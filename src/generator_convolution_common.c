@@ -378,13 +378,12 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
   unsigned int l_i, l_j;
   unsigned int reg_X;
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofh_rb * i_conv_desc->ofw_rb);
-  unsigned int l_intr_store = i_conv_kernel_config->vmove_instruction;
   unsigned int datatype_output_size = (i_conv_desc->use_nts) ? 2 : 4;
   unsigned int lead_dim_w = (i_conv_desc->use_nts) ? i_conv_desc->ofw_padded : i_conv_desc->ofw_rb;
   unsigned int store_offset;
   unsigned short  mask_array[32];
 
-  if (i_conv_desc->use_nts) {
+  if ( i_conv_desc->use_nts ) {
     if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ||
        i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL    ) {
       for ( i = 0; i < 16; ++i ) {
@@ -401,125 +400,127 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
           3);
     }
 
-    /* push 0x7f800000 on the stack, naninf masking */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x7f800000);
-    libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
+    if ( i_conv_desc->f32_bf16_cvt_rne ) {
+      /* push 0x7f800000 on the stack, naninf masking */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x7f800000);
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
 
-    /* push 0x00010000 on the stack, fixup masking */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x00010000);
-    libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 ); 
+      /* push 0x00010000 on the stack, fixup masking */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x00010000);
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 ); 
 
-    /* push 0x00007fff on the stack, rneadd */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x00007fff);
-    libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
+      /* push 0x00007fff on the stack, rneadd */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x00007fff);
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
 
-    /* push 0x00000001 on the stack, fixup */
-    libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x00000001);
-    libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
+      /* push 0x00000001 on the stack, fixup */
+      libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x00000001);
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
+    }
   } 
 
   for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
     for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
       reg_X =  l_vec_reg_acc_start + (l_i * i_conv_desc->ofw_rb) + l_j;
       store_offset = ((l_i * i_conv_desc->stride_h_store) * lead_dim_w + l_j * i_conv_desc->stride_w_store) * i_conv_kernel_config->vector_length_out * datatype_output_size;
-      if (i_conv_desc->use_nts) {
-#if 0
-        /* and for nan/inf */
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                 i_conv_kernel_config->instruction_set,
-                                                 LIBXSMM_X86_INSTR_VPANDD,
-                                                 1,
-                                                 LIBXSMM_X86_GP_REG_RSP,
-                                                 LIBXSMM_X86_GP_REG_UNDEF,
-                                                 0,
-                                                 24,
-                                                 'z',
-                                                 reg_X,
-                                                 0 );
+      if ( i_conv_desc->use_nts ) {
+        if ( i_conv_desc->f32_bf16_cvt_rne ) {
+          /* and for nan/inf */
+          libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                   i_conv_kernel_config->instruction_set,
+                                                   LIBXSMM_X86_INSTR_VPANDD,
+                                                   1,
+                                                   LIBXSMM_X86_GP_REG_RSP,
+                                                   LIBXSMM_X86_GP_REG_UNDEF,
+                                                   0,
+                                                   24,
+                                                   'z',
+                                                   reg_X,
+                                                   0 );
 
-        /* and for fixup */
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
-                                                 i_conv_kernel_config->instruction_set,
-                                                 LIBXSMM_X86_INSTR_VPANDD,
-                                                 1,
-                                                 LIBXSMM_X86_GP_REG_RSP,
-                                                 LIBXSMM_X86_GP_REG_UNDEF,
-                                                 0,
-                                                 16,
-                                                 'z',
-                                                 reg_X,
-                                                 1 );
+          /* and for fixup */
+          libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                   i_conv_kernel_config->instruction_set,
+                                                   LIBXSMM_X86_INSTR_VPANDD,
+                                                   1,
+                                                   LIBXSMM_X86_GP_REG_RSP,
+                                                   LIBXSMM_X86_GP_REG_UNDEF,
+                                                   0,
+                                                   16,
+                                                   'z',
+                                                   reg_X,
+                                                   1 );
 
-        /* get nan mask */
-        libxsmm_x86_instruction_vec_compute_mem_mask( io_generated_code,
-                                                      i_conv_kernel_config->instruction_set,
-                                                      LIBXSMM_X86_INSTR_VPCMPD,
-                                                      1,
-                                                      LIBXSMM_X86_GP_REG_RSP,
-                                                      LIBXSMM_X86_GP_REG_UNDEF,
-                                                      0,
-                                                      24,
-                                                      'z',
-                                                      0,                          /* first zmm */
-                                                      LIBXSMM_X86_VEC_REG_UNDEF,  /* second zmm */
-                                                      0,                          /* equal compare */
-                                                      1 );                        /* mask register */
+          /* get nanmask mask */
+          libxsmm_x86_instruction_vec_compute_mem_mask( io_generated_code,
+                                                        i_conv_kernel_config->instruction_set,
+                                                        LIBXSMM_X86_INSTR_VPCMPD,
+                                                        1,
+                                                        LIBXSMM_X86_GP_REG_RSP,
+                                                        LIBXSMM_X86_GP_REG_UNDEF,
+                                                        0,
+                                                        24,
+                                                        'z',
+                                                        0,                          /* first zmm */
+                                                        LIBXSMM_X86_VEC_REG_UNDEF,  /* second zmm */
+                                                        0,                          /* equal compare */
+                                                        1 );                        /* mask register */
 
-        /* get fixup mask */
-        libxsmm_x86_instruction_vec_compute_mem_mask( io_generated_code,
-                                                      i_conv_kernel_config->instruction_set,
-                                                      LIBXSMM_X86_INSTR_VPCMPD,
-                                                      1,
-                                                      LIBXSMM_X86_GP_REG_RSP,
-                                                      LIBXSMM_X86_GP_REG_UNDEF,
-                                                      0,
-                                                      16,
-                                                      'z',
-                                                      1,                          /* first zmm */
-                                                      LIBXSMM_X86_VEC_REG_UNDEF,  /* second zmm */
-                                                      4,                          /* not equal compare */
-                                                      2 );                        /* mask register */
+          /* get fixup mask */
+          libxsmm_x86_instruction_vec_compute_mem_mask( io_generated_code,
+                                                        i_conv_kernel_config->instruction_set,
+                                                        LIBXSMM_X86_INSTR_VPCMPD,
+                                                        1,
+                                                        LIBXSMM_X86_GP_REG_RSP,
+                                                        LIBXSMM_X86_GP_REG_UNDEF,
+                                                        0,
+                                                        16,
+                                                        'z',
+                                                        1,                          /* first zmm */
+                                                        LIBXSMM_X86_VEC_REG_UNDEF,  /* second zmm */
+                                                        4,                          /* not equal compare */
+                                                        2 );                        /* mask register */
 
-        /* load rne add */
-        libxsmm_x86_instruction_vec_move( io_generated_code,
-                                          i_conv_kernel_config->instruction_set,
-                                          LIBXSMM_X86_INSTR_VPBROADCASTD,
-                                          LIBXSMM_X86_GP_REG_RSP,
-                                          LIBXSMM_X86_GP_REG_UNDEF,
-                                          0,
-                                          8,
-                                          'z',
-                                          0,
-                                          0,
-                                          0 );
+          /* load rne add */
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+                                            i_conv_kernel_config->instruction_set,
+                                            LIBXSMM_X86_INSTR_VPBROADCASTD,
+                                            LIBXSMM_X86_GP_REG_RSP,
+                                            LIBXSMM_X86_GP_REG_UNDEF,
+                                            0,
+                                            8,
+                                            'z',
+                                            0,
+                                            0,
+                                            0 );
 
 
-        /* apply fixup mask to rne add */
-        libxsmm_x86_instruction_vec_compute_mem_mask( io_generated_code,
-                                                      i_conv_kernel_config->instruction_set,
-                                                      LIBXSMM_X86_INSTR_VPADDD,
-                                                      1,
-                                                      LIBXSMM_X86_GP_REG_RSP,
-                                                      LIBXSMM_X86_GP_REG_UNDEF,
-                                                      0,
-                                                      0,
-                                                      'z',
-                                                      0,                          /* first zmm */
-                                                      0,                          /* second zmm */
-                                                      LIBXSMM_X86_IMM_UNDEF,      /* equal compare */
-                                                      2 );                        /* mask register */
+          /* apply fixup mask to rne add */
+          libxsmm_x86_instruction_vec_compute_mem_mask( io_generated_code,
+                                                        i_conv_kernel_config->instruction_set,
+                                                        LIBXSMM_X86_INSTR_VPADDD,
+                                                        1,
+                                                        LIBXSMM_X86_GP_REG_RSP,
+                                                        LIBXSMM_X86_GP_REG_UNDEF,
+                                                        0,
+                                                        0,
+                                                        'z',
+                                                        0,                          /* first zmm */
+                                                        0,                          /* second zmm */
+                                                        LIBXSMM_X86_IMM_UNDEF,
+                                                        2 );                        /* mask register */
 
-        /* round */
-        libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
-                                                      i_conv_kernel_config->instruction_set,
-                                                      LIBXSMM_X86_INSTR_VPADDD,
-                                                      'z',
-                                                      0,
-                                                      reg_X,
-                                                      reg_X,
-                                                      LIBXSMM_X86_IMM_UNDEF,
-                                                      2 );
-#endif
+          /* round */
+          libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
+                                                        i_conv_kernel_config->instruction_set,
+                                                        LIBXSMM_X86_INSTR_VPADDD,
+                                                        'z',
+                                                        0,
+                                                        reg_X,
+                                                        reg_X,
+                                                        LIBXSMM_X86_IMM_UNDEF,
+                                                        1 );
+        }
 
         /* down convert to 16bit */
         if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ||
@@ -552,7 +553,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_conv_kernel_config->instruction_set,
-            l_intr_store,
+            LIBXSMM_X86_INSTR_VMOVNTPS,
             i_gp_reg_mapping->gp_reg_output,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             store_offset,
@@ -561,7 +562,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
       } else {
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_conv_kernel_config->instruction_set,
-            l_intr_store,
+            i_conv_kernel_config->vmove_instruction,
             i_gp_reg_mapping->gp_reg_output,
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             store_offset,
@@ -571,12 +572,14 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
     }
   }
 
-  if (i_conv_desc->use_nts) {
-    /* clean-up the stack */
-    libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
-    libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
+  if ( i_conv_desc->use_nts ) {
+    if ( i_conv_desc->f32_bf16_cvt_rne ) {
+      /* clean-up the stack */
+      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
+      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
+      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
+      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
+    }
   }
 }
 

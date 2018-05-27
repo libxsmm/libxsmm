@@ -189,15 +189,39 @@ if (n_segments) {
               element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               float *scratch_ptr = accumulators_scratch;
               __m512 zero_reg = _mm512_setzero_ps();
-              for ( oj = 0; oj < handle->ofh; oj++ ) {
-                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
-                  _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
-                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+              if ( handle->f32_bf16_cvt_rne ) {
+                __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
+                __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
+                __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
+                __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
+                for ( oj = 0; oj < handle->ofh; oj++ ) {
+                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                    __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+oi) );
+                    __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
+                    __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
+                    __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
+                    __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
+                    __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
+                    __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
+                    __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
+                    __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
+                    _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
+                    _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+                  }
+                  scratch_ptr += handle->ofw*handle->ofmblock;
+                  output_dst += handle->ofwp*handle->ofmblock;
                 }
-                scratch_ptr += handle->ofw*handle->ofmblock;
-                output_dst += handle->ofwp*handle->ofmblock;
+              } else {
+                for ( oj = 0; oj < handle->ofh; oj++ ) {
+                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                    __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
+                    __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
+                    _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
+                    _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+                  }
+                  scratch_ptr += handle->ofw*handle->ofmblock;
+                  output_dst += handle->ofwp*handle->ofmblock;
+                }
               }
             }
           }
@@ -247,15 +271,39 @@ if (n_segments) {
               element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               float *scratch_ptr = accumulators_scratch;
               __m512 zero_reg = _mm512_setzero_ps();
-              for ( oj = 0; oj < handle->ofh; oj++ ) {
-                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
-                  _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
-                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+              if ( handle->f32_bf16_cvt_rne ) {
+                __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
+                __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
+                __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
+                __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
+                for ( oj = 0; oj < handle->ofh; oj++ ) {
+                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                    __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+oi) );
+                    __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
+                    __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
+                    __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
+                    __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
+                    __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
+                    __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
+                    __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
+                    __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
+                    _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
+                    _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+                  }
+                  scratch_ptr += handle->ofw*handle->ofmblock;
+                  output_dst += handle->ofwp*handle->ofmblock;
                 }
-                scratch_ptr += handle->ofw*handle->ofmblock;
-                output_dst += handle->ofwp*handle->ofmblock;
+              } else {
+                for ( oj = 0; oj < handle->ofh; oj++ ) {
+                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                    __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
+                    __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
+                    _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
+                    _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+                  }
+                  scratch_ptr += handle->ofw*handle->ofmblock;
+                  output_dst += handle->ofwp*handle->ofmblock;
+                }
               }
             }
           }
@@ -306,15 +354,39 @@ if (n_segments) {
               element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               float *scratch_ptr = accumulators_scratch;
               __m512 zero_reg = _mm512_setzero_ps();
-              for ( oj = 0; oj < handle->ofh; oj++ ) {
-                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
-                  _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
-                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+              if ( handle->f32_bf16_cvt_rne ) {
+                __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
+                __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
+                __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
+                __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
+                for ( oj = 0; oj < handle->ofh; oj++ ) {
+                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                    __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+oi) );
+                    __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
+                    __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
+                    __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
+                    __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
+                    __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
+                    __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
+                    __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
+                    __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
+                    _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
+                    _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+                  }
+                  scratch_ptr += handle->ofw*handle->ofmblock;
+                  output_dst += handle->ofwp*handle->ofmblock;
                 }
-                scratch_ptr += handle->ofw*handle->ofmblock;
-                output_dst += handle->ofwp*handle->ofmblock;
+              } else {
+                for ( oj = 0; oj < handle->ofh; oj++ ) {
+                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                    __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
+                    __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
+                    _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
+                    _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+                  }
+                  scratch_ptr += handle->ofw*handle->ofmblock;
+                  output_dst += handle->ofwp*handle->ofmblock;
+                }
               }
             }
 
@@ -439,15 +511,39 @@ if (n_segments) {
               element_output_type *output_dst = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
               float *scratch_ptr = accumulators_scratch;
               __m512 zero_reg = _mm512_setzero_ps();
-              for ( oj = 0; oj < handle->ofh; oj++ ) {
-                for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                  __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                  __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
-                  _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
-                  _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+              if ( handle->f32_bf16_cvt_rne ) {
+                __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
+                __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
+                __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
+                __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
+                for ( oj = 0; oj < handle->ofh; oj++ ) {
+                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                    __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+oi) );
+                    __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
+                    __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
+                    __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
+                    __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
+                    __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
+                    __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
+                    __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
+                    __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
+                    _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
+                    _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+                  }
+                  scratch_ptr += handle->ofw*handle->ofmblock;
+                  output_dst += handle->ofwp*handle->ofmblock;
                 }
-                scratch_ptr += handle->ofw*handle->ofmblock;
-                output_dst += handle->ofwp*handle->ofmblock;
+              } else {
+                for ( oj = 0; oj < handle->ofh; oj++ ) {
+                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
+                    __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
+                    __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
+                    _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
+                    _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
+                  }
+                  scratch_ptr += handle->ofw*handle->ofmblock;
+                  output_dst += handle->ofwp*handle->ofmblock;
+                }
               }
             }
 
