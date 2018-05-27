@@ -41,6 +41,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_TRANS_TO_COPY)
+# define LIBXSMM_TRANS_TO_COPY
+#endif
+
 #if !defined(LIBXSMM_TRANS_JIT)
 # if defined(_WIN32) || defined(__CYGWIN__)
 /* only enable matcopy code generation (workaround issue with taking GP registers correctly) */
@@ -66,11 +70,9 @@ LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
       { { 5, 8,  8,   9,  20,  17,  20,  25 }, { 25,  60,  78,  58, 52, 56, 36,  31 } } }  /* SP */
   };
   { /* check if JIT-code generation is permitted */
-#if !defined(__clang__) || defined(__INTEL_COMPILER) /* TODO: investigate Clang specific issue */
     const char *const env_jit = getenv("LIBXSMM_TRANS_JIT");
     /* determine if JIT-kernels are used (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
     libxsmm_trans_jit = ((0 == env_jit || 0 == *env_jit) ? (LIBXSMM_TRANS_JIT) : atoi(env_jit));
-#endif
   }
   { /* load/adjust tile sizes */
     const char *const env_m = getenv("LIBXSMM_TRANS_M"), *const env_n = getenv("LIBXSMM_TRANS_N");
@@ -120,17 +122,10 @@ LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int t
       const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
       const unsigned int indx = LIBXSMM_MIN(size2 >> 10, 7);
       const unsigned int tidx = (4 < typesize ? 0 : 1);
-      const libxsmm_mcopy_descriptor* desc;
-      libxsmm_descriptor_blob blob;
       int mtasks;
       tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tidx][0/*M*/][indx]);
       tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tidx][1/*N*/][indx]);
-      /* libxsmm_trans_jit: JIT'ted matrix-copy permitted? */
-      desc = (0 != (1 & libxsmm_trans_jit) ? libxsmm_mcopy_descriptor_init(&blob,
-        typesize, tm, tn, uldo, uldi, 0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE,
-        iprefetch, NULL/*default unroll*/) : 0);
       mtasks = ((1 < nthreads) ? ((int)((m + tm - 1) / tm)) : 1);
-      xmatcopy = libxsmm_dispatch_mcopy(desc);
       if (1 < mtasks && nthreads <= mtasks) { /* only parallelized over M */
         const int mc = (mtasks + nthreads - 1) / nthreads * tm;
         m0 = tid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
@@ -141,6 +136,18 @@ LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int t
         const libxsmm_blasint mc = tm;
         m0 = mtid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
         n0 = ntid * nc; n1 = LIBXSMM_MIN(n0 + nc, n);
+      }
+      if (0 != (1 & libxsmm_trans_jit) /* libxsmm_trans_jit: JIT'ted matrix-copy permitted? */
+        /* avoid code-dispatch if task does not need the kernel for inner tiles */
+        && tm + m0 <= (unsigned int)(m1 - m0) && tn <= (unsigned int)(n1 - n0)
+        /* TODO: investigate issue with Byte-element copy/MT on pre-AVX512 */
+        && (1 < typesize || LIBXSMM_X86_AVX2 < libxsmm_target_archid))
+      {
+        libxsmm_descriptor_blob blob;
+        const libxsmm_mcopy_descriptor *const desc = libxsmm_mcopy_descriptor_init(&blob,
+          typesize, tm, tn, uldo, uldi, 0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE,
+          iprefetch, NULL/*default unroll*/);
+        xmatcopy = libxsmm_dispatch_mcopy(desc);
       }
       if (0 != prefetch && 0 != *prefetch) { /* prefetch */
         LIBXSMM_XCOPY(
@@ -204,7 +211,7 @@ LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int t
         fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the matcopy is/are zero or negative!\n");
       }
       else {
-        assert(ldi < m || ldo < n);
+        assert(ldi < m || ldo < m);
         fprintf(stderr, "LIBXSMM ERROR: the leading dimension(s) of the matcopy is/are too small!\n");
       }
     }
@@ -235,54 +242,70 @@ LIBXSMM_API int libxsmm_otrans_thread(void* out, const void* in, unsigned int ty
   {
     LIBXSMM_INIT /* before leading tile sizes */
     if (out != in) {
-      const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
-      unsigned int tm = (unsigned int)m, tn = (unsigned int)n;
-      libxsmm_descriptor_blob blob;
-      /* libxsmm_trans_jit: JIT'ted transpose permitted? */
-      libxsmm_trans_descriptor* desc = (0 != (2 & libxsmm_trans_jit)
-        ? libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, uldo) : 0);
-      libxsmm_xtransfunction xtrans = 0;
-      if (0 == desc) { /* tiled transpose */
-        const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
-        const unsigned int indx = LIBXSMM_MIN(size2 >> 10, 7);
-        const unsigned int tidx = (4 < typesize ? 0 : 1);
-        libxsmm_blasint m0 = 0, n0 = 0, m1 = m, n1 = n;
-        int mtasks;
-        tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tidx][0/*M*/][indx]);
-        tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tidx][1/*N*/][indx]);
+#if defined(LIBXSMM_TRANS_TO_COPY) /* check if transpose can be lowered */
+      if ((1 != n || m > ldo) && (1 != m || n != ldo))
+#endif
+      {
+        const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
+        unsigned int tm = (unsigned int)m, tn = (unsigned int)n;
+        libxsmm_descriptor_blob blob;
         /* libxsmm_trans_jit: JIT'ted transpose permitted? */
-        desc = (0 != (2 & libxsmm_trans_jit) ? libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, uldo) : 0);
-        if (0 != desc) { /* limit the amount of (unrolled) code with smaller kernel/tiles */
-          desc->m = LIBXSMM_MIN(tm, LIBXSMM_MAX_M); desc->n = LIBXSMM_MIN(tn, LIBXSMM_MAX_N);
-          if (0 != (xtrans = libxsmm_dispatch_trans(desc))) {
-            tm = desc->m; tn = desc->n;
+        libxsmm_trans_descriptor* desc = (0 != (2 & libxsmm_trans_jit)
+          ? libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, uldo) : 0);
+        libxsmm_xtransfunction xtrans = 0;
+        if (0 == desc) { /* tiled transpose */
+          const unsigned int size = tm * tn, size2 = LIBXSMM_SQRT2(size);
+          const unsigned int indx = LIBXSMM_MIN(size2 >> 10, 7);
+          const unsigned int tidx = (4 < typesize ? 0 : 1);
+          libxsmm_blasint m0 = 0, n0 = 0, m1 = m, n1 = n;
+          int mtasks;
+          tm = LIBXSMM_MIN(tm, libxsmm_trans_tile[tidx][0/*M*/][indx]);
+          tn = LIBXSMM_MIN(tn, libxsmm_trans_tile[tidx][1/*N*/][indx]);
+          /* libxsmm_trans_jit: JIT'ted transpose permitted? */
+          desc = (0 != (2 & libxsmm_trans_jit) ? libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, uldo) : 0);
+          if (0 != desc) { /* limit the amount of (unrolled) code with smaller kernel/tiles */
+            desc->m = LIBXSMM_MIN(tm, LIBXSMM_MAX_M); desc->n = LIBXSMM_MIN(tn, LIBXSMM_MAX_N);
+            if (0 != (xtrans = libxsmm_dispatch_trans(desc))) {
+              tm = desc->m; tn = desc->n;
+            }
+          }
+          mtasks = ((1 < nthreads) ? ((int)((m + tm - 1) / tm)) : 1);
+          if (1 < mtasks && nthreads <= mtasks) { /* only parallelized over M */
+            const int mc = (mtasks + nthreads - 1) / nthreads * tm;
+            m0 = tid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
+          }
+          else if (1 < nthreads) {
+            const int ntasks = nthreads / mtasks, mtid = tid / ntasks, ntid = tid - mtid * ntasks;
+            const libxsmm_blasint nc = (((n + ntasks - 1) / ntasks + tn - 1) / tn) * tn;
+            const libxsmm_blasint mc = tm;
+            m0 = mtid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
+            n0 = ntid * nc; n1 = LIBXSMM_MIN(n0 + nc, n);
+          }
+          LIBXSMM_XCOPY(
+            LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
+            LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans, out, in,
+            typesize, uldi, uldo, tm, tn, m0, m1, n0, n1);
+        }
+        else { /* no tiling */
+          if (0 != (xtrans = libxsmm_dispatch_trans(desc))) { /* JIT'ted kernel available */
+            LIBXSMM_TCOPY_CALL(xtrans, typesize, in, &uldi, out, &uldo);
+          }
+          else { /* JIT not available */
+            LIBXSMM_XCOPY_NONJIT(LIBXSMM_TCOPY_KERNEL, out, in, typesize, uldi, uldo, 0, m, 0, n);
           }
         }
-        mtasks = ((1 < nthreads) ? ((int)((m + tm - 1) / tm)) : 1);
-        if (1 < mtasks && nthreads <= mtasks) { /* only parallelized over M */
-          const int mc = (mtasks + nthreads - 1) / nthreads * tm;
-          m0 = tid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
-        }
-        else if (1 < nthreads) {
-          const int ntasks = nthreads / mtasks, mtid = tid / ntasks, ntid = tid - mtid * ntasks;
-          const libxsmm_blasint nc = (((n + ntasks - 1) / ntasks + tn - 1) / tn) * tn;
-          const libxsmm_blasint mc = tm;
-          m0 = mtid * mc; m1 = LIBXSMM_MIN(m0 + mc, m);
-          n0 = ntid * nc; n1 = LIBXSMM_MIN(n0 + nc, n);
-        }
-        LIBXSMM_XCOPY(
-          LIBXSMM_NOOP, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP_ARGS, LIBXSMM_NOOP,
-          LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, xtrans, out, in,
-          typesize, uldi, uldo, tm, tn, m0, m1, n0, n1);
       }
-      else { /* no tiling */
-        if (0 != (xtrans = libxsmm_dispatch_trans(desc))) { /* JIT'ted kernel available */
-          LIBXSMM_TCOPY_CALL(xtrans, typesize, in, &uldi, out, &uldo);
-        }
-        else { /* JIT not available */
-          LIBXSMM_XCOPY_NONJIT(LIBXSMM_TCOPY_KERNEL, out, in, typesize, uldi, uldo, 0, m, 0, n);
-        }
+#if defined(LIBXSMM_TRANS_TO_COPY)
+      else if (1 == m) {
+        result = libxsmm_matcopy_thread(out, in, typesize, 1/*m*/, n, 1/*ldi*/, 1/*ldo*/,
+          /*default prefetch*/NULL, tid, nthreads);
       }
+      else {
+        LIBXSMM_ASSERT(1 == n);
+        result = libxsmm_matcopy_thread(out, in, typesize, m, 1/*n*/, ldi, ldo,
+          /*default prefetch*/NULL, tid, nthreads);
+      }
+#endif
     }
     else if (ldi == ldo) {
       result = libxsmm_itrans(out, typesize, m, n, ldi);

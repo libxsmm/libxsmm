@@ -35,26 +35,73 @@
 #include "libxsmm_typedefs.h"
 #include "libxsmm_dnn.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#if !defined(NDEBUG)
-# include <stdio.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
-  int N;
-  int nThreads;
-} libxsmm_dnn_rnncell;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
   int N;
   int nThreads;
+  int m; /* number of outputs */
+  int n; /* size of the minibatch */
+  int k; /* number of inputs */
+  int t; /* number of time steps */
+  int bm; /* blocksize for m */
+  int bn; /* blocksize for n */
+  int bk; /* blocksize for k */
+  int b_m1; /* b_?? parameters are used in libxsmm_bgemm */
+  int b_n1;
+  int b_k1;
+  int b_m2;
+  int b_n2;
+  int b_k2;
+  libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
+  libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
+  libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
 } libxsmm_dnn_rnncell_desc;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
+  int N;
+  int nThreads;
+  libxsmm_dnn_rnncell_desc desc;
+  libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
+  libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
+  libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
+  int m;
+  int n;
+  int k;
+  int t;
+  int bm;
+  int bn;
+  int bk;
+  int b_m1;
+  int b_n1;
+  int b_k1;
+  int b_m2;
+  int b_n2;
+  int b_k2;
+  libxsmm_dnn_tensor* w;
+  libxsmm_dnn_tensor* xt;
+  libxsmm_dnn_tensor* u;
+  libxsmm_dnn_tensor* h;
+  libxsmm_dnn_tensor* z;
+  libxsmm_dnn_tensor* djdht;
+  libxsmm_dnn_tensor* djdu;
+  libxsmm_dnn_tensor* djdw;
+  libxsmm_dnn_tensor* djdxt;
+  libxsmm_dnn_tensor* deltat;
+  libxsmm_dnn_tensor* z1t;
+  libxsmm_dnn_tensor* z2;
+  libxsmm_dnn_tensor* di1;
+  libxsmm_dnn_tensor* di2;
+  libxsmm_dnn_tensor* dj1;
+  libxsmm_dnn_tensor* dw1;
+  libxsmm_dnn_tensor* uTp;
+  libxsmm_dnn_tensor* wTp;
+  libxsmm_dnn_tensor* hTp;
+  libxsmm_dnn_tensor* xTp;
+  libxsmm_bgemm_handle* handlewx;
+  libxsmm_bgemm_handle* handleuh;
+  libxsmm_bgemm_handle* handlett;
+  libxsmm_bgemm_handle* handlewd;
+} libxsmm_dnn_rnncell;
 
 LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_desc rnncell_desc, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_rnncell(const libxsmm_dnn_rnncell* handle);

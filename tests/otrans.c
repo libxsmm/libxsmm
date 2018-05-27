@@ -42,10 +42,10 @@
 
 int main(void)
 {
-  const libxsmm_blasint m[]   = { 1, 2, 3, 16, 63,  16,  75, 2507 };
-  const libxsmm_blasint n[]   = { 1, 2, 3, 16, 31, 500, 130, 1975 };
-  const libxsmm_blasint ldi[] = { 1, 2, 3, 16, 64,  16,  87, 3000 };
-  const libxsmm_blasint ldo[] = { 1, 2, 3, 16, 32, 512, 136, 3072 };
+  const libxsmm_blasint m[]   = { 1, 1, 1, 1, 2, 3, 5, 5, 5, 16, 63,  16,  75, 2507 };
+  const libxsmm_blasint n[]   = { 1, 7, 7, 7, 2, 3, 1, 1, 1, 16, 31, 500, 130, 1975 };
+  const libxsmm_blasint ldi[] = { 1, 1, 1, 9, 2, 3, 5, 8, 8, 16, 64,  16,  87, 3000 };
+  const libxsmm_blasint ldo[] = { 1, 7, 8, 8, 2, 3, 1, 1, 4, 16, 32, 512, 136, 3072 };
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint max_size_a = 0, max_size_b = 0;
   unsigned int nerrors = 0;
@@ -80,7 +80,9 @@ int main(void)
         }
       }
     }
-    nerrors = LIBXSMM_MAX(nerrors, testerrors);
+    if (nerrors < testerrors) {
+      nerrors = testerrors;
+    }
   }
 
   if (0 == nerrors) { /* previous results are correct and may be used to validate other tests */
@@ -103,7 +105,9 @@ int main(void)
             }
           }
         }
-        nerrors = LIBXSMM_MAX(nerrors, testerrors);
+        if (nerrors < testerrors) {
+          nerrors = testerrors;
+        }
       }
       else { /* negative tests */
         nerrors = LIBXSMM_MAX(EXIT_SUCCESS != libxsmm_otrans(

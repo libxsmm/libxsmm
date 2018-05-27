@@ -1075,11 +1075,12 @@ LIBXSMM_API_INLINE const char* internal_get_typesize_string(size_t typesize)
 {
   static LIBXSMM_TLS char result[4];
   assert(256 > typesize);
-  if (1 < typesize) {
-    LIBXSMM_SNPRINTF(result, sizeof(result), "%i", (int)typesize);
+  if (10 > typesize) {
+    result[0] = (char)('0' + typesize);
+    result[1] = 0;
   }
   else {
-    result[0] = 0;
+    LIBXSMM_SNPRINTF(result, sizeof(result), "%i", (int)typesize);
   }
   return result;
 }
@@ -2225,12 +2226,27 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
       0 != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? kk : nn),
       *(0 != ldc ? ldc : m), alpha, beta, gemm_flags, libxsmm_get_gemm_xprefetch(prefetch));
     if (0 != descriptor) {
+      libxsmm_code_pointer result;
       if (0 != (0x8000 & descriptor->prefetch)) { /* "sign"-bit of unsigned short is set */
         backend_descriptor = *descriptor;
         LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(backend_descriptor, libxsmm_gemm_auto_prefetch);
         descriptor = &backend_descriptor;
       }
-      *fn = internal_find_code(descriptor).ival;
+      result = internal_find_code(descriptor);
+      *fn = result.ival;
+#if defined(_DEBUG)
+      if (0 != libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.pmm) {
+        LIBXSMM_FLOCK(stdout);
+        fprintf(stdout, "LIBXSMM: ");
+        LIBXSMM_GEMM_PRINT2(stdout,
+          LIBXSMM_GETENUM_INP(descriptor->datatype), LIBXSMM_GETENUM_OUT(descriptor->datatype),
+          descriptor->flags, descriptor->m, descriptor->n, descriptor->k,
+          descriptor->alpha, 0/*a*/, descriptor->lda, 0/*b*/, descriptor->ldb,
+          descriptor->beta, 0/*c*/, descriptor->ldc);
+        fprintf(stdout, " = %p\n", result.pmm);
+        LIBXSMM_FUNLOCK(stdout);
+      }
+#endif
     }
     else { /* quiet */
       *fn = 0;

@@ -81,8 +81,12 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
 fi
 
 # ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh padw padh stride type
-
-#${NUMACTL} ./layer_example_${BIN} ${ITERS}   4   4  ${MB}  512  100  4  4 0 0 1 ${TYPE} ${FORMAT} ${PAD}    &&
+#
+if [ "${BIN}" != "f32" ]; then
+  true
+else
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   4   4  ${MB}  512  100  4  4 0 0 1 ${TYPE} ${FORMAT} ${PAD}
+fi && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}   4   4  ${MB}  512   96  4  4 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}   8   8  ${MB}  256  512  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}    && \
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  16  16  ${MB}  128  256  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}    && \

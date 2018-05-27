@@ -231,6 +231,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxs
     handle->fm_lp_block = 2;
     handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
     handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
+    if ( (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE) == LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE ) {
+      handle->f32_bf16_cvt_rne = 1;
+    }
   } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
     handle->ifmblock = (handle->desc.C >=16) ? 8 : (handle->desc.C/2);
     handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/2);
@@ -578,8 +581,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       }
     }
 
-    descriptor.use_nts =  handle->use_nts_fwd;
-
     if (handle->desc.R == 1 && handle->desc.S == 1) {
       descriptor.unroll_kh = 1;
       descriptor.unroll_kw = 1;
@@ -593,6 +594,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       descriptor.unroll_kh = 0;
       descriptor.unroll_kw = 1;
     }
+
+    descriptor.use_nts = handle->use_nts_fwd;
+    descriptor.f32_bf16_cvt_rne = handle->f32_bf16_cvt_rne;
 
     if (handle->padding_flag == 1) {
       descriptor.ifh_padded = handle->ifhp + 2 * handle->desc.pad_h;

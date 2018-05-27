@@ -880,7 +880,7 @@ void rnn_bwd_upd_execute(struct rnn_handle *rnn, const int nrepeat, const libxsm
   libxsmm_bgemm_handle *handledh = rnn->handleuh;
   libxsmm_bgemm_handle *handledx = rnn->handlett;
   libxsmm_bgemm_handle *handlewd = rnn->handlewd;
-  LIBXSMM_VLA_DECL(2, ITYPE, djdh, djdh, m * n);
+  LIBXSMM_VLA_DECL(2, ITYPE, djdh, djdht, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, z, zt, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, delta, deltat, m * n);
   LIBXSMM_VLA_DECL(2, ITYPE, x, xt, k * n);

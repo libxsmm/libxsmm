@@ -147,19 +147,17 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
                                               const unsigned int      i_shuffle_operand );
 
 /**
- * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 2 vector registers, memory operand as first operand
+ * Generates (v)XYZpd/(v)XYZps/(v)XYZsd/(v)XYZss instructions with 3 vector registers and masking
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_instruction_set requested instruction set to encode
  * @param i_vec_instr actual operation variant
- * @param i_use_broadcast if != 0 memory operand is interpreted as a scalar and broadcasted in fused fashion, only supported on AVX512 and IMCI
- * @param i_gp_reg_base base address register for memory broadcast
- * @param i_gp_reg_idx index register for memory broadcast, can be LIBXSMM_X86_GP_REG_UNDEF -> then regular displacement version is generated
- * @param i_scale scale of index register, ignored if i_gp_reg_idx is LIBXSMM_X86_GP_REG_UNDEF
- * @param i_displacement displacement to SIB address
  * @param i_vector_name the vector register name prefix (z)
  * @param i_vec_reg_number_0 the first vector register number (zmm: 0-31)
  * @param i_vec_reg_number_1 the second vector register number (zmm: 0-31)
+ * @param i_vec_reg_number_3 the second vector register number (zmm: 0-31)
+ * @param i_immediate immediate just as the compare value for a compate intructions
+ * @param i_mask_reg_number the mask register to read/write
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_generated_code,
@@ -169,6 +167,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
                                               const unsigned int      i_vec_reg_number_0,
                                               const unsigned int      i_vec_reg_number_1,
                                               const unsigned int      i_vec_reg_number_2,
+                                              const unsigned int      i_immediate,
                                               const unsigned int      i_mask_reg_number );
 
 /**
@@ -193,34 +192,37 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
                                               const unsigned int      i_vec_reg_number_0,
                                               const unsigned int      i_vec_reg_number_1 );
 
- /**
-  * Generates quadmadd instructions added in Knights Mill
-  *
-  * @param io_generated_code pointer to the pointer of the generated code structure
-  * @param i_instruction_set requested instruction set to encode
-  * @param i_vec_instr actual operation variant
-  * @param i_gp_reg_base base address register for memory broadcast
-  * @param i_gp_reg_idx index register for memory broadcast, can be LIBXSMM_X86_GP_REG_UNDEF -> then regular displacement version is generated
-  * @param i_scale scale of index register, ignored if i_gp_reg_idx is LIBXSMM_X86_GP_REG_UNDEF
-  * @param i_displacement displacement to SIB address
-  * @param i_vector_name the vector register name prefix (z)
-  * @param i_vec_reg_number_src the second vector register number (zmm: 0-31), this define a implicit regsiter range
-  * @param i_vec_reg_number_dest the first vector register number (zmm: 0-31)
-  */
+/**
+ * Generates vector instructions which require an immediate and mask. immediate is optional.
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_instruction_set requested instruction set to encode
+ * @param i_vec_instr actual operation variant
+ * @param i_use_broadcast if != 0 memory operand is interpreted as a scalar and broadcasted in fused fashion, only supported on AVX512 and IMCI
+ * @param i_gp_reg_base base address register for memory broadcast
+ * @param i_gp_reg_idx index register for memory broadcast, can be LIBXSMM_X86_GP_REG_UNDEF -> then regular displacement version is generated
+ * @param i_scale scale of index register, ignored if i_gp_reg_idx is LIBXSMM_X86_GP_REG_UNDEF
+ * @param i_displacement displacement to SIB address
+ * @param i_vector_name the vector register name prefix (z)
+ * @param i_vec_reg_number_0 the first vector register number (zmm: 0-31)
+ * @param i_vec_reg_number_1 the second vector register number (zmm: 0-31)
+ * @param i_immediate immediate just as the compare value for a compate intructions
+ * @param i_mask_reg_number the mask register to read/write
+ */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_mask( libxsmm_generated_code* io_generated_code,
-                                              const unsigned int      i_instruction_set,
-                                              const unsigned int      i_vec_instr,
-                                              const unsigned int      i_use_broadcast,
-                                              const unsigned int      i_gp_reg_base,
-                                              const unsigned int      i_gp_reg_idx,
-                                              const unsigned int      i_scale,
-                                              const int               i_displacement,
-                                              const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_number_0,
-                                              const unsigned int      i_vec_reg_number_1,
-                                              const unsigned int      i_shuffle_operand,
-                                              const unsigned int      i_mask_reg_number );
+                                                   const unsigned int      i_instruction_set,
+                                                   const unsigned int      i_vec_instr,
+                                                   const unsigned int      i_use_broadcast,
+                                                   const unsigned int      i_gp_reg_base,
+                                                   const unsigned int      i_gp_reg_idx,
+                                                   const unsigned int      i_scale,
+                                                   const int               i_displacement,
+                                                   const char              i_vector_name,
+                                                   const unsigned int      i_vec_reg_number_0,
+                                                   const unsigned int      i_vec_reg_number_1,
+                                                   const unsigned int      i_immediate,
+                                                   const unsigned int      i_mask_reg_number );
 
  /**
   * Generates quadmadd instructions added in Knights Mill
