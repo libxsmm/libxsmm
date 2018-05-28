@@ -21,7 +21,7 @@ export CC=/path/to/gcc/bin/gcc
 export FC=/path/to/gcc/bin/gfortran
 ```
 
-TensorFlow may be configured for the first time. In the past, Python&#160;3 was problematic since it was not the primary development vehicle and Python&#160;2.7 was de-facto prerequisite. It is recommended to use the default Python version available on the system (Linux distribution). For the configuration, all question may be (interactively) answered with their defaults. If not needed, some of the frameworks may be disabled (`TF_NEED_GCP=0`, `TF_NEED_HDFS=0`, `TF_NEED_S3=0`, and `TF_NEED_KAFKA=0`).
+TensorFlow may be configured for the first time. In the past, Python&#160;3 was problematic since it was not the primary development vehicle (and Python&#160;2.7 was a de-facto prerequisite). It is recommended to use the default Python version available on the system (Linux distribution's default). For the configuration, all questions may be (interactively) answered with the suggested defaults. If not needed, some of the frameworks can be disabled (`TF_NEED_GCP=0`, `TF_NEED_HDFS=0`, `TF_NEED_S3=0`, and `TF_NEED_KAFKA=0`).
 
 ```bash
 cd /path/to/tensorflow-xsmm
@@ -38,7 +38,7 @@ export https_proxy=https://proxy.domain.com:912
 export http_proxy=http://proxy.domain.com:911
 ```
 
-In general, if the build step of any of the Bazel commands goes wrong, `-s --verbose_failures` can be used (`-s` shows the full command of each of the build steps). For non-production code such as for debug purpose, TensorFlow can be built with `-c dbg` (or at least `--copt=-O0`). For further reference, please consult the official [guide](https://www.tensorflow.org/install/install_sources) to build TensorFlow from the sources. In case of production code, it is recommended the use a moderate optimization level (`-c opt --copt=-O2`), and to better focus on a reasonable set of target-flags (`--copt=-mfma --copt=-mavx2`). LIBXSMM (and MKL-DNN) both make use of CPUID-dispatch, and it is not too critical to pick for instance AVX-512 (even when available on the intended production target). However, if the desired workload is bottlenecked by Eigen code paths that are not covered by LIBXSMM (or MKL-DNN), one may be sufficiently served with Intel AVX2 instructions (`--copt=-mfma --copt=-mavx2`).
+If the build step of any of the Bazel commands goes wrong, `-s --verbose_failures` can be used (`-s` shows the full command of each of the build steps). For non-production code such as for debug purpose, TensorFlow can be built with `-c dbg` (or at least `--copt=-O0`). For further reference, please consult the [official guide](https://www.tensorflow.org/install/install_sources) to build TensorFlow from sources. In case of production code, it is recommended the use a moderate optimization level (`-c opt --copt=-O2`), and to better focus on a reasonable set of target-flags (`--copt=-mfma --copt=-mavx2`). LIBXSMM (and MKL-DNN) makes use of CPUID-dispatch, and it is not too critical to pick for instance AVX-512 (even if AVX-512 is available on the intended production target). However, if the desired workload is bottlenecked by Eigen code paths that are not covered by LIBXSMM (or MKL-DNN), one may be sufficiently served with Intel AVX2 instructions (`--copt=-mfma --copt=-mavx2`).
 
 ```bash
 bazel build -c opt --copt=-O2 --linkopt=-pthread --cxxopt=-D_GLIBCXX_USE_CXX11_ABI=0 \
@@ -54,9 +54,9 @@ If specific target flags are desired, one may select depending on the system cap
 * AVX-512/CORE/SKX: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl --copt=-mavx512dq`
 * AVX-512/MIC/KNL/KNM: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512pf --copt=-mavx512er`
 
-**NOTE**: TensorFlow or specifically Eigen's packed math abstraction may assert an unmet condition in case of AVX-512, hence one should either (1)&#160;limit the code to Intel AVX2 instructions, or (2)&#160;supply `-c opt` which in turn implies `--copt=-DNDEBUG` and thereby **disables** the assertions (at own risk). As a side-note (this is often missed in AVX2 vs. AVX-512 comparisons), AVX2 code can utilize twice as many registers (32) on an AVX-512 capable system (if instructions are EVEX encoded, which is practically always the case).
+**NOTE**: TensorFlow or specifically Eigen's packed math abstraction may assert an unmet condition in case of AVX-512. Therefore, one should either (1)&#160;limit the code to Intel AVX2 instructions, or (2)&#160;supply `-c opt` which implies `--copt=-DNDEBUG` and thereby **disables** the assertions (at own risk). As a side-note (this is often missed in AVX2 vs. AVX-512 comparisons), AVX2 code can utilize twice as many registers (32) on an AVX-512 capable system (if instructions are EVEX encoded, which is practically always the case).
 
-To finally build the TensorFlow (pip-)package ("wheel"), please invoke the following command (in the past the zip-stage ran into problems with Python wheels containing debug and thereby exceeding 2&#160;GB for the archive).
+To finally build the TensorFlow (pip-)package ("wheel"), please invoke the following command (in the past the zip-stage ran into problems with Python wheels containing debug code because of exceeding 2&#160;GB for the size of the wheel).
 
 ```bash
 bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
@@ -78,6 +78,8 @@ pip install \
   --proxy proxy.domain.com:912 \
   /tmp/tensorflow_pkg/<package-name-build-above.whl>
 ```
+
+**NOTE**: Unless a workload is symlinked and built underneath of the TensorFlow directory (for quicker development turnaround time; out of scope in this document), a wheel must be installed before it can be used to run any TensorFlow Python-code (the desired workload).
 
 ## Performance Tuning and Profiling
 
