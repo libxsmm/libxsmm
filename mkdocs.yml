@@ -30,6 +30,7 @@ pages:
 - Applications:
   - CP2K Molecular Dynamics: cp2k.md
   - GxM Deeplearning: gxm.md
+  - TensorFlow Serving: tfserving.md
   - TensorFlow: tensorflow.md
 - About:
   - Contributing: CONTRIBUTING.md
