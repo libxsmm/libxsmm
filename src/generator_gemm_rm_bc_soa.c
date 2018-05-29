@@ -250,7 +250,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512_kloop( libxs
 
   /* load C accumulator */
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-    if ( i_xgemm_desc->beta == 0 ) {
+    if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=0 */
       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->vxor_instruction,

@@ -103,7 +103,7 @@ void libxsmm_generator_spgemm_csc_bsparse( libxsmm_generated_code*         io_ge
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
   /* reset C if beta is zero */
-  if ( i_xgemm_desc->beta == 0 ) {
+  if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=0 */
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  unsigned int l_n = 0;\n");
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  for ( l_n = 0; l_n < %u; l_n++) {\n", (unsigned int)i_xgemm_desc->n);

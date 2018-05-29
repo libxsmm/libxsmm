@@ -390,6 +390,8 @@ LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
   double dalpha, const void* a, libxsmm_blasint lda,
   const void* b, libxsmm_blasint ldb,
   double dbeta, void* c, libxsmm_blasint ldc);
+LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
+  libxsmm_xmmfunction kernel, const void* a, const void* b, void* c);
 
 /** GEMM: fall-back prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(

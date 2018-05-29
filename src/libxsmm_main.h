@@ -124,7 +124,6 @@
   (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
   (DESCRIPTOR).flags = (unsigned short)(FLAGS); LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH); \
-  (DESCRIPTOR).alpha = (signed char)(ALPHA); (DESCRIPTOR).beta = (signed char)(BETA); \
   (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).iflags = 0
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
@@ -142,7 +141,7 @@
 /**
 * Structure, which stores the argument description of GEMM routines.
 * This structure must be ordered by the size of the members (packed).
-* The size of the structure matches LIBXSMM_GEMM_DESCRIPTOR_SIZE.
+* The size of the structure matches LIBXSMM_DESCRIPTOR_MAXSIZE.
 */
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
   /** Leading dimensions are general offsets. */
@@ -153,10 +152,10 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
   unsigned short flags;
   /** Prefetch strategy enumeration. */
   unsigned short prefetch;
-  /** Integer value. */
-  signed char alpha, beta;
   /** Denotes the data-type. */
   unsigned char datatype;
+  /** LIBXSMM_DESCRIPTOR_MAXSIZE. */
+  unsigned char pad[2];
   /** INTERNAL (last member!) */
   unsigned char iflags;
 };

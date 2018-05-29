@@ -334,7 +334,7 @@ void libxsmm_generator_gemm_load_C_imci( libxsmm_generated_code*             io_
 #endif /*NDEBUG*/
 
   /* load C accumulator */
-  if (i_xgemm_desc->beta == 1) {
+  if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=1 */
     /* adding to C, so let's load C */
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       libxsmm_x86_instruction_vec_move_imci( io_generated_code,

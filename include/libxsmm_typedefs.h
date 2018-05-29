@@ -114,7 +114,7 @@ union libxsmm_bfloat16_hp {
                                                               LIBXSMM_GEMM_PRECISION(OTYPE))
 
 /** Necessary size to store a descriptor/blob (GEMM, MCOPY, TRANS). */
-#define LIBXSMM_GEMM_DESCRIPTOR_SIZE 32
+#define LIBXSMM_DESCRIPTOR_MAXSIZE 32
 
 
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
@@ -122,7 +122,7 @@ typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** Type representing sufficient storage space for descriptors (GEMM, TCOPY, MCOPY). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_descriptor_blob {
-  char data[LIBXSMM_GEMM_DESCRIPTOR_SIZE];
+  char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
 } libxsmm_descriptor_blob;
 
 /** Structure storing arguments of GEMM-like routines. */
@@ -161,7 +161,6 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_TRANS_A = 1,
   /** Transpose matrix B. */
   LIBXSMM_GEMM_FLAG_TRANS_B = 2,
-#if 0
   /** Alpha=0|1 */
   LIBXSMM_GEMM_FLAG_ALPHA_0 = 4,
   /** Alpha=neg|pos */
@@ -170,7 +169,6 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_BETA_0  = 16,
   /** Beta=neg|pos */
   LIBXSMM_GEMM_FLAG_BETA_S  = 32,
-#endif
   /** Generate aligned load instructions. */
   LIBXSMM_GEMM_FLAG_ALIGN_A = 64,
   /** Aligned load/store instructions. */

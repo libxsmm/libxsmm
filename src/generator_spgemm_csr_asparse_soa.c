@@ -246,7 +246,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*   
     if (l_row_elements > 0) {
       /* load C accumulator */
       for ( l_n = 0; l_n < i_num_c_cols; l_n++ ) {
-        if ( i_xgemm_desc->beta == 0 ) {
+        if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=0 */
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                    i_micro_kernel_config->instruction_set,
                                                    i_micro_kernel_config->vxor_instruction,

@@ -29,6 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <libxsmm_intrinsics_x86.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -41,6 +42,9 @@
 #endif
 #if !defined(OTYPE)
 # define OTYPE ITYPE
+#endif
+#if !defined(CHECK_FPE) && 0
+# define CHECK_FPE
 #endif
 #if !defined(REFERENCE_BLAS)
 # define REFERENCE_BLAS LIBXSMM_GEMM_SYMBOL
@@ -71,8 +75,14 @@ int main(void)
   libxsmm_matdiff_info diff;
   ITYPE *a = 0, *b = 0;
   OTYPE *c = 0, *d = 0;
-  int test;
-
+  int result = EXIT_SUCCESS, test;
+# if defined(CHECK_FPE) && defined(__SSE__)
+  const unsigned int fpemask = _MM_GET_EXCEPTION_MASK(); /* backup FPE mask */
+  const unsigned int fpcheck = _MM_MASK_INVALID | _MM_MASK_OVERFLOW;
+  unsigned int fpstate = 0;
+  _MM_SET_EXCEPTION_MASK(fpemask | fpcheck);
+  _MM_SET_EXCEPTION_STATE(0);
+# endif
   for (test = begin; test < end; ++test) {
     const libxsmm_blasint size_a = lda[test] * k[test], size_b = ldb[test] * n[test], size_c = ldc[test] * n[test];
     assert(m[test] <= lda[test] && k[test] <= ldb[test] && m[test] <= ldc[test]);
@@ -93,34 +103,51 @@ int main(void)
   LIBXSMM_MATINIT(OTYPE,  0, d, max_size_c, 1, max_size_c, 1.0);
   memset(&diff, 0, sizeof(diff));
 
-  for (test = begin; test < end; ++test) {
+  for (test = begin; test < end && EXIT_SUCCESS == result; ++test) {
     libxsmm_matdiff_info diff_test;
 
     LIBXSMM_BLAS(ITYPE)(&transa, &transb, m + test, n + test, k + test,
       alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
 
-    REFERENCE_BLAS(ITYPE)(&transa, &transb, m + test, n + test, k + test,
-      alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
+# if defined(CHECK_FPE) && defined(__SSE__)
+    fpstate = _MM_GET_EXCEPTION_STATE() & ~fpcheck;
+    result = (0 == fpstate ? EXIT_SUCCESS : EXIT_FAILURE);
+    if (EXIT_SUCCESS == result)
+# endif
+    {
+      REFERENCE_BLAS(ITYPE)(&transa, &transb, m + test, n + test, k + test,
+        alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 
-    if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m[test], n[test], d, c, ldc + test, ldc + test, &diff_test)) {
-      libxsmm_matdiff_reduce(&diff, &diff_test);
+      result = libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m[test], n[test], d, c, ldc + test, ldc + test, &diff_test);
+      if (EXIT_SUCCESS == result) {
+        libxsmm_matdiff_reduce(&diff, &diff_test);
+      }
     }
   }
 
+# if defined(CHECK_FPE) && defined(__SSE__)
+  _MM_SET_EXCEPTION_MASK(fpemask); /* restore FPE mask */
+  _MM_SET_EXCEPTION_STATE(0); /* clear FPE state */
+# endif
   libxsmm_free(a);
   libxsmm_free(b);
   libxsmm_free(c);
   libxsmm_free(d);
 
-  if (1000.0 * diff.normf_rel <= 1.0) {
-    return EXIT_SUCCESS;
-  }
-  else {
+  if (result == EXIT_SUCCESS) {
+    if (1.0 < (1000.0 * diff.normf_rel)) {
 # if defined(_DEBUG)
-    fprintf(stderr, "diff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+      fprintf(stderr, "Diff(%i): L2abs=%f Linf=%f\n", test + 1, diff.l2_abs, diff.linf_abs);
 # endif
-    return EXIT_FAILURE;
+      result = EXIT_FAILURE;
+    }    
   }
+# if defined(_DEBUG) && defined(CHECK_FPE) && defined(__SSE__)
+  else {
+    fprintf(stderr, "FPE(%i): state=%u\n", test + 1, fpstate);
+  }
+# endif   
+  return result;
 #else
 # if defined(_DEBUG)
   fprintf(stderr, "Warning: skipped the test due to missing BLAS support!\n");
