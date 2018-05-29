@@ -138,6 +138,7 @@ LIBXSMM_API int libxsmm_matcopy_thread(void* out, const void* in, unsigned int t
         n0 = ntid * nc; n1 = LIBXSMM_MIN(n0 + nc, n);
       }
       if (0 != (1 & libxsmm_trans_jit) /* libxsmm_trans_jit: JIT'ted matrix-copy permitted? */
+        && (1 == typesize || 2 == typesize || 4 == typesize) /* TODO: support multiples */
         /* avoid code-dispatch if task does not need the kernel for inner tiles */
         && tm + m0 <= (unsigned int)(m1 - m0) && tn <= (unsigned int)(n1 - n0)
         /* TODO: investigate issue with Byte-element copy/MT on pre-AVX512 */
@@ -243,7 +244,7 @@ LIBXSMM_API int libxsmm_otrans_thread(void* out, const void* in, unsigned int ty
     LIBXSMM_INIT /* before leading tile sizes */
     if (out != in) {
 #if defined(LIBXSMM_TRANS_TO_COPY) /* check if transpose can be lowered */
-      if ((1 != n || m > ldo) && (1 != m || n != ldo))
+      if ((1 != n || m != ldo) && (1 != m || ldi != ldo))
 #endif
       {
         const unsigned int uldi = (unsigned int)ldi, uldo = (unsigned int)ldo;
