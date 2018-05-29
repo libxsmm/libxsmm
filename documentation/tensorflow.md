@@ -38,7 +38,7 @@ export https_proxy=https://proxy.domain.com:912
 export http_proxy=http://proxy.domain.com:911
 ```
 
-If the build step of any of the Bazel commands goes wrong, `-s --verbose_failures` can be used (`-s` shows the full command of each of the build steps). For non-production code such as for debug purpose, TensorFlow can be built with `-c dbg` (or at least `--copt=-O0`). For further reference, please consult the [official guide](https://www.tensorflow.org/install/install_sources) to build TensorFlow from sources. In case of production code, it is recommended the use a moderate optimization level (`-c opt --copt=-O2`), and to better focus on a reasonable set of target-flags (`--copt=-mfma --copt=-mavx2`). LIBXSMM (and MKL-DNN) makes use of CPUID-dispatch, and it is not too critical to pick for instance AVX-512 (even if AVX-512 is available on the intended production target). However, if the desired workload is bottlenecked by Eigen code paths that are not covered by LIBXSMM (or MKL-DNN), one may be sufficiently served with Intel AVX2 instructions (`--copt=-mfma --copt=-mavx2`).
+If the build step of any of the Bazel commands goes wrong, `-s --verbose_failures` can be used (`-s` shows the full command of each of the build steps). For non-production code such as for debug purpose, TensorFlow can be built with `-c dbg` (or at least `--copt=-O0`). For further reference, please consult the [official guide](https://www.tensorflow.org/install/install_sources) to build TensorFlow from sources. In case of production code, it is recommended the use a moderate optimization level (`-c opt --copt=-O2`), and to better focus on a reasonable set of target-flags (`--copt=-mfma --copt=-mavx2`). LIBXSMM makes use of CPUID-dispatch, and it is not too critical to pick for instance AVX-512 (even if AVX-512 is available on the intended production target). However, if the desired workload is bottlenecked by Eigen code paths that are not covered by LIBXSMM, one may be sufficiently served with Intel AVX2 instructions (`--copt=-mfma --copt=-mavx2`).
 
 ```bash
 bazel build -c opt --copt=-O2 --linkopt=-pthread --cxxopt=-D_GLIBCXX_USE_CXX11_ABI=0 \
@@ -70,7 +70,7 @@ pip install \
   -I /tmp/tensorflow_pkg/<package-name-build-above.whl>
 ```
 
-The `-I` flag shall enforce to reinstall the wheel even when the name of the wheel suggests the same version. To really ensure that no other bits are left, please remove any previously installed TensorFlow wheel:
+The `-I` flag may be sufficient to reinstall the wheel even when the name of the wheel suggests that the same version is already installed. To make sure that no other bits are left, it is perhaps even better to remove any previously installed TensorFlow wheel:
 
 ```bash
 pip uninstall tensorflow
@@ -83,7 +83,7 @@ pip install \
 
 ## Performance Tuning and Profiling
 
-As suggested in the overview, it is possible to build the mentioned fork of TensorFlow without LIBXSMM ("vanilla build"), or to try-out MKL-DNN as a compute engine. This may be desired to aim for performance, or to draw a performance baseline respectively. To omit LIBXSMM, just omit the flags `tensorflow_xsmm`, `eigen_xsmm`, and `tensorflow_xsmm_backward` (sometimes it may be desired to `--define tensorflow_xsmm_backward=0` but to keep `--define tensorflow_xsmm=1` and `--define eigen_xsmm=1`). To try MKL-DNN, simply use `--config=mkl` (instead of `tensorflow_xsmm`, `eigen_xsmm`, and `tensorflow_xsmm_backward`). To use MKL-DNN effectively, one may setup the environment with at least `KMP_BLOCKTIME=1` (perhaps more environment settings such as `KMP_AFFINITY=compact,1,granularity=fine`, `KMP_HW_SUBSET=1T`, and `OMP_NUM_THREADS=<number-of-physical-cores-not-threads>` are beneficial). The `KMP_BLOCKTIME` shall be set to a "low number of Milliseconds" (if not zero) to allow OpenMP workers to quickly transition between MKL's and TF's (Eigen) thread-pool.
+As suggested in the overview, it is possible to build the mentioned fork of TensorFlow without LIBXSMM ("vanilla build"), or to try-out MKL-DNN as a compute engine. This may be desired to aim for performance, or to draw a performance baseline respectively. To omit LIBXSMM, just omit the flags `tensorflow_xsmm`, `eigen_xsmm`, and `tensorflow_xsmm_backward` (sometimes it may be desired to `--define tensorflow_xsmm_backward=0` but to keep `--define tensorflow_xsmm=1` and `--define eigen_xsmm=1`). To utilize MKL-DNN, `--config=mkl` is supplied instead of `tensorflow_xsmm`, `eigen_xsmm`, and `tensorflow_xsmm_backward`. To use MKL-DNN effectively, the environment shall be setup with at least `KMP_BLOCKTIME=1` (perhaps more environment settings such as `KMP_AFFINITY=compact,1,granularity=fine`, `KMP_HW_SUBSET=1T`, and `OMP_NUM_THREADS=<number-of-physical-cores-not-threads>` are beneficial). The `KMP_BLOCKTIME` shall be set to a "low number of Milliseconds" (if not zero) to allow OpenMP workers to quickly transition between MKL's and TF's (Eigen) thread-pool. Please note that LIBXSMM uses the native TensorFlow (Eigen) thread-pool.
 
 It can be very beneficial to scale TensorFlow even on a per-socket basis (in case of multi-socket systems). Generally, this may involve (1)&#160;real MPI-based communication, or (2)&#160;just trivially running multiple instances of TensorFlow separately (without tight communication). For example, [Horovod](https://github.com/uber/horovod) can be used to perform an almost "trivial" instancing of TensorFlow, and to add an intermittent averaging scheme for exchanging weights between independently learning instances (Horovod is out of scope for this document). Similarly, for inference all incoming requests may be dispatched (in batches) to independent instances of TensorFlow. For the latter, the [TensorFlow Serving](tfserving.md) framework may be used to serve for inference-requests with an easy to use web-based client/server infrastructure.
 
@@ -118,7 +118,7 @@ echo 3 > /proc/sys/vm/drop_caches
 echo 1 > /proc/sys/vm/compact_memory 
 ```
 
-<a name="performance-profiling"></a>To gain insight into performance bottlenecks, one might source the Intel VTune Amplifier and run:
+<a name="performance-profiling"></a>To gain insight into performance bottlenecks, one can source the Intel VTune Amplifier and run:
 
 ```bash
 amplxe-cl -r result -data-limit 0 \
@@ -126,7 +126,7 @@ amplxe-cl -r result -data-limit 0 \
   ./my_tf_workload.py
 ```
 
-To get have nicely named JIT-kernels, one may add the following flags to Bazel's build line (Intel VTune Amplifier 2018):
+To get nicely named JIT-kernels, LIBXSMM's support for [JIT-profiling](libxsmm_prof.md) can be leveraged. In case of TensorFlow, the following flags can be added to Bazel's build line (Intel VTune Amplifier 2018):
 
 ```bash
 --copt=-DLIBXSMM_VTUNE=2 --linkopt=${VTUNE_AMPLIFIER_2018_DIR}/lib64/libjitprofiling.a
