@@ -1291,9 +1291,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_fwd(libxsmm_dnn_lstmcell* lst
 #endif
   int reuse = 1;
   FTYPE *wi = (FTYPE*)lstm->wi->data;
+#if defined(NON_FUSED_INPUT_GEMM)
   FTYPE *wf = (FTYPE*)lstm->wf->data;
   FTYPE *wo = (FTYPE*)lstm->wo->data;
   FTYPE *wc = (FTYPE*)lstm->wc->data;
+#endif
   FTYPE *xt = (FTYPE*)lstm->xt->data;
   FTYPE *ri = (FTYPE*)lstm->ri->data;
   FTYPE *rf = (FTYPE*)lstm->rf->data;
@@ -1333,7 +1335,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_fwd(libxsmm_dnn_lstmcell* lst
   LIBXSMM_VLA_DECL(2, FTYPE, o1, o1t, m * n);
   LIBXSMM_VLA_DECL(2, FTYPE, c1, c1t, m * n);
 #endif
-  libxsmm_bgemm_handle *handlewx = lstm->handlewx;
+  /* libxsmm_bgemm_handle *handlewx = lstm->handlewx; */
   libxsmm_bgemm_handle *handleuh = lstm->handleuh;
   libxsmm_bgemm_handle *handlett = lstm->handlett;
   LIBXSMM_VLA_DECL(2, FTYPE, hnr, h, m * n);
@@ -1591,7 +1593,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   FTYPE *xTp = (FTYPE*)lstm->xTp->data;
   */
   LIBXSMM_VLA_DECL(2, FTYPE, x, xt, k * n);
-  LIBXSMM_VLA_DECL(2, FTYPE, h, ht, m * n);
+  /* LIBXSMM_VLA_DECL(2, FTYPE, h, ht, m * n); */
   LIBXSMM_VLA_DECL(2, FTYPE, i, it, m * n);
   LIBXSMM_VLA_DECL(2, FTYPE, f, ft, m * n);
   LIBXSMM_VLA_DECL(2, FTYPE, o, ot, m * n);
@@ -1609,7 +1611,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   libxsmm_bgemm_handle *handledh = lstm->handleuh;
   libxsmm_bgemm_handle *handledx = lstm->handlett;
   libxsmm_bgemm_handle *handlewd = lstm->handlewd;
-#ifdef LSTM_TIMING
+#if defined(LSTM_TIMING)
   unsigned long long start;
   double duration;
 #endif
@@ -1617,7 +1619,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   int j;
   
   LIBXSMM_UNUSED(start_thread/* Need to populate this code */);
-#ifdef LSTM_TIMING
+#if defined(LSTM_TIMING)
   start = libxsmm_timer_tick();
 #endif
   /* for (s = 0; s < nrepeat; ++s) { */
@@ -1756,7 +1758,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
       }
     }
   /* } */
-#ifdef LSTM_TIMING
+#if defined(LSTM_TIMING)
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
   if (0 < duration) {
     fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
