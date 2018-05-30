@@ -109,8 +109,8 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_lstmcell_create_tensor_da
     if (layout != 0) {
       memset(layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
       /*layout->custom_format = handle->custom_format_type;*/
-      if ( (type == LIBXSMM_DNN_REGULAR_INPUT)  || (type == LIBXSMM_DNN_GRADIENT_INPUT)  || (type == LIBXSMM_DNN_INPUT)  ||
-           (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT)    ) {
+      if ( (type == LIBXSMM_DNN_LSTM_REGULAR_INPUT)  || (type == LIBXSMM_DNN_LSTM_GRADIENT_INPUT)  ||
+           (type == LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE) || (type == LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE) ) {
         layout->format = handle->buffer_format;
         layout->tensor_type = LIBXSMM_DNN_ACTIVATION;
 
@@ -127,12 +127,12 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_lstmcell_create_tensor_da
                 layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
                 layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
                 layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
-                if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) || (type == LIBXSMM_DNN_INPUT) ) {
+                if ( (type == LIBXSMM_DNN_LSTM_REGULAR_INPUT) || (type == LIBXSMM_DNN_LSTM_GRADIENT_INPUT) ) {
                   layout->dim_size[0] = handle->bm;
                   layout->dim_size[1] = handle->bk;
                   layout->dim_size[2] = handle->k / handle->bk;
                   layout->dim_size[3] = handle->m / handle->bm;
-                } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
+                } else if ( (type == LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE) || (type == LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE) ) {
                   layout->dim_size[0] = handle->bm;
                   layout->dim_size[1] = handle->bn;
                   layout->dim_size[2] = handle->m / handle->bm;
@@ -948,11 +948,93 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_release_internalstate(libxsmm
 
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bind_tensor(libxsmm_dnn_lstmcell* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type) {
-  LIBXSMM_UNUSED( handle );
-  LIBXSMM_UNUSED( tensor );
-  LIBXSMM_UNUSED( type );
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  return LIBXSMM_DNN_SUCCESS;
+  /* check for tensor type */
+  if ( (type != LIBXSMM_DNN_LSTM_REGULAR_INPUT)         && (type != LIBXSMM_DNN_LSTM_GRADIENT_INPUT)  &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE)   && (type != LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_I)       && (type != LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_I) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_F)       && (type != LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_F) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_O)       && (type != LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_O) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_C)       && (type != LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_C) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_I) && (type != LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_I) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_F) && (type != LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_F) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_O) && (type != LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_O) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_C) && (type != LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_C) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_BIAS_I)         && (type != LIBXSMM_DNN_LSTM_GRADIENT_BIAS_I)   &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_BIAS_F)         && (type != LIBXSMM_DNN_LSTM_GRADIENT_BIAS_F)   &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_BIAS_O)         && (type != LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O)   &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_BIAS_C)         && (type != LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C) ) {
+    status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
+    return status;
+  }
+
+  if (handle != 0 && tensor != 0) {
+    libxsmm_dnn_tensor_datalayout* handle_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout(handle, type, &status);
+
+    if ( libxsmm_dnn_compare_tensor_datalayout(handle_layout, tensor->layout, &status) == 0 ) {
+      if ( type == LIBXSMM_DNN_LSTM_REGULAR_INPUT ) {
+        handle->xt = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_INPUT ) {
+        handle->djdxt = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE ) {
+        handle->h = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE ) {
+        handle->djdht = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_I ) {
+        handle->wi = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_I ) {
+        handle->djdwi = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_F ) {
+        handle->wf = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_F ) {
+        handle->djdwf = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_O ) {
+        handle->wo = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_O ) {
+        handle->djdwo = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_C ) {
+        handle->wc = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_C ) {
+        handle->djdwc = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_I ) {
+        handle->ri = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_I ) {
+        handle->djdri = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_F ) {
+        handle->rf = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_F ) {
+        handle->djdrf = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_BIAS_I ) {
+        handle->bi = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_BIAS_I ) {
+        handle->djdbi = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_BIAS_F ) {
+        handle->bf = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_BIAS_F ) {
+        handle->djdbf = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_BIAS_O ) {
+        handle->bo = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O ) {
+        handle->djdbo = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_BIAS_C ) {
+        handle->bc = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C ) {
+        handle->djdbc = (libxsmm_dnn_tensor*)tensor;
+      } else {
+        /* cannot happen */
+      }
+    } else {
+      status = LIBXSMM_DNN_ERR_MISMATCH_TENSOR;
+    }
+
+    libxsmm_dnn_destroy_tensor_datalayout( handle_layout );
+  }
+  else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE_TENSOR;
+  }
+
+  return status;
 }
 
 
@@ -968,10 +1050,85 @@ LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_lstmcell_get_tensor(libxsmm_dnn_lstm
 
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_release_tensor(libxsmm_dnn_lstmcell* handle, const libxsmm_dnn_tensor_type type) {
-  LIBXSMM_UNUSED( handle );
-  LIBXSMM_UNUSED( type );
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  return LIBXSMM_DNN_SUCCESS;
+  /* check for tensor type */
+  if ( (type != LIBXSMM_DNN_LSTM_REGULAR_INPUT)         && (type != LIBXSMM_DNN_LSTM_GRADIENT_INPUT)  &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE)   && (type != LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_I)       && (type != LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_I) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_F)       && (type != LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_F) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_O)       && (type != LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_O) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_C)       && (type != LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_C) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_I) && (type != LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_I) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_F) && (type != LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_F) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_O) && (type != LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_O) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_C) && (type != LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_C) &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_BIAS_I)         && (type != LIBXSMM_DNN_LSTM_GRADIENT_BIAS_I)   &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_BIAS_F)         && (type != LIBXSMM_DNN_LSTM_GRADIENT_BIAS_F)   &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_BIAS_O)         && (type != LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O)   &&
+      (type != LIBXSMM_DNN_LSTM_REGULAR_BIAS_C)         && (type != LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C) ) {
+    status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
+    return status;
+  }
+
+  if (handle != 0) {
+    if ( type == LIBXSMM_DNN_LSTM_REGULAR_INPUT ) {
+      handle->xt = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_INPUT ) {
+      handle->djdxt = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE ) {
+      handle->h = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE ) {
+      handle->djdht = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_I ) {
+      handle->wi = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_I ) {
+      handle->djdwi = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_F ) {
+      handle->wf = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_F ) {
+      handle->djdwf = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_O ) {
+      handle->wo = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_O ) {
+      handle->djdwo = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_C ) {
+      handle->wc = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_C ) {
+      handle->djdwc = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_I ) {
+      handle->ri = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_I ) {
+      handle->djdri = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_F ) {
+      handle->rf = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_F ) {
+      handle->djdrf = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_BIAS_I ) {
+      handle->bi = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_BIAS_I ) {
+      handle->djdbi = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_BIAS_F ) {
+      handle->bf = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_BIAS_F ) {
+      handle->djdbf = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_BIAS_O ) {
+      handle->bo = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O ) {
+      handle->djdbo = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_REGULAR_BIAS_C ) {
+      handle->bc = 0;
+    } else if ( type == LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C ) {
+      handle->djdbc = 0;
+    } else {
+      /* cannot happen */
+    }
+  }
+  else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE_TENSOR;
+  }
+
+  return status;
 }
 
 
