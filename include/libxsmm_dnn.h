@@ -226,7 +226,7 @@ typedef enum libxsmm_dnn_tensor_type {
   /** regular gradient bias o */
   LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O,
   /** regular gradient bias c */
-  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C,
+  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C
 } libxsmm_dnn_tensor_type;
 
 /** layout descriptor to allow external data handling
