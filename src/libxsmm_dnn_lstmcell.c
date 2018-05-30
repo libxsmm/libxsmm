@@ -1546,7 +1546,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   FTYPE *rf = (FTYPE*)lstm->rf->data;
   FTYPE *ro = (FTYPE*)lstm->ro->data;
   FTYPE *rc = (FTYPE*)lstm->rc->data;
-  FTYPE *ht = (FTYPE*)lstm->h->data;
+  /* FTYPE *ht = (FTYPE*)lstm->h->data; */
   FTYPE *i1 = (FTYPE*)lstm->i1t->data;
   FTYPE *i2 = (FTYPE*)lstm->i2->data;
   FTYPE *i3 = (FTYPE*)lstm->i3->data;
