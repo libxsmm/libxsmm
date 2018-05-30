@@ -1631,7 +1631,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
        case LIBXSMM_X86_INSTR_VBLENDMPS:
           if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
           {
-              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%u != %i\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
               exit(-1);
           }
           l_second = 0x1;
@@ -1654,7 +1654,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
        case LIBXSMM_X86_INSTR_VPADDD:
           if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
           {
-              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%u != %i\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
               exit(-1);
           }
           l_fifth = 0x99;
@@ -1663,7 +1663,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
        case LIBXSMM_X86_INSTR_VPANDD:
           if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
           {
-              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%u != %i\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
               exit(-1);
           }
           l_fifth = 0x76;
@@ -1672,7 +1672,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
        case LIBXSMM_X86_INSTR_VPSUBD:
           if ( i_immediate != LIBXSMM_X86_IMM_UNDEF )
           {
-              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%d != %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+              fprintf(stderr,"libxsmm_instruction_vec_compute_reg_mask immediate=%u != %i\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
               exit(-1);
           }
           l_fifth = 0x95;
@@ -2680,7 +2680,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
           break;
        case LIBXSMM_X86_INSTR_VPADDD:
           if ( i_immediate != LIBXSMM_X86_IMM_UNDEF ) {
-             fprintf(stderr,"libxsmm_instruction_vec_compute_mem_mask: vpaddd should not use an immediate. You passed %d not %d\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
+             fprintf(stderr,"libxsmm_instruction_vec_compute_mem_mask: vpaddd should not use an immediate. You passed %u not %i\n",i_immediate,LIBXSMM_X86_IMM_UNDEF);
              exit(-1);
           }
           l_place = i + 5;

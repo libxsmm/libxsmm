@@ -414,6 +414,23 @@ LIBXSMM_API void libxsmm_gemm_dprint2(
 }
 
 
+LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
+  libxsmm_xmmfunction kernel, const void* a, const void* b, void* c)
+{
+  libxsmm_mmkernel_info info;
+  size_t code_size;
+  if (EXIT_SUCCESS == libxsmm_get_mmkernel_info(kernel, &info, &code_size)) {
+    libxsmm_code_pointer code_pointer;
+    libxsmm_gemm_dprint2(ostream, info.iprecision, info.oprecision,
+      0 == (LIBXSMM_GEMM_FLAG_TRANS_A & info.flags) ? 'N' : 'T',
+      0 == (LIBXSMM_GEMM_FLAG_TRANS_B & info.flags) ? 'N' : 'T', (libxsmm_blasint)info.m, (libxsmm_blasint)info.n, (libxsmm_blasint)info.k,
+      0 == (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_gemm_batchdesc.flags) ? 1 : 0, a, (libxsmm_blasint)info.lda, b, (libxsmm_blasint)info.ldb,
+      0 == (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 1 : 0, c, (libxsmm_blasint)info.ldc);
+    code_pointer.xgemm = kernel; fprintf((FILE*)ostream, " = %p+%u\n", code_pointer.ptr_const, (unsigned int)code_size);
+  }
+}
+
+
 LIBXSMM_API void libxsmm_blas_sgemm(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
@@ -502,7 +519,7 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
         char*       ci = c0 + ic * typesize;
         const libxsmm_blasint end1 = (end != size ? end : (end - 1));
 #if !defined(LIBXSMM_NO_SYNC)
-        if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 == info->beta)
+        if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & info->flags))
 #endif
         { /* no locking */
           for (i = begin; i < end1; i = ni) {
@@ -571,7 +588,7 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
         char* ci = c0 + dc * begin;
 
 #if !defined(LIBXSMM_NO_SYNC)
-        if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 == info->beta)
+        if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & info->flags))
 #endif
         { /* no locking */
           for (i = begin; i < end1; ++i) {

@@ -115,17 +115,16 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH) (DESCRIPTOR).prefetch = (unsigned short)(PREFETCH)
 #endif
 
-/**
-* Construct a GEMM descriptor after it has been declared. The descriptor flags will sanitized to remove any
-* alignment request which cannot be satisfied (avoids to build an unnecessary code version).
-*/
+/** Low-level/internal GEMM descriptor initialization. */
 #define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K); LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(LDA, LDB, LDC); \
   (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
-  (DESCRIPTOR).flags = (unsigned short)(FLAGS); LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH); \
-  (DESCRIPTOR).alpha = (signed char)(ALPHA); (DESCRIPTOR).beta = (signed char)(BETA); \
-  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).iflags = 0
+  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).iflags = 0; (DESCRIPTOR).pad0 = 0; (DESCRIPTOR).pad1 = 0; \
+  (DESCRIPTOR).flags = (unsigned short)((FLAGS) \
+    | (LIBXSMM_NEQ(0, ALPHA) ? 0 : LIBXSMM_GEMM_FLAG_ALPHA_0) \
+    | (LIBXSMM_NEQ(0, BETA)  ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
+    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH)
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, LIBXSMM_GETENUM(IPREC, OPREC), FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
@@ -142,7 +141,7 @@
 /**
 * Structure, which stores the argument description of GEMM routines.
 * This structure must be ordered by the size of the members (packed).
-* The size of the structure matches LIBXSMM_GEMM_DESCRIPTOR_SIZE.
+* The size of the structure matches LIBXSMM_DESCRIPTOR_MAXSIZE.
 */
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
   /** Leading dimensions are general offsets. */
@@ -153,10 +152,10 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
   unsigned short flags;
   /** Prefetch strategy enumeration. */
   unsigned short prefetch;
-  /** Integer value. */
-  signed char alpha, beta;
   /** Denotes the data-type. */
   unsigned char datatype;
+  /** LIBXSMM_DESCRIPTOR_MAXSIZE. */
+  unsigned char pad0, pad1;
   /** INTERNAL (last member!) */
   unsigned char iflags;
 };
