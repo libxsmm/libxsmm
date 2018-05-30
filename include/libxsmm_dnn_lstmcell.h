@@ -86,6 +86,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_lstmcell {
   libxsmm_dnn_tensor* rf;
   libxsmm_dnn_tensor* ro;
   libxsmm_dnn_tensor* rc;
+  /* Currently we are not using the following 4 bias terms */
+  libxsmm_dnn_tensor* bi;
+  libxsmm_dnn_tensor* bf;
+  libxsmm_dnn_tensor* bo;
+  libxsmm_dnn_tensor* bc;
   libxsmm_dnn_tensor* h;
   libxsmm_dnn_tensor* i1t;
   libxsmm_dnn_tensor* i1b;
