@@ -216,6 +216,9 @@
     <ClInclude Include="..\include\libxsmm_dnn_rnncell.h">
       <Filter>include</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\libxsmm_helper_recurrent.h">
+      <Filter>include</Filter>
+    </ClInclude>
     <ClInclude Include="..\src\generator_gemm_rm_bc_soa.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -427,6 +430,9 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_setup.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_helper_recurrent.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_rnncell.c">

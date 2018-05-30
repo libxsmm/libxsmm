@@ -64,6 +64,7 @@
 #include "libxsmm_math.h"
 #include "libxsmm_sync.h"
 #include "libxsmm_dnn.h"
+#include "libxsmm_helper_recurrent.h"
 #include "libxsmm_dnn_rnncell.h"
 #include "libxsmm_dnn_lstmcell.h"
 
