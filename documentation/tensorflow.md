@@ -31,7 +31,7 @@ TF_NEED_GCP=0 TF_NEED_HDFS=0 TF_NEED_S3=0 TF_NEED_KAFKA=0 \
 ./configure
 ```
 
-Bazel is downloading dependencies by default during the initial build stage and hence Internet access on the build system is highly desirable. When behind an HTTP-proxy, the environment variables `https_proxy` and `http_proxy` can be used but should carry `https://` and `http://` respectively.
+Bazel is downloading dependencies by default during the initial build stage and hence Internet access on the build system is highly desirable. When behind an HTTP-proxy, the environment variables `https_proxy` and `http_proxy` are considered by the Python package installer (pip) but they should carry `https://` and `http://` respectively (in the past `pip --proxy` was a necessary despite of the environment variables being present e.g., `pip --proxy proxy.domain.com:912`).
 
 ```bash
 export https_proxy=https://proxy.domain.com:912
@@ -45,6 +45,7 @@ bazel build -c opt --copt=-O2 --linkopt=-pthread --cxxopt=-D_GLIBCXX_USE_CXX11_A
   --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD \
   --define tensorflow_xsmm=1 --define tensorflow_xsmm_convolutions=1 \
   --define tensorflow_xsmm_backward_convolutions=0 \
+  --copt=-mfma --copt=-mavx2 \
   //tensorflow/tools/pip_package:build_pip_package
 ```
 
@@ -62,21 +63,17 @@ To finally build the TensorFlow (pip-)package ("wheel"), please invoke the follo
 bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
 ```
 
-The new Python TensorFlow wheel can be installed by the following command (use `sudo -H` in front to elevate your permissions, or add `--user` to install locally for the current user rather than installing it in a system-wide fashion):
+The new Python TensorFlow wheel can be installed by the following command (use `sudo -H` in front to elevate your permissions, or add `--user` (this flag does not require a user name argument but implicitly specifies the current user) to install locally for the current user rather than installing it in a system-wide fashion):
 
 ```bash
-pip install \
-  --proxy proxy.domain.com:912 \
-  -I /tmp/tensorflow_pkg/<package-name-build-above.whl>
+pip install -I /tmp/tensorflow_pkg/<package-name-build-above.whl>
 ```
 
-The `-I` flag may be sufficient to reinstall the wheel even when the name of the wheel suggests that the same version is already installed. To make sure that no other bits are left, it is perhaps even better to remove any previously installed TensorFlow wheel:
+The `-I` flag may be sufficient to reinstall the wheel even when the name of the wheel suggests that the same version is already installed. To make sure that no other bits are left, it is perhaps even better to remove all TensorFlow wheels (system-wide ans user-local). In rare cases it can help to start over and to remove all locally installed Python packages (`rm -rf ~/.local`).
 
 ```bash
 pip uninstall tensorflow
-pip install \
-  --proxy proxy.domain.com:912 \
-  /tmp/tensorflow_pkg/<package-name-build-above.whl>
+pip install /tmp/tensorflow_pkg/<package-name-build-above.whl>
 ```
 
 **NOTE**: Unless a workload is symlinked and built underneath of the TensorFlow directory (for quicker development turnaround time; out of scope in this document), a wheel must be installed before it can be used to run any TensorFlow Python-code (the desired workload).
