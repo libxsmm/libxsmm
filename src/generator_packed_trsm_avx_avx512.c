@@ -177,7 +177,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
         regset = 'z';
      }
 
-     if ( alpha == 0.0 )
+     if ( LIBXSMM_FEQ(0, alpha) )
      {
         compact_set_zero_ ( io_code, 0, numb, datasz, regset );
         for ( j = 1; j <= n1; j++ )
@@ -192,7 +192,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
         io_code->code_size = i;
         return ;
      }
-     if ( alpha != 1.0 )
+     if ( LIBXSMM_NEQ(1, alpha) )
      {
         compact_load_parameter_ ( io_code, alpha, 2, numb, regset );
      }
@@ -217,7 +217,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
               }
               for ( j = 1; j <= n1; j++ )
               {
-                 if ( alpha != 1.0 )
+                 if ( LIBXSMM_NEQ(1, alpha) )
                  {
                     for ( i = 1; i <= m1; i++ )
                     {
@@ -282,7 +282,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                  for ( k = 1 ; k <= m1; k+=2 )
                  {
                     scalealpha = 0;
-                    if ( (alpha != 1.0) && (k==1) ) scalealpha = 1;
+                    if ( LIBXSMM_NEQ(1, alpha) && (k==1) ) scalealpha = 1;
                     compact_load_matrix2_ ( io_code, ldb, k, j, 0, numb, datasz, regset );
                     if ( j+1 <= n1 ) compact_load_matrix2_ ( io_code, ldb, k, j+1, 4, numb, datasz, regset );
                     if ( j+2 <= n1 ) compact_load_matrix2_ ( io_code, ldb, k, j+2, 7, numb, datasz, regset );
@@ -423,7 +423,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #ifdef LUT_N2
                     if ((i+1<=m1)&&(j+1<=n1)) compact_load_matrix2_ ( io_code, ldb, i+1, j+1, 9, numb, datasz, regset );
 #endif
-                    if ( alpha != 1.0 ) {
+                    if ( LIBXSMM_NEQ(1, alpha) ) {
                        compact_mult_two_nums_ ( io_code, 0, 2, 0, numb, regset );
 #ifdef LUT_N2
                        if ( j+1 <= n1 ) compact_mult_two_nums_ ( io_code, 4, 2, 4, numb, regset );
@@ -543,7 +543,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #if defined(LLT_N2) && defined(LLT_M2)
                     if ( (i-1>=1) && (j+1<=n1) ) compact_load_matrix2_ ( io_code, ldb, i-1, j+1, 10, numb, datasz, regset );
 #endif
-                    if ( alpha != 1.0 )
+                    if ( LIBXSMM_NEQ(1, alpha) )
                     {
                        compact_mult_two_nums_ ( io_code, 0, 2, 0, numb, regset );
 #ifdef LLT_M2
@@ -669,7 +669,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
               }
               for ( j = 1; j <= n1; j+=2 )
               {
-                 if ( (alpha != 1.0) && (j==1) )
+                 if ( LIBXSMM_NEQ(1, alpha) && (j==1) )
                  {
                     for ( i = 1; i <= m1; i++ )
                     {
@@ -712,11 +712,11 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                        if (j+2<=n1) compact_load_matrix2_ ( io_code, ldb, i, j+2, 11, numb, datasz, regset );
                        if (j+3<=n1) compact_load_matrix2_ ( io_code, ldb, i, j+3, 13, numb, datasz, regset );
 #endif
-                       if ((k==1)&&(alpha!=1.0)) compact_mult_two_nums_ ( io_code, 1, 2, 1, numb, regset );
-                       if ((j+1<=n1)&&(k==1)&&(alpha!=1.0)) compact_mult_two_nums_ ( io_code, 7, 2, 7, numb, regset );
+                       if ((k==1)&&LIBXSMM_NEQ(1,alpha)) compact_mult_two_nums_ ( io_code, 1, 2, 1, numb, regset );
+                       if ((j+1<=n1)&&(k==1)&&LIBXSMM_NEQ(1,alpha)) compact_mult_two_nums_ ( io_code, 7, 2, 7, numb, regset );
 #if 0
-                       if ((j+2<=n1)&&(k==1)&&(alpha!=1.0)) compact_mult_two_nums_ ( io_code, 11, 2, 11, numb, regset );
-                       if ((j+3<=n1)&&(k==1)&&(alpha!=1.0)) compact_mult_two_nums_ ( io_code, 13, 2, 13, numb, regset );
+                       if ((j+2<=n1)&&(k==1)&&LIBXSMM_NEQ(1,alpha)) compact_mult_two_nums_ ( io_code, 11, 2, 11, numb, regset );
+                       if ((j+3<=n1)&&(k==1)&&LIBXSMM_NEQ(1,alpha)) compact_mult_two_nums_ ( io_code, 13, 2, 13, numb, regset );
 #endif
                        compact_load_matrix2_ ( io_code, ldb, i, k, 4, numb, datasz, regset );
                        compact_fms_cminusab_ ( io_code, 1, 3, 4, numb, regset );
@@ -786,7 +786,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
               /* Do RLN* cases: B <- alpha * B * inv(A) */
               for ( j = n1; j >= 1; j-- )
               {
-                 if ( alpha != 1.0 )
+                 if ( LIBXSMM_NEQ(1, alpha) )
                  {
                     for ( i = 1; i <= m1; i++ )
                     {
@@ -847,7 +847,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                        compact_store_matrix2_ ( io_code, ldb, i, j, 0, numb, datasz, regset );
                     }
                  }
-                 if ( alpha != 1.0 )
+                 if ( LIBXSMM_NEQ(1, alpha) )
                  {
                     for ( i = 1; i <= m1; i++ )
                     {
@@ -883,7 +883,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
                        compact_store_matrix2_ ( io_code, ldb, i, j, 0, numb, datasz, regset );
                     }
                  }
-                 if ( alpha != 1.0 )
+                 if ( LIBXSMM_NEQ(1, alpha) )
                  {
                     for ( i = 1; i <= m1; i++ )
                     {
