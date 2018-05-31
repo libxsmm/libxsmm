@@ -35,7 +35,6 @@
     <ClInclude Include="..\include\libxsmm_dnn.h" />
     <ClInclude Include="..\include\libxsmm_dnn_lstmcell.h" />
     <ClInclude Include="..\include\libxsmm_dnn_rnncell.h" />
-    <ClInclude Include="..\include\libxsmm_helper_recurrent.h" />
     <ClInclude Include="..\include\libxsmm_frontend.h" />
     <ClInclude Include="..\include\libxsmm_fsspmdm.h" />
     <ClInclude Include="..\include\libxsmm_generator.h" />
@@ -156,7 +155,6 @@
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
     <ClCompile Include="..\src\libxsmm_dnn_lstmcell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_rnncell.c" />
-    <ClCompile Include="..\src\libxsmm_helper_recurrent.c" />
     <ClCompile Include="..\src\libxsmm_dnn_setup.c" />
     <ClCompile Include="..\src\libxsmm_fsspmdm.c" />
     <ClCompile Include="..\src\libxsmm_generator.c" />
