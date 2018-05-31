@@ -41,6 +41,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(FTYPE)
+# define FTYPE float /* TODO: undefine/remove generic symbol names as header-only interfers with user's code */
+#endif
+
 #if defined(LSTM_TIMING)
 #include <stdio.h>
 double Gbl_t_input_total = 0., Gbl_t_recur_total = 0., Gbl_t_eltwise_total = 0., Gbl_t_nonlin_total = 0.;

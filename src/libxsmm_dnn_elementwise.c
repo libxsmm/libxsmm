@@ -39,6 +39,11 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(FTYPE)
+# define FTYPE float /* TODO: undefine/remove generic symbol names as header-only interfers with user's code */
+#endif
+
+
 void libxsmm_internal_matinit(int seed, FTYPE *dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
