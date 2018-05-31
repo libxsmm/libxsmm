@@ -69,7 +69,7 @@ The new Python TensorFlow wheel can be installed by the following command (use `
 pip install -I /tmp/tensorflow_pkg/<package-name-build-above.whl>
 ```
 
-The `-I` flag may be sufficient to reinstall the wheel even when the name of the wheel suggests that the same version is already installed. To make sure that no other bits are left, it is perhaps even better to remove all TensorFlow wheels (system-wide ans user-local). In rare cases it can help to start over and to remove all locally installed Python packages (`rm -rf ~/.local`).
+The `-I` flag may be sufficient to reinstall the wheel even when the name of the wheel suggests that the same version is already installed. To make sure that no other bits are left, it is perhaps even better to remove all TensorFlow wheels (system-wide and user-local). In rare cases it can help to start over and to remove all locally installed Python packages (`rm -rf ~/.local`).
 
 ```bash
 pip uninstall tensorflow
