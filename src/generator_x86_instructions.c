@@ -2717,6 +2717,8 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
        }
     }
 
+    if ( i_use_broadcast ) { l_fourth += 0x10; l_sizereg = 4; }
+
     if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
     {
         buf[i++] = (unsigned char)(0x62);
