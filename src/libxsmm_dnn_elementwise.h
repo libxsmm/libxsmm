@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2018, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -28,29 +28,31 @@
 ******************************************************************************/
 /* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_HELPER_RECURRENT_H
-#define LIBXSMM_HELPER_RECURRENT_H
+#ifndef LIBXSMM_DNN_ELEMENTWISE_H
+#define LIBXSMM_DNN_ELEMENTWISE_H
 
-#if !defined(FTYPE)
-# define FTYPE float /* TODO: undefine/remove generic symbol names as header-only interfers with user's code */
+#include <libxsmm_bgemm.h>
+
+#if !defined(LIBXSMM_DNN_ELTWISE_FTYPE)
+# define LIBXSMM_DNN_ELTWISE_FTYPE float /* TODO: undefine/remove generic symbol names as header-only interferes with user's code */
 #endif
 
-void libxsmm_internal_matinit(int seed, FTYPE *dst, 
+LIBXSMM_API_INTERN void libxsmm_internal_matinit(int seed, LIBXSMM_DNN_ELTWISE_FTYPE *dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale);
-void libxsmm_internal_matrix_add(libxsmm_blasint size, FTYPE *a, FTYPE *b, FTYPE *c);
-void libxsmm_internal_matrix_eltwise_mult(libxsmm_blasint size, FTYPE *a, FTYPE *b, FTYPE *c);
-void libxsmm_internal_matrix_sigmoid(libxsmm_blasint size, FTYPE *src, FTYPE *dst);
-void libxsmm_internal_matrix_tanh(libxsmm_blasint size, FTYPE *src, FTYPE *dst);
-void libxsmm_internal_matrix_relu(libxsmm_blasint size, FTYPE *src, FTYPE *dst);
-void libxsmm_internal_matrix_sigmoid_inverse(libxsmm_blasint size, FTYPE *src, FTYPE *dst);
-void libxsmm_internal_matrix_tanh_inverse(libxsmm_blasint size, FTYPE *src, FTYPE *dst);
-void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint size, FTYPE *src, FTYPE *dst, FTYPE *input);
-void libxsmm_internal_matrix_transpose(libxsmm_blasint rows, libxsmm_blasint cols, FTYPE *src, FTYPE *dst);
-void libxsmm_internal_matrix_copy(libxsmm_blasint size, FTYPE *src, FTYPE *dst);
-void libxsmm_internal_matrix_complement(libxsmm_blasint size, FTYPE *src, FTYPE *dst);
-void libxsmm_internal_matrix_complement_square(libxsmm_blasint size, FTYPE *src, FTYPE *dst);
-void libxsmm_internal_recursive_step(libxsmm_bgemm_handle* handle, FTYPE* u, FTYPE* h, FTYPE* op1, FTYPE *op2,
-  FTYPE *temp, FTYPE *dst, int act, libxsmm_blasint size, int tid, int nthreads);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_add(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *a, LIBXSMM_DNN_ELTWISE_FTYPE *b, LIBXSMM_DNN_ELTWISE_FTYPE *c);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_eltwise_mult(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *a, LIBXSMM_DNN_ELTWISE_FTYPE *b, LIBXSMM_DNN_ELTWISE_FTYPE *c);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, LIBXSMM_DNN_ELTWISE_FTYPE *input);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_transpose(libxsmm_blasint rows, libxsmm_blasint cols, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_copy(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst);
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst);
+LIBXSMM_API_INTERN void libxsmm_internal_recursive_step(libxsmm_bgemm_handle* handle, LIBXSMM_DNN_ELTWISE_FTYPE* u, LIBXSMM_DNN_ELTWISE_FTYPE* h, LIBXSMM_DNN_ELTWISE_FTYPE* op1, LIBXSMM_DNN_ELTWISE_FTYPE *op2,
+  LIBXSMM_DNN_ELTWISE_FTYPE *temp, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int act, libxsmm_blasint size, int tid, int nthreads);
 
-#endif
+#endif /*LIBXSMM_DNN_ELEMENTWISE_H*/
 

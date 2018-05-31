@@ -31,11 +31,7 @@
 #ifndef LIBXSMM_MAIN_H
 #define LIBXSMM_MAIN_H
 
-#include <libxsmm_frontend.h>
-#include <libxsmm_generator.h>
-#include <libxsmm_malloc.h>
-#include <libxsmm_sync.h>
-#include <libxsmm_dnn.h>
+#include <libxsmm.h>
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */

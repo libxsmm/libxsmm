@@ -238,6 +238,9 @@
     <ClInclude Include="..\src\generator_packed_trsm_dmacros.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_elementwise.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -782,6 +785,9 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_custom_custom_generic_bf16.tpl.c">
       <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_elementwise.c">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

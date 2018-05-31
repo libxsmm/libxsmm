@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2018, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -28,8 +28,7 @@
 ******************************************************************************/
 /* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
-
-#include <libxsmm.h>
+#include "libxsmm_dnn_elementwise.h"
 #include <math.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -39,12 +38,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(FTYPE)
-# define FTYPE float /* TODO: undefine/remove generic symbol names as header-only interfers with user's code */
-#endif
 
-
-void libxsmm_internal_matinit(int seed, FTYPE *dst,
+LIBXSMM_API_INTERN void libxsmm_internal_matinit(int seed, LIBXSMM_DNN_ELTWISE_FTYPE *dst,
   libxsmm_blasint nrows, libxsmm_blasint ncols, libxsmm_blasint ld, double scale)
 {
   const double seed1 = scale * (seed + 1);
@@ -56,17 +51,17 @@ void libxsmm_internal_matinit(int seed, FTYPE *dst,
     libxsmm_blasint j = 0;
     for (; j < nrows; ++j) {
       const libxsmm_blasint k = i * ld + j;
-      dst[k] = (FTYPE)(seed1 / (k + 1));
+      dst[k] = (LIBXSMM_DNN_ELTWISE_FTYPE)(seed1 / (k + 1));
     }
     for (; j < ld; ++j) {
       const libxsmm_blasint k = i * ld + j;
-      dst[k] = (FTYPE)seed;
+      dst[k] = (LIBXSMM_DNN_ELTWISE_FTYPE)seed;
     }
   }
 }
 
 
-void libxsmm_internal_matrix_add(libxsmm_blasint size, FTYPE *a, FTYPE *b, FTYPE *c)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_add(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *a, LIBXSMM_DNN_ELTWISE_FTYPE *b, LIBXSMM_DNN_ELTWISE_FTYPE *c)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -78,7 +73,7 @@ void libxsmm_internal_matrix_add(libxsmm_blasint size, FTYPE *a, FTYPE *b, FTYPE
 }
 
 
-void libxsmm_internal_matrix_eltwise_mult(libxsmm_blasint size, FTYPE *a, FTYPE *b, FTYPE *c)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_eltwise_mult(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *a, LIBXSMM_DNN_ELTWISE_FTYPE *b, LIBXSMM_DNN_ELTWISE_FTYPE *c)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -90,33 +85,33 @@ void libxsmm_internal_matrix_eltwise_mult(libxsmm_blasint size, FTYPE *a, FTYPE 
 }
 
 
-void libxsmm_internal_matrix_sigmoid(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst)
 {
   libxsmm_blasint i;
-  FTYPE exp_value;
+  LIBXSMM_DNN_ELTWISE_FTYPE exp_value;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    exp_value = (FTYPE)exp((double) -src[i]);
+    exp_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[i]);
     dst[i] = 1 / (1 + exp_value);
   }
 }
 
 
-void libxsmm_internal_matrix_tanh(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (FTYPE)tanh((double)src[i]);
+    dst[i] = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double)src[i]);
   }
 }
 
 
-void libxsmm_internal_matrix_relu(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -128,37 +123,37 @@ void libxsmm_internal_matrix_relu(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
 }
 
 
-void libxsmm_internal_matrix_sigmoid_inverse(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst)
 {
   libxsmm_blasint i;
-  FTYPE exp_value;
-  FTYPE sig_exp;
+  LIBXSMM_DNN_ELTWISE_FTYPE exp_value;
+  LIBXSMM_DNN_ELTWISE_FTYPE sig_exp;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    exp_value = (FTYPE)exp((double) -src[i]);
+    exp_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[i]);
     sig_exp = 1 / (1 + exp_value);
     dst[i] = (1 - sig_exp)*sig_exp;
   }
 }
 
 
-void libxsmm_internal_matrix_tanh_inverse(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst)
 {
   libxsmm_blasint i;
-  FTYPE tanh_value;
+  LIBXSMM_DNN_ELTWISE_FTYPE tanh_value;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    tanh_value = (FTYPE)tanh((double)src[i]);
+    tanh_value = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double)src[i]);
     dst[i] = 1 - (tanh_value * tanh_value);
   }
 }
 
 
-void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint size, FTYPE *src, FTYPE *dst, FTYPE *input)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, LIBXSMM_DNN_ELTWISE_FTYPE *input)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -170,11 +165,11 @@ void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint size, FTYPE *src, FTYP
 }
 
 
-void libxsmm_internal_matrix_transpose(libxsmm_blasint rows, libxsmm_blasint cols, FTYPE *src, FTYPE *dst)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_transpose(libxsmm_blasint rows, libxsmm_blasint cols, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst)
 {
   libxsmm_blasint i, j;
-  LIBXSMM_VLA_DECL(2, FTYPE, src2D, src, cols);
-  LIBXSMM_VLA_DECL(2, FTYPE, dst2D, dst, rows);
+  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, src2D, src, cols);
+  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, dst2D, dst, rows);
 #if defined(_OPENMP)
 # pragma omp parallel for private(i, j) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
@@ -186,7 +181,7 @@ void libxsmm_internal_matrix_transpose(libxsmm_blasint rows, libxsmm_blasint col
 }
 
 
-void libxsmm_internal_matrix_copy(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_copy(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -198,7 +193,7 @@ void libxsmm_internal_matrix_copy(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
 }
 
 
-void libxsmm_internal_matrix_complement(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -210,7 +205,7 @@ void libxsmm_internal_matrix_complement(libxsmm_blasint size, FTYPE *src, FTYPE 
 }
 
 
-void libxsmm_internal_matrix_complement_square(libxsmm_blasint size, FTYPE *src, FTYPE *dst)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst)
 {
   libxsmm_blasint i;
 #if defined(_OPENMP)
@@ -222,8 +217,8 @@ void libxsmm_internal_matrix_complement_square(libxsmm_blasint size, FTYPE *src,
 }
 
 
-void libxsmm_internal_recursive_step(libxsmm_bgemm_handle* handle, FTYPE* u, FTYPE* h, FTYPE* op1, FTYPE *op2,
-  FTYPE *temp, FTYPE *dst, int act, libxsmm_blasint size, int tid, int nthreads)
+LIBXSMM_API_INTERN void libxsmm_internal_recursive_step(libxsmm_bgemm_handle* handle, LIBXSMM_DNN_ELTWISE_FTYPE* u, LIBXSMM_DNN_ELTWISE_FTYPE* h, LIBXSMM_DNN_ELTWISE_FTYPE* op1, LIBXSMM_DNN_ELTWISE_FTYPE *op2,
+  LIBXSMM_DNN_ELTWISE_FTYPE *temp, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int act, libxsmm_blasint size, int tid, int nthreads)
 {
 #if defined(LSTM_TIMING)
   Gbl_t_recur = libxsmm_timer_tick();
