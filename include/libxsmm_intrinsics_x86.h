@@ -156,6 +156,10 @@
 #       endif
 #       if !defined(__CYGWIN__)
 #         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
+#         if (LIBXSMM_MAX_STATIC_TARGET_ARCH < LIBXSMM_STATIC_TARGET_ARCH)
+#           undef LIBXSMM_STATIC_TARGET_ARCH /* account for compiler issues */
+#           define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_MAX_STATIC_TARGET_ARCH
+#         endif
 #       else /* Error: invalid register for .seh_savexmm */
 #         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #       endif
