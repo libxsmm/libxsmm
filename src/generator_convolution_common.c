@@ -50,7 +50,7 @@ void libxsmm_generator_convolution_header_m_loop( libxsmm_generated_code*       
                                                   const libxsmm_matcopy_kernel_config*      i_kernel_config,
                                                   const unsigned int                        i_gp_reg_m_loop ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_add_instruction, i_gp_reg_m_loop, 1);
 }
 
@@ -70,7 +70,7 @@ void libxsmm_generator_convolution_header_n_loop( libxsmm_generated_code*       
                                                  const libxsmm_matcopy_kernel_config*      i_kernel_config,
                                                  const unsigned int                        i_gp_reg_n_loop ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_add_instruction, i_gp_reg_n_loop, 1);
 }
 
@@ -90,7 +90,7 @@ void libxsmm_generator_convolution_header_oi_loop( libxsmm_generated_code*      
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
                                                    const unsigned int                        i_gp_reg_oi_loop ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_oi_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_oi_loop, 1);
 }
 
@@ -110,7 +110,7 @@ void libxsmm_generator_convolution_header_oj_loop( libxsmm_generated_code*      
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
                                                    const unsigned int                        i_gp_reg_oj_loop ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_oj_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_oj_loop, 1);
 }
 
@@ -130,7 +130,7 @@ void libxsmm_generator_convolution_header_ofw_loop( libxsmm_generated_code*     
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
                                                    const unsigned int                        i_gp_reg_oi_loop ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_oi_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_oi_loop, 1);
 }
 
@@ -150,7 +150,7 @@ void libxsmm_generator_convolution_header_ofh_loop( libxsmm_generated_code*     
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
                                                    const unsigned int                        i_gp_reg_ofh_loop ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_ofh_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_ofh_loop, 1);
 }
 
@@ -170,7 +170,7 @@ void libxsmm_generator_convolution_header_kh_loop( libxsmm_generated_code*      
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
                                                    const unsigned int                        i_gp_reg_kh_loop ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_kh_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_kh_loop, 1);
 }
 
@@ -190,7 +190,7 @@ void libxsmm_generator_convolution_header_kw_loop( libxsmm_generated_code*      
                                                    const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
                                                    const unsigned int                        i_gp_reg_kw_loop ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_kw_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_kw_loop, 1);
 }
 
@@ -210,7 +210,7 @@ void libxsmm_generator_convolution_header_ifmOuter_loop( libxsmm_generated_code*
                                                          const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
                                                          const unsigned int                        i_gp_reg_ifmOuter_loop ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_ifmOuter_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_ifmOuter_loop, 1);
 }
 
@@ -231,7 +231,7 @@ void libxsmm_generator_convolution_header_h_block_loop( libxsmm_generated_code* 
                                                          const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
                                                          const unsigned int                        i_gp_reg_h_block_loop ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_h_block_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_h_block_loop, 1);
 }
 
@@ -251,7 +251,7 @@ void libxsmm_generator_convolution_header_image_block_loop( libxsmm_generated_co
                                                          const libxsmm_convolution_kernel_config*  i_conv_kernel_config,
                                                          const unsigned int                        i_gp_reg_img_block_loop ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_img_block_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_img_block_loop, 1);
 }
 
@@ -273,7 +273,7 @@ void libxsmm_generator_convolution_header_ifm_loop( libxsmm_generated_code*     
                                                     const unsigned int                        i_gp_reg_ifmInner_loop,
                                                     const unsigned int                        i_unrolled_trips ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_ifmInner_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_ifmInner_loop, i_unrolled_trips);
 }
 
@@ -294,7 +294,7 @@ void libxsmm_generator_convolution_header_ofm_loop( libxsmm_generated_code*     
                                                     const unsigned int                        i_gp_reg_ofmInner_loop,
                                                     const unsigned int                        i_unrolled_trips ) {
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_mov_instruction, i_gp_reg_ofmInner_loop, 0);
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, i_conv_kernel_config->alu_add_instruction, i_gp_reg_ofmInner_loop, i_unrolled_trips);
 }
 

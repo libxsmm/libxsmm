@@ -197,7 +197,7 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
   if ( i_conv_desc->itiles*i_conv_desc->jtiles*i_conv_desc->bimg/qfac > i_conv_desc->ur ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction,
                                        l_gp_reg_mapping.gp_reg_mloop, 0 );
-      libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
+      libxsmm_x86_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
       libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction,
                                        l_gp_reg_mapping.gp_reg_mloop, i_conv_desc->ur);
   }

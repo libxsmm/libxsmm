@@ -425,17 +425,17 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
                                                const unsigned int      i_mask_reg_number_dest  );
 
 /**
- * Generates regular all instructions with immediates
+ * Generates a label to which one can jump back and pushes it on the loop label stack
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param io_loop_label_tracker data structure to handle loop labels, nested loops are supported, but not overlapping loops
 */
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
-                                                  libxsmm_loop_label_tracker* io_loop_label_tracker );
+void libxsmm_x86_instruction_register_jump_back_label( libxsmm_generated_code*     io_generated_code,
+                                                       libxsmm_loop_label_tracker* io_loop_label_tracker );
 
 /**
- * Generates regular all instructions with immediates
+ * Pops the latest from the loop label stack and jumps there
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_jmp_instr the particular jump instruction used

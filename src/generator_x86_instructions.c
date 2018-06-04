@@ -4047,7 +4047,7 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
 
 
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
+void libxsmm_x86_instruction_register_jump_back_label( libxsmm_generated_code*     io_generated_code,
                                                   libxsmm_loop_label_tracker* io_loop_label_tracker ) {
   /* check if we still have lable we can jump to */
   if ( io_loop_label_tracker->label_count == 32 ) {
