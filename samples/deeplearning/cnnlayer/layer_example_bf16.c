@@ -41,7 +41,8 @@
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) { fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) ); global_status = A; }
 
-#define USE_OVERWRITE
+/*#define USE_OVERWRITE*/
+#define USE_OVERWRITE_RNE
 
 /* it's fine to alias in and out */
 void truncate_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
@@ -565,7 +566,12 @@ int main(int argc, char* argv[])
   conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
   conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
+#if defined(USE_OVERWRITE)
   conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
+#endif
+#if defined(USE_OVERWRITE_RNE)
+  conv_desc.options = LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE_OVERWRITE;
+#endif
   conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_BF16;
   conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_BF16;
 
