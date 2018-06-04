@@ -51,6 +51,7 @@
     <ClInclude Include="..\src\generator_packed_aux.h" />
     <ClInclude Include="..\src\generator_packed_trsm_dmacros.h" />
     <ClInclude Include="..\src\generator_packed_xct_avx2_lln.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_elementwise.h" />
     <ClInclude Include="..\src\packed_trsm_dmacros.h" />
     <ClInclude Include="..\src\generator_common.h" />
     <ClInclude Include="..\src\generator_packed_trsm_avx_avx512.h" />
@@ -152,6 +153,7 @@
     <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_forward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.c" />
     <ClCompile Include="..\src\libxsmm_dnn_dryruns.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_elementwise.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
     <ClCompile Include="..\src\libxsmm_dnn_lstmcell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_rnncell.c" />
@@ -1237,12 +1239,11 @@
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
       <ConformanceMode>true</ConformanceMode>
@@ -1279,13 +1280,12 @@
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
@@ -1329,7 +1329,7 @@
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
       <ConformanceMode>true</ConformanceMode>
@@ -1373,7 +1373,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
@@ -1408,7 +1408,7 @@
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
@@ -1447,7 +1447,7 @@
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>

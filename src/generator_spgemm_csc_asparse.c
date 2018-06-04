@@ -240,7 +240,7 @@ void libxsmm_generator_spgemm_csc_asparse( libxsmm_generated_code*        io_gen
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
   /* reset the current column in C if needed */
-  if ( i_xgemm_desc->beta == 0 ) {
+  if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=0 */
     l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "    unsigned int l_m = 0;\n");
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     if ( i_xgemm_desc->m > 1 ) {

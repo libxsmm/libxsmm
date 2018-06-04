@@ -408,7 +408,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
 
       /* push 0x00010000 on the stack, fixup masking */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x00010000);
-      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 ); 
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
 
       /* push 0x00007fff on the stack, rneadd */
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x00007fff);
@@ -418,7 +418,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
       libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x00000001);
       libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
     }
-  } 
+  }
 
   for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
     for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {

@@ -156,12 +156,11 @@
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
       <OpenMP>GenerateParallelCode</OpenMP>
@@ -200,13 +199,12 @@
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <OpenMP>GenerateParallelCode</OpenMP>
       <OpenMPSupport>true</OpenMPSupport>
@@ -252,7 +250,7 @@
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <OffloadConstructs>None</OffloadConstructs>
       <OpenMP>GenerateParallelCode</OpenMP>
@@ -298,7 +296,7 @@
       <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <OpenMP>GenerateParallelCode</OpenMP>
       <OpenMPSupport>true</OpenMPSupport>
@@ -335,7 +333,7 @@
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
       <OpenMP>GenerateParallelCode</OpenMP>
       <OpenMPSupport>true</OpenMPSupport>
@@ -376,7 +374,7 @@
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
       <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
       <OpenMP>GenerateParallelCode</OpenMP>
       <OpenMPSupport>true</OpenMPSupport>

@@ -150,7 +150,7 @@ The [Matrix Multiplication domain (MM)](libxsmm_mm.md) contains routines for:
 
 ### Deep Learning<a name="interface-for-convolutions"></a>
 
-This domain (DL) is detailed by a separate [document](libxsmm_dl.md). Please also note on how to [Get Started with TensorFlow&trade; using LIBXSMM](tensorflow.md).
+This domain (DL) is detailed by a separate [document](libxsmm_dl.md). Please also note on how to get started with [TensorFlow&trade;](tensorflow.md) or [TensorFlow Serving](tfserving.md) using LIBXSMM. It may inspiring to have a look at the GxM framework, which uses LIBXSMM for Deep Learning.
 
 ### Service Functions
 

@@ -51,13 +51,16 @@ if [ -e ${CODEFILE} ]; then
   PATTERNS="$(cat ${CODEFILE})"
 fi
 
-if [ "" != "${FLAKE8}" ] && [ "0" != "$(${FLAKE8} ${HERE}/*.py 2>&1 >/dev/null ; echo $?)" ]; then
+if [ "" != "${FLAKE8}" ] && [ "0" = "$(${FLAKE8} 2>&1 >/dev/null; ${ECHO} $?)" ] && \
+   [ "0" != "$(${FLAKE8} ${HERE}/*.py 2>&1 >/dev/null; ${ECHO} $?)" ];
+then
   ${ECHO} "Warning: some Python scripts do not pass flake8 check (${HERE})!"
 fi
 
 if [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && \
    [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
-   [ "" != "${CP}" ] && [ "" != "${RM}" ]; then
+   [ "" != "${CP}" ] && [ "" != "${RM}" ];
+then
   TMPF=$(${MKTEMP} .libxsmm_XXXXXX.txt)
 
   # disable glob in Shell

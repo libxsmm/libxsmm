@@ -62,7 +62,7 @@ if __name__ == "__main__":
                 print("    " + mnksig + ", " + ldxsig + ", " +
                       "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
                 print("  hash = libxsmm_crc32(&desc, " +
-                      "LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);")
+                      "LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED);")
                 print("  indx = LIBXSMM_HASH_MOD(hash, " +
                       "LIBXSMM_CAPACITY_REGISTRY);")
                 print("  func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" +
@@ -85,7 +85,7 @@ if __name__ == "__main__":
                 print("    " + mnksig + ", " + ldxsig + ", " +
                       "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
                 print("  hash = libxsmm_crc32(&desc, " +
-                      "LIBXSMM_GEMM_DESCRIPTOR_SIZE, LIBXSMM_HASH_SEED);")
+                      "LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED);")
                 print("  indx = LIBXSMM_HASH_MOD(hash, " +
                       "LIBXSMM_CAPACITY_REGISTRY);")
                 print("  func.smm = (libxsmm_smmfunction)libxsmm_smm_" +

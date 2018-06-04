@@ -111,7 +111,14 @@ typedef enum libxsmm_dnn_tensor_dimtype {
   /** kernel width */
   LIBXSMM_DNN_TENSOR_DIMTYPE_S,
   /** general counter */
-  LIBXSMM_DNN_TENSOR_DIMTYPE_X
+  LIBXSMM_DNN_TENSOR_DIMTYPE_X,
+
+  /** number of outputs for RNN/LSTM */
+  LIBXSMM_DNN_TENSOR_DIMTYPE_RLM,
+  /** number of inputs for RNN/LSTM */
+  LIBXSMM_DNN_TENSOR_DIMTYPE_RLK,
+  /** size of minibatch for RNN/LSTM */
+  LIBXSMM_DNN_TENSOR_DIMTYPE_RLN
 } libxsmm_dnn_tensor_dimtype;
 
 /** types of different buffers */
@@ -152,7 +159,81 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_MAX_STATS_BWD,
   LIBXSMM_DNN_MAX_STATS_UPD,
    /** general type, if needed might cause API issues in copy in/out API */
-  LIBXSMM_DNN_TENSOR
+  LIBXSMM_DNN_TENSOR,
+
+  /** regular input buffer */
+  LIBXSMM_DNN_RNN_REGULAR_INPUT,
+  /** regular hidden state buffer */
+  LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE,
+  /** regular weight */
+  LIBXSMM_DNN_RNN_REGULAR_WEIGHT,
+  /** regular recurrent weight */
+  LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT,
+  /** regular gradient input buffer */
+  LIBXSMM_DNN_RNN_GRADIENT_INPUT,
+  /** regular gradient hidden state buffer */
+  LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE,
+  /** regular gradient weight */
+  LIBXSMM_DNN_RNN_GRADIENT_WEIGHT,
+  /** regular gradient recurrent weight */
+  LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT,
+
+  /** regular input buffer */
+  LIBXSMM_DNN_LSTM_REGULAR_INPUT,
+  /** regular hidden state buffer */
+  LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE,
+  /** regular weight i */
+  LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_I,
+  /** regular weight f */
+  LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_F,
+  /** regular weight o */
+  LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_O,
+  /** regular weight c */
+  LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_C,
+  /** regular recurrent weight i */
+  LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_I,
+  /** regular recurrent weight f */
+  LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_F,
+  /** regular recurrent weight o */
+  LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_O,
+  /** regular recurrent weight c */
+  LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_C,
+  /** regular bias i */
+  LIBXSMM_DNN_LSTM_REGULAR_BIAS_I,
+  /** regular bias f */
+  LIBXSMM_DNN_LSTM_REGULAR_BIAS_F,
+  /** regular bias o */
+  LIBXSMM_DNN_LSTM_REGULAR_BIAS_O,
+  /** regular bias c */
+  LIBXSMM_DNN_LSTM_REGULAR_BIAS_C,
+  /** regular gradient input buffer */
+  LIBXSMM_DNN_LSTM_GRADIENT_INPUT,
+  /** regular gradient hidden state buffer */
+  LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE,
+  /** regular gradient weight i */
+  LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_I,
+  /** regular gradient weight f */
+  LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_F,
+  /** regular gradient weight o */
+  LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_O,
+  /** regular gradient weight c */
+  LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_C,
+  /** regular gradient recurrent weight i */
+  LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_I,
+  /** regular gradient recurrent weight f */
+  LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_F,
+  /** regular gradient recurrent weight o */
+  LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_O,
+  /** regular gradient recurrent weight c */
+  LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_C,
+  /** regular gradient bias i */
+  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_I,
+  /** regular gradient bias f */
+  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_F,
+  /** regular gradient bias o */
+  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O,
+  /** regular gradient bias c */
+  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C
 } libxsmm_dnn_tensor_type;
 
 /** layout descriptor to allow external data handling
@@ -323,8 +404,8 @@ LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, in
 /** some BF16<->FP32 conversion functions
     @TODO we need to find a final place for those */
 LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bfloat16* out, const unsigned int length);
-LIBXSMM_API void rnaz_convert_fp32_bfp16(const float* in, libxsmm_bfloat16* out, const unsigned int len);
-LIBXSMM_API void rne_convert_fp32_bfp16(const float* in, libxsmm_bfloat16* out, const unsigned int len);
+LIBXSMM_API void libxsmm_rnaz_convert_fp32_bfp16(const float* in, libxsmm_bfloat16* out, const unsigned int len);
+LIBXSMM_API void libxsmm_rne_convert_fp32_bfp16(const float* in, libxsmm_bfloat16* out, const unsigned int len);
 LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out, unsigned int length);
 
 #endif /*LIBXSMM_DNN_H*/

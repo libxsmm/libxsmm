@@ -283,7 +283,7 @@ SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
           libxsmm_gemm.c libxsmm_trans.c libxsmm_bgemm.c \
           libxsmm_spmdm.c libxsmm_fsspmdm.c \
           libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c \
-          libxsmm_dnn_rnncell.c libxsmm_dnn_lstmcell.c \
+          libxsmm_dnn_elementwise.c libxsmm_dnn_rnncell.c libxsmm_dnn_lstmcell.c \
           libxsmm_dnn_convolution_forward.c \
           libxsmm_dnn_convolution_backward.c \
           libxsmm_dnn_convolution_weight_update.c \
@@ -1434,12 +1434,39 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 		-o $(notdir $@)
 	@rm $(TMPFILE)
 
+$(DOCDIR)/tfserving.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/tfserving.md
+	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
+	@pandoc -D latex \
+	| sed \
+		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
+		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
+		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
+		> $(TMPFILE)
+	@cd $(ROOTDIR)/documentation && iconv -t utf-8 tfserving.md \
+	| sed \
+		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
+		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
+		-e 's/----*//g' \
+	| pandoc \
+		--template=$(notdir $(TMPFILE)) --listings \
+		-f markdown_github+all_symbols_escapable+subscript+superscript \
+		-V documentclass=scrartcl \
+		-V title-meta="TensorFlow Serving with LIBXSMM" \
+		-V author-meta="Hans Pabst" \
+		-V classoption=DIV=45 \
+		-V linkcolor=black \
+		-V citecolor=black \
+		-V urlcolor=black \
+		-o $(notdir $@)
+	@rm $(TMPFILE)
+
 .PHONY: documentation
 documentation: \
 $(DOCDIR)/libxsmm.$(DOCEXT) \
 $(DOCDIR)/libxsmm_samples.$(DOCEXT) \
 $(DOCDIR)/cp2k.$(DOCEXT) \
-$(DOCDIR)/tensorflow.$(DOCEXT)
+$(DOCDIR)/tensorflow.$(DOCEXT) \
+$(DOCDIR)/tfserving.$(DOCEXT)
 
 .PHONY: mkdocs
 mkdocs: $(ROOTDIR)/documentation/index.md $(ROOTDIR)/documentation/libxsmm_samples.md
