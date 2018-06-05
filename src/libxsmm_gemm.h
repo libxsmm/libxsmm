@@ -80,14 +80,6 @@
 # define LIBXSMM_GEMM_BATCHSCALE 1.5
 #endif
 
-#if !defined(LIBXSMM_NO_BLAS)
-# if !defined(__BLAS) || (0 != __BLAS)
-#   define LIBXSMM_NO_BLAS 0
-# else
-#   define LIBXSMM_NO_BLAS 1
-# endif
-#endif
-
 #define LIBXSMM_GEMM_TILED_KERNEL(KERNEL_INNER_BETA1, TYPE, TRANSA, TRANSB, FLAGS, POS_I, POS_J, MAX_K, TILE_M, TILE_N, TILE_K, \
   M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
 { \
