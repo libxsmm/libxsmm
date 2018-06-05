@@ -490,6 +490,11 @@ ifeq (1,$(GCC))
   endif
 endif
 
+CPP ?= 0
+ifneq (0,$(CPP))
+  CC = $(CXX)
+endif
+
 ifeq (Windows_NT,$(UNAME))
 ifeq (MINGW64,$(MSYSTEM))
   MINGW = 64
