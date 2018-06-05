@@ -234,14 +234,14 @@ LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], s
   size_t result = 0, size1 = 0;
   if (0 != ndims && 0 != shape) {
     size_t i;
-    assert(NULL != offset);
-    result = offset[0]; size1 = shape[0];
+    result = (0 != offset ? offset[0] : 0);
+    size1 = shape[0];
     for (i = 1; i < ndims; ++i) {
-      result += offset[i] * size1;
+      result += (0 != offset ? offset[i] : 0) * size1;
       size1 *= shape[i];
     }
   }
-  if (NULL != size) *size = size1;
+  if (0 != size) *size = size1;
   return result;
 }
 
