@@ -4065,7 +4065,7 @@ void libxsmm_x86_instruction_register_jump_back_label( libxsmm_generated_code*  
     int l_max_code_length = 511;
     int l_code_length = 0;
 
-    io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] = io_loop_label_tracker->label_count;
+    io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] = io_loop_label_tracker->label_count+32+1;
 
     if ( io_generated_code->code_type == 0 ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%u:\\n\\t\"\n", io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] );
@@ -4150,6 +4150,117 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 
     io_loop_label_tracker->label_address[io_loop_label_tracker->label_count] = 0;
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
+                                                  const unsigned int          i_label_no,
+                                                  libxsmm_jump_label_tracker* io_jump_label_tracker ) {
+  /* check if the label we are trying to set inside of bounds */
+  if ( i_label_no >= 32 ) { 
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
+    return;
+  }
+
+  /* check if the label we try to set is still available */
+  if ( io_jump_label_tracker->label_address[i_label_no] > 0 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_JMPLBL_USED );
+    return;
+  }
+
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    unsigned int l_ref = 0;
+    libxsmm_jump_source l_source = io_jump_label_tracker->label_source[i_label_no];
+    /* first added label to tracker */ 
+    io_jump_label_tracker->label_address[i_label_no] = io_generated_code->code_size;
+    /* patching all previous references */
+    for ( l_ref = 0; l_ref < l_source.ref_count; ++l_ref ) {
+      unsigned int l_jump_instr = l_source.instr_type[l_ref];
+      unsigned int l_position =   l_source.instr_addr[l_ref];
+
+      LIBXSMM_UNUSED( l_jump_instr );
+      LIBXSMM_UNUSED( l_position );
+      /* @TODO-Greg: Please add patching of code */
+    } 
+  } else {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+
+    io_jump_label_tracker->label_address[i_label_no] = i_label_no+1;
+
+    if ( io_generated_code->code_type == 0 ) {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%u:\\n\\t\"\n", io_jump_label_tracker->label_address[i_label_no] );
+    } else {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %u:\n", io_jump_label_tracker->label_address[i_label_no] );
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
+  }
+}
+
+
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_jump_to_label( libxsmm_generated_code*     io_generated_code,
+                                            const unsigned int          i_jmp_instr,
+                                            const unsigned int          i_label_no,
+                                            libxsmm_jump_label_tracker* io_jump_label_tracker ) {
+  unsigned int l_pos;
+
+  /* check if the label we are trying to set inside of bounds */
+  if ( (i_label_no < 32) == 0 ) { 
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
+    return;
+  }
+
+  /* check if we still have lable we can jump to */
+  if ( io_jump_label_tracker->label_source[i_label_no].ref_count == 32-1 ) {
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
+    return;
+  }
+
+  /* add addr at current position and instruction to tracking structure */
+  l_pos = io_jump_label_tracker->label_source[i_label_no].ref_count;
+  io_jump_label_tracker->label_source[i_label_no].instr_type[l_pos] = i_jmp_instr;
+  io_jump_label_tracker->label_source[i_label_no].instr_addr[l_pos] = io_generated_code->code_size;
+  io_jump_label_tracker->label_source[i_label_no].ref_count++;
+
+  /* @TODO add checks in debug mode */
+  if ( io_generated_code->code_type > 1 ) {
+    int dest_addr;
+    
+    if ( io_jump_label_tracker->label_address[i_label_no] == 0 ) {
+      dest_addr = 0;
+    } else {
+      /* @TODO-Greg, please check */
+      dest_addr = io_generated_code->code_size+6 - io_jump_label_tracker->label_address[i_label_no];
+    }
+    /* @TODO-Greg, please add jit of i_jmp_instr */
+
+    LIBXSMM_UNUSED( dest_addr );
+
+  } else {
+    char l_new_code[512];
+    int l_max_code_length = 511;
+    int l_code_length = 0;
+    char l_instr_name[16];
+    char l_jmp_dir;
+    libxsmm_get_x86_instr_name( i_jmp_instr, l_instr_name, 15 );
+
+    if ( io_jump_label_tracker->label_address[i_label_no] == 0 ) {
+      l_jmp_dir = 'f';
+    } else {
+      l_jmp_dir = 'b';
+    }
+
+    if ( io_generated_code->code_type == 0 ) {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %u%c\\n\\t\"\n", l_instr_name, i_label_no+1, l_jmp_dir );
+    } else {
+      l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %u%c\n", l_instr_name, i_label_no+1, l_jmp_dir  );
+    }
+    libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
 }
 

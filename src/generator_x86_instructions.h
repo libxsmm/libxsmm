@@ -447,6 +447,32 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
                                                  libxsmm_loop_label_tracker* io_loop_label_tracker );
 
 /**
+ * Generates a label to which one can jump back and pushes it on the loop label stacki
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @parma i_labal_no position in the jump label tracker to set
+ * @param io_jump_forward_label_tracker forward jump tracker structure for tracking the jump adresses/labels
+*/
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
+                                                  const unsigned int          i_label_no,
+                                                  libxsmm_jump_label_tracker* io_jump_label_tracker );
+
+/**
+ * Jumps to the address/label stored a specfic postion
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_jmp_instr the particular jump instruction used
+ * @param i_label_no position in the jump lable tracker to jump to
+ * @param io_jump_label_tracker data structures that tracks arbitrary jump labels
+*/
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_jump_to_label( libxsmm_generated_code*     io_generated_code,
+                                            const unsigned int          i_jmp_instr,
+                                            const unsigned int          i_label_no,
+                                            libxsmm_jump_label_tracker* io_jump_label_tracker );
+
+/**
  * Generates an insertion of constants into the code stream and loads them into
  * into a vector register
  *

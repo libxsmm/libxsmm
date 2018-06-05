@@ -773,6 +773,11 @@ void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_reset_jump_label_tracker( libxsmm_jump_label_tracker* io_jump_label_tracker ) {
+  memset(io_jump_label_tracker, 0, sizeof(*io_jump_label_tracker));
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
                                   const libxsmm_gemm_descriptor* i_xgemm_desc ) {
@@ -1053,6 +1058,10 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_EXCEED_JMPLBL:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "too many nested loops, exceeding loop label tracker (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_JMPLBL_USED:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "attempted to use an already used jump label (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_CSC_ALLOC_DATA:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

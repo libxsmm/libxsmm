@@ -309,6 +309,7 @@
 #define LIBXSMM_ERR_INVALID_GEMM_CONFIG  90051
 #define LIBXSMM_ERR_UNIQUE_VAL           90052
 #define LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF 90053
+#define LIBXSMM_ERR_JMPLBL_USED           90054
 
 #define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
   GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, libxsmm_verbosity)
@@ -487,8 +488,24 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_loop_label_tracker_struct {
   unsigned int label_count;
 } libxsmm_loop_label_tracker;
 
+/* structure to save jump properties to the same destination */
+LIBXSMM_EXTERN_C typedef struct libxsmm_jump_source_struct {
+  unsigned int instr_type[32];
+  unsigned int instr_addr[32];
+  unsigned int ref_count;
+} libxsmm_jump_source;
+
+/* structure for tracking arbitrary jump labels in assembly code */
+LIBXSMM_EXTERN_C typedef struct libxsmm_jump_label_tracker_struct {
+  unsigned int        label_address[32];
+  libxsmm_jump_source label_source[32];
+} libxsmm_jump_label_tracker;
+
 LIBXSMM_API_INTERN
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker );
+
+LIBXSMM_API_INTERN
+void libxsmm_reset_jump_label_tracker( libxsmm_jump_label_tracker* io_jump_lable_tracker );
 
 LIBXSMM_API_INTERN
 void libxsmm_get_x86_gp_reg_name( const unsigned int i_gp_reg_number,
