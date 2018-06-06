@@ -4159,7 +4159,7 @@ void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io
                                                   const unsigned int          i_label_no,
                                                   libxsmm_jump_label_tracker* io_jump_label_tracker ) {
   /* check if the label we are trying to set inside of bounds */
-  if ( i_label_no >= 32 ) { 
+  if ( i_label_no >= 32 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
   }
@@ -4174,7 +4174,7 @@ void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io
   if ( io_generated_code->code_type > 1 ) {
     unsigned int l_ref = 0;
     libxsmm_jump_source l_source = io_jump_label_tracker->label_source[i_label_no];
-    /* first added label to tracker */ 
+    /* first added label to tracker */
     io_jump_label_tracker->label_address[i_label_no] = io_generated_code->code_size;
     /* patching all previous references */
     for ( l_ref = 0; l_ref < l_source.ref_count; ++l_ref ) {
@@ -4184,7 +4184,7 @@ void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io
       LIBXSMM_UNUSED( l_jump_instr );
       LIBXSMM_UNUSED( l_position );
       /* @TODO-Greg: Please add patching of code */
-    } 
+    }
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;
@@ -4210,7 +4210,7 @@ void libxsmm_x86_instruction_jump_to_label( libxsmm_generated_code*     io_gener
   unsigned int l_pos;
 
   /* check if the label we are trying to set inside of bounds */
-  if ( (i_label_no < 32) == 0 ) { 
+  if ( (i_label_no < 32) == 0 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_EXCEED_JMPLBL );
     return;
   }
@@ -4230,7 +4230,7 @@ void libxsmm_x86_instruction_jump_to_label( libxsmm_generated_code*     io_gener
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
     int dest_addr;
-    
+
     if ( io_jump_label_tracker->label_address[i_label_no] == 0 ) {
       dest_addr = 0;
     } else {
