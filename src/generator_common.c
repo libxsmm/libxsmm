@@ -490,6 +490,27 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_JL:
       libxsmm_strncpy(o_instr_name, "jl", i_instr_name_max_length, 2 );
       break;
+    case LIBXSMM_X86_INSTR_JE:
+      libxsmm_strncpy(o_instr_name, "je", i_instr_name_max_length, 2 );
+      break;
+    case LIBXSMM_X86_INSTR_JZ:
+      libxsmm_strncpy(o_instr_name, "jz", i_instr_name_max_length, 2 );
+      break;
+    case LIBXSMM_X86_INSTR_JG:
+      libxsmm_strncpy(o_instr_name, "jg", i_instr_name_max_length, 2 );
+      break;
+    case LIBXSMM_X86_INSTR_JNE:
+      libxsmm_strncpy(o_instr_name, "jne", i_instr_name_max_length, 3 );
+      break;
+    case LIBXSMM_X86_INSTR_JNZ:
+      libxsmm_strncpy(o_instr_name, "jnz", i_instr_name_max_length, 3 );
+      break;
+    case LIBXSMM_X86_INSTR_JGE:
+      libxsmm_strncpy(o_instr_name, "jge", i_instr_name_max_length, 3 );
+      break;
+    case LIBXSMM_X86_INSTR_JLE:
+      libxsmm_strncpy(o_instr_name, "jle", i_instr_name_max_length, 3 );
+      break;
     case LIBXSMM_X86_INSTR_PREFETCHT0:
       libxsmm_strncpy(o_instr_name, "prefetcht0", i_instr_name_max_length, 10 );
       break;
