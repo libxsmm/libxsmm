@@ -490,8 +490,8 @@ ifeq (1,$(GCC))
   endif
 endif
 
-CPP ?= 0
-ifneq (0,$(CPP))
+FORCE_CXX ?= 0
+ifneq (0,$(FORCE_CXX))
   CC = $(CXX)
 endif
 
