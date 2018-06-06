@@ -75,6 +75,142 @@ int internal_x86_instructions_add_offset(const unsigned int i_place1,
   }
 }
 
+/**
+ * This routine is for the jump jit code. All jumps have similar patterns.
+ * Back jumps can be computed immediately because the source and dest is known
+ * Forward jumps can be estimated as 4-byte jumps taking 5 or 6 bytes in total
+ * i_src_location: location of the start of the jump instruction. It's passed 
+ *     in as it may have nothing to do with the last location coded in our jit 
+ *     stream. For backward jumps, it's probably io_generated_code->code_size
+ * i_dest_location: location of the start of the target destination we are 
+ *     jumping to, or -1 if it's a forward jump and currently unknown 
+ * i_jmp_instr is one of the jump instructions we support
+ * This function returns the number of bytes it uses, or 0 if it fails
+ */
+LIBXSMM_API_INLINE
+int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
+                          int i_src_location,
+                          int i_dest_location,
+                          const unsigned int i_jmp_instr )
+{
+  unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
+  int l_jmptype;
+  int l_dist;
+  unsigned char *l_cptr = (unsigned char *) &l_dist;
+
+  /* check that we just handle a valid jump */
+  switch ( i_jmp_instr ) {
+     case LIBXSMM_X86_INSTR_JL:
+        l_jmptype = 0x7c;
+        break;
+     case LIBXSMM_X86_INSTR_JE:
+     case LIBXSMM_X86_INSTR_JZ:
+        l_jmptype = 0x74;
+        break;
+     case LIBXSMM_X86_INSTR_JG:
+        l_jmptype = 0x7F;
+        break;
+     case LIBXSMM_X86_INSTR_JNE:
+     case LIBXSMM_X86_INSTR_JNZ:
+        l_jmptype = 0x75;
+        break;
+     case LIBXSMM_X86_INSTR_JGE:
+        l_jmptype = 0x7D;
+        break;
+     case LIBXSMM_X86_INSTR_JLE:
+        l_jmptype = 0x7E;
+        break;
+     case LIBXSMM_X86_INSTR_JMP:
+        l_jmptype = 0xEB;
+        break;
+     default:
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUPPORTED_JUMP );
+        return 0;
+  }
+  if ( i_src_location < 0 )
+  {
+     fprintf(stderr,"Bogus source location for internal jumping routine: %d\n",i_src_location );
+     exit(-1);
+  }
+  if ( i_dest_location < 0 )
+  {  
+     /* Must be a forward jump and we don't yet know it's dest location */
+     if ( i_jmp_instr == LIBXSMM_X86_INSTR_JMP ) {
+        buf[i_src_location] == 0xe9;
+        /* FIll-in zeros for now, this routine has to be called again: */
+        buf[i_src_location+1] = 0x00; 
+        buf[i_src_location+2] = 0x00;
+        buf[i_src_location+3] = 0x00;
+        buf[i_src_location+4] = 0x00;
+        return 5;
+     } else {
+        buf[i_src_location] = 0x0f;
+        buf[i_src_location+1] = (unsigned char) l_jmptype + 0x10;
+        /* FIll-in zeros for now, this routine has to be called again: */
+        buf[i_src_location+2] = 0x00; 
+        buf[i_src_location+3] = 0x00; 
+        buf[i_src_location+4] = 0x00; 
+        buf[i_src_location+5] = 0x00; 
+        return 6;
+     }
+  } 
+  if ( i_src_location > i_dest_location )
+  {
+     /* Must be a backward jump */
+     l_dist = -1*(i_src_location+2-i_dest_location); /* assume 1-byte */
+     if ( l_dist >= -128 ) /* can it be done in 1-byte? */
+     {
+        /* Single byte back jump */
+        buf[i_src_location]   = (unsigned char) l_jmptype;
+        buf[i_src_location+1] = (unsigned char) l_dist;
+        return 2;
+     } else {
+        /* 4-byte back jump */
+        if ( i_jmp_instr != LIBXSMM_X86_INSTR_JMP ) {
+           /* l_cptr better point to l_dist and l_dist needs to be recalced */
+           l_dist = -1*(i_src_location+6-i_dest_location);
+           buf[i_src_location]   = 0x0f;
+           buf[i_src_location+1] = (unsigned char) l_jmptype + 0x10;
+           buf[i_src_location+2] = l_cptr[0];
+           buf[i_src_location+3] = l_cptr[1];
+           buf[i_src_location+4] = l_cptr[2];
+           buf[i_src_location+5] = l_cptr[3];
+           return 6;
+        } else {
+           /* l_cptr better point to l_dist and l_dist needs to be recalced */
+           l_dist = -1*(i_src_location+5-i_dest_location);
+           buf[i_src_location]   = 0xE9;
+           buf[i_src_location+1] = l_cptr[0];
+           buf[i_src_location+2] = l_cptr[1];
+           buf[i_src_location+3] = l_cptr[2];
+           buf[i_src_location+4] = l_cptr[3];
+           return 5;
+        }
+     }
+  } else {
+     /* Must be a 4 or 5 byte forward jump with all locations known */ 
+     if ( i_jmp_instr == LIBXSMM_X86_INSTR_JMP ) {
+        /* l_cptr better point to l_dist and l_dist needs to be recalced */
+        l_dist = (i_dest_location-i_src_location-5);
+        buf[i_src_location] == 0xe9;
+        buf[i_src_location+1] = l_cptr[0];
+        buf[i_src_location+2] = l_cptr[1];
+        buf[i_src_location+3] = l_cptr[2];
+        buf[i_src_location+4] = l_cptr[3];
+        return 5;
+     } else {
+        /* l_cptr better point to l_dist and l_dist needs to be recalced */
+        l_dist = (i_dest_location-i_src_location-6);
+        buf[i_src_location] = 0x0f;
+        buf[i_src_location+1] = (unsigned char) l_jmptype + 0x10;
+        buf[i_src_location+2] = l_cptr[0];
+        buf[i_src_location+3] = l_cptr[1];
+        buf[i_src_location+4] = l_cptr[2];
+        buf[i_src_location+5] = l_cptr[3];
+        return 6;
+     }
+  } 
+}
 
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated_code,
@@ -4082,10 +4218,22 @@ LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_generated_code,
                                                  const unsigned int          i_jmp_instr,
                                                  libxsmm_loop_label_tracker* io_loop_label_tracker ) {
-  /* check that we just handle jl */
-  if ( i_jmp_instr != LIBXSMM_X86_INSTR_JL) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUPPORTED_JUMP );
-    return;
+
+  /* check that we just handle a valid jump */
+  switch ( i_jmp_instr ) {
+    case LIBXSMM_X86_INSTR_JL:
+    case LIBXSMM_X86_INSTR_JE:
+    case LIBXSMM_X86_INSTR_JZ:
+    case LIBXSMM_X86_INSTR_JG:
+    case LIBXSMM_X86_INSTR_JNE:
+    case LIBXSMM_X86_INSTR_JNZ:
+    case LIBXSMM_X86_INSTR_JGE:
+    case LIBXSMM_X86_INSTR_JLE:
+    case LIBXSMM_X86_INSTR_JMP:
+      break;
+    default:
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUPPORTED_JUMP );
+      return;
   }
 
   /* check if we still have lable we can jump to */
@@ -4101,6 +4249,7 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
     unsigned int l_maxsize = io_generated_code->buffer_size;
     int l_lab = --io_loop_label_tracker->label_count;
     int l_val = io_loop_label_tracker->label_address[l_lab];
+    int l_jmptype;
     int l_dist;
 
     if ( l_maxsize - i < 6 )
@@ -4108,20 +4257,60 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
        fprintf(stderr, "libxsmm_instruction_jump_back_to_label: Our jump instructions need at most 6 bytes\n");
        exit(-1);
     }
+
+    /* Eventually try using the generic routine: 
+ 
+    l_tmp = internal_x86_jumping( io_generated_code, i, l_val, i_jmp_instr );
+    io_generated_code->code_size = i + l_tmp;
+
+       and the below code becomes redundant */  
+
+    switch ( i_jmp_instr ) {
+      case LIBXSMM_X86_INSTR_JL:
+        l_jmptype = 0x7c;
+        break;
+      case LIBXSMM_X86_INSTR_JE:
+      case LIBXSMM_X86_INSTR_JZ:
+        l_jmptype = 0x74;
+        break;
+      case LIBXSMM_X86_INSTR_JG:
+        l_jmptype = 0x7F;
+        break;
+      case LIBXSMM_X86_INSTR_JNE:
+      case LIBXSMM_X86_INSTR_JNZ:
+        l_jmptype = 0x75;
+        break;
+      case LIBXSMM_X86_INSTR_JGE:
+        l_jmptype = 0x7D;
+        break;
+      case LIBXSMM_X86_INSTR_JLE:
+        l_jmptype = 0x7E;
+        break;
+      case LIBXSMM_X86_INSTR_JMP:
+        l_jmptype = 0xEB;
+        break;
+    }
     if ( l_val < i + 2 )
     {
        l_dist = -1*(i+2-l_val); /* assume 1-byte jump initially */
        if ( l_dist >= -128 )    /* can it be done in a single byte? */
        {
           /* Single byte back jump */
-          buf[i++] = 0x7c;
-          buf[i++] = (unsigned char)l_dist;
+          buf[i++]= (unsigned char) l_jmptype;
+          buf[i++] = (unsigned char) l_dist;
        } else {
           unsigned char *l_cptr = (unsigned char *) &l_dist;
           /* 4-byte back jump */
-          l_dist = -1*(i+6-l_val);  /* recalc the distance assuming 4-bytes */
-          buf[i++] = 0x0f;
-          buf[i++] = 0x8c;
+          if ( i_jmp_instr != LIBXSMM_X86_INSTR_JMP ) {
+             /* We need to recalculate the distance assuming 4+2 bytes total */
+             l_dist = -1*(i+6-l_val); 
+             buf[i++] = 0x0f;
+             buf[i++] = (unsigned char) l_jmptype + 0x10;
+          } else {
+             /* Larger unconditional jumps are 5 bytes in size only */
+             l_dist = -1*(i+5-l_val); 
+             buf[i++] = 0xE9; 
+          }
           buf[i++] = l_cptr[0];
           buf[i++] = l_cptr[1];
           buf[i++] = l_cptr[2];
@@ -4178,12 +4367,46 @@ void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io
     io_jump_label_tracker->label_address[i_label_no] = io_generated_code->code_size;
     /* patching all previous references */
     for ( l_ref = 0; l_ref < l_source.ref_count; ++l_ref ) {
-      unsigned int l_jump_instr = l_source.instr_type[l_ref];
+      unsigned int l_jmp_instr = l_source.instr_type[l_ref];
       unsigned int l_position =   l_source.instr_addr[l_ref];
+      int l_jmptype;
+      int l_tmp;
 
-      LIBXSMM_UNUSED( l_jump_instr );
+      switch ( l_jmp_instr ) {
+        case LIBXSMM_X86_INSTR_JL:
+          l_jmptype = 0x7c;
+          break;
+        case LIBXSMM_X86_INSTR_JE:
+        case LIBXSMM_X86_INSTR_JZ:
+          l_jmptype = 0x74;
+          break;
+        case LIBXSMM_X86_INSTR_JG:
+          l_jmptype = 0x7F;
+          break;
+        case LIBXSMM_X86_INSTR_JNE:
+        case LIBXSMM_X86_INSTR_JNZ:
+          l_jmptype = 0x75;
+          break;
+        case LIBXSMM_X86_INSTR_JGE:
+          l_jmptype = 0x7D;
+          break;
+        case LIBXSMM_X86_INSTR_JLE:
+          l_jmptype = 0x7E;
+          break;
+        case LIBXSMM_X86_INSTR_JMP:
+          l_jmptype = 0xEB;
+          break;
+        default:
+          LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUPPORTED_JUMP );
+          return;
+      }
+      LIBXSMM_UNUSED( l_jmptype );
+      LIBXSMM_UNUSED( l_jmp_instr );
       LIBXSMM_UNUSED( l_position );
       /* @TODO-Greg: Please add patching of code */
+      /* We should just replace this with our internal call: 
+      l_tmp = internal_x86_jumping ( io_generated_code, l_position, ??? , l_jmp_instr );
+      */
     }
   } else {
     char l_new_code[512];
@@ -4235,6 +4458,7 @@ void libxsmm_x86_instruction_jump_to_label( libxsmm_generated_code*     io_gener
       dest_addr = 0;
     } else {
       /* @TODO-Greg, please check */
+      /* This is only right for conditional jumps, otherwise 5 should be used */
       dest_addr = io_generated_code->code_size+6 - io_jump_label_tracker->label_address[i_label_no];
     }
     /* @TODO-Greg, please add jit of i_jmp_instr */

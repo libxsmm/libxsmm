@@ -250,6 +250,7 @@
 #define LIBXSMM_X86_INSTR_JNZ            30021
 #define LIBXSMM_X86_INSTR_JGE            30022
 #define LIBXSMM_X86_INSTR_JLE            30023
+#define LIBXSMM_X86_INSTR_JMP            30024
 
 /* Mask move instructions */
 #define LIBXSMM_X86_INSTR_KMOV           40000
