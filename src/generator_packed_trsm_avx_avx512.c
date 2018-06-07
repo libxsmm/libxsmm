@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Greg Henry, Hans Pabst (Intel Corp.)
+/* Alexander Heinecke, Greg Henry, Hans Pabst, Timothy Costa (Intel Corp.)
 ******************************************************************************/
 #include "generator_packed_trsm_avx_avx512.h"
 #include "generator_x86_instructions.h"
