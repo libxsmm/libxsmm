@@ -79,15 +79,15 @@ int internal_x86_instructions_add_offset(const unsigned int i_place1,
  * This routine is for the jump jit code. All jumps have similar patterns.
  * Back jumps can be computed immediately because the source and dest is known
  * Forward jumps can be estimated as 4-byte jumps taking 5 or 6 bytes in total
- * i_src_location: location of the start of the jump instruction. It's passed 
- *     in as it may have nothing to do with the last location coded in our jit 
+ * i_src_location: location of the start of the jump instruction. It's passed
+ *     in as it may have nothing to do with the last location coded in our jit
  *     stream. For backward jumps, it's probably io_generated_code->code_size
- * i_dest_location: location of the start of the target destination we are 
- *     jumping to, or -1 if it's a forward jump and currently unknown 
+ * i_dest_location: location of the start of the target destination we are
+ *     jumping to, or -1 if it's a forward jump and currently unknown
  * i_jmp_instr is one of the jump instructions we support
  * This function returns the number of bytes it uses, or 0 if it fails
  */
-LIBXSMM_API_INLINE 
+LIBXSMM_API_INLINE
 int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
                           int i_src_location,
                           int i_dest_location,
@@ -139,14 +139,14 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
      fprintf(stderr,"How can the source of the jump itself be an instruction far beyond where we've jitted? Something is really strange here src=%d loc=%d\n",i_src_location,io_generated_code->code_size);
      exit(-1);
   }
-  
+
   if ( i_dest_location < 0 )
-  {  
+  {
      /* Must be a forward jump and we don't yet know it's dest location */
      if ( i_jmp_instr == LIBXSMM_X86_INSTR_JMP ) {
         buf[i_src_location] == 0xe9;
         /* FIll-in zeros for now, this routine has to be called again: */
-        buf[i_src_location+1] = 0x00; 
+        buf[i_src_location+1] = 0x00;
         buf[i_src_location+2] = 0x00;
         buf[i_src_location+3] = 0x00;
         buf[i_src_location+4] = 0x00;
@@ -155,17 +155,17 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
         buf[i_src_location] = 0x0f;
         buf[i_src_location+1] = (unsigned char) l_jmptype + 0x10;
         /* FIll-in zeros for now, this routine has to be called again: */
-        buf[i_src_location+2] = 0x00; 
-        buf[i_src_location+3] = 0x00; 
-        buf[i_src_location+4] = 0x00; 
-        buf[i_src_location+5] = 0x00; 
+        buf[i_src_location+2] = 0x00;
+        buf[i_src_location+3] = 0x00;
+        buf[i_src_location+4] = 0x00;
+        buf[i_src_location+5] = 0x00;
         return 6;
      }
-  } 
+  }
 
   /* Make sure we aren't trying to jump to the same location as the original jump instruction */
   if ( i_src_location==i_dest_location || (i_src_location==i_dest_location+1) )
-  { 
+  {
      fprintf(stderr,"i_src_location=%d is physically too close to i_dest_location=%d\n",i_src_location,i_dest_location);
      exit(-1);
   }
@@ -204,7 +204,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
         }
      }
   } else {
-     /* Must be a 4 or 5 byte forward jump with all locations known */ 
+     /* Must be a 4 or 5 byte forward jump with all locations known */
      if ( i_jmp_instr == LIBXSMM_X86_INSTR_JMP ) {
         /* l_cptr better point to l_dist and l_dist needs to be recalced */
         l_dist = (i_dest_location-i_src_location-5);
@@ -225,7 +225,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
         buf[i_src_location+5] = l_cptr[3];
         return 6;
      }
-  } 
+  }
 }
 
 LIBXSMM_API_INTERN
