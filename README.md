@@ -59,6 +59,12 @@ A variety of build environments is out-of-the-box compatible, see [https://githu
 make COMPATIBLE=1
 ```
 
+In case of outdated Binutils, compilation can fail to assemble code when building the library (this has nothing to do with JIT-generated code and it does not affect how JIT-code is targeting the system). To workaround failing compilation, `INTRINSICS=1` can be used to statically depend on the desired target e.g., `AVX=3 MIC=0`, or `AVX=2`. If the target is omitted, the default target flags are used:
+
+```bash
+make INTRINSICS=1
+```
+
 To test and validate a build, please consult [https://github.com/hfp/libxsmm/wiki/Validation](https://github.com/hfp/libxsmm/wiki/Validation). To run some basic sanity checks, remember that each set of given key-value pairs represents a different build (and test):
 
 ```bash
