@@ -1532,6 +1532,9 @@ realclean-all: realclean
 	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
 		"$(MAKE) --no-print-directory realclean 2>/dev/null || true" \;
 
+.PHONY: distclean
+distclean: realclean-all
+
 # Dummy prefix
 ifneq (,$(strip $(PREFIX)))
 INSTALL_ROOT = $(PREFIX)
