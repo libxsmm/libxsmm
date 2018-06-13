@@ -988,21 +988,23 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
         if (name && *name) { /* profiler support requested */
           if (0 > libxsmm_verbosity) { /* avoid dump when only the profiler is enabled */
             FILE* code_file = fopen(name, "rb");
-            size_t check_size = 0;
-            if (NULL != code_file) {
-              fseek(code_file, 0L, SEEK_END);
-              check_size = (size_t)ftell(code_file);
-              fclose(code_file);
-            }
-            if (0 == check_size) { /* file does not exist yet */
+            size_t check_size = size;
+            if (NULL == code_file) { /* file does not exist */
               code_file = fopen(name, "wb");
-              if (NULL != code_file) { /* dump byte-code into a file and print function pointer and filename */
-                fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", code_ptr, name);
+              if (NULL != code_file) { /* dump byte-code into a file */
                 fwrite(code_ptr, 1, size, code_file);
                 fclose(code_file);
               }
             }
-            else if (check_size != size) {
+            else { /* check size of existing file */
+              fseek(code_file, 0L, SEEK_END);
+              check_size = (size_t)ftell(code_file);
+              fclose(code_file);
+            }
+            if (size == check_size) { /* print function pointer and filename */
+              fprintf(stderr, "LIBXSMM-JIT-DUMP(ptr:file) %p : %s\n", code_ptr, name);
+            }
+            else { /* should never happen */
               fprintf(stderr, "LIBXSMM ERROR: %s is shared by different code!\n", name);
             }
           }
