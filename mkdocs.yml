@@ -1,6 +1,7 @@
 docs_dir: documentation
-theme: readthedocs
-theme_dir: .theme
+theme:
+    name: readthedocs
+    custom_dir: .theme
 markdown_extensions:
 - toc:
     permalink: True
