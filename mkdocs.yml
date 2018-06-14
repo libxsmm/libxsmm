@@ -5,10 +5,10 @@ markdown_extensions:
 - toc:
     permalink: True
     title: None
-extra_javascript:
-- search.js
+#extra_javascript:
+#- search.js
 extra_css:
-- style.css
+- css/style.css
 
 site_name: LIBXSMM
 site_author: Hans Pabst
