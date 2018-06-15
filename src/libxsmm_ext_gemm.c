@@ -213,6 +213,16 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       || LIBXSMM_NEQ(0 == (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 1 : 0, *beta))
 #endif
     {
+#if defined(_DEBUG)
+      const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
+      const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+      const size_t size = (*ldc) * (*n) * sizeof(double);
+      void* d = NULL;
+      if (LIBXSMM_NEQ(0, check)) {
+        d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_SCRATCH_INTERNAL);
+        if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
+      }
+#endif
       if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
         libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
       }
@@ -220,27 +230,20 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
         libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
       }
 #if defined(_DEBUG)
-      {
-        const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
-        const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
-        if (LIBXSMM_NEQ(0, check)) {
-          const size_t size = (*ldc) * (*n) * sizeof(double);
-          void *const d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_SCRATCH_INTERNAL);
-          libxsmm_matdiff_info diff;
-          if (LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy original destination */
-          libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, ldc);
-          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F64, *m, *n, d, c, ldc, ldc, &diff)
-            && check < 100.0 * diff.normf_rel)
-          {
-            LIBXSMM_STDIO_ACQUIRE();
-            fprintf(stderr, "LIBXSMM: ");
-            libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F64, transa, transb,
-              m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-            fprintf(stderr, " => %f%% ERROR\n", 100.0 * diff.normf_rel);
-            LIBXSMM_STDIO_RELEASE();
-          }
-          libxsmm_free(d);
+      if (NULL != d) {
+        libxsmm_matdiff_info diff;
+        libxsmm_blas_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, ldc);
+        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F64, *m, *n, d, c, ldc, ldc, &diff)
+          && check < 100.0 * diff.normf_rel)
+        {
+          LIBXSMM_STDIO_ACQUIRE();
+          fprintf(stderr, "LIBXSMM: ");
+          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F64, transa, transb,
+            m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+          fprintf(stderr, " => %f%% ERROR\n", 100.0 * diff.normf_rel);
+          LIBXSMM_STDIO_RELEASE();
         }
+        libxsmm_free(d);
       }
 #endif
 #if defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD_EXT)
@@ -350,6 +353,16 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       || LIBXSMM_NEQ(0 == (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 1 : 0, *beta))
 #endif
     {
+#if defined(_DEBUG)
+      const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
+      const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+      const size_t size = (*ldc) * (*n) * sizeof(float);
+      void* d = NULL;
+      if (LIBXSMM_NEQ(0, check)) {
+        d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_SCRATCH_INTERNAL);
+        if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
+      }
+#endif
       if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
         libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
       }
@@ -357,27 +370,20 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
         libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
       }
 #if defined(_DEBUG)
-      {
-        const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
-        const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
-        if (LIBXSMM_NEQ(0, check)) {
-          const size_t size = (*ldc) * (*n) * sizeof(float);
-          void *const d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_SCRATCH_INTERNAL);
-          libxsmm_matdiff_info diff;
-          if (LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy original destination */
-          libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, ldc);
-          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F32, *m, *n, d, c, ldc, ldc, &diff)
-            && check < 100.0 * diff.normf_rel)
-          {
-            LIBXSMM_STDIO_ACQUIRE();
-            fprintf(stderr, "LIBXSMM: ");
-            libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F32, transa, transb,
-              m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-            fprintf(stderr, " => %f%% ERROR\n", 100.0 * diff.normf_rel);
-            LIBXSMM_STDIO_RELEASE();
-          }
-          libxsmm_free(d);
+      if (NULL != d) {
+        libxsmm_matdiff_info diff;
+        libxsmm_blas_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, d, ldc);
+        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE_F32, *m, *n, d, c, ldc, ldc, &diff)
+          && check < 100.0 * diff.normf_rel)
+        {
+          LIBXSMM_STDIO_ACQUIRE();
+          fprintf(stderr, "LIBXSMM: ");
+          libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION_F32, transa, transb,
+            m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+          fprintf(stderr, " => %f%% ERROR\n", 100.0 * diff.normf_rel);
+          LIBXSMM_STDIO_RELEASE();
         }
+        libxsmm_free(d);
       }
 #endif
 #if defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD_EXT)
