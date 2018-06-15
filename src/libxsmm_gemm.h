@@ -160,13 +160,13 @@
       const char libxsmm_tiled_xgemm_transb_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'n' : 'T'); \
       const TYPE libxsmm_tiled_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_tiled_xgemm_beta_ = (TYPE)(BETA); \
       if (0 < libxsmm_verbosity) { /* print fallback */ \
-        LIBXSMM_FLOCK(stderr); \
+        LIBXSMM_STDIO_ACQUIRE(); \
         fprintf(stderr, "LIBXSMM FALLBACK: "); \
         libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(TYPE), \
           &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(M), &(N), &(K), \
           &libxsmm_tiled_xgemm_alpha_, 0/*A*/, &(LDA), 0/*B*/, &(LDB), &libxsmm_tiled_xgemm_beta_, 0/*C*/, &(LDC)); \
         fprintf(stderr, "\n"); \
-        LIBXSMM_FUNLOCK(stderr); \
+        LIBXSMM_STDIO_RELEASE(); \
       } \
       else { /* dump matrices */ \
         libxsmm_gemm_print(NULL, LIBXSMM_GEMM_PRECISION(TYPE), \

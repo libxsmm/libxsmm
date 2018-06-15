@@ -426,7 +426,7 @@ LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
       (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & info.flags) ? 'N' : 'T'), (libxsmm_blasint)info.m, (libxsmm_blasint)info.n, (libxsmm_blasint)info.k,
       0 == (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_gemm_batchdesc.flags) ? 1 : 0, a, (libxsmm_blasint)info.lda, b, (libxsmm_blasint)info.ldb,
       0 == (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 1 : 0, c, (libxsmm_blasint)info.ldc);
-    code_pointer.xgemm = kernel; fprintf((FILE*)ostream, " = %p+%u\n", code_pointer.ptr_const, (unsigned int)code_size);
+    code_pointer.xgemm = kernel; fprintf((FILE*)ostream, " = %p+%u", code_pointer.ptr_const, (unsigned int)code_size);
   }
 }
 

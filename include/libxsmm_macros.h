@@ -531,6 +531,10 @@
 # endif
 #endif
 
+/** Synchronize console output */
+#define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)
+#define LIBXSMM_STDIO_RELEASE() LIBXSMM_FLOCK(stderr); LIBXSMM_FLOCK(stdout)
+
 /** Determines whether constant-folding is available or not. */
 #if !defined(LIBXSMM_STRING_POOLING)
 # if defined(__GNUC__) /*&& !defined(_MSC_VER)*/

@@ -929,14 +929,14 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
   static LIBXSMM_TLS unsigned int last_error_code;
   if (i_error_code != last_error_code) {
     if (0 != emit_message) {
-      LIBXSMM_FLOCK(stderr);
+      LIBXSMM_STDIO_ACQUIRE();
       if (0 != context && 0 != *context && '0' != *context) {
         fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
       }
       else {
         fprintf(stderr, "LIBXSMM ERROR: %s\n", libxsmm_strerror(i_error_code));
       }
-      LIBXSMM_FUNLOCK(stderr);
+      LIBXSMM_STDIO_RELEASE();
     }
     last_error_code = i_error_code;
   }
