@@ -134,10 +134,11 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     if (0 != libxsmm_gemm_wrap) {
       const char *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
       const unsigned int batchsize = ((0 == env_b || 0 == *env_b || 0 >= atoi(env_b)) ? (LIBXSMM_GEMM_BATCHSIZE) : atoi(env_b));
+      void *const p = &libxsmm_gemm_batcharray;
       const void *const extra = 0;
       /* draw default/non-scratch memory, but utilize the scratch memory allocator */
       assert(1 < (LIBXSMM_GEMM_BATCHSCALE));
-      if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&libxsmm_gemm_batcharray,
+      if (EXIT_SUCCESS == libxsmm_xmalloc((void**)p,
         (size_t)((LIBXSMM_GEMM_BATCHSCALE) * sizeof(libxsmm_gemm_batchitem) * batchsize),
         0, LIBXSMM_MALLOC_FLAG_SCRATCH, &extra, sizeof(extra)))
       {
