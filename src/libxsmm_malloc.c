@@ -519,8 +519,21 @@ LIBXSMM_API_INLINE void* internal_xmap(const char* dir, size_t size, int flags, 
   int i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/.libxsmm_XXXXXX.jit", dir);
   assert(NULL != rx);
   if (0 <= i && i < (int)sizeof(filename)) {
-    i = mkstemps(filename, 4);
-    if (-1 != i && 0 == unlink(filename) && 0 == ftruncate(i, size)) {
+#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(2, 19) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__)
+    i = mkstemps(filename, 4/*.jit*/);
+#else
+    char *const xpos = strrchr(filename, 'X');
+    const char c = (char)(NULL != xpos ? *(xpos + 1) : 0);
+    if (0 != c) {
+      xpos[1] = 0;
+      i = mkstemp(filename);
+      xpos[1] = c;
+    }
+    else {
+      i = -1;
+    }
+#endif
+    if (0 <= i && 0 == unlink(filename) && 0 == ftruncate(i, size)) {
       void *const xmap = mmap(NULL, size, PROT_READ | PROT_EXEC, flags | MAP_SHARED /*| LIBXSMM_MAP_ANONYMOUS*/, i, 0/*offset*/);
       if (MAP_FAILED != xmap) {
         assert(NULL != xmap);
