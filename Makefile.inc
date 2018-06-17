@@ -823,14 +823,13 @@ else # GCC assumed
     CXXFLAGS += -Wall -Wno-unused-function #-Wno-attributes
     CFLAGS += -Wall -Wno-unused-function #-Wno-attributes
     FSTD = -std=f2003
-    CPEDANTIC += -pedantic -Wextra \
-                 -Wno-overlength-strings -Wno-variadic-macros
+    CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wintrinsics-std \
                  -Wimplicit-interface -Wimplicit-procedure
     ifneq (0,$(shell echo "$$((40500<=$(FC_VERSION)))"))
-      CPEDANTIC += -Wshadow
+      CPEDANTIC += -Wshadow -Wno-overlength-strings
     endif
     ifneq (0,$(shell echo "$$((50000<=$(FC_VERSION)))"))
       FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
