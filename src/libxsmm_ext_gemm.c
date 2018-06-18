@@ -216,9 +216,9 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
 #if defined(_DEBUG)
       const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
       const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
-      const size_t size = (*ldc) * (*n) * sizeof(double);
       void* d = NULL;
       if (LIBXSMM_NEQ(0, check)) {
+        const size_t size = (*ldc) * (*n) * sizeof(double);
         d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_SCRATCH_INTERNAL);
         if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
       }
@@ -356,9 +356,9 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
 #if defined(_DEBUG)
       const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
       const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
-      const size_t size = (*ldc) * (*n) * sizeof(float);
       void* d = NULL;
       if (LIBXSMM_NEQ(0, check)) {
+        const size_t size = (*ldc) * (*n) * sizeof(float);
         d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_SCRATCH_INTERNAL);
         if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
       }
