@@ -3285,6 +3285,26 @@ void libxsmm_x86_instruction_vec_shuffle_reg( libxsmm_generated_code* io_generat
           buf[i++] = (unsigned char)(0x72);
           buf[i++] = (unsigned char)(0xf0 + l_vecval0);
           break;
+       case LIBXSMM_X86_INSTR_VPSRLD:
+          if ( i_vec_reg_number_2 != LIBXSMM_X86_VEC_REG_UNDEF )
+          {
+             fprintf(stderr,"libxsmm_x86_instruction_vec_shuffle_reg: VPSRLD requires vec2 be undef\n");
+             exit(-1);
+          }
+          if ( (i_vector_name!='z') && (i_vector_name!='Z') )
+          {
+             fprintf(stderr, "libxsmm_x86_instruction_vec_shuffle_reg: VPSRLD only works for zmm\n");
+             exit(-1);
+          }
+          l_2or3grp0 = (l_vecgrp0>=2);
+          l_2or3grp1 = (l_vecgrp1>=2);
+          buf[i++] = (unsigned char)(0x62);
+          buf[i++] = (unsigned char)(0xf1 - l_oddgrp0 * 0x20 - l_2or3grp0 * 0x40);
+          buf[i++] = (unsigned char)(0x7d - l_oddgrp1 * 0x40 - l_vecval1*8);
+          buf[i++] = (unsigned char)(0x48 - l_2or3grp1 * 0x08);
+          buf[i++] = (unsigned char)(0x72);
+          buf[i++] = (unsigned char)(0xd0 + l_vecval0);
+          break;
        case LIBXSMM_X86_INSTR_VSHUFF64X2:
           l_2or3grp0 = (l_vecgrp0>=2);
           l_2or3grp1 = (l_vecgrp1>=2);
