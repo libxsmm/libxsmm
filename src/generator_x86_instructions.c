@@ -1484,6 +1484,18 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           l_fpadj += 0x96;
           l_fpadj2 += 0x80;
           break;
+       case LIBXSMM_X86_INSTR_VPORD:
+          l_bytes = 6;
+          if ( i_vector_name == 'x' )
+          {
+             l_fourth -= 0x40;
+          } else if ( i_vector_name == 'y' )
+          {
+             l_fourth -= 0x20;
+          }
+          l_fpadj += 0x92;
+          l_fpadj2 += 0x80;
+          break;
         case LIBXSMM_X86_INSTR_VPDPWSSD:
           if ( (i_vector_name!='z') && (i_vec_reg_number_0<=15) &&
                (i_vec_reg_number_1<=15) && (i_vec_reg_number_2<=15) )
@@ -2347,6 +2359,21 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           }
           if ( l_broadcast != 0 ) l_sizereg = 4;
           l_fpadj += 0x96;
+          l_fpadj2 += 0x80;
+          break;
+       case LIBXSMM_X86_INSTR_VPORD:
+          l_bytes = 6;
+          if ( i_vector_name == 'x' )
+          {
+             l_fourth -= 0x40;
+             l_sizereg = 16;
+          } else if ( i_vector_name == 'y' )
+          {
+             l_fourth -= 0x20;
+             l_sizereg = 32;
+          }
+          if ( l_broadcast != 0 ) l_sizereg = 4;
+          l_fpadj += 0x92;
           l_fpadj2 += 0x80;
           break;
        case LIBXSMM_X86_INSTR_VPSRAVD:
