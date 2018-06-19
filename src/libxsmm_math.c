@@ -221,14 +221,16 @@ LIBXSMM_API float libxsmm_sexp2_fast(float x, int maxiter)
     1.00001061f, 1.00000525f, 1.00000262f, 1.00000131f, 1.00000072f, 1.00000036f, 1.00000012f
   };
   const int lut_size = sizeof(lut) / sizeof(*lut), lut_size1 = lut_size - 1;
-  const void *const px = &x;
-  const int *const raw = (const int*)px;
-  const int sign = (0 == (*raw & 0x80000000) ? 0 : 1);
-  const int temp = *raw & 0x7FFFFFFF; /* clear sign */
-  const int unbiased = (temp >> 23) - 127; /* exponent */
-  const int exponent = -unbiased;
-  int mantissa = (temp << 8) | 0x80000000;
+  int sign, temp, unbiased, exponent, mantissa;
   union { int i; float s; } result;
+
+  result.s = x;
+  sign = (0 == (result.i & 0x80000000) ? 0 : 1);
+  temp = result.i & 0x7FFFFFFF; /* clear sign */
+  unbiased = (temp >> 23) - 127; /* exponent */
+  exponent = -unbiased;
+  mantissa = (temp << 8) | 0x80000000;
+
   if (lut_size1 >= exponent) {
     if (lut_size1 != exponent) { /* multiple lookups needed */
       if (7 >= unbiased) { /* not a degenerated case */
