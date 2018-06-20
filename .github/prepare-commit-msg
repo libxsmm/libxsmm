@@ -62,7 +62,7 @@ if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no 
     PATTERNS+=$(${ECHO} -e "\nMakefile*")
 
     for FILENAME in $(${GIT} diff --cached --name-only); do
-      if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e '^.gitx/..*' 2>/dev/null)" ]; then
+      if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e '^.github/..*' 2>/dev/null)" ]; then
         exit 0
       fi
       if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e 'version.txt' 2>/dev/null)" ]; then

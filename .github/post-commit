@@ -43,7 +43,7 @@ then
   # lock file must be deleted *prior* to below commit
   ${RM} ${LOCKFILE}-version
   # update the version file
-  .gitx/version.sh > version.txt
+  .github/version.sh > version.txt
   # quietly amend the previous commit
   ${GIT} add version.txt
   ${GIT} commit --amend -C HEAD --no-verify >/dev/null

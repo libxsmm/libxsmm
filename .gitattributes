@@ -1,5 +1,5 @@
 .env export-ignore
-.gitx export-ignore
+.github export-ignore
 .theme export-ignore
 .fullci export-ignore
 .codefile export-ignore

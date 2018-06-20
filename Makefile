@@ -534,11 +534,11 @@ config: $(INCDIR)/libxsmm_config.h
 $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_config.h \
                             $(SCRDIR)/libxsmm_config.py $(SCRDIR)/libxsmm_utilities.py \
                             $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
-                            $(wildcard $(ROOTDIR)/.gitx/*) \
+                            $(wildcard $(ROOTDIR)/.github/*) \
                             $(ROOTDIR)/version.txt
 	$(information)
-	@if [ -e $(ROOTDIR)/.gitx/install.sh ]; then \
-		$(ROOTDIR)/.gitx/install.sh; \
+	@if [ -e $(ROOTDIR)/.github/install.sh ]; then \
+		$(ROOTDIR)/.github/install.sh; \
 	fi
 	@$(CP) $(ROOTDIR)/include/libxsmm_bgemm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2>/dev/null || true
