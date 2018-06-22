@@ -7,7 +7,7 @@
 export OMP_NUM_THREADS=28
 export KMP_AFFINITY=granularity=fine,compact,1,0
 export CHECK=1
-ITERS=400
+ITERS=1000
 
 # Initialize Env vars
 export FWD_BF=1
@@ -30,6 +30,7 @@ MB=2016
 BFN=48
 IFM=1024
 OFM=1024
+rm -f FWD_TUNING_${MB}_${IFM}_${OFM}
 touch FWD_TUNING_${MB}_${IFM}_${OFM}
 
 THREADS=28
@@ -38,7 +39,7 @@ export FWD_2D_BLOCKING=0
 for BFM in 32 64; do
   for BFACC in 1 2 4 8; do
     export FWD_BF=${BFACC}
-    srun -n 1 ./layer_example_bf16 ${ITERS} ${MB} ${IFM} ${OFM} 0 F B ${BFN} ${BFM} ${BFM} >> FWD_TUNING_${MB}_${IFM}_${OFM}
+    ./layer_example_bf16 ${ITERS} ${MB} ${IFM} ${OFM} 0 F B ${BFN} ${BFM} ${BFM} >> FWD_TUNING_${MB}_${IFM}_${OFM}
   done
 done
 
@@ -50,7 +51,7 @@ for ROWS in 7 14; do
   for BFM in 32 64; do
     for BFACC in 1 2 4 8; do
       export FWD_BF=${BFACC}
-      srun -n 1 ./layer_example_bf16 ${ITERS} ${MB} ${IFM} ${OFM} 0 F B ${BFN} ${BFM} ${BFM} >> FWD_TUNING_${MB}_${IFM}_${OFM}
+      ./layer_example_bf16 ${ITERS} ${MB} ${IFM} ${OFM} 0 F B ${BFN} ${BFM} ${BFM} >> FWD_TUNING_${MB}_${IFM}_${OFM}
     done
   done
 done
