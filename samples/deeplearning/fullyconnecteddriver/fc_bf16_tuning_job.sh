@@ -7,7 +7,7 @@
 export OMP_NUM_THREADS=28
 export KMP_AFFINITY=granularity=fine,compact,1,0
 export CHECK=1
-ITERS=10
+ITERS=1000
 
 # Initialize Env vars
 export FWD_BF=1
@@ -27,7 +27,7 @@ export OFM_SUBTASKS=1
 
 # Tune FWD
 MB=2016
-BFN=48
+BFN=24
 IFM=1024
 OFM=1024
 
@@ -62,7 +62,7 @@ for PASS in 'FWD' 'BWD' 'UPD'; do
       for OFMSUBTASKS in 1 2; do
         export OFM_SUBTASKS=${OFMSUBTASKS}
         for BFM in 32 64; do
-          for BFACC in 1 2; do
+          for BFACC in 1 2 4 7 14 21 42 84; do
             export ${PASS}_BF=${BFACC}
             ./layer_example_bf16 ${ITERS} ${MB} ${IFM} ${OFM} 0 ${PASS_ARG} B ${BFN} ${BFM} ${BFM} >> ${PASS}_TUNING_${MB}_${IFM}_${OFM}
           done
@@ -88,7 +88,7 @@ for PASS in 'FWD' 'BWD' 'UPD'; do
       COLUMNS=$((THREADS / ROWS))
       export ${PASS}_COLUMN_TEAMS=${COLUMNS}
       for BFM in 32 64; do
-        for BFACC in 1 2; do
+        for BFACC in 1 2 4 7 14 21 42 84; do
           export ${PASS}_BF=${BFACC}
           ./layer_example_bf16 ${ITERS} ${MB} ${IFM} ${OFM} 0 ${PASS_ARG} B ${BFN} ${BFM} ${BFM} >> ${PASS}_TUNING_${MB}_${IFM}_${OFM}
         done
