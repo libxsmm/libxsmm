@@ -1459,6 +1459,22 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
           }
           l_bytes = 5;
           break;
+       case LIBXSMM_X86_INSTR_VPERMT2W:
+          l_second += 0x01;
+          l_fpadj  += 0x24;
+          if ( i_vector_name == 'x' )
+          {
+             l_fourth -= 0x40;
+             if ( l_vreg0 >= 16 ) l_fourth -= 0xc0;
+             if ( l_vreg1 >= 16 ) l_fourth -= 0xc0;
+          } else if ( i_vector_name == 'y' )
+          {
+             l_fourth -= 0x20;
+             if ( l_vreg0 >= 16 ) l_fourth += 0x20;
+             if ( l_vreg1 >= 16 ) l_fourth += 0x20;
+          }
+          l_bytes = 6;
+          break;
        case LIBXSMM_X86_INSTR_VFNMSUB231SS:
           if (i_vector_name != 'x') fprintf(stderr, "libxsmm_instruction_vec_compute_reg: VFNMSUB231SS and ymm/zmm?\n");
           l_second += 0x21;
