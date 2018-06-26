@@ -1654,48 +1654,53 @@ endif
 deb:
 	@if [ "" != "$$(which git)" ]; then \
 		VERSION_ARCHIVE=$$(git describe --tags --abbrev=0 2>/dev/null); \
-		if [ "" != "$${VERSION_ARCHIVE}" ]; then \
-			ARCHIVE_AUTHOR_NAME="$$(git config user.name)"; \
-			ARCHIVE_AUTHOR_MAIL="$$(git config user.email)"; \
-			ARCHIVE_DATE="$$(LANG=C date -R)"; \
-			if [ "" != "$${ARCHIVE_AUTHOR_NAME}" ] && [ "" != "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
-				ARCHIVE_AUTHOR="$${ARCHIVE_AUTHOR_NAME} <$${ARCHIVE_AUTHOR_MAIL}>"; \
-			elif [ "" != "$${ARCHIVE_AUTHOR_NAME}" ] || [ "" != "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
+	fi; \
+	if [ "" != "$${VERSION_ARCHIVE}" ]; then \
+		ARCHIVE_AUTHOR_NAME="$$(git config user.name)"; \
+		ARCHIVE_AUTHOR_MAIL="$$(git config user.email)"; \
+		ARCHIVE_DATE="$$(LANG=C date -R)"; \
+		if [ "" != "$${ARCHIVE_AUTHOR_NAME}" ] && [ "" != "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
+			ARCHIVE_AUTHOR="$${ARCHIVE_AUTHOR_NAME} <$${ARCHIVE_AUTHOR_MAIL}>"; \
+		else \
+			echo "Warning: Please git-config user.name and user.email!"; \
+			if [ "" != "$${ARCHIVE_AUTHOR_NAME}" ] || [ "" != "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
 				ARCHIVE_AUTHOR="$${ARCHIVE_AUTHOR_NAME}$${ARCHIVE_AUTHOR_MAIL}"; \
-			fi; \
-			if ! [ -e libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz ]; then \
-				git archive --prefix libxsmm-$${VERSION_ARCHIVE}/ \
-					-o libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz $(VERSION_RELEASE); \
-			fi; \
-			tar xf libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz; \
-			cd libxsmm-$${VERSION_ARCHIVE}; \
-			mkdir -p debian/source; cd debian/source; \
-			echo "3.0 (quilt)" > format; \
-			cd ..; \
-			echo "Source: libxsmm" > control; \
-			echo "Maintainer: $${ARCHIVE_AUTHOR}" >> control; \
-			echo "Priority: optional" >> control; \
-			echo "Build-Depends: debhelper (>= 9)" >> control; \
-			echo "Standards-Version: 3.9.2" >> control; \
-			echo "Section: misc" >> control; \
-			echo >> control; \
-			echo "Package: libxsmm" >> control; \
-			echo "Architecture: amd64" >> control; \
-			echo "Description: Matrix operations and deep learning primitives" >> control; \
-			wget -qO- https://api.github.com/repos/hfp/libxsmm | sed -n 's/ *\"description\": \"\(..*\)\".*/ \1/p' >> control; \
-			echo "libxsmm ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
-			echo >> changelog; \
-			wget -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
-			| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
-			| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
-			| sed -n 's/^* \(..*\)/  * \1/p' >> changelog; \
-			echo >> changelog; \
-			echo " -- $${ARCHIVE_AUTHOR}  $${ARCHIVE_DATE}" >> changelog; \
-			cat $(ROOTDIR)/LICENSE.md > copyright; \
-			echo "#!/usr/bin/make -f" > rules; \
-			echo "%:" >> rules; \
-			echo "	dh $@" >> rules; \
-			echo "10" > compat; \
-			debuild -us -uc; \
-		fi \
+			fi \
+		fi; \
+		if ! [ -e libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz ]; then \
+			git archive --prefix libxsmm-$${VERSION_ARCHIVE}/ \
+				-o libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz $(VERSION_RELEASE); \
+		fi; \
+		tar xf libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz; \
+		cd libxsmm-$${VERSION_ARCHIVE}; \
+		mkdir -p debian/source; cd debian/source; \
+		echo "3.0 (quilt)" > format; \
+		cd ..; \
+		echo "Source: libxsmm" > control; \
+		echo "Maintainer: $${ARCHIVE_AUTHOR}" >> control; \
+		echo "Priority: optional" >> control; \
+		echo "Build-Depends: debhelper (>= 9)" >> control; \
+		echo "Standards-Version: 3.9.2" >> control; \
+		echo "Section: misc" >> control; \
+		echo >> control; \
+		echo "Package: libxsmm" >> control; \
+		echo "Architecture: amd64" >> control; \
+		echo "Description: Matrix operations and deep learning primitives" >> control; \
+		wget -qO- https://api.github.com/repos/hfp/libxsmm | sed -n 's/ *\"description\": \"\(..*\)\".*/ \1/p' >> control; \
+		echo "libxsmm ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
+		echo >> changelog; \
+		wget -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
+		| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
+		| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
+		| sed -n 's/^* \(..*\)/  * \1/p' >> changelog; \
+		echo >> changelog; \
+		echo " -- $${ARCHIVE_AUTHOR}  $${ARCHIVE_DATE}" >> changelog; \
+		cat $(ROOTDIR)/LICENSE.md > copyright; \
+		echo "#!/usr/bin/make -f" > rules; \
+		echo "%:" >> rules; \
+		echo "	dh \$$@" >> rules; \
+		echo "10" > compat; \
+		STATIC=0 debuild -us -uc; \
+	else \
+		echo "Error: Git is unavailable or make-deb runs outside of cloned repository!"; \
 	fi
