@@ -1686,7 +1686,8 @@ deb:
 		echo "Package: libxsmm" >> control; \
 		echo "Architecture: amd64" >> control; \
 		echo "Description: Matrix operations and deep learning primitives" >> control; \
-		wget -qO- https://api.github.com/repos/hfp/libxsmm | sed -n 's/ *\"description\": \"\(..*\)\".*/ \1/p' \
+		wget -qO- https://api.github.com/repos/hfp/libxsmm \
+		| sed -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
 		| fold -s -w 79 | sed -e 's/^/ /' >> control; \
 		echo "libxsmm ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
 		echo >> changelog; \
@@ -1703,7 +1704,7 @@ deb:
 		echo "	dh \$$@" >> rules; \
 		echo "10" > compat; \
 		chmod +x rules; \
-		debuild -e STATIC=0; \
+		debuild -e STATIC=0 -us -uc; \
 	else \
 		echo "Error: Git is unavailable or make-deb runs outside of cloned repository!"; \
 	fi
