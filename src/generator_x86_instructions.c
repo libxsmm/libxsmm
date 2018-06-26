@@ -3436,6 +3436,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
     int l_sizereg = 0;
     int l_instr_offset = 0;
     int l_instr_offset2 = 0;
+    int l_forced_offset = 0;
 
     if ( l_maxsize - i < 20 )
     {
@@ -3502,7 +3503,11 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
       buf[i++] = (unsigned char)(0x92 + l_instr_offset2);
       buf[i++] = (unsigned char)(0x04 + l_vecval1 * 8);
       buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_vecval0 * 8);
-      i += internal_x86_instructions_add_offset( i-2, i, i_displacement, 0, l_sizereg, buf );
+      if ( (l_regbas0 == 5) && (i_displacement==0) )
+      {
+          l_forced_offset = 1;
+      }
+      i += internal_x86_instructions_add_offset( i-2, i, i_displacement, l_forced_offset, l_sizereg, buf );
 
       io_generated_code->code_size = i;
       /* *loc = i; */
