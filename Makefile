@@ -13,8 +13,7 @@ ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 endif
 endif
 
-#ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
+ROOTDIR = $(abspath $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/))
 SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
 TSTDIR = $(ROOTDIR)/tests
@@ -210,6 +209,8 @@ VERSION_MAJOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 1)
 VERSION_MINOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 2)
 VERSION_UPDATE ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 3)
 VERSION_API ?= $(VERSION_MAJOR)
+VERSION_RELEASE ?= HEAD
+VERSION_PACKAGE ?= 1
 
 # target library for a broad range of systems
 ifneq (0,$(JIT))
@@ -1649,3 +1650,52 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@$(CP) -v .state $(INSTALL_ROOT)/$(PDOCDIR)/artifacts/make.txt
 endif
 
+.PHONY: deb
+deb:
+	@if [ "" != "$$(which git)" ]; then \
+		VERSION_ARCHIVE=$$(git describe --tags --abbrev=0 2>/dev/null); \
+		if [ "" != "$${VERSION_ARCHIVE}" ]; then \
+			ARCHIVE_AUTHOR_NAME="$$(git config user.name)"; \
+			ARCHIVE_AUTHOR_MAIL="$$(git config user.email)"; \
+			ARCHIVE_DATE="$$(LANG=C date -R)"; \
+			if [ "" != "$${ARCHIVE_AUTHOR_NAME}" ] && [ "" != "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
+				ARCHIVE_AUTHOR="$${ARCHIVE_AUTHOR_NAME} <$${ARCHIVE_AUTHOR_MAIL}>"; \
+			elif [ "" != "$${ARCHIVE_AUTHOR_NAME}" ] || [ "" != "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
+				ARCHIVE_AUTHOR="$${ARCHIVE_AUTHOR_NAME}$${ARCHIVE_AUTHOR_MAIL}"; \
+			fi; \
+			if ! [ -e libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz ]; then \
+				git archive --prefix libxsmm-$${VERSION_ARCHIVE}/ \
+					-o libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz $(VERSION_RELEASE); \
+			fi; \
+			tar xf libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz; \
+			cd libxsmm-$${VERSION_ARCHIVE}; \
+			mkdir -p debian/source; cd debian/source; \
+			echo "3.0 (quilt)" > format; \
+			cd ..; \
+			echo "Source: libxsmm" > control; \
+			echo "Maintainer: $${ARCHIVE_AUTHOR}" >> control; \
+			echo "Priority: optional" >> control; \
+			echo "Build-Depends: debhelper (>= 9)" >> control; \
+			echo "Standards-Version: 3.9.2" >> control; \
+			echo "Section: misc" >> control; \
+			echo >> control; \
+			echo "Package: libxsmm" >> control; \
+			echo "Architecture: amd64" >> control; \
+			echo "Description: Matrix operations and deep learning primitives" >> control; \
+			wget -qO- https://api.github.com/repos/hfp/libxsmm | sed -n 's/ *\"description\": \"\(..*\)\".*/ \1/p' >> control; \
+			echo "libxsmm ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
+			echo >> changelog; \
+			wget -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
+			| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
+			| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
+			| sed -n 's/^* \(..*\)/  * \1/p' >> changelog; \
+			echo >> changelog; \
+			echo " -- $${ARCHIVE_AUTHOR}  $${ARCHIVE_DATE}" >> changelog; \
+			cat $(ROOTDIR)/LICENSE.md > copyright; \
+			echo "#!/usr/bin/make -f" > rules; \
+			echo "%:" >> rules; \
+			echo "	dh $@" >> rules; \
+			echo "10" > compat; \
+			debuild -us -uc; \
+		fi \
+	fi
