@@ -1680,19 +1680,21 @@ deb:
 		echo "Maintainer: $${ARCHIVE_AUTHOR}" >> control; \
 		echo "Priority: optional" >> control; \
 		echo "Build-Depends: debhelper (>= 9)" >> control; \
-		echo "Standards-Version: 3.9.2" >> control; \
+		echo "Standards-Version: 3.9.8" >> control; \
 		echo "Section: misc" >> control; \
 		echo >> control; \
 		echo "Package: libxsmm" >> control; \
 		echo "Architecture: amd64" >> control; \
 		echo "Description: Matrix operations and deep learning primitives" >> control; \
-		wget -qO- https://api.github.com/repos/hfp/libxsmm | sed -n 's/ *\"description\": \"\(..*\)\".*/ \1/p' >> control; \
+		wget -qO- https://api.github.com/repos/hfp/libxsmm | sed -n 's/ *\"description\": \"\(..*\)\".*/ \1/p' \
+		| fold -s -w 79 | sed -e 's/^/ /' >> control; \
 		echo "libxsmm ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
 		echo >> changelog; \
 		wget -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
 		| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
 		| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
-		| sed -n 's/^* \(..*\)/  * \1/p' >> changelog; \
+		| sed -n 's/^\* \(..*\)/\* \1/p' \
+		| fold -s -w 78 | sed -e 's/^/  /g' -e 's/^  \* /\* /' -e 's/^/  /' >> changelog; \
 		echo >> changelog; \
 		echo " -- $${ARCHIVE_AUTHOR}  $${ARCHIVE_DATE}" >> changelog; \
 		cat $(ROOTDIR)/LICENSE.md > copyright; \
@@ -1700,7 +1702,8 @@ deb:
 		echo "%:" >> rules; \
 		echo "	dh \$$@" >> rules; \
 		echo "10" > compat; \
-		STATIC=0 debuild -us -uc; \
+		chmod +x rules; \
+		debuild -e STATIC=0; \
 	else \
 		echo "Error: Git is unavailable or make-deb runs outside of cloned repository!"; \
 	fi
