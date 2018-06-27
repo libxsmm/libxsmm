@@ -416,9 +416,9 @@ lib: headers drytest lib_hst lib_mic
 .PHONY: libs
 libs: lib
 ifneq (0,$(STATIC))
-	@$(MAKE) --no-print-directory lib STATIC=1
+	@$(MAKE) --no-print-directory lib STATIC=0
 else
-	@$(MAKE) --no-print-directory lib
+	@$(MAKE) --no-print-directory lib STATIC=1
 endif
 
 .PHONY: all
