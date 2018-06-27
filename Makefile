@@ -106,9 +106,13 @@ endif
 # Determines if the library is thread-safe
 THREADS ?= 1
 
-# 0: produces shared library files suitable for dynamic linkage
-# 1: produces library archives suitable for static linkage
+# 0: shared libraries files suitable for dynamic linkage
+# 1: library archives suitable for static linkage
 STATIC ?= 1
+
+# 0: build according to the value of STATIC
+# 1: build according to STATIC=0 and STATIC=1
+SHARED ?= 0
 
 # Determines if the library can act as a wrapper-library (GEMM)
 # 1: enables wrapping SGEMM/DGEMM, and GEMV (depends on "GEMM")
@@ -388,9 +392,17 @@ endif
 
 .PHONY: libxsmm
 ifeq (0,$(COMPATIBLE))
+ifeq (0,$(SHARED))
 libxsmm: lib generator
 else
+libxsmm: libs generator
+endif
+else
+ifeq (0,$(SHARED))
 libxsmm: lib
+else
+libxsmm: libs
+endif
 endif
 	$(information)
 ifneq (,$(strip $(LIBJITPROFILING)))
@@ -400,6 +412,11 @@ endif
 
 .PHONY: lib
 lib: headers drytest lib_hst lib_mic
+
+.PHONY: libs
+libs:
+	@$(FLOCK) $(BLDDIR) "$(MAKE) --no-print-directory STATIC=0"
+	@$(FLOCK) $(BLDDIR) "$(MAKE) --no-print-directory"
 
 .PHONY: all
 all: libxsmm samples
@@ -1715,7 +1732,7 @@ deb:
 		chmod +x rules; \
 		debuild \
 			-e PREFIX=usr \
-			-e STATIC=0 \
+			-e SHARED=1 \
 			-us -uc; \
 	else \
 		echo "Error: Git is unavailable or make-deb runs outside of cloned repository!"; \
