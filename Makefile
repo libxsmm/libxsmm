@@ -25,13 +25,13 @@ BINDIR = bin
 DOCDIR = documentation
 
 # subdirectories for prefix based installation
-PINCDIR = $(INCDIR)
-POUTDIR = $(OUTDIR)
-PBINDIR = $(BINDIR)
-PTSTDIR = tests
-PDOCDIR = share/libxsmm
-LICFDIR = $(PDOCDIR)
-LICFILE = LICENSE.md
+PINCDIR ?= $(INCDIR)
+POUTDIR ?= $(OUTDIR)
+PBINDIR ?= $(BINDIR)
+PTSTDIR ?= tests
+PDOCDIR ?= share/libxsmm
+LICFDIR ?= $(PDOCDIR)
+LICFILE ?= LICENSE.md
 
 # initial default flags: RPM_OPT_FLAGS are usually NULL
 CFLAGS = $(RPM_OPT_FLAGS)
