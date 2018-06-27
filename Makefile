@@ -414,9 +414,12 @@ endif
 lib: headers drytest lib_hst lib_mic
 
 .PHONY: libs
-libs:
-	@$(FLOCK) $(BLDDIR) "$(MAKE) -f $(ROOTDIR)/Makefile --no-print-directory STATIC=0"
-	@$(FLOCK) $(BLDDIR) "$(MAKE) -f $(ROOTDIR)/Makefile --no-print-directory"
+libs: lib
+ifneq (0,$(STATIC))
+	@$(MAKE) --no-print-directory lib STATIC=1
+else
+	@$(MAKE) --no-print-directory lib
+endif
 
 .PHONY: all
 all: libxsmm samples
