@@ -30,6 +30,7 @@ POUTDIR = $(OUTDIR)
 PBINDIR = $(BINDIR)
 PTSTDIR = tests
 PDOCDIR = share/libxsmm
+LICFILE = LICENSE.md
 
 # initial default flags: RPM_OPT_FLAGS are usually NULL
 CFLAGS = $(RPM_OPT_FLAGS)
@@ -203,7 +204,7 @@ endif
 DOCEXT = pdf
 
 # state to be excluded from tracking the (re-)build state
-EXCLUDE_STATE = BLAS_WARNING PREFIX
+EXCLUDE_STATE = BLAS_WARNING PREFIX DESTDIR
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
@@ -354,7 +355,7 @@ endif
 
 information = \
 	$(info ================================================================================) \
-	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py)) \
+	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py) (STATIC=$(STATIC))) \
 	$(info --------------------------------------------------------------------------------) \
 	$(info $(GINFO)) \
 	$(info $(CINFO)) \
@@ -1556,11 +1557,17 @@ realclean-all: realclean
 .PHONY: distclean
 distclean: realclean-all
 
-# Dummy prefix
 ifneq (,$(strip $(PREFIX)))
 INSTALL_ROOT = $(PREFIX)
 else
 INSTALL_ROOT = .
+endif
+ifeq ($(dir .),$(dir $(INSTALL_ROOT)))
+ifneq (,$(strip $(DESTDIR)))
+INSTALL_ROOT := $(abspath $(DESTDIR)/$(INSTALL_ROOT))
+else
+INSTALL_ROOT := $(abspath $(INSTALL_ROOT))
+endif
 endif
 
 .PHONY: install-minimal
@@ -1632,7 +1639,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/version.txt $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/CONTRIBUTING.md $(INSTALL_ROOT)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/LICENSE.md $(INSTALL_ROOT)/$(PDOCDIR)
+	@$(CP) -v $(ROOTDIR)/LICENSE.md $(INSTALL_ROOT)/$(PDOCDIR)/$(LICFILE)
 endif
 
 .PHONY: install-all
@@ -1721,7 +1728,6 @@ deb:
 		| fold -s -w 78 | sed -e 's/^/  /g' -e 's/^  \* /\* /' -e 's/^/  /' -e 's/\s\s*$$//' >> changelog; \
 		echo >> changelog; \
 		echo " -- $${ARCHIVE_AUTHOR}  $${ARCHIVE_DATE}" >> changelog; \
-		cat $(ROOTDIR)/LICENSE.md > copyright; \
 		echo "#!/usr/bin/make -f" > rules; \
 		echo "export DH_VERBOSE = 1" >> rules; \
 		echo >> rules; \
@@ -1735,7 +1741,10 @@ deb:
 		chmod +x rules; \
 		debuild \
 			-e PREFIX=debian/libxsmm/usr \
+			-e PDOCDIR=share/doc/libxsmm \
+			-e LICFILE=copyright \
 			-e SHARED=1 \
+			-e SYM=1 \
 			-us -uc; \
 	else \
 		echo "Error: Git is unavailable or make-deb runs outside of cloned repository!"; \
