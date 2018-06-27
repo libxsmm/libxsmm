@@ -1734,7 +1734,7 @@ deb:
 		echo "9" > compat; \
 		chmod +x rules; \
 		debuild \
-			-e PREFIX=usr \
+			-e PREFIX=debian/libxsmm/usr \
 			-e SHARED=1 \
 			-us -uc; \
 	else \

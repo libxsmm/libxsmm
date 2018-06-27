@@ -1067,11 +1067,14 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
           #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
           CTARGET = -tp=nehalem
         endif
-        ifneq (30,$(GCC)$(STATIC))
-          CTARGET ?= -msse4.2
-        else
+        ifeq (3,$(GCC))
+        ifeq (0,$(STATIC))
+          CTARGET ?= -msse3
+        else ifneq (0,$(SHARED)) 
           CTARGET ?= -msse3
         endif
+        endif
+        CTARGET ?= -msse4.2
       else # perhaps better to use TARGET flag directly
         CTARGET = -msse$(SSE)
       endif
