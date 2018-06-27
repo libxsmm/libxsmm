@@ -1745,9 +1745,11 @@ deb:
 			-e PDOCDIR=share/doc/libxsmm \
 			-e LICFILE=copyright \
 			-e LICFDIR=../.. \
+			-e SONAMELNK=0 \
 			-e SHARED=1 \
 			-e SYM=1 \
 			-us -uc; \
 	else \
 		echo "Error: Git is unavailable or make-deb runs outside of cloned repository!"; \
 	fi
+
