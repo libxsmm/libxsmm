@@ -415,8 +415,8 @@ lib: headers drytest lib_hst lib_mic
 
 .PHONY: libs
 libs:
-	@$(FLOCK) $(BLDDIR) "$(MAKE) --no-print-directory STATIC=0"
-	@$(FLOCK) $(BLDDIR) "$(MAKE) --no-print-directory"
+	@$(FLOCK) $(BLDDIR) "$(MAKE) -f $(ROOTDIR)/Makefile --no-print-directory STATIC=0"
+	@$(FLOCK) $(BLDDIR) "$(MAKE) -f $(ROOTDIR)/Makefile --no-print-directory"
 
 .PHONY: all
 all: libxsmm samples
