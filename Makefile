@@ -1611,7 +1611,6 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/version.txt $(INSTALL_ROOT)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/CODE_OF_CONDUCT.md $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/CONTRIBUTING.md $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/LICENSE.md $(INSTALL_ROOT)/$(PDOCDIR)
 endif
@@ -1677,34 +1676,47 @@ deb:
 		echo "3.0 (quilt)" > format; \
 		cd ..; \
 		echo "Source: libxsmm" > control; \
+		echo "Section: libs" >> control; \
+		echo "Homepage: https://github.com/hfp/libxsmm" >> control; \
+		echo "Vcs-Git: https://github.com/hfp/libxsmm/libxsmm.git" >> control; \
 		echo "Maintainer: $${ARCHIVE_AUTHOR}" >> control; \
 		echo "Priority: optional" >> control; \
 		echo "Build-Depends: debhelper (>= 9)" >> control; \
 		echo "Standards-Version: 3.9.8" >> control; \
-		echo "Section: misc" >> control; \
 		echo >> control; \
 		echo "Package: libxsmm" >> control; \
+		echo "Section: libs" >> control; \
 		echo "Architecture: amd64" >> control; \
+		echo "Depends: \$${shlibs:Depends}, \$${misc:Depends}" >> control; \
 		echo "Description: Matrix operations and deep learning primitives" >> control; \
 		wget -qO- https://api.github.com/repos/hfp/libxsmm \
 		| sed -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
-		| fold -s -w 79 | sed -e 's/^/ /' >> control; \
+		| fold -s -w 79 | sed -e 's/^/ /' -e 's/\s\s*$$//' >> control; \
 		echo "libxsmm ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
 		echo >> changelog; \
 		wget -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
 		| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
 		| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
 		| sed -n 's/^\* \(..*\)/\* \1/p' \
-		| fold -s -w 78 | sed -e 's/^/  /g' -e 's/^  \* /\* /' -e 's/^/  /' >> changelog; \
+		| fold -s -w 78 | sed -e 's/^/  /g' -e 's/^  \* /\* /' -e 's/^/  /' -e 's/\s\s*$$//' >> changelog; \
 		echo >> changelog; \
 		echo " -- $${ARCHIVE_AUTHOR}  $${ARCHIVE_DATE}" >> changelog; \
 		cat $(ROOTDIR)/LICENSE.md > copyright; \
 		echo "#!/usr/bin/make -f" > rules; \
+		echo "export DH_VERBOSE = 1" >> rules; \
+		echo >> rules; \
 		echo "%:" >> rules; \
 		echo "	dh \$$@" >> rules; \
-		echo "10" > compat; \
+		echo >> rules; \
+		echo "override_dh_auto_install:" >> rules; \
+        echo "	dh_auto_install -- prefix=/usr" >> rules; \
+		echo >> rules; \
+		echo "9" > compat; \
 		chmod +x rules; \
-		debuild -e STATIC=0 -us -uc; \
+		debuild \
+			-e PREFIX=usr \
+			-e STATIC=0 \
+			-us -uc; \
 	else \
 		echo "Error: Git is unavailable or make-deb runs outside of cloned repository!"; \
 	fi
