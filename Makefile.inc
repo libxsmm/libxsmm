@@ -199,9 +199,9 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 # Embedd soname into shared library
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
-    soname = -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5) \
-             $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5)) \
-             $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
+    soname = -o $1 -Wl,-soname=$(strip $(notdir $1).$5) \
+             $(shell cd $(dir $1) && ln -fs $(notdir $1)    $(notdir $1.$5) \
+                                  && ln -fs $(notdir $1.$5) $(notdir $1.$2.$3.$4))
   else # MinGW
     soname = -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
   endif
@@ -1006,6 +1006,14 @@ endif
 
 ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3>$(DBG)))"))
+  ifeq (3,$(GCC))
+  ifeq (0,$(STATIC))
+    CTARGET = -msse3
+  else ifneq (0,$(SHARED)) 
+    CTARGET = -msse3
+  endif
+  endif
+  ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((2<=$(AVX)))"))
     ifeq (3,$(AVX))
     ifneq (0,$(shell echo "$$(((0!=$(CLANG) && 40000<=$(CC_VERSION)) || 50000<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
@@ -1050,7 +1058,7 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
       CTARGET ?= -msse4.2
     else ifeq (2,$(SSE))
       # implicitly present (64-bit ABI)
-    else #ifneq (30,$(GCC)$(STATIC))
+    else
       ifeq (3,$(SSE))
         ifneq (0,$(PGI))
           #DFLAGS += -D__SSSE3__ -D__SSE3__
@@ -1058,21 +1066,13 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
         endif
         ifneq (Darwin,$(UNAME))
           CTARGET ?= -msse3
-        else
-          # prevents Clang backend error with CRC32/other instructions
+        else # prevents Clang BE error (CRC32 and others)
           CTARGET ?= -msse4.2
         endif
       else ifeq (4,$(SSE))
         ifneq (0,$(PGI))
           #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
           CTARGET = -tp=nehalem
-        endif
-        ifeq (3,$(GCC))
-        ifeq (0,$(STATIC))
-          CTARGET ?= -msse3
-        else ifneq (0,$(SHARED)) 
-          CTARGET ?= -msse3
-        endif
         endif
         CTARGET ?= -msse4.2
       else # perhaps better to use TARGET flag directly
@@ -1081,6 +1081,7 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     endif
   else ifneq (0,$(AVX))
     CTARGET = -march=native
+  endif
   endif
 endif
 endif

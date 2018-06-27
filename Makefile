@@ -30,6 +30,7 @@ POUTDIR = $(OUTDIR)
 PBINDIR = $(BINDIR)
 PTSTDIR = tests
 PDOCDIR = share/libxsmm
+LICFDIR = $(PDOCDIR)
 LICFILE = LICENSE.md
 
 # initial default flags: RPM_OPT_FLAGS are usually NULL
@@ -355,7 +356,7 @@ endif
 
 information = \
 	$(info ================================================================================) \
-	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py) (STATIC=$(STATIC))) \
+	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py)) \
 	$(info --------------------------------------------------------------------------------) \
 	$(info $(GINFO)) \
 	$(info $(CINFO)) \
@@ -1639,7 +1640,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/version.txt $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/CONTRIBUTING.md $(INSTALL_ROOT)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/LICENSE.md $(INSTALL_ROOT)/$(PDOCDIR)/$(LICFILE)
+	@$(CP) -v $(ROOTDIR)/LICENSE.md $(INSTALL_ROOT)/$(LICFDIR)/$(LICFILE)
 endif
 
 .PHONY: install-all
@@ -1743,6 +1744,7 @@ deb:
 			-e PREFIX=debian/libxsmm/usr \
 			-e PDOCDIR=share/doc/libxsmm \
 			-e LICFILE=copyright \
+			-e LICFDIR=../.. \
 			-e SHARED=1 \
 			-e SYM=1 \
 			-us -uc; \
