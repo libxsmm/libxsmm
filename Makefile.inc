@@ -197,13 +197,15 @@ libpath = $(strip $(if $1, \
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
 # Embedd soname into shared library
-SONAMELNK ?= 1
+SONAMELNK ?= 2
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
     solink = -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5)
     ifneq (0,$(SONAMELNK))
-      solink += $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5) \
-                                     && ln -fs $(notdir $1.$5)       $(notdir $1))
+      solink += $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5))
+    endif
+    ifneq (0,$(shell echo "$$((1<$(SONAMELNK) || 0>$(SONAMELNK)))"))
+      solink += $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
     endif
   else # MinGW
     solink = -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
@@ -819,9 +821,9 @@ else # GCC assumed
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   LIBGFORTRAN = $(call libpath,$(FLD) $(SLDFLAGS),$(NULL),gfortran)
   ifneq (,$(strip $(LIBGFORTRAN)))
-    LDFLAGS += $(XLIB_BEGIN) $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_END)
-    CXXLDFLAGS += $(XLIB_BEGIN) -lc $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
-    CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+    LDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) -lm $(XLIB_END)
+    CXXLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lc $(XLIB_END)
+    CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lstdc++ $(XLIB_END)
   else
     CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
