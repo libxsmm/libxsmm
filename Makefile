@@ -1641,7 +1641,9 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/version.txt $(INSTALL_ROOT)/$(PDOCDIR)
 	@mkdir -p $(INSTALL_ROOT)/$(LICFDIR)
+ifneq ($(abspath $(INSTALL_ROOT)/$(PDOCDIR)/LICENSE.md),$(abspath $(INSTALL_ROOT)/$(LICFDIR)/$(LICFILE)))
 	@$(MV) $(INSTALL_ROOT)/$(PDOCDIR)/LICENSE.md $(INSTALL_ROOT)/$(LICFDIR)/$(LICFILE)
+endif
 endif
 
 .PHONY: install-all
