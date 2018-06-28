@@ -181,6 +181,7 @@ void scopy_from_temp ( int layout, float *A, int lda, int m, int n, float *Atemp
 }
 
 #if !defined(USE_MKL_FOR_REFERENCE) && !defined(LIBXSMM_NOFORTRAN)
+extern void dtrsm_();
 
 /* Reference code for compact dtrsm. Note that this just copies data into
    a buffer from the compact storage and calls the regular dtrsm code. This
@@ -196,7 +197,6 @@ void compact_dtrsm_ ( unsigned int *layout, char *side, char *uplo,
 {
     int i, j, num, asize, offseta, offsetb;
     double *Ap, *Bp, Atemp[BUFSIZE], Btemp[BUFSIZE];
-    extern void dtrsm_();
     static int ntimes = 0;
 
     if ( ++ntimes < 3 ) printf("Inside reference compact_dtrsm_()\n");
@@ -230,6 +230,8 @@ if (++ntimes < 15 ) printf("Doing a dtrsm at place i=%d j=%d num=%d Ap[%d]=%g Bp
 
 #endif /*!defined(USE_MKL_FOR_REFERENCE) && !defined(LIBXSMM_NOFORTRAN)*/
 
+extern void strsm_();
+
 /* Reference code for compact strsm. Note that this just copies data into
    a buffer from the compact storage and calls the regular strsm code. This
    is very naive reference code just used for testing purposes */
@@ -244,7 +246,6 @@ void compact_strsm_ ( unsigned int *layout, char *side, char *uplo,
 {
     int i, j, num, asize;
     float *Ap, *Bp, Atemp[BUFSIZE], Btemp[BUFSIZE];
-    extern void strsm_();
 
     if ( (*side == 'L') || (*side == 'l') ) asize = *m;
     else asize = *n;
@@ -441,6 +442,13 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
   #define TIME_MKL
 #endif
 
+#ifdef USE_PREDEFINED_ASSEMBLY
+extern void trsm_xct_();
+#endif
+#ifdef MKL_TIMER
+extern double dsecnd_();
+#endif
+
 int main(int argc, char* argv[])
 {
   unsigned int m=8, n=8, lda=8, ldb=8, nerrs, num, nmat, nmats, nmatd, ntest;
@@ -450,9 +458,6 @@ int main(int argc, char* argv[])
   char side, uplo, trans, diag;
   unsigned int typesize8 = 8;
   unsigned int typesize4 = 4;
-#ifdef USE_PREDEFINED_ASSEMBLY
-  extern void trsm_xct_();
-#endif
   float  *sa, *sb, *sc, *sd;
   double *da, *db, *dc, *dd, *tmpbuf;
   double dalpha = 1.0;
@@ -657,7 +662,6 @@ int main(int argc, char* argv[])
   double timer;
 #ifdef MKL_TIMER
   double tmptimer;
-  extern double dsecnd_();
   tmptimer = dsecnd_();
 #else
   unsigned long long l_start, l_end;

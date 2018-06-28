@@ -136,7 +136,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
   /* Make sure i_src_location is no bigger than the end of the code */
   if ( (unsigned int)i_src_location > io_generated_code->code_size )
   {
-     fprintf(stderr,"How can the source of the jump itself be an instruction far beyond where we've jitted? Something is really strange here src=%d loc=%d\n",i_src_location,io_generated_code->code_size);
+     fprintf(stderr,"How can the source of the jump itself be an instruction far beyond where we've jitted? Something is really strange here src=%i loc=%u\n",i_src_location,io_generated_code->code_size);
      exit(-1);
   }
 
@@ -3465,7 +3465,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
           l_instr_offset2 = 1;
           break;
        default:
-          fprintf(stderr, "libxsmm_x86_instruction_vec_move_gathscat: Strange gather/scatter instruction:%d\n",i_vmove_instr);
+          fprintf(stderr, "libxsmm_x86_instruction_vec_move_gathscat: Strange gather/scatter instruction:%u\n",i_vmove_instr);
           exit(-1);
     }
     if ( i_vector_name != 'z' )
