@@ -67,8 +67,16 @@ endif
 CMAIN = "main\s*(.*)"
 FMAIN = "^\s*PROGRAM\s\s*\w\w*\(\s\s*\!.*\)*$$"
 
+# Debugging and symbols (e.g., when profiling)
+SYM ?= 0
+DBG ?= 0
+
 # Optimization level
-OPT ?= 2
+ifeq (0,$(DBG))
+  OPT ?= 2
+else
+  OPT ?= 0
+endif
 
 # Optimization flag derived from OPT flag
 ifeq (0,$(shell echo "$(OPT)" | grep -q "^[0-9]\+$$"; echo "$$?"))
@@ -131,10 +139,6 @@ endif
 # Internal utilities
 MKTEMP = $(DEPDIR)/.mktmp.sh
 FLOCK = $(DEPDIR)/.flock.sh
-
-# Debugging and symbols (e.g., when profiling)
-SYM ?= 0
-DBG ?= 0
 
 # THREADS refers to foundational TRT (and not necessarily Posix Threads)
 THREADS ?= 1
@@ -698,11 +702,14 @@ ifneq (0,$(INTEL))
   endif
   # flag specifying output directory must be last
   FMFLAGS += -module
+  CXXFLAGS += $(OPTFLAG)
+  CFLAGS += $(OPTFLAG)
+  FCFLAGS += $(OPTFLAG)
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
-    CXXFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
-    CFLAGS += $(OPTFLAG) -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
-    FCFLAGS += $(OPTFLAG) -qoverride_limits #-fp-model fast=2
+    CXXFLAGS += -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
+    CFLAGS += -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
+    FCFLAGS += -qoverride_limits #-fp-model fast=2
     ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
       FCFLAGS += -align array64byte
     endif
@@ -722,9 +729,7 @@ ifneq (0,$(INTEL))
     ifneq (0,$(shell echo "$$((1<$(DBG) || 0>$(DBG)))"))
       DFLAGS += -D_DEBUG
     endif
-    CXXFLAGS += -O0
-    CFLAGS += -O0
-    FCFLAGS += -O0 -check
+    FCFLAGS += -check
     SYM = $(DBG)
   endif
   ifneq (0,$(INSTRUMENT))
@@ -900,10 +905,10 @@ else # GCC assumed
   else # fallback
     FMFLAGS += -I
   endif
+  CXXFLAGS += $(OPTFLAG)
+  CFLAGS += $(OPTFLAG)
+  FCFLAGS += $(OPTFLAG)
   ifeq (0,$(DBG))
-    CXXFLAGS += $(OPTFLAG)
-    CFLAGS += $(OPTFLAG)
-    FCFLAGS += $(OPTFLAG)
     ifeq (0,$(COMPATIBLE))
       CXXFLAGS += -funroll-loops
       CFLAGS += -funroll-loops
@@ -927,9 +932,6 @@ else # GCC assumed
     ifneq (0,$(shell echo "$$((1<$(DBG) || 0>$(DBG)))"))
       DFLAGS += -D_DEBUG
     endif
-    CXXFLAGS += -O0
-    CFLAGS += -O0
-    FCFLAGS += -O0
     SYM = $(DBG)
   endif
   ifneq (0,$(INSTRUMENT))
