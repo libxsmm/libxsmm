@@ -71,7 +71,7 @@ To test and validate a build, please consult [https://github.com/hfp/libxsmm/wik
 make STATIC=0 tests
 ```
 
-To remove intermediate files, or to remove all generated files and folders (including the interface and the library archives), run one of the make-targets below. An additional distclean-target recursively cleans the entire tree (since version&#160;2.0).
+To remove intermediate files, or to remove all generated files and folders (including the interface and the library archives), run one of the make-targets below. An additional distclean-target recursively cleans the entire tree (after version&#160;1.9).
 
 ```bash
 make clean
