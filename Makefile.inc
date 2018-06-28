@@ -619,24 +619,43 @@ PGI ?= 0
 # linker setup
 LD = $(CC)
 XLD = $(CXX)
-ifneq (,$(strip $(FC)))
-  FLD = $(FC)
-else
-  FLD = $(LD)
-endif
+
 ifeq (0,$(DEPSTATIC))
-  LIB_LD := $(LD) -shared
-  LIB_XLD := $(XLD) -shared
-  LIB_FLD := $(FLD) -shared
+  LIB_LD = $(LD) -shared
+  LIB_XLD = $(XLD) -shared
   ifneq (0,$(CRAY))
     XLD += -dynamic
-    FLD += -dynamic
     LD += -dynamic
   endif
 else
   LIB_LD = $(LD)
   LIB_XLD = $(XLD)
-  LIB_FLD = $(FLD)
+endif
+
+ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
+  LIBGFORTRAN = $(call libpath,$(FC) $(SLDFLAGS),$(NULL),gfortran)
+  ifneq (,$(strip $(LIBGFORTRAN)))
+    LINK_FRTL = $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
+    LIB_FLD = $(LIB_LD) $(LINK_FRTL)
+    FLD = $(LD) $(LINK_FRTL)
+  endif
+endif
+
+ifeq (,$(strip $(FLD)))
+ifneq (,$(strip $(FC)))
+  FLD = $(FC)
+  ifeq (0,$(DEPSTATIC))
+    LIB_FLD = $(FLD) -shared
+    ifneq (0,$(CRAY))
+      FLD += -dynamic
+    endif
+  else
+    LIB_FLD = $(FLD)
+  endif
+else # fallback
+  FLD = $(LD)
+  LIB_FLD = $(LIB_LD)
+endif
 endif
 
 # Avoid more sophisticated flags of the GCC tool chain,
@@ -814,15 +833,9 @@ ifneq (0,$(INTEL))
   endif
 else # GCC assumed
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
-  LIBGFORTRAN = $(call libpath,$(FLD) $(SLDFLAGS),$(NULL),gfortran)
-  ifneq (,$(strip $(LIBGFORTRAN)))
-    LDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) -lm $(XLIB_END)
-    CXXLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lc $(XLIB_END)
-    CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lstdc++ $(XLIB_END)
-  else
-    CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
-    CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  endif
+  CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+  CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
+  LDFLAGS += $(XLIB_BEGIN) -lm $(XLIB_END)
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((40700<=$(GCC_VERSION)))"))
       CXXFLAGS += -std=c++11
