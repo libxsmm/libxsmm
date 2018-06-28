@@ -627,12 +627,7 @@ endif
 ifeq (0,$(DEPSTATIC))
   LIB_LD := $(LD) -shared
   LIB_XLD := $(XLD) -shared
-  ifeq (3,$(GCC))
-    # avoids ref. to Fortran runtime
-    LIB_FLD := $(LIB_LD)
-  else
-    LIB_FLD := $(FLD) -shared
-  endif
+  LIB_FLD := $(FLD) -shared
   ifneq (0,$(CRAY))
     XLD += -dynamic
     FLD += -dynamic
