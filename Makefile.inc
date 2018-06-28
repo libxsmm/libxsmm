@@ -200,20 +200,20 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 SONAMELNK ?= 1
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
-    soname = -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5)
+    solink = -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5)
     ifneq (0,$(SONAMELNK))
-      soname += $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5) \
+      solink += $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5) \
                                      && ln -fs $(notdir $1.$5)       $(notdir $1))
     endif
   else # MinGW
-    soname = -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
+    solink = -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
   endif
 else # osx
-  soname = -o $(basename $1).$2$(suffix $1) \
+  solink = -o $(basename $1).$2$(suffix $1) \
            -install_name $(notdir $(basename $1).$2$(suffix $1)) \
            -current_version $2.$3.$4 -compatibility_version $5
   ifneq (0,$(SONAMELNK))
-    soname += $(shell cd $(dir $1) && ln -fs $(notdir $(basename $1).$2$(suffix $1)) $(notdir $1))
+    solink += $(shell cd $(dir $1) && ln -fs $(notdir $(basename $1).$2$(suffix $1)) $(notdir $1))
   endif
 endif
 
@@ -1572,7 +1572,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
   $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL \
     $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP \
     abslibfile abslibpath absliblpath abslibrpath \
-    libpath abslib soname extname objname,$V), \
+    libpath abslib solink extname objname,$V), \
     $V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 

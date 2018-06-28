@@ -1,6 +1,6 @@
 My Amplifier*
-libxsmm-*
-libxsmm_*
+libxsmm*-*
+libxsmm*_*
 opentuner.db
 bin/libxsmm_generator
 include/libxsmm_config.h

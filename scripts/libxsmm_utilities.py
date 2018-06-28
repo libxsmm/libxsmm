@@ -226,20 +226,24 @@ if __name__ == "__main__":
         dims = load_mnklist(sys.argv[4+mnk_size:], 0, -2, dims)
         print(" ".join(map(lambda mnk: "_".join(map(str, mnk)), sorted(dims))))
     elif (0 <= arg1):
-        version, branch = version_branch()
-        major, minor, update, patch = version_numbers(version)
-        if (1 == arg1):
-            print(major)
-        elif (2 == arg1):
-            print(minor)
-        elif (3 == arg1):
-            print(update)
-        elif (4 == arg1):
-            print(patch)
-        elif ("" != branch):
-            print(branch + "-" + version)
+        if (0 == arg1 and 3 == argc):
+            major, minor, update, patch = version_numbers(sys.argv[2])
+            print(major)  # soname version
         else:
-            print(version)
+            version, branch = version_branch()
+            major, minor, update, patch = version_numbers(version)
+            if (1 == arg1):
+                print(major)
+            elif (2 == arg1):
+                print(minor)
+            elif (3 == arg1):
+                print(update)
+            elif (4 == arg1):
+                print(patch)
+            elif ("" != branch):
+                print(branch + "-" + version)
+            else:
+                print(version)
     else:
         sys.tracebacklimit = 0
         raise ValueError(

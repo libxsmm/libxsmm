@@ -13,7 +13,8 @@ ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 endif
 endif
 
-ROOTDIR = $(abspath $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/))
+# ROOTDIR avoid abspath to match Makefile targets
+ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
 SPLDIR = $(ROOTDIR)/samples
 SCRDIR = $(ROOTDIR)/scripts
 TSTDIR = $(ROOTDIR)/tests
@@ -24,7 +25,7 @@ OUTDIR = lib
 BINDIR = bin
 DOCDIR = documentation
 
-# subdirectories for prefix based installation
+# subdirectories (relative) for prefix based installation
 PINCDIR ?= $(INCDIR)
 POUTDIR ?= $(OUTDIR)
 PBINDIR ?= $(BINDIR)
@@ -214,7 +215,7 @@ include $(ROOTDIR)/Makefile.inc
 VERSION_MAJOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 1)
 VERSION_MINOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 2)
 VERSION_UPDATE ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 3)
-VERSION_API ?= $(VERSION_MAJOR)
+VERSION_API ?= $(shell $(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE))
 VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
 
@@ -839,7 +840,7 @@ module: module_hst module_mic
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
-	$(LIB_LD) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_GEN_LIB) $(LDFLAGS) $(CLDFLAGS) $(LIBRT)
+	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_GEN_LIB) $(LDFLAGS) $(CLDFLAGS) $(LIBRT)
 else # static
 	$(AR) -rs $@ $(OBJFILES_GEN_LIB)
 endif
@@ -865,7 +866,7 @@ ifneq (0,$(MPSS))
 clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(KRNOBJS_MIC)
 ifeq (0,$(STATIC))
-	$(LIB_LD) -mmic $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_MIC) $(KRNOBJS_MIC) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) -mmic $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_MIC) $(KRNOBJS_MIC) $(LDFLAGS) $(CLDFLAGS)
 else # static
 	$(AR) -rs $@ $(OBJFILES_MIC) $(KRNOBJS_MIC)
 endif
@@ -876,7 +877,7 @@ endif
 clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
 ifeq (0,$(STATIC))
-	$(LIB_LD) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
 else # static
 	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(OBJJITPROFILING)
 endif
@@ -888,7 +889,7 @@ ifneq (,$(strip $(FC)))
 flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	$(LIB_FLD) -mmic $(FCMTFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_FLD) -mmic $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/mic/libxsmm-mod.o $(call abslib,$(OUTDIR)/mic/libxsmm.$(IMPEXT)) $(LDFLAGS) $(FLDFLAGS)
 else # static
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/.make
@@ -905,7 +906,7 @@ ifneq (,$(strip $(FC)))
 flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT)
-	$(LIB_FLD) $(FCMTFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_FLD) $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(FLDFLAGS)
 else # static
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/.make
@@ -921,7 +922,7 @@ ifneq (0,$(MPSS))
 ext_mic: $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	$(LIB_LD) -mmic $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_LD) -mmic $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_MIC) $(call abslib,$(OUTDIR)/mic/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 else # static
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC)
@@ -935,13 +936,13 @@ ext_hst: $(OUTDIR)/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST) $(OUTDIR)/libxsmm.$(LIBEXT)
 ifneq (Darwin,$(UNAME))
-	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 else ifneq (0,$(INTEL)) # intel @ osx
-	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 			$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 else # osx
-	$(LIB_LD)               $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_LD)               $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 			$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 endif
 else # static
@@ -955,7 +956,7 @@ ifneq (0,$(MPSS))
 noblas_mic: $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
-	$(LIB_LD) -mmic $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_MIC) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) -mmic $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_MIC) $(LDFLAGS) $(CLDFLAGS)
 else # static
 $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
 	$(AR) -rs $@ $(NOBLAS_MIC)
@@ -968,11 +969,11 @@ noblas_hst: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
 ifneq (Darwin,$(UNAME))
-	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 else ifneq (0,$(INTEL)) # intel @ osx
-	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 else # osx
-	$(LIB_LD)               $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD)               $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 endif
 else # static
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
@@ -1639,8 +1640,8 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/version.txt $(INSTALL_ROOT)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/CONTRIBUTING.md $(INSTALL_ROOT)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/LICENSE.md $(INSTALL_ROOT)/$(LICFDIR)/$(LICFILE)
+	@mkdir -p $(INSTALL_ROOT)/$(LICFDIR)
+	@$(MV) $(INSTALL_ROOT)/$(PDOCDIR)/LICENSE.md $(INSTALL_ROOT)/$(LICFDIR)/$(LICFILE)
 endif
 
 .PHONY: install-all
@@ -1681,10 +1682,12 @@ endif
 deb:
 	@if [ "" != "$$(which git)" ]; then \
 		VERSION_ARCHIVE=$$(git describe --tags --abbrev=0 2>/dev/null); \
+		VERSION_ARCHIVE_SONAME=$$($(SCRDIR)/libxsmm_utilities.py 0 $${VERSION_ARCHIVE}); \
 	fi; \
-	if [ "" != "$${VERSION_ARCHIVE}" ]; then \
+	if [ "" != "$${VERSION_ARCHIVE}" ] && [ "" != "$${VERSION_ARCHIVE_SONAME}" ]; then \
 		ARCHIVE_AUTHOR_NAME="$$(git config user.name)"; \
 		ARCHIVE_AUTHOR_MAIL="$$(git config user.email)"; \
+		ARCHIVE_NAME=libxsmm$${VERSION_ARCHIVE_SONAME}; \
 		ARCHIVE_DATE="$$(LANG=C date -R)"; \
 		if [ "" != "$${ARCHIVE_AUTHOR_NAME}" ] && [ "" != "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
 			ARCHIVE_AUTHOR="$${ARCHIVE_AUTHOR_NAME} <$${ARCHIVE_AUTHOR_MAIL}>"; \
@@ -1694,16 +1697,16 @@ deb:
 				ARCHIVE_AUTHOR="$${ARCHIVE_AUTHOR_NAME}$${ARCHIVE_AUTHOR_MAIL}"; \
 			fi \
 		fi; \
-		if ! [ -e libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz ]; then \
-			git archive --prefix libxsmm-$${VERSION_ARCHIVE}/ \
-				-o libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz $(VERSION_RELEASE); \
+		if ! [ -e $${ARCHIVE_NAME}_$${VERSION_ARCHIVE}.orig.tar.gz ]; then \
+			git archive --prefix $${ARCHIVE_NAME}-$${VERSION_ARCHIVE}/ \
+				-o $${ARCHIVE_NAME}_$${VERSION_ARCHIVE}.orig.tar.gz $(VERSION_RELEASE); \
 		fi; \
-		tar xf libxsmm_$${VERSION_ARCHIVE}.orig.tar.gz; \
-		cd libxsmm-$${VERSION_ARCHIVE}; \
+		tar xf $${ARCHIVE_NAME}_$${VERSION_ARCHIVE}.orig.tar.gz; \
+		cd $${ARCHIVE_NAME}-$${VERSION_ARCHIVE}; \
 		mkdir -p debian/source; cd debian/source; \
 		echo "3.0 (quilt)" > format; \
 		cd ..; \
-		echo "Source: libxsmm" > control; \
+		echo "Source: $${ARCHIVE_NAME}" > control; \
 		echo "Section: libs" >> control; \
 		echo "Homepage: https://github.com/hfp/libxsmm" >> control; \
 		echo "Vcs-Git: https://github.com/hfp/libxsmm/libxsmm.git" >> control; \
@@ -1712,7 +1715,7 @@ deb:
 		echo "Build-Depends: debhelper (>= 9)" >> control; \
 		echo "Standards-Version: 3.9.8" >> control; \
 		echo >> control; \
-		echo "Package: libxsmm" >> control; \
+		echo "Package: $${ARCHIVE_NAME}" >> control; \
 		echo "Section: libs" >> control; \
 		echo "Architecture: amd64" >> control; \
 		echo "Depends: \$${shlibs:Depends}, \$${misc:Depends}" >> control; \
@@ -1720,7 +1723,7 @@ deb:
 		wget -qO- https://api.github.com/repos/hfp/libxsmm \
 		| sed -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
 		| fold -s -w 79 | sed -e 's/^/ /' -e 's/\s\s*$$//' >> control; \
-		echo "libxsmm ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
+		echo "$${ARCHIVE_NAME} ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
 		echo >> changelog; \
 		wget -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
 		| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
@@ -1741,8 +1744,8 @@ deb:
 		echo "9" > compat; \
 		chmod +x rules; \
 		debuild \
-			-e PREFIX=debian/libxsmm/usr \
-			-e PDOCDIR=share/doc/libxsmm \
+			-e PREFIX=debian/$${ARCHIVE_NAME}/usr \
+			-e PDOCDIR=share/doc/$${ARCHIVE_NAME} \
 			-e LICFILE=copyright \
 			-e LICFDIR=../.. \
 			-e SONAMELNK=0 \
