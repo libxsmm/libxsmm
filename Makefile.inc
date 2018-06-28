@@ -625,7 +625,12 @@ endif
 ifeq (0,$(DEPSTATIC))
   LIB_LD := $(LD) -shared
   LIB_XLD := $(XLD) -shared
-  LIB_FLD := $(FLD) -shared
+  ifeq (3,$(GCC))
+    # avoids ref. to Fortran runtime
+    LIB_FLD := $(LIB_LD)
+  else
+    LIB_FLD := $(FLD) -shared
+  endif
   ifneq (0,$(CRAY))
     XLD += -dynamic
     FLD += -dynamic
@@ -814,7 +819,7 @@ else # GCC assumed
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   LIBGFORTRAN = $(call libpath,$(FLD) $(SLDFLAGS),$(NULL),gfortran)
   ifneq (,$(strip $(LIBGFORTRAN)))
-    LDFLAGS += $(call abslibpath,$(LIBGFORTRAN))
+    LDFLAGS += $(XLIB_BEGIN) $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_END)
     CXXLDFLAGS += $(XLIB_BEGIN) -lc $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
   else
