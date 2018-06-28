@@ -635,9 +635,9 @@ endif
 ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
   LIBGFORTRAN = $(call libpath,$(FC) $(SLDFLAGS),$(NULL),gfortran)
   ifneq (,$(strip $(LIBGFORTRAN)))
-    LINK_FRTL = $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
-    LIB_FLD = $(LIB_LD) $(LINK_FRTL)
-    FLD = $(LD) $(LINK_FRTL)
+    FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
+    LIB_FLD = $(LIB_LD)
+    FLD = $(LD)
   endif
 endif
 
@@ -653,8 +653,8 @@ ifneq (,$(strip $(FC)))
     LIB_FLD = $(FLD)
   endif
 else # fallback
-  FLD = $(LD)
   LIB_FLD = $(LIB_LD)
+  FLD = $(LD)
 endif
 endif
 
