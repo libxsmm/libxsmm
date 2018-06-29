@@ -25,8 +25,9 @@ BINDIR = bin
 SPLDIR = samples
 DOCDIR = documentation
 
-# subdirectories (relative) for prefix based installation
+# subdirectories (relative) to PREFIX (install targets)
 PINCDIR ?= $(INCDIR)
+PSRCDIR ?= $(PINCDIR)/libxsmm
 POUTDIR ?= $(OUTDIR)
 PBINDIR ?= $(BINDIR)
 PTSTDIR ?= $(TSTDIR)
@@ -1573,11 +1574,11 @@ endif
 endif
 
 .PHONY: install-minimal
-install-minimal: libxsmm
+install-minimal: #libxsmm
 ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
+	@mkdir -p $(INSTALL_ROOT)/$(POUTDIR) $(INSTALL_ROOT)/$(PBINDIR) $(INSTALL_ROOT)/$(PINCDIR) $(INSTALL_ROOT)/$(PSRCDIR)
 	@echo
-	@echo "LIBXSMM installing binaries..."
-	@mkdir -p $(INSTALL_ROOT)/$(POUTDIR) $(INSTALL_ROOT)/$(PBINDIR) $(INSTALL_ROOT)/$(PINCDIR)
+	@echo "LIBXSMM installing libraries..."
 	@$(CP) -va $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
@@ -1621,14 +1622,19 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 		$(CP) -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@echo
+	@echo "LIBXSMM installing stand-alone generators..."
+	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@echo
 	@echo "LIBXSMM installing interface..."
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR) 2>/dev/null || true
-	@$(CP) -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)
+	@ls -1 $(INCDIR)/libxsmm*.h | grep -v libxsmm_source.h | xargs -I {} $(CP) -v {} $(INSTALL_ROOT)/$(PINCDIR)
 	@$(CP) -v $(INCDIR)/libxsmm.f $(INSTALL_ROOT)/$(PINCDIR)
 	@echo
-	@echo "LIBXSMM installing stand-alone generators..."
-	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@echo "LIBXSMM installing header-only..."
+	@$(ROOTDIR)/$(SCRDIR)/libxsmm_source.sh $(patsubst $(PINCDIR)/%,%,$(PSRCDIR)) \
+		> $(INSTALL_ROOT)/$(PINCDIR)/libxsmm_source.h
+	@$(CP) -vr $(SRCDIR)/* $(INSTALL_ROOT)/$(PSRCDIR)
 endif
 
 .PHONY: install
