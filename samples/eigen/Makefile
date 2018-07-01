@@ -98,11 +98,11 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 # no need to link against any of LIBXSMM's libraries since the sample code uses header-only LIBXSMM
 $(OUTDIR)/$(OUTNAME)_smm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_smm-cpp.o #$(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_smm-cpp.o $(NOXBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_smm-cpp.o $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 # no need to link against any of LIBXSMM's libraries since the sample code uses header-only LIBXSMM
 $(OUTDIR)/$(OUTNAME)_tensor: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_tensor-cpp.o #$(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_tensor-cpp.o $(NOXBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_tensor-cpp.o $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

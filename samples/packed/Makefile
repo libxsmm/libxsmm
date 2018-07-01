@@ -82,7 +82,7 @@ $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DE
 endif
 
 $(OUTDIR)/$(OUTNAME)_trsm: $(OUTDIR)/.make $(OBJECTS) $(FTNOBJS) $(LIBDEP)
-	$(LD) -o $@ $(OBJECTS) $(FTNOBJS) $(MAINLIB) $(NOXBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(OBJECTS) $(FTNOBJS) $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
