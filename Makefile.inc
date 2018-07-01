@@ -625,15 +625,11 @@ LD = $(CC)
 XLD = $(CXX)
 
 ifeq (0,$(DEPSTATIC))
-  LIB_LD = $(LD) -shared
-  LIB_XLD = $(XLD) -shared
-  ifneq (0,$(CRAY))
-    XLD += -dynamic
-    LD += -dynamic
-  endif
+  LIB_LD := $(LD) -shared
+  LIB_XLD := $(XLD) -shared
 else
-  LIB_LD = $(LD)
-  LIB_XLD = $(XLD)
+  LIB_LD := $(LD)
+  LIB_XLD := $(XLD)
 endif
 
 ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
@@ -649,16 +645,21 @@ ifeq (,$(strip $(FLD)))
 ifneq (,$(strip $(FC)))
   FLD = $(FC)
   ifeq (0,$(DEPSTATIC))
-    LIB_FLD = $(FLD) -shared
-    ifneq (0,$(CRAY))
-      FLD += -dynamic
-    endif
+    LIB_FLD := $(FLD) -shared
   else
-    LIB_FLD = $(FLD)
+    LIB_FLD := $(FLD)
   endif
 else # fallback
-  LIB_FLD = $(LIB_LD)
-  FLD = $(LD)
+  LIB_FLD := $(LIB_LD)
+  FLD := $(LD)
+endif
+endif
+
+ifneq (0,$(CRAY))
+ifeq (0,$(DEPSTATIC))
+  XLD := $(XLD) -dynamic
+  FLD := $(FLD) -dynamic
+  LD := $(LD) -dynamic
 endif
 endif
 
