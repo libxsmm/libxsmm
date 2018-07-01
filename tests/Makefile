@@ -84,7 +84,7 @@ ifneq (,$(wildcard $(EXTDEP)))
 $(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(dir $(1))/.make \
       $(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(LIBDEP) $(EXTDEP))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
-		$(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(EXTLIB) $(call abslib, $(LIBDEP)) $(BLASLIB)) \
+		$(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(EXTLIB) $(call abslib, $(LIBDEP)) $(XBLASLIB)) \
 		$(LDFLAGS) $(CLDFLAGS)
 else
 .PHONY: $(1)
@@ -101,7 +101,7 @@ ifneq (,$(wildcard $(FORTDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
 $(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(FORTDEP) $(LIBDEP) $(EXTDEP) $(dir $(1))/.make
 	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(FORTDEP)) $(EXTLIB) \
-		$(call abslib, $(LIBDEP)) $(BLASLIB) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
+		$(call abslib, $(LIBDEP)) $(XBLASLIB) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
 .PHONY: $(1)
 endif
