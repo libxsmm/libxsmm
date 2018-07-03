@@ -29,6 +29,8 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
+MAKEINC = $(abspath $(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
+
 ifeq (d,$(filter d,$(MAKEFLAGS)))
   SHELL = bash -xv
 endif
@@ -41,9 +43,6 @@ ifeq (Windows_NT,$(OS))
   SLIBEXT ?= lib
 endif
 
-# Python interpreter per PYTHON=/path/to/python
-PYTHON ?= $(shell which python 2>/dev/null)
-
 # Command line utilities
 #PKGCFG ?= $(shell which pkg-config 2>/dev/null)
 CP ?= $(shell which cp 2>/dev/null)
@@ -51,6 +50,19 @@ MV ?= $(shell which mv 2>/dev/null)
 UNAME ?= $(shell uname)
 MAKE ?= make
 ENV ?= env
+
+# Python interpreter per PYTHON=/path/to/python
+PYTHON3 ?= $(shell which python3 2>/dev/null)
+PYTHON ?= $(shell which python 2>/dev/null)
+
+ifeq (,$(PYTHON))
+ifneq (,$(PYTHON3))
+  SHELL := env PATH=$(MAKEINC):$(PATH) $(SHELL)
+  PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null && which python 2>/dev/null)
+else
+  $(info ERROR: No Python interpreter found!)
+endif
+endif
 
 ifneq (Darwin,$(UNAME))
   ifneq (,$(strip $(CP)))
