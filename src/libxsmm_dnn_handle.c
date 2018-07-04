@@ -168,7 +168,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     handle->scratch8 = 0;
 #endif
     handle->scratch9_size = LIBXSMM_UP2(size9, LIBXSMM_CACHELINE) * handle->desc.threads;
-#if defined(LIBXSMM_SCRATCH8)
+#if defined(LIBXSMM_SCRATCH9)
     handle->scratch9 = 0;
 #endif
   }
