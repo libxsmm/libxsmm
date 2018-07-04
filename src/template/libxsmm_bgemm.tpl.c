@@ -111,6 +111,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
             o_j2 = j2;
           }
         }
+
         if (0 != kernel_pf) { /* prefetch */
           for (ki2 = 0, ki = (b_k2 * k2); ki2 < b_k2; ++ki2, ++ki) {
             if (k2 < (nw_k - 2)) { /* prefetch */
