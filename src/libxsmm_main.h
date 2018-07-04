@@ -413,13 +413,13 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t max_scratch5_size;
   void* scratch6;
   size_t scratch6_size;
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
   void* scratch7;             /* [H][W][c-block] tensor (generic fwd/bwd convolution) */
 #endif
-#if defined(LIBXSMM_SCRATCH8)
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
   void* scratch8;             /* output_scratch (generic update convolution) */
 #endif
-#if defined(LIBXSMM_SCRATCH9)
+#if !defined(LIBXSMM_DNN_VLA_TLS3)
   void* scratch9;             /* filter_scratch (generic update convolution) */
 #endif
   size_t scratch7_size, scratch8_size, scratch9_size;

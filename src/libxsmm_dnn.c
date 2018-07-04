@@ -1795,7 +1795,7 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
                                                scratch5_size = handle->fwdbwd_scratch_size;
                                                l_scratch_size = scratch5_size + 64;
                                              }
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              if (handle->use_fwd_generic != 0) {
                                                l_scratch_size += handle->scratch7_size + 64;
                                              }
@@ -1808,7 +1808,7 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
                                                scratch5_size = handle->fwdbwd_scratch_size;
                                                l_scratch_size += scratch5_size + 64;
                                              }
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              if (handle->use_bwd_generic != 0) {
                                                l_scratch_size += handle->scratch7_size + 64;
                                              }
@@ -1828,16 +1828,16 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
                                              if (handle->use_lp_kernel == 1) {
                                                l_scratch_size += handle->scratch6_size + 64;
                                              }
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              if (handle->use_fwd_generic != 0 || handle->use_bwd_generic != 0) {
                                                l_scratch_size += handle->scratch7_size + 64;
                                              }
 #endif
                                              if (handle->use_upd_generic != 0) {
-#if defined(LIBXSMM_SCRATCH8)
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
                                                l_scratch_size += handle->scratch8_size + 64;
 #endif
-#if defined(LIBXSMM_SCRATCH9)
+#if !defined(LIBXSMM_DNN_VLA_TLS3)
                                                l_scratch_size += handle->scratch9_size + 64;
 #endif
                                              }
@@ -1858,16 +1858,16 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
                                              if (handle->use_lp_kernel == 1) {
                                                l_scratch_size += handle->scratch6_size + 64;
                                              }
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              if (handle->use_fwd_generic != 0 || handle->use_bwd_generic != 0) {
                                                l_scratch_size += handle->scratch7_size + 64;
                                              }
 #endif
                                              if (handle->use_upd_generic != 0) {
-#if defined(LIBXSMM_SCRATCH8)
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
                                                l_scratch_size += handle->scratch8_size + 64;
 #endif
-#if defined(LIBXSMM_SCRATCH9)
+#if !defined(LIBXSMM_DNN_VLA_TLS3)
                                                l_scratch_size += handle->scratch9_size + 64;
 #endif
                                              }
@@ -1927,7 +1927,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
         handle->scratch4 = (void*)(address+offset);
       }
       address += handle->scratch4_size + 64;
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
       if (address % 64 == 0) {
         handle->scratch7 = (void*)address;
       }
@@ -1973,7 +1973,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                }
                                                address += scratch5_size + 64;
                                              }
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              if (handle->use_fwd_generic != 0) {
                                                if (address % 64 == 0) {
                                                  handle->scratch7 = (void*)address;
@@ -2004,7 +2004,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                }
                                                address += scratch5_size + 64;
                                              }
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              if (handle->use_bwd_generic != 0) {
                                                if (address % 64 == 0) {
                                                  handle->scratch7 = (void*)address;
@@ -2054,7 +2054,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                }
                                                address += handle->scratch6_size + 64;
                                              }
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              if (handle->use_fwd_generic != 0 || handle->use_bwd_generic != 0) {
                                                if (address % 64 == 0) {
                                                  handle->scratch7 = (void*)address;
@@ -2067,7 +2067,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                              }
 #endif
                                              if (handle->use_upd_generic != 0) {
-#if defined(LIBXSMM_SCRATCH8)
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
                                                if (address % 64 == 0) {
                                                  handle->scratch8 = (void*)address;
                                                } else {
@@ -2076,7 +2076,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                }
                                                address += handle->scratch8_size + 64;
 #endif
-#if defined(LIBXSMM_SCRATCH9)
+#if !defined(LIBXSMM_DNN_VLA_TLS3)
                                                if (address % 64 == 0) {
                                                  handle->scratch9 = (void*)address;
                                                } else {
@@ -2133,7 +2133,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                }
                                                address += handle->scratch6_size + 64;
                                              }
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              if (handle->use_fwd_generic != 0 || handle->use_bwd_generic != 0) {
                                                if (address % 64 == 0) {
                                                  handle->scratch7 = (void*)address;
@@ -2145,7 +2145,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                              }
 #endif
                                              if (handle->use_upd_generic != 0) {
-#if defined(LIBXSMM_SCRATCH8)
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
                                                if (address % 64 == 0) {
                                                  handle->scratch8 = (void*)address;
                                                } else {
@@ -2154,7 +2154,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                }
                                                address += handle->scratch8_size + 64;
 #endif
-#if defined(LIBXSMM_SCRATCH9)
+#if !defined(LIBXSMM_DNN_VLA_TLS3)
                                                if (address % 64 == 0) {
                                                  handle->scratch9 = (void*)address;
                                                } else {
@@ -2187,7 +2187,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* han
       handle->scratch1 = 0;
       handle->scratch3 = 0;
       handle->scratch4 = 0;
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
       handle->scratch7 = 0;
 #endif
       handle->scratchIw = 0;
@@ -2197,14 +2197,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* han
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
                                              handle->scratch5 = 0;
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              handle->scratch7 = 0;
 #endif
         } break;
         case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
                                              handle->scratch1 = 0;
                                              handle->scratch5 = 0;
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              handle->scratch7 = 0;
 #endif
                                            } break;
@@ -2213,13 +2213,13 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* han
                                              handle->scratch4 = 0;
                                              handle->scratch5 = 0;
                                              handle->scratch6 = 0;
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              handle->scratch7 = 0;
 #endif
-#if defined(LIBXSMM_SCRATCH8)
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
                                              handle->scratch8 = 0;
 #endif
-#if defined(LIBXSMM_SCRATCH9)
+#if !defined(LIBXSMM_DNN_VLA_TLS3)
                                              handle->scratch9 = 0;
 #endif
         } break;
@@ -2229,13 +2229,13 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* han
                                              handle->scratch4 = 0;
                                              handle->scratch5 = 0;
                                              handle->scratch6 = 0;
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              handle->scratch7 = 0;
 #endif
-#if defined(LIBXSMM_SCRATCH8)
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
                                              handle->scratch8 = 0;
 #endif
-#if defined(LIBXSMM_SCRATCH9)
+#if !defined(LIBXSMM_DNN_VLA_TLS3)
                                              handle->scratch9 = 0;
 #endif
         } break;

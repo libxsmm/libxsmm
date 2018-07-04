@@ -69,7 +69,7 @@ element_filter_type* weight_base = 0;
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int scratch7_size = padded_h * padded_w * handle->ifmblock;
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
 element_input_type *const del_input_scratch_padding = (element_input_type*)(((char*)handle->scratch7) + ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_input_type), LIBXSMM_CACHELINE));
 #else
 element_input_type del_input_scratch_padding_array[scratch7_size];
