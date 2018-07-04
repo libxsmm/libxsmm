@@ -252,7 +252,7 @@ void matrix_complement_square(int size, float *src, float *dst)
 {
   int i;
 #if defined(_OPENMP)
-# pragma omp parallel for private(i, size)
+# pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
     dst[i] = 1 - (src[i] * src[i]);
@@ -282,7 +282,7 @@ void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, float *src, flo
 int main(int argc, char* argv[])
 {
   float *wgold, *xgoldt, *ugold, *hgold, *z1gold, *z2gold, *zgold;
-  float *w, *xt, *u, *h, *z1t, *z2, *z, *htest, *hgold_temp;
+  float *w, *xt, *u, *h, *htest, *hgold_temp;
 
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
@@ -325,9 +325,11 @@ int main(int argc, char* argv[])
   int nThreads = 1; /* number of threads */
 #endif
 
+  /*
   unsigned long long l_start, l_end;
   double l_total = 0.0;
   double flops = 0.0;
+  */
   int i, it;
 
   libxsmm_dnn_rnncell_desc rnncell_desc;
@@ -336,10 +338,12 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_hidden_state;
   libxsmm_dnn_tensor* libxsmm_weight;
   libxsmm_dnn_tensor* libxsmm_recur_weight;
+  /*
   libxsmm_dnn_tensor* libxsmm_dinput;
   libxsmm_dnn_tensor* libxsmm_dhidden_state;
   libxsmm_dnn_tensor* libxsmm_dweight;
   libxsmm_dnn_tensor* libxsmm_drecur_weight;
+  */
 
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;

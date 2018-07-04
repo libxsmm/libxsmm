@@ -501,8 +501,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_internalstate(libxsmm_dnn
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   size_t address = (size_t)internalstate;
   size_t offset = 0;
-  size_t scratch_size = 0;
-  size_t sizeof_datatype = sizeof(float);
 
   if (internalstate == 0) {
     status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
