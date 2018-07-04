@@ -147,11 +147,15 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
     const size_t size7 = padded_h * padded_w * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
     handle->scratch7_size = LIBXSMM_UP2(size7, LIBXSMM_CACHELINE) * handle->desc.threads;
+#if defined(LIBXSMM_SCRATCH7)
     handle->scratch7 = 0;
+#endif
     status = handle_status;
   } else {
     handle->scratch7_size = 0;
+#if defined(LIBXSMM_SCRATCH7)
     handle->scratch7 = 0;
+#endif
   }
   if (handle->use_upd_generic != 0) {
     const size_t output_typesize = libxsmm_dnn_typesize(handle->datatype_out);
@@ -160,15 +164,23 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     const size_t size8 = handle->ofhp * handle->ofwp * handle->ofmblock * output_typesize;
     const size_t size9 = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * filter_typesize;
     handle->scratch8_size = LIBXSMM_UP2(size8, LIBXSMM_CACHELINE) * handle->desc.threads;
+#if defined(LIBXSMM_SCRATCH8)
     handle->scratch8 = 0;
+#endif
     handle->scratch9_size = LIBXSMM_UP2(size9, LIBXSMM_CACHELINE) * handle->desc.threads;
+#if defined(LIBXSMM_SCRATCH8)
     handle->scratch9 = 0;
+#endif
   }
   else {
     handle->scratch8_size = 0;
+#if defined(LIBXSMM_SCRATCH8)
     handle->scratch8 = 0;
+#endif
     handle->scratch9_size = 0;
+#if defined(LIBXSMM_SCRATCH9)
     handle->scratch9 = 0;
+#endif
   }
 
   return status;

@@ -394,7 +394,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_tensor* reg_filter_tr;
   /* batchnorm stats */
   libxsmm_dnn_tensor* batch_stats;
-  /* maxstats used in low-recision kernels */
+  /* maxstats used in low-precision kernels */
   libxsmm_dnn_tensor* maxstats_fwd;
   libxsmm_dnn_tensor* maxstats_bwd;
   libxsmm_dnn_tensor* maxstats_upd;
@@ -410,20 +410,27 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   void* scratch4;
   size_t scratch4_size;
   void* scratch5;             /* This scratch is used as a copy buffer when padding needs to be applied */
+  size_t max_scratch5_size;
   void* scratch6;
+  size_t scratch6_size;
+#if defined(LIBXSMM_SCRATCH7)
   void* scratch7;             /* [H][W][c-block] tensor (generic fwd/bwd convolution) */
+#endif
+#if defined(LIBXSMM_SCRATCH8)
   void* scratch8;             /* output_scratch (generic update convolution) */
+#endif
+#if defined(LIBXSMM_SCRATCH9)
   void* scratch9;             /* filter_scratch (generic update convolution) */
-  size_t scratch6_size, scratch7_size, scratch8_size, scratch9_size;
+#endif
+  size_t scratch7_size, scratch8_size, scratch9_size;
   size_t minibatch_scratch_size;
   size_t fwdbwd_scratch_size;
-  size_t max_scratch5_size;
   int padding_flag;           /* Flag that dictates if we should apply padding in the input */
-  void* scratchIw;
+  void* scratchIw;            /* Winograd input buffer */
   size_t scratchIw_size;
-  void* scratchOw;
+  void* scratchOw;            /* Winograd output buffer */
   size_t scratchOw_size;
-  void* scratchVk;
+  void* scratchVk;            /* Winograd weight buffer */
   size_t scratchVk_size;
 
   /* JIT-generated convolution code */
@@ -667,9 +674,9 @@ LIBXSMM_APIVAR(libxsmm_malloc_function libxsmm_scratch_malloc_fn);
 LIBXSMM_APIVAR(libxsmm_free_function libxsmm_default_free_fn);
 /** Function used to release scratch memory. */
 LIBXSMM_APIVAR(libxsmm_free_function libxsmm_scratch_free_fn);
-/** If non-NULL, this context used for the context-form of the malloc/free function. */
+/** If non-NULL, this context is used by the context-form of memory allocation. */
 LIBXSMM_APIVAR(void* libxsmm_default_allocator_context);
-/** If non-NULL, this context used for the context-form of the malloc/free function. */
+/** If non-NULL, this context is used by the context-form of memory allocation. */
 LIBXSMM_APIVAR(void* libxsmm_scratch_allocator_context);
 /** Number of discovered threads (per libxsmm_get_tid) */
 LIBXSMM_APIVAR(unsigned int libxsmm_threads_count);
