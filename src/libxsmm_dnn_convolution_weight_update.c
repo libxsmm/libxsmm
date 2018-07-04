@@ -1103,9 +1103,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(l
   /* check if we have a kernel JITed */
   if ( handle->use_upd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      const int ldx     = (int)(handle->desc.W+(2*handle->desc.pad_w));
-      const int ldx_alt = (int)(handle->desc.v*handle->ifmblock);
-      const int ldb_alt = (int)handle->ofwp;
+      const libxsmm_blasint ldx     = (libxsmm_blasint)(handle->desc.W+(2*handle->desc.pad_w));
+      const libxsmm_blasint ldx_alt = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
+      const libxsmm_blasint ldb_alt = (libxsmm_blasint)handle->ofwp;
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
@@ -1156,13 +1156,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom(lib
   /* check if we have a kernel JITed */
   if ( handle->use_upd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      const int lda     = (int)(handle->blocksofm*handle->ofmblock);
-      const int ldb     = (int)(handle->desc.W+(2*handle->desc.pad_w));
-      const int ldc     = (int)(handle->ofmblock);
-      const int lda_alt = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) )
-                            ? (int)(handle->desc.v*handle->blocksifm*handle->ifmblock) : (int)(handle->desc.v*handle->ifmblock);
-      const int ldb_alt = (int)(handle->ofwp);
-      const int ldc_alt = (int)(handle->ifmblock);
+      const libxsmm_blasint lda     = (libxsmm_blasint)(handle->blocksofm*handle->ofmblock);
+      const libxsmm_blasint ldb     = (libxsmm_blasint)(handle->desc.W+(2*handle->desc.pad_w));
+      const libxsmm_blasint ldc     = (libxsmm_blasint)(handle->ofmblock);
+      const libxsmm_blasint lda_alt = (libxsmm_blasint)((handle->desc.pad_h == handle->desc.pad_h_in && handle->desc.pad_w == handle->desc.pad_w_in)
+                            ? (handle->desc.v*handle->blocksifm*handle->ifmblock) : (handle->desc.v*handle->ifmblock));
+      const libxsmm_blasint ldb_alt = (libxsmm_blasint)(handle->ofwp);
+      const libxsmm_blasint ldc_alt = (libxsmm_blasint)(handle->ifmblock);
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
@@ -1203,13 +1203,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(libxs
   /* check if we have a kernel JITed */
   if ( handle->use_upd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      const int lda     = (int)(handle->blocksofm*handle->ofmblock);
-      const int ldb     = (int)(handle->desc.W+(2*handle->desc.pad_w));
-      const int ldc     = (int)(handle->blocksofm*handle->ofmblock);
-      const int lda_alt = ( (handle->desc.pad_h == handle->desc.pad_h_in) && (handle->desc.pad_w == handle->desc.pad_w_in) )
-                            ? (int)(handle->desc.v*handle->blocksifm*handle->ifmblock) : (int)(handle->desc.v*handle->ifmblock);
-      const int ldb_alt = (int)(handle->ofwp);
-      const int ldc_alt = (int)(handle->ifmblock);
+      const libxsmm_blasint lda     = (libxsmm_blasint)(handle->blocksofm*handle->ofmblock);
+      const libxsmm_blasint ldb     = (libxsmm_blasint)(handle->desc.W+(2*handle->desc.pad_w));
+      const libxsmm_blasint ldc     = (libxsmm_blasint)(handle->blocksofm*handle->ofmblock);
+      const libxsmm_blasint lda_alt = (libxsmm_blasint)((handle->desc.pad_h == handle->desc.pad_h_in && handle->desc.pad_w == handle->desc.pad_w_in)
+                            ? (handle->desc.v*handle->blocksifm*handle->ifmblock) : (handle->desc.v*handle->ifmblock));
+      const libxsmm_blasint ldb_alt = (libxsmm_blasint)(handle->ofwp);
+      const libxsmm_blasint ldc_alt = (libxsmm_blasint)(handle->ifmblock);
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
