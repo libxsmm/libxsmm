@@ -34,7 +34,7 @@
 #include <libxsmm_bgemm.h>
 
 #if !defined(LIBXSMM_DNN_ELTWISE_FTYPE)
-# define LIBXSMM_DNN_ELTWISE_FTYPE float /* TODO: undefine/remove generic symbol names as header-only interferes with user's code */
+# define LIBXSMM_DNN_ELTWISE_FTYPE float
 #endif
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_zero(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, int start_thread, int tid, int nthreads);

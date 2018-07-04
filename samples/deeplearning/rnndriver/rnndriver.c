@@ -591,7 +591,7 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, scratch ) ); //KB //ALL
     /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
     zero_buf( (float*)scratch, scratch_size/4 );
-    
+
     /* let's allocate and bind scratch */
     internalstate_size = libxsmm_dnn_rnncell_get_internalstate_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, &status ); //KB //ALL
     CHKERR_LIBXSMM_DNN( status );
