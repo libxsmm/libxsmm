@@ -115,6 +115,7 @@ LIBXSMM_INLINE void init_buf_int8(char* buf, size_t size, int initPos, int initO
 LIBXSMM_INLINE void init_buf_uint8(unsigned char* buf, size_t size, int initPos, int initOne)
 {
   int i;
+  LIBXSMM_UNUSED(initPos);
   zero_buf_uint8(buf, size);
   for (i = 0; i < (int)size; ++i) {
     buf[i] = (unsigned char)((initOne != 0) ? 1 : (rand()%3));
