@@ -46,15 +46,15 @@ element_output_type* out = ((element_output_type*)handle->reg_output->data) + (h
 /* padding via stack allocated buffers */
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
-const int scratch7_size = padded_h * padded_w * handle->ifmblock;
+const int size_tls1 = padded_h * padded_w * handle->ifmblock;
 #if !defined(LIBXSMM_DNN_VLA_TLS1)
-element_input_type *const input_scratch_padding = (element_input_type*)(((char*)handle->scratch7) + ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_input_type), LIBXSMM_CACHELINE));
-LIBXSMM_ASSERT(scratch7_size * sizeof(element_input_type) * handle->desc.threads <= handle->scratch7_size);
+element_input_type *const input_scratch_padding = (element_input_type*)(((char*)handle->scratch5) + ltid * LIBXSMM_UP2(size_tls1 * sizeof(element_input_type), LIBXSMM_CACHELINE));
+LIBXSMM_ASSERT(size_tls1 * sizeof(element_input_type) * handle->desc.threads <= handle->max_scratch5_size);
 #else
-element_input_type input_scratch_padding_array[scratch7_size];
+element_input_type input_scratch_padding_array[size_tls1];
 element_input_type *const input_scratch_padding = input_scratch_padding_array;
 #endif
-for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
+for ( ii = 0; ii < size_tls1; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
 
 { /* open new scope for additional variable declarations (C89) */
   LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
