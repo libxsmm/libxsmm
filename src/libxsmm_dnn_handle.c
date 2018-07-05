@@ -140,7 +140,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   }
 
   /* Generic codepath setup here... */
-  if (0 != handle->use_fwd_generic || 0 != handle->use_bwd_generic || 0 != handle->use_upd_generic) {
+  if (0 != noarch || 0 != handle->use_upd_generic) {
     /*Setup generic code generation here*/
     const int handle_status = libxsmm_dnn_setup_generic(handle);
     const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
