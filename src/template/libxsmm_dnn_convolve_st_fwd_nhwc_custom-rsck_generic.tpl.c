@@ -49,11 +49,11 @@ const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int scratch7_size = padded_h * padded_w * handle->ifmblock;
 #if !defined(LIBXSMM_DNN_VLA_TLS1)
 element_input_type *const input_scratch_padding = (element_input_type*)(((char*)handle->scratch7) + ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_input_type), LIBXSMM_CACHELINE));
+LIBXSMM_ASSERT(scratch7_size * sizeof(element_input_type) * handle->desc.threads <= handle->scratch7_size);
 #else
 element_input_type input_scratch_padding_array[scratch7_size];
 element_input_type *const input_scratch_padding = input_scratch_padding_array;
 #endif
-LIBXSMM_ASSERT(scratch7_size * sizeof(element_input_type) * handle->desc.threads <= handle->scratch7_size);
 for ( ii = 0; ii < scratch7_size; ++ii ) { input_scratch_padding[ii] = (element_input_type)0; }
 
 { /* open new scope for additional variable declarations (C89) */
