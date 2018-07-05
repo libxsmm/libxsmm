@@ -153,7 +153,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
         return 5;
      } else {
         buf[i_src_location] = 0x0f;
-        buf[i_src_location+1] = (unsigned char) l_jmptype + 0x10;
+        buf[i_src_location+1] = (unsigned char)(l_jmptype + 0x10);
         /* FIll-in zeros for now, this routine has to be called again: */
         buf[i_src_location+2] = 0x00;
         buf[i_src_location+3] = 0x00;
@@ -177,8 +177,8 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
      if ( l_dist >= -128 ) /* can it be done in 1-byte? */
      {
         /* Single byte back jump */
-        buf[i_src_location]   = (unsigned char) l_jmptype;
-        buf[i_src_location+1] = (unsigned char) l_dist;
+        buf[i_src_location]   = (unsigned char)l_jmptype;
+        buf[i_src_location+1] = (unsigned char)l_dist;
         return 2;
      } else {
         /* 4-byte back jump */
@@ -186,7 +186,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
            /* l_cptr better point to l_dist and l_dist needs to be recalculated */
            l_dist = -1*(i_src_location+6-i_dest_location);
            buf[i_src_location]   = 0x0f;
-           buf[i_src_location+1] = (unsigned char) l_jmptype + 0x10;
+           buf[i_src_location+1] = (unsigned char)(l_jmptype + 0x10);
            buf[i_src_location+2] = l_cptr[0];
            buf[i_src_location+3] = l_cptr[1];
            buf[i_src_location+4] = l_cptr[2];
@@ -218,7 +218,7 @@ int internal_x86_jumping( libxsmm_generated_code* io_generated_code,
         /* l_cptr better point to l_dist and l_dist needs to be recalculated */
         l_dist = (i_dest_location-i_src_location-6);
         buf[i_src_location] = 0x0f;
-        buf[i_src_location+1] = (unsigned char) l_jmptype + 0x10;
+        buf[i_src_location+1] = (unsigned char)(l_jmptype + 0x10);
         buf[i_src_location+2] = l_cptr[0];
         buf[i_src_location+3] = l_cptr[1];
         buf[i_src_location+4] = l_cptr[2];
@@ -3620,7 +3620,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     {
         if (l_gp8) l_sse_preamble += 1;
         if (l_ix8) l_sse_preamble += 2;
-        buf[i++] = (unsigned char) l_sse_preamble;
+        buf[i++] = (unsigned char)l_sse_preamble;
         ++l_place1;
     }
 
