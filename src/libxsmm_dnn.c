@@ -1886,7 +1886,7 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle, const libxsmm_dnn_compute_kind kind, const void* scratch)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  size_t address = (size_t)scratch;
+  uintptr_t address = (uintptr_t)scratch;
   size_t offset = 0;
   size_t scratch5_size = 0;
 
@@ -2234,7 +2234,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* han
         } break;
         default: {
                    status = LIBXSMM_DNN_ERR_INVALID_KIND;
-                 }
+        }
       }
     }
   } else {
