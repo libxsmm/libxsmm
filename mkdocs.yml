@@ -1,21 +1,22 @@
+site_name: LIBXSMM
+site_author: Hans Pabst
+copyright: Copyright (c) 2009-2018, LIBXSMM <a href="http://libxsmm.readthedocs.io/LICENSE/">Contributors</a>.
+site_description: Library targeting Intel Architecture for specialized dense and sparse matrix operations, and deep learning primitives.
+repo_url: https://github.com/hfp/libxsmm/
+edit_uri: edit/master/documentation
 docs_dir: documentation
-theme: readthedocs
-theme_dir: .theme
+
 markdown_extensions:
 - toc:
     permalink: True
     title: None
-extra_javascript:
-- search.js
 extra_css:
 - style.css
 
-site_name: LIBXSMM
-site_author: Hans Pabst
-copyright: Copyright (c) 2009-2018, LIBXSMM <a href="http://libxsmm.readthedocs.io/LICENSE/">Contributors</a>.
-site_description: Library targeting Intel Architecture for small, dense or sparse matrix multiplications, and small convolutions.
-repo_url: https://github.com/hfp/libxsmm
-edit_uri: edit/master/documentation
+theme:
+    name: readthedocs
+    custom_dir: .theme
+theme_dir: .theme
 
 pages:
 - Overview: index.md

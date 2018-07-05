@@ -169,7 +169,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
   /* m loop */
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_mloop, 1 );
 
   /* loop over n-blocks */

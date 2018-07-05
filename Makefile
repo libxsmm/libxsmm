@@ -13,31 +13,34 @@ ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
 endif
 endif
 
-#ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
+# ROOTDIR avoid abspath to match Makefile targets
 ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
-SPLDIR = $(ROOTDIR)/samples
-SCRDIR = $(ROOTDIR)/scripts
-TSTDIR = $(ROOTDIR)/tests
-SRCDIR = $(ROOTDIR)/src
 INCDIR = include
+SCRDIR = scripts
+TSTDIR = tests
 BLDDIR = build
+SRCDIR = src
 OUTDIR = lib
 BINDIR = bin
+SPLDIR = samples
 DOCDIR = documentation
 
-# subdirectories for prefix based installation
-PINCDIR = $(INCDIR)
-POUTDIR = $(OUTDIR)
-PBINDIR = $(BINDIR)
-PTSTDIR = tests
-PDOCDIR = share/libxsmm
+# subdirectories (relative) to PREFIX (install targets)
+PINCDIR ?= $(INCDIR)
+PSRCDIR ?= $(PINCDIR)/libxsmm
+POUTDIR ?= $(OUTDIR)
+PBINDIR ?= $(BINDIR)
+PTSTDIR ?= $(TSTDIR)
+PDOCDIR ?= share/libxsmm
+LICFDIR ?= $(PDOCDIR)
+LICFILE ?= LICENSE.md
 
 # initial default flags: RPM_OPT_FLAGS are usually NULL
 CFLAGS = $(RPM_OPT_FLAGS)
 CXXFLAGS := $(CFLAGS)
 FCFLAGS := $(CFLAGS)
 DFLAGS = -DLIBXSMM_BUILD
-IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(SRCDIR)
+IFLAGS = -I$(INCDIR) -I$(BLDDIR) -I$(ROOTDIR)/$(SRCDIR)
 
 # THRESHOLD problem size (M x N x K) determining when to use BLAS
 # A value of zero (0) populates a default threshold
@@ -107,9 +110,13 @@ endif
 # Determines if the library is thread-safe
 THREADS ?= 1
 
-# 0: produces shared library files suitable for dynamic linkage
-# 1: produces library archives suitable for static linkage
+# 0: shared libraries files suitable for dynamic linkage
+# 1: library archives suitable for static linkage
 STATIC ?= 1
+
+# 0: build according to the value of STATIC
+# 1: build according to STATIC=0 and STATIC=1
+SHARED ?= 0
 
 # Determines if the library can act as a wrapper-library (GEMM)
 # 1: enables wrapping SGEMM/DGEMM, and GEMV (depends on "GEMM")
@@ -200,16 +207,18 @@ endif
 DOCEXT = pdf
 
 # state to be excluded from tracking the (re-)build state
-EXCLUDE_STATE = BLAS_WARNING PREFIX
+EXCLUDE_STATE = BLAS_WARNING PREFIX DESTDIR INSTALL_ROOT
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
 # Version numbers according to interface (version.txt)
-VERSION_MAJOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 1)
-VERSION_MINOR ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 2)
-VERSION_UPDATE ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py 3)
-VERSION_API ?= $(VERSION_MAJOR)
+VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1)
+VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 2)
+VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
+VERSION_API ?= $(shell $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE))
+VERSION_RELEASE ?= HEAD
+VERSION_PACKAGE ?= 1
 
 # target library for a broad range of systems
 ifneq (0,$(JIT))
@@ -255,11 +264,11 @@ else
   GENGEMM = $(BINDIR)/libxsmm_gemm_generator
 endif
 
-INDICES ?= $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
+INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 NINDICES = $(words $(INDICES))
 
-HEADERS = $(wildcard $(SRCDIR)/template/*.c) $(wildcard $(SRCDIR)/*.h) \
-          $(SRCDIR)/libxsmm_hash.c $(SRCDIR)/libxsmm_gemm_diff.c \
+HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
+          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c $(ROOTDIR)/$(SRCDIR)/libxsmm_gemm_diff.c \
           $(ROOTDIR)/include/libxsmm_bgemm.h \
           $(ROOTDIR)/include/libxsmm_cpuid.h \
           $(ROOTDIR)/include/libxsmm_dnn.h \
@@ -277,7 +286,7 @@ HEADERS = $(wildcard $(SRCDIR)/template/*.c) $(wildcard $(SRCDIR)/*.h) \
           $(ROOTDIR)/include/libxsmm_sync.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
-SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
+SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c libxsmm_math.c libxsmm_sync.c \
           libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_trans.c libxsmm_bgemm.c \
@@ -292,10 +301,10 @@ SRCFILES_LIB = $(patsubst %,$(SRCDIR)/%, \
           libxsmm_dnn_convolution_winograd_weight_update.o )
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
-SRCFILES_GEN_LIB = $(patsubst %,$(SRCDIR)/%,$(wildcard $(SRCDIR)/generator_*.c) libxsmm_trace.c libxsmm_generator.c)
-SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
-SRCFILES_GEN_CONVWINO_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_convolution_winograd_driver.c)
-SRCFILES_GEN_CONV_BIN = $(patsubst %,$(SRCDIR)/%,libxsmm_generator_convolution_driver.c)
+SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c) libxsmm_trace.c libxsmm_generator.c)
+SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
+SRCFILES_GEN_CONVWINO_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_convolution_winograd_driver.c)
+SRCFILES_GEN_CONV_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_convolution_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
 OBJFILES_GEN_CONVWINO_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_CONVWINO_BIN))))
@@ -349,7 +358,7 @@ endif
 
 information = \
 	$(info ================================================================================) \
-	$(info LIBXSMM $(shell $(PYTHON) $(SCRDIR)/libxsmm_utilities.py)) \
+	$(info LIBXSMM $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py)) \
 	$(info --------------------------------------------------------------------------------) \
 	$(info $(GINFO)) \
 	$(info $(CINFO)) \
@@ -387,9 +396,17 @@ endif
 
 .PHONY: libxsmm
 ifeq (0,$(COMPATIBLE))
+ifeq (0,$(SHARED))
 libxsmm: lib generator
 else
+libxsmm: libs generator
+endif
+else
+ifeq (0,$(SHARED))
 libxsmm: lib
+else
+libxsmm: libs
+endif
 endif
 	$(information)
 ifneq (,$(strip $(LIBJITPROFILING)))
@@ -399,6 +416,14 @@ endif
 
 .PHONY: lib
 lib: headers drytest lib_hst lib_mic
+
+.PHONY: libs
+libs: lib
+ifneq (0,$(STATIC))
+	@$(MAKE) --no-print-directory lib STATIC=0
+else
+	@$(MAKE) --no-print-directory lib STATIC=1
+endif
 
 .PHONY: all
 all: libxsmm samples
@@ -531,14 +556,14 @@ endif
 
 .PHONY: config
 config: $(INCDIR)/libxsmm_config.h
-$(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_config.h \
-                            $(SCRDIR)/libxsmm_config.py $(SCRDIR)/libxsmm_utilities.py \
+$(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
+                            $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py \
                             $(ROOTDIR)/Makefile $(ROOTDIR)/Makefile.inc \
-                            $(wildcard $(ROOTDIR)/.gitx/*) \
+                            $(wildcard $(ROOTDIR)/.github/*) \
                             $(ROOTDIR)/version.txt
 	$(information)
-	@if [ -e $(ROOTDIR)/.gitx/install.sh ]; then \
-		$(ROOTDIR)/.gitx/install.sh; \
+	@if [ -e $(ROOTDIR)/.github/install.sh ]; then \
+		$(ROOTDIR)/.github/install.sh; \
 	fi
 	@$(CP) $(ROOTDIR)/include/libxsmm_bgemm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2>/dev/null || true
@@ -557,7 +582,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 	@$(CP) $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2>/dev/null || true
-	@$(PYTHON) $(SCRDIR)/libxsmm_config.py $(SRCDIR)/template/libxsmm_config.h \
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
@@ -565,25 +590,25 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(SRCDIR)/template/libxsmm_co
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
-$(INCDIR)/libxsmm.h: $(SCRDIR)/libxsmm_interface.py \
-                     $(SRCDIR)/template/libxsmm.h \
+$(INCDIR)/libxsmm.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
+                     $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
                      $(INCDIR)/libxsmm_config.h $(HEADERS)
-	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.h \
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
 
 .PHONY: cheader_only
 cheader_only: $(INCDIR)/libxsmm_source.h
-$(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(SCRDIR)/libxsmm_source.sh $(INCDIR)/libxsmm.h
-	@$(SCRDIR)/libxsmm_source.sh > $@
+$(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(ROOTDIR)/$(SCRDIR)/libxsmm_source.sh $(INCDIR)/libxsmm.h
+	@$(ROOTDIR)/$(SCRDIR)/libxsmm_source.sh > $@
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
-$(INCDIR)/libxsmm.f: $(SCRDIR)/libxsmm_interface.py \
-                     $(SRCDIR)/template/libxsmm.f \
+$(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
+                     $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
                      $(INCDIR)/libxsmm_config.h
-	@$(PYTHON) $(SCRDIR)/libxsmm_interface.py $(SRCDIR)/template/libxsmm.f \
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) | \
-	$(PYTHON) $(SCRDIR)/libxsmm_config.py /dev/stdin \
+	$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py /dev/stdin \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
@@ -592,11 +617,11 @@ $(INCDIR)/libxsmm.f: $(SCRDIR)/libxsmm_interface.py \
 
 .PHONY: sources
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
-$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(SCRDIR)/libxsmm_dispatch.py $(SRCFILES_KERNELS) \
+$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(SRCFILES_KERNELS) \
                               $(INCDIR)/libxsmm.h
-	@$(PYTHON) $(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 
-$(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(SCRDIR)/libxsmm_utilities.py $(SCRDIR)/libxsmm_specialized.py
+$(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py $(ROOTDIR)/$(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES_KERNELS)))
 	$(eval MVALUE := $(shell echo $(basename $(notdir $@)) | cut -d_ -f2))
 	$(eval NVALUE := $(shell echo $(basename $(notdir $@)) | cut -d_ -f3))
@@ -678,7 +703,7 @@ endif
 		-e "/#error No kernel was compiled, lacking support for current architecture?/d" \
 		-e "/#pragma message (\".*KERNEL COMPILATION WARNING: compiling ..* code on ..* or newer architecture: \" __FILE__)/d" \
 		| tr "~" "\n" > $(TMPFILE)
-	@$(PYTHON) $(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $(TMPFILE)
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $(TMPFILE)
 	@$(MV) $(TMPFILE) $@
 endif
 
@@ -706,7 +731,7 @@ endif
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 $(foreach OBJ,$(OBJFILES_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
-  $(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
   -mmic $(CFLAGS) $(DFLAGS) $(IFLAGS))))
 $(foreach OBJ,$(KRNOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
@@ -714,16 +739,16 @@ $(foreach OBJ,$(KRNOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   -mmic $(CFLAGS) $(DFLAGS) $(IFLAGS))))
 $(foreach OBJ,$(EXTOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
-  $(OBJ), $(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   -mmic $(EXTCFLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
-$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_MIC),$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
+$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_MIC),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
   -mmic $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 endif
 endif
 
 $(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
-  $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
   $(CTARGET) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
 $(foreach OBJ,$(KRNOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
@@ -731,26 +756,26 @@ $(foreach OBJ,$(KRNOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(CTARGET) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
 $(foreach OBJ,$(EXTOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
-  $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(CTARGET) $(EXTCFLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
 $(foreach OBJ,$(OBJFILES_GEN_LIB),$(eval $(call DEFINE_COMPILE_RULE, \
-  $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(CFLAGS) $(DFLAGS) $(IFLAGS))))
 $(foreach OBJ,$(OBJFILES_GEN_GEMM_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
-  $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(CFLAGS) $(DFLAGS) $(IFLAGS))))
 $(foreach OBJ,$(OBJFILES_GEN_CONVWINO_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
-  $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(CFLAGS) $(DFLAGS) $(IFLAGS))))
 $(foreach OBJ,$(OBJFILES_GEN_CONV_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
-  $(OBJ),$(patsubst %.o,$(SRCDIR)/%.c,$(notdir $(OBJ))), \
+  $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(CFLAGS) $(DFLAGS) $(IFLAGS))))
-$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
+$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
   $(CTARGET) $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 
 .PHONY: compile_mic
@@ -816,7 +841,7 @@ module: module_hst module_mic
 build_generator_lib: $(OUTDIR)/libxsmmgen.$(LIBEXT)
 $(OUTDIR)/libxsmmgen.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
-	$(LIB_LD) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_GEN_LIB) $(LDFLAGS) $(CLDFLAGS) $(LIBRT)
+	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_GEN_LIB) $(LDFLAGS) $(CLDFLAGS) $(LIBRT)
 else # static
 	$(AR) -rs $@ $(OBJFILES_GEN_LIB)
 endif
@@ -842,7 +867,7 @@ ifneq (0,$(MPSS))
 clib_mic: $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(KRNOBJS_MIC)
 ifeq (0,$(STATIC))
-	$(LIB_LD) -mmic $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_MIC) $(KRNOBJS_MIC) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) -mmic $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_MIC) $(KRNOBJS_MIC) $(LDFLAGS) $(CLDFLAGS)
 else # static
 	$(AR) -rs $@ $(OBJFILES_MIC) $(KRNOBJS_MIC)
 endif
@@ -853,7 +878,7 @@ endif
 clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
 $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
 ifeq (0,$(STATIC))
-	$(LIB_LD) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
 else # static
 	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(OBJJITPROFILING)
 endif
@@ -865,7 +890,7 @@ ifneq (,$(strip $(FC)))
 flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	$(LIB_FLD) -mmic $(FCMTFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_FLD) -mmic $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/mic/libxsmm-mod.o $(call abslib,$(OUTDIR)/mic/libxsmm.$(IMPEXT)) $(LDFLAGS) $(FLDFLAGS)
 else # static
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/.make
@@ -882,7 +907,7 @@ ifneq (,$(strip $(FC)))
 flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT)
-	$(LIB_FLD) $(FCMTFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_FLD) $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(FLDFLAGS)
 else # static
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/.make
@@ -898,7 +923,7 @@ ifneq (0,$(MPSS))
 ext_mic: $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
-	$(LIB_LD) -mmic $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_LD) -mmic $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_MIC) $(call abslib,$(OUTDIR)/mic/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 else # static
 $(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC)
@@ -912,13 +937,13 @@ ext_hst: $(OUTDIR)/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST) $(OUTDIR)/libxsmm.$(LIBEXT)
 ifneq (Darwin,$(UNAME))
-	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 else ifneq (0,$(INTEL)) # intel @ osx
-	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 			$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 else # osx
-	$(LIB_LD)               $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
+	$(LIB_LD)               $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 			$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 endif
 else # static
@@ -932,7 +957,7 @@ ifneq (0,$(MPSS))
 noblas_mic: $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
-	$(LIB_LD) -mmic $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_MIC) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) -mmic $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_MIC) $(LDFLAGS) $(CLDFLAGS)
 else # static
 $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
 	$(AR) -rs $@ $(NOBLAS_MIC)
@@ -945,11 +970,11 @@ noblas_hst: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
 ifneq (Darwin,$(UNAME))
-	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 else ifneq (0,$(INTEL)) # intel @ osx
-	$(LIB_LD) $(EXTLDFLAGS) $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 else # osx
-	$(LIB_LD)               $(call soname,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
+	$(LIB_LD)               $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(NOBLAS_HST) $(LDFLAGS) $(CLDFLAGS)
 endif
 else # static
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
@@ -958,56 +983,56 @@ endif
 
 .PHONY: samples
 samples: lib_hst
-	@find $(SPLDIR) -type f -name Makefile | grep -v /pyfr/ | grep -v /lstmcell/ | grep -v /gxm/ \
+	@find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile | grep -v /pyfr/ | grep -v /lstmcell/ | grep -v /gxm/ \
 		$(patsubst %, | grep -v /%/,$^) | xargs -I {} $(FLOCK) {} "$(MAKE) DEPSTATIC=$(STATIC)"
 
 .PHONY: cp2k
 cp2k: lib_hst
-	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: cp2k_mic
 cp2k_mic: lib_mic
-	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
 .PHONY: wrap
 wrap: lib_hst
-	@$(FLOCK) $(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0"
 
 .PHONY: wrap_mic
 wrap_mic: lib_mic
-	@$(FLOCK) $(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1 TRACE=0"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1 TRACE=0"
 
 .PHONY: nek
 nek: lib_hst
-	@$(FLOCK) $(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: nek_mic
 nek_mic: lib_mic
-	@$(FLOCK) $(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
 .PHONY: smm
 smm: lib_hst
-	@$(FLOCK) $(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: smm_mic
 smm_mic: lib_mic
-	@$(FLOCK) $(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
 # added for specfem sample
 # will need option: make MNK="5 25" ..
 .PHONY: specfem
 specfem: lib_hst
-	@$(FLOCK) $(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: specfem_mic
 specfem_mic: lib_mic
-	@$(FLOCK) $(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
 .PHONY: drytest
-drytest: $(SPLDIR)/cp2k/cp2k-perf.sh $(SPLDIR)/smm/smmf-perf.sh \
-	$(SPLDIR)/nek/axhm-perf.sh $(SPLDIR)/nek/grad-perf.sh $(SPLDIR)/nek/rstr-perf.sh
+drytest: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh \
+	$(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh
 
-$(SPLDIR)/cp2k/cp2k-perf.sh: $(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
+$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/$(SPLDIR)/cp2k/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
@@ -1052,7 +1077,7 @@ endif
 	@echo >> $@
 	@chmod +x $@
 
-$(SPLDIR)/smm/smmf-perf.sh: $(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
+$(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh: $(ROOTDIR)/$(SPLDIR)/smm/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
@@ -1091,7 +1116,7 @@ endif
 	@echo >> $@
 	@chmod +x $@
 
-$(SPLDIR)/nek/axhm-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
+$(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
@@ -1130,7 +1155,7 @@ endif
 	@echo >> $@
 	@chmod +x $@
 
-$(SPLDIR)/nek/grad-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
+$(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
@@ -1169,7 +1194,7 @@ endif
 	@echo >> $@
 	@chmod +x $@
 
-$(SPLDIR)/nek/rstr-perf.sh: $(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
+$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)/Makefile
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
@@ -1228,79 +1253,79 @@ test-all: tests test-cp2k test-smm test-nek test-wrap
 
 .PHONY: build-tests
 build-tests: lib_hst
-	@$(FLOCK) $(TSTDIR) "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
+	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
 
 .PHONY: tests
 tests: lib_hst
-	@$(FLOCK) $(TSTDIR) "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) test"
+	@$(FLOCK) $(ROOTDIR)/$(TSTDIR) "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) test"
 
 .PHONY: cpp-test
 cpp-test: test-cpp
 
 .PHONY: test-cpp
 test-cpp: $(INCDIR)/libxsmm_source.h
-	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 \
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 \
 		ECXXFLAGS='-DUSE_HEADER_ONLY $(ECXXFLAGS)' clean compile"
 
 .PHONY: test-cp2k
-test-cp2k: $(SPLDIR)/cp2k/cp2k-test.txt
-$(SPLDIR)/cp2k/cp2k-test.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
+test-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt
+$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
 	$(info ========================)
 	$(info Running CP2K Code Sample)
 	$(info ========================)
-	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) cp2k"
-	@$(FLOCK) $(SPLDIR)/cp2k "./cp2k-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * 128)))"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) cp2k"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "./cp2k-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * 128)))"
 
 .PHONY: perf-cp2k
-perf-cp2k: $(SPLDIR)/cp2k/cp2k-perf.txt
-$(SPLDIR)/cp2k/cp2k-perf.txt: $(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
-	@$(FLOCK) $(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) cp2k"
-	@$(FLOCK) $(SPLDIR)/cp2k "./cp2k-perf.sh $(notdir $@)"
+perf-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt
+$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) cp2k"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "./cp2k-perf.sh $(notdir $@)"
 
 .PHONY: test-wrap
 test-wrap: wrap
-	@$(FLOCK) $(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 test"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 test"
 
 .PHONY: test-smm
 ifneq (,$(strip $(FC)))
-test-smm: $(SPLDIR)/smm/smm-test.txt
-$(SPLDIR)/smm/smm-test.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
+test-smm: $(ROOTDIR)/$(SPLDIR)/smm/smm-test.txt
+$(ROOTDIR)/$(SPLDIR)/smm/smm-test.txt: $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh lib_hst
 	$(info =======================)
 	$(info Running SMM Code Sample)
 	$(info =======================)
-	@$(FLOCK) $(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) smm"
-	@$(FLOCK) $(SPLDIR)/smm "./smmf-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) smm"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "./smmf-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
 .PHONY: perf-smm
 ifneq (,$(strip $(FC)))
-perf-smm: $(SPLDIR)/smm/smmf-perf.txt
-$(SPLDIR)/smm/smmf-perf.txt: $(SPLDIR)/smm/smmf-perf.sh lib_hst
-	@$(FLOCK) $(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) smm"
-	@$(FLOCK) $(SPLDIR)/smm "./smmf-perf.sh $(notdir $@)"
+perf-smm: $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.txt
+$(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.txt: $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh lib_hst
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) smm"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "./smmf-perf.sh $(notdir $@)"
 endif
 
 .PHONY: test-nek
 ifneq (,$(strip $(FC)))
-test-nek: $(SPLDIR)/nek/axhm-perf.txt $(SPLDIR)/nek/grad-perf.txt $(SPLDIR)/nek/rstr-perf.txt
-$(SPLDIR)/nek/axhm-perf.txt: $(SPLDIR)/nek/axhm-perf.sh lib_hst
+test-nek: $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt
+$(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh lib_hst
 	$(info =======================)
 	$(info Running NEK/AXHM Sample)
 	$(info =======================)
-	@$(FLOCK) $(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) axhm"
-	@$(FLOCK) $(SPLDIR)/nek "./axhm-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
-$(SPLDIR)/nek/grad-perf.txt: $(SPLDIR)/nek/grad-perf.sh lib_hst
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) axhm"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./axhm-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
+$(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh lib_hst
 	$(info =======================)
 	$(info Running NEK/GRAD Sample)
 	$(info =======================)
-	@$(FLOCK) $(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) grad"
-	@$(FLOCK) $(SPLDIR)/nek "./grad-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
-$(SPLDIR)/nek/rstr-perf.txt: $(SPLDIR)/nek/rstr-perf.sh lib_hst
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) grad"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./grad-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
+$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh lib_hst
 	$(info =======================)
 	$(info Running NEK/RSTR Sample)
 	$(info =======================)
-	@$(FLOCK) $(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) rstr"
-	@$(FLOCK) $(SPLDIR)/nek "./rstr-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) rstr"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./rstr-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
 $(DOCDIR)/index.md: $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/README.md
@@ -1351,8 +1376,8 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-o $(notdir $@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md
-	@cat $(SPLDIR)/*/README.md $(SPLDIR)/deeplearning/*/README.md \
+$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md
+	@cat $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md \
 	| sed \
 		-e 's/^#/##/' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
@@ -1485,8 +1510,8 @@ ifneq (,$(wildcard $(BLDDIR))) # still exists
 	@rm -f $(BLDDIR)/*.gcno $(BLDDIR)/*.gcda $(BLDDIR)/*.gcov
 endif
 	@find . -type f \( -name .make -or -name .state \) -exec rm {} \;
-	@rm -f $(SCRDIR)/libxsmm_utilities.pyc
-	@rm -rf $(SCRDIR)/__pycache__
+	@rm -f $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.pyc
+	@rm -rf $(ROOTDIR)/$(SCRDIR)/__pycache__
 
 .PHONY: realclean
 realclean: clean
@@ -1510,11 +1535,11 @@ endif
 ifneq (,$(wildcard $(BINDIR))) # still exists
 	@rm -f $(BINDIR)/libxsmm_*_generator
 endif
-	@rm -f $(SPLDIR)/cp2k/cp2k-perf.sh
-	@rm -f $(SPLDIR)/smm/smmf-perf.sh
-	@rm -f $(SPLDIR)/nek/grad-perf.sh
-	@rm -f $(SPLDIR)/nek/axhm-perf.sh
-	@rm -f $(SPLDIR)/nek/rstr-perf.sh
+	@rm -f $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh
+	@rm -f $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh
+	@rm -f $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh
+	@rm -f $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh
+	@rm -f $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh
 	@rm -f $(INCDIR)/libxsmm_config.h
 	@rm -f $(INCDIR)/libxsmm_source.h
 	@rm -f $(INCDIR)/libxsmm.modmic
@@ -1532,32 +1557,41 @@ realclean-all: realclean
 	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
 		"$(MAKE) --no-print-directory realclean 2>/dev/null || true" \;
 
-# Dummy prefix
+.PHONY: distclean
+distclean: realclean-all
+
 ifneq (,$(strip $(PREFIX)))
 INSTALL_ROOT = $(PREFIX)
 else
 INSTALL_ROOT = .
 endif
+ifeq ($(dir .),$(dir $(INSTALL_ROOT)))
+ifneq (,$(strip $(DESTDIR)))
+INSTALL_ROOT := $(abspath $(DESTDIR)/$(INSTALL_ROOT))
+else
+INSTALL_ROOT := $(abspath $(INSTALL_ROOT))
+endif
+endif
 
 .PHONY: install-minimal
 install-minimal: libxsmm
 ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
+	@mkdir -p $(INSTALL_ROOT)/$(POUTDIR) $(INSTALL_ROOT)/$(PBINDIR) $(INSTALL_ROOT)/$(PINCDIR) $(INSTALL_ROOT)/$(PSRCDIR)
 	@echo
-	@echo "LIBXSMM installing binaries..."
-	@mkdir -p $(INSTALL_ROOT)/$(POUTDIR) $(INSTALL_ROOT)/$(PBINDIR) $(INSTALL_ROOT)/$(PINCDIR)
-	@$(CP) -v $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmgen.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmext.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmf.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmmf.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmm.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v $(OUTDIR)/libxsmm.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@echo "LIBXSMM installing libraries..."
+	@$(CP) -va $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v  $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -va $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v  $(OUTDIR)/libxsmmgen.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -va $(OUTDIR)/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v  $(OUTDIR)/libxsmmext.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -va $(OUTDIR)/libxsmmf.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v  $(OUTDIR)/libxsmmf.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -va $(OUTDIR)/libxsmm.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v  $(OUTDIR)/libxsmm.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@if [ -e $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		$(CP) -v $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -va $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmnoblas.$(SLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
@@ -1565,7 +1599,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmext.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		$(CP) -v $(OUTDIR)/mic/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -va $(OUTDIR)/mic/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmext.$(SLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
@@ -1573,7 +1607,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmf.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		$(CP) -v $(OUTDIR)/mic/libxsmmf.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -va $(OUTDIR)/mic/libxsmmf.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmmf.$(SLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
@@ -1581,21 +1615,26 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmm.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
-		$(CP) -v $(OUTDIR)/mic/libxsmm.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
+		$(CP) -va $(OUTDIR)/mic/libxsmm.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@if [ -e $(OUTDIR)/mic/libxsmm.$(SLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 		$(CP) -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
 	@echo
+	@echo "LIBXSMM installing stand-alone generators..."
+	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@echo
 	@echo "LIBXSMM installing interface..."
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
 	@$(CP) -v $(INCDIR)/*.mod* $(INSTALL_ROOT)/$(PINCDIR) 2>/dev/null || true
-	@$(CP) -v $(INCDIR)/libxsmm*.h $(INSTALL_ROOT)/$(PINCDIR)
+	@ls -1 $(INCDIR)/libxsmm*.h | grep -v libxsmm_source.h | xargs -I {} $(CP) -v {} $(INSTALL_ROOT)/$(PINCDIR)
 	@$(CP) -v $(INCDIR)/libxsmm.f $(INSTALL_ROOT)/$(PINCDIR)
 	@echo
-	@echo "LIBXSMM installing stand-alone generators..."
-	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@echo "LIBXSMM installing header-only..."
+	@$(ROOTDIR)/$(SCRDIR)/libxsmm_source.sh $(patsubst $(PINCDIR)/%,%,$(PSRCDIR)) \
+		> $(INSTALL_ROOT)/$(PINCDIR)/libxsmm_source.h
+	@$(CP) -vr $(SRCDIR)/* $(INSTALL_ROOT)/$(PSRCDIR)
 endif
 
 .PHONY: install
@@ -1607,9 +1646,10 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.pdf $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/$(DOCDIR)/*.md $(INSTALL_ROOT)/$(PDOCDIR)
 	@$(CP) -v $(ROOTDIR)/version.txt $(INSTALL_ROOT)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/CODE_OF_CONDUCT.md $(INSTALL_ROOT)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/CONTRIBUTING.md $(INSTALL_ROOT)/$(PDOCDIR)
-	@$(CP) -v $(ROOTDIR)/LICENSE.md $(INSTALL_ROOT)/$(PDOCDIR)
+	@mkdir -p $(INSTALL_ROOT)/$(LICFDIR)
+ifneq ($(abspath $(INSTALL_ROOT)/$(PDOCDIR)/LICENSE.md),$(abspath $(INSTALL_ROOT)/$(LICFDIR)/$(LICFILE)))
+	@$(MV) $(INSTALL_ROOT)/$(PDOCDIR)/LICENSE.md $(INSTALL_ROOT)/$(LICFDIR)/$(LICFILE)
+endif
 endif
 
 .PHONY: install-all
@@ -1617,15 +1657,15 @@ install-all: install samples
 ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing samples..."
-	@$(CP) -v $(addprefix $(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/wrap/,dgemm-blas dgemm-blas.sh dgemm-wrap dgemm-wrap.sh dgemm-test.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/dispatch/,dispatch dispatch.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/nek/,axhm grad rstr *.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/smm/,smm smm.sh smm-perf* smmf-perf.sh smm-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/smm/,specialized specialized.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/smm/,dispatched dispatched.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/smm/,inlined inlined.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(SPLDIR)/smm/,blas blas.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/wrap/,dgemm-blas dgemm-blas.sh dgemm-wrap dgemm-wrap.sh dgemm-test.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/dispatch/,dispatch dispatch.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/nek/,axhm grad rstr *.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/smm/,smm smm.sh smm-perf* smmf-perf.sh smm-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/smm/,specialized specialized.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/smm/,dispatched dispatched.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/smm/,inlined inlined.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/smm/,blas blas.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-dev
@@ -1634,7 +1674,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing tests..."
 	@mkdir -p $(INSTALL_ROOT)/$(PTSTDIR)
-	@$(CP) -v $(basename $(wildcard ${TSTDIR}/*.c)) $(INSTALL_ROOT)/$(PTSTDIR) 2>/dev/null || true
+	@$(CP) -v $(basename $(wildcard $(ROOTDIR)/$(TSTDIR)/*.c)) $(INSTALL_ROOT)/$(PTSTDIR) 2>/dev/null || true
 endif
 
 .PHONY: install-artifacts
@@ -1645,4 +1685,84 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@mkdir -p $(INSTALL_ROOT)/$(PDOCDIR)/artifacts
 	@$(CP) -v .state $(INSTALL_ROOT)/$(PDOCDIR)/artifacts/make.txt
 endif
+
+.PHONY: deb
+deb:
+	@if [ "" != "$$(which git)" ]; then \
+		VERSION_ARCHIVE=$$(git describe --tags --abbrev=0 2>/dev/null); \
+		VERSION_ARCHIVE_SONAME=$$($(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $${VERSION_ARCHIVE}); \
+	fi; \
+	if [ "" != "$${VERSION_ARCHIVE}" ] && [ "" != "$${VERSION_ARCHIVE_SONAME}" ]; then \
+		ARCHIVE_AUTHOR_NAME="$$(git config user.name)"; \
+		ARCHIVE_AUTHOR_MAIL="$$(git config user.email)"; \
+		ARCHIVE_NAME=libxsmm$${VERSION_ARCHIVE_SONAME}; \
+		ARCHIVE_DATE="$$(LANG=C date -R)"; \
+		if [ "" != "$${ARCHIVE_AUTHOR_NAME}" ] && [ "" != "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
+			ARCHIVE_AUTHOR="$${ARCHIVE_AUTHOR_NAME} <$${ARCHIVE_AUTHOR_MAIL}>"; \
+		else \
+			echo "Warning: Please git-config user.name and user.email!"; \
+			if [ "" != "$${ARCHIVE_AUTHOR_NAME}" ] || [ "" != "$${ARCHIVE_AUTHOR_MAIL}" ]; then \
+				ARCHIVE_AUTHOR="$${ARCHIVE_AUTHOR_NAME}$${ARCHIVE_AUTHOR_MAIL}"; \
+			fi \
+		fi; \
+		if ! [ -e $${ARCHIVE_NAME}_$${VERSION_ARCHIVE}.orig.tar.gz ]; then \
+			git archive --prefix $${ARCHIVE_NAME}-$${VERSION_ARCHIVE}/ \
+				-o $${ARCHIVE_NAME}_$${VERSION_ARCHIVE}.orig.tar.gz $(VERSION_RELEASE); \
+		fi; \
+		tar xf $${ARCHIVE_NAME}_$${VERSION_ARCHIVE}.orig.tar.gz; \
+		cd $${ARCHIVE_NAME}-$${VERSION_ARCHIVE}; \
+		mkdir -p debian/source; cd debian/source; \
+		echo "3.0 (quilt)" > format; \
+		cd ..; \
+		echo "Source: $${ARCHIVE_NAME}" > control; \
+		echo "Section: libs" >> control; \
+		echo "Homepage: https://github.com/hfp/libxsmm" >> control; \
+		echo "Vcs-Git: https://github.com/hfp/libxsmm/libxsmm.git" >> control; \
+		echo "Maintainer: $${ARCHIVE_AUTHOR}" >> control; \
+		echo "Priority: optional" >> control; \
+		echo "Build-Depends: debhelper (>= 9)" >> control; \
+		echo "Standards-Version: 3.9.8" >> control; \
+		echo >> control; \
+		echo "Package: $${ARCHIVE_NAME}" >> control; \
+		echo "Section: libs" >> control; \
+		echo "Architecture: amd64" >> control; \
+		echo "Depends: \$${shlibs:Depends}, \$${misc:Depends}" >> control; \
+		echo "Description: Matrix operations and deep learning primitives" >> control; \
+		wget -qO- https://api.github.com/repos/hfp/libxsmm \
+		| sed -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
+		| fold -s -w 79 | sed -e 's/^/ /' -e 's/\s\s*$$//' >> control; \
+		echo "$${ARCHIVE_NAME} ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
+		echo >> changelog; \
+		wget -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
+		| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
+		| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
+		| sed -n 's/^\* \(..*\)/\* \1/p' \
+		| fold -s -w 78 | sed -e 's/^/  /g' -e 's/^  \* /\* /' -e 's/^/  /' -e 's/\s\s*$$//' >> changelog; \
+		echo >> changelog; \
+		echo " -- $${ARCHIVE_AUTHOR}  $${ARCHIVE_DATE}" >> changelog; \
+		echo "#!/usr/bin/make -f" > rules; \
+		echo "export DH_VERBOSE = 1" >> rules; \
+		echo >> rules; \
+		echo "%:" >> rules; \
+		echo "	dh \$$@" >> rules; \
+		echo >> rules; \
+		echo "override_dh_auto_install:" >> rules; \
+		echo "	dh_auto_install -- prefix=/usr" >> rules; \
+		echo >> rules; \
+		echo "9" > compat; \
+		$(MV) ../../LICENSE.md copyright; \
+		rm -f ../$(TSTDIR)/mhd_test.mhd; \
+		chmod +x rules; \
+		debuild \
+			-e PREFIX=debian/$${ARCHIVE_NAME}/usr \
+			-e PDOCDIR=share/doc/$${ARCHIVE_NAME} \
+			-e LICFILE=copyright \
+			-e LICFDIR=../.. \
+			-e SONAMELNK=1 \
+			-e SHARED=1 \
+			-e SYM=1 \
+			-us -uc; \
+	else \
+		echo "Error: Git is unavailable or make-deb runs outside of cloned repository!"; \
+	fi
 

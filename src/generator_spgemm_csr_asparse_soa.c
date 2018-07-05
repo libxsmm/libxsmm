@@ -167,7 +167,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   l_n_loop = ( l_n_remain == 0 ) ? (l_n_chunks * l_n_chunksize) : ((l_n_chunks-1) * l_n_chunksize);
 
   /* loop over blocks of n */
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_chunksize );
 
   /* do matix multiplicatoin for a block of N columns */
@@ -238,7 +238,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*   
     /* generate M loop */
     if (i_a_is_dense != 0 ) {
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_mloop, 0 );
-      libxsmm_x86_instruction_register_jump_label( io_generated_code, io_loop_label_tracker );
+      libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
       libxsmm_x86_instruction_alu_imm( io_generated_code, i_micro_kernel_config->alu_add_instruction, i_gp_reg_mapping->gp_reg_mloop, 1 );
     }
 

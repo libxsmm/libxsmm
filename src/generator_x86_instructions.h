@@ -156,7 +156,7 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
  * @param i_vec_reg_number_0 the first vector register number (zmm: 0-31)
  * @param i_vec_reg_number_1 the second vector register number (zmm: 0-31)
  * @param i_vec_reg_number_3 the second vector register number (zmm: 0-31)
- * @param i_immediate immediate just as the compare value for a compate intructions
+ * @param i_immediate immediate just as the compare value for a compare instruction
  * @param i_mask_reg_number the mask register to read/write
  */
 LIBXSMM_API_INTERN
@@ -206,7 +206,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
  * @param i_vector_name the vector register name prefix (z)
  * @param i_vec_reg_number_0 the first vector register number (zmm: 0-31)
  * @param i_vec_reg_number_1 the second vector register number (zmm: 0-31)
- * @param i_immediate immediate just as the compare value for a compate intructions
+ * @param i_immediate immediate just as the compare value for a compare instruction
  * @param i_mask_reg_number the mask register to read/write
  */
 LIBXSMM_API_INTERN
@@ -425,17 +425,17 @@ void libxsmm_x86_instruction_mask_compute_reg( libxsmm_generated_code* io_genera
                                                const unsigned int      i_mask_reg_number_dest  );
 
 /**
- * Generates regular all instructions with immediates
+ * Generates a label to which one can jump back and pushes it on the loop label stack
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param io_loop_label_tracker data structure to handle loop labels, nested loops are supported, but not overlapping loops
 */
 LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
-                                                  libxsmm_loop_label_tracker* io_loop_label_tracker );
+void libxsmm_x86_instruction_register_jump_back_label( libxsmm_generated_code*     io_generated_code,
+                                                       libxsmm_loop_label_tracker* io_loop_label_tracker );
 
 /**
- * Generates regular all instructions with immediates
+ * Pops the latest from the loop label stack and jumps there
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_jmp_instr the particular jump instruction used
@@ -447,11 +447,37 @@ void libxsmm_x86_instruction_jump_back_to_label( libxsmm_generated_code*     io_
                                                  libxsmm_loop_label_tracker* io_loop_label_tracker );
 
 /**
+ * Generates a label to which one can jump back and pushes it on the loop label stack
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @parma i_labal_no position in the jump label tracker to set
+ * @param io_jump_forward_label_tracker forward jump tracker structure for tracking the jump addresses/labels
+*/
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_register_jump_label( libxsmm_generated_code*     io_generated_code,
+                                                  const unsigned int          i_label_no,
+                                                  libxsmm_jump_label_tracker* io_jump_label_tracker );
+
+/**
+ * Jumps to the address/label stored a specific position
+ *
+ * @param io_generated_code pointer to the pointer of the generated code structure
+ * @param i_jmp_instr the particular jump instruction used
+ * @param i_label_no position in the jump label tracker to jump to
+ * @param io_jump_label_tracker data structures that tracks arbitrary jump labels
+*/
+LIBXSMM_API_INTERN
+void libxsmm_x86_instruction_jump_to_label( libxsmm_generated_code*     io_generated_code,
+                                            const unsigned int          i_jmp_instr,
+                                            const unsigned int          i_label_no,
+                                            libxsmm_jump_label_tracker* io_jump_label_tracker );
+
+/**
  * Generates an insertion of constants into the code stream and loads them into
  * into a vector register
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_data pointer to an array of bytes that should be be loaded, length needs to match registerlength spezified in i_vector_name (x=16, y=32, z=64)
+ * @param i_data pointer to an array of bytes that should be be loaded, length needs to match registerlength specified in i_vector_name (x=16, y=32, z=64)
  * @param i_id global identifier of constants to load.
  * @param i_vector_name the vector register name prefix (x,y or z)
  * @param i_vec_reg_number the destination(gather)/source(scatter) vec register (xmm/ymm: 0-15, zmm: 0-31)

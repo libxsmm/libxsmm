@@ -494,6 +494,27 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_JL:
       libxsmm_strncpy(o_instr_name, "jl", i_instr_name_max_length, 2 );
       break;
+    case LIBXSMM_X86_INSTR_JE:
+      libxsmm_strncpy(o_instr_name, "je", i_instr_name_max_length, 2 );
+      break;
+    case LIBXSMM_X86_INSTR_JZ:
+      libxsmm_strncpy(o_instr_name, "jz", i_instr_name_max_length, 2 );
+      break;
+    case LIBXSMM_X86_INSTR_JG:
+      libxsmm_strncpy(o_instr_name, "jg", i_instr_name_max_length, 2 );
+      break;
+    case LIBXSMM_X86_INSTR_JNE:
+      libxsmm_strncpy(o_instr_name, "jne", i_instr_name_max_length, 3 );
+      break;
+    case LIBXSMM_X86_INSTR_JNZ:
+      libxsmm_strncpy(o_instr_name, "jnz", i_instr_name_max_length, 3 );
+      break;
+    case LIBXSMM_X86_INSTR_JGE:
+      libxsmm_strncpy(o_instr_name, "jge", i_instr_name_max_length, 3 );
+      break;
+    case LIBXSMM_X86_INSTR_JLE:
+      libxsmm_strncpy(o_instr_name, "jle", i_instr_name_max_length, 3 );
+      break;
     case LIBXSMM_X86_INSTR_PREFETCHT0:
       libxsmm_strncpy(o_instr_name, "prefetcht0", i_instr_name_max_length, 10 );
       break;
@@ -777,6 +798,11 @@ void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label
 }
 
 LIBXSMM_API_INTERN
+void libxsmm_reset_jump_label_tracker( libxsmm_jump_label_tracker* io_jump_label_tracker ) {
+  memset(io_jump_label_tracker, 0, sizeof(*io_jump_label_tracker));
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_code,
                                   const char*                     i_routine_name,
                                   const libxsmm_gemm_descriptor* i_xgemm_desc ) {
@@ -907,14 +933,14 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
   static LIBXSMM_TLS unsigned int last_error_code;
   if (i_error_code != last_error_code) {
     if (0 != emit_message) {
-      LIBXSMM_FLOCK(stderr);
+      LIBXSMM_STDIO_ACQUIRE();
       if (0 != context && 0 != *context && '0' != *context) {
         fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
       }
       else {
         fprintf(stderr, "LIBXSMM ERROR: %s\n", libxsmm_strerror(i_error_code));
       }
-      LIBXSMM_FUNLOCK(stderr);
+      LIBXSMM_STDIO_RELEASE();
     }
     last_error_code = i_error_code;
   }
@@ -1057,6 +1083,10 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
     case LIBXSMM_ERR_EXCEED_JMPLBL:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "too many nested loops, exceeding loop label tracker (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_JMPLBL_USED:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "attempted to use an already used jump label (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_CSC_ALLOC_DATA:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

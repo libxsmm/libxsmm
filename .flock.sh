@@ -32,10 +32,12 @@
 
 FLOCK=$(which flock 2>/dev/null)
 
-if [ -f $1 ]; then
+if [ -d $1 ]; then
+  ABSDIR=$(cd $1; pwd -P)
+elif [ -f $1 ]; then
   ABSDIR=$(cd $(dirname $1); pwd -P)
 else
-  ABSDIR=$(cd $1; pwd -P)
+  ABSDIR=$(cd $(dirname $0); pwd -P)
 fi
 
 shift

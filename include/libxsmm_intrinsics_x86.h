@@ -168,14 +168,14 @@
 #       if !defined(LIBXSMM_INTRINSICS_STATIC) && (LIBXSMM_STATIC_TARGET_ARCH < LIBXSMM_X86_AVX2/*workaround*/)
 #         define LIBXSMM_INTRINSICS_STATIC
 #       endif
-#       if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(__PGI)
+#       if !defined(LIBXSMM_INTRINSICS_NONE) && defined(__PGI)
 #         define LIBXSMM_INTRINSICS_NONE
 #       endif
 #     endif
 #     if !defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(__PGI)
 #       define LIBXSMM_INTRINSICS_INCLUDE
 #     endif
-#     if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_NONE)
+#     if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_STATIC)
 #       if !defined(__SSE3__)
 #         define __SSE3__ 1
 #       endif

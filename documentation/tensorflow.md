@@ -8,7 +8,7 @@ The [TensorFlow repository](https://github.com/hfp/tensorflow-xsmm) (as cloned b
 git clone https://github.com/hfp/tensorflow-xsmm.git
 ```
 
-<a name="non-default-compiler"></a>LIBXSMM does not impose to build for a specific code path, and always exploits the most suitable instruction set extension for JIT-enabled code paths. LIBXSMM may also use non-JIT code paths which are CPUID-dispatched (if the static code path has lower capabilities). This however only works with GCC&#160;5.1 (v4.9 is fine if the intended target does not support AVX-512), Clang (not tested), or the Intel Compiler. It is hence recommended to use a recent GNU Compiler Collection to build TensorFlow. If the static code path does not match the highest possible CPU target (march=native), a very minor performance penalty (if at all) is expected (indirect calls due to CPUID-dispatch). With any [recent Bazel version](https://github.com/bazelbuild/bazel/releases), a non-default compiler can be source'd i.e., it can be added to the environment just normally as shown below (the second block of exports may be safely omitted).
+<a name="non-default-compiler"></a>LIBXSMM does not impose to build for a specific code path, and always exploits the most suitable instruction set extension for JIT-enabled code paths. LIBXSMM may also use non-JIT code paths which are CPUID-dispatched (if the static code path has lower capabilities). This however only works with GCC&#160;5.1 (v4.9 is fine if the intended target does not support AVX-512), Clang (not tested), or the Intel Compiler. It is hence recommended to use a recent GNU Compiler Collection to build TensorFlow. If the static code path does not match the highest possible CPU target (march=native), a very minor performance penalty (if at all) is expected (indirect calls due to CPUID-dispatch). If this is unwanted or in case of compilation issues (e.g., due to outdated Binutils on OSX), one can disable the afore mentioned facility by adding `--copt=-DLIBXSMM_INTRINSICS_STATIC=1` to Bazel's build line (see later). With any [recent Bazel version](https://github.com/bazelbuild/bazel/releases), a non-default compiler can be source'd i.e., it can be added to the environment just normally as shown below (the second block of exports may be safely omitted).
 
 ```bash
 export PATH=/path/to/gcc/bin:${PATH}
@@ -44,7 +44,7 @@ If the build step of any of the Bazel commands goes wrong, `-s --verbose_failure
 bazel build -c opt --copt=-O2 --linkopt=-pthread --cxxopt=-D_GLIBCXX_USE_CXX11_ABI=0 \
   --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD \
   --define tensorflow_xsmm=1 --define tensorflow_xsmm_convolutions=1 \
-  --define tensorflow_xsmm_backward_convolutions=0 \
+  --define tensorflow_xsmm_backward_convolutions=1 \
   --copt=-mfma --copt=-mavx2 \
   //tensorflow/tools/pip_package:build_pip_package
 ```
@@ -55,7 +55,7 @@ bazel build -c opt --copt=-O2 --linkopt=-pthread --cxxopt=-D_GLIBCXX_USE_CXX11_A
 * AVX-512/CORE/SKX: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512bw --copt=-mavx512vl --copt=-mavx512dq`
 * AVX-512/MIC/KNL/KNM: `--copt=-mfma --copt=-mavx512f --copt=-mavx512cd --copt=-mavx512pf --copt=-mavx512er`
 
-**NOTE**: TensorFlow or specifically Eigen's packed math abstraction may assert an unmet condition in case of AVX-512. Therefore, one should either (1)&#160;limit the code to Intel AVX2 instructions, or (2)&#160;supply `-c opt` which implies `--copt=-DNDEBUG` and thereby **disables** the assertions (at own risk). As a side-note (this is often missed in AVX2 vs. AVX-512 comparisons), AVX2 code can utilize twice as many registers (32) on an AVX-512 capable system (if instructions are EVEX encoded, which is practically always the case).
+**NOTE**: TensorFlow or specifically Eigen's packed math abstraction may assert an unmet condition in case of AVX-512. Therefore, one should either (1)&#160;limit the code to Intel AVX2 instructions, or (2)&#160;supply `-c opt` which implies `--copt=-DNDEBUG` and thereby **disables** the assertions (at own risk). As a side-note (this is often missed in AVX2 vs. AVX-512 comparisons), AVX2 code can utilize twice as many registers (32) on an AVX-512 capable system (if instructions are EVEX encoded).
 
 To finally build the TensorFlow (pip-)package ("wheel"), please invoke the following command (in the past the zip-stage ran into problems with Python wheels containing debug code because of exceeding 2&#160;GB for the size of the wheel).
 

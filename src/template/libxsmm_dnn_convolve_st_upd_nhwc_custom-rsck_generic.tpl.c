@@ -44,7 +44,7 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int scratch7_size = padded_h * padded_w * handle->ifmblock;
-#if defined(LIBXSMM_SCRATCH7)
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
 element_input_type *const input_scratch = (element_input_type*)(((char*)handle->scratch7) + ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_input_type), LIBXSMM_CACHELINE));
 #else
 element_input_type input_scratch_array[scratch7_size];
@@ -54,16 +54,13 @@ element_input_type *const input_scratch = input_scratch_array;
 /* transpose via stack allocated buffers for output and weights to control stride-GEMM issue
    idea: we transpose grad_output and transpose filters when done */
 const int scratch8_size = handle->ofhp * handle->ofwp * handle->ofmblock;
-#if defined(LIBXSMM_SCRATCH8)
+const int scratch9_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
 element_output_type *const output_scratch = (element_output_type*)(((char*)handle->scratch8) + ltid * LIBXSMM_UP2(scratch8_size * sizeof(element_output_type), LIBXSMM_CACHELINE));
+element_filter_type *const filter_scratch = (element_filter_type*)(((char*)handle->scratch9) + ltid * LIBXSMM_UP2(scratch9_size * sizeof(element_filter_type), LIBXSMM_CACHELINE));
 #else
 element_output_type output_scratch_array[scratch8_size];
 element_output_type *const output_scratch = output_scratch_array;
-#endif
-const int scratch9_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
-#if defined(LIBXSMM_SCRATCH9)
-element_filter_type *const filter_scratch = (element_filter_type*)(((char*)handle->scratch9) + ltid * LIBXSMM_UP2(scratch9_size * sizeof(element_filter_type), LIBXSMM_CACHELINE));
-#else
 element_filter_type filter_scratch_array[scratch9_size];
 element_filter_type *const filter_scratch = filter_scratch_array;
 #endif
@@ -83,7 +80,7 @@ LIBXSMM_VLA_DECL(3, element_input_type, input_padded, input_scratch, padded_w, h
 LIBXSMM_VLA_DECL(3, element_output_type, output_trans, output_scratch, handle->ofmblock, handle->ofwp);
 LIBXSMM_VLA_DECL(4, element_filter_type, weight_local, filter_scratch, handle->desc.S, handle->ofmblock, handle->ifmblock);
 
-LIBXSMM_ASSERT(scratch7_size * sizeof(element_input_type)  * handle->desc.threads <= handle->scratch7_size);
+LIBXSMM_ASSERT(scratch7_size * sizeof(element_input_type)  * handle->desc.threads <= handle->scratch7_size || 0 == handle->scratch7_size);
 LIBXSMM_ASSERT(scratch8_size * sizeof(element_output_type) * handle->desc.threads <= handle->scratch8_size);
 LIBXSMM_ASSERT(scratch9_size * sizeof(element_filter_type) * handle->desc.threads <= handle->scratch9_size);
 

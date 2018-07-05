@@ -62,7 +62,7 @@ FULL_BIN_NAME := $(BIN_BUILD_DIR)/$(BINARY_NAME)
 # Source files
 # CXX_SRCS are the source files excluding the test ones.
 CXX_SRCS := $(shell find src/ ! -name "test_*.cpp" -name "*.cpp" | sort)
-$(info CXX_SRCS= $(CXX_SRCS))
+#$(info CXX_SRCS = $(CXX_SRCS))
 # BUILD_INCLUDE_DIR contains any generated header files we want to include.
 BUILD_INCLUDE_DIR := $(BUILD_DIR)
 # PROTO_SRCS are the protocol buffer definitions

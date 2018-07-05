@@ -427,8 +427,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     unsigned int linebreak;
 
     /* synchronize I/O */
-    LIBXSMM_FLOCK(stdout);
-    LIBXSMM_FLOCK(stderr);
+    LIBXSMM_STDIO_ACQUIRE();
 
     if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
       fprintf(stderr, "\nLIBXSMM_VERSION=%s-%s", LIBXSMM_BRANCH, LIBXSMM_VERSION);
@@ -473,8 +472,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     }
 
     /* synchronize I/O */
-    LIBXSMM_FUNLOCK(stderr);
-    LIBXSMM_FUNLOCK(stdout);
+    LIBXSMM_STDIO_RELEASE();
   }
 
   /* release scratch memory pool */
@@ -1890,11 +1888,11 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     result = internal_find_code(descriptor).xgemm;
 #if defined(_DEBUG)
     if (0 != libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.xmm) {
-      LIBXSMM_FLOCK(stdout);
-      fprintf(stdout, "LIBXSMM: ");
-      libxsmm_gemm_xprint(stdout, result, NULL/*a*/, NULL/*b*/, NULL/*c*/);
-      fprintf(stdout, "\n");
-      LIBXSMM_FUNLOCK(stdout);
+      LIBXSMM_STDIO_ACQUIRE();
+      fprintf(stderr, "LIBXSMM: ");
+      libxsmm_gemm_xprint(stderr, result, NULL/*a*/, NULL/*b*/, NULL/*c*/);
+      fprintf(stderr, "\n");
+      LIBXSMM_STDIO_RELEASE();
     }
 #endif
   }
@@ -2262,11 +2260,11 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
       *fn = result.ival;
 #if defined(_DEBUG)
       if (0 != libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.pmm) {
-        LIBXSMM_FLOCK(stdout);
-        fprintf(stdout, "LIBXSMM: ");
-        libxsmm_gemm_xprint(stdout, result.xgemm, NULL/*a*/, NULL/*b*/, NULL/*c*/);
-        fprintf(stdout, "\n");
-        LIBXSMM_FUNLOCK(stdout);
+        LIBXSMM_STDIO_ACQUIRE();
+        fprintf(stderr, "LIBXSMM: ");
+        libxsmm_gemm_xprint(stderr, result.xgemm, NULL/*a*/, NULL/*b*/, NULL/*c*/);
+        fprintf(stderr, "\n");
+        LIBXSMM_STDIO_RELEASE();
       }
 #endif
     }

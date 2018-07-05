@@ -1,4 +1,6 @@
 My Amplifier*
+libxsmm*-*
+libxsmm*_*
 opentuner.db
 bin/libxsmm_generator
 include/libxsmm_config.h
@@ -20,6 +22,7 @@ samples/*/*.dat
 samples/*/*.pdf
 samples/*/*.png
 inspector*
+python
 site
 bin
 tmp
@@ -81,4 +84,3 @@ _*.txt
 *.i
 *.s
 *.*~
-

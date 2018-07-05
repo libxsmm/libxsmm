@@ -80,14 +80,6 @@
 # define LIBXSMM_GEMM_BATCHSCALE 1.5
 #endif
 
-#if !defined(LIBXSMM_NO_BLAS)
-# if !defined(__BLAS) || (0 != __BLAS)
-#   define LIBXSMM_NO_BLAS 0
-# else
-#   define LIBXSMM_NO_BLAS 1
-# endif
-#endif
-
 #define LIBXSMM_GEMM_TILED_KERNEL(KERNEL_INNER_BETA1, TYPE, TRANSA, TRANSB, FLAGS, POS_I, POS_J, MAX_K, TILE_M, TILE_N, TILE_K, \
   M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
 { \
@@ -168,13 +160,13 @@
       const char libxsmm_tiled_xgemm_transb_ = (char)(0 == ((FLAGS) & LIBXSMM_GEMM_FLAG_TRANS_B) ? 'n' : 'T'); \
       const TYPE libxsmm_tiled_xgemm_alpha_ = (TYPE)(ALPHA), libxsmm_tiled_xgemm_beta_ = (TYPE)(BETA); \
       if (0 < libxsmm_verbosity) { /* print fallback */ \
-        LIBXSMM_FLOCK(stderr); \
+        LIBXSMM_STDIO_ACQUIRE(); \
         fprintf(stderr, "LIBXSMM FALLBACK: "); \
         libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(TYPE), \
           &libxsmm_tiled_xgemm_transa_, &libxsmm_tiled_xgemm_transb_, &(M), &(N), &(K), \
           &libxsmm_tiled_xgemm_alpha_, 0/*A*/, &(LDA), 0/*B*/, &(LDB), &libxsmm_tiled_xgemm_beta_, 0/*C*/, &(LDC)); \
         fprintf(stderr, "\n"); \
-        LIBXSMM_FUNLOCK(stderr); \
+        LIBXSMM_STDIO_RELEASE(); \
       } \
       else { /* dump matrices */ \
         libxsmm_gemm_print(NULL, LIBXSMM_GEMM_PRECISION(TYPE), \

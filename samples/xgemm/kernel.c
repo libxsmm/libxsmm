@@ -233,12 +233,8 @@ void run_jit_short_float( const libxsmm_gemm_descriptor*  i_xgemm_desc,
 
 int main(int argc, char* argv []) {
   char* l_precision = NULL;
-  int l_m = 0;
-  int l_n = 0;
-  int l_k = 0;
-  int l_lda = 0;
-  int l_ldb = 0;
-  int l_ldc = 0;
+  libxsmm_blasint l_lda = 0, l_ldb = 0, l_ldc = 0;
+  int l_m = 0, l_n = 0, l_k = 0;
   int l_aligned_a = 0;
   int l_aligned_c = 0;
   double l_alpha = 0;

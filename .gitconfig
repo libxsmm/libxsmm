@@ -2,7 +2,7 @@
 	driver = true
 
 [mailmap]
-	file = .gitx/.mailmap
+	file = .github/.mailmap
 
 [log]
 	mailmap = true

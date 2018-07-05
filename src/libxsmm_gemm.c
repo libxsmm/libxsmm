@@ -134,10 +134,11 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     if (0 != libxsmm_gemm_wrap) {
       const char *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
       const unsigned int batchsize = ((0 == env_b || 0 == *env_b || 0 >= atoi(env_b)) ? (LIBXSMM_GEMM_BATCHSIZE) : atoi(env_b));
+      void *const p = &libxsmm_gemm_batcharray;
       const void *const extra = 0;
       /* draw default/non-scratch memory, but utilize the scratch memory allocator */
       assert(1 < (LIBXSMM_GEMM_BATCHSCALE));
-      if (EXIT_SUCCESS == libxsmm_xmalloc((void**)&libxsmm_gemm_batcharray,
+      if (EXIT_SUCCESS == libxsmm_xmalloc((void**)p,
         (size_t)((LIBXSMM_GEMM_BATCHSCALE) * sizeof(libxsmm_gemm_batchitem) * batchsize),
         0, LIBXSMM_MALLOC_FLAG_SCRATCH, &extra, sizeof(extra)))
       {
@@ -426,7 +427,7 @@ LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
       (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & info.flags) ? 'N' : 'T'), (libxsmm_blasint)info.m, (libxsmm_blasint)info.n, (libxsmm_blasint)info.k,
       0 == (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_gemm_batchdesc.flags) ? 1 : 0, a, (libxsmm_blasint)info.lda, b, (libxsmm_blasint)info.ldb,
       0 == (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 1 : 0, c, (libxsmm_blasint)info.ldc);
-    code_pointer.xgemm = kernel; fprintf((FILE*)ostream, " = %p+%u\n", code_pointer.ptr_const, (unsigned int)code_size);
+    code_pointer.xgemm = kernel; fprintf((FILE*)ostream, " = %p+%u", code_pointer.ptr_const, (unsigned int)code_size);
   }
 }
 
@@ -511,7 +512,10 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
 
     assert(0 < typesize);
     if (0 != index_stride) { /* stride arrays contain indexes */
-      if (((int)sizeof(libxsmm_blasint)) <= index_stride) {
+#if defined(LIBXSMM_GEMM_CHECK)
+      if (((int)sizeof(libxsmm_blasint)) <= index_stride)
+#endif
+      {
         const char *const sa = (const char*)stride_a, *const sb = (const char*)stride_b, *const sc = (const char*)stride_c;
         libxsmm_blasint ii = begin * index_stride, ic = (0 != sc ? (*((const libxsmm_blasint*)(sc + ii)) - index_base) : 0);
         const char* ai = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
@@ -522,14 +526,28 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
         if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & info->flags))
 #endif
         { /* no locking */
-          for (i = begin; i < end1; i = ni) {
-            ni = i + 1; ii = ni * index_stride;
-            {
-              const char *const an = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
-              const char *const bn = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
-              char       *const cn = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
-              kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
-              ai = an; bi = bn; ci = cn;
+          if (0 != sa && 0 != sb && 0 != sc) {
+            for (i = begin; i < end1; i = ni) {
+              ni = i + 1; ii = ni * index_stride;
+              {
+                const char *const an = a0 + ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize);
+                const char *const bn = b0 + ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize);
+                char       *const cn = c0 + ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize);
+                kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
+                ai = an; bi = bn; ci = cn;
+              }
+            }
+          }
+          else {
+            for (i = begin; i < end1; i = ni) {
+              ni = i + 1; ii = ni * index_stride;
+              {
+                const char *const an = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
+                const char *const bn = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
+                char       *const cn = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
+                kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
+                ai = an; bi = bn; ci = cn;
+              }
             }
           }
           if (end != end1) { /* remainder multiplication */
@@ -543,25 +561,50 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
           LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK)* lock0 = 0;
 # endif
           LIBXSMM_ASSERT(0 != lock);
-          for (i = begin; i < end1; i = ni) {
-            ni = i + 1; ii = ni * index_stride; ic = (0 != sc ? (*((const libxsmm_blasint*)(sc + ii)) - index_base) : 0);
-            {
-              const char *const an = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
-              const char *const bn = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
-              char       *const cn = c0 + ic * typesize;
-              LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ic, internal_gemm_nlocks)].state;
+          if (0 != sa && 0 != sb && 0 != sc) {
+            for (i = begin; i < end1; i = ni) {
+              ni = i + 1; ii = ni * index_stride; ic = (*((const libxsmm_blasint*)(sc + ii)) - index_base);
+              {
+                const char *const an = a0 + ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize);
+                const char *const bn = b0 + ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize);
+                char       *const cn = c0 + ic * typesize;
+                LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ic, internal_gemm_nlocks)].state;
 # if defined(LIBXSMM_GEMM_LOCKFWD)
-              if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
+                if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
 # else
-              LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
+                LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
 # endif
-              kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
+                kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
 # if defined(LIBXSMM_GEMM_LOCKFWD)
-              if (lock != lock1 || ni == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
+                if (lock != lock1 || ni == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
 # else
-              LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
+                LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
 # endif
-              ai = an; bi = bn; ci = cn; /* next */
+                ai = an; bi = bn; ci = cn; /* next */
+              }
+            }
+          }
+          else {
+            for (i = begin; i < end1; i = ni) {
+              ni = i + 1; ii = ni * index_stride; ic = (0 != sc ? (*((const libxsmm_blasint*)(sc + ii)) - index_base) : 0);
+              {
+                const char *const an = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
+                const char *const bn = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
+                char       *const cn = c0 + ic * typesize;
+                LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ic, internal_gemm_nlocks)].state;
+# if defined(LIBXSMM_GEMM_LOCKFWD)
+                if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
+# else
+                LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock);
+# endif
+                kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
+# if defined(LIBXSMM_GEMM_LOCKFWD)
+                if (lock != lock1 || ni == end1) { LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1; }
+# else
+                LIBXSMM_LOCK_RELEASE(LIBXSMM_GEMM_LOCK, lock); lock = lock1;
+# endif
+                ai = an; bi = bn; ci = cn; /* next */
+              }
             }
           }
           if (end != end1) { /* remainder multiplication */
@@ -572,17 +615,21 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
         }
 #endif /*!defined(LIBXSMM_NO_SYNC)*/
       }
+#if defined(LIBXSMM_GEMM_CHECK)
       else { /* incorrect argument(s) */
         result = EXIT_FAILURE;
       }
+#endif
     }
     else { /* singular strides are measured in Bytes */
       const libxsmm_blasint stride_unit = sizeof(libxsmm_blasint);
       const libxsmm_blasint da = (0 != stride_a ? (*stride_a - index_base * stride_unit) : 0);
       const libxsmm_blasint db = (0 != stride_b ? (*stride_b - index_base * stride_unit) : 0);
       const libxsmm_blasint dc = (0 != stride_c ? (*stride_c - index_base * stride_unit) : 0);
-
-      if (typesize <= da && typesize <= db && typesize <= dc) {
+#if defined(LIBXSMM_GEMM_CHECK)
+      if (typesize <= da && typesize <= db && typesize <= dc)
+#endif
+      {
         const libxsmm_blasint end1 = (end != size ? end : (end - 1));
         const char *ai = a0 + da * begin, *bi = b0 + db * begin;
         char* ci = c0 + dc * begin;
@@ -664,9 +711,11 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
         }
 #endif /*!defined(LIBXSMM_NO_SYNC)*/
       }
+#if defined(LIBXSMM_GEMM_CHECK)
       else { /* incorrect argument(s) */
         result = EXIT_FAILURE;
       }
+#endif
     }
   }
   return result;

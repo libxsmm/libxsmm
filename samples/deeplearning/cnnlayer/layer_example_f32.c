@@ -265,6 +265,8 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
       }
     }
   }
+#else
+  LIBXSMM_UNUSED(bias);
 #endif
 
 #if defined(_OPENMP)
@@ -332,6 +334,8 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
   LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
 #if defined(USE_FUSED_RELU_BWD)
   LIBXSMM_VLA_DECL(4, const float, naive_input_t, naive_input_save + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
+#else
+  LIBXSMM_UNUSED(naive_input_save);
 #endif
 
 #if defined(_OPENMP)

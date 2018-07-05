@@ -54,7 +54,7 @@ LIBXSMM_VLA_DECL(6, const element_input_type, input, (element_input_type*)handle
 LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data + tile_id * BLOCKSIFM * BLOCKSOFM * handle->ifmblock * handle->ofmblock * handle->fm_lp_block *  handle->desc.R * handle->desc.S, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
 
 /* Auxiliary integer variables   */
-int instr, n_segments, offset_bn, offset_i, offset_o, offset_w, pi, po, pw, pc, i, ih, n_convs, conv_i, ifm1, ofm1, ofm2, oj, img, input_h_start, input_h_end, my_h_out, oi;
+int instr, n_segments, offset_bn, offset_i, offset_o, offset_w, pi, po, pw, pc, i, ih, n_convs, conv_i, ifm1, ofm1, ofm2, oj, img = 0, input_h_start, input_h_end, my_h_out, oi;
 /* Stream related variables  */
 segment_t *code_stream;
 int *stream = handle->compute_fwd_indices_ptrs[ltid];

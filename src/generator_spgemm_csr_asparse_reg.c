@@ -218,7 +218,7 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
 
   /* n loop */
 #if 0
-  libxsmm_x86_instruction_register_jump_label( io_generated_code, &l_loop_label_tracker );
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n_blocking );
 #endif
 

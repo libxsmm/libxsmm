@@ -4,7 +4,7 @@
 
 By default, only non-coprocessor targets are built since both KNC/self-hosted ("native") and KNC/offload are considered legacy (OFFLOAD=0 and KNC=0). In general, the subfolders of the 'lib' directory are separating the build targets where a 'mic' folder contains the native library (KNC=1) targeting the Intel&#160;Xeon&#160;Phi coprocessor ("KNC"), and the 'intel64' folder contains either the hybrid archive made of CPU/host as well as coprocessor code (OFFLOAD=1, which also implies KNC=1), or an archive which is only containing the CPU code (default). To remove any BLAS-dependency, please follow the [Link Instructions](index.md#link-instructions).
 
-**NOTE**: The build system considers a set of given key-value pairs as a single unique build, and triggers a rebuild for a distinct set of flags!
+**NOTE**: The build system considers a set of given key-value pairs as a single unique build and triggers a rebuild for a distinct set of flags!
 
 ### Static Specialization
 
