@@ -373,17 +373,23 @@
 #define LIBXSMM_DEFAULT(DEFAULT, VALUE) (0 < (VALUE) ? (VALUE) : (DEFAULT))
 
 #if defined(__INTEL_COMPILER)
-# define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N);
-# define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION);
+# if (1500 <= __INTEL_COMPILER)
+#   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
+# else
+#   define LIBXSMM_ASSUME(EXPRESSION) assert(EXPRESSION)
+# endif
+#elif defined(_MSC_VER)
+# define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
+#elif defined(__GNUC__) && !defined(_CRAYC) && (LIBXSMM_VERSION3(4, 5, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+# define LIBXSMM_ASSUME(EXPRESSION) do { if (!(EXPRESSION)) __builtin_unreachable(); } while(0)
+#else
+# define LIBXSMM_ASSUME(EXPRESSION) assert(EXPRESSION)
+#endif
+
+#if defined(__INTEL_COMPILER)
+# define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
 #else
 # define LIBXSMM_ASSUME_ALIGNED(A, N)
-# if defined(_MSC_VER)
-#   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION);
-# elif defined(__GNUC__) && !defined(_CRAYC) && (LIBXSMM_VERSION3(4, 5, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
-#   define LIBXSMM_ASSUME(EXPRESSION) do { if (!(EXPRESSION)) __builtin_unreachable(); } while(0);
-# else
-#   define LIBXSMM_ASSUME(EXPRESSION)
-# endif
 #endif
 #define LIBXSMM_ALIGN(POINTER, ALIGNMENT/*POT*/) ((POINTER) + (LIBXSMM_UP2((uintptr_t)(POINTER), ALIGNMENT) - ((uintptr_t)(POINTER))) / sizeof(*(POINTER)))
 #define LIBXSMM_FOLD2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_DIV2((uintptr_t)(POINTER), ALIGNMENT), NPOT)
