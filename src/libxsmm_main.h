@@ -418,8 +418,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
 #endif
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
   void* scratch8;             /* output_scratch (generic update convolution) */
-#endif
-#if !defined(LIBXSMM_DNN_VLA_TLS3)
   void* scratch9;             /* filter_scratch (generic update convolution) */
 #endif
   size_t scratch7_size, scratch8_size, scratch9_size;

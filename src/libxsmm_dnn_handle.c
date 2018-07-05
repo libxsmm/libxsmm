@@ -139,7 +139,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     libxsmm_dnn_setup_scratch(handle);
   }
 
-  /* Generic codepath setup here... */
+  /* Generic code-path setup here... */
   if (0 != noarch || 0 != handle->use_upd_generic) {
     /*Setup generic code generation here*/
     const int handle_status = libxsmm_dnn_setup_generic(handle);
@@ -152,9 +152,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   else {
     handle->scratch7_size = 0;
   }
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-  handle->scratch7 = 0;
-#endif
   if (0 != handle->use_upd_generic) {
     const size_t output_typesize = libxsmm_dnn_typesize(handle->datatype_out);
     /* FIXME: currently filter data-type is always smaller/equal output type */
@@ -168,10 +165,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     handle->scratch8_size = 0;
     handle->scratch9_size = 0;
   }
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
+  handle->scratch7 = 0;
+#endif
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
   handle->scratch8 = 0;
-#endif
-#if !defined(LIBXSMM_DNN_VLA_TLS3)
   handle->scratch9 = 0;
 #endif
   return status;

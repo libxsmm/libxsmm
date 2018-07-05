@@ -54,16 +54,13 @@ element_input_type *const input_scratch = input_scratch_array;
 /* transpose via stack allocated buffers for output and weights to control stride-GEMM issue
    idea: we transpose grad_output and transpose filters when done */
 const int scratch8_size = handle->ofhp * handle->ofwp * handle->ofmblock;
+const int scratch9_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
 element_output_type *const output_scratch = (element_output_type*)(((char*)handle->scratch8) + ltid * LIBXSMM_UP2(scratch8_size * sizeof(element_output_type), LIBXSMM_CACHELINE));
+element_filter_type *const filter_scratch = (element_filter_type*)(((char*)handle->scratch9) + ltid * LIBXSMM_UP2(scratch9_size * sizeof(element_filter_type), LIBXSMM_CACHELINE));
 #else
 element_output_type output_scratch_array[scratch8_size];
 element_output_type *const output_scratch = output_scratch_array;
-#endif
-const int scratch9_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
-#if !defined(LIBXSMM_DNN_VLA_TLS3)
-element_filter_type *const filter_scratch = (element_filter_type*)(((char*)handle->scratch9) + ltid * LIBXSMM_UP2(scratch9_size * sizeof(element_filter_type), LIBXSMM_CACHELINE));
-#else
 element_filter_type filter_scratch_array[scratch9_size];
 element_filter_type *const filter_scratch = filter_scratch_array;
 #endif
