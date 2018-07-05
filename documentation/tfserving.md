@@ -20,7 +20,7 @@ To build the Serving framework execute the following command:
 bazel build --verbose_failures -c opt --cxxopt=-D_GLIBCXX_USE_CXX11_ABI=0 \
   --copt=-O2 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD \
   --define tensorflow_xsmm=1 --define tensorflow_xsmm_convolutions=1 \
-  --define tensorflow_xsmm_backward_convolutions=0 \
+  --define tensorflow_xsmm_backward_convolutions=1 \
   --copt=-mfma --copt=-mavx2 \
   --action_env TF_REVISION="master" \
   tensorflow_serving/...
