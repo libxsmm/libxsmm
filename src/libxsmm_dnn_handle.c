@@ -143,8 +143,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     status = libxsmm_dnn_setup_generic(handle);
   }
 
+#if !(defined(LIBXSMM_DNN_VLA_TLS1) && defined(LIBXSMM_DNN_VLA_TLS2))
   if (LIBXSMM_DNN_SUCCESS == status) {
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
+# if !defined(LIBXSMM_DNN_VLA_TLS1)
     if (0 != handle->use_fwd_generic || 0 != handle->use_bwd_generic || 0 != handle->use_upd_generic) {
       const int padded_h = handle->desc.H + (2 * handle->desc.pad_h), padded_w = handle->desc.W + (2 * handle->desc.pad_w);
       const size_t size_tls1 = padded_h * padded_w * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
@@ -152,8 +153,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
       if (handle->max_scratch5_size < size_tls1_total) handle->max_scratch5_size = size_tls1_total;
     }
     handle->scratch5 = 0;
-#endif
-#if !defined(LIBXSMM_DNN_VLA_TLS2)
+# endif
+# if !defined(LIBXSMM_DNN_VLA_TLS2)
     handle->scratch6 = handle->scratch7 = 0;
     if (0 != handle->use_upd_generic) {
       const size_t output_typesize = libxsmm_dnn_typesize(handle->datatype_out);
@@ -167,9 +168,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     else {
       handle->scratch6_size = handle->scratch7_size = 0;
     }
-#endif
+# endif
   }
-
+#endif
   return status;
 }
 
