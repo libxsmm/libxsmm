@@ -26,8 +26,8 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Rajkishore Barik,
- ** Ankush Mandal, Evangelos Georganas (Intel Corp.)
+/* Alexander Heinecke, Hans Pabst, Rajkishore Barik,
+ * Ankush Mandal, Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_handle.h"
 #include "libxsmm_main.h"
@@ -143,31 +143,45 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     status = libxsmm_dnn_setup_generic(handle);
   }
 
-#if !(defined(LIBXSMM_DNN_VLA_TLS1) && defined(LIBXSMM_DNN_VLA_TLS2))
+#if !(defined(LIBXSMM_DNN_VLA_TLS1) && defined(LIBXSMM_DNN_VLA_TLS2) && defined(LIBXSMM_DNN_VLA_TLS3))
   if (LIBXSMM_DNN_SUCCESS == status) {
 # if !defined(LIBXSMM_DNN_VLA_TLS1)
     if (0 != handle->use_fwd_generic || 0 != handle->use_bwd_generic || 0 != handle->use_upd_generic) {
       const int padded_h = handle->desc.H + (2 * handle->desc.pad_h), padded_w = handle->desc.W + (2 * handle->desc.pad_w);
-      const size_t size_tls1 = padded_h * padded_w * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
-      const size_t size_tls1_total = LIBXSMM_UP2(size_tls1, LIBXSMM_CACHELINE) * handle->desc.threads;
-      if (handle->max_scratch5_size < size_tls1_total) handle->max_scratch5_size = size_tls1_total;
+      const size_t size5_tensor = padded_h * padded_w * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
+      const size_t size5 = LIBXSMM_UP2(size5_tensor, LIBXSMM_CACHELINE) * handle->desc.threads;
+      if (handle->max_scratch5_size < size5) handle->max_scratch5_size = size5;
     }
     handle->scratch5 = 0;
 # endif
 # if !defined(LIBXSMM_DNN_VLA_TLS2)
-    handle->scratch6 = handle->scratch7 = 0;
+    handle->scratch6_size = 0;
+#   if 0 /* make float-accumulation scratch always available as it is referenced even if below property is false */
+    if (handle->use_accumulation_scratch)
+#   endif
+    {
+      const size_t size6 = handle->ofmblock * handle->ofw * handle->ofh * sizeof(float);
+      handle->scratch6_size = LIBXSMM_UP2(size6, LIBXSMM_CACHELINE) * handle->desc.threads;
+    }
     if (0 != handle->use_upd_generic) {
       const size_t output_typesize = libxsmm_dnn_typesize(handle->datatype_out);
+      const size_t size6_tensor = handle->ofhp * handle->ofwp * handle->ofmblock * output_typesize;
+      const size_t size6 = LIBXSMM_UP2(size6_tensor, LIBXSMM_CACHELINE) * handle->desc.threads;
+      if (handle->scratch6_size < size6) handle->scratch6_size = size6;
+    }
+    handle->scratch6 = 0;
+# endif
+# if !defined(LIBXSMM_DNN_VLA_TLS3)
+    if (0 != handle->use_upd_generic) {
       /* FIXME: currently filter data-type is always smaller/equal output type */
-      const size_t filter_typesize = output_typesize;
-      const size_t size8 = handle->ofhp * handle->ofwp * handle->ofmblock * output_typesize;
-      const size_t size9 = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * filter_typesize;
-      handle->scratch6_size = LIBXSMM_UP2(size8, LIBXSMM_CACHELINE) * handle->desc.threads;
-      handle->scratch7_size = LIBXSMM_UP2(size9, LIBXSMM_CACHELINE) * handle->desc.threads;
+      const size_t filter_typesize = libxsmm_dnn_typesize(handle->datatype_out);
+      const size_t size7 = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * filter_typesize;
+      handle->scratch7_size = LIBXSMM_UP2(size7, LIBXSMM_CACHELINE) * handle->desc.threads;
     }
     else {
-      handle->scratch6_size = handle->scratch7_size = 0;
+      handle->scratch7_size = 0;
     }
+    handle->scratch7 = 0;
 # endif
   }
 #endif

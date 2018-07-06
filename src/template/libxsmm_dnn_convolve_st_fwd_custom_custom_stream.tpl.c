@@ -86,7 +86,15 @@ element_output_type *bn_sum_base2;
 double *bn_sum_base;
 double *bn_sum_base2;
 #endif
-float accumulators_scratch[handle->ofmblock * handle->ofw * handle->ofh];
+
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
+float *const accumulators_scratch = (float*)(((char*)handle->scratch6) +
+  ltid * LIBXSMM_UP2(handle->ofmblock * handle->ofw * handle->ofh * sizeof(float), LIBXSMM_CACHELINE));
+#else
+float accumulators_scratch_array[handle->ofmblock * handle->ofw * handle->ofh];
+float *const accumulators_scratch = accumulators_scratch_array;
+#endif
+
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs;
 #else /* won't happen as this code only runs on AVX512 platforms */
