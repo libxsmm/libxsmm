@@ -45,7 +45,8 @@ const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
 const int size_tls1 = padded_h * padded_w * handle->ifmblock;
 #if !defined(LIBXSMM_DNN_VLA_TLS1)
-element_input_type *const input_scratch = (element_input_type*)(((char*)handle->scratch5) + ltid * LIBXSMM_UP2(size_tls1 * sizeof(element_input_type), LIBXSMM_CACHELINE));
+element_input_type *const input_scratch = (element_input_type*)(((char*)handle->scratch5) +
+  ltid * LIBXSMM_UP2(size_tls1 * sizeof(element_input_type), LIBXSMM_CACHELINE));
 #else
 element_input_type input_scratch_array[size_tls1];
 element_input_type *const input_scratch = input_scratch_array;
@@ -56,8 +57,10 @@ element_input_type *const input_scratch = input_scratch_array;
 const int scratch6_size = handle->ofhp * handle->ofwp * handle->ofmblock;
 const int scratch7_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
-element_output_type *const output_scratch = (element_output_type*)(((char*)handle->scratch6) + ltid * LIBXSMM_UP2(scratch6_size * sizeof(element_output_type), LIBXSMM_CACHELINE));
-element_filter_type *const filter_scratch = (element_filter_type*)(((char*)handle->scratch7) + ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_filter_type), LIBXSMM_CACHELINE));
+element_output_type *const output_scratch = (element_output_type*)(((char*)handle->scratch6) +
+  ltid * LIBXSMM_UP2(scratch6_size * sizeof(element_output_type), LIBXSMM_CACHELINE));
+element_filter_type *const filter_scratch = (element_filter_type*)(((char*)handle->scratch7) +
+  ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_filter_type), LIBXSMM_CACHELINE));
 #else
 element_output_type output_scratch_array[scratch6_size];
 element_output_type *const output_scratch = output_scratch_array;
