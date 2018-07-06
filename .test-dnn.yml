@@ -2,12 +2,11 @@ script:
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
-      echo; echo "+++ ResNet-50 (format=${FORMAT})";
       for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo "--- PADDING MODE: ${PAD}";
+          echo; echo "--- ResNet-50 (format=${FORMAT} pad=${PAD})";
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -18,12 +17,11 @@ script:
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
-      echo; echo "+++ AlexNet (format=${FORMAT})";
       for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo "--- PADDING MODE: ${PAD}";
+          echo; echo "--- AlexNet (format=${FORMAT} pad=${PAD})";
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -34,12 +32,11 @@ script:
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
-      echo; echo "+++ Overfeat (format=${FORMAT})";
       for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo "--- PADDING MODE: ${PAD}";
+          echo; echo "--- Overfeat (format=${FORMAT} pad=${PAD})";
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -50,12 +47,11 @@ script:
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
-      echo; echo "+++ GoogleNet-v1 (format=${FORMAT})";
       for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo "--- PADDING MODE: ${PAD}";
+          echo; echo "--- GoogleNet-v1 (format=${FORMAT} pad=${PAD})";
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -66,12 +62,11 @@ script:
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
-      echo; echo "+++ GoogleNet-v3 (format=${FORMAT})";
       for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo "--- PADDING MODE: ${PAD}";
+          echo; echo "--- GoogleNet-v3 (format=${FORMAT} pad=${PAD})";
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -82,12 +77,11 @@ script:
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
-      echo; echo "+++ dcGAN (format=${FORMAT})";
       for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo "--- PADDING MODE: ${PAD}";
+          echo; echo "--- dcGAN (format=${FORMAT} pad=${PAD})";
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -98,12 +92,11 @@ script:
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
    (CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
-      echo; echo "+++ VGGa (format=${FORMAT})";
       for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo "--- PADDING MODE: ${PAD}";
+          echo; echo "--- VGGa (format=${FORMAT} pad=${PAD})";
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -115,9 +108,8 @@ script:
    (OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
     CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
-      echo; echo "+++ DeepBench (format=${FORMAT})";
       for PAD in 0 1; do
-        echo "--- PADDING MODE: ${PAD}";
+        echo; echo "--- DeepBench (format=${FORMAT} pad=${PAD})";
         ./run_deepbench.sh ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
         ./run_deepbench.sh ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
         ./run_deepbench.sh ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -127,16 +119,15 @@ script:
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
    (OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
     CHECK=1 ITERS=1000 MB=${OMP_NUM_THREADS};
-    echo; echo "+++ ResNet-50 (16-bit)";
     for PAD in 0 1; do
-      echo "--- PADDING MODE: ${PAD}";
+      echo; echo "--- ResNet-50 (precision=16-bit pad=${PAD})";
       ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 F L ${PAD} &&
       ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 B L ${PAD} &&
       ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 U L ${PAD};
     done)
 
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
-   (echo; echo "+++ Quicktest";
+   (echo; echo "--- Quicktest";
     for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
       MB=$(echo ${MB_NT} | cut -d_ -f1);
       OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);

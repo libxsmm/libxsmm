@@ -203,8 +203,6 @@ then
         else
           ${ECHO} "Test Case #${TESTID}"
         fi
-        ${ECHO} "================================================================================"
-        ${ECHO}
       fi
 
       # make execution environment locally available (always)
