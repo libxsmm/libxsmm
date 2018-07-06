@@ -199,9 +199,9 @@ then
       if [ "" = "$1" ] || [ "none" != "${PARTITION}" ]; then
         ${ECHO} "================================================================================"
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
-          ${ECHO} "Test Case #${TESTID} (${PARTITION})"
+          ${ECHO} "--- Test Case #${TESTID} (${PARTITION})"
         else
-          ${ECHO} "Test Case #${TESTID}"
+          ${ECHO} "--- Test Case #${TESTID}"
         fi
       fi
 
