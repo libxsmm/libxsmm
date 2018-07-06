@@ -7,7 +7,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- PADDING MODE: ${PAD}";
+          echo "--- PADDING MODE: ${PAD}";
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -23,7 +23,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- PADDING MODE: ${PAD}";
+          echo "--- PADDING MODE: ${PAD}";
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -39,7 +39,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- PADDING MODE: ${PAD}";
+          echo "--- PADDING MODE: ${PAD}";
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -55,7 +55,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- PADDING MODE: ${PAD}";
+          echo "--- PADDING MODE: ${PAD}";
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -71,7 +71,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- PADDING MODE: ${PAD}";
+          echo "--- PADDING MODE: ${PAD}";
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -87,7 +87,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- PADDING MODE: ${PAD}";
+          echo "--- PADDING MODE: ${PAD}";
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -103,7 +103,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- PADDING MODE: ${PAD}";
+          echo "--- PADDING MODE: ${PAD}";
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -117,7 +117,7 @@ script:
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
       echo; echo "+++ DeepBench (format=${FORMAT})";
       for PAD in 0 1; do
-        echo; echo "--- PADDING MODE: ${PAD}";
+        echo "--- PADDING MODE: ${PAD}";
         ./run_deepbench.sh ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
         ./run_deepbench.sh ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
         ./run_deepbench.sh ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -129,7 +129,7 @@ script:
     CHECK=1 ITERS=1000 MB=${OMP_NUM_THREADS};
     echo; echo "+++ ResNet-50 (16-bit)";
     for PAD in 0 1; do
-      echo; echo "--- PADDING MODE: ${PAD}";
+      echo "--- PADDING MODE: ${PAD}";
       ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 F L ${PAD} &&
       ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 B L ${PAD} &&
       ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 U L ${PAD};
