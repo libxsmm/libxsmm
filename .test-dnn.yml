@@ -6,7 +6,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- ResNet-50 (format=${FORMAT} pad=${PAD})";
+          echo; echo "--- TEST ResNet-50 (format=${FORMAT} pad=${PAD})";
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -21,7 +21,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- AlexNet (format=${FORMAT} pad=${PAD})";
+          echo; echo "--- TEST AlexNet (format=${FORMAT} pad=${PAD})";
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -36,7 +36,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- Overfeat (format=${FORMAT} pad=${PAD})";
+          echo; echo "--- TEST Overfeat (format=${FORMAT} pad=${PAD})";
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -51,7 +51,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- GoogleNet-v1 (format=${FORMAT} pad=${PAD})";
+          echo; echo "--- TEST GoogleNet-v1 (format=${FORMAT} pad=${PAD})";
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -66,7 +66,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- GoogleNet-v3 (format=${FORMAT} pad=${PAD})";
+          echo; echo "--- TEST GoogleNet-v3 (format=${FORMAT} pad=${PAD})";
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -81,7 +81,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- dcGAN (format=${FORMAT} pad=${PAD})";
+          echo; echo "--- TEST dcGAN (format=${FORMAT} pad=${PAD})";
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -96,7 +96,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- VGGa (format=${FORMAT} pad=${PAD})";
+          echo; echo "--- TEST VGGa (format=${FORMAT} pad=${PAD})";
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -109,7 +109,7 @@ script:
     CHECK=1 ITERS=1;
     for FORMAT in $(if [ "" != "${FORMATS}" ]; then echo "${FORMATS}"; else echo "L"; fi); do
       for PAD in 0 1; do
-        echo; echo "--- DeepBench (format=${FORMAT} pad=${PAD})";
+        echo; echo "--- TEST DeepBench (format=${FORMAT} pad=${PAD})";
         ./run_deepbench.sh ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
         ./run_deepbench.sh ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
         ./run_deepbench.sh ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -120,14 +120,14 @@ script:
    (OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
     CHECK=1 ITERS=1000 MB=${OMP_NUM_THREADS};
     for PAD in 0 1; do
-      echo; echo "--- ResNet-50 (precision=16-bit pad=${PAD})";
+      echo; echo "--- TEST ResNet-50 (precision=16-bit pad=${PAD})";
       ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 F L ${PAD} &&
       ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 B L ${PAD} &&
       ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 U L ${PAD};
     done)
 
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
-   (echo; echo "--- Quicktest";
+   (echo; echo "--- TEST Quicktest";
     for MB_NT in $(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}"; else echo "32_0"; fi); do
       MB=$(echo ${MB_NT} | cut -d_ -f1);
       OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);

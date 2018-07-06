@@ -204,6 +204,7 @@ then
           ${ECHO} "Test Case #${TESTID}"
         fi
       fi
+      ${ECHO} "^^^ +++"
 
       # make execution environment locally available (always)
       if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
