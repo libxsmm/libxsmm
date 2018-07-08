@@ -712,7 +712,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       handle->fwd_code_segments[i] = NULL;
     }
 
-    /* In case of logical padding also add a kernel that copies only one line of the image -- in case we exploit intra-image parallelism we should avoid copying entire image for each thread but only the minimum required number of input pixels... */
+    /* In case of logical padding also add a kernel that copies only one line of the image;
+     * in case we exploit intra-image parallelism we should avoid copying entire image for
+     * each thread but only the minimum required number of input pixels... */
     if (handle->padding_flag == 1) {
       matcopy_descriptor.n = 1;
       handle->matcopy_fwd[2].xmatcopy = libxsmm_dispatch_mcopy(&matcopy_descriptor);
@@ -742,7 +744,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
         status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
       }
       handle->matcopy_fwd[3].xmatcopy = libxsmm_dispatch_mcopy(&matzero_descriptor);
-
     }
 
     /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
