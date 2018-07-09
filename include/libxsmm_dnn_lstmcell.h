@@ -55,6 +55,10 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_lstmcell_desc {
   libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
   libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
+  libxsmm_bgemm_handle* handlewx;
+  libxsmm_bgemm_handle* handleuh;
+  libxsmm_bgemm_handle* handlett;
+  libxsmm_bgemm_handle* handlewd;
 } libxsmm_dnn_lstmcell_desc;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_lstmcell {
@@ -86,7 +90,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_lstmcell {
   libxsmm_dnn_tensor* rf;
   libxsmm_dnn_tensor* ro;
   libxsmm_dnn_tensor* rc;
-  /* Currently we are not using the following 4 bias terms */
   libxsmm_dnn_tensor* bi;
   libxsmm_dnn_tensor* bf;
   libxsmm_dnn_tensor* bo;

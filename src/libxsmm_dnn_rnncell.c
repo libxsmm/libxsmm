@@ -89,7 +89,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->handleuh = rnncell_desc.handleuh;
     handle->handlett = rnncell_desc.handlett;
     handle->handlewd = rnncell_desc.handlewd;
-    /* Need to allocate space for scratch libxsmm_dnn_tensor's */
+    /* Need to allocate space for scratch and internalstate libxsmm_dnn_tensor's */
     handle->z   = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
     handle->deltat = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
     handle->z1t = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
@@ -495,7 +495,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_assign_z(libxsmm_dnn_rnncell* 
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   libxsmm_blasint it;
   libxsmm_blasint m, n, t;
-  LIBXSMM_DNN_ELTWISE_FTYPE* zgoldt, *zt;
+  LIBXSMM_DNN_ELTWISE_FTYPE *zgoldt, *zt;
   if (handle != 0 && zgoldtb != 0) {
     m = handle->m;
     n = handle->n;

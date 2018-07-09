@@ -78,14 +78,6 @@ LIBXSMM_INLINE void matinit(int seed, float * dst,
 {
   const double seed1 = scale * (seed + 1);
   int i;
-#if 0
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < nrows*ncols; ++i) {
-    dst[i] = (float)1;
-  }
-#else
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
@@ -100,7 +92,6 @@ LIBXSMM_INLINE void matinit(int seed, float * dst,
       dst[k] = (float)seed;
     }
   }
-#endif
 }
 
 
@@ -1095,8 +1086,10 @@ int main(int argc, char* argv[])
     /* clean-up */
     if (pass == 0) {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_internalstate( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD ) );
     } else {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_internalstate( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL ) );
     }
     libxsmm_free(scratch);
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_tensor( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_INPUT ) );
