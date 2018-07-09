@@ -186,7 +186,7 @@ void lp_transpose_input_and_output_vperm(int my_img_start, int my_img_end, libxs
       }
     }
     for (c_i = 0; c_i<mask_remainder; c_i++) {
-      mask[c_i] = (1 << 31);
+      mask[c_i] = (1U << 31);
     }
     for (c_i = mask_remainder; c_i<8; c_i++) {
       mask[c_i] = 0;
@@ -350,7 +350,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle)
       }
     }
     for (c_i=0; c_i<mask_remainder; c_i++) {
-      mask[c_i] = (1<<31);
+      mask[c_i] = (1U << 31);
     }
     for (c_i=mask_remainder; c_i<8; c_i++) {
       mask[c_i] = 0;
@@ -533,7 +533,7 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
     }
   }
   for (c_i=0; c_i<mask_remainder; c_i++) {
-    mask[c_i] = (1<<31);
+    mask[c_i] = (1U << 31);
   }
   for (c_i=mask_remainder; c_i<8; c_i++) {
     mask[c_i] = 0;
