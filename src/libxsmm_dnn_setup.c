@@ -1200,6 +1200,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         }
         descriptor.ofw_rb = i;
 
+        assert(0 != descriptor.ofw_rb);
+        assert(0 != wu_each_iter_code_size);
         upper_limit_ofh_rb = wu_max_code_size / (descriptor.ofw_rb * wu_each_iter_code_size);
         for (i = LIBXSMM_MIN(upper_limit_ofh_rb, handle->ofh); i >= 1; i--) {
           if (handle->ofh % i == 0) break;

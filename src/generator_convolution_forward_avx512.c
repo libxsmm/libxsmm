@@ -968,6 +968,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
         }
       }
 
+      assert(0 != i_conv_desc->ifm_block);
       if ( (l_n == 0) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) ) {
         int l_filter_weight_pos = l_k + ((l_k/i_conv_desc->ifm_block)*(i_conv_kernel_config->l_ld_ifm_fil-i_conv_desc->ifm_block)*i_conv_desc->fm_lp_block);
         libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -1383,6 +1384,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
           }
         }
 
+        assert(0 != i_conv_desc->ifm_block);
         if ( (l_n == 0) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) && (l_m == 0) ) {
           int l_filter_weight_pos = l_k + ((l_k/i_conv_desc->ifm_block)*(i_conv_kernel_config->l_ld_ifm_fil-i_conv_desc->ifm_block)* i_conv_desc->fm_lp_block);
           libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -1781,6 +1783,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
           }
         }
 
+        assert(0 != i_conv_desc->ifm_block);
         if ( (l_n == 0) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) && (l_m == 0) ) {
           int l_filter_weight_pos = l_k + ((l_k/i_conv_desc->ifm_block)*(i_conv_kernel_config->l_ld_ifm_fil-i_conv_desc->ifm_block)* i_conv_desc->fm_lp_block);
           libxsmm_x86_instruction_prefetch( io_generated_code,
