@@ -63,16 +63,6 @@ LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
 }
 
 
-LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
-{
-  int i;
-  zero_buf(buf, size);
-  for (i = 0; i < (int)size; ++i) {
-    buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rand_f64() : (0.05 - libxsmm_rand_f64()/10.0)));
-  }
-}
-
-
 LIBXSMM_INLINE void matinit(int seed, float * dst,
   int nrows, int ncols, int ld, double scale)
 {
