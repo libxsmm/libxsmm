@@ -76,7 +76,7 @@ libxsmm_convfunction kernel_pool[2];
 char *variant = handle->kernel_bwd_variant_ptrs[ltid];
 
 LIBXSMM_ALIGNED(float scale_factor, 64);
-LIBXSMM_ALIGNED(float *max_vals, 64);
+LIBXSMM_ALIGNED(float *max_vals, 64) = NULL;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs;
 #else /* won't happen as this code only runs on AVX512 platforms */
@@ -291,6 +291,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
             }
 
+            assert(NULL != max_vals);
             /* Run the stream of convolutions for this segment */
             for (conv_i = 0; conv_i < n_convs; conv_i++) {
               const int vi = variant[pool_index]; /* avoid warning about char used as array index */
@@ -300,7 +301,10 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
-              kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
+              kernel_pool[vi](
+                input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+                input_base + pi, weight_base + pw, output_base + po,
+                regular_input_base + offset_o, &scale_factor, max_vals);
               ++pool_index;
               i += 3;
             }
@@ -345,6 +349,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
             }
 
+            assert(NULL != max_vals);
             /* Run the stream of convolutions for this segment */
             for (conv_i = 0; conv_i < n_convs; conv_i++) {
               offset_i = stream[i];
@@ -353,7 +358,10 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
-              kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
+              kernel(
+                input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+                input_base + pi, weight_base + pw, output_base + po,
+                regular_input_base + offset_o, &scale_factor, max_vals);
               i += 3;
             }
           }
@@ -425,6 +433,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
             }
 
+            assert(NULL != max_vals);
             /* Run the stream of convolutions for this segment */
             for (conv_i = 0; conv_i < n_convs; conv_i++) {
               const int vi = variant[pool_index]; /* avoid warning about char used as array index */
@@ -434,7 +443,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
-              kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+              kernel_pool[vi](
+                input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
               ++pool_index;
               i += 3;
             }
@@ -504,6 +515,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
             }
 
+            assert(NULL != max_vals);
             /* Run the stream of convolutions for this segment */
             for (conv_i = 0; conv_i < n_convs; conv_i++) {
               offset_i = stream[i];
@@ -512,7 +524,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
-              kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+              kernel(
+                input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
               i += 3;
             }
           }
@@ -555,6 +569,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           }
         }
 
+        assert(NULL != max_vals);
         /* Run the stream of convolutions for this segment */
         for (conv_i = 0; conv_i < n_convs; conv_i++) {
           offset_i = stream[i];
@@ -563,16 +578,19 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           pi = stream[i+3];
           pw = stream[i+4];
           po = stream[i+5];
-          kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+          kernel(
+            input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+            input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
           i += 3;
         }
       }
     }
   } else {
+    assert(NULL != max_vals);
     /* TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images */
     if (handle->desc.N*BLOCKSIFM >= handle->desc.threads && !((handle->desc.N == 1) && (handle->bwd_ofh_rb == 1))) {
       /* Run the stream of convolutions, no extra operations are required... */
-      if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
+      if (handle->perform_relu_in_kernel == 1) { /* do RELU stuff in the kernel  */
         LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
         element_input_type *regular_input_base;
         regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -586,7 +604,10 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
+            kernel_pool[vi](
+              input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+              input_base + pi, weight_base + pw, output_base + po,
+              regular_input_base + offset_o, &scale_factor, max_vals);
             i += 3;
           }
         } else {
@@ -597,7 +618,10 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, regular_input_base + offset_o, &scale_factor, max_vals);
+            kernel(
+              input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+              input_base + pi, weight_base + pw, output_base + po,
+              regular_input_base + offset_o, &scale_factor, max_vals);
             i += 3;
           }
         }
@@ -611,7 +635,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+            kernel_pool[vi](
+              input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+              input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
             i += 3;
           }
         } else {
@@ -622,7 +648,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
-            kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+            kernel(
+              input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+              input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
             i += 3;
           }
         }
@@ -636,7 +664,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         pi = stream[i+3];
         pw = stream[i+4];
         po = stream[i+5];
-        kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+        kernel(
+          input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+          input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
         i += 3;
       }
     }
