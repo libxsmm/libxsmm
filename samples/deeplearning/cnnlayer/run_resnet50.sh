@@ -75,6 +75,10 @@ if [ "" = "${OMP_NUM_THREADS}" ] || [ "0" = "${OMP_NUM_THREADS}" ]; then
   export OMP_NUM_THREADS=$((NC))
 fi
 
+if [ "" = "${MB}" ] || [ "0" = "${MB}" ]; then
+  MB=${OMP_NUM_THREADS}
+fi
+
 if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; then
   echo "OMP_NUM_THREADS=${OMP_NUM_THREADS} NUMACTL=\"${NUMACTL}\""
   echo
