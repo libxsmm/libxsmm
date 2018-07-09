@@ -89,14 +89,23 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->handleuh = rnncell_desc.handleuh;
     handle->handlett = rnncell_desc.handlett;
     handle->handlewd = rnncell_desc.handlewd;
-    /* Need to allocate space for scratch libxsmm_dnn_tensor's */
-    handle->z   = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
-    handle->deltat = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
-    handle->z1t = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
-    handle->z2  = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
-    handle->di1 = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
-    handle->di2 = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
-    handle->deltaMt = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
+    /* Need to allocate space for scratch and internalstate libxsmm_dnn_tensor's */
+    handle->z   = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
+    handle->deltat = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
+    handle->z1t = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
+    handle->z2  = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
+    handle->di1 = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
+    handle->di2 = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
+    handle->deltaMt = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
+    if (NULL == handle->deltat || NULL == handle->deltaMt ||
+        NULL == handle->z || NULL == handle->z1t || NULL == handle->z2 ||
+        NULL == handle->di1 || NULL == handle->di2)
+    {
+      free(handle->deltat); free(handle->deltaMt);
+      free(handle->z); free(handle->z1t); free(handle->z2);
+      free(handle->di1); free(handle->di2);
+      *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
+    }
   } else {
     *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
   }
@@ -108,6 +117,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_rnncell(const libxsmm_dnn_rnnc
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   if (0 != handle) {
+    free(handle->deltat); free(handle->deltaMt);
+    free(handle->z); free(handle->z1t); free(handle->z2);
+    free(handle->di1); free(handle->di2);
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_rnncell*)handle);
   }
@@ -490,7 +502,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_internalstate(libxsmm_
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_assign_z(libxsmm_dnn_rnncell* handle, void* zgoldtb)
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_assign_z(libxsmm_dnn_rnncell* handle, const void* zgoldtb)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 

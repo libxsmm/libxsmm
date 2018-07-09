@@ -78,14 +78,6 @@ LIBXSMM_INLINE void matinit(int seed, float * dst,
 {
   const double seed1 = scale * (seed + 1);
   int i;
-#if 0
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < nrows*ncols; ++i) {
-    dst[i] = (float)1;
-  }
-#else
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
@@ -100,7 +92,6 @@ LIBXSMM_INLINE void matinit(int seed, float * dst,
       dst[k] = (float)seed;
     }
   }
-#endif
 }
 
 
@@ -358,7 +349,7 @@ int main(int argc, char* argv[])
   memset(&diff, 0, sizeof(diff));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("\nUsage: ./lstmdriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [M] [N] [K] [time_steps > 1] [reuse (for FWD): 0/1] [bm] [bn] [bk] [order] [b_m1] [b_n1] [b_k1] [b_m2] [b_n2] [b_k2]\n\n");
+    printf("\nUsage: ./rnndriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [M] [N] [K] [time_steps > 1] [reuse (for FWD): 0/1] [bm] [bn] [bk] [order] [b_m1] [b_n1] [b_k1] [b_m2] [b_n2] [b_k2]\n\n");
     return 0;
   }
   libxsmm_srand(1);
@@ -1095,8 +1086,10 @@ int main(int argc, char* argv[])
     /* clean-up */
     if (pass == 0) {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_internalstate( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD ) );
     } else {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_internalstate( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL ) );
     }
     libxsmm_free(scratch);
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_tensor( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_INPUT ) );
