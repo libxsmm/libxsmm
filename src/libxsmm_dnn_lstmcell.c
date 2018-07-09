@@ -83,10 +83,10 @@ LIBXSMM_API libxsmm_dnn_lstmcell* libxsmm_dnn_create_lstmcell(libxsmm_dnn_lstmce
     handle->b_m2 = lstmcell_desc.b_m2;
     handle->b_n2 = lstmcell_desc.b_n2;
     handle->b_k2 = lstmcell_desc.b_k2;
-    handle->handlewx = rnncell_desc.handlewx;
-    handle->handleuh = rnncell_desc.handleuh;
-    handle->handlett = rnncell_desc.handlett;
-    handle->handlewd = rnncell_desc.handlewd;
+    handle->handlewx = lstmcell_desc.handlewx;
+    handle->handleuh = lstmcell_desc.handleuh;
+    handle->handlett = lstmcell_desc.handlett;
+    handle->handlewd = lstmcell_desc.handlewd;
     /* Need to allocate space for scratch and internalstate libxsmm_dnn_tensor's */
     handle->i1t = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
     handle->i1b = (libxsmm_dnn_tensor*)libxsmm_malloc(sizeof(libxsmm_dnn_tensor));
