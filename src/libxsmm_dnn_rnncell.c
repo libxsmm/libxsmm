@@ -89,7 +89,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->handleuh = rnncell_desc.handleuh;
     handle->handlett = rnncell_desc.handlett;
     handle->handlewd = rnncell_desc.handlewd;
-    /* Need to allocate space for scratch and internalstate libxsmm_dnn_tensor's */
+    /* Need to allocate space for scratch libxsmm_dnn_tensor's */
     handle->z   = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->deltat = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->z1t = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));

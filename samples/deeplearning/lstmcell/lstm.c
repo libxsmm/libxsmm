@@ -1795,7 +1795,7 @@ int lstm (const libxsmm_blasint m, const libxsmm_blasint n, const libxsmm_blasin
     ITYPE* wo = 0;
     ITYPE* wc = 0;
 #endif
-    ITYPE* xt = (ITYPE*)libxsmm_malloc(m * n * sizeof(ITYPE) * t);
+    ITYPE* xt = (ITYPE*)libxsmm_malloc(k * n * sizeof(ITYPE) * t);
     ITYPE* ri = (ITYPE*)libxsmm_malloc(m * m * sizeof(ITYPE));
     ITYPE* rf = (ITYPE*)libxsmm_malloc(m * m * sizeof(ITYPE));
     ITYPE* ro = (ITYPE*)libxsmm_malloc(m * m * sizeof(ITYPE));
