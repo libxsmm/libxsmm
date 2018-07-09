@@ -291,7 +291,6 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
             }
 
-            assert(NULL != max_vals);
             /* Run the stream of convolutions for this segment */
             for (conv_i = 0; conv_i < n_convs; conv_i++) {
               const int vi = variant[pool_index]; /* avoid warning about char used as array index */
@@ -349,7 +348,6 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
             }
 
-            assert(NULL != max_vals);
             /* Run the stream of convolutions for this segment */
             for (conv_i = 0; conv_i < n_convs; conv_i++) {
               offset_i = stream[i];
@@ -433,7 +431,6 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
             }
 
-            assert(NULL != max_vals);
             /* Run the stream of convolutions for this segment */
             for (conv_i = 0; conv_i < n_convs; conv_i++) {
               const int vi = variant[pool_index]; /* avoid warning about char used as array index */
@@ -515,7 +512,6 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
             }
 
-            assert(NULL != max_vals);
             /* Run the stream of convolutions for this segment */
             for (conv_i = 0; conv_i < n_convs; conv_i++) {
               offset_i = stream[i];
@@ -569,7 +565,6 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           }
         }
 
-        assert(NULL != max_vals);
         /* Run the stream of convolutions for this segment */
         for (conv_i = 0; conv_i < n_convs; conv_i++) {
           offset_i = stream[i];
@@ -586,7 +581,6 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       }
     }
   } else {
-    assert(NULL != max_vals);
     /* TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images */
     if (handle->desc.N*BLOCKSIFM >= handle->desc.threads && !((handle->desc.N == 1) && (handle->bwd_ofh_rb == 1))) {
       /* Run the stream of convolutions, no extra operations are required... */

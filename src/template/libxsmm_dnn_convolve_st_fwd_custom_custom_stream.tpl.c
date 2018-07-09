@@ -700,7 +700,6 @@ if (n_segments) {
         }
       }
 
-      assert(NULL != max_vals);
       /* Run the stream of convolutions for this segment */
       for (conv_i = 0; conv_i < n_convs; conv_i++) {
         offset_i = stream[i];
@@ -718,7 +717,6 @@ if (n_segments) {
     }
   }
 } else {
-  assert(NULL != max_vals);
   /* Run the stream of convolutions, no extra operations are required... */
   if ( handle->compute_batch_stats_in_kernel == 1 ) { /* We  do BN stuff in the kernel  */
 #ifndef FP64_BN_STATS
