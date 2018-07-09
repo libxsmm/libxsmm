@@ -119,7 +119,7 @@ int main(void)
     result = (0 == fpstate ? EXIT_SUCCESS : EXIT_FAILURE);
     if (EXIT_SUCCESS != result) {
 #   if defined(_DEBUG)
-      fprintf(stderr, "FPE: test=#%i state=0x%08x -> invalid=%b overflow=%b\n", test + 1, fpstate,
+      fprintf(stderr, "FPE: test=#%i state=0x%08x -> invalid=%s overflow=%s\n", test + 1, fpstate,
         0 != (_MM_MASK_INVALID  & fpstate) ? "true" : "false",
         0 != (_MM_MASK_OVERFLOW & fpstate) ? "true" : "false");
 #   endif
