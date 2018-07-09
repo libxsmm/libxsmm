@@ -237,7 +237,6 @@ if (n_segments) {
             }
           }
 
-          assert(NULL != max_vals);
           /* Run the stream of convolutions for this segment */
           for (conv_i = 0; conv_i < n_convs; conv_i++) {
             const int vi = variant[pool_index]; /* avoid warning about char used as array index */
@@ -324,7 +323,6 @@ if (n_segments) {
             }
           }
 
-          assert(NULL != max_vals);
           /* Run the stream of convolutions for this segment */
           for (conv_i = 0; conv_i < n_convs; conv_i++) {
             offset_i = stream[i];
@@ -489,7 +487,6 @@ if (n_segments) {
             }
           }
 
-          assert(NULL != max_vals);
           /* Run the stream of convolutions for this segment */
           for (conv_i = 0; conv_i < n_convs; conv_i++) {
             const int vi = variant[pool_index]; /* avoid warning about char used as array index */
@@ -649,7 +646,6 @@ if (n_segments) {
             }
           }
 
-          assert(NULL != max_vals);
           /* Run the stream of convolutions for this segment */
           for (conv_i = 0; conv_i < n_convs; conv_i++) {
             offset_i = stream[i];
