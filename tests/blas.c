@@ -96,11 +96,16 @@ int main(void)
   c = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
   d = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
   assert(0 != a && 0 != b && 0 != c && 0 != d);
-
+# if defined(CHECK_FPE) && defined(__SSE__)
+  memset(a, 0, max_size_a * sizeof(ITYPE));
+  memset(b, 0, max_size_b * sizeof(ITYPE));
+  memset(c, 0, max_size_c * sizeof(OTYPE));
+# else
   LIBXSMM_MATINIT(ITYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
   LIBXSMM_MATINIT(ITYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
   LIBXSMM_MATINIT(OTYPE,  0, c, max_size_c, 1, max_size_c, 1.0);
   LIBXSMM_MATINIT(OTYPE,  0, d, max_size_c, 1, max_size_c, 1.0);
+# endif
   memset(&diff, 0, sizeof(diff));
 
   for (test = begin; test < end && EXIT_SUCCESS == result; ++test) {
@@ -114,7 +119,9 @@ int main(void)
     result = (0 == fpstate ? EXIT_SUCCESS : EXIT_FAILURE);
     if (EXIT_SUCCESS != result) {
 #   if defined(_DEBUG)
-      fprintf(stderr, "FPE(%i): state=%u\n", test + 1, fpstate);
+      fprintf(stderr, "FPE: test=#%i state=0x%08x -> invalid=%b overflow=%b\n", test + 1, fpstate,
+        0 != (_MM_MASK_INVALID  & fpstate) ? "true" : "false",
+        0 != (_MM_MASK_OVERFLOW & fpstate) ? "true" : "false");
 #   endif
     }
     else
