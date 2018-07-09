@@ -63,7 +63,10 @@ int *bn_stream = handle->bn_indices_ptrs[ltid];
 /* Padding related variables */
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ifwp + 2 * handle->desc.pad_w;
-LIBXSMM_VLA_DECL(5, element_input_type, input_buffer, ((element_input_type*)handle->scratch5) + ltid * BLOCKSIFM * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block, padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
+const size_t input_buffer_size = BLOCKSIFM * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block;
+LIBXSMM_VLA_DECL(5, element_input_type, input_buffer,
+  (element_input_type*)(((char*)handle->scratch5) + ltid * LIBXSMM_UP2(input_buffer_size * sizeof(element_input_type), LIBXSMM_CACHELINE)),
+  padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
 /* Kernel related variables  */
 libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_fwd[0].xmatcopy;
 libxsmm_xmcopyfunction jitted_zero_overwrite = handle->matcopy_fwd[1].xmatcopy;
@@ -83,7 +86,15 @@ element_output_type *bn_sum_base2;
 double *bn_sum_base;
 double *bn_sum_base2;
 #endif
-float accumulators_scratch[handle->ofmblock * handle->ofw * handle->ofh];
+
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
+float *const accumulators_scratch = (float*)(((char*)handle->scratch6) +
+  ltid * LIBXSMM_UP2(handle->ofmblock * handle->ofw * handle->ofh * sizeof(float), LIBXSMM_CACHELINE));
+#else
+float accumulators_scratch_array[handle->ofmblock * handle->ofw * handle->ofh];
+float *const accumulators_scratch = accumulators_scratch_array;
+#endif
+
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs;
 #else /* won't happen as this code only runs on AVX512 platforms */
@@ -101,7 +112,7 @@ if (handle->padding_flag == 1) {
       padded_h, padded_w, handle->ifmblock, handle->fm_lp_block);
   /* we need to set the scratch to zero */
   /* @TODO: we need to find a better/faster code here */
-  memset( input_zero, 0, BLOCKSIFM * padded_h * padded_w * handle->ifmblock * handle->fm_lp_block * sizeof(element_input_type) );
+  memset(input_zero, 0, input_buffer_size * sizeof(element_input_type));
 } else {
   input_base = &LIBXSMM_VLA_ACCESS(6, input, 0, 0, 0, 0, 0, 0,
       BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block);

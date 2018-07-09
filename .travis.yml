@@ -32,8 +32,8 @@ env:
   global:
   - UPLOAD_DIR=libxsmm
   - LIBXSMM_VERBOSE=2
-  #- PEDANTIC_HIGH="PEDANTIC=2"
-  #- PEDANTIC_TEST="PEDANTIC=1"
+  - PEDANTIC_HIGH="PEDANTIC=2"
+  - PEDANTIC_TEST="PEDANTIC=1"
 
 addons:
   apt:

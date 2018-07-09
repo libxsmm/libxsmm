@@ -65,7 +65,10 @@ element_output_type *prefetch_ptr;
 /* Padding related variables */
 const int padded_h = handle->ofhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ofwp + 2 * handle->desc.pad_w;
-LIBXSMM_VLA_DECL(5, element_output_type, output_buffer, ((element_output_type*)handle->scratch5) + ltid * BLOCKSOFM * padded_h * padded_w * handle->ofmblock, padded_h, padded_w, handle->ofmblock_lp, handle->fm_lp_block);
+const size_t output_buffer_size = BLOCKSOFM * padded_h * padded_w * handle->ofmblock;
+LIBXSMM_VLA_DECL(5, element_output_type, output_buffer,
+  (element_output_type*)(((char*)handle->scratch5) + ltid * LIBXSMM_UP2(output_buffer_size * sizeof(element_output_type), LIBXSMM_CACHELINE)),
+  padded_h, padded_w, handle->ofmblock_lp, handle->fm_lp_block);
 
 libxsmm_convfunction kernel_bwd = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
 libxsmm_convfunction kernel2_bwd = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
@@ -111,7 +114,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 
 { /* open new scope for additional variable declarations (C89) */
   LIBXSMM_VLA_DECL(5, element_input_type, del_input, del_in, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-  /* Ouput tensor declaration */
+  /* Output tensor declaration */
   element_output_type *const out = ((element_output_type*)handle->grad_output->data) /* + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock * handle->fm_lp_block*/;
   LIBXSMM_VLA_DECL(6, element_output_type, del_out, out, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
 
@@ -137,7 +140,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         padded_h, padded_w, handle->ofmblock_lp, handle->fm_lp_block);
     /* we need to set the scratch to zero */
     /* @TODO: we need to find a better/faster code here, e.g. just setting the rim */
-    memset( input_base, 0, BLOCKSOFM * padded_h * padded_w * handle->ofmblock * sizeof(element_output_type) );
+    memset(input_base, 0, output_buffer_size * sizeof(element_output_type));
   } else {
     input_base = &LIBXSMM_VLA_ACCESS(6, del_out, 0, 0, 0, 0, 0, 0,
         BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);

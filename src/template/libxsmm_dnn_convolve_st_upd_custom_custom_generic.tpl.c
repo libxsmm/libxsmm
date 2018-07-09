@@ -43,28 +43,31 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 /* transpose + padding via stack allocated buffers for input */
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
-const int scratch7_size = padded_h * padded_w * handle->ifmblock;
+const int size_tls1 = padded_h * padded_w * handle->ifmblock;
 #if !defined(LIBXSMM_DNN_VLA_TLS1)
-element_input_type *const input_scratch = (element_input_type*)(((char*)handle->scratch7) + ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_input_type), LIBXSMM_CACHELINE));
+element_input_type *const input_scratch = (element_input_type*)(((char*)handle->scratch5) +
+  ltid * LIBXSMM_UP2(size_tls1 * sizeof(element_input_type), LIBXSMM_CACHELINE));
 #else
-element_input_type input_scratch_array[scratch7_size];
+element_input_type input_scratch_array[size_tls1];
 element_input_type *const input_scratch = input_scratch_array;
 #endif
 
 /* transpose via stack allocated buffers for output and weights to control stride-GEMM issue
    idea: we transpose grad_output and transpose filters when done */
-const int scratch8_size = handle->ofhp * handle->ofwp * handle->ofmblock;
+const int scratch6_size = handle->ofhp * handle->ofwp * handle->ofmblock;
+const int scratch7_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
-element_output_type *const output_scratch = (element_output_type*)(((char*)handle->scratch8) + ltid * LIBXSMM_UP2(scratch8_size * sizeof(element_output_type), LIBXSMM_CACHELINE));
+element_output_type *const output_scratch = (element_output_type*)(((char*)handle->scratch6) +
+  ltid * LIBXSMM_UP2(scratch6_size * sizeof(element_output_type), LIBXSMM_CACHELINE));
 #else
-element_output_type output_scratch_array[scratch8_size];
+element_output_type output_scratch_array[scratch6_size];
 element_output_type *const output_scratch = output_scratch_array;
 #endif
-const int scratch9_size = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock;
 #if !defined(LIBXSMM_DNN_VLA_TLS3)
-element_filter_type *const filter_scratch = (element_filter_type*)(((char*)handle->scratch9) + ltid * LIBXSMM_UP2(scratch9_size * sizeof(element_filter_type), LIBXSMM_CACHELINE));
+element_filter_type *const filter_scratch = (element_filter_type*)(((char*)handle->scratch7) +
+  ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_filter_type), LIBXSMM_CACHELINE));
 #else
-element_filter_type filter_scratch_array[scratch9_size];
+element_filter_type filter_scratch_array[scratch7_size];
 element_filter_type *const filter_scratch = filter_scratch_array;
 #endif
 
@@ -78,14 +81,10 @@ LIBXSMM_VLA_DECL(3, element_input_type, input_padded, input_scratch, padded_w, h
 LIBXSMM_VLA_DECL(3, element_output_type, output_trans, output_scratch, handle->ofmblock, handle->ofwp);
 LIBXSMM_VLA_DECL(4, element_filter_type, weight_local, filter_scratch, handle->desc.S, handle->ofmblock, handle->ifmblock);
 
-LIBXSMM_ASSERT(scratch7_size * sizeof(element_input_type)  * handle->desc.threads <= handle->scratch7_size);
-LIBXSMM_ASSERT(scratch8_size * sizeof(element_output_type) * handle->desc.threads <= handle->scratch8_size);
-LIBXSMM_ASSERT(scratch9_size * sizeof(element_filter_type) * handle->desc.threads <= handle->scratch9_size);
-
 /* zeroing local scratch after declarations (not mixing declarations and code) */
-for (ii = 0; ii < scratch7_size; ++ii) { input_scratch[ii] = (element_input_type)0; }
-for (oi = 0; oi < scratch8_size; ++oi) { output_scratch[oi] = (element_output_type)0; }
-for (oi = 0; oi < scratch9_size; ++oi) { filter_scratch[oi] = (element_filter_type)0; }
+for (ii = 0; ii < size_tls1; ++ii) { input_scratch[ii] = (element_input_type)0; }
+for (oi = 0; oi < scratch6_size; ++oi) { output_scratch[oi] = (element_output_type)0; }
+for (oi = 0; oi < scratch7_size; ++oi) { filter_scratch[oi] = (element_filter_type)0; }
 
 for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
   ofm1 = ofm1ifm1 / handle->blocksifm;
@@ -96,7 +95,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
     element_filter_type* temp_buf = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, 0, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 
     LIBXSMM_PRAGMA_SIMD
-    for (ii = 0; ii < scratch9_size; ++ii) {
+    for (ii = 0; ii < scratch7_size; ++ii) {
       temp_buf[ii] = (element_filter_type)0;
     }
   }

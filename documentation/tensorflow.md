@@ -44,7 +44,7 @@ If the build step of any of the Bazel commands goes wrong, `-s --verbose_failure
 bazel build -c opt --copt=-O2 --linkopt=-pthread --cxxopt=-D_GLIBCXX_USE_CXX11_ABI=0 \
   --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD \
   --define tensorflow_xsmm=1 --define tensorflow_xsmm_convolutions=1 \
-  --define tensorflow_xsmm_backward_convolutions=0 \
+  --define tensorflow_xsmm_backward_convolutions=1 \
   --copt=-mfma --copt=-mavx2 \
   //tensorflow/tools/pip_package:build_pip_package
 ```

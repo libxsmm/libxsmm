@@ -1450,8 +1450,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_zero_tensor(const libxsmm_dnn_tensor* 
                                       for (i = 0; i < size; ++i) int8_data[i] = 0;
                                     } break;
       default: {
-                 status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-               }
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+      }
     }
   }
   else {
@@ -1774,7 +1774,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_tensor(libxsmm_dnn_layer* hand
 LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status)
 {
   size_t l_scratch_size = 0;
-  size_t scratch5_size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
@@ -1792,12 +1791,16 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
                                              if (handle->padding_flag == 1) {
-                                               scratch5_size = handle->fwdbwd_scratch_size;
-                                               l_scratch_size = scratch5_size + 64;
+                                               l_scratch_size = handle->fwdbwd_scratch_size + 64;
                                              }
 #if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              if (handle->use_fwd_generic != 0) {
-                                               l_scratch_size += handle->scratch7_size + 64;
+                                               l_scratch_size += handle->max_scratch5_size + 64;
+                                             }
+#endif
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
+                                             if (handle->scratch6_size != 0) {
+                                               l_scratch_size += handle->scratch6_size + 64;
                                              }
 #endif
                                            } break;
@@ -1805,72 +1808,77 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
                                              /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
                                              l_scratch_size = handle->scratch1_size + 64;
                                              if (handle->padding_flag == 1) {
-                                               scratch5_size = handle->fwdbwd_scratch_size;
-                                               l_scratch_size += scratch5_size + 64;
+                                               l_scratch_size += handle->fwdbwd_scratch_size + 64;
                                              }
 #if !defined(LIBXSMM_DNN_VLA_TLS1)
                                              if (handle->use_bwd_generic != 0) {
-                                               l_scratch_size += handle->scratch7_size + 64;
+                                               l_scratch_size += handle->max_scratch5_size + 64;
                                              }
 #endif
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
+                                             if (handle->use_lp_kernel == 1) {
+                                               l_scratch_size += handle->scratch2_size + 64;
+                                             }
                                              /* we need a minibatch copy for transpose of input, scratch3 */
                                              l_scratch_size += handle->scratch3_size + 64;
                                              /* potentially we need thread-local filter copies, scratch4 */
                                              if (handle->upd_use_thread_fil == 1) {
                                                l_scratch_size += handle->scratch4_size + 64;
                                              }
-                                             if (handle->padding_flag == 1) {
-                                               scratch5_size = handle->minibatch_scratch_size;
-                                               l_scratch_size += scratch5_size + 64;
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
+                                             if (handle->use_upd_generic != 0) {
+                                               l_scratch_size += handle->max_scratch5_size + 64;
                                              }
-                                             if (handle->use_lp_kernel == 1) {
+                                             else
+#endif
+                                             if (handle->padding_flag == 1) {
+                                               l_scratch_size += handle->minibatch_scratch_size + 64;
+                                             }
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
+                                             if (handle->scratch6_size != 0) {
                                                l_scratch_size += handle->scratch6_size + 64;
                                              }
-                                             if (handle->use_upd_generic != 0) {
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-                                               l_scratch_size += handle->scratch7_size + 64;
-#endif
-#if !defined(LIBXSMM_DNN_VLA_TLS2)
-                                               l_scratch_size += handle->scratch8_size + 64;
 #endif
 #if !defined(LIBXSMM_DNN_VLA_TLS3)
-                                               l_scratch_size += handle->scratch9_size + 64;
-#endif
+                                             if (handle->scratch7_size != 0) {
+                                               l_scratch_size += handle->scratch7_size + 64;
                                              }
+#endif
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
                                              /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
                                              l_scratch_size += handle->scratch1_size + 64;
+                                             if (handle->use_lp_kernel == 1) {
+                                               l_scratch_size += handle->scratch2_size + 64;
+                                             }
                                              /* we need a minibatch copy for transpose of input, scratch3 */
                                              l_scratch_size += handle->scratch3_size + 64;
                                              /* potentially we need thread-local filter copies, scratch4 */
                                              if (handle->upd_use_thread_fil == 1) {
                                                l_scratch_size += handle->scratch4_size + 64;
                                              }
-                                             if (handle->padding_flag == 1) {
-                                               scratch5_size = handle->max_scratch5_size;
-                                               l_scratch_size += scratch5_size + 64;
+                                             if (handle->padding_flag == 1
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
+                                               || handle->use_fwd_generic != 0 || handle->use_bwd_generic != 0 || handle->use_upd_generic != 0
+#endif
+                                             ) {
+                                               l_scratch_size += handle->max_scratch5_size + 64;
                                              }
-                                             if (handle->use_lp_kernel == 1) {
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
+                                             if (handle->scratch6_size != 0) {
                                                l_scratch_size += handle->scratch6_size + 64;
                                              }
-                                             if (handle->use_upd_generic != 0) {
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-                                               l_scratch_size += handle->scratch7_size + 64;
-#endif
-#if !defined(LIBXSMM_DNN_VLA_TLS2)
-                                               l_scratch_size += handle->scratch8_size + 64;
 #endif
 #if !defined(LIBXSMM_DNN_VLA_TLS3)
-                                               l_scratch_size += handle->scratch9_size + 64;
-#endif
+                                             if (handle->scratch7_size != 0) {
+                                               l_scratch_size += handle->scratch7_size + 64;
                                              }
+#endif
                                            } break;
         default: {
-                   *status = LIBXSMM_DNN_ERR_INVALID_KIND;
-                 }
+          *status = LIBXSMM_DNN_ERR_INVALID_KIND;
+        }
       }
     }
   } else {
@@ -1884,9 +1892,8 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle, const libxsmm_dnn_compute_kind kind, const void* scratch)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  size_t address = (size_t)scratch;
+  uintptr_t address = (uintptr_t)scratch;
   size_t offset = 0;
-  size_t scratch5_size = 0;
 
   if (scratch == 0) {
     status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
@@ -1923,16 +1930,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
         handle->scratch4 = (void*)(address+offset);
       }
       address += handle->scratch4_size + 64;
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-      if (address % 64 == 0) {
-        handle->scratch7 = (void*)address;
-      }
-      else {
-        offset = (64 - address % 64);
-        handle->scratch7 = (void*)(address + offset);
-      }
-      address += handle->scratch7_size + 64;
-#endif
       if (address % 64 == 0) {
         handle->scratchIw = (void*)address;
       } else {
@@ -1959,25 +1956,37 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
     } else {
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                             if (handle->padding_flag == 1) {
-                                               scratch5_size = handle->fwdbwd_scratch_size;
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
+                                             if (handle->use_fwd_generic != 0) {
                                                if (address % 64 == 0) {
                                                  handle->scratch5 = (void*)address;
                                                } else {
                                                  offset = (64 - address % 64);
                                                  handle->scratch5 = (void*)(address+offset);
                                                }
-                                               address += scratch5_size + 64;
+                                               address += handle->max_scratch5_size + 64;
                                              }
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-                                             if (handle->use_fwd_generic != 0) {
+                                             else
+#endif
+                                             if (handle->padding_flag == 1) {
                                                if (address % 64 == 0) {
-                                                 handle->scratch7 = (void*)address;
+                                                 handle->scratch5 = (void*)address;
                                                } else {
                                                  offset = (64 - address % 64);
-                                                 handle->scratch7 = (void*)(address+offset);
+                                                 handle->scratch5 = (void*)(address+offset);
                                                }
-                                               address += handle->scratch7_size + 64;
+                                               address += handle->fwdbwd_scratch_size + 64;
+                                             }
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
+                                             if (handle->scratch6_size != 0) {
+                                               if (address % 64 == 0) {
+                                                 handle->scratch6 = (void*)address;
+                                               }
+                                               else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch6 = (void*)(address + offset);
+                                               }
+                                               address += handle->scratch6_size + 64;
                                              }
 #endif
                                            } break;
@@ -1989,8 +1998,20 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                offset = (64 - address % 64);
                                                handle->scratch1 = (void*)(address+offset);
                                              }
+#if !defined(LIBXSMM_DNN_VLA_TLS1)
+                                             if (handle->use_bwd_generic != 0) {
+                                               if (address % 64 == 0) {
+                                                 handle->scratch5 = (void*)address;
+                                               }
+                                               else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch5 = (void*)(address + offset);
+                                               }
+                                               address += handle->max_scratch5_size + 64;
+                                             }
+                                             else
+#endif
                                              if (handle->padding_flag == 1) {
-                                               scratch5_size = handle->fwdbwd_scratch_size;
                                                address += handle->scratch1_size + 64;
                                                if (address % 64 == 0) {
                                                  handle->scratch5 = (void*)address;
@@ -1998,31 +2019,20 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                  offset = (64 - address % 64);
                                                  handle->scratch5 = (void*)(address+offset);
                                                }
-                                               address += scratch5_size + 64;
+                                               address += handle->fwdbwd_scratch_size + 64;
                                              }
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-                                             if (handle->use_bwd_generic != 0) {
-                                               if (address % 64 == 0) {
-                                                 handle->scratch7 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch7 = (void*)(address+offset);
-                                               }
-                                               address += handle->scratch7_size + 64;
-                                             }
-#endif
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
                                              /* we need a minibatch copy for transpose of input, scratch3 */
-                                             if (handle->padding_flag == 1) {
-                                               scratch5_size = handle->minibatch_scratch_size;
+                                             if (handle->use_lp_kernel == 1) {
                                                if (address % 64 == 0) {
-                                                 handle->scratch5 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch5 = (void*)(address+offset);
+                                                 handle->scratch2 = (void*)address;
                                                }
-                                               address += scratch5_size + 64;
+                                               else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch2 = (void*)(address + offset);
+                                               }
+                                               address += handle->scratch2_size + 64;
                                              }
                                              if (address % 64 == 0) {
                                                handle->scratch3 = (void*)address;
@@ -2041,58 +2051,55 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                }
                                                address += handle->scratch4_size + 64;
                                              }
-                                             if (handle->use_lp_kernel == 1) {
-                                               if (address % 64 == 0) {
-                                                 handle->scratch6 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch6 = (void*)(address+offset);
-                                               }
-                                               address += handle->scratch6_size + 64;
-                                             }
-                                             if (handle->use_upd_generic != 0) {
 #if !defined(LIBXSMM_DNN_VLA_TLS1)
+                                             if (0 != handle->use_upd_generic) {
                                                if (address % 64 == 0) {
-                                                 handle->scratch7 = (void*)address;
+                                                 handle->scratch5 = (void*)address;
                                                }
                                                else {
                                                  offset = (64 - address % 64);
-                                                 handle->scratch7 = (void*)(address + offset);
+                                                 handle->scratch5 = (void*)(address + offset);
                                                }
-                                               address += handle->scratch7_size + 64;
+                                               address += handle->max_scratch5_size + 64;
+                                             }
+                                             else
 #endif
-#if !defined(LIBXSMM_DNN_VLA_TLS2)
+                                             if (handle->padding_flag == 1) {
                                                if (address % 64 == 0) {
-                                                 handle->scratch8 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch8 = (void*)(address+offset);
+                                                 handle->scratch5 = (void*)address;
                                                }
-                                               address += handle->scratch8_size + 64;
+                                               else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch5 = (void*)(address + offset);
+                                               }
+                                               address += handle->minibatch_scratch_size + 64;
+                                             }
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
+                                             if (handle->scratch6_size != 0) {
+                                               if (address % 64 == 0) {
+                                                 handle->scratch6 = (void*)address;
+                                               }
+                                               else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch6 = (void*)(address + offset);
+                                               }
+                                               address += handle->scratch6_size + 64;
+                                             }
 #endif
 #if !defined(LIBXSMM_DNN_VLA_TLS3)
+                                             if (handle->scratch7_size != 0) {
                                                if (address % 64 == 0) {
-                                                 handle->scratch9 = (void*)address;
+                                                 handle->scratch7 = (void*)address;
                                                } else {
                                                  offset = (64 - address % 64);
-                                                 handle->scratch9 = (void*)(address+offset);
+                                                 handle->scratch7 = (void*)(address+offset);
                                                }
-                                               address += handle->scratch9_size + 64;
-#endif
+                                               address += handle->scratch7_size + 64;
                                              }
+#endif
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
                                              /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
-                                             if (handle->padding_flag == 1) {
-                                               scratch5_size = handle->max_scratch5_size;
-                                               if (address % 64 == 0) {
-                                                 handle->scratch5 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch5 = (void*)(address+offset);
-                                               }
-                                               address += scratch5_size + 64;
-                                             }
                                              if (address % 64 == 0) {
                                                handle->scratch1 = (void*)address;
                                              } else {
@@ -2100,6 +2107,16 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                handle->scratch1 = (void*)(address+offset);
                                              }
                                              address += handle->scratch1_size + 64;
+                                             if (handle->use_lp_kernel == 1) {
+                                               if (address % 64 == 0) {
+                                                 handle->scratch2 = (void*)address;
+                                               }
+                                               else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch2 = (void*)(address + offset);
+                                               }
+                                               address += handle->scratch2_size + 64;
+                                             }
                                              /* we need a minibatch copy for transpose of input, scratch3 */
                                              if (address % 64 == 0) {
                                                handle->scratch3 = (void*)address;
@@ -2118,49 +2135,47 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                }
                                                address += handle->scratch4_size + 64;
                                              }
-                                             if (handle->use_lp_kernel == 1) {
-                                               if (address % 64 == 0) {
-                                                 handle->scratch6 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch6 = (void*)(address+offset);
-                                               }
-                                               address += handle->scratch6_size + 64;
-                                             }
-                                             if (handle->use_upd_generic != 0) {
+                                             if (handle->padding_flag == 1
 #if !defined(LIBXSMM_DNN_VLA_TLS1)
+                                               || handle->use_fwd_generic != 0 || handle->use_bwd_generic != 0 || handle->use_upd_generic != 0
+#endif
+                                             ) {
                                                if (address % 64 == 0) {
-                                                 handle->scratch7 = (void*)address;
+                                                 handle->scratch5 = (void*)address;
                                                }
                                                else {
                                                  offset = (64 - address % 64);
-                                                 handle->scratch7 = (void*)(address + offset);
+                                                 handle->scratch5 = (void*)(address + offset);
                                                }
-                                               address += handle->scratch7_size + 64;
-#endif
+                                               address += handle->max_scratch5_size + 64;
+                                             }
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
+                                             if (handle->scratch6_size != 0) {
                                                if (address % 64 == 0) {
-                                                 handle->scratch8 = (void*)address;
-                                               } else {
-                                                 offset = (64 - address % 64);
-                                                 handle->scratch8 = (void*)(address+offset);
+                                                 handle->scratch6 = (void*)address;
                                                }
-                                               address += handle->scratch8_size + 64;
+                                               else {
+                                                 offset = (64 - address % 64);
+                                                 handle->scratch6 = (void*)(address + offset);
+                                               }
+                                               address += handle->scratch6_size + 64;
+                                             }
 #endif
 #if !defined(LIBXSMM_DNN_VLA_TLS3)
+                                             if (handle->scratch7_size != 0) {
                                                if (address % 64 == 0) {
-                                                 handle->scratch9 = (void*)address;
+                                                 handle->scratch7 = (void*)address;
                                                } else {
                                                  offset = (64 - address % 64);
-                                                 handle->scratch9 = (void*)(address+offset);
+                                                 handle->scratch7 = (void*)(address+offset);
                                                }
-                                               address += handle->scratch9_size + 64;
-#endif
+                                               address += handle->scratch7_size + 64;
                                              }
+#endif
                                            } break;
         default: {
-                   status = LIBXSMM_DNN_ERR_INVALID_KIND;
-                 }
+          status = LIBXSMM_DNN_ERR_INVALID_KIND;
+        }
       }
     }
   } else {
@@ -2180,9 +2195,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* han
       handle->scratch1 = 0;
       handle->scratch3 = 0;
       handle->scratch4 = 0;
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-      handle->scratch7 = 0;
-#endif
       handle->scratchIw = 0;
       handle->scratchOw = 0;
       handle->scratchVk = 0;
@@ -2190,51 +2202,42 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* han
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
                                              handle->scratch5 = 0;
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-                                             handle->scratch7 = 0;
+#if !defined(LIBXSMM_DNN_VLA_TLS2)
+                                             handle->scratch6 = 0;
 #endif
         } break;
         case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
                                              handle->scratch1 = 0;
                                              handle->scratch5 = 0;
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-                                             handle->scratch7 = 0;
-#endif
-                                           } break;
+        } break;
         case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
+                                             handle->scratch2 = 0;
                                              handle->scratch3 = 0;
                                              handle->scratch4 = 0;
                                              handle->scratch5 = 0;
-                                             handle->scratch6 = 0;
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-                                             handle->scratch7 = 0;
-#endif
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
-                                             handle->scratch8 = 0;
+                                             handle->scratch6 = 0;
 #endif
 #if !defined(LIBXSMM_DNN_VLA_TLS3)
-                                             handle->scratch9 = 0;
+                                             handle->scratch7 = 0;
 #endif
         } break;
         case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
                                              handle->scratch1 = 0;
+                                             handle->scratch2 = 0;
                                              handle->scratch3 = 0;
                                              handle->scratch4 = 0;
                                              handle->scratch5 = 0;
-                                             handle->scratch6 = 0;
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-                                             handle->scratch7 = 0;
-#endif
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
-                                             handle->scratch8 = 0;
+                                             handle->scratch6 = 0;
 #endif
 #if !defined(LIBXSMM_DNN_VLA_TLS3)
-                                             handle->scratch9 = 0;
+                                             handle->scratch7 = 0;
 #endif
         } break;
         default: {
-                   status = LIBXSMM_DNN_ERR_INVALID_KIND;
-                 }
+          status = LIBXSMM_DNN_ERR_INVALID_KIND;
+        }
       }
     }
   } else {
@@ -2586,8 +2589,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_codegen_success(libxsmm_dnn_layer*
                                            }
                                          } break;
       default: {
-                 status = LIBXSMM_DNN_ERR_INVALID_KIND;
-               }
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
     }
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
@@ -2616,8 +2619,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* 
                                            }
                                          } break;
       default: {
-                 status = LIBXSMM_DNN_ERR_INVALID_KIND;
-               }
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
     }
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
