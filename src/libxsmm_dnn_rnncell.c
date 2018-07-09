@@ -493,17 +493,12 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_internalstate(libxsmm_
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_assign_z(libxsmm_dnn_rnncell* handle, void* zgoldtb)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  libxsmm_blasint it;
-  libxsmm_blasint m, n, t;
-  LIBXSMM_DNN_ELTWISE_FTYPE* zgoldt, *zt;
+
   if (handle != 0 && zgoldtb != 0) {
-    m = handle->m;
-    n = handle->n;
-    t = handle->t;
-    zgoldt = (LIBXSMM_DNN_ELTWISE_FTYPE*)zgoldtb;
-    zt = (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->z->data;
-    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, zgold, zgoldt, m * n);
-    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, z, zt, m * n);
+    const libxsmm_blasint m = handle->m, n = handle->n, t = handle->t;
+    LIBXSMM_VLA_DECL(2, const LIBXSMM_DNN_ELTWISE_FTYPE, zgold, (const LIBXSMM_DNN_ELTWISE_FTYPE*)zgoldtb, m * n);
+    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, z, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->z->data, m * n);
+    libxsmm_blasint it;
     for (it = 0; it < t; ++it) {
       libxsmm_bgemm_copyin_b(handle->handlewx, &LIBXSMM_VLA_ACCESS(2, zgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, z, it, 0, m * n));
     }
