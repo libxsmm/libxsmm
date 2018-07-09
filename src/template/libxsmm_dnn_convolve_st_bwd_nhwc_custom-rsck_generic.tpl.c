@@ -68,15 +68,16 @@ element_filter_type* weight_base = 0;
 /* padding via stack allocated buffers */
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
 const int padded_h = handle->desc.H + (2 * handle->desc.pad_h);
-const int scratch7_size = padded_h * padded_w * handle->ifmblock;
+const int size_tls1 = padded_h * padded_w * handle->ifmblock;
 #if !defined(LIBXSMM_DNN_VLA_TLS1)
-element_input_type *const del_input_scratch_padding = (element_input_type*)(((char*)handle->scratch7) + ltid * LIBXSMM_UP2(scratch7_size * sizeof(element_input_type), LIBXSMM_CACHELINE));
-LIBXSMM_ASSERT(scratch7_size * sizeof(element_input_type) * handle->desc.threads <= handle->scratch7_size);
+element_input_type *const del_input_scratch_padding = (element_input_type*)(((char*)handle->scratch5) +
+  ltid * LIBXSMM_UP2(size_tls1 * sizeof(element_input_type), LIBXSMM_CACHELINE));
+LIBXSMM_ASSERT(size_tls1 * sizeof(element_input_type) * handle->desc.threads <= handle->max_scratch5_size);
 #else
-element_input_type del_input_scratch_padding_array[scratch7_size];
+element_input_type del_input_scratch_padding_array[size_tls1];
 element_input_type *const del_input_scratch_padding = del_input_scratch_padding_array;
 #endif
-for ( ii = 0; ii < scratch7_size; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
+for ( ii = 0; ii < size_tls1; ++ii ) { del_input_scratch_padding[ii] = (element_input_type)0; }
 
 /* transpose filters, if requested */
 if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) {
@@ -172,7 +173,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
        of input channels should be convoluted */
     if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
       LIBXSMM_PRAGMA_SIMD
-      for (ij = 0; ij < scratch7_size; ++ij) {
+      for (ij = 0; ij < size_tls1; ++ij) {
         del_input_scratch_padding[ij] = (element_output_type)0;
       }
     } else {

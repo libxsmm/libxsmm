@@ -38,5 +38,5 @@ echo
 echo "================================================================================"
 echo "Errors (warnings)"
 echo "================================================================================"
-grep -e "error:" -e "warning:" .analyze.log | grep -v "is never read"
+grep -e "error:" -e "warning:" .analyze.log | grep -v "is never read" | sort -u
 

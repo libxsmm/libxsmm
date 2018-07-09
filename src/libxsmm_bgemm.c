@@ -374,6 +374,56 @@ LIBXSMM_API int libxsmm_bgemm_copyout_c(const libxsmm_bgemm_handle* handle, cons
 }
 
 
+LIBXSMM_API int libxsmm_bgemm_convert_b_to_a(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst)
+{
+  int result = EXIT_SUCCESS;
+  static int error_once = 0;
+
+  if (0 != handle) {
+#if 0 /* TODO: support leading dimension for the source buffer */
+    const libxsmm_blasint ild = (0 == ld ? handle->k : *ld);
+    assert(ild >= handle->k);
+#else
+    LIBXSMM_UNUSED(ld);
+#endif
+    switch (handle->iprec) {
+      case LIBXSMM_GEMM_PRECISION_F64: {
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE double
+#       include "template/libxsmm_bgemm_convert_b_to_a.tpl.c"
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+      } break;
+      case LIBXSMM_GEMM_PRECISION_F32: {
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE float
+#       include "template/libxsmm_bgemm_convert_b_to_a.tpl.c"
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+      } break;
+      case LIBXSMM_GEMM_PRECISION_I16: {
+#       define LIBXSMM_BGEMM_TEMPLATE_TYPE short
+#       include "template/libxsmm_bgemm_convert_b_to_a.tpl.c"
+#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+      } break;
+      default: {
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM ERROR: BGEMM precision of matrix B is not supported!\n");
+        }
+        result = EXIT_FAILURE;
+      }
+    }
+  }
+  else {
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: BGEMM-handle cannot be NULL!\n");
+    }
+    result = EXIT_FAILURE;
+  }
+  return result;
+}
+
+
 LIBXSMM_API_INLINE void internal_bgemm_order(libxsmm_bgemm_order order,
   libxsmm_blasint w_i, libxsmm_blasint nw_i, libxsmm_blasint nw_j, libxsmm_blasint nw_k,
   libxsmm_blasint* i2, libxsmm_blasint* j2, libxsmm_blasint* k2)

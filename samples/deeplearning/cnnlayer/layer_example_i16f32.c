@@ -711,7 +711,7 @@ int main(int argc, char* argv[])
   /* let's allocate and bind scratch */
   scratch_size = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
   CHKERR_LIBXSMM_DNN( status );
-  scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
+  scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
   /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
   /*init_buf_int16( (short*)scratch, scratch_size/2, 0, 0 );*/
