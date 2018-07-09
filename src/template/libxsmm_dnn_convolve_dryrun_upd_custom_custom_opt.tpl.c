@@ -151,7 +151,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   }
 
 
-  /* Allocate auxiliary data structures for index jitting  */
+  /* Allocate auxiliary data structures for index jitting */
   handle->n_entries_upd[ltid] = local_entries/3;
   compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
   handle->compute_upd_indices_ptrs[ltid] = compute_indices;
@@ -160,6 +160,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->n_upd_code_segments[ltid] = n_code_segments;
   expanded_size = local_entries/3 + n_code_segments;
   tmp_expanded_stream = (int*) malloc( expanded_size * sizeof(int) );
+  assert(NULL != tmp_expanded_stream);
   tmp_stream_index = 0;
   if (n_code_segments) {
     encoded_code_segments = (segment_t*) libxsmm_aligned_malloc(n_code_segments * sizeof(segment_t), 2097152);
