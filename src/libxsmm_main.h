@@ -405,24 +405,22 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   /* scratch */
   void* scratch1;
   size_t scratch1_size;
+  void* scratch2;
+  size_t scratch2_size;
   void* scratch3;
   size_t scratch3_size;
-  void* scratch4;
+  void* scratch4;             /* TLS: used to reduce weights */
   size_t scratch4_size;
-  void* scratch5;             /* This scratch is used as a copy buffer when padding needs to be applied */
+  void* scratch5;             /* TLS: copy-buffer (if padding is needed), or [H][W][c-block]-tensor (generic FWD/BWD) */
   size_t max_scratch5_size;
-  void* scratch6;
-  size_t scratch6_size;
-#if !defined(LIBXSMM_DNN_VLA_TLS1)
-  void* scratch7;             /* [H][W][c-block] tensor (generic fwd/bwd convolution) */
-#endif
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
-  void* scratch8;             /* output_scratch (generic update convolution) */
+  void* scratch6;             /* TLS: output_scratch (generic WU), or float-accumulation buffer */
+  size_t scratch6_size;
 #endif
 #if !defined(LIBXSMM_DNN_VLA_TLS3)
-  void* scratch9;             /* filter_scratch (generic update convolution) */
+  void* scratch7;             /* TLS: filter_scratch (generic WU) */
+  size_t scratch7_size;
 #endif
-  size_t scratch7_size, scratch8_size, scratch9_size;
   size_t minibatch_scratch_size;
   size_t fwdbwd_scratch_size;
   int padding_flag;           /* Flag that dictates if we should apply padding in the input */
