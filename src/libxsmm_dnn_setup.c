@@ -1477,6 +1477,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
             handle->blocksimg_blocking = 1;
             descriptor.blocks_img = handle->blocksimg_blocking;
             handle->reduce_weights = 0;
+            printf("Came in the no reduce version!!!!\n");
           } else {
             handle->reduce_weights = 1;
           }
