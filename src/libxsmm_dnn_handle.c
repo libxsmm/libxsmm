@@ -144,7 +144,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   }
 
 #if !(defined(LIBXSMM_DNN_VLA_TLS1) && defined(LIBXSMM_DNN_VLA_TLS2) && defined(LIBXSMM_DNN_VLA_TLS3))
-  if (LIBXSMM_DNN_SUCCESS == status) {
+# if 0 /* TODO: Bf16 currently triggers error 90005 before but we want to continue */
+  if (LIBXSMM_DNN_SUCCESS == status)
+# endif
+  {
 # if !defined(LIBXSMM_DNN_VLA_TLS1)
     if (0 != handle->use_fwd_generic || 0 != handle->use_bwd_generic || 0 != handle->use_upd_generic) {
       const int padded_h = handle->desc.H + (2 * handle->desc.pad_h), padded_w = handle->desc.W + (2 * handle->desc.pad_w);
