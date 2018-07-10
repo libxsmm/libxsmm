@@ -117,8 +117,12 @@ int main(void)
         0 != (_MM_MASK_OVERFLOW & fpstate) ? "true" : "false");
 # endif
     }
-#elif !defined(__BLAS) || (0 != __BLAS)
-    else {
+# if !defined(__BLAS) || (0 != __BLAS)
+    else
+# endif
+#endif
+#if !defined(__BLAS) || (0 != __BLAS)
+    {
       libxsmm_matdiff_info diff_test;
       REFERENCE_BLAS(ITYPE)(&transa, &transb, m + test, n + test, k + test,
         alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
