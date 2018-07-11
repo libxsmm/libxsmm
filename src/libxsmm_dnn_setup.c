@@ -330,7 +330,7 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
     handle->scratch2_size = handle->desc.N * handle->blocksofm * handle->ofmblock * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+8+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_in);
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
       /* Allocate scratch to dump results before downconvert  */
-      handle->scratch2_size += handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * sizeof(float);    
+      handle->scratch2_size += handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * sizeof(float);    
     }
   } else {
     handle->scratch2 = 0;
@@ -1502,7 +1502,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
           handle->code_upd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
-          handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+          //handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
         }
         /*ALL*/
         descriptor.transpose_ofw_ifm = 0;
