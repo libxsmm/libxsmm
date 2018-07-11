@@ -330,7 +330,7 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
     handle->scratch2_size = handle->desc.N * handle->blocksofm * handle->ofmblock * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+8+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_in);
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
       /* Allocate scratch to dump results before downconvert  */
-      handle->scratch2_size += handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * sizeof(float);    
+      handle->scratch2_size += handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * sizeof(float);
     }
   } else {
     handle->scratch2 = 0;

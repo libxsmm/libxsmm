@@ -89,15 +89,15 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_upd_dryrun_direct_custo
       if (handle->use_fastpath) {
         if ( handle->use_hybrid_wu_parallelism == 1 ) {
           if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
-#include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom_bf16.tpl.c"          
+#include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom_bf16.tpl.c"
           } else {
 #include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom.tpl.c"
           }
         }
         else {
           if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
-#include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt_bf16.tpl.c"          
-          } else {     
+#include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt_bf16.tpl.c"
+          } else {
 #include "template/libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt.tpl.c"
           }
         }

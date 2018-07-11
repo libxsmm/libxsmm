@@ -231,7 +231,7 @@ for (pc = 0; pc < instr; pc++) {
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (handle->reduce_weights) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) 
+#if defined(LIBXSMM_INTRINSICS_AVX512)
   for ( j = 2*reduce_thr_begin; j < 2*reduce_thr_end; j+=2 ) {
     __m512 weight_sum_lo = _mm512_setzero_ps();
     __m512 weight_sum_hi = _mm512_setzero_ps();
@@ -241,7 +241,7 @@ if (handle->reduce_weights) {
     }
     for ( i = 0; i < handle->weight_copies; i++ ) {
       weight_sum_hi = _mm512_add_ps(weight_sum_hi, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->weight_copies, 16)));
-    } 
+    }
     fm0 = (__m512i) weight_sum_lo;
     fm1 = (__m512i) weight_sum_hi;
     fm0 = _mm512_srli_epi32 (fm0, 16);

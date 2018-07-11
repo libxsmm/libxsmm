@@ -2507,7 +2507,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
                   mem_offset,
                   i_conv_kernel_config->vector_name,
                   reg_X,
-                  reg_X);   
+                  reg_X);
 
               libxsmm_x86_instruction_vec_move( io_generated_code,
                   i_conv_kernel_config->instruction_set,
@@ -2516,7 +2516,7 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
                   LIBXSMM_X86_GP_REG_UNDEF, 0,
                   mem_offset,
                   i_conv_kernel_config->vector_name,
-                  reg_X, 0, 1 );   
+                  reg_X, 0, 1 );
             } else {
               libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
                   i_conv_kernel_config->instruction_set,

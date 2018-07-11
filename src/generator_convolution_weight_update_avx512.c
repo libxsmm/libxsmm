@@ -132,7 +132,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
     l_conv_kernel_config.vadd_instruction = LIBXSMM_X86_INSTR_VPADDD;
     l_conv_kernel_config.vbcst_instruction = LIBXSMM_X86_INSTR_VPBROADCASTD;
  }
-  
+
  if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32) {
     l_conv_kernel_config.vfma_instruction = LIBXSMM_X86_INSTR_VPMADDUBSW;
     l_conv_kernel_config.vadd_instruction = LIBXSMM_X86_INSTR_VPADDD;

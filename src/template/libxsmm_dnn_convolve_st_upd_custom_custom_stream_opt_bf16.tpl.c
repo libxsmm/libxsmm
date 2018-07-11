@@ -264,7 +264,7 @@ if (handle->reduce_weights) {
   if (handle->upd_use_external_reduce == 0) {
     libxsmm_barrier_wait(handle->barrier, ltid);
     for ( j = 2*reduce_thr_begin; j < 2*reduce_thr_end; j+=2 ) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) 
+#if defined(LIBXSMM_INTRINSICS_AVX512)
       __m512 weight_sum_lo = _mm512_setzero_ps();
       __m512 weight_sum_hi = _mm512_setzero_ps();
       __m512i fm0, fm1, pair_fms;
