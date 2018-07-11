@@ -38,7 +38,7 @@ int BLOCKSOFM = handle->blocksofm;
 int OFWP = handle->ofwp+handle->output_lp_padding;
 
 /* Auxiliary integer variables   */
-int ofm1, ifm1, ki, kj, i, j;
+int ofm1, ifm1, i, j;
 
 /* transpose, copy and reduce work-related variables  */
 const int reduce_work = BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*(handle->ifmblock_hp/2);
@@ -51,10 +51,10 @@ int pixels_lp = handle->fm_lp_block;
 element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
 LIBXSMM_VLA_DECL(6, element_output_type, tr_output, (element_output_type*)handle->scratch2 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
 LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
-
+#if 0
 LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->grad_filter->data, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock_hp, handle->ofmblock);
-
-//element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;
+#endif
+/*element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;*/
 float *weight_ptr = ((float*) handle->scratch2) + (handle->desc.N * handle->blocksofm * handle->ofmblock * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+8+2*handle->desc.pad_w))/2;
 
 float* reduction_weight_ptr = ((float*)handle->scratch4) + (handle->weight_copies * BLOCKSOFM * BLOCKSIFM * handle->desc.R*handle->desc.S*handle->ifmblock_hp*handle->ofmblock);
@@ -84,13 +84,14 @@ libxsmm_convfunction kernel = (handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunct
 
 LIBXSMM_ALIGNED(float scale_factor, 64);
 LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
+#if 0
 LIBXSMM_ALIGNED(float *max_vals, 64);
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs = _mm512_setzero_ps();
 #else /* won't happen as this code only runs on AVX512 platforms */
   LIBXSMM_ASSERT(0);
 #endif
-
+#endif
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 /* Initialize base pointers */
@@ -107,6 +108,7 @@ if (handle->reduce_weights == 0) {
   while ( handle->desc.threads % team_div != 0  ) {
     team_div--;
   }
+#if 0
   {
     int n_ifm_teams = (BLOCKSIFM > BLOCKSOFM) ? handle->desc.threads / team_div : team_div;
     int n_ofm_teams = (BLOCKSIFM > BLOCKSOFM) ? team_div : handle->desc.threads / team_div;
@@ -118,9 +120,9 @@ if (handle->reduce_weights == 0) {
     int my_ifm_end =  LIBXSMM_MIN((my_ifm_id+1) * ifms_per_thread, BLOCKSIFM);
     int my_ofm_start =  LIBXSMM_MIN(my_ofm_id * ofms_per_thread, BLOCKSOFM);
     int my_ofm_end =  LIBXSMM_MIN((my_ofm_id+1) * ofms_per_thread, BLOCKSOFM);
-
+    int ki, kj;
     element_filter_type *zero_ptr;
-    /*
+
     for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++ ) {
       for ( ofm1 = my_ofm_start; ofm1 < my_ofm_end; ofm1++ ) {
         for (kj=0; kj < handle->desc.R; kj++) {
@@ -131,8 +133,8 @@ if (handle->reduce_weights == 0) {
         }
       }
     }
-    */
   }
+#endif
 }
 
 
@@ -211,12 +213,12 @@ instr = handle->n_entries_upd[ltid];
 if (handle->use_lp_kernel == 1) {
   scale_factor = libxsmm_sexp2(-1.f*((float)(handle->reg_input->scf + handle->grad_output->scf)));
 }
-
+#if 0
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, float, maxstats, (float*)handle->maxstats_upd->data, 16);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, 16);
 }
-
+#endif
 for (pc = 0; pc < instr; pc++) {
   offset_i = stream[i];
   offset_w = stream[i+1];
@@ -263,11 +265,12 @@ if (handle->reduce_weights) {
     libxsmm_bfloat16 *bf16_weight_ptr =  ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16;
     float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16;
     __m512i fm0 = (__m512i) LIBXSMM_INTRINSICS_MM512_LOAD_PS( (float*) fp32_weight_ptr);
-    fm0 = _mm512_srli_epi32 (fm0, 16);
     __m512i fm1 = (__m512i) LIBXSMM_INTRINSICS_MM512_LOAD_PS( (float*) fp32_weight_ptr + 16);
+    __m512i pair_fms;
+    fm0 = _mm512_srli_epi32 (fm0, 16);
     fm1 = _mm512_srli_epi32 (fm1, 16);
     fm1 = _mm512_slli_epi32 (fm1, 16);
-    __m512i pair_fms = _mm512_or_epi32(fm0, fm1);
+    pair_fms = _mm512_or_epi32(fm0, fm1);
     _mm512_store_epi32( ((libxsmm_bfloat16*) bf16_weight_ptr), pair_fms);
   }
 }

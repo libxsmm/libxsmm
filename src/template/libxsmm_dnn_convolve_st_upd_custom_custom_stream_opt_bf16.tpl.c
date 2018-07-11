@@ -55,7 +55,7 @@ element_output_type *const out = ((element_output_type*)handle->grad_output->dat
 LIBXSMM_VLA_DECL(6, element_output_type, tr_output, (element_output_type*)handle->scratch2 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
 LIBXSMM_VLA_DECL(6, element_output_type, output, out, handle->blocksofm_lp, handle->ofhp, handle->ofwp, handle->ofmblock_lp, handle->fm_lp_block);
 
-//element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;
+/*element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;*/
 float *weight_ptr = ((float*) handle->scratch2) + (handle->desc.N * handle->blocksofm * handle->ofmblock * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+8+2*handle->desc.pad_w))/2;
 
 /* The "scratch" buffers for intermediate bf16 weights should be float....  */
@@ -88,16 +88,16 @@ element_output_type *output_base;
 /* Kernel related variables  */
 libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunction)handle->code_upd[0].xconv.sconv : (libxsmm_convfunction)handle->code_upd[1].xconv.sconv;
 
-LIBXSMM_ALIGNED(float scale_factor, 64);
-scale_factor = 1.0;
+LIBXSMM_ALIGNED(float scale_factor, 64) = 1.0;
 LIBXSMM_ALIGNED(float vnni_scratch[32], 64);
+#if 0
 LIBXSMM_ALIGNED(float *max_vals, 64);
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs = _mm512_setzero_ps();
 #else /* won't happen as this code only runs on AVX512 platforms */
   LIBXSMM_ASSERT(0);
 #endif
-
+#endif
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
@@ -194,12 +194,12 @@ if (handle->use_lp_kernel == 1) {
 }
 
 scale_factor = 1.0;
-
+#if 0
 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(2, float, maxstats, (float*)handle->maxstats_upd->data, 16);
   max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, 16);
 }
-
+#endif
 if (n_segments) {
   /* We have segmented the stream of convolutions since we need to inject different functionalities... */
   code_stream = handle->upd_code_segments[ltid];
