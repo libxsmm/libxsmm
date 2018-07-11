@@ -310,6 +310,10 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
     handle->upd_use_thread_fil = 1;
     handle->scratch4 = 0;
     handle->scratch4_size = 2 * handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_out);
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+      /* Allocate twice as much since the out datatype is BF16 while the intermediate output is in float  */
+      handle->scratch4_size = 2 * handle->scratch4_size;
+    }
     /* enable external reduce of filter scratch */
     if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) > 0 ) {
       handle->upd_use_external_reduce = 1;
@@ -324,6 +328,10 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
   if (handle->use_lp_kernel == 1) {
     handle->scratch2 = 0;
     handle->scratch2_size = handle->desc.N * handle->blocksofm * handle->ofmblock * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+8+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_in);
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+      /* Allocate scratch to dump results before downconvert  */
+      handle->scratch2_size += handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * sizeof(float);    
+    }
   } else {
     handle->scratch2 = 0;
     handle->scratch2_size = 0;
@@ -1250,13 +1258,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         descriptor.transpose_ofw_ifm = 0;
         handle->use_hybrid_wu_parallelism = 0;
 
-        if ( handle->use_lp_kernel == 1 && ((libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) && handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 ) ) {
+        if ( handle->use_lp_kernel == 1 && ((libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) ) ) {
           handle->use_vperm_transposes = 1;
         } else {
           handle->use_vperm_transposes = 0;
         }
 
-        if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) {
+        if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
           if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) {
             if (handle->ofwp % 2 == 0) {
               handle->avoid_output_trans = 1;
@@ -1300,7 +1308,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
             padding_target = 8;
             output_lp_padding = handle->ofwp%2;
             if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) {
-              if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) {
+              if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
                 padding_target = 2;
               } else {
                 padding_target = 4;
@@ -1477,7 +1485,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
             handle->blocksimg_blocking = 1;
             descriptor.blocks_img = handle->blocksimg_blocking;
             handle->reduce_weights = 0;
-            printf("Came in the no reduce version!!!!\n");
           } else {
             handle->reduce_weights = 1;
           }
