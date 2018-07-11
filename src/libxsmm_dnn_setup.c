@@ -1502,7 +1502,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
           handle->code_upd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
-          //handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+          /*handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);*/
         }
         /*ALL*/
         descriptor.transpose_ofw_ifm = 0;
