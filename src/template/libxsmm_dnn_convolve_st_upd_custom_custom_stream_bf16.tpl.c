@@ -254,24 +254,21 @@ if (handle->reduce_weights) {
   }
 } else {
   /* If there is no reduction, then just convert the result ...*/
-  const int transform_work = BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S;
+  const int transform_work = BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*8;
   const int transform_chunksize = (transform_work % handle->desc.threads == 0) ? (transform_work / handle->desc.threads) : (transform_work / handle->desc.threads) + 1;
   const int transform_thr_begin = (ltid * transform_chunksize < transform_work) ? (ltid * transform_chunksize) : transform_work;
   const int transform_thr_end = ((ltid + 1) * transform_chunksize < transform_work) ? ((ltid + 1) * transform_chunksize) : transform_work;
 
-  int x;
-  for ( j = transform_thr_begin; j < transform_thr_end; j++ ) {
-    libxsmm_bfloat16 *bf16_weight_ptr =  ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16 * 16;
-    float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16 * 16;
-    for (x=0; x<16; x+=2) {
-      __m512i fm0 = (__m512i) LIBXSMM_INTRINSICS_MM512_LOAD_PS( (float*) fp32_weight_ptr + (x+0)*16);
-      fm0 = _mm512_srli_epi32 (fm0, 16);
-      __m512i fm1 = (__m512i) LIBXSMM_INTRINSICS_MM512_LOAD_PS( (float*) fp32_weight_ptr + (x+1)*16);
-      fm1 = _mm512_srli_epi32 (fm1, 16);
-      fm1 = _mm512_slli_epi32 (fm1, 16);
-      __m512i pair_fms = _mm512_or_epi32(fm0, fm1);
-      _mm512_store_epi32( ((libxsmm_bfloat16*) bf16_weight_ptr) + x * 16, pair_fms);
-    }
+  for ( j = 2*transform_thr_begin; j < 2*transform_thr_end; j+=2 ) {
+    libxsmm_bfloat16 *bf16_weight_ptr =  ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16;
+    float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16;
+    __m512i fm0 = (__m512i) LIBXSMM_INTRINSICS_MM512_LOAD_PS( (float*) fp32_weight_ptr);
+    fm0 = _mm512_srli_epi32 (fm0, 16);
+    __m512i fm1 = (__m512i) LIBXSMM_INTRINSICS_MM512_LOAD_PS( (float*) fp32_weight_ptr + 16);
+    fm1 = _mm512_srli_epi32 (fm1, 16);
+    fm1 = _mm512_slli_epi32 (fm1, 16);
+    __m512i pair_fms = _mm512_or_epi32(fm0, fm1);
+    _mm512_store_epi32( ((libxsmm_bfloat16*) bf16_weight_ptr), pair_fms);
   }
 }
 
