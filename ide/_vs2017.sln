@@ -263,6 +263,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "trsm", "..\samples\packed\t
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "layer_example_bf16", "..\samples\deeplearning\cnnlayer\layer_example_bf16.vcxproj", "{0176F1E0-2816-4D47-89A2-96337E1B5755}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
