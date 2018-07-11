@@ -51,6 +51,7 @@
     <ClInclude Include="..\src\generator_packed_aux.h" />
     <ClInclude Include="..\src\generator_packed_trsm_dmacros.h" />
     <ClInclude Include="..\src\generator_packed_xct_avx2_lln.h" />
+    <ClInclude Include="..\src\libxsmm_bgemm_types.h" />
     <ClInclude Include="..\src\libxsmm_dnn_elementwise.h" />
     <ClInclude Include="..\src\packed_trsm_dmacros.h" />
     <ClInclude Include="..\src\generator_common.h" />

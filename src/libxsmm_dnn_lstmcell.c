@@ -1462,22 +1462,22 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_fwd(libxsmm_dnn_lstmcell* lst
     Gbl_t_input = libxsmm_timer_tick();
 #endif
 #if defined(NON_FUSED_INPUT_GEMM)
-    libxsmm_bgemm(handlett, wi, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, i1, 0, 0, m * n), tid, lstm->nThreads);
-    libxsmm_bgemm(handlett, wf, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, f1, 0, 0, m * n), tid, lstm->nThreads);
-    libxsmm_bgemm(handlett, wo, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, o1, 0, 0, m * n), tid, lstm->nThreads);
-    libxsmm_bgemm(handlett, wc, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, c1, 0, 0, m * n), tid, lstm->nThreads);
+    libxsmm_bgemm_st(handlett, wi, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, i1, 0, 0, m * n), start_thread, tid);
+    libxsmm_bgemm_st(handlett, wf, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, f1, 0, 0, m * n), start_thread, tid);
+    libxsmm_bgemm_st(handlett, wo, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, o1, 0, 0, m * n), start_thread, tid);
+    libxsmm_bgemm_st(handlett, wc, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, c1, 0, 0, m * n), start_thread, tid);
 #else
-    libxsmm_bgemm(handlett, wi, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(3, i4, 0, 0, 0, t, m * n), tid, lstm->nThreads);
+    libxsmm_bgemm_st(handlett, wi, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(3, i4, 0, 0, 0, t, m * n), start_thread, tid);
 #endif
 #if defined(LSTM_TIMING)
     Gbl_duration_input = libxsmm_timer_duration(Gbl_t_input, libxsmm_timer_tick());
     Gbl_t_input_total += Gbl_duration_input;
 #endif
     for (j = 0; j < t-1; ++j) {
-      libxsmm_internal_recursive_step(handleuh, ri, h, i2, &LIBXSMM_VLA_ACCESS(2, i1, j, 0, m * n), i, i, 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-      libxsmm_internal_recursive_step(handleuh, rf, h, f2, &LIBXSMM_VLA_ACCESS(2, f1, j, 0, m * n), f, f, 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-      libxsmm_internal_recursive_step(handleuh, ro, h, o2, &LIBXSMM_VLA_ACCESS(2, o1, j, 0, m * n), o, o, 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-      libxsmm_internal_recursive_step(handleuh, rc, h, c2, &LIBXSMM_VLA_ACCESS(2, c1, j, 0, m * n), c, c, 1, m * n, start_thread, tid, lstm->nThreads); /*tanh*/
+      libxsmm_internal_recursive_step(handleuh, ri, h, i2, &LIBXSMM_VLA_ACCESS(2, i1, j, 0, m * n), i, i, 1, m * n, start_thread, tid); /*sigmoid*/
+      libxsmm_internal_recursive_step(handleuh, rf, h, f2, &LIBXSMM_VLA_ACCESS(2, f1, j, 0, m * n), f, f, 1, m * n, start_thread, tid); /*sigmoid*/
+      libxsmm_internal_recursive_step(handleuh, ro, h, o2, &LIBXSMM_VLA_ACCESS(2, o1, j, 0, m * n), o, o, 1, m * n, start_thread, tid); /*sigmoid*/
+      libxsmm_internal_recursive_step(handleuh, rc, h, c2, &LIBXSMM_VLA_ACCESS(2, c1, j, 0, m * n), c, c, 1, m * n, start_thread, tid); /*tanh*/
 #if defined(LSTM_TIMING)
       Gbl_t_eltwise = libxsmm_timer_tick();
 #endif
@@ -1501,10 +1501,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_fwd(libxsmm_dnn_lstmcell* lst
       Gbl_t_eltwise_total += Gbl_duration_eltwise;
 #endif
     }
-    libxsmm_internal_recursive_step(handleuh, ri, h, i2, &LIBXSMM_VLA_ACCESS(2, i1, t-1, 0, m * n), i, i, 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-    libxsmm_internal_recursive_step(handleuh, rf, h, f2, &LIBXSMM_VLA_ACCESS(2, f1, t-1, 0, m * n), f, f, 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-    libxsmm_internal_recursive_step(handleuh, ro, h, o2, &LIBXSMM_VLA_ACCESS(2, o1, t-1, 0, m * n), o, o, 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-    libxsmm_internal_recursive_step(handleuh, rc, h, c2, &LIBXSMM_VLA_ACCESS(2, c1, t-1, 0, m * n), c, c, 1, m * n, start_thread, tid, lstm->nThreads); /*tanh*/
+    libxsmm_internal_recursive_step(handleuh, ri, h, i2, &LIBXSMM_VLA_ACCESS(2, i1, t-1, 0, m * n), i, i, 1, m * n, start_thread, tid); /*sigmoid*/
+    libxsmm_internal_recursive_step(handleuh, rf, h, f2, &LIBXSMM_VLA_ACCESS(2, f1, t-1, 0, m * n), f, f, 1, m * n, start_thread, tid); /*sigmoid*/
+    libxsmm_internal_recursive_step(handleuh, ro, h, o2, &LIBXSMM_VLA_ACCESS(2, o1, t-1, 0, m * n), o, o, 1, m * n, start_thread, tid); /*sigmoid*/
+    libxsmm_internal_recursive_step(handleuh, rc, h, c2, &LIBXSMM_VLA_ACCESS(2, c1, t-1, 0, m * n), c, c, 1, m * n, start_thread, tid); /*tanh*/
 #if defined(LSTM_TIMING)
     Gbl_t_eltwise = libxsmm_timer_tick();
 #endif
@@ -1520,22 +1520,22 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_fwd(libxsmm_dnn_lstmcell* lst
     Gbl_t_input = libxsmm_timer_tick();
 #endif
 #if defined(NON_FUSED_INPUT_GEMM)
-    libxsmm_bgemm(handlett, wi, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, i1, 0, 0, m * n), tid, lstm->nThreads);
-    libxsmm_bgemm(handlett, wf, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, f1, 0, 0, m * n), tid, lstm->nThreads);
-    libxsmm_bgemm(handlett, wo, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, o1, 0, 0, m * n), tid, lstm->nThreads);
-    libxsmm_bgemm(handlett, wc, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, c1, 0, 0, m * n), tid, lstm->nThreads);
+    libxsmm_bgemm_st(handlett, wi, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, i1, 0, 0, m * n), start_thread, tid);
+    libxsmm_bgemm_st(handlett, wf, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, f1, 0, 0, m * n), start_thread, tid);
+    libxsmm_bgemm_st(handlett, wo, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, o1, 0, 0, m * n), start_thread, tid);
+    libxsmm_bgemm_st(handlett, wc, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, c1, 0, 0, m * n), start_thread, tid);
 #else
-    libxsmm_bgemm(handlett, wi, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(3, i4, 0, 0, 0, t, m * n), tid, lstm->nThreads);
+    libxsmm_bgemm_st(handlett, wi, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(3, i4, 0, 0, 0, t, m * n), start_thread, tid);
 #endif
 #if defined(LSTM_TIMING)
     Gbl_duration_input = libxsmm_timer_duration(Gbl_t_input, libxsmm_timer_tick());
     Gbl_t_input_total += Gbl_duration_input;
 #endif
     for (j = 0; j < t-1; ++j) {
-      libxsmm_internal_recursive_step(handleuh, ri, &LIBXSMM_VLA_ACCESS(2, hnr, j, 0, m * n), i2, &LIBXSMM_VLA_ACCESS(2, i1, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, inr, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, inr, j, 0, m * n), 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-      libxsmm_internal_recursive_step(handleuh, rf, &LIBXSMM_VLA_ACCESS(2, hnr, j, 0, m * n), f2, &LIBXSMM_VLA_ACCESS(2, f1, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, fnr, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, fnr, j, 0, m * n), 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-      libxsmm_internal_recursive_step(handleuh, ro, &LIBXSMM_VLA_ACCESS(2, hnr, j, 0, m * n), o2, &LIBXSMM_VLA_ACCESS(2, o1, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, onr, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, onr, j, 0, m * n), 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-      libxsmm_internal_recursive_step(handleuh, rc, &LIBXSMM_VLA_ACCESS(2, hnr, j, 0, m * n), c2, &LIBXSMM_VLA_ACCESS(2, c1, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, cnr, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, cnr, j, 0, m * n), 1, m * n, start_thread, tid, lstm->nThreads); /*tanh*/
+      libxsmm_internal_recursive_step(handleuh, ri, &LIBXSMM_VLA_ACCESS(2, hnr, j, 0, m * n), i2, &LIBXSMM_VLA_ACCESS(2, i1, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, inr, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, inr, j, 0, m * n), 1, m * n, start_thread, tid); /*sigmoid*/
+      libxsmm_internal_recursive_step(handleuh, rf, &LIBXSMM_VLA_ACCESS(2, hnr, j, 0, m * n), f2, &LIBXSMM_VLA_ACCESS(2, f1, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, fnr, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, fnr, j, 0, m * n), 1, m * n, start_thread, tid); /*sigmoid*/
+      libxsmm_internal_recursive_step(handleuh, ro, &LIBXSMM_VLA_ACCESS(2, hnr, j, 0, m * n), o2, &LIBXSMM_VLA_ACCESS(2, o1, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, onr, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, onr, j, 0, m * n), 1, m * n, start_thread, tid); /*sigmoid*/
+      libxsmm_internal_recursive_step(handleuh, rc, &LIBXSMM_VLA_ACCESS(2, hnr, j, 0, m * n), c2, &LIBXSMM_VLA_ACCESS(2, c1, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, cnr, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, cnr, j, 0, m * n), 1, m * n, start_thread, tid); /*tanh*/
 #if defined(LSTM_TIMING)
       Gbl_t_eltwise = libxsmm_timer_tick();
 #endif
@@ -1559,10 +1559,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_fwd(libxsmm_dnn_lstmcell* lst
       Gbl_t_eltwise_total += Gbl_duration_eltwise;
 #endif
     }
-    libxsmm_internal_recursive_step(handleuh, ri, &LIBXSMM_VLA_ACCESS(2, hnr, t-1, 0, m * n), i2, &LIBXSMM_VLA_ACCESS(2, i1, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, inr, t-2, 0, m * n), &LIBXSMM_VLA_ACCESS(2, inr, t-2, 0, m * n), 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-    libxsmm_internal_recursive_step(handleuh, rf, &LIBXSMM_VLA_ACCESS(2, hnr, t-1, 0, m * n), f2, &LIBXSMM_VLA_ACCESS(2, f1, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, fnr, t-2, 0, m * n), &LIBXSMM_VLA_ACCESS(2, fnr, t-2, 0, m * n), 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-    libxsmm_internal_recursive_step(handleuh, ro, &LIBXSMM_VLA_ACCESS(2, hnr, t-1, 0, m * n), o2, &LIBXSMM_VLA_ACCESS(2, o1, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, onr, t-2, 0, m * n), &LIBXSMM_VLA_ACCESS(2, onr, t-2, 0, m * n), 1, m * n, start_thread, tid, lstm->nThreads); /*sigmoid*/
-    libxsmm_internal_recursive_step(handleuh, rc, &LIBXSMM_VLA_ACCESS(2, hnr, t-1, 0, m * n), c2, &LIBXSMM_VLA_ACCESS(2, c1, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, cnr, t-2, 0, m * n), &LIBXSMM_VLA_ACCESS(2, cnr, t-2, 0, m * n), 1, m * n, start_thread, tid, lstm->nThreads); /*tanh*/
+    libxsmm_internal_recursive_step(handleuh, ri, &LIBXSMM_VLA_ACCESS(2, hnr, t-1, 0, m * n), i2, &LIBXSMM_VLA_ACCESS(2, i1, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, inr, t-2, 0, m * n), &LIBXSMM_VLA_ACCESS(2, inr, t-2, 0, m * n), 1, m * n, start_thread, tid); /*sigmoid*/
+    libxsmm_internal_recursive_step(handleuh, rf, &LIBXSMM_VLA_ACCESS(2, hnr, t-1, 0, m * n), f2, &LIBXSMM_VLA_ACCESS(2, f1, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, fnr, t-2, 0, m * n), &LIBXSMM_VLA_ACCESS(2, fnr, t-2, 0, m * n), 1, m * n, start_thread, tid); /*sigmoid*/
+    libxsmm_internal_recursive_step(handleuh, ro, &LIBXSMM_VLA_ACCESS(2, hnr, t-1, 0, m * n), o2, &LIBXSMM_VLA_ACCESS(2, o1, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, onr, t-2, 0, m * n), &LIBXSMM_VLA_ACCESS(2, onr, t-2, 0, m * n), 1, m * n, start_thread, tid); /*sigmoid*/
+    libxsmm_internal_recursive_step(handleuh, rc, &LIBXSMM_VLA_ACCESS(2, hnr, t-1, 0, m * n), c2, &LIBXSMM_VLA_ACCESS(2, c1, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, cnr, t-2, 0, m * n), &LIBXSMM_VLA_ACCESS(2, cnr, t-2, 0, m * n), 1, m * n, start_thread, tid); /*tanh*/
 #if defined(LSTM_TIMING)
     Gbl_t_eltwise = libxsmm_timer_tick();
 #endif
@@ -1744,32 +1744,32 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   if (pass == 1 || pass == 3) {
     /* compute djdx */
     /* libxsmm_internal_matrix_transpose(m, k, wi, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdi, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), tid, lstm->nThreads); */
-    libxsmm_bgemm(handlewd, wi, &LIBXSMM_VLA_ACCESS(2, djdi, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), tid, lstm->nThreads);
+    /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdi, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid); */
+    libxsmm_bgemm_st(handlewd, wi, &LIBXSMM_VLA_ACCESS(2, djdi, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid);
     /* libxsmm_internal_matrix_transpose(m, k, wf, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdf, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), tid, lstm->nThreads); */
-    libxsmm_bgemm(handlewd, wf, &LIBXSMM_VLA_ACCESS(2, djdf, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), tid, lstm->nThreads);
+    /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdf, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid); */
+    libxsmm_bgemm_st(handlewd, wf, &LIBXSMM_VLA_ACCESS(2, djdf, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid);
     /* libxsmm_internal_matrix_transpose(m, k, wo, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdo, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), tid, lstm->nThreads); */
-    libxsmm_bgemm(handlewd, wo, &LIBXSMM_VLA_ACCESS(2, djdo, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), tid, lstm->nThreads);
+    /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdo, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid); */
+    libxsmm_bgemm_st(handlewd, wo, &LIBXSMM_VLA_ACCESS(2, djdo, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid);
     /* libxsmm_internal_matrix_transpose(m, k, wc, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdc, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), tid, lstm->nThreads); */
-    libxsmm_bgemm(handlewd, wc, &LIBXSMM_VLA_ACCESS(2, djdc, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), tid, lstm->nThreads);
+    /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdc, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid); */
+    libxsmm_bgemm_st(handlewd, wc, &LIBXSMM_VLA_ACCESS(2, djdc, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid);
   }
   for (j = t-2; j >= 0; --j) {
     /* compute delta */
     /* libxsmm_internal_matrix_transpose(m, m, ri, rTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), tid, lstm->nThreads); */
-    libxsmm_bgemm(handleud, ri, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), tid, lstm->nThreads);
+    /* libxsmm_bgemm_st(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid); */
+    libxsmm_bgemm_st(handleud, ri, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid);
     /* libxsmm_internal_matrix_transpose(m, m, rf, rTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), tid, lstm->nThreads); */
-    libxsmm_bgemm(handleud, rf, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), tid, lstm->nThreads);
+    /* libxsmm_bgemm_st(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid); */
+    libxsmm_bgemm_st(handleud, rf, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid);
     /* libxsmm_internal_matrix_transpose(m, m, ro, rTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), tid, lstm->nThreads); */
-    libxsmm_bgemm(handleud, ro, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), tid, lstm->nThreads);
+    /* libxsmm_bgemm_st(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid); */
+    libxsmm_bgemm_st(handleud, ro, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid);
     /* libxsmm_internal_matrix_transpose(m, m, rc, rTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), tid, lstm->nThreads); */
-    libxsmm_bgemm(handleud, rc, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), tid, lstm->nThreads);
+    /* libxsmm_bgemm_st(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid); */
+    libxsmm_bgemm_st(handleud, rc, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid);
     libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), start_thread, tid, lstm->nThreads);
     /* compute djdd */
     libxsmm_internal_matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, o, j, 0, m * n), d1, start_thread, tid, lstm->nThreads);
@@ -1805,17 +1805,17 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
     if (pass == 1 || pass == 3) {
       /* compute djdx */
       /* libxsmm_internal_matrix_transpose(m, k, wi, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-      /* libxsmm_bgemm(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), tid, lstm->nThreads); */
-      libxsmm_bgemm(handlewd, wi, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), tid, lstm->nThreads);
+      /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid); */
+      libxsmm_bgemm_st(handlewd, wi, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid);
       /* libxsmm_internal_matrix_transpose(m, k, wf, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-      /* libxsmm_bgemm(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), tid, lstm->nThreads); */
-      libxsmm_bgemm(handlewd, wf, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), tid, lstm->nThreads);
+      /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid); */
+      libxsmm_bgemm_st(handlewd, wf, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid);
       /* libxsmm_internal_matrix_transpose(m, k, wo, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-      /* libxsmm_bgemm(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), tid, lstm->nThreads); */
-      libxsmm_bgemm(handlewd, wo, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), tid, lstm->nThreads);
+      /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid); */
+      libxsmm_bgemm_st(handlewd, wo, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid);
       /* libxsmm_internal_matrix_transpose(m, k, wc, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-      /* libxsmm_bgemm(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), tid, lstm->nThreads); */
-      libxsmm_bgemm(handlewd, wc, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), tid, lstm->nThreads);
+      /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid); */
+      libxsmm_bgemm_st(handlewd, wc, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid);
     }
   }
   if (pass == 2 || pass == 3) {
@@ -1823,23 +1823,23 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
     for (j = 0; j < t; ++j) {
       /* libxsmm_internal_matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), xTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
       /*
-      libxsmm_bgemm(handledx, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n), xTp, djdwi, tid, lstm->nThreads);
-      libxsmm_bgemm(handledx, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n), xTp, djdwf, tid, lstm->nThreads);
-      libxsmm_bgemm(handledx, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), xTp, djdwo, tid, lstm->nThreads);
-      libxsmm_bgemm(handledx, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n), xTp, djdwc, tid, lstm->nThreads);
+      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n), xTp, djdwi, start_thread, tid);
+      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n), xTp, djdwf, start_thread, tid);
+      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), xTp, djdwo, start_thread, tid);
+      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n), xTp, djdwc, start_thread, tid);
       */
-      libxsmm_bgemm(handledx, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdwi, tid, lstm->nThreads);
-      libxsmm_bgemm(handledx, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdwf, tid, lstm->nThreads);
-      libxsmm_bgemm(handledx, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdwo, tid, lstm->nThreads);
-      libxsmm_bgemm(handledx, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdwc, tid, lstm->nThreads);
+      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdwi, start_thread, tid);
+      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdwf, start_thread, tid);
+      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdwo, start_thread, tid);
+      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdwc, start_thread, tid);
     }
     /* compute djdr */
     for (j = 0; j < t-1; ++j) {
       /* libxsmm_internal_matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), deltaTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-      libxsmm_bgemm(handledh, &LIBXSMM_VLA_ACCESS(2, djdi, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdri, tid, lstm->nThreads);
-      libxsmm_bgemm(handledh, &LIBXSMM_VLA_ACCESS(2, djdf, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdrf, tid, lstm->nThreads);
-      libxsmm_bgemm(handledh, &LIBXSMM_VLA_ACCESS(2, djdo, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdro, tid, lstm->nThreads);
-      libxsmm_bgemm(handledh, &LIBXSMM_VLA_ACCESS(2, djdc, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdrc, tid, lstm->nThreads);
+      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdi, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdri, start_thread, tid);
+      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdf, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdrf, start_thread, tid);
+      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdo, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdro, start_thread, tid);
+      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdc, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdrc, start_thread, tid);
     }
     /* compute djdb */
     for (j = 0; j < t-1; j++) {

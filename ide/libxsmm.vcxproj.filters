@@ -244,6 +244,9 @@
     <ClInclude Include="..\src\generator_x86_instructions.h">
       <Filter>src\generator</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_bgemm_types.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
