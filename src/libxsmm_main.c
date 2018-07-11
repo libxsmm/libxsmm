@@ -705,7 +705,11 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &attr_global);
       /* control number of locks needed; LIBXSMM_TRYLOCK implies only 1 lock */
       if (0 == env_trylock || 0 == *env_trylock) { /* no LIBXSMM_TRYLOCK */
+#if defined(LIBXSMM_VTUNE)
+        internal_reglock_count = 1; /* avoid duplicated kernels */
+#else
         internal_reglock_count = INTERNAL_REGLOCK_MAXN;
+#endif
       }
       else { /* LIBXSMM_TRYLOCK environment variable specified */
         internal_reglock_count = (0 != atoi(env_trylock) ? 1 : (INTERNAL_REGLOCK_MAXN));

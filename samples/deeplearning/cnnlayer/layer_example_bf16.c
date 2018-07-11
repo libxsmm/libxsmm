@@ -67,6 +67,7 @@ void rnaz_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
   for ( i = 0; i < len; ++i ) {
     unsigned int int_round = 0;
     unsigned int do_round = 1;
+    const void *const ptr = &int_round;
 
     int_round = *((unsigned int*)&(in[i]));
 
@@ -83,7 +84,7 @@ void rnaz_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
     /* chop bits to create BFP16 in FP32 */
     int_round = int_round & 0xffff0000;
 
-    out[i] = *((float*)&int_round);
+    out[i] = *((float*)ptr);
   }
 }
 
@@ -95,6 +96,7 @@ void rne_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
   for ( i = 0; i < len; ++i ) {
     unsigned int int_round = 0;
     unsigned int do_round = 1;
+    const void *const ptr = &int_round;
 
     int_round = *((unsigned int*)&(in[i]));
 
@@ -112,7 +114,7 @@ void rne_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
     /* chop bits to create BFP16 in FP32 */
     int_round = int_round & 0xffff0000;
 
-    out[i] = *((float*)&int_round);
+    out[i] = *((float*)ptr);
   }
 }
 
