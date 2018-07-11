@@ -35,15 +35,15 @@
 #
 HERE=$(cd $(dirname $0); pwd -P)
 if [ "" = "${GIT_DIR}" ]; then
-  GIT_DIR=${HERE}/../.git
+  GIT_DIR=${HERE}/../../.git
 fi
-
-GIT=$(which git 2>/dev/null)
 ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P)
 CODEFILE=${ROOTDIR}/.codefile
 MSG_TAG="[skip ci]"
 MSG_FILE=$1
 MSG_KIND=$2
+
+GIT=$(which git 2>/dev/null)
 
 if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no amend)
   ECHO=$(which echo 2>/dev/null)

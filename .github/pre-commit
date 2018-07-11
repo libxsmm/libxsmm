@@ -30,6 +30,10 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
+HERE=$(cd $(dirname $0); pwd -P)
+if [ "" = "${GIT_DIR}" ]; then
+  GIT_DIR=${HERE}/../../.git
+fi
 LOCKFILE=${GIT_DIR}/.commit
 CODEFILE=.codefile
 BANNED_CHARS="\t"
