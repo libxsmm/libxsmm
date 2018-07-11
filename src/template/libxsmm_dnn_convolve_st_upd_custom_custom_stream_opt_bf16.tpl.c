@@ -44,7 +44,7 @@ const int ltid = tid-start_thread;
 int i, j, k;
 
 /* transpose, copy and reduce work-related variables  */
-const int reduce_work = BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*handle->ofmblock;
+const int reduce_work = BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*(handle->ofmblock/2);
 const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce_work / handle->desc.threads) : (reduce_work / handle->desc.threads) + 1;
 const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
 const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
@@ -263,47 +263,30 @@ if (handle->reduce_weights) {
   /* Perform reduction because we used thread private filters... */
   if (handle->upd_use_external_reduce == 0) {
     libxsmm_barrier_wait(handle->barrier, ltid);
-    for ( j = reduce_thr_begin; j < reduce_thr_end; j++ ) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-      __m512 weight_sum = _mm512_setzero_ps();
+    for ( j = 2*reduce_thr_begin; j < 2*reduce_thr_end; j+=2 ) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) 
+      __m512 weight_sum_lo = _mm512_setzero_ps();
+      __m512 weight_sum_hi = _mm512_setzero_ps();
+      __m512i fm0, fm1, pair_fms;
       for ( i = 0; i < handle->desc.threads; i++ ) {
-        weight_sum = _mm512_add_ps(weight_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
+        weight_sum_lo = _mm512_add_ps(weight_sum_lo, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
       }
-      if ( ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) ) {
-        LIBXSMM_INTRINSICS_MM512_STREAM_PS((float*)&weight_ptr[j*16], weight_sum);
-      } else {
-        __m512 new_result = _mm512_add_ps(weight_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&weight_ptr[j*16]));
-        _mm512_store_ps(&weight_ptr[j*16], new_result);
+      for ( i = 0; i < handle->desc.threads; i++ ) {
+        weight_sum_hi = _mm512_add_ps(weight_sum_hi, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->desc.threads, 16)));
       }
+      fm0 = (__m512i) weight_sum_lo;
+      fm1 = (__m512i) weight_sum_hi;
+      fm0 = _mm512_srli_epi32 (fm0, 16);
+      fm1 = _mm512_srli_epi32 (fm1, 16);
+      fm1 = _mm512_slli_epi32 (fm1, 16);
+      pair_fms = _mm512_or_epi32(fm0, fm1);
+      _mm512_store_epi32( ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16, pair_fms);
 #else
 #endif
     }
   }
 }
 libxsmm_barrier_wait(handle->barrier, ltid);
-
-/* FIXME: For now do a final pass and do downconvert from f32 weights to bf16 AND the proper bf16 weights format */
-/* Now each work item is a (float) [16][16] => (bf16) [8][16][2]  */
-
-const int transform_work = BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S;
-const int transform_chunksize = (transform_work % handle->desc.threads == 0) ? (transform_work / handle->desc.threads) : (transform_work / handle->desc.threads) + 1;
-const int transform_thr_begin = (ltid * transform_chunksize < transform_work) ? (ltid * transform_chunksize) : transform_work;
-const int transform_thr_end = ((ltid + 1) * transform_chunksize < transform_work) ? ((ltid + 1) * transform_chunksize) : transform_work;
-
-int x;
-for ( j = transform_thr_begin; j < transform_thr_end; j++ ) {
-  libxsmm_bfloat16 *bf16_weight_ptr =  ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16 * 16;
-  float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16 * 16;
-  for (x=0; x<16; x+=2) {
-    __m512i fm0 = (__m512i) LIBXSMM_INTRINSICS_MM512_LOAD_PS( (float*) fp32_weight_ptr + (x+0)*16);
-    fm0 = _mm512_srli_epi32 (fm0, 16);
-    __m512i fm1 = (__m512i) LIBXSMM_INTRINSICS_MM512_LOAD_PS( (float*) fp32_weight_ptr + (x+1)*16);
-    fm1 = _mm512_srli_epi32 (fm1, 16);
-    fm1 = _mm512_slli_epi32 (fm1, 16);
-    __m512i pair_fms = _mm512_or_epi32(fm0, fm1);
-    _mm512_store_epi32( ((libxsmm_bfloat16*) bf16_weight_ptr) + x * 16, pair_fms);
-  }
-}
 
 #undef WEIGHT_INIT
 #undef UPDATE_KERNEL
