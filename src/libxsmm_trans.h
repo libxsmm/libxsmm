@@ -196,11 +196,11 @@ LIBXSMM_API void libxsmm_otrans_internal(void* out, const void* in, unsigned int
   int tid, int nthreads);
 
 /** Determines whether JIT-kernels are used or not (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
-LIBXSMM_APIVAR(int libxsmm_trans_jit);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_trans_jit);
 /** M-factor shaping the N-extent (tile shape). */
-LIBXSMM_APIVAR(float libxsmm_trans_tile_stretch);
+LIBXSMM_APIVAR_PUBLIC(float libxsmm_trans_tile_stretch);
 /** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR(libxsmm_blasint* libxsmm_trans_mtile);
+LIBXSMM_APIVAR_PUBLIC(libxsmm_blasint* libxsmm_trans_mtile);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_trans_taskscale);
 
