@@ -208,7 +208,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel
           OTRANS_THREAD(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo, omp_get_thread_num(), omp_get_num_threads());
 #else
-          result = OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
 #endif
           duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
         }
@@ -218,7 +218,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel
 #         pragma omp single nowait
 #endif
-          result = OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
+          OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
           duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
         }
       }
@@ -228,7 +228,7 @@ int main(int argc, char* argv[])
 
         if (2 > tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
-          result = ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
+          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
           duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
@@ -237,7 +237,7 @@ int main(int argc, char* argv[])
 #         pragma omp parallel
 #         pragma omp single
 #endif
-          result = ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
+          ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
           duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
         }
       }

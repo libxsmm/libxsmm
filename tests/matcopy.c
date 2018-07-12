@@ -102,34 +102,34 @@ int main(void)
   LIBXSMM_MATINIT(ELEM_TYPE, 0, c, max_size_b, 1, max_size_b, 1.0);
 #endif
   for (test = start; test < ntests; ++test) {
-    unsigned int testerrors = (EXIT_SUCCESS == MATCOPY(
-      b, a, sizeof(ELEM_TYPE), m[test], n[test],
-      ldi[test], ldo[test], prefetch + test) ? 0u : 1u);
-    libxsmm_blasint i, j;
-
-    if (0 == testerrors) {
-      for (i = 0; i < n[test]; ++i) {
-        for (j = 0; j < m[test]; ++j) {
-          const ELEM_TYPE u = a[i*ldi[test]+j];
-          const ELEM_TYPE v = b[i*ldo[test]+j];
-          testerrors += (LIBXSMM_FEQ(u, v) ? 0u : 1u);
+    MATCOPY(b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test], prefetch + test);
+    { /* validation */
+      unsigned int testerrors = 0;
+      libxsmm_blasint i, j;
+      if (0 == testerrors) {
+        for (i = 0; i < n[test]; ++i) {
+          for (j = 0; j < m[test]; ++j) {
+            const ELEM_TYPE u = a[i*ldi[test] + j];
+            const ELEM_TYPE v = b[i*ldo[test] + j];
+            testerrors += (LIBXSMM_FEQ(u, v) ? 0u : 1u);
+          }
         }
       }
-    }
 #if defined(MATCOPY_GOLD)
-    if (0 == testerrors) {
-      MATCOPY_GOLD(m + test, n + test, a, ldi + test, c, ldo + test);
-      for (i = 0; i < n[test]; ++i) {
-        for (j = 0; j < m[test]; ++j) {
-          const ELEM_TYPE u = b[i*ldo[test]+j];
-          const ELEM_TYPE v = c[i*ldo[test]+j];
-          testerrors += (LIBXSMM_FEQ(u, v) ? 0u : 1u);
+      if (0 == testerrors) {
+        MATCOPY_GOLD(m + test, n + test, a, ldi + test, c, ldo + test);
+        for (i = 0; i < n[test]; ++i) {
+          for (j = 0; j < m[test]; ++j) {
+            const ELEM_TYPE u = b[i*ldo[test] + j];
+            const ELEM_TYPE v = c[i*ldo[test] + j];
+            testerrors += (LIBXSMM_FEQ(u, v) ? 0u : 1u);
+          }
         }
       }
-    }
 #endif
-    if (nerrors < testerrors) {
-      nerrors = testerrors;
+      if (nerrors < testerrors) {
+        nerrors = testerrors;
+      }
     }
   }
 

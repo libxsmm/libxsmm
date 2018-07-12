@@ -80,8 +80,8 @@ class TransposeTune(MeasurementInterface):
         """
         cfg = desired_result.configuration.data
         nruns = max(self.args.nruns, 1)
-        begin = max(self.args.begin, 1)
-        end = max(self.args.end, 1)
+        begin = max(self.args.begin, 2)
+        end = max(self.args.end, 2)
         run_cmd = (
             "CHECK=-1"  # repeatable runs
             " LIBXSMM_TRANS_M=" + str(self.granularity * cfg["M"]) +
