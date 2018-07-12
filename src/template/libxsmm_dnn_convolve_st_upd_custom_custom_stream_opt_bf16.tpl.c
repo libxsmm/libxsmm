@@ -274,10 +274,10 @@ if (handle->reduce_weights) {
       for ( i = 0; i < handle->desc.threads; i++ ) {
         weight_sum_hi = _mm512_add_ps(weight_sum_hi, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->desc.threads, 16)));
       }
-      fm0 = (__m512i) weight_sum_lo;
-      fm1 = (__m512i) weight_sum_hi;
-      fm0 = _mm512_srli_epi32 (fm0, 16);
-      fm1 = _mm512_srli_epi32 (fm1, 16);
+      fm0 = _mm512_castps_si512(weight_sum_lo);
+      fm1 = _mm512_castps_si512(weight_sum_hi);
+      fm0 = _mm512_srli_epi32(fm0, 16);
+      fm1 = _mm512_srli_epi32(fm1, 16);
       fm1 = _mm512_slli_epi32 (fm1, 16);
       pair_fms = _mm512_or_epi32(fm0, fm1);
       _mm512_store_epi32( ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16, pair_fms);
