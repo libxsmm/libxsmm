@@ -795,6 +795,12 @@
     <ClCompile Include="..\src\generator_x86_instructions.c">
       <Filter>src\generator</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_stream_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">
