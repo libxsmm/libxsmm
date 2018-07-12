@@ -135,10 +135,6 @@ LIBXSMM_API libxsmm_dnn_lstmcell* libxsmm_dnn_create_lstmcell(libxsmm_dnn_lstmce
     handle->djdbf = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->djdbo = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->djdbc = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
-    handle->rTp = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
-    handle->wTp = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
-    handle->deltaTp = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
-    handle->xTp = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->i4t = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     if (NULL == handle->i1t || NULL == handle->i1b || NULL == handle->i2 || NULL == handle->f1t || NULL == handle->f1b ||
         NULL == handle->f2 || NULL == handle->o1t || NULL == handle->o1b || NULL == handle->o2 || NULL == handle->c1t ||
@@ -149,8 +145,7 @@ LIBXSMM_API libxsmm_dnn_lstmcell* libxsmm_dnn_create_lstmcell(libxsmm_dnn_lstmce
         NULL == handle->djdot || NULL == handle->djdxt || NULL == handle->djdwi || NULL == handle->djdwf ||
         NULL == handle->djdwo || NULL == handle->djdwc || NULL == handle->djdri || NULL == handle->djdrf ||
         NULL == handle->djdro || NULL == handle->djdrc || NULL == handle->djdbi || NULL == handle->djdbf ||
-        NULL == handle->djdbo || NULL == handle->djdbc || NULL == handle->rTp || NULL == handle->wTp ||
-        NULL == handle->deltaTp || NULL == handle->xTp || NULL == handle->i4t)
+        NULL == handle->djdbo || NULL == handle->djdbc || NULL == handle->i4t)
     {
       free(handle->i1t); free(handle->i1b); free(handle->i2); free(handle->f1t); free(handle->f1b);
       free(handle->f2); free(handle->o1t); free(handle->o1b); free(handle->o2); free(handle->c1t);
@@ -161,8 +156,7 @@ LIBXSMM_API libxsmm_dnn_lstmcell* libxsmm_dnn_create_lstmcell(libxsmm_dnn_lstmce
       free(handle->djdot); free(handle->djdxt); free(handle->djdwi); free(handle->djdwf);
       free(handle->djdwo); free(handle->djdwc); free(handle->djdri); free(handle->djdrf);
       free(handle->djdro); free(handle->djdrc); free(handle->djdbi); free(handle->djdbf);
-      free(handle->djdbo); free(handle->djdbc); free(handle->rTp); free(handle->wTp);
-      free(handle->deltaTp); free(handle->xTp); free(handle->i4t);
+      free(handle->djdbo); free(handle->djdbc); free(handle->i4t);
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
     }
   } else {
@@ -185,8 +179,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_lstmcell(const libxsmm_dnn_lst
     free(handle->djdot); free(handle->djdxt); free(handle->djdwi); free(handle->djdwf);
     free(handle->djdwo); free(handle->djdwc); free(handle->djdri); free(handle->djdrf);
     free(handle->djdro); free(handle->djdrc); free(handle->djdbi); free(handle->djdbf);
-    free(handle->djdbo); free(handle->djdbc); free(handle->rTp); free(handle->wTp);
-    free(handle->deltaTp); free(handle->xTp); free(handle->i4t);
+    free(handle->djdbo); free(handle->djdbc); free(handle->i4t);
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_lstmcell*)handle);
   }
@@ -401,14 +394,6 @@ LIBXSMM_API size_t libxsmm_dnn_lstmcell_get_scratch_size(const libxsmm_dnn_lstmc
                                            size += handle->m * handle->n * sizeof_datatype; /* d3 (dh) */
                                            size += 64;
                                            size += handle->m * handle->n * sizeof_datatype; /* d4 */
-                                           size += 64;
-                                           size += handle->m * handle->k * sizeof_datatype; /* wTp */
-                                           size += 64;
-                                           size += handle->m * handle->n * sizeof_datatype; /* rTp */
-                                           size += 64;
-                                           size += handle->k * handle->n * sizeof_datatype; /* xTp */
-                                           size += 64;
-                                           size += handle->m * handle->n * sizeof_datatype; /* deltaTp */
                                            size += 64;
                                            size += handle->m * handle->n * sizeof_datatype * handle->t; /* delta */
                                            size += 64;
@@ -686,38 +671,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bind_scratch(libxsmm_dnn_lstm
                                            scratch_size = handle->m * handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
-                                             handle->wTp->data = (void*)address;
-                                           } else {
-                                             offset = (64 - address % 64);
-                                             handle->wTp->data = (void*)(address+offset);
-                                           }
-                                           scratch_size = handle->m * handle->k * sizeof_datatype;
-                                           address += scratch_size + 64;
-                                           if (address % 64 == 0) {
-                                             handle->rTp->data = (void*)address;
-                                           } else {
-                                             offset = (64 - address % 64);
-                                             handle->rTp->data = (void*)(address+offset);
-                                           }
-                                           scratch_size = handle->m * handle->n * sizeof_datatype;
-                                           address += scratch_size + 64;
-                                           if (address % 64 == 0) {
-                                             handle->xTp->data = (void*)address;
-                                           } else {
-                                             offset = (64 - address % 64);
-                                             handle->xTp->data = (void*)(address+offset);
-                                           }
-                                           scratch_size = handle->k * handle->n * sizeof_datatype;
-                                           address += scratch_size + 64;
-                                           if (address % 64 == 0) {
-                                             handle->deltaTp->data = (void*)address;
-                                           } else {
-                                             offset = (64 - address % 64);
-                                             handle->deltaTp->data = (void*)(address+offset);
-                                           }
-                                           scratch_size = handle->m * handle->n * sizeof_datatype;
-                                           address += scratch_size + 64;
-                                           if (address % 64 == 0) {
                                              handle->deltat->data = (void*)address;
                                            } else {
                                              offset = (64 - address % 64);
@@ -789,10 +742,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_release_scratch(libxsmm_dnn_l
                                            handle->i3->data = 0;
                                            handle->f3->data = 0;
                                            handle->d4->data = 0;
-                                           handle->rTp->data = 0;
-                                           handle->wTp->data = 0;
-                                           handle->xTp->data = 0;
-                                           handle->deltaTp->data = 0;
                                            handle->deltat->data = 0;
                                            handle->i1t = 0;
                                            handle->i1b = 0;
@@ -812,10 +761,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_release_scratch(libxsmm_dnn_l
                                            handle->i3 = 0;
                                            handle->f3 = 0;
                                            handle->d4 = 0;
-                                           handle->rTp = 0;
-                                           handle->wTp = 0;
-                                           handle->xTp = 0;
-                                           handle->deltaTp = 0;
                                            handle->deltat = 0;
                                          } break;
       default: {
@@ -1684,7 +1629,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   LIBXSMM_DNN_ELTWISE_FTYPE *rf = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->rf->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *ro = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->ro->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *rc = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->rc->data;
-  /* LIBXSMM_DNN_ELTWISE_FTYPE *ht = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->h->data; */
+  LIBXSMM_DNN_ELTWISE_FTYPE *ht = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->h->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *i1 = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->i1t->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *i2 = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->i2->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *i3 = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->i3->data;
@@ -1724,14 +1669,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   LIBXSMM_DNN_ELTWISE_FTYPE *djdbf = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->djdbf->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *djdbo = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->djdbo->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *djdbc = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->djdbc->data;
-  /*
-  LIBXSMM_DNN_ELTWISE_FTYPE *rTp = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->rTp->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *wTp = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->wTp->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *deltaTp = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->deltaTp->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *xTp = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->xTp->data;
-  */
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, x, xt, k * n);
-  /* LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, h, ht, m * n); */
+  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, h, ht, m * n);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, i, it, m * n);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, f, ft, m * n);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, o, ot, m * n);
@@ -1787,32 +1726,16 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   libxsmm_internal_matrix_eltwise_mult(m * n, o1, o2, &LIBXSMM_VLA_ACCESS(2, djdo, t-1, 0, m * n), start_thread, tid, lstm->nThreads);
   if (pass == 1 || pass == 3) {
     /* compute djdx */
-    /* libxsmm_internal_matrix_transpose(m, k, wi, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdi, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid); */
     libxsmm_bgemm_st(handlewd, wi, &LIBXSMM_VLA_ACCESS(2, djdi, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid);
-    /* libxsmm_internal_matrix_transpose(m, k, wf, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdf, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid); */
     libxsmm_bgemm_st(handlewd, wf, &LIBXSMM_VLA_ACCESS(2, djdf, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid);
-    /* libxsmm_internal_matrix_transpose(m, k, wo, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdo, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid); */
     libxsmm_bgemm_st(handlewd, wo, &LIBXSMM_VLA_ACCESS(2, djdo, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid);
-    /* libxsmm_internal_matrix_transpose(m, k, wc, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdc, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid); */
     libxsmm_bgemm_st(handlewd, wc, &LIBXSMM_VLA_ACCESS(2, djdc, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, t-1, 0, k * n), start_thread, tid);
   }
   for (j = t-2; j >= 0; --j) {
     /* compute delta */
-    /* libxsmm_internal_matrix_transpose(m, m, ri, rTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm_st(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid); */
     libxsmm_bgemm_st(handleud, ri, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid);
-    /* libxsmm_internal_matrix_transpose(m, m, rf, rTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm_st(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid); */
     libxsmm_bgemm_st(handleud, rf, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid);
-    /* libxsmm_internal_matrix_transpose(m, m, ro, rTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm_st(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid); */
     libxsmm_bgemm_st(handleud, ro, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid);
-    /* libxsmm_internal_matrix_transpose(m, m, rc, rTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-    /* libxsmm_bgemm_st(handleud, rTp, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid); */
     libxsmm_bgemm_st(handleud, rc, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n),  &LIBXSMM_VLA_ACCESS(2, delta, j+1, 0, m * n), start_thread, tid);
     libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), start_thread, tid, lstm->nThreads);
     /* compute djdd */
@@ -1848,17 +1771,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
     libxsmm_internal_matrix_eltwise_mult(m * n, o1, o2, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), start_thread, tid, lstm->nThreads);
     if (pass == 1 || pass == 3) {
       /* compute djdx */
-      /* libxsmm_internal_matrix_transpose(m, k, wi, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-      /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid); */
       libxsmm_bgemm_st(handlewd, wi, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid);
-      /* libxsmm_internal_matrix_transpose(m, k, wf, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-      /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid); */
       libxsmm_bgemm_st(handlewd, wf, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid);
-      /* libxsmm_internal_matrix_transpose(m, k, wo, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-      /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid); */
       libxsmm_bgemm_st(handlewd, wo, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid);
-      /* libxsmm_internal_matrix_transpose(m, k, wc, wTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-      /* libxsmm_bgemm_st(handlewd, wTp, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid); */
       libxsmm_bgemm_st(handlewd, wc, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdx, j, 0, k * n), start_thread, tid);
     }
   }
@@ -1880,13 +1795,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
     }
     /* compute djdw */
     for (j = 0; j < t; ++j) {
-      /* libxsmm_internal_matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), xTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-      /*
-      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdi, j, 0, m * n), xTp, djdwi, start_thread, tid);
-      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdf, j, 0, m * n), xTp, djdwf, start_thread, tid);
-      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdo, j, 0, m * n), xTp, djdwo, start_thread, tid);
-      libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdc, j, 0, m * n), xTp, djdwc, start_thread, tid);
-      */
       libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdiM, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdwi, start_thread, tid);
       libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdfM, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdwf, start_thread, tid);
       libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, djdoM, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdwo, start_thread, tid);
@@ -1894,11 +1802,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
     }
     /* compute djdr */
     for (j = 0; j < t-1; ++j) {
-      /* libxsmm_internal_matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), deltaTp, start_thread, tid, lstm->nThreads); - already taken care of in init */
-      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdiM, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdri, start_thread, tid);
-      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdfM, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdrf, start_thread, tid);
-      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdoM, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdro, start_thread, tid);
-      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdcM, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), djdrc, start_thread, tid);
+      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdiM, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, h, j, 0, m * n), djdri, start_thread, tid);
+      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdfM, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, h, j, 0, m * n), djdrf, start_thread, tid);
+      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdoM, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, h, j, 0, m * n), djdro, start_thread, tid);
+      libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, djdcM, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, h, j, 0, m * n), djdrc, start_thread, tid);
     }
     /* compute djdb */
     for (j = 0; j < t-1; j++) {

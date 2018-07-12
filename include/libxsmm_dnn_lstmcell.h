@@ -140,11 +140,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_lstmcell {
   libxsmm_dnn_tensor* djdbf;
   libxsmm_dnn_tensor* djdbo;
   libxsmm_dnn_tensor* djdbc;
-  libxsmm_dnn_tensor* rTp;
-  libxsmm_dnn_tensor* wTp;
-  libxsmm_dnn_tensor* deltaTp;
-  libxsmm_dnn_tensor* xTp;
   libxsmm_dnn_tensor* i4t;
+  libxsmm_dnn_tensor* djdiMt;
+  libxsmm_dnn_tensor* djdfMt;
+  libxsmm_dnn_tensor* djdcMt;
+  libxsmm_dnn_tensor* djdoMt;
   libxsmm_bgemm_handle* handlewx;
   libxsmm_bgemm_handle* handleuh;
   libxsmm_bgemm_handle* handlett;
