@@ -502,7 +502,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_internalstate(libxsmm_
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_assign_z(libxsmm_dnn_rnncell* handle, const void* zgoldtb)
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_assign_internalstate(libxsmm_dnn_rnncell* handle, const void* zgoldtb)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
