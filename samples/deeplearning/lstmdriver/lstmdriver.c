@@ -1106,58 +1106,58 @@ int main(int argc, char* argv[])
     /* copy in data to LIBXSMM format */
     if (pass == 0) {
 #if defined(NON_FUSED_INPUT_GEMM)
-      libxsmm_bgemm_copyin_a(handlewx, wigold, &m, wi);
-      libxsmm_bgemm_copyin_a(handlewx, wfgold, &m, wf);
-      libxsmm_bgemm_copyin_a(handlewx, wogold, &m, wo);
-      libxsmm_bgemm_copyin_a(handlewx, wcgold, &m, wc);
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wigold, &m, wi) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wfgold, &m, wf) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wogold, &m, wo) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wcgold, &m, wc) );
 #else
       LIBXSMM_VLA_DECL(2, float, wi4, wi, m * k);
-      libxsmm_bgemm_copyin_a(handlewx, wigold, &m, &LIBXSMM_VLA_ACCESS(2, wi4, 0, 0, m * k));
-      libxsmm_bgemm_copyin_a(handlewx, wfgold, &m, &LIBXSMM_VLA_ACCESS(2, wi4, 1, 0, m * k));
-      libxsmm_bgemm_copyin_a(handlewx, wogold, &m, &LIBXSMM_VLA_ACCESS(2, wi4, 2, 0, m * k));
-      libxsmm_bgemm_copyin_a(handlewx, wcgold, &m, &LIBXSMM_VLA_ACCESS(2, wi4, 3, 0, m * k));
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wigold, &m, &LIBXSMM_VLA_ACCESS(2, wi4, 0, 0, m * k)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wfgold, &m, &LIBXSMM_VLA_ACCESS(2, wi4, 1, 0, m * k)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wogold, &m, &LIBXSMM_VLA_ACCESS(2, wi4, 2, 0, m * k)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wcgold, &m, &LIBXSMM_VLA_ACCESS(2, wi4, 3, 0, m * k)) );
 #endif
       for (it = 0; it < t; ++it) {
-        libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n));
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
       }
-      libxsmm_bgemm_copyin_a(handleuh, rigold, &m, ri);
-      libxsmm_bgemm_copyin_a(handleuh, rfgold, &m, rf);
-      libxsmm_bgemm_copyin_a(handleuh, rogold, &m, ro);
-      libxsmm_bgemm_copyin_a(handleuh, rcgold, &m, rc);
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleuh, rigold, &m, ri) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleuh, rfgold, &m, rf) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleuh, rogold, &m, ro) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleuh, rcgold, &m, rc) );
       if (reuse) {
-        libxsmm_bgemm_copyin_b(handleuh, hgold_temp, &m, h);
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, hgold_temp, &m, h) );
       } else {
-        libxsmm_bgemm_copyin_b(handleuh, hgold_temp, &m, &LIBXSMM_VLA_ACCESS(2, hnr, 0, 0, m * n));
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, hgold_temp, &m, &LIBXSMM_VLA_ACCESS(2, hnr, 0, 0, m * n)) );
         zero_buf(&LIBXSMM_VLA_ACCESS(2, hnr, 1, 0, m * n), m*n*t);
       }
-      libxsmm_bgemm_copyin_b(handleuh, bigold, &m, bi);
-      libxsmm_bgemm_copyin_b(handleuh, bfgold, &m, bf);
-      libxsmm_bgemm_copyin_b(handleuh, bogold, &m, bo);
-      libxsmm_bgemm_copyin_b(handleuh, bcgold, &m, bc);
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, bigold, &m, bi) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, bfgold, &m, bf) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, bogold, &m, bo) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, bcgold, &m, bc) );
     } else {
       matrix_transpose(m, k, wigold, wgoldTp);
-      libxsmm_bgemm_copyin_a(handlewd, wgoldTp, &k, wi);
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wgoldTp, &k, wi) );
       matrix_transpose(m, k, wfgold, wgoldTp);
-      libxsmm_bgemm_copyin_a(handlewd, wgoldTp, &k, wf);
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wgoldTp, &k, wf) );
       matrix_transpose(m, k, wogold, wgoldTp);
-      libxsmm_bgemm_copyin_a(handlewd, wgoldTp, &k, wo);
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wgoldTp, &k, wo) );
       matrix_transpose(m, k, wcgold, wgoldTp);
-      libxsmm_bgemm_copyin_a(handlewd, wgoldTp, &k, wc);
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wgoldTp, &k, wc) );
       for (it = 0; it < t; ++it) {
         matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), hgoldTp);
-        libxsmm_bgemm_copyin_b(handleuh, hgoldTp, &m, &LIBXSMM_VLA_ACCESS(2, hb, it, 0, m * n));
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, hgoldTp, &m, &LIBXSMM_VLA_ACCESS(2, hb, it, 0, m * n)) );
         matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), xgoldTp);
-        libxsmm_bgemm_copyin_b(handlett, xgoldTp, &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n));
-        libxsmm_bgemm_copyin_b(handlewd, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, djdh, it, 0, m * n));
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlett, xgoldTp, &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewd, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, djdh, it, 0, m * n)) );
       }
       matrix_transpose(m, m, rigold, rgoldTp);
-      libxsmm_bgemm_copyin_a(handlewx, rgoldTp, &m, ri);
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, rgoldTp, &m, ri) );
       matrix_transpose(m, m, rfgold, rgoldTp);
-      libxsmm_bgemm_copyin_a(handlewx, rgoldTp, &m, rf);
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, rgoldTp, &m, rf) );
       matrix_transpose(m, m, rogold, rgoldTp);
-      libxsmm_bgemm_copyin_a(handlewx, rgoldTp, &m, ro);
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, rgoldTp, &m, ro) );
       matrix_transpose(m, m, rcgold, rgoldTp);
-      libxsmm_bgemm_copyin_a(handlewx, rgoldTp, &m, rc);
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, rgoldTp, &m, rc) );
     }
 
     /* bind buffers and filter to handle */
@@ -1485,7 +1485,6 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &norms_upd_b);
     }
 
-#if 0 //KB
     if ( pass == 0 ) {
       printf("##########################################\n");
       printf("#   Performance - FWD (custom-Storage)   #\n");
@@ -1508,7 +1507,7 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * (double)t * (double)iters;
+      flops = (((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * 4.0 + (5.0 * m * n)) * (double)t * (double)iters;
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
@@ -1539,16 +1538,20 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = m * m; /* U^T */
-      flops += (2.0 * m * n * m); /* U^T * delta */
-      flops += (m * n); /* dJdh + (U^T * delta) */
-      flops += (tflops * m * n); /* sigma'(Z) */
-      flops += (m * n); /* sigma'(Z) * (dJdh + (U^T * delta)) */
-      flops *= t; /* for t time steps */
-      tempflops = m * k; /* W^T */
-      tempflops += (2.0 * m * n * k); /* W^T * delta */
-      tempflops *= t; /* for t time steps of input */
+      flops = m * n; /* delta + delta_out */
+      flops += (6.0 * m * n + tflops * m * n); /* dJdd */
+      flops += (4.0 * m * n); /* dJdc */
+      flops += (4.0 * m * n); /* dJdi */
+      flops += (4.0 * m * n); /* dJdf */
+      flops += (4.0 * m * n + tflops * m * n); /* dJdo */
+      tempflops = (4.0 * m * k); /* W^T */
+      tempflops += (8.0 * m * n * k); /* W^T * dJd{c, i, f, o} */
+      tempflops += (3.0 * m * k); /* summation */
       flops += tempflops;
+      tempflops = (4.0 * m * m); /* R^T */
+      tempflops += (8.0 * m * n * m); /* R^T * dJd{c, i, f, o} */
+      flops += tempflops;
+      flops *= t; /* for t time steps */
       flops *= iters;
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
@@ -1580,22 +1583,27 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = m * m; /* U^T */
-      flops += (2.0 * m * n * m); /* U^T * delta */
-      flops += (m * n); /* dJdh + (U^T * delta) */
-      flops += (tflops * m * n); /* sigma'(Z) */
-      flops += (m * n); /* sigma'(Z) * (dJdh + (U^T * delta)) */
+      flops = m * n; /* delta + delta_out */
+      flops += (6.0 * m * n + tflops * m * n); /* dJdd */
+      flops += (4.0 * m * n); /* dJdc */
+      flops += (4.0 * m * n); /* dJdi */
+      flops += (4.0 * m * n); /* dJdf */
+      flops += (4.0 * m * n + tflops * m * n); /* dJdo */
+      tempflops = (4.0 * m * m); /* R^T */
+      tempflops += (8.0 * m * n * m); /* R^T * dJd{c, i, f, o} */
+      flops += tempflops;
       flops *= t; /* for t time steps */
-      tempflops = m * n; /* h^T */
-      tempflops += (2.0 * m * n * m); /* delta * h^T */
-      tempflops *= t; /* for t time steps */
-      tempflops += (m * m * (t-1)); /* for summation of dJdU */
-      flops += tempflops;
       tempflops = k * n; /* x^T */
-      tempflops += (2.0 * m * n * k); /* delta * x^T */
+      tempflops += (8.0 * m * n * k); /* delta{c, i, f, o} * x^T */
       tempflops *= t; /* for t time steps */
-      tempflops += (m * k * (t-1)); /* for summation of dJdW */
+      tempflops += (4.0 * m * k * (t-1)); /* for summation of dJdW{c, i, f, o} */
       flops += tempflops;
+      tempflops = 4.0 * m * n; /* delta^T */
+      tempflops += (8.0 * m * n * m); /* delta{c, i, f, o} * delta^T */
+      tempflops *= (t - 1); /* for (t - 1) time steps */
+      tempflops += (4.0 * m * n * (t-2)); /* for summation of dJdR{c, i, f, o} */
+      flops += tempflops;
+      flops += (4.0 * m * n * (t - 1)); /* delbias */
       flops *= iters;
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
@@ -1627,26 +1635,31 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = m * m; /* U^T */
-      flops += (2.0 * m * n * m); /* U^T * delta */
-      flops += (m * n); /* dJdh + (U^T * delta) */
-      flops += (tflops * m * n); /* sigma'(Z) */
-      flops += (m * n); /* sigma'(Z) * (dJdh + (U^T * delta)) */
+      flops = m * n; /* delta + delta_out */
+      flops += (6.0 * m * n + tflops * m * n); /* dJdd */
+      flops += (4.0 * m * n); /* dJdc */
+      flops += (4.0 * m * n); /* dJdi */
+      flops += (4.0 * m * n); /* dJdf */
+      flops += (4.0 * m * n + tflops * m * n); /* dJdo */
+      tempflops = (4.0 * m * k); /* W^T */
+      tempflops += (8.0 * m * n * k); /* W^T * dJd{c, i, f, o} */
+      tempflops += (3.0 * m * k); /* summation */
+      flops += tempflops;
+      tempflops = (4.0 * m * m); /* R^T */
+      tempflops += (8.0 * m * n * m); /* R^T * dJd{c, i, f, o} */
+      flops += tempflops;
       flops *= t; /* for t time steps */
-      tempflops = m * n; /* h^T */
-      tempflops += (2.0 * m * n * m); /* delta * h^T */
-      tempflops *= t; /* for t time steps */
-      tempflops += (m * m * (t-1)); /* for summation of dJdU */
-      flops += tempflops;
       tempflops = k * n; /* x^T */
-      tempflops += (2.0 * m * n * k); /* delta * x^T */
+      tempflops += (8.0 * m * n * k); /* delta{c, i, f, o} * x^T */
       tempflops *= t; /* for t time steps */
-      tempflops += (m * k * (t-1)); /* for summation of dJdW */
+      tempflops += (4.0 * m * k * (t-1)); /* for summation of dJdW{c, i, f, o} */
       flops += tempflops;
-      tempflops = m * k; /* W^T */
-      tempflops += (2.0 * m * n * k); /* W^T * delta */
-      tempflops *= t; /* for t time steps of input */
+      tempflops = 4.0 * m * n; /* delta^T */
+      tempflops += (8.0 * m * n * m); /* delta{c, i, f, o} * delta^T */
+      tempflops *= (t - 1); /* for (t - 1) time steps */
+      tempflops += (4.0 * m * n * (t-2)); /* for summation of dJdR{c, i, f, o} */
       flops += tempflops;
+      flops += (4.0 * m * n * (t - 1)); /* delbias */
       flops *= iters;
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
@@ -1665,28 +1678,76 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_internalstate( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL ) );
     }
     libxsmm_free(scratch);
+    libxsmm_free(internalstate);
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_INPUT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_I ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_F ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_O ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_C ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_I ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_F ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_O ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_C ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_I ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_F ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_O ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_C ) );
     if (pass != 0) {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_INPUT ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_I ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_F ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_O ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_C ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_I ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_F ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_O ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_C ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_I ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_F ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C ) );
     }
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_input ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_hidden_state ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_recur_weight ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_i ) );
+    if (pass == 0) {
+#if defined(NON_FUSED_INPUT_GEMM)
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_f ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_o ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_c ) );
+#endif
+    } else {
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_f ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_o ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_c ) );
+    }
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_recur_weight_i ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_recur_weight_f ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_recur_weight_o ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_recur_weight_c ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias_i ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias_f ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias_o ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias_c ) );
     if (pass != 0) {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dinput ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dhidden_state ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dweight ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_drecur_weight ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dweight_i ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dweight_f ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dweight_o ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dweight_c ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_drecur_weight_i ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_drecur_weight_f ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_drecur_weight_o ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_drecur_weight_c ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dbias_i ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dbias_f ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dbias_o ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dbias_c ) );
     }
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_lstmcell( libxsmm_handle ) );
-#endif //KB 
   }
 
   /* deallocate data */
@@ -1737,41 +1798,95 @@ int main(int argc, char* argv[])
     libxsmm_free(bc);
     libxsmm_free(htest);
     libxsmm_free(hgold_temp);
-  }
-  /*
-  else {
-    libxsmm_free(wgold);
+  } else {
+    libxsmm_free(wigold);
+    libxsmm_free(wfgold);
+    libxsmm_free(wogold);
+    libxsmm_free(wcgold);
     libxsmm_free(xgoldt);
-    libxsmm_free(ugold);
+    libxsmm_free(rigold);
+    libxsmm_free(rfgold);
+    libxsmm_free(rogold);
+    libxsmm_free(rcgold);
     libxsmm_free(hgoldt);
-    libxsmm_free(djdwgold);
-    libxsmm_free(djdxgoldt);
-    libxsmm_free(djdugold);
-    libxsmm_free(djdhgoldt);
-    libxsmm_free(zgoldt);
+    libxsmm_free(igoldt);
+    libxsmm_free(fgoldt);
+    libxsmm_free(ogoldt);
+    libxsmm_free(cgoldt);
+    libxsmm_free(dgoldt);
+    libxsmm_free(i1gold);
+    libxsmm_free(i2gold);
+    libxsmm_free(i3gold);
+    libxsmm_free(f1gold);
+    libxsmm_free(f2gold);
+    libxsmm_free(f3gold);
+    libxsmm_free(o1gold);
+    libxsmm_free(o2gold);
+    libxsmm_free(c1gold);
+    libxsmm_free(c2gold);
+    libxsmm_free(d1gold);
+    libxsmm_free(d2gold);
+    libxsmm_free(d3gold);
+    libxsmm_free(d4gold);
     libxsmm_free(deltagoldt);
-    libxsmm_free(zigold);
-    libxsmm_free(di1gold);
-    libxsmm_free(di2gold);
-    libxsmm_free(dj1gold);
-    libxsmm_free(dw1gold);
+    libxsmm_free(djdhgoldt);
+    libxsmm_free(djddgoldt);
+    libxsmm_free(djdigoldt);
+    libxsmm_free(djdfgoldt);
+    libxsmm_free(djdogoldt);
+    libxsmm_free(djdcgoldt);
+    libxsmm_free(djdxgoldt);
+    libxsmm_free(djdwigold);
+    libxsmm_free(djdwfgold);
+    libxsmm_free(djdwogold);
+    libxsmm_free(djdwcgold);
+    libxsmm_free(djdrigold);
+    libxsmm_free(djdrfgold);
+    libxsmm_free(djdrogold);
+    libxsmm_free(djdrcgold);
+    libxsmm_free(djdbigold);
+    libxsmm_free(djdbfgold);
+    libxsmm_free(djdbogold);
+    libxsmm_free(djdbcgold);
     libxsmm_free(wgoldTp);
+    libxsmm_free(rgoldTp);
     libxsmm_free(xgoldTp);
-    libxsmm_free(ugoldTp);
     libxsmm_free(hgoldTp);
-    libxsmm_free(w);
+    libxsmm_free(wi);
+    libxsmm_free(wf);
+    libxsmm_free(wo);
+    libxsmm_free(wc);
     libxsmm_free(xt);
-    libxsmm_free(u);
+    libxsmm_free(ri);
+    libxsmm_free(rf);
+    libxsmm_free(ro);
+    libxsmm_free(rc);
     libxsmm_free(ht);
-    libxsmm_free(djdw);
-    libxsmm_free(djdxt);
-    libxsmm_free(djdu);
+    libxsmm_free(bi);
+    libxsmm_free(bf);
+    libxsmm_free(bo);
+    libxsmm_free(bc);
     libxsmm_free(djdht);
-    libxsmm_free(djdwtest);
+    libxsmm_free(djdxt);
+    libxsmm_free(djdwi);
+    libxsmm_free(djdwf);
+    libxsmm_free(djdwo);
+    libxsmm_free(djdwc);
+    libxsmm_free(djdri);
+    libxsmm_free(djdrf);
+    libxsmm_free(djdro);
+    libxsmm_free(djdrc);
+    libxsmm_free(djdbi);
+    libxsmm_free(djdbf);
+    libxsmm_free(djdbo);
+    libxsmm_free(djdbc);
     libxsmm_free(djdxtestt);
-    libxsmm_free(djdutest);
+    libxsmm_free(djdwtest);
+    libxsmm_free(djdrtest);
+    libxsmm_free(djdbtest);
+    libxsmm_free(djdrgold4);
+    libxsmm_free(djdbgold4);
   }
-  */
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
