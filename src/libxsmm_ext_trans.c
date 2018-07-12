@@ -52,9 +52,9 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
   {
     LIBXSMM_INIT
     {
+#if defined(_OPENMP)
       libxsmm_blasint tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
       libxsmm_blasint tn = (libxsmm_blasint)(libxsmm_trans_tile_stretch * tm);
-#if defined(_OPENMP)
       if (tm <= m && tn <= n) { /* consider problem-size (threshold) */
         const int iprefetch = (0 == prefetch ? 0 : *prefetch);
         libxsmm_xmcopyfunction kernel = NULL;
@@ -168,9 +168,9 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
   {
     LIBXSMM_INIT
     if (out != in) {
+#if defined(_OPENMP)
       const libxsmm_blasint tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
       const libxsmm_blasint tn = (libxsmm_blasint)(libxsmm_trans_tile_stretch * tm);
-#if defined(_OPENMP)
       if (tm <= m && tn <= n) { /* consider problem-size (threshold) */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         if (0 == omp_get_active_level())
