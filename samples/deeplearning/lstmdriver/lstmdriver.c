@@ -978,7 +978,7 @@ int main(int argc, char* argv[])
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
     if (pass == 0) {
-#if defined(NON_FUSED_INPUT_GEMM) 
+#if defined(NON_FUSED_INPUT_GEMM)
       libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_F, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_weight_f = libxsmm_dnn_link_tensor( libxsmm_layout, wf, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
@@ -1045,7 +1045,7 @@ int main(int argc, char* argv[])
       libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_hidden_state = libxsmm_dnn_link_tensor( libxsmm_layout, ht, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-    
+
       libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dinput = libxsmm_dnn_link_tensor( libxsmm_layout, djdxt, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
