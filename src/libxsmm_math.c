@@ -385,7 +385,7 @@ LIBXSMM_API unsigned int libxsmm_rand_u32(unsigned int n)
 }
 
 
-LIBXSMM_API double libxsmm_rand_f64()
+LIBXSMM_API double libxsmm_rand_f64(void)
 {
 #if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
   static const double scale = 1.0 / (RAND_MAX);
