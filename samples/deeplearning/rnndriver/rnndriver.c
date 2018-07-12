@@ -34,8 +34,6 @@
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
-/* #define NON_FUSED_INPUT_GEMM */
-
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
@@ -516,26 +514,26 @@ int main(int argc, char* argv[])
   LIBXSMM_VLA_DECL(2, float, hnr, h, m * n);
 
   if (pass == 0) {
-    handlewx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handlewx = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
-    handleuh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handleuh = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
-    handlett = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handlett = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
   } else {
-    handlewx = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handlewx = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
       &alpha, &beta, &gemm_flags, &strategy, &order); /* U^T*delta */
-    handleuh = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handleuh = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, m, n, &bm, &bm, &bn, &b_m1, &b_m1, &b_n1, &b_n2,
       &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*h^T */
-    handlett = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handlett = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, k, n, &bm, &bk, &bn, &b_m1, &b_k1, &b_n1, &b_n2,
       &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*x^T */
-    handlewd = libxsmm_bgemm_handle_create(LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handlewd = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       k, n, m, &bk, &bn, &bm, &b_k1, &b_n1, &b_m1, &b_m2,
       &alpha, &beta, &gemm_flags, &strategy, &order); /* W^T*delta */
   }
@@ -723,7 +721,7 @@ int main(int argc, char* argv[])
     }
     zero_buf( (float*)internalstate, internalstate_size/4 );
     if (pass != 0) {
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_assign_z( libxsmm_handle, zgoldt ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_assign_internalstate( libxsmm_handle, zgoldt ) );
     }
 
     if ((pass == 0) && LIBXSMM_NEQ(0, check)) {
@@ -744,10 +742,8 @@ int main(int argc, char* argv[])
       }
       /* copy out data */
       if (reuse) {
-        /* CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_b( k, n, bk, bn, h, htest ) ); */
         libxsmm_bgemm_copyout_b( m, n, bm, bn, h, htest );
       } else {
-        /* CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_b( k, n, bk, bn, &LIBXSMM_VLA_ACCESS(2, hnr, t, 0, m * n), htest ) ); */
         libxsmm_bgemm_copyout_b( m, n, bm, bn, &LIBXSMM_VLA_ACCESS(2, hnr, t, 0, m * n), htest );
       }
 
@@ -821,7 +817,7 @@ int main(int argc, char* argv[])
 
       /* compare */
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*k, 1, djdwgold, djdwtest, 0, 0, &norms_upd_w);
-      printf("Weight\n");
+      printf("Delta weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_w.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_w.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_upd_w.l2_abs);
@@ -832,7 +828,7 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &norms_upd_w);
 
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*m, 1, djdugold, djdutest, 0, 0, &norms_upd_u);
-      printf("Recurrent weight\n");
+      printf("Delta recurrent weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_u.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_u.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_upd_u.l2_abs);
@@ -1119,6 +1115,7 @@ int main(int argc, char* argv[])
     libxsmm_free(u);
     libxsmm_free(h);
     libxsmm_free(htest);
+    libxsmm_free(hgold_temp);
   } else {
     libxsmm_free(wgold);
     libxsmm_free(xgoldt);
