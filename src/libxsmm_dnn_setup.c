@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_dnn_setup.h"
 #include "libxsmm_dnn_dryruns.h"
+#include "generator_common.h"
 #include "libxsmm_main.h"
 #include <libxsmm.h>
 
@@ -121,8 +122,8 @@ LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *
   const int min_r = 15;
   const int max_r = 28;
   int n_variants = 0;
-  int wrb1 = 0, hrb1 = 0, wrb2 = 0, hrb2 = 0, foo1, foo2;
-  int w_tmp, rem;
+  unsigned int wrb1 = 0, hrb1 = 0, wrb2 = 0, hrb2 = 0;
+  unsigned int foo1, foo2;
 
   /* Case 1: min_r <= W <= max_r  */
   if (min_r <= W && W <= max_r) {
