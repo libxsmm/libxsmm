@@ -126,7 +126,7 @@ LIBXSMM_API void libxsmm_matcopy_internal(void* out, const void* in, unsigned in
 
   if (nthreads <= mtasks) { /* parallelized over M */
     const libxsmm_blasint mt = (m + nthreads - 1) / nthreads;
-    m0 = tid * mt; m1 = LIBXSMM_MIN(m0 + mt, m);
+    m0 = LIBXSMM_MIN(tid * mt, m); m1 = LIBXSMM_MIN(m0 + mt, m);
     n0 = 0; n1 = n;
   }
   else { /* parallelized over M and N */
@@ -243,7 +243,7 @@ LIBXSMM_API void libxsmm_otrans_internal(void* out, const void* in, unsigned int
 
   if (nthreads <= mtasks) { /* parallelized over M */
     const libxsmm_blasint mt = (m + nthreads - 1) / nthreads;
-    m0 = tid * mt; m1 = LIBXSMM_MIN(m0 + mt, m);
+    m0 = LIBXSMM_MIN(tid * mt, m); m1 = LIBXSMM_MIN(m0 + mt, m);
     n0 = 0; n1 = n;
   }
   else { /* parallelized over M and N */
