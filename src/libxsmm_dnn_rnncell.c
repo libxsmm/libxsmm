@@ -97,9 +97,10 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->di1 = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->di2 = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->deltaMt = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
+    handle->barrier = libxsmm_barrier_create(handle->nThreads, 1);
     if (NULL == handle->deltat || NULL == handle->deltaMt ||
         NULL == handle->z || NULL == handle->z1t || NULL == handle->z2 ||
-        NULL == handle->di1 || NULL == handle->di2)
+        NULL == handle->di1 || NULL == handle->di2 || NULL == handle->barrier)
     {
       free(handle->deltat); free(handle->deltaMt);
       free(handle->z); free(handle->z1t); free(handle->z2);
@@ -120,8 +121,12 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_rnncell(const libxsmm_dnn_rnnc
     free(handle->deltat); free(handle->deltaMt);
     free(handle->z); free(handle->z1t); free(handle->z2);
     free(handle->di1); free(handle->di2);
+    /* Deallocate barrier */
+    if (handle->barrier != 0 ) { libxsmm_barrier_release((const libxsmm_barrier*)handle->barrier); }
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_rnncell*)handle);
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
   }
   return status;
 }
@@ -688,6 +693,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   Gbl_duration_input = 0.; Gbl_duration_recur = 0.; Gbl_duration_eltwise = 0.; Gbl_duration_nonlin = 0.;
 #endif
   int i;
+  const int ltid = tid - start_thread;
 
 #if defined(LSTM_TIMING)
   start = libxsmm_timer_tick();
@@ -698,15 +704,19 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   Gbl_duration_input = libxsmm_timer_duration(Gbl_t_input, libxsmm_timer_tick());
   Gbl_t_input_total += Gbl_duration_input;
 #endif
+  if (rnn->nThreads > 1) {
+    libxsmm_barrier_init(rnn->barrier, ltid);
+  }
   if (reuse) {
     for (i = 0; i < t; ++i) {
-      /* printf("i %d, t %d\n", i, t); */
       libxsmm_internal_recursive_step(handleuh, u, h, &LIBXSMM_VLA_ACCESS(2, z2, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, z1, i, 0, m * n), z, h, 2, m * n, start_thread, tid); /*sigmoid*/
+      if (rnn->nThreads > 1) { libxsmm_barrier_wait(rnn->barrier, ltid); }
     }
   } else {
     for (i = 0; i < t; ++i) {
       libxsmm_internal_recursive_step(handleuh, u, &LIBXSMM_VLA_ACCESS(2, hnr, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, z2, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, z1, i, 0, m * n),
         &LIBXSMM_VLA_ACCESS(2, znr, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, hnr, i+1, 0, m * n), 2, m * n, start_thread, tid); /*sigmoid*/
+      if (rnn->nThreads > 1) { libxsmm_barrier_wait(rnn->barrier, ltid); }
     }
   }
 #if defined(LSTM_TIMING)
@@ -788,18 +798,24 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, deltaM, deltaMt, m * n);
 
   int i;
+  const int ltid = tid - start_thread;
 #ifdef LSTM_TIMING
   unsigned long long start;
   double duration;
   start = libxsmm_timer_tick();
 #endif
-
+  if (rnn->nThreads > 1) {
+    libxsmm_barrier_init(rnn->barrier, ltid);
+  }
   libxsmm_internal_matrix_zero(m * n, &LIBXSMM_VLA_ACCESS(2, delta, t-1, 0, m * n), start_thread, tid, rnn->nThreads);
+  if (rnn->nThreads > 1) { libxsmm_barrier_wait(rnn->barrier, ltid); }
   for (i = t-2; i >= 0; --i) {
     libxsmm_internal_matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, z, i+1, 0, m * n), zi, start_thread, tid, rnn->nThreads);
+    if (rnn->nThreads > 1) { libxsmm_barrier_wait(rnn->barrier, ltid); }
     libxsmm_bgemm_st(handleud, u, &LIBXSMM_VLA_ACCESS(2, delta, i+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, di1, i, 0, m * n), start_thread, tid);
     libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, i+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, di1, i, 0, m * n), di2, start_thread, tid, rnn->nThreads);
     libxsmm_internal_matrix_eltwise_mult(m * n, zi, di2, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), start_thread, tid, rnn->nThreads);
+    if (rnn->nThreads > 1) { libxsmm_barrier_wait(rnn->barrier, ltid); }
   }
   if (pass == 1 || pass == 3) {
     for (i = 0; i < t; ++i) {
@@ -810,6 +826,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
     for (i = 0; i < t; ++i) {
       libxsmm_bgemm_convert_b_to_a(handleud, &LIBXSMM_VLA_ACCESS(2, delta, i, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, deltaM, i, 0, m * n));
     }
+    if (rnn->nThreads > 1) { libxsmm_barrier_wait(rnn->barrier, ltid); }
     for (i = 0; i < t; ++i) {
       libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, deltaM, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, h, i, 0, m * n), djdu, start_thread, tid);
       libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, deltaM, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, i, 0, k * m), djdw, start_thread, tid);

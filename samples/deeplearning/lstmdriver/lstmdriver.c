@@ -296,7 +296,7 @@ int main(int argc, char* argv[])
   int n = 512;                   /* size of mini-batch */
   int k = 256;                   /* number of inputs */
   int t = 5;                     /* number of time steps (> 1) */
-  int reuse = 0;                 /* reuse=1 for FWD overwrites the same memory
+  int reuse = 1;                 /* reuse=1 for FWD overwrites the same memory
                                   * for intermediate values during inference;
                                   * reuse value is immaterial for BWD and UPD */
   int bm = 32;                   /* first blocking factor for m */

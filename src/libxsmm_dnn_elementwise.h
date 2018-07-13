@@ -32,6 +32,7 @@
 #define LIBXSMM_DNN_ELEMENTWISE_H
 
 #include <libxsmm_bgemm.h>
+#include <libxsmm_sync.h>
 
 #if !defined(LIBXSMM_DNN_ELTWISE_FTYPE)
 # define LIBXSMM_DNN_ELTWISE_FTYPE float

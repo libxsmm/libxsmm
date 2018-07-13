@@ -103,6 +103,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_bgemm_handle* handleuh;
   libxsmm_bgemm_handle* handlett;
   libxsmm_bgemm_handle* handlewd;
+  /* barrier */
+  libxsmm_barrier* barrier;
 } libxsmm_dnn_rnncell;
 
 LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_desc rnncell_desc, libxsmm_dnn_err_t* status);

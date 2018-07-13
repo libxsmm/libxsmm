@@ -318,6 +318,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square(libxsmm_blasin
 LIBXSMM_API_INTERN void libxsmm_internal_recursive_step(libxsmm_bgemm_handle* handle, LIBXSMM_DNN_ELTWISE_FTYPE* u, LIBXSMM_DNN_ELTWISE_FTYPE* h, LIBXSMM_DNN_ELTWISE_FTYPE* op1, LIBXSMM_DNN_ELTWISE_FTYPE *op2,
   LIBXSMM_DNN_ELTWISE_FTYPE *temp, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int act, libxsmm_blasint size, int start_thread, int tid)
 {
+  const int ltid = tid - start_thread;
 #if defined(LSTM_TIMING)
   Gbl_t_recur = libxsmm_timer_tick();
 #endif
