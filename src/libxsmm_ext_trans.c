@@ -129,7 +129,9 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
       LIBXSMM_UNUSED(prefetch);
 #endif /*defined(_OPENMP)*/
       { /* no MT, or small problem-size */
-        LIBXSMM_XCOPY_NONJIT(LIBXSMM_MCOPY_KERNEL, out, in, typesize, ldi, ldo, 0, m, 0, n);
+        LIBXSMM_XCOPY_NONJIT(LIBXSMM_MCOPY_KERNEL,
+          typesize, out, in, ldi, ldo, 0, m, 0, n,
+          LIBXSMM_XALIGN_MCOPY);
       }
     }
   }
@@ -241,7 +243,9 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
           LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
         }
         else {
-          LIBXSMM_XCOPY_NONJIT(LIBXSMM_TCOPY_KERNEL, out, in, typesize, ldi, ldo, 0, m, 0, n);
+          LIBXSMM_XCOPY_NONJIT(LIBXSMM_TCOPY_KERNEL,
+            typesize, out, in, ldi, ldo, 0, m, 0, n,
+            LIBXSMM_XALIGN_TCOPY);
         }
       }
     }

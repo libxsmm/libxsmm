@@ -142,11 +142,13 @@ LIBXSMM_API void libxsmm_matcopy_internal(void* out, const void* in, unsigned in
 
   if (0 != prefetch && 0 != *prefetch) { /* prefetch */
     LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, kernel,
-      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1);
+      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
+      LIBXSMM_XALIGN_MCOPY);
   }
   else { /* no prefetch */
     LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, kernel,
-      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1);
+      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
+      LIBXSMM_XALIGN_MCOPY);
   }
 }
 
@@ -258,7 +260,8 @@ LIBXSMM_API void libxsmm_otrans_internal(void* out, const void* in, unsigned int
   LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= n, "Invalid task size!");
 
   LIBXSMM_XCOPY(LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, kernel,
-    out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1);
+    out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
+    LIBXSMM_XALIGN_TCOPY);
 }
 
 
