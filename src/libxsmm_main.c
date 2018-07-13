@@ -1409,10 +1409,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     } break;
     case LIBXSMM_BUILD_KIND_MCOPY: { /* matcopy kernel */
       assert(0 != request->descriptor.matcopy);
-      if (4 == request->descriptor.matcopy->typesize ||
-          2 == request->descriptor.matcopy->typesize ||
-          1 == request->descriptor.matcopy->typesize)
-      {
+      if (4 == request->descriptor.matcopy->typesize) {
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_matcopy_kernel, &generated_code, request->descriptor.matcopy, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)

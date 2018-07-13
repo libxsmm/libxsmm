@@ -106,12 +106,12 @@ int main(void)
     { /* validation */
       unsigned int testerrors = 0;
       libxsmm_blasint i, j;
-      if (0 == testerrors) {
-        for (i = 0; i < n[test]; ++i) {
-          for (j = 0; j < m[test]; ++j) {
-            const ELEM_TYPE u = a[i*ldi[test]+j];
-            const ELEM_TYPE v = b[i*ldo[test]+j];
-            testerrors += (LIBXSMM_FEQ(u, v) ? 0u : 1u);
+      for (i = 0; i < n[test]; ++i) {
+        for (j = 0; j < m[test]; ++j) {
+          const ELEM_TYPE u = a[i*ldi[test]+j];
+          const ELEM_TYPE v = b[i*ldo[test]+j];
+          if (LIBXSMM_NEQ(u, v)) {
+            ++testerrors;
           }
         }
       }
@@ -122,7 +122,9 @@ int main(void)
           for (j = 0; j < m[test]; ++j) {
             const ELEM_TYPE u = b[i*ldo[test] + j];
             const ELEM_TYPE v = c[i*ldo[test] + j];
-            testerrors += (LIBXSMM_FEQ(u, v) ? 0u : 1u);
+            if (LIBXSMM_NEQ(u, v)) {
+              ++testerrors;
+            }
           }
         }
       }

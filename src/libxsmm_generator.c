@@ -278,15 +278,21 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
     libxsmm_mcopy_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  result.blob = blob;
-  result.ptr->unroll_level = (unsigned char)(0 == unroll ? 2 : (0 >= *unroll ? 2 : LIBXSMM_MIN(*unroll, 64)));
-  result.ptr->typesize = (unsigned char)typesize;
-  result.ptr->prefetch = (unsigned char)prefetch;
-  result.ptr->flags = (unsigned char)flags;
-  result.ptr->ldi = ldi;
-  result.ptr->ldo = ldo;
-  result.ptr->m = m;
-  result.ptr->n = n;
+  if (0 == LIBXSMM_MOD2(typesize, 4)) { /* TODO: more general kernel */
+    const unsigned int typescale = LIBXSMM_DIV2(typesize, 4);
+    result.blob = blob;
+    result.ptr->unroll_level = (unsigned char)((0 == unroll || 0 >= *unroll) ? 2/*default*/ : LIBXSMM_MIN(*unroll, 64));
+    result.ptr->typesize = (unsigned char)/*typesize*/4;
+    result.ptr->prefetch = (unsigned char)prefetch;
+    result.ptr->flags = (unsigned char)flags;
+    result.ptr->ldi = ldi * typescale;
+    result.ptr->ldo = ldo * typescale;
+    result.ptr->m = m * typescale;
+    result.ptr->n = n;
+  }
+  else {
+    result.ptr = 0;
+  }
   return result.ptr;
 }
 
