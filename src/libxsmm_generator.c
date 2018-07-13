@@ -256,7 +256,7 @@ LIBXSMM_API libxsmm_trans_descriptor* libxsmm_trans_descriptor_init(libxsmm_desc
     libxsmm_descriptor_blob* blob;
   } result;
   /* limit the amount of (unrolled) code by rejecting larger kernels */
-  if (LIBXSMM_TRANS_NO_BYPASS_DIMS(m, n, ldo)) {
+  if (LIBXSMM_TRANS_NO_BYPASS(m, n)) {
     result.blob = blob;
     result.ptr->typesize = (unsigned char)typesize;
     result.ptr->ldo = ldo;

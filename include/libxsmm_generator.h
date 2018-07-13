@@ -38,7 +38,7 @@
         (LIBXSMM_FEQ(1, ALPHA) /*|| LIBXSMM_FEQ(-1, ALPHA)*/) && \
         (LIBXSMM_FEQ(1, BETA) || LIBXSMM_FEQ(0, BETA)))
 
-#define LIBXSMM_TRANS_NO_BYPASS_DIMS(M, N, LDO) ((M) <= (LIBXSMM_MAX_M) && (N) <= (LIBXSMM_MAX_N) && \
+#define LIBXSMM_TRANS_NO_BYPASS(M, N) ( \
   (((unsigned int)(M)) * (N)) <= ((unsigned int)(LIBXSMM_AVG_M) * (LIBXSMM_AVG_N)))
 
 

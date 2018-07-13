@@ -41,9 +41,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_EXT_TRANS_SCALE)
-# define LIBXSMM_EXT_TRANS_SCALE 4
-#endif
+#define LIBXSMM_MCOPY_MT(MT, NT, M, N) ((MT) <= (M) && (NT) <= (N) && \
+  (((unsigned int)(LIBXSMM_AVG_M)) * LIBXSMM_AVG_N) <= (((unsigned int)(M)) * (N)))
 
 
 LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
@@ -59,7 +58,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 #if defined(_OPENMP)
       libxsmm_blasint tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
       libxsmm_blasint tn = (libxsmm_blasint)(libxsmm_trans_tile_stretch * tm);
-      if ((tm * LIBXSMM_EXT_TRANS_SCALE) <= m && (tn * LIBXSMM_EXT_TRANS_SCALE) <= n) { /* consider problem-size */
+      if (LIBXSMM_MCOPY_MT(tm, tn, m, n)) { /* consider problem-size */
         const int iprefetch = (0 == prefetch ? 0 : *prefetch);
         libxsmm_xmcopyfunction kernel = NULL;
         const libxsmm_mcopy_descriptor* desc;
@@ -175,7 +174,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 #if defined(_OPENMP)
       const libxsmm_blasint tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
       const libxsmm_blasint tn = (libxsmm_blasint)(libxsmm_trans_tile_stretch * tm);
-      if ((tm * LIBXSMM_EXT_TRANS_SCALE) <= m && (tn * LIBXSMM_EXT_TRANS_SCALE) <= n) { /* consider problem-size */
+      if (0 == LIBXSMM_TRANS_NO_BYPASS(m, n) && tm <= m && tn <= n) { /* consider problem-size */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         if (0 == omp_get_active_level())
 # else

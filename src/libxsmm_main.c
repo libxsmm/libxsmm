@@ -1995,7 +1995,7 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_de
   libxsmm_xtransfunction result;
   if (0 != descriptor
     /* no need to double-check since initializing the descriptor was successful
-    && 0 != LIBXSMM_TRANS_NO_BYPASS_DIMS(descriptor->m, descriptor->n, descriptor->ldo)*/)
+    && 0 != LIBXSMM_TRANS_NO_BYPASS(descriptor->m, descriptor->n)*/)
   {
     libxsmm_kernel_info query;
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
