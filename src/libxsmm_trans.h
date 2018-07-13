@@ -37,14 +37,6 @@
 # define LIBXSMM_TRANS_CHECK
 #endif
 
-#if !defined(LIBXSMM_TRANS_COLLAPSE)
-# if !defined(_CRAYC)
-#   define LIBXSMM_TRANS_COLLAPSE 1/*2*/
-# else
-#   define LIBXSMM_TRANS_COLLAPSE 1
-# endif
-#endif
-
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
   const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
