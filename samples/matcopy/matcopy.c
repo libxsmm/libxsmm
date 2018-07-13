@@ -34,6 +34,10 @@
 #include <stdio.h>
 #include <math.h>
 
+#if !defined(ELEM_TYPE)
+# define ELEM_TYPE float
+#endif
+
 
 int main(int argc, char* argv[])
 {
@@ -48,52 +52,49 @@ int main(int argc, char* argv[])
 
   /* we should modify to test all data-types */
   const libxsmm_mcopy_descriptor* desc;
-  libxsmm_xmcopyfunction skernel;
+  libxsmm_xmcopyfunction kernel;
   libxsmm_descriptor_blob blob;
   libxsmm_timer_tickint l_start;
   libxsmm_timer_tickint l_end;
   int error = 0, i, j;
-  float *a, *b;
+  ELEM_TYPE *a, *b;
   double copy_time;
 
   printf("This is a tester for JIT matcopy kernels!\n");
-  desc = libxsmm_mcopy_descriptor_init(&blob, sizeof(float),
+  desc = libxsmm_mcopy_descriptor_init(&blob, sizeof(ELEM_TYPE),
     m, n, ldo, ldi, flags, prefetch, &unroll);
 
-  a = (float*) malloc(n * ldi * sizeof(float));
-  b = (float*) malloc(n * ldo * sizeof(float));
+  a = (ELEM_TYPE*)malloc(n * ldi * sizeof(ELEM_TYPE));
+  b = (ELEM_TYPE*)malloc(n * ldo * sizeof(ELEM_TYPE));
 
   for (i = 0; i < n; i++) {
     for (j = 0; j < m; j++) {
-      a[j+ldi*i] = 1.f * rand();
+      a[j+ldi*i] = (ELEM_TYPE)rand();
       if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & flags)) {
-        b[j+ldo*i] = 1.f * rand();
+        b[j+ldo*i] = (ELEM_TYPE)rand();
       }
     }
   }
 
   /* test dispatch call */
-  skernel = libxsmm_dispatch_mcopy(desc);
-
-  if (skernel == 0) {
+  kernel = libxsmm_dispatch_mcopy(desc);
+  if (kernel == 0) {
     printf("JIT error -> exit!!!!\n");
     exit(EXIT_FAILURE);
   }
 
   /* let's call */
-  skernel(a, &ldi, b, &ldo, &a[128]);
+  kernel(a, &ldi, b, &ldo, &a[128]);
 
   l_start = libxsmm_timer_tick();
-
-  for (i = 0; i<iters; i++) {
-    skernel(a, &ldi, b, &ldo, &a[128]);
+  for (i = 0; i < iters; ++i) {
+    kernel(a, &ldi, b, &ldo, &a[128]);
   }
-
   l_end = libxsmm_timer_tick();
   copy_time = libxsmm_timer_duration(l_start, l_end);
 
-  for (i = 0; i < n; i++) {
-    for (j = 0; j < m; j++) {
+  for (i = 0; i < n; ++i) {
+    for (j = 0; j < m; ++j) {
       if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & flags)) {
         if (LIBXSMM_NEQ(b[j+ldo*i], 0)) {
           printf("ERROR!!!\n");
@@ -113,7 +114,7 @@ int main(int argc, char* argv[])
 
   if (error == 0) {
     printf("CORRECT copy!!!!\n");
-    printf("Time taken is\t%.5f seconds\n",copy_time);
+    printf("Time taken is\t%.5f seconds\n", copy_time);
   }
 
   return EXIT_SUCCESS;

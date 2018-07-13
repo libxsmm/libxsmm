@@ -109,8 +109,8 @@ int main(void)
       if (0 == testerrors) {
         for (i = 0; i < n[test]; ++i) {
           for (j = 0; j < m[test]; ++j) {
-            const ELEM_TYPE u = a[i*ldi[test] + j];
-            const ELEM_TYPE v = b[i*ldo[test] + j];
+            const ELEM_TYPE u = a[i*ldi[test]+j];
+            const ELEM_TYPE v = b[i*ldo[test]+j];
             testerrors += (LIBXSMM_FEQ(u, v) ? 0u : 1u);
           }
         }
