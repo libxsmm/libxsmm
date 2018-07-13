@@ -52,7 +52,7 @@ class TransposeTune(MeasurementInterface):
         self.mintilesize = 2
         self.granularity = 1
         assert(0 < self.granularity)
-        minsize = self.mintilesize * self.granularity
+        minsize = max(self.mintilesize / self.granularity, 1)
         maxsize = minsize + self.granularity
         m_max = max(min(self.args.maxm, self.args.end), maxsize)
         n_max = max(min(self.args.maxn, self.args.end), maxsize)

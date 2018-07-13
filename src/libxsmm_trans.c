@@ -64,9 +64,9 @@ LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
 {
   /* setup tile sizes according to CPUID or environment (LIBXSMM_TRANS_M, LIBXSMM_TRANS_N) */
   static libxsmm_blasint config_tm[/*config*/][2/*DP/SP*/] = {
-    /* generic (hsw) */ { 140, 140 },
-    /* mic (knl/knm) */ { 140, 140 },
-    /* core (skx)    */ { 140, 140 }
+    /* generic (hsw) */ { 2, 2 },
+    /* mic (knl/knm) */ { 2, 2 },
+    /* core (skx)    */ { 2, 2 }
   };
   { /* check if JIT-code generation is permitted */
     const char *const env_jit = getenv("LIBXSMM_TRANS_JIT");
@@ -80,15 +80,15 @@ LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
     int i;
     if (LIBXSMM_X86_AVX512_CORE <= archid) {
       libxsmm_trans_mtile = config_tm[2];
-      libxsmm_trans_tile_stretch = 0.5f;
+      libxsmm_trans_tile_stretch = 32.f;
     }
     else if (LIBXSMM_X86_AVX512_MIC <= archid && LIBXSMM_X86_AVX512_CORE > archid) {
       libxsmm_trans_mtile = config_tm[1];
-      libxsmm_trans_tile_stretch = 0.5f;
+      libxsmm_trans_tile_stretch = 32.f;
     }
     else {
       libxsmm_trans_mtile = config_tm[0];
-      libxsmm_trans_tile_stretch = 0.5f;
+      libxsmm_trans_tile_stretch = 32.f;
     }
     for (i = 0; i < 2/*DP/SP*/; ++i) {
       if (0 < m) libxsmm_trans_mtile[i] = LIBXSMM_MAX(m, LIBXSMM_TRANS_MIN);
