@@ -121,7 +121,7 @@ LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *
   const int min_r = 15;
   const int max_r = 28;
   int n_variants = 0;
-  int wrb1 = 0, hrb1 = 0, wrb2 = 0, hrb2 = 0;
+  int wrb1 = 0, hrb1 = 0, wrb2 = 0, hrb2 = 0, foo1, foo2;
   int w_tmp, rem;
 
   /* Case 1: min_r <= W <= max_r  */
@@ -132,67 +132,28 @@ LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *
   }
   /* Case 2: max_r < W  */
   if (max_r < W) {
-    /* Subcase (i) */
-    int success2_1 = 0;
-    /* Attempt to find w_tmp s.t. min_r <= w_tmp <= max_r AND W%w_tmp == 0 */
-    for (w_tmp = max_r; w_tmp >= min_r; w_tmp--) {
-      if (W % w_tmp == 0) {
-        break;
-      }
-    }
-    if (W % w_tmp == 0) { /* case 2 */
-      success2_1 = 1;
+    libxsmm_compute_equalized_blocking(W, max_r, &foo1, &wrb1, &foo2, &wrb2);
+    if (wrb2 == 0) {
       n_variants = 1;
-      wrb1 = w_tmp;
-      hrb1 = 1;
-    }
-
-    /* Subcase (ii) if subcase (i) failed  */
-    if (!success2_1) {
+    } else {
       n_variants = 2;
-      w_tmp = max_r;
-      rem = W % w_tmp;
-      while (rem < min_r && w_tmp >= min_r) {
-        w_tmp--;
-        rem = W % w_tmp;
-      }
-      if (min_r <= w_tmp && w_tmp <= max_r && min_r <= rem && rem <= max_r ) { /* case 3 */
-        wrb1 = w_tmp;
-        hrb1 = 1;
-        wrb2 = rem;
-        hrb2 = 1;
-      } else { /* case 4 */
-        wrb1 = max_r;
-        hrb1 = 1;
-        wrb2 = W % wrb1;
-        hrb2 = 1;
-      }
     }
+    hrb1 = 1;
+    hrb2 = 1;
   }
+
   /* Case 3: W < min_r */
   if (W < min_r) {
-    int h = 1;
     wrb1 = W;
-    while ( (wrb1 * h <= max_r) && (h <= H) ) {
-      if ( (wrb1 * (h+1) <= max_r) && (h+1 <= H)) {
-        h++;
-      } else {
-        break;
-      }
-    }
-    if (H % h == 0) { /* case 5 */
+    wrb2 = W;
+    libxsmm_compute_equalized_blocking(H, max_r/W, &foo1, &hrb1, &foo2, &hrb2);
+    if (hrb2 == 0) {
       n_variants = 1;
-      wrb1 = W;
-      hrb1 = h;
-    } else { /* case 6 */
+    } else {
       n_variants = 2;
-      rem = H % h;
-      wrb1 = W;
-      hrb1 = h;
-      wrb2 = W;
-      hrb2 = rem;
     }
   }
+
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
   printf("Problem has W = %d and H = %d\n", W, H);
   if (n_variants == 1) {
@@ -203,6 +164,7 @@ LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *
     printf("Variant 2 with wrb = %d and hrb = %d\n",wrb2, hrb2);
   }
 #endif
+
   *wrb1_res = wrb1;
   *hrb1_res = hrb1;
   *wrb2_res = wrb2;
