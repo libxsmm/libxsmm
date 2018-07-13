@@ -128,7 +128,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custo
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_bf16.tpl.c"
     } else {
       /* TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images */
-      if ((handle->desc.N*handle->blocksofm >= handle->desc.threads) && !((handle->desc.N == 1) && (handle->fwd_ofh_rb == 1 )) ) {
+      if ((handle->desc.N*handle->blocksofm >= handle->desc.threads) && !((handle->desc.N == 1) && (handle->fwd_ofh_rb == 1) && (handle->n_variants == 1)) ) {
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
       } else {
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"

@@ -133,7 +133,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     }
 
                     if (mark_ofm_close == 1) {
-                      if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING  && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                      if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING  && oj >= handle->ofh - handle->fwd_ofh_rb && oi >= handle->ofw - handle->fwd_ofw_rb) {
                         n_code_segments++;
                       }
                     }
@@ -177,7 +177,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     }
 
                     if (mark_ofm_close == 1) {
-                      if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING  && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                      if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING  && oj >= handle->ofh - handle->fwd_ofh_rb && oi >= handle->ofw - handle->fwd_ofw_rb) {
                         n_code_segments++;
                       }
                     }
@@ -301,7 +301,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         tmp_expanded_stream[tmp_stream_index] = IFM_LOOP_CLOSE_S;
                         tmp_stream_index++;
                       }
-                      if (mark_ofm_close == 1 && ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= (handle->ofh - handle->fwd_ofh_rb) && oi == (handle->ofw - handle->fwd_ofw_rb)) {
+                      if (mark_ofm_close == 1 && ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= (handle->ofh - handle->fwd_ofh_rb) && oi >= (handle->ofw - handle->fwd_ofw_rb)) {
                         tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
                         tmp_stream_index++;
                       }
@@ -389,7 +389,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                           tmp_stream_index++;
                         }
 
-                        if (mark_ofm_close == 1 && ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                        if (mark_ofm_close == 1 && ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= handle->ofh - handle->fwd_ofh_rb && oi >= handle->ofw - handle->fwd_ofw_rb) {
                           tmp_expanded_stream[tmp_stream_index] = OFM_LOOP_CLOSE;
                           tmp_stream_index++;
                         }
@@ -459,7 +459,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         }
 
                         if (mark_ofm_close == 1) {
-                          if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                          if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= handle->ofh - handle->fwd_ofh_rb && oi >= handle->ofw - handle->fwd_ofw_rb) {
                             encoded_code_segments[encoded_stream_index].aux_index = ofm1;
                             encoded_stream_index++;
                           }
@@ -502,7 +502,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                           }
 
                           if (mark_ofm_close == 1) {
-                            if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= handle->ofh - handle->fwd_ofh_rb && oi == handle->ofw - handle->fwd_ofw_rb) {
+                            if (ifm1 == BLOCKSIFM-BLOCKSIFM_BLOCKING && oj >= handle->ofh - handle->fwd_ofh_rb && oi >= handle->ofw - handle->fwd_ofw_rb) {
                               encoded_code_segments[encoded_stream_index].aux_index = ofm1;
                               encoded_stream_index++;
                             }
