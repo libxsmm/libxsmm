@@ -88,12 +88,12 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
           }
 # if defined(LIBXSMM_EXT_TASKS)
           else { /* tasks requested */
-            const int ntasks = libxsmm_trans_taskscale * nthreads;
+            const int ntasks = nthreads * libxsmm_trans_taskscale;
 #           pragma omp parallel num_threads(nthreads)
-            {
+            { /* first thread discovering work will launch all tasks */
 #             pragma omp single nowait /* anyone is good */
-              { /* first thread discovering work will launch all tasks */
-                int tid; for (tid = 0; tid < ntasks; ++tid) {
+              { int tid;
+                for (tid = 0; tid < ntasks; ++tid) {
 #                 pragma omp task untied
                   libxsmm_matcopy_internal(out, in, typesize, m, n, ldi, ldo, prefetch,
                     tm, tn, kernel, tid, ntasks);
@@ -106,14 +106,14 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
         else { /* assume external parallelization */
           const int nthreads = omp_get_num_threads();
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-          const int ntasks = libxsmm_trans_taskscale * nthreads;
-#         pragma omp single nowait /* anyone is good */
-          { /* first thread discovering work will launch all tasks */
-            int tid; for (tid = 0; tid < ntasks; ++tid) {
-#             pragma omp task untied
-              libxsmm_matcopy_internal(out, in, typesize, m, n, ldi, ldo, prefetch,
-                tm, tn, kernel, tid, ntasks);
-            }
+          const int ntasks = (0 == libxsmm_trans_taskscale
+            ? (LIBXSMM_TRANS_TASKSCALE)
+            : libxsmm_trans_taskscale) * nthreads;
+          int tid;
+          for (tid = 0; tid < ntasks; ++tid) {
+#           pragma omp task untied
+            libxsmm_matcopy_internal(out, in, typesize, m, n, ldi, ldo, prefetch,
+              tm, tn, kernel, tid, ntasks);
           }
           if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #           pragma omp taskwait
@@ -194,12 +194,12 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
           }
 # if defined(LIBXSMM_EXT_TASKS)
           else { /* tasks requested */
-            const int ntasks = libxsmm_trans_taskscale * nthreads;
+            const int ntasks = nthreads * libxsmm_trans_taskscale;
 #           pragma omp parallel num_threads(nthreads)
-            {
+            { /* first thread discovering work will launch all tasks */
 #             pragma omp single nowait /* anyone is good */
-              { /* first thread discovering work will launch all tasks */
-                int tid; for (tid = 0; tid < ntasks; ++tid) {
+              { int tid;
+                for (tid = 0; tid < ntasks; ++tid) {
 #                 pragma omp task untied
                   libxsmm_otrans_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
                     tid, ntasks);
@@ -212,14 +212,14 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
         else { /* assume external parallelization */
           const int nthreads = omp_get_num_threads();
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
-          const int ntasks = libxsmm_trans_taskscale * nthreads;
-#         pragma omp single nowait /* anyone is good */
-          { /* first thread discovering work will launch all tasks */
-            int tid; for (tid = 0; tid < ntasks; ++tid) {
-#             pragma omp task untied
-              libxsmm_otrans_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
-                tid, ntasks);
-            }
+          const int ntasks = (0 == libxsmm_trans_taskscale
+            ? (LIBXSMM_TRANS_TASKSCALE)
+            : libxsmm_trans_taskscale) * nthreads;
+          int tid;
+          for (tid = 0; tid < ntasks; ++tid) {
+#           pragma omp task untied
+            libxsmm_otrans_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
+              tid, ntasks);
           }
           if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #           pragma omp taskwait

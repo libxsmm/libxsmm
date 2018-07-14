@@ -36,6 +36,9 @@
 #if !defined(LIBXSMM_TRANS_CHECK) && !defined(NDEBUG)
 # define LIBXSMM_TRANS_CHECK
 #endif
+#if !defined(LIBXSMM_TRANS_TASKSCALE)
+# define LIBXSMM_TRANS_TASKSCALE 2
+#endif
 
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \

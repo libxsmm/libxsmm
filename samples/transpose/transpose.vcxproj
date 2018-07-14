@@ -167,6 +167,7 @@
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
+      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -208,6 +209,7 @@
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
+      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -251,6 +253,7 @@
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
+      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -293,6 +296,7 @@
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
+      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -327,6 +331,7 @@
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
+      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -365,6 +370,7 @@
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
       <ConformanceMode>true</ConformanceMode>
+      <OpenMP>GenerateParallelCode</OpenMP>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
