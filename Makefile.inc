@@ -866,8 +866,13 @@ else # GCC assumed
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wintrinsics-std \
                  -Wimplicit-interface -Wimplicit-procedure
+    ifneq (0,$(shell echo "$$((40200<=$(FC_VERSION)))"))
+      CPEDANTIC += -Wno-overlength-strings
+    else ifneq (0,$(CLANG))
+      CPEDANTIC += -Wno-overlength-strings
+    endif
     ifneq (0,$(shell echo "$$((40500<=$(FC_VERSION)))"))
-      CPEDANTIC += -Wshadow -Wno-overlength-strings
+      CPEDANTIC += -Wshadow
     endif
     ifneq (0,$(shell echo "$$((50000<=$(FC_VERSION)))"))
       FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
