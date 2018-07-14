@@ -212,11 +212,6 @@ EXCLUDE_STATE = BLAS_WARNING PREFIX DESTDIR INSTALL_ROOT
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
-# TODO: resolve issue related to TLS2
-ifneq (0,$(INTEL))
-  DFLAGS += -DLIBXSMM_DNN_VLA_TLS2
-endif
-
 # Version numbers according to interface (version.txt)
 VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1)
 VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 2)
@@ -989,7 +984,7 @@ endif
 
 .PHONY: samples
 samples: lib_hst
-	@find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile | grep -v /gxm/ | grep -v /lstmcell/ | grep -v /rnndriver/ | grep -v /pyfr/ \
+	@find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile | grep -v /gxm/ | grep -v /lstmcell/ | grep -v /lstmdriver/ | grep -v /rnndriver/ | grep -v /pyfr/ \
 		$(patsubst %, | grep -v /%/,$^) | xargs -I {} $(FLOCK) {} "$(MAKE) DEPSTATIC=$(STATIC)"
 
 .PHONY: cp2k

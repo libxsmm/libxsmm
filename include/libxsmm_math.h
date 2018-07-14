@@ -110,7 +110,7 @@ LIBXSMM_API void libxsmm_srand(unsigned int seed);
 LIBXSMM_API unsigned int libxsmm_rand_u32(unsigned int n);
 
 /** Similar to libxsmm_rand_u32, but return a DP-value in the interval [0, 1). */
-LIBXSMM_API double libxsmm_rand_f64();
+LIBXSMM_API double libxsmm_rand_f64(void);
 
 #endif /*LIBXSMM_MATH_H*/
 

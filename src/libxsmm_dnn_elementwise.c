@@ -29,14 +29,16 @@
 /* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_elementwise.h"
-#include <math.h>
+#include "libxsmm_bgemm_types.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <math.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
+
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_zero(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, int start_thread, int tid, int nthreads)
 {
@@ -314,18 +316,19 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square(libxsmm_blasin
 
 
 LIBXSMM_API_INTERN void libxsmm_internal_recursive_step(libxsmm_bgemm_handle* handle, LIBXSMM_DNN_ELTWISE_FTYPE* u, LIBXSMM_DNN_ELTWISE_FTYPE* h, LIBXSMM_DNN_ELTWISE_FTYPE* op1, LIBXSMM_DNN_ELTWISE_FTYPE *op2,
-  LIBXSMM_DNN_ELTWISE_FTYPE *temp, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int act, libxsmm_blasint size, int start_thread, int tid, int nthreads)
+  LIBXSMM_DNN_ELTWISE_FTYPE *temp, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int act, libxsmm_blasint size, int start_thread, int tid)
 {
+  /*const int ltid = tid - start_thread;*/
 #if defined(LSTM_TIMING)
   Gbl_t_recur = libxsmm_timer_tick();
 #endif
-  libxsmm_bgemm(handle, u, h, op1, tid, nthreads);
+  libxsmm_bgemm_st(handle, u, h, op1, start_thread, tid);
 #if defined(LSTM_TIMING)
   Gbl_duration_recur = libxsmm_timer_duration(Gbl_t_recur, libxsmm_timer_tick());
   Gbl_t_recur_total += Gbl_duration_recur;
   Gbl_t_eltwise = libxsmm_timer_tick();
 #endif
-  libxsmm_internal_matrix_add(size, op1, op2, temp, start_thread, tid, nthreads);
+  libxsmm_internal_matrix_add(size, op1, op2, temp, start_thread, tid, handle->nthreads);
 #if defined(LSTM_TIMING)
   Gbl_duration_eltwise = libxsmm_timer_duration(Gbl_t_eltwise, libxsmm_timer_tick());
   Gbl_t_eltwise_total += Gbl_duration_eltwise;
@@ -337,13 +340,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_recursive_step(libxsmm_bgemm_handle* ha
       dst = temp;
       break;
     case 1:
-      libxsmm_internal_matrix_relu(size, temp, dst, start_thread, tid, nthreads);
+      libxsmm_internal_matrix_relu(size, temp, dst, start_thread, tid, handle->nthreads);
       break;
     case 2:
-      libxsmm_internal_matrix_sigmoid(size, temp, dst, start_thread, tid, nthreads);
+      libxsmm_internal_matrix_sigmoid(size, temp, dst, start_thread, tid, handle->nthreads);
       break;
     case 3:
-      libxsmm_internal_matrix_tanh(size, temp, dst, start_thread, tid, nthreads);
+      libxsmm_internal_matrix_tanh(size, temp, dst, start_thread, tid, handle->nthreads);
       break;
     default:
       /* fprintf(stdout, "Unsupported activation function: %d\n", act); */

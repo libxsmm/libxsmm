@@ -64,7 +64,8 @@ if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && [ ""
    [ "" != "${RM}" ] && [ "" != "${CP}" ];
 then
   # check if full tests are triggered (allows to skip the detailed investigation)
-  if [ "" != "${FASTCI}" ] && [ -e ${FASTCI} ] && [ "" != "${GIT}" ] && [ "1" != "${FULLCI}" ] && \
+  if [ "webhook" = "${BUILDKITE_SOURCE}" ] && \
+     [ "" != "${FASTCI}" ] && [ -e ${FASTCI} ] && [ "" != "${GIT}" ] && [ "1" != "${FULLCI}" ] && \
      [ "" = "$(${GIT} log ${REVSTART}...${REVEND} 2>/dev/null | ${GREP} -e "${FULLCI}")" ];
   then
     # transform wild-card patterns to regular expressions

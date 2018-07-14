@@ -39,13 +39,23 @@
 # define ELEM_TYPE float
 #endif
 
+#if !defined(CHECK_PARALLEL)
+# define CHECK_PARALLEL
+#endif
+
+#if defined(CHECK_PARALLEL)
+# define OTRANS libxsmm_otrans_omp
+#else
+# define OTRANS libxsmm_otrans
+#endif
+
 
 int main(void)
 {
-  const libxsmm_blasint m[]   = { 1, 1, 1, 1, 2, 3, 5, 5, 5, 16, 63,  16,  75, 2507 };
-  const libxsmm_blasint n[]   = { 1, 7, 7, 7, 2, 3, 1, 1, 1, 16, 31, 500, 130, 1975 };
-  const libxsmm_blasint ldi[] = { 1, 1, 1, 9, 2, 3, 5, 8, 8, 16, 64,  16,  87, 3000 };
-  const libxsmm_blasint ldo[] = { 1, 7, 8, 8, 2, 3, 1, 1, 4, 16, 32, 512, 136, 3072 };
+  const libxsmm_blasint m[]   = { 1, 1, 1, 1, 2, 3, 5, 5, 5, 16, 63,  16,  16,  75, 2507 };
+  const libxsmm_blasint n[]   = { 1, 7, 7, 7, 2, 3, 1, 1, 1, 16, 31, 500,  32, 130, 1975 };
+  const libxsmm_blasint ldi[] = { 1, 1, 1, 9, 2, 3, 5, 8, 8, 16, 64,  16, 512,  87, 3000 };
+  const libxsmm_blasint ldo[] = { 1, 7, 8, 8, 2, 3, 1, 1, 4, 16, 32, 512,  64, 136, 3072 };
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint max_size_a = 0, max_size_b = 0;
   unsigned int nerrors = 0;
@@ -66,11 +76,9 @@ int main(void)
   LIBXSMM_MATINIT(ELEM_TYPE,  0, b, max_size_b, 1, max_size_b, 1.0);
 
   for (test = start; test < ntests; ++test) {
-    unsigned int testerrors = (EXIT_SUCCESS == libxsmm_otrans(
-      b, a, sizeof(ELEM_TYPE), m[test], n[test],
-      ldi[test], ldo[test]) ? 0 : 1);
-
-    if (0 == testerrors) {
+    OTRANS(b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
+    { /* validation */
+      unsigned int testerrors = 0;
       libxsmm_blasint i, j;
       for (i = 0; i < n[test]; ++i) {
         for (j = 0; j < m[test]; ++j) {
@@ -79,23 +87,21 @@ int main(void)
           testerrors += (LIBXSMM_FEQ(a[u], b[v]) ? 0u : 1u);
         }
       }
-    }
-    if (nerrors < testerrors) {
-      nerrors = testerrors;
+      if (nerrors < testerrors) {
+        nerrors = testerrors;
+      }
     }
   }
 
   if (0 == nerrors) { /* previous results are correct and may be used to validate other tests */
     for (test = start; test < ntests; ++test) {
       /* prepare expected results in b (correct according to the previous test block) */
-      libxsmm_otrans(b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
+      OTRANS(b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
 
       if (m[test] == n[test] && ldi[test] == ldo[test]) {
-        unsigned int testerrors = (EXIT_SUCCESS == libxsmm_otrans(
-          a, a, sizeof(ELEM_TYPE), m[test], n[test],
-          ldi[test], ldo[test]) ? 0 : 1);
-
-        if (0 == testerrors) {
+        OTRANS(a, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
+        { /* validation */
+          unsigned int testerrors = 0;
           libxsmm_blasint i, j;
           for (i = 0; i < n[test]; ++i) {
             for (j = 0; j < m[test]; ++j) {
@@ -104,15 +110,10 @@ int main(void)
               testerrors += (LIBXSMM_FEQ(a[uv], b[uv]) ? 0u : 1u);
             }
           }
+          if (nerrors < testerrors) {
+            nerrors = testerrors;
+          }
         }
-        if (nerrors < testerrors) {
-          nerrors = testerrors;
-        }
-      }
-      else { /* negative tests */
-        nerrors = LIBXSMM_MAX(EXIT_SUCCESS != libxsmm_otrans(
-          a, a, sizeof(ELEM_TYPE), m[test], n[test],
-          ldi[test], ldo[test]) ? 0u : 1u, nerrors);
       }
     }
   }

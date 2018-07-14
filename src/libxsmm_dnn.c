@@ -138,6 +138,7 @@ LIBXSMM_API size_t libxsmm_dnn_typesize(libxsmm_dnn_datatype datatype)
   switch (datatype) {
     case LIBXSMM_DNN_DATATYPE_F32: return 4;
     case LIBXSMM_DNN_DATATYPE_I32: return 4;
+    case LIBXSMM_DNN_DATATYPE_BF16:return 2;
     case LIBXSMM_DNN_DATATYPE_I16: return 2;
     case LIBXSMM_DNN_DATATYPE_I8:  return 1;
     /* no error expected as enumeration really arrives at an enum; compiler-checked */

@@ -226,6 +226,10 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bf16convfunction)(
   const libxsmm_bfloat16* input1, const libxsmm_bfloat16* input2, libxsmm_bfloat16* output,
   const libxsmm_bfloat16* ipf1, const libxsmm_bfloat16* ipf2, const libxsmm_bfloat16* opf, ...);
 
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bf16f32convfunction)(
+  const libxsmm_bfloat16* input1, const float* input2, libxsmm_bfloat16* output,
+  const libxsmm_bfloat16* ipf1, const float* ipf2, const libxsmm_bfloat16* opf, ...);
+
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction)(
   const short* input1, const short* input2, int* output,
   const short* ipf1, const short* ipf2, const int* opf, ...);
@@ -266,6 +270,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction_bwd
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction {
   libxsmm_sconvfunction sconv;
   libxsmm_bf16convfunction bf16conv;
+  libxsmm_bf16f32convfunction bf1632conv;
   libxsmm_wsconvfunction wsconv;
   libxsmm_uwsconvfunction uwsconv;
   libxsmm_wconvfunction wconv;

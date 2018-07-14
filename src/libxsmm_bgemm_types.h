@@ -26,48 +26,38 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee (Intel Corp.), Dheevatsa Mudigere (Intel Corp.)
-   Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
+/* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_bgemm_types.h"
-#include "libxsmm_main.h"
+#ifndef LIBXSMM_BGEMM_TYPES_H
+#define LIBXSMM_BGEMM_TYPES_H
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdio.h>
-#if defined(_OPENMP)
-# include <omp.h>
-#endif
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
+#include "libxsmm_gemm.h"
+
+#if !defined(LIBXSMM_BGEMM_CHECKS) && !defined(NDEBUG)
+# define LIBXSMM_BGEMM_CHECKS
 #endif
 
 
-LIBXSMM_APIEXT void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
-  const void* a, const void* b, void* c, /*unsigned*/int count)
-{
-  static int error_once = 0;
-  if (0 != handle && 0 != a && 0 != b && 0 != c && 0 < count) {
-#if defined(_OPENMP)
-#   pragma omp parallel num_threads(handle->nthreads)
-#endif /*defined(_OPENMP)*/
-    {
-      int i;
-#if defined(_OPENMP)
-      const int tid = omp_get_thread_num();
-#else
-      const int tid = 0;
-#endif
-      for (i = 0; i < count; ++i) {
-        libxsmm_bgemm_st(handle, a, b, c, 0/*start_thread*/, tid);
-      }
-    }
-  }
-  else if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_bgemm_omp!\n");
-  }
-}
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
+  char pad[LIBXSMM_CACHELINE];
+  volatile LIBXSMM_ATOMIC_LOCKTYPE state;
+} libxsmm_bgemm_lock;
+
+
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
+  union { double d; float s; int w; } alpha, beta;
+  libxsmm_gemm_precision iprec, oprec;
+  libxsmm_xmmfunction kernel_pf;
+  libxsmm_xmmfunction kernel;
+  libxsmm_barrier* barrier;
+  libxsmm_bgemm_lock* locks;
+  libxsmm_bgemm_order order;
+  libxsmm_blasint m, n, k, bm, bn, bk;
+  libxsmm_blasint b_m1, b_n1, b_k1, b_k2;
+  libxsmm_blasint mb, nb, kb;
+  void* buffer;
+  int nthreads;
+};
+
+#endif /*LIBXSMM_BGEMM_TYPES_H*/
 

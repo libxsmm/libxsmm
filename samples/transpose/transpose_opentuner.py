@@ -49,14 +49,17 @@ class TransposeTune(MeasurementInterface):
         Define the search space by creating a
         ConfigurationManipulator
         """
-        m_max = min(160, self.args.end)
-        n_max = min(160, self.args.end)
+        self.mintilesize = 2
         self.granularity = 1
         assert(0 < self.granularity)
+        minsize = max(self.mintilesize / self.granularity, 1)
+        maxsize = minsize + self.granularity
+        m_max = max(min(self.args.maxm, self.args.end), maxsize)
+        n_max = max(min(self.args.maxn, self.args.end), maxsize)
         m_max = (m_max + self.granularity - 1) / self.granularity
         n_max = (n_max + self.granularity - 1) / self.granularity
-        m_param = IntegerParameter("M", self.granularity, m_max)
-        n_param = IntegerParameter("N", self.granularity, n_max)
+        m_param = IntegerParameter("M", minsize, m_max)
+        n_param = IntegerParameter("N", minsize, n_max)
         manipulator = ConfigurationManipulator()
         manipulator.add_parameter(m_param)
         manipulator.add_parameter(n_param)
@@ -68,7 +71,8 @@ class TransposeTune(MeasurementInterface):
         if 0 == m_seed or 0 == n_seed:
             return []
         else:
-            return [{"M": m_seed, "N": n_seed}]
+            return [{"M": max(m_seed, self.mintilesize),
+                     "N": max(n_seed, self.mintilesize)}]
 
     def objective(self):
         return opentuner.search.objective.MaximizeAccuracyMinimizeSize()
@@ -80,8 +84,8 @@ class TransposeTune(MeasurementInterface):
         """
         cfg = desired_result.configuration.data
         nruns = max(self.args.nruns, 1)
-        begin = max(self.args.begin, 1)
-        end = max(self.args.end, 1)
+        begin = max(self.args.begin, self.mintilesize)
+        end = max(self.args.end, self.mintilesize)
         run_cmd = (
             "CHECK=-1"  # repeatable runs
             " LIBXSMM_TRANS_M=" + str(self.granularity * cfg["M"]) +
@@ -135,4 +139,10 @@ if __name__ == "__main__":
     argparser.add_argument(
         "n", type=int, default=0, nargs='?',
         help="Initial tile size (N)")
+    argparser.add_argument(
+        "maxm", type=int, default=160, nargs='?',
+        help="Max. tile size (M)")
+    argparser.add_argument(
+        "maxn", type=int, default=160, nargs='?',
+        help="Max. tile size (N)")
     TransposeTune.main(argparser.parse_args())

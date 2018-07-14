@@ -33,7 +33,7 @@
 LIBXSMM_VLA_DECL(2, libxsmm_bgemm_lock, locks, handle->locks, handle->nb);
 /* TODO: pad thread-local buffer members by the size of a cache-line in order to avoid "Ping-Pong" */
 LIBXSMM_VLA_DECL(2, LIBXSMM_BGEMM_TEMPLATE_TYPE_C, l_out, (LIBXSMM_BGEMM_TEMPLATE_TYPE_C*)(((char*)handle->buffer) +
-  tid * LIBXSMM_UP2(handle->bm * handle->bn * sizeof(LIBXSMM_BGEMM_TEMPLATE_TYPE_C), LIBXSMM_CACHELINE)), handle->bm);
+  ltid * LIBXSMM_UP2(handle->bm * handle->bn * sizeof(LIBXSMM_BGEMM_TEMPLATE_TYPE_C), LIBXSMM_CACHELINE)), handle->bm);
 LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_TYPE_AB, real_a, (const LIBXSMM_BGEMM_TEMPLATE_TYPE_AB*)a, handle->kb, handle->bk, handle->bm);
 LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_TYPE_AB, real_b, (const LIBXSMM_BGEMM_TEMPLATE_TYPE_AB*)b, handle->kb, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_TYPE_C, real_c, (LIBXSMM_BGEMM_TEMPLATE_TYPE_C*)c, handle->mb, handle->bn, handle->bm);
@@ -75,8 +75,8 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
     for (kb = 0, k = 0; kb < b_k1; ++kb, k += nw_k2) {
       const libxsmm_blasint nw_k3 = nw_k / b_k2;
       const libxsmm_blasint nw2 = nw * nw_k3;
-      const libxsmm_blasint s = (tid * nw2) / nthreads;
-      const libxsmm_blasint e = ((tid + 1) * nw2) / nthreads;
+      const libxsmm_blasint s = (ltid * nw2) / handle->nthreads;
+      const libxsmm_blasint e = ((ltid + 1) * nw2) / handle->nthreads;
       libxsmm_blasint o_i2 = 0, o_j2 = 0;
       nw_k2 = nw_k3;
 

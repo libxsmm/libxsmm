@@ -34,9 +34,9 @@ HERE=$(cd $(dirname $0); pwd -P)
 GIT_DIR=${HERE}/../.git
 LOCKFILE=${GIT_DIR}/.commit
 
-GIT=$(which git)
-CP=$(which cp)
-RM=$(which rm)
+GIT=$(which git 2>/dev/null)
+CP=$(which cp 2>/dev/null)
+RM=$(which rm 2>/dev/null)
 
 if [ -e ${GIT_DIR}/hooks ] && \
    [ "" != "${GIT}" ] && [ "" != "${CP}" ] && [ "" != "${RM}" ]; \

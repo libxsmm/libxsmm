@@ -30,9 +30,9 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-ECHO=$(which echo)
-CUT=$(which cut)
-GIT=$(which git)
+ECHO=$(which echo 2>/dev/null)
+CUT=$(which cut 2>/dev/null)
+GIT=$(which git 2>/dev/null)
 
 NAME=$(${GIT} name-rev --name-only HEAD)
 MAIN=$(${GIT} describe --tags --abbrev=0)

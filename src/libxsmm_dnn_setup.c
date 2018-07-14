@@ -30,6 +30,7 @@
 ******************************************************************************/
 #include "libxsmm_dnn_setup.h"
 #include "libxsmm_dnn_dryruns.h"
+#include "generator_common.h"
 #include "libxsmm_main.h"
 #include <libxsmm.h>
 
@@ -121,8 +122,8 @@ LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *
   const int min_r = 15;
   const int max_r = 28;
   int n_variants = 0;
-  int wrb1 = 0, hrb1 = 0, wrb2 = 0, hrb2 = 0;
-  int w_tmp, rem;
+  unsigned int wrb1 = 0, hrb1 = 0, wrb2 = 0, hrb2 = 0;
+  unsigned int foo1, foo2;
 
   /* Case 1: min_r <= W <= max_r  */
   if (min_r <= W && W <= max_r) {
@@ -132,67 +133,28 @@ LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *
   }
   /* Case 2: max_r < W  */
   if (max_r < W) {
-    /* Subcase (i) */
-    int success2_1 = 0;
-    /* Attempt to find w_tmp s.t. min_r <= w_tmp <= max_r AND W%w_tmp == 0 */
-    for (w_tmp = max_r; w_tmp >= min_r; w_tmp--) {
-      if (W % w_tmp == 0) {
-        break;
-      }
-    }
-    if (W % w_tmp == 0) { /* case 2 */
-      success2_1 = 1;
+    libxsmm_compute_equalized_blocking(W, max_r, &foo1, &wrb1, &foo2, &wrb2);
+    if (wrb2 == 0) {
       n_variants = 1;
-      wrb1 = w_tmp;
-      hrb1 = 1;
-    }
-
-    /* Subcase (ii) if subcase (i) failed  */
-    if (!success2_1) {
+    } else {
       n_variants = 2;
-      w_tmp = max_r;
-      rem = W % w_tmp;
-      while (rem < min_r && w_tmp >= min_r) {
-        w_tmp--;
-        rem = W % w_tmp;
-      }
-      if (min_r <= w_tmp && w_tmp <= max_r && min_r <= rem && rem <= max_r ) { /* case 3 */
-        wrb1 = w_tmp;
-        hrb1 = 1;
-        wrb2 = rem;
-        hrb2 = 1;
-      } else { /* case 4 */
-        wrb1 = max_r;
-        hrb1 = 1;
-        wrb2 = W % wrb1;
-        hrb2 = 1;
-      }
     }
+    hrb1 = 1;
+    hrb2 = 1;
   }
+
   /* Case 3: W < min_r */
   if (W < min_r) {
-    int h = 1;
     wrb1 = W;
-    while ( (wrb1 * h <= max_r) && (h <= H) ) {
-      if ( (wrb1 * (h+1) <= max_r) && (h+1 <= H)) {
-        h++;
-      } else {
-        break;
-      }
-    }
-    if (H % h == 0) { /* case 5 */
+    wrb2 = W;
+    libxsmm_compute_equalized_blocking(H, max_r/W, &foo1, &hrb1, &foo2, &hrb2);
+    if (hrb2 == 0) {
       n_variants = 1;
-      wrb1 = W;
-      hrb1 = h;
-    } else { /* case 6 */
+    } else {
       n_variants = 2;
-      rem = H % h;
-      wrb1 = W;
-      hrb1 = h;
-      wrb2 = W;
-      hrb2 = rem;
     }
   }
+
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
   printf("Problem has W = %d and H = %d\n", W, H);
   if (n_variants == 1) {
@@ -203,6 +165,7 @@ LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *
     printf("Variant 2 with wrb = %d and hrb = %d\n",wrb2, hrb2);
   }
 #endif
+
   *wrb1_res = wrb1;
   *hrb1_res = hrb1;
   *wrb2_res = wrb2;
@@ -310,6 +273,10 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
     handle->upd_use_thread_fil = 1;
     handle->scratch4 = 0;
     handle->scratch4_size = 2 * handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_out);
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+      /* Allocate twice as much since the out datatype is BF16 while the intermediate output is in float  */
+      handle->scratch4_size = 2 * handle->scratch4_size;
+    }
     /* enable external reduce of filter scratch */
     if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) > 0 ) {
       handle->upd_use_external_reduce = 1;
@@ -324,6 +291,10 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
   if (handle->use_lp_kernel == 1) {
     handle->scratch2 = 0;
     handle->scratch2_size = handle->desc.N * handle->blocksofm * handle->ofmblock * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+8+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_in);
+    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+      /* Allocate scratch to dump results before downconvert  */
+      handle->scratch2_size += handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * sizeof(float);
+    }
   } else {
     handle->scratch2 = 0;
     handle->scratch2_size = 0;
@@ -1251,13 +1222,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         descriptor.transpose_ofw_ifm = 0;
         handle->use_hybrid_wu_parallelism = 0;
 
-        if ( handle->use_lp_kernel == 1 && ((libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CPX) && handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 ) ) {
+        if ( handle->use_lp_kernel == 1 && ((libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CPX) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16)) ) {
           handle->use_vperm_transposes = 1;
         } else {
           handle->use_vperm_transposes = 0;
         }
 
-        if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) {
+        if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
           if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || libxsmm_target_archid == LIBXSMM_X86_AVX512_CPX) {
             if (handle->ofwp % 2 == 0) {
               handle->avoid_output_trans = 1;
@@ -1301,7 +1272,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
             padding_target = 8;
             output_lp_padding = handle->ofwp%2;
             if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || libxsmm_target_archid == LIBXSMM_X86_AVX512_CPX) {
-              if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) {
+              if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
                 padding_target = 2;
               } else {
                 padding_target = 4;
@@ -1495,7 +1466,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
           handle->code_upd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
         } else {
-          handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+          /*handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);*/
         }
         /*ALL*/
         descriptor.transpose_ofw_ifm = 0;

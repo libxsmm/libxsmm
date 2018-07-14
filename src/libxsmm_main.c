@@ -708,7 +708,11 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &attr_global);
       /* control number of locks needed; LIBXSMM_TRYLOCK implies only 1 lock */
       if (0 == env_trylock || 0 == *env_trylock) { /* no LIBXSMM_TRYLOCK */
+#if defined(LIBXSMM_VTUNE)
+        internal_reglock_count = 1; /* avoid duplicated kernels */
+#else
         internal_reglock_count = INTERNAL_REGLOCK_MAXN;
+#endif
       }
       else { /* LIBXSMM_TRYLOCK environment variable specified */
         internal_reglock_count = (0 != atoi(env_trylock) ? 1 : (INTERNAL_REGLOCK_MAXN));
@@ -1412,10 +1416,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     } break;
     case LIBXSMM_BUILD_KIND_MCOPY: { /* matcopy kernel */
       assert(0 != request->descriptor.matcopy);
-      if (4 == request->descriptor.matcopy->typesize ||
-          2 == request->descriptor.matcopy->typesize ||
-          1 == request->descriptor.matcopy->typesize)
-      {
+      if (4 == request->descriptor.matcopy->typesize) {
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_matcopy_kernel, &generated_code, request->descriptor.matcopy, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1998,7 +1999,7 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_de
   libxsmm_xtransfunction result;
   if (0 != descriptor
     /* no need to double-check since initializing the descriptor was successful
-    && 0 != LIBXSMM_TRANS_NO_BYPASS_DIMS(descriptor->m, descriptor->n, descriptor->ldo)*/)
+    && 0 != LIBXSMM_TRANS_NO_BYPASS(descriptor->m, descriptor->n)*/)
   {
     libxsmm_kernel_info query;
     assert(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
