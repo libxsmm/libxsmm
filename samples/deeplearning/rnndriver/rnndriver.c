@@ -29,10 +29,7 @@
 /* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <math.h>
 #include <libxsmm_intrinsics_x86.h>
-
-#define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -43,12 +40,16 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
+
+#define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
+
 
 LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
   int i;
