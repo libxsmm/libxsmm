@@ -1869,7 +1869,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
                 i_conv_kernel_config->instruction_set,
                 LIBXSMM_X86_INSTR_VDPBF16PS,
                 1,
-                i_gp_reg_mapping->gp_reg_input,
+                input_reg_to_use,
                 LIBXSMM_X86_GP_REG_UNDEF,
                 LIBXSMM_X86_GP_REG_UNDEF,
                 l_disp,
