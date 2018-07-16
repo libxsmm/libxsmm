@@ -364,7 +364,7 @@ else
       FC = gfortran
     else
       FC = $(NULL)
-    endif  
+    endif
   endif
   endif
   endif
@@ -1049,10 +1049,12 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
   # prevents Clang BE error (CRC32 and others)
   ifneq (Darwin,$(UNAME))
   ifeq (3,$(GCC))
-  ifeq (0,$(STATIC))
+  ifeq (0,$(DEPSTATIC))
     CTARGET = -msse3
-  else ifneq (0,$(SHARED)) 
-    CTARGET = -msse3
+  else ifneq (0,$(SHARED))
+    ifneq (,$(SHARED))
+      CTARGET = -msse3
+    endif
   endif
   endif
   endif
