@@ -39,6 +39,7 @@ ECHO=$(which echo 2>/dev/null)
 SYNC=$(which sync 2>/dev/null)
 SORT=$(which sort 2>/dev/null)
 GREP=$(which grep 2>/dev/null)
+WGET=$(which wget 2>/dev/null)
 GIT=$(which git 2>/dev/null)
 SED=$(which sed 2>/dev/null)
 CUT=$(which cut 2>/dev/null)
@@ -46,6 +47,14 @@ TR=$(which tr 2>/dev/null)
 WC=$(which wc 2>/dev/null)
 RM=$(which rm 2>/dev/null)
 CP=$(which cp 2>/dev/null)
+
+if [ "" != "${WGET}" ] && [ "" != "${BUILDKITE_ORGANIZATION_SLUG}" ] && [ "" != "${BUILDKITE_PIPELINE_SLUG}" ]; then
+  echo "Debug: previous build commit"
+  ${WGET} -qO- https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds \
+  | ${SED} -n '0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p'
+else
+  echo "Debug: failed"
+fi
 
 MKTEMP=${HERE}/../.mktmp.sh
 FASTCI=$2
