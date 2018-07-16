@@ -87,9 +87,9 @@ PROTO_GEN_CC := $(addprefix $(BUILD_DIR)/, ${PROTO_SRCS:.proto=.pb.cc})
 # Source file objects
 CXX_OBJS := $(addprefix $(BUILD_DIR)/, ${CXX_SRCS:.cpp=.o})
 PROTO_OBJS := ${PROTO_GEN_CC:.cc=.o}
-OBJS := $(PROTO_OBJS) $(CXX_OBJS) 
+OBJS := $(PROTO_OBJS) $(CXX_OBJS)
 # Output files for automatic dependency generation
-DEPS := ${CXX_OBJS:.o=.d} 
+DEPS := ${CXX_OBJS:.o=.d}
 
 # Compiler warning locations
 WARNS_EXT := warnings.txt
@@ -101,12 +101,12 @@ NONEMPTY_WARN_REPORT := $(BUILD_DIR)/$(WARNS_EXT)
 # include and lib directories
 
 INCLUDE_DIRS += $(BUILD_INCLUDE_DIR) ./src ./include
-LIBRARIES += glog gflags protobuf m 
+LIBRARIES += glog gflags protobuf m
 
 USE_OPENCV ?= 1
 
 ifeq ($(USE_OPENCV), 1)
-	LIBRARIES += opencv_core opencv_highgui opencv_imgproc 
+	LIBRARIES += opencv_core opencv_highgui opencv_imgproc
 
 	ifeq ($(OPENCV_VERSION), 3)
 		LIBRARIES += opencv_imgcodecs
@@ -147,12 +147,12 @@ ifeq ($(ARCH), avx512_common)
 endif
 ifeq ($(ARCH), avx512_mic)
 	COMMON_FLAGS += -xMIC-AVX512
-	CXXFLAGS += -DUSE_NTS_SPLIT -DUSE_NTS_BN 
+	CXXFLAGS += -DUSE_NTS_SPLIT -DUSE_NTS_BN
 endif
 
 # Debugging
 ifeq ($(DEBUG), 1)
-	COMMON_FLAGS += -g3 -O0 -gdwarf-3 
+	COMMON_FLAGS += -g3 -O0 -gdwarf-3
 else
 	COMMON_FLAGS += -DNDEBUG -O2 -ip -ipo
 endif
@@ -179,7 +179,7 @@ ifeq ($(BLAS), openblas)
 	LIBRARIES += openblas
 
 	BLAS_INCLUDE = $(OPENBLAS)/include
-	BLAS_LIB = $(OPENBLAS)/lib 
+	BLAS_LIB = $(OPENBLAS)/lib
 	INCLUDE_DIRS += $(BLAS_INCLUDE)
 	LIBRARY_DIRS += $(BLAS_LIB)
 endif
@@ -193,7 +193,7 @@ LIBRARY_DIRS += $(GXM_LIBRARY_PATH)/lib
 LIBRARY_DIRS += $(LIB_BUILD_DIR)
 
 # libxsmm paths
-LIBRARIES += xsmm xsmmext 
+LIBRARIES += xsmm xsmmext
 INCLUDE_DIRS += $(LIBXSMM_PATH)/include
 LIBRARY_DIRS += $(LIBXSMM_PATH)/lib
 
@@ -218,7 +218,7 @@ ifeq ($(BPOPT_ALLOC), 1)
   CXXFLAGS += -DUSE_OPTBP_ALLOC
 endif
 
-ifeq ($(NUMA_ON), 1) 
+ifeq ($(NUMA_ON), 1)
   CXXFLAGS += -DUSE_NUMA
 endif
 
@@ -242,7 +242,7 @@ ifeq ($(STATS), 1)
 endif
 
 ifeq ($(DUMP_ACT), 1)
-  	CXXFLAGS += -DDUMP_ACT_DATA 
+  	CXXFLAGS += -DDUMP_ACT_DATA
 endif
 
 ifeq ($(DUMP_WT), 1)
@@ -259,8 +259,8 @@ endif
 
 # Complete build flags.
 COMMON_FLAGS += $(foreach includedir,$(INCLUDE_DIRS),-I$(includedir))
-CXXFLAGS += $(COMMON_FLAGS) $(WARNINGS) -std=c++11 
-LINKFLAGS += $(COMMON_FLAGS) $(WARNINGS) 
+CXXFLAGS += $(COMMON_FLAGS) $(WARNINGS) -std=c++11
+LINKFLAGS += $(COMMON_FLAGS) $(WARNINGS)
 
 LDFLAGS += $(foreach librarydir,$(LIBRARY_DIRS),-L$(librarydir)) \
 		$(foreach library,$(LIBRARIES),-l$(library))
@@ -282,7 +282,7 @@ $(BUILD_DIR)/.linked:
 $(ALL_BUILD_DIRS): | $(BUILD_DIR_LINK)
 	@ mkdir -p $@
 
-$(FULL_BIN_NAME): $(OBJS) 
+$(FULL_BIN_NAME): $(OBJS)
 		$(CXX) -o $@ $(OBJS) $(LINKFLAGS) $(LDFLAGS)
 
 $(BUILD_DIR)/%.o: %.cpp | $(ALL_BUILD_DIRS)
