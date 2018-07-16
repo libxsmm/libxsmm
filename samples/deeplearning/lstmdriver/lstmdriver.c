@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2018, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -317,7 +317,7 @@ int main(int argc, char* argv[])
   const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
 
   const char *const env_check = getenv("CHECK");
-  const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
+  const double check = LIBXSMM_ABS(0 == env_check ? 0/*disabled by default*/ : atof(env_check));
 
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads(); /* number of threads */
