@@ -101,7 +101,7 @@ LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per
     barrier->cores = (internal_sync_core_tag**)libxsmm_aligned_malloc(
       barrier->ncores * sizeof(internal_sync_core_tag*), LIBXSMM_CACHELINE);
     barrier->threads_waiting = barrier->nthreads; /* atomic */
-    barrier->init_done = 0; /* false */    
+    barrier->init_done = 0; /* false */
   }
   else
 #endif
@@ -191,7 +191,7 @@ LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
     }
     else {
       while (2 != barrier->init_done);
-    }    
+    }
   }
 #endif
 }
