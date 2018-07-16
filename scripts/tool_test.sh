@@ -48,24 +48,23 @@ WC=$(which wc 2>/dev/null)
 RM=$(which rm 2>/dev/null)
 CP=$(which cp 2>/dev/null)
 
-if [ "" != "${WGET}" ] && [ "" != "${BUILDKITE_ORGANIZATION_SLUG}" ] && [ "" != "${BUILDKITE_PIPELINE_SLUG}" ]; then
-  echo "Debug: begin"
-  if [ "" != "${BUILDKITE_AGENT_ACCESS_TOKEN}" ]; then
-    echo "DEBUG: access token available"
-  fi
-  echo "Debug: previous build commit"
-  ${WGET} -qO- https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN} \
-  | ${SED} -n '0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p'
-  echo "Debug: end"
-fi
-
 MKTEMP=${HERE}/../.mktmp.sh
 FASTCI=$2
 
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
-REVSTART="HEAD"
-REVEND="HEAD^"
+
+if [ "" != "${WGET}" ] && \
+   [ "" != "${BUILDKITE_ORGANIZATION_SLUG}" ] && \
+   [ "" != "${BUILDKITE_PIPELINE_SLUG}" ] && \
+   [ "" != "${BUILDKITE_AGENT_ACCESS_TOKEN}" ];
+then
+  REVSTART=$(${WGET} -qO- \
+  https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN} \
+  | ${SED} -n '/ *\"state\": \"passed\"/,/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
+else
+  REVSTART="HEAD^"
+fi
 
 if [ "" = "${FULLCI}" ] || [ "0" = "${FULLCI}" ]; then
   FULLCI="\[full ci\]"
@@ -78,13 +77,13 @@ then
   # check if full tests are triggered (allows to skip the detailed investigation)
   if [ "webhook" = "${BUILDKITE_SOURCE}" ] && \
      [ "" != "${FASTCI}" ] && [ -e ${FASTCI} ] && [ "" != "${GIT}" ] && [ "1" != "${FULLCI}" ] && \
-     [ "" = "$(${GIT} log ${REVSTART}...${REVEND} 2>/dev/null | ${GREP} -e "${FULLCI}")" ];
+     [ "" = "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "${FULLCI}")" ];
   then
     # transform wild-card patterns to regular expressions
     PATTERNS="$(${SED} -e 's/\./\\./g' -e 's/\*/..*/g' -e 's/?/./g' -e 's/$/\$/g' ${FASTCI} 2>/dev/null)"
     DOTESTS=0
     if [ "" != "${PATTERNS}" ]; then
-      for FILENAME in $(${GIT} diff --name-only ${REVSTART} ${REVEND} 2>/dev/null); do
+      for FILENAME in $(${GIT} diff --name-only ${REVSTART} HEAD 2>/dev/null); do
         # check if the file is supposed to impact a build (source code or script)
         for PATTERN in ${PATTERNS}; do
           MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
