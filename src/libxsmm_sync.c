@@ -87,12 +87,11 @@ struct LIBXSMM_RETARGETABLE libxsmm_barrier {
 
 LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per_core)
 {
-  libxsmm_barrier *const barrier = (libxsmm_barrier*)libxsmm_aligned_malloc(
-    sizeof(libxsmm_barrier), LIBXSMM_CACHELINE);
+  libxsmm_barrier *const barrier = (libxsmm_barrier*)malloc(sizeof(libxsmm_barrier));
 #if defined(LIBXSMM_NO_SYNC)
   LIBXSMM_UNUSED(ncores); LIBXSMM_UNUSED(nthreads_per_core);
 #else
-  if (1 < ncores && ncores <= nthreads_per_core) {
+  if (NULL != barrier && 1 < ncores && 1 <= nthreads_per_core) {
     barrier->ncores = ncores;
     barrier->ncores_log2 = LIBXSMM_LOG2((ncores << 1) - 1);
     barrier->nthreads_per_core = nthreads_per_core;
@@ -106,7 +105,7 @@ LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per
   }
   else
 #endif
-  {
+  if (NULL != barrier) {
     barrier->nthreads = 1;
   }
   return barrier;
@@ -115,8 +114,10 @@ LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per
 
 LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
 {
-#if !defined(LIBXSMM_NO_SYNC)
-  if (1 < barrier->nthreads) {
+#if defined(LIBXSMM_NO_SYNC)
+  LIBXSMM_UNUSED(barrier); LIBXSMM_UNUSED(tid);
+#else
+  if (NULL != barrier && 1 < barrier->nthreads) {
     const int cid = tid / barrier->nthreads_per_core; /* this thread's core ID */
     internal_sync_core_tag* core = 0;
     int i;
@@ -192,8 +193,6 @@ LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
       while (2 != barrier->init_done);
     }    
   }
-#else
-  LIBXSMM_UNUSED(barrier); LIBXSMM_UNUSED(tid);
 #endif
 }
 
@@ -201,8 +200,10 @@ LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
 LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
 void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
 {
-#if !defined(LIBXSMM_NO_SYNC)
-  if (1 < barrier->nthreads) {
+#if defined(LIBXSMM_NO_SYNC)
+  LIBXSMM_UNUSED(barrier); LIBXSMM_UNUSED(tid);
+#else
+  if (NULL != barrier && 1 < barrier->nthreads) {
     internal_sync_thread_tag *const thread = barrier->threads[tid];
     internal_sync_core_tag *const core = thread->core;
 
@@ -271,8 +272,6 @@ void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
       }
     }
   }
-#else
-  LIBXSMM_UNUSED(barrier); LIBXSMM_UNUSED(tid);
 #endif
 }
 
@@ -280,7 +279,7 @@ void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
 LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier)
 {
 #if !defined(LIBXSMM_NO_SYNC)
-  if (1 < barrier->nthreads) {
+  if (NULL != barrier && 1 < barrier->nthreads) {
     if (2 == barrier->init_done) {
       int i;
       for (i = 0; i < barrier->ncores; ++i) {
@@ -300,7 +299,7 @@ LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier)
     libxsmm_free(barrier->cores);
   }
 #endif
-  libxsmm_free(barrier);
+  free((libxsmm_barrier*)barrier);
 }
 
 
