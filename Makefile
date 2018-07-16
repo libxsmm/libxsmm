@@ -984,7 +984,7 @@ endif
 
 .PHONY: samples
 samples: lib_hst
-	@find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile | grep -v /gxm/ | grep -v /lstmcell/ | grep -v /lstmdriver/ | grep -v /rnndriver/ | grep -v /pyfr/ \
+	@find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile | grep -v /gxm/ | grep -v /lstmdriver/ | grep -v /rnndriver/ | grep -v /pyfr/ \
 		$(patsubst %, | grep -v /%/,$^) | xargs -I {} $(FLOCK) {} "$(MAKE) DEPSTATIC=$(STATIC)"
 
 .PHONY: cp2k
