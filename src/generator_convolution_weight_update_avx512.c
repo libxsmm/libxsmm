@@ -1337,7 +1337,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
                   l_disp,
                   i_conv_kernel_config->vector_name,
                   3, 0, 0 );
-
+            
               /* vpslld  */
               libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
                   i_conv_kernel_config->instruction_set,
@@ -1600,6 +1600,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
     step_size = 1;
     use_lp_kernel = 0;
   } else if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) || i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_BF16)  {
+    /* @TODO this needs to be fixed */
     l_compute_instr = LIBXSMM_X86_INSTR_VP4DPWSSDS;
     step_size = 2;
     use_lp_kernel = 1;
@@ -1791,7 +1792,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
           input_reg_to_use = i_gp_reg_mapping->gp_reg_input;
         }
 
-        if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32) {
+        if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 ) {
           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
               i_conv_kernel_config->instruction_set,
               l_compute_instr,
@@ -1915,7 +1916,6 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
           }
         } else {
           /* shouldn't happen */
-
         }
 
         if (l_k_1+lookahead < i_conv_desc->ofh_rb ) {
