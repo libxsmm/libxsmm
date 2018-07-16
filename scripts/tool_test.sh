@@ -49,11 +49,14 @@ RM=$(which rm 2>/dev/null)
 CP=$(which cp 2>/dev/null)
 
 if [ "" != "${WGET}" ] && [ "" != "${BUILDKITE_ORGANIZATION_SLUG}" ] && [ "" != "${BUILDKITE_PIPELINE_SLUG}" ]; then
+  echo "Debug: begin"
+  if [ "" != "${BUILDKITE_AGENT_ACCESS_TOKEN}" ]; then
+    echo "DEBUG: access token available"
+  fi
   echo "Debug: previous build commit"
-  ${WGET} -qO- https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds \
+  ${WGET} -qO- https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN} \
   | ${SED} -n '0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p'
-else
-  echo "Debug: failed"
+  echo "Debug: end"
 fi
 
 MKTEMP=${HERE}/../.mktmp.sh
