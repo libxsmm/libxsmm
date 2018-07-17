@@ -624,6 +624,13 @@
 #   define LIBXSMM_EXPECT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) == (EXPR))
 # endif
 #endif
+#if !defined(LIBXSMM_EXPECT_NOT)
+# if defined(NDEBUG)
+#   define LIBXSMM_EXPECT_NOT(RESULT, EXPR) (EXPR)
+# else
+#   define LIBXSMM_EXPECT_NOT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) != (EXPR))
+# endif
+#endif
 #include <stddef.h>
 #include <stdint.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
