@@ -34,18 +34,15 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-# include <mkl_service.h>
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 #if defined(_OPENMP)
 # include <omp.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
 #endif
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
@@ -58,28 +55,6 @@ LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
 #endif
   for (i = 0; i < (int)size; ++i) {
     buf[i] = 0.0f;
-  }
-}
-
-
-LIBXSMM_INLINE void matinit(int seed, float * dst,
-  int nrows, int ncols, int ld, double scale)
-{
-  const double seed1 = scale * (seed + 1);
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < ncols; ++i) {
-    int j = 0;
-    for (; j < nrows; ++j) {
-      const int k = i * ld + j;
-      dst[k] = (float)(seed1 / (k + 1));
-    }
-    for (; j < ld; ++j) {
-      const int k = i * ld + j;
-      dst[k] = (float)seed;
-    }
   }
 }
 
@@ -111,12 +86,11 @@ LIBXSMM_INLINE void matrix_eltwise_mult(int size, float *a, float *b, float *c)
 LIBXSMM_INLINE void matrix_sigmoid(int size, float *src, float *dst)
 {
   int i;
-  float exp_value;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    exp_value = (float)exp((double) -src[i]);
+    const float exp_value = (float)exp((double) -src[i]);
     dst[i] = 1 / (1 + exp_value);
   }
 }
@@ -149,14 +123,12 @@ LIBXSMM_INLINE void matrix_relu(int size, float *src, float *dst)
 LIBXSMM_INLINE void matrix_sigmoid_inverse(int size, float *src, float *dst)
 {
   int i;
-  float exp_value;
-  float sig_exp;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    exp_value = (float)exp((double) -src[i]);
-    sig_exp = 1 / (1 + exp_value);
+    const float exp_value = (float)exp((double) -src[i]);
+    const float sig_exp = 1 / (1 + exp_value);
     dst[i] = (1 - sig_exp)*sig_exp;
   }
 }
@@ -165,12 +137,11 @@ LIBXSMM_INLINE void matrix_sigmoid_inverse(int size, float *src, float *dst)
 LIBXSMM_INLINE void matrix_tanh_inverse(int size, float *src, float *dst)
 {
   int i;
-  float tanh_value;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    tanh_value = (float)tanh((double)src[i]);
+    const float tanh_value = (float)tanh((double)src[i]);
     dst[i] = 1 - (tanh_value * tanh_value);
   }
 }
@@ -457,24 +428,24 @@ int main(int argc, char* argv[])
 
   /* initialize data */
   if (pass == 0) {
-    matinit(42, wgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT(float, 42, wgold, m, k, m, 1.0);
     for (it = 0; it < t; ++it) {
-      matinit(24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
     }
-    matinit(42, ugold, m, m, m, 1.0);
-    matinit(24, hgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT(float, 42, ugold, m, m, m, 1.0);
+    LIBXSMM_MATINIT(float, 24, hgold, m, n, m, 1.0);
     matrix_copy(m*n, hgold, hgold_temp); /* Required because hgold may get overwritten */
     zero_buf(z1gold, m*n);
     zero_buf(z2gold, m*n);
     zero_buf(zgold, m*n);
   } else {
-    matinit(42, ugold, m, m, m, 1.0);
-    matinit(42, wgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT(float, 42, ugold, m, m, m, 1.0);
+    LIBXSMM_MATINIT(float, 42, wgold, m, k, m, 1.0);
     for (it = 0; it < t; ++it) {
-      matinit(24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 1.0);
-      matinit(24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), m, n, m, 1.0);
-      matinit(24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
-      matinit(24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 1.0);
     }
     zero_buf(deltagoldt, m*n*t);
     zero_buf(djdugold, m*m);
@@ -908,7 +879,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel  private(i)
+#     pragma omp parallel private(i)
 #endif
       {
 #if defined(_OPENMP)
@@ -939,7 +910,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel  private(i)
+#     pragma omp parallel private(i)
 #endif
       {
 #if defined(_OPENMP)
@@ -980,7 +951,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel  private(i)
+#     pragma omp parallel private(i)
 #endif
       {
 #if defined(_OPENMP)
@@ -1027,7 +998,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel  private(i)
+#     pragma omp parallel private(i)
 #endif
       {
 #if defined(_OPENMP)
