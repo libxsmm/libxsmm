@@ -138,7 +138,6 @@
     <ClInclude Include="..\src\template\libxsmm_config.h">
       <Filter>src\template</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\packed_trsm_dmacros.h" />
     <ClInclude Include="..\src\libxsmm_dnn_elementwise.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -847,14 +846,16 @@
       <Filter>scripts</Filter>
     </None>
     <None Include="..\.flock.sh" />
-    <None Include="..\.fullci" />
-    <None Include="..\.test-dnn.yml" />
     <None Include="..\scripts\tool_test.sh">
       <Filter>scripts</Filter>
     </None>
     <None Include="..\src\template\libxsmm.f">
       <Filter>src\template</Filter>
     </None>
+    <None Include="..\.test-dnn-fullci" />
+    <None Include="..\.test-rnn.yml" />
+    <None Include="..\.test-rnn-fullci" />
+    <None Include="..\.test-dnn.yml" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />
