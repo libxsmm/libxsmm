@@ -1514,7 +1514,7 @@ else ifneq (0,$(BLAS)) # generic
       endif
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
-    OPENBLAS = $(if $(BLASLIBFILE),1,0)
+    OPENBLAS := $(if $(BLASLIBFILE),1,0)
 
     ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
@@ -1544,7 +1544,7 @@ else ifneq (0,$(BLAS)) # generic
       BLAS_LDFLAGS += -lblas
     endif
     ifeq (0,$(OPENBLAS)) # BLAS (reference)
-      ifneq (0,$(STATIC))
+      ifneq (0,$(DEPSTATIC))
       ifneq (,$(LIBGFORTRAN))
         BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
       endif
