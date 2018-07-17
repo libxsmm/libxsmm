@@ -472,6 +472,7 @@ unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
   return libxsmm_gemm_diffn_avx2(reference, descs, hint, ndescs, nbytes);
 # endif
 #else
+# if !defined(LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS) || !defined(NDEBUG)
   { static int error_once = 0;
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -479,6 +480,7 @@ unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
       fprintf(stderr, "LIBXSMM WARNING: unable to enter AVX-512 code path!\n");
     }
   }
+# endif
   return libxsmm_gemm_diffn_avx2(reference, descs, hint, ndescs, nbytes);
 #endif
 }
