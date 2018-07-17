@@ -1,4 +1,0 @@
-samples/deeplearning/*
-src/template/*.tpl.c
-src/libxsmm_dnn*.c
-include/*.h

@@ -1,0 +1,6 @@
+script:
+  - make -e ${MAKEJ} && cd samples/deeplearning/rnndriver && make -e ${MAKEJ} &&
+   (echo; echo "--- TEST RNN"; CHECK=1 ./rnndriver.sh)
+
+   - make -e ${MAKEJ} && cd samples/deeplearning/lstmdriver && make -e ${MAKEJ} &&
+   (echo; echo "--- TEST LSTM"; CHECK=1 ./lstmdriver.sh)

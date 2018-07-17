@@ -62,7 +62,8 @@ then
   REVSTART=$(${WGET} -qO- \
   https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN} \
   | ${SED} -n '/ *\"state\": \"passed\"/,/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
-else
+fi
+if [ "" = "${REVSTART}" ]; then
   REVSTART="HEAD^"
 fi
 
@@ -173,6 +174,16 @@ then
   if [ "" = "${TESTSET}" ]; then
     TESTSET=travis
   fi
+  if [ -e .${TESTSET}.yml ]; then
+    TESTSETFILE=.${TESTSET}.yml
+  elif [ -e ${TESTSET}.yml ]; then
+    TESTSETFILE=${TESTSET}.yml
+  elif [ -e ${TESTSET} ]; then
+    TESTSETFILE=${TESTSET}
+  else
+    ${ECHO} "ERROR: Cannot find file with test set!"
+    exit 1
+  fi
 
   # setup batch execution
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
@@ -200,7 +211,7 @@ then
 
   RESULT=0
   while TEST=$(eval " \
-    ${SED} -n -e '/^ *script: *$/,\$p' ${HERE}/../.${TESTSET}.yml | ${SED} -e '/^ *script: *$/d' | \
+    ${SED} -n -e '/^ *script: *$/,\$p' ${HERE}/../${TESTSETFILE} | ${SED} -e '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
     ${SED} -e 's/^ *- *//' -e 's/^  *//' | ${TR} '\n' ' ' | \
     ${SED} -e 's/  *$//'") && [ "" != "${TEST}" ];
