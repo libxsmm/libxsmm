@@ -635,8 +635,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
       handle->code_fwd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
     } else {
-      descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-      handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
+      if ( handle->n_variants == 1 ) {
+        descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
+        handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
+      }
       if (handle->padding_flag == 1) {
         handle->matcopy_fwd[0].xmatcopy = libxsmm_dispatch_mcopy(&matcopy_descriptor);
       }
@@ -662,7 +664,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     memset( handle->ofh_fwd_end, 0, handle->desc.threads * sizeof(int) );
 
     descriptor.n_variants = handle->n_variants;
-    if ( handle->n_variants == 2) {
+    if ( handle->n_variants == 2 ) {
       descriptor.ofh_padded = handle->ofhp;
       descriptor.ofw_padded = handle->ofwp;
       descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
@@ -1046,6 +1048,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
     { /* compute kernel stream overhead */
       int ks_overhead = 0;
+      int i = 0;
       ks_overhead += handle->desc.threads*5*sizeof(int);
       ks_overhead += handle->desc.threads*2*sizeof(int*);
       ks_overhead += handle->desc.threads*sizeof(char*);
