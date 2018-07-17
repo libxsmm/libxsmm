@@ -6,7 +6,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- TEST ResNet-50 (format=${FORMAT} pad=${PAD} mb=${MB} nt=${NT})";
+          echo; echo "--- TEST ResNet-50 (format=${FORMAT} pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_resnet50.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -21,7 +21,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- TEST AlexNet (format=${FORMAT} pad=${PAD} mb=${MB} nt=${NT})";
+          echo; echo "--- TEST AlexNet (format=${FORMAT} pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_alexnet.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -36,7 +36,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- TEST Overfeat (format=${FORMAT} pad=${PAD} mb=${MB} nt=${NT})";
+          echo; echo "--- TEST Overfeat (format=${FORMAT} pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_overfeat.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -51,7 +51,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- TEST GoogleNet-v1 (format=${FORMAT} pad=${PAD} mb=${MB} nt=${NT})";
+          echo; echo "--- TEST GoogleNet-v1 (format=${FORMAT} pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_googlenetv1.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -66,7 +66,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- TEST GoogleNet-v3 (format=${FORMAT} pad=${PAD} mb=${MB} nt=${NT})";
+          echo; echo "--- TEST GoogleNet-v3 (format=${FORMAT} pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_googlenetv3.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -81,7 +81,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- TEST dcGAN (format=${FORMAT} pad=${PAD} mb=${MB} nt=${NT})";
+          echo; echo "--- TEST dcGAN (format=${FORMAT} pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_dcgan.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
@@ -96,7 +96,7 @@ script:
         MB=$(echo ${MB_NT} | cut -d_ -f1);
         OMP_NUM_THREADS=$(echo ${MB_NT} | cut -d_ -f2);
         for PAD in 0 1; do
-          echo; echo "--- TEST VGGa (format=${FORMAT} pad=${PAD} mb=${MB} nt=${NT})";
+          echo; echo "--- TEST VGGa (format=${FORMAT} pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 F ${FORMAT} ${PAD} &&
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 B ${FORMAT} ${PAD} &&
           ./run_vgga.sh ${MB} ${ITERS} -1 f32 U ${FORMAT} ${PAD};
