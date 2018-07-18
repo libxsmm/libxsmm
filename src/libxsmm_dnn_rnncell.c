@@ -50,7 +50,6 @@ double Gbl_duration_input = 0., Gbl_duration_recur = 0., Gbl_duration_eltwise = 
 LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_desc rnncell_desc, libxsmm_dnn_err_t* status)
 {
   libxsmm_dnn_rnncell* handle = 0;
-  *status = LIBXSMM_DNN_SUCCESS;
   const char *const env_b_m1 = getenv("LIBXSMM_BGEMM_M1");
   const int b_m1 = (0 == env_b_m1) ? 1 : atoi(env_b_m1);
   const char *const env_b_n1 = getenv("LIBXSMM_BGEMM_N1");
@@ -71,6 +70,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
 
   handle = (libxsmm_dnn_rnncell*)malloc(sizeof(libxsmm_dnn_rnncell));
   if (0 != handle) {
+    *status = LIBXSMM_DNN_SUCCESS;
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
     memset(handle, 0, sizeof(*handle));
     /* initialize known handle components */
