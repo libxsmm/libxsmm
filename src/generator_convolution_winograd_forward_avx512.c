@@ -215,7 +215,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                           offset,
                                           l_micro_kernel_config.vector_name,
                                           reg,
-                                          0,
+                                          0, 1,
                                           0 );
       }
     }
@@ -258,7 +258,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                         offset,
                                         l_micro_kernel_config.vector_name,
                                         qindex,
-                                        0,
+                                        0, 1,
                                         0 );
     }
 
@@ -279,7 +279,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                             offset,
                                             l_micro_kernel_config.vector_name,
                                             wreg*qfac + qindex,
-                                            0,
+                                            0, 1,
                                             0 );
         }
       }
@@ -438,7 +438,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                             offset,
                                             l_micro_kernel_config.vector_name,
                                             reg,
-                                            0,
+                                            0, 0,
                                             1 ); /* store */
         }
         else {
@@ -451,7 +451,7 @@ void libxsmm_generator_convolution_winograd_forward_avx512( libxsmm_generated_co
                                             offset,
                                             l_micro_kernel_config.vector_name,
                                             reg,
-                                            0,
+                                            0, 0,
                                             1 ); /* store */
         }
       }

@@ -807,7 +807,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size),
                                         i_micro_kernel_config->vector_name,
-                                        l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->use_masking_a_c, 0 );
+                                        l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->use_masking_a_c, 1, 0 );
         }
 #if 0
         if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_CL2 ||
@@ -917,7 +917,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       0,
                                       i_micro_kernel_config->vector_name, 0,
-                                      0, 0 );
+                                      0, 1, 0 );
     /* loop over the accumulator, convert and scale */
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
@@ -965,7 +965,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
                                     LIBXSMM_X86_GP_REG_UNDEF, 0,
                                     ((l_n * i_xgemm_desc->ldc) + (l_m * (i_micro_kernel_config->vector_length))) * (i_micro_kernel_config->datatype_size),
                                     i_micro_kernel_config->vector_name,
-                                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->use_masking_a_c, 1 );
+                                    l_vec_reg_acc_start + l_m + (l_m_blocking * l_n), i_micro_kernel_config->use_masking_a_c, 0, 1 );
     }
 
     if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_BL2_VIA_C ||

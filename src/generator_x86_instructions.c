@@ -323,7 +323,8 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const int               i_displacement,
                                        const char              i_vector_name,
                                        const unsigned int      i_vec_reg_number_0,
-                                       const unsigned int      i_use_masking,
+                                       const unsigned int      i_mask_reg_number,
+                                       const unsigned int      i_use_zero_masking,
                                        const unsigned int      i_is_store )
 {
 /* Greg asks: do we still need this condition? It seems to me this works now
@@ -363,9 +364,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     int l_insert_extra_byte = 0;
     int l_fpadj = 0;
 
-    int i_mask_reg_number = i_use_masking; /* change if you don't want k1 */
-
-    if ( (i_vector_name != 'z') && (i_use_masking!=0) )
+    if ( (i_vector_name != 'z') && (i_mask_reg_number !=0) )
     {
        fprintf(stderr, "libxsmm_instruction_vec_move: Masking is only enabled with zmm registers!\n");
        exit(-1);
@@ -743,7 +742,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
        l_wow -= 0x20;
     }
 
-    if ( i_use_masking != 0 ) l_maskingoff = i_mask_reg_number;
+    if ( i_mask_reg_number != 0 ) l_maskingoff = i_mask_reg_number;
 
     if ( l_num == 0 ) l_vregoffset = 0x90;
     else if ( l_num == 1 ) { l_vregoffset = 0x10; l_vregoffset2 = -0x80; }
@@ -869,42 +868,57 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     int l_code_length = 0;
     char l_gp_reg_base_name[4];
     char l_instr_name[16];
+    char l_masking_type[16];
 
     libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name, 15 );
+
+    if ( i_use_zero_masking == 0 ) {
+      if ( io_generated_code->code_type == 0 ) {
+        LIBXSMM_SNPRINTF(l_masking_type, 16, "" );
+      } else {
+        LIBXSMM_SNPRINTF(l_masking_type, 16, "" );
+      }
+    } else {
+      if ( io_generated_code->code_type == 0 ) {
+        LIBXSMM_SNPRINTF(l_masking_type, 16, "%%{z%%}" );
+      } else {
+        LIBXSMM_SNPRINTF(l_masking_type, 16, "{z}" );
+      }
+    }
 
     if ( (i_instruction_set == LIBXSMM_X86_AVX512_MIC   ||
           i_instruction_set == LIBXSMM_X86_AVX512_CORE  ||
           i_instruction_set == LIBXSMM_X86_AVX512_KNM   ||
           i_instruction_set == LIBXSMM_X86_AVX512_ICL  ) &&
-         (i_use_masking != 0) ) {
+         (i_mask_reg_number != 0) ) {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%u%%{%%%%k%i%%}%%{z%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%u%%{%%%%k%i%%}%s\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, i_mask_reg_number, l_masking_type );
         } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%u{%%k%i}{z}\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%u{%%k%i}%s\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, i_mask_reg_number, l_masking_type );
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %i(%%%%%s)%%{%%%%k%i%%}%s\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, i_mask_reg_number, l_masking_type );
         } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%u, %i(%%%s) {%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%u, %i(%%%s) {%%k%i}%s\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, i_mask_reg_number, l_masking_type );
         }
       }
-    } else if ( (i_instruction_set == LIBXSMM_X86_IMCI) && (i_use_masking != 0) ) {
+    } else if ( (i_instruction_set == LIBXSMM_X86_IMCI) && (i_mask_reg_number != 0) ) {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%u%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%u%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, i_mask_reg_number );
         } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%u{%%k%i}\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%u{%%k%i}\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vector_name, i_vec_reg_number_0, i_mask_reg_number );
         }
       } else {
         if ( io_generated_code->code_type == 0 ) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %i(%%%%%s)%%{%%%%k%i%%}\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, i_mask_reg_number );
         } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%u, %i(%%%s) {%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, LIBXSMM_X86_IMCI_AVX512_MASK );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%u, %i(%%%s) {%%k%i}\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_displacement, l_gp_reg_base_name, i_mask_reg_number );
         }
       }
     } else {
@@ -1761,7 +1775,8 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
                                                    const unsigned int      i_vec_reg_number_1,
                                                    const unsigned int      i_vec_reg_number_2,
                                                    const unsigned int      i_immediate,
-                                                   const unsigned int      i_mask_reg_number )
+                                                   const unsigned int      i_mask_reg_number,
+                                                   const unsigned int      i_use_zero_masking )
 {
   LIBXSMM_UNUSED(i_immediate/*TODO*/);
   /* @TODO add checks in debug mode */
@@ -1883,21 +1898,36 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
     int l_max_code_length = 511;
     int l_code_length = 0;
     char l_instr_name[16];
+    char l_masking[16];
+
     libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name, 15 );
 
-    /* build vXYZpd/ps/sd/ss instruction pure register use*/
-    if ( i_instruction_set != LIBXSMM_X86_SSE3 ) {
+    if ( i_use_zero_masking == 0 ) {
       if ( io_generated_code->code_type == 0 ) {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+        LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}", i_mask_reg_number );
       } else {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%u, %%%cmm%u, %%%cmm%u\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2 );
+        LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}", i_mask_reg_number );
       }
     } else {
       if ( io_generated_code->code_type == 0 ) {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1);
+        LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}%%{z%%}", i_mask_reg_number );
       } else {
-        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%u, %%%cmm%u\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+        LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}{z}", i_mask_reg_number );
       }
+    }
+
+    /* build vXYZpd/ps/sd/ss instruction pure register use*/
+    if ( i_instruction_set == LIBXSMM_X86_AVX512_CORE ||
+         i_instruction_set == LIBXSMM_X86_AVX512_MIC  ||
+         i_instruction_set == LIBXSMM_X86_AVX512_ICL  ||
+         i_instruction_set == LIBXSMM_X86_AVX512_KNM ) {
+      if ( io_generated_code->code_type == 0 ) {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %%%%%cmm%u, %%%%%cmm%u%s\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2, l_masking );
+      } else {
+        l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %%%cmm%u, %%%cmm%u, %%%cmm%u%s\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2, l_masking );
+      }
+    } else {
+      /* This is an error */
     }
     libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
   }
@@ -2778,7 +2808,8 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
                                                     const unsigned int      i_vec_reg_number_0,
                                                     const unsigned int      i_vec_reg_number_1,
                                                     const unsigned int      i_immediate,
-                                                    const unsigned int      i_mask_reg_number )
+                                                    const unsigned int      i_mask_reg_number,
+                                                    const unsigned int      i_use_zero_masking )
 {
   /* @TODO add checks in debug mode */
   if ( (i_instruction_set != LIBXSMM_X86_IMCI)        &&
@@ -2957,6 +2988,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
     char l_gp_reg_idx[4];
     char l_instr_name[16];
     char l_broadcast[8];
+    char l_masking[16];
     unsigned int l_single_precision = libxsmm_is_x86_vec_instr_single_precision( i_vec_instr );
 
     libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base, 3 );
@@ -2968,34 +3000,48 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
       LIBXSMM_SNPRINTF( l_broadcast, 7, "1to16" );
     }
 
+    if ( i_use_zero_masking == 0 ) {
+      if ( io_generated_code->code_type == 0 ) {
+        LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}", i_mask_reg_number );
+      } else {
+        LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}", i_mask_reg_number );
+      }
+    } else {
+      if ( io_generated_code->code_type == 0 ) {
+        LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}%%{z%%}", i_mask_reg_number );
+      } else {
+        LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}{z}", i_mask_reg_number );
+      }
+    }
+
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
     if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
       if ( io_generated_code->code_type == 0 ) {
         if (i_use_broadcast != 0) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s)%%{%s%%}, %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s)%%{%s%%}, %%%%%cmm%u, %%%%%cmm%u%s\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, l_masking );
         } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s), %%%%%cmm%u, %%%%%cmm%u%s\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, l_masking );
         }
       } else {
         if (i_use_broadcast != 0) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s) {%s}, %%%cmm%u, %%%cmm%u\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s) {%s}, %%%cmm%u, %%%cmm%u%s\n", l_instr_name, i_displacement, l_gp_reg_base, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, l_masking );
         } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%u, %%%cmm%u\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s), %%%cmm%u, %%%cmm%u%s\n", l_instr_name, i_displacement, l_gp_reg_base, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, l_masking );
         }
       }
     } else {
       libxsmm_get_x86_gp_reg_name( i_gp_reg_idx, l_gp_reg_idx, 3 );
       if ( io_generated_code->code_type == 0 ) {
         if (i_use_broadcast != 0) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%u)%%{%s%%}, %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%u)%%{%s%%}, %%%%%cmm%u, %%%%%cmm%u%s\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, l_masking );
         } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%u), %%%%%cmm%u, %%%%%cmm%u\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%%s,%u), %%%%%cmm%u, %%%%%cmm%u%s\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, l_masking );
         }
       } else {
         if (i_use_broadcast != 0) {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%%s,%u) {%s}, %%%cmm%u, %%%cmm%u\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%%s,%u) {%s}, %%%cmm%u, %%%cmm%u%s\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, l_broadcast, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, l_masking );
         } else {
-          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%%s,%u), %%%cmm%u, %%%cmm%u\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1 );
+          l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       %s %i(%%%s,%%%s,%u), %%%cmm%u, %%%cmm%u%s\n", l_instr_name, i_displacement, l_gp_reg_base, l_gp_reg_idx, i_scale, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, l_masking );
         }
       }
     }

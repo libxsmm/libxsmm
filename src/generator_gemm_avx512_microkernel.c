@@ -167,7 +167,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                         i_xgemm_desc->lda * l_displacement_k_a * i_micro_kernel_config->datatype_size,
                                         i_micro_kernel_config->vector_name,
                                         0,
-                                        i_micro_kernel_config->use_masking_a_c, 0 );
+                                        i_micro_kernel_config->use_masking_a_c, 1, 0 );
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
            i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
@@ -195,7 +195,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                           i_xgemm_desc->lda * l_displacement_k_a * i_micro_kernel_config->datatype_size,
                                           i_micro_kernel_config->vector_name,
                                           1,
-                                          i_micro_kernel_config->use_masking_a_c, 0 );
+                                          i_micro_kernel_config->use_masking_a_c, 1, 0 );
         /* current A prefetch, next 8 rows for the current column */
         if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
              i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
@@ -224,7 +224,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                         i_xgemm_desc->lda * l_displacement_k_a * i_micro_kernel_config->datatype_size,
                                         i_micro_kernel_config->vector_name,
                                         (l_k+1)%2,
-                                        i_micro_kernel_config->use_masking_a_c, 0 );
+                                        i_micro_kernel_config->use_masking_a_c, 1, 0 );
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
            i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
@@ -341,7 +341,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                             l_b_idx, l_scale,
                                             l_disp,
                                             i_micro_kernel_config->vector_name,
-                                            3, 0, 0 );
+                                            3, 0, 1, 0 );
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                             i_micro_kernel_config->instruction_set,
                                             LIBXSMM_X86_INSTR_VPMADDWD,
@@ -649,7 +649,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                             l_b_idx, l_scale,
                                             l_disp,
                                             i_micro_kernel_config->vector_name,
-                                            3, 0, 0 );
+                                            3, 0, 1, 0 );
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                             i_micro_kernel_config->instruction_set,
                                             LIBXSMM_X86_INSTR_VPMADDWD,
@@ -861,7 +861,7 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
                                         i_xgemm_desc->lda * l_displacement_k_a * i_micro_kernel_config->datatype_size,
                                         i_micro_kernel_config->vector_name,
                                         l_z,
-                                        i_micro_kernel_config->use_masking_a_c, 0 );
+                                        i_micro_kernel_config->use_masking_a_c, 1, 0 );
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
            i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD) {
@@ -1138,7 +1138,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
                                     i_xgemm_desc->lda * (l_k+0) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     0,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction,
@@ -1147,7 +1147,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
                                     i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     1,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
     } else if ( l_k == 1 ) {
       /* load A, zmm2 + 3 */
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -1158,7 +1158,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
                                     i_xgemm_desc->lda * (l_k+1) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     2,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction,
@@ -1167,7 +1167,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
                                     i_xgemm_desc->lda * (l_k+2) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     3,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
     } else if ( l_k == 2 ) {
       /* load A, zmm4 + 5 */
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -1178,7 +1178,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
                                     i_xgemm_desc->lda * (l_k+2) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     4,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction,
@@ -1187,7 +1187,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
                                     i_xgemm_desc->lda * (l_k+3) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     5,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
     } else if ( l_k == 3 ) {
       /* load A, zmm6 + 7 */
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -1198,7 +1198,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
                                     i_xgemm_desc->lda * (l_k+3) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     6,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
       libxsmm_x86_instruction_vec_move( io_generated_code,
                                     i_micro_kernel_config->instruction_set,
                                     i_micro_kernel_config->a_vmove_instruction,
@@ -1207,7 +1207,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
                                     i_xgemm_desc->lda * (l_k+4) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     7,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
     } else if ( l_k < (i_k_blocking - 4) ) {
       /* pipelined load of A, one k iteration ahead */
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -1218,7 +1218,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code* 
                                     i_xgemm_desc->lda * (l_k+4) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     (l_k+4)%8,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
     }
 
     /* current A prefetch, next 8 rows for the current column */
@@ -1353,7 +1353,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
                                     i_xgemm_desc->lda * (l_displacement_k_a) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     0,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
 #if 0
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
@@ -1382,7 +1382,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
                                     i_xgemm_desc->lda * (l_displacement_k_a) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     1,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
 #if 0
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
@@ -1416,7 +1416,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
                                     i_xgemm_desc->lda * (l_displacement_k_a) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     2,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
 #if 0
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
@@ -1445,7 +1445,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
                                     i_xgemm_desc->lda * (l_displacement_k_a) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     3,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
 #if 0
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
@@ -1475,7 +1475,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
                                     i_xgemm_desc->lda * (l_displacement_k_a) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     4,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
 #if 0
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
@@ -1504,7 +1504,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
                                     i_xgemm_desc->lda * (l_displacement_k_a) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     5,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
 #if 0
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
@@ -1534,7 +1534,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
                                     i_xgemm_desc->lda * (l_displacement_k_a) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     6,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
 #if 0
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
@@ -1563,7 +1563,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
                                     i_xgemm_desc->lda * (l_displacement_k_a) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     7,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
 #if 0
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||
@@ -1593,7 +1593,7 @@ void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated
                                     i_xgemm_desc->lda * (l_displacement_k_a) * i_micro_kernel_config->datatype_size,
                                     i_micro_kernel_config->vector_name,
                                     (l_k+4)%8,
-                                    i_micro_kernel_config->use_masking_a_c, 0 );
+                                    i_micro_kernel_config->use_masking_a_c, 1, 0 );
 #if 0
       /* current A prefetch, next 8 rows for the current column */
       if ( i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_AHEAD ||

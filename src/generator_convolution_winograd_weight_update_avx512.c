@@ -182,7 +182,7 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
                                       offset,
                                       l_micro_kernel_config.vector_name,
                                       urf,
-                                      0,
+                                      0, 1,
                                       0 );
     if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_ALL) == LIBXSMM_CONVOLUTION_PREFETCH_ALL) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -230,7 +230,7 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
                                       offset,
                                       l_micro_kernel_config.vector_name,
                                       l_micro_kernel_config.vector_length + qindex,
-                                      0,
+                                      0, 1,
                                       0 );
     if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_ALL) == LIBXSMM_CONVOLUTION_PREFETCH_ALL) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -373,7 +373,7 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
                                           offset,
                                           l_micro_kernel_config.vector_name,
                                           l_micro_kernel_config.vector_length + toggle*qfac + qindex,
-                                          0,
+                                          0, 1,
                                           0 );
         if ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_ALL) == LIBXSMM_CONVOLUTION_PREFETCH_ALL) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -416,7 +416,7 @@ void libxsmm_generator_convolution_winograd_weight_update_avx512( libxsmm_genera
                                       offset,
                                       l_micro_kernel_config.vector_name,
                                       urf,
-                                      0,
+                                      0, 0,
                                       1 ); /* store */
   }
 

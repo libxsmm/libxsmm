@@ -296,21 +296,21 @@ LIBXSMM_API_INLINE void gen_one_trans(
   {
     io_generated_code->code_size = i;
     /* Do instructions like: vmovups (%rdi), zmm1{%k1} */
-    if (n>0) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetA, cval, 1, reg, 0);
+    if (n>0) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetA, cval, 1, reg, 0, 0);
     /* vmovups (%rdi,%rsi,1), zmm2{%k1} */
-    if (n>1) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_lda, 1, offsetA, cval, 2, reg, 0);
+    if (n>1) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_lda, 1, offsetA, cval, 2, reg, 0, 0);
     /* vmovups (%rdi,%rsi,2), zmm3{%k1} */
-    if (n>2) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_lda, 2, offsetA, cval, 3, reg, 0);
+    if (n>2) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_lda, 2, offsetA, cval, 3, reg, 0, 0);
     /* vmovups (%rdi,%r8 ,1), zmm4{%k1} */
-    if (n>3) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_m_loop, 1, offsetA, cval, 4, reg, 0);
+    if (n>3) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_m_loop, 1, offsetA, cval, 4, reg, 0, 0);
     /* vmovups (%rdi,%rsi,4), zmm5{%k1} */
-    if (n>4) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_lda, 4, offsetA, cval, 5, reg, 0);
+    if (n>4) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_lda, 4, offsetA, cval, 5, reg, 0, 0);
     /* vmovups (%rdi,%rbx,1), zmm6{%k1} */
-    if (n>5) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, LIBXSMM_X86_GP_REG_RBX, 1, offsetA, cval, 6, reg, 0);
+    if (n>5) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, LIBXSMM_X86_GP_REG_RBX, 1, offsetA, cval, 6, reg, 0, 0);
     /* vmovups (%rdi,%r8 ,2), zmm7{%k1} */
-    if (n>6) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_m_loop, 2, offsetA, cval, 7, reg, 0);
+    if (n>6) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, i_gp_reg_mapping->gp_reg_m_loop, 2, offsetA, cval, 7, reg, 0, 0);
     /* vmovups (%rdi,%rbp,1), zmm8{%k1} */
-    if (n>7) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, LIBXSMM_X86_GP_REG_RBP, 1, offsetA, cval, 8, reg, 0);
+    if (n>7) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_a, LIBXSMM_X86_GP_REG_RBP, 1, offsetA, cval, 8, reg, 0, 0);
     i = io_generated_code->code_size;
   }
 
@@ -465,7 +465,7 @@ LIBXSMM_API_INLINE void gen_one_trans(
       {
         /* vmovups %xmm1, offsetB(%rdx) */
         io_generated_code->code_size = i;
-        libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB, 'x', 1, 0, 1);
+        libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB, 'x', 1, 0, 0, 1);
         i = io_generated_code->code_size;
       }
       if (m_nonone_border)
@@ -480,7 +480,7 @@ LIBXSMM_API_INLINE void gen_one_trans(
       {
         /* vmovups %ymm1, (%rdx) */
         io_generated_code->code_size = i;
-        libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB, 'y', 1, 0, 1);
+        libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB, 'y', 1, 0, 0, 1);
         i = io_generated_code->code_size;
       }
     }
@@ -516,21 +516,21 @@ LIBXSMM_API_INLINE void gen_one_trans(
       {
         io_generated_code->code_size = i;
         /* vmovups %ymm1, (%rdx) or xmm1 if cval=='x'*/
-        libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB, cval, 1, 0, 1);
+        libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB, cval, 1, 0, 0, 1);
         /* vmovups %ymm2, (%rdx) */
-        if (m>1) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + shiftmult*ldb, cval, 2, 0, 1);
+        if (m>1) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + shiftmult*ldb, cval, 2, 0, 0, 1);
         /* vmovups %ymm3, (%rdx) */
-        if (m>2) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 2 * shiftmult*ldb, cval, 3, 0, 1);
+        if (m>2) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 2 * shiftmult*ldb, cval, 3, 0, 0, 1);
         /* vmovups %ymm4, (%rdx) */
-        if (m>3) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 3 * shiftmult*ldb, cval, 4, 0, 1);
+        if (m>3) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 3 * shiftmult*ldb, cval, 4, 0, 0, 1);
         /* vmovups %ymm5, (%rdx) */
-        if (m>4) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 4 * shiftmult*ldb, cval, 5, 0, 1);
+        if (m>4) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 4 * shiftmult*ldb, cval, 5, 0, 0, 1);
         /* vmovups %ymm6, (%rdx) */
-        if (m>5) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 5 * shiftmult*ldb, cval, 6, 0, 1);
+        if (m>5) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 5 * shiftmult*ldb, cval, 6, 0, 0, 1);
         /* vmovups %ymm7, (%rdx) */
-        if (m>6) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 6 * shiftmult*ldb, cval, 7, 0, 1);
+        if (m>6) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 6 * shiftmult*ldb, cval, 7, 0, 0, 1);
         /* vmovups %ymm8, (%rdx) */
-        if (m>7) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 7 * shiftmult*ldb, cval, 8, 0, 1);
+        if (m>7) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 7 * shiftmult*ldb, cval, 8, 0, 0, 1);
         i = io_generated_code->code_size;
       }
       else { /* avx512 */
@@ -538,15 +538,15 @@ LIBXSMM_API_INLINE void gen_one_trans(
         if (n % REGSIZE == 0) reg = 0; else reg = 2;
         io_generated_code->code_size = i;
         /* vmovups %zmm1, offsetB(%rdx){%k2} (reg is the mask reg) */
-        if (m>0) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB, cval, 1, reg, 1);
+        if (m>0) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB, cval, 1, reg, 0, 1);
         /* vmovups %zmm2, *(%rdx){%k2} */
-        if (m>1) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 8 * ldb, cval, 2, reg, 1);
-        if (m>2) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 16 * ldb, cval, 3, reg, 1);
-        if (m>3) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 24 * ldb, cval, 4, reg, 1);
-        if (m>4) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 32 * ldb, cval, 5, reg, 1);
-        if (m>5) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 40 * ldb, cval, 6, reg, 1);
-        if (m>6) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 48 * ldb, cval, 7, reg, 1);
-        if (m>7) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 56 * ldb, cval, 8, reg, 1);
+        if (m>1) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 8 * ldb, cval, 2, reg, 0, 1);
+        if (m>2) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 16 * ldb, cval, 3, reg, 0, 1);
+        if (m>3) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 24 * ldb, cval, 4, reg, 0, 1);
+        if (m>4) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 32 * ldb, cval, 5, reg, 0, 1);
+        if (m>5) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 40 * ldb, cval, 6, reg, 0, 1);
+        if (m>6) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 48 * ldb, cval, 7, reg, 0, 1);
+        if (m>7) libxsmm_x86_instruction_vec_move(io_generated_code, LIBXSMM_X86_AVX, LIBXSMM_X86_INSTR_VMOVUPS, i_gp_reg_mapping->gp_reg_b, LIBXSMM_X86_GP_REG_UNDEF, 1, offsetB + 56 * ldb, cval, 8, reg, 0, 1);
         i = io_generated_code->code_size;
       } /* avx512 */
     }
