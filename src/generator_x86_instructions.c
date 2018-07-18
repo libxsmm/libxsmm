@@ -875,9 +875,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
 
     if ( i_use_zero_masking == 0 ) {
       if ( io_generated_code->code_type == 0 ) {
-        LIBXSMM_SNPRINTF(l_masking_type, 16, "" );
-      } else {
-        LIBXSMM_SNPRINTF(l_masking_type, 16, "" );
+        memset( l_masking_type, '\0', sizeof(l_masking_type) );
       }
     } else {
       if ( io_generated_code->code_type == 0 ) {
