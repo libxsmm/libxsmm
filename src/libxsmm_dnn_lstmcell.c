@@ -69,8 +69,8 @@ LIBXSMM_API libxsmm_dnn_lstmcell* libxsmm_dnn_create_lstmcell(libxsmm_dnn_lstmce
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const float alpha = 1, beta = 1;
-  libxsmm_bgemm_order order = 0; /* denotes order of execution for bgemm */
-  const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
+  const libxsmm_bgemm_order order = (libxsmm_bgemm_order)0; /* denotes order of execution for bgemm */
+  const libxsmm_gemm_prefetch_type strategy = (libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH_AUTO;
 
   handle = (libxsmm_dnn_lstmcell*)malloc(sizeof(libxsmm_dnn_lstmcell));
   if (0 != handle) {
