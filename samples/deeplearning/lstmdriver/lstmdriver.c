@@ -254,7 +254,7 @@ int main(int argc, char* argv[])
   size_t scratch_size = 0, internalstate_size = 0;
 
   int iters = 10;                /* repetitions of benchmark */
-  int pass = 1;                  /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
+  int pass = 3;                  /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
   int m = 1024;                  /* number of outputs */
   int n = 512;                   /* size of mini-batch */
   int k = 256;                   /* number of inputs */
@@ -266,12 +266,18 @@ int main(int argc, char* argv[])
   int bn = 32;                   /* first blocking factor for n */
   int bk = 32;                   /* first blocking factor for k */
   libxsmm_bgemm_order order = 0; /* denotes order of execution for bgemm */
-  int b_m1 = 1;                  /* second blocking factor for m */
-  int b_n1 = 1;                  /* second blocking factor for n */
-  int b_k1 = 1;                  /* second blocking factor for k */
-  int b_m2 = 1;                  /* third blocking factor for m */
-  int b_n2 = 1;                  /* third blocking factor for n */
-  int b_k2 = 1;                  /* third blocking factor for k */
+  const char *const env_b_m1 = getenv("LIBXSMM_BGEMM_M1");
+  const int b_m1 = (0 == env_b_m1) ? 1 : atoi(env_b_m1);
+  const char *const env_b_n1 = getenv("LIBXSMM_BGEMM_N1");
+  const int b_n1 = (0 == env_b_n1) ? 1 : atoi(env_b_n1);
+  const char *const env_b_k1 = getenv("LIBXSMM_BGEMM_K1");
+  const int b_k1 = (0 == env_b_k1) ? 1 : atoi(env_b_k1);
+  const char *const env_b_m2 = getenv("LIBXSMM_BGEMM_M2");
+  const int b_m2 = (0 == env_b_m2) ? 1 : atoi(env_b_m2);
+  const char *const env_b_n2 = getenv("LIBXSMM_BGEMM_N2");
+  const int b_n2 = (0 == env_b_n2) ? 1 : atoi(env_b_n2);
+  const char *const env_b_k2 = getenv("LIBXSMM_BGEMM_K2");
+  const int b_k2 = (0 == env_b_k2) ? 1 : atoi(env_b_k2);
   libxsmm_bgemm_handle* handlewx = 0;
   libxsmm_bgemm_handle* handleuh = 0;
   libxsmm_bgemm_handle* handlett = 0;
@@ -337,7 +343,7 @@ int main(int argc, char* argv[])
   memset(&diff, 0, sizeof(diff));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("\nUsage: ./lstmdriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [M] [N] [K] [time_steps > 1] [reuse (for FWD): 0/1] [bm] [bn] [bk] [order] [b_m1] [b_n1] [b_k1] [b_m2] [b_n2] [b_k2]\n\n");
+    printf("\nUsage: ./lstmdriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [M] [N] [K] [time_steps > 1] [reuse (for FWD): 0/1] [bm] [bn] [bk]\n\n");
     return 0;
   }
   libxsmm_srand(1);
@@ -354,13 +360,6 @@ int main(int argc, char* argv[])
   if (argc > i) bm    = atoi(argv[i++]);
   if (argc > i) bn    = atoi(argv[i++]);
   if (argc > i) bk    = atoi(argv[i++]);
-  if (argc > i) order = (libxsmm_bgemm_order)(atoi(argv[i++]));
-  if (argc > i) b_m1  = atoi(argv[i++]);
-  if (argc > i) b_n1  = atoi(argv[i++]);
-  if (argc > i) b_k1  = atoi(argv[i++]);
-  if (argc > i) b_m2  = atoi(argv[i++]);
-  if (argc > i) b_n2  = atoi(argv[i++]);
-  if (argc > i) b_k2  = atoi(argv[i++]);
 
   if (t <= 1) {
     printf("time_steps %d should be greater than 1\n\n", t);
@@ -913,20 +912,11 @@ int main(int argc, char* argv[])
     lstmcell_desc.bm = bm;
     lstmcell_desc.bn = bn;
     lstmcell_desc.bk = bk;
-    lstmcell_desc.b_m1 = b_m1;
-    lstmcell_desc.b_n1 = b_n1;
-    lstmcell_desc.b_k1 = b_k1;
-    lstmcell_desc.b_m2 = b_m2;
-    lstmcell_desc.b_n2 = b_n2;
-    lstmcell_desc.b_k2 = b_k2;
     lstmcell_desc.reuse = reuse;
+    lstmcell_desc.pass = pass;
     lstmcell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     lstmcell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     lstmcell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
-    lstmcell_desc.handlewx = handlewx;
-    lstmcell_desc.handleuh = handleuh;
-    lstmcell_desc.handlett = handlett;
-    lstmcell_desc.handlewd = handlewd;
 
     libxsmm_handle = libxsmm_dnn_create_lstmcell( lstmcell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
