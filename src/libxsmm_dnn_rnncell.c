@@ -50,10 +50,27 @@ double Gbl_duration_input = 0., Gbl_duration_recur = 0., Gbl_duration_eltwise = 
 LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_desc rnncell_desc, libxsmm_dnn_err_t* status)
 {
   libxsmm_dnn_rnncell* handle = 0;
-  *status = LIBXSMM_DNN_SUCCESS;
+  const char *const env_b_m1 = getenv("LIBXSMM_BGEMM_M1");
+  const int b_m1 = (0 == env_b_m1) ? 1 : atoi(env_b_m1);
+  const char *const env_b_n1 = getenv("LIBXSMM_BGEMM_N1");
+  const int b_n1 = (0 == env_b_n1) ? 1 : atoi(env_b_n1);
+  const char *const env_b_k1 = getenv("LIBXSMM_BGEMM_K1");
+  const int b_k1 = (0 == env_b_k1) ? 1 : atoi(env_b_k1);
+  const char *const env_b_m2 = getenv("LIBXSMM_BGEMM_M2");
+  const int b_m2 = (0 == env_b_m2) ? 1 : atoi(env_b_m2);
+  const char *const env_b_n2 = getenv("LIBXSMM_BGEMM_N2");
+  const int b_n2 = (0 == env_b_n2) ? 1 : atoi(env_b_n2);
+  const char *const env_b_k2 = getenv("LIBXSMM_BGEMM_K2");
+  const int b_k2 = (0 == env_b_k2) ? 1 : atoi(env_b_k2);
+  const char transa = 'N', transb = 'N'; /* no transposes */
+  const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
+  const float alpha = 1, beta = 1;
+  const libxsmm_bgemm_order order = (libxsmm_bgemm_order)0; /* denotes order of execution for bgemm */
+  const libxsmm_gemm_prefetch_type strategy = (libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH_AUTO;
 
   handle = (libxsmm_dnn_rnncell*)malloc(sizeof(libxsmm_dnn_rnncell));
   if (0 != handle) {
+    *status = LIBXSMM_DNN_SUCCESS;
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
     memset(handle, 0, sizeof(*handle));
     /* initialize known handle components */
@@ -62,6 +79,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->datatype_in = rnncell_desc.datatype_in;
     handle->datatype_out = rnncell_desc.datatype_out;
     handle->reuse = rnncell_desc.reuse;
+    handle->pass = rnncell_desc.pass;
     if ( (rnncell_desc.datatype_in != LIBXSMM_DNN_DATATYPE_F32) || (rnncell_desc.datatype_out != LIBXSMM_DNN_DATATYPE_F32) ) {
       /* error */
       *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -79,16 +97,36 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->bm = rnncell_desc.bm;
     handle->bn = rnncell_desc.bn;
     handle->bk = rnncell_desc.bk;
-    handle->b_m1 = rnncell_desc.b_m1;
-    handle->b_n1 = rnncell_desc.b_n1;
-    handle->b_k1 = rnncell_desc.b_k1;
-    handle->b_m2 = rnncell_desc.b_m2;
-    handle->b_n2 = rnncell_desc.b_n2;
-    handle->b_k2 = rnncell_desc.b_k2;
-    handle->handlewx = rnncell_desc.handlewx;
-    handle->handleuh = rnncell_desc.handleuh;
-    handle->handlett = rnncell_desc.handlett;
-    handle->handlewd = rnncell_desc.handlewd;
+    handle->b_m1 = b_m1;
+    handle->b_n1 = b_n1;
+    handle->b_k1 = b_k1;
+    handle->b_m2 = b_m2;
+    handle->b_n2 = b_n2;
+    handle->b_k2 = b_k2;
+    if (handle->pass == 0) {
+      handle->handlewx = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->n, handle->k, &(handle->bm), &(handle->bn), &(handle->bk), &(handle->b_m1), &(handle->b_n1), &(handle->b_k1), &(handle->b_k2),
+        &alpha, &beta, &gemm_flags, &strategy, &order);
+      handle->handleuh = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->n, handle->m, &(handle->bm), &(handle->bn), &(handle->bm), &(handle->b_m1), &(handle->b_n1), &(handle->b_m1), &(handle->b_m2),
+        &alpha, &beta, &gemm_flags, &strategy, &order);
+      handle->handlett = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->n*handle->t, handle->k, &(handle->bm), &(handle->bn), &(handle->bk), &(handle->b_m1), &(handle->b_n1), &(handle->b_k1), &(handle->b_k2),
+        &alpha, &beta, &gemm_flags, &strategy, &order);
+    } else {
+      handle->handlewx = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->n, handle->m, &(handle->bm), &(handle->bn), &(handle->bm), &(handle->b_m1), &(handle->b_n1), &(handle->b_m1), &(handle->b_m2),
+        &alpha, &beta, &gemm_flags, &strategy, &order); /* U^T*delta */
+      handle->handleuh = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->m, handle->n, &(handle->bm), &(handle->bm), &(handle->bn), &(handle->b_m1), &(handle->b_m1), &(handle->b_n1), &(handle->b_n2),
+        &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*h^T */
+      handle->handlett = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->k, handle->n, &(handle->bm), &(handle->bk), &(handle->bn), &(handle->b_m1), &(handle->b_k1), &(handle->b_n1), &(handle->b_n2),
+        &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*x^T */
+      handle->handlewd = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->k, handle->n, handle->m, &(handle->bk), &(handle->bn), &(handle->bm), &(handle->b_k1), &(handle->b_n1), &(handle->b_m1), &(handle->b_m2),
+        &alpha, &beta, &gemm_flags, &strategy, &order); /* W^T*delta */
+    }
     /* Need to allocate space for scratch libxsmm_dnn_tensor's */
     handle->z   = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->deltat = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
