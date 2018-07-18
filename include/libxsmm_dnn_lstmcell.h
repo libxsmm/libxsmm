@@ -46,20 +46,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_lstmcell_desc {
   int bm;    /* blocksize for m */
   int bn;    /* blocksize for n */
   int bk;    /* blocksize for k */
-  int b_m1;  /* b_?? parameters are used in libxsmm_bgemm */
-  int b_n1;
-  int b_k1;
-  int b_m2;
-  int b_n2;
-  int b_k2;
   int reuse; /* reuse/overwrite memory for FWD */
+  int pass;  /* denotes whether it is FWD/BWD/UPD */
   libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
   libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
-  libxsmm_bgemm_handle* handlewx;
-  libxsmm_bgemm_handle* handleuh;
-  libxsmm_bgemm_handle* handlett;
-  libxsmm_bgemm_handle* handlewd;
 } libxsmm_dnn_lstmcell_desc;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_lstmcell {
@@ -76,13 +67,14 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_lstmcell {
   int bm;
   int bn;
   int bk;
+  int reuse;
+  int pass;
   int b_m1;
   int b_n1;
   int b_k1;
   int b_m2;
   int b_n2;
   int b_k2;
-  int reuse;
   libxsmm_dnn_tensor* wi;
   libxsmm_dnn_tensor* wf;
   libxsmm_dnn_tensor* wo;
@@ -149,8 +141,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_lstmcell {
   libxsmm_bgemm_handle* handleuh;
   libxsmm_bgemm_handle* handlett;
   libxsmm_bgemm_handle* handlewd;
-  /* barrier */
-  libxsmm_barrier* barrier;
+  libxsmm_barrier* barrier; /* barrier */
 } libxsmm_dnn_lstmcell;
 
 LIBXSMM_API libxsmm_dnn_lstmcell* libxsmm_dnn_create_lstmcell(libxsmm_dnn_lstmcell_desc lstmcell_desc, libxsmm_dnn_err_t* status);
