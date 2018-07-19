@@ -81,7 +81,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
                                   LIBXSMM_X86_GP_REG_UNDEF, 0,
                                   0,
                                   i_micro_kernel_config->vector_name,
-                                  i_n_blocking, i_micro_kernel_config->use_masking_a_c, 0 );
+                                  i_n_blocking, i_micro_kernel_config->use_masking_a_c, 1, 0 );
     /* loop over columns of B */
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       /* post increment of a pointer early */
@@ -100,7 +100,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       ((i_micro_kernel_config->datatype_size) * i_offset) + (i_xgemm_desc->ldb * l_n * (i_micro_kernel_config->datatype_size)),
                                       i_micro_kernel_config->vector_name,
-                                      l_n, i_micro_kernel_config->use_masking_a_c, 0 );
+                                      l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
       } else {
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                       i_micro_kernel_config->instruction_set,
@@ -109,7 +109,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       i_xgemm_desc->ldb * l_n *  i_micro_kernel_config->datatype_size,
                                       i_micro_kernel_config->vector_name,
-                                      l_n, i_micro_kernel_config->use_masking_a_c, 0 );
+                                      l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
         if ( l_n == (i_n_blocking -1) ) {
           libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_add_instruction,
@@ -144,7 +144,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       ((i_micro_kernel_config->datatype_size) * i_offset) + (i_xgemm_desc->ldb * l_n * (i_micro_kernel_config->datatype_size)),
                                       i_micro_kernel_config->vector_name,
-                                      l_n, i_micro_kernel_config->use_masking_a_c, 0 );
+                                      l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
       }
     } else {
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
@@ -155,7 +155,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       i_xgemm_desc->ldb * l_n *  i_micro_kernel_config->datatype_size,
                                       i_micro_kernel_config->vector_name,
-                                      l_n, i_micro_kernel_config->use_masking_a_c, 0 );
+                                      l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
      }
      libxsmm_x86_instruction_alu_imm( io_generated_code,
                                   i_micro_kernel_config->alu_add_instruction,
@@ -173,7 +173,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
                                       i_micro_kernel_config->vector_name,
-                                      i_n_blocking, i_micro_kernel_config->use_masking_a_c, 0 );
+                                      i_n_blocking, i_micro_kernel_config->use_masking_a_c, 1, 0 );
 
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
           /* post increment early */
@@ -210,7 +210,7 @@ void libxsmm_generator_gemm_avx_microkernel( libxsmm_generated_code*            
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
                                       i_micro_kernel_config->vector_name,
-                                      i_n_blocking+l_m, i_micro_kernel_config->use_masking_a_c, 0 );
+                                      i_n_blocking+l_m, i_micro_kernel_config->use_masking_a_c, 1, 0 );
       }
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {

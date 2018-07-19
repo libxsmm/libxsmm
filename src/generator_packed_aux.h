@@ -147,7 +147,7 @@ LIBXSMM_API_INLINE void compact_store_matrix2_ (
         exit(-1);
      }
 
-     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RSI, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 1 );
+     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RSI, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0, 1 );
 }
 
 LIBXSMM_API_INLINE void compact_store_matrix3_ (
@@ -185,7 +185,7 @@ LIBXSMM_API_INLINE void compact_store_matrix3_ (
         exit(-1);
      }
 
-     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RDX, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 1 );
+     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RDX, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0, 1 );
 }
 
 LIBXSMM_API_INLINE void compact_load_matrix1_ (
@@ -223,7 +223,7 @@ LIBXSMM_API_INLINE void compact_load_matrix1_ (
         exit(-1);
      }
 
-     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RDI, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0 );
+     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RDI, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0, 0 );
 }
 
 LIBXSMM_API_INLINE void compact_load_matrix2_ (
@@ -261,7 +261,7 @@ LIBXSMM_API_INLINE void compact_load_matrix2_ (
         exit(-1);
      }
 
-     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RSI, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0 );
+     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RSI, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0, 0 );
 }
 
 LIBXSMM_API_INLINE void compact_load_matrix3_ (
@@ -299,7 +299,7 @@ LIBXSMM_API_INLINE void compact_load_matrix3_ (
         exit(-1);
      }
 
-     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RDX, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0 );
+     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RDX, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0, 0 );
 }
 
 LIBXSMM_API_INLINE void compact_mult_two_nums_ (

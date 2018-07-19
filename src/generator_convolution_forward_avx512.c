@@ -282,7 +282,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code
         l_conv_kernel_config.vbcst_instruction,
         LIBXSMM_X86_GP_REG_RSP ,
         LIBXSMM_X86_GP_REG_UNDEF, 0, 0,
-        l_conv_kernel_config.vector_name, 3, 0, 0 );
+        l_conv_kernel_config.vector_name, 3, 0, 1, 0 );
     /*
        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
        l_conv_kernel_config.instruction_set,
@@ -698,7 +698,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             l_filter_pos * i_conv_kernel_config->l_ld_ofm_fil * i_conv_kernel_config->datatype_size_wt * i_conv_desc->fm_lp_block,
             i_conv_kernel_config->vector_name, l_w,
-            0, 0 );
+            0, 1, 0 );
         /* vpslld  */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             i_conv_kernel_config->instruction_set,
@@ -736,7 +736,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             l_filter_pos * i_conv_kernel_config->l_ld_ofm_fil * i_conv_kernel_config->datatype_size_wt * i_conv_desc->fm_lp_block,
             i_conv_kernel_config->vector_name, l_w,
-            0, 0 );
+            0, 1, 0 );
       }
       l_filter_pos++;
     }
@@ -788,7 +788,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
                 l_input_idx, l_scale,
                 l_disp,
                 i_conv_kernel_config->vector_name,
-                1, 0, 0 );
+                1, 0, 1, 0 );
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                 i_conv_kernel_config->instruction_set,
                 i_conv_kernel_config->vfma_instruction,
@@ -826,7 +826,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
                 l_input_idx, l_scale,
                 l_disp,
                 i_conv_kernel_config->vector_name,
-                3, 0, 0 );
+                3, 0, 1, 0 );
 
             /* vpslld  */
             libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
@@ -886,7 +886,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
               l_input_idx, l_scale,
               l_disp,
               i_conv_kernel_config->vector_name,
-              1, 0, 0 );
+              1, 0, 1, 0 );
 
           /* 8/16bit integer MADD with horizontal add */
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -1118,7 +1118,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             l_filter_pos* i_conv_kernel_config->l_ld_ofm_fil * i_conv_kernel_config->datatype_size_wt * i_conv_desc->fm_lp_block,
             i_conv_kernel_config->vector_name, l_w,
-            0, 0 );
+            0, 1, 0 );
         /* vpslld  */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             i_conv_kernel_config->instruction_set,
@@ -1156,7 +1156,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             l_filter_pos* i_conv_kernel_config->l_ld_ofm_fil * i_conv_kernel_config->datatype_size_wt * i_conv_desc->fm_lp_block,
             i_conv_kernel_config->vector_name, l_w,
-            0, 0 );
+            0, 1, 0 );
       }
       l_filter_pos++;
     }
@@ -1204,7 +1204,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
                   l_input_idx, l_scale,
                   l_disp,
                   i_conv_kernel_config->vector_name,
-                  1, 0, 0 );
+                  1, 0, 1, 0 );
               libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                   i_conv_kernel_config->instruction_set,
                   i_conv_kernel_config->vfma_instruction,
@@ -1242,7 +1242,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
                   l_input_idx, l_scale,
                   l_disp,
                   i_conv_kernel_config->vector_name,
-                  3, 0, 0 );
+                  3, 0, 1, 0 );
 
               /* vpslld  */
               libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
@@ -1302,7 +1302,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_gene
                 l_input_idx, l_scale,
                 l_disp,
                 i_conv_kernel_config->vector_name,
-                1, 0, 0 );
+                1, 0, 1, 0 );
 
             /* 8/16bit integer MADD with horizontal add */
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -1521,7 +1521,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             l_filter_pos* i_conv_kernel_config->l_ld_ofm_fil * i_conv_kernel_config->datatype_size_wt * i_conv_desc->fm_lp_block,
             i_conv_kernel_config->vector_name, l_w,
-            0, 0 );
+            0, 1, 0 );
         /* vpslld  */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             i_conv_kernel_config->instruction_set,
@@ -1559,7 +1559,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             l_filter_pos* i_conv_kernel_config->l_ld_ofm_fil * i_conv_kernel_config->datatype_size_wt * i_conv_desc->fm_lp_block,
             i_conv_kernel_config->vector_name, l_w,
-            0, 0 );
+            0, 1, 0 );
       }
       l_filter_pos++;
     }
@@ -1602,7 +1602,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
                   LIBXSMM_X86_GP_REG_UNDEF, 0,
                   l_disp,
                   i_conv_kernel_config->vector_name,
-                  1, 0, 0 );
+                  1, 0, 1, 0 );
               libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                   i_conv_kernel_config->instruction_set,
                   i_conv_kernel_config->vfma_instruction,
@@ -1640,7 +1640,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
                   l_input_idx, l_scale,
                   l_disp,
                   i_conv_kernel_config->vector_name,
-                  3, 0, 0 );
+                  3, 0, 1, 0 );
 
               /* vpslld  */
               libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
@@ -1700,7 +1700,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
                 l_input_idx, l_scale,
                 l_disp,
                 i_conv_kernel_config->vector_name,
-                1, 0, 0 );
+                1, 0, 1, 0 );
 
             /* 8/16bit integer MADD with horizontal add */
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,

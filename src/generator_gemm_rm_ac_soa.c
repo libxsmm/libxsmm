@@ -260,7 +260,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         l_n*i_soa_width*i_micro_kernel_config->datatype_size,
                                         i_micro_kernel_config->vector_name,
-                                        l_n, 0, 0 );
+                                        l_n, 0, 1, 0 );
     }
   }
 
@@ -277,7 +277,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       l_lcl_k*i_soa_width*i_micro_kernel_config->datatype_size,
                                       i_micro_kernel_config->vector_name,
-                                      i_n_blocking+l_lcl_k, 0, 0 );
+                                      i_n_blocking+l_lcl_k, 0, 1, 0 );
   }
 
   /* loop over the register block */
@@ -305,7 +305,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         l_n * i_micro_kernel_config->datatype_size,
                                         i_micro_kernel_config->vector_name,
-                                        i_n_blocking+1, 0, 0 );
+                                        i_n_blocking+1, 0, 1, 0 );
       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->vmul_instruction,
@@ -321,7 +321,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
                                         l_n * i_micro_kernel_config->datatype_size,
                                         i_micro_kernel_config->vector_name,
-                                        i_n_blocking+1, 0, 0 );
+                                        i_n_blocking+1, 0, 1, 0 );
       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->vmul_instruction,
@@ -363,7 +363,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       l_n*i_soa_width*i_micro_kernel_config->datatype_size,
                                       i_micro_kernel_config->vector_name,
-                                      l_n, 0, 1 );
+                                      l_n, 0, 0, 1 );
   }
 
   /* reset A pointer */

@@ -90,6 +90,7 @@ void libxsmm_x86_instruction_vec_mask_move( libxsmm_generated_code* io_generated
  * @param i_vector_name the vector register name prefix (x, y or z)
  * @param i_vec_reg_number_0 the vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_mask_reg_number the mask register to be used
+ * @param i_use_zero_masking: 0: merge masking ; !=0: zero masking
  * @param i_is_store 0: load semantic, other: store semantic
  */
 LIBXSMM_API_INTERN
@@ -102,7 +103,8 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const int               i_displacement,
                                        const char              i_vector_name,
                                        const unsigned int      i_vec_reg_number_0,
-                                       const unsigned int      i_use_masking,
+                                       const unsigned int      i_mask_reg_number,
+                                       const unsigned int      i_use_zero_masking,
                                        const unsigned int      i_is_store );
 
 /**
@@ -158,6 +160,7 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
  * @param i_vec_reg_number_3 the second vector register number (zmm: 0-31)
  * @param i_immediate immediate just as the compare value for a compare instruction
  * @param i_mask_reg_number the mask register to read/write
+ * @param i_use_zero_masking 0: merge masking, !=0 zero masking
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_generated_code,
@@ -168,7 +171,8 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
                                               const unsigned int      i_vec_reg_number_1,
                                               const unsigned int      i_vec_reg_number_2,
                                               const unsigned int      i_immediate,
-                                              const unsigned int      i_mask_reg_number );
+                                              const unsigned int      i_mask_reg_number,
+                                              const unsigned int      i_use_zero_masking );
 
 /**
  * @param i_instruction_set requested instruction set to encode
@@ -208,6 +212,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
  * @param i_vec_reg_number_1 the second vector register number (zmm: 0-31)
  * @param i_immediate immediate just as the compare value for a compare instruction
  * @param i_mask_reg_number the mask register to read/write
+ * @param i_use_zero_masking 0: merge masking; !=0: zero masking
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_vec_compute_mem_mask( libxsmm_generated_code* io_generated_code,
@@ -222,7 +227,8 @@ void libxsmm_x86_instruction_vec_compute_mem_mask( libxsmm_generated_code* io_ge
                                                    const unsigned int      i_vec_reg_number_0,
                                                    const unsigned int      i_vec_reg_number_1,
                                                    const unsigned int      i_immediate,
-                                                   const unsigned int      i_mask_reg_number );
+                                                   const unsigned int      i_mask_reg_number,
+                                                   const unsigned int      i_use_zero_masking );
 
  /**
   * Generates quadmadd instructions added in Knights Mill
