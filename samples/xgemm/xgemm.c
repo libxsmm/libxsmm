@@ -49,9 +49,14 @@
 # define OTYPE ITYPE
 #endif
 
+#if !defined(XGEMM)
+# define XGEMM LIBXSMM_YGEMM_SYMBOL(ITYPE)
+#endif
+
 #if !defined(CHECK) && \
   (!defined(__BLAS) || (0 != __BLAS)) && /* BLAS available */ \
   (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double))
+# define XGEMM_GOLD LIBXSMM_GEMM_SYMBOL(ITYPE)
 # define CHECK
 #endif
 
@@ -102,10 +107,10 @@ int main(int argc, char* argv[])
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
     /* warm-up OpenMP (populate thread pool) */
-    LIBXSMM_YGEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+    XGEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
 #if defined(CHECK)
     if (0 != d) {
-      LIBXSMM_GEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
+      XGEMM_GOLD(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
     }
 #endif
     libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(ITYPE),
@@ -116,7 +121,7 @@ int main(int argc, char* argv[])
       int i; double duration;
       unsigned long long start = libxsmm_timer_tick();
       for (i = 0; i < nrepeat; ++i) {
-        LIBXSMM_YGEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+        XGEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
       }
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
       if (0 < duration) {
@@ -131,7 +136,7 @@ int main(int argc, char* argv[])
 #       pragma omp parallel
 #       pragma omp single nowait
 #endif
-        LIBXSMM_YGEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
+        XGEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
       }
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
       if (0 < duration) {
@@ -144,7 +149,7 @@ int main(int argc, char* argv[])
       int i; double duration;
       unsigned long long start = libxsmm_timer_tick();
       for (i = 0; i < nrepeat; ++i) {
-        LIBXSMM_GEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
+        XGEMM_GOLD(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
       }
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
       if (0 < duration) {
