@@ -608,6 +608,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
   /** If a name is given, an executable buffer will be dumped into a file. */
   const char* name);
 
+/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
 LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
