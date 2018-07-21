@@ -114,73 +114,77 @@ for (i = 0; i < nn; ++i) {
   if (normt < normtj) normt = normtj;
 }
 
-/* Infinity-norm relative to reference */
-if (0 < normr) {
-  info->normi_rel = info->normi_abs / normr;
-}
-else if (0 < normt) { /* relative to test */
-  info->normi_rel = info->normi_abs / normt;
-}
-else { /* should not happen */
-  info->normi_rel = 0;
-}
-
-/* Froebenius-norm relative to reference */
-if (0 < normfr) {
-  info->normf_rel = info->l2_abs / normfr;
-}
-else if (0 < normft) { /* relative to test */
-  info->normf_rel = info->l2_abs / normft;
-}
-else { /* should not happen */
-  info->normf_rel = 0;
-}
-
-for (j = 0; j < mm; ++j) {
-  double compri = 0, compti = 0, comp1 = 0;
-  double normri = 0, normti = 0, norm1 = 0;
-
-  for (i = 0; i < nn; ++i) {
-    const double ri = real_ref[i*ldr+j], ti = (0 != real_tst ? real_tst[i*ldt+j] : 0);
-    const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
-    const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
-    if (ta != ta) { /* NaN */
-      result = EXIT_FAILURE;
-      j = mm;
-      break;
-    }
-
-    /* column-wise sum of reference values with Kahan compensation */
-    double v0 = ra - compri, v1 = normri + v0;
-    compri = (v1 - normri) - v0;
-    normri = v1;
-
-    /* column-wise sum of test values with Kahan compensation */
-    v0 = ta - compti; v1 = normti + v0;
-    compti = (v1 - normti) - v0;
-    normti = v1;
-
-    /* column-wise sum of differences with Kahan compensation */
-    v0 = di - comp1; v1 = norm1 + v0;
-    comp1 = (v1 - norm1) - v0;
-    norm1 = v1;
+if (EXIT_SUCCESS == result) {
+  /* Infinity-norm relative to reference */
+  if (0 < normr) {
+    info->normi_rel = info->normi_abs / normr;
+  }
+  else if (0 < normt) { /* relative to test */
+    info->normi_rel = info->normi_abs / normt;
+  }
+  else { /* should not happen */
+    info->normi_rel = 0;
   }
 
-  /* calculate One-norm of differences */
-  if (info->norm1_abs < norm1) info->norm1_abs = norm1;
-  /* calculate One-norm of reference/test values */
-  if (normrc < normri) normrc = normri;
-  if (normtc < normti) normtc = normti;
-}
+  /* Froebenius-norm relative to reference */
+  if (0 < normfr) {
+    info->normf_rel = info->l2_abs / normfr;
+  }
+  else if (0 < normft) { /* relative to test */
+    info->normf_rel = info->l2_abs / normft;
+  }
+  else { /* should not happen */
+    info->normf_rel = 0;
+  }
 
-/* One-norm relative to reference */
-if (0 < normrc) {
-  info->norm1_rel = info->norm1_abs / normrc;
-}
-else if (0 < normtc) { /* relative to test */
-  info->norm1_rel = info->norm1_abs / normtc;
-}
-else { /* should not happen */
-  info->norm1_rel = 0;
+  for (j = 0; j < mm; ++j) {
+    double compri = 0, compti = 0, comp1 = 0;
+    double normri = 0, normti = 0, norm1 = 0;
+
+    for (i = 0; i < nn; ++i) {
+      const double ri = real_ref[i*ldr + j], ti = (0 != real_tst ? real_tst[i*ldt + j] : 0);
+      const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
+      const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
+      if (ta != ta) { /* NaN */
+        result = EXIT_FAILURE;
+        j = mm;
+        break;
+      }
+
+      /* column-wise sum of reference values with Kahan compensation */
+      double v0 = ra - compri, v1 = normri + v0;
+      compri = (v1 - normri) - v0;
+      normri = v1;
+
+      /* column-wise sum of test values with Kahan compensation */
+      v0 = ta - compti; v1 = normti + v0;
+      compti = (v1 - normti) - v0;
+      normti = v1;
+
+      /* column-wise sum of differences with Kahan compensation */
+      v0 = di - comp1; v1 = norm1 + v0;
+      comp1 = (v1 - norm1) - v0;
+      norm1 = v1;
+    }
+
+    /* calculate One-norm of differences */
+    if (info->norm1_abs < norm1) info->norm1_abs = norm1;
+    /* calculate One-norm of reference/test values */
+    if (normrc < normri) normrc = normri;
+    if (normtc < normti) normtc = normti;
+  }
+
+  if (EXIT_SUCCESS == result) {
+    /* One-norm relative to reference */
+    if (0 < normrc) {
+      info->norm1_rel = info->norm1_abs / normrc;
+    }
+    else if (0 < normtc) { /* relative to test */
+      info->norm1_rel = info->norm1_abs / normtc;
+    }
+    else { /* should not happen */
+      info->norm1_rel = 0;
+    }
+  }
 }
 
