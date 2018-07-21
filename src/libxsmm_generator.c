@@ -244,7 +244,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
       }
       else {
         const float aa = (0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
-        const float bb = (0 != beta ? *((const float*)beta) : (LIBXSMM_BETA));
+        const float bb = (0 != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
         LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_F32 == oprec);
         result = libxsmm_wsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
         if (NULL != dalpha) *dalpha = (double)aa;
