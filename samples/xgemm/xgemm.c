@@ -68,18 +68,18 @@ LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE);
 
 int main(int argc, char* argv[])
 {
-  LIBXSMM_GEMM_CONST libxsmm_blasint m = LIBXSMM_DEFAULT(512, 1 < argc ? atoi(argv[1]) : 0);
-  LIBXSMM_GEMM_CONST libxsmm_blasint k = LIBXSMM_DEFAULT(m, 3 < argc ? atoi(argv[3]) : 0);
-  LIBXSMM_GEMM_CONST libxsmm_blasint n = LIBXSMM_DEFAULT(k, 2 < argc ? atoi(argv[2]) : 0);
-  LIBXSMM_GEMM_CONST libxsmm_blasint lda = LIBXSMM_DEFAULT(m, 4 < argc ? atoi(argv[4]) : 0);
-  LIBXSMM_GEMM_CONST libxsmm_blasint ldb = LIBXSMM_DEFAULT(k, 5 < argc ? atoi(argv[5]) : 0);
-  LIBXSMM_GEMM_CONST libxsmm_blasint ldc = LIBXSMM_DEFAULT(m, 6 < argc ? atoi(argv[6]) : 0);
+  LIBXSMM_GEMM_CONST libxsmm_blasint m = (1 < argc ? atoi(argv[1]) : 512);
+  LIBXSMM_GEMM_CONST libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
+  LIBXSMM_GEMM_CONST libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
+  LIBXSMM_GEMM_CONST libxsmm_blasint lda = ((4 < argc && m < atoi(argv[4])) ? atoi(argv[4]) : m);
+  LIBXSMM_GEMM_CONST libxsmm_blasint ldb = ((5 < argc && k < atoi(argv[5])) ? atoi(argv[5]) : k);
+  LIBXSMM_GEMM_CONST libxsmm_blasint ldc = ((6 < argc && m < atoi(argv[6])) ? atoi(argv[6]) : m);
   LIBXSMM_GEMM_CONST OTYPE alpha = (OTYPE)(7 < argc ? atof(argv[7]) : 1.0);
   LIBXSMM_GEMM_CONST OTYPE beta  = (OTYPE)(8 < argc ? atof(argv[8]) : 1.0);
-  LIBXSMM_GEMM_CONST char transa = 'N', transb = 'N';
-  const int nrepeat = LIBXSMM_DEFAULT(
-    LIBXSMM_MAX(13 / LIBXSMM_MAX(1, (int)(libxsmm_icbrt_u64(1ULL * m * n * k) >> 10)), 3),
-    9 < argc ? atoi(argv[9]) : 0);
+  LIBXSMM_GEMM_CONST char transa =  (9 < argc ? *argv[9]  : 'N');
+  LIBXSMM_GEMM_CONST char transb = (10 < argc ? *argv[10] : 'N');
+  const int nrepeat = ((11 < argc && 0 < atoi(argv[11])) ? atoi(argv[11])
+    : LIBXSMM_MAX(13 / LIBXSMM_MAX(1, (int)(libxsmm_icbrt_u64(1ULL * m * n * k) >> 10)), 3));
   const double gflops = 2.0 * m * n * k * 1E-9;
   int result = EXIT_SUCCESS;
 #if defined(CHECK)
@@ -154,6 +154,7 @@ int main(int argc, char* argv[])
         XGEMM_GOLD(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
       }
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+
       if (0 < duration) {
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
