@@ -233,12 +233,12 @@ LIBXSMM_INLINE void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, 
 int main(int argc, char* argv[])
 {
   /* Arrays related to FWD pass */
-  float *wgold, *xgoldt, *ugold, *hgold, *z1gold, *z2gold, *zgold;
-  float *w, *xt, *u, *h, *htest, *hgold_temp;
+  float *wgold, *xgoldt, *ugold, *hgold = NULL, *z1gold = NULL, *z2gold = NULL, *zgold = NULL;
+  float *w, *xt, *u, *h = NULL, *htest = NULL, *hgold_temp = NULL;
   /* Arrays related to BWD and UPD pass */
-  float *djdhgoldt, *zgoldt, *deltagoldt, *hgoldt, *djdugold, *djdwgold, *djdxgoldt;
-  float *zigold, *di1gold, *di2gold, *dj1gold, *dw1gold, *ugoldTp, *wgoldTp, *hgoldTp, *xgoldTp;
-  float *djdht, *ht, *djdu, *djdw, *djdxt, *djdxtestt, *djdwtest, *djdutest;
+  float *djdhgoldt = NULL, *zgoldt = NULL, *deltagoldt = NULL, *hgoldt = NULL, *djdugold = NULL, *djdwgold = NULL, *djdxgoldt = NULL;
+  float *zigold = NULL, *di1gold = NULL, *di2gold = NULL, *dj1gold = NULL, *dw1gold = NULL, *ugoldTp = NULL, *wgoldTp = NULL, *hgoldTp = NULL, *xgoldTp = NULL;
+  float *djdht = NULL, *ht = NULL, *djdu = NULL, *djdw = NULL, *djdxt = NULL, *djdxtestt = NULL, *djdwtest = NULL, *djdutest = NULL;
 
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
@@ -298,10 +298,10 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_hidden_state;
   libxsmm_dnn_tensor* libxsmm_weight;
   libxsmm_dnn_tensor* libxsmm_recur_weight;
-  libxsmm_dnn_tensor* libxsmm_dinput;
-  libxsmm_dnn_tensor* libxsmm_dhidden_state;
-  libxsmm_dnn_tensor* libxsmm_dweight;
-  libxsmm_dnn_tensor* libxsmm_drecur_weight;
+  libxsmm_dnn_tensor* libxsmm_dinput = NULL;
+  libxsmm_dnn_tensor* libxsmm_dhidden_state = NULL;
+  libxsmm_dnn_tensor* libxsmm_dweight = NULL;
+  libxsmm_dnn_tensor* libxsmm_drecur_weight = NULL;
 
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
@@ -421,7 +421,7 @@ int main(int argc, char* argv[])
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, k * n);
   LIBXSMM_VLA_DECL(2, float, hgoldb, hgoldt, m * n);
   LIBXSMM_VLA_DECL(2, float, djdh, djdht, m * n);
-  LIBXSMM_VLA_DECL(2, float, xb, xt, k * n);
+  /*LIBXSMM_VLA_DECL(2, float, xb, xt, k * n);*/
   LIBXSMM_VLA_DECL(2, float, hb, ht, m * n);
   LIBXSMM_VLA_DECL(2, float, djdx, djdxt, k * n);
 
@@ -467,9 +467,9 @@ int main(int argc, char* argv[])
     zero_buf(xt, k*n*t);
     zero_buf(u,  m*m);
     if (reuse) {
-      zero_buf(h,  m*n);
+      zero_buf(h, m*n);
     } else {
-      zero_buf(h,  m*n*(t+1));
+      zero_buf(h, m*n*(t+1));
     }
   } else {
     zero_buf(w, m*k);
