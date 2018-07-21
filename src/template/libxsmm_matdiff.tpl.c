@@ -43,8 +43,12 @@ for (i = 0; i < nn; ++i) {
   for (j = 0; j < mm; ++j) {
     const double ri = real_ref[i*ldr+j], ti = (0 != real_tst ? real_tst[i*ldt+j] : 0);
     const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
-    const double ra = LIBXSMM_ABS(ri);
-    const double ta = LIBXSMM_ABS(ti);
+    const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
+    if (ta != ta) { /* NaN */
+      result = EXIT_FAILURE;
+      i = nn;
+      break;
+    }
 
     /* maximum absolute error and location */
     if (info->linf_abs < di) {
@@ -139,8 +143,12 @@ for (j = 0; j < mm; ++j) {
   for (i = 0; i < nn; ++i) {
     const double ri = real_ref[i*ldr+j], ti = (0 != real_tst ? real_tst[i*ldt+j] : 0);
     const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
-    const double ra = LIBXSMM_ABS(ri);
-    const double ta = LIBXSMM_ABS(ti);
+    const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
+    if (ta != ta) { /* NaN */
+      result = EXIT_FAILURE;
+      j = mm;
+      break;
+    }
 
     /* column-wise sum of reference values with Kahan compensation */
     double v0 = ra - compri, v1 = normri + v0;

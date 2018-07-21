@@ -56,40 +56,40 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
     memset(info, 0, sizeof(*info)); /* nullify */
     switch (datatype) {
-    case LIBXSMM_DATATYPE_F64: {
+      case LIBXSMM_DATATYPE_F64: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
 #       include "template/libxsmm_matdiff.tpl.c"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-    } break;
-    case LIBXSMM_DATATYPE_F32: {
+      } break;
+      case LIBXSMM_DATATYPE_F32: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE float
 #       include "template/libxsmm_matdiff.tpl.c"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-    } break;
-    case LIBXSMM_DATATYPE_I32: {
+      } break;
+      case LIBXSMM_DATATYPE_I32: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE int
 #       include "template/libxsmm_matdiff.tpl.c"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-    } break;
-    case LIBXSMM_DATATYPE_I16: {
+      } break;
+      case LIBXSMM_DATATYPE_I16: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE short
 #       include "template/libxsmm_matdiff.tpl.c"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-    } break;
-    case LIBXSMM_DATATYPE_I8: {
+      } break;
+      case LIBXSMM_DATATYPE_I8: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE signed char
 #       include "template/libxsmm_matdiff.tpl.c"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-    } break;
-    default: {
-      static int error_once = 0;
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM ERROR: unsupported data-type requested!\n");
+      } break;
+      default: {
+        static int error_once = 0;
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM ERROR: unsupported data-type requested!\n");
+        }
+        result = EXIT_FAILURE;
       }
-      result = EXIT_FAILURE;
-    }
     }
   }
   else {
