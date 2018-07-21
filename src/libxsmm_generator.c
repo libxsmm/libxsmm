@@ -199,39 +199,56 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init2(libxsmm_descr
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
   int flags, libxsmm_gemm_prefetch_type prefetch)
 {
+  return libxsmm_gemm_descriptor_init3(blob, iprec, oprec, m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch,
+    NULL/*dalpha*/, NULL/*dbeta*/);
+}
+
+
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descriptor_blob* blob,
+  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
+  int flags, libxsmm_gemm_prefetch_type prefetch,
+  double* dalpha, double* dbeta)
+{
   libxsmm_gemm_descriptor* result;
   switch (iprec) {
     case LIBXSMM_GEMM_PRECISION_F64: {
-      result = libxsmm_dgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
-        0 != alpha ? *((const double*)alpha) : (LIBXSMM_ALPHA),
-        0 != beta ? *((const double*)beta) : (LIBXSMM_BETA),
-        flags, prefetch);
+      const double aa = (NULL != alpha ? *((const double*)alpha) : (LIBXSMM_ALPHA));
+      const double bb = (NULL != beta  ? *((const double*)beta)  : (LIBXSMM_BETA));
+      LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_F64 == oprec);
+      result = libxsmm_dgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
+      if (NULL != dalpha) *dalpha = aa;
+      if (NULL != dbeta) *dbeta = bb;
     } break;
     case LIBXSMM_GEMM_PRECISION_F32: {
-      result = libxsmm_sgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
-        0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA),
-        0 != beta ? *((const float*)beta) : (LIBXSMM_BETA),
-        flags, prefetch);
+      const float aa = (0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
+      const float bb = (0 != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
+      LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_F32 == oprec);
+      result = libxsmm_sgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
+      if (NULL != dalpha) *dalpha = (double)aa;
+      if (NULL != dbeta) *dbeta = (double)bb;
     } break;
     case LIBXSMM_GEMM_PRECISION_I16: {
       if (LIBXSMM_GEMM_PRECISION_I32 == oprec) {
         /**
-        * Take alpha and beta as short data although wgemm works on integers.
-        * However, alpha and beta are only JIT-supported for certain values,
-        * and the call-side may not distinct different input and output types
-        * (integer/short), hence it is safer to only read short data.
-        */
-        result = libxsmm_wigemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
-          0 != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA),
-          0 != beta ? *((const short*)beta) : (LIBXSMM_BETA),
-          flags, prefetch);
+         * Take alpha and beta as short data although wgemm works on integers.
+         * However, alpha and beta are only JIT-supported for certain values,
+         * and the call-side may not distinct different input and output types
+         * (integer/short), hence it is safer to only read short data.
+         */
+        const short aa = (0 != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA));
+        const short bb = (0 != beta  ? *((const short*)beta)  : (LIBXSMM_BETA));
+        result = libxsmm_wigemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
+        if (NULL != dalpha) *dalpha = (double)aa;
+        if (NULL != dbeta) *dbeta = (double)bb;
       }
       else {
+        const float aa = (0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
+        const float bb = (0 != beta ? *((const float*)beta) : (LIBXSMM_BETA));
         LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_F32 == oprec);
-        result = libxsmm_wsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
-          0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA),
-          0 != beta ? *((const float*)beta) : (LIBXSMM_BETA),
-          flags, prefetch);
+        result = libxsmm_wsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
+        if (NULL != dalpha) *dalpha = (double)aa;
+        if (NULL != dbeta) *dbeta = (double)bb;
       }
     } break;
     default: {
