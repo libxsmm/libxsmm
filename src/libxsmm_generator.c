@@ -236,8 +236,8 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
          * and the call-side may not distinct different input and output types
          * (integer/short), hence it is safer to only read short data.
          */
-        const short aa = (0 != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA));
-        const short bb = (0 != beta  ? *((const short*)beta)  : (LIBXSMM_BETA));
+        const short aa = (short)(0 != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA));
+        const short bb = (short)(0 != beta  ? *((const short*)beta)  : (LIBXSMM_BETA));
         result = libxsmm_wigemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
         if (NULL != dalpha) *dalpha = (double)aa;
         if (NULL != dbeta) *dbeta = (double)bb;
