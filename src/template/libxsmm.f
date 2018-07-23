@@ -983,7 +983,7 @@
           INTERFACE
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
-     &      BIND(C, NAME="libxsmm_blas_dgemm")
+     &      BIND(C, NAME="libxsmm_blas_dgemm_")
               IMPORT C_PTR, LIBXSMM_BLASINT_KIND
               TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -1012,7 +1012,7 @@
           INTERFACE
             SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
-     &      BIND(C, NAME="libxsmm_blas_sgemm")
+     &      BIND(C, NAME="libxsmm_blas_sgemm_")
               IMPORT C_PTR, LIBXSMM_BLASINT_KIND
               TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
