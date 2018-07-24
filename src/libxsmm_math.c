@@ -134,27 +134,96 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 }
 
 
-LIBXSMM_API void libxsmm_primes_u32(unsigned int num, unsigned int num_factors[])
+LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n32[])
 {
-  unsigned int idx = 0, i;
-  if (0 < num && 0 == (num & 1)) { /* non-zero even */
-    unsigned int j = num / 2;
-    while (num == (2 * j)) {
-      num_factors[idx++] = 2;
-      num = j; j /= 2;
+  unsigned int c = num, i;
+  int n = 0;
+  if (0 < c && 0 == (c & 1)) { /* non-zero even */
+    unsigned int j = c / 2;
+    while (c == (2 * j)) {
+      num_factors_n32[n++] = 2;
+      c = j; j /= 2;
     }
   }
-  for (i = 3; i <= num; i += 2) {
-    unsigned int j = num / i;
-    while (num == (i * j)) {
-      num_factors[idx++] = i;
-      num = j; j /= i;
+  for (i = 3; i <= c; i += 2) {
+    unsigned int j = c / i;
+    while (c == (i * j)) {
+      num_factors_n32[n++] = i;
+      c = j; j /= i;
+    }
+    if ((i * i) > num) {
+      break;
     }
   }
-  LIBXSMM_ASSERT(1 >= num);
-  for (i = idx; i < 32; ++i) {
-    num_factors[i] = num;
+  LIBXSMM_ASSERT(1 >= c || 0 == n);
+  return n;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_split_work(unsigned int work, unsigned int split_limit, unsigned int splits_n32[], int* nsplits)
+{
+  unsigned int result;
+  LIBXSMM_ASSERT((NULL != nsplits && NULL != nsplits) || (NULL == nsplits && NULL == nsplits));
+  if (split_limit < work) {
+    if (1 < split_limit) {
+      unsigned int fw[32], ft[32], *const fs = (NULL != splits_n32 ? splits_n32 : ft), *fmin, *fmax;
+      const int nw = libxsmm_primes_u32(work, fw);
+      const int ns = libxsmm_primes_u32(split_limit, fs);
+      int imin = 0, imax = 0, maxi, mini;
+      if (ns <= nw) {
+        fmin = fs; fmax = fw;
+        maxi = nw; mini = ns;
+      }
+      else {
+        fmin = fw; fmax = fs;
+        maxi = ns; mini = nw;
+      }
+      result = 1;
+      /* intersect fmin and fmax into fmin (in-place) */
+      while (imin < mini && imax < maxi) {
+        const unsigned int minf = fmin[imin];
+        const unsigned int maxf = fmax[imax];
+        if (minf < maxf) {
+          ++imin;
+        }
+        else if (maxf < minf) {
+          ++imax;
+        }
+        else {
+          LIBXSMM_ASSERT(minf == maxf);
+          result *= minf;
+          ++imin;
+          ++imax;
+        }
+      }
+      if (NULL != nsplits) {
+        *nsplits = imin;
+        if (fmin != splits_n32) {
+          LIBXSMM_ASSERT(NULL != splits_n32);
+          for (imin = 0; imin < *nsplits; ++imin) {
+            splits_n32[imin] = fmin[imin];
+          }
+        }
+      }
+    }
+    else {
+      if (NULL != nsplits) {
+        LIBXSMM_ASSERT(NULL != splits_n32);
+        *splits_n32 = 1;
+        *nsplits = 1;
+      }
+      result = 1;
+    }
   }
+  else {
+    if (NULL != nsplits) {
+      LIBXSMM_ASSERT(NULL != splits_n32);
+      *splits_n32 = work;
+      *nsplits = 1;
+    }
+    result = work;
+  }
+  return result;
 }
 
 

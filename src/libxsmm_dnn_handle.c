@@ -192,25 +192,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
 }
 
 
-/**
- * This function finds the unroll factor for a given amount of work.
- * An optimal solution (Knapsack problem) is not guaranteed e.g.,
- * 12 = 2*2*3, MAX_ACC = 6, this algorithm: 2*2 (best: 2*3).
- */
-LIBXSMM_API_INLINE unsigned int internal_dnn_handle_maxunroll(
-  unsigned int work, unsigned int max_unroll)
-{
-  unsigned int fact[32], ur = 1, i;
-  libxsmm_primes_u32(work, fact);
-  for (i = 0; 1 < fact[i]; ++i) {
-    if ((fact[i] * ur) <= max_unroll) {
-      ur *= fact[i];
-    }
-  }
-  return ur;
-}
-
-
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_winograd_check( libxsmm_dnn_layer* handle ) {
   /* flag to test if we found an architecture which is supported */
   int noarch = 1;
@@ -572,7 +553,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         } else {
           max_acc = 26;
         }
-        wino_desc_fp.ur = internal_dnn_handle_maxunroll(wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, max_acc);
+        wino_desc_fp.ur = libxsmm_split_work(wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, max_acc, NULL, NULL);
         /* ur should be at least 14 to hide qfma latency */
         temp_ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_fp.ur, 14), wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg);
         if (0 == wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg % temp_ur) {
@@ -905,7 +886,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         } else {
           max_acc = 26;
         }
-        wino_desc_bp.ur = internal_dnn_handle_maxunroll(wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, max_acc);
+        wino_desc_bp.ur = libxsmm_split_work(wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, max_acc, NULL, NULL);
         temp_ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_bp.ur, 14), wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg);
         if (0 == wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg % temp_ur) {
           wino_desc_bp.ur = temp_ur;
@@ -1253,9 +1234,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
         allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
         if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg % 4) == 0) {
-          wino_desc_wu.ur = internal_dnn_handle_maxunroll(wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg/4, allowed_unroll);
+          wino_desc_wu.ur = libxsmm_split_work(wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg/4, allowed_unroll, NULL, NULL);
         } else {
-          wino_desc_wu.ur = internal_dnn_handle_maxunroll(wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg, allowed_unroll);
+          wino_desc_wu.ur = libxsmm_split_work(wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg, allowed_unroll, NULL, NULL);
         }
       }
 

@@ -57,8 +57,19 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
 
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input);
 
-/* This function finds up to 32 prime factors of an unsigned integer. */
-LIBXSMM_API void libxsmm_primes_u32(unsigned int num, unsigned int num_factors_32[]);
+/**
+ * This function finds prime-factors (up to 32) of an unsigned integer in ascending order, and
+ * returns the number of factors found (zero if the given number is prime and unequal to two).
+ */
+LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n32[]);
+
+/**
+ * Divides the given amount of work into a number (nsplits) of ascending factors (splits).
+ * An optimal solution according to the 0/1-Knapsack problem is achieved e.g.,
+ * work=12=2*2*3 and split_limit=6=2*3 then factors=2*3 (result=6).
+ */
+LIBXSMM_API unsigned int libxsmm_split_work(unsigned int work, unsigned int split_limit,
+  unsigned int splits_n32[], int* nsplits);
 
 /* SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x);
