@@ -192,51 +192,22 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
 }
 
 
-/* This function finds the prime factors of a number */
-LIBXSMM_API_INLINE void internal_dnn_handle_factors(
-    unsigned int num,
-    unsigned int num_factors[] )
-{
-  unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
-  int i;
-  unsigned int total_primes = 10;
-  unsigned int idx = 0;
-
-  for ( i = total_primes-1; i >= 0; i-- ) {
-    while((num % primes[i]) == 0) {
-      num_factors[idx] = primes[i];
-      idx++;
-      num = num/primes[i];
-    }
-  }
-}
-
-
 /**
- * This function finds the unroll factor for (itiles*jtiles*bimg)
- * such that ur <= max_acc
- * The following loop may not give an optimal solution (knapsack problem)
- * Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2
+ * This function finds the unroll factor for a given amount of work.
+ * An optimal solution (Knapsack problem) is not guaranteed e.g.,
+ * 12 = 2*2*3, MAX_ACC = 6, this algorithm: 2*2 (best: 2*3).
  */
-LIBXSMM_API_INLINE void internal_dnn_handle_factors_all(
-    unsigned int  product,
-    unsigned int* ur,
-    unsigned int  max_acc)
+LIBXSMM_API_INLINE unsigned int internal_dnn_handle_maxunroll(
+  unsigned int work, unsigned int max_unroll)
 {
-  unsigned int i;
-  unsigned int fact[10];
-
-  for ( i = 0; i < 10; i++ ) {
-    fact[i] = 1;
-  }
-  internal_dnn_handle_factors(product, fact);
-
-  *ur = 1;
-  for ( i = 0; fact[i] != 1; i++ ) {
-    if ( (fact[i] * (*ur)) <= max_acc ) {
-      *ur = (*ur)*fact[i];
+  unsigned int fact[32], ur = 1, i;
+  libxsmm_primes_u32(work, fact);
+  for (i = 0; 1 < fact[i]; ++i) {
+    if ((fact[i] * ur) <= max_unroll) {
+      ur *= fact[i];
     }
   }
+  return ur;
 }
 
 
@@ -601,7 +572,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         } else {
           max_acc = 26;
         }
-        internal_dnn_handle_factors_all( wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
+        wino_desc_fp.ur = internal_dnn_handle_maxunroll(wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, max_acc);
         /* ur should be at least 14 to hide qfma latency */
         temp_ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_fp.ur, 14), wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg);
         if (0 == wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg % temp_ur) {
@@ -934,7 +905,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         } else {
           max_acc = 26;
         }
-        internal_dnn_handle_factors_all( wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
+        wino_desc_bp.ur = internal_dnn_handle_maxunroll(wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, max_acc);
         temp_ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_bp.ur, 14), wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg);
         if (0 == wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg % temp_ur) {
           wino_desc_bp.ur = temp_ur;
@@ -1282,9 +1253,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
         allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
         if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg % 4) == 0) {
-          internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg/4, &(wino_desc_wu.ur), allowed_unroll );
+          wino_desc_wu.ur = internal_dnn_handle_maxunroll(wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg/4, allowed_unroll);
         } else {
-          internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg,   &(wino_desc_wu.ur), allowed_unroll );
+          wino_desc_wu.ur = internal_dnn_handle_maxunroll(wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg, allowed_unroll);
         }
       }
 

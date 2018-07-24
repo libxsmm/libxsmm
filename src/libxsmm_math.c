@@ -134,6 +134,30 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 }
 
 
+LIBXSMM_API void libxsmm_primes_u32(unsigned int num, unsigned int num_factors[])
+{
+  unsigned int idx = 0, i;
+  if (0 < num && 0 == (num & 1)) { /* non-zero even */
+    unsigned int j = num / 2;
+    while (num == (2 * j)) {
+      num_factors[idx++] = 2;
+      num = j; j /= 2;
+    }
+  }
+  for (i = 3; i <= num; i += 2) {
+    unsigned int j = num / i;
+    while (num == (i * j)) {
+      num_factors[idx++] = i;
+      num = j; j /= i;
+    }
+  }
+  LIBXSMM_ASSERT(1 >= num);
+  for (i = idx; i < 32; ++i) {
+    num_factors[i] = num;
+  }
+}
+
+
 LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x)
 {
   unsigned long long b; unsigned int y = 0, s;
