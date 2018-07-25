@@ -39,7 +39,7 @@
 #endif
 
 #if !defined(LIBXSMM_MAX_NTHREADS)
-# define LIBXSMM_MAX_NTHREADS 512
+# define LIBXSMM_MAX_NTHREADS 1024
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
 # define LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS LIBXSMM_MAX_NTHREADS
@@ -608,7 +608,14 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
   /** If a name is given, an executable buffer will be dumped into a file. */
   const char* name);
 
+/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
 LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+
+/** Determines the given value in double-precision based on the given type. */
+LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
+
+/** Determines the generic value given in double-precision. */
+LIBXSMM_API_INTERN int libxsmm_cast(libxsmm_datatype datatype, double dvalue, char value[]);
 
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);

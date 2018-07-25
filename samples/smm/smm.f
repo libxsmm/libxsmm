@@ -87,7 +87,7 @@
         CALL libxsmm_dispatch(xmm, m, n, k)
 
         ! workload is about 2 GByte in memory by default
-        size0 = (m * k + k * n) * T ! size of a single stream element in Byte
+        size0 = (m * k + k * n + m * n) * T ! size of a single stream element in Byte
         size1 = MERGE(2048_8, MERGE(size1, ISHFT(ABS(size0 * size1)     &
      &            + ISHFT(1, 20) - 1, -20), 0.LE.size1), 0.EQ.size1)
         size = ISHFT(MERGE(MAX(size, size1), ISHFT(ABS(size) * size0    &
@@ -111,7 +111,7 @@
 
         WRITE(*, "(3(A,I0),A,I0,A,I0,A,I0)")                            &
      &    "m=", m, " n=", n, " k=", k, " elements=", UBOUND(a, 3),      &
-     &    " size=", size1, "MB repetitions=", repetitions
+     &    " size=", size1, " MB repetitions=", repetitions
 
         ! compute reference solution and warmup BLAS library
         ALLOCATE(d(m,n))

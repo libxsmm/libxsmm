@@ -192,54 +192,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
 }
 
 
-/* This function finds the prime factors of a number */
-LIBXSMM_API_INLINE void internal_dnn_handle_factors(
-    unsigned int num,
-    unsigned int num_factors[] )
-{
-  unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
-  int i;
-  unsigned int total_primes = 10;
-  unsigned int idx = 0;
-
-  for ( i = total_primes-1; i >= 0; i-- ) {
-    while((num % primes[i]) == 0) {
-      num_factors[idx] = primes[i];
-      idx++;
-      num = num/primes[i];
-    }
-  }
-}
-
-
-/**
- * This function finds the unroll factor for (itiles*jtiles*bimg)
- * such that ur <= max_acc
- * The following loop may not give an optimal solution (knapsack problem)
- * Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2
- */
-LIBXSMM_API_INLINE void internal_dnn_handle_factors_all(
-    unsigned int  product,
-    unsigned int* ur,
-    unsigned int  max_acc)
-{
-  unsigned int i;
-  unsigned int fact[10];
-
-  for ( i = 0; i < 10; i++ ) {
-    fact[i] = 1;
-  }
-  internal_dnn_handle_factors(product, fact);
-
-  *ur = 1;
-  for ( i = 0; fact[i] != 1; i++ ) {
-    if ( (fact[i] * (*ur)) <= max_acc ) {
-      *ur = (*ur)*fact[i];
-    }
-  }
-}
-
-
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_winograd_check( libxsmm_dnn_layer* handle ) {
   /* flag to test if we found an architecture which is supported */
   int noarch = 1;
@@ -601,7 +553,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         } else {
           max_acc = 26;
         }
-        internal_dnn_handle_factors_all( wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
+        wino_desc_fp.ur = libxsmm_split_work(wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, max_acc, NULL, NULL);
         /* ur should be at least 14 to hide qfma latency */
         temp_ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_fp.ur, 14), wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg);
         if (0 == wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg % temp_ur) {
@@ -934,7 +886,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         } else {
           max_acc = 26;
         }
-        internal_dnn_handle_factors_all( wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
+        wino_desc_bp.ur = libxsmm_split_work(wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, max_acc, NULL, NULL);
         temp_ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_bp.ur, 14), wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg);
         if (0 == wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg % temp_ur) {
           wino_desc_bp.ur = temp_ur;
@@ -1282,9 +1234,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
         allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
         if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg % 4) == 0) {
-          internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg/4, &(wino_desc_wu.ur), allowed_unroll );
+          wino_desc_wu.ur = libxsmm_split_work(wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg/4, allowed_unroll, NULL, NULL);
         } else {
-          internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg,   &(wino_desc_wu.ur), allowed_unroll );
+          wino_desc_wu.ur = libxsmm_split_work(wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg, allowed_unroll, NULL, NULL);
         }
       }
 

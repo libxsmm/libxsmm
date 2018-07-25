@@ -235,17 +235,17 @@ void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, float *src, flo
 int main(int argc, char* argv[])
 {
   /* Arrays related to FWD pass */
-  float *wigold, *wfgold, *wogold, *wcgold, *xgoldt, *rigold, *rfgold, *rogold, *rcgold, *hgold, *bigold, *bfgold, *bogold, *bcgold;
-  float *igold, *fgold, *ogold, *cgold, *dgold;
-  float *i1gold, *i2gold, *f1gold, *f2gold, *o1gold, *o2gold, *c1gold, *c2gold, *d1gold, *d2gold, *dhgold;
-  float *wi, *wf, *wo, *wc, *xt, *ri, *rf, *ro, *rc, *h, *bi, *bf, *bo, *bc, *htest, *hgold_temp;
+  float *wigold, *wfgold, *wogold, *wcgold, *xgoldt, *rigold, *rfgold, *rogold, *rcgold, *hgold = NULL, *bigold = NULL, *bfgold = NULL, *bogold = NULL, *bcgold = NULL;
+  float *igold = NULL, *fgold = NULL, *ogold = NULL, *cgold = NULL, *dgold = NULL;
+  float *i1gold, *i2gold, *f1gold, *f2gold, *o1gold, *o2gold, *c1gold, *c2gold, *d1gold, *d2gold, *dhgold = NULL;
+  float *wi, *wf, *wo, *wc, *xt, *ri, *rf, *ro, *rc, *h = NULL, *bi, *bf, *bo, *bc, *htest = NULL, *hgold_temp = NULL;
   /* Arrays related to BWD and UPD pass */
-  float *hgoldt, *igoldt, *fgoldt, *ogoldt, *cgoldt, *i3gold, *f3gold, *d3gold, *d4gold, *dgoldt, *deltagoldt;
-  float *djdhgoldt, *djddgoldt, *djdigoldt, *djdfgoldt, *djdcgoldt, *djdogoldt, *djdxgoldt;
-  float *djdwigold, *djdwfgold, *djdwogold, *djdwcgold, *djdrigold, *djdrfgold, *djdrogold, *djdrcgold;
-  float *djdbigold, *djdbfgold, *djdbogold, *djdbcgold, *wgoldTp, *rgoldTp, *xgoldTp, *hgoldTp;
-  float *ht, *djdht, *djdxt, *djdwi, *djdwf, *djdwo, *djdwc, *djdri, *djdrf, *djdro, *djdrc, *djdbi, *djdbf, *djdbo, *djdbc;
-  float *djdxtestt, *djdwtest, *djdrtest, *djdbtest, *djdwgold4, *djdrgold4, *djdbgold4;
+  float *hgoldt = NULL, *igoldt = NULL, *fgoldt = NULL, *ogoldt = NULL, *cgoldt = NULL, *i3gold = NULL, *f3gold = NULL, *d3gold = NULL, *d4gold = NULL, *dgoldt = NULL, *deltagoldt = NULL;
+  float *djdhgoldt = NULL, *djddgoldt = NULL, *djdigoldt = NULL, *djdfgoldt = NULL, *djdcgoldt = NULL, *djdogoldt = NULL, *djdxgoldt = NULL;
+  float *djdwigold = NULL, *djdwfgold = NULL, *djdwogold = NULL, *djdwcgold = NULL, *djdrigold = NULL, *djdrfgold = NULL, *djdrogold = NULL, *djdrcgold = NULL;
+  float *djdbigold = NULL, *djdbfgold = NULL, *djdbogold = NULL, *djdbcgold = NULL, *wgoldTp = NULL, *rgoldTp = NULL, *xgoldTp = NULL, *hgoldTp = NULL;
+  float *ht = NULL, *djdht = NULL, *djdxt = NULL, *djdwi = NULL, *djdwf = NULL, *djdwo = NULL, *djdwc = NULL, *djdri = NULL, *djdrf = NULL, *djdro = NULL, *djdrc = NULL, *djdbi = NULL, *djdbf = NULL, *djdbo = NULL, *djdbc = NULL;
+  float *djdxtestt = NULL, *djdwtest = NULL, *djdrtest = NULL, *djdbtest = NULL, *djdwgold4 = NULL, *djdrgold4 = NULL, *djdbgold4 = NULL;
 
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
@@ -304,9 +304,9 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_input;
   libxsmm_dnn_tensor* libxsmm_hidden_state;
   libxsmm_dnn_tensor* libxsmm_weight_i;
-  libxsmm_dnn_tensor* libxsmm_weight_f;
-  libxsmm_dnn_tensor* libxsmm_weight_o;
-  libxsmm_dnn_tensor* libxsmm_weight_c;
+  libxsmm_dnn_tensor* libxsmm_weight_f = NULL;
+  libxsmm_dnn_tensor* libxsmm_weight_o = NULL;
+  libxsmm_dnn_tensor* libxsmm_weight_c = NULL;
   libxsmm_dnn_tensor* libxsmm_recur_weight_i;
   libxsmm_dnn_tensor* libxsmm_recur_weight_f;
   libxsmm_dnn_tensor* libxsmm_recur_weight_o;
@@ -315,20 +315,20 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_bias_f;
   libxsmm_dnn_tensor* libxsmm_bias_o;
   libxsmm_dnn_tensor* libxsmm_bias_c;
-  libxsmm_dnn_tensor* libxsmm_dinput;
-  libxsmm_dnn_tensor* libxsmm_dhidden_state;
-  libxsmm_dnn_tensor* libxsmm_dweight_i;
-  libxsmm_dnn_tensor* libxsmm_dweight_f;
-  libxsmm_dnn_tensor* libxsmm_dweight_o;
-  libxsmm_dnn_tensor* libxsmm_dweight_c;
-  libxsmm_dnn_tensor* libxsmm_drecur_weight_i;
-  libxsmm_dnn_tensor* libxsmm_drecur_weight_f;
-  libxsmm_dnn_tensor* libxsmm_drecur_weight_o;
-  libxsmm_dnn_tensor* libxsmm_drecur_weight_c;
-  libxsmm_dnn_tensor* libxsmm_dbias_i;
-  libxsmm_dnn_tensor* libxsmm_dbias_f;
-  libxsmm_dnn_tensor* libxsmm_dbias_o;
-  libxsmm_dnn_tensor* libxsmm_dbias_c;
+  libxsmm_dnn_tensor* libxsmm_dinput = NULL;
+  libxsmm_dnn_tensor* libxsmm_dhidden_state = NULL;
+  libxsmm_dnn_tensor* libxsmm_dweight_i = NULL;
+  libxsmm_dnn_tensor* libxsmm_dweight_f = NULL;
+  libxsmm_dnn_tensor* libxsmm_dweight_o = NULL;
+  libxsmm_dnn_tensor* libxsmm_dweight_c = NULL;
+  libxsmm_dnn_tensor* libxsmm_drecur_weight_i = NULL;
+  libxsmm_dnn_tensor* libxsmm_drecur_weight_f = NULL;
+  libxsmm_dnn_tensor* libxsmm_drecur_weight_o = NULL;
+  libxsmm_dnn_tensor* libxsmm_drecur_weight_c = NULL;
+  libxsmm_dnn_tensor* libxsmm_dbias_i = NULL;
+  libxsmm_dnn_tensor* libxsmm_dbias_f = NULL;
+  libxsmm_dnn_tensor* libxsmm_dbias_o = NULL;
+  libxsmm_dnn_tensor* libxsmm_dbias_c = NULL;
 
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
@@ -665,9 +665,9 @@ int main(int argc, char* argv[])
     zero_buf(ro, m*m);
     zero_buf(rc, m*m);
     if (reuse) {
-      zero_buf(h,  m*n);
+      zero_buf(h, m*n);
     } else {
-      zero_buf(h,  m*n*(t+1));
+      zero_buf(h, m*n*(t+1));
     }
     zero_buf(bi, m*n);
     zero_buf(bf, m*n);
@@ -1460,7 +1460,7 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = (((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * 4.0 + (5.0 * m * n)) * (double)t * (double)iters;
+      flops = (((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n) + (tflops * m * n)) * 4.0 + (4.0 * m * n) + (tflops * m * n)) * (double)t * (double)iters;
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
       printf("fp time = %.5g\n", ((double)(l_total/iters)));

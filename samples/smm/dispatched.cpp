@@ -283,7 +283,8 @@ int main(int argc, char* argv[])
 
       if (0 != check) {
         libxsmm_matdiff_info diff;
-        if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m, n, c, NULL, &ldc, &ldc, &diff)) {
+        result = libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m, n, c, NULL, &ldc, &ldc, &diff);
+        if (EXIT_SUCCESS == result) {
           fprintf(stdout, "\tcheck: %f\n", diff.l1_ref);
         }
       }

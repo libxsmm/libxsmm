@@ -180,7 +180,8 @@ int main(int argc, char* argv[])
         if (0 != ctest) {
           libxsmm_matdiff_info diff;
           libxsmm_bgemm_copyout_c(handle, c, &ldc, ctest);
-          if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, cgold, ctest, &ldc, &ldc, &diff)) {
+          result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, cgold, ctest, &ldc, &ldc, &diff);
+          if (EXIT_SUCCESS == result) {
             fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
             if (check < 100.0 * diff.normf_rel) {
               fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
