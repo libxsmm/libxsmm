@@ -375,14 +375,12 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
     const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
     const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
     const libxsmm_convolution_forward_descriptor*     i_conv_desc ) {
-  unsigned int i;
   unsigned int l_i, l_j;
   unsigned int reg_X;
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofh_rb * i_conv_desc->ofw_rb);
   unsigned int datatype_output_size = (i_conv_desc->use_nts) ? 2 : 4;
   unsigned int lead_dim_w = (i_conv_desc->use_nts) ? i_conv_desc->ofw_padded : i_conv_desc->ofw_rb;
   unsigned int store_offset;
-  unsigned short  mask_array[32];
 
   if ( (i_conv_desc->compute_batch_stats > 0) ) {
     /* set zmm2 and 3 to zero */
@@ -410,8 +408,10 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
 
   if ( i_conv_desc->use_nts ) {
 #if 0
+    unsigned short mask_array[32];
     if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ||
        i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL    ) {
+      unsigned int i;
       for ( i = 0; i < 16; ++i ) {
         mask_array[i] = (unsigned short)((i*2)+1);
       }
