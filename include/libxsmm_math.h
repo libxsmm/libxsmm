@@ -57,6 +57,11 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
 
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input);
 
+/** Greatest common divisor. */
+LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b);
+/** Least common multiple. */
+LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
+
 /**
  * This function finds prime-factors (up to 32) of an unsigned integer in ascending order, and
  * returns the number of factors found (zero if the given number is prime and unequal to two).

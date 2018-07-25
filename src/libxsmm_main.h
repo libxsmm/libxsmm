@@ -568,10 +568,6 @@ typedef enum libxsmm_malloc_flags {
   LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_RW | LIBXSMM_MALLOC_FLAG_X
 } libxsmm_malloc_flags;
 
-/** Greatest common divisor. */
-LIBXSMM_API_INTERN size_t libxsmm_gcd(size_t a, size_t b);
-/** Least common multiple. */
-LIBXSMM_API_INTERN size_t libxsmm_lcm(size_t a, size_t b);
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment);
 

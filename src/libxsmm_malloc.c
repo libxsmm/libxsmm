@@ -194,23 +194,6 @@ LIBXSMM_APIVAR(size_t internal_malloc_scratch_nmallocs);
 LIBXSMM_APIVAR(size_t internal_malloc_scratch_size);
 
 
-LIBXSMM_API_INTERN size_t libxsmm_gcd(size_t a, size_t b)
-{
-  while (0 != b) {
-    const size_t r = a % b;
-    a = b;
-    b = r;
-  }
-  return a;
-}
-
-
-LIBXSMM_API_INTERN size_t libxsmm_lcm(size_t a, size_t b)
-{
-  return (a * b) / libxsmm_gcd(a, b);
-}
-
-
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
 {
   size_t result = sizeof(void*);
