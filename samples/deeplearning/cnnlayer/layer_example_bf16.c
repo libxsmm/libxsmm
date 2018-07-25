@@ -42,8 +42,8 @@
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) { fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) ); global_status = A; }
 
 #define USE_OVERWRITE
-/*#define USE_FUSED_BATCH_STATS*/
-/*#define USE_OVERWRITE_RNE*/
+#define USE_FUSED_BATCH_STATS
+#define USE_OVERWRITE_RNE
 
 /* it's fine to alias in and out */
 void truncate_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
@@ -492,6 +492,7 @@ int main(int argc, char* argv[])
   double l_total = 0.0;
   double lpOps = 0.0; /* number of low precision operations */
   int i;
+  int bnofmblock;
 
   libxsmm_dnn_conv_desc conv_desc;
   libxsmm_dnn_layer* libxsmm_handle;
@@ -786,6 +787,8 @@ int main(int argc, char* argv[])
 
 #ifdef USE_FUSED_BATCH_STATS
   libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_BATCH_STATS, &status ); CHKERR_LIBXSMM_DNN( status );
+  /* we know that the tensor has 3 dims, inner most dim is the channel block */
+  bnofmblock = libxsmm_layout->dim_size[0];
   libxsmm_batchstats  = libxsmm_dnn_link_tensor( libxsmm_layout, batchstats_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 #endif
@@ -859,7 +862,7 @@ int main(int argc, char* argv[])
       int ch_i = 0;
       int ch_j = 0;
       int pxl_i = 0;
-      LIBXSMM_VLA_DECL(4, float, sum_fuse,  batchstats_libxsmm, nOfm/32, nImg, 32);
+      LIBXSMM_VLA_DECL(4, float, sum_fuse,  batchstats_libxsmm, nOfm/bnofmblock, nImg, bnofmblock);
       LIBXSMM_VLA_DECL(3, float, sum_naive, naive_output_fp, nOfm, ofhp*ofwp);
 
       ch_sum       = (float*) malloc(nOfm*sizeof(float));
@@ -873,11 +876,11 @@ int main(int argc, char* argv[])
         ch_sum[ch_i] = 0.0f;
         ch_sum2[ch_i] = 0.0f;
       }
-      for ( ch_i = 0; ch_i < nOfm/32; ++ch_i ) {
+      for ( ch_i = 0; ch_i < nOfm/bnofmblock; ++ch_i ) {
         for ( img_i = 0; img_i < nImg; ++img_i ) {
-          for ( ch_j = 0; ch_j < 32; ++ch_j ) {
-            ch_sum_fuse[(ch_i*32) + ch_j]  += sum_fuse[0][ch_i][img_i][ch_j];
-            ch_sum2_fuse[(ch_i*32) + ch_j] += sum_fuse[1][ch_i][img_i][ch_j];
+          for ( ch_j = 0; ch_j < bnofmblock; ++ch_j ) {
+            ch_sum_fuse[(ch_i*bnofmblock) + ch_j]  += sum_fuse[0][ch_i][img_i][ch_j];
+            ch_sum2_fuse[(ch_i*bnofmblock) + ch_j] += sum_fuse[1][ch_i][img_i][ch_j];
           }
         }
       }
