@@ -400,7 +400,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
         i_gp_reg_mapping->gp_reg_help_2,
         LIBXSMM_X86_GP_REG_UNDEF, 0,
         0);
-    /* prefetch current sum^2 value int L1$ */ 
+    /* prefetch current sum^2 value int L1$ */
     libxsmm_x86_instruction_prefetch( io_generated_code,
         LIBXSMM_X86_INSTR_PREFETCHT0,
         i_gp_reg_mapping->gp_reg_help_3,

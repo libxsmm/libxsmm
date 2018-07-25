@@ -403,7 +403,7 @@ if (n_segments) {
                     scratch_ptr += handle->ofw*handle->ofmblock;
                     output_dst += handle->ofwp*handle->ofmblock;
                   }
-                
+
                   _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 0, code_stream[pc].aux_index/*ofm1*/, img, 0,
                          BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
                   _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, code_stream[pc].aux_index/*ofm1*/, img, 0,
