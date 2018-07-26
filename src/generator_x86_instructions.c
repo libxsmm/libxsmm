@@ -1877,6 +1877,8 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
           exit(-1);
     }
 
+    if ( i_use_zero_masking != 0 ) l_fourth += 0x80;
+
     buf[i++] = (unsigned char)(0x62);
     buf[i++] = (unsigned char)(0xf1 + l_second - l_oddgrp0 * 0x20 - l_oddgrp2 * 0x80 - l_2or3grp0 * 0x40 - l_2or3grp2 * 0x10);
     buf[i++] = (unsigned char)(0x7d + l_third - l_oddgrp1 * 0x40 - l_vecval1*8);
@@ -2943,6 +2945,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
     }
 
     if ( i_use_broadcast ) { l_fourth += 0x10; l_sizereg = 4; }
+    if ( i_use_zero_masking != 0 ) l_fourth += 0x80;
 
     if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
     {
