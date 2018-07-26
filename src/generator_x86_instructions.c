@@ -743,6 +743,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     }
 
     if ( i_mask_reg_number != 0 ) l_maskingoff = i_mask_reg_number;
+    if ( i_use_zero_masking != 0 ) l_maskingoff += 0x80;
 
     if ( l_num == 0 ) l_vregoffset = 0x90;
     else if ( l_num == 1 ) { l_vregoffset = 0x10; l_vregoffset2 = -0x80; }
