@@ -69,12 +69,11 @@ LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
 LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n32[]);
 
 /**
- * Divides the given amount of work into a number (nsplits) of ascending factors (splits).
- * An optimal solution according to the 0/1-Knapsack problem is achieved e.g.,
- * work=12=2*2*3 and split_limit=6=2*3 then factors=2*3 (result=6).
+ * Divides the amount of work into prime factors and selects factors such
+ * that the product is within the given limit (0/1-Knapsack problem).
+ * For example: work=12=2*2*3 and split_limit=6 then result=2*3=6.
  */
-LIBXSMM_API unsigned int libxsmm_split_work(unsigned int work, unsigned int split_limit,
-  unsigned int splits_n32[], int* nsplits);
+LIBXSMM_API unsigned int libxsmm_split_work(unsigned int work, unsigned int split_limit);
 
 /* SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x);
