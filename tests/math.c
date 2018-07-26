@@ -121,6 +121,10 @@ int main(int argc, char* argv[])
     fprintf(stderr, "missed bitwise exact result in %i of %i cases!\n", LIBXSMM_MAX(warn_ssqrt, warn_dsqrt), N);
   }
 
+  /* check work division routine */
+  if (libxsmm_split_work(12 * 13, 13) != 13) exit(EXIT_FAILURE);
+  if (libxsmm_split_work(12, 6) != 6) exit(EXIT_FAILURE);
+
   return EXIT_SUCCESS;
 }
 
