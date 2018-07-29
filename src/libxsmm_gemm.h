@@ -51,8 +51,14 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_GEMM_CHECK) && !defined(NDEBUG)
+# define LIBXSMM_GEMM_CHECK
+#endif
 #if !defined(LIBXSMM_GEMM_LOCK)
 # define LIBXSMM_GEMM_LOCK LIBXSMM_LOCK_DEFAULT
+#endif
+#if !defined(LIBXSMM_GEMM_TASKSCALE)
+# define LIBXSMM_GEMM_TASKSCALE 2
 #endif
 
 #if !defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD) && \
@@ -399,6 +405,11 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void);
 /** Determines the size of the element-type given by precision. */
 LIBXSMM_API_INTERN unsigned char libxsmm_gemm_typesize(libxsmm_gemm_precision precision);
 
+/** Determines the given value in double-precision based on the given precision. */
+LIBXSMM_API_INTERN int libxsmm_gemm_dvalue(libxsmm_gemm_precision precision, const void* value, double* dvalue);
+/** Determines the value given in double-precision. */
+LIBXSMM_API_INTERN int libxsmm_gemm_cast(libxsmm_gemm_precision precision, double dvalue, char value[]);
+
 LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
 LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
 
@@ -426,6 +437,17 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
 
 LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, float);
 LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, double);
+
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
+  libxsmm_code_pointer copy_a[4], copy_b[4];
+  libxsmm_code_pointer copy_ci[4], copy_co[4];
+  libxsmm_xmmfunction kernel[2];
+  libxsmm_blasint m, n, k, mm, nn, kk;
+  unsigned int lda, ldb, ldc, ti, tm, tn, tk;
+  unsigned int itypesize, otypesize;
+  unsigned int nthreads, mt, nt, kt;
+  int flags_gemm, flags_copy, prf_copy;
+};
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
   struct {
@@ -456,8 +478,13 @@ LIBXSMM_API int libxsmm_smmbatch_blas(const char* transa, const char* transb, li
 
 LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
 
-/** Configuration table containing the tile sizes separate for DP and SP. */
-LIBXSMM_APIVAR_PUBLIC(/*const*/ unsigned int (*libxsmm_gemm_tile)[3/*M,N,K*/][8/*size-range*/]);
+/** Table of M-extents per type-size (tile shape). */
+LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_gemm_mtile);
+/** Table of M-extents per type-size (tile shape). */
+LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_gemm_ntile);
+/** Table of M-extents per type-size (tile shape). */
+LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_gemm_ktile);
+
 /** auto-batch descriptor (filter). */
 LIBXSMM_APIVAR_PUBLIC(libxsmm_gemm_descriptor libxsmm_gemm_batchdesc);
 /** Records a batch of SMMs. */
@@ -466,10 +493,10 @@ LIBXSMM_APIVAR_PUBLIC(libxsmm_gemm_batchitem* libxsmm_gemm_batcharray);
 LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_gemm_batchlock);
 /** Maximum size of the recorded batch. */
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_batchsize);
-/** Grain/chunk size when processing batches. */
-LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_chunksize);
-/** Determines if OpenMP tasks are used. */
-LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_tasks);
+/** Minimum batchsize per thread/task. */
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_batchgrain);
+/** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_taskscale);
 /**
  * Intercepted GEMM
  * - odd: sequential and non-tiled (small problem sizes only)

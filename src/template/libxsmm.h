@@ -306,7 +306,7 @@ LIBXSMM_API void libxsmm_matcopy(void* out, const void* in, unsigned int typesiz
 /** Matrix copy function ("in" can be NULL to zero the destination, per-thread form). */
 LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
-  const int* prefetch, int tid, int nthreads);
+  const int* prefetch, /*unsigned*/int tid, /*unsigned*/int nthreads);
 
 /** Matrix copy function ("in" can be NULL to zero the destination); MT via libxsmmext. */
 LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
@@ -320,7 +320,7 @@ LIBXSMM_API void libxsmm_otrans(void* out, const void* in, unsigned int typesize
 /** Matrix transposition (out-of-place form, per-thread form). */
 LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
-  int tid, int nthreads);
+  /*unsigned*/int tid, /*unsigned*/int nthreads);
 
 /** Matrix transposition; MT via libxsmmext (out-of-place form). */
 LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int typesize,
@@ -330,18 +330,22 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
-/** General dense matrix multiplication; MT via libxsmmext (double-precision). */
-LIBXSMM_APIEXT void libxsmm_dgemm_omp(const char* transa, const char* transb,
+/** Initialize GEMM-handle; allows to better amortize setup overhead. */
+LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blob,
+  libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc);
-/** General dense matrix multiplication; MT via libxsmmext (single-precision). */
-LIBXSMM_APIEXT void libxsmm_sgemm_omp(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc);
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const void* alpha, const void* beta, /*unsigned*/int nthreads);
+
+/** Low-level type-agnostic GEMM suitable for external threads or tasks. */
+LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
+  const void* a, const void* b, void* c, /*unsigned*/int tid);
+
+/** General dense matrix multiplication (libxsmmext); available as xgemm (generic), dgemm (DP), and sgemm (SP). */
+LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc);
 
 /** Dispatched general dense matrix multiplication (double-precision). */
 LIBXSMM_API void libxsmm_dgemm(const char* transa, const char* transb,

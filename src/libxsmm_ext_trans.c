@@ -80,7 +80,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
           const int nthreads = omp_get_max_threads();
 # if defined(LIBXSMM_EXT_TASKS)
           if (0 >= libxsmm_trans_taskscale)
-#endif
+# endif
           {
 #           pragma omp parallel num_threads(nthreads)
             libxsmm_matcopy_internal(out, in, typesize, m, n, ldi, ldo, prefetch,
@@ -186,7 +186,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
           const int nthreads = omp_get_max_threads();
 # if defined(LIBXSMM_EXT_TASKS)
           if (0 >= libxsmm_trans_taskscale)
-#endif
+# endif
           {
 #           pragma omp parallel num_threads(nthreads)
             libxsmm_otrans_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,

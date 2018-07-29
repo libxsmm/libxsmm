@@ -120,6 +120,10 @@ union libxsmm_bfloat16_hp {
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
 typedef LIBXSMM_BLASINT libxsmm_blasint;
 
+/** Type representing sufficient storage space for a GEMM handle. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_blob { char data[256]; } libxsmm_gemm_blob;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle libxsmm_gemm_handle;
+
 /** Type representing sufficient storage space for descriptors (GEMM, TCOPY, MCOPY). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_descriptor_blob {
   char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
