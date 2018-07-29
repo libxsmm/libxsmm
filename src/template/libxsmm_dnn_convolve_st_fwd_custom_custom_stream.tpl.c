@@ -386,8 +386,6 @@ if (n_segments) {
                   for ( oj = 0; oj < handle->ofh; oj++ ) {
                     for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                       __m512 tmp = LIBXSMM_INTRINSICS_MM512_LOAD_PS( scratch_ptr+oi );
-                      bsum = _mm512_add_ps( bsum, tmp );
-                      bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( tmp, tmp ) );
                       __m512i vfp32     = _mm512_castps_si512( tmp );
                       __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
                       __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
@@ -397,6 +395,8 @@ if (n_segments) {
                       __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
                       __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
                       __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
+                      bsum = _mm512_add_ps(bsum, tmp);
+                      bsum2 = _mm512_add_ps(bsum2, _mm512_mul_ps(tmp, tmp));
                       _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
                       _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                     }
@@ -436,9 +436,9 @@ if (n_segments) {
                   for ( oj = 0; oj < handle->ofh; oj++ ) {
                     for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                       __m512 tmp = LIBXSMM_INTRINSICS_MM512_LOAD_PS( scratch_ptr+oi );
-                      bsum = _mm512_add_ps( bsum, tmp );
-                      bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( tmp, tmp ) );
                       __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
+                      bsum = _mm512_add_ps(bsum, tmp);
+                      bsum2 = _mm512_add_ps(bsum2, _mm512_mul_ps(tmp, tmp));
                       _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
                       _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                     }
@@ -602,8 +602,6 @@ if (n_segments) {
                   for ( oj = 0; oj < handle->ofh; oj++ ) {
                     for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                       __m512 tmp = LIBXSMM_INTRINSICS_MM512_LOAD_PS( scratch_ptr+oi );
-                      bsum = _mm512_add_ps( bsum, tmp );
-                      bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( tmp, tmp ) );
                       __m512i vfp32     = _mm512_castps_si512( tmp );
                       __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
                       __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
@@ -613,6 +611,8 @@ if (n_segments) {
                       __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
                       __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
                       __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
+                      bsum = _mm512_add_ps(bsum, tmp);
+                      bsum2 = _mm512_add_ps(bsum2, _mm512_mul_ps(tmp, tmp));
                       _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
                       _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                     }
@@ -653,9 +653,9 @@ if (n_segments) {
                   for ( oj = 0; oj < handle->ofh; oj++ ) {
                     for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
                       __m512 tmp = _mm512_loadu_ps(scratch_ptr+oi);
-                      bsum = _mm512_add_ps( bsum, tmp );
-                      bsum2 = _mm512_add_ps( bsum2, _mm512_mul_ps( tmp, tmp ) );
                       __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
+                      bsum = _mm512_add_ps(bsum, tmp);
+                      bsum2 = _mm512_add_ps(bsum2, _mm512_mul_ps(tmp, tmp));
                       _mm512_storeu_ps(scratch_ptr+oi, zero_reg);
                       _mm256_storeu_si256( (__m256i*)(output_dst+oi), vbfp16 );
                     }

@@ -34,6 +34,7 @@
 #include "libxsmm_typedefs.h"
 
 /** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
+#if !defined(_WIN32) && !defined(__CYGWIN__) /* TODO: fully support calling convention */
 #if 0 != ((LIBXSMM_PREFETCH) & 2/*AL2*/) \
  || 0 != ((LIBXSMM_PREFETCH) & 4/*AL2_JPST*/) \
  || 0 != ((LIBXSMM_PREFETCH) & 16/*AL2_AHEAD*/) \
@@ -46,6 +47,7 @@
 #endif
 #if 0 != ((LIBXSMM_PREFETCH) & 128/*CL1*/)
 # define LIBXSMM_GEMM_PREFETCH_C(EXPR) (EXPR)
+#endif
 #endif
 /** Secondary helper macros derived from the above group. */
 #if defined(LIBXSMM_GEMM_PREFETCH_A)
@@ -258,24 +260,16 @@
 
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
 #define LIBXSMM_MMCALL_ABC(FN, A, B, C) \
-  LIBXSMM_ASSERT(FN); \
-  FN(A, B, C)
-
-/* TODO: full support for Windows calling convention */
-#if defined(_WIN32) || defined(__CYGWIN__)
-# define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) LIBXSMM_MMCALL_ABC(FN, A, B, C)
-#else
-# define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) { \
-    LIBXSMM_NOPREFETCH_A(LIBXSMM_UNUSED(PA)); \
-    LIBXSMM_NOPREFETCH_B(LIBXSMM_UNUSED(PB)); \
-    LIBXSMM_NOPREFETCH_C(LIBXSMM_UNUSED(PC)); \
-    LIBXSMM_ASSERT(FN); \
-    FN(A, B, C, \
-      LIBXSMM_GEMM_PREFETCH_A(PA), \
-      LIBXSMM_GEMM_PREFETCH_B(PB), \
-      LIBXSMM_GEMM_PREFETCH_C(PC)); \
-  }
-#endif
+  LIBXSMM_ASSERT(FN); FN(A, B, C)
+#define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) { \
+  LIBXSMM_NOPREFETCH_A(LIBXSMM_UNUSED(PA)); \
+  LIBXSMM_NOPREFETCH_B(LIBXSMM_UNUSED(PB)); \
+  LIBXSMM_NOPREFETCH_C(LIBXSMM_UNUSED(PC)); \
+  LIBXSMM_ASSERT(FN); FN(A, B, C, \
+    LIBXSMM_GEMM_PREFETCH_A(PA), \
+    LIBXSMM_GEMM_PREFETCH_B(PB), \
+    LIBXSMM_GEMM_PREFETCH_C(PC)); \
+}
 
 #if (0/*LIBXSMM_GEMM_PREFETCH_NONE*/ == LIBXSMM_PREFETCH)
 # define LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, LDA, LDB, LDC) \
