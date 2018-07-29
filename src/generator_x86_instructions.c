@@ -42,7 +42,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(GENERATOR_X86_ZEROMASKING)
+#if !defined(GENERATOR_X86_ZEROMASKING) && 0
 # define GENERATOR_X86_ZEROMASKING
 #endif
 
