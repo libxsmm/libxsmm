@@ -42,7 +42,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(GENERATOR_X86_ZEROMASKING) && 0
+#if !defined(GENERATOR_X86_ZEROMASKING)
 # define GENERATOR_X86_ZEROMASKING
 #endif
 
@@ -363,7 +363,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     int l_insert_extra_byte = 0;
     int l_fpadj = 0;
 
-    if ( (i_vector_name != 'z') && (i_mask_reg_number !=0) )
+    if ( (i_vector_name != 'z') && (i_mask_reg_number != 0) )
     {
        fprintf(stderr, "libxsmm_instruction_vec_move: Masking is only enabled with zmm registers!\n");
        exit(-1);
@@ -741,10 +741,12 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
        l_wow -= 0x20;
     }
 
-    if ( i_mask_reg_number != 0 ) l_maskingoff = i_mask_reg_number;
+    if ( i_mask_reg_number != 0 ) {
+      l_maskingoff = i_mask_reg_number;
 #if defined(GENERATOR_X86_ZEROMASKING)
-    if ( i_use_zero_masking != 0 ) l_maskingoff += 0x80;
+      if ( i_use_zero_masking != 0 ) l_maskingoff += 0x80;
 #endif
+    }
     if ( l_num == 0 ) l_vregoffset = 0x90;
     else if ( l_num == 1 ) { l_vregoffset = 0x10; l_vregoffset2 = -0x80; }
     else if ( l_num == 2 ) l_vregoffset = 0x80;
@@ -874,11 +876,11 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name, 15 );
 #if defined(GENERATOR_X86_ZEROMASKING)
-    if ( i_use_zero_masking == 0 )
+    if ( i_use_zero_masking == 0 || i_mask_reg_number == 0 )
 #endif
     {
       if ( io_generated_code->code_type == 0 ) {
-        memset( l_masking_type, '\0', sizeof(l_masking_type) );
+        l_masking_type[0] = (char)0; /* no mask */
       }
     }
 #if defined(GENERATOR_X86_ZEROMASKING)
@@ -1884,7 +1886,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
           exit(-1);
     }
 #if defined(GENERATOR_X86_ZEROMASKING)
-    if ( i_use_zero_masking != 0 ) l_fourth += 0x80;
+    if ( i_use_zero_masking != 0 && i_mask_reg_number != 0 ) l_fourth += 0x80;
 #endif
     buf[i++] = (unsigned char)(0x62);
     buf[i++] = (unsigned char)(0xf1 + l_second - l_oddgrp0 * 0x20 - l_oddgrp2 * 0x80 - l_2or3grp0 * 0x40 - l_2or3grp2 * 0x10);
@@ -1909,25 +1911,29 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
     char l_masking[16];
 
     libxsmm_get_x86_instr_name( i_vec_instr, l_instr_name, 15 );
+    if ( i_mask_reg_number != 0 ) {
 #if defined(GENERATOR_X86_ZEROMASKING)
-    if ( i_use_zero_masking == 0 )
+      if ( i_use_zero_masking == 0 )
 #endif
-    {
-      if ( io_generated_code->code_type == 0 ) {
-        LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}", i_mask_reg_number );
-      } else {
-        LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}", i_mask_reg_number );
+      {
+        if ( io_generated_code->code_type == 0 ) {
+          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}", i_mask_reg_number );
+        } else {
+          LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}", i_mask_reg_number );
+        }
       }
-    }
 #if defined(GENERATOR_X86_ZEROMASKING)
-    else {
-      if ( io_generated_code->code_type == 0 ) {
-        LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}%%{z%%}", i_mask_reg_number );
-      } else {
-        LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}{z}", i_mask_reg_number );
+      else {
+        if ( io_generated_code->code_type == 0 ) {
+          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}%%{z%%}", i_mask_reg_number );
+        } else {
+          LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}{z}", i_mask_reg_number );
+        }
       }
-    }
 #endif
+    }
+    else l_masking[0] = (char)0; /* no mask */
+
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
     if ( i_instruction_set == LIBXSMM_X86_AVX512_CORE ||
          i_instruction_set == LIBXSMM_X86_AVX512_MIC  ||
@@ -2961,7 +2967,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
 
     if ( i_use_broadcast ) { l_fourth += 0x10; l_sizereg = 4; }
 #if defined(GENERATOR_X86_ZEROMASKING)
-    if ( i_use_zero_masking != 0 ) l_fourth += 0x80;
+    if ( i_use_zero_masking != 0 && i_mask_reg_number != 0 ) l_fourth += 0x80;
 #endif
     if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
     {
@@ -3017,25 +3023,29 @@ void libxsmm_x86_instruction_vec_compute_mem_mask ( libxsmm_generated_code* io_g
     } else {
       LIBXSMM_SNPRINTF( l_broadcast, 7, "1to16" );
     }
+    if ( i_mask_reg_number != 0 ) {
 #if defined(GENERATOR_X86_ZEROMASKING)
-    if ( i_use_zero_masking == 0 )
+      if ( i_use_zero_masking == 0)
 #endif
-    {
-      if ( io_generated_code->code_type == 0 ) {
-        LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}", i_mask_reg_number );
-      } else {
-        LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}", i_mask_reg_number );
+      {
+        if ( io_generated_code->code_type == 0 ) {
+          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}", i_mask_reg_number );
+        } else {
+          LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}", i_mask_reg_number );
+        }
       }
-    }
 #if defined(GENERATOR_X86_ZEROMASKING)
-    else {
-      if ( io_generated_code->code_type == 0 ) {
-        LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}%%{z%%}", i_mask_reg_number );
-      } else {
-        LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}{z}", i_mask_reg_number );
+      else {
+        if ( io_generated_code->code_type == 0 ) {
+          LIBXSMM_SNPRINTF(l_masking, 16, "%%{k%u%%}%%{z%%}", i_mask_reg_number );
+        } else {
+          LIBXSMM_SNPRINTF(l_masking, 16, "{k%u}{z}", i_mask_reg_number );
+        }
       }
-    }
 #endif
+    }
+    else l_masking[0] = (char)0; /* no mask */
+
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
     if ( i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF ) {
       if ( io_generated_code->code_type == 0 ) {
