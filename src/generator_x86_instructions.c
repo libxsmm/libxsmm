@@ -331,14 +331,6 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
                                        const unsigned int      i_use_zero_masking,
                                        const unsigned int      i_is_store )
 {
-/* Greg asks: do we still need this condition? It seems to me this works now
-#if !defined(NDEBUG)
-  if ( i_gp_reg_idx != LIBXSMM_X86_GP_REG_UNDEF ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_NO_INDEX_SCALE_ADDR );
-    return;
-  }
-#endif
-*/
 #if !defined(GENERATOR_X86_ZEROMASKING)
   LIBXSMM_UNUSED(i_use_zero_masking);
 #endif
@@ -1792,7 +1784,6 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
 #if !defined(GENERATOR_X86_ZEROMASKING)
   LIBXSMM_UNUSED(i_use_zero_masking);
 #endif
-  LIBXSMM_UNUSED(i_immediate/*TODO*/);
 
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
