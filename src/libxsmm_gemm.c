@@ -705,7 +705,9 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       const libxsmm_blasint ildb = (libxsmm_blasint)(NULL == result.ptr->copy_b[0].xtrans  ? result.ptr->ldb : result.ptr->tk);
       const libxsmm_blasint ildc = (libxsmm_blasint)(NULL == result.ptr->copy_ci[0].xtrans ? result.ptr->ldc : result.ptr->tm);
       libxsmm_gemm_descriptor* desc = libxsmm_gemm_descriptor_init2(&desc_blob, iprec, oprec,
-        result.ptr->tm, result.ptr->tn, result.ptr->tk, ilda, ildb, ildc, alpha, beta, result.ptr->flags_gemm, prf_gemm);
+        result.ptr->tm, result.ptr->tn, result.ptr->tk, ilda, ildb, ildc, alpha, beta,
+        /* remove transpose flags from kernel request */
+        result.ptr->flags_gemm & ~transab, prf_gemm);
       if (NULL != desc) {
         result.ptr->kernel[0] = libxsmm_xmmdispatch(desc);
         if (0 == (desc->flags & LIBXSMM_GEMM_FLAG_BETA_0)) { /* beta=1 */
