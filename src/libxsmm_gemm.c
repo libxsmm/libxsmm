@@ -569,7 +569,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   LIBXSMM_ASSERT(sizeof(libxsmm_gemm_handle) <= sizeof(libxsmm_gemm_blob));
   if (NULL != blob && NULL != m && 0 < nthreads) {
     const int transab = LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B;
-    unsigned int replan = 0, mt, nt, kt, rm, rn, rk;
+    unsigned int ti, mt, nt, kt, rm, rn, rk, replan = 0;
     libxsmm_descriptor_blob desc_blob;
     LIBXSMM_INIT
     result.blob = blob;
@@ -585,11 +585,11 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     result.ptr->ldc = (unsigned int)(NULL != ldc ? *ldc : *m);
     result.ptr->itypesize = libxsmm_gemm_typesize(iprec);
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
-    result.ptr->ti = (4 < result.ptr->otypesize ? 0 : 1);
+    ti = (4 < result.ptr->otypesize ? 0 : 1);
     /* TODO: LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size!"); */
-    result.ptr->tm = libxsmm_gemm_mtile[result.ptr->ti];
-    result.ptr->tn = libxsmm_gemm_ntile[result.ptr->ti];
-    result.ptr->tk = libxsmm_gemm_ktile[result.ptr->ti];
+    result.ptr->tm = libxsmm_gemm_mtile[ti];
+    result.ptr->tn = libxsmm_gemm_ntile[ti];
+    result.ptr->tk = libxsmm_gemm_ktile[ti];
     result.ptr->nthreads = (unsigned int)nthreads;
     mt = (*m + result.ptr->tm - 1) / result.ptr->tm;
     nt = (result.ptr->n + result.ptr->tn - 1) / result.ptr->tn;
@@ -635,12 +635,14 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
           result.ptr->itypesize, result.ptr->tm, result.ptr->tk, result.ptr->tk/*tight*/);
         result.ptr->copy_a[0].xtrans = libxsmm_dispatch_trans(desc);
         if (NULL == result.ptr->copy_a[0].xtrans) result.ptr = NULL;
+        result.ptr->dm = result.ptr->tk;
       }
       else if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & result.ptr->flags_gemm)) {
         const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(&desc_blob,
           result.ptr->itypesize, result.ptr->tk, result.ptr->tn, result.ptr->tn/*tight*/);
         result.ptr->copy_b[0].xtrans = libxsmm_dispatch_trans(desc);
         if (NULL == result.ptr->copy_b[0].xtrans) result.ptr = NULL;
+        result.ptr->dk = result.ptr->tn;
       }
     }
     else {
@@ -666,6 +668,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
         result.ptr->flags_copy, result.ptr->prf_copy, NULL/*unroll*/);
       result.ptr->copy_a[0].xmatcopy = libxsmm_dispatch_mcopy(desc);
       if (NULL == result.ptr->copy_a[0].xmatcopy) result.ptr = NULL;
+      result.ptr->dm = result.ptr->tm;
     }
 #endif
 #if defined(LIBXSMM_GEMM_COPY_POTLDX) || defined(LIBXSMM_GEMM_COPY_B)
@@ -679,6 +682,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
         result.ptr->flags_copy, result.ptr->prf_copy, NULL/*unroll*/);
       result.ptr->copy_b[0].xmatcopy = libxsmm_dispatch_mcopy(desc);
       if (NULL == result.ptr->copy_b[0].xmatcopy) result.ptr = NULL;
+      result.ptr->dk = result.ptr->tk;
     }
 #endif
 #if defined(LIBXSMM_GEMM_COPY_POTLDX) || defined(LIBXSMM_GEMM_COPY_C)
@@ -701,8 +705,8 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
 #endif
     if (NULL != result.ptr) {
       const libxsmm_gemm_prefetch_type prf_gemm = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
-      const libxsmm_blasint ilda = (libxsmm_blasint)(NULL == result.ptr->copy_a[0].xmatcopy ? result.ptr->lda : result.ptr->tm);
-      const libxsmm_blasint ildb = (libxsmm_blasint)(NULL == result.ptr->copy_b[0].xmatcopy ? result.ptr->ldb : result.ptr->tk);
+      const libxsmm_blasint ilda = (libxsmm_blasint)(NULL == result.ptr->copy_a[0].xmatcopy ? result.ptr->lda : result.ptr->dm);
+      const libxsmm_blasint ildb = (libxsmm_blasint)(NULL == result.ptr->copy_b[0].xmatcopy ? result.ptr->ldb : result.ptr->dk);
       const libxsmm_blasint ildc = (libxsmm_blasint)(NULL == result.ptr->copy_i[0].xmatcopy ? result.ptr->ldc : result.ptr->tm);
       libxsmm_gemm_descriptor* desc = libxsmm_gemm_descriptor_init2(&desc_blob, iprec, oprec,
         result.ptr->tm, result.ptr->tn, result.ptr->tk, ilda, ildb, ildc, alpha, beta,
@@ -737,9 +741,9 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
   if (NULL != handle) {
     const int remainder = (1 == handle->nthreads || ((tid + 1) != (int)handle->nthreads) ? 0 : 1);
     const int ntkt = handle->nt * handle->kt, mtid = tid / ntkt, rtid = tid - mtid * ntkt, ntid = rtid / handle->kt, ktid = rtid - ntid * handle->kt;
-    const libxsmm_blasint m0 = LIBXSMM_MIN(mtid * handle->mm, handle->m), m1 = LIBXSMM_MIN(m0 + handle->mm, handle->m);
-    const libxsmm_blasint n0 = LIBXSMM_MIN(ntid * handle->nn, handle->n), n1 = LIBXSMM_MIN(n0 + handle->nn, handle->n);
-    const libxsmm_blasint k0 = LIBXSMM_MIN(ktid * handle->kk, handle->k), k1 = LIBXSMM_MIN(k0 + handle->kk, handle->k);
+    const unsigned int m0 = LIBXSMM_MIN(mtid * handle->mm, handle->m), m1 = LIBXSMM_MIN(m0 + handle->mm, handle->m);
+    const unsigned int n0 = LIBXSMM_MIN(ntid * handle->nn, handle->n), n1 = LIBXSMM_MIN(n0 + handle->nn, handle->n);
+    const unsigned int k0 = LIBXSMM_MIN(ktid * handle->kk, handle->k), k1 = LIBXSMM_MIN(k0 + handle->kk, handle->k);
     const unsigned int size_bk = handle->itypesize * handle->tk, size_ak = size_bk * handle->lda;
     const unsigned int size_cn = handle->otypesize * handle->tn * handle->ldc;
     const unsigned int size_k0 = handle->itypesize * k0;
@@ -751,7 +755,7 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
     const char *aa = ((const char*)a) + size_k0 * handle->lda, *bb = ((const char*)b) + size_k0;
     char* cc = ((char*)c) + handle->otypesize * n0 * handle->ldc;
     /* loop induction variables */
-    libxsmm_blasint im = m0, in = n0, ik = k0, im1, in1, ik1;
+    unsigned int im = m0, in = n0, ik = k0, im1, in1, ik1;
 
     LIBXSMM_ASSERT_MSG(m0 <= m1 && m1 <= handle->m, "Invalid task size!");
     LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= handle->n, "Invalid task size!");
