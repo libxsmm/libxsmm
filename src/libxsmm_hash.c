@@ -306,8 +306,9 @@ LIBXSMM_HASH_API_DEFINITION void libxsmm_hash_init(int target_arch)
   LIBXSMM_ASSERT(0 != internal_hash_function);
 #if !defined(LIBXSMM_INTRINSICS_SSE4)
   { static int error_once = 0;
-    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+    if (0 == error_once && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
       fprintf(stderr, "LIBXSMM WARNING: unable to access CRC32 instructions due to the compiler used!\n");
+      error_once = 1; /* no need for atom*/
     }
   }
 #endif
