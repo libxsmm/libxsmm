@@ -442,13 +442,13 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
                                 "  %s/*alpha*/, %p/*a*/, %" PRIuPTR "/*lda*/,\n"
                                 "              %p/*b*/, %" PRIuPTR "/*ldb*/,\n"
                                 "   %s/*beta*/, %p/*c*/, %" PRIuPTR "/*ldc*/)",
-          typeprefix, ctransa, ctransa, (uintptr_t)*m, (uintptr_t)nn, (uintptr_t)kk,
+          typeprefix, ctransa, ctransb, (uintptr_t)*m, (uintptr_t)nn, (uintptr_t)kk,
           string_a, a, (uintptr_t)ilda, b, (uintptr_t)ildb, string_b, c, (uintptr_t)ildc);
       }
       else {
         fprintf((FILE*)ostream, "%cgemm(trans=%c%c mnk=%" PRIuPTR ",%" PRIuPTR ",%" PRIuPTR
                                                  " ldx=%" PRIuPTR ",%" PRIuPTR ",%" PRIuPTR " a,b=%s,%s)",
-          typeprefix, ctransa, ctransa, (uintptr_t)*m, (uintptr_t)nn, (uintptr_t)kk,
+          typeprefix, ctransa, ctransb, (uintptr_t)*m, (uintptr_t)nn, (uintptr_t)kk,
           (uintptr_t)ilda, (uintptr_t)ildb, (uintptr_t)ildc, string_a, string_b);
       }
     }
