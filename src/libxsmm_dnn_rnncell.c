@@ -816,7 +816,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
 
   int i;
   const int ltid = tid - start_thread;
-    
+
   libxsmm_barrier_init(rnn->barrier, ltid);
   libxsmm_internal_matrix_zero(m * n, &LIBXSMM_VLA_ACCESS(2, delta, t-1, 0, m * n), start_thread, tid, rnn->nThreads);
   if (rnn->nThreads > 1) { libxsmm_barrier_wait(rnn->barrier, ltid); }
