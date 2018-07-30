@@ -165,6 +165,8 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_TRANS_A = 1,
   /** Transpose matrix B. */
   LIBXSMM_GEMM_FLAG_TRANS_B = 2,
+  /** Transpose matrix A and B. */
+  LIBXSMM_GEMM_FLAG_TRANS_AB = LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B,
   /** Alpha=0|1 */
   LIBXSMM_GEMM_FLAG_ALPHA_0 = 4,
   /** Alpha=neg|pos */
