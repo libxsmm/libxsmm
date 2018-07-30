@@ -439,8 +439,7 @@ LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, float);
 LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, double);
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
-  libxsmm_code_pointer copy_a[4], copy_b[4];
-  libxsmm_code_pointer copy_ci[4], copy_co[4];
+  libxsmm_code_pointer copy_a[4], copy_b[4], copy_i[4], copy_o[4];
   libxsmm_xmmfunction kernel[2];
   libxsmm_blasint m, n, k, mm, nn, kk;
   unsigned int lda, ldb, ldc, ti, tm, tn, tk;

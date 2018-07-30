@@ -58,7 +58,7 @@
 #if !defined(LIBXSMM_GEMM_COPY_C) && 0
 # define LIBXSMM_GEMM_COPY_C
 #endif
-#if !defined(LIBXSMM_GEMM_COPY_POTLDX) && 1
+#if !defined(LIBXSMM_GEMM_COPY_POTLDX) && 0
 # define LIBXSMM_GEMM_COPY_POTLDX
 #endif
 #if !defined(LIBXSMM_GEMM_BATCHSIZE)
@@ -573,15 +573,15 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     libxsmm_descriptor_blob desc_blob;
     LIBXSMM_INIT
     result.blob = blob;
-    result.ptr->copy_a[0].pmm = result.ptr->copy_b[0].pmm = result.ptr->copy_ci[0].pmm = result.ptr->copy_co[0].pmm = NULL;
+    result.ptr->copy_a[0].pmm = result.ptr->copy_b[0].pmm = result.ptr->copy_i[0].pmm = result.ptr->copy_o[0].pmm = NULL;
     result.ptr->flags_gemm = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
     result.ptr->flags_copy = 0/*LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE*/;
     result.ptr->prf_copy = 0;
     result.ptr->k = (NULL != k ? *k : *m);
     result.ptr->n = (NULL != n ? *n : result.ptr->k);
     result.ptr->m = *m;
-    result.ptr->lda = (unsigned int)(NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & result.ptr->flags_gemm) ? *m : result.ptr->k));
-    result.ptr->ldb = (unsigned int)(NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & result.ptr->flags_gemm) ? result.ptr->k : result.ptr->n));
+    result.ptr->lda = (unsigned int)(NULL != lda ? *lda : *m);
+    result.ptr->ldb = (unsigned int)(NULL != ldb ? *ldb : result.ptr->k);
     result.ptr->ldc = (unsigned int)(NULL != ldc ? *ldc : *m);
     result.ptr->itypesize = libxsmm_gemm_typesize(iprec);
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
@@ -646,12 +646,12 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     else {
       const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(&desc_blob,
         result.ptr->otypesize, result.ptr->tn, result.ptr->tm, result.ptr->ldc);
-      result.ptr->copy_co[0].xtrans = libxsmm_dispatch_trans(desc);
-      if (NULL != result.ptr->copy_co[0].xtrans) { /* copy-in required */
-        result.ptr->copy_ci[0].xmatcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&desc_blob,
+      result.ptr->copy_o[0].xtrans = libxsmm_dispatch_trans(desc);
+      if (NULL != result.ptr->copy_o[0].xtrans) { /* copy-in required */
+        result.ptr->copy_i[0].xmatcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&desc_blob,
           result.ptr->otypesize, result.ptr->tm, result.ptr->tn, result.ptr->tm/*tight*/, result.ptr->ldc,
           result.ptr->flags_copy, result.ptr->prf_copy, NULL/*unroll*/));
-        if (NULL == result.ptr->copy_ci[0].xmatcopy) result.ptr = NULL;
+        if (NULL == result.ptr->copy_i[0].xmatcopy) result.ptr = NULL;
       }
       else result.ptr = NULL;
     }
@@ -682,28 +682,28 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     }
 #endif
 #if defined(LIBXSMM_GEMM_COPY_POTLDX) || defined(LIBXSMM_GEMM_COPY_C)
-    if (NULL != result.ptr && NULL == result.ptr->copy_ci[0].xmatcopy
+    if (NULL != result.ptr && NULL == result.ptr->copy_i[0].xmatcopy
 # if !defined(LIBXSMM_GEMM_COPY_C)
       && result.ptr->ldc == LIBXSMM_UP2POT(result.ptr->ldc)
 # endif
       ) {
-      result.ptr->copy_co[0].xmatcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&desc_blob,
+      result.ptr->copy_o[0].xmatcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&desc_blob,
         result.ptr->otypesize, result.ptr->tm, result.ptr->tn, result.ptr->ldc, result.ptr->tm/*tight*/,
         result.ptr->flags_copy, result.ptr->prf_copy, NULL/*unroll*/));
-      if (NULL != result.ptr->copy_co[0].xmatcopy) {
-        result.ptr->copy_ci[0].xmatcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&desc_blob,
+      if (NULL != result.ptr->copy_o[0].xmatcopy) {
+        result.ptr->copy_i[0].xmatcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&desc_blob,
           result.ptr->otypesize, result.ptr->tm, result.ptr->tn, result.ptr->tm/*tight*/, result.ptr->ldc,
           result.ptr->flags_copy, result.ptr->prf_copy, NULL/*unroll*/));
-        if (NULL == result.ptr->copy_ci[0].xmatcopy) result.ptr = NULL;
+        if (NULL == result.ptr->copy_i[0].xmatcopy) result.ptr = NULL;
       }
       else result.ptr = NULL;
     }
 #endif
     if (NULL != result.ptr) {
       const libxsmm_gemm_prefetch_type prf_gemm = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
-      const libxsmm_blasint ilda = (libxsmm_blasint)(NULL == result.ptr->copy_a[0].xtrans  ? result.ptr->lda : result.ptr->tm);
-      const libxsmm_blasint ildb = (libxsmm_blasint)(NULL == result.ptr->copy_b[0].xtrans  ? result.ptr->ldb : result.ptr->tk);
-      const libxsmm_blasint ildc = (libxsmm_blasint)(NULL == result.ptr->copy_ci[0].xtrans ? result.ptr->ldc : result.ptr->tm);
+      const libxsmm_blasint ilda = (libxsmm_blasint)(NULL == result.ptr->copy_a[0].xmatcopy ? result.ptr->lda : result.ptr->tm);
+      const libxsmm_blasint ildb = (libxsmm_blasint)(NULL == result.ptr->copy_b[0].xmatcopy ? result.ptr->ldb : result.ptr->tk);
+      const libxsmm_blasint ildc = (libxsmm_blasint)(NULL == result.ptr->copy_i[0].xmatcopy ? result.ptr->ldc : result.ptr->tm);
       libxsmm_gemm_descriptor* desc = libxsmm_gemm_descriptor_init2(&desc_blob, iprec, oprec,
         result.ptr->tm, result.ptr->tn, result.ptr->tk, ilda, ildb, ildc, alpha, beta,
         /* remove transpose flags from kernel request */
@@ -762,8 +762,8 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
         const char *a0 = aa + handle->itypesize * im;
         const char *b0 = bb + handle->itypesize * in * handle->ldb;
         char *c1 = c0 + size_cn, *ci = c0;
-        if (NULL != handle->copy_ci[0].ptr_const) {
-          handle->copy_ci[0].xmatcopy(c0, &handle->ldc, ct, &handle->tm);
+        if (NULL != handle->copy_i[0].ptr_const) {
+          handle->copy_i[0].xmatcopy(c0, &handle->ldc, ct, &handle->tm);
           ci = ct;
         }
         for (ik = k0, ik1 = ik + handle->tk; (ik1 - 1) < k1; ik = ik1, ik1 += handle->tk) {
@@ -782,9 +782,9 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
           a0 = a1;
           b0 = b1;
         }
-        if (NULL != handle->copy_co[0].ptr_const) {
+        if (NULL != handle->copy_o[0].ptr_const) {
           /* TODO: synchronize */
-          handle->copy_co[0].xmatcopy(ct, &handle->tm, c0, &handle->ldc);
+          handle->copy_o[0].xmatcopy(ct, &handle->tm, c0, &handle->ldc);
         }
         c0 = c1;
       }
