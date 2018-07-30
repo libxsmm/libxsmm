@@ -242,7 +242,8 @@ LIBXSMM_API_INLINE const char* internal_get_target_arch(int id)
       target_arch = "knl";
     } break;
     case LIBXSMM_X86_AVX512: {
-      target_arch = "avx3";
+      /* TODO: rework BE to use target ID instead of set of strings (target_arch = "avx3") */
+      target_arch = "hsw";
     } break;
     case LIBXSMM_X86_AVX2: {
       target_arch = "hsw";
@@ -251,7 +252,8 @@ LIBXSMM_API_INLINE const char* internal_get_target_arch(int id)
       target_arch = "snb";
     } break;
     case LIBXSMM_X86_SSE4: {
-      target_arch = "sse4";
+      /* TODO: rework BE to use target ID instead of set of strings (target_arch = "sse4") */
+      target_arch = "wsm";
     } break;
     case LIBXSMM_X86_SSE3: {
       /* WSM includes SSE4, but BE relies on SSE3 only,
@@ -764,22 +766,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       libxsmm_kernel_info *const registry_keys = internal_registry_keys;
       internal_registry_nbytes = (LIBXSMM_CAPACITY_REGISTRY) * (sizeof(libxsmm_code_pointer) + sizeof(libxsmm_kernel_info));
 
-      /* serves as an id to invalidate the thread-local cache; never decremented */
+      /* serves as an ID to invalidate the thread-local cache; never decremented */
       ++internal_teardown;
-#if defined(LIBXSMM_TRACE)
-      i = libxsmm_trace_finalize();
-      if (EXIT_SUCCESS != i && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
-        fprintf(stderr, "LIBXSMM ERROR: failed to finalize trace (error #%i)!\n", i);
-      }
-#endif
-      libxsmm_gemm_finalize();
-      libxsmm_gemm_diff_finalize();
-      libxsmm_trans_finalize();
-      libxsmm_hash_finalize();
-      libxsmm_dnn_finalize();
-#if defined(LIBXSMM_PERF)
-      libxsmm_perf_finalize();
-#endif
+
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         /*const*/ libxsmm_code_pointer code = registry[i];
         if (0 != code.ptr_const) {
@@ -829,6 +818,22 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
           }
         }
       }
+
+#if defined(LIBXSMM_TRACE)
+      i = libxsmm_trace_finalize();
+      if (EXIT_SUCCESS != i && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+        fprintf(stderr, "LIBXSMM ERROR: failed to finalize trace (error #%i)!\n", i);
+      }
+#endif
+      libxsmm_gemm_finalize();
+      libxsmm_gemm_diff_finalize();
+      libxsmm_trans_finalize();
+      libxsmm_hash_finalize();
+      libxsmm_dnn_finalize();
+#if defined(LIBXSMM_PERF)
+      libxsmm_perf_finalize();
+#endif
+
       /* make internal registry globally unavailable */
       LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
       internal_registry_keys = 0;
