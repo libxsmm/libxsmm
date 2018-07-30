@@ -75,12 +75,12 @@ int main(int argc, char* argv[])
   LIBXSMM_GEMM_CONST OTYPE beta  = (OTYPE)(8 < argc ? atof(argv[8]) : 1.0);
   LIBXSMM_GEMM_CONST char transa =  (9 < argc ? *argv[9]  : 'N');
   LIBXSMM_GEMM_CONST char transb = (10 < argc ? *argv[10] : 'N');
-  LIBXSMM_GEMM_CONST libxsmm_blasint ldm = (('N' == transa || 'n' == transa) ? m : k);
-  LIBXSMM_GEMM_CONST libxsmm_blasint ldk = (('N' == transb || 'n' == transb) ? k : n);
+  LIBXSMM_GEMM_CONST libxsmm_blasint mm = (('N' == transa || 'n' == transa) ? m : k);
+  LIBXSMM_GEMM_CONST libxsmm_blasint kk = (('N' == transb || 'n' == transb) ? k : n);
   LIBXSMM_GEMM_CONST libxsmm_blasint ka = (('N' == transa || 'n' == transa) ? k : m);
   LIBXSMM_GEMM_CONST libxsmm_blasint kb = (('N' == transb || 'n' == transb) ? n : k);
-  LIBXSMM_GEMM_CONST libxsmm_blasint lda = ((4 < argc && ldm < atoi(argv[4])) ? atoi(argv[4]) : ldm);
-  LIBXSMM_GEMM_CONST libxsmm_blasint ldb = ((5 < argc && ldk < atoi(argv[5])) ? atoi(argv[5]) : ldk);
+  LIBXSMM_GEMM_CONST libxsmm_blasint lda = ((4 < argc && mm < atoi(argv[4])) ? atoi(argv[4]) : mm);
+  LIBXSMM_GEMM_CONST libxsmm_blasint ldb = ((5 < argc && kk < atoi(argv[5])) ? atoi(argv[5]) : kk);
   LIBXSMM_GEMM_CONST libxsmm_blasint ldc = ((6 < argc && m < atoi(argv[6])) ? atoi(argv[6]) : m);
   const int nrepeat = ((11 < argc && 0 < atoi(argv[11])) ? atoi(argv[11])
     : LIBXSMM_MAX(13 / LIBXSMM_MAX(1, (int)(libxsmm_icbrt_u64(1ULL * m * n * k) >> 10)), 3));
@@ -103,12 +103,12 @@ int main(int argc, char* argv[])
     OTYPE* d = 0;
     if (!LIBXSMM_FEQ(0, check)) {
       d = (OTYPE*)libxsmm_malloc((size_t)(ldc * nn * sizeof(OTYPE)));
-      LIBXSMM_MATINIT(OTYPE, 0, d, m, nn, ldc, 1.0);
+      LIBXSMM_MATINIT(OTYPE, 0, d, m, n, ldc, 1.0);
     }
 #endif
-    LIBXSMM_MATINIT(OTYPE,  0, c, m, nn, ldc, 1.0);
-    LIBXSMM_MATINIT(ITYPE, 42, a, m, ka, lda, 1.0);
-    LIBXSMM_MATINIT(ITYPE, 24, b, kb, n, ldb, 1.0);
+    LIBXSMM_MATINIT(OTYPE,  0, c,  m,  n, ldc, 1.0);
+    LIBXSMM_MATINIT(ITYPE, 42, a, mm, ka, lda, 1.0);
+    LIBXSMM_MATINIT(ITYPE, 24, b, kb, nn, ldb, 1.0);
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif

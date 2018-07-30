@@ -580,8 +580,8 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     result.ptr->k = (NULL != k ? *k : *m);
     result.ptr->n = (NULL != n ? *n : result.ptr->k);
     result.ptr->m = *m;
-    result.ptr->lda = (unsigned int)(NULL != lda ? *lda : *m);
-    result.ptr->ldb = (unsigned int)(NULL != ldb ? *ldb : result.ptr->k);
+    result.ptr->lda = (unsigned int)(NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & result.ptr->flags_gemm) ? *m : result.ptr->k));
+    result.ptr->ldb = (unsigned int)(NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & result.ptr->flags_gemm) ? result.ptr->k : result.ptr->n));
     result.ptr->ldc = (unsigned int)(NULL != ldc ? *ldc : *m);
     result.ptr->itypesize = libxsmm_gemm_typesize(iprec);
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
