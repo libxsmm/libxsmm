@@ -44,7 +44,7 @@ for (i = 0; i < nn; ++i) {
     const double ri = real_ref[i*ldr+j], ti = (0 != real_tst ? real_tst[i*ldt+j] : 0);
     const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
     const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
-    if (LIBXSMM_NOTNAN(ta, ta)) {
+    if (LIBXSMM_NOTNAN(ta)) {
       /* maximum absolute error and location */
       if (info->linf_abs < di) {
         info->linf_abs = di;
@@ -116,9 +116,7 @@ for (i = 0; i < nn; ++i) {
     v0 = normtj - compt; v1 = info->l1_tst + v0;
     compt = (v1 - info->l1_tst) - v0;
     info->l1_tst = v1;
-    if (v1 != v1) {
-      printf("NaN\n");
-    }
+
     /* calculate Infinity-norm of differences */
     if (info->normi_abs < normij) info->normi_abs = normij;
     /* calculate Infinity-norm of reference/test values */
