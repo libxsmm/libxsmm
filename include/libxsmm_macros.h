@@ -363,6 +363,8 @@
 #define LIBXSMM_HASH2(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
 /** Compares floating point values but avoids warning about unreliable comparison. */
+#define LIBXSMM_NOTNAN(A) (LIBXSMM_NEQ(0, (A) - (A)) || 0 == ((int)((A) - (A))))
+#define LIBXSMM_ISNAN(A)  (!LIBXSMM_NOTNAN(A))
 #define LIBXSMM_NEQ(A, B) ((A) < (B) || (A) > (B))
 #define LIBXSMM_FEQ(A, B) (!LIBXSMM_NEQ(A, B))
 
