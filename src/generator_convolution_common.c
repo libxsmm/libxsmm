@@ -2715,3 +2715,4 @@ void libxsmm_generator_convolution_weight_update_transpose_store_weight( libxsmm
     }
   }
 }
+
