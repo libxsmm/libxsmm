@@ -718,7 +718,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     if (NULL != result.ptr) {
       const libxsmm_gemm_prefetch_type prf_gemm = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
       const libxsmm_blasint ilda = (libxsmm_blasint)(NULL == result.ptr->copy_a[0].xmatcopy ? result.ptr->lda : result.ptr->km);
-      const libxsmm_blasint ildb = (libxsmm_blasint)(NULL == result.ptr->copy_b[0].xmatcopy ? result.ptr->ldb : result.ptr->kn);
+      const libxsmm_blasint ildb = (libxsmm_blasint)(NULL == result.ptr->copy_b[0].xmatcopy ? result.ptr->ldb : result.ptr->kk);
       const libxsmm_blasint ildc = (libxsmm_blasint)(NULL == result.ptr->copy_i[0].xmatcopy ? result.ptr->ldc : result.ptr->km);
       libxsmm_gemm_descriptor* desc = libxsmm_gemm_descriptor_init2(&desc_blob, iprec, oprec,
         result.ptr->km, result.ptr->kn, result.ptr->kk, ilda, ildb, ildc, alpha, beta,
@@ -791,14 +791,14 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
             if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm) &&
                (LIBXSMM_GEMM_FLAG_TRANS_A & handle->flags_gemm) != 0)
             {
-              const libxsmm_blasint transm = (libxsmm_blasint)handle->tk, transn = (libxsmm_blasint)handle->tm;
+              const libxsmm_blasint transm = (libxsmm_blasint)handle->km, transn = (libxsmm_blasint)handle->kk;
               libxsmm_otrans_internal(at/*out*/, a0/*in*/, handle->itypesize, transm, transn,
                 (libxsmm_blasint)handle->ldm/*ldi*/, transn/*ldo*/, transm/*tile*/, transn/*tile*/,
                 NULL/*kernel*/, 0/*tid*/, 1/*nthreads*/);
             }
             else
 #endif
-            handle->copy_a[0].xmatcopy(a0, &handle->ldm, at, &handle->tm);
+            handle->copy_a[0].xmatcopy(a0, &handle->ldm, at, &handle->kk);
             ai = at;
           }
           if (NULL != handle->copy_b[0].ptr_const) {
@@ -806,14 +806,14 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
             if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm) &&
                (LIBXSMM_GEMM_FLAG_TRANS_B & handle->flags_gemm) != 0)
             {
-              const libxsmm_blasint transm = (libxsmm_blasint)handle->tn, transn = (libxsmm_blasint)handle->tk;
+              const libxsmm_blasint transm = (libxsmm_blasint)handle->kk, transn = (libxsmm_blasint)handle->kn;
               libxsmm_otrans_internal(bt/*out*/, b0/*in*/, handle->itypesize, transm, transn,
                 (libxsmm_blasint)handle->ldk/*ldi*/, transn/*ldo*/, transm/*tile*/, transn/*tile*/,
                 NULL/*kernel*/, 0/*tid*/, 1/*nthreads*/);
             }
             else
 #endif
-            handle->copy_b[0].xmatcopy(b0, &handle->ldk, bt, &handle->tk);
+            handle->copy_b[0].xmatcopy(b0, &handle->ldk, bt, &handle->kn);
             bi = bt;
           }
           LIBXSMM_MMCALL_PRF(handle->kernel[k0 != ik ? 1 : 0].xmm, ai, bi, ci, a1, b1, c1);
