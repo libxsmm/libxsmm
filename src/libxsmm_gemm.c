@@ -777,10 +777,11 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
     /* calculate base addresses of thread-local storages */
     char *const at = internal_gemm_scratch_a + tid * internal_gemm_tsize_a;
     char *const bt = internal_gemm_scratch_b + tid * internal_gemm_tsize_b;
-    char*       ct = internal_gemm_scratch_c + tid * internal_gemm_tsize_c;
+    char *const ct = internal_gemm_scratch_c + tid * internal_gemm_tsize_c;
     /* calculate base addresses used to simplify address calculations */
-    const char *aa = ((const char*)a) + size_k0 * handle->lda, *bb = ((const char*)b) + size_k0;
-    char* cc = ((char*)c) + handle->otypesize * n0 * handle->ldc;
+    const char *const aa = ((const char*)a) + size_k0 * handle->lda;
+    const char *const bb = ((const char*)b) + size_k0;
+    char       *const cc = ((char*)c) + handle->otypesize * n0 * handle->ldc;
     /* loop induction variables */
     unsigned int im = m0, in = n0, ik = k0, im1, in1, ik1;
     LIBXSMM_ASSERT_MSG(m0 <= m1 && m1 <= handle->m, "Invalid task size!");
