@@ -44,7 +44,7 @@ for (i = 0; i < nn; ++i) {
     const double ri = real_ref[i*ldr+j], ti = (0 != real_tst ? real_tst[i*ldt+j] : 0);
     const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
     const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
-    if (LIBXSMM_FEQ(ta, ta)) { /* ta != NaN */
+    if (LIBXSMM_NOTNAN(ta) && INFINITY > ta) {
       /* maximum absolute error and location */
       if (info->linf_abs < di) {
         info->linf_abs = di;
