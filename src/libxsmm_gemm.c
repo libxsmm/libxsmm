@@ -55,17 +55,18 @@
 #if !defined(LIBXSMM_GEMM_KPARALLELISM) && 0
 # define LIBXSMM_GEMM_KPARALLELISM
 #endif
-#if !defined(LIBXSMM_GEMM_COPY_A) && 0
-# define LIBXSMM_GEMM_COPY_A
+#if !defined(LIBXSMM_GEMM_COPY_A)
+# define LIBXSMM_GEMM_COPY_A 0
 #endif
-#if !defined(LIBXSMM_GEMM_COPY_B) && 0
-# define LIBXSMM_GEMM_COPY_B
+#if !defined(LIBXSMM_GEMM_COPY_B)
+# define LIBXSMM_GEMM_COPY_B 0
 #endif
-#if !defined(LIBXSMM_GEMM_COPY_C) && 0
-# define LIBXSMM_GEMM_COPY_C
+#if !defined(LIBXSMM_GEMM_COPY_C)
+#if defined(NDEBUG)
+# define LIBXSMM_GEMM_COPY_C 2
+#else
+# define LIBXSMM_GEMM_COPY_C 0
 #endif
-#if !defined(LIBXSMM_GEMM_COPY_POTLDX) && 0
-# define LIBXSMM_GEMM_COPY_POTLDX
 #endif
 #if !defined(LIBXSMM_GEMM_BATCHSIZE)
 # define LIBXSMM_GEMM_BATCHSIZE 1024
@@ -132,6 +133,18 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     /* mic (knl/knm) */{ 32, 32 },
     /* core (skx)    */{ 32, 32 }
   };
+#if defined(NDEBUG)
+  static unsigned int config_tn[/*config*/][2/*DP/SP*/] = {
+    /* generic (hsw) */{ 64, 64 },
+    /* mic (knl/knm) */{ 64, 64 },
+    /* core (skx)    */{ 64, 64 }
+  };
+  static unsigned int config_tk[/*config*/][2/*DP/SP*/] = {
+    /* generic (hsw) */{ 160, 160 },
+    /* mic (knl/knm) */{ 160, 160 },
+    /* core (skx)    */{ 160, 160 }
+  };
+#else
   static unsigned int config_tn[/*config*/][2/*DP/SP*/] = {
     /* generic (hsw) */{ 32, 32 },
     /* mic (knl/knm) */{ 32, 32 },
@@ -142,6 +155,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     /* mic (knl/knm) */{ 32, 32 },
     /* core (skx)    */{ 32, 32 }
   };
+#endif
   LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr;
   unsigned int i;
 
@@ -671,9 +685,9 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       }
       else result.ptr = NULL;
     }
-#if defined(LIBXSMM_GEMM_COPY_POTLDX) || defined(LIBXSMM_GEMM_COPY_A)
+#if defined(LIBXSMM_GEMM_COPY_A) && (0 < (LIBXSMM_GEMM_COPY_A))
     if (NULL != result.ptr && NULL == result.ptr->copy_a[0].xmatcopy
-# if !defined(LIBXSMM_GEMM_COPY_A)
+# if (1 < (LIBXSMM_GEMM_COPY_A))
       && result.ptr->lda == LIBXSMM_UP2POT(result.ptr->lda)
 # endif
       ) {
@@ -684,9 +698,9 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       if (NULL == result.ptr->copy_a[0].xmatcopy) result.ptr = NULL;
     }
 #endif
-#if defined(LIBXSMM_GEMM_COPY_POTLDX) || defined(LIBXSMM_GEMM_COPY_B)
+#if defined(LIBXSMM_GEMM_COPY_B) && (0 < (LIBXSMM_GEMM_COPY_B))
     if (NULL != result.ptr && NULL == result.ptr->copy_b[0].xmatcopy
-# if !defined(LIBXSMM_GEMM_COPY_B)
+# if (1 < (LIBXSMM_GEMM_COPY_B))
       && result.ptr->ldb == LIBXSMM_UP2POT(result.ptr->ldb)
 # endif
       ) {
@@ -697,9 +711,9 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       if (NULL == result.ptr->copy_b[0].xmatcopy) result.ptr = NULL;
     }
 #endif
-#if defined(LIBXSMM_GEMM_COPY_POTLDX) || defined(LIBXSMM_GEMM_COPY_C)
+#if defined(LIBXSMM_GEMM_COPY_C) && (0 < (LIBXSMM_GEMM_COPY_C))
     if (NULL != result.ptr && NULL == result.ptr->copy_i[0].xmatcopy
-# if !defined(LIBXSMM_GEMM_COPY_C)
+# if (1 < (LIBXSMM_GEMM_COPY_C))
       && result.ptr->ldc == LIBXSMM_UP2POT(result.ptr->ldc)
 # endif
       ) {
