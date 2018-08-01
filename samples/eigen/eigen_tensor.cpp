@@ -105,9 +105,9 @@ int main(int argc, char* argv[])
       mkl_enable_instructions(MKL_ENABLE_AVX512);
 # endif
 # if defined(_OPENMP)
-      Eigen::NonBlockingThreadPool threadpool(1 == nthreads ? omp_get_max_threads() : nthreads);
+      Eigen::ThreadPool threadpool(1 == nthreads ? omp_get_max_threads() : nthreads);
 # else
-      Eigen::NonBlockingThreadPool threadpool(nthreads);
+      Eigen::ThreadPool threadpool(nthreads);
 # endif
       Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
       Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n), td(m, n);
