@@ -62,11 +62,7 @@
 # define LIBXSMM_GEMM_COPY_B 0
 #endif
 #if !defined(LIBXSMM_GEMM_COPY_C)
-#if defined(NDEBUG)
-# define LIBXSMM_GEMM_COPY_C 2
-#else
-# define LIBXSMM_GEMM_COPY_C 0
-#endif
+# define LIBXSMM_GEMM_COPY_C 1
 #endif
 #if !defined(LIBXSMM_GEMM_BATCHSIZE)
 # define LIBXSMM_GEMM_BATCHSIZE 1024
@@ -133,7 +129,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     /* mic (knl/knm) */{ 32, 32 },
     /* core (skx)    */{ 32, 32 }
   };
-#if defined(NDEBUG)
+#if 0
   static unsigned int config_tn[/*config*/][2/*DP/SP*/] = {
     /* generic (hsw) */{ 64, 64 },
     /* mic (knl/knm) */{ 64, 64 },
@@ -722,7 +718,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     const libxsmm_gemm_prefetch_type prf_gemm = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
     const libxsmm_blasint ilda = (libxsmm_blasint)(NULL == result.ptr->copy_a[0].ptr_const ? result.ptr->lda : result.ptr->tm);
     const libxsmm_blasint ildb = (libxsmm_blasint)(NULL == result.ptr->copy_b[0].ptr_const ? result.ptr->ldb : result.ptr->tk);
-    const libxsmm_blasint ildc = (libxsmm_blasint)(NULL == result.ptr->copy_i[0].ptr_const ? result.ptr->ldc : result.ptr->tm);
+    const libxsmm_blasint ildc = (libxsmm_blasint)(NULL == result.ptr->copy_o[0].ptr_const ? result.ptr->ldc : result.ptr->tm);
     libxsmm_gemm_descriptor* desc = libxsmm_gemm_descriptor_init2(&desc_blob, iprec, oprec,
       result.ptr->tm, result.ptr->tn, result.ptr->tk, ilda, ildb, ildc, alpha, beta,
       /* remove transpose flags from kernel request */
@@ -867,6 +863,7 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
             handle->copy_b[0].xmatcopy(b0, &handle->ldb, bt, &handle->tn);
             bi = bt;
           }
+          /* beta0-kernel on first-touch, beta1-kernel otherwise (beta0/beta1 are identical if beta=1) */
           LIBXSMM_MMCALL_PRF(handle->kernel[k0!=ik?1:0].xmm, ai, bi, ci, a1, b1, c1);
           a0 = a1;
           b0 = b1;
