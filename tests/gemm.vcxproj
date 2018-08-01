@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="blas.c" />
+    <ClCompile Include="gemm.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
@@ -35,7 +35,7 @@
     <None Include="test.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>blas</ProjectName>
+    <ProjectName>gemm</ProjectName>
     <ProjectGuid>{CDCBFA7A-54BC-4D49-B57A-8B9E9A107320}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
