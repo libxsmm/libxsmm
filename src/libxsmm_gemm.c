@@ -646,8 +646,11 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
         result.ptr->otypesize, result.ptr->tn, result.ptr->tm, result.ptr->ldc);
       result.ptr->copy_o[0].xtrans = libxsmm_dispatch_trans(desc);
       if (NULL != result.ptr->copy_o[0].ptr_const) {
-        double dbeta;
-        if (EXIT_SUCCESS == libxsmm_gemm_dvalue(oprec, beta, &dbeta) && LIBXSMM_NEQ(0, dbeta)) { /* copy-in only if beta!=0 */
+#if (3 > (LIBXSMM_GEMM_COPY_C))
+        double dbeta; /* copy-in only if beta!=0 */
+        if (EXIT_SUCCESS == libxsmm_gemm_dvalue(oprec, beta, &dbeta) && LIBXSMM_NEQ(0, dbeta))
+#endif
+        {
           result.ptr->copy_i[0].xmatcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&desc_blob,
             result.ptr->otypesize, result.ptr->tn, result.ptr->tm, result.ptr->tn/*ldo*/, result.ptr->ldc/*ldi*/,
             result.ptr->flags_copy, result.ptr->prf_copy, NULL/*unroll*/));
@@ -708,8 +711,11 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       result.ptr->otypesize, result.ptr->tm, result.ptr->tn, result.ptr->ldc/*ldo*/, result.ptr->tm/*ldi*/,
       result.ptr->flags_copy, result.ptr->prf_copy, NULL/*unroll*/));
     if (NULL != result.ptr->copy_o[0].ptr_const) {
-      double dbeta;
-      if (EXIT_SUCCESS == libxsmm_gemm_dvalue(oprec, beta, &dbeta) && LIBXSMM_NEQ(0, dbeta)) { /* copy-in only if beta!=0 */
+# if (3 > (LIBXSMM_GEMM_COPY_C))
+      double dbeta; /* copy-in only if beta!=0 */
+      if (EXIT_SUCCESS == libxsmm_gemm_dvalue(oprec, beta, &dbeta) && LIBXSMM_NEQ(0, dbeta))
+# endif
+      {
         result.ptr->copy_i[0].xmatcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&desc_blob,
           result.ptr->otypesize, result.ptr->tm, result.ptr->tn, result.ptr->tm/*ldo*/, result.ptr->ldc/*ldi*/,
           result.ptr->flags_copy, result.ptr->prf_copy, NULL/*unroll*/));
