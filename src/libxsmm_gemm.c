@@ -791,6 +791,11 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
     const unsigned int m0 = LIBXSMM_MIN(mtid * handle->dm, handle->m), m1 = LIBXSMM_MIN(m0 + handle->dm, handle->m);
     const unsigned int n0 = LIBXSMM_MIN(ntid * handle->dn, handle->n), n1 = LIBXSMM_MIN(n0 + handle->dn, handle->n);
     const unsigned int k0 = LIBXSMM_MIN(ktid * handle->dk, handle->k), k1 = LIBXSMM_MIN(k0 + handle->dk, handle->k);
+    /* calculate increments to simplify address calculations */
+    const unsigned int dom = handle->tm * handle->otypesize;
+    const unsigned int don = handle->tn * handle->otypesize;
+    const unsigned int on = handle->otypesize * n0;
+    unsigned int om = handle->otypesize * m0;
     /* calculate base addresses of thread-local storages */
     char *const at = internal_gemm_scratch_a + tid * internal_gemm_tsize_a;
     char *const bt = internal_gemm_scratch_b + tid * internal_gemm_tsize_b;
@@ -798,29 +803,32 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
     /* loop induction variables */
     unsigned int im = m0, in = n0, ik = k0, im1, in1, ik1;
     const char *aa, *bb;
-    char *const cc = (char*)c;
     if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
       aa = (const char*)a;
       bb = (const char*)b;
     }
-    else {
+    else { /* TT */
       aa = (const char*)b;
       bb = (const char*)a;
     }
     LIBXSMM_ASSERT_MSG(m0 <= m1 && m1 <= handle->m, "Invalid task size!");
     LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= handle->n, "Invalid task size!");
     LIBXSMM_ASSERT_MSG(k0 <= k1 && k1 <= handle->k, "Invalid task size!");
-    for (im1 = im + handle->tm; (im1 - 1) < m1; im = im1, im1 += handle->tm) {
-      for (in = n0, in1 = in + handle->tn; (in1 - 1) < n1; in = in1, in1 += handle->tn) {
-        char *c0, *ci;
-        if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
-          c0 = cc + (in * handle->ldc + im) * handle->otypesize;
+    for (im1 = im + handle->tm; (im1 - 1) < m1; im = im1, im1 += handle->tm, om += dom) {
+      char *c0 = (char*)c, *ci;
+      unsigned int dn = don;
+      if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
+        c0 += on * handle->ldc + om;
+        dn *= handle->ldc;
+      }
+      else { /* TT */
+        c0 += on + handle->ldc * om;
+      }
+      for (in = n0, in1 = in + handle->tn; (in1 - 1) < n1; in = in1, in1 += handle->tn, c0 += dn) {
+        if (NULL == handle->copy_i[0].ptr_const) {
+          ci = (NULL == handle->copy_o[0].ptr_const ? c0 : ct);
         }
-        else { /* TT */
-          c0 = cc + (im * handle->ldc + in) * handle->otypesize;
-        }
-        ci = c0;
-        if (NULL != handle->copy_i[0].ptr_const) {
+        else {
 #if defined(LIBXSMM_GEMM_TRANS_NOJIT)
           if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
             const libxsmm_blasint transm = (libxsmm_blasint)handle->tm, transn = (libxsmm_blasint)handle->tn;
@@ -830,9 +838,6 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
           else
 #endif
           handle->copy_i[0].xmatcopy(c0, &handle->ldc, ct, &handle->tm);
-          ci = ct;
-        }
-        else if (NULL != handle->copy_o[0].ptr_const) {
           ci = ct;
         }
         for (ik = k0, ik1 = ik + handle->tk; (ik1 - 1) < k1; ik = ik1, ik1 += handle->tk) {
