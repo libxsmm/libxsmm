@@ -122,6 +122,8 @@ int main(int argc, char* argv[])
   }
 
   /* check work division routine */
+  if (libxsmm_split_work(12 * 5 * 7 * 11 * 13 * 17, 231) != (3 * 7 * 11)) exit(EXIT_FAILURE);
+  if (libxsmm_split_work(12 * 5 * 7, 32) != (2 * 3 * 5)) exit(EXIT_FAILURE);
   if (libxsmm_split_work(12 * 13, 13) != 13) exit(EXIT_FAILURE);
   if (libxsmm_split_work(12, 6) != 6) exit(EXIT_FAILURE);
 
