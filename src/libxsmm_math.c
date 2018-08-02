@@ -187,11 +187,13 @@ LIBXSMM_API unsigned int libxsmm_split_work(unsigned int work, unsigned int spli
   if (split_limit < work) {
     result = 1;
     if (1 < split_limit) {
-      unsigned int fact[32], wmax;
+      unsigned int fact[32], wmax = split_limit;
       int i;
-      result = (unsigned int)libxsmm_gcd(work, split_limit);
-      /* lowering the memory requirement for DP */
-      wmax = split_limit / result;
+      /* attempt to lower the memory requirement for DP; can miss best solution */
+      if (LIBXSMM_MAX_SPLITLIMIT < split_limit) {
+        result = (unsigned int)libxsmm_gcd(work, split_limit);
+        wmax /= result;
+      }
       if (LIBXSMM_MAX_SPLITLIMIT >= wmax) {
         unsigned int k[2][LIBXSMM_MAX_SPLITLIMIT], w;
         const int n = libxsmm_primes_u32(work / result, fact);
