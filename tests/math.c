@@ -121,6 +121,18 @@ int main(int argc, char* argv[])
     fprintf(stderr, "missed bitwise exact result in %i of %i cases!\n", LIBXSMM_MAX(warn_ssqrt, warn_dsqrt), N);
   }
 
+  { /* check prime factorization */
+    const unsigned int test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 2057, 120, 14, 997 };
+    const int n = sizeof(test) / sizeof(*test);
+    unsigned int fact[32];
+    for (i = 0; i < n; ++i) {
+      const int np = libxsmm_primes_u32(test[i], fact);
+      int j; for (j = 1; j < np; ++j) fact[0] *= fact[j];
+      if (0 < np && fact[0] != test[i]) {
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
   /* check work division routine */
   if (libxsmm_split_work(12 * 5 * 7 * 11 * 13 * 17, 231) != (3 * 7 * 11)) exit(EXIT_FAILURE);
   if (libxsmm_split_work(12 * 5 * 7, 32) != (2 * 3 * 5)) exit(EXIT_FAILURE);
