@@ -617,7 +617,6 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
           result.ptr->itypesize, result.ptr->tk, result.ptr->tm, result.ptr->tm/*ldo*/);
         result.ptr->copy_a[0].xtrans = libxsmm_dispatch_trans(desc);
         if (NULL != result.ptr->copy_a[0].ptr_const) {
-          result.ptr->lda = result.ptr->k;
           tmp = result.ptr->tm;
           result.ptr->tm = result.ptr->tk;
           result.ptr->tk = tmp;
@@ -629,7 +628,6 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
           result.ptr->itypesize, result.ptr->tn, result.ptr->tk, result.ptr->tk/*ldo*/);
         result.ptr->copy_b[0].xtrans = libxsmm_dispatch_trans(desc);
         if (NULL != result.ptr->copy_b[0].ptr_const) {
-          result.ptr->ldb = result.ptr->n;
           tmp = result.ptr->tk;
           result.ptr->tk = result.ptr->tn;
           result.ptr->tn = tmp;
@@ -654,7 +652,6 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       }
       tmp = result.ptr->lda;
       result.ptr->lda = result.ptr->ldb;
-      /*result.ptr->ldc = result.ptr->n;*/
       result.ptr->ldb = tmp;
       tmp = result.ptr->tm;
       result.ptr->tm = result.ptr->tn;
@@ -843,11 +840,11 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
         for (ik = k0, ik1 = ik + handle->tk; (ik1 - 1) < k1; ik = ik1, ik1 += handle->tk) {
           const char *ai, *bi;
           if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
-            if (0 != (LIBXSMM_GEMM_FLAG_TRANS_A & handle->flags_gemm)) {
+            if (0 != (LIBXSMM_GEMM_FLAG_TRANS_A & handle->flags_gemm)) { /* TN */
               a0 = (const char*)a + (im * handle->lda + ik) * handle->itypesize;
               b0 = (const char*)b + (in * handle->ldb + ik) * handle->itypesize;
             }
-            else if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->flags_gemm)) {
+            else if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->flags_gemm)) { /* NT */
               a0 = (const char*)a + (ik * handle->lda + im) * handle->itypesize;
               b0 = (const char*)b + (ik * handle->ldb + in) * handle->itypesize;
             }
