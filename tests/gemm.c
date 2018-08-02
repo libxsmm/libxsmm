@@ -62,18 +62,18 @@ LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE);
 
 int main(void)
 {
-  libxsmm_blasint m[]               = { 1, 1, 2, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32,    9 };
-  libxsmm_blasint n[]               = { 1, 2, 2, 3, 1, 3,    8, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33,    9 };
-  libxsmm_blasint k[]               = { 1, 2, 2, 3, 2, 2,   64,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192, 1742 };
-  libxsmm_blasint lda[]             = { 1, 1, 2, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9 };
-  libxsmm_blasint ldb[]             = { 1, 2, 2, 3, 2, 2, 9216, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742 };
-  libxsmm_blasint ldc[]             = { 1, 1, 2, 3, 3, 1, 4096, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
-  LIBXSMM_GEMM_CONST OTYPE alpha[]  = { 1, 1, 1, 1, 1, 1,    1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
-  LIBXSMM_GEMM_CONST OTYPE beta[]   = { 1, 1, 1, 1, 0, 0,    0,   1,     0,     1,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0 };
+  libxsmm_blasint m[]   = { 1, 1, 2, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32,    9 };
+  libxsmm_blasint n[]   = { 1, 2, 2, 3, 1, 3,    8, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33,    9 };
+  libxsmm_blasint k[]   = { 1, 2, 2, 3, 2, 2,   64,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192, 1742 };
+  libxsmm_blasint lda[] = { 1, 1, 2, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9 };
+  libxsmm_blasint ldb[] = { 1, 2, 2, 3, 2, 2, 9216, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742 };
+  libxsmm_blasint ldc[] = { 1, 1, 2, 3, 3, 1, 4096, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
+  OTYPE alpha[]         = { 1, 1, 1, 1, 1, 1,    1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
+  OTYPE beta[]          = { 1, 1, 1, 1, 0, 0,    0,   1,     0,     1,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0 };
   LIBXSMM_GEMM_CONST char transa[] = /*"NNNTT"*/"N";
-  LIBXSMM_GEMM_CONST char transb[] = "NNTNT";
+  char transb[] = "NNTNT";
   const int begin = 0, end = sizeof(m) / sizeof(*m), i0 = 0, i1 = sizeof(transa) - 1;
-  libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0;
+  libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0, mb = 1, kb = mb, nb = kb;
   libxsmm_matdiff_info diff;
   ITYPE *a = 0, *b = 0;
   OTYPE *c = 0, *d = 0;
@@ -85,15 +85,20 @@ int main(void)
   _MM_SET_EXCEPTION_MASK(fpemask & ~fpcheck);
 #endif
   for (test = begin; test < end; ++test) {
+    m[test] = LIBXSMM_UP(m[test], mb);
+    n[test] = LIBXSMM_UP(n[test], nb);
+    k[test] = LIBXSMM_UP(k[test], kb);
+    lda[test] = LIBXSMM_MAX(lda[test], m[test]);
+    ldb[test] = LIBXSMM_MAX(ldb[test], k[test]);
+    ldc[test] = LIBXSMM_MAX(ldc[test], m[test]);
+  }
+  for (test = begin; test < end; ++test) {
     const libxsmm_blasint size_a = lda[test] * k[test], size_b = ldb[test] * n[test], size_c = ldc[test] * n[test];
-    LIBXSMM_ASSERT(m[test] <= lda[test]);
-    LIBXSMM_ASSERT(k[test] <= ldb[test]);
-    LIBXSMM_ASSERT(m[test] <= ldc[test]);
+    LIBXSMM_ASSERT(m[test] <= lda[test] && k[test] <= ldb[test] && m[test] <= ldc[test]);
     max_size_a = LIBXSMM_MAX(max_size_a, size_a);
     max_size_b = LIBXSMM_MAX(max_size_b, size_b);
     max_size_c = LIBXSMM_MAX(max_size_c, size_c);
   }
-
   a = (ITYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(ITYPE)));
   b = (ITYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ITYPE)));
   c = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
@@ -156,7 +161,9 @@ int main(void)
           }
           else {
 # if defined(_DEBUG)
-            fprintf(stderr, "Diff(#%i): L2abs=%f Linf=%f\n", test + 1, diff_test.l2_abs, diff_test.linf_abs);
+            libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
+              alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
+            fprintf(stderr, ": L2abs=%f Linf=%f (test %i.%i)\n", diff_test.l2_abs, diff_test.linf_abs, test + 1, i + 1);
 # endif
             result = EXIT_FAILURE;
           }
