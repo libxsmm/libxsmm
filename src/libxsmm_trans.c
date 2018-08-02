@@ -255,16 +255,17 @@ LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsig
   LIBXSMM_ASSERT_MSG(m0 <= m1 && m1 <= m, "Invalid task size!");
   LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= n, "Invalid task size!");
 
-  libxsmm_otrans_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, kernel);
+  libxsmm_otrans_internal(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
 }
 
 
-LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
+LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
+  unsigned int typesize, libxsmm_blasint ldi, libxsmm_blasint ldo,
+  libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint tm, libxsmm_blasint tn, libxsmm_xtransfunction kernel)
 {
   LIBXSMM_XCOPY(LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, kernel,
-    out, in, typesize, ldi, ldo, tm, tn, 0, m, 0, n,
+    out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
     LIBXSMM_XALIGN_TCOPY);
 }
 
