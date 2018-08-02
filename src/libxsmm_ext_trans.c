@@ -189,7 +189,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 # endif
           {
 #           pragma omp parallel num_threads(nthreads)
-            libxsmm_otrans_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
+            libxsmm_otrans_thread_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
               omp_get_thread_num(), nthreads);
           }
 # if defined(LIBXSMM_EXT_TASKS)
@@ -201,7 +201,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
               { int tid;
                 for (tid = 0; tid < ntasks; ++tid) {
 #                 pragma omp task untied
-                  libxsmm_otrans_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
+                  libxsmm_otrans_thread_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
                     tid, ntasks);
                 }
               }
@@ -218,14 +218,14 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
           int tid;
           for (tid = 0; tid < ntasks; ++tid) {
 #           pragma omp task untied
-            libxsmm_otrans_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
+            libxsmm_otrans_thread_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
               tid, ntasks);
           }
           if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #           pragma omp taskwait
           }
 # else
-          libxsmm_otrans_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
+          libxsmm_otrans_thread_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
             omp_get_thread_num(), nthreads);
 # endif
         }
