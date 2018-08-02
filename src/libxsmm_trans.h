@@ -192,8 +192,9 @@ LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsig
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   libxsmm_blasint tm, libxsmm_blasint tn, libxsmm_xtransfunction kernel,
   int tid, int nthreads);
-LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
+LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
+  unsigned int typesize, libxsmm_blasint ldi, libxsmm_blasint ldo,
+  libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
   libxsmm_blasint tm, libxsmm_blasint tn, libxsmm_xtransfunction kernel);
 
 /** Determines whether JIT-kernels are used or not (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
