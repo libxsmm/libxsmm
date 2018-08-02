@@ -70,10 +70,14 @@ int main(void)
   libxsmm_blasint ldc[] = { 1, 1, 2, 3, 3, 1, 4096, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
   OTYPE alpha[]         = { 1, 1, 1, 1, 1, 1,    1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
   OTYPE beta[]          = { 1, 1, 1, 1, 0, 0,    0,   1,     0,     1,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0 };
-  LIBXSMM_GEMM_CONST char transa[] = /*"NNNTT"*/"N";
+#if 0
+  char transa[] = "NNNTT";
+#else
+  char transa[] = "N";
+#endif
   char transb[] = "NNTNT";
   const int begin = 0, end = sizeof(m) / sizeof(*m), i0 = 0, i1 = sizeof(transa) - 1;
-  libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0, mb = 1, kb = mb, nb = kb;
+  libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0, block = 1;
   libxsmm_matdiff_info diff;
   ITYPE *a = 0, *b = 0;
   OTYPE *c = 0, *d = 0;
@@ -85,9 +89,9 @@ int main(void)
   _MM_SET_EXCEPTION_MASK(fpemask & ~fpcheck);
 #endif
   for (test = begin; test < end; ++test) {
-    m[test] = LIBXSMM_UP(m[test], mb);
-    n[test] = LIBXSMM_UP(n[test], nb);
-    k[test] = LIBXSMM_UP(k[test], kb);
+    m[test] = LIBXSMM_UP(m[test], block);
+    n[test] = LIBXSMM_UP(n[test], block);
+    k[test] = LIBXSMM_UP(k[test], block);
     lda[test] = LIBXSMM_MAX(lda[test], m[test]);
     ldb[test] = LIBXSMM_MAX(ldb[test], k[test]);
     ldc[test] = LIBXSMM_MAX(ldc[test], m[test]);
