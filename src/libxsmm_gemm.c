@@ -476,22 +476,22 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
         LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "TRANS = %c\nALPHA = %s", ctransa, string_a);
         LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_a_%p.mhd", a);
         data_size[0] = (size_t)ilda; data_size[1] = (size_t)kk; size[0] = (size_t)(*m); size[1] = (size_t)kk;
-        libxsmm_mhd_write(string_a, NULL/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype, a,
-          NULL/*header_size*/, extension_header, NULL/*extension*/, 0/*extension_size*/);
+        libxsmm_mhd_write(string_a, NULL/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype,
+          NULL/*conversion*/, a, NULL/*header_size*/, extension_header, NULL/*extension*/, 0/*extension_size*/);
       }
       if (0 != b) {
         LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "\nTRANS = %c", ctransb);
         LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_b_%p.mhd", b);
         data_size[0] = (size_t)ildb; data_size[1] = (size_t)nn; size[0] = (size_t)kk; size[1] = (size_t)nn;
-        libxsmm_mhd_write(string_a, NULL/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype, b,
-          NULL/*header_size*/, extension_header, NULL/*extension*/, 0/*extension_size*/);
+        libxsmm_mhd_write(string_a, NULL/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype,
+          NULL/*conversion*/, b, NULL/*header_size*/, extension_header, NULL/*extension*/, 0/*extension_size*/);
       }
       if (0 != c) {
         LIBXSMM_SNPRINTF(extension_header, sizeof(extension_header), "BETA = %s", string_b);
         LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "libxsmm_c_%p.mhd", c);
         data_size[0] = (size_t)ildc; data_size[1] = (size_t)nn; size[0] = (size_t)(*m); size[1] = (size_t)nn;
-        libxsmm_mhd_write(string_a, NULL/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype, c,
-          NULL/*header_size*/, extension_header, NULL/*extension*/, 0/*extension_size*/);
+        libxsmm_mhd_write(string_a, NULL/*offset*/, size, data_size, 2/*ndims*/, 1/*ncomponents*/, mhd_elemtype,
+          NULL/*conversion*/, c, NULL/*header_size*/, extension_header, NULL/*extension*/, 0/*extension_size*/);
       }
     }
   }
@@ -723,18 +723,20 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
 #endif
   if (NULL != result.ptr) { /* build SMM kernels */
     const libxsmm_gemm_prefetch_type prf_gemm = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
-    const libxsmm_blasint ilda = (libxsmm_blasint)(NULL == result.ptr->copy_a[0].ptr_const ? result.ptr->lda : result.ptr->tm);
-    const libxsmm_blasint ildb = (libxsmm_blasint)(NULL == result.ptr->copy_b[0].ptr_const ? result.ptr->ldb : result.ptr->tk);
+    const libxsmm_blasint kernel_lda = (libxsmm_blasint)(NULL == result.ptr->copy_a[0].ptr_const ? result.ptr->lda : result.ptr->tm);
+    const libxsmm_blasint kernel_ldb = (libxsmm_blasint)(NULL == result.ptr->copy_b[0].ptr_const ? result.ptr->ldb : result.ptr->tk);
+    libxsmm_blasint kernel_m, kernel_n;
+    if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->flags_gemm)) {
+      kernel_m = result.ptr->tm; kernel_n = result.ptr->tn;
+    }
+    else {
+      kernel_m = result.ptr->tn; kernel_n = result.ptr->tm;
+    }
     /* remove transpose flags from kernel request */
-    libxsmm_gemm_descriptor *const desc = (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->flags_gemm)
-      ? libxsmm_gemm_descriptor_init2(&desc_blob, iprec, oprec,
-        result.ptr->tm, result.ptr->tn, result.ptr->tk, ilda, ildb,
-        (libxsmm_blasint)(NULL == result.ptr->copy_o[0].ptr_const ? result.ptr->ldc : result.ptr->tm),
-        alpha, beta, result.ptr->flags_gemm & ~LIBXSMM_GEMM_FLAG_TRANS_AB, prf_gemm)
-      : libxsmm_gemm_descriptor_init2(&desc_blob, iprec, oprec,
-        result.ptr->tn, result.ptr->tm, result.ptr->tk, ilda, ildb,
-        (libxsmm_blasint)(NULL == result.ptr->copy_o[0].ptr_const ? result.ptr->ldc : result.ptr->tn),
-        alpha, beta, result.ptr->flags_gemm & ~LIBXSMM_GEMM_FLAG_TRANS_AB, prf_gemm));
+    libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&desc_blob, iprec, oprec,
+      kernel_m, kernel_n, result.ptr->tk, kernel_lda, kernel_ldb,
+      (libxsmm_blasint)(NULL == result.ptr->copy_o[0].ptr_const ? result.ptr->ldc : kernel_m),
+      alpha, beta, result.ptr->flags_gemm & ~LIBXSMM_GEMM_FLAG_TRANS_AB, prf_gemm);
     result.ptr->kernel[0] = libxsmm_xmmdispatch(desc);
     if (NULL != result.ptr->kernel[0].xmm) {
       if (0 == (desc->flags & LIBXSMM_GEMM_FLAG_BETA_0)) { /* beta!=0 */
@@ -842,8 +844,8 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
         else {
 #if defined(LIBXSMM_GEMM_TRANS_NOJIT)
           if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
-            const libxsmm_blasint transm = (libxsmm_blasint)handle->tm, transn = (libxsmm_blasint)handle->tn;
-            libxsmm_otrans_internal(ct/*out*/, c0/*in*/, handle->otypesize, (libxsmm_blasint)handle->ldc/*ldi*/, transm/*ldo*/,
+            const libxsmm_blasint transm = (libxsmm_blasint)handle->tn, transn = (libxsmm_blasint)handle->tm;
+            libxsmm_otrans_internal(ct/*out*/, c0/*in*/, handle->otypesize, (libxsmm_blasint)handle->ldc/*ldi*/, transn/*ldo*/,
               0, transm, 0, transn, transm/*tile*/, transn/*tile*/, NULL/*kernel*/);
           }
           else
