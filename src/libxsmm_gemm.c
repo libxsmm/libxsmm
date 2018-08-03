@@ -617,11 +617,9 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
           result.ptr->itypesize, result.ptr->tk, result.ptr->tm, result.ptr->tm/*ldo*/);
         result.ptr->copy_a[0].xtrans = libxsmm_dispatch_trans(desc);
         if (NULL != result.ptr->copy_a[0].ptr_const) {
-#if 1
           tmp = result.ptr->tm;
           result.ptr->tm = result.ptr->tk;
           result.ptr->tk = tmp;
-#endif
         }
         else result.ptr = NULL;
       }
@@ -630,11 +628,9 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
           result.ptr->itypesize, result.ptr->tn, result.ptr->tk, result.ptr->tk/*ldo*/);
         result.ptr->copy_b[0].xtrans = libxsmm_dispatch_trans(desc);
         if (NULL != result.ptr->copy_b[0].ptr_const) {
-#if 1
           tmp = result.ptr->tk;
           result.ptr->tk = result.ptr->tn;
           result.ptr->tn = tmp;
-#endif
         }
         else result.ptr = NULL;
       }
@@ -654,21 +650,14 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       else {
         result.ptr = NULL;
       }
-#if 1
       tmp = result.ptr->lda;
       result.ptr->lda = result.ptr->ldb;
       result.ptr->ldb = tmp;
-#endif
-#if 1
-      tmp = result.ptr->tm;
-      result.ptr->tm = result.ptr->tn;
-      result.ptr->tn = tmp;
-#endif
-#if 1
       tmp = result.ptr->m;
       result.ptr->m = result.ptr->n;
       result.ptr->n = tmp;
-#endif
+      tmp = LIBXSMM_MIN(result.ptr->tm, result.ptr->tn);
+      result.ptr->tm = result.ptr->tn = tmp;
     }
   }
   else {
