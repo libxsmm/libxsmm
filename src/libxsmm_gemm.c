@@ -809,24 +809,42 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
     LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= handle->n, "Invalid task size!");
     LIBXSMM_ASSERT_MSG(k0 <= k1 && k1 <= handle->k, "Invalid task size!");
     for (im1 = im + handle->tm; (im1 - 1) < m1; im = im1, im1 += handle->tm, om += dom) {
-      char *c0 = (char*)c, *ci;
       unsigned int dn = don, dka = dik, dkb = dik;
+      char *c0 = (char*)c, *ci;
+      const char *aa;
       if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
-        if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->flags_gemm)) { /* NT */
+        if (0 != (LIBXSMM_GEMM_FLAG_TRANS_A & handle->flags_gemm)) { /* TN */
+          aa = (const char*)a + (im * handle->lda + k0) * handle->itypesize;
+        }
+        else if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->flags_gemm)) { /* NT */
+          aa = (const char*)a + (k0 * handle->lda + im) * handle->itypesize;
           dka *= handle->lda; dkb *= handle->ldb;
         }
-        else if (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & handle->flags_gemm)) { /* NN */
+        else { /* NN */
+          aa = (const char*)a + (k0 * handle->lda + im) * handle->itypesize;
           dka *= handle->lda;
         }
         c0 += on * handle->ldc + om;
         dn *= handle->ldc;
       }
       else { /* TT */
+        aa = (const char*)b + (k0 * handle->lda + im) * handle->itypesize;
         c0 += on + handle->ldc * om;
         dka *= handle->lda;
       }
       for (in = n0, in1 = in + handle->tn; (in1 - 1) < n1; in = in1, in1 += handle->tn, c0 += dn) {
-        const char *a0, *b0, *a1, *b1;
+        const char *a0 = aa, *b0 = (const char*)b;
+        if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
+          if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->flags_gemm)) { /* NT */
+            b0 += (k0 * handle->ldb + in) * handle->itypesize;
+          }
+          else { /* NN or TN */
+            b0 += (in * handle->ldb + k0) * handle->itypesize;
+          }
+        }
+        else { /* TT */
+          b0 = (const char*)a + (in * handle->ldb + k0) * handle->itypesize;
+        }
         if (NULL == handle->copy_i[0].ptr_const) {
           ci = (NULL == handle->copy_o[0].ptr_const ? c0 : ct);
         }
@@ -843,27 +861,7 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
           ci = ct;
         }
         for (ik = k0, ik1 = ik + handle->tk; (ik1 - 1) < k1; ik = ik1, ik1 += handle->tk) {
-          const char *ai, *bi;
-          if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
-            if (0 != (LIBXSMM_GEMM_FLAG_TRANS_A & handle->flags_gemm)) { /* TN */
-              a0 = (const char*)a + (im * handle->lda + ik) * handle->itypesize;
-              b0 = (const char*)b + (in * handle->ldb + ik) * handle->itypesize;
-            }
-            else if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->flags_gemm)) { /* NT */
-              a0 = (const char*)a + (ik * handle->lda + im) * handle->itypesize;
-              b0 = (const char*)b + (ik * handle->ldb + in) * handle->itypesize;
-            }
-            else { /* NN */
-              a0 = (const char*)a + (ik * handle->lda + im) * handle->itypesize;
-              b0 = (const char*)b + (in * handle->ldb + ik) * handle->itypesize;
-            }
-          }
-          else { /* TT */
-            a0 = (const char*)b + (ik * handle->lda + im) * handle->itypesize;
-            b0 = (const char*)a + (in * handle->ldb + ik) * handle->itypesize;
-          }
-          a1 = a0 + dka; b1 = b0 + dkb;
-          ai = a0; bi = b0;
+          const char *const a1 = a0 + dka, *const b1 = b0 + dkb, *ai = a0, *bi = b0;
           if (NULL != handle->copy_a[0].ptr_const) {
 #if defined(LIBXSMM_GEMM_TRANS_NOJIT)
             if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm) &&
