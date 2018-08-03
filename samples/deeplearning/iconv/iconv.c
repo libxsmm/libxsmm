@@ -124,7 +124,7 @@ int main(int argc, char* argv[])
         }
       }
       result = libxsmm_mhd_write(filename, 0/*offset*/, size_in, size_in,
-        2/*ndims*/, 1/*ncomponents*/, LIBXSMM_MHD_ELEMTYPE_U8, image,
+        2/*ndims*/, 1/*ncomponents*/, LIBXSMM_MHD_ELEMTYPE_U8, NULL/*conversion*/, image,
         0/*header_size*/, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
       if (EXIT_SUCCESS == result) filename_in = filename;
     }
@@ -390,7 +390,7 @@ int main(int argc, char* argv[])
     }
     result = libxsmm_mhd_write(filename_out, offset, size_in, size_out, 2/*ndims*/, ncomponents,
       (libxsmm_mhd_elemtype)type_dnn/* assume MHD I/O provides a super-set of DNN types */,
-      image, &header_size, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
+      NULL/*conversion*/, image, &header_size, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
   }
 
   /* convert into input pixel-type, and re-write result image. */
@@ -405,7 +405,7 @@ int main(int argc, char* argv[])
           image, 0/*handle_element*/, 0/*extension*/, 0/*extension_size*/);
         if (EXIT_SUCCESS == result) {
           result = libxsmm_mhd_write(filename_out,
-            0/*offset*/, size_in, size_in, 2/*ndims*/, ncomponents, type_in, image,
+            0/*offset*/, size_in, size_in, 2/*ndims*/, ncomponents, type_in, NULL/*conversion*/, image,
             0/*header_size*/, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
         }
       }

@@ -30,6 +30,7 @@
 ******************************************************************************/
 
 #include <libxsmm_math.h>
+#include <libxsmm_mhd.h>
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -95,23 +96,42 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
         result = EXIT_FAILURE;
       }
     }
+    if (EXIT_SUCCESS == result) {
+      const char *const env = getenv("LIBXSMM_DUMP");
+      if (0 != env && 0 != *env) {
+        const char *const basename = isdigit(*env) ? "libxsmm_dump" : env;
+        const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
+        const libxsmm_mhd_elemtype type_dst = LIBXSMM_MAX(LIBXSMM_MHD_ELEMTYPE_U8, type_src);
+        char filename[256];
+        size_t size[2], pr[2]; size[0] = mm; size[1] = nn; pr[0] = ldr; pr[1] = nn;
+        LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-ref%p.mhd", basename, ref);
+        libxsmm_mhd_write(filename, NULL/*offset*/, size, pr, 2/*ndims*/, 1/*ncomponents*/,
+          type_src, &type_dst, ref, NULL/*header_size*/, NULL/*extension_header*/,
+          NULL/*extension*/, 0/*extension_size*/);
+        if (NULL != tst) {
+          size_t pt[2]; pt[0] = ldt; pt[1] = nn;
+          LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-tst%p.mhd", basename, tst);
+          libxsmm_mhd_write(filename, NULL/*offset*/, size, pt, 2/*ndims*/, 1/*ncomponents*/,
+            type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
+            NULL/*extension*/, 0/*extension_size*/);
+        }
+      }
+      info->normf_rel = libxsmm_dsqrt(info->normf_rel);
+      info->l2_abs = libxsmm_dsqrt(info->l2_abs);
+      info->l2_rel = libxsmm_dsqrt(info->l2_rel);
+      if (1 == n) {
+        const libxsmm_blasint tmp = info->linf_abs_m;
+        info->linf_abs_m = info->linf_abs_n;
+        info->linf_abs_n = tmp;
+      }
+      if (0 != result_swap) {
+        info->l1_tst = info->l1_ref;
+        info->l1_ref = 0;
+      }
+    }
   }
   else {
     result = EXIT_FAILURE;
-  }
-  if (EXIT_SUCCESS == result) {
-    info->normf_rel = libxsmm_dsqrt(info->normf_rel);
-    info->l2_abs = libxsmm_dsqrt(info->l2_abs);
-    info->l2_rel = libxsmm_dsqrt(info->l2_rel);
-    if (1 == n) {
-      const libxsmm_blasint tmp = info->linf_abs_m;
-      info->linf_abs_m = info->linf_abs_n;
-      info->linf_abs_n = tmp;
-    }
-    if (0 != result_swap) {
-      info->l1_tst = info->l1_ref;
-      info->l1_ref = 0;
-    }
   }
   return result;
 }
