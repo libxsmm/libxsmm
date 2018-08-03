@@ -20,7 +20,7 @@ matrix:
     compiler: clang
     env: DBG=1 LIBXSMM_TARGET=0
   - os: osx
-    osx_image: xcode9.1
+    #osx_image: xcode9.1
     compiler: clang
     env: OPT=1
   - os: osx

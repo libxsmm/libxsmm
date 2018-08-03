@@ -360,6 +360,11 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
        fprintf(stderr, "libxsmm_instruction_vec_move: Masking is only enabled with zmm registers!\n");
        exit(-1);
     }
+    if ( (i_use_zero_masking != 0) && (i_mask_reg_number != 0) && (i_is_store != 0) )
+    {
+      fprintf(stderr, "libxsmm_instruction_vec_move: zero-masked store cannot operate on memory destination!\n");
+      exit(-1);
+    }
     if ( l_maxsize - i < 20 )
     {
        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_BUFFER_TOO_SMALL );
@@ -735,7 +740,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
 
     if ( i_mask_reg_number != 0 ) {
       l_maskingoff = i_mask_reg_number;
-      if ( i_use_zero_masking != 0 ) l_maskingoff += 0x80;
+      if ( i_use_zero_masking != 0 && i_is_store == 0 ) l_maskingoff += 0x80;
     }
     if ( l_num == 0 ) l_vregoffset = 0x90;
     else if ( l_num == 1 ) { l_vregoffset = 0x10; l_vregoffset2 = -0x80; }
@@ -866,9 +871,9 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
     libxsmm_get_x86_gp_reg_name( i_gp_reg_base, l_gp_reg_base_name, 3 );
     libxsmm_get_x86_instr_name( i_vmove_instr, l_instr_name, 15 );
 
-    if ( i_use_zero_masking == 0 || i_mask_reg_number == 0 ) {
+    if ( i_use_zero_masking == 0 || i_mask_reg_number == 0 || i_is_store != 0 ) {
       if ( io_generated_code->code_type == 0 ) {
-        l_masking_type[0] = (char)0; /* no mask */
+        l_masking_type[0] = (char)0; /* no zero-masking */
       }
     } else {
       if ( io_generated_code->code_type == 0 ) {
