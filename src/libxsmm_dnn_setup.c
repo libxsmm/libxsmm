@@ -488,6 +488,17 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     handle->use_nts_fwd = 0;
   }
 
+  /* determine if we should use the image par version */
+  handle->fwd_img_par = 0;
+  /* we are running out of parallelism */
+  if ( handle->desc.N*handle->blocksofm  < handle->desc.threads ) {
+    handle->fwd_img_par = 1;
+  }
+  /* huge images, but minibatch 1 */
+  if ( (handle->desc.threads != 1) &&  (handle->desc.N == 1) && (handle->fwd_ofh_rb == 1) && (handle->n_variants == 1) && (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
+    handle->fwd_img_par = 1;
+  }
+
   /* Adjust blocking factors if custom_2 format is requested */
   if ((handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2)) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32) {
