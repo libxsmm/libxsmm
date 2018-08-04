@@ -93,7 +93,7 @@ LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per
 #else
   if (NULL != barrier && 1 < ncores && 1 <= nthreads_per_core) {
     barrier->ncores = ncores;
-    barrier->ncores_log2 = LIBXSMM_LOG2((ncores << 1) - 1);
+    barrier->ncores_log2 = (int)LIBXSMM_LOG2(((unsigned long long)ncores << 1) - 1);
     barrier->nthreads_per_core = nthreads_per_core;
     barrier->nthreads = ncores * nthreads_per_core;
     barrier->threads = (internal_sync_thread_tag**)libxsmm_aligned_malloc(

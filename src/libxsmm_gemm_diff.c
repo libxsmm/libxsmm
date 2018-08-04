@@ -309,11 +309,14 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_sw(const libxsm
   const char *const desc = (const char*)descs;
   const unsigned int end = hint + ndescs;
   unsigned int i;
+  LIBXSMM_ASSERT(0 <= nbytes);
   for (i = hint; i < end; ++i) {
-    const unsigned int j = i % ndescs; /* wrap around index */
+    const size_t j = (i % ndescs); /* wrap around index */
     /* negative stride runs backwards */
-    if (0 == libxsmm_gemm_diff_sw(reference, (const libxsmm_gemm_descriptor*)(desc + j * nbytes))) {
-      return j;
+    const libxsmm_gemm_descriptor *const idesc = (const libxsmm_gemm_descriptor*)(
+      0 <= nbytes ? (desc + j * nbytes) : (desc - j * (size_t)(-nbytes)));
+    if (0 == libxsmm_gemm_diff_sw(reference, idesc)) {
+      return (unsigned int)j;
     }
   }
   return ndescs;

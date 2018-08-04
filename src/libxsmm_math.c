@@ -46,7 +46,7 @@
 #endif
 
 #if !defined(LIBXSMM_MAX_SPLITLIMIT)
-# define LIBXSMM_MAX_SPLITLIMIT 2048
+# define LIBXSMM_MAX_SPLITLIMIT 1024
 #endif
 
 
@@ -318,7 +318,7 @@ LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long x)
 {
   unsigned long long b; unsigned int y = 0; int s;
   for (s = 63; 0 <= s; s -= 3) {
-    y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
+    y += y; b = ((unsigned long long)y + 1) * 3 * y + 1ULL;
     if (b <= (x >> s)) { x -= b << s; ++y; }
   }
   return y;

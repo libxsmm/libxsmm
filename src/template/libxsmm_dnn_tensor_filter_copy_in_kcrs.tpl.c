@@ -65,7 +65,7 @@ if (tensor->layout->custom_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
             for (i6 = 0; i6 < bofm; ++i6) {
               for (i7 = 0; i7 < lpb; ++i7) {
                 LIBXSMM_VLA_ACCESS(7, handle_data_1, i1, i2, i3, i4, i5, i6, i7, ifmb, R, S, bifm, bofm, lpb) =
-                LIBXSMM_VLA_ACCESS(4, user_data, i1 * bofm + i6, (i2*bifm*lpb) + (i5*lpb) + i7, i3, i4, ifmb * bifm * lpb, R, S);
+                LIBXSMM_VLA_ACCESS(4, user_data, i1 * bofm + i6, ((size_t)i2*bifm*lpb) + ((size_t)i5*lpb) + i7, i3, i4, ifmb * bifm * lpb, R, S);
               }
             }
           }
@@ -81,7 +81,7 @@ if (tensor->layout->custom_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
           for ( i5 = 0; i5 < bifm; i5++ ) {
             for ( i6 = 0; i6 < bofm; i6++ ) {
               LIBXSMM_VLA_ACCESS(6, handle_data_2, i1, i2, i3, i4, i5, i6, ifmb, R, S, bifm, bofm) =
-              LIBXSMM_VLA_ACCESS(4, user_data, (i1*bofm)+i6, (i2*bifm)+i5, i3, i4, C, R, S);
+              LIBXSMM_VLA_ACCESS(4, user_data, ((size_t)i1*bofm)+i6, ((size_t)i2*bifm)+i5, i3, i4, C, R, S);
             }
           }
         }

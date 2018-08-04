@@ -131,13 +131,13 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
           default: result = EXIT_FAILURE;
         }
       }
-      memset(batcharray, 0, (size_t)(batchsize * itemsize)); /* clear */
+      memset(batcharray, 0, (size_t)batchsize * (size_t)itemsize); /* clear */
     }
     else { /* print statistic */
       const libxsmm_blasint limit = (3 < libxsmm_get_verbosity() ? batchsize : 7);
       unsigned int threshold, batchcount;
       libxsmm_blasint count = 0, i;
-      assert(0 != batcharray);
+      assert(NULL != batcharray);
       qsort(batcharray, (size_t)batchsize, (size_t)itemsize, internal_mmbatch_sortrev);
       batchcount = batcharray[0].stat.count;
       threshold = ((3 < libxsmm_get_verbosity() || 3 >= batchsize) ? 0 : (batchcount / 2));
@@ -150,7 +150,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
         const char *const symbol = batcharray[i].stat.symbol;
         const unsigned int ci = batcharray[i].stat.count;
 
-        memset(batcharray + i, 0, (size_t)itemsize); /* clear */
+        memset(&batcharray[i], 0, (size_t)itemsize); /* clear */
         if (threshold < ci && count < limit /* limit printed statistic */
           && 0 < m && 0 < n && 0 < k)
         {
@@ -218,7 +218,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
       void* d = NULL;
       if (LIBXSMM_NEQ(0, check)) {
-        const size_t size = (*ldc) * (*n) * sizeof(double);
+        const size_t size = (size_t)(*ldc) * (size_t)(*n) * sizeof(double);
         d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_SCRATCH_INTERNAL);
         if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
       }
@@ -358,7 +358,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
       void* d = NULL;
       if (LIBXSMM_NEQ(0, check)) {
-        const size_t size = (*ldc) * (*n) * sizeof(float);
+        const size_t size = (size_t)(*ldc) * (size_t)(*n) * sizeof(float);
         d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_SCRATCH_INTERNAL);
         if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
       }

@@ -421,7 +421,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     const char *const target_arch = (0 == env_target_hidden || 0 == atoi(env_target_hidden))
       ? internal_get_target_arch(libxsmm_target_archid)
       : NULL/*hidden*/;
-    const double regsize = 1.0 * internal_registry_nbytes / (1 << 20);
+    const double regsize = 1.0 * internal_registry_nbytes / (1ULL << 20);
     libxsmm_scratch_info scratch_info;
     unsigned int linebreak;
 
@@ -439,14 +439,14 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
       size_t ngemms = 0;
       int i; for (i = 0; i < 4; ++i) {
-        ngemms += internal_statistic[0/*DP*/][i].nsta + internal_statistic[1/*SP*/][i].nsta;
-        ngemms += internal_statistic[0/*DP*/][i].njit + internal_statistic[1/*SP*/][i].njit;
+        ngemms += (size_t)internal_statistic[0/*DP*/][i].nsta + internal_statistic[1/*SP*/][i].nsta;
+        ngemms += (size_t)internal_statistic[0/*DP*/][i].njit + internal_statistic[1/*SP*/][i].njit;
       }
       fprintf(stderr, " (gemm=%lu mcopy=%u tcopy=%u)", (unsigned long int)ngemms,
         internal_statistic_num_mcopy, internal_statistic_num_tcopy);
     }
     if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.size) {
-      fprintf(stderr, "\nScratch: %.f MB", 1.0 * scratch_info.size / (1 << 20));
+      fprintf(stderr, "\nScratch: %.f MB", 1.0 * scratch_info.size / (1ULL << 20));
       if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
 #if !defined(LIBXSMM_NO_SYNC)
         if (1 < libxsmm_threads_count) {

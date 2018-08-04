@@ -203,7 +203,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->n_entries_fwd[ltid] = local_entries/3;
 
   /* Allocate auxiliary data structures for index jitting  */
-  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
+  compute_indices = (int*)libxsmm_aligned_malloc(((size_t)local_entries+3) * sizeof(int), 64);
   handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
 
   /* BN offsets...  */

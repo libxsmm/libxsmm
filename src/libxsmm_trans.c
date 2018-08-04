@@ -378,8 +378,8 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
       libxsmm_blasint i, j;
       for (i = 0; i < m; ++i) {
         for (j = 0; j < i; ++j) {
-          char *const a = ((char*)inout) + (i * ld + j) * typesize;
-          char *const b = ((char*)inout) + (j * ld + i) * typesize;
+          char *const a = (char*)inout + ((size_t)i * ld + j) * typesize;
+          char *const b = (char*)inout + ((size_t)j * ld + i) * typesize;
           unsigned int k;
           for (k = 0; k < typesize; ++k) {
             const char tmp = a[k];

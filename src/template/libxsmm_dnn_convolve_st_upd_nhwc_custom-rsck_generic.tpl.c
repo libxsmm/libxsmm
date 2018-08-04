@@ -71,7 +71,7 @@ element_filter_type filter_scratch_array[scratch7_size];
 element_filter_type *const filter_scratch = filter_scratch_array;
 #endif
 
-element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm*handle->ofmblock;
+element_output_type *const out = (element_output_type*)handle->grad_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm*handle->ofmblock;
 LIBXSMM_VLA_DECL(5, const element_output_type, output, out, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
 LIBXSMM_VLA_DECL(5, const element_output_type, output_padded, (const element_output_type*)handle->grad_output->data, handle->ofhp, handle->ofwp, handle->blocksofm, handle->ofmblock);
 LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->ifhp, handle->ifwp, handle->blocksifm, handle->ifmblock);
@@ -113,7 +113,7 @@ for (ofm1ifm1 = thr_begin; ofm1ifm1 < thr_end; ++ofm1ifm1) {
           for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
             temp_buf[ofm2] = (element_filter_type)0;
           }
-          temp_buf += handle->blocksofm*handle->ofmblock;
+          temp_buf += (size_t)handle->blocksofm*handle->ofmblock;
         }
       }
     }

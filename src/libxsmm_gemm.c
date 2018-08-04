@@ -182,7 +182,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       /* draw default/non-scratch memory, but utilize the scratch memory allocator */
       LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_BATCHSCALE));
       if (EXIT_SUCCESS == libxsmm_xmalloc((void**)p,
-        (size_t)((LIBXSMM_GEMM_BATCHSCALE) * sizeof(libxsmm_gemm_batchitem) * batchsize),
+        (size_t)(LIBXSMM_GEMM_BATCHSCALE) * sizeof(libxsmm_gemm_batchitem) * batchsize,
         0, LIBXSMM_MALLOC_FLAG_SCRATCH, &extra, sizeof(extra)))
       {
         const char *const env_g = getenv("LIBXSMM_GEMM_BATCHGRAIN");
@@ -245,7 +245,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     internal_gemm_tsize_a = LIBXSMM_UP2(internal_gemm_tsize_a, LIBXSMM_CACHELINE);
     internal_gemm_tsize_b = LIBXSMM_UP2(internal_gemm_tsize_b, LIBXSMM_CACHELINE);
     internal_gemm_tsize_c = LIBXSMM_UP2(internal_gemm_tsize_c, LIBXSMM_CACHELINE);
-    if (EXIT_SUCCESS == libxsmm_xmalloc(&buffer, (LIBXSMM_MAX_NTHREADS) * internal_gemm_tsize_a,
+    if (EXIT_SUCCESS == libxsmm_xmalloc(&buffer, (size_t)(LIBXSMM_MAX_NTHREADS) * internal_gemm_tsize_a,
       LIBXSMM_CACHELINE, LIBXSMM_MALLOC_FLAG_SCRATCH, NULL/*extra*/, 0/*extra_size*/))
     {
       internal_gemm_scratch_a = (char*)buffer;
@@ -253,7 +253,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     else {
       fprintf(stderr, "LIBXSMM ERROR: failed to allocate GEMM-scratch memory for A-matrix!\n");
     }
-    if (EXIT_SUCCESS == libxsmm_xmalloc(&buffer, (LIBXSMM_MAX_NTHREADS) * internal_gemm_tsize_b,
+    if (EXIT_SUCCESS == libxsmm_xmalloc(&buffer, (size_t)(LIBXSMM_MAX_NTHREADS) * internal_gemm_tsize_b,
       LIBXSMM_CACHELINE, LIBXSMM_MALLOC_FLAG_SCRATCH, NULL/*extra*/, 0/*extra_size*/))
     {
       internal_gemm_scratch_b = (char*)buffer;
@@ -261,7 +261,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     else {
       fprintf(stderr, "LIBXSMM ERROR: failed to allocate GEMM-scratch memory for B-matrix!\n");
     }
-    if (EXIT_SUCCESS == libxsmm_xmalloc(&buffer, (LIBXSMM_MAX_NTHREADS) * internal_gemm_tsize_c,
+    if (EXIT_SUCCESS == libxsmm_xmalloc(&buffer, (size_t)(LIBXSMM_MAX_NTHREADS) * internal_gemm_tsize_c,
       LIBXSMM_CACHELINE, LIBXSMM_MALLOC_FLAG_SCRATCH, NULL/*extra*/, 0/*extra_size*/))
     {
       internal_gemm_scratch_c = (char*)buffer;
@@ -800,9 +800,9 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
     const unsigned int on = handle->otypesize * n0;
     unsigned int om = handle->otypesize * m0;
     /* calculate base addresses of thread-local storages */
-    char *const at = internal_gemm_scratch_a + tid * internal_gemm_tsize_a;
-    char *const bt = internal_gemm_scratch_b + tid * internal_gemm_tsize_b;
-    char *const ct = internal_gemm_scratch_c + tid * internal_gemm_tsize_c;
+    char *const at = internal_gemm_scratch_a + (size_t)tid * internal_gemm_tsize_a;
+    char *const bt = internal_gemm_scratch_b + (size_t)tid * internal_gemm_tsize_b;
+    char *const ct = internal_gemm_scratch_c + (size_t)tid * internal_gemm_tsize_c;
     /* loop induction variables */
     unsigned int im = m0, in = n0, ik = k0, im1, in1, ik1;
     LIBXSMM_ASSERT_MSG(m0 <= m1 && m1 <= handle->m, "Invalid task size!");
@@ -814,36 +814,36 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
       const char *aa;
       if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
         if (0 != (LIBXSMM_GEMM_FLAG_TRANS_A & handle->flags_gemm)) { /* TN */
-          aa = (const char*)a + (im * handle->lda + k0) * handle->itypesize;
+          aa = (const char*)a + ((size_t)im * handle->lda + k0) * handle->itypesize;
         }
         else if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->flags_gemm)) { /* NT */
-          aa = (const char*)a + (k0 * handle->lda + im) * handle->itypesize;
+          aa = (const char*)a + ((size_t)k0 * handle->lda + im) * handle->itypesize;
           dka *= handle->lda; dkb *= handle->ldb;
         }
         else { /* NN */
-          aa = (const char*)a + (k0 * handle->lda + im) * handle->itypesize;
+          aa = (const char*)a + ((size_t)k0 * handle->lda + im) * handle->itypesize;
           dka *= handle->lda;
         }
-        c0 += on * handle->ldc + om;
+        c0 += (size_t)on * handle->ldc + om;
         dn *= handle->ldc;
       }
       else { /* TT */
-        aa = (const char*)b + (k0 * handle->lda + im) * handle->itypesize;
-        c0 += on + handle->ldc * om;
+        aa = (const char*)b + ((size_t)k0 * handle->lda + im) * handle->itypesize;
+        c0 += (size_t)on + handle->ldc * (size_t)om;
         dka *= handle->lda;
       }
       for (in = n0, in1 = in + handle->tn; (in1 - 1) < n1; in = in1, in1 += handle->tn, c0 += dn) {
         const char *a0 = aa, *b0 = (const char*)b;
         if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
           if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->flags_gemm)) { /* NT */
-            b0 += (k0 * handle->ldb + in) * handle->itypesize;
+            b0 += ((size_t)k0 * handle->ldb + in) * handle->itypesize;
           }
           else { /* NN or TN */
-            b0 += (in * handle->ldb + k0) * handle->itypesize;
+            b0 += ((size_t)in * handle->ldb + k0) * handle->itypesize;
           }
         }
         else { /* TT */
-          b0 = (const char*)a + (in * handle->ldb + k0) * handle->itypesize;
+          b0 = (const char*)a + ((size_t)in * handle->ldb + k0) * handle->itypesize;
         }
         if (NULL == handle->copy_i[0].ptr_const) {
           ci = (NULL == handle->copy_o[0].ptr_const ? c0 : ct);
@@ -986,7 +986,7 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
         libxsmm_blasint ii = begin * index_stride, ic = (0 != sc ? (*((const libxsmm_blasint*)(sc + ii)) - index_base) : 0);
         const char* ai = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
         const char* bi = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
-        char*       ci = c0 + ic * typesize;
+        char*       ci = c0 + (size_t)ic * typesize;
         const libxsmm_blasint end1 = (end != size ? end : (end - 1));
 #if !defined(LIBXSMM_NO_SYNC)
         if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & info->flags))
@@ -996,9 +996,9 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
             for (i = begin; i < end1; i = ni) {
               ni = i + 1; ii = ni * index_stride;
               {
-                const char *const an = a0 + ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize);
-                const char *const bn = b0 + ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize);
-                char       *const cn = c0 + ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize);
+                const char *const an = a0 + (size_t)(*(const libxsmm_blasint*)(sa + ii) - (size_t)index_base) * typesize;
+                const char *const bn = b0 + (size_t)(*(const libxsmm_blasint*)(sb + ii) - (size_t)index_base) * typesize;
+                char       *const cn = c0 + (size_t)(*(const libxsmm_blasint*)(sc + ii) - (size_t)index_base) * typesize;
                 kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
                 ai = an; bi = bn; ci = cn;
               }
@@ -1008,9 +1008,9 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
             for (i = begin; i < end1; i = ni) {
               ni = i + 1; ii = ni * index_stride;
               {
-                const char *const an = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
-                const char *const bn = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
-                char       *const cn = c0 + (0 != sc ? ((*((const libxsmm_blasint*)(sc + ii)) - index_base) * typesize) : 0);
+                const char *const an = a0 + (0 != sa ? ((size_t)(*(const libxsmm_blasint*)(sa + ii) - (size_t)index_base) * typesize) : 0);
+                const char *const bn = b0 + (0 != sb ? ((size_t)(*(const libxsmm_blasint*)(sb + ii) - (size_t)index_base) * typesize) : 0);
+                char       *const cn = c0 + (0 != sc ? ((size_t)(*(const libxsmm_blasint*)(sc + ii) - (size_t)index_base) * typesize) : 0);
                 kernel.xmm(ai, bi, ci, an, bn, cn); /* with prefetch */
                 ai = an; bi = bn; ci = cn;
               }
@@ -1031,9 +1031,9 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
             for (i = begin; i < end1; i = ni) {
               ni = i + 1; ii = ni * index_stride; ic = (*((const libxsmm_blasint*)(sc + ii)) - index_base);
               {
-                const char *const an = a0 + ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize);
-                const char *const bn = b0 + ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize);
-                char       *const cn = c0 + ic * typesize;
+                const char *const an = a0 + (size_t)(*((const libxsmm_blasint*)(sa + ii)) - (size_t)index_base) * typesize;
+                const char *const bn = b0 + (size_t)(*((const libxsmm_blasint*)(sb + ii)) - (size_t)index_base) * typesize;
+                char       *const cn = c0 + (size_t)ic * typesize;
                 LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ic, internal_gemm_nlocks)].state;
 # if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
@@ -1056,7 +1056,7 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
               {
                 const char *const an = a0 + (0 != sa ? ((*((const libxsmm_blasint*)(sa + ii)) - index_base) * typesize) : 0);
                 const char *const bn = b0 + (0 != sb ? ((*((const libxsmm_blasint*)(sb + ii)) - index_base) * typesize) : 0);
-                char       *const cn = c0 + ic * typesize;
+                char       *const cn = c0 + (size_t)ic * typesize;
                 LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) *const lock1 = &internal_gemm_lock[LIBXSMM_GEMM_LOCKIDX(ic, internal_gemm_nlocks)].state;
 # if defined(LIBXSMM_GEMM_LOCKFWD)
                 if (lock != lock0) { lock0 = lock; LIBXSMM_LOCK_ACQUIRE(LIBXSMM_GEMM_LOCK, lock); }
@@ -1097,8 +1097,8 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
 #endif
       {
         const libxsmm_blasint end1 = (end != size ? end : (end - 1));
-        const char *ai = a0 + da * begin, *bi = b0 + db * begin;
-        char* ci = c0 + dc * begin;
+        const char *ai = a0 + (size_t)da * begin, *bi = b0 + (size_t)db * begin;
+        char* ci = c0 + (size_t)dc * begin;
 
 #if !defined(LIBXSMM_NO_SYNC)
         if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & info->flags))

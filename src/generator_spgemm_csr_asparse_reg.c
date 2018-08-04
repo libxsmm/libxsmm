@@ -90,8 +90,8 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
   unsigned int l_unique;
   unsigned int l_hit;
   unsigned int l_n_blocking = 1;
-  double *const l_unique_values = (double*)malloc(sizeof(double)*i_row_idx[i_xgemm_desc->m]);
-  unsigned int *const l_unique_pos = (unsigned int*)malloc(sizeof(unsigned int)*i_row_idx[i_xgemm_desc->m]);
+  double *const l_unique_values = (double*)malloc(sizeof(double) * i_row_idx[i_xgemm_desc->m]);
+  unsigned int *const l_unique_pos = (unsigned int*)malloc(sizeof(unsigned int) * i_row_idx[i_xgemm_desc->m]);
   double l_code_const_dp[8];
   float l_code_const_fp[16];
 
