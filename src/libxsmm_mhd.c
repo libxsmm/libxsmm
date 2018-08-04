@@ -29,6 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_mhd.h>
+#include "libxsmm_main.h" /* libxsmm_typesize */
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -69,7 +70,7 @@
 
 LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t* typesize, const char** ctypename)
 {
-  const char *mhd_typename = 0, *c_typename = 0;
+  const char *mhd_typename = NULL, *c_typename = NULL;
   size_t size = 0;
   switch (type) {
     case LIBXSMM_MHD_ELEMTYPE_I8:  { size = 1; mhd_typename = "MET_CHAR";   c_typename = "signed char";        } break;
@@ -82,11 +83,11 @@ LIBXSMM_API const char* libxsmm_mhd_typename(libxsmm_mhd_elemtype type, size_t* 
     case LIBXSMM_MHD_ELEMTYPE_U64: { size = 8; mhd_typename = "MET_ULONG";  c_typename = "unsigned long long"; } break;
     case LIBXSMM_MHD_ELEMTYPE_F32: { size = 4; mhd_typename = "MET_FLOAT";  c_typename = "float";              } break;
     case LIBXSMM_MHD_ELEMTYPE_F64: { size = 8; mhd_typename = "MET_DOUBLE"; c_typename = "double";             } break;
-    default: ;
+    default: size = libxsmm_typesize((libxsmm_datatype)type); /* fall-back */
   }
   assert(size <= LIBXSMM_MHD_MAX_ELEMSIZE);
-  if (0 != ctypename) *ctypename = c_typename;
-  if (0 != typesize) *typesize = size;
+  if (NULL != ctypename) *ctypename = c_typename;
+  if (NULL != typesize) *typesize = size;
   return mhd_typename;
 }
 
@@ -661,13 +662,14 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   const libxsmm_mhd_elemtype elemtype = (NULL == type ? type_data : *type);
   const char *const elemname = libxsmm_mhd_typename(elemtype, &typesize, NULL/*ctypename*/);
   FILE *const file = (0 != filename && 0 != *filename &&
-    NULL != size && 0 != ndims && 0 != ncomponents && NULL != data && NULL != elemname && 0 < typesize &&
-    NULL != libxsmm_mhd_typename(type_data, &typesize_data, NULL/*ctypename*/) && 0 < typesize_data)
+    NULL != size && 0 != ndims && 0 != ncomponents && NULL != data && NULL != elemname && 0 < typesize)
     ? fopen(filename, "wb")
     : NULL;
   int result = EXIT_SUCCESS;
 
-  if (0 != file) {
+  /* source data type is not required to have MHD element name (type-size is needed) */
+  libxsmm_mhd_typename(type_data, &typesize_data, NULL/*ctypename*/);
+  if (0 != file && 0 < typesize_data) {
     size_t i;
     if (0 < fprintf(file, "NDims = %u\nElementNumberOfChannels = %u\nElementByteOrderMSB = False\nDimSize =",
       (unsigned int)ndims, (unsigned int)ncomponents))
