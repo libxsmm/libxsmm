@@ -131,7 +131,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_perform_fwd_dryrun_direct_custo
       if ( handle->fwd_img_par == 0 ) {
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c"
       } else {
-        printf("IMG PAR DRYRUN\n");
 # include "template/libxsmm_dnn_convolve_dryrun_fwd_custom_custom_img_par.tpl.c"
       }
     }
