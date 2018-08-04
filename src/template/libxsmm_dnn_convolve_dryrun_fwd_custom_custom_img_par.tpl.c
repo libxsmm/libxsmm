@@ -239,6 +239,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_use) * handle->ofwp)  +  oi_use  ) *  handle->ofmblock;
 
                     /* Initialize kernel variant with the one that prefetches everything */
+                    LIBXSMM_ASSERT(NULL != kernel_variant); /* TODO: proper error handling (malloc returned NULL eventually) */
                     kernel_variant[local_entries/3] = 2;
                     local_entries += 3;
 

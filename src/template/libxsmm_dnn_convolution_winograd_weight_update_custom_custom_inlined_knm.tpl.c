@@ -36,6 +36,7 @@ int thr_begin;
 int thr_end;
 int job;
 unsigned int img;
+size_t tmp;
 int ifm1;
 int ofm1;
 int oj;
@@ -91,8 +92,8 @@ thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 t_start = __rdtsc();
 #endif
 for (job = thr_begin; job < thr_end; job++) {
-  const size_t tmp = img % handle->cwino_upd.bimg;
   img  = job / handle->blocksifm;
+  tmp  = img % handle->cwino_upd.bimg;
   ifm1 = job % handle->blocksifm;
   internal_upd_input_transform_custom_custom(
     &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, TDVLEN),
