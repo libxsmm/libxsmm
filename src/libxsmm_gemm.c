@@ -580,12 +580,12 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     result.ptr->flags_copy = 0/*LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE*/;
     result.ptr->prf_copy = 0;
     /* TODO: check that arguments fit into handle (unsigned int vs. libxsmm_blasint) */
-    result.ptr->k = (NULL != k ? *k : *m);
-    result.ptr->n = (NULL != n ? *n : result.ptr->k);
-    result.ptr->m = *m;
+    result.ptr->k = (unsigned int)(NULL != k ? *k : *m);
+    result.ptr->n = (NULL != n ? ((unsigned int)(*n)) : result.ptr->k);
+    result.ptr->m = (unsigned int)(*m);
     result.ptr->ldc = (unsigned int)(NULL != ldc ? *ldc : *m);
-    result.ptr->lda = (unsigned int)(NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & result.ptr->flags_gemm) ? *m : result.ptr->k));
-    result.ptr->ldb = (unsigned int)(NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & result.ptr->flags_gemm) ? result.ptr->k : result.ptr->n));
+    result.ptr->lda = (NULL != lda ? ((unsigned int)(*lda)) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & result.ptr->flags_gemm) ? ((unsigned int)(*m)) : result.ptr->k));
+    result.ptr->ldb = (NULL != ldb ? ((unsigned int)(*ldb)) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & result.ptr->flags_gemm) ? result.ptr->k : result.ptr->n));
     result.ptr->itypesize = libxsmm_gemm_typesize(iprec);
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
     tmp = (4 < result.ptr->otypesize ? 0 : 1);
@@ -699,17 +699,11 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     const libxsmm_gemm_prefetch_type prf_gemm = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
     const libxsmm_blasint kernel_lda = (libxsmm_blasint)(NULL == result.ptr->copy_a[0].ptr_const ? result.ptr->lda : result.ptr->tm);
     const libxsmm_blasint kernel_ldb = (libxsmm_blasint)(NULL == result.ptr->copy_b[0].ptr_const ? result.ptr->ldb : result.ptr->tk);
-    libxsmm_blasint kernel_m, kernel_n;
-    if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->flags_gemm)) {
-      kernel_m = result.ptr->tm; kernel_n = result.ptr->tn;
-    }
-    else {
-      kernel_m = result.ptr->tn; kernel_n = result.ptr->tm;
-    }
-    /* remove transpose flags from kernel request */
-    libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&desc_blob, iprec, oprec,
-      kernel_m, kernel_n, result.ptr->tk, kernel_lda, kernel_ldb,
-      (libxsmm_blasint)(NULL == result.ptr->copy_o[0].ptr_const ? result.ptr->ldc : kernel_m),
+    const libxsmm_blasint kernel_m = (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->flags_gemm) ? result.ptr->tm : result.ptr->tn);
+    const libxsmm_blasint kernel_n = (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->flags_gemm) ? result.ptr->tn : result.ptr->tm);
+    libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2( /* remove transpose flags from kernel request */
+      &desc_blob, iprec, oprec, kernel_m, kernel_n, result.ptr->tk, kernel_lda, kernel_ldb,
+      NULL == result.ptr->copy_o[0].ptr_const ? ((libxsmm_blasint)result.ptr->ldc) : kernel_m,
       alpha, beta, result.ptr->flags_gemm & ~LIBXSMM_GEMM_FLAG_TRANS_AB, prf_gemm);
     result.ptr->kernel[0] = libxsmm_xmmdispatch(desc);
     if (NULL != result.ptr->kernel[0].xmm) {
