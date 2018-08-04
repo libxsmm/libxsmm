@@ -129,7 +129,6 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     /* mic (knl/knm) */{ 32, 32 },
     /* core (skx)    */{ 32, 32 }
   };
-#if 0
   static unsigned int config_tn[/*config*/][2/*DP/SP*/] = {
     /* generic (hsw) */{ 64, 64 },
     /* mic (knl/knm) */{ 64, 64 },
@@ -140,18 +139,6 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     /* mic (knl/knm) */{ 160, 160 },
     /* core (skx)    */{ 160, 160 }
   };
-#else
-  static unsigned int config_tn[/*config*/][2/*DP/SP*/] = {
-    /* generic (hsw) */{ 32, 32 },
-    /* mic (knl/knm) */{ 32, 32 },
-    /* core (skx)    */{ 32, 32 }
-  };
-  static unsigned int config_tk[/*config*/][2/*DP/SP*/] = {
-    /* generic (hsw) */{ 32, 32 },
-    /* mic (knl/knm) */{ 32, 32 },
-    /* core (skx)    */{ 32, 32 }
-  };
-#endif
   LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr;
   unsigned int i;
 

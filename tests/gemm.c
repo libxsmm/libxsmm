@@ -70,11 +70,7 @@ int main(void)
   libxsmm_blasint ldc[] = { 1, 1, 2, 3, 3, 1, 4096, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
   OTYPE alpha[]         = { 1, 1, 1, 1, 1, 1,    1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
   OTYPE beta[]          = { 1, 1, 1, 1, 0, 0,    0,   1,     0,     1,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0 };
-#if 0
   char transa[] = "NNNTT";
-#else
-  char transa[] = "N";
-#endif
   char transb[] = "NNTNT";
   const int begin = 0, end = sizeof(m) / sizeof(*m), i0 = 0, i1 = sizeof(transa) - 1;
   libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0, block = 1;
