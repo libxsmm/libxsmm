@@ -585,7 +585,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   } result;
   LIBXSMM_ASSERT(sizeof(libxsmm_gemm_handle) <= sizeof(libxsmm_gemm_blob));
   if (NULL != blob && NULL != m) {
-    unsigned int tmp;
+    unsigned int tmp, rm, rn, rk;
     LIBXSMM_INIT
     result.blob = blob;
     result.ptr->copy_a[0].pmm = result.ptr->copy_b[0].pmm = result.ptr->copy_i[0].pmm = result.ptr->copy_o[0].pmm = NULL;
@@ -602,15 +602,13 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     result.ptr->itypesize = libxsmm_gemm_typesize(iprec);
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
     tmp = (4 < result.ptr->otypesize ? 0 : 1);
-    /* TODO: LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size!"); */
     result.ptr->tm = libxsmm_gemm_mtile[tmp];
     result.ptr->tn = libxsmm_gemm_ntile[tmp];
     result.ptr->tk = libxsmm_gemm_ktile[tmp];
-#if 0
     rk = result.ptr->k % result.ptr->tk;
     rn = result.ptr->n % result.ptr->tn;
     rm = *m % result.ptr->tm;
-#endif
+    if (0 != rm || 0 != rn || 0 != rk) return NULL; /* TODO: implement remainder tiles */
     if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->flags_gemm)) {
       if (0 != (LIBXSMM_GEMM_FLAG_TRANS_A & result.ptr->flags_gemm)) {
         const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(&desc_blob,
