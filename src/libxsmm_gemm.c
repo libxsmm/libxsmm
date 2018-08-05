@@ -600,7 +600,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->flags_gemm)) {
       if (0 != (LIBXSMM_GEMM_FLAG_TRANS_A & result.ptr->flags_gemm)) {
         const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(&desc_blob,
-          result.ptr->itypesize, result.ptr->tk, result.ptr->tm, result.ptr->tm/*ldo*/);
+          result.ptr->itypesize, result.ptr->tm, result.ptr->tk, result.ptr->tk/*ldo*/);
         result.ptr->copy_a[0].xtrans = libxsmm_dispatch_trans(desc);
         if (NULL != result.ptr->copy_a[0].ptr_const) {
           tmp = result.ptr->tm;
@@ -622,14 +622,15 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       }
     }
     else {
+      const unsigned int tmn = LIBXSMM_MIN(result.ptr->tm, result.ptr->tn);
       const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(&desc_blob,
-        result.ptr->otypesize, result.ptr->tm, result.ptr->tn, result.ptr->ldc);
+        result.ptr->otypesize, tmn, tmn, result.ptr->ldc/*ldo*/);
       result.ptr->copy_o[0].xtrans = libxsmm_dispatch_trans(desc);
       if (NULL != result.ptr->copy_o[0].ptr_const) {
         double dbeta; /* copy-in only if beta!=0 */
         if (EXIT_SUCCESS == libxsmm_gemm_dvalue(oprec, beta, &dbeta) && LIBXSMM_NEQ(0, dbeta)) {
           result.ptr->copy_i[0].xtrans = libxsmm_dispatch_trans(libxsmm_trans_descriptor_init(&desc_blob,
-            result.ptr->otypesize, result.ptr->tm, result.ptr->tn, result.ptr->tm));
+            result.ptr->otypesize, tmn, tmn, tmn/*ldo*/));
           if (NULL == result.ptr->copy_i[0].ptr_const) result.ptr = NULL;
         }
       }
@@ -642,8 +643,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       tmp = result.ptr->m;
       result.ptr->m = result.ptr->n;
       result.ptr->n = tmp;
-      tmp = LIBXSMM_MIN(result.ptr->tm, result.ptr->tn);
-      result.ptr->tm = result.ptr->tn = tmp;
+      result.ptr->tm = result.ptr->tn = tmn;
     }
   }
   else {
