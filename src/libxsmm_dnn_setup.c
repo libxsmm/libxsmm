@@ -834,14 +834,15 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
   }
 
   /* When we chose overwrite and we loop over all ofms, then let's use streaming stores */
-  if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->desc.K == handle->blocksofm_blocking*handle->ofmblock) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) ) {
+  /* FIXME: check why test for datatypes here.... these are anyways all supported datatypes */
+  if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->desc.K == handle->blocksofm_blocking*handle->ofmblock) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) ) {
     handle->use_nts_bwd = 1;
   } else {
     handle->use_nts_bwd = 0;
   }
 
   /* FIXME: SKX specific tuning for GooglenetV3 */
-  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->desc.K/16 <= 8) {
+  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && (handle->desc.K/16 <= 8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
     handle->use_nts_bwd = 0;
   }
 
