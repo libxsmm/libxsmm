@@ -596,15 +596,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     rk = result.ptr->k % result.ptr->tk;
     rn = result.ptr->n % result.ptr->tn;
     rm = *m % result.ptr->tm;
-    if (0 != rm || 0 != rn || 0 != rk) { /* TODO: implement remainder tiles */
-      static int error_once = 0;
-      if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM WARNING (XGEMM): fall-back code path triggered!\n");
-      }
-      return NULL;
-    }
+    if (0 != rm || 0 != rn || 0 != rk) return NULL; /* TODO: implement remainder tiles */
     if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->flags_gemm)) {
       if (0 != (LIBXSMM_GEMM_FLAG_TRANS_A & result.ptr->flags_gemm)) {
         const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(&desc_blob,
