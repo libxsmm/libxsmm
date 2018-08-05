@@ -163,7 +163,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     if (handle->use_accumulation_scratch)
 #   endif
     {
-      const size_t size6 = (size_t)handle->ofmblock * handle->ofw * handle->ofh * sizeof(float);
+      const size_t size6a = (size_t)handle->ofmblock * handle->ofw * handle->ofh * sizeof(float);
+      const size_t size6b = (size_t)handle->ifmblock * handle->desc.W * handle->desc.H * sizeof(float);
+      const size_t size6 = ( size6a > size6b ) ? size6a : size6b;
       handle->scratch6_size = LIBXSMM_UP2(size6, LIBXSMM_CACHELINE) * handle->desc.threads;
     }
     if (0 != handle->use_upd_generic) {
