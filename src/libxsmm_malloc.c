@@ -1329,7 +1329,7 @@ LIBXSMM_API void libxsmm_free(const void* memory)
 
       /* check if memory belongs to scratch domain or local domain */
       if (NULL != info && pool->instance.buffer <= buffer && buffer < (pool->instance.buffer + info->size)) {
-        const size_t counter = LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, (size_t)1, LIBXSMM_ATOMIC_SEQ_CST);
+        const size_t counter = LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
 
         assert(pool->instance.buffer <= pool->instance.head);
         if (0 == counter) { /* reallocate scratch domain */
