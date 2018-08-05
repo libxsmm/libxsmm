@@ -87,6 +87,7 @@ double *bn_sum_base;
 double *bn_sum_base2;
 #endif
 
+/* accumulation scratch for fp32->bf16 downconvert */
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
 float *const accumulators_scratch = (float*)(((char*)handle->scratch6) +
   ltid * LIBXSMM_UP2(handle->ofmblock * handle->ofw * handle->ofh * sizeof(float), LIBXSMM_CACHELINE));
