@@ -567,7 +567,6 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   const void* alpha, const void* beta, /*unsigned*/int nthreads)
 {
   libxsmm_descriptor_blob desc_blob;
-  static int error_once = 0;
   union {
     libxsmm_gemm_handle* ptr;
     libxsmm_gemm_blob* blob;
@@ -598,6 +597,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     rn = result.ptr->n % result.ptr->tn;
     rm = *m % result.ptr->tm;
     if (0 != rm || 0 != rn || 0 != rk) { /* TODO: implement remainder tiles */
+      static int error_once = 0;
       if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
@@ -766,11 +766,6 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     result.ptr->dn = nt / result.ptr->nt * result.ptr->tn;
     result.ptr->dk = kt / result.ptr->kt * result.ptr->tk;
   }
-  if (NULL == result.ptr && (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM WARNING (XGEMM): fall-back code path triggered!\n");
-  }
   return result.ptr;
 }
 
@@ -778,7 +773,10 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
 LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
   const void* a, const void* b, void* c, /*unsigned*/int tid)
 {
-  if (NULL != handle) {
+#if !defined(NDEBUG)
+  if (NULL != handle)
+#endif
+  {
 #if 0
     const int remainder = (1 == handle->nthreads || ((tid + 1) != (int)handle->nthreads) ? 0 : 1);
 #endif
@@ -902,12 +900,14 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
       }
     }
   }
+#if !defined(NDEBUG)
   else if (/*implies LIBXSMM_INIT*/0 != libxsmm_get_verbosity()) { /* library code is expected to be mute */
     static int error_once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
       fprintf(stderr, "LIBXSMM ERROR: libxsmm_gemm_thread - invalid handle!\n");
     }
   }
+#endif
 }
 
 

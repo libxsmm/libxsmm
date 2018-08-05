@@ -524,8 +524,13 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
 #endif /*defined(_OPENMP)*/
   }
   else { /* fall-back */
-    libxsmm_blas_xgemm(LIBXSMM_GEMM_PRECISION_F64, LIBXSMM_GEMM_PRECISION_F64,
-      transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    static int error_once = 0;
+    if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM WARNING (XGEMM): fall-back code path triggered!\n");
+    }
+    libxsmm_blas_xgemm(iprec, oprec, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
 }
 
