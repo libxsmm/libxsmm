@@ -312,7 +312,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
 
               /* @TODO this is a hack as it might conflict with MAX STATS fuse */
-              /* down-convert to bf16 from fp32 */ 
+              /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
                 element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 float *scratch_ptr = accumulators_scratch;
@@ -411,7 +411,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
 
               /* @TODO this is a hack as it might conflict with MAX STATS fuse */
-              /* down-convert to bf16 from fp32 */ 
+              /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
                 element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 float *scratch_ptr = accumulators_scratch;
@@ -536,7 +536,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
 
               /* @TODO this is a hack as it might conflict with MAX STATS/ReLU fuse */
-              /* down-convert to bf16 from fp32 */ 
+              /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
                 element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 float *scratch_ptr = accumulators_scratch;
@@ -659,7 +659,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
 
               /* @TODO this is a hack as it might conflict with MAX STATS fuse */
-              /* down-convert to bf16 from fp32 */ 
+              /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
                 element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 float *scratch_ptr = accumulators_scratch;
