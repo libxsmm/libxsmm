@@ -42,7 +42,7 @@ NUMACTL="${TOOL_COMMAND}"
 CPUFLAGS=$(if [ -e /proc/cpuinfo ]; then grep -m1 flags /proc/cpuinfo | cut -d: -f2-; fi)
 if [ "" != "$(echo "${CPUFLAGS}" | grep -o avx512er)" ]; then
   if [ "0" != "$((NUMA < $(numactl -H | grep "node  " | tr -s " " | cut -d" " -f2- | wc -w)))" ]; then
-    NUMACTL="numactl --membind=${NUMA} ${TOOL_COMMAND}"
+    NUMACTL="numactl --preferred=${NUMA} ${TOOL_COMMAND}"
   fi
 fi
 
