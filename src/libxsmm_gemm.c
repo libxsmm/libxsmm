@@ -594,9 +594,9 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     result.ptr->itypesize = libxsmm_gemm_typesize(iprec);
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
     tmp = (4 < result.ptr->otypesize ? 0 : 1);
-    bm = libxsmm_gemm_mtile[tmp];
-    bn = libxsmm_gemm_ntile[tmp];
-    bk = libxsmm_gemm_ktile[tmp];
+    bm = LIBXSMM_MIN(libxsmm_gemm_mtile[tmp], um);
+    bn = LIBXSMM_MIN(libxsmm_gemm_ntile[tmp], un);
+    bk = LIBXSMM_MIN(libxsmm_gemm_ktile[tmp], uk);
     rk = uk % bk;
     rn = un % bn;
     rm = um % bm;
