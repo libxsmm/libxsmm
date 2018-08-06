@@ -167,14 +167,18 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_TRANS_B = 2,
   /** Transpose matrix A and B. */
   LIBXSMM_GEMM_FLAG_TRANS_AB = LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B,
+#if 0
   /** Alpha=0|1 */
   LIBXSMM_GEMM_FLAG_ALPHA_0 = 4,
   /** Alpha=neg|pos */
   LIBXSMM_GEMM_FLAG_ALPHA_S = 8,
+#endif
   /** Beta=0|1 */
   LIBXSMM_GEMM_FLAG_BETA_0  = 16,
+#if 0
   /** Beta=neg|pos */
   LIBXSMM_GEMM_FLAG_BETA_S  = 32,
+#endif
   /** Generate aligned load instructions. */
   LIBXSMM_GEMM_FLAG_ALIGN_A = 64,
   /** Aligned load/store instructions. */

@@ -115,15 +115,15 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
         const libxsmm_blasint lda = batchdesc->lda, ldb = batchdesc->ldb, ldc = batchdesc->ldc;
         switch (batchdesc->datatype) {
           case LIBXSMM_GEMM_PRECISION_F64: {
-            const double alpha = (0 == (LIBXSMM_GEMM_FLAG_ALPHA_0 & batchdesc->flags) ? 1.0 : 0.0);
-            const double beta  = (0 == (LIBXSMM_GEMM_FLAG_BETA_0  & batchdesc->flags) ? 1.0 : 0.0);
+            const double alpha = (/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & batchdesc->flags) ? 0.0 : */1.0);
+            const double beta  = (0 != (LIBXSMM_GEMM_FLAG_BETA_0  & batchdesc->flags) ? 0.0 : 1.0);
             result = libxsmm_dmmbatch_blas(&transa, &transb, batchdesc->m, batchdesc->n, batchdesc->k,
               &alpha, &batcharray->value.a, &lda, &batcharray->value.b, &ldb, &beta, &batcharray->value.c, &ldc,
               0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize, batchsize);
           } break;
           case LIBXSMM_GEMM_PRECISION_F32: {
-            const float alpha = (0 == (LIBXSMM_GEMM_FLAG_ALPHA_0 & batchdesc->flags) ? 1.f : 0.f);
-            const float beta  = (0 == (LIBXSMM_GEMM_FLAG_BETA_0  & batchdesc->flags) ? 1.f : 0.f);
+            const float alpha = (/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & batchdesc->flags) ? 0.f : */1.f);
+            const float beta  = (0 != (LIBXSMM_GEMM_FLAG_BETA_0  & batchdesc->flags) ? 0.f : 1.f);
             result = libxsmm_smmbatch_blas(&transa, &transb, batchdesc->m, batchdesc->n, batchdesc->k,
               &alpha, &batcharray->value.a, &lda, &batcharray->value.b, &ldb, &beta, &batcharray->value.c, &ldc,
               0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize, batchsize);
@@ -160,8 +160,8 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
           }
           LIBXSMM_GEMM_PRINT2(stderr,
             LIBXSMM_GETENUM_INP(descriptor.datatype), LIBXSMM_GETENUM_OUT(descriptor.datatype), descriptor.flags, m, n, k,
-            0 == (LIBXSMM_GEMM_FLAG_ALPHA_0 & batchdesc->flags) ? 1 : 0, NULL/*a*/, lda, NULL/*b*/, ldb,
-            0 == (LIBXSMM_GEMM_FLAG_BETA_0  & batchdesc->flags) ? 1 : 0, NULL/*c*/, ldc);
+            /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & batchdesc->flags) ? 0 : */1, NULL/*a*/, lda, NULL/*b*/, ldb,
+            0 != (LIBXSMM_GEMM_FLAG_BETA_0  & batchdesc->flags) ? 0 : 1, NULL/*c*/, ldc);
           if (0 != symbol) {
             fprintf(stderr, ": %.0f%% [%s]\n", 100.0 * ci / batchcount, symbol);
           }
@@ -209,8 +209,8 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       || ((unsigned int)*k) != libxsmm_gemm_batchdesc.k
       || (0 > (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb))) /* false */
       || flags != (flags & libxsmm_gemm_batchdesc.flags)
-      || LIBXSMM_NEQ(0 == (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_gemm_batchdesc.flags) ? 1 : 0, *alpha)
-      || LIBXSMM_NEQ(0 == (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 1 : 0, *beta))
+      || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_gemm_batchdesc.flags) ? 0 : */1, *alpha)
+      || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 0 : 1, *beta))
 #endif
     {
 #if defined(_DEBUG)
@@ -349,8 +349,8 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       || ((unsigned int)*k) != libxsmm_gemm_batchdesc.k
       || (0 > (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb))) /* false */
       || flags != (flags & libxsmm_gemm_batchdesc.flags)
-      || LIBXSMM_NEQ(0 == (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_gemm_batchdesc.flags) ? 1 : 0, *alpha)
-      || LIBXSMM_NEQ(0 == (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 1 : 0, *beta))
+      || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_gemm_batchdesc.flags) ? 0 : */1, *alpha)
+      || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 0 : 1, *beta))
 #endif
     {
 #if defined(_DEBUG)

@@ -195,7 +195,7 @@ LIBXSMM_API_INTERN unsigned char libxsmm_gemm_typesize(libxsmm_gemm_precision pr
 /** Determines the given value in double-precision based on the given precision. */
 LIBXSMM_API_INTERN int libxsmm_gemm_dvalue(libxsmm_gemm_precision precision, const void* value, double* dvalue);
 /** Determines the value given in double-precision. */
-LIBXSMM_API_INTERN int libxsmm_gemm_cast(libxsmm_gemm_precision precision, double dvalue, char value[]);
+LIBXSMM_API_INTERN int libxsmm_gemm_cast(libxsmm_gemm_precision precision, double dvalue, void* value);
 
 LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
 LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
@@ -226,7 +226,7 @@ LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, float);
 LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, double);
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
-  libxsmm_code_pointer copy_a[4], copy_b[4], copy_i[4], copy_o[4];
+  libxsmm_code_pointer copy_a, copy_b, copy_i, copy_o;
   libxsmm_xmmfunction kernel[2];
   unsigned int m, n, k, lda, ldb, ldc;
   unsigned int tm, tn, tk, dm, dn, dk;
