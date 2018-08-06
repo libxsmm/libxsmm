@@ -52,7 +52,7 @@
   (defined(_WIN32) || defined(__CYGWIN__))
 # define LIBXSMM_GEMM_NOJIT_TRANS
 #endif
-#if !defined(LIBXSMM_GEMM_NOJIT_MCOPY) && 1
+#if !defined(LIBXSMM_GEMM_NOJIT_MCOPY) && 0
 # define LIBXSMM_GEMM_NOJIT_MCOPY
 #endif
 #if !defined(LIBXSMM_GEMM_KPARALLELISM) && 0
@@ -604,6 +604,9 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       return NULL;
     }
     if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->flags_gemm)) { /* NN, NT, or TN */
+      result.ptr->tm = bm; result.ptr->tn = bn; result.ptr->tk = bk;
+      result.ptr->m = um; result.ptr->n = un; result.ptr->k = uk;
+      result.ptr->lda = ulda; result.ptr->ldb = uldb;
       if (0 != (LIBXSMM_GEMM_FLAG_TRANS_A & result.ptr->flags_gemm)) { /* TN */
         const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(&desc_blob,
           result.ptr->itypesize, bk, bm, bm/*ldo*/);
@@ -616,18 +619,15 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
         result.ptr->copy_b[0].xtrans = libxsmm_dispatch_trans(desc);
         if (NULL == result.ptr->copy_b[0].ptr_const) result.ptr = NULL;
       }
-      result.ptr->lda = ulda;
-      result.ptr->ldb = uldb;
-      result.ptr->tm = bm;
-      result.ptr->tn = bn;
-      result.ptr->m = um;
-      result.ptr->n = un;
     }
     else { /* TT */
       const unsigned int mn = LIBXSMM_MIN(bm, bn);
       const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(&desc_blob,
         result.ptr->otypesize, mn, mn, result.ptr->ldc/*ldo*/);
       result.ptr->copy_o[0].xtrans = libxsmm_dispatch_trans(desc);
+      result.ptr->tm = mn; result.ptr->tn = mn; result.ptr->tk = bk;
+      result.ptr->m = un; result.ptr->n = um; result.ptr->k = uk;
+      result.ptr->lda = uldb; result.ptr->ldb = ulda;
       if (NULL != result.ptr->copy_o[0].ptr_const) {
         double dbeta; /* copy-in only if beta!=0 */
         if (EXIT_SUCCESS == libxsmm_gemm_dvalue(oprec, beta, &dbeta) && LIBXSMM_NEQ(0, dbeta)) {
@@ -639,15 +639,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       else {
         result.ptr = NULL;
       }
-      result.ptr->lda = uldb;
-      result.ptr->ldb = ulda;
-      result.ptr->tm = mn;
-      result.ptr->tn = mn;
-      result.ptr->m = un;
-      result.ptr->n = um;
     }
-    result.ptr->tk = bk;
-    result.ptr->k = uk;
   }
   else {
     result.ptr = NULL;
