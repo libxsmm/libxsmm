@@ -56,16 +56,16 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
     LIBXSMM_INIT
     {
 #if defined(_OPENMP)
-      libxsmm_blasint tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
-      libxsmm_blasint tn = (libxsmm_blasint)(libxsmm_trans_tile_stretch * tm);
-      if (LIBXSMM_MCOPY_MT(tm, tn, m, n)) { /* consider problem-size */
+      const unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
+      const unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
+      if (LIBXSMM_MCOPY_MT(tm, tn, (unsigned int)m, (unsigned int)n)) { /* consider problem-size */
         const int iprefetch = (0 == prefetch ? 0 : *prefetch);
         libxsmm_xmcopyfunction kernel = NULL;
         const libxsmm_mcopy_descriptor* desc;
         libxsmm_descriptor_blob blob;
         if (0 != (1 & libxsmm_trans_jit) /* JIT'ted matrix-copy permitted? */
           && NULL != (desc = libxsmm_mcopy_descriptor_init(&blob, typesize,
-          (unsigned int)tm, (unsigned int)tn, (unsigned int)ldo, (unsigned int)ldi,
+          tm, tn, (unsigned int)ldo, (unsigned int)ldi,
             0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/)))
         {
           kernel = libxsmm_dispatch_mcopy(desc);
@@ -83,8 +83,9 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 # endif
           {
 #           pragma omp parallel num_threads(nthreads)
-            libxsmm_matcopy_internal(out, in, typesize, m, n, ldi, ldo, prefetch,
-              tm, tn, kernel, omp_get_thread_num(), nthreads);
+            libxsmm_matcopy_thread_internal(out, in, typesize,
+              (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+              prefetch, tm, tn, kernel, omp_get_thread_num(), nthreads);
           }
 # if defined(LIBXSMM_EXT_TASKS)
           else { /* tasks requested */
@@ -95,8 +96,9 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
               { int tid;
                 for (tid = 0; tid < ntasks; ++tid) {
 #                 pragma omp task untied
-                  libxsmm_matcopy_internal(out, in, typesize, m, n, ldi, ldo, prefetch,
-                    tm, tn, kernel, tid, ntasks);
+                  libxsmm_matcopy_thread_internal(out, in, typesize,
+                    (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+                    prefetch, tm, tn, kernel, tid, ntasks);
                 }
               }
             }
@@ -112,15 +114,17 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
           int tid;
           for (tid = 0; tid < ntasks; ++tid) {
 #           pragma omp task untied
-            libxsmm_matcopy_internal(out, in, typesize, m, n, ldi, ldo, prefetch,
-              tm, tn, kernel, tid, ntasks);
+            libxsmm_matcopy_thread_internal(out, in, typesize,
+              (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+              prefetch, tm, tn, kernel, tid, ntasks);
           }
           if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #           pragma omp taskwait
           }
 # else
-          libxsmm_matcopy_internal(out, in, typesize, m, n, ldi, ldo, prefetch,
-            tm, tn, kernel, omp_get_thread_num(), nthreads);
+          libxsmm_matcopy_thread_internal(out, in, typesize,
+            (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+            prefetch, tm, tn, kernel, omp_get_thread_num(), nthreads);
 # endif
         }
       }
@@ -174,9 +178,9 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
     LIBXSMM_INIT
     if (out != in) {
 #if defined(_OPENMP)
-      const libxsmm_blasint tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
-      const libxsmm_blasint tn = (libxsmm_blasint)(libxsmm_trans_tile_stretch * tm);
-      if (0 == LIBXSMM_TRANS_NO_BYPASS(m, n) && tm <= m && tn <= n) { /* consider problem-size */
+      const unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
+      const unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
+      if (0 == LIBXSMM_TRANS_NO_BYPASS(m, n) && tm <= (unsigned int)m && tn <= (unsigned int)n) { /* consider problem-size */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         if (0 == omp_get_active_level())
 # else
@@ -189,8 +193,9 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 # endif
           {
 #           pragma omp parallel num_threads(nthreads)
-            libxsmm_otrans_thread_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
-              omp_get_thread_num(), nthreads);
+            libxsmm_otrans_thread_internal(out, in, typesize,
+              (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+              tm, tn, NULL/*kernel*/, omp_get_thread_num(), nthreads);
           }
 # if defined(LIBXSMM_EXT_TASKS)
           else { /* tasks requested */
@@ -201,8 +206,9 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
               { int tid;
                 for (tid = 0; tid < ntasks; ++tid) {
 #                 pragma omp task untied
-                  libxsmm_otrans_thread_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
-                    tid, ntasks);
+                  libxsmm_otrans_thread_internal(out, in, typesize,
+                    (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+                    tm, tn, NULL/*kernel*/, tid, ntasks);
                 }
               }
             }
@@ -218,15 +224,17 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
           int tid;
           for (tid = 0; tid < ntasks; ++tid) {
 #           pragma omp task untied
-            libxsmm_otrans_thread_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
-              tid, ntasks);
+            libxsmm_otrans_thread_internal(out, in, typesize,
+              (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+              tm, tn, NULL/*kernel*/, tid, ntasks);
           }
           if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #           pragma omp taskwait
           }
 # else
-          libxsmm_otrans_thread_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, NULL/*kernel*/,
-            omp_get_thread_num(), nthreads);
+          libxsmm_otrans_thread_internal(out, in, typesize,
+            (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+            tm, tn, NULL/*kernel*/, omp_get_thread_num(), nthreads);
 # endif
         }
       }

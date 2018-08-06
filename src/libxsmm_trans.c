@@ -59,7 +59,7 @@
 LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
 {
   /* setup tile sizes according to CPUID or environment (LIBXSMM_TRANS_M, LIBXSMM_TRANS_N) */
-  static libxsmm_blasint config_tm[/*config*/][2/*DP/SP*/] = {
+  static unsigned int config_tm[/*config*/][2/*DP/SP*/] = {
     /* generic (hsw) */ { 2, 2 },
     /* mic (knl/knm) */ { 2, 2 },
     /* core (skx)    */ { 2, 2 }
@@ -108,27 +108,27 @@ LIBXSMM_API_INTERN void libxsmm_trans_finalize(void)
 }
 
 
-LIBXSMM_API void libxsmm_matcopy_internal(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo, const int* prefetch,
-  libxsmm_blasint tm, libxsmm_blasint tn, libxsmm_xmcopyfunction kernel,
+LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsigned int typesize,
+  unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo, const int* prefetch,
+  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel,
   int tid, int nthreads)
 {
   const int mtasks = (m + tm - 1) / tm;
-  libxsmm_blasint m0, m1, n0, n1;
+  unsigned int m0, m1, n0, n1;
 
   LIBXSMM_ASSERT_MSG(tid < nthreads && 0 < nthreads, "Invalid task setup!");
   LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size!");
   LIBXSMM_ASSERT_MSG(typesize <= 255, "Invalid type-size!");
 
   if (nthreads <= mtasks) { /* parallelized over M */
-    const libxsmm_blasint mt = (m + nthreads - 1) / nthreads;
+    const unsigned int mt = (m + nthreads - 1) / nthreads;
     m0 = LIBXSMM_MIN(tid * mt, m); m1 = LIBXSMM_MIN(m0 + mt, m);
     n0 = 0; n1 = n;
   }
   else { /* parallelized over M and N */
     const int ntasks = nthreads / mtasks;
     const int mtid = tid / ntasks, ntid = tid - mtid * ntasks;
-    const libxsmm_blasint nt = (((n + ntasks - 1) / ntasks + tn - 1) / tn) * tn;
+    const unsigned int nt = (((n + ntasks - 1) / ntasks + tn - 1) / tn) * tn;
     m0 = LIBXSMM_MIN(mtid * tm, m); m1 = LIBXSMM_MIN(m0 + tm, m);
     n0 = LIBXSMM_MIN(ntid * nt, n); n1 = LIBXSMM_MIN(n0 + nt, n);
   }
@@ -137,15 +137,35 @@ LIBXSMM_API void libxsmm_matcopy_internal(void* out, const void* in, unsigned in
   LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= n, "Invalid task size!");
 
   if (0 != prefetch && 0 != *prefetch) { /* prefetch */
-    LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, kernel,
-      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
-      LIBXSMM_XALIGN_MCOPY);
+    libxsmm_matcopy_internal_pf(out, in, typesize, ldi, ldo,
+      m0, m1, n0, n1, tm, tn, kernel);
   }
   else { /* no prefetch */
-    LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, kernel,
-      out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
-      LIBXSMM_XALIGN_MCOPY);
+    libxsmm_matcopy_internal(out, in, typesize, ldi, ldo,
+      m0, m1, n0, n1, tm, tn, kernel);
   }
+}
+
+
+LIBXSMM_API_INTERN void libxsmm_matcopy_internal_pf(void* out, const void* in,
+  unsigned int typesize, unsigned int ldi, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel)
+{
+  LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL, kernel,
+    out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
+    LIBXSMM_XALIGN_MCOPY);
+}
+
+
+LIBXSMM_API_INTERN void libxsmm_matcopy_internal(void* out, const void* in,
+  unsigned int typesize, unsigned int ldi, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel)
+{
+  LIBXSMM_XCOPY(LIBXSMM_MCOPY_KERNEL, LIBXSMM_MCOPY_CALL_NOPF, kernel,
+    out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
+    LIBXSMM_XALIGN_MCOPY);
 }
 
 
@@ -160,15 +180,15 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
     0 <= tid && tid < nthreads)
 #endif
   {
-    libxsmm_blasint tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
-    libxsmm_blasint tn = (libxsmm_blasint)(libxsmm_trans_tile_stretch * tm);
+    unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
+    unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
     libxsmm_xmcopyfunction kernel = NULL;
-    if (m < tm || n < tn) {
+    if (m < (libxsmm_blasint)tm || n < (libxsmm_blasint)tn) {
       if (1 < nthreads) {
         const unsigned int tasksize = (((unsigned int)m) * n) / ((unsigned int)(nthreads * libxsmm_trans_tile_stretch));
-        const libxsmm_blasint nn = (libxsmm_blasint)libxsmm_isqrt_u32(tasksize);
-        const libxsmm_blasint mm = (libxsmm_blasint)(libxsmm_trans_tile_stretch * nn);
-        tn = LIBXSMM_MIN(nn, n); tm = LIBXSMM_CLMP(m, 1, mm);
+        const unsigned int nn = libxsmm_isqrt_u32(tasksize);
+        const unsigned int mm = (unsigned int)(libxsmm_trans_tile_stretch * nn);
+        tn = LIBXSMM_MIN(nn, (unsigned int)n); tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
       }
       else {
         tm = m; tn = n;
@@ -186,7 +206,9 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
         kernel = libxsmm_dispatch_mcopy(desc);
       }
     }
-    libxsmm_matcopy_internal(out, in, typesize, m, n, ldi, ldo, prefetch, tm, tn, kernel, tid, nthreads);
+    libxsmm_matcopy_thread_internal(out, in, typesize,
+      (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+      prefetch, tm, tn, kernel, tid, nthreads);
   }
 #if defined(LIBXSMM_TRANS_CHECK)
   else {
@@ -228,26 +250,26 @@ LIBXSMM_API void libxsmm_matcopy(void* out, const void* in, unsigned int typesiz
 
 
 LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
-  libxsmm_blasint tm, libxsmm_blasint tn, libxsmm_xtransfunction kernel,
+  unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo,
+  unsigned int tm, unsigned int tn, libxsmm_xtransfunction kernel,
   int tid, int nthreads)
 {
   const int mtasks = (m + tm - 1) / tm;
-  libxsmm_blasint m0, m1, n0, n1;
+  unsigned int m0, m1, n0, n1;
 
   LIBXSMM_ASSERT_MSG(tid < nthreads && 0 < nthreads, "Invalid task setup!");
   LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size!");
   LIBXSMM_ASSERT_MSG(typesize <= 255, "Invalid type-size!");
 
   if (nthreads <= mtasks) { /* parallelized over M */
-    const libxsmm_blasint mt = (m + nthreads - 1) / nthreads;
+    const unsigned int mt = (m + nthreads - 1) / nthreads;
     m0 = LIBXSMM_MIN(tid * mt, m); m1 = LIBXSMM_MIN(m0 + mt, m);
     n0 = 0; n1 = n;
   }
   else { /* parallelized over M and N */
     const int ntasks = nthreads / mtasks;
     const int mtid = tid / ntasks, ntid = tid - mtid * ntasks;
-    const libxsmm_blasint nt = (((n + ntasks - 1) / ntasks + tn - 1) / tn) * tn;
+    const unsigned int nt = (((n + ntasks - 1) / ntasks + tn - 1) / tn) * tn;
     m0 = LIBXSMM_MIN(mtid * tm, m); m1 = LIBXSMM_MIN(m0 + tm, m);
     n0 = LIBXSMM_MIN(ntid * nt, n); n1 = LIBXSMM_MIN(n0 + nt, n);
   }
@@ -260,9 +282,9 @@ LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsig
 
 
 LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
-  unsigned int typesize, libxsmm_blasint ldi, libxsmm_blasint ldo,
-  libxsmm_blasint m0, libxsmm_blasint m1, libxsmm_blasint n0, libxsmm_blasint n1,
-  libxsmm_blasint tm, libxsmm_blasint tn, libxsmm_xtransfunction kernel)
+  unsigned int typesize, unsigned int ldi, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xtransfunction kernel)
 {
   LIBXSMM_XCOPY(LIBXSMM_TCOPY_KERNEL, LIBXSMM_TCOPY_CALL, kernel,
     out, in, typesize, ldi, ldo, tm, tn, m0, m1, n0, n1,
@@ -283,19 +305,19 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
 #endif
   {
     if (out != in) {
-      libxsmm_blasint tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
-      libxsmm_blasint tn = (libxsmm_blasint)(libxsmm_trans_tile_stretch * tm);
+      unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
+      unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
       libxsmm_xtransfunction kernel = NULL;
-      if (m < tm || n < tn) {
+      if ((unsigned int)m < tm || (unsigned int)n < tn) {
         const libxsmm_trans_descriptor* desc;
         libxsmm_descriptor_blob blob;
         if (1 < nthreads) {
           const unsigned int tasksize = (((unsigned int)m) * n) / ((unsigned int)(nthreads * libxsmm_trans_tile_stretch));
-          const libxsmm_blasint nn = (libxsmm_blasint)libxsmm_isqrt_u32(tasksize);
-          const libxsmm_blasint mm = (libxsmm_blasint)(libxsmm_trans_tile_stretch * nn);
-          tn = LIBXSMM_MIN(nn, n); tm = LIBXSMM_CLMP(m, 1, mm);
+          const unsigned int nn = libxsmm_isqrt_u32(tasksize);
+          const unsigned int mm = (unsigned int)(libxsmm_trans_tile_stretch * nn);
+          tn = LIBXSMM_MIN(nn, (unsigned int)n); tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
           if (0 != (2 & libxsmm_trans_jit) /* JIT'ted transpose permitted? */
-            && NULL != (desc = libxsmm_trans_descriptor_init(&blob, typesize, (unsigned int)tm, (unsigned int)tn, (unsigned int)ldo)))
+            && NULL != (desc = libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, (unsigned int)ldo)))
           {
             kernel = libxsmm_dispatch_trans(desc);
           }
@@ -311,7 +333,9 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
           tm = m; tn = n;
         }
       }
-      libxsmm_otrans_thread_internal(out, in, typesize, m, n, ldi, ldo, tm, tn, kernel, tid, nthreads);
+      libxsmm_otrans_thread_internal(out, in, typesize,
+        (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+        tm, tn, kernel, tid, nthreads);
     }
     else if (ldi == ldo) {
       libxsmm_itrans(out, typesize, m, n, ldi);
