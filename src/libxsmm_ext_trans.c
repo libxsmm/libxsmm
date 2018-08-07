@@ -50,7 +50,8 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
   const int* prefetch)
 {
 #if defined(LIBXSMM_TRANS_CHECK)
-  if (0 != out && out != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && m <= ldo)
+  if (0 < typesize && m <= ldi && m <= ldo && out != in &&
+    ((0 != out && 0 < m && 0 < n) || (0 == m && 0 == n)))
 #endif
   {
     LIBXSMM_INIT
@@ -172,7 +173,8 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 {
   static int error_once = 0;
 #if defined(LIBXSMM_TRANS_CHECK)
-  if (0 != out && 0 != in && 0 < typesize && 0 < m && 0 < n && m <= ldi && n <= ldo)
+  if (0 < typesize && m <= ldi && n <= ldo &&
+    ((0 != out && 0 != in && 0 < m && 0 < n) || (0 == m && 0 == n)))
 #endif
   {
     LIBXSMM_INIT
