@@ -372,6 +372,8 @@ ifneq (0,$(FORTRAN))
     FC = $(GFC)
   endif
   endif
+else
+  FC = $(GFC)
 endif
 ifeq (,$(strip $(FC)))
   DFLAGS += -DLIBXSMM_NOFORTRAN
