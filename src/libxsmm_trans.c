@@ -180,36 +180,38 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
     /* use (signed) integer types, but check sanity of input */
     0 <= tid && tid < nthreads)
   {
-    unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
-    unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
-    libxsmm_xmcopyfunction kernel = NULL;
-    if (m < (libxsmm_blasint)tm || n < (libxsmm_blasint)tn) {
-      if (1 < nthreads) {
-        const unsigned int tasksize = (((unsigned int)m) * n) / ((unsigned int)(nthreads * libxsmm_trans_tile_stretch));
-        const unsigned int nn = libxsmm_isqrt_u32(tasksize);
-        const unsigned int mm = (unsigned int)(libxsmm_trans_tile_stretch * nn);
-        tn = LIBXSMM_CLMP((unsigned int)n, 1, nn);
-        tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
+    if (0 < m && 0 < n) {
+      unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
+      unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
+      libxsmm_xmcopyfunction kernel = NULL;
+      if (m < (libxsmm_blasint)tm || n < (libxsmm_blasint)tn) {
+        if (1 < nthreads) {
+          const unsigned int tasksize = (((unsigned int)m) * n) / ((unsigned int)(nthreads * libxsmm_trans_tile_stretch));
+          const unsigned int nn = libxsmm_isqrt_u32(tasksize);
+          const unsigned int mm = (unsigned int)(libxsmm_trans_tile_stretch * nn);
+          tn = LIBXSMM_CLMP((unsigned int)n, 1, nn);
+          tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
+        }
+        else {
+          tm = m; tn = n;
+        }
       }
       else {
-        tm = m; tn = n;
+        const int iprefetch = (0 == prefetch ? 0 : *prefetch);
+        const libxsmm_mcopy_descriptor* desc;
+        libxsmm_descriptor_blob blob;
+        if (0 != (1 & libxsmm_trans_jit) /* JIT'ted matrix-copy permitted? */
+          && NULL != (desc = libxsmm_mcopy_descriptor_init(&blob, typesize,
+          (unsigned int)tm, (unsigned int)tn, (unsigned int)ldo, (unsigned int)ldi,
+            0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/)))
+        {
+          kernel = libxsmm_dispatch_mcopy(desc);
+        }
       }
+      libxsmm_matcopy_thread_internal(out, in, typesize,
+        (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+        prefetch, tm, tn, kernel, tid, nthreads);
     }
-    else {
-      const int iprefetch = (0 == prefetch ? 0 : *prefetch);
-      const libxsmm_mcopy_descriptor* desc;
-      libxsmm_descriptor_blob blob;
-      if (0 != (1 & libxsmm_trans_jit) /* JIT'ted matrix-copy permitted? */
-        && NULL != (desc = libxsmm_mcopy_descriptor_init(&blob, typesize,
-        (unsigned int)tm, (unsigned int)tn, (unsigned int)ldo, (unsigned int)ldi,
-          0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/)))
-      {
-        kernel = libxsmm_dispatch_mcopy(desc);
-      }
-    }
-    libxsmm_matcopy_thread_internal(out, in, typesize,
-      (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-      prefetch, tm, tn, kernel, tid, nthreads);
   }
   else {
     static int error_once = 0;
@@ -303,47 +305,49 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
     /* use (signed) integer types, but check sanity of input */
     0 <= tid && tid < nthreads)
   {
-    if (out != in) {
-      unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
-      unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
-      libxsmm_xtransfunction kernel = NULL;
-      if ((unsigned int)m < tm || (unsigned int)n < tn) {
-        const libxsmm_trans_descriptor* desc;
-        libxsmm_descriptor_blob blob;
-        if (1 < nthreads) {
-          const unsigned int tasksize = (((unsigned int)m) * n) / ((unsigned int)(nthreads * libxsmm_trans_tile_stretch));
-          const unsigned int nn = libxsmm_isqrt_u32(tasksize);
-          const unsigned int mm = (unsigned int)(libxsmm_trans_tile_stretch * nn);
-          tn = LIBXSMM_CLMP((unsigned int)n, 1, nn);
-          tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
-          if (0 != (2 & libxsmm_trans_jit) /* JIT'ted transpose permitted? */
-            && NULL != (desc = libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, (unsigned int)ldo)))
-          {
-            kernel = libxsmm_dispatch_trans(desc);
+    if (0 < m && 0 < n) {
+      if (out != in) {
+        unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
+        unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
+        libxsmm_xtransfunction kernel = NULL;
+        if ((unsigned int)m < tm || (unsigned int)n < tn) {
+          const libxsmm_trans_descriptor* desc;
+          libxsmm_descriptor_blob blob;
+          if (1 < nthreads) {
+            const unsigned int tasksize = (((unsigned int)m) * n) / ((unsigned int)(nthreads * libxsmm_trans_tile_stretch));
+            const unsigned int nn = libxsmm_isqrt_u32(tasksize);
+            const unsigned int mm = (unsigned int)(libxsmm_trans_tile_stretch * nn);
+            tn = LIBXSMM_CLMP((unsigned int)n, 1, nn);
+            tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
+            if (0 != (2 & libxsmm_trans_jit) /* JIT'ted transpose permitted? */
+              && NULL != (desc = libxsmm_trans_descriptor_init(&blob, typesize, tm, tn, (unsigned int)ldo)))
+            {
+              kernel = libxsmm_dispatch_trans(desc);
+            }
+          }
+          else {
+            if (0 != (2 & libxsmm_trans_jit) /* JIT'ted transpose permitted? */
+              && NULL != (desc = libxsmm_trans_descriptor_init(&blob, typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ldo))
+              && NULL != (kernel = libxsmm_dispatch_trans(desc))) /* JIT-kernel available */
+            {
+              LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
+              return; /* fast path */
+            }
+            tm = m; tn = n;
           }
         }
-        else {
-          if (0 != (2 & libxsmm_trans_jit) /* JIT'ted transpose permitted? */
-            && NULL != (desc = libxsmm_trans_descriptor_init(&blob, typesize, (unsigned int)m, (unsigned int)n, (unsigned int)ldo))
-            && NULL != (kernel = libxsmm_dispatch_trans(desc))) /* JIT-kernel available */
-          {
-            LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
-            return; /* fast path */
-          }
-          tm = m; tn = n;
-        }
+        libxsmm_otrans_thread_internal(out, in, typesize,
+          (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
+          tm, tn, kernel, tid, nthreads);
       }
-      libxsmm_otrans_thread_internal(out, in, typesize,
-        (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-        tm, tn, kernel, tid, nthreads);
-    }
-    else if (ldi == ldo) {
-      libxsmm_itrans(out, typesize, m, n, ldi);
-    }
-    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-    {
-      fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
+      else if (ldi == ldo) {
+        libxsmm_itrans(out, typesize, m, n, ldi);
+      }
+      else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
+      }
     }
   }
   else {
