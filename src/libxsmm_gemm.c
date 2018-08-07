@@ -432,7 +432,7 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
       LIBXSMM_SNPRINTF(string_b, sizeof(string_b), "%g", 0 != beta  ? *((const float*)beta)  : LIBXSMM_BETA);
       mhd_elemtype = LIBXSMM_MHD_ELEMTYPE_F32;
       typeprefix = 's';
-    }
+    } break;
     default: if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
       static int error_once = 0;
       if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) { /* TODO: support I16, etc. */
@@ -511,7 +511,7 @@ LIBXSMM_API void libxsmm_gemm_dprint2(
       const float alpha = (float)dalpha, beta = (float)dbeta;
       libxsmm_gemm_print2(ostream, LIBXSMM_GEMM_PRECISION_F32, oprec, &transa, &transb,
         &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
-    }
+    } break;
     default: {
       libxsmm_gemm_print2(ostream, iprec, oprec, &transa, &transb,
         &m, &n, &k, &dalpha, a, &lda, b, &ldb, &dbeta, c, &ldc);
