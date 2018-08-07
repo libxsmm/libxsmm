@@ -802,9 +802,7 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
     char *const ct = internal_gemm_scratch_c + (size_t)tid * internal_gemm_tsize_c;
     /* loop induction variables */
     unsigned int im = m0, in = n0, ik = k0, im1, in1, ik1;
-    LIBXSMM_ASSERT_MSG(mtid * task->dm <= m1 && m1 <= task->m, "Invalid task size!");
-    LIBXSMM_ASSERT_MSG(ntid * task->dn <= n1 && n1 <= task->n, "Invalid task size!");
-    LIBXSMM_ASSERT_MSG(ktid * task->dk <= k1 && k1 <= task->k, "Invalid task size!");
+    LIBXSMM_ASSERT_MSG(m1 <= task->m && n1 <= task->n && k1 <= task->k, "Invalid task size!");
     for (im1 = im + task->tm; (im1 - 1) < m1; im = im1, im1 += task->tm, om += dom) {
       unsigned int dn = don, dka = dik, dkb = dik;
       char *c0 = (char*)c, *ci;
