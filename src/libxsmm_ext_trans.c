@@ -49,10 +49,8 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
   const int* prefetch)
 {
-#if defined(LIBXSMM_TRANS_CHECK)
   if (0 < typesize && m <= ldi && m <= ldo && out != in &&
     ((0 != out && 0 < m && 0 < n) || (0 == m && 0 == n)))
-#endif
   {
     LIBXSMM_INIT
     {
@@ -140,31 +138,29 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
       }
     }
   }
-#if defined(LIBXSMM_TRANS_CHECK)
   else {
     static int error_once = 0;
     if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       if (0 == out) {
-        fprintf(stderr, "LIBXSMM ERROR: the matcopy input and/or output is NULL!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the matrix-copy input and/or output is NULL!\n");
       }
       else if (out == in) {
-        fprintf(stderr, "LIBXSMM ERROR: output and input of the matcopy must be different!\n");
+        fprintf(stderr, "LIBXSMM ERROR: output and input of the matrix-copy must be different!\n");
       }
       else if (0 == typesize) {
-        fprintf(stderr, "LIBXSMM ERROR: the typesize of the matcopy is zero!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the type-size of the matrix-copy is zero!\n");
       }
       else if (0 >= m || 0 >= n) {
-        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the matcopy is/are zero or negative!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the matrix-copy is/are zero or negative!\n");
       }
       else {
         LIBXSMM_ASSERT(ldi < m || ldo < n);
-        fprintf(stderr, "LIBXSMM ERROR: the leading dimension(s) of the matcopy is/are too small!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the leading dimension(s) of the matrix-copy is/are too small!\n");
       }
     }
   }
-#endif
 }
 
 
@@ -172,10 +168,8 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo)
 {
   static int error_once = 0;
-#if defined(LIBXSMM_TRANS_CHECK)
   if (0 < typesize && m <= ldi && n <= ldo &&
     ((0 != out && 0 != in && 0 < m && 0 < n) || (0 == m && 0 == n)))
-#endif
   {
     LIBXSMM_INIT
     if (out != in) {
@@ -268,7 +262,6 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
       fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
     }
   }
-#if defined(LIBXSMM_TRANS_CHECK)
   else {
     if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -280,7 +273,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
         fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
       }
       else if (0 == typesize) {
-        fprintf(stderr, "LIBXSMM ERROR: the typesize of the transpose is zero!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the type-size of the transpose is zero!\n");
       }
       else if (0 >= m || 0 >= n) {
         fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the transpose is/are zero or negative!\n");
@@ -291,7 +284,6 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
       }
     }
   }
-#endif
 }
 
 

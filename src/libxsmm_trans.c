@@ -175,12 +175,10 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
   const int* prefetch, int tid, int nthreads)
 {
   LIBXSMM_INIT
-#if defined(LIBXSMM_TRANS_CHECK)
   if (0 < typesize && m <= ldi && m <= ldo && out != in &&
     ((0 != out && 0 < m && 0 < n) || (0 == m && 0 == n)) &&
     /* use (signed) integer types, but check sanity of input */
     0 <= tid && tid < nthreads)
-#endif
   {
     unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
     unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
@@ -213,34 +211,32 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
       (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
       prefetch, tm, tn, kernel, tid, nthreads);
   }
-#if defined(LIBXSMM_TRANS_CHECK)
   else {
     static int error_once = 0;
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       if (0 > tid || tid >= nthreads) {
-        fprintf(stderr, "LIBXSMM ERROR: the matcopy thread-id or number of threads is incorrect!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the matrix-copy thread-id or number of threads is incorrect!\n");
       }
       else if (0 == out) {
-        fprintf(stderr, "LIBXSMM ERROR: the matcopy input and/or output is NULL!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the matrix-copy input and/or output is NULL!\n");
       }
       else if (out == in) {
-        fprintf(stderr, "LIBXSMM ERROR: output and input of the matcopy must be different!\n");
+        fprintf(stderr, "LIBXSMM ERROR: output and input of the matrix-copy must be different!\n");
       }
       else if (0 == typesize) {
-        fprintf(stderr, "LIBXSMM ERROR: the typesize of the matcopy is zero!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the type-size of the matrix-copy is zero!\n");
       }
       else if (0 >= m || 0 >= n) {
-        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the matcopy is/are zero or negative!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the matrix-copy is/are zero or negative!\n");
       }
       else {
         LIBXSMM_ASSERT(ldi < m || ldo < m);
-        fprintf(stderr, "LIBXSMM ERROR: the leading dimension(s) of the matcopy is/are too small!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the leading dimension(s) of the matrix-copy is/are too small!\n");
       }
     }
   }
-#endif
 }
 
 
@@ -302,12 +298,10 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
 {
   static int error_once = 0;
   LIBXSMM_INIT
-#if defined(LIBXSMM_TRANS_CHECK)
   if (0 < typesize && m <= ldi && n <= ldo &&
     ((0 != out && 0 != in && 0 < m && 0 < n) || (0 == m && 0 == n)) &&
     /* use (signed) integer types, but check sanity of input */
     0 <= tid && tid < nthreads)
-#endif
   {
     if (out != in) {
       unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
@@ -352,7 +346,6 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
       fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
     }
   }
-#if defined(LIBXSMM_TRANS_CHECK)
   else {
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -367,7 +360,7 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
         fprintf(stderr, "LIBXSMM ERROR: output and input of the transpose must be different!\n");
       }
       else if (0 == typesize) {
-        fprintf(stderr, "LIBXSMM ERROR: the typesize of the transpose is zero!\n");
+        fprintf(stderr, "LIBXSMM ERROR: the type-size of the transpose is zero!\n");
       }
       else if (0 >= m || 0 >= n) {
         fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the transpose is/are zero or negative!\n");
@@ -378,7 +371,6 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
       }
     }
   }
-#endif
 }
 
 
@@ -392,19 +384,10 @@ LIBXSMM_API void libxsmm_otrans(void* out, const void* in, unsigned int typesize
 LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld)
 {
-#if defined(LIBXSMM_TRANS_CHECK)
   static int error_once = 0;
   LIBXSMM_INIT
-  if (0 != inout)
-#else
-  LIBXSMM_UNUSED(n);
-  LIBXSMM_INIT
-#endif
-  {
-#if defined(LIBXSMM_TRANS_CHECK)
-    if (m == n) /* some fall-back; still warned as "not implemented" */
-#endif
-    {
+  if (0 != inout) {
+    if (m == n) { /* some fall-back; still warned as "not implemented" */
       libxsmm_blasint i, j;
       for (i = 0; i < m; ++i) {
         for (j = 0; j < i; ++j) {
@@ -426,7 +409,6 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
       }
 #endif
     }
-#if defined(LIBXSMM_TRANS_CHECK)
     else {
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -435,15 +417,12 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
       }
       LIBXSMM_ASSERT(0/*TODO: proper implementation is pending*/);
     }
-#endif
   }
-#if defined(LIBXSMM_TRANS_CHECK)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: the transpose input/output cannot be NULL!\n");
   }
-#endif
 }
 
 
