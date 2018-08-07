@@ -521,6 +521,8 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       libxsmm_gemm_thread(handle, a, b, c, omp_get_thread_num());
 # endif
     }
+#else
+    libxsmm_gemm_thread(handle, a, b, c, 0);
 #endif /*defined(_OPENMP)*/
   }
   else { /* fall-back */
