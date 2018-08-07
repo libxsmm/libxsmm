@@ -366,13 +366,13 @@ GFC = $(NULL)
 ifneq (0,$(FORTRAN))
   ifneq (,$(strip $(FC)))
   ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
-  ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
-    GFC = gfortran
-  endif
+    ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
+      GFC = gfortran
+    endif
+    FC = $(GFC)
   endif
   endif
 endif
-FC = $(GFC)
 ifeq (,$(strip $(FC)))
   DFLAGS += -DLIBXSMM_NOFORTRAN
 endif
