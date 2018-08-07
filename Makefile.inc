@@ -323,16 +323,20 @@ CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 # or pickup the Intel Compiler (if available).
 ifneq (,$(notdir $(shell which icpc 2>/dev/null)))
   CXX = icpc
+else ifneq (,$(notdir $(shell which icpx 2>/dev/null)))
+  CXX = icpx
 endif
 ifneq (,$(notdir $(shell which icc 2>/dev/null)))
   CC = icc
+else ifneq (,$(notdir $(shell which icx 2>/dev/null)))
+  CC = icx
 endif
 ifneq (,$(notdir $(shell which ifort 2>/dev/null)))
   FC = ifort
 endif
 
 # check if the Intel Development Tools are available
-INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icc, \
+INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
   $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1) \
   $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1)))))")
 
@@ -357,21 +361,18 @@ else
   else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CC = gcc
   endif
-  ifneq (0,$(FORTRAN))
+endif
+GFC = $(NULL)
+ifneq (0,$(FORTRAN))
   ifneq (,$(strip $(FC)))
   ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
-    ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
-      FC = gfortran
-    else
-      FC = $(NULL)
-    endif
+  ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
+    GFC = gfortran
   endif
   endif
   endif
 endif
-ifeq (0,$(FORTRAN))
-  FC = $(NULL)
-endif
+FC = $(GFC)
 ifeq (,$(strip $(FC)))
   DFLAGS += -DLIBXSMM_NOFORTRAN
 endif
@@ -685,36 +686,46 @@ ifneq (0,$(INTEL))
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  CXXFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  CFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
   LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
-  FCFLAGS += -diag-disable 10006,10010,10411,13003
-  ifneq (0,$(THREADS))
-    FCMTFLAGS += -threads
+  ifeq (,$(strip $(GFC)))
+    FCFLAGS += -diag-disable 10006,10010,10411,13003
+    ifneq (0,$(THREADS))
+      FCMTFLAGS += -threads
+    endif
+    FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   endif
   CPEDANTIC += -Wcheck -diag-disable 177,1419,2547,10382
-  FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   CWARNEXTRA = -Wremarks
   ifeq (1,$(PEDANTIC))
-    FSTD = -std03
     CSTD = -std=c99
     CXXFLAGS += -Wcheck
     CFLAGS += $(CSTD) -Wcheck
-    FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
-    FCFLAGS += -free
+    ifeq (,$(strip $(GFC)))
+      FSTD = -std03
+      FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
+      FCFLAGS += -free
+    endif
   else ifneq (0,$(PEDANTIC))
-    FSTD = -std03
     CSTD = -std=c89
     CXXFLAGS += $(CPEDANTIC)
     CFLAGS += $(CSTD) $(CPEDANTIC) $(CWARNEXTRA)
-    FCFLAGS += $(FSTD) $(FPEDANTIC)
-    FMFLAGS += -fixed
+    ifeq (,$(strip $(GFC)))
+      FSTD = -std03
+      FCFLAGS += $(FSTD) $(FPEDANTIC)
+      FMFLAGS += -fixed
+    endif
   else
     CSTD = -std=c89
-    FCFLAGS += -free
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += -free
+    endif
   endif
-  # flag specifying output directory must be last
-  FMFLAGS += -module
+  ifeq (,$(strip $(GFC)))
+    # flag specifying output directory must be last
+    FMFLAGS += -module
+  endif
   CXXFLAGS += $(OPTFLAG)
   CFLAGS += $(OPTFLAG)
   FCFLAGS += $(OPTFLAG)
@@ -722,14 +733,18 @@ ifneq (0,$(INTEL))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
     CXXFLAGS += -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
     CFLAGS += -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
-    FCFLAGS += -qoverride_limits #-fp-model fast=2
-    ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
-      FCFLAGS += -align array64byte
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += -qoverride_limits #-fp-model fast=2
+      ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
+        FCFLAGS += -align array64byte
+      endif
+      ifneq (0,$(IPO))
+        FCFLAGS += -ipo
+      endif
     endif
     ifneq (0,$(IPO))
       CXXFLAGS += -ipo
       CFLAGS += -ipo
-      FCFLAGS += -ipo
     endif
     ifneq (0,$(INSTRUMENT))
       SYM = $(INSTRUMENT)
@@ -742,7 +757,9 @@ ifneq (0,$(INTEL))
     ifneq (0,$(shell echo "$$((1<$(DBG) || 0>$(DBG)))"))
       DFLAGS += -D_DEBUG
     endif
-    FCFLAGS += -check
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += -check
+    endif
     SYM = $(DBG)
   endif
   ifneq (0,$(INSTRUMENT))
@@ -805,10 +822,11 @@ ifneq (0,$(INTEL))
     ifeq (1,$(SYM))
       CXXFLAGS := -g $(CXXFLAGS)
       CFLAGS := -g $(CFLAGS)
-      FCFLAGS := -g -traceback $(FCFLAGS)
     else
       CXXFLAGS := -g3 -debug inline-debug-info $(CXXFLAGS)
       CFLAGS := -g3 -debug inline-debug-info $(CFLAGS)
+    endif
+    ifeq (,$(strip $(GFC)))
       FCFLAGS := -g -traceback $(FCFLAGS)
     endif
   endif
@@ -819,15 +837,19 @@ ifneq (0,$(INTEL))
   ifneq (0,$(OMP))
     CXXFLAGS += $(OMPFLAG)
     CFLAGS += $(OMPFLAG)
-    FCFLAGS += $(OMPFLAG)
     LDFLAGS += $(OMPFLAG)
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += $(OMPFLAG)
+    endif
   endif
   ifneq (0,$(SIMD))
   ifneq (0,$(shell echo "$$((150000<=$(CXX_VERSION)))"))
     DFLAGS += -DLIBXSMM_OPENMP_SIMD
     CXXFLAGS += -qopenmp-simd
     CFLAGS += -qopenmp-simd
-    FCFLAGS += -qopenmp-simd
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += -qopenmp-simd
+    endif
   endif
   endif
   ifeq (1,$(STATIC))
@@ -840,9 +862,11 @@ ifneq (0,$(INTEL))
     DFLAGS += -D__STATIC=$(STATIC)
     SLDFLAGS += -static
   endif
+  ifeq (,$(strip $(GFC)))
   ifneq (,$(strip $(R8)))
   ifneq (0,$(R8))
     FCFLAGS += -autodouble
+  endif
   endif
   endif
   # workaround for certain bits introduced by GCC 7.0
