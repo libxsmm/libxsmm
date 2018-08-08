@@ -294,7 +294,7 @@
 # define LIBXSMM_PRAGMA_OMP(...)
 #endif
 
-#if defined(LIBXSMM_INTEL_COMPILER)
+#if defined(__INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_NONTEMPORAL_VARS(A, ...) LIBXSMM_PRAGMA(vector nontemporal(A, __VA_ARGS__))
 # define LIBXSMM_PRAGMA_NONTEMPORAL LIBXSMM_PRAGMA(vector nontemporal)
 # define LIBXSMM_PRAGMA_VALIGNED LIBXSMM_PRAGMA(vector aligned)
