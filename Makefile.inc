@@ -705,12 +705,15 @@ ifneq (0,$(INTEL))
   CWARNEXTRA = -Wremarks
   ifeq (1,$(PEDANTIC))
     CSTD = -std=c99
-    CXXFLAGS += -Wcheck
-    CFLAGS += $(CSTD) -Wcheck
+    CFLAGS += $(CSTD)
     ifeq (,$(strip $(GFC)))
       FSTD = -std03
       FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
       FCFLAGS += -free
+    endif
+    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+      CXXFLAGS += -Wcheck
+      CFLAGS += -Wcheck
     endif
   else ifneq (0,$(PEDANTIC))
     CSTD = -std=c89
