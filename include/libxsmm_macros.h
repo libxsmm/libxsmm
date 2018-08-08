@@ -145,8 +145,14 @@
 # define LIBXSMM_CDECL
 #endif
 
+#if defined(__INTEL_COMPILER)
+# define LIBXSMM_INTEL_COMPILER __INTEL_COMPILER
+#elif defined(__INTEL_COMPILER_BUILD_DATE)
+# define LIBXSMM_INTEL_COMPILER ((__INTEL_COMPILER_BUILD_DATE / 10000 - 2000) * 100)
+#endif
+
 #if defined(LIBXSMM_OFFLOAD_BUILD) && \
-  defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
+  defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= LIBXSMM_INTEL_COMPILER))
 # define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
 # define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) ((RTYPE (*)(LIBXSMM_VARIADIC))(FN))(__VA_ARGS__)
 # if !defined(LIBXSMM_OFFLOAD_TARGET)
@@ -227,9 +233,9 @@
 #define LIBXSMM_API_EXTERN LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
 
 #if !defined(LIBXSMM_RESTRICT)
-# if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(__INTEL_COMPILER)) && !defined(_WIN32)
+# if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(LIBXSMM_INTEL_COMPILER)) && !defined(_WIN32)
 #   define LIBXSMM_RESTRICT __restrict__
-# elif defined(_MSC_VER) || defined(__INTEL_COMPILER)
+# elif defined(_MSC_VER) || defined(LIBXSMM_INTEL_COMPILER)
 #   define LIBXSMM_RESTRICT __restrict
 # else
 #   define LIBXSMM_RESTRICT
@@ -237,7 +243,7 @@
 #endif /*LIBXSMM_RESTRICT*/
 
 #if !defined(LIBXSMM_PRAGMA)
-# if defined(__INTEL_COMPILER) || defined(_MSC_VER)
+# if defined(LIBXSMM_INTEL_COMPILER) || defined(_MSC_VER)
 #   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(DIRECTIVE)
 # else
 #   define LIBXSMM_PRAGMA(DIRECTIVE)
@@ -245,8 +251,8 @@
 #endif /*LIBXSMM_PRAGMA*/
 
 #if !defined(LIBXSMM_OPENMP_SIMD) && (defined(_OPENMP) && (201307 <= _OPENMP)) /*OpenMP 4.0*/
-# if defined(__INTEL_COMPILER)
-#   if (1500 <= __INTEL_COMPILER)
+# if defined(LIBXSMM_INTEL_COMPILER)
+#   if (1500 <= LIBXSMM_INTEL_COMPILER)
 #     define LIBXSMM_OPENMP_SIMD
 #   endif
 # elif defined(__GNUC__)
@@ -263,12 +269,12 @@
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(omp simd collapse(N))
 # define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(omp simd private(A, __VA_ARGS__))
 # define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(omp simd)
-# if defined(__INTEL_COMPILER)
+# if defined(LIBXSMM_INTEL_COMPILER)
 #   define LIBXSMM_PRAGMA_NOVECTOR LIBXSMM_PRAGMA(novector)
 # else
 #   define LIBXSMM_PRAGMA_NOVECTOR
 # endif
-#elif defined(__INTEL_COMPILER)
+#elif defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(simd reduction(EXPRESSION))
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(simd collapse(N))
 # define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(simd private(A, __VA_ARGS__))
@@ -288,7 +294,7 @@
 # define LIBXSMM_PRAGMA_OMP(...)
 #endif
 
-#if defined(__INTEL_COMPILER)
+#if defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_NONTEMPORAL_VARS(A, ...) LIBXSMM_PRAGMA(vector nontemporal(A, __VA_ARGS__))
 # define LIBXSMM_PRAGMA_NONTEMPORAL LIBXSMM_PRAGMA(vector nontemporal)
 # define LIBXSMM_PRAGMA_VALIGNED LIBXSMM_PRAGMA(vector aligned)
@@ -311,7 +317,7 @@
 # define LIBXSMM_PRAGMA_UNROLL
 #endif
 
-#if defined(__INTEL_COMPILER)
+#if defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(optimize("", off))
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(optimize("", on))
 #elif defined(__clang__)
@@ -368,8 +374,8 @@
 #define LIBXSMM_NEQ(A, B) ((A) < (B) || (A) > (B))
 #define LIBXSMM_FEQ(A, B) (!LIBXSMM_NEQ(A, B))
 
-#if defined(__INTEL_COMPILER)
-# if (1600 <= __INTEL_COMPILER)
+#if defined(LIBXSMM_INTEL_COMPILER)
+# if (1600 <= LIBXSMM_INTEL_COMPILER)
 #   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
 # else
 #   define LIBXSMM_ASSUME(EXPRESSION) assert(EXPRESSION)
@@ -382,7 +388,7 @@
 # define LIBXSMM_ASSUME(EXPRESSION) assert(EXPRESSION)
 #endif
 
-#if defined(__INTEL_COMPILER)
+#if defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
 #else
 # define LIBXSMM_ASSUME_ALIGNED(A, N) assert(0 == ((uintptr_t)(A)) % (N))
@@ -413,7 +419,7 @@
  * VLA-support is signaled by LIBXSMM_VLA.
  */
 #if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && !defined(__PGI) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
-   (!defined(__STDC_NO_VLA__) && 199901L/*C99*/ < __STDC_VERSION__))) || (defined(__INTEL_COMPILER) && !defined(_WIN32)) || \
+   (!defined(__STDC_NO_VLA__) && 199901L/*C99*/ < __STDC_VERSION__))) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32)) || \
     (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus))/*depends on prior C99-check*/)
 # define LIBXSMM_VLA
 #endif
@@ -498,7 +504,7 @@
 # define LIBXSMM_ATTRIBUTE_DTOR
 #endif
 
-#if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_WIN32))
+#if defined(__GNUC__) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32))
 # define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
 #else
 # define LIBXSMM_ATTRIBUTE_UNUSED
@@ -561,7 +567,7 @@
 # if !defined(NOMINMAX)
 #   define NOMINMAX 1
 # endif
-# if defined(__INTEL_COMPILER) && (190023506 <= _MSC_FULL_VER)
+# if defined(LIBXSMM_INTEL_COMPILER) && (190023506 <= _MSC_FULL_VER)
 #   define __builtin_huge_val() HUGE_VAL
 #   define __builtin_huge_valf() HUGE_VALF
 #   define __builtin_nan nan
@@ -595,11 +601,11 @@
 /* _Float128 was introduced with GNU GCC 7.0. */
 #if !defined(_Float128) && defined(__GNUC__) && !defined(__cplusplus) \
   && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
-  || (defined(__INTEL_COMPILER) && defined(__INTEL_COMPILER_UPDATE) && ( \
-        ((1800 <= ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE))) \
-      && (1801  > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))) || \
-        ((1706  > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE))) \
-      &&    (0 != ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))))))
+  || (defined(LIBXSMM_INTEL_COMPILER) && defined(LIBXSMM_INTEL_COMPILER_UPDATE) && ( \
+        ((1800 <= ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE))) \
+      && (1801  > ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE)))) || \
+        ((1706  > ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE))) \
+      &&    (0 != ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE)))))))
 # define _Float128 __float128
 #endif
 
