@@ -690,8 +690,8 @@ ifneq (0,$(INTEL))
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
   CXXFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
   CFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
   ifeq (,$(strip $(GFC)))
+    LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
     FCFLAGS += -diag-disable 10006,10010,10411,13003
     ifneq (0,$(THREADS))
       FCMTFLAGS += -threads
