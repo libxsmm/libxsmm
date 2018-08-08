@@ -698,7 +698,10 @@ ifneq (0,$(INTEL))
     endif
     FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   endif
-  CPEDANTIC += -Wcheck -diag-disable 177,1419,2547,10382
+  ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+    CPEDANTIC += -Wcheck
+  endif
+  CPEDANTIC += -diag-disable 177,1419,2547,10382
   CWARNEXTRA = -Wremarks
   ifeq (1,$(PEDANTIC))
     CSTD = -std=c99
