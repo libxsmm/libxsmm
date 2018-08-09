@@ -83,6 +83,21 @@ FMAIN = "^\s*PROGRAM\s\s*\w\w*\(\s\s*\!.*\)*$$"
 SYM ?= 0
 DBG ?= 0
 
+ifeq (0,$(DBG))
+  ifneq (0,$(INSTRUMENT))
+    SYM = $(INSTRUMENT)
+  else ifeq (0,$(shell echo "$$((0>$(SYM)))"))
+    DFLAGS += -DNDEBUG
+  else
+    DFLAGS += -D_DEBUG
+  endif
+else # debugging enabled
+  ifneq (0,$(shell echo "$$((1<$(DBG) || 0>$(DBG)))"))
+    DFLAGS += -D_DEBUG
+  endif
+  SYM = $(DBG)
+endif
+
 # Optimization level
 ifeq (0,$(DBG))
   OPT ?= 2
@@ -96,6 +111,11 @@ ifeq (0,$(shell echo "$(OPT)" | grep -q "^[0-9]\+$$"; echo "$$?"))
 else
   OPTFLAG = -$(OPT)
 endif
+
+# Avoid more sophisticated flags of the GCC tool chain,
+# and improve compatibility with compilers supposed to be
+# compatible with the GCC tool chain
+COMPATIBLE ?= 0
 
 # Instrumentation level (trace)
 ifeq (,$(strip $(INSTRUMENT)))
@@ -670,18 +690,34 @@ else # fallback
 endif
 endif
 
-ifneq (0,$(CRAY))
-ifeq (0,$(DEPSTATIC))
+ifneq (0,$(DEPSTATIC))
+  ifeq (0,$(COMPATIBLE))
+  ifneq (Darwin,$(UNAME))
+  ifneq (Windows_NT,$(UNAME))
+    ifneq (0,$(HARDEN))
+      ifneq (,$(strip $(HARDEN))) # explicit
+        DYNAMIC = 1
+      else ifneq (0,$(SYM))
+        DYNAMIC = 1
+      endif
+    else ifneq (0,$(SYM))
+      DYNAMIC = 1
+    endif
+  endif
+  endif
+  endif
+else
+  DYNAMIC = 1
+endif
+DYNAMIC ?= 0
+
+#ifneq (0,$(CRAY))
+ifneq (0,$(DYNAMIC))
   XLD := $(XLD) -dynamic
   FLD := $(FLD) -dynamic
   LD := $(LD) -dynamic
 endif
-endif
-
-# Avoid more sophisticated flags of the GCC tool chain,
-# and improve compatibility with compilers supposed to be
-# compatible with the GCC tool chain
-COMPATIBLE ?= 0
+#endif
 
 ifneq (0,$(INTEL))
   AR ?= xiar
@@ -754,21 +790,10 @@ ifneq (0,$(INTEL))
       CXXFLAGS += -ipo
       CFLAGS += -ipo
     endif
-    ifneq (0,$(INSTRUMENT))
-      SYM = $(INSTRUMENT)
-    else ifeq (0,$(shell echo "$$((0>$(SYM)))"))
-      DFLAGS += -DNDEBUG
-    else
-      DFLAGS += -D_DEBUG
-    endif
   else # debugging enabled
-    ifneq (0,$(shell echo "$$((1<$(DBG) || 0>$(DBG)))"))
-      DFLAGS += -D_DEBUG
-    endif
     ifeq (,$(strip $(GFC)))
       FCFLAGS += -check
     endif
-    SYM = $(DBG)
   endif
   ifneq (0,$(INSTRUMENT))
     CXXFLAGS += -finstrument-functions
@@ -971,18 +996,6 @@ else # GCC assumed
       FLDFLAGS += -fno-lto
       LDFLAGS += -flto
     endif
-    ifneq (0,$(INSTRUMENT))
-      SYM = $(INSTRUMENT)
-    else ifeq (0,$(shell echo "$$((0>$(SYM)))"))
-      DFLAGS += -DNDEBUG
-    else
-      DFLAGS += -D_DEBUG
-    endif
-  else
-    ifneq (0,$(shell echo "$$((1<$(DBG) || 0>$(DBG)))"))
-      DFLAGS += -D_DEBUG
-    endif
-    SYM = $(DBG)
   endif
   ifneq (0,$(INSTRUMENT))
     CXXFLAGS += -finstrument-functions
@@ -1639,7 +1652,7 @@ objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG
 STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
   $(filter-out environment% default automatic,$(origin $V)), \
   $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL \
-    $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP \
+    $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED \
     abslibfile abslibpath absliblpath abslibrpath \
     libpath abslib solink extname objname,$V), \
     $V=$($V)?)))
