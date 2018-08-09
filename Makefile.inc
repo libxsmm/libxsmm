@@ -641,7 +641,7 @@ else ifneq (0,$(GCC))
 else
   SUITE = Compiler
   ifeq (0,$(CLANG))
-    COMPATIBLE ?= 1
+    COMPATIBLE = 1
   endif
   ifneq (0,$(COMPATIBLE))
     ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
