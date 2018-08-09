@@ -86,9 +86,9 @@ __m512 max_abs;
 /* accumulation scratch for fp32->bf16 downconvert */
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
 float *const accumulators_scratch = (float*)(((char*)handle->scratch6) +
-  ltid * LIBXSMM_UP2(handle->ifmblock * handle->desc.W * handle->desc.H * sizeof(float), LIBXSMM_CACHELINE));
+  ltid * LIBXSMM_UP2(handle->ifmblock_hp * handle->desc.W * handle->desc.H * sizeof(float), LIBXSMM_CACHELINE));
 #else
-float accumulators_scratch_array[handle->ifmblock * handle->desc.W * handle->desc.H];
+float accumulators_scratch_array[handle->ifmblock_hp * handle->desc.W * handle->desc.H];
 float *const accumulators_scratch = accumulators_scratch_array;
 #endif
 
@@ -103,7 +103,7 @@ kernel_pool[1] = kernel2_bwd;
 if (handle->datatype_in != handle->datatype_out) {
   del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock_hp);
 } else {
-  del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock);
+  del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock_hp);
 }
 
 if (handle->use_lp_kernel == 1) {
@@ -173,10 +173,10 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
     float *scratch_ptr = accumulators_scratch;
     __m512 zero_reg = _mm512_setzero_ps();
     for ( ij = 0; ij < handle->desc.H; ij++ ) {
-      for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
+      for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
         _mm512_store_ps(scratch_ptr+ii, zero_reg);
       }
-      scratch_ptr += handle->desc.W*handle->ifmblock;
+      scratch_ptr += handle->desc.W*handle->ifmblock_hp;
     }
   }
 
@@ -314,7 +314,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               /* @TODO this is a hack as it might conflict with MAX STATS fuse */
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
-                element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                 float *scratch_ptr = accumulators_scratch;
                 __m512 zero_reg = _mm512_setzero_ps();
                 if ( handle->f32_bf16_cvt_rne ) {
@@ -323,7 +323,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                   __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
                   __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
                   for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
+                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
                       __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
                       __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
                       __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
@@ -336,19 +336,19 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                       _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
                       _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
                     }
-                    scratch_ptr += handle->desc.W*handle->ifmblock;
-                    input_dst += handle->ifwp*handle->ifmblock;
+                    scratch_ptr += handle->desc.W*handle->ifmblock_hp;
+                    input_dst += handle->ifwp*handle->ifmblock_hp;
                   }
                 } else {
                   for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
+                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
                       __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
                       __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
                       _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
                       _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
                     }
-                    scratch_ptr += handle->desc.W*handle->ifmblock;
-                    input_dst += handle->ifwp*handle->ifmblock;
+                    scratch_ptr += handle->desc.W*handle->ifmblock_hp;
+                    input_dst += handle->ifwp*handle->ifmblock_hp;
                   }
                 }
               }
@@ -366,7 +366,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               kernel_pool[vi](
                 input_base + offset_i, weight_base + offset_w, output_base + offset_o,
                 input_base + pi, weight_base + pw, output_base + po,
-                regular_input_base + offset_o, &scale_factor, max_vals, accumulators_scratch + offset_i);
+                regular_input_base + offset_o, &scale_factor, max_vals, accumulators_scratch + offset_o);
               ++pool_index;
               i += 3;
             }
@@ -413,7 +413,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               /* @TODO this is a hack as it might conflict with MAX STATS fuse */
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
-                element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                 float *scratch_ptr = accumulators_scratch;
                 __m512 zero_reg = _mm512_setzero_ps();
                 if ( handle->f32_bf16_cvt_rne ) {
@@ -440,14 +440,14 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                   }
                 } else {
                   for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
+                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
                       __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
                       __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
                       _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
                       _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
                     }
-                    scratch_ptr += handle->desc.W*handle->ifmblock;
-                    input_dst += handle->ifwp*handle->ifmblock;
+                    scratch_ptr += handle->desc.W*handle->ifmblock_hp;
+                    input_dst += handle->ifwp*handle->ifmblock_hp;
                   }
                 }
               }
@@ -464,7 +464,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               kernel(
                 input_base + offset_i, weight_base + offset_w, output_base + offset_o,
                 input_base + pi, weight_base + pw, output_base + po,
-                regular_input_base + offset_o, &scale_factor, max_vals, accumulators_scratch + offset_i);
+                regular_input_base + offset_o, &scale_factor, max_vals, accumulators_scratch + offset_o);
               i += 3;
             }
           }
@@ -538,7 +538,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               /* @TODO this is a hack as it might conflict with MAX STATS/ReLU fuse */
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
-                element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                 float *scratch_ptr = accumulators_scratch;
                 __m512 zero_reg = _mm512_setzero_ps();
                 if ( handle->f32_bf16_cvt_rne ) {
@@ -547,7 +547,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                   __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
                   __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
                   for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
+                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
                       __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
                       __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
                       __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
@@ -560,19 +560,19 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                       _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
                       _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
                     }
-                    scratch_ptr += handle->desc.W*handle->ifmblock;
-                    input_dst += handle->ifwp*handle->ifmblock;
+                    scratch_ptr += handle->desc.W*handle->ifmblock_hp;
+                    input_dst += handle->ifwp*handle->ifmblock_hp;
                   }
                 } else {
                   for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
+                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
                       __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
                       __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
                       _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
                       _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
                     }
-                    scratch_ptr += handle->desc.W*handle->ifmblock;
-                    input_dst += handle->ifwp*handle->ifmblock;
+                    scratch_ptr += handle->desc.W*handle->ifmblock_hp;
+                    input_dst += handle->ifwp*handle->ifmblock_hp;
                   }
                 }
               }
@@ -589,7 +589,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               po = stream[i+5];
               kernel_pool[vi](
                 input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_i);
+                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_o);
               ++pool_index;
               i += 3;
             }
@@ -661,7 +661,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               /* @TODO this is a hack as it might conflict with MAX STATS fuse */
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
-                element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                 float *scratch_ptr = accumulators_scratch;
                 __m512 zero_reg = _mm512_setzero_ps();
                 if ( handle->f32_bf16_cvt_rne ) {
@@ -670,7 +670,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                   __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
                   __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
                   for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
+                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
                       __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
                       __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
                       __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
@@ -683,19 +683,19 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                       _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
                       _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
                     }
-                    scratch_ptr += handle->desc.W*handle->ifmblock;
-                    input_dst += handle->ifwp*handle->ifmblock;
+                    scratch_ptr += handle->desc.W*handle->ifmblock_hp;
+                    input_dst += handle->ifwp*handle->ifmblock_hp;
                   }
                 } else {
                   for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
+                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
                       __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
                       __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
                       _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
                       _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
                     }
-                    scratch_ptr += handle->desc.W*handle->ifmblock;
-                    input_dst += handle->ifwp*handle->ifmblock;
+                    scratch_ptr += handle->desc.W*handle->ifmblock_hp;
+                    input_dst += handle->ifwp*handle->ifmblock_hp;
                   }
                 }
               }
@@ -711,7 +711,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               po = stream[i+5];
               kernel(
                 input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_i);
+                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_o);
               i += 3;
             }
           }

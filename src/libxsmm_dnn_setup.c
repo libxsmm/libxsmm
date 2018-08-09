@@ -817,12 +817,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
 
 
   /* FIXME: KNM specific tuning for Resnet */
-  if ( (handle->desc.C == 256 && handle->desc.K == 1024) || (handle->desc.C == 512 && handle->desc.K == 2048) ||  (handle->desc.C == 1024 && handle->desc.K == 2048) ) {
-    handle->blocksofm_blocking = 8;
+  if (handle->datatype_out != LIBXSMM_DNN_DATATYPE_BF16) {
+    if ( (handle->desc.C == 256 && handle->desc.K == 1024) || (handle->desc.C == 512 && handle->desc.K == 2048) ||  (handle->desc.C == 1024 && handle->desc.K == 2048) ) {
+      handle->blocksofm_blocking = 8;
+    }
   }
 
   /* Restrict acc chain for overflow handling only if combo is int16/int32  */
-  if (handle->use_lp_kernel == 1) {
+  if (handle->use_lp_kernel == 1  && (handle->datatype_in != LIBXSMM_DNN_DATATYPE_BF16) ) {
     if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
       if (handle->blocksofm_blocking * handle->ofmblock > 256) {
         handle->blocksofm_blocking = 16;
