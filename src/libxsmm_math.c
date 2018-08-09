@@ -58,6 +58,12 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
   if (0 == ref && 0 != tst) { ref = tst; tst = NULL; result_swap = 1; }
   if (0 != ref && 0 != info) {
     libxsmm_blasint mm = m, nn = n, ldr = (0 == ldref ? m : *ldref), ldt = (0 == ldtst ? m : *ldtst);
+    union { int i; float s; } inf;
+#if defined(INFINITY)
+    inf.s = INFINITY;
+#else
+    inf.i = 0x7F800000;
+#endif
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
     memset(info, 0, sizeof(*info)); /* nullify */
     switch (datatype) {
