@@ -44,10 +44,6 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* min. tile-size is 3x3 rather than 2x2 to avoid remainder tiles of 1x1 */
-#if !defined(LIBXSMM_GEMM_TMIN)
-# define LIBXSMM_GEMM_TMIN 3
-#endif
 #if !defined(LIBXSMM_GEMM_NOJIT_TRANS) && \
   /* TODO: fully support calling convention */ \
   (defined(_WIN32) || defined(__CYGWIN__))
@@ -208,18 +204,18 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       libxsmm_gemm_ktile = config_tk[0];
     }
     { /* double-precision */
-      if (0 < m) libxsmm_gemm_mtile[0] = LIBXSMM_MAX(m, LIBXSMM_GEMM_TMIN);
-      if (0 < n) libxsmm_gemm_ntile[0] = LIBXSMM_MAX(n, LIBXSMM_GEMM_TMIN);
-      if (0 < k) libxsmm_gemm_ktile[0] = LIBXSMM_MAX(k, LIBXSMM_GEMM_TMIN);
+      if (0 < m) libxsmm_gemm_mtile[0] = LIBXSMM_MAX(m, 1);
+      if (0 < n) libxsmm_gemm_ntile[0] = LIBXSMM_MAX(n, 1);
+      if (0 < k) libxsmm_gemm_ktile[0] = LIBXSMM_MAX(k, 1);
       internal_gemm_tsize_a = libxsmm_gemm_mtile[0] * libxsmm_gemm_ktile[0] * 8;
       internal_gemm_tsize_b = libxsmm_gemm_ktile[0] * libxsmm_gemm_ntile[0] * 8;
       internal_gemm_tsize_c = libxsmm_gemm_mtile[0] * libxsmm_gemm_ntile[0] * 8;
     }
     { /* single-precision */
       unsigned int size;
-      if (0 < m) libxsmm_gemm_mtile[1] = LIBXSMM_MAX(m, LIBXSMM_GEMM_TMIN);
-      if (0 < n) libxsmm_gemm_ntile[1] = LIBXSMM_MAX(n, LIBXSMM_GEMM_TMIN);
-      if (0 < k) libxsmm_gemm_ktile[1] = LIBXSMM_MAX(k, LIBXSMM_GEMM_TMIN);
+      if (0 < m) libxsmm_gemm_mtile[1] = LIBXSMM_MAX(m, 1);
+      if (0 < n) libxsmm_gemm_ntile[1] = LIBXSMM_MAX(n, 1);
+      if (0 < k) libxsmm_gemm_ktile[1] = LIBXSMM_MAX(k, 1);
       size = libxsmm_gemm_mtile[1] * libxsmm_gemm_ktile[1] * 4;
       internal_gemm_tsize_a = LIBXSMM_MAX(internal_gemm_tsize_a, size);
       size = libxsmm_gemm_ktile[1] * libxsmm_gemm_ntile[1] * 4;

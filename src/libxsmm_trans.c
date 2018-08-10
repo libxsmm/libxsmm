@@ -50,11 +50,6 @@
 # endif
 #endif
 
-/* min. tile-size is 3x3 rather than 2x2 to avoid remainder tiles of 1x1 */
-#if !defined(LIBXSMM_TRANS_TMIN)
-# define LIBXSMM_TRANS_TMIN 3
-#endif
-
 
 LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
 {
@@ -87,10 +82,10 @@ LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
       libxsmm_trans_tile_stretch = 32.f;
     }
     for (i = 0; i < 2/*DP/SP*/; ++i) {
-      if (0 < m) libxsmm_trans_mtile[i] = LIBXSMM_MAX(m, LIBXSMM_TRANS_TMIN);
+      if (0 < m) libxsmm_trans_mtile[i] = LIBXSMM_MAX(m, 1);
       if (0 < n) libxsmm_trans_tile_stretch = ((float)n) / libxsmm_trans_mtile[i];
-      if (LIBXSMM_TRANS_TMIN > (libxsmm_trans_tile_stretch * libxsmm_trans_mtile[i])) {
-        const float stretch = ((float)(LIBXSMM_TRANS_TMIN)) / libxsmm_trans_mtile[i];
+      if (1 > (libxsmm_trans_tile_stretch * libxsmm_trans_mtile[i])) {
+        const float stretch = 1.f / libxsmm_trans_mtile[i];
         libxsmm_trans_tile_stretch = LIBXSMM_MAX(stretch, libxsmm_trans_tile_stretch);
       }
     }
