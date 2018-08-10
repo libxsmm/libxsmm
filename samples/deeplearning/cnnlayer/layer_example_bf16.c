@@ -43,7 +43,7 @@
 
 #define USE_OVERWRITE
 #define USE_FUSED_BATCH_STATS
-#define USE_OVERWRITE_RNE
+//#define USE_OVERWRITE_RNE
 
 /* it's fine to alias in and out */
 void truncate_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
