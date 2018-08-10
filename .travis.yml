@@ -44,16 +44,16 @@ addons:
     - python3
     - sshpass
 
-before_install:
-  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
-      if [ "${TRAVIS_OS_NAME}" = "osx" ] && [ "${CC}" != "clang" ]; then sudo easy_install pip; fi;
-    fi
+#before_install:
+#  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
+#      if [ "${TRAVIS_OS_NAME}" = "osx" ] && [ "${CC}" != "clang" ]; then sudo easy_install pip; fi;
+#    fi
 
 install:
-  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
-      if [ "${CC}" != "clang" ]; then pip install --user codecov; fi;
-    fi
-  - if [ "${UPLOAD_ENABLED}" != "" ] && [ "${UPLOAD_ENABLED}" != "0" ] && [ "" = "$(which sshpass)" ] ; then
+  #- if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
+  #    if [ "${CC}" != "clang" ]; then pip install --user codecov; fi;
+  #  fi
+  - if [ "${UPLOAD_ENABLED}" != "" ] && [ "${UPLOAD_ENABLED}" != "0" ] && [ "" = "$(which sshpass)" ]; then
       (cd /tmp && curl -O -L https://downloads.sourceforge.net/project/sshpass/sshpass/1.06/sshpass-1.06.tar.gz &&
         tar xvzf sshpass-1.06.tar.gz && cd sshpass-1.06 && ./configure && make ${MAKEJ} && sudo make install &&
         cd ${TRAVIS_BUILD_DIR}) || true;
