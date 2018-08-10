@@ -478,6 +478,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
 #endif
   const libxsmm_gemm_handle *const handle = libxsmm_gemm_handle_init(&blob,
     iprec, oprec, transa, transb, m, n, k, lda, ldb, ldc, alpha, beta, nthreads);
+  static int error_once = 0;
   if (NULL != handle) {
 #if defined(_OPENMP)
     if (0 == omp_external) { /* enable internal parallelization */
@@ -521,12 +522,17 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       libxsmm_gemm_thread(handle, a, b, c, omp_get_thread_num());
 # endif
     }
+    if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
+      const unsigned int ntasks = handle->mt * handle->nt * handle->kt;
+      if (ntasks < handle->nthreads && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+        fprintf(stderr, "LIBXSMM WARNING (XGEMM): only %u of %u workers are utilized!\n", ntasks, handle->nthreads);
+      }
+    }
 #else
     libxsmm_gemm_thread(handle, a, b, c, 0/*tid*/);
 #endif /*defined(_OPENMP)*/
   }
   else { /* fall-back */
-    static int error_once = 0;
     if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
