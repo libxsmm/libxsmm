@@ -231,14 +231,18 @@ void SplitNode::forwardPropagate()
       printf("Executing FP %s: bot %p, top %p\n",nname_.c_str(), bot, top);
     }
 #endif
+    Shape *bs = tenBot_->getShape();
+    int size = bs->dims[0]*bs->dims[1]*bs->dims[2]*bs->dims[3];
     string s = nname_ + "_Inp";
-    MeanOfLayer((char*)s.c_str(), bot, tenBotData_->getBufferSize()/sizeof(float));
+    MeanOfLayer((char*)s.c_str(), bot, size);
 
     for(int i=0; i<top_.size(); i++)
     {
+      Shape *ts = tenTop_[i]->getShape();
+      int size = ts->dims[0]*ts->dims[1]*ts->dims[2]*ts->dims[3];
       float* top = (float*)tenTopData_[i]->getBuffer();
       s = nname_ + "_Outp_" + to_string(i);
-      MeanOfLayer((char*)s.c_str(), top, tenTopData_[i]->getBufferSize()/sizeof(float));
+      MeanOfLayer((char*)s.c_str(), top, size);
     }
   }
 #endif
@@ -317,7 +321,8 @@ void SplitNode::backPropagate()
         pp = (float*)tenTopDiff_[i]->getPrivBuffer();
         ptr = (pp == NULL) ? p : pp;
 
-        size = tenTopData_[i]->getBufferSize()/sizeof(float);
+        Shape *ts = tenTop_[i]->getShape();
+        size = ts->dims[0]*ts->dims[1]*ts->dims[2]*ts->dims[3];
         string s = nname_ + "_delOutp_" + to_string(i);
         MeanOfLayer((char*)s.c_str(), ptr, size);
       }
@@ -326,7 +331,8 @@ void SplitNode::backPropagate()
     p = (float*)tenBotDiff_->getBuffer();
     pp = (float*)tenBotDiff_->getPrivBuffer();
     ptr = (pp == NULL) ? p : pp;
-    size = tenBotData_->getBufferSize()/sizeof(float);
+    Shape *bs = tenBot_->getShape();
+    size = bs->dims[0]*bs->dims[1]*bs->dims[2]*bs->dims[3];
 
     string s = nname_ + "_delInp";
     MeanOfLayer((char*)s.c_str(), ptr, size);

@@ -38,7 +38,7 @@
 
 #define VLEN 16
 
-#define NO_APPX_RCP
+//#define NO_APPX_RCP
 
 void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gammapb, TensorBuf *betapb, float *gmeanp, float *grstdp, TensorBuf *outpb, int tid)
 {
@@ -520,6 +520,7 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
   float *gammap = (float*)gammapb->getBuffer();
   float *deloutp = (float*)deloutpb->getBuffer();
   float *delinp_r = (float*)delinpb[0]->getBuffer();
+  float *delinp_l = gp->eltwise ? (float*)delinpb[1]->getBuffer() : NULL;
   float *delgammap = (float*)delgammapb->getBuffer();
   float *delbetap = (float*)delbetapb->getBuffer();
 
@@ -532,6 +533,7 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
 
   float (* __restrict input_r)[nBfm][fhi][fwi][VLEN]     = (float (*)[*][*][*][VLEN])inp_r;
   float (* __restrict del_input_r)[nBfm][fhi][fwi][VLEN] = (float (*)[*][*][*][VLEN])delinp_r;
+  float (* __restrict del_input_l)[nBfm][fhi][fwi][VLEN] = gp->eltwise ? (float (*)[*][*][*][VLEN])delinp_l : NULL;
   float (* __restrict output)[nBfm][fhp][fwp][VLEN]      = (float (*)[*][*][*][VLEN])outp;
   float (* __restrict del_output)[nBfm][fhp][fwp][VLEN]  = (float (*)[*][*][*][VLEN])deloutp;
   float (* __restrict gamma)[VLEN]                       = (float (*)[VLEN])gammap;
@@ -636,92 +638,89 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
 
 
   if(gp->eltwise)
-    delinpb[1]->setBuffer(deloutp);
-
-  if(gp->bwd_relu)
   {
-    for ( int fmb = 0; fmb < nBfm; fmb += inc_fm ) {
-    int stop_fm = std::min<int>(fmb + inc_fm, nBfm);
+    if(gp->bwd_relu)
+    {
+      for ( int fmb = 0; fmb < nBfm; fmb += inc_fm ) {
+        int stop_fm = std::min<int>(fmb + inc_fm, nBfm);
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
-    {
+        {
 #pragma omp for
 #pragma vector aligned
-      for(int img=0; img < nImg; img++) {
-        for(int fm=fmb; fm < stop_fm; fm++) {
-        /*for(int fm=0; fm < nBfm; fm++) {*/
-          float lcl_gamma[VLEN];
-          float lcl_beta[VLEN];
-#pragma omp simd
-#pragma vector aligned
-          for(int v=0; v < VLEN; v++) {
-            lcl_gamma[v] = 0.0f;
-            lcl_beta[v] = 0.0f;
-          }
-          for(int h=iph, hp=ph; h < (fh + iph); h+=sh, hp++) {
-            for(int w=ipw, wp=pw; w < (fw + ipw); w+=sw, wp++) {
+          for(int img=0; img < nImg; img++) {
+            for(int fm=fmb; fm < stop_fm; fm++) {
+              float lcl_gamma[VLEN];
+              float lcl_beta[VLEN];
 #pragma omp simd
 #pragma vector aligned
               for(int v=0; v < VLEN; v++) {
-                del_output[img][fm][hp][wp][v] = (output[img][fm][hp][wp][v] == 0.0) ? 0.0 : del_output[img][fm][hp][wp][v];
-                lcl_gamma[v] += (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_output[img][fm][hp][wp][v] * brstd[fm][v];
-                lcl_beta[v] += del_output[img][fm][hp][wp][v];
+                lcl_gamma[v] = 0.0f;
+                lcl_beta[v] = 0.0f;
               }
-            }
-          }
+              for(int h=iph, hp=ph; h < (fh + iph); h+=sh, hp++) {
+                for(int w=ipw, wp=pw; w < (fw + ipw); w+=sw, wp++) {
+#pragma omp simd
+#pragma vector aligned
+                  for(int v=0; v < VLEN; v++) {
+                    del_output[img][fm][hp][wp][v] = (output[img][fm][hp][wp][v] == 0.0) ? 0.0 : del_output[img][fm][hp][wp][v];
+                    del_input_l[img][fm][h][w][v] = del_output[img][fm][hp][wp][v];
+                    lcl_gamma[v] += (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_output[img][fm][hp][wp][v] * brstd[fm][v];
+                    lcl_beta[v] += del_output[img][fm][hp][wp][v];
+                  }
+                }
+              }
 #pragma omp simd
 #pragma vector aligned
 #ifdef USE_NTS_BN
 #pragma vector nontemporal
 #endif
-          for(int v=0; v < VLEN; v++) {
-            del_gamma_img[fm][img][v] = lcl_gamma[v];
-            del_beta_img[fm][img][v]  = lcl_beta[v];
+              for(int v=0; v < VLEN; v++) {
+                del_gamma_img[fm][img][v] = lcl_gamma[v];
+                del_beta_img[fm][img][v]  = lcl_beta[v];
+              }
+            }
           }
-        }
-      }
 #pragma omp for
 #pragma vector aligned
-      for(int fm=fmb; fm < stop_fm; fm++) {
-      /*for(int fm=0; fm < nBfm; fm++) {*/
-        for(int img=0; img < nImg; img++) {
+          for(int fm=fmb; fm < stop_fm; fm++) {
+            for(int img=0; img < nImg; img++) {
 #pragma omp simd
 #pragma vector aligned
-          for(int v=0; v < VLEN; v++) {
-            del_gamma[fm][v] += del_gamma_img[fm][img][v];
-            del_beta[fm][v] += del_beta_img[fm][img][v];
+              for(int v=0; v < VLEN; v++) {
+                del_gamma[fm][v] += del_gamma_img[fm][img][v];
+                del_beta[fm][v] += del_beta_img[fm][img][v];
+              }
+            }
           }
-        }
-      }
 #pragma omp for nowait
-      for(int img=0; img < nImg; img++) {
+          for(int img=0; img < nImg; img++) {
 #ifdef __AVX512F__
-        __m512 vrecp_nhw = _mm512_set1_ps(recp_nhw);
-        __m512 vnhw      = _mm512_set1_ps(nhw);
+            __m512 vrecp_nhw = _mm512_set1_ps(recp_nhw);
+            __m512 vnhw      = _mm512_set1_ps(nhw);
 #endif
-        for(int fm=(stop_fm-1); fm >= fmb; fm--) {
-          /*for(int fm=(nBfm-1); fm >= 0; fm--) {*/
+            for(int fm=(stop_fm-1); fm >= fmb; fm--) {
 #ifdef __AVX512F__
-          __m512 vgamma     = _mm512_load_ps( &(gamma[fm][0]) );
-          __m512 vbrstd     = _mm512_load_ps( &(brstd[fm][0]) );
-          __m512 vdel_beta  = _mm512_load_ps( &(del_beta[fm][0]) );
-          __m512 vbmean     = _mm512_load_ps( &(bmean[fm][0]) );
-          __m512 vdel_gamma = _mm512_load_ps( &(del_gamma[fm][0]) );
+              __m512 vgamma     = _mm512_load_ps( &(gamma[fm][0]) );
+              __m512 vbrstd     = _mm512_load_ps( &(brstd[fm][0]) );
+              __m512 vdel_beta  = _mm512_load_ps( &(del_beta[fm][0]) );
+              __m512 vbmean     = _mm512_load_ps( &(bmean[fm][0]) );
+              __m512 vdel_gamma = _mm512_load_ps( &(del_gamma[fm][0]) );
 #endif
-          for(int h=(fh+iph)-sh, hp=(fhs+ph)-1; h >= iph; h-=sh, hp--) {
-            for(int w=(fw+ipw)-sw, wp=(fws+pw)-1; w >= ipw; w-=sw, wp--) {
+              for(int h=(fh+iph)-sh, hp=(fhs+ph)-1; h >= iph; h-=sh, hp--) {
+                for(int w=(fw+ipw)-sw, wp=(fws+pw)-1; w >= ipw; w-=sw, wp--) {
 #ifdef __AVX512F__
-              __m512 vdel_output = _mm512_load_ps( &(del_output[img][fm][hp][wp][0]) );
-              __m512 vinput_r    = _mm512_load_ps( &(input_r[img][fm][h][w][0]) );
-              __m512 vtmp0 = _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( vinput_r, vbmean ), vdel_gamma ), vbrstd );
-              __m512 vtmp1 = _mm512_sub_ps( _mm512_mul_ps( vnhw, vdel_output ), _mm512_add_ps( vdel_beta, vtmp0 ) );
+                  __m512 vdel_output = _mm512_load_ps( &(del_output[img][fm][hp][wp][0]) );
+                  __m512 vinput_r    = _mm512_load_ps( &(input_r[img][fm][h][w][0]) );
+                  __m512 vtmp0 = _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( vinput_r, vbmean ), vdel_gamma ), vbrstd );
+                  __m512 vtmp1 = _mm512_sub_ps( _mm512_mul_ps( vnhw, vdel_output ), _mm512_add_ps( vdel_beta, vtmp0 ) );
 #ifdef USE_NTS_BN
-              _mm512_stream_ps( &(del_input_r[img][fm][h][w][0]),
-                  _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
+                  _mm512_stream_ps( &(del_input_r[img][fm][h][w][0]),
+                      _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
 #else
-              _mm512_store_ps( &(del_input_r[img][fm][h][w][0]),
-                  _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
+                  _mm512_store_ps( &(del_input_r[img][fm][h][w][0]),
+                      _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
 #endif
 #else
 #pragma omp simd
@@ -729,101 +728,204 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
 #ifdef USE_NTS_BN
 #pragma vector nontemporal
 #endif
-              for(int v=0; v < VLEN; v++) {
-                del_input_r[img][fm][h][w][v] = gamma[fm][v] * brstd[fm][v] * recp_nhw * (nhw*del_output[img][fm][hp][wp][v] -
-                    (del_beta[fm][v] + (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_gamma[fm][v] * brstd[fm][v]));
-              }
+                  for(int v=0; v < VLEN; v++) {
+                    del_input_r[img][fm][h][w][v] = gamma[fm][v] * brstd[fm][v] * recp_nhw * (nhw*del_output[img][fm][hp][wp][v] -
+                        (del_beta[fm][v] + (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_gamma[fm][v] * brstd[fm][v]));
+                  }
 #endif
+                }
+              }
             }
           }
         }
+      }
+
+#ifdef USE_XSMM_TIMING
+      gb += ((double)nImg*(double)nFM*(double)fhs*(double)fws*(double)sizeof(float)) / (1000*1000*1000);
+      gib += ((double)nImg*(double)nFM*(double)fhs*(double)fws*(double)sizeof(float)) / (1024*1024*1024);
+#endif
+    }
+    else
+    {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+      {
+#pragma omp for
+#pragma vector aligned
+        for(int img=0; img < nImg; img++) {
+          for(int fm=0; fm < nBfm; fm++) {
+            float lcl_gamma[VLEN];
+            float lcl_beta[VLEN];
+#pragma omp simd
+#pragma vector aligned
+            for(int v=0; v < VLEN; v++) {
+              lcl_gamma[v] = 0.0f;
+              lcl_beta[v] = 0.0f;
+            }
+            for(int h=iph, hp=ph; h < (fh + iph); h+=sh, hp++) {
+              for(int w=ipw, wp=pw; w < (fw + ipw); w+=sw, wp++) {
+#pragma omp simd
+#pragma vector aligned
+                for(int v=0; v < VLEN; v++) {
+                  del_input_l[img][fm][h][w][v] = del_output[img][fm][hp][wp][v];
+                  lcl_gamma[v] += (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_output[img][fm][hp][wp][v] * brstd[fm][v];
+                  lcl_beta[v] += del_output[img][fm][hp][wp][v];
+                }
+              }
+            }
+#pragma omp simd
+#pragma vector aligned
+#ifdef USE_NTS_BN
+#pragma vector nontemporal
+#endif
+            for(int v=0; v < VLEN; v++) {
+              del_gamma_img[fm][img][v] = lcl_gamma[v];
+              del_beta_img[fm][img][v]  = lcl_beta[v];
+            }
+          }
+        }
+#pragma omp for
+#pragma vector aligned
+        for(int fm=0; fm < nBfm; fm++) {
+          for(int img=0; img < nImg; img++) {
+#pragma omp simd
+#pragma vector aligned
+            for(int v=0; v < VLEN; v++) {
+              del_gamma[fm][v] += del_gamma_img[fm][img][v];
+              del_beta[fm][v] += del_beta_img[fm][img][v];
+            }
+          }
+        }
+#pragma omp for nowait
+        for(int img=0; img < nImg; img++) {
+#ifdef __AVX512F__
+          __m512 vrecp_nhw = _mm512_set1_ps(recp_nhw);
+          __m512 vnhw      = _mm512_set1_ps(nhw);
+#endif
+          for(int fm=(nBfm-1); fm >= 0; fm--) {
+#ifdef __AVX512F__
+            __m512 vgamma     = _mm512_load_ps( &(gamma[fm][0]) );
+            __m512 vbrstd     = _mm512_load_ps( &(brstd[fm][0]) );
+            __m512 vdel_beta  = _mm512_load_ps( &(del_beta[fm][0]) );
+            __m512 vbmean     = _mm512_load_ps( &(bmean[fm][0]) );
+            __m512 vdel_gamma = _mm512_load_ps( &(del_gamma[fm][0]) );
+#endif
+            for(int h=(fh+iph)-sh, hp=(fhs+ph)-1; h >= iph; h-=sh, hp--) {
+              for(int w=(fw+ipw)-sw, wp=(fws+pw)-1; w >= ipw; w-=sw, wp--) {
+#ifdef __AVX512F__
+                __m512 vdel_output = _mm512_load_ps( &(del_output[img][fm][hp][wp][0]) );
+                __m512 vinput_r    = _mm512_load_ps( &(input_r[img][fm][h][w][0]) );
+                __m512 vtmp0 = _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( vinput_r, vbmean ), vdel_gamma ), vbrstd );
+                __m512 vtmp1 = _mm512_sub_ps( _mm512_mul_ps( vnhw, vdel_output ), _mm512_add_ps( vdel_beta, vtmp0 ) );
+#ifdef USE_NTS_BN
+                _mm512_stream_ps( &(del_input_r[img][fm][h][w][0]),
+                    _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
+#else
+                _mm512_store_ps( &(del_input_r[img][fm][h][w][0]),
+                    _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
+#endif
+#else
+#pragma omp simd
+#pragma vector aligned
+#ifdef USE_NTS_BN
+#pragma vector nontemporal
+#endif
+                for(int v=0; v < VLEN; v++) {
+                  del_input_r[img][fm][h][w][v] = gamma[fm][v] * brstd[fm][v] * recp_nhw * (nhw*del_output[img][fm][hp][wp][v] -
+                      (del_beta[fm][v] + (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_gamma[fm][v] * brstd[fm][v]));
+                }
+#endif
+              }
+            }
+          }
         }
       }
     }
-
-#ifdef USE_XSMM_TIMING
-    gb += ((double)nImg*(double)nFM*(double)fhs*(double)fws*(double)sizeof(float)) / (1000*1000*1000);
-    gib += ((double)nImg*(double)nFM*(double)fhs*(double)fws*(double)sizeof(float)) / (1024*1024*1024);
-#endif
-  }
-  else
+  } 
+  else 
   {
+    if(gp->bwd_relu)
+    {
+      for ( int fmb = 0; fmb < nBfm; fmb += inc_fm ) {
+        int stop_fm = std::min<int>(fmb + inc_fm, nBfm);
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
-    {
+        {
 #pragma omp for
 #pragma vector aligned
-      for(int img=0; img < nImg; img++) {
-        for(int fm=0; fm < nBfm; fm++) {
-          float lcl_gamma[VLEN];
-          float lcl_beta[VLEN];
-#pragma omp simd
-#pragma vector aligned
-          for(int v=0; v < VLEN; v++) {
-            lcl_gamma[v] = 0.0f;
-            lcl_beta[v] = 0.0f;
-          }
-          for(int h=iph, hp=ph; h < (fh + iph); h+=sh, hp++) {
-            for(int w=ipw, wp=pw; w < (fw + ipw); w+=sw, wp++) {
+          for(int img=0; img < nImg; img++) {
+            for(int fm=fmb; fm < stop_fm; fm++) {
+              float lcl_gamma[VLEN];
+              float lcl_beta[VLEN];
 #pragma omp simd
 #pragma vector aligned
               for(int v=0; v < VLEN; v++) {
-                lcl_gamma[v] += (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_output[img][fm][hp][wp][v] * brstd[fm][v];
-                lcl_beta[v] += del_output[img][fm][hp][wp][v];
+                lcl_gamma[v] = 0.0f;
+                lcl_beta[v] = 0.0f;
+              }
+              for(int h=iph, hp=ph; h < (fh + iph); h+=sh, hp++) {
+                for(int w=ipw, wp=pw; w < (fw + ipw); w+=sw, wp++) {
+#pragma omp simd
+#pragma vector aligned
+                  for(int v=0; v < VLEN; v++) {
+                    del_output[img][fm][hp][wp][v] = (output[img][fm][hp][wp][v] == 0.0) ? 0.0 : del_output[img][fm][hp][wp][v];
+                    lcl_gamma[v] += (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_output[img][fm][hp][wp][v] * brstd[fm][v];
+                    lcl_beta[v] += del_output[img][fm][hp][wp][v];
+                  }
+                }
+              }
+#pragma omp simd
+#pragma vector aligned
+#ifdef USE_NTS_BN
+#pragma vector nontemporal
+#endif
+              for(int v=0; v < VLEN; v++) {
+                del_gamma_img[fm][img][v] = lcl_gamma[v];
+                del_beta_img[fm][img][v]  = lcl_beta[v];
               }
             }
           }
-#pragma omp simd
-#pragma vector aligned
-#ifdef USE_NTS_BN
-#pragma vector nontemporal
-#endif
-          for(int v=0; v < VLEN; v++) {
-            del_gamma_img[fm][img][v] = lcl_gamma[v];
-            del_beta_img[fm][img][v]  = lcl_beta[v];
-          }
-        }
-      }
 #pragma omp for
 #pragma vector aligned
-      for(int fm=0; fm < nBfm; fm++) {
-        for(int img=0; img < nImg; img++) {
+          for(int fm=fmb; fm < stop_fm; fm++) {
+            for(int img=0; img < nImg; img++) {
 #pragma omp simd
 #pragma vector aligned
-          for(int v=0; v < VLEN; v++) {
-            del_gamma[fm][v] += del_gamma_img[fm][img][v];
-            del_beta[fm][v] += del_beta_img[fm][img][v];
+              for(int v=0; v < VLEN; v++) {
+                del_gamma[fm][v] += del_gamma_img[fm][img][v];
+                del_beta[fm][v] += del_beta_img[fm][img][v];
+              }
+            }
           }
-        }
-      }
 #pragma omp for nowait
-      for(int img=0; img < nImg; img++) {
+          for(int img=0; img < nImg; img++) {
 #ifdef __AVX512F__
-        __m512 vrecp_nhw = _mm512_set1_ps(recp_nhw);
-        __m512 vnhw      = _mm512_set1_ps(nhw);
+            __m512 vrecp_nhw = _mm512_set1_ps(recp_nhw);
+            __m512 vnhw      = _mm512_set1_ps(nhw);
 #endif
-        for(int fm=(nBfm-1); fm >= 0; fm--) {
+            for(int fm=(stop_fm-1); fm >= fmb; fm--) {
 #ifdef __AVX512F__
-          __m512 vgamma     = _mm512_load_ps( &(gamma[fm][0]) );
-          __m512 vbrstd     = _mm512_load_ps( &(brstd[fm][0]) );
-          __m512 vdel_beta  = _mm512_load_ps( &(del_beta[fm][0]) );
-          __m512 vbmean     = _mm512_load_ps( &(bmean[fm][0]) );
-          __m512 vdel_gamma = _mm512_load_ps( &(del_gamma[fm][0]) );
+              __m512 vgamma     = _mm512_load_ps( &(gamma[fm][0]) );
+              __m512 vbrstd     = _mm512_load_ps( &(brstd[fm][0]) );
+              __m512 vdel_beta  = _mm512_load_ps( &(del_beta[fm][0]) );
+              __m512 vbmean     = _mm512_load_ps( &(bmean[fm][0]) );
+              __m512 vdel_gamma = _mm512_load_ps( &(del_gamma[fm][0]) );
 #endif
-          for(int h=(fh+iph)-sh, hp=(fhs+ph)-1; h >= iph; h-=sh, hp--) {
-            for(int w=(fw+ipw)-sw, wp=(fws+pw)-1; w >= ipw; w-=sw, wp--) {
+              for(int h=(fh+iph)-sh, hp=(fhs+ph)-1; h >= iph; h-=sh, hp--) {
+                for(int w=(fw+ipw)-sw, wp=(fws+pw)-1; w >= ipw; w-=sw, wp--) {
 #ifdef __AVX512F__
-               __m512 vdel_output = _mm512_load_ps( &(del_output[img][fm][hp][wp][0]) );
-               __m512 vinput_r    = _mm512_load_ps( &(input_r[img][fm][h][w][0]) );
-               __m512 vtmp0 = _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( vinput_r, vbmean ), vdel_gamma ), vbrstd );
-               __m512 vtmp1 = _mm512_sub_ps( _mm512_mul_ps( vnhw, vdel_output ), _mm512_add_ps( vdel_beta, vtmp0 ) );
+                  __m512 vdel_output = _mm512_load_ps( &(del_output[img][fm][hp][wp][0]) );
+                  __m512 vinput_r    = _mm512_load_ps( &(input_r[img][fm][h][w][0]) );
+                  __m512 vtmp0 = _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( vinput_r, vbmean ), vdel_gamma ), vbrstd );
+                  __m512 vtmp1 = _mm512_sub_ps( _mm512_mul_ps( vnhw, vdel_output ), _mm512_add_ps( vdel_beta, vtmp0 ) );
 #ifdef USE_NTS_BN
-               _mm512_stream_ps( &(del_input_r[img][fm][h][w][0]),
-                  _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
+                  _mm512_stream_ps( &(del_input_r[img][fm][h][w][0]),
+                      _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
 #else
-               _mm512_store_ps( &(del_input_r[img][fm][h][w][0]),
-                  _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
+                  _mm512_store_ps( &(del_input_r[img][fm][h][w][0]),
+                      _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
 #endif
 #else
 #pragma omp simd
@@ -831,11 +933,114 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
 #ifdef USE_NTS_BN
 #pragma vector nontemporal
 #endif
-              for(int v=0; v < VLEN; v++) {
-                del_input_r[img][fm][h][w][v] = gamma[fm][v] * brstd[fm][v] * recp_nhw * (nhw*del_output[img][fm][hp][wp][v] -
-                                    (del_beta[fm][v] + (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_gamma[fm][v] * brstd[fm][v]));
-              }
+                  for(int v=0; v < VLEN; v++) {
+                    del_input_r[img][fm][h][w][v] = gamma[fm][v] * brstd[fm][v] * recp_nhw * (nhw*del_output[img][fm][hp][wp][v] -
+                        (del_beta[fm][v] + (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_gamma[fm][v] * brstd[fm][v]));
+                  }
 #endif
+                }
+              }
+            }
+          }
+        }
+      }
+
+#ifdef USE_XSMM_TIMING
+      gb += ((double)nImg*(double)nFM*(double)fhs*(double)fws*(double)sizeof(float)) / (1000*1000*1000);
+      gib += ((double)nImg*(double)nFM*(double)fhs*(double)fws*(double)sizeof(float)) / (1024*1024*1024);
+#endif
+    }
+    else
+    {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+      {
+#pragma omp for
+#pragma vector aligned
+        for(int img=0; img < nImg; img++) {
+          for(int fm=0; fm < nBfm; fm++) {
+            float lcl_gamma[VLEN];
+            float lcl_beta[VLEN];
+#pragma omp simd
+#pragma vector aligned
+            for(int v=0; v < VLEN; v++) {
+              lcl_gamma[v] = 0.0f;
+              lcl_beta[v] = 0.0f;
+            }
+            for(int h=iph, hp=ph; h < (fh + iph); h+=sh, hp++) {
+              for(int w=ipw, wp=pw; w < (fw + ipw); w+=sw, wp++) {
+#pragma omp simd
+#pragma vector aligned
+                for(int v=0; v < VLEN; v++) {
+                  lcl_gamma[v] += (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_output[img][fm][hp][wp][v] * brstd[fm][v];
+                  lcl_beta[v] += del_output[img][fm][hp][wp][v];
+                }
+              }
+            }
+#pragma omp simd
+#pragma vector aligned
+#ifdef USE_NTS_BN
+#pragma vector nontemporal
+#endif
+            for(int v=0; v < VLEN; v++) {
+              del_gamma_img[fm][img][v] = lcl_gamma[v];
+              del_beta_img[fm][img][v]  = lcl_beta[v];
+            }
+          }
+        }
+#pragma omp for
+#pragma vector aligned
+        for(int fm=0; fm < nBfm; fm++) {
+          for(int img=0; img < nImg; img++) {
+#pragma omp simd
+#pragma vector aligned
+            for(int v=0; v < VLEN; v++) {
+              del_gamma[fm][v] += del_gamma_img[fm][img][v];
+              del_beta[fm][v] += del_beta_img[fm][img][v];
+            }
+          }
+        }
+#pragma omp for nowait
+        for(int img=0; img < nImg; img++) {
+#ifdef __AVX512F__
+          __m512 vrecp_nhw = _mm512_set1_ps(recp_nhw);
+          __m512 vnhw      = _mm512_set1_ps(nhw);
+#endif
+          for(int fm=(nBfm-1); fm >= 0; fm--) {
+#ifdef __AVX512F__
+            __m512 vgamma     = _mm512_load_ps( &(gamma[fm][0]) );
+            __m512 vbrstd     = _mm512_load_ps( &(brstd[fm][0]) );
+            __m512 vdel_beta  = _mm512_load_ps( &(del_beta[fm][0]) );
+            __m512 vbmean     = _mm512_load_ps( &(bmean[fm][0]) );
+            __m512 vdel_gamma = _mm512_load_ps( &(del_gamma[fm][0]) );
+#endif
+            for(int h=(fh+iph)-sh, hp=(fhs+ph)-1; h >= iph; h-=sh, hp--) {
+              for(int w=(fw+ipw)-sw, wp=(fws+pw)-1; w >= ipw; w-=sw, wp--) {
+#ifdef __AVX512F__
+                __m512 vdel_output = _mm512_load_ps( &(del_output[img][fm][hp][wp][0]) );
+                __m512 vinput_r    = _mm512_load_ps( &(input_r[img][fm][h][w][0]) );
+                __m512 vtmp0 = _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( vinput_r, vbmean ), vdel_gamma ), vbrstd );
+                __m512 vtmp1 = _mm512_sub_ps( _mm512_mul_ps( vnhw, vdel_output ), _mm512_add_ps( vdel_beta, vtmp0 ) );
+#ifdef USE_NTS_BN
+                _mm512_stream_ps( &(del_input_r[img][fm][h][w][0]),
+                    _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
+#else
+                _mm512_store_ps( &(del_input_r[img][fm][h][w][0]),
+                    _mm512_mul_ps( vgamma, _mm512_mul_ps( vbrstd, _mm512_mul_ps( vrecp_nhw, vtmp1 ))) );
+#endif
+#else
+#pragma omp simd
+#pragma vector aligned
+#ifdef USE_NTS_BN
+#pragma vector nontemporal
+#endif
+                for(int v=0; v < VLEN; v++) {
+                  del_input_r[img][fm][h][w][v] = gamma[fm][v] * brstd[fm][v] * recp_nhw * (nhw*del_output[img][fm][hp][wp][v] -
+                      (del_beta[fm][v] + (input_r[img][fm][h][w][v] - bmean[fm][v]) * del_gamma[fm][v] * brstd[fm][v]));
+                }
+#endif
+              }
             }
           }
         }
