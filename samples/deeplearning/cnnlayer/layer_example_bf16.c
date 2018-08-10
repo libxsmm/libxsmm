@@ -42,7 +42,7 @@
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) { fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) ); global_status = A; }
 
 #define USE_OVERWRITE
-#define USE_FUSED_BATCH_STATS
+//#define USE_FUSED_BATCH_STATS
 #define USE_FUSED_RELU_BWD
 //#define USE_OVERWRITE_RNE
 
