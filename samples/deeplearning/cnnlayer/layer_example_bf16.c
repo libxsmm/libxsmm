@@ -43,6 +43,7 @@
 
 #define USE_OVERWRITE
 #define USE_FUSED_BATCH_STATS
+#define USE_FUSED_RELU_BWD
 //#define USE_OVERWRITE_RNE
 
 /* it's fine to alias in and out */
@@ -326,18 +327,26 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
               for (ki = 0; ki < kw; ++ki) {
                 if (ii+ki < 0 || ii+ki >= ifw) continue;
                 LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) +=
-                LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
-                * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
+                  LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
+                  * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
               }
             }
           }
         }
       }
+#if defined(USE_FUSED_RELU) || defined(USE_FUSED_BIAS_RELU)
+      for (oj = 0; oj < ofh; ++oj) {
+        for (oi = 0; oi < ofw; ++oi) {
+          LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) =
+            (LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) < 0.0f) ? 0.0f : LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
+        }
+      }
+#endif
     }
   }
 }
 
-LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float* output, const float* filter)
+LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float* output, const float* filter, const float* naive_input_save)
 {
   int nImg      = param->nImg;
   int nIfm      = param->nIfm;
@@ -366,6 +375,11 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
   LIBXSMM_VLA_DECL(4, const float, output_t, output + (pad_h_out * ofwp + pad_w_out), nOfm, ofhp, ofwp);
   LIBXSMM_VLA_DECL(4,       float,  input_t,  input + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
   LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
+#if defined(USE_FUSED_RELU_BWD)
+  LIBXSMM_VLA_DECL(4, const float, naive_input_t, naive_input_save + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
+#else
+  LIBXSMM_UNUSED(naive_input_save);
+#endif
 
 #if defined(_OPENMP)
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
@@ -383,12 +397,21 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
                 if (ii+ki < 0 || ii+ki >= ifw) continue;
                 LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp) +=
                   LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp)
-                * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
+                  * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
               }
             }
           }
         }
       }
+#if defined(USE_FUSED_RELU_BWD)
+      for (ij = 0; ij < ifh; ij++) {
+        for (ii = 0; ii < ifw; ii++) {
+          if ( LIBXSMM_VLA_ACCESS(4,  naive_input_t, img, ifm, ij, ii , nIfm, ifhp, ifwp) == 0.0 ) {
+            LIBXSMM_VLA_ACCESS(4, input_t, img, ifm, ij, ii , nIfm, ifhp, ifwp) = 0.0;
+          }
+        }
+      }
+#endif
     }
   }
 }
@@ -439,7 +462,7 @@ LIBXSMM_INLINE void naive_conv_wu(naive_conv_t* param, const float* input, const
                 if (ii+ki < 0 || ii+ki >= ifw) continue;
                 LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw) +=
                   LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
-                * LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
+                  * LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
               }
             }
           }
@@ -660,6 +683,18 @@ int main(int argc, char* argv[])
     copy_internal_nchw( naive_output_bp , naive_output_bp_tmp, nImg, nOfm, ofh, ofw, pad_h, pad_w);
   }
 
+#if defined(USE_FUSED_RELU_BWD)
+  /* Initialize some entries with zeros  */
+  {
+    int i;
+    for (i = 0; i < nImg*nIfm*ifhp*ifwp; i++ ) {
+      if ( ((i%16) == 2) || ((i%16) == 3) || ((i%16) == 7) || ((i%16) == 14) ) {
+        naive_input[i] = 0.0;
+      }
+    }
+  }
+#endif
+
   copy_buf(naive_input, naive_input_save, nImg*nIfm*ifhp*ifwp);
   copy_buf(naive_output_bp, naive_output_save, nImg*nOfm*ofhp*ofwp);
   init_buf(naive_filter, nIfm*nOfm*kh*kw, 0, 0);
@@ -667,10 +702,10 @@ int main(int argc, char* argv[])
   zero_buf(naive_input_bp,  nImg*nIfm*ifhp*ifwp);
   zero_buf(naive_filter_wu, nOfm*nIfm*kh*kw);
   /*zero_buf(output_libxsmm,      nImg*nOfm*ofhp*ofwp);
-  zero_buf(dinput_libxsmm,      nImg*nIfm*ifhp*ifwp);
-  zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
-  zero_buf(naive_libxsmm_input,  nImg*nIfm*ifhp*ifwp);
-  zero_buf(naive_libxsmm_filter, nOfm*nIfm*kh*kw);*/
+    zero_buf(dinput_libxsmm,      nImg*nIfm*ifhp*ifwp);
+    zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
+    zero_buf(naive_libxsmm_input,  nImg*nIfm*ifhp*ifwp);
+    zero_buf(naive_libxsmm_filter, nOfm*nIfm*kh*kw);*/
 
   /* make things bfp16 */
   truncate_mask_fp32_bfp16( naive_input, naive_input, nImg*nIfm*ifhp*ifwp );
@@ -696,7 +731,7 @@ int main(int argc, char* argv[])
     }
     /* run naive convolutions */
     if (type == 'A' || type == 'B') {
-      naive_conv_bp(&naive_param, naive_input_bp, naive_output_bp, naive_filter);
+      naive_conv_bp(&naive_param, naive_input_bp, naive_output_bp, naive_filter, naive_input_save);
     }
     /* run naive convolutions */
     if (type == 'A' || type == 'U') {
