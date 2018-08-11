@@ -83,6 +83,12 @@ FMAIN = "^\s*PROGRAM\s\s*\w\w*\(\s\s*\!.*\)*$$"
 SYM ?= 0
 DBG ?= 0
 
+# Instrumentation level (trace)
+ifeq (,$(strip $(INSTRUMENT)))
+  INSTRUMENT = 0
+endif
+TRACE ?= 0
+
 ifeq (0,$(DBG))
   ifneq (0,$(INSTRUMENT))
     SYM = $(INSTRUMENT)
@@ -116,12 +122,6 @@ endif
 # and improve compatibility with compilers supposed to be
 # compatible with the GCC tool chain
 COMPATIBLE ?= 0
-
-# Instrumentation level (trace)
-ifeq (,$(strip $(INSTRUMENT)))
-  INSTRUMENT = 0
-endif
-TRACE ?= 0
 
 # Number of repeated calls (tests),
 # or used to scale the problem size
