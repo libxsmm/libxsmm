@@ -42,7 +42,7 @@
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) { fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) ); global_status = A; }
 
 #define USE_OVERWRITE
-//#define USE_FUSED_BATCH_STATS
+/*#define USE_FUSED_BATCH_STATS*/
 #define USE_FUSED_RELU_BWD
 #define USE_OVERWRITE_RNE
 
@@ -515,7 +515,6 @@ int main(int argc, char* argv[])
   double l_total = 0.0;
   double lpOps = 0.0; /* number of low precision operations */
   int i;
-  int bnofmblock;
 
   libxsmm_dnn_conv_desc conv_desc;
   libxsmm_dnn_layer* libxsmm_handle;
@@ -527,6 +526,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_dfilter;
 #ifdef USE_FUSED_BATCH_STATS
   libxsmm_dnn_tensor* libxsmm_batchstats;
+  int bnofmblock;
 #endif
 
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
@@ -671,26 +671,24 @@ int main(int argc, char* argv[])
   batchstats_libxsmm        = (float*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(float), 2097152);
 
   /* initialize data */
-  float *naive_output_bp_tmp       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   zero_buf(naive_input, nImg*nIfm*ifhp*ifwp);
   if (padding_mode == 0 ) {
     init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
     init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
   } else {
+    float *naive_output_bp_tmp       = (float*)libxsmm_aligned_scratch( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
     init_buf(naive_input_tmp,      nImg*nIfm*ifh*ifw, 0, 0);
     init_buf(naive_output_bp_tmp,      nImg*nOfm*ofh*ofw, 0, 0);
     copy_internal_nchw( naive_input , naive_input_tmp, nImg, nIfm, ifh, ifw, pad_h, pad_w);
     copy_internal_nchw( naive_output_bp , naive_output_bp_tmp, nImg, nOfm, ofh, ofw, pad_h, pad_w);
+    libxsmm_free(naive_output_bp_tmp);
   }
 
 #if defined(USE_FUSED_RELU_BWD)
   /* Initialize some entries with zeros  */
-  {
-    int i;
-    for (i = 0; i < nImg*nIfm*ifhp*ifwp; i++ ) {
-      if ( ((i%16) == 2) || ((i%16) == 3) || ((i%16) == 7) || ((i%16) == 14) ) {
-        naive_input[i] = 0.0;
-      }
+  for (i = 0; i < nImg*nIfm*ifhp*ifwp; i++ ) {
+    if ( ((i%16) == 2) || ((i%16) == 3) || ((i%16) == 7) || ((i%16) == 14) ) {
+      naive_input[i] = 0.0;
     }
   }
 #endif
@@ -853,7 +851,7 @@ int main(int argc, char* argv[])
   /* let's allocate and bind scratch */
   scratch_size = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
   CHKERR_LIBXSMM_DNN( status );
-  scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
+  scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
   /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
   /*init_buf_int16( (libxsmm_bfloat16*)scratch, scratch_size/2, 0, 0 );*/
