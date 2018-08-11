@@ -428,7 +428,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
     libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
         i_conv_kernel_config->instruction_set,
         i_conv_kernel_config->vxor_instruction,
-        i_conv_kernel_config->vector_name, 2, 2, 2);  
+        i_conv_kernel_config->vector_name, 2, 2, 2);
 
     libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
         i_conv_kernel_config->instruction_set,
@@ -513,7 +513,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
               i_conv_kernel_config->vxor_instruction,
               i_conv_kernel_config->vector_name, 0, 0, 0);
 
-          /* ymm0 holds now the streaming input  */  
+          /* ymm0 holds now the streaming input */
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_conv_kernel_config->instruction_set,
               i_conv_kernel_config->vmove_instruction,
@@ -536,7 +536,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
           libxsmm_x86_instruction_vec_compute_reg_mask ( io_generated_code,
               i_conv_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VCMPPS,
-              i_conv_kernel_config->vector_name, 
+              i_conv_kernel_config->vector_name,
               0,
               2,
               LIBXSMM_X86_VEC_REG_UNDEF,
