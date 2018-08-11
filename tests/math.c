@@ -133,11 +133,19 @@ int main(int argc, char* argv[])
       }
     }
   }
-  /* check work division routine */
-  if (libxsmm_split_work(12 * 5 * 7 * 11 * 13 * 17, 231) != (3 * 7 * 11)) exit(EXIT_FAILURE);
-  if (libxsmm_split_work(12 * 5 * 7, 32) != (2 * 3 * 5)) exit(EXIT_FAILURE);
-  if (libxsmm_split_work(12 * 13, 13) != 13) exit(EXIT_FAILURE);
-  if (libxsmm_split_work(12, 6) != 6) exit(EXIT_FAILURE);
+
+  /* find upper limited product */
+  if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 0) != (3 * 7 * 11)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12 * 5 * 7, 32, 0) != (2 * 3 * 5)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12 * 13, 13, 0) != 13) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12, 6, 0) != 6) exit(EXIT_FAILURE);
+
+  /* find lower limited product */
+  if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 1) != (2 * 3 * 7 * 11)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12 * 5 * 7, 36, 1) != (2 * 5 * 7)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12 * 13, 13, 1) != 13) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12, 6, 1) != 12) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(320, 4, 1) != 8) exit(EXIT_FAILURE);
 
   return EXIT_SUCCESS;
 }

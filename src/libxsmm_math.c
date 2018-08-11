@@ -45,8 +45,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_MAX_SPLITLIMIT)
-# define LIBXSMM_MAX_SPLITLIMIT 1024
+#if !defined(LIBXSMM_MATH_MAXPRODUCT)
+# define LIBXSMM_MATH_MAXPRODUCT 1024
 #endif
 
 
@@ -209,55 +209,85 @@ LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n3
 }
 
 
-LIBXSMM_API unsigned int libxsmm_split_work(unsigned int work, unsigned int split_limit)
+LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned int limit, int is_lower)
 {
   int result;
-  if (split_limit < work) {
+  if (limit < product) {
     result = 1;
-    if (1 < split_limit) {
-      unsigned int fact[32], wmax = split_limit;
-      int i;
+    if (1 < limit) {
+      unsigned int fact[32], maxp = limit;
+      int i, n;
       /* attempt to lower the memory requirement for DP; can miss best solution */
-      if (LIBXSMM_MAX_SPLITLIMIT < split_limit) {
-        result = (unsigned int)libxsmm_gcd(work, split_limit);
-        wmax /= result;
+      if (LIBXSMM_MATH_MAXPRODUCT < limit) {
+        const unsigned int minfct = (limit + limit - 1) / LIBXSMM_MATH_MAXPRODUCT;
+        const unsigned int maxfct = (unsigned int)libxsmm_gcd(product, limit);
+        result = maxfct;
+        if (minfct < maxfct) {
+          n = libxsmm_primes_u32(result, fact);
+          for (i = 0; i < n; ++i) {
+            if (minfct < fact[i]) {
+              result = fact[i];
+              i = n; /* break */
+            }
+          }
+        }
+        maxp /= result;
       }
-      if (LIBXSMM_MAX_SPLITLIMIT >= wmax) {
-        unsigned int k[2][LIBXSMM_MAX_SPLITLIMIT], w;
-        const int n = libxsmm_primes_u32(work / result, fact);
-        unsigned int *k0 = k[0], *k1 = k[1], *kt;
+      if (LIBXSMM_MATH_MAXPRODUCT >= maxp) {
+        unsigned int k[2][LIBXSMM_MATH_MAXPRODUCT], *k0 = k[0], *k1 = k[1], *kt, p;
+        n = libxsmm_primes_u32(product / result, fact);
         /* initialize table with trivial factor */
-        for (w = 0; w <= wmax; ++w) k[0][w] = 1;
+        for (p = 0; p <= maxp; ++p) k[0][p] = 1;
         k[0][0] = k[1][0] = 1;
         for (i = 1; i <= n; ++i) {
-          for (w = 1; w <= wmax; ++w) {
-            const unsigned int f = fact[i-1], h = k0[w];
-            if (w < f) {
-              k1[w] = h;
+          for (p = 1; p <= maxp; ++p) {
+            const unsigned int f = fact[i - 1], h = k0[p];
+            if (p < f) {
+              k1[p] = h;
             }
             else {
-              const unsigned int g = f * k0[w/f];
-              k1[w] = LIBXSMM_MAX(g, h);
+              const unsigned int g = f * k0[p / f];
+              k1[p] = LIBXSMM_MAX(g, h);
             }
           }
           kt = k0; k0 = k1; k1 = kt;
         }
-        result *= k0[wmax];
+        result *= k0[maxp];
       }
       else { /* trivial approximation */
-        const int n = libxsmm_primes_u32(work, fact);
+        n = libxsmm_primes_u32(product, fact);
         for (i = 0; i < n; ++i) {
           const unsigned int f = result * fact[i];
-          if (f <= split_limit) {
+          if (f <= limit) {
             result = f;
           }
           else i = n; /* break */
         }
       }
+      if (0 != is_lower) {
+        unsigned int rfact[32];
+        const int m = libxsmm_primes_u32(result, rfact);
+        if (0 != m) {
+          int j = 0;
+          n = libxsmm_primes_u32(product, fact);
+          LIBXSMM_ASSERT(m <= n);
+          for (i = 0; i < n; ++i) {
+            const unsigned int fi = fact[i];
+            while (fi == rfact[j] && j < m) {
+              ++i;
+              ++j;
+            }
+            if (j == m || fi != rfact[j]) {
+              result *= fi;
+              i = n; /* break */
+            }
+          }
+        }
+      }
     }
   }
   else { /* fast-path */
-    result = work;
+    result = product;
   }
   return result;
 }
@@ -341,7 +371,7 @@ LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x)
   return y;
 }
 
-/* Implementation based on Claude Baumann's work (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm). */
+/* Implementation based on Claude Baumann's product (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm). */
 LIBXSMM_API float libxsmm_sexp2_fast(float x, int maxiter)
 {
   static const float lut[] = { /* tabulated powf(2.f, powf(2.f, -index)) */

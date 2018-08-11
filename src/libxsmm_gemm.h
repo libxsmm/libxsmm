@@ -264,13 +264,6 @@ LIBXSMM_API int libxsmm_smmbatch_blas(const char* transa, const char* transb, li
 
 LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
 
-/** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_gemm_mtile);
-/** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_gemm_ntile);
-/** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_gemm_ktile);
-
 /** auto-batch descriptor (filter). */
 LIBXSMM_APIVAR_PUBLIC(libxsmm_gemm_descriptor libxsmm_gemm_batchdesc);
 /** Records a batch of SMMs. */
@@ -283,21 +276,29 @@ LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_batchsize);
 LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_batchgrain);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_taskscale);
-/**
- * Intercepted GEMM
- * - odd: sequential and non-tiled (small problem sizes only)
- * - even (or negative): parallelized and tiled (all problem sizes)
- * - 3: GEMV is intercepted; small problem sizes
- * - 4: GEMV is intercepted; all problem sizes
- */
-LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_wrap);
-/** Prefetch strategy for tiled GEMM. */
-LIBXSMM_APIVAR_PUBLIC(libxsmm_gemm_prefetch_type libxsmm_gemm_tiled_prefetch);
 
+/** Prefetch strategy for tiled GEMM. */
+LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_tiled_prefetch);
 /** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
+
+/**
+* Intercepted GEMM
+* - odd: sequential and non-tiled (small problem sizes only)
+* - even (or negative): parallelized and tiled (all problem sizes)
+* - 3: GEMV is intercepted; small problem sizes
+* - 4: GEMV is intercepted; all problem sizes
+*/
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_wrap);
+
+/** Table of M-extents per type-size (tile shape). */
+LIBXSMM_APIVAR(unsigned int* libxsmm_gemm_mtile_min);
+/** Table of M-extents per type-size (tile shape). */
+LIBXSMM_APIVAR(float* libxsmm_gemm_ntile_stretch);
+/** Table of M-extents per type-size (tile shape). */
+LIBXSMM_APIVAR(float* libxsmm_gemm_ktile_stretch);
 
 #endif /*LIBXSMM_GEMM_H*/
 
