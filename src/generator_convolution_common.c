@@ -414,6 +414,37 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
         'y', 2, 2, 2);
   }
 
+  if (i_conv_desc->perform_relu_in_kernel == 1) {
+    /* Load in reg_help_2 the offset for the "input" to determine RELU  */
+    libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_0);
+    libxsmm_x86_instruction_alu_mem( io_generated_code,
+        i_conv_kernel_config->alu_mov_instruction,
+        i_gp_reg_mapping->gp_reg_help_0,
+        LIBXSMM_X86_GP_REG_UNDEF, 0,
+        48,
+        i_gp_reg_mapping->gp_reg_help_2,
+        0 );
+
+    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+        i_conv_kernel_config->instruction_set,
+        i_conv_kernel_config->vxor_instruction,
+        i_conv_kernel_config->vector_name, 2, 2, 2);  
+
+    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+        i_conv_kernel_config->instruction_set,
+        i_conv_kernel_config->vxor_instruction,
+        i_conv_kernel_config->vector_name, 0, 0, 0);
+
+    /* Initialize "permute mask" in zmm3 */
+    unsigned short  mask_array[32] = {16,0,  17,1,  18,2,  19,3,  20,4,  21,5,  22,6,  23,7,  24,8,  25,9,  26,10,  27,11,  28,12,  29,13,  30,14,  31,15 };
+
+    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
+        (const unsigned char*) mask_array,
+        "perm_mask",
+        i_conv_kernel_config->vector_name,
+        3);
+  }
+
   if ( i_conv_desc->use_nts ) {
 #if 0
     unsigned short mask_array[32];
@@ -475,6 +506,57 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
       }
 
       if ( i_conv_desc->use_nts ) {
+        /* If requested, apply RELU to reg_X  */
+        if (i_conv_desc->perform_relu_in_kernel == 1) {
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              i_conv_kernel_config->vxor_instruction,
+              i_conv_kernel_config->vector_name, 0, 0, 0);
+
+          /* ymm0 holds now the streaming input  */  
+          libxsmm_x86_instruction_vec_move( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              i_conv_kernel_config->vmove_instruction,
+              i_gp_reg_mapping->gp_reg_help_2,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              store_offset,
+              'y',
+              0, 0, 1, 0 );
+
+          /* Perform vperm of zmm0 to expand ymm0 emtries  */
+          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VPERMW,
+              i_conv_kernel_config->vector_name,
+              0,
+              3,
+              0);
+
+          /* VCMP  */
+          libxsmm_x86_instruction_vec_compute_reg_mask ( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VCMPPS,
+              i_conv_kernel_config->vector_name, 
+              0,
+              2,
+              LIBXSMM_X86_VEC_REG_UNDEF,
+              0,
+              2,
+              0);
+
+          /* BLEND  */
+          libxsmm_x86_instruction_vec_compute_reg_mask( io_generated_code,
+              i_conv_kernel_config->instruction_set,
+              LIBXSMM_X86_INSTR_VBLENDMPS,
+              i_conv_kernel_config->vector_name,
+              2,
+              reg_X,
+              reg_X,
+              LIBXSMM_X86_IMM_UNDEF,
+              2, 0);
+
+        }
+
         if ( i_conv_desc->f32_bf16_cvt_rne ) {
           /* and for nan/inf */
           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
