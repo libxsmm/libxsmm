@@ -507,11 +507,12 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
       if ( i_conv_desc->use_nts ) {
         /* If requested, apply RELU to reg_X  */
         if (i_conv_desc->perform_relu_in_kernel == 1) {
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_conv_kernel_config->instruction_set,
-              i_conv_kernel_config->vxor_instruction,
-              i_conv_kernel_config->vector_name, 0, 0, 0);
-
+          if ( i_conv_desc->f32_bf16_cvt_rne ) {
+            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+            i_conv_kernel_config->instruction_set,
+            i_conv_kernel_config->vxor_instruction,
+            i_conv_kernel_config->vector_name, 0, 0, 0);
+          }  
           /* ymm0 holds now the streaming input */
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_conv_kernel_config->instruction_set,
@@ -522,25 +523,25 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
               'y',
               0, 0, 1, 0 );
 
-          /* Perform vperm of zmm0 to expand ymm0 emtries  */
+          /* Perform vperm of zmm0 to expand ymm0 emtries to zmm1  */
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
               i_conv_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VPERMW,
               i_conv_kernel_config->vector_name,
               0,
               3,
-              0);
+              1);
 
           /* VCMP  */
           libxsmm_x86_instruction_vec_compute_reg_mask ( io_generated_code,
               i_conv_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VCMPPS,
               i_conv_kernel_config->vector_name,
-              0,
+              1,
               2,
               LIBXSMM_X86_VEC_REG_UNDEF,
               0,
-              2,
+              3,
               0);
 
           /* BLEND  */
@@ -552,7 +553,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
               reg_X,
               reg_X,
               LIBXSMM_X86_IMM_UNDEF,
-              2, 0);
+              3, 0);
 
         }
 
