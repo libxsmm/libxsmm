@@ -49,8 +49,8 @@
   (defined(_WIN32) || defined(__CYGWIN__))
 # define LIBXSMM_GEMM_NOJIT_TRANS
 #endif
-#if !defined(LIBXSMM_GEMM_TSIZE_MAX)
-# define LIBXSMM_GEMM_TSIZE_MAX 64
+#if !defined(LIBXSMM_GEMM_MSIZE_MAX)
+# define LIBXSMM_GEMM_MSIZE_MAX 32
 #endif
 #if !defined(LIBXSMM_GEMM_KPARALLEL) && 0
 # define LIBXSMM_GEMM_KPARALLEL
@@ -95,6 +95,15 @@ LIBXSMM_APIVAR(internal_gemm_locktype internal_gemm_lock[LIBXSMM_GEMM_MAXNLOCKS]
 LIBXSMM_APIVAR(unsigned int internal_gemm_nlocks); /* populated number of locks */
 #endif
 
+/** Prefetch strategy for tiled GEMM. */
+LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type internal_gemm_tiled_prefetch);
+/** Table of M-extents per type-size (tile shape). */
+LIBXSMM_APIVAR(unsigned int internal_gemm_vwidth);
+/** Table of M-extents per type-size (tile shape). */
+LIBXSMM_APIVAR(float internal_gemm_nstretch);
+/** Table of M-extents per type-size (tile shape). */
+LIBXSMM_APIVAR(float internal_gemm_kstretch);
+
 LIBXSMM_APIVAR(unsigned int internal_gemm_tsize_a);
 LIBXSMM_APIVAR(unsigned int internal_gemm_tsize_b);
 LIBXSMM_APIVAR(unsigned int internal_gemm_tsize_c);
@@ -123,22 +132,6 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void
 
 LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 {
-  /* setup tile sizes according to CPUID or environment (LIBXSMM_TGEMM_M, LIBXSMM_TGEMM_N, LIBXSMM_TGEMM_K) */
-  static unsigned int config_tm_min[/*config*/][2/*DP/SP*/] = {
-    /* generic (hsw) */{ 4,  8 },
-    /* mic (knl/knm) */{ 8, 16 },
-    /* core (skx)    */{ 8, 16 }
-  };
-  static float config_tn_stretch[/*config*/][2/*DP/SP*/] = {
-    /* generic (hsw) */{ 5, 5 },
-    /* mic (knl/knm) */{ 5, 5 },
-    /* core (skx)    */{ 5, 5 }
-  };
-  static float config_tk_stretch[/*config*/][2/*DP/SP*/] = {
-    /* generic (hsw) */{ 10, 10 },
-    /* mic (knl/knm) */{ 10, 10 },
-    /* core (skx)    */{ 10, 10 }
-  };
   LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr;
   unsigned int i;
 
@@ -147,7 +140,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH");
     const libxsmm_gemm_prefetch_type tiled_prefetch_default = LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;
     const int uid = ((0 == env_p || 0 == *env_p) ? LIBXSMM_PREFETCH_AUTO/*default*/ : atoi(env_p));
-    libxsmm_gemm_tiled_prefetch = (0 <= uid ? libxsmm_gemm_uid2prefetch(uid) : tiled_prefetch_default);
+    internal_gemm_tiled_prefetch = (0 <= uid ? libxsmm_gemm_uid2prefetch(uid) : tiled_prefetch_default);
   }
 #if !defined(LIBXSMM_NO_SYNC)
   { /* initialize locks for the batch interface */
@@ -186,35 +179,46 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     }
   }
 #endif
-  { /* load/adjust tile sizes */
+  { /* setup tile sizes according to CPUID or environment (LIBXSMM_TGEMM_M, LIBXSMM_TGEMM_N, LIBXSMM_TGEMM_K) */
     const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
     const int m = ((0 == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((0 == env_n || 0 == *env_n) ? 0 : atoi(env_n));
     const int k = ((0 == env_k || 0 == *env_k) ? 0 : atoi(env_k));
     if (LIBXSMM_X86_AVX512_CORE <= archid) {
-      libxsmm_gemm_mtile_min = config_tm_min[2];
-      libxsmm_gemm_ntile_stretch = config_tn_stretch[2];
-      libxsmm_gemm_ktile_stretch = config_tk_stretch[2];
+      internal_gemm_vwidth = 64;
+      internal_gemm_nstretch = 5;
+      internal_gemm_kstretch = 10;
     }
-    else if (LIBXSMM_X86_AVX512_MIC <= archid && LIBXSMM_X86_AVX512_CORE > archid) {
-      libxsmm_gemm_mtile_min = config_tm_min[1];
-      libxsmm_gemm_ntile_stretch = config_tn_stretch[1];
-      libxsmm_gemm_ktile_stretch = config_tk_stretch[1];
+    else if (LIBXSMM_X86_AVX512_MIC <= archid) {
+      internal_gemm_vwidth = 64;
+      internal_gemm_nstretch = 5;
+      internal_gemm_kstretch = 10;
+    }
+    else if (LIBXSMM_X86_AVX <= archid) {
+      internal_gemm_vwidth = 32;
+      internal_gemm_nstretch = 5;
+      internal_gemm_kstretch = 10;
     }
     else {
-      libxsmm_gemm_mtile_min = config_tm_min[0];
-      libxsmm_gemm_ntile_stretch = config_tn_stretch[0];
-      libxsmm_gemm_ktile_stretch = config_tk_stretch[0];
+      internal_gemm_vwidth = 16;
+      internal_gemm_nstretch = 5;
+      internal_gemm_kstretch = 10;
     }
 
-    if (0 < m) libxsmm_gemm_mtile_min[0] = libxsmm_gemm_mtile_min[1] = LIBXSMM_MAX(m, 1);
-    if (0 < n) libxsmm_gemm_ntile_stretch[0] = libxsmm_gemm_ntile_stretch[1] = (float)LIBXSMM_MAX(n, 1) / libxsmm_gemm_mtile_min[0];
-    if (0 < k) libxsmm_gemm_ktile_stretch[0] = libxsmm_gemm_ktile_stretch[1] = (float)LIBXSMM_MAX(k, 1) / libxsmm_gemm_mtile_min[0];
+    if (0 < m) {
+      if (0 < n) internal_gemm_nstretch = ((float)n) / m;
+      if (0 < k) internal_gemm_kstretch = ((float)k) / m;
+    }
   }
   { /* thread-local scratch buffer for GEMM */
     void* buffer;
-    const unsigned int size = LIBXSMM_UP2(LIBXSMM_GEMM_TSIZE_MAX * LIBXSMM_GEMM_TSIZE_MAX * 8/*DP*/, LIBXSMM_CACHELINE);
-    internal_gemm_tsize_a = internal_gemm_tsize_b = internal_gemm_tsize_c = size;
+    const unsigned int max_typesize = 8; /*DP*/
+    const unsigned int max_msize = LIBXSMM_GEMM_MSIZE_MAX;
+    const unsigned int max_nsize = LIBXSMM_MAX((unsigned int)(max_msize * internal_gemm_nstretch), 1);
+    const unsigned int max_ksize = LIBXSMM_MAX((unsigned int)(max_msize * internal_gemm_kstretch), 1);
+    internal_gemm_tsize_a = LIBXSMM_UP2(max_msize * max_ksize * max_typesize, LIBXSMM_CACHELINE);
+    internal_gemm_tsize_b = LIBXSMM_UP2(max_ksize * max_nsize * max_typesize, LIBXSMM_CACHELINE);
+    internal_gemm_tsize_c = LIBXSMM_UP2(max_msize * max_nsize * max_typesize, LIBXSMM_CACHELINE);
     if (EXIT_SUCCESS == libxsmm_xmalloc(&buffer, (size_t)(LIBXSMM_MAX_NTHREADS) * internal_gemm_tsize_a,
       LIBXSMM_CACHELINE, LIBXSMM_MALLOC_FLAG_SCRATCH, NULL/*extra*/, 0/*extra_size*/))
     {
@@ -607,7 +611,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   if (NULL != blob && NULL != m) {
     libxsmm_blasint klda, kldb, kldc, km, kn;
     libxsmm_gemm_descriptor* desc;
-    unsigned int t, rm, rn, rk;
+    unsigned int tm, rm, rn, rk;
     double dbeta;
     LIBXSMM_INIT
     result.blob = blob;
@@ -620,10 +624,10 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     /* TODO: check that arguments fit into handle (unsigned int vs. libxsmm_blasint) */
     uk = (unsigned int)(NULL != k ? *k : *m); un = (NULL != n ? ((unsigned int)(*n)) : uk); um = (unsigned int)(*m);
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
-    t = (4 < result.ptr->otypesize ? 0 : 1);
-    bm = libxsmm_product_limit(um, libxsmm_gemm_mtile_min[t], 1);
-    bn = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(bm * libxsmm_gemm_ntile_stretch[t]), 1), 0);
-    bk = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(bm * libxsmm_gemm_ktile_stretch[t]), 1), 0);
+    tm = LIBXSMM_CLMP(internal_gemm_vwidth / result.ptr->otypesize, 1, LIBXSMM_GEMM_MSIZE_MAX);
+    bm = libxsmm_product_limit(um, tm, 1);
+    bn = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(bm * internal_gemm_nstretch), 1), 0);
+    bk = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(bm * internal_gemm_kstretch), 1), 0);
     LIBXSMM_ASSERT(bm <= um && bn <= un && bk <= uk);
     rk = uk % bk; rn = un % bn; rm = um % bm;
     if (0 != rm || 0 != rn || 0 != rk) {
