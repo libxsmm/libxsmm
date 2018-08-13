@@ -620,7 +620,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   if (NULL != blob && NULL != m && 0 < nthreads) {
     const char *const env_tm = getenv("LIBXSMM_TGEMM_M");
     libxsmm_blasint klda, kldb, kldc, km, kn;
-    unsigned int tm, vwidth, ntasks = 0;
+    unsigned int tm, ntasks = 0;
     libxsmm_gemm_descriptor* desc;
     const int prf_copy = 0;
     double dbeta;
@@ -637,8 +637,9 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
     result.ptr->nthreads = (unsigned int)nthreads;
     if (NULL == env_tm || 0 >= atoi(env_tm)) {
-      vwidth = LIBXSMM_CLMP(internal_gemm_vwidth / result.ptr->otypesize, 1, LIBXSMM_GEMM_MSIZE_MAX);
-      for (tm = libxsmm_product_limit(um, vwidth, 1); tm < LIBXSMM_GEMM_MSIZE_MAX; tm = libxsmm_product_limit(um, tm + 1, 1)) {
+      const unsigned int vwidth = LIBXSMM_CLMP(internal_gemm_vwidth / result.ptr->otypesize, 1, LIBXSMM_GEMM_MSIZE_MAX);
+      const unsigned int dtm = vwidth + vwidth - 1;
+      for (tm = libxsmm_product_limit(um, dtm, 0); tm < LIBXSMM_GEMM_MSIZE_MAX; tm = libxsmm_product_limit(um, tm + dtm, 1)) {
         const unsigned int tn = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(tm * internal_gemm_nstretch), 1), 0);
         const unsigned int tk = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(tm * internal_gemm_kstretch), 1), 0);
         LIBXSMM_ASSERT(tm <= um && tn <= un && tk <= uk);
@@ -649,7 +650,10 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
           LIBXSMM_ASSERT(1 <= nt);
 #if !defined(LIBXSMM_GEMM_QUICKPLAN)
           if (ntasks <= nt) {
-            bm = tm; bn = tn; bk = tk; ntasks = nt;
+            if (bm != tm) {
+              bm = tm; bn = tn; bk = tk; ntasks = nt;
+            }
+            else break;
           }
 #else
           if (ntasks < nt) {
