@@ -566,13 +566,22 @@ LIBXSMM_API_INLINE int libxsmm_gemm_plan_internal(unsigned int nthreads,
         replan = 0;
       }
       else { /* MNK-parallelism */
-#if defined(LIBXSMM_GEMM_KPARALLEL)
         const unsigned int mnktasks = libxsmm_product_limit((*nmt) * (*nnt) * (*nkt), nthreads, 0);
         if (mntasks < mnktasks) {
+#if defined(LIBXSMM_GEMM_KPARALLEL)
           *nt = mntasks / *mt;
           *kt = mnktasks / mntasks;
           replan = 0;
+#else
+          static int error_once = 0;
+          if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+            && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+          {
+            fprintf(stderr, "LIBXSMM WARNING: K-parallelism triggered!\n");
+          }
+#endif
         }
+#if defined(LIBXSMM_GEMM_KPARALLEL)
         else
 #endif
         if (0 == replan) replan = 2;
