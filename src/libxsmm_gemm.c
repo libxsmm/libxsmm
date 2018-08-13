@@ -624,8 +624,8 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     /* TODO: check that arguments fit into handle (unsigned int vs. libxsmm_blasint) */
     uk = (unsigned int)(NULL != k ? *k : *m); un = (NULL != n ? ((unsigned int)(*n)) : uk); um = (unsigned int)(*m);
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
-    tm = LIBXSMM_CLMP(internal_gemm_vwidth / result.ptr->otypesize, 1, LIBXSMM_GEMM_MSIZE_MAX);
-    bm = libxsmm_product_limit(um, tm, 1);
+    tm = libxsmm_product_limit(um, LIBXSMM_CLMP(internal_gemm_vwidth / result.ptr->otypesize, 1, LIBXSMM_GEMM_MSIZE_MAX), 1);
+    bm = LIBXSMM_MIN(tm, LIBXSMM_GEMM_MSIZE_MAX);
     bn = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(bm * internal_gemm_nstretch), 1), 0);
     bk = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(bm * internal_gemm_kstretch), 1), 0);
     LIBXSMM_ASSERT(bm <= um && bn <= un && bk <= uk);
@@ -791,19 +791,25 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
     const unsigned int m0 = mtid * handle->dm, m1 = LIBXSMM_MIN(m0 + handle->dm, handle->m);
     const unsigned int n0 = ntid * handle->dn, n1 = LIBXSMM_MIN(n0 + handle->dn, handle->n);
     const unsigned int k0 = ktid * handle->dk, k1 = LIBXSMM_MIN(k0 + handle->dk, handle->k);
-    const unsigned int ldo = (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm) ? handle->tm : handle->tk);
     /* calculate increments to simplify address calculations */
     const unsigned int dom = handle->tm * handle->otypesize;
     const unsigned int don = handle->tn * handle->otypesize;
     const unsigned int dik = handle->tk * handle->itypesize;
     const unsigned int on = handle->otypesize * n0;
-    unsigned int om = handle->otypesize * m0;
-    /* calculate base addresses of thread-local storages */
-    char *const at = internal_gemm_scratch_a + (size_t)tid * internal_gemm_tsize_a;
-    char *const bt = internal_gemm_scratch_b + (size_t)tid * internal_gemm_tsize_b;
-    char *const ct = internal_gemm_scratch_c + (size_t)tid * internal_gemm_tsize_c;
-    /* loop induction variables */
-    unsigned int im = m0, in = n0, ik = k0, im1, in1, ik1;
+    /* calculate base address of thread-local storage */
+    char *const ct = internal_gemm_scratch_c + (size_t)tid * internal_gemm_tsize_c, *at, *bt;
+    /* loop induction variables and others */
+    unsigned int om = handle->otypesize * m0, ldo, im = m0, in = n0, ik = k0, im1, in1, ik1;
+    if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->flags_gemm)) {
+      at = internal_gemm_scratch_a + (size_t)tid * internal_gemm_tsize_b;
+      bt = internal_gemm_scratch_b + (size_t)tid * internal_gemm_tsize_a;
+      ldo = handle->tm;
+    }
+    else { /* TT */
+      at = internal_gemm_scratch_a + (size_t)tid * internal_gemm_tsize_a;
+      bt = internal_gemm_scratch_b + (size_t)tid * internal_gemm_tsize_b;
+      ldo = handle->tk;
+    }
     LIBXSMM_ASSERT_MSG(m1 <= handle->m && n1 <= handle->n && k1 <= handle->k, "Invalid task size!");
     for (im1 = im + handle->tm; (im1 - 1) < m1; im = im1, im1 += handle->tm, om += dom) {
       unsigned int dn = don, dka = dik, dkb = dik;
