@@ -794,147 +794,152 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
   const void* a, const void* b, void* c, /*unsigned*/int tid)
 {
 #if !defined(NDEBUG)
-  if (NULL != handle)
+  if (NULL != handle && 0 <= tid)
 #endif
   {
-    const int ntkt = handle->nt * handle->kt, mtid = tid / ntkt, rtid = tid - mtid * ntkt, ntid = rtid / handle->kt, ktid = rtid - ntid * handle->kt;
-    const unsigned int m0 = mtid * handle->dm, m1 = LIBXSMM_MIN(m0 + handle->dm, handle->m);
-    const unsigned int n0 = ntid * handle->dn, n1 = LIBXSMM_MIN(n0 + handle->dn, handle->n);
-    const unsigned int k0 = ktid * handle->dk, k1 = LIBXSMM_MIN(k0 + handle->dk, handle->k);
-    /* calculate increments to simplify address calculations */
-    const unsigned int dom = handle->tm * handle->otypesize;
-    const unsigned int don = handle->tn * handle->otypesize;
-    const unsigned int dik = handle->tk * handle->itypesize;
-    const unsigned int on = handle->otypesize * n0;
-    /* calculate base address of thread-local storage */
-    char *const ct = internal_gemm_scratch_c + (size_t)tid * internal_gemm_tsize_c, *at, *bt;
-    /* loop induction variables and others */
-    unsigned int om = handle->otypesize * m0, ldo, im = m0, in = n0, ik = k0, im1, in1, ik1;
-    if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags)) {
-      at = internal_gemm_scratch_a + (size_t)tid * internal_gemm_tsize_b;
-      bt = internal_gemm_scratch_b + (size_t)tid * internal_gemm_tsize_a;
-      ldo = handle->tm;
-    }
-    else { /* TT */
-      at = internal_gemm_scratch_a + (size_t)tid * internal_gemm_tsize_a;
-      bt = internal_gemm_scratch_b + (size_t)tid * internal_gemm_tsize_b;
-      ldo = handle->tk;
-    }
-    LIBXSMM_ASSERT_MSG(m1 <= handle->m && n1 <= handle->n && k1 <= handle->k, "Invalid task size!");
-    for (im1 = im + handle->tm; (im1 - 1) < m1; im = im1, im1 += handle->tm, om += dom) {
-      unsigned int dn = don, dka = dik, dkb = dik;
-      char *c0 = (char*)c, *ci;
-      const char *aa;
+    const unsigned int ntasks = handle->mt * handle->nt * handle->kt;
+    const unsigned int utid = (unsigned int)tid;
+    if (utid < ntasks) {
+      const unsigned int rtid = utid / handle->mt, mtid = utid - rtid * handle->mt, ntid = rtid % handle->nt, ktid = utid / (handle->mt * handle->nt);
+      const unsigned int m0 = mtid * handle->dm, m1 = LIBXSMM_MIN(m0 + handle->dm, handle->m);
+      const unsigned int n0 = ntid * handle->dn, n1 = LIBXSMM_MIN(n0 + handle->dn, handle->n);
+      const unsigned int k0 = ktid * handle->dk, k1 = LIBXSMM_MIN(k0 + handle->dk, handle->k);
+      /* calculate increments to simplify address calculations */
+      const unsigned int dom = handle->tm * handle->otypesize;
+      const unsigned int don = handle->tn * handle->otypesize;
+      const unsigned int dik = handle->tk * handle->itypesize;
+      const unsigned int on = handle->otypesize * n0;
+      /* calculate base address of thread-local storage */
+      char *const ct = internal_gemm_scratch_c + (size_t)utid * internal_gemm_tsize_c, *at, *bt;
+      /* loop induction variables and others */
+      unsigned int om = handle->otypesize * m0, ldo, im = m0, in = n0, ik = k0, im1, in1, ik1;
       if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags)) {
-        if (0 != (LIBXSMM_GEMM_FLAG_TRANS_A & handle->gemm_flags)) { /* TN */
-          aa = (const char*)a + ((size_t)im * handle->lda + k0) * handle->itypesize;
-        }
-        else if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->gemm_flags)) { /* NT */
-          aa = (const char*)a + ((size_t)k0 * handle->lda + im) * handle->itypesize;
-          dka *= handle->lda; dkb *= handle->ldb;
-        }
-        else { /* NN */
-          aa = (const char*)a + ((size_t)k0 * handle->lda + im) * handle->itypesize;
-          dka *= handle->lda;
-        }
-        c0 += (size_t)on * handle->ldc + om;
-        dn *= handle->ldc;
+        at = internal_gemm_scratch_a + (size_t)utid * internal_gemm_tsize_b;
+        bt = internal_gemm_scratch_b + (size_t)utid * internal_gemm_tsize_a;
+        ldo = handle->tm;
       }
       else { /* TT */
-        aa = (const char*)b + ((size_t)k0 * handle->lda + im) * handle->itypesize;
-        c0 += (size_t)on + handle->ldc * (size_t)om;
-        dka *= handle->lda;
+        at = internal_gemm_scratch_a + (size_t)utid * internal_gemm_tsize_a;
+        bt = internal_gemm_scratch_b + (size_t)utid * internal_gemm_tsize_b;
+        ldo = handle->tk;
       }
-      for (in = n0, in1 = in + handle->tn; (in1 - 1) < n1; in = in1, in1 += handle->tn, c0 += dn) {
-        const char *a0 = aa, *b0 = (const char*)b;
+      LIBXSMM_ASSERT_MSG(mtid < handle->mt && ntid < handle->nt && ktid < handle->kt, "Invalid task ID!");
+      LIBXSMM_ASSERT_MSG(m1 <= handle->m && n1 <= handle->n && k1 <= handle->k, "Invalid task size!");
+      for (im1 = im + handle->tm; (im1 - 1) < m1; im = im1, im1 += handle->tm, om += dom) {
+        unsigned int dn = don, dka = dik, dkb = dik;
+        char *c0 = (char*)c, *ci;
+        const char *aa;
         if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags)) {
-          if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->gemm_flags)) { /* NT */
-            b0 += ((size_t)k0 * handle->ldb + in) * handle->itypesize;
+          if (0 != (LIBXSMM_GEMM_FLAG_TRANS_A & handle->gemm_flags)) { /* TN */
+            aa = (const char*)a + ((size_t)im * handle->lda + k0) * handle->itypesize;
           }
-          else { /* NN or TN */
-            b0 += ((size_t)in * handle->ldb + k0) * handle->itypesize;
+          else if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->gemm_flags)) { /* NT */
+            aa = (const char*)a + ((size_t)k0 * handle->lda + im) * handle->itypesize;
+            dka *= handle->lda; dkb *= handle->ldb;
           }
+          else { /* NN */
+            aa = (const char*)a + ((size_t)k0 * handle->lda + im) * handle->itypesize;
+            dka *= handle->lda;
+          }
+          c0 += (size_t)on * handle->ldc + om;
+          dn *= handle->ldc;
         }
         else { /* TT */
-          b0 = (const char*)a + ((size_t)in * handle->ldb + k0) * handle->itypesize;
+          aa = (const char*)b + ((size_t)k0 * handle->lda + im) * handle->itypesize;
+          c0 += (size_t)on + handle->ldc * (size_t)om;
+          dka *= handle->lda;
         }
-        if (NULL == handle->copy_i.ptr_const) {
-          ci = (NULL == handle->copy_o.ptr_const ? c0 : ct);
-          if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags)) {
-            const unsigned int km = handle->tn, kn = handle->tm;
-            libxsmm_otrans_internal(ct/*out*/, c0/*in*/, handle->otypesize, handle->ldc/*ldi*/, kn/*ldo*/,
-              0, km, 0, kn, km/*tile*/, kn/*tile*/, NULL/*kernel*/);
+        for (in = n0, in1 = in + handle->tn; (in1 - 1) < n1; in = in1, in1 += handle->tn, c0 += dn) {
+          const char *a0 = aa, *b0 = (const char*)b;
+          if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags)) {
+            if (0 != (LIBXSMM_GEMM_FLAG_TRANS_B & handle->gemm_flags)) { /* NT */
+              b0 += ((size_t)k0 * handle->ldb + in) * handle->itypesize;
+            }
+            else { /* NN or TN */
+              b0 += ((size_t)in * handle->ldb + k0) * handle->itypesize;
+            }
+          }
+          else { /* TT */
+            b0 = (const char*)a + ((size_t)in * handle->ldb + k0) * handle->itypesize;
+          }
+          if (NULL == handle->copy_i.ptr_const) {
+            ci = (NULL == handle->copy_o.ptr_const ? c0 : ct);
+            if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags)) {
+              const unsigned int km = handle->tn, kn = handle->tm;
+              libxsmm_otrans_internal(ct/*out*/, c0/*in*/, handle->otypesize, handle->ldc/*ldi*/, kn/*ldo*/,
+                0, km, 0, kn, km/*tile*/, kn/*tile*/, NULL/*kernel*/);
+              ci = ct;
+            }
+            else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_C & handle->flags)) {
+              if (0 == (handle->gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0)) { /* copy-in only if beta!=0 */
+                libxsmm_matcopy_internal(ct/*out*/, c0/*in*/, handle->otypesize, handle->ldc/*ldi*/, handle->tm/*ldo*/,
+                  0, handle->tm, 0, handle->tn, handle->tm/*tile*/, handle->tn/*tile*/, NULL/*kernel*/);
+              }
+              ci = ct;
+            }
+          }
+          else { /* MCOPY/TCOPY kernel */
+            handle->copy_i.xmatcopy(c0, &handle->ldc, ct, &handle->tm);
             ci = ct;
           }
-          else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_C & handle->flags)) {
-            if (0 == (handle->gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0)) { /* copy-in only if beta!=0 */
-              libxsmm_matcopy_internal(ct/*out*/, c0/*in*/, handle->otypesize, handle->ldc/*ldi*/, handle->tm/*ldo*/,
+          for (ik = k0, ik1 = ik + handle->tk; (ik1 - 1) < k1; ik = ik1, ik1 += handle->tk) {
+            const char *const a1 = a0 + dka, *const b1 = b0 + dkb, *ai = a0, *bi = b0;
+            if (NULL == handle->copy_a.ptr_const) {
+              if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags) &&
+                 (LIBXSMM_GEMM_FLAG_TRANS_A & handle->gemm_flags) != 0) /* pure A-transpose */
+              {
+                LIBXSMM_ASSERT(ldo == handle->tm);
+                libxsmm_otrans_internal(at/*out*/, a0/*in*/, handle->itypesize, handle->lda/*ldi*/, ldo,
+                  0, handle->tk, 0, handle->tm, handle->tk/*tile*/, handle->tm/*tile*/, NULL/*kernel*/);
+                ai = at;
+              }
+              else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_A & handle->flags)) {
+                libxsmm_matcopy_internal(at/*out*/, a0/*in*/, handle->itypesize, handle->lda/*ldi*/, ldo,
+                  0, handle->tm, 0, handle->tk, handle->tm/*tile*/, handle->tk/*tile*/, NULL/*kernel*/);
+                ai = at;
+              }
+            }
+            else { /* MCOPY/TCOPY kernel */
+              handle->copy_a.xmatcopy(a0, &handle->lda, at, &ldo);
+              ai = at;
+            }
+            if (NULL == handle->copy_b.ptr_const) {
+              if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags) &&
+                 (LIBXSMM_GEMM_FLAG_TRANS_B & handle->gemm_flags) != 0) /* pure B-transpose */
+              {
+                libxsmm_otrans_internal(bt/*out*/, b0/*in*/, handle->itypesize, handle->ldb/*ldi*/, handle->tk/*ldo*/,
+                  0, handle->tn, 0, handle->tk, handle->tn/*tile*/, handle->tk/*tile*/, NULL/*kernel*/);
+                bi = bt;
+              }
+              else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_B & handle->flags)) {
+                libxsmm_matcopy_internal(bt/*out*/, b0/*in*/, handle->itypesize, handle->ldb/*ldi*/, handle->tk/*ldo*/,
+                  0, handle->tk, 0, handle->tn, handle->tk/*tile*/, handle->tn/*tile*/, NULL/*kernel*/);
+                bi = bt;
+              }
+            }
+            else { /* MCOPY/TCOPY kernel */
+              handle->copy_b.xmatcopy(b0, &handle->ldb, bt, &handle->tk);
+              bi = bt;
+            }
+            /* beta0-kernel on first-touch, beta1-kernel otherwise (beta0/beta1 are identical if beta=1) */
+            LIBXSMM_MMCALL_PRF(handle->kernel[k0!=ik?1:0].xmm, ai, bi, ci, a1, b1, c0);
+            a0 = a1;
+            b0 = b1;
+          }
+          /* TODO: synchronize */
+          if (NULL == handle->copy_o.ptr_const) {
+            if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags)) {
+              libxsmm_otrans_internal(c0/*out*/, ct/*in*/, handle->otypesize, handle->tm/*ldi*/, handle->ldc/*ldo*/,
                 0, handle->tm, 0, handle->tn, handle->tm/*tile*/, handle->tn/*tile*/, NULL/*kernel*/);
             }
-            ci = ct;
-          }
-        }
-        else { /* MCOPY/TCOPY kernel */
-          handle->copy_i.xmatcopy(c0, &handle->ldc, ct, &handle->tm);
-          ci = ct;
-        }
-        for (ik = k0, ik1 = ik + handle->tk; (ik1 - 1) < k1; ik = ik1, ik1 += handle->tk) {
-          const char *const a1 = a0 + dka, *const b1 = b0 + dkb, *ai = a0, *bi = b0;
-          if (NULL == handle->copy_a.ptr_const) {
-            if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags) &&
-               (LIBXSMM_GEMM_FLAG_TRANS_A & handle->gemm_flags) != 0) /* pure A-transpose */
-            {
-              LIBXSMM_ASSERT(ldo == handle->tm);
-              libxsmm_otrans_internal(at/*out*/, a0/*in*/, handle->itypesize, handle->lda/*ldi*/, ldo,
-                0, handle->tk, 0, handle->tm, handle->tk/*tile*/, handle->tm/*tile*/, NULL/*kernel*/);
-              ai = at;
-            }
-            else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_A & handle->flags)) {
-              libxsmm_matcopy_internal(at/*out*/, a0/*in*/, handle->itypesize, handle->lda/*ldi*/, ldo,
-                0, handle->tm, 0, handle->tk, handle->tm/*tile*/, handle->tk/*tile*/, NULL/*kernel*/);
-              ai = at;
+            else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_C & handle->flags)) {
+              libxsmm_matcopy_internal(c0/*out*/, ct/*in*/, handle->otypesize, handle->tm/*ldi*/, handle->ldc/*ldo*/,
+                0, handle->tm, 0, handle->tn, handle->tm/*tile*/, handle->tn/*tile*/, NULL/*kernel*/);
             }
           }
           else { /* MCOPY/TCOPY kernel */
-            handle->copy_a.xmatcopy(a0, &handle->lda, at, &ldo);
-            ai = at;
+            handle->copy_o.xmatcopy(ct, &handle->tm, c0, &handle->ldc);
           }
-          if (NULL == handle->copy_b.ptr_const) {
-            if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags) &&
-               (LIBXSMM_GEMM_FLAG_TRANS_B & handle->gemm_flags) != 0) /* pure B-transpose */
-            {
-              libxsmm_otrans_internal(bt/*out*/, b0/*in*/, handle->itypesize, handle->ldb/*ldi*/, handle->tk/*ldo*/,
-                0, handle->tn, 0, handle->tk, handle->tn/*tile*/, handle->tk/*tile*/, NULL/*kernel*/);
-              bi = bt;
-            }
-            else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_B & handle->flags)) {
-              libxsmm_matcopy_internal(bt/*out*/, b0/*in*/, handle->itypesize, handle->ldb/*ldi*/, handle->tk/*ldo*/,
-                0, handle->tk, 0, handle->tn, handle->tk/*tile*/, handle->tn/*tile*/, NULL/*kernel*/);
-              bi = bt;
-            }
-          }
-          else { /* MCOPY/TCOPY kernel */
-            handle->copy_b.xmatcopy(b0, &handle->ldb, bt, &handle->tk);
-            bi = bt;
-          }
-          /* beta0-kernel on first-touch, beta1-kernel otherwise (beta0/beta1 are identical if beta=1) */
-          LIBXSMM_MMCALL_PRF(handle->kernel[k0!=ik?1:0].xmm, ai, bi, ci, a1, b1, c0);
-          a0 = a1;
-          b0 = b1;
-        }
-        /* TODO: synchronize */
-        if (NULL == handle->copy_o.ptr_const) {
-          if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags)) {
-            libxsmm_otrans_internal(c0/*out*/, ct/*in*/, handle->otypesize, handle->tm/*ldi*/, handle->ldc/*ldo*/,
-              0, handle->tm, 0, handle->tn, handle->tm/*tile*/, handle->tn/*tile*/, NULL/*kernel*/);
-          }
-          else if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_C & handle->flags)) {
-            libxsmm_matcopy_internal(c0/*out*/, ct/*in*/, handle->otypesize, handle->tm/*ldi*/, handle->ldc/*ldo*/,
-              0, handle->tm, 0, handle->tn, handle->tm/*tile*/, handle->tn/*tile*/, NULL/*kernel*/);
-          }
-        }
-        else { /* MCOPY/TCOPY kernel */
-          handle->copy_o.xmatcopy(ct, &handle->tm, c0, &handle->ldc);
         }
       }
     }
