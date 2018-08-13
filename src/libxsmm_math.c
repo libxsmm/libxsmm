@@ -211,7 +211,7 @@ LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n3
 
 LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned int limit, int is_lower)
 {
-  int result;
+  unsigned int result;
   if (limit < product) {
     result = 1;
     if (1 < limit) {
@@ -264,23 +264,27 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
           else i = n; /* break */
         }
       }
-      if (0 != is_lower) {
+      if (0 != is_lower && result < limit) {
         unsigned int rfact[32];
         const int m = libxsmm_primes_u32(result, rfact);
-        if (0 != m) {
-          int j = 0;
-          n = libxsmm_primes_u32(product, fact);
-          LIBXSMM_ASSERT(m <= n);
-          for (i = 0; i < n; ++i) {
-            while (j < m && fact[i] == rfact[j]) {
-              ++i; ++j; /* skip */
-            }
-            if (j == m || fact[i] != rfact[j]) {
+        int j = 0;
+        n = libxsmm_primes_u32(product, fact);
+        LIBXSMM_ASSERT(m <= n);
+        for (i = 0; i < n; ++i) {
+          while (j < m && fact[i] == rfact[j]) {
+            ++i; ++j; /* skip */
+          }
+          if (j == m || fact[i] != rfact[j]) {
+            if (i < n) {
               result *= fact[i];
-              i = n; /* break */
             }
+            else {
+              result = product;
+            }
+            i = n; /* break */
           }
         }
+        LIBXSMM_ASSERT(result <= product);
       }
     }
   }

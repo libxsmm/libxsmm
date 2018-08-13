@@ -141,12 +141,16 @@ int main(int argc, char* argv[])
   if (libxsmm_product_limit(12, 6, 0) != 6) exit(EXIT_FAILURE);
 
   /* find lower limited product */
-  if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 1) != (2 * 3 * 7 * 11)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 1) != (3 * 7 * 11)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 5 * 7, 36, 1) != (2 * 5 * 7)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 13, 13, 1) != 13) exit(EXIT_FAILURE);
-  if (libxsmm_product_limit(1000, 8, 1) != 40) exit(EXIT_FAILURE);
-  if (libxsmm_product_limit(320, 4, 1) != 8) exit(EXIT_FAILURE);
-  if (libxsmm_product_limit(12, 6, 1) != 12) exit(EXIT_FAILURE);
+
+  if (libxsmm_product_limit(320, 300, 1) != 320) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(320, 65, 1) != 320) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(320, 33, 1) != 64) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(1000, 6, 1) != 10) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(1000, 9, 1) != 40) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12, 7, 1) != 12) exit(EXIT_FAILURE);
 
   return EXIT_SUCCESS;
 }
