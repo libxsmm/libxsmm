@@ -144,8 +144,9 @@ int main(int argc, char* argv[])
   if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 1) != (2 * 3 * 7 * 11)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 5 * 7, 36, 1) != (2 * 5 * 7)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 13, 13, 1) != 13) exit(EXIT_FAILURE);
-  if (libxsmm_product_limit(12, 6, 1) != 12) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(1000, 8, 1) != 40) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(320, 4, 1) != 8) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12, 6, 1) != 12) exit(EXIT_FAILURE);
 
   return EXIT_SUCCESS;
 }
