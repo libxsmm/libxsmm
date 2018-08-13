@@ -539,34 +539,31 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
                 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
-                  LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                  element_input_type *orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
+                  LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
+                  const element_input_type *orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                   element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                   float *scratch_ptr = accumulators_scratch;
-                  __m512 zero_reg = _mm512_setzero_ps();
-                  __mmask16 mask;
-                  __m256i orig_reg;
-                  __m512i orig_reg_fp32;
+                  const __m512 zero_reg = _mm512_setzero_ps();
                   if ( handle->f32_bf16_cvt_rne ) {
-                    __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
-                    __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
-                    __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
-                    __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
+                    const __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
+                    const __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
+                    const __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
+                    const __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
                     for ( ij = 0; ij < handle->desc.H; ij++ ) {
                       for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
-                        orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
-                        orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
-                        mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
-                        vfp32 = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
-                        __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
-                        __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
-                        __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
-                        __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
-                        __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
-                        __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
-                        __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
-                        __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
+                        const __m512i vfp32 = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
+                        const __m256i orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
+                        const __m512i orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
+                        const __mmask16 mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
+                        const __m512i vfp32_masked = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
+                        const __m512i vfp32nan = _mm512_and_epi32( vfp32_masked, vnaninf );
+                        const __m512i vfp32fixup = _mm512_and_epi32( vfp32_masked, vfixupmask );
+                        const __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
+                        const __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
+                        const __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
+                        const __m512i vfp32rne = _mm512_mask_add_epi32( vfp32_masked, rnemask, vfp32_masked, vrnd );
+                        const __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
+                        const __m256i vbfp16 = _mm512_cvtepi32_epi16( vbfp16_32 );
                         _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
                         _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
                       }
@@ -577,13 +574,13 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                   } else {
                     for ( ij = 0; ij < handle->desc.H; ij++ ) {
                       for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
-                        __m512i vfp32     = _mm512_castps_si512(tmp);
-                        orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
-                        orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
-                        mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
-                        vfp32 = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
-                        __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( vfp32, 16));
+                        const __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
+                        const __m512i vfp32 = _mm512_castps_si512(tmp);
+                        const __m256i orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
+                        const __m512i orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
+                        const __mmask16 mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
+                        const __m512i vfp32_masked = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
+                        const __m256i vbfp16 = _mm512_cvtepi32_epi16(_mm512_srai_epi32( vfp32_masked, 16));
                         _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
                         _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
                       }
@@ -718,34 +715,31 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
                 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
-                  LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                  element_input_type *orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
+                  LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
+                  const element_input_type *orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                   element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                   float *scratch_ptr = accumulators_scratch;
-                  __m512 zero_reg = _mm512_setzero_ps();
-                  __mmask16 mask;
-                  __m256i orig_reg;
-                  __m512i orig_reg_fp32;               
+                  const __m512 zero_reg = _mm512_setzero_ps();
                   if ( handle->f32_bf16_cvt_rne ) {
-                    __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
-                    __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
-                    __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
-                    __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
+                    const __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
+                    const __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
+                    const __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
+                    const __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
                     for ( ij = 0; ij < handle->desc.H; ij++ ) {
                       for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
-                        orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
-                        orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
-                        mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
-                        vfp32 = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
-                        __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
-                        __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
-                        __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
-                        __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
-                        __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
-                        __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
-                        __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
-                        __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
+                        const __m512i vfp32 = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
+                        const __m256i orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
+                        const __m512i orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
+                        const __mmask16 mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
+                        const __m512i vfp32_masked = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
+                        const __m512i vfp32nan = _mm512_and_epi32( vfp32_masked, vnaninf );
+                        const __m512i vfp32fixup = _mm512_and_epi32( vfp32_masked, vfixupmask );
+                        const __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
+                        const __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
+                        const __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
+                        const __m512i vfp32rne = _mm512_mask_add_epi32( vfp32_masked, rnemask, vfp32_masked, vrnd );
+                        const __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
+                        const __m256i vbfp16 = _mm512_cvtepi32_epi16( vbfp16_32 );
                         _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
                         _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
                       }
@@ -756,13 +750,13 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                   } else {
                     for ( ij = 0; ij < handle->desc.H; ij++ ) {
                       for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
-                        __m512i vfp32     = _mm512_castps_si512(tmp);
-                        orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
-                        orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
-                        mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
-                        vfp32 = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
-                        __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( vfp32, 16));
+                        const __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
+                        const __m512i vfp32 = _mm512_castps_si512(tmp);
+                        const __m256i orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
+                        const __m512i orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
+                        const __mmask16 mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
+                        const __m512i vfp32_masked = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
+                        const __m256i vbfp16 = _mm512_cvtepi32_epi16(_mm512_srai_epi32( vfp32_masked, 16));
                         _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
                         _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
                       }
