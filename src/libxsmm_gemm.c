@@ -615,6 +615,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   } result;
   LIBXSMM_ASSERT(sizeof(libxsmm_gemm_handle) <= sizeof(libxsmm_gemm_blob));
   if (NULL != blob && NULL != m) {
+    const char *const env_tm = getenv("LIBXSMM_TGEMM_M");
     libxsmm_blasint klda, kldb, kldc, km, kn;
     libxsmm_gemm_descriptor* desc;
     unsigned int tm, rm, rn, rk;
@@ -631,7 +632,14 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     /* TODO: check that arguments fit into handle (unsigned int vs. libxsmm_blasint) */
     uk = (unsigned int)(NULL != k ? *k : *m); un = (NULL != n ? ((unsigned int)(*n)) : uk); um = (unsigned int)(*m);
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
-    tm = libxsmm_product_limit(um, LIBXSMM_CLMP(internal_gemm_vwidth / result.ptr->otypesize, 1, LIBXSMM_GEMM_MSIZE_MAX), 1);
+    if (NULL == env_tm || 0 >= atoi(env_tm)) {
+      tm = LIBXSMM_MAX(internal_gemm_vwidth / result.ptr->otypesize, 1);
+      tm = libxsmm_product_limit(um, LIBXSMM_MIN(tm, LIBXSMM_GEMM_MSIZE_MAX), 1);
+    }
+    else {
+      tm = atoi(env_tm);
+      tm = libxsmm_product_limit(um, LIBXSMM_MIN(tm, LIBXSMM_GEMM_MSIZE_MAX), 0);
+    }
     bm = LIBXSMM_MIN(tm, LIBXSMM_GEMM_MSIZE_MAX);
     bn = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(bm * internal_gemm_nstretch), 1), 0);
     bk = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(bm * internal_gemm_kstretch), 1), 0);
