@@ -170,36 +170,42 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     }
   }
 #endif
-  { /* setup tile sizes according to CPUID or environment (LIBXSMM_TGEMM_M, LIBXSMM_TGEMM_N, LIBXSMM_TGEMM_K) */
+  if (LIBXSMM_X86_AVX512_CORE <= archid) {
+    internal_gemm_vwidth = 64;
+    internal_gemm_nstretch = 5;
+    internal_gemm_kstretch = 10;
+  }
+  else if (LIBXSMM_X86_AVX512_MIC <= archid) {
+    internal_gemm_vwidth = 64;
+    internal_gemm_nstretch = 5;
+    internal_gemm_kstretch = 10;
+  }
+  else if (LIBXSMM_X86_AVX <= archid) {
+    internal_gemm_vwidth = 32;
+    internal_gemm_nstretch = 5;
+    internal_gemm_kstretch = 10;
+  }
+  else {
+    internal_gemm_vwidth = 16;
+    internal_gemm_nstretch = 5;
+    internal_gemm_kstretch = 10;
+  }
+  { /* setup tile sizes according to environment (LIBXSMM_TGEMM_M, LIBXSMM_TGEMM_N, LIBXSMM_TGEMM_K) */
     const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
     const int m = ((0 == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((0 == env_n || 0 == *env_n) ? 0 : atoi(env_n));
     const int k = ((0 == env_k || 0 == *env_k) ? 0 : atoi(env_k));
-    if (LIBXSMM_X86_AVX512_CORE <= archid) {
-      internal_gemm_vwidth = 64;
-      internal_gemm_nstretch = 5;
-      internal_gemm_kstretch = 10;
-    }
-    else if (LIBXSMM_X86_AVX512_MIC <= archid) {
-      internal_gemm_vwidth = 64;
-      internal_gemm_nstretch = 5;
-      internal_gemm_kstretch = 10;
-    }
-    else if (LIBXSMM_X86_AVX <= archid) {
-      internal_gemm_vwidth = 32;
-      internal_gemm_nstretch = 5;
-      internal_gemm_kstretch = 10;
-    }
-    else {
-      internal_gemm_vwidth = 16;
-      internal_gemm_nstretch = 5;
-      internal_gemm_kstretch = 10;
-    }
-
     if (0 < m) {
       if (0 < n) internal_gemm_nstretch = ((float)n) / m;
       if (0 < k) internal_gemm_kstretch = ((float)k) / m;
     }
+  }
+  { /* setup tile sizes according to environment (LIBXSMM_TGEMM_NS, LIBXSMM_TGEMM_KS) */
+    const char *const env_ns = getenv("LIBXSMM_TGEMM_NS"), *const env_ks = getenv("LIBXSMM_TGEMM_KS");
+    const double ns = ((0 == env_ns || 0 == *env_ns) ? 0 : atof(env_ns));
+    const double ks = ((0 == env_ks || 0 == *env_ks) ? 0 : atof(env_ks));
+    if (0 < ns) internal_gemm_nstretch = (float)LIBXSMM_MAX(24, ns);
+    if (0 < ks) internal_gemm_kstretch = (float)LIBXSMM_MAX(24, ks);
   }
   { /* thread-local scratch buffer for GEMM */
     void* buffer;
