@@ -104,8 +104,8 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
     }
     if (EXIT_SUCCESS == result) {
       const char *const env = getenv("LIBXSMM_DUMP");
-      if (0 != env && 0 != *env) {
-        const char *const basename = ('0' <= *env && '9' >= *env) ? "libxsmm_dump" : env;
+      if (0 != env && 0 != *env && (('0' < *env && '9' >= *env) || '0' != *env)) {
+        const char *const basename = ('0' < *env && '9' >= *env) ? "libxsmm_dump" : env;
         const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
         const libxsmm_mhd_elemtype type_dst = LIBXSMM_MAX(LIBXSMM_MHD_ELEMTYPE_U8, type_src);
         char filename[256];
