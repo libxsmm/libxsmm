@@ -645,13 +645,13 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
         unsigned int nmti, nnti, nkti, mt, nt, kt;
         LIBXSMM_ASSERT(tmi <= um && tni <= un && tki <= uk);
         if (EXIT_SUCCESS == libxsmm_gemm_plan_internal(result.ptr->nthreads, um, un, uk, tmi, tni, tki, &nmti, &nnti, &nkti, &mt, &nt, &kt)) {
+          const int exit_plan = (tmi < um ? 0 : 1);
           const unsigned ntasks = mt * nt * kt;
           LIBXSMM_ASSERT(1 <= ntasks);
 #if defined(LIBXSMM_GEMM_QUICKPLAN)
           if (ntasks_plan < ntasks) {
 #else
           if (ntasks_plan <= ntasks) {
-            LIBXSMM_ASSERT(tm < tmi);
 #endif
             result.ptr->mt = mt; result.ptr->nt = nt; result.ptr->kt = kt;
             nmt = nmti; nnt = nnti; nkt = nkti;
@@ -661,6 +661,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
             if (result.ptr->nthreads == ntasks) break;
 #endif
           }
+          if (0 != exit_plan) break;
         }
       }
     }
