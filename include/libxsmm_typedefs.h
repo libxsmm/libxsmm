@@ -187,6 +187,14 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_INVALID = 256
 } libxsmm_gemm_flags;
 
+/** Flag enumeration which can be binary ORed. */
+typedef enum libxsmm_gemm_handle_flags {
+  LIBXSMM_GEMM_HANDLE_FLAG_COPY_AUTO = 0,
+  LIBXSMM_GEMM_HANDLE_FLAG_COPY_A = 1,
+  LIBXSMM_GEMM_HANDLE_FLAG_COPY_B = 2,
+  LIBXSMM_GEMM_HANDLE_FLAG_COPY_C = 4
+} libxsmm_gemm_handle_flags;
+
 /** Auto-batch flags (can be ORed) applicable to mmbatch_begin/mmbatch_end. */
 typedef enum libxsmm_mmbatch_flags {
   /** Handle recorded batch unsynchronized-parallel. */

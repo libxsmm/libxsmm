@@ -232,7 +232,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
   unsigned int tm, tn, tk, dm, dn, dk;
   unsigned int itypesize, otypesize;
   unsigned int nthreads, mt, nt, kt;
-  int flags_gemm, flags_copy, prf_copy;
+  int gemm_flags, flags;
 };
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
@@ -277,8 +277,6 @@ LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_batchgrain);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_taskscale);
 
-/** Prefetch strategy for tiled GEMM. */
-LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_tiled_prefetch);
 /** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
 /** Determines the prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
@@ -292,13 +290,6 @@ LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
 * - 4: GEMV is intercepted; all problem sizes
 */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_wrap);
-
-/** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR(unsigned int* libxsmm_gemm_mtile_min);
-/** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR(float* libxsmm_gemm_ntile_stretch);
-/** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR(float* libxsmm_gemm_ktile_stretch);
 
 #endif /*LIBXSMM_GEMM_H*/
 

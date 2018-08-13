@@ -931,7 +931,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (0 == strcmp("icl", arch) || 0 == strcmp("icx", arch)) {
       target_archid = LIBXSMM_X86_AVX512_ICL;
     }
-    else if (0 == strcmp("skx", arch) || 0 == strcmp("skl", arch)) {
+    else if (0 == strcmp("skx", arch) || 0 == strcmp("skl", arch)
+          /* "avx3"/"avx512" previously enabled LIBXSMM_X86_AVX512 */
+          || 0 == strcmp("avx3", arch) || 0 == strcmp("avx512", arch))
+    {
       target_archid = LIBXSMM_X86_AVX512_CORE;
     }
     else if (0 == strcmp("knm", arch)) {
@@ -939,9 +942,6 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     }
     else if (0 == strcmp("knl", arch) || 0 == strcmp("mic", arch)) {
       target_archid = LIBXSMM_X86_AVX512_MIC;
-    }
-    else if (0 == strcmp("avx3", arch) || 0 == strcmp("avx512", arch)) {
-      target_archid = LIBXSMM_X86_AVX512;
     }
     else if (0 == strcmp("hsw", arch) || 0 == strcmp("avx2", arch)) {
       target_archid = LIBXSMM_X86_AVX2;
