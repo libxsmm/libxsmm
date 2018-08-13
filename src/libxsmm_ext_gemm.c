@@ -476,8 +476,8 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
 #else
   const int nthreads = 1;
 #endif
-  const libxsmm_gemm_handle *const handle = libxsmm_gemm_handle_init(&blob,
-    iprec, oprec, transa, transb, m, n, k, lda, ldb, ldc, alpha, beta, nthreads);
+  const libxsmm_gemm_handle *const handle = libxsmm_gemm_handle_init(&blob, iprec, oprec, transa, transb,
+    m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_GEMM_HANDLE_FLAG_COPY_AUTO, nthreads);
   if (NULL != handle) {
 #if defined(_OPENMP)
     if (0 == omp_external) { /* enable internal parallelization */

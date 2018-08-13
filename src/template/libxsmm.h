@@ -335,7 +335,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const void* alpha, const void* beta, /*unsigned*/int nthreads);
+  const void* alpha, const void* beta, int flags, /*unsigned*/int nthreads);
 
 /** Low-level type-agnostic GEMM suitable for external threads or tasks. */
 LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,

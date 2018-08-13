@@ -232,7 +232,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
   unsigned int tm, tn, tk, dm, dn, dk;
   unsigned int itypesize, otypesize;
   unsigned int nthreads, mt, nt, kt;
-  int flags_gemm, flags_copy, prf_copy;
+  int gemm_flags, flags;
 };
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
