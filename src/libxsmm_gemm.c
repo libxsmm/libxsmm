@@ -610,7 +610,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, int flags, /*unsigned*/int nthreads)
 {
-  unsigned int ulda, uldb, um, un, uk, nmt = 0, nnt = 0, nkt = 0, tm = 0, tn = 0, tk = 0;
+  unsigned int ulda, uldb, um, un, uk, tm = 0, tn = 0, tk = 0;
   libxsmm_descriptor_blob desc_blob;
   union {
     libxsmm_gemm_handle* ptr;
@@ -618,10 +618,10 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   } result;
   LIBXSMM_ASSERT(sizeof(libxsmm_gemm_handle) <= sizeof(libxsmm_gemm_blob));
   if (NULL != blob && NULL != m && 0 < nthreads) {
+    unsigned int ntm = 0, ntn = 0, ntk = 0, mt = 0, nt = 0, kt = 0, ntasks_plan = 0;
     const char *const env_tm = getenv("LIBXSMM_TGEMM_M");
     libxsmm_blasint klda, kldb, kldc, km, kn;
     libxsmm_gemm_descriptor* desc;
-    unsigned int ntasks_plan = 0;
     const int prf_copy = 0;
     double dbeta;
     LIBXSMM_INIT
@@ -632,29 +632,38 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     memset(blob, 0, sizeof(libxsmm_gemm_blob));
 #endif
     if (EXIT_SUCCESS != libxsmm_gemm_dvalue(oprec, beta, &dbeta) && LIBXSMM_NEQ(0, dbeta)) dbeta = LIBXSMM_BETA; /* fuse beta into flags */
+    result.ptr->gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS) | (LIBXSMM_NEQ(0, dbeta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
     /* TODO: check that arguments fit into handle (unsigned int vs. libxsmm_blasint) */
     uk = (unsigned int)(NULL != k ? *k : *m); un = (NULL != n ? ((unsigned int)(*n)) : uk); um = (unsigned int)(*m);
+    LIBXSMM_ASSERT(LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags) || um == un);
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
     result.ptr->nthreads = (unsigned int)nthreads;
     if (NULL == env_tm || 0 >= atoi(env_tm)) {
       const unsigned int vwidth = LIBXSMM_CLMP(internal_gemm_vwidth / result.ptr->otypesize, 1, LIBXSMM_GEMM_MSIZE_MAX);
       unsigned int tmi = libxsmm_product_limit(um, vwidth + vwidth - 1, 0);
       for (; tmi < LIBXSMM_GEMM_MSIZE_MAX; tmi = libxsmm_product_limit(um, tmi + 1, 1)) {
-        const unsigned int tni = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(tmi * internal_gemm_nstretch), 1), 0);
-        const unsigned int tki = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(tmi * internal_gemm_kstretch), 1), 0);
-        unsigned int nmti, nnti, nkti, mt, nt, kt;
+        unsigned int tni = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(tmi * internal_gemm_nstretch), 1), 0);
+        unsigned int tki = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(tmi * internal_gemm_kstretch), 1), 0);
+        unsigned int ntmi, ntni, ntki, mti, nti, kti;
         LIBXSMM_ASSERT(tmi <= um && tni <= un && tki <= uk);
-        if (EXIT_SUCCESS == libxsmm_gemm_plan_internal(result.ptr->nthreads, um, un, uk, tmi, tni, tki, &nmti, &nnti, &nkti, &mt, &nt, &kt)) {
-          const int exit_plan = (tmi < um ? 0 : 1);
-          const unsigned ntasks = mt * nt * kt;
+        if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags)) {
+          const unsigned int ttm = (unsigned int)libxsmm_product_limit(tmi, result.ptr->nthreads, 0);
+          const unsigned int ttn = (unsigned int)libxsmm_product_limit(tni, result.ptr->nthreads, 0);
+          tmi = tni = LIBXSMM_MIN(ttm, ttn); /* prefer threads over larger tile */
+        }
+        if (EXIT_SUCCESS == libxsmm_gemm_plan_internal(result.ptr->nthreads, um, un, uk, tmi, tni, tki,
+          &ntmi, &ntni, &ntki, &mti, &nti, &kti))
+        {
+          const int exit_plan = ((tmi < um && tni < un && tki < uk && (tm != tmi || tn != tni || tk != tki)) ? 0 : 1);
+          const unsigned ntasks = mti * nti * kti;
           LIBXSMM_ASSERT(1 <= ntasks);
 #if defined(LIBXSMM_GEMM_QUICKPLAN)
           if (ntasks_plan < ntasks) {
 #else
           if (ntasks_plan <= ntasks) {
 #endif
-            result.ptr->mt = mt; result.ptr->nt = nt; result.ptr->kt = kt;
-            nmt = nmti; nnt = nnti; nkt = nkti;
+            ntm = ntmi; ntn = ntni; ntk = ntki;
+            mt = mti; nt = nti; kt = kti;
             tm = tmi; tn = tni; tk = tki;
             ntasks_plan = ntasks;
 #if defined(LIBXSMM_GEMM_QUICKPLAN)
@@ -670,29 +679,31 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       tm = libxsmm_product_limit(um, LIBXSMM_MIN(tmi, LIBXSMM_GEMM_MSIZE_MAX), 0);
       tn = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(tm * internal_gemm_nstretch), 1), 0);
       tk = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(tm * internal_gemm_kstretch), 1), 0);
+      if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags)) {
+        const unsigned int ttm = (unsigned int)libxsmm_product_limit(tm, result.ptr->nthreads, 0);
+        const unsigned int ttn = (unsigned int)libxsmm_product_limit(tn, result.ptr->nthreads, 0);
+        tm = tn = LIBXSMM_MIN(ttm, ttn); /* prefer threads over larger tile */
+      }
       if (EXIT_SUCCESS == libxsmm_gemm_plan_internal(result.ptr->nthreads, um, un, uk, tm, tn, tk,
-        &nmt, &nnt, &nkt, &result.ptr->mt, &result.ptr->nt, &result.ptr->kt))
+        &ntm, &ntn, &ntk, &mt, &nt, &kt))
       {
 #if defined(NDEBUG)
         ntasks_plan = 1; /* only need something unequal to zero */
 #else
-        ntasks_plan = result.ptr->mt * result.ptr->nt * result.ptr->kt;
+        ntasks_plan = mt * nt * kt;
 #endif
       }
     }
+    LIBXSMM_ASSERT(LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags) || tm == tn);
     if (0 == ntasks_plan || 0 != (um % tm) || 0 != (un % tn) || 0 != (uk % tk)) {
       return NULL;
     }
-    result.ptr->dm = nmt / result.ptr->mt * tm;
-    result.ptr->dn = nnt / result.ptr->nt * tn;
-    result.ptr->dk = nkt / result.ptr->kt * tk;
     result.ptr->flags = flags;
     if (LIBXSMM_GEMM_HANDLE_FLAG_COPY_AUTO == flags && /* check for big enough problem size */
       ((unsigned long long)(LIBXSMM_MAX_MNK)) < LIBXSMM_MNK_SIZE(um, un, uk))
     {
       result.ptr->flags |= LIBXSMM_GEMM_HANDLE_FLAG_COPY_C;
     }
-    result.ptr->gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS) | (LIBXSMM_NEQ(0, dbeta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
     result.ptr->itypesize = libxsmm_gemm_typesize(iprec);
     result.ptr->ldc = (unsigned int)(NULL != ldc ? *ldc : *m);
     ulda = (NULL != lda ? ((unsigned int)(*lda)) : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & result.ptr->gemm_flags) ? ((unsigned int)(*m)) : uk));
@@ -738,29 +749,33 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
         }
         kldc = (libxsmm_blasint)tm;
       }
-      result.ptr->tm = tm; result.ptr->tn = tn;
       result.ptr->lda = ulda; result.ptr->ldb = uldb;
+      result.ptr->tm = tm; result.ptr->tn = tn;
+      result.ptr->mt = mt; result.ptr->nt = nt;
       result.ptr->m = um; result.ptr->n = un;
+      result.ptr->dm = ntm / mt * tm;
+      result.ptr->dn = ntn / nt * tn;
       km = tm; kn = tn;
     }
     else { /* TT */
-      const unsigned int mn = LIBXSMM_MIN(tm, tn);
+      const unsigned int tt = tm;
       klda = (libxsmm_blasint)uldb;
       kldb = (libxsmm_blasint)ulda;
-      kldc = (libxsmm_blasint)mn;
+      kldc = (libxsmm_blasint)tt;
+      LIBXSMM_ASSERT(tt == tn);
 #if !defined(LIBXSMM_GEMM_NOJIT_TRANS)
       result.ptr->copy_o.xtrans = libxsmm_dispatch_trans(libxsmm_trans_descriptor_init(&desc_blob,
-        result.ptr->otypesize, mn, mn, result.ptr->ldc/*ldo*/));
+        result.ptr->otypesize, tt, tt, result.ptr->ldc/*ldo*/));
       if (0 == (result.ptr->gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0)) { /* copy-in only if beta!=0 */
         result.ptr->copy_i.xtrans = libxsmm_dispatch_trans(libxsmm_trans_descriptor_init(&desc_blob,
-          result.ptr->otypesize, mn, mn, mn/*ldo*/));
+          result.ptr->otypesize, tt, tt, tt/*ldo*/));
       }
 #endif
       if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_A & result.ptr->flags)) {
         result.ptr->copy_a.xmatcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&desc_blob,
-          result.ptr->itypesize, mn, tk, tk/*ldo*/, uldb/*ldi*/,
+          result.ptr->itypesize, tt, tk, tk/*ldo*/, uldb/*ldi*/,
           0/*flags*/, prf_copy, NULL/*unroll*/));
-        klda = (libxsmm_blasint)mn;
+        klda = (libxsmm_blasint)tt;
       }
       if (0 != (LIBXSMM_GEMM_HANDLE_FLAG_COPY_B & result.ptr->flags)) {
         result.ptr->copy_b.xmatcopy = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&desc_blob,
@@ -768,12 +783,17 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
           0/*flags*/, prf_copy, NULL/*unroll*/));
         kldb = (libxsmm_blasint)tk;
       }
-      result.ptr->tm = mn; result.ptr->tn = mn;
       result.ptr->lda = uldb; result.ptr->ldb = ulda;
+      result.ptr->tm = tn; result.ptr->tn = tm;
+      result.ptr->mt = nt; result.ptr->nt = mt;
       result.ptr->m = un; result.ptr->n = um;
-      km = kn = mn;
+      result.ptr->dm = ntn / nt * tn;
+      result.ptr->dn = ntm / mt * tm;
+      km = kn = tt;
     }
+    result.ptr->dk = ntk / kt * tk;
     result.ptr->tk = tk;
+    result.ptr->kt = kt;
     result.ptr->k = uk;
     desc = libxsmm_gemm_descriptor_init2( /* remove transpose flags from kernel request */
       &desc_blob, iprec, oprec, km, kn, result.ptr->tk, klda, kldb, kldc,
