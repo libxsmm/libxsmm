@@ -256,7 +256,7 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
   handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
   /* backward transpose filters */
   handle->scratch1 = 0;
-  handle->scratch1_size = handle->blocksifm_lp * handle->ifmblock * handle->blocksofm * handle->ofmblock
+  handle->scratch1_size = (size_t)handle->blocksifm_lp * handle->ifmblock * handle->blocksofm * handle->ofmblock
     * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
   if (handle->fm_lp_block > 1) {
     /* If low precision, we need extra buffer to store intermediate weight tensor */
@@ -265,14 +265,14 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
 
   /* weight update transpose of minibatch */
   handle->scratch3 = 0;
-  handle->scratch3_size = handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->ifhp * (handle->ifwp+8)
+  handle->scratch3_size = (size_t)handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->ifhp * ((size_t)handle->ifwp + 8)
     * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
 
   /* minibatch parallel execution of weight update kernel */
   if ( ((handle->blocksifm * handle->blocksofm) < handle->desc.threads) || (handle->use_thread_private_jit) ) {
     handle->upd_use_thread_fil = 1;
     handle->scratch4 = 0;
-    handle->scratch4_size = 2 * handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_out);
+    handle->scratch4_size = (size_t)2 * handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_out);
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
       /* Allocate twice as much since the out datatype is BF16 while the intermediate output is in float  */
       handle->scratch4_size = 2 * handle->scratch4_size;
@@ -290,10 +290,13 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
   /* Allocate scratch for additional output transpose */
   if (handle->use_lp_kernel == 1) {
     handle->scratch2 = 0;
-    handle->scratch2_size = handle->desc.N * handle->blocksofm * handle->ofmblock * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+8+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_in);
+    handle->scratch2_size = (size_t)handle->desc.N * handle->blocksofm * handle->ofmblock
+      * ((size_t)handle->ofhp     + (size_t)2 * handle->desc.pad_h)
+      * ((size_t)handle->ofwp + 8 + (size_t)2 * handle->desc.pad_w)
+      * libxsmm_dnn_typesize(handle->datatype_in);
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
-      /* Allocate scratch to dump results before downconvert  */
-      handle->scratch2_size += handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * sizeof(float);
+      /* Allocate scratch to dump results before down-convert  */
+      handle->scratch2_size += (size_t)handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * sizeof(float);
     }
   } else {
     handle->scratch2 = 0;
@@ -386,7 +389,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
 
   /* backward transpose filters, as we want to call small GEMMs we need that scratch */
   handle->scratch1 = 0;
-  handle->scratch1_size = handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
+  handle->scratch1_size = (size_t)handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
     * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_in);
   if (handle->fm_lp_block > 1) {
     /* If low precision, we need extra buffer to store intermediate weight tensor */
@@ -488,6 +491,21 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     handle->use_nts_fwd = 0;
   }
 
+  /* determine if we should use the image par version */
+  handle->fwd_img_par = 0;
+  /* we are running out of parallelism */
+  if ( handle->desc.N*handle->blocksofm  < handle->desc.threads ) {
+    handle->fwd_img_par = 1;
+  }
+  /* huge images, but minibatch 1 */
+  if ( (handle->desc.threads != 1) &&  (handle->desc.N == 1) && (handle->fwd_ofh_rb == 1) && (handle->n_variants == 1) && (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
+    handle->fwd_img_par = 1;
+  }
+  /* when batch stats should be calculated -> no img par version */
+  if ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0  ) {
+    handle->fwd_img_par = 0;
+  }
+
   /* Adjust blocking factors if custom_2 format is requested */
   if ((handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2)) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32) {
@@ -517,8 +535,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
 
   /* allocate appropriate buffers if the input must be padded */
   if ((handle->desc.pad_h_in == 0) && (handle->desc.pad_w_in == 0) && (handle->desc.pad_h_out == 0) && (handle->desc.pad_w_out == 0) && ((handle->desc.pad_h > 0) || (handle->desc.pad_w > 0))) {
-    const size_t fwdbwd_scratch_size_a = handle->desc.C * (handle->ifhp+2*handle->desc.pad_h) * (handle->ifwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_out);
-    const size_t fwdbwd_scratch_size_b = handle->desc.K * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+2*handle->desc.pad_w) * libxsmm_dnn_typesize(handle->datatype_in);
+    const size_t fwdbwd_scratch_size_a = (size_t)handle->desc.C
+      * ((size_t)handle->ifhp + (size_t)2 * handle->desc.pad_h)
+      * ((size_t)handle->ifwp + (size_t)2 * handle->desc.pad_w)
+      * libxsmm_dnn_typesize(handle->datatype_out);
+    const size_t fwdbwd_scratch_size_b = (size_t)handle->desc.K
+      * ((size_t)handle->ofhp + (size_t)2 * handle->desc.pad_h)
+      * ((size_t)handle->ofwp + (size_t)2 * handle->desc.pad_w)
+      * libxsmm_dnn_typesize(handle->datatype_in);
     const size_t fwdbwd_scratch_size = LIBXSMM_MAX(fwdbwd_scratch_size_a, fwdbwd_scratch_size_b);
     handle->fwdbwd_scratch_size = LIBXSMM_UP2(fwdbwd_scratch_size, LIBXSMM_CACHELINE) * handle->desc.threads;
     handle->minibatch_scratch_size = libxsmm_dnn_typesize(handle->datatype_out) * LIBXSMM_MAX(
@@ -646,21 +670,29 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     /* use jit code path */
     handle->use_fwd_generic = 0;
 
+    /* allocate buffers */
     handle->n_entries_fwd = (int*) malloc(handle->desc.threads * sizeof(int));
+    handle->compute_fwd_indices_ptrs = (int**)malloc(handle->desc.threads * sizeof(int*));
+    handle->bn_indices_ptrs = (int**)malloc(handle->desc.threads * sizeof(int*));
+    handle->kernel_fwd_variant_ptrs = (char**)malloc(handle->desc.threads * sizeof(char*));
+    handle->n_fwd_code_segments = (int*)malloc(handle->desc.threads * sizeof(int));
+    handle->fwd_code_segments = (segment_t**)malloc(handle->desc.threads * sizeof(segment_t*));
+    handle->ofh_fwd_start = (int*)malloc(handle->desc.threads * sizeof(int));
+    handle->ofh_fwd_end = (int*)malloc(handle->desc.threads * sizeof(int));
+
+    /* TODO: proper error handling */
+    LIBXSMM_ASSERT(NULL != handle->n_entries_fwd && NULL != handle->compute_fwd_indices_ptrs);
+    LIBXSMM_ASSERT(NULL != handle->bn_indices_ptrs && NULL != handle->kernel_fwd_variant_ptrs);
+    LIBXSMM_ASSERT(NULL != handle->n_fwd_code_segments && NULL != handle->fwd_code_segments);
+    LIBXSMM_ASSERT(NULL != handle->ofh_fwd_start && NULL != handle->ofh_fwd_end);
+
     memset( handle->n_entries_fwd, 0, handle->desc.threads * sizeof(int) );
-    handle->compute_fwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
     memset( handle->compute_fwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
-    handle->bn_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
     memset( handle->bn_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
-    handle->kernel_fwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
     memset( handle->kernel_fwd_variant_ptrs, 0, handle->desc.threads * sizeof(char*) );
-    handle->n_fwd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
     memset( handle->n_fwd_code_segments, 0, handle->desc.threads * sizeof(int) );
-    handle->fwd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
     memset( handle->fwd_code_segments, 0, handle->desc.threads * sizeof(segment_t*) );
-    handle->ofh_fwd_start = (int*) malloc(handle->desc.threads * sizeof(int));
     memset( handle->ofh_fwd_start, 0, handle->desc.threads * sizeof(int) );
-    handle->ofh_fwd_end = (int*) malloc(handle->desc.threads * sizeof(int));
     memset( handle->ofh_fwd_end, 0, handle->desc.threads * sizeof(int) );
 
     descriptor.n_variants = handle->n_variants;
@@ -785,12 +817,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
 
 
   /* FIXME: KNM specific tuning for Resnet */
-  if ( (handle->desc.C == 256 && handle->desc.K == 1024) || (handle->desc.C == 512 && handle->desc.K == 2048) ||  (handle->desc.C == 1024 && handle->desc.K == 2048) ) {
-    handle->blocksofm_blocking = 8;
+  if (handle->datatype_out != LIBXSMM_DNN_DATATYPE_BF16) {
+    if ( (handle->desc.C == 256 && handle->desc.K == 1024) || (handle->desc.C == 512 && handle->desc.K == 2048) ||  (handle->desc.C == 1024 && handle->desc.K == 2048) ) {
+      handle->blocksofm_blocking = 8;
+    }
   }
 
   /* Restrict acc chain for overflow handling only if combo is int16/int32  */
-  if (handle->use_lp_kernel == 1) {
+  if (handle->use_lp_kernel == 1  && (handle->datatype_in != LIBXSMM_DNN_DATATYPE_BF16) ) {
     if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
       if (handle->blocksofm_blocking * handle->ofmblock > 256) {
         handle->blocksofm_blocking = 16;
@@ -802,14 +836,15 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
   }
 
   /* When we chose overwrite and we loop over all ofms, then let's use streaming stores */
-  if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->desc.K == handle->blocksofm_blocking*handle->ofmblock) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) ) {
+  /* FIXME: check why test for datatypes here.... these are anyways all supported datatypes */
+  if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->desc.K == handle->blocksofm_blocking*handle->ofmblock) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16 || handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) ) {
     handle->use_nts_bwd = 1;
   } else {
     handle->use_nts_bwd = 0;
   }
 
   /* FIXME: SKX specific tuning for GooglenetV3 */
-  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->desc.K/16 <= 8) {
+  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && (handle->desc.K/16 <= 8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
     handle->use_nts_bwd = 0;
   }
 
@@ -901,6 +936,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       fwd_equivalent_descriptor.stride_h_store = handle->desc.u;
       fwd_equivalent_descriptor.stride_w_store = handle->desc.v;
       fwd_equivalent_descriptor.use_nts = handle->use_nts_bwd;
+      fwd_equivalent_descriptor.f32_bf16_cvt_rne = handle->f32_bf16_cvt_rne;
       fwd_equivalent_descriptor.compute_batch_stats = 0;
       fwd_equivalent_descriptor.compute_max = 0;
       if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_nts_bwd == 1))  {
@@ -965,25 +1001,35 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       assert(0/*should not happen*/);
     }
 
-    {
-      libxsmm_dnn_layer mirror_handle;
+    { libxsmm_dnn_layer mirror_handle;
+      /* allocate buffers */
       handle->n_entries_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
-      memset( handle->n_entries_bwd, 0, handle->desc.threads * sizeof(int) );
       handle->compute_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
-      memset( handle->compute_bwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
       handle->kernel_bwd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
-      memset( handle->kernel_bwd_variant_ptrs, 0, handle->desc.threads * sizeof(char*));
       handle->n_bwd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
-      memset( handle->n_bwd_code_segments, 0, handle->desc.threads * sizeof(int) );
       handle->bwd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
-      memset( handle->bwd_code_segments, 0, handle->desc.threads * sizeof(segment_t*) );
       handle->ofh_bwd_start = (int*) malloc(handle->desc.threads * sizeof(int));
-      memset( handle->ofh_bwd_start, 0, handle->desc.threads * sizeof(int) );
       handle->ofh_bwd_end = (int*) malloc(handle->desc.threads * sizeof(int));
-      memset( handle->ofh_bwd_end, 0, handle->desc.threads * sizeof(int));
       handle->n_entries_trans_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
-      memset( handle->n_entries_trans_bwd, 0, handle->desc.threads * sizeof(int));
       handle->transpose_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+
+      /* TODO: proper error handling */
+      LIBXSMM_ASSERT(NULL != handle->n_entries_bwd);
+      LIBXSMM_ASSERT(NULL != handle->compute_bwd_indices_ptrs);
+      LIBXSMM_ASSERT(NULL != handle->kernel_bwd_variant_ptrs);
+      LIBXSMM_ASSERT(NULL != handle->n_bwd_code_segments && NULL != handle->bwd_code_segments);
+      LIBXSMM_ASSERT(NULL != handle->ofh_bwd_start && NULL != handle->ofh_bwd_end);
+      LIBXSMM_ASSERT(NULL != handle->n_entries_trans_bwd);
+      LIBXSMM_ASSERT(NULL != handle->transpose_bwd_indices_ptrs);
+
+      memset(handle->n_entries_bwd, 0, handle->desc.threads * sizeof(int));
+      memset(handle->compute_bwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
+      memset(handle->kernel_bwd_variant_ptrs, 0, handle->desc.threads * sizeof(char*));
+      memset(handle->n_bwd_code_segments, 0, handle->desc.threads * sizeof(int));
+      memset(handle->bwd_code_segments, 0, handle->desc.threads * sizeof(segment_t*));
+      memset(handle->ofh_bwd_start, 0, handle->desc.threads * sizeof(int));
+      memset(handle->ofh_bwd_end, 0, handle->desc.threads * sizeof(int));
+      memset(handle->n_entries_trans_bwd, 0, handle->desc.threads * sizeof(int));
       memset( handle->transpose_bwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
 
       mirror_handle = *handle;
@@ -1513,23 +1559,32 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
           handle->trans_ofw_ifm = 0;
         }
 
+        /* allocate buffers */
         handle->n_entries_upd = (int*) malloc(handle->desc.threads * sizeof(int));
-        memset( handle->n_entries_upd, 0, handle->desc.threads * sizeof(int) );
         handle->compute_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
-        memset( handle->compute_upd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
         handle->kernel_upd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
-        memset( handle->kernel_upd_variant_ptrs, 0, handle->desc.threads * sizeof(char*) );
         handle->n_upd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
-        memset( handle->n_upd_code_segments, 0, handle->desc.threads * sizeof(int) );
         handle->upd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
-        memset( handle->upd_code_segments, 0, handle->desc.threads * sizeof(segment_t*));
         handle->n_entries_init_upd = (int*) malloc(handle->desc.threads * sizeof(int));
-        memset( handle->n_entries_init_upd, 0, handle->desc.threads * sizeof(int) );
         handle->init_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
-        memset( handle->init_upd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
         handle->n_entries_copy_upd = (int*) malloc(handle->desc.threads * sizeof(int));
-        memset( handle->n_entries_copy_upd, 0, handle->desc.threads * sizeof(int) );
         handle->copy_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+
+        /* TODO: proper error handling */
+        LIBXSMM_ASSERT(NULL != handle->n_entries_upd);
+        LIBXSMM_ASSERT(NULL != handle->compute_upd_indices_ptrs);
+        LIBXSMM_ASSERT(NULL != handle->kernel_upd_variant_ptrs);
+        LIBXSMM_ASSERT(NULL != handle->n_upd_code_segments && NULL != handle->upd_code_segments);
+        LIBXSMM_ASSERT(NULL != handle->n_entries_init_upd && NULL != handle->init_upd_indices_ptrs);
+        LIBXSMM_ASSERT(NULL != handle->n_entries_copy_upd && NULL != handle->copy_upd_indices_ptrs);
+        memset(handle->n_entries_upd, 0, handle->desc.threads * sizeof(int));
+        memset(handle->compute_upd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
+        memset(handle->kernel_upd_variant_ptrs, 0, handle->desc.threads * sizeof(char*));
+        memset(handle->n_upd_code_segments, 0, handle->desc.threads * sizeof(int));
+        memset(handle->upd_code_segments, 0, handle->desc.threads * sizeof(segment_t*));
+        memset(handle->n_entries_init_upd, 0, handle->desc.threads * sizeof(int));
+        memset(handle->init_upd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
+        memset(handle->n_entries_copy_upd, 0, handle->desc.threads * sizeof(int));
         memset( handle->copy_upd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
 
         matzero_descriptor.n = 1;

@@ -181,7 +181,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   handle->n_entries_fwd[ltid] = local_entries/3;
   /* Allocate auxiliary data structures for index jitting  */
-  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
+  compute_indices = (int*)libxsmm_aligned_malloc(((size_t)local_entries+3) * sizeof(int), 64);
   handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
   kernel_variant = (char*)(3 <= local_entries ? libxsmm_aligned_malloc((local_entries / 3) * sizeof(char), 64) : NULL);
   handle->kernel_fwd_variant_ptrs[ltid] = kernel_variant;

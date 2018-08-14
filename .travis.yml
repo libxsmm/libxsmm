@@ -20,7 +20,7 @@ matrix:
     compiler: clang
     env: DBG=1 LIBXSMM_TARGET=0
   - os: osx
-    osx_image: xcode9.1
+    #osx_image: xcode9.1
     compiler: clang
     env: OPT=1
   - os: osx
@@ -44,16 +44,16 @@ addons:
     - python3
     - sshpass
 
-before_install:
-  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
-      if [ "${TRAVIS_OS_NAME}" = "osx" ] && [ "${CC}" != "clang" ]; then sudo easy_install pip; fi;
-    fi
+#before_install:
+#  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
+#      if [ "${TRAVIS_OS_NAME}" = "osx" ] && [ "${CC}" != "clang" ]; then sudo easy_install pip; fi;
+#    fi
 
 install:
-  - if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
-      if [ "${CC}" != "clang" ]; then pip install --user codecov; fi;
-    fi
-  - if [ "${UPLOAD_ENABLED}" != "" ] && [ "${UPLOAD_ENABLED}" != "0" ] && [ "" = "$(which sshpass)" ] ; then
+  #- if [ "${CODECOV_ENABLED}" = "" ] || [ "${CODECOV_ENABLED}" != "0" ]; then
+  #    if [ "${CC}" != "clang" ]; then pip install --user codecov; fi;
+  #  fi
+  - if [ "${UPLOAD_ENABLED}" != "" ] && [ "${UPLOAD_ENABLED}" != "0" ] && [ "" = "$(which sshpass)" ]; then
       (cd /tmp && curl -O -L https://downloads.sourceforge.net/project/sshpass/sshpass/1.06/sshpass-1.06.tar.gz &&
         tar xvzf sshpass-1.06.tar.gz && cd sshpass-1.06 && ./configure && make ${MAKEJ} && sudo make install &&
         cd ${TRAVIS_BUILD_DIR}) || true;
@@ -83,11 +83,11 @@ script:
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 PYMOD=1 EFLAGS="-DLIBXSMM_CAPACITY_REGISTRY=32" install-artifacts tests
+      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 PYMOD=1 EFLAGS="-DLIBXSMM_NO_CTOR" install-artifacts tests
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-      env TOOL_ENABLED=0 make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 MNK="9 3, 23" STATIC=0 EFLAGS="-DLIBXSMM_NO_CTOR" install-artifacts test-smm
+      env TOOL_ENABLED=0 make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 MNK="9 3, 23" STATIC=0 EFLAGS="-DLIBXSMM_CAPACITY_REGISTRY=32" install-artifacts test-smm
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (

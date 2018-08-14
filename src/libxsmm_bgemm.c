@@ -93,8 +93,8 @@ LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(/*unsigned*/ int n
         }
       }
       if (0 != handle.kernel.xmm) {
-        const size_t tls_size = LIBXSMM_UP2(mm * nn * LIBXSMM_TYPESIZE(oprec), LIBXSMM_CACHELINE) * nthreads;
-        const size_t size_locks = (size_t)(handle.mb * handle.nb * sizeof(libxsmm_bgemm_lock));
+        const size_t tls_size = LIBXSMM_UP2((size_t)mm * nn * LIBXSMM_TYPESIZE(oprec), LIBXSMM_CACHELINE) * nthreads;
+        const size_t size_locks = (size_t)handle.mb * handle.nb * sizeof(libxsmm_bgemm_lock);
         handle.locks = (libxsmm_bgemm_lock*)libxsmm_aligned_malloc(size_locks, LIBXSMM_CACHELINE);
         handle.buffer = libxsmm_aligned_malloc(tls_size, LIBXSMM_CACHELINE);
         result = (libxsmm_bgemm_handle*)malloc(sizeof(libxsmm_bgemm_handle));

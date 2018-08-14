@@ -121,9 +121,36 @@ int main(int argc, char* argv[])
     fprintf(stderr, "missed bitwise exact result in %i of %i cases!\n", LIBXSMM_MAX(warn_ssqrt, warn_dsqrt), N);
   }
 
-  /* check work division routine */
-  if (libxsmm_split_work(12 * 13, 13) != 13) exit(EXIT_FAILURE);
-  if (libxsmm_split_work(12, 6) != 6) exit(EXIT_FAILURE);
+  { /* check prime factorization */
+    const unsigned int test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 2057, 120, 14, 997 };
+    const int n = sizeof(test) / sizeof(*test);
+    unsigned int fact[32];
+    for (i = 0; i < n; ++i) {
+      const int np = libxsmm_primes_u32(test[i], fact);
+      int j; for (j = 1; j < np; ++j) fact[0] *= fact[j];
+      if (0 < np && fact[0] != test[i]) {
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+
+  /* find upper limited product */
+  if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 0) != (3 * 7 * 11)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12 * 5 * 7, 32, 0) != (2 * 3 * 5)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12 * 13, 13, 0) != 13) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12, 6, 0) != 6) exit(EXIT_FAILURE);
+
+  /* find lower limited product */
+  if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 1) != (3 * 7 * 11)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12 * 5 * 7, 36, 1) != (2 * 5 * 7)) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12 * 13, 13, 1) != 13) exit(EXIT_FAILURE);
+
+  if (libxsmm_product_limit(320, 300, 1) != 320) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(320, 65, 1) != 320) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(320, 33, 1) != 64) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(1000, 6, 1) != 10) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(1000, 9, 1) != 40) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(12, 7, 1) != 12) exit(EXIT_FAILURE);
 
   return EXIT_SUCCESS;
 }

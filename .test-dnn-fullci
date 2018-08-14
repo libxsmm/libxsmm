@@ -3,6 +3,7 @@ include/libxsmm_dnn.h
 src/libxsmm_dnn_convolution_*
 src/generator_convolution*
 src/template/*.tpl.c
+src/libxsmm_main.*
 src/libxsmm_dnn_dryruns.*
 src/libxsmm_dnn_handle.*
 src/libxsmm_dnn_setup.*

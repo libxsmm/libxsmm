@@ -202,7 +202,7 @@ Registry: 20 MB (gemm=0 mcopy=14 tcopy=0)
 
 If the call-wrapper is used, an additional runtime statistic becomes available (see [Call Wrapper](libxsmm_mm.md#call-wrapper)).
 
-**NOTE**: Setting LIBXSMM_VERBOSE to a negative value will binary-dump each generated JIT kernel to a file with each file being named like the function name shown in [Intel&#160;VTune](libxsmm_prof.md#intelvtuneamplifier). Disassembly of the raw binary files can be accomplished by:
+<a name="objdump"></a>**NOTE**: Setting LIBXSMM_VERBOSE to a negative value will binary-dump each generated JIT kernel to a file with each file being named like the function name shown in [Intel&#160;VTune](libxsmm_prof.md#intelvtuneamplifier). Disassembly of the raw binary files can be accomplished by:
 
 ```bash
 objdump -D -b binary -m i386 -M x86-64 [JIT-dump-file]

@@ -246,19 +246,20 @@ int main(int argc, char* argv[])
   void *scratch, *internalstate;
   size_t scratch_size = 0, internalstate_size = 0;
 
-  int iters = 10;                /* repetitions of benchmark */
-  int pass = 3;                  /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
-  int m = 1024;                  /* number of outputs */
-  int n = 512;                   /* size of mini-batch */
-  int k = 256;                   /* number of inputs */
-  int t = 5;                     /* number of time steps (> 1) */
-  int reuse = 1;                 /* reuse=1 for FWD overwrites the same memory
-                                  * for intermediate values during inference;
-                                  * reuse value is immaterial for BWD and UPD */
-  int bm = 32;                   /* first blocking factor for m */
-  int bn = 32;                   /* first blocking factor for n */
-  int bk = 32;                   /* first blocking factor for k */
-  libxsmm_bgemm_order order = 0; /* denotes order of execution for bgemm */
+  int iters = 10; /* repetitions of benchmark */
+  int pass = 3;   /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
+  int m = 1024;   /* number of outputs */
+  int n = 512;    /* size of mini-batch */
+  int k = 256;    /* number of inputs */
+  int t = 5;      /* number of time steps (> 1) */
+  int reuse = 1;  /* reuse=1 for FWD overwrites the same memory
+                   * for intermediate values during inference;
+                   * reuse value is immaterial for BWD and UPD */
+  int bm = 32;    /* first blocking factor for m */
+  int bn = 32;    /* first blocking factor for n */
+  int bk = 32;    /* first blocking factor for k */
+  /* denotes order of execution for bgemm */
+  libxsmm_bgemm_order order = LIBXSMM_BGEMM_ORDER_JIK;
   const char *const env_b_m1 = getenv("LIBXSMM_BGEMM_M1");
   const int b_m1 = (0 == env_b_m1) ? 1 : atoi(env_b_m1);
   const char *const env_b_n1 = getenv("LIBXSMM_BGEMM_N1");

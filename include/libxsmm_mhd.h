@@ -147,8 +147,10 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   size_t ndims,
   /* Number of pixel components. */
   size_t ncomponents,
-  /* Storage type. */
-  libxsmm_mhd_elemtype type,
+  /* Type (input). */
+  libxsmm_mhd_elemtype type_data,
+  /* Type (data conversion, optional). */
+  const libxsmm_mhd_elemtype* type,
   /* Raw data to be saved. */
   const void* data,
   /* Size of the header; can be a NULL-argument (optional). */

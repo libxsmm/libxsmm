@@ -61,7 +61,7 @@ if [ "" != "${WGET}" ] && \
 then
   REVSTART=$(${WGET} -qO- \
   https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN} \
-  | ${SED} -n '/ *\"state\": \"passed\"/,/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
+  | ${SED} -n '/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
 fi
 if [ "" = "${REVSTART}" ]; then
   REVSTART="HEAD^"

@@ -45,7 +45,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if (defined(__GNUC__) || defined(__INTEL_COMPILER)) && (64 <= (LIBXSMM_BITS))
+#if (defined(__GNUC__) || defined(LIBXSMM_INTEL_COMPILER)) && (64 <= (LIBXSMM_BITS))
 # define LIBXSMM_TIMER_RDTSC(CYCLE) { libxsmm_timer_tickint libxsmm_timer_rdtsc_hi_; \
     __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \
     CYCLE |= libxsmm_timer_rdtsc_hi_ << 32; \

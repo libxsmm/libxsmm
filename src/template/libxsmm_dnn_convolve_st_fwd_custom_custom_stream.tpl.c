@@ -87,6 +87,7 @@ double *bn_sum_base;
 double *bn_sum_base2;
 #endif
 
+/* accumulation scratch for fp32->bf16 downconvert */
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
 float *const accumulators_scratch = (float*)(((char*)handle->scratch6) +
   ltid * LIBXSMM_UP2(handle->ofmblock * handle->ofw * handle->ofh * sizeof(float), LIBXSMM_CACHELINE));
@@ -159,8 +160,7 @@ if (n_segments) {
   /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
   code_stream = handle->fwd_code_segments[ltid];
   /* If we are in the img_par execution then avoid fine-grained copy in case of padding...  */
-  /* TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images */
-  if (handle->desc.N*BLOCKSOFM  >= handle->desc.threads && !((handle->desc.N == 1) && (handle->fwd_ofh_rb == 1) && (handle->n_variants == 1) && (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32))) {
+  if ( handle->fwd_img_par == 0 ) {
     if (handle->compute_batch_stats_in_kernel == 1) { /* We  do BN stuff in the kernel  */
 #ifndef FP64_BN_STATS
       LIBXSMM_VLA_DECL(4, float, kernel_stats, (float*)handle->batch_stats->data, BLOCKSOFM, handle->desc.N, handle->ofmblock);

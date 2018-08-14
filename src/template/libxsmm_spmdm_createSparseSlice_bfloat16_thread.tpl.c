@@ -112,10 +112,10 @@ else {
         SIMDTYPE_INT32 v1tmp, v2tmp;
         SIMDTYPE_FP32 v1, v2, v3, v4;
         SIMDMASKTYPE_FP32 m1, m2, m3, m4;
-        v1tmp = _MM_LOADU_INT32((const SIMDTYPE_INT32* )(input_ptr + i*handle->k + k));
-        _MM_PREFETCH((char *)(input_ptr + (i+2)*handle->k + k), _MM_HINT_T0);
-        v2tmp = _MM_LOADU_INT32((const SIMDTYPE_INT32*)(input_ptr + i*handle->k + k + 2*SIMD_WIDTH_FP32));
-        _MM_PREFETCH((char *)(input_ptr + (i+2)*handle->k + k + SIMD_WIDTH_FP32), _MM_HINT_T0);
+        v1tmp = _MM_LOADU_INT32((const SIMDTYPE_INT32*)(input_ptr + (size_t)i*handle->k + k));
+        _MM_PREFETCH((char *)(input_ptr + ((size_t)i+2)*handle->k + k), _MM_HINT_T0);
+        v2tmp = _MM_LOADU_INT32((const SIMDTYPE_INT32*)(input_ptr + (size_t)i*handle->k + k + 2*SIMD_WIDTH_FP32));
+        _MM_PREFETCH((char *)(input_ptr + ((size_t)i+2)*handle->k + k + SIMD_WIDTH_FP32), _MM_HINT_T0);
         EXPAND_BFLOAT16(v1tmp, v1, v2);
         EXPAND_BFLOAT16(v2tmp, v3, v4);
         m1 = _MM_CMPNEQ_FP32(v1, vzerof);
@@ -140,13 +140,5 @@ else {
     }
   }
   rowidx_ptr[nrows] = cnt;
-#if 0
-  printf("cnt: %d\n", cnt);
-  for (i = 0; i <= nrows; i++) {
-    for (j = slice.rowidx[i]; j < slice.rowidx[i+1]; j++) {
-      printf("(%d, %d): %f ", i, colidx_ptr[j], values_ptr[j]);
-    }
-  }
-#endif
 }
 

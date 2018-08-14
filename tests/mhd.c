@@ -77,7 +77,7 @@ int main(int argc, char* argv[])
   /* Write the data into a new file; update header_size. */
   if (EXIT_SUCCESS == result) {
     result = libxsmm_mhd_write("mhd_test.mhd", 0/*offset*/, pitch, pitch,
-      ndims, ncomponents, type, data, &header_size,
+      ndims, ncomponents, type, NULL/*conversion*/, data, &header_size,
       0/*extension_header*/,
       0/*extension*/,
       0/*extension_size*/);

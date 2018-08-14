@@ -145,8 +145,14 @@
 # define LIBXSMM_CDECL
 #endif
 
+#if defined(__INTEL_COMPILER)
+# define LIBXSMM_INTEL_COMPILER __INTEL_COMPILER
+#elif defined(__INTEL_COMPILER_BUILD_DATE)
+# define LIBXSMM_INTEL_COMPILER ((__INTEL_COMPILER_BUILD_DATE / 10000 - 2000) * 100)
+#endif
+
 #if defined(LIBXSMM_OFFLOAD_BUILD) && \
-  defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= __INTEL_COMPILER))
+  defined(__INTEL_OFFLOAD) && (!defined(_WIN32) || (1400 <= LIBXSMM_INTEL_COMPILER))
 # define LIBXSMM_OFFLOAD(A) LIBXSMM_ATTRIBUTE(target(A))
 # define LIBXSMM_NO_OFFLOAD(RTYPE, FN, ...) ((RTYPE (*)(LIBXSMM_VARIADIC))(FN))(__VA_ARGS__)
 # if !defined(LIBXSMM_OFFLOAD_TARGET)
@@ -227,9 +233,9 @@
 #define LIBXSMM_API_EXTERN LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
 
 #if !defined(LIBXSMM_RESTRICT)
-# if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(__INTEL_COMPILER)) && !defined(_WIN32)
+# if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(LIBXSMM_INTEL_COMPILER)) && !defined(_WIN32)
 #   define LIBXSMM_RESTRICT __restrict__
-# elif defined(_MSC_VER) || defined(__INTEL_COMPILER)
+# elif defined(_MSC_VER) || defined(LIBXSMM_INTEL_COMPILER)
 #   define LIBXSMM_RESTRICT __restrict
 # else
 #   define LIBXSMM_RESTRICT
@@ -237,7 +243,7 @@
 #endif /*LIBXSMM_RESTRICT*/
 
 #if !defined(LIBXSMM_PRAGMA)
-# if defined(__INTEL_COMPILER) || defined(_MSC_VER)
+# if defined(LIBXSMM_INTEL_COMPILER) || defined(_MSC_VER)
 #   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(DIRECTIVE)
 # else
 #   define LIBXSMM_PRAGMA(DIRECTIVE)
@@ -245,8 +251,8 @@
 #endif /*LIBXSMM_PRAGMA*/
 
 #if !defined(LIBXSMM_OPENMP_SIMD) && (defined(_OPENMP) && (201307 <= _OPENMP)) /*OpenMP 4.0*/
-# if defined(__INTEL_COMPILER)
-#   if (1500 <= __INTEL_COMPILER)
+# if defined(LIBXSMM_INTEL_COMPILER)
+#   if (1500 <= LIBXSMM_INTEL_COMPILER)
 #     define LIBXSMM_OPENMP_SIMD
 #   endif
 # elif defined(__GNUC__)
@@ -263,12 +269,12 @@
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(omp simd collapse(N))
 # define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(omp simd private(A, __VA_ARGS__))
 # define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(omp simd)
-# if defined(__INTEL_COMPILER)
+# if defined(LIBXSMM_INTEL_COMPILER)
 #   define LIBXSMM_PRAGMA_NOVECTOR LIBXSMM_PRAGMA(novector)
 # else
 #   define LIBXSMM_PRAGMA_NOVECTOR
 # endif
-#elif defined(__INTEL_COMPILER)
+#elif defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(simd reduction(EXPRESSION))
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(simd collapse(N))
 # define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(simd private(A, __VA_ARGS__))
@@ -311,7 +317,7 @@
 # define LIBXSMM_PRAGMA_UNROLL
 #endif
 
-#if defined(__INTEL_COMPILER)
+#if defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_OPTIMIZE_OFF LIBXSMM_PRAGMA(optimize("", off))
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON  LIBXSMM_PRAGMA(optimize("", on))
 #elif defined(__clang__)
@@ -338,7 +344,7 @@
 #define LIBXSMM_LOG2_16(N) (0 != ((N) & 0xFF00) ? (8 | LIBXSMM_LOG2_08((N) >> 8)) : LIBXSMM_LOG2_08(N))
 #define LIBXSMM_LOG2_32(N) (0 != ((N) & 0xFFFF0000) ? (16 | LIBXSMM_LOG2_16((N) >> 16)) : LIBXSMM_LOG2_16(N))
 #define LIBXSMM_LOG2_64(N) (0 != ((N) & 0xFFFFFFFF00000000) ? (32 | LIBXSMM_LOG2_32((N) >> 32)) : LIBXSMM_LOG2_32(N))
-#define LIBXSMM_LOG2(N) LIBXSMM_MAX((unsigned int)LIBXSMM_LOG2_64((unsigned long long)(N)), 1U)
+#define LIBXSMM_LOG2(N) LIBXSMM_MAX((unsigned int)LIBXSMM_LOG2_64((unsigned long long)N), 1U)
 
 /** LIBXSMM_UP2POT rounds up to the next power of two (POT). */
 #define LIBXSMM_UP2POT_01(N) ((N) | ((N) >> 1))
@@ -347,27 +353,29 @@
 #define LIBXSMM_UP2POT_08(N) (LIBXSMM_UP2POT_04(N) | (LIBXSMM_UP2POT_04(N) >> 8))
 #define LIBXSMM_UP2POT_16(N) (LIBXSMM_UP2POT_08(N) | (LIBXSMM_UP2POT_08(N) >> 16))
 #define LIBXSMM_UP2POT_32(N) (LIBXSMM_UP2POT_16(N) | (LIBXSMM_UP2POT_16(N) >> 32))
-#define LIBXSMM_UP2POT(N) (LIBXSMM_UP2POT_32((unsigned long long)((N) - 1)) + 1)
+#define LIBXSMM_UP2POT(N) (LIBXSMM_UP2POT_32((unsigned long long)(N) - 1) + 1)
 
-#define LIBXSMM_UP2(N, NPOT) ((((uintptr_t)(N)) + ((NPOT) - 1)) & ~((NPOT) - 1))
-#define LIBXSMM_UP(N, UP) (((((uintptr_t)(N)) + (UP) - 1) / (UP)) * (UP))
+#define LIBXSMM_UP2(N, NPOT) ((((uintptr_t)N) + ((NPOT) - 1)) & ~((NPOT) - 1))
+#define LIBXSMM_UP(N, UP) (((((uintptr_t)N) + (UP) - 1) / (UP)) * (UP))
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
 #define LIBXSMM_DIFF(T0, T1) ((T0) < (T1) ? ((T1) - (T0)) : 0)
 #define LIBXSMM_CLMP(VALUE, LO, HI) ((LO) < (VALUE) ? ((VALUE) <= (HI) ? (VALUE) : LIBXSMM_MIN(VALUE, HI)) : LIBXSMM_MAX(LO, VALUE))
 #define LIBXSMM_MOD2(N, NPOT) ((N) & ((NPOT) - 1))
-#define LIBXSMM_MUL2(N, NPOT) (((unsigned long long)(N)) << LIBXSMM_LOG2(NPOT))
-#define LIBXSMM_DIV2(N, NPOT) (((unsigned long long)(N)) >> LIBXSMM_LOG2(NPOT))
+#define LIBXSMM_MUL2(N, NPOT) (((unsigned long long)N) << LIBXSMM_LOG2(NPOT))
+#define LIBXSMM_DIV2(N, NPOT) (((unsigned long long)N) >> LIBXSMM_LOG2(NPOT))
 #define LIBXSMM_SQRT2(N) (0 < (N) ? ((unsigned int)(1ULL << (LIBXSMM_LOG2(((N) << 1) - 1) >> 1))) : 0)
 #define LIBXSMM_HASH2(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
 /** Compares floating point values but avoids warning about unreliable comparison. */
+#define LIBXSMM_NOTNAN(A) (LIBXSMM_NEQ(0, (A) - (A)) || 0 == ((int)((A) - (A))))
+#define LIBXSMM_ISNAN(A)  (!LIBXSMM_NOTNAN(A))
 #define LIBXSMM_NEQ(A, B) ((A) < (B) || (A) > (B))
 #define LIBXSMM_FEQ(A, B) (!LIBXSMM_NEQ(A, B))
 
-#if defined(__INTEL_COMPILER)
-# if (1600 <= __INTEL_COMPILER)
+#if defined(LIBXSMM_INTEL_COMPILER)
+# if (1600 <= LIBXSMM_INTEL_COMPILER)
 #   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
 # else
 #   define LIBXSMM_ASSUME(EXPRESSION) assert(EXPRESSION)
@@ -380,7 +388,7 @@
 # define LIBXSMM_ASSUME(EXPRESSION) assert(EXPRESSION)
 #endif
 
-#if defined(__INTEL_COMPILER)
+#if defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
 #else
 # define LIBXSMM_ASSUME_ALIGNED(A, N) assert(0 == ((uintptr_t)(A)) % (N))
@@ -411,8 +419,8 @@
  * VLA-support is signaled by LIBXSMM_VLA.
  */
 #if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && !defined(__PGI) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
-   (!defined(__STDC_NO_VLA__) && 199901L/*C99*/ < __STDC_VERSION__))) || (defined(__INTEL_COMPILER) && !defined(_WIN32)) || \
-    (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus))/*depends on prior C99-check*/)
+   (!defined(__STDC_NO_VLA__) && 199901L/*C99*/ < __STDC_VERSION__))) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32) && !defined(__cplusplus)) || \
+    (defined(__INTEL_COMPILER) && !defined(_WIN32)) || (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus))/*depends on prior C99-check*/)
 # define LIBXSMM_VLA
 #endif
 
@@ -427,14 +435,14 @@
 #else
 # define LIBXSMM_INDEX1(NDIMS, ...) LIBXSMM_CONCATENATE(LIBXSMM_INDEX1_, NDIMS)(__VA_ARGS__)
 #endif
-#define LIBXSMM_INDEX1_1(I0) (1ULL * (I0))
-#define LIBXSMM_INDEX1_2(I0, I1, S1) (LIBXSMM_INDEX1_1(I0) * (S1) + I1)
-#define LIBXSMM_INDEX1_3(I0, I1, I2, S1, S2) (LIBXSMM_INDEX1_2(I0, I1, S1) * (S2) + (I2))
-#define LIBXSMM_INDEX1_4(I0, I1, I2, I3, S1, S2, S3) (LIBXSMM_INDEX1_3(I0, I1, I2, S1, S2) * (S3) + (I3))
-#define LIBXSMM_INDEX1_5(I0, I1, I2, I3, I4, S1, S2, S3, S4) (LIBXSMM_INDEX1_4(I0, I1, I2, I3, S1, S2, S3) * (S4) + (I4))
-#define LIBXSMM_INDEX1_6(I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, S5) (LIBXSMM_INDEX1_5(I0, I1, I2, I3, I4, S1, S2, S3, S4) * (S5) + (I5))
-#define LIBXSMM_INDEX1_7(I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, S6) (LIBXSMM_INDEX1_6(I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, S5) * (S6) + (I6))
-#define LIBXSMM_INDEX1_8(I0, I1, I2, I3, I4, I5, I6, I7, S1, S2, S3, S4, S5, S6, S7) (LIBXSMM_INDEX1_7(I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, S6) * (S7) + (I7))
+#define LIBXSMM_INDEX1_1(I0) ((size_t)I0)
+#define LIBXSMM_INDEX1_2(I0, I1, S1) (LIBXSMM_INDEX1_1(I0) * ((size_t)S1) + (size_t)I1)
+#define LIBXSMM_INDEX1_3(I0, I1, I2, S1, S2) (LIBXSMM_INDEX1_2(I0, I1, S1) * ((size_t)S2) + (size_t)I2)
+#define LIBXSMM_INDEX1_4(I0, I1, I2, I3, S1, S2, S3) (LIBXSMM_INDEX1_3(I0, I1, I2, S1, S2) * ((size_t)S3) + (size_t)I3)
+#define LIBXSMM_INDEX1_5(I0, I1, I2, I3, I4, S1, S2, S3, S4) (LIBXSMM_INDEX1_4(I0, I1, I2, I3, S1, S2, S3) * ((size_t)S4) + (size_t)I4)
+#define LIBXSMM_INDEX1_6(I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, S5) (LIBXSMM_INDEX1_5(I0, I1, I2, I3, I4, S1, S2, S3, S4) * ((size_t)S5) + (size_t)I5)
+#define LIBXSMM_INDEX1_7(I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, S6) (LIBXSMM_INDEX1_6(I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, S5) * ((size_t)S6) + (size_t)I6)
+#define LIBXSMM_INDEX1_8(I0, I1, I2, I3, I4, I5, I6, I7, S1, S2, S3, S4, S5, S6, S7) (LIBXSMM_INDEX1_7(I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, S6) * ((size_t)S7) + (size_t)I7)
 
 /**
  * LIBXSMM_VLA_DECL declares an array according to the given set of (multiple) bounds.
@@ -496,7 +504,7 @@
 # define LIBXSMM_ATTRIBUTE_DTOR
 #endif
 
-#if defined(__GNUC__) || (defined(__INTEL_COMPILER) && !defined(_WIN32))
+#if defined(__GNUC__) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32))
 # define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
 #else
 # define LIBXSMM_ATTRIBUTE_UNUSED
@@ -559,7 +567,7 @@
 # if !defined(NOMINMAX)
 #   define NOMINMAX 1
 # endif
-# if defined(__INTEL_COMPILER) && (190023506 <= _MSC_FULL_VER)
+# if defined(LIBXSMM_INTEL_COMPILER) && (190023506 <= _MSC_FULL_VER)
 #   define __builtin_huge_val() HUGE_VAL
 #   define __builtin_huge_valf() HUGE_VALF
 #   define __builtin_nan nan
@@ -593,11 +601,11 @@
 /* _Float128 was introduced with GNU GCC 7.0. */
 #if !defined(_Float128) && defined(__GNUC__) && !defined(__cplusplus) \
   && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
-  || (defined(__INTEL_COMPILER) && defined(__INTEL_COMPILER_UPDATE) && ( \
-        ((1800 <= ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE))) \
-      && (1801  > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))) || \
-        ((1706  > ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE))) \
-      &&    (0 != ((__INTEL_COMPILER) + (__INTEL_COMPILER_UPDATE)))))))
+  || (defined(LIBXSMM_INTEL_COMPILER) && defined(LIBXSMM_INTEL_COMPILER_UPDATE) && ( \
+        ((1800 <= ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE))) \
+      && (1801  > ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE)))) || \
+        ((1706  > ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE))) \
+      &&    (0 != ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE)))))))
 # define _Float128 __float128
 #endif
 

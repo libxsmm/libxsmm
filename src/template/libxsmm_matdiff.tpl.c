@@ -44,7 +44,7 @@ for (i = 0; i < nn; ++i) {
     const double ri = real_ref[i*ldr+j], ti = (0 != real_tst ? real_tst[i*ldt+j] : 0);
     const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
     const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
-    if (LIBXSMM_FEQ(ta, ta)) { /* ta != NaN */
+    if (LIBXSMM_NOTNAN(ta) && inf.s > ta) {
       /* maximum absolute error and location */
       if (info->linf_abs < di) {
         info->linf_abs = di;
@@ -58,7 +58,7 @@ for (i = 0; i < nn; ++i) {
         if (info->linf_rel < dri) info->linf_rel = dri;
         /* sum of relative differences */
         v0 = dri * dri;
-        if (INFINITY > v0) {
+        if (inf.s > v0) {
           v0 -= compd;
           v1 = info->l2_rel + v0;
           compd = (v1 - info->l2_rel) - v0;
@@ -93,7 +93,7 @@ for (i = 0; i < nn; ++i) {
 
       /* Froebenius-norm of differences with Kahan compensation */
       v0 = di * di;
-      if (INFINITY > v0) {
+      if (inf.s > v0) {
         v0 -= compf;
         v1 = info->l2_abs + v0;
         compf = (v1 - info->l2_abs) - v0;

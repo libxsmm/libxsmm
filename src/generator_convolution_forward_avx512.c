@@ -46,10 +46,13 @@
 # pragma offload_attribute(pop)
 #endif
 
+
 LIBXSMM_API_INTERN
-void libxsmm_generator_convolution_forward_avx512_kernel( libxsmm_generated_code*                       io_generated_code,
-    const libxsmm_convolution_forward_descriptor* i_conv_desc,
-    const char*                                   i_arch ) {
+void libxsmm_generator_convolution_forward_avx512_kernel(
+  libxsmm_generated_code*                       io_generated_code,
+  const libxsmm_convolution_forward_descriptor* i_conv_desc,
+  const char*                                   i_arch )
+{
   libxsmm_convolution_kernel_config l_conv_kernel_config;
   libxsmm_convolution_forward_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -1863,8 +1866,4 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_qfma_x_rows( libxsmm_g
     }
   }
 }
-
-
-
-
 

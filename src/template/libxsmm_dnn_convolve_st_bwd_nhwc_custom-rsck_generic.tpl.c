@@ -50,7 +50,7 @@ const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? 
 const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
 
 /* offset pointer in case of physical padding */
-element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm * handle->ofmblock;
+element_output_type *const out = (element_output_type*)handle->grad_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->blocksofm * handle->ofmblock;
 
 #if defined(LIBXSMM_DNN_TPL_FWD_DIRECT_GENERIC_NHWC_CUSTOM)
 /* Weight and transpose_weight tensor declaration */
@@ -135,7 +135,7 @@ for (imgifm1 = thr_begin; imgifm1 < thr_end; ++imgifm1) {
         for (ofm2 = 0; ofm2 < handle->ifmblock; ofm2++) {
           temp_ptr[ofm2] = (element_input_type)0;
         }
-        temp_ptr += handle->blocksifm*handle->ifmblock;
+        temp_ptr += (size_t)handle->blocksifm*handle->ifmblock;
       }
     }
 

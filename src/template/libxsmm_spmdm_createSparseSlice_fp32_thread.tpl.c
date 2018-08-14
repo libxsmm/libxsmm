@@ -78,10 +78,10 @@ else {
     rowidx_ptr[i] = cnt;
     if ('T' == transA || 't' == transA) {
       for (k = 0; k < ncols_aligned; k += 4*SIMD_WIDTH_FP32) {
-        SIMDTYPE_FP32 v1 = _MM_GATHER_FP32(input_ptr + k*handle->m + i, vindex, 4);
-        SIMDTYPE_FP32 v2 = _MM_GATHER_FP32(input_ptr + (k+SIMD_WIDTH_FP32)*handle->m + i, vindex, 4);
-        SIMDTYPE_FP32 v3 = _MM_GATHER_FP32(input_ptr + (k+2*SIMD_WIDTH_FP32)*handle->m + i, vindex, 4);
-        SIMDTYPE_FP32 v4 = _MM_GATHER_FP32(input_ptr + (k+3*SIMD_WIDTH_FP32)*handle->m + i, vindex, 4);
+        SIMDTYPE_FP32 v1 = _MM_GATHER_FP32(input_ptr + (size_t)k * handle->m + i, vindex, 4);
+        SIMDTYPE_FP32 v2 = _MM_GATHER_FP32(input_ptr + ((size_t)k+1*SIMD_WIDTH_FP32) * handle->m + i, vindex, 4);
+        SIMDTYPE_FP32 v3 = _MM_GATHER_FP32(input_ptr + ((size_t)k+2*SIMD_WIDTH_FP32) * handle->m + i, vindex, 4);
+        SIMDTYPE_FP32 v4 = _MM_GATHER_FP32(input_ptr + ((size_t)k+3*SIMD_WIDTH_FP32) * handle->m + i, vindex, 4);
         SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzero);
         SIMDMASKTYPE_FP32 m2 = _MM_CMPNEQ_FP32(v2, vzero);
         SIMDMASKTYPE_FP32 m3 = _MM_CMPNEQ_FP32(v3, vzero);
@@ -92,7 +92,7 @@ else {
         COMPRESS_FP32(v4, k + 3*SIMD_WIDTH_FP32, m4, cnt);
       }
       for (k = ncols_aligned; k < ncols_aligned_2; k += SIMD_WIDTH_FP32) {
-        SIMDTYPE_FP32 v1 = _MM_GATHER_FP32(input_ptr + k*handle->m + i, vindex, 4);
+        SIMDTYPE_FP32 v1 = _MM_GATHER_FP32(input_ptr + (size_t)k * handle->m + i, vindex, 4);
         SIMDMASKTYPE_FP32 m1 = _MM_CMPNEQ_FP32(v1, vzero);
         COMPRESS_FP32(v1, k, m1, cnt);
       }
@@ -106,14 +106,14 @@ else {
       for (k = 0; k < ncols_aligned; k += 4*SIMD_WIDTH_FP32) {
         SIMDTYPE_FP32 v1, v2, v3, v4;
         SIMDMASKTYPE_FP32 m1, m2, m3, m4;
-        v1 = _MM_LOADU_FP32(input_ptr + i*handle->k + k);
-        _MM_PREFETCH((char *)(input_ptr + (i+2)*handle->k + k), _MM_HINT_T0);
-        v2 = _MM_LOADU_FP32(input_ptr + i*handle->k + k + SIMD_WIDTH_FP32);
-        _MM_PREFETCH((char *)(input_ptr + (i+2)*handle->k + k + SIMD_WIDTH_FP32), _MM_HINT_T0);
-        v3 = _MM_LOADU_FP32(input_ptr + i*handle->k + k + 2*SIMD_WIDTH_FP32);
-        _MM_PREFETCH((char *)(input_ptr + (i+2)*handle->k + k + 2*SIMD_WIDTH_FP32), _MM_HINT_T0);
-        v4 = _MM_LOADU_FP32(input_ptr + i*handle->k + k + 3*SIMD_WIDTH_FP32);
-        _MM_PREFETCH((char *)(input_ptr + (i+2)*handle->k + k + 3*SIMD_WIDTH_FP32), _MM_HINT_T0);
+        v1 = _MM_LOADU_FP32(input_ptr + ((size_t)i)   * handle->k + (size_t)k);
+        _MM_PREFETCH((char*)input_ptr + ((size_t)i+2) * handle->k + (size_t)k, _MM_HINT_T0);
+        v2 = _MM_LOADU_FP32(input_ptr + ((size_t)i)   * handle->k + (size_t)k + (size_t)SIMD_WIDTH_FP32);
+        _MM_PREFETCH((char*)input_ptr + ((size_t)i+2) * handle->k + (size_t)k + (size_t)SIMD_WIDTH_FP32, _MM_HINT_T0);
+        v3 = _MM_LOADU_FP32(input_ptr + ((size_t)i)   * handle->k + (size_t)k + (size_t)2 * SIMD_WIDTH_FP32);
+        _MM_PREFETCH((char*)input_ptr + ((size_t)i+2) * handle->k + (size_t)k + (size_t)2 * SIMD_WIDTH_FP32, _MM_HINT_T0);
+        v4 = _MM_LOADU_FP32(input_ptr + ((size_t)i)   * handle->k + (size_t)k + (size_t)3 * SIMD_WIDTH_FP32);
+        _MM_PREFETCH((char*)input_ptr + ((size_t)i+2) * handle->k + (size_t)k + (size_t)3 * SIMD_WIDTH_FP32, _MM_HINT_T0);
         m1 = _MM_CMPNEQ_FP32(v1, vzero);
         m2 = _MM_CMPNEQ_FP32(v2, vzero);
         m3 = _MM_CMPNEQ_FP32(v3, vzero);
@@ -126,8 +126,8 @@ else {
       for (k = ncols_aligned; k < ncols_aligned_2; k += SIMD_WIDTH_FP32) {
         SIMDTYPE_FP32 v1;
         SIMDMASKTYPE_FP32 m1;
-        v1 = _MM_LOADU_FP32(input_ptr + i*handle->k + k);
-        _MM_PREFETCH((char *)(input_ptr + (i+2)*handle->k + k), _MM_HINT_T0);
+        v1 = _MM_LOADU_FP32(input_ptr + ((size_t)i)   * handle->k + (size_t)k);
+        _MM_PREFETCH((char*)input_ptr + ((size_t)i+2) * handle->k + (size_t)k, _MM_HINT_T0);
         m1 = _MM_CMPNEQ_FP32(v1, vzero);
         COMPRESS_FP32(v1, k, m1, cnt);
       }
@@ -139,14 +139,5 @@ else {
     }
   }
   rowidx_ptr[nrows] = cnt;
-#if 0
-  printf("cnt: %d\n", cnt);
-  for (i = 0; i <= nrows; i++) {
-    int j;
-    for (j = slice.rowidx[i]; j < slice.rowidx[i+1]; j++) {
-      printf("(%d, %d): %f ", i, colidx_ptr[j], values_ptr[j]);
-    }
-  }
-#endif
 }
 

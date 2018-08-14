@@ -39,7 +39,7 @@
 #if !defined(LIBXSMM_INTRINSICS_STATIC) && /* GCC 4.4 (target-attribute) */ \
   (defined(__GNUC__) && (LIBXSMM_VERSION3(4, 4, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) && !defined(__clang__)) || \
   (defined(__clang__) && LIBXSMM_VERSION3(3, 7, 0) > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) || \
-  (defined(__APPLE__) && defined(__MACH__) && !defined(__INTEL_COMPILER) && defined(__clang__) && \
+  (defined(__APPLE__) && defined(__MACH__) && !defined(LIBXSMM_INTEL_COMPILER) && defined(__clang__) && \
    LIBXSMM_VERSION3(9, 0, 0) > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 # define LIBXSMM_INTRINSICS_STATIC
 #endif
@@ -103,9 +103,9 @@
 # if defined(LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_INTRINSICS_STATIC)
 #   if defined(__INTEL_COMPILER)
       /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
-#     if 1500 <= (__INTEL_COMPILER)
+#     if 1500 <= (LIBXSMM_INTEL_COMPILER)
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
-#     elif 1400 <= (__INTEL_COMPILER)
+#     elif 1400 <= (LIBXSMM_INTEL_COMPILER)
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
 #     else
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
@@ -342,7 +342,7 @@
 #if defined(LIBXSMM_INTRINSICS_INCLUDE)
 # if defined(_WIN32)
 #   include <intrin.h>
-# elif defined(__INTEL_COMPILER) || defined(_CRAYC) || defined(__clang__) || defined(__PGI)
+# elif defined(LIBXSMM_INTEL_COMPILER) || defined(_CRAYC) || defined(__clang__) || defined(__PGI)
 #   include <x86intrin.h>
 # elif defined(__GNUC__) && (LIBXSMM_VERSION3(4, 4, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 #   include <x86intrin.h>
@@ -397,8 +397,8 @@
 # define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_stream_ps(A, B)
 # define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_stream_pd(A, B)
 #endif
-#if defined(__INTEL_COMPILER)
-# if 1600 <= (__INTEL_COMPILER)
+#if defined(LIBXSMM_INTEL_COMPILER)
+# if 1600 <= (LIBXSMM_INTEL_COMPILER)
 #   define LIBXSMM_INTRINSICS_MM512_SET_EPI16(E31, E30, E29, E28, E27, E26, E25, E24, E23, E22, E21, E20, E19, E18, E17, E16, \
                                                         E15, E14, E13, E12, E11, E10, E9, E8, E7, E6, E5, E4, E3, E2, E1, E0) \
                              _mm512_set_epi16(E31, E30, E29, E28, E27, E26, E25, E24, E23, E22, E21, E20, E19, E18, E17, E16, \

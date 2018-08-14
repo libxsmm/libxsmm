@@ -234,8 +234,8 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_abc
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_prf
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch
@@ -411,7 +411,8 @@
           ! General dense matrix multiplication; MT via libxsmmext (double-precision).
           ! Implicit FORTRAN 77 interface: similar to DGEMM.
           PURE SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,    &
-     &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
+     &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
+     &    BIND(C, NAME="libxsmm_dgemm_omp_") ! FORTRAN 77 layer
             IMPORT C_DOUBLE, C_CHAR, LIBXSMM_BLASINT_KIND
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -424,7 +425,8 @@
           ! General dense matrix multiplication; MT via libxsmmext (single-precision).
           ! Implicit FORTRAN 77 interface: similar to SGEMM.
           PURE SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,    &
-     &    alpha, a, lda, b, ldb, beta, c, ldc) BIND(C)
+     &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
+     &    BIND(C, NAME="libxsmm_sgemm_omp_") ! FORTRAN 77 layer
             IMPORT C_FLOAT, C_CHAR, LIBXSMM_BLASINT_KIND
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
