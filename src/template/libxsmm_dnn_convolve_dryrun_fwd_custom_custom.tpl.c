@@ -235,11 +235,11 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->n_entries_fwd[ltid] = local_entries/3;
 
   /* Allocate auxiliary data structures for index jitting  */
-  compute_indices = (int*) libxsmm_aligned_malloc( (local_entries+3) * sizeof(int), 64);
+  compute_indices = (int*) libxsmm_aligned_malloc(((size_t)local_entries+3) * sizeof(int), 64);
   handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
 
   /* BN offsets...  */
-  if  (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
+  if  (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) && 0 != local_entries) {
     bn_indices = (int*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(int), 64);
     handle->bn_indices_ptrs[ltid] = bn_indices;
   }

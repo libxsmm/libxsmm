@@ -34,6 +34,7 @@
 #include "libxsmm_typedefs.h"
 
 /** Helper macros for eliding prefetch address calculations depending on prefetch scheme. */
+#if !defined(_WIN32) && !defined(__CYGWIN__) /* TODO: fully support calling convention */
 #if 0 != ((LIBXSMM_PREFETCH) & 2/*AL2*/) \
  || 0 != ((LIBXSMM_PREFETCH) & 4/*AL2_JPST*/) \
  || 0 != ((LIBXSMM_PREFETCH) & 16/*AL2_AHEAD*/) \
@@ -46,6 +47,7 @@
 #endif
 #if 0 != ((LIBXSMM_PREFETCH) & 128/*CL1*/)
 # define LIBXSMM_GEMM_PREFETCH_C(EXPR) (EXPR)
+#endif
 #endif
 /** Secondary helper macros derived from the above group. */
 #if defined(LIBXSMM_GEMM_PREFETCH_A)
@@ -258,14 +260,12 @@
 
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
 #define LIBXSMM_MMCALL_ABC(FN, A, B, C) \
-  LIBXSMM_ASSERT(FN); \
-  FN(A, B, C)
+  LIBXSMM_ASSERT(FN); FN(A, B, C)
 #define LIBXSMM_MMCALL_PRF(FN, A, B, C, PA, PB, PC) { \
   LIBXSMM_NOPREFETCH_A(LIBXSMM_UNUSED(PA)); \
   LIBXSMM_NOPREFETCH_B(LIBXSMM_UNUSED(PB)); \
   LIBXSMM_NOPREFETCH_C(LIBXSMM_UNUSED(PC)); \
-  LIBXSMM_ASSERT(FN); \
-  FN(A, B, C, \
+  LIBXSMM_ASSERT(FN); FN(A, B, C, \
     LIBXSMM_GEMM_PREFETCH_A(PA), \
     LIBXSMM_GEMM_PREFETCH_B(PB), \
     LIBXSMM_GEMM_PREFETCH_C(PC)); \
@@ -276,7 +276,7 @@
   LIBXSMM_MMCALL_ABC(FN, A, B, C)
 #else
 # define LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, LDA, LDB, LDC) \
-  LIBXSMM_MMCALL_PRF(FN, A, B, C, (A) + (LDA) * (K), (B) + (LDB) * (N), (C) + (LDC) * (N))
+  LIBXSMM_MMCALL_PRF(FN, A, B, C, (A) + ((size_t)LDA) * (K), (B) + ((size_t)LDB) * (N), (C) + ((size_t)LDC) * (N))
 #endif
 #define LIBXSMM_MMCALL(FN, A, B, C, M, N, K) LIBXSMM_MMCALL_LDX(FN, A, B, C, M, N, K, M, K, M)
 
@@ -426,26 +426,29 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void
 LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void);
 
 /**
- * General dense matrix multiplication (single-precision), which re-exposes
- * LAPACK/BLAS but allows to rely on LIBXSMM's defaults (libxsmm_config.h)
+ * General dense matrix multiplication, which re-exposes LAPACK/BLAS
+ * but allows to rely on LIBXSMM's defaults (libxsmm_config.h)
  * when supplying NULL-arguments in certain places.
  */
-LIBXSMM_API void libxsmm_blas_sgemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const float* alpha, const float* a, const libxsmm_blasint* lda,
-  const float* b, const libxsmm_blasint* ldb,
-  const float* beta, float* c, const libxsmm_blasint* ldc);
+LIBXSMM_API void libxsmm_blas_xgemm(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+  const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc);
 
-/**
- * General dense matrix multiplication (double-precision), which re-exposes
- * LAPACK/BLAS but allows to rely on LIBXSMM's defaults (libxsmm_config.h)
- * when supplying NULL-arguments in certain places.
- */
-LIBXSMM_API void libxsmm_blas_dgemm(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const double* alpha, const double* a, const libxsmm_blasint* lda,
-  const double* b, const libxsmm_blasint* ldb,
-  const double* beta, double* c, const libxsmm_blasint* ldc);
+#define libxsmm_blas_dgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+  libxsmm_blas_xgemm(LIBXSMM_GEMM_PRECISION_F64, LIBXSMM_GEMM_PRECISION_F64, \
+    TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+#define libxsmm_blas_sgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+  libxsmm_blas_xgemm(LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_GEMM_PRECISION_F32, \
+    TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+
+#define libxsmm_dgemm_omp(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+  libxsmm_xgemm_omp(LIBXSMM_GEMM_PRECISION_F64, LIBXSMM_GEMM_PRECISION_F64, \
+    TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+#define libxsmm_sgemm_omp(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+  libxsmm_xgemm_omp(LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_GEMM_PRECISION_F32, \
+    TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
 /** Translates GEMM prefetch request into prefetch-enumeration (incl. FE's auto-prefetch). */
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch);

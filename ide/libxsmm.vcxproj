@@ -53,7 +53,6 @@
     <ClInclude Include="..\src\generator_packed_xct_avx2_lln.h" />
     <ClInclude Include="..\src\libxsmm_bgemm_types.h" />
     <ClInclude Include="..\src\libxsmm_dnn_elementwise.h" />
-    <ClInclude Include="..\src\packed_trsm_dmacros.h" />
     <ClInclude Include="..\src\generator_common.h" />
     <ClInclude Include="..\src\generator_packed_trsm_avx_avx512.h" />
     <ClInclude Include="..\src\generator_convolution_common.h" />
@@ -1113,12 +1112,14 @@
   <ItemGroup>
     <None Include="..\.codefile" />
     <None Include="..\.flock.sh" />
-    <None Include="..\.fullci" />
     <None Include="..\.gitattributes" />
     <None Include="..\.gitconfig" />
     <None Include="..\.gitignore" />
     <None Include="..\.state.sh" />
+    <None Include="..\.test-dnn-fullci" />
     <None Include="..\.test-dnn.yml" />
+    <None Include="..\.test-rnn-fullci" />
+    <None Include="..\.test-rnn.yml" />
     <None Include="..\.travis.yml" />
     <None Include="..\include\libxsmm.f" />
     <None Include="..\LICENSE.md" />

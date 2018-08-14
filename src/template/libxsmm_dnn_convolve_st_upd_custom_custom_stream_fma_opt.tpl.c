@@ -54,7 +54,7 @@ const int copy_thr_begin = (ltid * copychunksize < copywork) ? (ltid * copychunk
 const int copy_thr_end = ((ltid + 1) * copychunksize < copywork) ? ((ltid + 1) * copychunksize) : copywork;
 
 /* Pointer related variables for output and weight */
-element_output_type *const out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
+element_output_type *const out = (element_output_type*)handle->grad_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
 element_filter_type* remote_weight_ptr = 0;
 element_filter_type* weight_ptr = (element_filter_type*)handle->grad_filter->data;

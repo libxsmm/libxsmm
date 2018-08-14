@@ -108,7 +108,10 @@ LIBXSMM_API_INLINE void internal_spmdm_allocate_csr_a(libxsmm_spmdm_handle* hand
   int m_blocks = handle->mb;
   int k_blocks = handle->kb;
 
-  size_t sz_block = ((handle->bm + 1)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(uint16_t) + (handle->bm)*(handle->bk)*sizeof(float) + sizeof(libxsmm_CSR_sparseslice));
+  const size_t sz_block = (((size_t)handle->bm + 1) * sizeof(uint16_t)
+    + (size_t)handle->bm * handle->bk * sizeof(uint16_t)
+    + (size_t)handle->bm * handle->bk * sizeof(float)
+    + sizeof(libxsmm_CSR_sparseslice));
   size_t sz_all_blocks = sz_block * handle->mb * handle->kb;
   char* memory_block = 0;
   void *const pv = &memory_block;
@@ -119,18 +122,18 @@ LIBXSMM_API_INLINE void internal_spmdm_allocate_csr_a(libxsmm_spmdm_handle* hand
   {
     char* memory_head  = memory_block;
     libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice*)(memory_head);
-    memory_head += handle->mb * handle->kb * sizeof(libxsmm_CSR_sparseslice);
+    memory_head += (size_t)handle->mb * handle->kb * sizeof(libxsmm_CSR_sparseslice);
     assert(0 != libxsmm_output_csr_a/*sanity check*/);
 
     for (kb = 0; kb < k_blocks; kb++) {
       for (mb = 0; mb < m_blocks; mb++) {
         int i = kb*m_blocks + mb;
-        libxsmm_output_csr_a[i].rowidx = (uint16_t *)(memory_head);
-        memory_head += (handle->bm + 1)*sizeof(uint16_t);
-        libxsmm_output_csr_a[i].colidx = (uint16_t *)(memory_head);
-        memory_head += (handle->bm)*(handle->bk)*sizeof(uint16_t);
+        libxsmm_output_csr_a[i].rowidx = (uint16_t*)(memory_head);
+        memory_head += ((size_t)handle->bm + 1) * sizeof(uint16_t);
+        libxsmm_output_csr_a[i].colidx = (uint16_t*)(memory_head);
+        memory_head += (size_t)handle->bm * handle->bk * sizeof(uint16_t);
         libxsmm_output_csr_a[i].values = (float*)(memory_head);
-        memory_head += (handle->bm)*(handle->bk)*sizeof(float);
+        memory_head += (size_t)handle->bm * handle->bk * sizeof(float);
       }
     }
     assert(memory_head == (memory_block + sz_all_blocks));
@@ -147,7 +150,9 @@ LIBXSMM_API_INLINE void internal_spmdm_allocate_csr_a(libxsmm_spmdm_handle* hand
 LIBXSMM_API_INLINE void internal_spmdm_allocate_scratch(libxsmm_spmdm_handle* handle, int max_threads)
 {
   void *const pv = &handle->base_ptr_scratch_B_scratch_C;
-  size_t sz_memory_for_scratch_per_thread = ((handle->bm)*(handle->bn)*sizeof(float) + (handle->bk)*(handle->bn)*sizeof(float)), sz_total_memory;
+  size_t sz_total_memory, sz_memory_for_scratch_per_thread =
+    (size_t)handle->bm * handle->bn * sizeof(float) +
+    (size_t)handle->bk * handle->bn * sizeof(float);
   sz_memory_for_scratch_per_thread = LIBXSMM_UP2(sz_memory_for_scratch_per_thread, 4096);
   sz_total_memory = sz_memory_for_scratch_per_thread * max_threads;
   handle->base_ptr_scratch_B_scratch_C = 0;
@@ -608,7 +613,7 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
   handle->kb = (handle->k + handle->bk - 1) / handle->bk;
 
   max_work_per_block    = handle->bm * handle->bn;
-  avg_work_per_block    = (double)(handle->m * handle->n) / (handle->mb * handle->nb);
+  avg_work_per_block    = (double)((size_t)handle->m * handle->n) / ((size_t)handle->mb * handle->nb);
   load_imbalance_1      = max_work_per_block / avg_work_per_block;
   max_blocks_per_thread = (handle->mb * handle->nb + max_threads - 1) / max_threads;
   avg_blocks_per_thread = (double)handle->mb * handle->nb / max_threads;
@@ -623,7 +628,7 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
     avg_blocks_per_thread = (double)handle->mb * handle->nb / max_threads;
     load_imbalance_2      = max_blocks_per_thread / avg_blocks_per_thread;
     max_work_per_block    = handle->bm * handle->bn;
-    avg_work_per_block    = (double)(handle->m * handle->n) / (handle->mb * handle->nb);
+    avg_work_per_block    = (double)((size_t)handle->m * handle->n) / ((size_t)handle->mb * handle->nb);
     load_imbalance_1      = max_work_per_block / avg_work_per_block;
     load_imbalance        = load_imbalance_1 * load_imbalance_2;
   }

@@ -150,7 +150,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   {
 # if !defined(LIBXSMM_DNN_VLA_TLS1)
     if (0 != handle->use_fwd_generic || 0 != handle->use_bwd_generic || 0 != handle->use_upd_generic) {
-      const int padded_h = handle->desc.H + (2 * handle->desc.pad_h), padded_w = handle->desc.W + (2 * handle->desc.pad_w);
+      const size_t padded_h = ((size_t)2 * handle->desc.pad_h) + handle->desc.H, padded_w = ((size_t)2 * handle->desc.pad_w) + handle->desc.W;
       const size_t size5_tensor = padded_h * padded_w * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
       const size_t size5 = LIBXSMM_UP2(size5_tensor, LIBXSMM_CACHELINE) * handle->desc.threads;
       if (handle->max_scratch5_size < size5) handle->max_scratch5_size = size5;
@@ -163,12 +163,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     if (handle->use_accumulation_scratch)
 #   endif
     {
-      const size_t size6 = handle->ofmblock * handle->ofw * handle->ofh * sizeof(float);
+      const size_t size6a = (size_t)handle->ofmblock * handle->ofw * handle->ofh * sizeof(float);
+      const size_t size6b = (size_t)handle->ifmblock * handle->fm_lp_block *  handle->desc.W * handle->desc.H * sizeof(float);
+      const size_t size6 = ( size6a > size6b ) ? size6a : size6b;
       handle->scratch6_size = LIBXSMM_UP2(size6, LIBXSMM_CACHELINE) * handle->desc.threads;
     }
     if (0 != handle->use_upd_generic) {
       const size_t output_typesize = libxsmm_dnn_typesize(handle->datatype_out);
-      const size_t size6_tensor = handle->ofhp * handle->ofwp * handle->ofmblock * output_typesize;
+      const size_t size6_tensor = (size_t)handle->ofhp * handle->ofwp * handle->ofmblock * output_typesize;
       const size_t size6 = LIBXSMM_UP2(size6_tensor, LIBXSMM_CACHELINE) * handle->desc.threads;
       if (handle->scratch6_size < size6) handle->scratch6_size = size6;
     }
@@ -178,7 +180,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     if (0 != handle->use_upd_generic) {
       /* FIXME: currently filter data-type is always smaller/equal output type */
       const size_t filter_typesize = libxsmm_dnn_typesize(handle->datatype_out);
-      const size_t size7 = handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * filter_typesize;
+      const size_t size7 = (size_t)handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * filter_typesize;
       handle->scratch7_size = LIBXSMM_UP2(size7, LIBXSMM_CACHELINE) * handle->desc.threads;
     }
     else {
@@ -189,54 +191,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   }
 #endif
   return status;
-}
-
-
-/* This function finds the prime factors of a number */
-LIBXSMM_API_INLINE void internal_dnn_handle_factors(
-    unsigned int num,
-    unsigned int num_factors[] )
-{
-  unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
-  int i;
-  unsigned int total_primes = 10;
-  unsigned int idx = 0;
-
-  for ( i = total_primes-1; i >= 0; i-- ) {
-    while((num % primes[i]) == 0) {
-      num_factors[idx] = primes[i];
-      idx++;
-      num = num/primes[i];
-    }
-  }
-}
-
-
-/**
- * This function finds the unroll factor for (itiles*jtiles*bimg)
- * such that ur <= max_acc
- * The following loop may not give an optimal solution (knapsack problem)
- * Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2
- */
-LIBXSMM_API_INLINE void internal_dnn_handle_factors_all(
-    unsigned int  product,
-    unsigned int* ur,
-    unsigned int  max_acc)
-{
-  unsigned int i;
-  unsigned int fact[10];
-
-  for ( i = 0; i < 10; i++ ) {
-    fact[i] = 1;
-  }
-  internal_dnn_handle_factors(product, fact);
-
-  *ur = 1;
-  for ( i = 0; fact[i] != 1; i++ ) {
-    if ( (fact[i] * (*ur)) <= max_acc ) {
-      *ur = (*ur)*fact[i];
-    }
-  }
 }
 
 
@@ -602,7 +556,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         } else {
           max_acc = 26;
         }
-        internal_dnn_handle_factors_all( wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, &(wino_desc_fp.ur), max_acc );
+        wino_desc_fp.ur = libxsmm_product_limit(wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg, max_acc, 0);
         /* ur should be at least 14 to hide qfma latency */
         temp_ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_fp.ur, 14), wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg);
         if (0 == wino_desc_fp.itiles*wino_desc_fp.jtiles*wino_desc_fp.bimg % temp_ur) {
@@ -936,7 +890,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         } else {
           max_acc = 26;
         }
-        internal_dnn_handle_factors_all( wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, &(wino_desc_bp.ur), max_acc );
+        wino_desc_bp.ur = libxsmm_product_limit(wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg, max_acc, 0);
         temp_ur = LIBXSMM_MIN(LIBXSMM_MAX(wino_desc_bp.ur, 14), wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg);
         if (0 == wino_desc_bp.itiles*wino_desc_bp.jtiles*wino_desc_bp.bimg % temp_ur) {
           wino_desc_bp.ur = temp_ur;
@@ -1285,9 +1239,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         allowed_unroll = 512 / (wino_desc_wu.bimg*wino_desc_wu.itiles*wino_desc_wu.jtiles);
         allowed_unroll = (allowed_unroll > 26) ? 26 : allowed_unroll;
         if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg % 4) == 0) {
-          internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg/4, &(wino_desc_wu.ur), allowed_unroll );
+          wino_desc_wu.ur = libxsmm_product_limit(wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg/4, allowed_unroll, 0);
         } else {
-          internal_dnn_handle_factors_all( wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg,   &(wino_desc_wu.ur), allowed_unroll );
+          wino_desc_wu.ur = libxsmm_product_limit(wino_desc_wu.itiles*wino_desc_wu.jtiles*wino_desc_wu.bimg, allowed_unroll, 0);
         }
       }
 
@@ -1321,17 +1275,17 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
       }
 
       handle->scratch1 = 0;
-      handle->scratch1_size = alpha*alpha*handle->desc.C*handle->desc.K*libxsmm_dnn_typesize(handle->datatype_in);
+      handle->scratch1_size = (size_t)alpha*alpha*handle->desc.C*handle->desc.K*libxsmm_dnn_typesize(handle->datatype_in);
       handle->scratch3 = 0;
-      handle->scratch3_size = alpha*alpha*ijtiles*handle->desc.N * handle->desc.C * libxsmm_dnn_typesize(handle->datatype_in);
+      handle->scratch3_size = (size_t)alpha*alpha*ijtiles*handle->desc.N * handle->desc.C * libxsmm_dnn_typesize(handle->datatype_in);
       handle->scratch4 = 0;
-      handle->scratch4_size = alpha*alpha*ijtiles*handle->desc.N * handle->desc.K * libxsmm_dnn_typesize(handle->datatype_out);
+      handle->scratch4_size = (size_t)alpha*alpha*ijtiles*handle->desc.N * handle->desc.K * libxsmm_dnn_typesize(handle->datatype_out);
       handle->scratch2 = 0;
       handle->scratch2_size = 0;
       handle->scratchIw = 0;
-      handle->scratchIw_size = ijtiles*alpha*alpha*16*libxsmm_dnn_typesize(handle->datatype_in)*handle->desc.threads;
+      handle->scratchIw_size = (size_t)ijtiles*alpha*alpha*16*libxsmm_dnn_typesize(handle->datatype_in)*handle->desc.threads;
       handle->scratchOw = 0;
-      handle->scratchOw_size = ijtiles*alpha*alpha*16*libxsmm_dnn_typesize(handle->datatype_out)*handle->desc.threads;
+      handle->scratchOw_size = (size_t)ijtiles*alpha*alpha*16*libxsmm_dnn_typesize(handle->datatype_out)*handle->desc.threads;
       handle->scratchVk = 0;
       handle->scratchVk_size = handle->scratch3_size;
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);

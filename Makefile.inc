@@ -83,6 +83,27 @@ FMAIN = "^\s*PROGRAM\s\s*\w\w*\(\s\s*\!.*\)*$$"
 SYM ?= 0
 DBG ?= 0
 
+# Instrumentation level (trace)
+ifeq (,$(strip $(INSTRUMENT)))
+  INSTRUMENT = 0
+endif
+TRACE ?= 0
+
+ifeq (0,$(DBG))
+  ifneq (0,$(INSTRUMENT))
+    SYM = $(INSTRUMENT)
+  else ifeq (0,$(shell echo "$$((0>$(SYM)))"))
+    DFLAGS += -DNDEBUG
+  else
+    DFLAGS += -D_DEBUG
+  endif
+else # debugging enabled
+  ifneq (0,$(shell echo "$$((1<$(DBG) || 0>$(DBG)))"))
+    DFLAGS += -D_DEBUG
+  endif
+  SYM = $(DBG)
+endif
+
 # Optimization level
 ifeq (0,$(DBG))
   OPT ?= 2
@@ -97,11 +118,10 @@ else
   OPTFLAG = -$(OPT)
 endif
 
-# Instrumentation level (trace)
-ifeq (,$(strip $(INSTRUMENT)))
-  INSTRUMENT = 0
-endif
-TRACE ?= 0
+# Avoid more sophisticated flags of the GCC tool chain,
+# and improve compatibility with compilers supposed to be
+# compatible with the GCC tool chain
+COMPATIBLE ?= 0
 
 # Number of repeated calls (tests),
 # or used to scale the problem size
@@ -323,16 +343,20 @@ CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 # or pickup the Intel Compiler (if available).
 ifneq (,$(notdir $(shell which icpc 2>/dev/null)))
   CXX = icpc
+else ifneq (,$(notdir $(shell which icpx 2>/dev/null)))
+  CXX = icpx
 endif
 ifneq (,$(notdir $(shell which icc 2>/dev/null)))
   CC = icc
+else ifneq (,$(notdir $(shell which icx 2>/dev/null)))
+  CC = icx
 endif
 ifneq (,$(notdir $(shell which ifort 2>/dev/null)))
   FC = ifort
 endif
 
 # check if the Intel Development Tools are available
-INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icc, \
+INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
   $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1) \
   $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1)))))")
 
@@ -357,20 +381,19 @@ else
   else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CC = gcc
   endif
-  ifneq (0,$(FORTRAN))
+endif
+GFC = $(NULL)
+ifneq (0,$(FORTRAN))
   ifneq (,$(strip $(FC)))
   ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
-      FC = gfortran
-    else
-      FC = $(NULL)
+      GFC = gfortran
     endif
+    FC = $(GFC)
   endif
   endif
-  endif
-endif
-ifeq (0,$(FORTRAN))
-  FC = $(NULL)
+else
+  FC = $(GFC)
 endif
 ifeq (,$(strip $(FC)))
   DFLAGS += -DLIBXSMM_NOFORTRAN
@@ -618,7 +641,7 @@ else ifneq (0,$(GCC))
 else
   SUITE = Compiler
   ifeq (0,$(CLANG))
-    COMPATIBLE ?= 1
+    COMPATIBLE = 1
   endif
   ifneq (0,$(COMPATIBLE))
     ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
@@ -667,54 +690,86 @@ else # fallback
 endif
 endif
 
-ifneq (0,$(CRAY))
-ifeq (0,$(DEPSTATIC))
+ifneq (0,$(DEPSTATIC))
+  ifeq (0,$(COMPATIBLE))
+  ifneq (Darwin,$(UNAME))
+  ifneq (Windows_NT,$(UNAME))
+    ifneq (0,$(HARDEN))
+      ifneq (,$(strip $(HARDEN))) # explicit
+        DYNAMIC = 1
+      else ifneq (0,$(SYM))
+        DYNAMIC = 1
+      endif
+    else ifneq (0,$(SYM))
+      DYNAMIC = 1
+    endif
+  endif
+  endif
+  endif
+else
+  DYNAMIC = 1
+endif
+DYNAMIC ?= 0
+
+#ifneq (0,$(CRAY))
+ifneq (0,$(DYNAMIC))
   XLD := $(XLD) -dynamic
   FLD := $(FLD) -dynamic
   LD := $(LD) -dynamic
 endif
-endif
-
-# Avoid more sophisticated flags of the GCC tool chain,
-# and improve compatibility with compilers supposed to be
-# compatible with the GCC tool chain
-COMPATIBLE ?= 0
+#endif
 
 ifneq (0,$(INTEL))
   AR ?= xiar
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
-  FCFLAGS += -diag-disable 10006,10010,10411,13003
-  ifneq (0,$(THREADS))
-    FCMTFLAGS += -threads
+  CXXFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  CFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  ifeq (,$(strip $(GFC)))
+    LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
+    FCFLAGS += -diag-disable 10006,10010,10411,13003
+    ifneq (0,$(THREADS))
+      FCMTFLAGS += -threads
+    endif
+    FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   endif
-  CPEDANTIC += -Wcheck -diag-disable 177,1419,2547,10382
-  FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
+  ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+    CPEDANTIC += -Wcheck
+  endif
+  CPEDANTIC += -diag-disable 177,1419,2547,10382
   CWARNEXTRA = -Wremarks
   ifeq (1,$(PEDANTIC))
-    FSTD = -std03
     CSTD = -std=c99
-    CXXFLAGS += -Wcheck
-    CFLAGS += $(CSTD) -Wcheck
-    FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
-    FCFLAGS += -free
+    CFLAGS += $(CSTD)
+    ifeq (,$(strip $(GFC)))
+      FSTD = -std03
+      FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
+      FCFLAGS += -free
+    endif
+    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+      CXXFLAGS += -Wcheck
+      CFLAGS += -Wcheck
+    endif
   else ifneq (0,$(PEDANTIC))
-    FSTD = -std03
     CSTD = -std=c89
     CXXFLAGS += $(CPEDANTIC)
     CFLAGS += $(CSTD) $(CPEDANTIC) $(CWARNEXTRA)
-    FCFLAGS += $(FSTD) $(FPEDANTIC)
-    FMFLAGS += -fixed
+    ifeq (,$(strip $(GFC)))
+      FSTD = -std03
+      FCFLAGS += $(FSTD) $(FPEDANTIC)
+      FMFLAGS += -fixed
+    endif
   else
     CSTD = -std=c89
-    FCFLAGS += -free
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += -free
+    endif
   endif
-  # flag specifying output directory must be last
-  FMFLAGS += -module
+  ifeq (,$(strip $(GFC)))
+    # flag specifying output directory must be last
+    FMFLAGS += -module
+  endif
   CXXFLAGS += $(OPTFLAG)
   CFLAGS += $(OPTFLAG)
   FCFLAGS += $(OPTFLAG)
@@ -722,28 +777,23 @@ ifneq (0,$(INTEL))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
     CXXFLAGS += -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
     CFLAGS += -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
-    FCFLAGS += -qoverride_limits #-fp-model fast=2
-    ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
-      FCFLAGS += -align array64byte
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += -qoverride_limits #-fp-model fast=2
+      ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
+        FCFLAGS += -align array64byte
+      endif
+      ifneq (0,$(IPO))
+        FCFLAGS += -ipo
+      endif
     endif
     ifneq (0,$(IPO))
       CXXFLAGS += -ipo
       CFLAGS += -ipo
-      FCFLAGS += -ipo
-    endif
-    ifneq (0,$(INSTRUMENT))
-      SYM = $(INSTRUMENT)
-    else ifeq (0,$(shell echo "$$((0>$(SYM)))"))
-      DFLAGS += -DNDEBUG
-    else
-      DFLAGS += -D_DEBUG
     endif
   else # debugging enabled
-    ifneq (0,$(shell echo "$$((1<$(DBG) || 0>$(DBG)))"))
-      DFLAGS += -D_DEBUG
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += -check
     endif
-    FCFLAGS += -check
-    SYM = $(DBG)
   endif
   ifneq (0,$(INSTRUMENT))
     CXXFLAGS += -finstrument-functions
@@ -805,10 +855,11 @@ ifneq (0,$(INTEL))
     ifeq (1,$(SYM))
       CXXFLAGS := -g $(CXXFLAGS)
       CFLAGS := -g $(CFLAGS)
-      FCFLAGS := -g -traceback $(FCFLAGS)
     else
       CXXFLAGS := -g3 -debug inline-debug-info $(CXXFLAGS)
       CFLAGS := -g3 -debug inline-debug-info $(CFLAGS)
+    endif
+    ifeq (,$(strip $(GFC)))
       FCFLAGS := -g -traceback $(FCFLAGS)
     endif
   endif
@@ -819,15 +870,19 @@ ifneq (0,$(INTEL))
   ifneq (0,$(OMP))
     CXXFLAGS += $(OMPFLAG)
     CFLAGS += $(OMPFLAG)
-    FCFLAGS += $(OMPFLAG)
     LDFLAGS += $(OMPFLAG)
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += $(OMPFLAG)
+    endif
   endif
   ifneq (0,$(SIMD))
   ifneq (0,$(shell echo "$$((150000<=$(CXX_VERSION)))"))
     DFLAGS += -DLIBXSMM_OPENMP_SIMD
     CXXFLAGS += -qopenmp-simd
     CFLAGS += -qopenmp-simd
-    FCFLAGS += -qopenmp-simd
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += -qopenmp-simd
+    endif
   endif
   endif
   ifeq (1,$(STATIC))
@@ -840,9 +895,11 @@ ifneq (0,$(INTEL))
     DFLAGS += -D__STATIC=$(STATIC)
     SLDFLAGS += -static
   endif
+  ifeq (,$(strip $(GFC)))
   ifneq (,$(strip $(R8)))
   ifneq (0,$(R8))
     FCFLAGS += -autodouble
+  endif
   endif
   endif
   # workaround for certain bits introduced by GCC 7.0
@@ -939,18 +996,6 @@ else # GCC assumed
       FLDFLAGS += -fno-lto
       LDFLAGS += -flto
     endif
-    ifneq (0,$(INSTRUMENT))
-      SYM = $(INSTRUMENT)
-    else ifeq (0,$(shell echo "$$((0>$(SYM)))"))
-      DFLAGS += -DNDEBUG
-    else
-      DFLAGS += -D_DEBUG
-    endif
-  else
-    ifneq (0,$(shell echo "$$((1<$(DBG) || 0>$(DBG)))"))
-      DFLAGS += -D_DEBUG
-    endif
-    SYM = $(DBG)
   endif
   ifneq (0,$(INSTRUMENT))
     CXXFLAGS += -finstrument-functions
@@ -1514,7 +1559,7 @@ else ifneq (0,$(BLAS)) # generic
       endif
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
-    OPENBLAS = $(if $(BLASLIBFILE),1,0)
+    OPENBLAS := $(if $(BLASLIBFILE),1,0)
 
     ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
@@ -1544,7 +1589,7 @@ else ifneq (0,$(BLAS)) # generic
       BLAS_LDFLAGS += -lblas
     endif
     ifeq (0,$(OPENBLAS)) # BLAS (reference)
-      ifneq (0,$(STATIC))
+      ifneq (0,$(DEPSTATIC))
       ifneq (,$(LIBGFORTRAN))
         BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
       endif
@@ -1607,7 +1652,7 @@ objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG
 STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
   $(filter-out environment% default automatic,$(origin $V)), \
   $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL \
-    $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP \
+    $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED \
     abslibfile abslibpath absliblpath abslibrpath \
     libpath abslib solink extname objname,$V), \
     $V=$($V)?)))

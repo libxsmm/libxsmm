@@ -1,0 +1,8 @@
+samples/deeplearning/*driver/*
+include/libxsmm_dnn_*.h
+src/libxsmm_bgemm_types.h
+src/template/libxsmm_bgemm*.tpl.c
+src/libxsmm_dnn_elementwise.*
+src/libxsmm_dnn_*cell.c
+src/libxsmm_*bgemm.c
+src/generator_gemm*

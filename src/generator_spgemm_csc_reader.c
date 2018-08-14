@@ -119,7 +119,7 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
         if ( sscanf(l_line, "%u %u %u", o_row_count, o_column_count, o_element_count) == 3 ) {
           /* allocate CSC data structure matching mtx file */
           *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_element_count));
-          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_column_count + 1));
+          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)(*o_column_count) + 1));
           *o_values = (double*) malloc(sizeof(double) * (*o_element_count));
           l_column_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * (*o_column_count));
 
@@ -135,15 +135,15 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
           }
 
           /* set everything to zero for init */
-          memset(*o_row_idx, 0, sizeof(unsigned int)*(*o_element_count));
-          memset(*o_column_idx, 0, sizeof(unsigned int)*(*o_column_count + 1));
-          memset(*o_values, 0, sizeof(double)*(*o_element_count));
-          memset(l_column_idx_id, 0, sizeof(unsigned int)*(*o_column_count));
+          memset(*o_row_idx, 0, sizeof(unsigned int) * (*o_element_count));
+          memset(*o_column_idx, 0, sizeof(unsigned int) * ((size_t)(*o_column_count) + 1));
+          memset(*o_values, 0, sizeof(double) * (*o_element_count));
+          memset(l_column_idx_id, 0, sizeof(unsigned int) * (*o_column_count));
 
           /* init column idx */
-          for ( l_i = 0; l_i < (*o_column_count + 1); l_i++)
-            (*o_column_idx)[l_i] = (*o_element_count);
-
+          for (l_i = 0; l_i <= *o_column_count; ++l_i) {
+            (*o_column_idx)[l_i] = *o_element_count;
+          }
           /* init */
           (*o_column_idx)[0] = 0;
           l_i = 0;

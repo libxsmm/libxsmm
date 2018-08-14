@@ -194,23 +194,6 @@ LIBXSMM_APIVAR(size_t internal_malloc_scratch_nmallocs);
 LIBXSMM_APIVAR(size_t internal_malloc_scratch_size);
 
 
-LIBXSMM_API_INTERN size_t libxsmm_gcd(size_t a, size_t b)
-{
-  while (0 != b) {
-    const size_t r = a % b;
-    a = b;
-    b = r;
-  }
-  return a;
-}
-
-
-LIBXSMM_API_INTERN size_t libxsmm_lcm(size_t a, size_t b)
-{
-  return (a * b) / libxsmm_gcd(a, b);
-}
-
-
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
 {
   size_t result = sizeof(void*);
@@ -1205,7 +1188,7 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size, size_t alignment, const ch
     if (end == pool) pool = pool0; /* fall-back to new pool */
     if (end != pool) {
       const internal_malloc_info_type* info = NULL;
-      const size_t counter = LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
+      const size_t counter = LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.counter, (size_t)1, LIBXSMM_ATOMIC_SEQ_CST);
       info = internal_malloc_info(pool->instance.buffer);
 
       if (NULL == pool->instance.buffer && 1 == counter) {

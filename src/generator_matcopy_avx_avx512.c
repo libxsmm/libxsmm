@@ -286,7 +286,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
             l_kernel_config.vector_name, 0,
-            0, 0 );
+            0, 1, 0 );
       }
 
       /* Prefetch if requested */
@@ -307,7 +307,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
           l_kernel_config.vector_name, 0,
-          0, 1 );
+          0, 0, 1 );
     }
 
     if (0 == (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & i_matcopy_desc->flags)) {
@@ -349,7 +349,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
           l_kernel_config.vector_name, 0,
-          0, 0 );
+          0, 1, 0 );
     }
     if (i_matcopy_desc->prefetch) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -366,7 +366,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
         LIBXSMM_X86_GP_REG_UNDEF, 0,
         i*l_kernel_config.vector_length*l_kernel_config.datatype_size,
         l_kernel_config.vector_name, 0,
-        0, 1 );
+        0, 0, 1 );
   }
 
   /* Add load/store with mask if there is remaining and we have AVX512 arch */
@@ -379,7 +379,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           remaining_unrolled * l_kernel_config.vector_length * l_kernel_config.datatype_size,
           l_kernel_config.vector_name, 0,
-          1, 0 );
+          1, 1, 0 );
     }
     if (i_matcopy_desc->prefetch) {
       libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -396,7 +396,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
         LIBXSMM_X86_GP_REG_UNDEF, 0,
         remaining_unrolled * l_kernel_config.vector_length * l_kernel_config.datatype_size,
         l_kernel_config.vector_name, 0,
-        1, 1 );
+        1, 0, 1 );
   } else if (remaining && (l_kernel_config.instruction_set == LIBXSMM_X86_AVX || l_kernel_config.instruction_set == LIBXSMM_X86_AVX2)) {
     /* Use scalar moves in case of remaining and AVX/AVX2 arch */
     for (i=0; i<remaining; i++) {
@@ -408,7 +408,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (remaining_unrolled * l_kernel_config.vector_length + i) * l_kernel_config.datatype_size,
             'x', 0,
-            0, 0 );
+            0, 1, 0 );
       }
       if (i_matcopy_desc->prefetch) {
         /* Issue just one prefetch */
@@ -428,7 +428,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
           LIBXSMM_X86_GP_REG_UNDEF, 0,
           (remaining_unrolled * l_kernel_config.vector_length + i) * l_kernel_config.datatype_size,
           'x', 0,
-          0, 1 );
+          0, 0, 1 );
     }
   }
 

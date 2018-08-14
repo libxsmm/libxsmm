@@ -42,8 +42,8 @@
 
 /* kernel uses consecutive stores and consecutive loads (copy) */
 #define LIBXSMM_MCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
-  const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
-        TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((INDEX_J) * (LDO) + (INDEX_I)))
+  const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((size_t)(INDEX_J) * (LDI) + (INDEX_I))); \
+        TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_J) * (LDO) + (INDEX_I)))
 /* call JIT-kernel (matrix-copy) */
 #define LIBXSMM_MCOPY_CALL_NOPF(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
   const unsigned int libxsmm_mcopy_call_nopf_uldi_ = (unsigned int)(LDI); \
@@ -55,12 +55,12 @@
   const unsigned int libxsmm_mcopy_call_uldi_ = (unsigned int)(LDI); \
   const unsigned int libxsmm_mcopy_call_uldo_ = (unsigned int)(LDO); \
   (PRFT_KERNEL)(SRC, &libxsmm_mcopy_call_uldi_, DST, &libxsmm_mcopy_call_uldo_, \
-    /*prefetch next line*/((const char*)(SRC)) + (TYPESIZE) * (LDI)); \
+    /*prefetch next line*/((const char*)(SRC)) + (TYPESIZE) * (size_t)(LDI)); \
 }
 /* kernel uses consecutive stores and strided loads (transpose) */
 #define LIBXSMM_TCOPY_KERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, INDEX_I, INDEX_J, SRC, DST) \
-  const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((INDEX_J) * (LDI) + (INDEX_I))); \
-        TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((INDEX_I) * (LDO) + (INDEX_J)))
+  const TYPE *const SRC = (const TYPE*)(((const char*) (IN)) + (TYPESIZE) * ((size_t)(INDEX_J) * (LDI) + (INDEX_I))); \
+        TYPE *const DST = (      TYPE*)(((      char*)(OUT)) + (TYPESIZE) * ((size_t)(INDEX_I) * (LDO) + (INDEX_J)))
 /* call JIT-kernel (transpose) */
 #define LIBXSMM_TCOPY_CALL(KERNEL, TYPESIZE, SRC, LDI, DST, LDO) { \
   const unsigned int libxsmm_tcopy_call_uldi_ = (unsigned int)(LDI); \
@@ -140,6 +140,7 @@
 
 #define LIBXSMM_XCOPY(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1, XALIGN) { \
   libxsmm_blasint libxsmm_xcopy_i_ = M0, libxsmm_xcopy_j_ = N0; \
+  LIBXSMM_ASSERT_MSG(0 < (TILE_M) && 0 < (TILE_N), "XCOPY cannot make progress!"); \
   if (0 != (KERNEL)) { /* inner tiles with JIT */ \
     for (; libxsmm_xcopy_i_ < (libxsmm_blasint)((M1) - (TILE_M) + 1); libxsmm_xcopy_i_ += TILE_M) { \
       for (libxsmm_xcopy_j_ = N0; libxsmm_xcopy_j_ < (libxsmm_blasint)((N1) - (TILE_N) + 1); libxsmm_xcopy_j_ += TILE_N) { \
@@ -184,21 +185,34 @@ LIBXSMM_API_INTERN void libxsmm_trans_init(int archid);
 /** Finalizes the transpose functionality; NOT thread-safe. */
 LIBXSMM_API_INTERN void libxsmm_trans_finalize(void);
 
-LIBXSMM_API void libxsmm_matcopy_internal(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo, const int* prefetch,
-  libxsmm_blasint tm, libxsmm_blasint tn, libxsmm_xmcopyfunction kernel,
+LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsigned int typesize,
+  unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo, const int* prefetch,
+  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel,
   int tid, int nthreads);
-LIBXSMM_API void libxsmm_otrans_internal(void* out, const void* in, unsigned int typesize,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ldi, libxsmm_blasint ldo,
-  libxsmm_blasint tm, libxsmm_blasint tn, libxsmm_xtransfunction kernel,
+LIBXSMM_API_INTERN void libxsmm_matcopy_internal_pf(void* out, const void* in,
+  unsigned int typesize, unsigned int ldi, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel);
+LIBXSMM_API_INTERN void libxsmm_matcopy_internal(void* out, const void* in,
+  unsigned int typesize, unsigned int ldi, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xmcopyfunction kernel);
+
+LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsigned int typesize,
+  unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo,
+  unsigned int tm, unsigned int tn, libxsmm_xtransfunction kernel,
   int tid, int nthreads);
+LIBXSMM_API_INTERN void libxsmm_otrans_internal(void* out, const void* in,
+  unsigned int typesize, unsigned int ldi, unsigned int ldo,
+  unsigned int m0, unsigned int m1, unsigned int n0, unsigned int n1,
+  unsigned int tm, unsigned int tn, libxsmm_xtransfunction kernel);
 
 /** Determines whether JIT-kernels are used or not (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_trans_jit);
 /** M-factor shaping the N-extent (tile shape). */
 LIBXSMM_APIVAR_PUBLIC(float libxsmm_trans_tile_stretch);
 /** Table of M-extents per type-size (tile shape). */
-LIBXSMM_APIVAR_PUBLIC(libxsmm_blasint* libxsmm_trans_mtile);
+LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_trans_mtile);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_trans_taskscale);
 

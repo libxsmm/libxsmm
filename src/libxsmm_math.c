@@ -30,6 +30,7 @@
 ******************************************************************************/
 
 #include <libxsmm_math.h>
+#include <libxsmm_mhd.h>
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -44,6 +45,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_MATH_MAXPRODUCT)
+# define LIBXSMM_MATH_MAXPRODUCT 1024
+#endif
+
 
 LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n,
   const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
@@ -53,61 +58,86 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
   if (0 == ref && 0 != tst) { ref = tst; tst = NULL; result_swap = 1; }
   if (0 != ref && 0 != info) {
     libxsmm_blasint mm = m, nn = n, ldr = (0 == ldref ? m : *ldref), ldt = (0 == ldtst ? m : *ldtst);
+    union { int i; float s; } inf;
+#if defined(INFINITY)
+    inf.s = INFINITY;
+#else
+    inf.i = 0x7F800000;
+#endif
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
     memset(info, 0, sizeof(*info)); /* nullify */
     switch (datatype) {
-    case LIBXSMM_DATATYPE_F64: {
+      case LIBXSMM_DATATYPE_F64: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
 #       include "template/libxsmm_matdiff.tpl.c"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-    } break;
-    case LIBXSMM_DATATYPE_F32: {
+      } break;
+      case LIBXSMM_DATATYPE_F32: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE float
 #       include "template/libxsmm_matdiff.tpl.c"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-    } break;
-    case LIBXSMM_DATATYPE_I32: {
+      } break;
+      case LIBXSMM_DATATYPE_I32: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE int
 #       include "template/libxsmm_matdiff.tpl.c"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-    } break;
-    case LIBXSMM_DATATYPE_I16: {
+      } break;
+      case LIBXSMM_DATATYPE_I16: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE short
 #       include "template/libxsmm_matdiff.tpl.c"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-    } break;
-    case LIBXSMM_DATATYPE_I8: {
+      } break;
+      case LIBXSMM_DATATYPE_I8: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE signed char
 #       include "template/libxsmm_matdiff.tpl.c"
 #       undef  LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE
-    } break;
-    default: {
-      static int error_once = 0;
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM ERROR: unsupported data-type requested for libxsmm_matdiff!\n");
+      } break;
+      default: {
+        static int error_once = 0;
+        if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM ERROR: unsupported data-type requested!\n");
+        }
+        result = EXIT_FAILURE;
       }
-      result = EXIT_FAILURE;
     }
+    if (EXIT_SUCCESS == result) {
+      const char *const env = getenv("LIBXSMM_DUMP");
+      if (0 != env && 0 != *env && (('0' < *env && '9' >= *env) || '0' != *env)) {
+        const char *const basename = ('0' < *env && '9' >= *env) ? "libxsmm_dump" : env;
+        const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
+        const libxsmm_mhd_elemtype type_dst = LIBXSMM_MAX(LIBXSMM_MHD_ELEMTYPE_U8, type_src);
+        char filename[256];
+        size_t size[2], pr[2]; size[0] = mm; size[1] = nn; pr[0] = ldr; pr[1] = nn;
+        LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-ref%p.mhd", basename, ref);
+        libxsmm_mhd_write(filename, NULL/*offset*/, size, pr, 2/*ndims*/, 1/*ncomponents*/,
+          type_src, &type_dst, ref, NULL/*header_size*/, NULL/*extension_header*/,
+          NULL/*extension*/, 0/*extension_size*/);
+        if (NULL != tst) {
+          size_t pt[2]; pt[0] = ldt; pt[1] = nn;
+          LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-tst%p.mhd", basename, tst);
+          libxsmm_mhd_write(filename, NULL/*offset*/, size, pt, 2/*ndims*/, 1/*ncomponents*/,
+            type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
+            NULL/*extension*/, 0/*extension_size*/);
+        }
+      }
+      info->normf_rel = libxsmm_dsqrt(info->normf_rel);
+      info->l2_abs = libxsmm_dsqrt(info->l2_abs);
+      info->l2_rel = libxsmm_dsqrt(info->l2_rel);
+      if (1 == n) {
+        const libxsmm_blasint tmp = info->linf_abs_m;
+        info->linf_abs_m = info->linf_abs_n;
+        info->linf_abs_n = tmp;
+      }
+      if (0 != result_swap) {
+        info->l1_tst = info->l1_ref;
+        info->l1_ref = 0;
+      }
     }
   }
   else {
     result = EXIT_FAILURE;
-  }
-  if (EXIT_SUCCESS == result) {
-    info->normf_rel = libxsmm_dsqrt(info->normf_rel);
-    info->l2_abs = libxsmm_dsqrt(info->l2_abs);
-    info->l2_rel = libxsmm_dsqrt(info->l2_rel);
-    if (1 == n) {
-      const libxsmm_blasint tmp = info->linf_abs_m;
-      info->linf_abs_m = info->linf_abs_n;
-      info->linf_abs_n = tmp;
-    }
-    if (0 != result_swap) {
-      info->l1_tst = info->l1_ref;
-      info->l1_ref = 0;
-    }
   }
   return result;
 }
@@ -131,6 +161,137 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
     output->l1_ref = input->l1_ref;
     output->l1_tst = input->l1_tst;
   }
+}
+
+
+LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b)
+{
+  while (0 != b) {
+    const size_t r = a % b;
+    a = b;
+    b = r;
+  }
+  return a;
+}
+
+
+LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b)
+{
+  return (a * b) / libxsmm_gcd(a, b);
+}
+
+
+LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n32[])
+{
+  unsigned int c = num, i;
+  int n = 0;
+  if (0 < c && 0 == (c & 1)) { /* non-zero even */
+    unsigned int j = c / 2;
+    while (c == (2 * j)) {
+      num_factors_n32[n++] = 2;
+      c = j; j /= 2;
+    }
+  }
+  for (i = 3; i <= c; i += 2) {
+    unsigned int j = c / i;
+    while (c == (i * j)) {
+      num_factors_n32[n++] = i;
+      c = j; j /= i;
+    }
+    if ((i * i) > num) {
+      break;
+    }
+  }
+  if (1 < c && 0 != n) {
+    num_factors_n32[n++] = c;
+  }
+  return n;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned int limit, int is_lower)
+{
+  unsigned int result;
+  if (limit < product) {
+    result = 1;
+    if (1 < limit) {
+      unsigned int fact[32], maxp = limit;
+      int i, n;
+      /* attempt to lower the memory requirement for DP; can miss best solution */
+      if (LIBXSMM_MATH_MAXPRODUCT < limit) {
+        const unsigned int minfct = (limit + limit - 1) / LIBXSMM_MATH_MAXPRODUCT;
+        const unsigned int maxfct = (unsigned int)libxsmm_gcd(product, limit);
+        result = maxfct;
+        if (minfct < maxfct) {
+          n = libxsmm_primes_u32(result, fact);
+          for (i = 0; i < n; ++i) {
+            if (minfct < fact[i]) {
+              result = fact[i];
+              i = n; /* break */
+            }
+          }
+        }
+        maxp /= result;
+      }
+      if (LIBXSMM_MATH_MAXPRODUCT >= maxp) {
+        unsigned int k[2][LIBXSMM_MATH_MAXPRODUCT], *k0 = k[0], *k1 = k[1], *kt, p;
+        n = libxsmm_primes_u32(product / result, fact);
+        /* initialize table with trivial factor */
+        for (p = 0; p <= maxp; ++p) k[0][p] = 1;
+        k[0][0] = k[1][0] = 1;
+        for (i = 1; i <= n; ++i) {
+          for (p = 1; p <= maxp; ++p) {
+            const unsigned int f = fact[i - 1], h = k0[p];
+            if (p < f) {
+              k1[p] = h;
+            }
+            else {
+              const unsigned int g = f * k0[p / f];
+              k1[p] = LIBXSMM_MAX(g, h);
+            }
+          }
+          kt = k0; k0 = k1; k1 = kt;
+        }
+        result *= k0[maxp];
+      }
+      else { /* trivial approximation */
+        n = libxsmm_primes_u32(product, fact);
+        for (i = 0; i < n; ++i) {
+          const unsigned int f = result * fact[i];
+          if (f <= limit) {
+            result = f;
+          }
+          else i = n; /* break */
+        }
+      }
+      if (0 != is_lower && result < limit) {
+        unsigned int rfact[32];
+        const int m = libxsmm_primes_u32(result, rfact);
+        int j = 0;
+        n = libxsmm_primes_u32(product, fact);
+        LIBXSMM_ASSERT(m <= n);
+        for (i = 0; i < n; ++i) {
+          while (j < m && fact[i] == rfact[j]) {
+            ++i; ++j; /* skip */
+          }
+          if (j == m || fact[i] != rfact[j]) {
+            if (i < n) {
+              result *= fact[i];
+            }
+            else {
+              result = product;
+            }
+            i = n; /* break */
+          }
+        }
+        LIBXSMM_ASSERT(result <= product);
+      }
+    }
+  }
+  else { /* fast-path */
+    result = product;
+  }
+  return result;
 }
 
 
@@ -195,7 +356,7 @@ LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long x)
 {
   unsigned long long b; unsigned int y = 0; int s;
   for (s = 63; 0 <= s; s -= 3) {
-    y += y; b = 3 * y * ((unsigned long long)y + 1) + 1;
+    y += y; b = ((unsigned long long)y + 1) * 3 * y + 1ULL;
     if (b <= (x >> s)) { x -= b << s; ++y; }
   }
   return y;
@@ -212,7 +373,7 @@ LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x)
   return y;
 }
 
-/* Implementation based on Claude Baumann's work (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm). */
+/* Implementation based on Claude Baumann's product (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm). */
 LIBXSMM_API float libxsmm_sexp2_fast(float x, int maxiter)
 {
   static const float lut[] = { /* tabulated powf(2.f, powf(2.f, -index)) */

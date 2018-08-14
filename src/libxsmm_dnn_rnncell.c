@@ -39,6 +39,7 @@
 # pragma offload_attribute(pop)
 #endif
 
+/* #define LSTM_TIMING */
 #if defined(LSTM_TIMING)
 #include <stdio.h>
 double Gbl_t_input_total = 0., Gbl_t_recur_total = 0., Gbl_t_eltwise_total = 0., Gbl_t_nonlin_total = 0.;
@@ -50,10 +51,27 @@ double Gbl_duration_input = 0., Gbl_duration_recur = 0., Gbl_duration_eltwise = 
 LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_desc rnncell_desc, libxsmm_dnn_err_t* status)
 {
   libxsmm_dnn_rnncell* handle = 0;
-  *status = LIBXSMM_DNN_SUCCESS;
+  const char *const env_b_m1 = getenv("LIBXSMM_BGEMM_M1");
+  const int b_m1 = (0 == env_b_m1) ? 1 : atoi(env_b_m1);
+  const char *const env_b_n1 = getenv("LIBXSMM_BGEMM_N1");
+  const int b_n1 = (0 == env_b_n1) ? 1 : atoi(env_b_n1);
+  const char *const env_b_k1 = getenv("LIBXSMM_BGEMM_K1");
+  const int b_k1 = (0 == env_b_k1) ? 1 : atoi(env_b_k1);
+  const char *const env_b_m2 = getenv("LIBXSMM_BGEMM_M2");
+  const int b_m2 = (0 == env_b_m2) ? 1 : atoi(env_b_m2);
+  const char *const env_b_n2 = getenv("LIBXSMM_BGEMM_N2");
+  const int b_n2 = (0 == env_b_n2) ? 1 : atoi(env_b_n2);
+  const char *const env_b_k2 = getenv("LIBXSMM_BGEMM_K2");
+  const int b_k2 = (0 == env_b_k2) ? 1 : atoi(env_b_k2);
+  const char transa = 'N', transb = 'N'; /* no transposes */
+  const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
+  const float alpha = 1, beta = 1;
+  const libxsmm_bgemm_order order = (libxsmm_bgemm_order)0; /* denotes order of execution for bgemm */
+  const libxsmm_gemm_prefetch_type strategy = (libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH_AUTO;
 
   handle = (libxsmm_dnn_rnncell*)malloc(sizeof(libxsmm_dnn_rnncell));
   if (0 != handle) {
+    *status = LIBXSMM_DNN_SUCCESS;
     /* zero entire content; not only safer but also sets data and code pointers to NULL */
     memset(handle, 0, sizeof(*handle));
     /* initialize known handle components */
@@ -62,6 +80,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->datatype_in = rnncell_desc.datatype_in;
     handle->datatype_out = rnncell_desc.datatype_out;
     handle->reuse = rnncell_desc.reuse;
+    handle->pass = rnncell_desc.pass;
     if ( (rnncell_desc.datatype_in != LIBXSMM_DNN_DATATYPE_F32) || (rnncell_desc.datatype_out != LIBXSMM_DNN_DATATYPE_F32) ) {
       /* error */
       *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -79,16 +98,36 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->bm = rnncell_desc.bm;
     handle->bn = rnncell_desc.bn;
     handle->bk = rnncell_desc.bk;
-    handle->b_m1 = rnncell_desc.b_m1;
-    handle->b_n1 = rnncell_desc.b_n1;
-    handle->b_k1 = rnncell_desc.b_k1;
-    handle->b_m2 = rnncell_desc.b_m2;
-    handle->b_n2 = rnncell_desc.b_n2;
-    handle->b_k2 = rnncell_desc.b_k2;
-    handle->handlewx = rnncell_desc.handlewx;
-    handle->handleuh = rnncell_desc.handleuh;
-    handle->handlett = rnncell_desc.handlett;
-    handle->handlewd = rnncell_desc.handlewd;
+    handle->b_m1 = b_m1;
+    handle->b_n1 = b_n1;
+    handle->b_k1 = b_k1;
+    handle->b_m2 = b_m2;
+    handle->b_n2 = b_n2;
+    handle->b_k2 = b_k2;
+    if (handle->pass == 0) {
+      handle->handlewx = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->n, handle->k, &(handle->bm), &(handle->bn), &(handle->bk), &(handle->b_m1), &(handle->b_n1), &(handle->b_k1), &(handle->b_k2),
+        &alpha, &beta, &gemm_flags, &strategy, &order);
+      handle->handleuh = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->n, handle->m, &(handle->bm), &(handle->bn), &(handle->bm), &(handle->b_m1), &(handle->b_n1), &(handle->b_m1), &(handle->b_m2),
+        &alpha, &beta, &gemm_flags, &strategy, &order);
+      handle->handlett = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->n*handle->t, handle->k, &(handle->bm), &(handle->bn), &(handle->bk), &(handle->b_m1), &(handle->b_n1), &(handle->b_k1), &(handle->b_k2),
+        &alpha, &beta, &gemm_flags, &strategy, &order);
+    } else {
+      handle->handlewx = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->n, handle->m, &(handle->bm), &(handle->bn), &(handle->bm), &(handle->b_m1), &(handle->b_n1), &(handle->b_m1), &(handle->b_m2),
+        &alpha, &beta, &gemm_flags, &strategy, &order); /* U^T*delta */
+      handle->handleuh = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->m, handle->n, &(handle->bm), &(handle->bm), &(handle->bn), &(handle->b_m1), &(handle->b_m1), &(handle->b_n1), &(handle->b_n2),
+        &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*h^T */
+      handle->handlett = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->m, handle->k, handle->n, &(handle->bm), &(handle->bk), &(handle->bn), &(handle->b_m1), &(handle->b_k1), &(handle->b_n1), &(handle->b_n2),
+        &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*x^T */
+      handle->handlewd = libxsmm_bgemm_handle_create(handle->nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+        handle->k, handle->n, handle->m, &(handle->bk), &(handle->bn), &(handle->bm), &(handle->b_k1), &(handle->b_n1), &(handle->b_m1), &(handle->b_m2),
+        &alpha, &beta, &gemm_flags, &strategy, &order); /* W^T*delta */
+    }
     /* Need to allocate space for scratch libxsmm_dnn_tensor's */
     handle->z   = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->deltat = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
@@ -241,25 +280,25 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           size += handle->m * handle->n * sizeof_datatype * handle->t; /* z1t */
+                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* z1t */
                                            size += 64;
-                                           size += handle->m * handle->n * sizeof_datatype * handle->t; /* z2 */
+                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* z2 */
                                            size += 64;
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           size += handle->m * handle->n * sizeof_datatype * handle->t; /* z1t */
+                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* z1t */
                                            size += 64;
-                                           size += handle->m * handle->n * sizeof_datatype; /* z2, zi */
+                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* z2, zi */
                                            size += 64;
-                                           size += handle->m * handle->n * sizeof_datatype * handle->t; /* deltat */
+                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* deltat */
                                            size += 64;
-                                           size += handle->m * handle->n * sizeof_datatype * handle->t; /* di1 */
+                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* di1 */
                                            size += 64;
-                                           size += handle->m * handle->n * sizeof_datatype; /* di2 */
+                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* di2 */
                                            size += 64;
-                                           size += handle->m * handle->n * sizeof_datatype * handle->t; /* deltaMt */
+                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* deltaMt */
                                            size += 64;
                                          } break;
       default: {
@@ -296,7 +335,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
                                              offset = (64 - address % 64);
                                              handle->z1t->data = (void*)(address+offset);
                                            }
-                                           scratch_size = handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->z2->data = (void*)address;
@@ -314,7 +353,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
                                              offset = (64 - address % 64);
                                              handle->z1t->data = (void*)(address+offset);
                                            }
-                                           scratch_size = handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->z2->data = (void*)address;
@@ -322,7 +361,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
                                              offset = (64 - address % 64);
                                              handle->z2->data = (void*)(address+offset);
                                            }
-                                           scratch_size = handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->deltat->data = (void*)address;
@@ -330,7 +369,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
                                              offset = (64 - address % 64);
                                              handle->deltat->data = (void*)(address+offset);
                                            }
-                                           scratch_size = handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->di1->data = (void*)address;
@@ -338,7 +377,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
                                              offset = (64 - address % 64);
                                              handle->di1->data = (void*)(address+offset);
                                            }
-                                           scratch_size = handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->di2->data = (void*)address;
@@ -346,7 +385,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
                                              offset = (64 - address % 64);
                                              handle->di2->data = (void*)(address+offset);
                                            }
-                                           scratch_size = handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->deltaMt->data = (void*)address;
@@ -415,13 +454,13 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_internalstate_size(const libxsmm_dnn_
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           size += handle->m * handle->n * sizeof_datatype * handle->t; /* zt */
+                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* zt */
                                            size += 64;
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           size += handle->m * handle->n * sizeof_datatype * handle->t; /* zt */
+                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* zt */
                                            size += 64;
                                          } break;
       default: {
@@ -666,7 +705,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   libxsmm_blasint k = rnn->k;
   libxsmm_blasint t = rnn->t;
 #if defined(LSTM_TIMING)
-  const double gflops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * t * 1E-9;
+  const double tflops = 12;
+  const double gflops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (m * n) + (tflops * m * n)) * (double)t * 1E-9;
 #endif
   int reuse = rnn->reuse;
   /* The following code should be in template */
@@ -695,41 +735,47 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   int i;
   const int ltid = tid - start_thread;
 
+  libxsmm_barrier_init(rnn->barrier, ltid);
 #if defined(LSTM_TIMING)
-  start = libxsmm_timer_tick();
-  Gbl_t_input = libxsmm_timer_tick();
+  if (ltid == 0) {
+    start = libxsmm_timer_tick();
+    Gbl_t_input = libxsmm_timer_tick();
+  }
 #endif
   libxsmm_bgemm_st(handlett, w, &LIBXSMM_VLA_ACCESS(2, x, 0, 0, k * n), &LIBXSMM_VLA_ACCESS(2, z1, 0, 0, m * n), start_thread, tid);
 #if defined(LSTM_TIMING)
-  Gbl_duration_input = libxsmm_timer_duration(Gbl_t_input, libxsmm_timer_tick());
-  Gbl_t_input_total += Gbl_duration_input;
-#endif
-  if (rnn->nThreads > 1) {
-    libxsmm_barrier_init(rnn->barrier, ltid);
+  if (ltid == 0) {
+    Gbl_duration_input = libxsmm_timer_duration(Gbl_t_input, libxsmm_timer_tick());
+    Gbl_t_input_total += Gbl_duration_input;
   }
+#endif
+
   if (reuse) {
     for (i = 0; i < t; ++i) {
       libxsmm_internal_recursive_step(handleuh, u, h, &LIBXSMM_VLA_ACCESS(2, z2, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, z1, i, 0, m * n), z, h, 2, m * n, start_thread, tid); /*sigmoid*/
-      if (rnn->nThreads > 1) { libxsmm_barrier_wait(rnn->barrier, ltid); }
+      libxsmm_barrier_wait(rnn->barrier, ltid);
     }
   } else {
     for (i = 0; i < t; ++i) {
       libxsmm_internal_recursive_step(handleuh, u, &LIBXSMM_VLA_ACCESS(2, hnr, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, z2, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, z1, i, 0, m * n),
         &LIBXSMM_VLA_ACCESS(2, znr, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, hnr, i+1, 0, m * n), 2, m * n, start_thread, tid); /*sigmoid*/
-      if (rnn->nThreads > 1) { libxsmm_barrier_wait(rnn->barrier, ltid); }
+      libxsmm_barrier_wait(rnn->barrier, ltid);
     }
   }
 #if defined(LSTM_TIMING)
-  duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-  if (0 < duration) {
-    fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops / duration); /* *nrepeat */
+  if (ltid == 0) {
+    duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+    if (0 < duration) {
+      fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops / duration); /* *nrepeat */
+      double t_total = Gbl_t_input_total + Gbl_t_recur_total + Gbl_t_eltwise_total + Gbl_t_nonlin_total;
+      fprintf(stdout, "Percentage of time spent in input matrix multiplication: %lf\n", Gbl_t_input_total*100.0/t_total);
+      fprintf(stdout, "Percentage of time spent in recurrence matrix multiplication: %lf\n", Gbl_t_recur_total*100.0/t_total);
+      fprintf(stdout, "Percentage of time spent in element-wise operations: %lf\n", Gbl_t_eltwise_total*100.0/t_total);
+      fprintf(stdout, "Percentage of time spent in non-linear operations: %lf\n", Gbl_t_nonlin_total*100.0/t_total);
+    }
   }
-  double t_total = Gbl_t_input_total + Gbl_t_recur_total + Gbl_t_eltwise_total + Gbl_t_nonlin_total;
-  fprintf(stdout, "Percentage of time spent in input matrix multiplication: %lf\n", Gbl_t_input_total*100.0/t_total);
-  fprintf(stdout, "Percentage of time spent in recurrence matrix multiplication: %lf\n", Gbl_t_recur_total*100.0/t_total);
-  fprintf(stdout, "Percentage of time spent in element-wise operations: %lf\n", Gbl_t_eltwise_total*100.0/t_total);
-  fprintf(stdout, "Percentage of time spent in non-linear operations: %lf\n", Gbl_t_nonlin_total*100.0/t_total);
 #endif
+
   return status;
 }
 
@@ -741,35 +787,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
   libxsmm_blasint n = rnn->n;
   libxsmm_blasint k = rnn->k;
   libxsmm_blasint t = rnn->t;
-#ifdef LSTM_TIMING
-  const double tflops = 12; /* transcendental flops */
-  double gflops = m * m; /* U^T */
-  gflops += (2.0 * m * n * m); /* U^T * delta */
-  gflops += (m * n); /* dJdh + (U^T * delta) */
-  gflops += (tflops * m * n); /* sigma'(Z) */
-  gflops += (m * n); /* sigma'(Z) * (dJdh + (U^T * delta)) */
-  gflops *= t; /* for t time steps */
-  double tempflops;
-  if (pass == 2 || pass == 3) {
-    tempflops = m * n; /* h^T */
-    tempflops += (2.0 * m * n * m); /* delta * h^T */
-    tempflops *= t; /* for t time steps */
-    tempflops += (m * m * (t-1)); /* for summation of dJdU */
-    gflops += tempflops;
-    tempflops = k * n; /* x^T */
-    tempflops += (2.0 * m * n * k); /* delta * x^T */
-    tempflops *= t; /* for t time steps */
-    tempflops += (m * k * (t-1)); /* for summation of dJdW */
-    gflops += tempflops;
-  }
-  if (pass == 1 || pass == 3) {
-    tempflops = m * k; /* W^T */
-    tempflops += (2.0 * m * n * k); /* W^T * delta */
-    tempflops *= t; /* for t time steps of input */
-    gflops += tempflops;
-  }
-  gflops *= 1E-9; /* to convert flops to Gflops */
-#endif
   LIBXSMM_DNN_ELTWISE_FTYPE *djdht = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->djdht->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *zt = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->z->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *deltat = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->deltat->data;
@@ -799,14 +816,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
 
   int i;
   const int ltid = tid - start_thread;
-#ifdef LSTM_TIMING
-  unsigned long long start;
-  double duration;
-  start = libxsmm_timer_tick();
-#endif
-  if (rnn->nThreads > 1) {
-    libxsmm_barrier_init(rnn->barrier, ltid);
-  }
+
+  libxsmm_barrier_init(rnn->barrier, ltid);
   libxsmm_internal_matrix_zero(m * n, &LIBXSMM_VLA_ACCESS(2, delta, t-1, 0, m * n), start_thread, tid, rnn->nThreads);
   if (rnn->nThreads > 1) { libxsmm_barrier_wait(rnn->barrier, ltid); }
   for (i = t-2; i >= 0; --i) {
@@ -832,12 +843,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
       libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, deltaM, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, i, 0, k * m), djdw, start_thread, tid);
     }
   }
-#ifdef LSTM_TIMING
-  duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-  if (0 < duration) {
-    fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops / duration); /* *nrepeat */
-  }
-#endif
 
   return status;
 }

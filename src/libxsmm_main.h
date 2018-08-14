@@ -39,7 +39,7 @@
 #endif
 
 #if !defined(LIBXSMM_MAX_NTHREADS)
-# define LIBXSMM_MAX_NTHREADS 512
+# define LIBXSMM_MAX_NTHREADS 1024
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
 # define LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS LIBXSMM_MAX_NTHREADS
@@ -118,7 +118,7 @@
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
   (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).iflags = 0; (DESCRIPTOR).pad0 = 0; (DESCRIPTOR).pad1 = 0; \
   (DESCRIPTOR).flags = (unsigned short)((FLAGS) \
-    | (LIBXSMM_NEQ(0, ALPHA) ? 0 : LIBXSMM_GEMM_FLAG_ALPHA_0) \
+    /*| (LIBXSMM_NEQ(0, ALPHA) ? 0 : LIBXSMM_GEMM_FLAG_ALPHA_0)*/ \
     | (LIBXSMM_NEQ(0, BETA)  ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
     LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH)
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
@@ -384,6 +384,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int h_variants;
   int loop_order;
   int f32_bf16_cvt_rne;
+  int fwd_img_par;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;
@@ -568,10 +569,6 @@ typedef enum libxsmm_malloc_flags {
   LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_RW | LIBXSMM_MALLOC_FLAG_X
 } libxsmm_malloc_flags;
 
-/** Greatest common divisor. */
-LIBXSMM_API_INTERN size_t libxsmm_gcd(size_t a, size_t b);
-/** Least common multiple. */
-LIBXSMM_API_INTERN size_t libxsmm_lcm(size_t a, size_t b);
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment);
 
@@ -608,7 +605,14 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
   /** If a name is given, an executable buffer will be dumped into a file. */
   const char* name);
 
+/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
 LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+
+/** Determines the given value in double-precision based on the given type. */
+LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
+
+/** Determines the generic value given in double-precision. */
+LIBXSMM_API_INTERN int libxsmm_cast(libxsmm_datatype datatype, double dvalue, void* value);
 
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);

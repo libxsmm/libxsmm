@@ -34,18 +34,15 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-# include <mkl_service.h>
-#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <math.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 #if defined(_OPENMP)
 # include <omp.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
 #endif
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
@@ -58,28 +55,6 @@ LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
 #endif
   for (i = 0; i < (int)size; ++i) {
     buf[i] = 0.0f;
-  }
-}
-
-
-LIBXSMM_INLINE void matinit(int seed, float * dst,
-  int nrows, int ncols, int ld, double scale)
-{
-  const double seed1 = scale * (seed + 1);
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < ncols; ++i) {
-    int j = 0;
-    for (; j < nrows; ++j) {
-      const int k = i * ld + j;
-      dst[k] = (float)(seed1 / (k + 1));
-    }
-    for (; j < ld; ++j) {
-      const int k = i * ld + j;
-      dst[k] = (float)seed;
-    }
   }
 }
 
@@ -111,12 +86,11 @@ LIBXSMM_INLINE void matrix_eltwise_mult(int size, float *a, float *b, float *c)
 LIBXSMM_INLINE void matrix_sigmoid(int size, float *src, float *dst)
 {
   int i;
-  float exp_value;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    exp_value = (float)exp((double) -src[i]);
+    const float exp_value = (float)exp((double) -src[i]);
     dst[i] = 1 / (1 + exp_value);
   }
 }
@@ -149,14 +123,12 @@ LIBXSMM_INLINE void matrix_relu(int size, float *src, float *dst)
 LIBXSMM_INLINE void matrix_sigmoid_inverse(int size, float *src, float *dst)
 {
   int i;
-  float exp_value;
-  float sig_exp;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    exp_value = (float)exp((double) -src[i]);
-    sig_exp = 1 / (1 + exp_value);
+    const float exp_value = (float)exp((double) -src[i]);
+    const float sig_exp = 1 / (1 + exp_value);
     dst[i] = (1 - sig_exp)*sig_exp;
   }
 }
@@ -165,12 +137,11 @@ LIBXSMM_INLINE void matrix_sigmoid_inverse(int size, float *src, float *dst)
 LIBXSMM_INLINE void matrix_tanh_inverse(int size, float *src, float *dst)
 {
   int i;
-  float tanh_value;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    tanh_value = (float)tanh((double)src[i]);
+    const float tanh_value = (float)tanh((double)src[i]);
     dst[i] = 1 - (tanh_value * tanh_value);
   }
 }
@@ -228,7 +199,7 @@ LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
 }
 
 
-void matrix_complement_square(int size, float *src, float *dst)
+LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
 {
   int i;
 #if defined(_OPENMP)
@@ -240,7 +211,7 @@ void matrix_complement_square(int size, float *src, float *dst)
 }
 
 
-void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, float *src, float *dst)
+LIBXSMM_INLINE void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, float *src, float *dst)
 {
   LIBXSMM_VLA_DECL(4, float, real_src, src, k/blk_k, blk_n, blk_k);
   LIBXSMM_VLA_DECL(2, float, real_dst, dst, k);
@@ -262,12 +233,12 @@ void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, float *src, flo
 int main(int argc, char* argv[])
 {
   /* Arrays related to FWD pass */
-  float *wgold, *xgoldt, *ugold, *hgold, *z1gold, *z2gold, *zgold;
-  float *w, *xt, *u, *h, *htest, *hgold_temp;
+  float *wgold, *xgoldt, *ugold, *hgold = NULL, *z1gold = NULL, *z2gold = NULL, *zgold = NULL;
+  float *w, *xt, *u, *h = NULL, *htest = NULL, *hgold_temp = NULL;
   /* Arrays related to BWD and UPD pass */
-  float *djdhgoldt, *zgoldt, *deltagoldt, *hgoldt, *djdugold, *djdwgold, *djdxgoldt;
-  float *zigold, *di1gold, *di2gold, *dj1gold, *dw1gold, *ugoldTp, *wgoldTp, *hgoldTp, *xgoldTp;
-  float *djdht, *ht, *djdu, *djdw, *djdxt, *djdxtestt, *djdwtest, *djdutest;
+  float *djdhgoldt = NULL, *zgoldt = NULL, *deltagoldt = NULL, *hgoldt = NULL, *djdugold = NULL, *djdwgold = NULL, *djdxgoldt = NULL;
+  float *zigold = NULL, *di1gold = NULL, *di2gold = NULL, *dj1gold = NULL, *dw1gold = NULL, *ugoldTp = NULL, *wgoldTp = NULL, *hgoldTp = NULL, *xgoldTp = NULL;
+  float *djdht = NULL, *ht = NULL, *djdu = NULL, *djdw = NULL, *djdxt = NULL, *djdxtestt = NULL, *djdwtest = NULL, *djdutest = NULL;
 
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
@@ -275,25 +246,32 @@ int main(int argc, char* argv[])
   void *scratch, *internalstate;
   size_t scratch_size = 0, internalstate_size = 0;
 
-  int iters = 10;                /* repetitions of benchmark */
-  int pass = 2;                  /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
-  int m = 1024;                  /* number of outputs */
-  int n = 512;                   /* size of mini-batch */
-  int k = 256;                   /* number of inputs */
-  int t = 5;                     /* number of time steps (> 1) */
-  int reuse = 1;                 /* reuse=1 for FWD overwrites the same memory
-                                  * for intermediate values during inference;
-                                  * reuse value is immaterial for BWD and UPD */
-  int bm = 32;                   /* first blocking factor for m */
-  int bn = 32;                   /* first blocking factor for n */
-  int bk = 32;                   /* first blocking factor for k */
-  libxsmm_bgemm_order order = 0; /* denotes order of execution for bgemm */
-  int b_m1 = 1;                  /* second blocking factor for m */
-  int b_n1 = 1;                  /* second blocking factor for n */
-  int b_k1 = 1;                  /* second blocking factor for k */
-  int b_m2 = 1;                  /* third blocking factor for m */
-  int b_n2 = 1;                  /* third blocking factor for n */
-  int b_k2 = 1;                  /* third blocking factor for k */
+  int iters = 10; /* repetitions of benchmark */
+  int pass = 3;   /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
+  int m = 1024;   /* number of outputs */
+  int n = 512;    /* size of mini-batch */
+  int k = 256;    /* number of inputs */
+  int t = 5;      /* number of time steps (> 1) */
+  int reuse = 1;  /* reuse=1 for FWD overwrites the same memory
+                   * for intermediate values during inference;
+                   * reuse value is immaterial for BWD and UPD */
+  int bm = 32;    /* first blocking factor for m */
+  int bn = 32;    /* first blocking factor for n */
+  int bk = 32;    /* first blocking factor for k */
+  /* denotes order of execution for bgemm */
+  libxsmm_bgemm_order order = LIBXSMM_BGEMM_ORDER_JIK;
+  const char *const env_b_m1 = getenv("LIBXSMM_BGEMM_M1");
+  const int b_m1 = (0 == env_b_m1) ? 1 : atoi(env_b_m1);
+  const char *const env_b_n1 = getenv("LIBXSMM_BGEMM_N1");
+  const int b_n1 = (0 == env_b_n1) ? 1 : atoi(env_b_n1);
+  const char *const env_b_k1 = getenv("LIBXSMM_BGEMM_K1");
+  const int b_k1 = (0 == env_b_k1) ? 1 : atoi(env_b_k1);
+  const char *const env_b_m2 = getenv("LIBXSMM_BGEMM_M2");
+  const int b_m2 = (0 == env_b_m2) ? 1 : atoi(env_b_m2);
+  const char *const env_b_n2 = getenv("LIBXSMM_BGEMM_N2");
+  const int b_n2 = (0 == env_b_n2) ? 1 : atoi(env_b_n2);
+  const char *const env_b_k2 = getenv("LIBXSMM_BGEMM_K2");
+  const int b_k2 = (0 == env_b_k2) ? 1 : atoi(env_b_k2);
   libxsmm_bgemm_handle* handlewx = 0;
   libxsmm_bgemm_handle* handleuh = 0;
   libxsmm_bgemm_handle* handlett = 0;
@@ -321,10 +299,10 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_hidden_state;
   libxsmm_dnn_tensor* libxsmm_weight;
   libxsmm_dnn_tensor* libxsmm_recur_weight;
-  libxsmm_dnn_tensor* libxsmm_dinput;
-  libxsmm_dnn_tensor* libxsmm_dhidden_state;
-  libxsmm_dnn_tensor* libxsmm_dweight;
-  libxsmm_dnn_tensor* libxsmm_drecur_weight;
+  libxsmm_dnn_tensor* libxsmm_dinput = NULL;
+  libxsmm_dnn_tensor* libxsmm_dhidden_state = NULL;
+  libxsmm_dnn_tensor* libxsmm_dweight = NULL;
+  libxsmm_dnn_tensor* libxsmm_drecur_weight = NULL;
 
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
@@ -338,7 +316,7 @@ int main(int argc, char* argv[])
   memset(&diff, 0, sizeof(diff));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("\nUsage: ./rnndriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [M] [N] [K] [time_steps > 1] [reuse (for FWD): 0/1] [bm] [bn] [bk] [order] [b_m1] [b_n1] [b_k1] [b_m2] [b_n2] [b_k2]\n\n");
+    printf("\nUsage: ./rnndriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [M] [N] [K] [time_steps > 1] [reuse (for FWD): 0/1] [bm] [bn] [bk]\n\n");
     return 0;
   }
   libxsmm_srand(1);
@@ -355,13 +333,6 @@ int main(int argc, char* argv[])
   if (argc > i) bm    = atoi(argv[i++]);
   if (argc > i) bn    = atoi(argv[i++]);
   if (argc > i) bk    = atoi(argv[i++]);
-  if (argc > i) order = (libxsmm_bgemm_order)(atoi(argv[i++]));
-  if (argc > i) b_m1  = atoi(argv[i++]);
-  if (argc > i) b_n1  = atoi(argv[i++]);
-  if (argc > i) b_k1  = atoi(argv[i++]);
-  if (argc > i) b_m2  = atoi(argv[i++]);
-  if (argc > i) b_n2  = atoi(argv[i++]);
-  if (argc > i) b_k2  = atoi(argv[i++]);
 
   if (t <= 1) {
     printf("time_steps %d should be greater than 1\n\n", t);
@@ -451,30 +422,30 @@ int main(int argc, char* argv[])
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, k * n);
   LIBXSMM_VLA_DECL(2, float, hgoldb, hgoldt, m * n);
   LIBXSMM_VLA_DECL(2, float, djdh, djdht, m * n);
-  LIBXSMM_VLA_DECL(2, float, xb, xt, k * n);
+  /*LIBXSMM_VLA_DECL(2, float, xb, xt, k * n);*/
   LIBXSMM_VLA_DECL(2, float, hb, ht, m * n);
   LIBXSMM_VLA_DECL(2, float, djdx, djdxt, k * n);
 
   /* initialize data */
   if (pass == 0) {
-    matinit(42, wgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT(float, 42, wgold, m, k, m, 1.0);
     for (it = 0; it < t; ++it) {
-      matinit(24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
     }
-    matinit(42, ugold, m, m, m, 1.0);
-    matinit(24, hgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT(float, 42, ugold, m, m, m, 1.0);
+    LIBXSMM_MATINIT(float, 24, hgold, m, n, m, 1.0);
     matrix_copy(m*n, hgold, hgold_temp); /* Required because hgold may get overwritten */
     zero_buf(z1gold, m*n);
     zero_buf(z2gold, m*n);
     zero_buf(zgold, m*n);
   } else {
-    matinit(42, ugold, m, m, m, 1.0);
-    matinit(42, wgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT(float, 42, ugold, m, m, m, 1.0);
+    LIBXSMM_MATINIT(float, 42, wgold, m, k, m, 1.0);
     for (it = 0; it < t; ++it) {
-      matinit(24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 1.0);
-      matinit(24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), m, n, m, 1.0);
-      matinit(24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
-      matinit(24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 1.0);
     }
     zero_buf(deltagoldt, m*n*t);
     zero_buf(djdugold, m*m);
@@ -497,9 +468,9 @@ int main(int argc, char* argv[])
     zero_buf(xt, k*n*t);
     zero_buf(u,  m*m);
     if (reuse) {
-      zero_buf(h,  m*n);
+      zero_buf(h, m*n);
     } else {
-      zero_buf(h,  m*n*(t+1));
+      zero_buf(h, m*n*(t+1));
     }
   } else {
     zero_buf(w, m*k);
@@ -596,20 +567,11 @@ int main(int argc, char* argv[])
     rnncell_desc.bm = bm;
     rnncell_desc.bn = bn;
     rnncell_desc.bk = bk;
-    rnncell_desc.b_m1 = b_m1;
-    rnncell_desc.b_n1 = b_n1;
-    rnncell_desc.b_k1 = b_k1;
-    rnncell_desc.b_m2 = b_m2;
-    rnncell_desc.b_n2 = b_n2;
-    rnncell_desc.b_k2 = b_k2;
     rnncell_desc.reuse = reuse;
+    rnncell_desc.pass = pass;
     rnncell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
-    rnncell_desc.handlewx = handlewx;
-    rnncell_desc.handleuh = handleuh;
-    rnncell_desc.handlett = handlett;
-    rnncell_desc.handlewd = handlewd;
 
     libxsmm_handle = libxsmm_dnn_create_rnncell( rnncell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
@@ -908,7 +870,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel  private(i)
+#     pragma omp parallel private(i)
 #endif
       {
 #if defined(_OPENMP)
@@ -922,7 +884,7 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (2.0 * m * n)) * (double)t * (double)iters;
+      flops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (m * n) + (tflops * m * n)) * (double)t * (double)iters;
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
@@ -939,7 +901,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel  private(i)
+#     pragma omp parallel private(i)
 #endif
       {
 #if defined(_OPENMP)
@@ -980,7 +942,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel  private(i)
+#     pragma omp parallel private(i)
 #endif
       {
 #if defined(_OPENMP)
@@ -1027,7 +989,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel  private(i)
+#     pragma omp parallel private(i)
 #endif
       {
 #if defined(_OPENMP)

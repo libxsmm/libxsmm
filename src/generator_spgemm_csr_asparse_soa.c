@@ -260,7 +260,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*   
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
                                             l_n*i_soa_width*i_micro_kernel_config->datatype_size,
                                             i_micro_kernel_config->vector_name,
-                                            l_n, 0, 0 );
+                                            l_n, 0, 1, 0 );
         }
         if ( (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL2_VIA_C) > 0 ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
@@ -280,7 +280,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*   
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
                                           (i_row_idx[l_m] + l_z) * i_micro_kernel_config->datatype_size,
                                           i_micro_kernel_config->vector_name,
-                                          i_num_c_cols, 0, 0 );
+                                          i_num_c_cols, 0, 1, 0 );
         /* multiply with B */
         for ( l_n = 0; l_n < i_num_c_cols; l_n++ ) {
           l_b_offset = ((i_column_idx[i_row_idx[l_m] + l_z]*i_micro_kernel_config->datatype_size*i_soa_width*i_xgemm_desc->ldb)
@@ -341,7 +341,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*   
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
                                           l_n*i_soa_width*i_micro_kernel_config->datatype_size,
                                           i_micro_kernel_config->vector_name,
-                                          l_n, 0, 1 );
+                                          l_n, 0, 0, 1 );
       }
     }
     /* advance C pointer */

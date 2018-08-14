@@ -43,7 +43,8 @@
 
 #define USE_OVERWRITE
 /*#define USE_FUSED_BATCH_STATS*/
-/*#define USE_OVERWRITE_RNE*/
+//#define USE_FUSED_RELU_BWD
+#define USE_OVERWRITE_RNE
 
 /* it's fine to alias in and out */
 void truncate_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
@@ -326,18 +327,26 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
               for (ki = 0; ki < kw; ++ki) {
                 if (ii+ki < 0 || ii+ki >= ifw) continue;
                 LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) +=
-                LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
-                * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
+                  LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
+                  * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
               }
             }
           }
         }
       }
+#if defined(USE_FUSED_RELU) || defined(USE_FUSED_BIAS_RELU)
+      for (oj = 0; oj < ofh; ++oj) {
+        for (oi = 0; oi < ofw; ++oi) {
+          LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) =
+            (LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) < 0.0f) ? 0.0f : LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
+        }
+      }
+#endif
     }
   }
 }
 
-LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float* output, const float* filter)
+LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float* output, const float* filter, const float* naive_input_save)
 {
   int nImg      = param->nImg;
   int nIfm      = param->nIfm;
@@ -366,6 +375,11 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
   LIBXSMM_VLA_DECL(4, const float, output_t, output + (pad_h_out * ofwp + pad_w_out), nOfm, ofhp, ofwp);
   LIBXSMM_VLA_DECL(4,       float,  input_t,  input + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
   LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
+#if defined(USE_FUSED_RELU_BWD)
+  LIBXSMM_VLA_DECL(4, const float, naive_input_t, naive_input_save + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
+#else
+  LIBXSMM_UNUSED(naive_input_save);
+#endif
 
 #if defined(_OPENMP)
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
@@ -383,12 +397,21 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
                 if (ii+ki < 0 || ii+ki >= ifw) continue;
                 LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp) +=
                   LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp)
-                * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
+                  * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
               }
             }
           }
         }
       }
+#if defined(USE_FUSED_RELU_BWD)
+      for (ij = 0; ij < ifh; ij++) {
+        for (ii = 0; ii < ifw; ii++) {
+          if ( LIBXSMM_VLA_ACCESS(4,  naive_input_t, img, ifm, ij, ii , nIfm, ifhp, ifwp) == 0.0 ) {
+            LIBXSMM_VLA_ACCESS(4, input_t, img, ifm, ij, ii , nIfm, ifhp, ifwp) = 0.0;
+          }
+        }
+      }
+#endif
     }
   }
 }
@@ -439,7 +462,7 @@ LIBXSMM_INLINE void naive_conv_wu(naive_conv_t* param, const float* input, const
                 if (ii+ki < 0 || ii+ki >= ifw) continue;
                 LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw) +=
                   LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
-                * LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
+                  * LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
               }
             }
           }
@@ -503,6 +526,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_dfilter;
 #ifdef USE_FUSED_BATCH_STATS
   libxsmm_dnn_tensor* libxsmm_batchstats;
+  int bnofmblock;
 #endif
 
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
@@ -647,17 +671,27 @@ int main(int argc, char* argv[])
   batchstats_libxsmm        = (float*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(float), 2097152);
 
   /* initialize data */
-  float *naive_output_bp_tmp       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   zero_buf(naive_input, nImg*nIfm*ifhp*ifwp);
   if (padding_mode == 0 ) {
     init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
     init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
   } else {
+    float *naive_output_bp_tmp       = (float*)libxsmm_aligned_scratch( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
     init_buf(naive_input_tmp,      nImg*nIfm*ifh*ifw, 0, 0);
     init_buf(naive_output_bp_tmp,      nImg*nOfm*ofh*ofw, 0, 0);
     copy_internal_nchw( naive_input , naive_input_tmp, nImg, nIfm, ifh, ifw, pad_h, pad_w);
     copy_internal_nchw( naive_output_bp , naive_output_bp_tmp, nImg, nOfm, ofh, ofw, pad_h, pad_w);
+    libxsmm_free(naive_output_bp_tmp);
   }
+
+#if defined(USE_FUSED_RELU_BWD)
+  /* Initialize some entries with zeros  */
+  for (i = 0; i < nImg*nIfm*ifhp*ifwp; i++ ) {
+    if ( ((i%16) == 2) || ((i%16) == 3) || ((i%16) == 7) || ((i%16) == 14) ) {
+      naive_input[i] = 0.0;
+    }
+  }
+#endif
 
   copy_buf(naive_input, naive_input_save, nImg*nIfm*ifhp*ifwp);
   copy_buf(naive_output_bp, naive_output_save, nImg*nOfm*ofhp*ofwp);
@@ -666,10 +700,10 @@ int main(int argc, char* argv[])
   zero_buf(naive_input_bp,  nImg*nIfm*ifhp*ifwp);
   zero_buf(naive_filter_wu, nOfm*nIfm*kh*kw);
   /*zero_buf(output_libxsmm,      nImg*nOfm*ofhp*ofwp);
-  zero_buf(dinput_libxsmm,      nImg*nIfm*ifhp*ifwp);
-  zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
-  zero_buf(naive_libxsmm_input,  nImg*nIfm*ifhp*ifwp);
-  zero_buf(naive_libxsmm_filter, nOfm*nIfm*kh*kw);*/
+    zero_buf(dinput_libxsmm,      nImg*nIfm*ifhp*ifwp);
+    zero_buf(naive_libxsmm_output, nImg*nOfm*ofhp*ofwp);
+    zero_buf(naive_libxsmm_input,  nImg*nIfm*ifhp*ifwp);
+    zero_buf(naive_libxsmm_filter, nOfm*nIfm*kh*kw);*/
 
   /* make things bfp16 */
   truncate_mask_fp32_bfp16( naive_input, naive_input, nImg*nIfm*ifhp*ifwp );
@@ -695,7 +729,7 @@ int main(int argc, char* argv[])
     }
     /* run naive convolutions */
     if (type == 'A' || type == 'B') {
-      naive_conv_bp(&naive_param, naive_input_bp, naive_output_bp, naive_filter);
+      naive_conv_bp(&naive_param, naive_input_bp, naive_output_bp, naive_filter, naive_input_save);
     }
     /* run naive convolutions */
     if (type == 'A' || type == 'U') {
@@ -786,6 +820,8 @@ int main(int argc, char* argv[])
 
 #ifdef USE_FUSED_BATCH_STATS
   libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_BATCH_STATS, &status ); CHKERR_LIBXSMM_DNN( status );
+  /* we know that the tensor has 3 dims, inner most dim is the channel block */
+  bnofmblock = libxsmm_layout->dim_size[0];
   libxsmm_batchstats  = libxsmm_dnn_link_tensor( libxsmm_layout, batchstats_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 #endif
@@ -815,7 +851,7 @@ int main(int argc, char* argv[])
   /* let's allocate and bind scratch */
   scratch_size = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
   CHKERR_LIBXSMM_DNN( status );
-  scratch = libxsmm_aligned_malloc( scratch_size, 2097152 );
+  scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
   /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
   /*init_buf_int16( (libxsmm_bfloat16*)scratch, scratch_size/2, 0, 0 );*/
@@ -859,7 +895,7 @@ int main(int argc, char* argv[])
       int ch_i = 0;
       int ch_j = 0;
       int pxl_i = 0;
-      LIBXSMM_VLA_DECL(4, float, sum_fuse,  batchstats_libxsmm, nOfm/32, nImg, 32);
+      LIBXSMM_VLA_DECL(4, float, sum_fuse,  batchstats_libxsmm, nOfm/bnofmblock, nImg, bnofmblock);
       LIBXSMM_VLA_DECL(3, float, sum_naive, naive_output_fp, nOfm, ofhp*ofwp);
 
       ch_sum       = (float*) malloc(nOfm*sizeof(float));
@@ -873,19 +909,20 @@ int main(int argc, char* argv[])
         ch_sum[ch_i] = 0.0f;
         ch_sum2[ch_i] = 0.0f;
       }
-      for ( ch_i = 0; ch_i < nOfm/32; ++ch_i ) {
+      for ( ch_i = 0; ch_i < nOfm/bnofmblock; ++ch_i ) {
         for ( img_i = 0; img_i < nImg; ++img_i ) {
-          for ( ch_j = 0; ch_j < 32; ++ch_j ) {
-            ch_sum_fuse[(ch_i*32) + ch_j]  += sum_fuse[0][ch_i][img_i][ch_j];
-            ch_sum2_fuse[(ch_i*32) + ch_j] += sum_fuse[1][ch_i][img_i][ch_j];
+          for ( ch_j = 0; ch_j < bnofmblock; ++ch_j ) {
+            ch_sum_fuse[(ch_i*bnofmblock) + ch_j]  += LIBXSMM_VLA_ACCESS(4, sum_fuse, 0, ch_i, img_i, ch_j, nOfm/bnofmblock, nImg, bnofmblock);
+            ch_sum2_fuse[(ch_i*bnofmblock) + ch_j] += LIBXSMM_VLA_ACCESS(4, sum_fuse, 1, ch_i, img_i, ch_j, nOfm/bnofmblock, nImg, bnofmblock);
           }
         }
       }
       for ( img_i = 0; img_i < nImg; ++img_i ) {
         for ( ch_i = 0; ch_i < nOfm; ++ch_i ) {
           for ( pxl_i = 0; pxl_i < ofhp*ofwp; ++pxl_i ) {
-            ch_sum[ch_i]  += sum_naive[img_i][ch_i][pxl_i];
-            ch_sum2[ch_i] += (sum_naive[img_i][ch_i][pxl_i]*sum_naive[img_i][ch_i][pxl_i]);
+            const float f = LIBXSMM_VLA_ACCESS(3, sum_naive, img_i, ch_i, pxl_i, nOfm, ofhp*ofwp);
+            ch_sum2[ch_i] += f * f;
+            ch_sum[ch_i] += f;
           }
         }
       }

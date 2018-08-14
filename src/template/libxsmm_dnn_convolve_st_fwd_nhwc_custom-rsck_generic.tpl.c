@@ -41,7 +41,8 @@ const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* offset output pointer in case of physical output padding */
-element_output_type *const out = ((element_output_type*)handle->reg_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * (handle->blocksofm*handle->ofmblock);
+element_output_type *const out = (element_output_type*)handle->reg_output->data +
+  ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * ((size_t)handle->blocksofm*handle->ofmblock);
 
 /* padding via stack allocated buffers */
 const int padded_w = handle->desc.W + (2 * handle->desc.pad_w);
@@ -84,7 +85,7 @@ for ( ii = 0; ii < size_tls1; ++ii ) { input_scratch_padding[ii] = (element_inpu
           for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
             temp_ptr[ofm2] = temp_ptr_2[ofm2];
           }
-          temp_ptr += handle->blocksofm*handle->ofmblock;
+          temp_ptr += (size_t)handle->blocksofm*handle->ofmblock;
         }
       }
     }
@@ -100,7 +101,7 @@ for ( ii = 0; ii < size_tls1; ++ii ) { input_scratch_padding[ii] = (element_inpu
             for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
               temp_ptr[ofm2] = (element_output_type)0;
             }
-            temp_ptr += handle->blocksofm*handle->ofmblock;
+            temp_ptr += (size_t)handle->blocksofm*handle->ofmblock;
           }
         }
       }
@@ -165,7 +166,7 @@ for ( ii = 0; ii < size_tls1; ++ii ) { input_scratch_padding[ii] = (element_inpu
           for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
             temp_ptr[ofm2] = (element_output_type)(temp_ptr[ofm2] < 0 ? 0 : temp_ptr[ofm2]);
           }
-          temp_ptr += handle->blocksofm*handle->ofmblock;
+          temp_ptr += (size_t)handle->blocksofm*handle->ofmblock;
         }
       }
     }

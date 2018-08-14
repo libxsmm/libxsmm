@@ -46,12 +46,14 @@
 #if !defined(CHECK_FPE)
 # define CHECK_FPE
 #endif
-#if !defined(REFERENCE_BLAS)
-# define REFERENCE_BLAS LIBXSMM_GEMM_SYMBOL
+#if !defined(GEMM_GOLD)
+# define GEMM_GOLD LIBXSMM_GEMM_SYMBOL
 #endif
-#if !defined(LIBXSMM_BLAS)
-# define LIBXSMM_BLAS LIBXSMM_XGEMM_SYMBOL
-/*# define LIBXSMM_BLAS LIBXSMM_YGEMM_SYMBOL*/
+#if !defined(GEMM)
+# define GEMM LIBXSMM_YGEMM_SYMBOL
+#endif
+#if !defined(SMM)
+# define SMM LIBXSMM_XGEMM_SYMBOL
 #endif
 
 
@@ -60,21 +62,26 @@ LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE);
 
 int main(void)
 {
-  libxsmm_blasint m[]               = { 0, 0, 1, 1, 1, 2, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32,    9 };
-  libxsmm_blasint n[]               = { 0, 1, 1, 1, 2, 2, 3, 1, 3,    8, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33,    9 };
-  libxsmm_blasint k[]               = { 0, 1, 1, 1, 2, 2, 3, 2, 2,   64,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192, 1742 };
-  libxsmm_blasint lda[]             = { 0, 1, 1, 1, 1, 2, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9 };
-  libxsmm_blasint ldb[]             = { 0, 1, 1, 1, 2, 2, 3, 2, 2, 9216, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742 };
-  libxsmm_blasint ldc[]             = { 0, 1, 0, 1, 1, 2, 3, 3, 1, 4096, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
-  LIBXSMM_GEMM_CONST OTYPE alpha[]  = { 1, 1, 1, 1, 1, 1, 1, 1, 1,    1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
-  LIBXSMM_GEMM_CONST OTYPE beta[]   = { 0, 1, 0, 1, 1, 1, 1, 0, 0,    0,   1,     0,     0,   0,   0,   0,   0,   0,  0,  0,  0,  0,    0,    0 };
-  LIBXSMM_GEMM_CONST char transa = 'N', transb = 'N';
-  const int begin = 3, end = sizeof(m) / sizeof(*m);
-  libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0;
+  libxsmm_blasint m[]   = { 1, 1, 2, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32,    9 };
+  libxsmm_blasint n[]   = { 1, 2, 2, 3, 1, 3,    8, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33,    9 };
+  libxsmm_blasint k[]   = { 1, 2, 2, 3, 2, 2,   64,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192, 1742 };
+  libxsmm_blasint lda[] = { 1, 1, 2, 3, 3, 1,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9 };
+  libxsmm_blasint ldb[] = { 1, 2, 2, 3, 2, 2, 9216, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742 };
+  libxsmm_blasint ldc[] = { 1, 1, 2, 3, 3, 1, 4096, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
+  OTYPE alpha[]         = { 1, 1, 1, 1, 1, 1,    1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
+  OTYPE beta[]          = { 1, 1, 1, 1, 0, 0,    0,   1,     0,     1,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0 };
+#if !defined(__BLAS) || (0 != __BLAS)
+  char transa[] = "NNNTT";
+#else
+  char transa[] = "NN";
+#endif
+  char transb[] = "NNTNT";
+  const int begin = 0, end = sizeof(m) / sizeof(*m), i0 = 0, i1 = sizeof(transa) - 1;
+  libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0, block = 1;
   libxsmm_matdiff_info diff;
   ITYPE *a = 0, *b = 0;
   OTYPE *c = 0, *d = 0;
-  int result = EXIT_SUCCESS, test;
+  int result = EXIT_SUCCESS, test, i;
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
   const unsigned int fpemask = _MM_GET_EXCEPTION_MASK(); /* backup FPE mask */
   const unsigned int fpcheck = _MM_MASK_INVALID | _MM_MASK_OVERFLOW;
@@ -82,18 +89,25 @@ int main(void)
   _MM_SET_EXCEPTION_MASK(fpemask & ~fpcheck);
 #endif
   for (test = begin; test < end; ++test) {
+    m[test] = LIBXSMM_UP(m[test], block);
+    n[test] = LIBXSMM_UP(n[test], block);
+    k[test] = LIBXSMM_UP(k[test], block);
+    lda[test] = LIBXSMM_MAX(lda[test], m[test]);
+    ldb[test] = LIBXSMM_MAX(ldb[test], k[test]);
+    ldc[test] = LIBXSMM_MAX(ldc[test], m[test]);
+  }
+  for (test = begin; test < end; ++test) {
     const libxsmm_blasint size_a = lda[test] * k[test], size_b = ldb[test] * n[test], size_c = ldc[test] * n[test];
-    assert(m[test] <= lda[test] && k[test] <= ldb[test] && m[test] <= ldc[test]);
+    LIBXSMM_ASSERT(m[test] <= lda[test] && k[test] <= ldb[test] && m[test] <= ldc[test]);
     max_size_a = LIBXSMM_MAX(max_size_a, size_a);
     max_size_b = LIBXSMM_MAX(max_size_b, size_b);
     max_size_c = LIBXSMM_MAX(max_size_c, size_c);
   }
-
   a = (ITYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(ITYPE)));
   b = (ITYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ITYPE)));
   c = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
   d = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
-  assert(0 != a && 0 != b && 0 != c && 0 != d);
+  LIBXSMM_ASSERT(0 != a && 0 != b && 0 != c && 0 != d);
   LIBXSMM_MATINIT(ITYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
   LIBXSMM_MATINIT(ITYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
   LIBXSMM_MATINIT(OTYPE,  0, c, max_size_c, 1, max_size_c, 1.0);
@@ -101,48 +115,68 @@ int main(void)
   memset(&diff, 0, sizeof(diff));
 
   for (test = begin; test < end && EXIT_SUCCESS == result; ++test) {
+    for (i = i0; i < i1 && EXIT_SUCCESS == result; ++i) {
+      libxsmm_blasint mi = m[test], ni = n[test], ki = k[test];
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
-    _MM_SET_EXCEPTION_STATE(0);
+      _MM_SET_EXCEPTION_STATE(0);
 #endif
-    LIBXSMM_BLAS(ITYPE)(&transa, &transb, m + test, n + test, k + test,
-      alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
-
+      if (0 != i) {
+        if ('N' != transa[i] && 'N' == transb[i]) { /* TN */
+          mi = ki = LIBXSMM_MIN(mi, ki);
+        }
+        else if ('N' == transa[i] && 'N' != transb[i]) { /* NT */
+          ki = ni = LIBXSMM_MIN(ki, ni);
+        }
+        else if ('N' != transa[i] && 'N' != transb[i]) { /* TT */
+          const libxsmm_blasint ti = LIBXSMM_MIN(mi, ni);
+          mi = ni = ki = LIBXSMM_MIN(ti, ki);
+        }
+        GEMM(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
+          alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
+      }
+      else {
+        SMM(ITYPE)(transa, transb, &mi, &ni, &ki,
+          alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
+      }
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
-    fpstate = _MM_GET_EXCEPTION_STATE() & fpcheck;
-    result = (0 == fpstate ? EXIT_SUCCESS : EXIT_FAILURE);
-    if (EXIT_SUCCESS != result) {
+      fpstate = _MM_GET_EXCEPTION_STATE() & fpcheck;
+      result = (0 == fpstate ? EXIT_SUCCESS : EXIT_FAILURE);
+      if (EXIT_SUCCESS != result) {
 # if defined(_DEBUG)
-      fprintf(stderr, "FPE(#%i): state=0x%08x -> invalid=%s overflow=%s\n", test + 1, fpstate,
-        0 != (_MM_MASK_INVALID  & fpstate) ? "true" : "false",
-        0 != (_MM_MASK_OVERFLOW & fpstate) ? "true" : "false");
+        fprintf(stderr, "FPE(#%i): state=0x%08x -> invalid=%s overflow=%s\n", test + 1, fpstate,
+          0 != (_MM_MASK_INVALID  & fpstate) ? "true" : "false",
+          0 != (_MM_MASK_OVERFLOW & fpstate) ? "true" : "false");
 # endif
-    }
+      }
 # if !defined(__BLAS) || (0 != __BLAS)
-    else
+      else
 # endif
 #endif
 #if !defined(__BLAS) || (0 != __BLAS)
-    {
-      libxsmm_matdiff_info diff_test;
-      REFERENCE_BLAS(ITYPE)(&transa, &transb, m + test, n + test, k + test,
-        alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
+      {
+        libxsmm_matdiff_info diff_test;
+        GEMM_GOLD(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
+          alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 
-      result = libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m[test], n[test], d, c, ldc + test, ldc + test, &diff_test);
-      if (EXIT_SUCCESS == result) {
-        if (1.0 >= (1000.0 * diff_test.normf_rel)) {
-          libxsmm_matdiff_reduce(&diff, &diff_test);
-        }
-        else {
+        result = libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m[test], n[test], d, c, ldc + test, ldc + test, &diff_test);
+        if (EXIT_SUCCESS == result) {
+          if (1.0 >= (1000.0 * diff_test.normf_rel)) {
+            libxsmm_matdiff_reduce(&diff, &diff_test);
+          }
+          else {
 # if defined(_DEBUG)
-          fprintf(stderr, "Diff(#%i): L2abs=%f Linf=%f\n", test + 1, diff_test.l2_abs, diff_test.linf_abs);
+            libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
+              alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
+            fprintf(stderr, ": L2abs=%f Linf=%f (test %i.%i)\n", diff_test.l2_abs, diff_test.linf_abs, test + 1, i + 1);
 # endif
-          result = EXIT_FAILURE;
+            result = EXIT_FAILURE;
+          }
         }
       }
-    }
 #elif defined(_DEBUG)
-    fprintf(stderr, "Warning: skipped the test due to missing BLAS support!\n");
+      fprintf(stderr, "Warning: skipped the test due to missing BLAS support!\n");
 #endif
+    }
   }
 
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)

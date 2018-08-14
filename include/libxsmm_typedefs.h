@@ -120,6 +120,10 @@ union libxsmm_bfloat16_hp {
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
 typedef LIBXSMM_BLASINT libxsmm_blasint;
 
+/** Type representing sufficient storage space for a GEMM handle. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_blob { char data[256]; } libxsmm_gemm_blob;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle libxsmm_gemm_handle;
+
 /** Type representing sufficient storage space for descriptors (GEMM, TCOPY, MCOPY). */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_descriptor_blob {
   char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
@@ -161,14 +165,20 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_TRANS_A = 1,
   /** Transpose matrix B. */
   LIBXSMM_GEMM_FLAG_TRANS_B = 2,
+  /** Transpose matrix A and B. */
+  LIBXSMM_GEMM_FLAG_TRANS_AB = LIBXSMM_GEMM_FLAG_TRANS_A | LIBXSMM_GEMM_FLAG_TRANS_B,
+#if 0
   /** Alpha=0|1 */
   LIBXSMM_GEMM_FLAG_ALPHA_0 = 4,
   /** Alpha=neg|pos */
   LIBXSMM_GEMM_FLAG_ALPHA_S = 8,
+#endif
   /** Beta=0|1 */
   LIBXSMM_GEMM_FLAG_BETA_0  = 16,
+#if 0
   /** Beta=neg|pos */
   LIBXSMM_GEMM_FLAG_BETA_S  = 32,
+#endif
   /** Generate aligned load instructions. */
   LIBXSMM_GEMM_FLAG_ALIGN_A = 64,
   /** Aligned load/store instructions. */
@@ -176,6 +186,14 @@ typedef enum libxsmm_gemm_flags {
   /** Marker flag; do not use. */
   LIBXSMM_GEMM_FLAG_INVALID = 256
 } libxsmm_gemm_flags;
+
+/** Flag enumeration which can be binary ORed. */
+typedef enum libxsmm_gemm_handle_flags {
+  LIBXSMM_GEMM_HANDLE_FLAG_COPY_AUTO = 0,
+  LIBXSMM_GEMM_HANDLE_FLAG_COPY_A = 1,
+  LIBXSMM_GEMM_HANDLE_FLAG_COPY_B = 2,
+  LIBXSMM_GEMM_HANDLE_FLAG_COPY_C = 4
+} libxsmm_gemm_handle_flags;
 
 /** Auto-batch flags (can be ORed) applicable to mmbatch_begin/mmbatch_end. */
 typedef enum libxsmm_mmbatch_flags {

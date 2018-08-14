@@ -105,9 +105,9 @@ int main(int argc, char* argv[])
       mkl_enable_instructions(MKL_ENABLE_AVX512);
 # endif
 # if defined(_OPENMP)
-      Eigen::NonBlockingThreadPool threadpool(1 == nthreads ? omp_get_max_threads() : nthreads);
+      Eigen::ThreadPool threadpool(1 == nthreads ? omp_get_max_threads() : nthreads);
 # else
-      Eigen::NonBlockingThreadPool threadpool(nthreads);
+      Eigen::ThreadPool threadpool(nthreads);
 # endif
       Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
       Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n), td(m, n);
@@ -149,7 +149,8 @@ int main(int argc, char* argv[])
       if (0 < d2) {
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / d2);
       }
-      if (EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, td.data(), tc.data(), &m, &m, &diff)) {
+      result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, td.data(), tc.data(), &m, &m, &diff);
+      if (EXIT_SUCCESS == result) {
         fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
         if (check < 100.0 * diff.normf_rel) {
           fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);

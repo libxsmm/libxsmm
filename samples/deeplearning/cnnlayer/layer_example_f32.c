@@ -42,7 +42,7 @@
 # define USE_OVERWRITE
 /*# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE*/
 /*# define USE_FUSED_BATCH_STATS*/
-/*#define USE_FUSED_RELU_BWD*/
+//#define USE_FUSED_RELU_BWD
 
 #if !defined(USE_FUSED_BIAS) && 0
 # define USE_FUSED_BIAS
@@ -641,35 +641,35 @@ int main(int argc, char* argv[])
   dbias_nhwc            = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
 
   /* initialize data */
-  float *naive_input_tmp           = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
   if (padding_mode == 0 ) {
     init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
   } else {
+    float *naive_input_tmp = (float*)libxsmm_aligned_scratch( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
     init_buf(naive_input_tmp,          nImg*nIfm*ifh*ifw, 0, 0);
     copy_internal_nchw( naive_input , naive_input_tmp, nImg, nIfm, ifh, ifw, pad_h, pad_w);
+    libxsmm_free(naive_input_tmp);
   }
 #if defined(USE_FUSED_RELU_BWD)
   /* Initialize some entries with zeros  */
-  {
-    int i;
-    for (i = 0; i < nImg*nIfm*ifhp*ifwp; i++ ) {
-      if ( ((i%16) == 2) || ((i%16) == 3) || ((i%16) == 7) || ((i%16) == 14) ) {
-        naive_input[i] = 0.0;
-      }
+  for (i = 0; i < nImg*nIfm*ifhp*ifwp; i++ ) {
+    if ( ((i%16) == 2) || ((i%16) == 3) || ((i%16) == 7) || ((i%16) == 14) ) {
+      naive_input[i] = 0.0;
     }
   }
 #endif
 
-  float *naive_output_bp_tmp       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
-  float *naive_output_wu_tmp       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   if (padding_mode == 0 ) {
     init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
     init_buf(naive_output_wu,      nImg*nOfm*ofhp*ofwp, 0, 0);
   } else {
+    float *naive_output_bp_tmp = (float*)libxsmm_aligned_scratch( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
+    float *naive_output_wu_tmp = (float*)libxsmm_aligned_scratch( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
     init_buf(naive_output_bp_tmp,      nImg*nOfm*ofh*ofw, 0, 0);
     copy_internal_nchw( naive_output_bp , naive_output_bp_tmp, nImg, nOfm, ofh, ofw, pad_h, pad_w);
     init_buf(naive_output_wu_tmp,      nImg*nOfm*ofh*ofw, 0, 0);
     copy_internal_nchw( naive_output_wu , naive_output_wu_tmp, nImg, nOfm, ofh, ofw, pad_h, pad_w);
+    libxsmm_free(naive_output_bp_tmp);
+    libxsmm_free(naive_output_wu_tmp);
   }
   set_zeropad_nchw(naive_input, nImg, nIfm, ifhp, ifwp, pad_h_in, pad_w_in);
   set_zeropad_nchw(naive_output_bp, nImg, nOfm, ofhp, ofwp, pad_h_out, pad_w_out);
@@ -678,11 +678,12 @@ int main(int argc, char* argv[])
   copy_buf(naive_input, naive_input_save, nImg*nIfm*ifhp*ifwp);
   zero_buf(naive_output_save,    nImg*nOfm*ofhp*ofwp);
 
-  float *naive_output_tmp          = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   if (padding_mode == 0 ) {
     init_buf(naive_output,       nImg*nOfm*ofhp*ofwp, 0, 0);
   } else {
+    float *naive_output_tmp = (float*)libxsmm_aligned_scratch( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
     init_buf(naive_output_tmp,       nImg*nOfm*ofh*ofw, 0, 0);
+    libxsmm_free(naive_output_tmp);
   }
   set_zeropad_nchw(naive_output, nImg, nOfm, ofhp, ofwp, pad_h_out, pad_w_out);
 
@@ -915,16 +916,17 @@ int main(int argc, char* argv[])
         for ( ch_i = 0; ch_i < nOfm/16; ++ch_i ) {
           for ( img_i = 0; img_i < nImg; ++img_i ) {
             for ( ch_j = 0; ch_j < 16; ++ch_j ) {
-              ch_sum_fuse[(ch_i*16) + ch_j]  += sum_fuse[0][ch_i][img_i][ch_j];
-              ch_sum2_fuse[(ch_i*16) + ch_j] += sum_fuse[1][ch_i][img_i][ch_j];
+              ch_sum_fuse[(ch_i*16) + ch_j]  += LIBXSMM_VLA_ACCESS(4, sum_fuse, 0, ch_i, img_i, ch_j, nOfm/16, nImg, 16);
+              ch_sum2_fuse[(ch_i*16) + ch_j] += LIBXSMM_VLA_ACCESS(4, sum_fuse, 1, ch_i, img_i, ch_j, nOfm/16, nImg, 16);
             }
           }
         }
         for ( img_i = 0; img_i < nImg; ++img_i ) {
           for ( ch_i = 0; ch_i < nOfm; ++ch_i ) {
             for ( pxl_i = 0; pxl_i < ofhp*ofwp; ++pxl_i ) {
-              ch_sum[ch_i]  += sum_naive[img_i][ch_i][pxl_i];
-              ch_sum2[ch_i] += (sum_naive[img_i][ch_i][pxl_i]*sum_naive[img_i][ch_i][pxl_i]);
+              const float f = LIBXSMM_VLA_ACCESS(3, sum_naive, img_i, ch_i, pxl_i, nOfm, ofhp*ofwp);
+              ch_sum2[ch_i] += f * f;
+              ch_sum[ch_i]  += f;
             }
           }
         }

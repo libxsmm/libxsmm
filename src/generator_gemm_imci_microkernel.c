@@ -264,7 +264,7 @@ void libxsmm_x86_instruction_vec_move_imci( libxsmm_generated_code* io_generated
   if ( (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVAPD) ||
        (i_vmove_instr == LIBXSMM_X86_INSTR_VMOVAPS) ) {
     libxsmm_x86_instruction_vec_move( io_generated_code, i_instruction_set, i_vmove_instr,
-                                  i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
+                                  i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_vector_name, i_vec_reg_number_0, i_use_masking, 0, i_is_store );
   } else if ( i_vmove_instr == LIBXSMM_X86_INSTR_VMOVUPD ) {
     unsigned int l_instr_1 = 0;
     unsigned int l_instr_2 = 0;
@@ -276,9 +276,9 @@ void libxsmm_x86_instruction_vec_move_imci( libxsmm_generated_code* io_generated
       l_instr_2 = LIBXSMM_X86_INSTR_VPACKSTOREHPD;
     }
     libxsmm_x86_instruction_vec_move( io_generated_code, i_instruction_set, l_instr_1,
-                                  i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
+                                  i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_vector_name, i_vec_reg_number_0, i_use_masking, 0, i_is_store );
     libxsmm_x86_instruction_vec_move( io_generated_code, i_instruction_set, l_instr_2,
-                                  i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement+64, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
+                                  i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement+64, i_vector_name, i_vec_reg_number_0, i_use_masking, 0, i_is_store );
   } else if ( i_vmove_instr == LIBXSMM_X86_INSTR_VMOVUPS ) {
     unsigned int l_instr_1 = 0;
     unsigned int l_instr_2 = 0;
@@ -290,9 +290,9 @@ void libxsmm_x86_instruction_vec_move_imci( libxsmm_generated_code* io_generated
       l_instr_2 = LIBXSMM_X86_INSTR_VPACKSTOREHPS;
     }
     libxsmm_x86_instruction_vec_move( io_generated_code, i_instruction_set, l_instr_1,
-                                  i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
+                                  i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement, i_vector_name, i_vec_reg_number_0, i_use_masking, 0, i_is_store );
     libxsmm_x86_instruction_vec_move( io_generated_code, i_instruction_set, l_instr_2,
-                                  i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement+64, i_vector_name, i_vec_reg_number_0, i_use_masking, i_is_store );
+                                  i_gp_reg_base, i_gp_reg_idx, i_scale, i_displacement+64, i_vector_name, i_vec_reg_number_0, i_use_masking, 0, i_is_store );
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_VEC_MOVE_IMCI );
     return;

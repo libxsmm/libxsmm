@@ -1561,17 +1561,17 @@ realclean-all: realclean
 .PHONY: distclean
 distclean: realclean-all
 
+# INSTALL_ROOT may sanitize the given PREFIX
 ifneq (,$(strip $(PREFIX)))
 INSTALL_ROOT = $(PREFIX)
 else
 INSTALL_ROOT = .
 endif
-ifeq ($(dir .),$(dir $(INSTALL_ROOT)))
-ifneq (,$(strip $(DESTDIR)))
+# ensure INSTALL_ROOT is an absolute path
+ifneq (,$(strip $(DESTDIR))) # consider DESTDIR
 INSTALL_ROOT := $(abspath $(DESTDIR)/$(INSTALL_ROOT))
 else
 INSTALL_ROOT := $(abspath $(INSTALL_ROOT))
-endif
 endif
 
 .PHONY: install-minimal
@@ -1635,7 +1635,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo "LIBXSMM installing header-only..."
 	@$(ROOTDIR)/$(SCRDIR)/libxsmm_source.sh $(patsubst $(PINCDIR)/%,%,$(PSRCDIR)) \
 		> $(INSTALL_ROOT)/$(PINCDIR)/libxsmm_source.h
-	@$(CP) -vr $(SRCDIR)/* $(INSTALL_ROOT)/$(PSRCDIR)
+	@$(CP) -vr $(ROOTDIR)/$(SRCDIR)/* $(INSTALL_ROOT)/$(PSRCDIR)
 endif
 
 .PHONY: install
