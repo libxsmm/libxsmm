@@ -209,83 +209,71 @@ LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n3
 }
 
 
+LIBXSMM_API_INLINE unsigned int internal_product_limit(unsigned int product, unsigned int limit)
+{
+  unsigned int fact[32], maxp = limit, result = 1;
+  int i, n;
+  /* attempt to lower the memory requirement for DP; can miss best solution */
+  if (LIBXSMM_MATH_MAXPRODUCT < limit) {
+    const unsigned int minfct = (limit + limit - 1) / LIBXSMM_MATH_MAXPRODUCT;
+    const unsigned int maxfct = (unsigned int)libxsmm_gcd(product, limit);
+    result = maxfct;
+    if (minfct < maxfct) {
+      n = libxsmm_primes_u32(result, fact);
+      for (i = 0; i < n; ++i) {
+        if (minfct < fact[i]) {
+          result = fact[i];
+          i = n; /* break */
+        }
+      }
+    }
+    maxp /= result;
+  }
+  if (LIBXSMM_MATH_MAXPRODUCT >= maxp) {
+    unsigned int k[2][LIBXSMM_MATH_MAXPRODUCT], *k0 = k[0], *k1 = k[1], *kt, p;
+    n = libxsmm_primes_u32(product / result, fact);
+    /* initialize table with trivial factor */
+    for (p = 0; p <= maxp; ++p) k[0][p] = 1;
+    k[0][0] = k[1][0] = 1;
+    for (i = 1; i <= n; ++i) {
+      for (p = 1; p <= maxp; ++p) {
+        const unsigned int f = fact[i - 1], h = k0[p];
+        if (p < f) {
+          k1[p] = h;
+        }
+        else {
+          const unsigned int g = f * k0[p / f];
+          k1[p] = LIBXSMM_MAX(g, h);
+        }
+      }
+      kt = k0; k0 = k1; k1 = kt;
+    }
+    result *= k0[maxp];
+  }
+  else { /* trivial approximation */
+    n = libxsmm_primes_u32(product, fact);
+    for (i = 0; i < n; ++i) {
+      const unsigned int f = result * fact[i];
+      if (f <= limit) {
+        result = f;
+      }
+      else i = n; /* break */
+    }
+  }
+  return result;
+}
+
+
 LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned int limit, int is_lower)
 {
   unsigned int result;
   if (limit < product) {
     result = 1;
     if (1 < limit) {
-      unsigned int fact[32], maxp = limit;
-      int i, n;
-      /* attempt to lower the memory requirement for DP; can miss best solution */
-      if (LIBXSMM_MATH_MAXPRODUCT < limit) {
-        const unsigned int minfct = (limit + limit - 1) / LIBXSMM_MATH_MAXPRODUCT;
-        const unsigned int maxfct = (unsigned int)libxsmm_gcd(product, limit);
-        result = maxfct;
-        if (minfct < maxfct) {
-          n = libxsmm_primes_u32(result, fact);
-          for (i = 0; i < n; ++i) {
-            if (minfct < fact[i]) {
-              result = fact[i];
-              i = n; /* break */
-            }
-          }
-        }
-        maxp /= result;
-      }
-      if (LIBXSMM_MATH_MAXPRODUCT >= maxp) {
-        unsigned int k[2][LIBXSMM_MATH_MAXPRODUCT], *k0 = k[0], *k1 = k[1], *kt, p;
-        n = libxsmm_primes_u32(product / result, fact);
-        /* initialize table with trivial factor */
-        for (p = 0; p <= maxp; ++p) k[0][p] = 1;
-        k[0][0] = k[1][0] = 1;
-        for (i = 1; i <= n; ++i) {
-          for (p = 1; p <= maxp; ++p) {
-            const unsigned int f = fact[i - 1], h = k0[p];
-            if (p < f) {
-              k1[p] = h;
-            }
-            else {
-              const unsigned int g = f * k0[p / f];
-              k1[p] = LIBXSMM_MAX(g, h);
-            }
-          }
-          kt = k0; k0 = k1; k1 = kt;
-        }
-        result *= k0[maxp];
-      }
-      else { /* trivial approximation */
-        n = libxsmm_primes_u32(product, fact);
-        for (i = 0; i < n; ++i) {
-          const unsigned int f = result * fact[i];
-          if (f <= limit) {
-            result = f;
-          }
-          else i = n; /* break */
-        }
-      }
+      result = internal_product_limit(product, limit);
       if (0 != is_lower && result < limit) {
-        unsigned int rfact[32];
-        const int m = libxsmm_primes_u32(result, rfact);
-        int j = 0, stop = (j != m ? 0 : 1);
-        n = libxsmm_primes_u32(product, fact);
-        LIBXSMM_ASSERT(m <= n);
-        for (i = 0; i < n; ++i) {
-          while (j < m && fact[i] == rfact[j]) {
-            ++i; ++j; /* skip */
-          }
-          stop = ((j == m || fact[i] != rfact[j]) ? 1 : 0);
-          if (0 != stop) break;
-        }
-        if (0 != stop) {
-          if (i < n) {
-            result *= fact[i];
-          }
-          else {
-            result = product;
-          }
-        }
-        LIBXSMM_ASSERT(result <= product);
+        result = internal_product_limit(product, 2 * limit - 1);
+        if (result < limit) result = product;
       }
     }
   }
