@@ -267,21 +267,22 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
       if (0 != is_lower && result < limit) {
         unsigned int rfact[32];
         const int m = libxsmm_primes_u32(result, rfact);
-        int j = 0;
+        int j = 0, stop = (j != m ? 0 : 1);
         n = libxsmm_primes_u32(product, fact);
         LIBXSMM_ASSERT(m <= n);
         for (i = 0; i < n; ++i) {
           while (j < m && fact[i] == rfact[j]) {
             ++i; ++j; /* skip */
           }
-          if (j == m || fact[i] != rfact[j]) {
-            if (i < n) {
-              result *= fact[i];
-            }
-            else {
-              result = product;
-            }
-            i = n; /* break */
+          stop = ((j == m || fact[i] != rfact[j]) ? 1 : 0);
+          if (0 != stop) break;
+        }
+        if (0 != stop) {
+          if (i < n) {
+            result *= fact[i];
+          }
+          else {
+            result = product;
           }
         }
         LIBXSMM_ASSERT(result <= product);

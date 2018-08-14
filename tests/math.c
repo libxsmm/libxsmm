@@ -151,6 +151,7 @@ int main(int argc, char* argv[])
   if (libxsmm_product_limit(1000, 6, 1) != 10) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(1000, 9, 1) != 40) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12, 7, 1) != 12) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(5, 2, 1) != 5) exit(EXIT_FAILURE);
 
   return EXIT_SUCCESS;
 }
