@@ -175,23 +175,23 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 #endif
   if (LIBXSMM_X86_AVX512_CORE <= archid) {
     internal_gemm_vwidth = 64;
-    internal_gemm_nstretch = 4;
-    internal_gemm_kstretch = 9;
+    internal_gemm_nstretch = 1;
+    internal_gemm_kstretch = 4;
   }
   else if (LIBXSMM_X86_AVX512_MIC <= archid) {
     internal_gemm_vwidth = 64;
-    internal_gemm_nstretch = 4;
-    internal_gemm_kstretch = 9;
+    internal_gemm_nstretch = 1;
+    internal_gemm_kstretch = 4;
   }
   else if (LIBXSMM_X86_AVX <= archid) {
     internal_gemm_vwidth = 32;
-    internal_gemm_nstretch = 4;
-    internal_gemm_kstretch = 9;
+    internal_gemm_nstretch = 1;
+    internal_gemm_kstretch = 4;
   }
   else {
     internal_gemm_vwidth = 16;
-    internal_gemm_nstretch = 4;
-    internal_gemm_kstretch = 9;
+    internal_gemm_nstretch = 1;
+    internal_gemm_kstretch = 4;
   }
   { /* setup tile sizes according to environment (LIBXSMM_TGEMM_M, LIBXSMM_TGEMM_N, LIBXSMM_TGEMM_K) */
     const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
@@ -207,8 +207,8 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     const char *const env_ns = getenv("LIBXSMM_TGEMM_NS"), *const env_ks = getenv("LIBXSMM_TGEMM_KS");
     const double ns = ((0 == env_ns || 0 == *env_ns) ? 0 : atof(env_ns));
     const double ks = ((0 == env_ks || 0 == *env_ks) ? 0 : atof(env_ks));
-    if (0 < ns) internal_gemm_nstretch = (float)LIBXSMM_MAX(24, ns);
-    if (0 < ks) internal_gemm_kstretch = (float)LIBXSMM_MAX(24, ks);
+    if (0 < ns) internal_gemm_nstretch = (float)LIBXSMM_MIN(24, ns);
+    if (0 < ks) internal_gemm_kstretch = (float)LIBXSMM_MIN(24, ks);
   }
   { /* thread-local scratch buffer for GEMM */
     void* buffer;
