@@ -842,8 +842,8 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
         }
       }
     }
-  } 
-  else 
+  }
+  else
   {
     if(gp->bwd_relu)
     {

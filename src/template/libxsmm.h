@@ -66,6 +66,7 @@
 #include "libxsmm_dnn.h"
 #include "libxsmm_dnn_rnncell.h"
 #include "libxsmm_dnn_lstmcell.h"
+#include "libxsmm_dnn_fusedbn.h"
 
 
 /** Initialize the library; pay for setup cost at a specific point. */
