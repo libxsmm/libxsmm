@@ -50,7 +50,7 @@
 # define LIBXSMM_GEMM_NOJIT_TRANS
 #endif
 #if !defined(LIBXSMM_GEMM_MSIZE_MAX)
-# define LIBXSMM_GEMM_MSIZE_MAX 32
+# define LIBXSMM_GEMM_MSIZE_MAX 48
 #endif
 #if !defined(LIBXSMM_GEMM_QUICKPLAN) && 0
 # define LIBXSMM_GEMM_QUICKPLAN
@@ -169,12 +169,12 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
   if (LIBXSMM_X86_AVX512_CORE <= archid) {
     internal_gemm_vwidth = 64;
     internal_gemm_nstretch = 1;
-    internal_gemm_kstretch = 4;
+    internal_gemm_kstretch = 3;
   }
   else if (LIBXSMM_X86_AVX512_MIC <= archid) {
     internal_gemm_vwidth = 64;
     internal_gemm_nstretch = 1;
-    internal_gemm_kstretch = 4;
+    internal_gemm_kstretch = 3;
   }
   else if (LIBXSMM_X86_AVX2 <= archid) {
     internal_gemm_vwidth = 32;
