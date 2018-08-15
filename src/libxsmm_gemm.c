@@ -771,15 +771,23 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     }
     if (NULL != result.ptr) { /* thread-local scratch buffer for GEMM */
       result.ptr->size_a = result.ptr->size_b = result.ptr->size_c = 0;
-      if (0 != (result.ptr->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_A)) {
+      if (0 != (result.ptr->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_A)
+        || (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags) &&
+           (LIBXSMM_GEMM_FLAG_TRANS_A & result.ptr->gemm_flags) != 0))
+      {
         const size_t size_a = result.ptr->tm * result.ptr->tk * result.ptr->itypesize;
         result.ptr->size_a = LIBXSMM_UP2(size_a, LIBXSMM_CACHELINE);
       }
-      if (0 != (result.ptr->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_B)) {
+      if (0 != (result.ptr->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_B)
+        || (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags) &&
+           (LIBXSMM_GEMM_FLAG_TRANS_B & result.ptr->gemm_flags) != 0))
+      {
         const size_t size_b = result.ptr->tk * result.ptr->tn * result.ptr->itypesize;
         result.ptr->size_b = LIBXSMM_UP2(size_b, LIBXSMM_CACHELINE);
       }
-      if (0 != (result.ptr->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_C)) {
+      if (0 != (result.ptr->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_C)
+        || LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags))
+      {
         const size_t size_c = result.ptr->tm * result.ptr->tn * result.ptr->otypesize;
         result.ptr->size_c = LIBXSMM_UP2(size_c, LIBXSMM_CACHELINE);
       }
@@ -805,9 +813,9 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* sc
   {
     const unsigned int ntasks = handle->mt * handle->nt * handle->kt;
     const unsigned int spread = handle->nthreads / ntasks;
-    const unsigned int utid = (unsigned int)tid;
-    if (utid < (spread * ntasks) && 0 == (utid % spread)) {
-      const unsigned int rtid = utid / handle->mt, mtid = utid - rtid * handle->mt, ntid = rtid % handle->nt, ktid = utid / (handle->mt * handle->nt);
+    const unsigned int utid = (unsigned int)tid, vtid = utid / spread;
+    if (utid < (spread * ntasks) && 0 == (utid - vtid * spread)) {
+      const unsigned int rtid = vtid / handle->mt, mtid = vtid - rtid * handle->mt, ntid = rtid % handle->nt, ktid = vtid / (handle->mt * handle->nt);
       const unsigned int m0 = mtid * handle->dm, m1 = LIBXSMM_MIN(m0 + handle->dm, handle->m);
       const unsigned int n0 = ntid * handle->dn, n1 = LIBXSMM_MIN(n0 + handle->dn, handle->n);
       const unsigned int k0 = ktid * handle->dk, k1 = LIBXSMM_MIN(k0 + handle->dk, handle->k);
@@ -818,7 +826,7 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* sc
       const unsigned int dik = handle->tk * handle->itypesize;
       const unsigned int on = handle->otypesize * n0;
       /* calculate base address of thread-local storage */
-      char *const at = (char*)scratch + (handle->size_a + handle->size_b + handle->size_c) * utid;
+      char *const at = (char*)scratch + (handle->size_a + handle->size_b + handle->size_c) * vtid;
       char *const bt = at + handle->size_a;
       char *const ct = bt + handle->size_b;
       /* loop induction variables and other variables */
