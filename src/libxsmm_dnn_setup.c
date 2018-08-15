@@ -222,7 +222,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
   *C_block_hp = ifmblock_hp;
   *K_block_lp = ofmblock_lp;
 
-  return status;  
+  return status;
 }
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxsmm_dnn_layer* handle, int *noarch ) {
@@ -234,7 +234,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxs
     handle->use_lp_kernel = 0;
   }
 
-  status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K, 
+  status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K,
                                                &(handle->ifmblock), &(handle->ifmblock_hp),
                                                &(handle->ofmblock), &(handle->ofmblock_lp),
                                                &(handle->fm_lp_block), handle->datatype_in, handle->datatype_out, noarch );

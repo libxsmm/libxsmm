@@ -515,7 +515,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn {
   libxsmm_dnn_tensor* stddev;         /* standard derivation */
   libxsmm_barrier* barrier;           /* barrier */
   int ifmblock;
-  int ifmblock_hp;   
+  int ifmblock_hp;
   int ofmblock;
   int ofmblock_lp;
   int blocksifm;

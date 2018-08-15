@@ -36,7 +36,7 @@ LIBXSMM_API libxsmm_dnn_fusedbn* libxsmm_dnn_create_fusedbn(libxsmm_dnn_fusedbn_
   libxsmm_dnn_fusedbn* handle = 0;
   int noarch;
 
-  if ( ((handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)) || 
+  if ( ((handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)) ||
        ((handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32))    ) {
     handle = (libxsmm_dnn_fusedbn*)malloc(sizeof(libxsmm_dnn_fusedbn));
 
@@ -47,7 +47,7 @@ LIBXSMM_API libxsmm_dnn_fusedbn* libxsmm_dnn_create_fusedbn(libxsmm_dnn_fusedbn_
       /* let's make the desciption presitent */
       handle->desc = fusedbn_desc;
       /* we need to compute the memory layout given the */
-      *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.C, 
+      *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.C,
                                                     &(handle->ifmblock), &(handle->ifmblock_hp),
                                                     &(handle->ofmblock), &(handle->ofmblock_lp),
                                                     &(handle->fm_lp_block), handle->desc.datatype_in, handle->desc.datatype_out, &noarch );
