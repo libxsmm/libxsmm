@@ -267,19 +267,24 @@ LIBXSMM_API_INLINE unsigned int internal_product_limit(unsigned int product, uns
 LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned int limit, int is_lower)
 {
   unsigned int result;
-  if (limit < product) {
-    result = 1;
-    if (1 < limit) {
-      result = internal_product_limit(product, limit);
-      if (0 != is_lower && result < limit) {
-        result = internal_product_limit(product, 2 * limit - 1);
-        if (result < limit) result = product;
-      }
-    }
+  if (1 < limit) { /* check for fast-path */
+    result = internal_product_limit(product, limit);
   }
-  else { /* fast-path */
+  else if (limit < product) {
+    result = limit;
+  }
+  else {
     result = product;
   }
+  if (0 != is_lower && limit < product) {
+    if (result < limit) {
+      result = internal_product_limit(product, 2 * limit - 1);
+    }
+    if (product < result || result < limit) {
+      result = product;
+    }
+  }
+  LIBXSMM_ASSERT(result <= product);
   return result;
 }
 
