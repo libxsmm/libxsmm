@@ -49,9 +49,6 @@
   (defined(_WIN32) || defined(__CYGWIN__))
 # define LIBXSMM_GEMM_NOJIT_TRANS
 #endif
-#if !defined(LIBXSMM_GEMM_MSIZE_MAX)
-# define LIBXSMM_GEMM_MSIZE_MAX 48
-#endif
 #if !defined(LIBXSMM_GEMM_KPARALLEL) && 0
 # define LIBXSMM_GEMM_KPARALLEL
 #endif
@@ -88,8 +85,10 @@ LIBXSMM_APIVAR(unsigned int internal_gemm_nlocks); /* populated number of locks 
 
 /** Prefetch strategy for tiled GEMM. */
 LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type internal_gemm_tiled_prefetch);
-/** Table of M-extents per type-size (tile shape). */
+/** Vector width used for GEMM. */
 LIBXSMM_APIVAR(unsigned int internal_gemm_vwidth);
+/** Limit the M-extent of the tile. */
+LIBXSMM_APIVAR(unsigned int internal_gemm_mlimit);
 /** Table of M-extents per type-size (tile shape). */
 LIBXSMM_APIVAR(float internal_gemm_nstretch);
 /** Table of M-extents per type-size (tile shape). */
@@ -165,26 +164,31 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 #endif
   if (LIBXSMM_X86_AVX512_CORE <= archid) {
     internal_gemm_vwidth = 64;
+    internal_gemm_mlimit = 48;
     internal_gemm_nstretch = 4;
     internal_gemm_kstretch = 4;
   }
   else if (LIBXSMM_X86_AVX512_MIC <= archid) {
     internal_gemm_vwidth = 64;
-    internal_gemm_nstretch = 1;
-    internal_gemm_kstretch = 3;
+    internal_gemm_mlimit = 48;
+    internal_gemm_nstretch = 2;
+    internal_gemm_kstretch = 2;
   }
   else if (LIBXSMM_X86_AVX2 <= archid) {
     internal_gemm_vwidth = 32;
+    internal_gemm_mlimit = 48;
     internal_gemm_nstretch = 5;
     internal_gemm_kstretch = 2;
   }
   else if (LIBXSMM_X86_AVX <= archid) {
     internal_gemm_vwidth = 32;
+    internal_gemm_mlimit = 48;
     internal_gemm_nstretch = 5;
     internal_gemm_kstretch = 2;
   }
   else {
     internal_gemm_vwidth = 16;
+    internal_gemm_mlimit = 48;
     internal_gemm_nstretch = 7;
     internal_gemm_kstretch = 2;
   }
@@ -599,7 +603,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     result.ptr->nthreads = (unsigned int)nthreads;
     if (NULL == env_tm || 0 >= atoi(env_tm)) {
       const unsigned int vwidth = LIBXSMM_MAX(internal_gemm_vwidth / result.ptr->otypesize, 1);
-      unsigned int tmi = libxsmm_product_limit(um, LIBXSMM_GEMM_MSIZE_MAX, 0);
+      unsigned int tmi = libxsmm_product_limit(um, internal_gemm_mlimit, 0);
       for (; vwidth <= tmi; tmi = libxsmm_product_limit(um, tmi - 1, 0)) {
         const double si = (double)(LIBXSMM_CONFIG_MAX_MNK) / (tmi * tmi * tmi), s = (s2 <= si ? 1 : (s2 / si));
         unsigned int tni = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(tmi * (s * internal_gemm_nstretch)), 1), 0);
@@ -630,7 +634,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     else {
       const unsigned int tmi = atoi(env_tm);
       double si, s;
-      tm = libxsmm_product_limit(um, LIBXSMM_MIN(tmi, LIBXSMM_GEMM_MSIZE_MAX), 0);
+      tm = libxsmm_product_limit(um, LIBXSMM_MIN(tmi, internal_gemm_mlimit), 0);
       si = (double)(LIBXSMM_CONFIG_MAX_MNK) / (tm * tm * tm); s = (s2 <= si ? 1 : (s2 / si));
       tn = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(tm * (s * internal_gemm_nstretch)), 1), 0);
       tk = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(tm * (s * internal_gemm_kstretch)), 1), 0);
