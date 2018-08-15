@@ -43,7 +43,7 @@
 
 #define USE_OVERWRITE
 /*#define USE_FUSED_BATCH_STATS*/
-//#define USE_FUSED_RELU_BWD
+/*#define USE_FUSED_RELU_BWD*/
 #define USE_OVERWRITE_RNE
 
 /* it's fine to alias in and out */
