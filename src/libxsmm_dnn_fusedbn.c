@@ -113,13 +113,10 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
 
     if (layout != 0) {
       memset(layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
-      layout->custom_format = handle->desc.buffer_format;
-      if ( (type == LIBXSMM_DNN_REGULAR_INPUT)  || (type == LIBXSMM_DNN_GRADIENT_INPUT)  || (type == LIBXSMM_DNN_INPUT)  ||
-           (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ||
-           (type == LIBXSMM_DNN_REGULAR_CHANNEL_SCALAR) || (type == LIBXSMM_DNN_GRADIENT_CHANNEL_SCALAR) || (type == LIBXSMM_DNN_CHANNEL_SCALAR)   ) {
-        layout->format = handle->desc.buffer_format;
-        layout->tensor_type = LIBXSMM_DNN_ACTIVATION;
+      layout->custom_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
 
+      if ( (type == LIBXSMM_DNN_REGULAR_INPUT)  || (type == LIBXSMM_DNN_GRADIENT_INPUT)  || (type == LIBXSMM_DNN_INPUT)  ||
+           (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT)    ) {
         if ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) {
           if ( ((handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) ) {
             layout->datatype = LIBXSMM_DNN_DATATYPE_F32;
@@ -263,8 +260,8 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
             *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
           }
         } else if ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_NHWC) > 0) {
-          layout->datatype = handle->desc.datatype_out;
           if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 ) {
+            layout->datatype = handle->desc.datatype_out;
             layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(1*sizeof(libxsmm_dnn_tensor_dimtype));
             layout->dim_size = (unsigned int*) malloc(1*sizeof(unsigned int));
 
