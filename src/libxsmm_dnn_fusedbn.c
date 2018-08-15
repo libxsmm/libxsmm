@@ -30,6 +30,7 @@
 ******************************************************************************/
 
 #include "libxsmm_main.h"
+#include "libxsmm_dnn_setup.h"
 
 LIBXSMM_API libxsmm_dnn_fusedbn* libxsmm_dnn_create_fusedbn(libxsmm_dnn_fusedbn_desc fusedbn_desc, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_fusedbn* handle = 0;
