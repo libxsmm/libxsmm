@@ -52,9 +52,6 @@
 #if !defined(LIBXSMM_GEMM_MSIZE_MAX)
 # define LIBXSMM_GEMM_MSIZE_MAX 48
 #endif
-#if !defined(LIBXSMM_GEMM_QUICKPLAN) && 0
-# define LIBXSMM_GEMM_QUICKPLAN
-#endif
 #if !defined(LIBXSMM_GEMM_KPARALLEL) && 0
 # define LIBXSMM_GEMM_KPARALLEL
 #endif
@@ -600,11 +597,11 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     result.ptr->otypesize = libxsmm_gemm_typesize(oprec);
     result.ptr->nthreads = (unsigned int)nthreads;
     if (NULL == env_tm || 0 >= atoi(env_tm)) {
-      const unsigned int vwidth = LIBXSMM_CLMP(internal_gemm_vwidth / result.ptr->otypesize, 1, LIBXSMM_GEMM_MSIZE_MAX);
-      unsigned int tmi = libxsmm_product_limit(um, vwidth + vwidth - 1, 0);
-      for (; tmi < LIBXSMM_GEMM_MSIZE_MAX; tmi = libxsmm_product_limit(um, tmi + 1, 1)) {
-        unsigned int tni = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(tmi * internal_gemm_nstretch), 1), 0);
-        unsigned int tki = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(tmi * internal_gemm_kstretch), 1), 0);
+      const unsigned int vwidth = LIBXSMM_MAX(internal_gemm_vwidth / result.ptr->otypesize, 1);
+      unsigned int tmi = libxsmm_product_limit(um, LIBXSMM_GEMM_MSIZE_MAX, 0);
+      for (; vwidth <= tmi; tmi = libxsmm_product_limit(um, tmi - 1, 0)) {
+        unsigned int tni = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(tmi * internal_gemm_nstretch), 1), 1);
+        unsigned int tki = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(tmi * internal_gemm_kstretch), 1), 1);
         unsigned int ntmi, ntni, ntki, mti, nti, kti;
         LIBXSMM_ASSERT(tmi <= um && tni <= un && tki <= uk);
         if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags)) {
@@ -618,28 +615,21 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
           const int exit_plan = ((tmi < um && tni < un && tki < uk && (tm != tmi || tn != tni || tk != tki)) ? 0 : 1);
           const unsigned itasks = mti * nti * kti;
           LIBXSMM_ASSERT(1 <= itasks);
-#if defined(LIBXSMM_GEMM_QUICKPLAN)
           if (ntasks < itasks) {
-#else
-          if (ntasks <= itasks) {
-#endif
             ntm = ntmi; ntn = ntni; ntk = ntki;
             mt = mti; nt = nti; kt = kti;
             tm = tmi; tn = tni; tk = tki;
             ntasks = itasks;
-#if defined(LIBXSMM_GEMM_QUICKPLAN)
-            if (result.ptr->nthreads == itasks) break;
-#endif
           }
-          if (0 != exit_plan) break;
+          if (result.ptr->nthreads == itasks || 0 != exit_plan) break;
         }
       }
     }
     else {
       const unsigned int tmi = atoi(env_tm);
       tm = libxsmm_product_limit(um, LIBXSMM_MIN(tmi, LIBXSMM_GEMM_MSIZE_MAX), 0);
-      tn = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(tm * internal_gemm_nstretch), 1), 0);
-      tk = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(tm * internal_gemm_kstretch), 1), 0);
+      tn = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(tm * internal_gemm_nstretch), 1), 1);
+      tk = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(tm * internal_gemm_kstretch), 1), 1);
       if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags)) {
         const unsigned int ttm = (unsigned int)libxsmm_product_limit(tm, result.ptr->nthreads, 0);
         const unsigned int ttn = (unsigned int)libxsmm_product_limit(tn, result.ptr->nthreads, 0);
