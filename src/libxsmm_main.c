@@ -476,6 +476,9 @@ LIBXSMM_API_INLINE void internal_finalize(void)
 
   /* release scratch memory pool */
   libxsmm_release_scratch();
+  /* release global services */
+  libxsmm_gemm_diff_finalize();
+  libxsmm_hash_finalize();
 
 #if !defined(LIBXSMM_NO_SYNC)
   { /* release locks */
@@ -825,14 +828,12 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
         fprintf(stderr, "LIBXSMM ERROR: failed to finalize trace (error #%i)!\n", i);
       }
 #endif
-      libxsmm_gemm_finalize();
-      libxsmm_gemm_diff_finalize();
-      libxsmm_trans_finalize();
-      libxsmm_hash_finalize();
-      libxsmm_dnn_finalize();
 #if defined(LIBXSMM_PERF)
       libxsmm_perf_finalize();
 #endif
+      libxsmm_gemm_finalize();
+      libxsmm_trans_finalize();
+      libxsmm_dnn_finalize();
 
       /* make internal registry globally unavailable */
       LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
