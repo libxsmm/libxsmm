@@ -499,6 +499,21 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int **copy_upd_indices_ptrs;
 };
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn {
+  libxsmm_dnn_fusedbn_desc desc;
+  libxsmm_dnn_tensor* reg_input;      /* input tensor */
+  libxsmm_dnn_tensor* reg_output;     /* output tensor */
+  libxsmm_dnn_tensor* grad_input;     /* grad input tensor */
+  libxsmm_dnn_tensor* grad_output;    /* grad output tensor */
+  libxsmm_dnn_tensor* reg_add;        /* elementwise tensor */
+  libxsmm_dnn_tensor* grad_add;       /* grad elementwise tensor */
+  libxsmm_dnn_tensor* beta;           /* beta tensor */
+  libxsmm_dnn_tensor* gamma;          /* gamma tensor */
+  libxsmm_dnn_tensor* grad_beta;      /* grad beta tensor */
+  libxsmm_dnn_tensor* grad_gamma;     /* grad gamma tensor */
+  libxsmm_barrier* barrier;           /* barrier */
+} libxsmm_dnn_fusedbn;
+
 struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
   int M;
   int N;
