@@ -94,43 +94,58 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_fusedbn(const libxsmm_dnn_fuse
 
 
 LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_datalayout(const libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status) {
+  LIBXSMM_UNUSED(handle);
+  LIBXSMM_UNUSED(type);
+  LIBXSMM_UNUSED(status);
   return 0;
 }
 
 LIBXSMM_API size_t libxsmm_dnn_fusedbn_get_scratch_size(const libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status) {
+  LIBXSMM_UNUSED(handle);
+  LIBXSMM_UNUSED(kind);
+  LIBXSMM_UNUSED(status);
   return 0;
 }
 
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_scratch(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_compute_kind kind, const void* scratch) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-
+  LIBXSMM_UNUSED(handle);
+  LIBXSMM_UNUSED(kind);
+  LIBXSMM_UNUSED(scratch);
   return status;
 }
 
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_scratch(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_compute_kind kind) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-
+  LIBXSMM_UNUSED(handle);
+  LIBXSMM_UNUSED(kind);
   return status;
 }
 
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-
+  LIBXSMM_UNUSED(handle);
+  LIBXSMM_UNUSED(tensor);
+  LIBXSMM_UNUSED(type);
   return status;
 }
 
 
 LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_fusedbn_get_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status) {
+  LIBXSMM_UNUSED(handle);
+  LIBXSMM_UNUSED(type);
+  LIBXSMM_UNUSED(status);
   return 0;
 }
 
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-
+  LIBXSMM_UNUSED(handle);
+  LIBXSMM_UNUSED(type);
   return status;
 }
 
@@ -138,7 +153,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_tensor(libxsmm_dnn_fus
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_execute_st(libxsmm_dnn_fusedbn* handle, libxsmm_dnn_compute_kind kind,
   /*unsigned*/int start_thread, /*unsigned*/int tid) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-
+  LIBXSMM_UNUSED(handle);
+  LIBXSMM_UNUSED(kind);
+  LIBXSMM_UNUSED(start_thread);
+  LIBXSMM_UNUSED(tid);
   return status;
 }
 
