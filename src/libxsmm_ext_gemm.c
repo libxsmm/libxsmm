@@ -476,9 +476,13 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
 #else
   const int nthreads = 1;
 #endif
-  const libxsmm_gemm_handle *const handle = libxsmm_gemm_handle_init(&blob, iprec, oprec, transa, transb,
+  size_t scratch_size = 0;
+  const libxsmm_gemm_handle *const handle = libxsmm_gemm_handle_init(&blob, &scratch_size, iprec, oprec, transa, transb,
     m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_GEMM_HANDLE_FLAG_COPY_AUTO, nthreads);
-  if (NULL != handle) {
+  void* scratch = NULL;
+  if (NULL != handle && (0 == scratch_size ||
+      NULL != (scratch = libxsmm_scratch_malloc(scratch_size, LIBXSMM_CACHELINE, LIBXSMM_MALLOC_SCRATCH_INTERNAL))))
+  {
 #if defined(_OPENMP)
     if (0 == omp_external) { /* enable internal parallelization */
 # if defined(LIBXSMM_EXT_TASKS)
@@ -486,7 +490,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
 # endif
       {
 #       pragma omp parallel num_threads(nthreads)
-        libxsmm_gemm_thread(handle, a, b, c, omp_get_thread_num());
+        libxsmm_gemm_thread(handle, scratch, a, b, c, omp_get_thread_num());
       }
 # if defined(LIBXSMM_EXT_TASKS)
       else { /* tasks requested */
@@ -497,7 +501,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
           { int tid;
             for (tid = 0; tid < ntasks; ++tid) {
 #             pragma omp task untied
-              libxsmm_gemm_thread(handle, a, b, c, tid);
+              libxsmm_gemm_thread(handle, scratch, a, b, c, tid);
             }
           }
         } /* implicit synchronization (barrier) */
@@ -512,13 +516,13 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       int tid;
       for (tid = 0; tid < ntasks; ++tid) {
 #       pragma omp task untied
-        libxsmm_gemm_thread(handle, a, b, c, tid);
+        libxsmm_gemm_thread(handle, scratch, a, b, c, tid);
       }
       if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #       pragma omp taskwait
       }
 # else
-      libxsmm_gemm_thread(handle, a, b, c, omp_get_thread_num());
+      libxsmm_gemm_thread(handle, scratch, a, b, c, omp_get_thread_num());
 # endif
     }
     if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
@@ -532,15 +536,23 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       }
     }
 #else
-    libxsmm_gemm_thread(handle, a, b, c, 0/*tid*/);
+    libxsmm_gemm_thread(handle, scratch, a, b, c, 0/*tid*/);
 #endif /*defined(_OPENMP)*/
+    libxsmm_free(scratch);
   }
-  else { /* fall-back */
+  else { /* fall-back or error */
     static int error_once = 0;
-    if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
-      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    if (NULL == handle) { /* fall-back */
+      if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM WARNING (XGEMM): fall-back code path triggered!\n");
+      }
+    }
+    else if (0 != libxsmm_verbosity && /* library code is expected to be mute */
+      1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM WARNING (XGEMM): fall-back code path triggered!\n");
+      fprintf(stderr, "LIBXSMM ERROR: failed to allocate GEMM-scratch memory!\n");
     }
     libxsmm_blas_xgemm(iprec, oprec, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
