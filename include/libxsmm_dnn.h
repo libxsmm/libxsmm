@@ -114,11 +114,11 @@ typedef enum libxsmm_dnn_tensor_dimtype {
   /** general counter */
   LIBXSMM_DNN_TENSOR_DIMTYPE_X,
 
-  /** number of outputs for RNN/LSTM */
+  /** number of outputs for RNN/LSTM/GRU */
   LIBXSMM_DNN_TENSOR_DIMTYPE_RLM,
-  /** number of inputs for RNN/LSTM */
+  /** number of inputs for RNN/LSTM/GRU */
   LIBXSMM_DNN_TENSOR_DIMTYPE_RLK,
-  /** size of minibatch for RNN/LSTM */
+  /** size of minibatch for RNN/LSTM/GRU */
   LIBXSMM_DNN_TENSOR_DIMTYPE_RLN
 } libxsmm_dnn_tensor_dimtype;
 
@@ -256,7 +256,52 @@ typedef enum libxsmm_dnn_tensor_type {
   /** regular gradient bias o */
   LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O,
   /** regular gradient bias c */
-  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C
+  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C,
+
+  /** regular input buffer */
+  LIBXSMM_DNN_GRU_REGULAR_INPUT,
+  /** regular hidden state buffer */
+  LIBXSMM_DNN_GRU_REGULAR_HIDDEN_STATE,
+  /** regular weight r */
+  LIBXSMM_DNN_GRU_REGULAR_WEIGHT_R,
+  /** regular weight z */
+  LIBXSMM_DNN_GRU_REGULAR_WEIGHT_Z,
+  /** regular weight g */
+  LIBXSMM_DNN_GRU_REGULAR_WEIGHT_G,
+  /** regular recurrent weight r */
+  LIBXSMM_DNN_GRU_REGULAR_RECUR_WEIGHT_R,
+  /** regular recurrent weight z */
+  LIBXSMM_DNN_GRU_REGULAR_RECUR_WEIGHT_Z,
+  /** regular recurrent weight g */
+  LIBXSMM_DNN_GRU_REGULAR_RECUR_WEIGHT_G,
+  /** regular bias r */
+  LIBXSMM_DNN_GRU_REGULAR_BIAS_R,
+  /** regular bias z */
+  LIBXSMM_DNN_GRU_REGULAR_BIAS_Z,
+  /** regular bias g */
+  LIBXSMM_DNN_GRU_REGULAR_BIAS_G,
+  /** regular gradient input buffer */
+  LIBXSMM_DNN_GRU_GRADIENT_INPUT,
+  /** regular gradient hidden state buffer */
+  LIBXSMM_DNN_GRU_GRADIENT_HIDDEN_STATE,
+  /** regular gradient weight r */
+  LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_R,
+  /** regular gradient weight z */
+  LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_Z,
+  /** regular gradient weight g */
+  LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_G,
+  /** regular gradient recurrent weight r */
+  LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_R,
+  /** regular gradient recurrent weight z */
+  LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_Z,
+  /** regular gradient recurrent weight g */
+  LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_G,
+  /** regular gradient bias r */
+  LIBXSMM_DNN_GRU_GRADIENT_BIAS_R,
+  /** regular gradient bias z */
+  LIBXSMM_DNN_GRU_GRADIENT_BIAS_Z,
+  /** regular gradient bias g */
+  LIBXSMM_DNN_GRU_GRADIENT_BIAS_G
 } libxsmm_dnn_tensor_type;
 
 /** layout descriptor to allow external data handling
