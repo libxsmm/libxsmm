@@ -126,10 +126,14 @@ typedef enum libxsmm_dnn_tensor_dimtype {
 typedef enum libxsmm_dnn_tensor_type {
   /** regular input buffer */
   LIBXSMM_DNN_REGULAR_INPUT,
+  /** regular input buffer */
+  LIBXSMM_DNN_REGULAR_INPUT_ADD,
   /** regular input buffer, transpose */
   LIBXSMM_DNN_REGULAR_INPUT_TRANS,
   /** gradient input buffer */
   LIBXSMM_DNN_GRADIENT_INPUT,
+  /** gradient input buffer */
+  LIBXSMM_DNN_GRADIENT_INPUT_ADD,
   /** regular output buffer */
   LIBXSMM_DNN_REGULAR_OUTPUT,
   /** gradient output buffer */
@@ -149,9 +153,27 @@ typedef enum libxsmm_dnn_tensor_type {
   /** general filter type */
   LIBXSMM_DNN_FILTER,
   /* regular bias */
-  LIBXSMM_DNN_REGULAR_CHANNEL_SCALAR,
+  LIBXSMM_DNN_REGULAR_CHANNEL_BIAS,
   /* gradient bias */
-  LIBXSMM_DNN_GRADIENT_CHANNEL_SCALAR,
+  LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS,
+  /* bias */
+  LIBXSMM_DNN_CHANNEL_BIAS,
+  /* regular beta */
+  LIBXSMM_DNN_REGULAR_CHANNEL_BETA,
+  /* gradient beta */
+  LIBXSMM_DNN_GRADIENT_CHANNEL_BETA,
+  /* beta */
+  LIBXSMM_DNN_CHANNEL_BETA,
+  /* regular gamma */
+  LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA,
+  /* gradient gamma */
+  LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA,
+  /* Gamma */
+  LIBXSMM_DNN_CHANNEL_GAMMA,
+  /* regular beta */
+  LIBXSMM_DNN_CHANNEL_EXPECTV,
+  /* regular beta */
+  LIBXSMM_DNN_CHANNEL_STDDEV,
   /** general bias type */
   LIBXSMM_DNN_CHANNEL_SCALAR,
   /** batch stats */
