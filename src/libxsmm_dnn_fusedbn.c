@@ -75,6 +75,8 @@ LIBXSMM_API libxsmm_dnn_fusedbn* libxsmm_dnn_create_fusedbn(libxsmm_dnn_fusedbn_
       }
       /* create barrier */
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
+      /* calculate scratch size for batchstats */
+      handle->scratch_size = (handle->desc.C * handle->desc.N * 2 * sizeof(float));
     } else {
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
     }
@@ -312,27 +314,55 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
   return 0;
 }
 
-LIBXSMM_API size_t libxsmm_dnn_fusedbn_get_scratch_size(const libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status) {
-  LIBXSMM_UNUSED(handle);
-  LIBXSMM_UNUSED(kind);
-  LIBXSMM_UNUSED(status);
-  return 0;
+LIBXSMM_API size_t libxsmm_dnn_fusedbn_get_scratch_size(const libxsmm_dnn_fusedbn* handle, libxsmm_dnn_err_t* status) {
+  size_t l_scratch_size = 0;
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handle) {
+    l_scratch_size = handle->scratch_size + 64; /* 64 byte extra in case the user code doens't care about alignment */
+  } else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return l_scratch_size;
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_scratch(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_compute_kind kind, const void* scratch) {
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_scratch(libxsmm_dnn_fusedbn* handle, const void* scratch) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  LIBXSMM_UNUSED(handle);
-  LIBXSMM_UNUSED(kind);
-  LIBXSMM_UNUSED(scratch);
+  uintptr_t address = (uintptr_t)scratch;
+  size_t offset = 0;
+
+  if (scratch == 0) {
+    status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
+    return status;
+  }
+
+  if (0 != handle) {
+    /* align the internal scratch buffer if needed */
+    if (address % 64 == 0) {
+      handle->scratch = (void*)address;
+    } else {
+      offset = (64 - address % 64);
+      handle->scratch = (void*)(address+offset);
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
   return status;
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_scratch(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_compute_kind kind) {
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_scratch(libxsmm_dnn_fusedbn* handle) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  LIBXSMM_UNUSED(handle);
-  LIBXSMM_UNUSED(kind);
+
+  if (0 != handle) {
+    handle->scratch = 0;
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
   return status;
 }
 
