@@ -523,6 +523,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn {
   int blocksifm_lp;  /* not used */
   int blocksofm_lp;  /* not used */
   int fm_lp_block;
+  size_t scratch_size;
+  void* scratch;
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {

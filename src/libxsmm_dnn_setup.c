@@ -1027,7 +1027,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       assert(0/*should not happen*/);
     }
 
-    { libxsmm_dnn_layer mirror_handle;
+    if (handle->exploit_duality) { 
+      libxsmm_dnn_layer mirror_handle;
       /* allocate buffers */
       handle->n_entries_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
       handle->compute_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
