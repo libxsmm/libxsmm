@@ -214,7 +214,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
               layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
               layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
               layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-              if ( (type == LIBXSMM_DNN_REGULAR_INPUT)     || (type == LIBXSMM_DNN_GRADIENT_INPUT)     || (type == LIBXSMM_DNN_INPUT) || 
+              if ( (type == LIBXSMM_DNN_REGULAR_INPUT)     || (type == LIBXSMM_DNN_GRADIENT_INPUT)     || (type == LIBXSMM_DNN_INPUT) ||
                    (type == LIBXSMM_DNN_REGULAR_INPUT_ADD) || (type == LIBXSMM_DNN_GRADIENT_INPUT_ADD)                                      )   {
                 layout->dim_size[0] = handle->desc.C;
                 layout->dim_size[1] = handle->desc.W;
