@@ -1258,7 +1258,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bind_tensor(libxsmm_dnn_lstmc
       status = LIBXSMM_DNN_ERR_MISMATCH_TENSOR;
     }
 
-    /* libxsmm_dnn_destroy_tensor_datalayout( handle_layout ); */
+    libxsmm_dnn_destroy_tensor_datalayout( handle_layout );
   }
   else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE_TENSOR;

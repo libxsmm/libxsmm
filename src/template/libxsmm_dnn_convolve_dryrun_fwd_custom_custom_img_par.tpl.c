@@ -115,7 +115,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     l_l3 = handle->ofh / handle->fwd_ofh_rb;
     /* number of threads need in the ofh loop (as we have l_l1 global parallel tasks) */
     l_l1_gs = handle->desc.threads / l_l1;
-    /* number of elemens of ofh loop per thread */
+    /* number of elements of ofh loop per thread */
     l_l2_ts = (l_l3 % l_l1_gs == 0) ? ((l_l3 / l_l1_gs)*handle->fwd_ofh_rb) : (((l_l3 / l_l1_gs) + 1)*handle->fwd_ofh_rb);
     /* get group id */
     l_tidgroup = ltid / l_l1_gs;

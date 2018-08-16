@@ -173,6 +173,58 @@ LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *
   return n_variants;
 }
 
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, int K, int* C_block, int* C_block_hp, int* K_block, int* K_block_lp, int* fm_lp_block, libxsmm_dnn_datatype datatype_in, libxsmm_dnn_datatype datatype_out, int* noarch) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  int ifmblock;
+  int ofmblock;
+  int lp_block;
+  int ifmblock_hp;
+  int ofmblock_lp;
+
+  if ( (datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
+    ifmblock = (C >=16) ? 16 : C;
+    ofmblock = (K >=16) ? 16 : K;
+    lp_block = 1;
+    ifmblock_hp = ifmblock * lp_block;
+    ofmblock_lp = ofmblock / lp_block;
+  } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
+    ifmblock = (C >=16) ? 8 : C/2;
+    ofmblock = (K >=16) ? 16 : K/2;
+    lp_block = 2;
+    ifmblock_hp = ifmblock * lp_block;
+    ofmblock_lp = ofmblock / lp_block;
+  } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
+    ifmblock = (C >=16) ? 8 : (C/2);
+    ofmblock = (K >=16) ? 16 : (K/2);
+    lp_block = 2;
+    ifmblock_hp = ifmblock * lp_block;
+    ofmblock_lp = ofmblock / lp_block;
+    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ) {
+      *noarch = 1;
+    }
+  } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (datatype_out == LIBXSMM_DNN_DATATYPE_I32)) {
+    ifmblock = (C >=16) ? 4 : (C/4);
+    ofmblock = (K >=16) ? 16 : (K/4);
+    lp_block = 4;
+    ifmblock_hp = ifmblock * lp_block;
+    ofmblock_lp = ofmblock / lp_block;
+    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
+      *noarch = 1;
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+    return status;
+  }
+
+  *C_block = ifmblock;
+  *K_block = ofmblock;
+  *fm_lp_block = lp_block;
+  *C_block_hp = ifmblock_hp;
+  *K_block_lp = ofmblock_lp;
+
+  return status;
+}
+
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxsmm_dnn_layer* handle, int *noarch ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   /* Determine if we have low precision kernel generation */
@@ -182,42 +234,16 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxs
     handle->use_lp_kernel = 0;
   }
 
-  if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
-    handle->ifmblock = (handle->desc.C >=16) ? 16 : handle->desc.C;
-    handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K;
-    handle->fm_lp_block = 1;
-    handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
-    handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
-  } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
-    handle->ifmblock = (handle->desc.C >=16) ? 8 : handle->desc.C/2;
-    handle->ofmblock = (handle->desc.K >=16) ? 16 : handle->desc.K/2;
-    handle->fm_lp_block = 2;
-    handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
-    handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
+  status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K,
+                                               &(handle->ifmblock), &(handle->ifmblock_hp),
+                                               &(handle->ofmblock), &(handle->ofmblock_lp),
+                                               &(handle->fm_lp_block), handle->datatype_in, handle->datatype_out, noarch );
+
+  /* @TODO we need to find a better home from this if.... */
+  if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
     if ( (handle->desc.options & LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE) == LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE ) {
       handle->f32_bf16_cvt_rne = 1;
     }
-  } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
-    handle->ifmblock = (handle->desc.C >=16) ? 8 : (handle->desc.C/2);
-    handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/2);
-    handle->fm_lp_block = 2;
-    handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
-    handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
-    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ) {
-      *noarch = 1;
-    }
-  } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32) && ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0)) {
-    handle->ifmblock = (handle->desc.C >=16) ? 4 : (handle->desc.C/4);
-    handle->ofmblock = (handle->desc.K >=16) ? 16 : (handle->desc.K/4);
-    handle->fm_lp_block = 4;
-    handle->ifmblock_hp = handle->ifmblock * handle->fm_lp_block;
-    handle->ofmblock_lp = handle->ofmblock / handle->fm_lp_block;
-    if ( libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ) {
-      *noarch = 1;
-    }
-  } else {
-    status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-    return status;
   }
 
   /* Let's calculate how many blocks we need for the feature maps */
@@ -1001,7 +1027,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       assert(0/*should not happen*/);
     }
 
-    { libxsmm_dnn_layer mirror_handle;
+    if (handle->exploit_duality) {
+      libxsmm_dnn_layer mirror_handle;
       /* allocate buffers */
       handle->n_entries_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
       handle->compute_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
