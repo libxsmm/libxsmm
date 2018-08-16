@@ -165,32 +165,32 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
   if (LIBXSMM_X86_AVX512_CORE <= archid) {
     internal_gemm_vwidth = 64;
     internal_gemm_mlimit = 48;
-    internal_gemm_nstretch = 4;
-    internal_gemm_kstretch = 4;
+    internal_gemm_nstretch = 4.0f;
+    internal_gemm_kstretch = 4.0f;
   }
   else if (LIBXSMM_X86_AVX512_MIC <= archid) {
     internal_gemm_vwidth = 64;
     internal_gemm_mlimit = 48;
-    internal_gemm_nstretch = 2;
-    internal_gemm_kstretch = 2;
+    internal_gemm_nstretch = 1.0f;
+    internal_gemm_kstretch = 1.0f;
   }
   else if (LIBXSMM_X86_AVX2 <= archid) {
     internal_gemm_vwidth = 32;
     internal_gemm_mlimit = 48;
-    internal_gemm_nstretch = 5;
-    internal_gemm_kstretch = 2;
+    internal_gemm_nstretch = 5.0f;
+    internal_gemm_kstretch = 2.0f;
   }
   else if (LIBXSMM_X86_AVX <= archid) {
     internal_gemm_vwidth = 32;
     internal_gemm_mlimit = 48;
-    internal_gemm_nstretch = 5;
-    internal_gemm_kstretch = 2;
+    internal_gemm_nstretch = 5.0f;
+    internal_gemm_kstretch = 2.0f;
   }
   else {
     internal_gemm_vwidth = 16;
     internal_gemm_mlimit = 48;
-    internal_gemm_nstretch = 7;
-    internal_gemm_kstretch = 2;
+    internal_gemm_nstretch = 7.0f;
+    internal_gemm_kstretch = 2.0f;
   }
   { /* setup tile sizes according to environment (LIBXSMM_TGEMM_M, LIBXSMM_TGEMM_N, LIBXSMM_TGEMM_K) */
     const char *const env_m = getenv("LIBXSMM_TGEMM_M"), *const env_n = getenv("LIBXSMM_TGEMM_N"), *const env_k = getenv("LIBXSMM_TGEMM_K");
