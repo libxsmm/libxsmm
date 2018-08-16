@@ -62,7 +62,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
     libxsmm_x86_instruction_alu_imm_i64( io_generated_code,
                                   i_micro_kernel_config->alu_mov_instruction,
                                   i_gp_reg_mapping->gp_reg_help_0,
-                                  l_mask );
+                                  (size_t)l_mask );
   } else {
      libxsmm_x86_instruction_alu_imm( io_generated_code,
                                   i_micro_kernel_config->alu_mov_instruction,

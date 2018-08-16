@@ -310,8 +310,6 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
   }
 
   return layout;
-
-  return 0;
 }
 
 LIBXSMM_API size_t libxsmm_dnn_fusedbn_get_scratch_size(const libxsmm_dnn_fusedbn* handle, libxsmm_dnn_err_t* status) {
