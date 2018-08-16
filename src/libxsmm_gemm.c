@@ -658,7 +658,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       return NULL;
     }
     result.ptr->flags = flags;
-    if (LIBXSMM_GEMM_HANDLE_FLAG_COPY_AUTO == flags && /* check for big enough problem size */
+    if (LIBXSMM_GEMM_HANDLE_FLAG_AUTO == flags && /* check for big enough problem size */
       ((unsigned long long)(LIBXSMM_MAX_MNK)) < LIBXSMM_MNK_SIZE(um, un, uk))
     {
       result.ptr->flags |= LIBXSMM_GEMM_HANDLE_FLAG_COPY_C;

@@ -477,7 +477,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
   const int nthreads = 1;
 #endif
   const libxsmm_gemm_handle *const handle = libxsmm_gemm_handle_init(&blob, iprec, oprec, transa, transb,
-    m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_GEMM_HANDLE_FLAG_COPY_AUTO, nthreads);
+    m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_GEMM_HANDLE_FLAG_AUTO, nthreads);
   const size_t scratch_size = libxsmm_gemm_handle_get_scratch_size(handle);
   void* scratch = NULL;
   if (NULL != handle && (0 == scratch_size ||

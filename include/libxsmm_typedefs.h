@@ -189,7 +189,7 @@ typedef enum libxsmm_gemm_flags {
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_handle_flags {
-  LIBXSMM_GEMM_HANDLE_FLAG_COPY_AUTO = 0,
+  LIBXSMM_GEMM_HANDLE_FLAG_AUTO   = 0,
   LIBXSMM_GEMM_HANDLE_FLAG_COPY_A = 1,
   LIBXSMM_GEMM_HANDLE_FLAG_COPY_B = 2,
   LIBXSMM_GEMM_HANDLE_FLAG_COPY_C = 4
