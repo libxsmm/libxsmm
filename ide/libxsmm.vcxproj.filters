@@ -246,6 +246,12 @@
     <ClInclude Include="..\src\libxsmm_bgemm_types.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\libxsmm_dnn_grucell.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_dnn_fusedbn.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -801,6 +807,9 @@
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_fusedbn.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_grucell.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

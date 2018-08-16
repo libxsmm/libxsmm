@@ -33,6 +33,8 @@
     <ClInclude Include="..\include\libxsmm_config.h" />
     <ClInclude Include="..\include\libxsmm_cpuid.h" />
     <ClInclude Include="..\include\libxsmm_dnn.h" />
+    <ClInclude Include="..\include\libxsmm_dnn_fusedbn.h" />
+    <ClInclude Include="..\include\libxsmm_dnn_grucell.h" />
     <ClInclude Include="..\include\libxsmm_dnn_lstmcell.h" />
     <ClInclude Include="..\include\libxsmm_dnn_rnncell.h" />
     <ClInclude Include="..\include\libxsmm_frontend.h" />
@@ -155,6 +157,7 @@
     <ClCompile Include="..\src\libxsmm_dnn_dryruns.c" />
     <ClCompile Include="..\src\libxsmm_dnn_elementwise.c" />
     <ClCompile Include="..\src\libxsmm_dnn_fusedbn.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_grucell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
     <ClCompile Include="..\src\libxsmm_dnn_lstmcell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_rnncell.c" />

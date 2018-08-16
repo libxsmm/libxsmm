@@ -730,7 +730,7 @@ int main(int argc, char* argv[])
         matrix_add(m*n, zgold, bzgold, zgold);
         matrix_sigmoid(m*n, zgold, zgold); /*sigmoid*/
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &n, &k, &alpha, uggold, &m, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, k * n), &k, &beta0, g1gold, &m);
-        matrix_eltwise_mult(m*n, rgold, hgold, g3gold); 
+        matrix_eltwise_mult(m*n, rgold, hgold, g3gold);
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &n, &m, &alpha, wggold, &m, g3gold, &m, &beta0, g2gold, &m);
         matrix_add(m*n, g1gold, g2gold, ggold);
         matrix_add(m*n, ggold, bggold, ggold);
