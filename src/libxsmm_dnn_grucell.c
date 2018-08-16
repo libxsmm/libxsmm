@@ -1303,7 +1303,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_fwd(libxsmm_dnn_grucell* gru, 
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, r1, r1t, m * n);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, z1, z1t, m * n);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, g1, g1t, m * n);
-  libxsmm_bgemm_handle *handleux = gru->handleux;
+  /*libxsmm_bgemm_handle *handleux = gru->handleux;*/
   libxsmm_bgemm_handle *handlewh = gru->handlewh;
   libxsmm_bgemm_handle *handlett = gru->handlett;
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, hnr, h, m * n);
