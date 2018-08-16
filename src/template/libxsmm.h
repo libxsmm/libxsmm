@@ -332,11 +332,14 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld);
 
 /** Initialize GEMM-handle; allows to better amortize setup overhead. */
-LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blob, size_t* scratch_size,
+LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blob,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, int flags, /*unsigned*/int nthreads);
+
+/** Calculate required scratch buffer size needed to perform libxsmm_gemm_thread. */
+LIBXSMM_API size_t libxsmm_gemm_handle_get_scratch_size(const libxsmm_gemm_handle* handle);
 
 /** Low-level type-agnostic GEMM suitable for external threads or tasks. */
 LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* scratch,

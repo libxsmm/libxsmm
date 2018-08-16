@@ -566,7 +566,7 @@ LIBXSMM_API_INLINE int libxsmm_gemm_plan_internal(unsigned int nthreads,
 }
 
 
-LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blob, size_t* scratch_size,
+LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blob,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
@@ -579,7 +579,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     libxsmm_gemm_blob* blob;
   } result;
   LIBXSMM_ASSERT(sizeof(libxsmm_gemm_handle) <= sizeof(libxsmm_gemm_blob));
-  if (NULL != blob && NULL != scratch_size && NULL != m && 0 < nthreads) {
+  if (NULL != blob && NULL != m && 0 < nthreads) {
     const double s2 = (double)internal_gemm_nstretch * internal_gemm_kstretch;
     unsigned int ntm = 0, ntn = 0, ntk = 0, mt = 0, nt = 0, kt = 0;
     const char *const env_tm = getenv("LIBXSMM_TGEMM_M");
@@ -646,7 +646,11 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       if (EXIT_SUCCESS == libxsmm_gemm_plan_internal(result.ptr->nthreads, um, un, uk, tm, tn, tk,
         &ntm, &ntn, &ntk, &mt, &nt, &kt))
       {
+#if defined(NDEBUG)
+        ntasks = 2; /* only need something unequal to zero to pass below condition */
+#else
         ntasks = mt * nt * kt;
+#endif
       }
     }
     LIBXSMM_ASSERT(LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags) || tm == tn);
@@ -764,41 +768,78 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
         if (NULL == result.ptr->kernel[1].xmm) result.ptr = NULL;
       }
     }
-    else {
-      result.ptr = NULL;
-    }
-    if (NULL != result.ptr) { /* thread-local scratch buffer for GEMM */
-      result.ptr->size_a = result.ptr->size_b = result.ptr->size_c = 0;
-      if (0 != (result.ptr->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_A)
-        || (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags) &&
-           (LIBXSMM_GEMM_FLAG_TRANS_A & result.ptr->gemm_flags) != 0))
-      {
-        const size_t size_a = (size_t)result.ptr->tm * result.ptr->tk * result.ptr->itypesize;
-        result.ptr->size_a = LIBXSMM_UP2(size_a, LIBXSMM_CACHELINE);
-      }
-      if (0 != (result.ptr->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_B)
-        || (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags) &&
-           (LIBXSMM_GEMM_FLAG_TRANS_B & result.ptr->gemm_flags) != 0))
-      {
-        const size_t size_b = (size_t)result.ptr->tk * result.ptr->tn * result.ptr->itypesize;
-        result.ptr->size_b = LIBXSMM_UP2(size_b, LIBXSMM_CACHELINE);
-      }
-      if (0 != (result.ptr->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_C)
-        || LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags))
-      {
-        const size_t size_c = (size_t)result.ptr->tm * result.ptr->tn * result.ptr->otypesize;
-        result.ptr->size_c = LIBXSMM_UP2(size_c, LIBXSMM_CACHELINE);
-      }
-      *scratch_size = ntasks * (result.ptr->size_a + result.ptr->size_b + result.ptr->size_c);
-    }
-    else {
-      *scratch_size = 0;
-    }
+    else result.ptr = NULL;
   }
   else {
     result.ptr = NULL;
   }
   return result.ptr;
+}
+
+
+LIBXSMM_API_INLINE size_t libxsmm_gemm_handle_get_scratch_size_a(const libxsmm_gemm_handle* handle)
+{
+  size_t result;
+  if (NULL == handle || (0 == (handle->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_A)
+    && (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags) ||
+       (LIBXSMM_GEMM_FLAG_TRANS_A & handle->gemm_flags) == 0)))
+  {
+    result = 0;
+  }
+  else {
+    const size_t size = (size_t)handle->tm * handle->tk * handle->itypesize;
+    result = LIBXSMM_UP2(size, LIBXSMM_CACHELINE);
+  }
+  return result;
+}
+
+
+LIBXSMM_API_INLINE size_t libxsmm_gemm_handle_get_scratch_size_b(const libxsmm_gemm_handle* handle)
+{
+  size_t result;
+  if (NULL == handle || (0 == (handle->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_B)
+    && (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags) ||
+       (LIBXSMM_GEMM_FLAG_TRANS_B & handle->gemm_flags) == 0)))
+  {
+    result = 0;
+  }
+  else {
+    const size_t size = (size_t)handle->tk * handle->tn * handle->itypesize;
+    result = LIBXSMM_UP2(size, LIBXSMM_CACHELINE);
+  }
+  return result;
+}
+
+
+LIBXSMM_API_INLINE size_t libxsmm_gemm_handle_get_scratch_size_c(const libxsmm_gemm_handle* handle)
+{
+  size_t result;
+  if (NULL == handle || (0 == (handle->flags & LIBXSMM_GEMM_HANDLE_FLAG_COPY_C)
+    && LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & handle->gemm_flags)))
+  {
+    result = 0;
+  }
+  else {
+    const size_t size = (size_t)handle->tm * handle->tn * handle->otypesize;
+    result = LIBXSMM_UP2(size, LIBXSMM_CACHELINE);
+  }
+  return result;
+}
+
+
+LIBXSMM_API size_t libxsmm_gemm_handle_get_scratch_size(const libxsmm_gemm_handle* handle)
+{
+  size_t result;
+  if (NULL != handle) { /* thread-local scratch buffer for GEMM */
+    result = (libxsmm_gemm_handle_get_scratch_size_a(handle)
+            + libxsmm_gemm_handle_get_scratch_size_b(handle)
+            + libxsmm_gemm_handle_get_scratch_size_c(handle))
+      * handle->mt * handle->nt * handle->kt;
+  }
+  else {
+    result = 0;
+  }
+  return result;
 }
 
 
@@ -824,9 +865,12 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* sc
       const unsigned int dik = handle->tk * handle->itypesize;
       const unsigned int on = handle->otypesize * n0;
       /* calculate base address of thread-local storage */
-      char *const at = (char*)scratch + (handle->size_a + handle->size_b + handle->size_c) * vtid;
-      char *const bt = at + handle->size_a;
-      char *const ct = bt + handle->size_b;
+      const size_t size_a = libxsmm_gemm_handle_get_scratch_size_a(handle);
+      const size_t size_b = libxsmm_gemm_handle_get_scratch_size_b(handle);
+      const size_t size_c = libxsmm_gemm_handle_get_scratch_size_c(handle);
+      char *const at = (char*)scratch + (size_a + size_b + size_c) * vtid;
+      char *const bt = at + size_a;
+      char *const ct = bt + size_b;
       /* loop induction variables and other variables */
       unsigned int om = handle->otypesize * m0, im = m0, in = n0, ik = k0, im1, in1, ik1;
       LIBXSMM_ASSERT_MSG(mtid < handle->mt && ntid < handle->nt && ktid < handle->kt, "Invalid task ID!");

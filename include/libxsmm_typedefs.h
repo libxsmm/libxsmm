@@ -121,7 +121,7 @@ union libxsmm_bfloat16_hp {
 typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** Type representing sufficient storage space for a GEMM handle. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_blob { char data[256]; } libxsmm_gemm_blob;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_blob { char data[128]; } libxsmm_gemm_blob;
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle libxsmm_gemm_handle;
 
 /** Type representing sufficient storage space for descriptors (GEMM, TCOPY, MCOPY). */
