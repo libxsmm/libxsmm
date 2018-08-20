@@ -816,7 +816,7 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_end(void)
     {
       internal_ext_gemm_batchsize = 0; /* reset */
       --internal_ext_gemm_batchdepth; /* restore the previous descriptor */
-      LIBXSMM_ASSERT((LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH) == mmbatch_maxdepth/*is pot*/);
+      assert((LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH) == mmbatch_maxdepth/*is pot*/); /* no LIBXSMM_ASSERT! */
       libxsmm_gemm_batchdesc = internal_ext_gemm_batchdesc[LIBXSMM_MOD2(internal_ext_gemm_batchdepth, LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH)];
     }
     else if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
