@@ -74,8 +74,10 @@
 # define ITYPE float
 #endif
 
-
+#if !defined(CHECK) && (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double))
 LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE);
+# define CHECK
+#endif
 
 
 int main(int argc, char* argv[])
@@ -105,12 +107,11 @@ int main(int argc, char* argv[])
 # endif
       Eigen::ThreadPool threadpool(nthreads);
       Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
-      Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n), td(m, n);
+      Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n);
       LIBXSMM_GEMM_CONST char transa = 'N', transb = 'N';
-      LIBXSMM_GEMM_CONST ITYPE alpha = 1, beta = 0;
-      libxsmm_matdiff_info diff;
+      LIBXSMM_GEMM_CONST ITYPE alpha(1), beta(0);
       unsigned long long start;
-      double d1, d2;
+      double d1;
       {
         std::array<Eigen::IndexPair<libxsmm_blasint>,1> product_dims = {
           Eigen::IndexPair<libxsmm_blasint>(1, 0),
@@ -122,9 +123,12 @@ int main(int argc, char* argv[])
         }
         d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       }
-      libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(ITYPE), &transa, &transb,
+      libxsmm_gemm_print(stdout, libxsmm_gemm_precision_enum<ITYPE>::value, &transa, &transb,
         &m, &n, &k, &alpha, ta.data(), &m, tb.data(), &k, &beta, tc.data(), &m);
       fprintf(stdout, "\n\n");
+# if defined(CHECK)
+      Eigen::Tensor<ITYPE, 2/*nindices*/, 0/*options*/, libxsmm_blasint> td(m, n);
+      double d2;
       {
         start = libxsmm_timer_tick();
         for (int i = 0; i < nrepeat; ++i) {
@@ -134,16 +138,19 @@ int main(int argc, char* argv[])
         }
         d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       }
+# endif
       if (0 < d1) {
         fprintf(stdout, "\tEigen"
-#if !defined(USE_LIBXSMM)
+# if !defined(USE_LIBXSMM)
           "+XSMM"
-#endif
+# endif
           ": %.1f GFLOPS/s\n", gflops * nrepeat / d1);
       }
+# if defined(CHECK)
       if (0 < d2) {
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / d2);
       }
+      libxsmm_matdiff_info diff;
       result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, td.data(), tc.data(), &m, &m, &diff);
       if (EXIT_SUCCESS == result) {
         fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
@@ -152,6 +159,7 @@ int main(int argc, char* argv[])
           result = EXIT_FAILURE;
         }
       }
+# endif
     }
     fprintf(stdout, "Finished\n");
 #endif /*defined(__EIGEN_UNSUPPORTED)*/
