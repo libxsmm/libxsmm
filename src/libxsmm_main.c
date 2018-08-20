@@ -1042,6 +1042,12 @@ LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_I32:  return 4;
     case LIBXSMM_DATATYPE_I16:  return 2;
     case LIBXSMM_DATATYPE_I8:   return 1;
+    case LIBXSMM_DATATYPE_UNSUPPORTED: {
+      static int error_once = 0;
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+        fprintf(stderr, "LIBXSMM ERROR: unsupported data type!\n");
+      }
+    } break;
   }
   return 0;
 }
