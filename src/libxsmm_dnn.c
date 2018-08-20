@@ -1377,7 +1377,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_tensor(const libxsmm_dnn_tensor
       case LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA:
       case LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA:
       case LIBXSMM_DNN_CHANNEL_GAMMA:
-      case LIBXSMM_DNN_CHANNEL_EXPECTV:
+      case LIBXSMM_DNN_CHANNEL_EXPECTVAL:
       case LIBXSMM_DNN_CHANNEL_STDDEV:
       case LIBXSMM_DNN_CHANNEL_SCALAR: {
                                switch (in_format) {
@@ -1588,7 +1588,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsmm_dnn_tenso
       case LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA:
       case LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA:
       case LIBXSMM_DNN_CHANNEL_GAMMA:
-      case LIBXSMM_DNN_CHANNEL_EXPECTV:
+      case LIBXSMM_DNN_CHANNEL_EXPECTVAL:
       case LIBXSMM_DNN_CHANNEL_STDDEV:
       case LIBXSMM_DNN_CHANNEL_SCALAR: {
                                switch (out_format) {

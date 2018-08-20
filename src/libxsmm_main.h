@@ -507,8 +507,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn {
   libxsmm_dnn_tensor* grad_output;    /* grad output tensor */
   libxsmm_dnn_tensor* reg_add;        /* elementwise tensor */
   libxsmm_dnn_tensor* grad_add;       /* grad elementwise tensor */
-  libxsmm_dnn_tensor* beta;           /* beta tensor */
-  libxsmm_dnn_tensor* gamma;          /* gamma tensor */
+  libxsmm_dnn_tensor* reg_beta;       /* beta tensor */
+  libxsmm_dnn_tensor* reg_gamma;      /* gamma tensor */
   libxsmm_dnn_tensor* grad_beta;      /* grad beta tensor */
   libxsmm_dnn_tensor* grad_gamma;     /* grad gamma tensor */
   libxsmm_dnn_tensor* expvalue;       /* expected value */

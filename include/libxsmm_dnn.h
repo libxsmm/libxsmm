@@ -171,7 +171,7 @@ typedef enum libxsmm_dnn_tensor_type {
   /* Gamma */
   LIBXSMM_DNN_CHANNEL_GAMMA,
   /* regular beta */
-  LIBXSMM_DNN_CHANNEL_EXPECTV,
+  LIBXSMM_DNN_CHANNEL_EXPECTVAL,
   /* regular beta */
   LIBXSMM_DNN_CHANNEL_STDDEV,
   /** general bias type */
