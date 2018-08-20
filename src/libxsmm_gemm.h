@@ -222,8 +222,8 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const double*, double*, const libxsmm_blasint*);
 #endif
 
-LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, float);
-LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, double);
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, float)
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, double)
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
   libxsmm_code_pointer copy_a, copy_b, copy_i, copy_o;

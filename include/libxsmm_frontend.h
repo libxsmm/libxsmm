@@ -171,7 +171,7 @@
       CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
       CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
       CONST TYPE*, CONST libxsmm_blasint*, \
-      CONST TYPE*, TYPE*, CONST libxsmm_blasint*)
+      CONST TYPE*, TYPE*, CONST libxsmm_blasint*);
 #else
 # define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE)
 #endif
