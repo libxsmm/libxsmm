@@ -280,9 +280,12 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
     if (result < limit) {
       result = internal_product_limit(product, 2 * limit - 1);
     }
-    if (product < result || result < limit) {
+    if (result < limit) {
       result = product;
     }
+  }
+  if (product < result) {
+    result = product;
   }
   LIBXSMM_ASSERT(result <= product);
   return result;

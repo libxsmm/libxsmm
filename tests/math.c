@@ -139,9 +139,10 @@ int main(int argc, char* argv[])
   if (libxsmm_product_limit(12 * 5 * 7, 32, 0) != (2 * 3 * 5)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 13, 13, 0) != 13) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12, 6, 0) != 6) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(0, 48, 0) != 0) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(0, 1, 0) != 0) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(0, 0, 0) != 0) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(1, 0, 0) != 0) exit(EXIT_FAILURE);
-  if (libxsmm_product_limit(0, 1, 0) != 0) exit(EXIT_FAILURE);
 
   /* find lower limited product */
   if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 1) != (3 * 7 * 11)) exit(EXIT_FAILURE);
@@ -155,9 +156,9 @@ int main(int argc, char* argv[])
   if (libxsmm_product_limit(12, 7, 1) != 12) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(5, 2, 1) != 5) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(5, 2, 0) != 1) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(0, 1, 1) != 0) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(0, 0, 1) != 0) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(1, 0, 1) != 0) exit(EXIT_FAILURE);
-  if (libxsmm_product_limit(0, 1, 1) != 0) exit(EXIT_FAILURE);
 
   return EXIT_SUCCESS;
 }
