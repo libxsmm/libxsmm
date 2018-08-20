@@ -425,10 +425,54 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_tensor(libxsmm_dnn_fusedb
 
 
 LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_fusedbn_get_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status) {
-  LIBXSMM_UNUSED(handle);
-  LIBXSMM_UNUSED(type);
-  LIBXSMM_UNUSED(status);
-  return 0;
+  libxsmm_dnn_tensor* return_tensor = 0;
+
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  /* check for tensor type */
+  if ( (type != LIBXSMM_DNN_REGULAR_INPUT)         && (type != LIBXSMM_DNN_GRADIENT_INPUT)         &&
+       (type != LIBXSMM_DNN_REGULAR_OUTPUT)        && (type != LIBXSMM_DNN_GRADIENT_OUTPUT)        &&
+       (type != LIBXSMM_DNN_REGULAR_INPUT_ADD)     && (type != LIBXSMM_DNN_GRADIENT_INPUT_ADD)     &&
+       (type != LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  &&
+       (type != LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) &&
+       (type != LIBXSMM_DNN_CHANNEL_EXPECTVAL)     && (type != LIBXSMM_DNN_CHANNEL_STDDEV)            ) {
+    *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
+    return return_tensor;
+  }
+
+  if (handle != 0) {
+    if ( type == LIBXSMM_DNN_REGULAR_INPUT ) {
+      return_tensor = handle->reg_input;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT ) {
+      return_tensor = handle->grad_input;
+    } else if ( type == LIBXSMM_DNN_REGULAR_OUTPUT ) {
+      return_tensor = handle->reg_output;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_OUTPUT ) {
+      return_tensor = handle->grad_output;
+    } else if ( type == LIBXSMM_DNN_REGULAR_INPUT_ADD ) {
+      return_tensor = handle->reg_add;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT_ADD ) {
+      return_tensor = handle->grad_add;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+      return_tensor = handle->reg_beta;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+      return_tensor = handle->grad_beta;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA ) {
+      return_tensor = handle->reg_gamma;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA ) {
+      return_tensor = handle->grad_gamma;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_EXPECTVAL ) {
+      return_tensor = handle->expvalue;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_STDDEV ) {
+      return_tensor = handle->stddev;
+    } else {
+      /* cannot happen */
+    }
+  } else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return return_tensor;
 }
 
 
