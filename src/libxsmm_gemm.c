@@ -594,7 +594,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
 #else
     memset(blob, 0, sizeof(libxsmm_gemm_blob));
 #endif
-    if (EXIT_SUCCESS != libxsmm_gemm_dvalue(oprec, beta, &dbeta) && LIBXSMM_NEQ(0, dbeta)) dbeta = LIBXSMM_BETA; /* fuse beta into flags */
+    if (EXIT_SUCCESS != libxsmm_gemm_dvalue(oprec, beta, &dbeta)) dbeta = LIBXSMM_BETA; /* fuse beta into flags */
     result.ptr->gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS) | (LIBXSMM_NEQ(0, dbeta) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0);
     /* TODO: check that arguments fit into handle (unsigned int vs. libxsmm_blasint) */
     uk = (unsigned int)(NULL != k ? *k : *m); un = (NULL != n ? ((unsigned int)(*n)) : uk); um = (unsigned int)(*m);
