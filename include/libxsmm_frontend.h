@@ -116,8 +116,7 @@
 #define LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION)  LIBXSMM_TPREFIX(LIBXSMM_CONCATENATE(ITYPE, OTYPE), FUNCTION)
 
 /** Helper macro for comparing selected types. */
-#define LIBXSMM_EQUAL_CHECK(...) LIBXSMM_SELECT_HEAD(__VA_ARGS__, 0)
-#define LIBXSMM_EQUAL(T1, T2) LIBXSMM_EQUAL_CHECK(LIBXSMM_CONCATENATE2(LIBXSMM_EQUAL_, T1, T2))
+#define LIBXSMM_EQUAL(T1, T2) LIBXSMM_CONCATENATE2(LIBXSMM_EQUAL_, T1, T2)
 #define LIBXSMM_EQUAL_floatfloat 1
 #define LIBXSMM_EQUAL_doubledouble 1
 #define LIBXSMM_EQUAL_floatdouble 0
@@ -166,12 +165,16 @@
 # define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
 #endif
 
-#define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
-  void LIBXSMM_GEMM_SYMBOL(TYPE)(CONST char*, CONST char*, \
-    CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
-    CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
-    CONST TYPE*, CONST libxsmm_blasint*, \
-    CONST TYPE*, TYPE*, CONST libxsmm_blasint*)
+#if (!defined(__BLAS) || (0 != __BLAS)) /* BLAS available */
+# define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
+    void LIBXSMM_GEMM_SYMBOL(TYPE)(CONST char*, CONST char*, \
+      CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
+      CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
+      CONST TYPE*, CONST libxsmm_blasint*, \
+      CONST TYPE*, TYPE*, CONST libxsmm_blasint*)
+#else
+# define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE)
+#endif
 
 /** Helper macro consolidating the transpose requests into a set of flags. */
 #define LIBXSMM_GEMM_FLAGS(TRANSA, TRANSB) /* check for N/n rather than T/t since C/c is also valid! */ \
