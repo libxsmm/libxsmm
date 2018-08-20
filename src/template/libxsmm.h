@@ -379,12 +379,14 @@ LIBXSMM_API void libxsmm_wsgemm(const char* transa, const char* transb,
 $MNK_INTERFACE_LIST
 #if defined(__cplusplus)
 
+namespace Eigen { struct half; }
 template<typename T> struct libxsmm_gemm_precision_enum {};     /** Map a built-in type to libxsmm_gemm_precision. */
 template<> struct libxsmm_gemm_precision_enum<double>           { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F64; };
 template<> struct libxsmm_gemm_precision_enum<float>            { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F32; };
 template<> struct libxsmm_gemm_precision_enum<int>              { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I32; };
 template<> struct libxsmm_gemm_precision_enum</*signed*/short>  { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
 template<> struct libxsmm_gemm_precision_enum<unsigned short>   { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
+template<> struct libxsmm_gemm_precision_enum<Eigen::half>      { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
 template<> struct libxsmm_gemm_precision_enum<signed char>      { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
 template<> struct libxsmm_gemm_precision_enum<unsigned char>    { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
 template<> struct libxsmm_gemm_precision_enum<char>             { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
