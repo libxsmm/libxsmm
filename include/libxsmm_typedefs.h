@@ -140,6 +140,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor lib
 
 /** Enumerates element/data types. */
 typedef enum libxsmm_datatype {
+  LIBXSMM_DATATYPE_UNSUPPORTED = -1,
   LIBXSMM_DATATYPE_F64,
   LIBXSMM_DATATYPE_F32,
   LIBXSMM_DATATYPE_BF16,

@@ -380,20 +380,23 @@ $MNK_INTERFACE_LIST
 #if defined(__cplusplus)
 
 namespace Eigen { struct half; }
-template<typename T> struct libxsmm_gemm_precision_enum {};     /** Map a built-in type to libxsmm_gemm_precision. */
-template<> struct libxsmm_gemm_precision_enum<double>           { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F64; };
-template<> struct libxsmm_gemm_precision_enum<float>            { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F32; };
-template<> struct libxsmm_gemm_precision_enum<int>              { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I32; };
-template<> struct libxsmm_gemm_precision_enum</*signed*/short>  { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
-template<> struct libxsmm_gemm_precision_enum<unsigned short>   { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
-template<> struct libxsmm_gemm_precision_enum<Eigen::half>      { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
-template<> struct libxsmm_gemm_precision_enum<signed char>      { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
-template<> struct libxsmm_gemm_precision_enum<unsigned char>    { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
-template<> struct libxsmm_gemm_precision_enum<char>             { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
+namespace tensorflow { struct bfloat16; }
+/** Map a built-in type to libxsmm_gemm_precision (libxsmm_gemm_precision_enum). */
+template<typename T> struct libxsmm_gemm_precision_enum             { static const libxsmm_gemm_precision value = static_cast<libxsmm_gemm_precision>(LIBXSMM_DATATYPE_UNSUPPORTED); };
+template<> struct libxsmm_gemm_precision_enum<double>               { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F64; };
+template<> struct libxsmm_gemm_precision_enum<float>                { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F32; };
+template<> struct libxsmm_gemm_precision_enum<int>                  { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I32; };
+template<> struct libxsmm_gemm_precision_enum</*signed*/short>      { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
+template<> struct libxsmm_gemm_precision_enum<unsigned short>       { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
+template<> struct libxsmm_gemm_precision_enum<Eigen::half>          { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
+template<> struct libxsmm_gemm_precision_enum<tensorflow::bfloat16> { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_BF16; };
+template<> struct libxsmm_gemm_precision_enum<signed char>          { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
+template<> struct libxsmm_gemm_precision_enum<unsigned char>        { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
+template<> struct libxsmm_gemm_precision_enum<char>                 { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
 
-template<typename INP_TYPE> struct libxsmm_gemm_default_output  { typedef INP_TYPE type; };
-template<> struct libxsmm_gemm_default_output</*signed*/short>  { typedef int type; };
-template<> struct libxsmm_gemm_default_output<unsigned short>   { typedef int type; };
+template<typename INP_TYPE> struct libxsmm_gemm_default_output      { typedef INP_TYPE type; };
+template<> struct libxsmm_gemm_default_output</*signed*/short>      { typedef int type; };
+template<> struct libxsmm_gemm_default_output<unsigned short>       { typedef int type; };
 
 /** Construct and execute a specialized function. */
 template<typename INP_TYPE, typename OUT_TYPE = typename libxsmm_gemm_default_output<INP_TYPE>::type>
