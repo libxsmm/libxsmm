@@ -434,8 +434,50 @@ LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_fusedbn_get_tensor(libxsmm_dnn_fused
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  LIBXSMM_UNUSED(handle);
-  LIBXSMM_UNUSED(type);
+
+  /* check for tensor type */
+  if ( (type != LIBXSMM_DNN_REGULAR_INPUT)         && (type != LIBXSMM_DNN_GRADIENT_INPUT)         &&
+       (type != LIBXSMM_DNN_REGULAR_OUTPUT)        && (type != LIBXSMM_DNN_GRADIENT_OUTPUT)        &&
+       (type != LIBXSMM_DNN_REGULAR_INPUT_ADD)     && (type != LIBXSMM_DNN_GRADIENT_INPUT_ADD)     &&
+       (type != LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  &&
+       (type != LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) &&
+       (type != LIBXSMM_DNN_CHANNEL_EXPECTVAL)     && (type != LIBXSMM_DNN_CHANNEL_STDDEV)            ) {
+    status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
+    return status;
+  }
+
+  if (handle != 0) {
+    if ( type == LIBXSMM_DNN_REGULAR_INPUT ) {
+      handle->reg_input = 0;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT ) {
+      handle->grad_input = 0;
+    } else if ( type == LIBXSMM_DNN_REGULAR_OUTPUT ) {
+      handle->reg_output = 0;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_OUTPUT ) {
+      handle->grad_output = 0;
+    } else if ( type == LIBXSMM_DNN_REGULAR_INPUT_ADD ) {
+      handle->reg_add = 0;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT_ADD ) {
+      handle->grad_add = 0;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+      handle->reg_beta = 0;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+      handle->grad_beta = 0;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA ) {
+      handle->reg_gamma = 0;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA ) {
+      handle->grad_gamma = 0;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_EXPECTVAL ) {
+      handle->expvalue = 0;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_STDDEV ) {
+      handle->stddev = 0;
+    } else {
+      /* cannot happen */
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
   return status;
 }
 
