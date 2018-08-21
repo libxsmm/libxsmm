@@ -654,12 +654,8 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       }
     }
     LIBXSMM_ASSERT(LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags) || tm == tn);
-    if (
-#if !defined(NDEBUG)
-      (0 < tm && 0 < tn && 0 < tk) && /* fast-path to avoid later fall-back (still conforming GEMM parameters!) */
-#endif
-      (0 == ntasks || 0 != (um % tm) || 0 != (un % tn) || 0 != (uk % tk)))
-    {
+    /* check for non-conforming GEMM parameters (error), and conforming GEMM parameters (fast-path, fall-back) */
+    if (0 == ntasks || 0 == tm || 0 == tn || 0 == tk || 0 != (um % tm) || 0 != (un % tn) || 0 != (uk % tk)) {
       return NULL;
     }
     result.ptr->flags = flags;
