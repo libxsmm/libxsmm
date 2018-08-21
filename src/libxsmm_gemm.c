@@ -836,10 +836,10 @@ LIBXSMM_API size_t libxsmm_gemm_handle_get_scratch_size(const libxsmm_gemm_handl
 {
   size_t result;
   if (NULL != handle) { /* thread-local scratch buffer for GEMM */
-    result = (libxsmm_gemm_handle_get_scratch_size_a(handle)
-            + libxsmm_gemm_handle_get_scratch_size_b(handle)
-            + libxsmm_gemm_handle_get_scratch_size_c(handle))
-      * handle->mt * handle->nt * handle->kt;
+    const size_t size_a = libxsmm_gemm_handle_get_scratch_size_a(handle);
+    const size_t size_b = libxsmm_gemm_handle_get_scratch_size_b(handle);
+    const size_t size_c = libxsmm_gemm_handle_get_scratch_size_c(handle);
+    result = (size_a + size_b + size_c) * handle->mt * handle->nt * handle->kt;
   }
   else {
     result = 0;
