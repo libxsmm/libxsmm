@@ -129,6 +129,8 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: time steps should be >= 2 for RNN/LSTM!";
     case LIBXSMM_DNN_ERR_CREATE_LAYOUT_ARRAYS:
       return "LIBXSMM DNN Error: failed to create internal layout arrays!";
+    case LIBXSMM_DNN_ERR_NOT_IMPLEMENTED:
+      return "LIBXSMM DNN Error: the requested functionality is right now not implemented!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occurred!";
   }
