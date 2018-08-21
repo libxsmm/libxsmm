@@ -93,6 +93,8 @@
     <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_forward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.h" />
     <ClInclude Include="..\src\libxsmm_dnn_dryruns.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_fusedbatchnorm_backward.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_fusedbatchnorm_forward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_handle.h" />
     <ClInclude Include="..\src\libxsmm_dnn_setup.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
@@ -156,6 +158,8 @@
     <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.c" />
     <ClCompile Include="..\src\libxsmm_dnn_dryruns.c" />
     <ClCompile Include="..\src\libxsmm_dnn_elementwise.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_fusedbatchnorm_backward.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_fusedbatchnorm_forward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_fusedbn.c" />
     <ClCompile Include="..\src\libxsmm_dnn_grucell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />

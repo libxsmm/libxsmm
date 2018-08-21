@@ -82,7 +82,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom(libxsmm_
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check if we have input, output and filter */
-  if (handle->reg_input == 0 || handle->reg_output == 0 || 
+  if (handle->reg_input == 0 || handle->reg_output == 0 ||
       handle->reg_beta == 0  || handle->reg_gamma == 0  ||
       handle->expvalue == 0  || handle->stddev == 0        ) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
