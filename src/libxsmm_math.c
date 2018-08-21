@@ -270,11 +270,8 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
   if (1 < limit) { /* check for fast-path */
     result = internal_product_limit(product, limit);
   }
-  else if (limit < product) {
-    result = limit;
-  }
   else {
-    result = product;
+    result = limit;
   }
   if (0 != is_lower && limit < product) {
     if (result < limit) {
@@ -283,6 +280,7 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
     if (result < limit) {
       result = product;
     }
+    LIBXSMM_ASSERT(limit <= result);
   }
   if (product < result) {
     result = product;
