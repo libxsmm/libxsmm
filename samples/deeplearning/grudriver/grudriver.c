@@ -1013,11 +1013,9 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_grucell_bind_internalstate( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, internalstate ) );
     }
     zero_buf( (float*)internalstate, internalstate_size/4 );
-#if 0
     if (pass != 0) {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_grucell_assign_internalstate( libxsmm_handle, rgoldt, zgoldt, ggoldt ) );
     }
-#endif
 
     if ((pass == 0) && LIBXSMM_NEQ(0, check)) {
       printf("##########################################\n");

@@ -990,30 +990,24 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_release_internalstate(libxsmm_
   return status;
 }
 
-#if 0
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_assign_internalstate(libxsmm_dnn_grucell* handle, const void* igoldtb, const void* fgoldtb, const void* ogoldtb, const void* cgoldtb, const void* dgoldtb)
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_assign_internalstate(libxsmm_dnn_grucell* handle, const void* rgoldtb, const void* zgoldtb, const void* ggoldtb)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  if (handle != 0 && igoldtb != 0 && fgoldtb != 0 && ogoldtb != 0 && cgoldtb != 0 && dgoldtb != 0) {
+  if (handle != 0 && rgoldtb != 0 && zgoldtb != 0 && ggoldtb != 0) {
     const libxsmm_blasint m = handle->m, n = handle->n, t = handle->t;
-    LIBXSMM_VLA_DECL(2, const LIBXSMM_DNN_ELTWISE_FTYPE, igold, (const LIBXSMM_DNN_ELTWISE_FTYPE*)igoldtb, m * n);
-    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, i, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->i->data, m * n);
-    LIBXSMM_VLA_DECL(2, const LIBXSMM_DNN_ELTWISE_FTYPE, fgold, (const LIBXSMM_DNN_ELTWISE_FTYPE*)fgoldtb, m * n);
-    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, f, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->f->data, m * n);
-    LIBXSMM_VLA_DECL(2, const LIBXSMM_DNN_ELTWISE_FTYPE, ogold, (const LIBXSMM_DNN_ELTWISE_FTYPE*)ogoldtb, m * n);
-    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, o, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->o->data, m * n);
-    LIBXSMM_VLA_DECL(2, const LIBXSMM_DNN_ELTWISE_FTYPE, cgold, (const LIBXSMM_DNN_ELTWISE_FTYPE*)cgoldtb, m * n);
-    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, c, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->c->data, m * n);
-    LIBXSMM_VLA_DECL(2, const LIBXSMM_DNN_ELTWISE_FTYPE, dgold, (const LIBXSMM_DNN_ELTWISE_FTYPE*)dgoldtb, m * n);
-    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, d, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->d->data, m * n);
+    LIBXSMM_VLA_DECL(2, const LIBXSMM_DNN_ELTWISE_FTYPE, rgold, (const LIBXSMM_DNN_ELTWISE_FTYPE*)rgoldtb, m * n);
+    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, r, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->r->data, m * n);
+    LIBXSMM_VLA_DECL(2, const LIBXSMM_DNN_ELTWISE_FTYPE, zgold, (const LIBXSMM_DNN_ELTWISE_FTYPE*)zgoldtb, m * n);
+    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, z, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->z->data, m * n);
+    LIBXSMM_VLA_DECL(2, const LIBXSMM_DNN_ELTWISE_FTYPE, ggold, (const LIBXSMM_DNN_ELTWISE_FTYPE*)ggoldtb, m * n);
+    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, g, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->g->data, m * n);
     libxsmm_blasint it;
     for (it = 0; it < t; ++it) {
-      libxsmm_bgemm_copyin_b(handle->handlewd, &LIBXSMM_VLA_ACCESS(2, igold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, i, it, 0, m * n));
-      libxsmm_bgemm_copyin_b(handle->handlewd, &LIBXSMM_VLA_ACCESS(2, fgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, f, it, 0, m * n));
-      libxsmm_bgemm_copyin_b(handle->handlewd, &LIBXSMM_VLA_ACCESS(2, ogold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, o, it, 0, m * n));
-      libxsmm_bgemm_copyin_b(handle->handlewd, &LIBXSMM_VLA_ACCESS(2, cgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, c, it, 0, m * n));
-      libxsmm_bgemm_copyin_b(handle->handlewd, &LIBXSMM_VLA_ACCESS(2, dgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, d, it, 0, m * n));
+      libxsmm_bgemm_copyin_b(handle->handlewd, &LIBXSMM_VLA_ACCESS(2, rgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, r, it, 0, m * n));
+      libxsmm_bgemm_copyin_b(handle->handlewd, &LIBXSMM_VLA_ACCESS(2, zgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, z, it, 0, m * n));
+      libxsmm_bgemm_copyin_b(handle->handlewd, &LIBXSMM_VLA_ACCESS(2, ggold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, g, it, 0, m * n));
     }
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE_TENSOR;
@@ -1021,7 +1015,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_assign_internalstate(libxsmm_d
 
   return status;
 }
-#endif
+
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_tensor(libxsmm_dnn_grucell* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type)
 {
