@@ -1627,6 +1627,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 #else
             mode = 2; /* enter code generation */
 #endif
+            if (LIBXSMM_KERNEL_KIND_MATMUL == descriptor->iflags) {
+              internal_update_mmstatistic(descriptor, 0, 1/*collision*/);
+            }
           }
           assert(0 != diff); /* continue */
         }
@@ -1693,6 +1696,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
           flux_entry.pmm = 0;
           diff = 0;
         }
+      }
+      if (LIBXSMM_KERNEL_KIND_MATMUL == descriptor->iflags) {
+        internal_update_mmstatistic(descriptor, 1/*try*/, 0);
       }
     }
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
