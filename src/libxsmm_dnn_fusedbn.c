@@ -243,9 +243,9 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
           layout = 0; /* make sure a NULL is returned */
           *status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
         }
-      } else if ( (type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  || (type == LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  || (type == LIBXSMM_DNN_CHANNEL_BETA) ||
+      } else if ( (type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  || (type == LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  || (type == LIBXSMM_DNN_CHANNEL_BETA)  ||
                   (type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) || (type == LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) || (type == LIBXSMM_DNN_CHANNEL_GAMMA) ||
-                  (type == LIBXSMM_DNN_CHANNEL_EXPECTV)       || (type == LIBXSMM_DNN_CHANNEL_STDDEV)                                                     ) {
+                  (type == LIBXSMM_DNN_CHANNEL_EXPECTVAL)     || (type == LIBXSMM_DNN_CHANNEL_STDDEV)                                                     ) {
         layout->format = handle->desc.buffer_format;
         layout->tensor_type = LIBXSMM_DNN_CHANNEL_SCALAR;
 
@@ -367,25 +367,161 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_scratch(libxsmm_dnn_fu
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  LIBXSMM_UNUSED(handle);
-  LIBXSMM_UNUSED(tensor);
-  LIBXSMM_UNUSED(type);
+
+  /* check for tensor type */
+  if ( (type != LIBXSMM_DNN_REGULAR_INPUT)         && (type != LIBXSMM_DNN_GRADIENT_INPUT)         &&
+       (type != LIBXSMM_DNN_REGULAR_OUTPUT)        && (type != LIBXSMM_DNN_GRADIENT_OUTPUT)        &&
+       (type != LIBXSMM_DNN_REGULAR_INPUT_ADD)     && (type != LIBXSMM_DNN_GRADIENT_INPUT_ADD)     &&
+       (type != LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  &&
+       (type != LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) &&
+       (type != LIBXSMM_DNN_CHANNEL_EXPECTVAL)     && (type != LIBXSMM_DNN_CHANNEL_STDDEV)            ) {
+    status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
+    return status;
+  }
+
+  if (handle != 0 && tensor != 0) {
+    libxsmm_dnn_tensor_datalayout* handle_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout(handle, type, &status);
+
+    if ( libxsmm_dnn_compare_tensor_datalayout(handle_layout, tensor->layout, &status) == 0 ) {
+      if ( type == LIBXSMM_DNN_REGULAR_INPUT ) {
+        handle->reg_input = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT ) {
+        handle->grad_input = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_REGULAR_OUTPUT ) {
+        handle->reg_output = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_GRADIENT_OUTPUT ) {
+        handle->grad_output = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_REGULAR_INPUT_ADD ) {
+        handle->reg_add = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT_ADD ) {
+        handle->grad_add = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+        handle->reg_beta = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+        handle->grad_beta = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA ) {
+        handle->reg_gamma = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA ) {
+        handle->grad_gamma = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_CHANNEL_EXPECTVAL ) {
+        handle->expvalue = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_CHANNEL_STDDEV ) {
+        handle->stddev = (libxsmm_dnn_tensor*)tensor;
+      } else {
+        /* cannot happen */
+      }
+    } else {
+      status = LIBXSMM_DNN_ERR_MISMATCH_TENSOR;
+    }
+
+    libxsmm_dnn_destroy_tensor_datalayout( handle_layout );
+  }
+  else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE_TENSOR;
+  }
+
   return status;
 }
 
 
 LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_fusedbn_get_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status) {
-  LIBXSMM_UNUSED(handle);
-  LIBXSMM_UNUSED(type);
-  LIBXSMM_UNUSED(status);
-  return 0;
+  libxsmm_dnn_tensor* return_tensor = 0;
+
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  /* check for tensor type */
+  if ( (type != LIBXSMM_DNN_REGULAR_INPUT)         && (type != LIBXSMM_DNN_GRADIENT_INPUT)         &&
+       (type != LIBXSMM_DNN_REGULAR_OUTPUT)        && (type != LIBXSMM_DNN_GRADIENT_OUTPUT)        &&
+       (type != LIBXSMM_DNN_REGULAR_INPUT_ADD)     && (type != LIBXSMM_DNN_GRADIENT_INPUT_ADD)     &&
+       (type != LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  &&
+       (type != LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) &&
+       (type != LIBXSMM_DNN_CHANNEL_EXPECTVAL)     && (type != LIBXSMM_DNN_CHANNEL_STDDEV)            ) {
+    *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
+    return return_tensor;
+  }
+
+  if (handle != 0) {
+    if ( type == LIBXSMM_DNN_REGULAR_INPUT ) {
+      return_tensor = handle->reg_input;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT ) {
+      return_tensor = handle->grad_input;
+    } else if ( type == LIBXSMM_DNN_REGULAR_OUTPUT ) {
+      return_tensor = handle->reg_output;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_OUTPUT ) {
+      return_tensor = handle->grad_output;
+    } else if ( type == LIBXSMM_DNN_REGULAR_INPUT_ADD ) {
+      return_tensor = handle->reg_add;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT_ADD ) {
+      return_tensor = handle->grad_add;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+      return_tensor = handle->reg_beta;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+      return_tensor = handle->grad_beta;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA ) {
+      return_tensor = handle->reg_gamma;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA ) {
+      return_tensor = handle->grad_gamma;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_EXPECTVAL ) {
+      return_tensor = handle->expvalue;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_STDDEV ) {
+      return_tensor = handle->stddev;
+    } else {
+      /* cannot happen */
+    }
+  } else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return return_tensor;
 }
 
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  LIBXSMM_UNUSED(handle);
-  LIBXSMM_UNUSED(type);
+
+  /* check for tensor type */
+  if ( (type != LIBXSMM_DNN_REGULAR_INPUT)         && (type != LIBXSMM_DNN_GRADIENT_INPUT)         &&
+       (type != LIBXSMM_DNN_REGULAR_OUTPUT)        && (type != LIBXSMM_DNN_GRADIENT_OUTPUT)        &&
+       (type != LIBXSMM_DNN_REGULAR_INPUT_ADD)     && (type != LIBXSMM_DNN_GRADIENT_INPUT_ADD)     &&
+       (type != LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  &&
+       (type != LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) &&
+       (type != LIBXSMM_DNN_CHANNEL_EXPECTVAL)     && (type != LIBXSMM_DNN_CHANNEL_STDDEV)            ) {
+    status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
+    return status;
+  }
+
+  if (handle != 0) {
+    if ( type == LIBXSMM_DNN_REGULAR_INPUT ) {
+      handle->reg_input = 0;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT ) {
+      handle->grad_input = 0;
+    } else if ( type == LIBXSMM_DNN_REGULAR_OUTPUT ) {
+      handle->reg_output = 0;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_OUTPUT ) {
+      handle->grad_output = 0;
+    } else if ( type == LIBXSMM_DNN_REGULAR_INPUT_ADD ) {
+      handle->reg_add = 0;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT_ADD ) {
+      handle->grad_add = 0;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+      handle->reg_beta = 0;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+      handle->grad_beta = 0;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA ) {
+      handle->reg_gamma = 0;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA ) {
+      handle->grad_gamma = 0;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_EXPECTVAL ) {
+      handle->expvalue = 0;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_STDDEV ) {
+      handle->stddev = 0;
+    } else {
+      /* cannot happen */
+    }
+  } else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
   return status;
 }
 

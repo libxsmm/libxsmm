@@ -82,6 +82,7 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_INVALID_HANDLE_BIAS        100026
 #define LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL       100027
 #define LIBXSMM_DNN_ERR_CREATE_LAYOUT_ARRAYS       100028
+#define LIBXSMM_DNN_ERR_NOT_IMPLEMENTED            100029
 
 /** Kinds of supported compute flavor operations. */
 typedef enum libxsmm_dnn_compute_kind {
@@ -171,7 +172,7 @@ typedef enum libxsmm_dnn_tensor_type {
   /* Gamma */
   LIBXSMM_DNN_CHANNEL_GAMMA,
   /* regular beta */
-  LIBXSMM_DNN_CHANNEL_EXPECTV,
+  LIBXSMM_DNN_CHANNEL_EXPECTVAL,
   /* regular beta */
   LIBXSMM_DNN_CHANNEL_STDDEV,
   /** general bias type */
