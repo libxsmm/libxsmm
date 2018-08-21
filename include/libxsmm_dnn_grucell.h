@@ -116,6 +116,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_grucell {
   libxsmm_bgemm_handle* handleux;
   libxsmm_bgemm_handle* handlewh;
   libxsmm_bgemm_handle* handlett;
+  libxsmm_bgemm_handle* handlewd;
   libxsmm_barrier* barrier; /* barrier */
 } libxsmm_dnn_grucell;
 
