@@ -525,7 +525,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       libxsmm_gemm_thread(handle, scratch, a, b, c, omp_get_thread_num());
 # endif
     }
-    if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
+    if (2 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
       const unsigned int ntasks = handle->mt * handle->nt * handle->kt;
       const double imbalance = 100.0 * (handle->nthreads - ntasks) / handle->nthreads;
       static double max_imbalance = 0;
@@ -543,7 +543,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
   else { /* fall-back or error */
     static int error_once = 0;
     if (NULL == handle) { /* fall-back */
-      if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+      if ((2 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
         fprintf(stderr, "LIBXSMM WARNING (XGEMM): fall-back code path triggered!\n");
