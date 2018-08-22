@@ -1592,7 +1592,7 @@ else ifneq (0,$(BLAS)) # generic
       ifneq (0,$(DEPSTATIC))
         ifneq (,$(LIBGFORTRAN))
           BLAS_XLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
-        else
+        else ifneq (,$(strip $(FC)))
           BLAS_XLDFLAGS += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
         endif
       endif
