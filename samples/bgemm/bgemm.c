@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const double gflops = 2.0 * m * n * k * 1E-9;
   int result = EXIT_SUCCESS;
-#if defined(CHECK)
+#if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
 #endif
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
 #endif
       /* warm-up OpenMP (populate thread pool) */
       libxsmm_bgemm_omp(handle, a, b, c, 1);
-#if defined(CHECK)
+#if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
       if (!LIBXSMM_FEQ(0, check)) {
         LIBXSMM_GEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, agold, &lda, bgold, &ldb, &beta, cgold, &ldc);
       }
@@ -155,7 +155,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
         }
       }
-#if defined(CHECK)
+#if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
       if (!LIBXSMM_FEQ(0, check)) { /* validate result against LAPACK/BLAS xGEMM */
         ITYPE* ctest = 0;
         int i;

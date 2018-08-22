@@ -109,7 +109,7 @@ int main(int argc, char* argv[])
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
     /* warm-up OpenMP (populate thread pool) */
-#if defined(CHECK)
+#if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
     if (0 != d) XGEMM_GOLD(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, d, &ldc);
 #endif
     XGEMM(&transa, &transb, &m, &n, &k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc);
@@ -143,7 +143,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
     }
-#if defined(CHECK)
+#if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
     if (0 != d) { /* validate result against LAPACK/BLAS xGEMM */
       libxsmm_matdiff_info diff;
       int i; double duration;
