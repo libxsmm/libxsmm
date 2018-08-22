@@ -136,14 +136,14 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
               if ( (type == LIBXSMM_DNN_REGULAR_INPUT)     || (type == LIBXSMM_DNN_GRADIENT_INPUT)     || (type == LIBXSMM_DNN_INPUT) ||
                    (type == LIBXSMM_DNN_REGULAR_INPUT_ADD) || (type == LIBXSMM_DNN_GRADIENT_INPUT_ADD)                                   ) {
                 layout->dim_size[0] = handle->ifmblock;
-                layout->dim_size[1] = handle->desc.W;
-                layout->dim_size[2] = handle->desc.H;
+                layout->dim_size[1] = handle->desc.W + (2*handle->desc.pad_w_in);
+                layout->dim_size[2] = handle->desc.H + (2*handle->desc.pad_h_in);
                 layout->dim_size[3] = handle->blocksifm;
                 layout->dim_size[4] = handle->desc.N;
               } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
                 layout->dim_size[0] = handle->ofmblock;
-                layout->dim_size[1] = handle->desc.W/handle->desc.v;
-                layout->dim_size[2] = handle->desc.H/handle->desc.u;
+                layout->dim_size[1] = (handle->desc.W/handle->desc.v) + (2*handle->desc.pad_w_out);
+                layout->dim_size[2] = (handle->desc.H/handle->desc.u) + (2*handle->desc.pad_h_out);
                 layout->dim_size[3] = handle->blocksofm;
                 layout->dim_size[4] = handle->desc.N;
               } else {
@@ -174,15 +174,15 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
                    (type == LIBXSMM_DNN_REGULAR_INPUT_ADD) || (type == LIBXSMM_DNN_GRADIENT_INPUT_ADD)                                   ) {
                 layout->dim_size[0] = handle->fm_lp_block;
                 layout->dim_size[1] = handle->ifmblock;
-                layout->dim_size[2] = handle->desc.W;
-                layout->dim_size[3] = handle->desc.H;
+                layout->dim_size[2] = handle->desc.W + (2*handle->desc.pad_w_in);
+                layout->dim_size[3] = handle->desc.H + (2*handle->desc.pad_h_in);
                 layout->dim_size[4] = handle->blocksifm;
                 layout->dim_size[5] = handle->desc.N;
               } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
                 layout->dim_size[0] = handle->fm_lp_block;
                 layout->dim_size[1] = handle->ofmblock_lp;
-                layout->dim_size[2] = handle->desc.W/handle->desc.v;
-                layout->dim_size[3] = handle->desc.H/handle->desc.u;
+                layout->dim_size[2] = (handle->desc.W/handle->desc.v) + (2*handle->desc.pad_w_out);
+                layout->dim_size[3] = (handle->desc.H/handle->desc.u) + (2*handle->desc.pad_h_out);
                 layout->dim_size[4] = handle->blocksofm;
                 layout->dim_size[5] = handle->desc.N;
               } else {
@@ -217,13 +217,13 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
               if ( (type == LIBXSMM_DNN_REGULAR_INPUT)     || (type == LIBXSMM_DNN_GRADIENT_INPUT)     || (type == LIBXSMM_DNN_INPUT) ||
                    (type == LIBXSMM_DNN_REGULAR_INPUT_ADD) || (type == LIBXSMM_DNN_GRADIENT_INPUT_ADD)                                      )   {
                 layout->dim_size[0] = handle->desc.C;
-                layout->dim_size[1] = handle->desc.W;
-                layout->dim_size[2] = handle->desc.H;
+                layout->dim_size[1] = handle->desc.W + (2*handle->desc.pad_w_in);
+                layout->dim_size[2] = handle->desc.H + (2*handle->desc.pad_h_in);
                 layout->dim_size[3] = handle->desc.N;
               } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) )   {
                 layout->dim_size[0] = handle->desc.C;
-                layout->dim_size[1] = handle->desc.W/handle->desc.v;
-                layout->dim_size[2] = handle->desc.H/handle->desc.u;
+                layout->dim_size[1] = (handle->desc.W/handle->desc.v) + (2*handle->desc.pad_w_out);
+                layout->dim_size[2] = (handle->desc.H/handle->desc.u) + (2*handle->desc.pad_h_out);
                 layout->dim_size[3] = handle->desc.N;
               } else {
                 free(layout->dim_type);

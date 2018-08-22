@@ -52,7 +52,33 @@ libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_fwd_custom_f32_f32(libxsmm_dnn_fusedbn*
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  /* @TODO */
+  typedef float element_input_type;
+  typedef float element_output_type;
+  typedef float element_stats_type;
+
+  if ( handle->desc.fuse_order != LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU ) {
+    status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_ORDER;
+  } else {
+    if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE ) {
+# include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom.tpl.c"
+    } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE ) {
+# define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE
+# include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom.tpl.c"
+# undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE 
+    } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU ) {
+# define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
+# include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom.tpl.c"
+# undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU 
+    } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU ) {
+# define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE
+# define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
+# include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom.tpl.c"
+# undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
+# undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE 
+    } else {
+      status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+    }
+  }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
@@ -90,20 +116,47 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom(libxsmm_
   }
 
   /* check if we are on an AVX512 platform */
-  if ( 1 ) {
+  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+       libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL    ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      /* @TODO */
+      status = libxsmm_dnn_fusedbn_st_fwd_custom_f32_f32( handle, start_thread, tid);
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
-      /* @TODO */
+      /*status = libxsmm_dnn_fusedbn_st_fwd_custom_bf16_bf16( handle, start_thread, tid);*/
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
   } else {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      status = libxsmm_dnn_fusedbn_st_fwd_custom_f32_f32( handle, start_thread, tid);
+      typedef float element_input_type;
+      typedef float element_output_type;
+      typedef float element_stats_type;
+
+      if ( handle->desc.fuse_order != LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU ) {
+        status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_ORDER;
+      } else {
+        if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE ) {
+# include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom.tpl.c"
+        } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE ) {
+# define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE
+# include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom.tpl.c"
+# undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE 
+        } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU ) {
+# define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
+# include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom.tpl.c"
+# undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU 
+        } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU ) {
+# define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE
+# define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
+# include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom.tpl.c"
+# undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
+# undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE 
+        } else {
+         status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+        }
+      }
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
-      /*status = libxsmm_dnn_fusedbn_st_fwd_custom_bf16_bf16( handle, start_thread, tid);*/
+      /* TODO */
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
