@@ -100,13 +100,13 @@ if ( nFmBlock == 16 ) {
 #pragma vector nontemporal
 #endif
         for( v = 0; v < 16; v++ ) {
-          // BN + scale (gamma, beta)
+          /* BN + scale (gamma, beta) */
           float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
-          // Eltwise
+          /* Eltwise */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
           o += input_add_ptr[v];
 #endif
-          // ReLU
+          /* ReLU */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
           output_ptr[v] = ( o < 0.0f ) ? 0.0f : o;
 #endif
@@ -141,13 +141,13 @@ if ( nFmBlock == 16 ) {
 #pragma vector nontemporal
 #endif
         for( v = 0; v < nFmBlock; v++ ) {
-          // BN + scale (gamma, beta)
+          /* BN + scale (gamma, beta) */
           float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
-          // Eltwise
+          /* Eltwise */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
           o += input_add_ptr[v];
 #endif
-          // ReLU
+          /* ReLU */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
           output_ptr[v] = ( o < 0.0f ) ? 0.0f : o;
 #endif
