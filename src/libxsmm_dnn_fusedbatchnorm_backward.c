@@ -52,7 +52,9 @@ libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom_f32_f32(libxsmm_dnn_fusedbn*
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  /* @TODO */
+  LIBXSMM_UNUSED( handle );
+  LIBXSMM_UNUSED( start_thread );
+  LIBXSMM_UNUSED( tid );
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
