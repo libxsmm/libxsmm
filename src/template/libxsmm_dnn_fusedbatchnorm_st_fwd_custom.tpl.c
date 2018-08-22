@@ -108,8 +108,9 @@ if ( nFmBlock == 16 ) {
 #endif
           /* ReLU */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
-          output_ptr[v] = ( o < 0.0f ) ? 0.0f : o;
+          o = ( o < 0.0f ) ? 0.0f : o;
 #endif
+          output_ptr[v] = o;
         }
       }
     }
@@ -149,8 +150,9 @@ if ( nFmBlock == 16 ) {
 #endif
           /* ReLU */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
-          output_ptr[v] = ( o < 0.0f ) ? 0.0f : o;
+          o = ( o < 0.0f ) ? 0.0f : o;
 #endif
+          output_ptr[v] = o;
         }
       }
     }
