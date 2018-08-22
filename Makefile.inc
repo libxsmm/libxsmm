@@ -1620,7 +1620,7 @@ else ifneq (0,$(BLAS)) # generic
 endif
 
 define cleanup =
-  $(strip $(eval hit :=) $(foreach _,$1,$(if $(filter $_,${hit}),,$(eval hit += $_))) ${hit})
+  $(strip $(shell echo "$(eval hit :=) $(foreach _,$(shell echo '$1' | rev),$(if $(filter $_,${hit}),,$(eval hit += $_))) ${hit}" | rev))
 endef
 
 # no-BLAS flags: cleanup and extra flags
