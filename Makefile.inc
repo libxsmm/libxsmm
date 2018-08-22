@@ -1590,13 +1590,19 @@ else ifneq (0,$(BLAS)) # generic
     endif
     ifeq (0,$(OPENBLAS)) # BLAS (reference)
       ifneq (0,$(DEPSTATIC))
-      ifneq (,$(LIBGFORTRAN))
-        BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
-      endif
+        ifneq (,$(LIBGFORTRAN))
+          BLAS_XLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+        else
+          BLAS_XLDFLAGS += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
+        endif
       endif
       QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
       ifneq (0,$(QUADMATH))
-        BLAS_CLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
+        BLAS_XLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
+      endif
+      BLAS_CLDFLAGS += $(BLAS_XLDFLAGS)
+      ifneq (3,$(GCC))
+        BLAS_LDFLAGS += $(BLAS_XLDFLAGS)
       endif
     endif
   else # BLAS library is specified via BLASLIB
@@ -1613,25 +1619,31 @@ else ifneq (0,$(BLAS)) # generic
   endif
 endif
 
+define cleanup =
+  $(strip $(eval hit :=) $(foreach _,$1,$(if $(filter $_,${hit}),,$(eval hit += $_))) ${hit})
+endef
+
 # no-BLAS flags: cleanup and extra flags
-NOBLAS_CXXFLAGS := $(strip $(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS := $(strip $(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS := $(strip $(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_LDFLAGS := $(strip $(PICFLAG) $(LDFLAGS) $(ELDFLAGS))
-NOBLAS_CLDFLAGS := $(strip $(CLDFLAGS))
-NOBLAS_FLAGS := $(strip $(DFLAGS))
-NOBLAS_IFLAGS := $(strip $(IFLAGS))
+NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS := $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_LDFLAGS := $(call cleanup,$(PICFLAG) $(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CLDFLAGS := $(call cleanup,$(CLDFLAGS))
+NOBLAS_FLAGS := $(call cleanup,$(DFLAGS))
+NOBLAS_IFLAGS := $(call cleanup,$(IFLAGS))
 
 # regular flags: cleanup
-CXXFLAGS := $(strip $(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))
-FCFLAGS := $(strip $(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
-CFLAGS := $(strip $(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
-LDFLAGS := $(strip $(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
-CLDFLAGS := $(strip $(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
-DFLAGS := $(strip $(NOBLAS_FLAGS) $(BLAS_FLAGS))
-IFLAGS := $(strip $(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
+CXXFLAGS := $(call cleanup,$(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))
+FCFLAGS := $(call cleanup,$(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
+CFLAGS := $(call cleanup,$(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
+LDFLAGS := $(call cleanup,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
+CLDFLAGS := $(call cleanup,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
+DFLAGS := $(call cleanup,$(NOBLAS_FLAGS) $(BLAS_FLAGS))
+IFLAGS := $(call cleanup,$(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
 # cleanup eventually duplicated flags
+LDFLAGS := $(subst $(NULL) $(XLIB_BEGIN) $(XLIB_END),$(NULL),$(LDFLAGS))
 LDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(LDFLAGS))
+CLDFLAGS := $(subst $(NULL) $(XLIB_BEGIN) $(XLIB_END),$(NULL),$(CLDFLAGS))
 CLDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(CLDFLAGS))
 # cleanup duplicated slashes
 LDFLAGS := $(subst //,/,$(LDFLAGS))
