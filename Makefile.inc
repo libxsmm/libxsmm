@@ -1192,12 +1192,12 @@ ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
 endif
 
 ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
-ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-f.f); \
+ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/libxsmm_XXXXXX-f.f); \
   echo "      PROGRAM test" > $${FINFILE}; \
   echo "      END PROGRAM" >> $${FINFILE}; \
   FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
   if [ "" = "$${FTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-  rm -f /tmp/.libxsmm_??????-f.f .libxsmm_??????-f.o* 2>/dev/null))
+  rm -f /tmp/libxsmm_??????-f.f libxsmm_??????-f.o* 2>/dev/null))
 # inherit CTARGET flags
   FTARGET = $(CTARGET)
 endif
