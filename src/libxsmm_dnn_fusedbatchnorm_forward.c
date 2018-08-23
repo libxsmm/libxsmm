@@ -103,7 +103,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_fwd_custom_bf16_bf16(libxsmm_dnn_fusedb
 #endif
 
 
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom(libxsmm_dnn_fusedbn* handle, int start_thread, int tid)
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_fwd_custom(libxsmm_dnn_fusedbn* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
