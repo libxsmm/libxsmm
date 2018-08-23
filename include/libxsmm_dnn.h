@@ -83,6 +83,8 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL       100027
 #define LIBXSMM_DNN_ERR_CREATE_LAYOUT_ARRAYS       100028
 #define LIBXSMM_DNN_ERR_NOT_IMPLEMENTED            100029
+#define LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_ORDER   100030
+#define LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION  100031
 
 /** Kinds of supported compute flavor operations. */
 typedef enum libxsmm_dnn_compute_kind {

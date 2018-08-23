@@ -545,7 +545,7 @@ LIBXSMM_API_INLINE int libxsmm_gemm_plan_internal(unsigned int nthreads,
           replan = 0;
 #else
           static int error_once = 0;
-          if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+          if ((2 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
             && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
           {
             fprintf(stderr, "LIBXSMM WARNING: K-parallelism triggered!\n");
@@ -654,12 +654,8 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       }
     }
     LIBXSMM_ASSERT(LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags) || tm == tn);
-    if (
-#if !defined(NDEBUG)
-      (0 < tm && 0 < tn && 0 < tk) && /* fast-path to avoid later fall-back (still conforming GEMM parameters!) */
-#endif
-      (0 == ntasks || 0 != (um % tm) || 0 != (un % tn) || 0 != (uk % tk)))
-    {
+    /* check for non-conforming GEMM parameters (error), and conforming GEMM parameters (fast-path, fall-back) */
+    if (0 == ntasks || 0 == tm || 0 == tn || 0 == tk || 0 != (um % tm) || 0 != (un % tn) || 0 != (uk % tk)) {
       return NULL;
     }
     result.ptr->flags = flags;
@@ -836,10 +832,10 @@ LIBXSMM_API size_t libxsmm_gemm_handle_get_scratch_size(const libxsmm_gemm_handl
 {
   size_t result;
   if (NULL != handle) { /* thread-local scratch buffer for GEMM */
-    result = (libxsmm_gemm_handle_get_scratch_size_a(handle)
-            + libxsmm_gemm_handle_get_scratch_size_b(handle)
-            + libxsmm_gemm_handle_get_scratch_size_c(handle))
-      * handle->mt * handle->nt * handle->kt;
+    const size_t size_a = libxsmm_gemm_handle_get_scratch_size_a(handle);
+    const size_t size_b = libxsmm_gemm_handle_get_scratch_size_b(handle);
+    const size_t size_c = libxsmm_gemm_handle_get_scratch_size_c(handle);
+    result = (size_a + size_b + size_c) * handle->mt * handle->nt * handle->kt;
   }
   else {
     result = 0;

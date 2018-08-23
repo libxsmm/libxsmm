@@ -102,9 +102,12 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
 # define INTERNAL_FIND_CODE_CACHE_INDEX(CACHE_HIT, RESULT_INDEX) \
     RESULT_INDEX = ((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1)) % (LIBXSMM_CAPACITY_CACHE)
+#elif defined(NDEBUG)
+# define INTERNAL_FIND_CODE_CACHE_INDEX(CACHE_HIT, RESULT_INDEX) \
+    RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1), LIBXSMM_CAPACITY_CACHE)
 #else
 # define INTERNAL_FIND_CODE_CACHE_INDEX(CACHE_HIT, RESULT_INDEX) \
-    assert(/*is pot*/(LIBXSMM_CAPACITY_CACHE) == LIBXSMM_UP2POT(LIBXSMM_CAPACITY_CACHE)); \
+    { const unsigned internal_capacity_cache_pot_ = LIBXSMM_UP2POT(LIBXSMM_CAPACITY_CACHE); assert((LIBXSMM_CAPACITY_CACHE) == internal_capacity_cache_pot_); } \
     RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1), LIBXSMM_CAPACITY_CACHE)
 #endif
 
@@ -1627,6 +1630,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 #else
             mode = 2; /* enter code generation */
 #endif
+            if (LIBXSMM_KERNEL_KIND_MATMUL == descriptor->iflags) {
+              internal_update_mmstatistic(descriptor, 0, 1/*collision*/);
+            }
           }
           assert(0 != diff); /* continue */
         }
@@ -1693,6 +1699,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
           flux_entry.pmm = 0;
           diff = 0;
         }
+      }
+      if (LIBXSMM_KERNEL_KIND_MATMUL == descriptor->iflags) {
+        internal_update_mmstatistic(descriptor, 1/*try*/, 0);
       }
     }
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))

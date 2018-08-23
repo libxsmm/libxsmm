@@ -165,13 +165,14 @@
 # define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
 #endif
 
+#define LIBXSMM_GEMM_SYMBOL_BLAS(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
+  void LIBXSMM_GEMM_SYMBOL(TYPE)(CONST char*, CONST char*, \
+    CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
+    CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
+    CONST TYPE*, CONST libxsmm_blasint*, \
+    CONST TYPE*, TYPE*, CONST libxsmm_blasint*);
 #if (!defined(__BLAS) || (0 != __BLAS)) /* BLAS available */
-# define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
-    void LIBXSMM_GEMM_SYMBOL(TYPE)(CONST char*, CONST char*, \
-      CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
-      CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
-      CONST TYPE*, CONST libxsmm_blasint*, \
-      CONST TYPE*, TYPE*, CONST libxsmm_blasint*);
+# define LIBXSMM_GEMM_SYMBOL_DECL LIBXSMM_GEMM_SYMBOL_BLAS
 #else
 # define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE)
 #endif

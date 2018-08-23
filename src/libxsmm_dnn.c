@@ -131,6 +131,10 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: failed to create internal layout arrays!";
     case LIBXSMM_DNN_ERR_NOT_IMPLEMENTED:
       return "LIBXSMM DNN Error: the requested functionality is right now not implemented!";
+    case LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_ORDER:
+      return "LIBXSMM DNN Error: the requested order of fusion in batch norm is right now not implemented!";
+    case LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION:
+      return "LIBXSMM DNN Error: the requested fusion in batch norm is right now not implemented!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occurred!";
   }

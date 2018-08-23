@@ -64,6 +64,10 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn_desc {
   int W;                                     /* width of input image */
   int u;                                     /* vertical stride */
   int v;                                     /* horizontal stride */
+  int pad_h_in;                              /* height of physcial zero-padding in input buffer */
+  int pad_w_in;                              /* width of physical zero-padding in input buffer */
+  int pad_h_out;                             /* height of physical zero-padding in output buffer */
+  int pad_w_out;                             /* width of physical zero-padding in output buffer */
   int threads;                               /* number of threads used */
   libxsmm_dnn_datatype datatype_in;          /* datatypes used for all input related buffer */
   libxsmm_dnn_datatype datatype_out;         /* datatypes used for all output related buffer */
