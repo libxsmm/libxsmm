@@ -28,9 +28,10 @@
 ******************************************************************************/
 /* Alexander Heinecke, Sasikanth Avancha (Intel Corp.)
 ******************************************************************************/
-
-#include "libxsmm_main.h"
+#include "libxsmm_dnn_fusedbatchnorm_backward.h"
+#include "libxsmm_dnn_fusedbatchnorm_forward.h"
 #include "libxsmm_dnn_setup.h"
+#include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))

@@ -155,7 +155,7 @@ LIBXSMM_INLINE void naive_copy_NHWC_to_NCHW(const float* nhwc, float* nchw, int 
 }
 
 
-LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_ptr, float* output_ptr, const float* input_add_ptr, 
+LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_ptr, float* output_ptr, const float* input_add_ptr,
                                      const float* beta_ptr, const float* gamma_ptr, float* expectval_ptr, float* stddev_ptr)
 {
   const int nImg = param->N;
@@ -208,7 +208,7 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
 int main(int argc, char* argv[])
 {
   float *naive_input, *naive_output, *naive_input_add, *naive_libxsmm_output;
-  float *naive_beta, *naive_gamma, *naive_expectval, *naive_stddev; 
+  float *naive_beta, *naive_gamma, *naive_expectval, *naive_stddev;
   float *input_libxsmm, *output_libxsmm, *input_add_libxsmm;
   float *beta_libxsmm, *gamma_libxsmm, *expectval_libxsmm, *stddev_libxsmm;
 
