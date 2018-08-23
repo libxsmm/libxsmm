@@ -209,6 +209,31 @@ LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n3
 }
 
 
+LIBXSMM_API unsigned int libxsmm_shuffle(unsigned int n)
+{
+  const unsigned int s = (0 != (n & 1) ? ((n / 2 - 1) | 1) : ((n / 2) & ~1));
+  const unsigned int d = (0 != (n & 1) ? 1 : 2);
+  unsigned int result = (1 < n ? 1 : 0), i;
+  for (i = (d < n ? (n - 1) : 0); d < i; i -= d) {
+    unsigned int c = (s <= i ? (i - s) : (s - i));
+    unsigned int a = n, b = c;
+    do {
+      const unsigned int r = a % b;
+      a = b;
+      b = r;
+    } while (0 != b);
+    if (1 == a) {
+      result = c;
+      if (2 * c <= n) {
+        i = d; /* break */
+      }
+    }
+  }
+  LIBXSMM_ASSERT((0 == result && 1 >= n) || (result < n && 1 == libxsmm_gcd(result, n)));
+  return result;
+}
+
+
 LIBXSMM_API_INLINE unsigned int internal_product_limit(unsigned int product, unsigned int limit)
 {
   unsigned int fact[32], maxp = limit, result = 1;
