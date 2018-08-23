@@ -2220,13 +2220,16 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           else l_fpadj2 = -0x81;
           break;
        case LIBXSMM_X86_INSTR_VDPBF16PS:
+          if ( i_vector_name=='y' ) { l_sizereg = 32; l_fourth -= 0x20; }
+          if ( i_vector_name=='x' ) { l_sizereg = 16; l_fourth -= 0x40; }
           if ( l_broadcast == 1 ) l_sizereg = 4;
           if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
-               l_fpadj2 = -1;
+               l_fpadj2 = -0x81;
           else l_fpadj2 = -0x81;
-          l_fpadj2 += 0x82;
+          l_fpadj2 += 0x02;
           l_fpadj = -7;
           l_second += 1;
+          l_bytes = 6;
           break;
        case LIBXSMM_X86_INSTR_VADDPS:
           if ( l_broadcast == 1 ) l_sizereg = 4;
