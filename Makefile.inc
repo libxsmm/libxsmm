@@ -1309,22 +1309,20 @@ endif
 endif
 
 ifneq (0,$(THREADS))
-  ifeq (0,$(COMPATIBLE))
-    CXXFLAGS += -pthread
-    CFLAGS += -pthread
-    ifneq (0,$(shell echo "$$((0==$(INTEL) || 0!=$(DEPSTATIC)))"))
-      FLDFLAGS += -lpthread
-      ifneq (Windows_NT,$(UNAME))
-        ifneq (Darwin,$(UNAME))
-          CLDFLAGS += -pthread
-        else ifeq (0,$(CLANG))
-          CLDFLAGS += -pthread
-        endif
+ifeq (0,$(COMPATIBLE))
+  CXXFLAGS += -pthread
+  CFLAGS += -pthread
+  ifneq (0,$(shell echo "$$((0==$(INTEL) || 0!=$(DEPSTATIC)))"))
+    FLDFLAGS += -lpthread
+    ifneq (Windows_NT,$(UNAME))
+      ifneq (Darwin,$(UNAME))
+        CLDFLAGS += -pthread
+      else ifeq (0,$(CLANG))
+        CLDFLAGS += -pthread
       endif
     endif
   endif
-else
-  DFLAGS += -DLIBXSMM_NO_SYNC
+endif
 endif
 ifeq (0,$(VLA))
   DFLAGS += -DLIBXSMM_NO_VLA

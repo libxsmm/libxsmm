@@ -34,7 +34,7 @@
 #include "libxsmm_intrinsics_x86.h"
 
 #if !defined(LIBXSMM_TLS)
-# if !defined(LIBXSMM_NO_SYNC) && !defined(LIBXSMM_NO_TLS)
+# if (0 != LIBXSMM_SYNC) && !defined(LIBXSMM_NO_TLS)
 #   if defined(__CYGWIN__) && defined(__clang__)
 #     define LIBXSMM_NO_TLS
 #     define LIBXSMM_TLS
@@ -116,7 +116,7 @@
           LIBXSMM_ASSERT_MSG(0 == *(DST_PTR), "LIBXSMM_NONATOMIC_RELEASE"); }
 #define LIBXSMM_NONATOMIC_SYNC(KIND) LIBXSMM_UNUSED(KIND)
 
-#if defined(LIBXSMM_NO_SYNC)
+#if (0 == LIBXSMM_SYNC)
 # define LIBXSMM_ATOMIC(FN, BITS) FN
 # define LIBXSMM_ATOMIC_LOAD LIBXSMM_NONATOMIC_LOAD
 # define LIBXSMM_ATOMIC_STORE LIBXSMM_NONATOMIC_STORE
@@ -293,7 +293,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if !defined(LIBXSMM_NO_SYNC) /** Default lock-kind */
+#if (0 != LIBXSMM_SYNC) /** Default lock-kind */
 # define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
 # if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
 #   define LIBXSMM_LOCK_SYSTEM_SPINLOCK
