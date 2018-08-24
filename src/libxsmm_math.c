@@ -229,7 +229,7 @@ LIBXSMM_API size_t libxsmm_shuffle(unsigned int n)
       }
     }
   }
-  LIBXSMM_ASSERT((0 == result && 1 >= n) || (result < n && 1 == libxsmm_gcd(result, n)));
+  assert((0 == result && 1 >= n) || (result < n && 1 == libxsmm_gcd(result, n)));
   return result;
 }
 
