@@ -364,7 +364,7 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
   libxsmm_mhd_elemtype mhd_elemtype = LIBXSMM_MHD_ELEMTYPE_CHAR;
   char string_a[128], string_b[128], typeprefix = 0;
 
-  switch (iprec) {
+  switch (iprec | oprec) {
     case LIBXSMM_GEMM_PRECISION_F64: {
       LIBXSMM_ASSERT(iprec == oprec);
       LIBXSMM_SNPRINTF(string_a, sizeof(string_a), "%g", 0 != alpha ? *((const double*)alpha) : LIBXSMM_ALPHA);
