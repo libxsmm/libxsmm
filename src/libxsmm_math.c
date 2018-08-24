@@ -209,7 +209,7 @@ LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n3
 }
 
 
-LIBXSMM_API unsigned int libxsmm_shuffle(unsigned int n)
+LIBXSMM_API size_t libxsmm_shuffle(unsigned int n)
 {
   const unsigned int s = (0 != (n & 1) ? ((n / 2 - 1) | 1) : ((n / 2) & ~1));
   const unsigned int d = (0 != (n & 1) ? 1 : 2);
