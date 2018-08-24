@@ -559,7 +559,7 @@ MINGW ?= 0
 #endif
 IMPEXT ?= $(LIBEXT)
 
-# Too many ICEs with Clang hence we want to know if we are on Clang
+# Too many ICEs with older Clang (need to know if Clang is used)
 ifeq (0,$(GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
 ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__clang__"; echo "$$?"))
@@ -1045,6 +1045,10 @@ else # GCC assumed
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((1<=$(GCC)))"))
       OMPFLAG = -fopenmp
+    else ifneq (Darwin,$(UNAME))
+      ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION)))"))
+        OMPFLAG = -fopenmp
+      endif
     endif
   endif
   ifeq (,$(OMPFLAG))
