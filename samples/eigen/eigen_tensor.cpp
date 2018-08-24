@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
       libxsmm_gemm_print(stdout, libxsmm_gemm_precision_enum<ITYPE>::value, &transa, &transb,
         &m, &n, &k, &alpha, ta.data(), &m, tb.data(), &k, &beta, tc.data(), &m);
       fprintf(stdout, "\n\n");
-# if defined(CHECK)
+# if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
       Eigen::Tensor<ITYPE, 2/*nindices*/, 0/*options*/, libxsmm_blasint> td(m, n);
       double d2;
       {
@@ -146,7 +146,7 @@ int main(int argc, char* argv[])
 # endif
           ": %.1f GFLOPS/s\n", gflops * nrepeat / d1);
       }
-# if defined(CHECK)
+# if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
       if (0 < d2) {
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / d2);
       }

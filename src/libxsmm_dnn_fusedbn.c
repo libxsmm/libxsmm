@@ -28,9 +28,10 @@
 ******************************************************************************/
 /* Alexander Heinecke, Sasikanth Avancha (Intel Corp.)
 ******************************************************************************/
-
-#include "libxsmm_main.h"
+#include "libxsmm_dnn_fusedbatchnorm_backward.h"
+#include "libxsmm_dnn_fusedbatchnorm_forward.h"
 #include "libxsmm_dnn_setup.h"
+#include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -115,6 +116,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
 
     if (layout != 0) {
       memset(layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
+      layout->format = handle->desc.buffer_format;
       layout->custom_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
 
       if ( (type == LIBXSMM_DNN_REGULAR_INPUT)     || (type == LIBXSMM_DNN_GRADIENT_INPUT)  || (type == LIBXSMM_DNN_INPUT)  ||
@@ -246,7 +248,6 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
       } else if ( (type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  || (type == LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  || (type == LIBXSMM_DNN_CHANNEL_BETA)  ||
                   (type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) || (type == LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) || (type == LIBXSMM_DNN_CHANNEL_GAMMA) ||
                   (type == LIBXSMM_DNN_CHANNEL_EXPECTVAL)     || (type == LIBXSMM_DNN_CHANNEL_STDDEV)                                                     ) {
-        layout->format = handle->desc.buffer_format;
         layout->tensor_type = LIBXSMM_DNN_CHANNEL_SCALAR;
 
         if ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) {
@@ -529,10 +530,28 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_tensor(libxsmm_dnn_fus
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_execute_st(libxsmm_dnn_fusedbn* handle, libxsmm_dnn_compute_kind kind,
   /*unsigned*/int start_thread, /*unsigned*/int tid) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  LIBXSMM_UNUSED(handle);
-  LIBXSMM_UNUSED(kind);
-  LIBXSMM_UNUSED(start_thread);
-  LIBXSMM_UNUSED(tid);
+
+  if (0 != handle) {
+    switch (kind) {
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+        switch (handle->desc.buffer_format) {
+          case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
+            status = libxsmm_dnn_fusedbn_st_fwd_custom( handle, start_thread, tid );
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN;
+          }
+        }
+      } break;
+      default: {
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
+    }
+  }
+  else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
   return status;
 }
 
