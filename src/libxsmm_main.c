@@ -695,8 +695,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     static int counter = 0, once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
 #endif
-      unsigned long long s1 = libxsmm_timer_tick(), t1; /* warm-up */
-      const unsigned long long s0 = libxsmm_timer_tick(), t0 = libxsmm_timer_tick_rdtsc();
+      libxsmm_timer_tickint s1 = libxsmm_timer_tick_rtc(), t1 = libxsmm_timer_tick(); /* warm-up */
+      const libxsmm_timer_tickint s0 = libxsmm_timer_tick_rtc(), t0 = libxsmm_timer_tick();
 #if (0 != LIBXSMM_SYNC)
       const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
       LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK) attr_global;
@@ -731,7 +731,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGNLOCK, &attr);
 # endif
 #endif
-      s1 = libxsmm_timer_tick(); t1 = libxsmm_timer_tick_rdtsc(); /* final timings */
+      s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick(); /* final timings */
       if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && s0 != s1 && t0 != t1) {
         libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / (t0 < t1 ? (t1 - t0) : (t0 - t1));
       }
