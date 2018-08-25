@@ -1049,6 +1049,8 @@ else # GCC assumed
       ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION)))"))
         OMPFLAG = -fopenmp
       endif
+    else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 90000<=$(CC_VERSION)))"))
+      OMPFLAG = -fopenmp
     endif
   endif
   ifeq (,$(OMPFLAG))
