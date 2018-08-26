@@ -75,12 +75,10 @@ ifneq (,$(EIGENROOT))
   DFLAGS += -D__EIGEN
   IFLAGS += -I$(EIGENROOT)
   EIGEN ?= 1
-  ifneq (0,$(shell echo "$$((1 < $(EIGEN)))"))
-  ifneq (0,$(MKL))
+  ifneq (0,$(shell echo "$$((1 < $(EIGEN) && 0 != $(MKL)))"))
     DFLAGS += -DEIGEN_USE_MKL_ALL
   endif
-  endif
-  ifneq (0,$(shell echo "$$((2 <= $(BLAS) || 1 < $(EIGEN)))"))
+  ifneq (0,$(shell echo "$$((1 < $(BLAS) || 1 < $(EIGEN)))"))
     DFLAGS += -DEIGEN_USE_THREADS
   endif
   ifneq (,$(wildcard $(EIGENROOT)/unsupported/Eigen/CXX11/ThreadPool))
