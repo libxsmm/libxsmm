@@ -1048,9 +1048,8 @@ else # GCC assumed
     else ifneq (Darwin,$(UNAME))
       ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION)))"))
         OMPFLAG = -fopenmp
+        OMPRT = omp
       endif
-    else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 90000<=$(CC_VERSION)))"))
-      OMPFLAG = -fopenmp
     endif
   endif
   ifeq (,$(OMPFLAG))
@@ -1080,6 +1079,7 @@ else # GCC assumed
       CFLAGS += $(OMPFLAG)
       FCFLAGS += $(OMPFLAG)
       LDFLAGS += $(OMPFLAG)
+	  FLDFLAGS += -l$(OMPRT)
     endif
   endif
   endif
