@@ -57,7 +57,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)_smm $(OUTDIR)/$(OUTNAME)_blaze $(OUTDIR)/$(OUTNAME)_eigen
+XFILES := $(OUTDIR)/$(OUTNAME)_xsmm $(OUTDIR)/$(OUTNAME)_blaze $(OUTDIR)/$(OUTNAME)_eigen
 
 ifneq (0,$(BLAZE))
 ifeq (,$(strip $(BLAZEROOT)))
@@ -115,8 +115,8 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME)_smm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_smm-c.o $(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_smm-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/$(OUTNAME)_xsmm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(EXTDEP) $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 ifneq (,$(BLAZEROOT))
 $(OUTDIR)/$(OUTNAME)_blaze: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blaze-cpp.o

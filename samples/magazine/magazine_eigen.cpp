@@ -33,7 +33,7 @@
 #endif
 
 #if defined(__EIGEN)
-# include <bench/benchtimer.h>
+# include <bench/BenchTimer.h>
 # include <Eigen/Dense>
 #endif
 #include <memory>
