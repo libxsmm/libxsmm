@@ -672,7 +672,7 @@ ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
   ifneq (,$(strip $(LIBGFORTRAN)))
     FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
     LIB_FLD = $(LIB_LD)
-    FLD = $(LD)
+    #FLD = $(LD)
   endif
 endif
 
@@ -1076,7 +1076,12 @@ else # GCC assumed
       CLDFLAGS += $(OMPFLAG)=$(OMP)
     else #ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
       LIBOMPRT = $(call libpath,$(LD) $(SLDFLAGS),$(NULL),omp)
-      ifneq (,$(strip $(LIBOMPRT)))
+      ifeq (3,$(GCC))
+        CXXFLAGS += $(OMPFLAG)
+        CFLAGS += $(OMPFLAG)
+        FCFLAGS += $(OMPFLAG)
+        LDFLAGS += $(OMPFLAG)
+      else ifneq (,$(strip $(LIBOMPRT)))
         FLDFLAGS += $(call abslibpath,$(LIBOMPRT)) $(XLIB_BEGIN) $(call abslibfile,$(LIBOMPRT)) $(XLIB_END)
         CXXFLAGS += $(OMPFLAG)
         CFLAGS += $(OMPFLAG)
