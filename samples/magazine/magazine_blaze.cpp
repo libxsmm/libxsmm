@@ -28,15 +28,14 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
-#include <stdio.h>
-
-#if 0 /* process batch of A, B, and C in "random" order */
-# define SHUFFLE
+#if defined(__BLAZE) || 1
+# if !defined(BLAZE_USE_SHARED_MEMORY_PARALLELIZATION) /* Example uses outer parallelism hence Blaze-internal parallelism is disabled */
+#   define BLAZE_USE_SHARED_MEMORY_PARALLELIZATION 0
+# endif
+# include <blaze/Blaze.h>
 #endif
-#if 0 /* auto-dispatch SMM kernel */
-# define AUTO
-#endif
+#include <cstdlib>
+#include <cstdio>
 
 
 /**
@@ -49,90 +48,96 @@
  */
 int main(int argc, char* argv[])
 {
+  typedef double T;
+  typedef blaze::CustomMatrix<T,blaze::aligned,blaze::padded,blaze::rowMajor> matrix_type;
+  const size_t alignment = 64; /* must be power of two */
+
   /* batch-size is used to stream matrix-operands from memory */
-  const int batchsize = (1 < argc ? atoi(argv[1]) : 100000);
-#if defined(SHUFFLE)
-  const size_t shuffle = libxsmm_shuffle((unsigned int)batchsize);
-#endif
+  const int batchsize = (1 < argc ? atoi(argv[1]) : 1000000);
   /* default: M, N, and K are 13, 5, and 7 respectively */
   const int m = (2 < argc ? atoi(argv[2]) : 13);
   const int n = (3 < argc ? atoi(argv[3]) : 5);
   const int k = (4 < argc ? atoi(argv[4]) : 7);
-  /* leading dimensions are made multiples of the size of a cache-line */
-  const int lda = LIBXSMM_UP2(m * sizeof(double), LIBXSMM_CACHELINE) / sizeof(double);
-  const int ldb = LIBXSMM_UP2(k * sizeof(double), LIBXSMM_CACHELINE) / sizeof(double);
-  const int ldc = LIBXSMM_UP2(m * sizeof(double), LIBXSMM_CACHELINE) / sizeof(double);
+  /* trailing dimensions are used to each pad (row-major!) */
+  const int tda = ((k * sizeof(T) + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const int tdb = ((n * sizeof(T) + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const int tdc = ((n * sizeof(T) + alignment - 1) & ~(alignment - 1)) / sizeof(T);
   /* micro-kernels are limited to certain alpha- and beta-values */
+#if 0
   const char transa = 'n', transb = 'n';
-  const double alpha = 1, beta = 0;
-  /* allocate A, B, and C matrices (explicit alignment may be considered) */
-  const size_t na = lda * k, nb = ldb * n, nc = ldc * n;
-  double *const a = (double*)malloc(sizeof(double) * na * batchsize);
-  double *const b = (double*)malloc(sizeof(double) * nb * batchsize);
-  double *const c = (double*)malloc(sizeof(double) * nc * batchsize);
-  const double scale = 1.0 / batchsize;
-  libxsmm_timer_tickint start;
-  double duration;
-  int i;
-
-#if !defined(AUTO) /* explicitly dispatch a kernel according to parameters */
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
-  libxsmm_dmmfunction xmm = libxsmm_dmmdispatch(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, NULL);
 #endif
+  const T alpha = 1, beta = 0;
+  /* calculate matrix sizes incl. padded elements */
+  const size_t na = ((m * tda * sizeof(T) + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t nb = ((k * tdb * sizeof(T) + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t nc = ((m * tdc * sizeof(T) + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  size_t sa = sizeof(T) * na * batchsize + alignment - 1;
+  size_t sb = sizeof(T) * nb * batchsize + alignment - 1;
+  size_t sc = sizeof(T) * nc * batchsize + alignment - 1;
+  /* allocate A, B, and C matrix buffers */
+  void *const va = malloc(sa), *const vb = malloc(sb), *const vc = malloc(sc), *wa = va, *wb = vb, *wc = vc;
+  /* align memory according to alignment */
+  T *const pa = static_cast<T*>(std::align(alignment, sa - alignment + 1, wa, sa));
+  T *const pb = static_cast<T*>(std::align(alignment, sb - alignment + 1, wb, sb));
+  T *const pc = static_cast<T*>(std::align(alignment, sc - alignment + 1, wc, sc));
 
   /* initialize data according to touch-first policy */
 #if defined(_OPENMP)
-# pragma omp parallel for private(i)
+# pragma omp parallel for
 #endif
-  for (i = 0; i < batchsize; ++i) {
-#if defined(SHUFFLE)
-    const int j = (i * shuffle) % batchsize;
-#else
-    const int j = i;
-#endif
-    LIBXSMM_MATINIT(double, 25 + i, a + j * na, m, k, lda, scale);
-    LIBXSMM_MATINIT(double, 75 + i, b + j * nb, k, n, ldb, scale);
-    if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
-      LIBXSMM_MATINIT(double, 42 + i, c + j * nc, m, n, ldc, scale);
+  for (int i = 0; i < batchsize; ++i) {
+    matrix_type a(pa + i * na, m, k, tda);
+    for (int u = 0; u < m; ++u) {
+      for (int v = 0; v < k; ++v) {
+        a(u, v) = blaze::rand<T>();
+      }
+    }
+    matrix_type b(pb + i * nb, k, n, tdb);
+    for (int u = 0; u < k; ++u) {
+      for (int v = 0; v < n; ++v) {
+        b(u, v) = blaze::rand<T>();
+      }
+    }
+    matrix_type c(pc + i * nc, m, n, tdc);
+    for (int u = 0; u < m; ++u) {
+      for (int v = 0; v < n; ++v) {
+        c(u, v) = blaze::rand<T>();
+      }
     }
   }
 
+  blaze::timing::WcTimer timer;
 #if defined(_OPENMP)
 # pragma omp parallel
 #endif
   {
 #if !defined(_OPENMP)
-    start = libxsmm_timer_tick();
+    timer.start();
 #else /* OpenMP thread pool is already populated (parallel region) */
 #   pragma omp single
-    start = libxsmm_timer_tick();
-#   pragma omp for private(i)
+    timer.start();
+#   pragma omp for
 #endif
-    for (i = 0; i < batchsize; ++i) {
-#if defined(SHUFFLE)
-      const int j = (i * shuffle) % batchsize;
+    for (int i = 0; i < batchsize; ++i) {
+      const matrix_type a(pa + i * na, m, k, tda), b(pb + i * nb, k, n, tdb);
+      matrix_type c(pc + i * nc, m, n, tdc);
+#if 0 /* alpha=1 anyway */
+      c = alpha * a * b + beta * c;
 #else
-      const int j = i;
-#endif
-#if defined(AUTO)
-      libxsmm_dgemm(&transa, &transb, &m, &n, &k,
-        &alpha, a + j * na, &lda, b + j * nb, &ldb,
-         &beta, c + j * nc, &ldc);
-#else
-      xmm(a + j * na, b + j * nb, c + j * nc);
+      c = a * b + beta * c;
 #endif
     }
   }
-  duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
-  if (0 < duration) {
+  timer.end();
+  if (0 < timer.total()) {
     const double gflops = 2.0 * m * n * k * 1E-9;
-    printf("%.1f GFLOPS/s\n", gflops * batchsize / duration);
-    printf("%.1f ms\n", 1000.0 * duration);
+    printf("%.1f GFLOPS/s\n", gflops / timer.total() * batchsize);
   }
+  printf("%.1f ms\n", 1000.0 * timer.total());
 
-  free(a);
-  free(b);
-  free(c);
+  free(va);
+  free(vb);
+  free(vc);
 
   return EXIT_SUCCESS;
 }

@@ -57,16 +57,42 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/smm
+XFILES := $(OUTDIR)/$(OUTNAME)_smm $(OUTDIR)/$(OUTNAME)_blaze
 
+ifneq (0,$(BLAZE))
+ifeq (,$(strip $(BLAZEROOT)))
+  ifneq (,$(wildcard $(DEPDIR)/../blaze*/blaze/Blaze.h))
+    BLAZEROOT = $(wildcard $(DEPDIR)/../blaze*)
+  else ifneq (,$(wildcard $(HOME)/blaze*/blaze/Blaze.h))
+    BLAZEROOT = $(wildcard $(HOME)/blaze*)
+  endif
+endif
+endif
+
+ifneq (,$(BLAZEROOT))
+  DFLAGS += -D__BLAZE
+  IFLAGS += -I$(BLAZEROOT)
+  BLAZE ?= 1
+  DFLAGS += -DBLAZE_USE_SHARED_MEMORY_PARALLELIZATION=$(shell echo "$$(($(BLAZE)-1))")
+else
+  BLAZE := 0
+endif
+$(info DEBUG: $(BLAZE) $(BLAZEROOT))
 .PHONY: all
 all: $(XFILES)
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/smm: $(OUTDIR)/.make $(OBJECTS) $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/$(OUTNAME)_smm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_smm-c.o $(EXTDEP) $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_smm-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+ifneq (,$(BLAZEROOT))
+$(OUTDIR)/$(OUTNAME)_blaze: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blaze-cpp.o
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blaze-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+else
+.PHONY: $(OUTDIR)/$(OUTNAME)_blaze
+endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
