@@ -28,10 +28,12 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if defined(__BLAZE) || 1
+#if defined(__BLAZE)
 # if !defined(BLAZE_USE_SHARED_MEMORY_PARALLELIZATION) /* Example uses outer parallelism hence Blaze-internal parallelism is disabled */
 #   define BLAZE_USE_SHARED_MEMORY_PARALLELIZATION 0
 # endif
+# define _mm512_setzero_epi16 _mm512_setzero_si512
+# define _mm512_setzero_epi8  _mm512_setzero_si512
 # include <blaze/Blaze.h>
 #endif
 #include <cstdlib>
@@ -124,6 +126,7 @@ int main(int argc, char* argv[])
 #if 0 /* alpha=1 anyway */
       c = alpha * a * b + beta * c;
 #else
+      (void)alpha; /* unused */
       c = a * b + beta * c;
 #endif
     }

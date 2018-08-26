@@ -77,7 +77,7 @@ ifneq (,$(BLAZEROOT))
 else
   BLAZE := 0
 endif
-$(info DEBUG: $(BLAZE) $(BLAZEROOT))
+
 .PHONY: all
 all: $(XFILES)
 
