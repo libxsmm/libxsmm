@@ -28,18 +28,13 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(__BLAZE)
-# define __BLAZE
+#if !defined(__EIGEN)
+# define __EIGEN
 #endif
 
-#if defined(__BLAZE)
-# if !defined(BLAZE_USE_SHARED_MEMORY_PARALLELIZATION)
-/* Example uses outer parallelism hence Blaze-internal parallelism is disabled */
-#   define BLAZE_USE_SHARED_MEMORY_PARALLELIZATION 0
-# endif
-# define _mm512_setzero_epi16 _mm512_setzero_si512
-# define _mm512_setzero_epi8  _mm512_setzero_si512
-# include <blaze/Blaze.h>
+#if defined(__EIGEN)
+# include <bench/benchtimer.h>
+# include <Eigen/Dense>
 #endif
 #include <memory>
 #include <cstdlib>
@@ -72,9 +67,10 @@ template<typename T> void init(int seed, T* dst, int nrows, int ncols, int ld, d
  */
 int main(int argc, char* argv[])
 {
-#if defined(__BLAZE)
+#if defined(__EIGEN)
   typedef double T;
-  typedef blaze::CustomMatrix<T,blaze::aligned,blaze::padded,blaze::rowMajor> matrix_type;
+  typedef Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> matrix_type;
+  typedef Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic> stride_type;
   const size_t alignment = 64; /* must be power of two */
 
   /* batch-size is used to stream matrix-operands from memory */
@@ -84,17 +80,17 @@ int main(int argc, char* argv[])
   const int n = (3 < argc ? atoi(argv[3]) : 5);
   const int k = (4 < argc ? atoi(argv[4]) : 7);
   /* trailing dimensions are used to each pad (row-major!) */
-  const int tda = ((sizeof(T) * k + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const int tdb = ((sizeof(T) * n + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const int tdc = ((sizeof(T) * n + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const stride_type tda(((sizeof(T) * k + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
+  const stride_type tdb(((sizeof(T) * n + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
+  const stride_type tdc(((sizeof(T) * n + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
 #if 0
   const char transa = 'n', transb = 'n';
 #endif
   const T alpha = 1, beta = 0;
   /* calculate matrix sizes incl. padded elements */
-  const size_t na = ((sizeof(T) * m * tda + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const size_t nb = ((sizeof(T) * k * tdb + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const size_t nc = ((sizeof(T) * m * tdc + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t na = ((sizeof(T) * m * tda.outer() + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t nb = ((sizeof(T) * k * tdb.outer() + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t nc = ((sizeof(T) * m * tdc.outer() + alignment - 1) & ~(alignment - 1)) / sizeof(T);
   size_t sa = sizeof(T) * na * batchsize + alignment - 1;
   size_t sb = sizeof(T) * nb * batchsize + alignment - 1;
   size_t sc = sizeof(T) * nc * batchsize + alignment - 1;
@@ -111,12 +107,12 @@ int main(int argc, char* argv[])
 # pragma omp parallel for
 #endif
   for (int i = 0; i < batchsize; ++i) {
-    init(25 + i, pa + i * na, m, k, tda, scale);
-    init(75 + i, pb + i * nb, k, n, tdb, scale);
-    init(42 + i, pc + i * nc, m, n, tdc, scale);
+    init(25 + i, pa + i * na, m, k, static_cast<int>(tda.outer()), scale);
+    init(75 + i, pb + i * nb, k, n, static_cast<int>(tdb.outer()), scale);
+    init(42 + i, pc + i * nc, m, n, static_cast<int>(tdc.outer()), scale);
   }
 
-  blaze::timing::WcTimer timer;
+  Eigen::BenchTimer timer;
 #if defined(_OPENMP)
 # pragma omp parallel
 #endif
@@ -129,8 +125,9 @@ int main(int argc, char* argv[])
 #   pragma omp for
 #endif
     for (int i = 0; i < batchsize; ++i) {
-      const matrix_type a(pa + i * na, m, k, tda), b(pb + i * nb, k, n, tdb);
-      matrix_type c(pc + i * nc, m, n, tdc);
+      const auto a = matrix_type::Map(pa + i * na, m, k, tda);
+      const auto b = matrix_type::Map(pb + i * nb, k, n, tdb);
+      auto c = matrix_type::Map(pc + i * nc, m, n, tdc);
 #if 0 /* alpha=1 anyway */
       c = alpha * a * b + beta * c;
 #else
@@ -139,7 +136,7 @@ int main(int argc, char* argv[])
 #endif
     }
   }
-  timer.end();
+  timer.stop();
 
   if (0 < timer.total()) {
     const double gflops = 2.0 * m * n * k * 1E-9;

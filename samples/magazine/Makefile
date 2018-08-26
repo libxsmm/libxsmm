@@ -57,7 +57,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)_smm $(OUTDIR)/$(OUTNAME)_blaze
+XFILES := $(OUTDIR)/$(OUTNAME)_smm $(OUTDIR)/$(OUTNAME)_blaze $(OUTDIR)/$(OUTNAME)_eigen
 
 ifneq (0,$(BLAZE))
 ifeq (,$(strip $(BLAZEROOT)))
@@ -78,6 +78,37 @@ else
   BLAZE := 0
 endif
 
+ifneq (0,$(EIGEN))
+ifeq (,$(strip $(EIGENROOT)))
+  ifneq (,$(wildcard $(DEPDIR)/../eigen*/Eigen/Dense))
+    EIGENROOT = $(wildcard $(DEPDIR)/../eigen*)
+  else ifneq (,$(wildcard $(HOME)/eigen*/Eigen/Dense))
+    EIGENROOT = $(wildcard $(HOME)/eigen*)
+  else ifneq (,$(wildcard /usr/include/eigen3/Eigen/Dense))
+    EIGENROOT = /usr/include/eigen3
+  endif
+endif
+endif
+
+ifneq (,$(EIGENROOT))
+  DFLAGS += -D__EIGEN
+  IFLAGS += -I$(EIGENROOT)
+  EIGEN ?= 1
+  ifneq (0,$(shell echo "$$((1 < $(EIGEN)))"))
+  ifneq (0,$(MKL))
+    DFLAGS += -DEIGEN_USE_MKL_ALL
+  endif
+  endif
+  ifneq (0,$(shell echo "$$((2 <= $(BLAS) || 1 < $(EIGEN)))"))
+    DFLAGS += -DEIGEN_USE_THREADS
+  endif
+  ifneq (,$(wildcard $(EIGENROOT)/unsupported/Eigen/CXX11/ThreadPool))
+    DFLAGS += -D__EIGEN_UNSUPPORTED
+  endif
+else
+  EIGEN := 0
+endif
+
 .PHONY: all
 all: $(XFILES)
 
@@ -92,6 +123,13 @@ $(OUTDIR)/$(OUTNAME)_blaze: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blaze-cpp.o
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blaze-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 else
 .PHONY: $(OUTDIR)/$(OUTNAME)_blaze
+endif
+
+ifneq (,$(EIGENROOT))
+$(OUTDIR)/$(OUTNAME)_eigen: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_eigen-cpp.o
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_eigen-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+else
+.PHONY: $(OUTDIR)/$(OUTNAME)_eigen
 endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
