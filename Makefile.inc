@@ -1074,12 +1074,15 @@ else # GCC assumed
       # omit passing special OMP into Fortran compiler
       FCFLAGS += $(OMPFLAG)
       CLDFLAGS += $(OMPFLAG)=$(OMP)
-    else ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
-      CXXFLAGS += $(OMPFLAG)
-      CFLAGS += $(OMPFLAG)
-      FCFLAGS += $(OMPFLAG)
-      LDFLAGS += $(OMPFLAG)
-	  FLDFLAGS += -l$(OMPRT)
+    else #ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
+      LIBOMPRT = $(call libpath,$(LD) $(SLDFLAGS),$(NULL),omp)
+      ifneq (,$(strip $(LIBOMPRT)))
+        FLDFLAGS += $(call abslibpath,$(LIBOMPRT)) $(XLIB_BEGIN) $(call abslibfile,$(LIBOMPRT)) $(XLIB_END)
+        CXXFLAGS += $(OMPFLAG)
+        CFLAGS += $(OMPFLAG)
+        FCFLAGS += $(OMPFLAG)
+        LDFLAGS += $(OMPFLAG)
+      endif
     endif
   endif
   endif
