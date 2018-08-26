@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#if !defined(__BLAZE)
+#if !defined(__BLAZE) && 0
 # define __BLAZE
 #endif
 
@@ -133,9 +133,13 @@ int main(int argc, char* argv[])
       matrix_type c(pc + i * nc, m, n, tdc);
 #if 0 /* alpha=1 anyway */
       c = alpha * a * b + beta * c;
-#else
+#elif 0
       (void)alpha; /* unused */
       c = a * b + beta * c;
+#else /* beta=0 */
+      (void)alpha; /* unused */
+      (void)beta; /* unused */
+      c = a * b;
 #endif
     }
   }
