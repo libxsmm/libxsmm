@@ -28,6 +28,10 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#if !defined(__BLAZE) && 0
+# define __BLAZE
+#endif
+
 #if defined(__BLAZE)
 # if !defined(BLAZE_USE_SHARED_MEMORY_PARALLELIZATION) /* Example uses outer parallelism hence Blaze-internal parallelism is disabled */
 #   define BLAZE_USE_SHARED_MEMORY_PARALLELIZATION 0
@@ -50,6 +54,7 @@
  */
 int main(int argc, char* argv[])
 {
+#if defined(__BLAZE)
   typedef double T;
   typedef blaze::CustomMatrix<T,blaze::aligned,blaze::padded,blaze::rowMajor> matrix_type;
   const size_t alignment = 64; /* must be power of two */
@@ -132,6 +137,7 @@ int main(int argc, char* argv[])
     }
   }
   timer.end();
+
   if (0 < timer.total()) {
     const double gflops = 2.0 * m * n * k * 1E-9;
     printf("%.1f GFLOPS/s\n", gflops / timer.total() * batchsize);
@@ -141,7 +147,11 @@ int main(int argc, char* argv[])
   free(va);
   free(vb);
   free(vc);
-
   return EXIT_SUCCESS;
+#else
+  (void)argc; /* unused */
+  (void)argv; /* unused */
+  return EXIT_FAILURE;
+#endif
 }
 

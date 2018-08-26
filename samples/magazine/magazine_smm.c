@@ -130,6 +130,7 @@ int main(int argc, char* argv[])
     }
   }
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+
   if (0 < duration) {
     const double gflops = 2.0 * m * n * k * 1E-9;
     printf("%.1f GFLOPS/s\n", gflops / duration * batchsize);
