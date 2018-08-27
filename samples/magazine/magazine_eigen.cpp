@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
   const size_t alignment = 64; /* must be power of two */
 
   /* batch-size is used to stream matrix-operands from memory */
-  const int batchsize = (1 < argc ? atoi(argv[1]) : 1000000);
+  const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
   /* default: M, N, and K are 13, 5, and 7 respectively */
   const int m = (2 < argc ? atoi(argv[2]) : 13);
   const int n = (3 < argc ? atoi(argv[3]) : 5);
@@ -91,22 +91,24 @@ int main(int argc, char* argv[])
   const size_t na = ((sizeof(T) * m * tda.outer() + alignment - 1) & ~(alignment - 1)) / sizeof(T);
   const size_t nb = ((sizeof(T) * k * tdb.outer() + alignment - 1) & ~(alignment - 1)) / sizeof(T);
   const size_t nc = ((sizeof(T) * m * tdc.outer() + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  size_t sa = sizeof(T) * na * batchsize + alignment - 1;
-  size_t sb = sizeof(T) * nb * batchsize + alignment - 1;
-  size_t sc = sizeof(T) * nc * batchsize + alignment - 1;
+  /* calculate default batch-size to hit work-set size of approx. 2 GB */
+  const int size = (0 >= batchsize ? static_cast<int>((2ULL << 30/*2 GB*/) / (sizeof(T) * (na + nb + nc))) : batchsize);
+  size_t sa = sizeof(T) * na * size + alignment - 1;
+  size_t sb = sizeof(T) * nb * size + alignment - 1;
+  size_t sc = sizeof(T) * nc * size + alignment - 1;
   /* allocate A, B, and C matrix buffers */
   void *const va = malloc(sa), *const vb = malloc(sb), *const vc = malloc(sc), *wa = va, *wb = vb, *wc = vc;
   /* align memory according to alignment */
   T *const pa = static_cast<T*>(std::align(alignment, sa - alignment + 1, wa, sa));
   T *const pb = static_cast<T*>(std::align(alignment, sb - alignment + 1, wb, sb));
   T *const pc = static_cast<T*>(std::align(alignment, sc - alignment + 1, wc, sc));
-  const double scale = 1.0 / batchsize;
+  const double scale = 1.0 / size;
 
   /* initialize data according to touch-first policy */
 #if defined(_OPENMP)
 # pragma omp parallel for
 #endif
-  for (int i = 0; i < batchsize; ++i) {
+  for (int i = 0; i < size; ++i) {
     init(25 + i, pa + i * na, m, k, static_cast<int>(tda.outer()), scale);
     init(75 + i, pb + i * nb, k, n, static_cast<int>(tdb.outer()), scale);
     init(42 + i, pc + i * nc, m, n, static_cast<int>(tdc.outer()), scale);
@@ -124,19 +126,19 @@ int main(int argc, char* argv[])
     timer.start();
 #   pragma omp for
 #endif
-    for (int i = 0; i < batchsize; ++i) {
+    for (int i = 0; i < size; ++i) {
       const auto a = matrix_type::Map(pa + i * na, m, k, tda);
       const auto b = matrix_type::Map(pb + i * nb, k, n, tdb);
       auto c = matrix_type::Map(pc + i * nc, m, n, tdc);
 #if 0 /* alpha=1 anyway */
-      c = alpha * a * b + beta * c;
-#elif 0
+      c.noalias() = alpha * a * b + beta * c;
+#elif 1
       (void)alpha; /* unused */
-      c = a * b + beta * c;
+      c.noalias() = a * b + beta * c;
 #else /* beta=0 */
       (void)alpha; /* unused */
       (void)beta; /* unused */
-      c = a * b;
+      c.noalias() = a * b;
 #endif
     }
   }
@@ -144,7 +146,7 @@ int main(int argc, char* argv[])
 
   if (0 < timer.total()) {
     const double gflops = 2.0 * m * n * k * 1E-9;
-    printf("%.1f GFLOPS/s\n", gflops / timer.total() * batchsize);
+    printf("%.1f GFLOPS/s\n", gflops / timer.total() * size);
   }
   printf("%.1f ms\n", 1000.0 * timer.total());
 
