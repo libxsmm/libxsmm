@@ -88,7 +88,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_barrier {
 LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per_core)
 {
   libxsmm_barrier *const barrier = (libxsmm_barrier*)malloc(sizeof(libxsmm_barrier));
-#if defined(LIBXSMM_NO_SYNC)
+#if (0 == LIBXSMM_SYNC)
   LIBXSMM_UNUSED(ncores); LIBXSMM_UNUSED(nthreads_per_core);
 #else
   if (NULL != barrier && 1 < ncores && 1 <= nthreads_per_core) {
@@ -114,7 +114,7 @@ LIBXSMM_API libxsmm_barrier* libxsmm_barrier_create(int ncores, int nthreads_per
 
 LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
 {
-#if defined(LIBXSMM_NO_SYNC)
+#if (0 == LIBXSMM_SYNC)
   LIBXSMM_UNUSED(barrier); LIBXSMM_UNUSED(tid);
 #else
   if (NULL != barrier && 1 < barrier->nthreads) {
@@ -200,7 +200,7 @@ LIBXSMM_API void libxsmm_barrier_init(libxsmm_barrier* barrier, int tid)
 LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
 void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
 {
-#if defined(LIBXSMM_NO_SYNC)
+#if (0 == LIBXSMM_SYNC)
   LIBXSMM_UNUSED(barrier); LIBXSMM_UNUSED(tid);
 #else
   if (NULL != barrier && 1 < barrier->nthreads) {
@@ -278,7 +278,7 @@ void libxsmm_barrier_wait(libxsmm_barrier* barrier, int tid)
 
 LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
   if (NULL != barrier && 1 < barrier->nthreads) {
     if (2 == barrier->init_done) {
       int i;
@@ -303,7 +303,7 @@ LIBXSMM_API void libxsmm_barrier_destroy(const libxsmm_barrier* barrier)
 }
 
 
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
 enum {
   INTERNAL_SYNC_LOCK_FREE = 0,
   INTERNAL_SYNC_LOCK_LOCKED = 1,
@@ -338,7 +338,7 @@ LIBXSMM_API libxsmm_spinlock* libxsmm_spinlock_create(void)
     LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK_SPINLOCK, &attr);
     LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_SPINLOCK, &result->impl, &attr);
     LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_SPINLOCK, &attr);
-#elif !defined(LIBXSMM_NO_SYNC)
+#elif (0 != LIBXSMM_SYNC)
     result->state = INTERNAL_SYNC_LOCK_FREE;
 #endif
   }
@@ -357,7 +357,7 @@ LIBXSMM_API void libxsmm_spinlock_destroy(const libxsmm_spinlock* spinlock)
 
 LIBXSMM_API int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   assert(0 != spinlock);
   return LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
@@ -379,7 +379,7 @@ LIBXSMM_API int libxsmm_spinlock_trylock(libxsmm_spinlock* spinlock)
 
 LIBXSMM_API void libxsmm_spinlock_acquire(libxsmm_spinlock* spinlock)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   assert(0 != spinlock);
   LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
@@ -400,7 +400,7 @@ LIBXSMM_API void libxsmm_spinlock_acquire(libxsmm_spinlock* spinlock)
 
 LIBXSMM_API void libxsmm_spinlock_release(libxsmm_spinlock* spinlock)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
   assert(0 != spinlock);
 # if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
@@ -440,7 +440,7 @@ LIBXSMM_API libxsmm_mutex* libxsmm_mutex_create(void)
     LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK_MUTEX, &attr);
     LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_MUTEX, &result->impl, &attr);
     LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_MUTEX, &attr);
-#elif !defined(LIBXSMM_NO_SYNC)
+#elif (0 != LIBXSMM_SYNC)
     result->state = INTERNAL_SYNC_LOCK_FREE;
 #endif
   }
@@ -459,7 +459,7 @@ LIBXSMM_API void libxsmm_mutex_destroy(const libxsmm_mutex* mutex)
 
 LIBXSMM_API int libxsmm_mutex_trylock(libxsmm_mutex* mutex)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
   assert(0 != mutex);
 # if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && defined(LIBXSMM_SYNC_SYSTEM)
   return LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_MUTEX, &mutex->impl);
@@ -475,7 +475,7 @@ LIBXSMM_API int libxsmm_mutex_trylock(libxsmm_mutex* mutex)
 
 LIBXSMM_API void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && defined(LIBXSMM_SYNC_SYSTEM)
   assert(0 != mutex);
   LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_MUTEX, &mutex->impl);
@@ -520,7 +520,7 @@ LIBXSMM_API void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
 
 LIBXSMM_API void libxsmm_mutex_release(libxsmm_mutex* mutex)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
   assert(0 != mutex);
 # if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_MUTEX, &mutex->impl);
@@ -541,7 +541,7 @@ LIBXSMM_API void libxsmm_mutex_release(libxsmm_mutex* mutex)
 }
 
 
-#if !defined(LIBXSMM_NO_SYNC) && !(defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM))
+#if (0 != LIBXSMM_SYNC) && !(defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM))
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
   struct {
     uint16_t writer;
@@ -553,7 +553,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_sync_counter {
 
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_rwlock {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_RWLOCK) impl;
 # else
@@ -570,7 +570,7 @@ LIBXSMM_API libxsmm_rwlock* libxsmm_rwlock_create(void)
 {
   libxsmm_rwlock *const result = (libxsmm_rwlock*)malloc(sizeof(libxsmm_rwlock));
   if (0 != result) {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
     LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK_RWLOCK) attr;
     LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_LOCK_RWLOCK, &attr);
@@ -597,7 +597,7 @@ LIBXSMM_API void libxsmm_rwlock_destroy(const libxsmm_rwlock* rwlock)
 }
 
 
-#if !defined(LIBXSMM_NO_SYNC) && !(defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM))
+#if (0 != LIBXSMM_SYNC) && !(defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM))
 LIBXSMM_API_INLINE int internal_rwlock_trylock(libxsmm_rwlock* rwlock, internal_sync_counter* prev)
 {
   internal_sync_counter next;
@@ -617,7 +617,7 @@ LIBXSMM_API_INLINE int internal_rwlock_trylock(libxsmm_rwlock* rwlock, internal_
 
 LIBXSMM_API int libxsmm_rwlock_trylock(libxsmm_rwlock* rwlock)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   assert(0 != rwlock);
   return LIBXSMM_LOCK_TRYLOCK(LIBXSMM_LOCK_RWLOCK, &rwlock->impl);
@@ -634,7 +634,7 @@ LIBXSMM_API int libxsmm_rwlock_trylock(libxsmm_rwlock* rwlock)
 
 LIBXSMM_API void libxsmm_rwlock_acquire(libxsmm_rwlock* rwlock)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   assert(0 != rwlock);
   LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_RWLOCK, &rwlock->impl);
@@ -653,7 +653,7 @@ LIBXSMM_API void libxsmm_rwlock_acquire(libxsmm_rwlock* rwlock)
 
 LIBXSMM_API void libxsmm_rwlock_release(libxsmm_rwlock* rwlock)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
   assert(0 != rwlock);
 # if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_RWLOCK, &rwlock->impl);
@@ -668,10 +668,10 @@ LIBXSMM_API void libxsmm_rwlock_release(libxsmm_rwlock* rwlock)
 }
 
 
-#if !defined(LIBXSMM_NO_SYNC) && !(defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM))
+#if (0 != LIBXSMM_SYNC) && !(defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM))
 LIBXSMM_API_INLINE int internal_rwlock_tryread(libxsmm_rwlock* rwlock, internal_sync_counter* prev)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
   assert(0 != rwlock && 0 != prev);
 # if defined(_WIN32)
   prev->bits = InterlockedExchangeAdd((volatile LONG*)&rwlock->requests.bits, INTERNAL_SYNC_RWLOCK_READINC);
@@ -691,7 +691,7 @@ LIBXSMM_API_INLINE int internal_rwlock_tryread(libxsmm_rwlock* rwlock, internal_
 
 LIBXSMM_API int libxsmm_rwlock_tryread(libxsmm_rwlock* rwlock)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   assert(0 != rwlock);
   return LIBXSMM_LOCK_TRYREAD(LIBXSMM_LOCK_RWLOCK, &rwlock->impl);
@@ -708,7 +708,7 @@ LIBXSMM_API int libxsmm_rwlock_tryread(libxsmm_rwlock* rwlock)
 
 LIBXSMM_API void libxsmm_rwlock_acqread(libxsmm_rwlock* rwlock)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   assert(0 != rwlock);
   LIBXSMM_LOCK_ACQREAD(LIBXSMM_LOCK_RWLOCK, &rwlock->impl);
@@ -727,7 +727,7 @@ LIBXSMM_API void libxsmm_rwlock_acqread(libxsmm_rwlock* rwlock)
 
 LIBXSMM_API void libxsmm_rwlock_relread(libxsmm_rwlock* rwlock)
 {
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
   assert(0 != rwlock);
 # if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && defined(LIBXSMM_SYNC_SYSTEM)
   LIBXSMM_LOCK_RELREAD(LIBXSMM_LOCK_RWLOCK, &rwlock->impl);

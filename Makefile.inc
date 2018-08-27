@@ -559,7 +559,7 @@ MINGW ?= 0
 #endif
 IMPEXT ?= $(LIBEXT)
 
-# Too many ICEs with Clang hence we want to know if we are on Clang
+# Too many ICEs with older Clang (need to know if Clang is used)
 ifeq (0,$(GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
 ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__clang__"; echo "$$?"))
@@ -672,7 +672,7 @@ ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
   ifneq (,$(strip $(LIBGFORTRAN)))
     FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
     LIB_FLD = $(LIB_LD)
-    FLD = $(LD)
+    #FLD = $(LD)
   endif
 endif
 
@@ -724,6 +724,11 @@ ifneq (0,$(INTEL))
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+  ifneq (0,$(shell echo "$$((170000<=$(CXX_VERSION)))"))
+    CXXFLAGS += -std=c++14
+  else ifneq (0,$(shell echo "$$((140000<=$(CXX_VERSION)))"))
+    CXXFLAGS += -std=c++11
+  endif
   CXXFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
   CFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
   ifeq (,$(strip $(GFC)))
@@ -912,7 +917,9 @@ else # GCC assumed
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   LDFLAGS += $(XLIB_BEGIN) -lm $(XLIB_END)
   ifeq (0,$(COMPATIBLE))
-    ifneq (0,$(shell echo "$$((40700<=$(GCC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((50000<=$(GCC_VERSION)))"))
+      CXXFLAGS += -std=c++14
+    else ifneq (0,$(shell echo "$$((40700<=$(GCC_VERSION)))"))
       CXXFLAGS += -std=c++11
     endif
     CXXFLAGS += -Wall -Wno-unused-function #-Wno-attributes
@@ -1038,6 +1045,11 @@ else # GCC assumed
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((1<=$(GCC)))"))
       OMPFLAG = -fopenmp
+    else ifneq (Darwin,$(UNAME))
+      ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION)))"))
+        OMPFLAG = -fopenmp
+        OMPRT = omp
+      endif
     endif
   endif
   ifeq (,$(OMPFLAG))
@@ -1062,11 +1074,20 @@ else # GCC assumed
       # omit passing special OMP into Fortran compiler
       FCFLAGS += $(OMPFLAG)
       CLDFLAGS += $(OMPFLAG)=$(OMP)
-    else ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
-      CXXFLAGS += $(OMPFLAG)
-      CFLAGS += $(OMPFLAG)
-      FCFLAGS += $(OMPFLAG)
-      LDFLAGS += $(OMPFLAG)
+    else #ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
+      LIBOMPRT = $(call libpath,$(LD) $(SLDFLAGS),$(NULL),omp)
+      ifeq (3,$(GCC))
+        CXXFLAGS += $(OMPFLAG)
+        CFLAGS += $(OMPFLAG)
+        FCFLAGS += $(OMPFLAG)
+        LDFLAGS += $(OMPFLAG)
+      else ifneq (,$(strip $(LIBOMPRT)))
+        FLDFLAGS += $(call abslibpath,$(LIBOMPRT)) $(XLIB_BEGIN) $(call abslibfile,$(LIBOMPRT)) $(XLIB_END)
+        CXXFLAGS += $(OMPFLAG)
+        CFLAGS += $(OMPFLAG)
+        FCFLAGS += $(OMPFLAG)
+        LDFLAGS += $(OMPFLAG)
+      endif
     endif
   endif
   endif
@@ -1309,22 +1330,20 @@ endif
 endif
 
 ifneq (0,$(THREADS))
-  ifeq (0,$(COMPATIBLE))
-    CXXFLAGS += -pthread
-    CFLAGS += -pthread
-    ifneq (0,$(shell echo "$$((0==$(INTEL) || 0!=$(DEPSTATIC)))"))
-      FLDFLAGS += -lpthread
-      ifneq (Windows_NT,$(UNAME))
-        ifneq (Darwin,$(UNAME))
-          CLDFLAGS += -pthread
-        else ifeq (0,$(CLANG))
-          CLDFLAGS += -pthread
-        endif
+ifeq (0,$(COMPATIBLE))
+  CXXFLAGS += -pthread
+  CFLAGS += -pthread
+  ifneq (0,$(shell echo "$$((0==$(INTEL) || 0!=$(DEPSTATIC)))"))
+    FLDFLAGS += -lpthread
+    ifneq (Windows_NT,$(UNAME))
+      ifneq (Darwin,$(UNAME))
+        CLDFLAGS += -pthread
+      else ifeq (0,$(CLANG))
+        CLDFLAGS += -pthread
       endif
     endif
   endif
-else
-  DFLAGS += -DLIBXSMM_NO_SYNC
+endif
 endif
 ifeq (0,$(VLA))
   DFLAGS += -DLIBXSMM_NO_VLA

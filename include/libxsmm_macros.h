@@ -523,7 +523,7 @@
 #else
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf(S, __VA_ARGS__); LIBXSMM_UNUSED(N)
 #endif
-#if defined(LIBXSMM_NO_SYNC)
+#if (0 == LIBXSMM_SYNC)
 # define LIBXSMM_FLOCK(FILE)
 # define LIBXSMM_FUNLOCK(FILE)
 #else
@@ -594,7 +594,7 @@
 # define inline LIBXSMM_INLINE_KEYWORD
 #endif
 
-#if !defined(LIBXSMM_NO_SYNC) && !defined(_REENTRANT)
+#if (0 != LIBXSMM_SYNC) && !defined(_REENTRANT)
 # define _REENTRANT
 #endif
 

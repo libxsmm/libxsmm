@@ -105,7 +105,7 @@ LIBXSMM_APIVAR(volatile LONG internal_trace_initialized);
 #else
 # define LIBXSMM_TRACE_MINDEPTH 4
 LIBXSMM_APIVAR(volatile int internal_trace_initialized);
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
 LIBXSMM_APIVAR(pthread_key_t internal_trace_key);
 #endif
 LIBXSMM_API_INLINE void internal_delete(void* value)
@@ -155,7 +155,7 @@ LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int
 # if defined(_WIN32) || defined(__CYGWIN__)
   SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
   result = (FALSE != SymInitialize(GetCurrentProcess(), NULL, TRUE) ? EXIT_SUCCESS : GetLastError());
-# elif !defined(LIBXSMM_NO_SYNC)
+# elif (0 != LIBXSMM_SYNC)
   result = pthread_key_create(&internal_trace_key, internal_delete);
 # endif
   if (EXIT_SUCCESS == result) {
@@ -188,7 +188,7 @@ LIBXSMM_API int libxsmm_trace_finalize(void)
     internal_trace_initialized = -1; /* disable */
 # if defined(_WIN32) || defined(__CYGWIN__)
     result = (FALSE != SymCleanup(GetCurrentProcess()) ? EXIT_SUCCESS : GetLastError());
-# elif !defined(LIBXSMM_NO_SYNC)
+# elif (0 != LIBXSMM_SYNC)
     result = pthread_key_delete(internal_trace_key);
 # endif
   }
@@ -301,7 +301,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
             if (threadid) *threadid = abs_tid - 1;
           }
 # else
-#   if defined(LIBXSMM_NO_SYNC)
+#   if (0 == LIBXSMM_SYNC)
           static char raw_c;
           char */*const*/ raw_value = &raw_c; /* const: avoid warning (below / constant control-flow) */
 #   else
@@ -352,7 +352,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                 ivalue[0] = fd; /* valid file descriptor for internal_delete */
 
                 if (
-#   if !defined(LIBXSMM_NO_SYNC)
+#   if (0 != LIBXSMM_SYNC)
                   0 == pthread_setspecific(internal_trace_key, buffer) &&
 #   endif
                      (sizeof(int) * 1) == read(fd, &check, sizeof(int))

@@ -55,7 +55,7 @@
 #endif
 
 
-LIBXSMM_API_INLINE libxsmm_timer_tickint internal_timer_tick(void)
+LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
 {
   libxsmm_timer_tickint result;
 #if defined(_WIN32)
@@ -75,32 +75,15 @@ LIBXSMM_API_INLINE libxsmm_timer_tickint internal_timer_tick(void)
 }
 
 
-LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
-libxsmm_timer_tickint libxsmm_timer_tick_rdtsc(void)
-{
-  libxsmm_timer_tickint result;
-#if defined(LIBXSMM_TIMER_RDTSC)
-  LIBXSMM_TIMER_RDTSC(result);
-#else
-  result = internal_timer_tick();
-#endif
-  return result;
-}
-
-
 LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC)
 libxsmm_timer_tickint libxsmm_timer_tick(void)
 {
   libxsmm_timer_tickint result;
 #if defined(LIBXSMM_TIMER_RDTSC)
-  if (0 < libxsmm_timer_scale) {
-    LIBXSMM_TIMER_RDTSC(result);
-  }
-  else
+  LIBXSMM_TIMER_RDTSC(result);
+#else
+  result = libxsmm_timer_tick_rtc();
 #endif
-  {
-    result = internal_timer_tick();
-  }
   return result;
 }
 

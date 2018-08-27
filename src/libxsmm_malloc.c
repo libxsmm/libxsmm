@@ -174,7 +174,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_malloc_pool_type {
     char *buffer, *head;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
     const void* site;
-# if !defined(LIBXSMM_NO_SYNC)
+# if (0 != LIBXSMM_SYNC)
     size_t tid;
 # endif
 #endif
@@ -1167,13 +1167,13 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size, size_t alignment, const ch
     const void *const site = internal_malloc_site(caller);
     const size_t align_size = (0 == alignment ? libxsmm_alignment(size, alignment) : alignment);
     const size_t alloc_size = size + align_size - 1;
-#if !defined(LIBXSMM_NO_SYNC)
+#if (0 != LIBXSMM_SYNC)
     const unsigned int tid = libxsmm_get_tid();
 #endif
     assert(sizeof(internal_malloc_pool_type) <= (LIBXSMM_CACHELINE));
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
     for (; pool != end; ++pool) { /* find exact matching pool */
-# if !defined(LIBXSMM_NO_SYNC)
+# if (0 != LIBXSMM_SYNC)
       if (site == pool->instance.site && (tid == pool->instance.tid
 #   if defined(LIBXSMM_MALLOC_NO_AFFINITY)
         || (LIBXSMM_MALLOC_NO_AFFINITY) == pool->instance.tid
@@ -1209,7 +1209,7 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size, size_t alignment, const ch
         pool->instance.minsize = minsize;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
         pool->instance.site = site;
-# if !defined(LIBXSMM_NO_SYNC)
+# if (0 != LIBXSMM_SYNC)
         pool->instance.tid = tid;
 # endif
 #endif
@@ -1340,7 +1340,7 @@ LIBXSMM_API void libxsmm_free(const void* memory)
 
           if (pool->instance.minsize < minsize) {
             pool->instance.buffer = pool->instance.head = NULL;
-# if !defined(LIBXSMM_NO_SYNC)
+# if (0 != LIBXSMM_SYNC)
 #   if !defined(NDEBUG) /* library code is expected to be mute */
             if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && libxsmm_get_tid() != pool->instance.tid) {
               static int error_once = 0;

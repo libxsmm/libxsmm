@@ -22,12 +22,12 @@ OUTDIR = .
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
-DFLAGS = -DLIBXSMM_GEMM_CONST
+DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
-BLAS = 1
-OMP = 1
+BLAS = 0
 SYM = 1
+OMP = 1
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
@@ -57,7 +57,26 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)_smm $(OUTDIR)/$(OUTNAME)_tensor
+XFILES := $(OUTDIR)/$(OUTNAME)_xsmm $(OUTDIR)/$(OUTNAME)_blaze $(OUTDIR)/$(OUTNAME)_eigen
+
+ifneq (0,$(BLAZE))
+ifeq (,$(strip $(BLAZEROOT)))
+  ifneq (,$(wildcard $(DEPDIR)/../blaze*/blaze/Blaze.h))
+    BLAZEROOT = $(wildcard $(DEPDIR)/../blaze*)
+  else ifneq (,$(wildcard $(HOME)/blaze*/blaze/Blaze.h))
+    BLAZEROOT = $(wildcard $(HOME)/blaze*)
+  endif
+endif
+endif
+
+ifneq (,$(BLAZEROOT))
+  DFLAGS += -D__BLAZE
+  IFLAGS += -I$(BLAZEROOT)
+  BLAZE ?= 1
+  DFLAGS += -DBLAZE_USE_SHARED_MEMORY_PARALLELIZATION=$(shell echo "$$(($(BLAZE)-1))")
+else
+  BLAZE := 0
+endif
 
 ifneq (0,$(EIGEN))
 ifeq (,$(strip $(EIGENROOT)))
@@ -94,13 +113,22 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-# no need to link against any of LIBXSMM's libraries since the sample code uses header-only LIBXSMM
-$(OUTDIR)/$(OUTNAME)_smm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_smm-cpp.o #$(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_smm-cpp.o $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/$(OUTNAME)_xsmm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(EXTDEP) $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-# no need to link against any of LIBXSMM's libraries since the sample code uses header-only LIBXSMM
-$(OUTDIR)/$(OUTNAME)_tensor: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_tensor-cpp.o #$(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_tensor-cpp.o $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+ifneq (,$(BLAZEROOT))
+$(OUTDIR)/$(OUTNAME)_blaze: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blaze-cpp.o
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blaze-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+else
+.PHONY: $(OUTDIR)/$(OUTNAME)_blaze
+endif
+
+ifneq (,$(EIGENROOT))
+$(OUTDIR)/$(OUTNAME)_eigen: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_eigen-cpp.o
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_eigen-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+else
+.PHONY: $(OUTDIR)/$(OUTNAME)_eigen
+endif
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
