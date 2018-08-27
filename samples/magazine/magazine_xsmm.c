@@ -43,8 +43,8 @@
 
 
 /**
- * Example program that multiplies matrices independently (C = A * B).
- * A and B-matrices are not accumulated into a single C matrix.
+ * Example program that multiplies matrices independently (C += A * B).
+ * A and B-matrices are accumulated into a single C matrix (beta=1).
  * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
  * However, running a kernel without loading any matrix operand from
  * memory ("cache-hot loop") is not modeling typical applications
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
   const int ldc = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
   /* micro-kernels are limited to certain alpha- and beta-values */
   const char transa = 'n', transb = 'n';
-  const TYPE alpha = 1, beta = 0;
+  const TYPE alpha = 1, beta = 1;
   /* calculate matrix sizes incl. padded elements */
   const size_t na = LIBXSMM_UP2(sizeof(TYPE) * lda * k, LIBXSMM_CACHELINE) / sizeof(TYPE);
   const size_t nb = LIBXSMM_UP2(sizeof(TYPE) * ldb * n, LIBXSMM_CACHELINE) / sizeof(TYPE);

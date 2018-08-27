@@ -58,8 +58,8 @@ template<typename T> void init(int seed, T* dst, int nrows, int ncols, int ld, d
 
 
 /**
- * Example program that multiplies matrices independently (C = A * B).
- * A and B-matrices are not accumulated into a single C matrix.
+ * Example program that multiplies matrices independently (C += A * B).
+ * A and B-matrices are accumulated into a single C matrix (beta=1).
  * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
  * However, running a kernel without loading any matrix operand from
  * memory ("cache-hot loop") is not modeling typical applications
@@ -86,7 +86,7 @@ int main(int argc, char* argv[])
 #if 0
   const char transa = 'n', transb = 'n';
 #endif
-  const T alpha = 1, beta = 0;
+  const T alpha = 1, beta = 1;
   /* calculate matrix sizes incl. padded elements */
   const size_t na = ((sizeof(T) * lda.outer() * k + alignment - 1) & ~(alignment - 1)) / sizeof(T);
   const size_t nb = ((sizeof(T) * ldb.outer() * n + alignment - 1) & ~(alignment - 1)) / sizeof(T);
@@ -130,15 +130,31 @@ int main(int argc, char* argv[])
       const auto a = matrix_type::Map(pa + i * na, m, k, lda);
       const auto b = matrix_type::Map(pb + i * nb, k, n, ldb);
       auto c = matrix_type::Map(pc + i * nc, m, n, ldc);
+      /**
+       * Expression templates attempt to delay evaluation until the sequence point
+       * is reached, or an "expression object" goes out of scope and hence must
+       * materialize the effect. Ideally, a complex expression is mapped to the
+       * best possible implementation e.g., c = alpha * a * b + beta * c may be
+       * mapped to GEMM or definitely omits alpha*a in case of alpha=1, or similar
+       * for special cases for beta=0 and beta=1. However, to not rely on an ideal
+       * transformation a *manually specialized* expression is written for e.g.,
+       * alpha=1 and beta=1 (c += a * b) or tweaked manually ("noalias").
+       * NOTE: changing alpha or beta from above may not have an effect
+       *       depending on what is selected below (expression).
+       */
 #if 0 /* alpha=1 anyway */
       c.noalias() = alpha * a * b + beta * c;
-#elif 1
+#elif 0
       (void)alpha; /* unused */
       c.noalias() = a * b + beta * c;
-#else /* beta=0 */
+#elif 0 /* beta=0 */
       (void)alpha; /* unused */
       (void)beta; /* unused */
       c.noalias() = a * b;
+#else /* beta=1 */
+      (void)alpha; /* unused */
+      (void)beta; /* unused */
+      c.noalias() += a * b;
 #endif
     }
   }
