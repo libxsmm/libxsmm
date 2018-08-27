@@ -43,9 +43,9 @@
 
 template<typename T> void init(int seed, T* dst, int nrows, int ncols, int ld, double scale) {
   const double seed1 = scale * (seed + 1);
-  for (int i = 0; i < nrows; ++i) {
+  for (int i = 0; i < ncols; ++i) {
     int j = 0;
-    for (; j < ncols; ++j) {
+    for (; j < nrows; ++j) {
       const int k = i * ld + j;
       dst[k] = static_cast<T>(seed1 / (k + 1));
     }
@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
 {
 #if defined(__EIGEN)
   typedef double T;
-  typedef Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic,Eigen::RowMajor> matrix_type;
+  typedef Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> matrix_type;
   typedef Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic> stride_type;
   const size_t alignment = 64; /* must be power of two */
 
@@ -79,18 +79,18 @@ int main(int argc, char* argv[])
   const int m = (2 < argc ? atoi(argv[2]) : 13);
   const int n = (3 < argc ? atoi(argv[3]) : 5);
   const int k = (4 < argc ? atoi(argv[4]) : 7);
-  /* trailing dimensions are used to each pad (row-major!) */
-  const stride_type tda(((sizeof(T) * k + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
-  const stride_type tdb(((sizeof(T) * n + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
-  const stride_type tdc(((sizeof(T) * n + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
+  /* leading dimensions are used to each pad (row-major!) */
+  const stride_type lda(((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
+  const stride_type ldb(((sizeof(T) * k + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
+  const stride_type ldc(((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
 #if 0
   const char transa = 'n', transb = 'n';
 #endif
   const T alpha = 1, beta = 0;
   /* calculate matrix sizes incl. padded elements */
-  const size_t na = ((sizeof(T) * m * tda.outer() + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const size_t nb = ((sizeof(T) * k * tdb.outer() + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const size_t nc = ((sizeof(T) * m * tdc.outer() + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t na = ((sizeof(T) * lda.outer() * k + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t nb = ((sizeof(T) * ldb.outer() * n + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t nc = ((sizeof(T) * ldc.outer() * n + alignment - 1) & ~(alignment - 1)) / sizeof(T);
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? static_cast<int>((2ULL << 30/*2 GB*/) / (sizeof(T) * (na + nb + nc))) : batchsize);
   size_t sa = sizeof(T) * na * size + alignment - 1;
@@ -109,9 +109,9 @@ int main(int argc, char* argv[])
 # pragma omp parallel for
 #endif
   for (int i = 0; i < size; ++i) {
-    init(25 + i, pa + i * na, m, k, static_cast<int>(tda.outer()), scale);
-    init(75 + i, pb + i * nb, k, n, static_cast<int>(tdb.outer()), scale);
-    init(42 + i, pc + i * nc, m, n, static_cast<int>(tdc.outer()), scale);
+    init(25 + i, pa + i * na, m, k, static_cast<int>(lda.outer()), scale);
+    init(75 + i, pb + i * nb, k, n, static_cast<int>(ldb.outer()), scale);
+    init(42 + i, pc + i * nc, m, n, static_cast<int>(ldc.outer()), scale);
   }
 
   Eigen::BenchTimer timer;
@@ -127,9 +127,9 @@ int main(int argc, char* argv[])
 #   pragma omp for
 #endif
     for (int i = 0; i < size; ++i) {
-      const auto a = matrix_type::Map(pa + i * na, m, k, tda);
-      const auto b = matrix_type::Map(pb + i * nb, k, n, tdb);
-      auto c = matrix_type::Map(pc + i * nc, m, n, tdc);
+      const auto a = matrix_type::Map(pa + i * na, m, k, lda);
+      const auto b = matrix_type::Map(pb + i * nb, k, n, ldb);
+      auto c = matrix_type::Map(pc + i * nc, m, n, ldc);
 #if 0 /* alpha=1 anyway */
       c.noalias() = alpha * a * b + beta * c;
 #elif 1
