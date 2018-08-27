@@ -824,7 +824,7 @@
     <ClCompile Include="..\src\libxsmm_dnn_fusedbatchnorm_forward.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_fwd_custom.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_fwd_custom_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
   </ItemGroup>
