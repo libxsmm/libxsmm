@@ -11,10 +11,15 @@ KIND = system("sh -c \"echo ${KIND}\"")
 if (KIND eq "") {
   KIND = "xsmm"
 }
+FILEEXT = system("sh -c \"echo ${FILEEXT}\"")
+if (FILEEXT eq "") {
+  FILEEXT = "pdf"
+}
 
 BASENAME = "benchmark"
 FILEINP = BASENAME."-".KIND.".txt"
-FILEOUT = BASENAME."-".KIND.".pdf"
+FILEOUT = BASENAME."-".KIND.".".FILEEXT
+
 FILECOUNT = 1 # initial file number
 # MULTI =-1: multiple files; no titles
 # MULTI = 0: multiple files with titles
@@ -69,7 +74,6 @@ if (MULTI==1) {
   set output FILEOUT
 }
 
-FILEEXT = system("sh -c \"echo ".FILEOUT." | sed 's/.\\+\\.\\(.\\+\\)/\\1/'\"")
 set terminal FILEEXT
 set termoption enhanced
 #set termoption font ",12"
@@ -78,7 +82,7 @@ set encoding utf8
 
 
 reset
-if (MULTI<=0) { set output "".FILECOUNT."-".FILEOUT; FILECOUNT = FILECOUNT + 1 }
+if (MULTI<=0) { set output BASENAME."-".KIND."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance (Selected Kernels)" }
 set origin -0.03, 0
 set pm3d interpolate 0, 0
@@ -99,7 +103,7 @@ set format x "%g"; set format y "%g"; set format z "%g"; set format cb "%g"
 splot FILEINP using MPARM:NPARM:KPARM:FLOPS notitle with points pointtype 7 linetype palette
 
 reset
-if (MULTI<=0) { set output "".FILECOUNT."-".FILEOUT; FILECOUNT = FILECOUNT + 1 }
+if (MULTI<=0) { set output BASENAME."-".KIND."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance (K-Average for ".sprintf("%u Kernels", NSAMPLES).")" }
 set origin -0.02, 0
 set dgrid3d #9, 9
@@ -113,7 +117,7 @@ set mxtics 2
 splot BASENAME."-avg.dat" using (("".strcol(3)."" eq "i")?(I1($1, XN)):(1/0)):(("".strcol(3)."" eq "i")?(J1($1, XN)):(1/0)):2 notitle with pm3d
 
 reset
-if (MULTI<=0) { set output "".FILECOUNT."-".FILEOUT; FILECOUNT = FILECOUNT + 1 }
+if (MULTI<=0) { set output BASENAME."-".KIND."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance (Average per Bin)" }
 set style fill solid 0.4 noborder
 set boxwidth 0.5
@@ -144,7 +148,7 @@ plot FILEINP \
   ""  using (2.0):(BIN3_FLOPS) notitle smooth unique with boxes linetype 1 linecolor "grey"
 
 reset
-if (MULTI<=0) { set output "".FILECOUNT."-".FILEOUT; FILECOUNT = FILECOUNT + 1 }
+if (MULTI<=0) { set output BASENAME."-".KIND."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Cummulative Performance Distribution (CDF for ".sprintf("%u Kernels", NSAMPLES).")" }
 set xlabel "Probability\n\n{/=9 Min.: ".sprintf(FORMAT(MINFLOPS), MINFLOPS)." GFLOP/s   Geo.: ".sprintf(FORMAT(GEOFLOPS), GEOFLOPS)." GFLOP/s   Med.: ".sprintf(FORMAT(MEDFLOPS), MEDFLOPS)." GFLOP/s   Avg.: ".sprintf(FORMAT(AVGFLOPS), AVGFLOPS)." GFLOP/s   Max.: ".sprintf(FORMAT(MAXFLOPS), MAXFLOPS)." GFLOP/s}"
 set ylabel "GB/s"
@@ -175,7 +179,7 @@ plot BASENAME."-mbw.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0))
      BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 axes x1y2 title "Compute Performance" with lines linewidth 2
 
 reset
-if (MULTI<=0) { set output "".FILECOUNT."-".FILEOUT; FILECOUNT = FILECOUNT + 1 }
+if (MULTI<=0) { set output BASENAME."-".KIND."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Arithmetic Intensity (".sprintf("%u Kernels", NSAMPLES).")" }
 set grid x y2 linecolor "grey"
 set key left #spacing 0.5
@@ -190,7 +194,7 @@ plot FILEINP using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth sbezier with l
           "" using (AI(MPARM,NPARM,KPARM,8)):FLOPS notitle smooth unique with points pointtype 7 pointsize 0.1
 
 reset
-if (MULTI<=0) { set output "".FILECOUNT."-".FILEOUT; FILECOUNT = FILECOUNT + 1 }
+if (MULTI<=0) { set output BASENAME."-".KIND."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Memory Bandwidth Consumption (".sprintf("%u Kernels", NSAMPLES).")" }
 set grid x y2 linecolor "grey"
 set key left #spacing 0.5
@@ -204,7 +208,7 @@ plot FILEINP using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(
           "" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):(BW(MPARM,NPARM,KPARM,FLOPS,8)) notitle with points pointtype 7 pointsize 0.1
 
 reset
-if (MULTI<=0) { set output "".FILECOUNT."-".FILEOUT; FILECOUNT = FILECOUNT + 1 }
+if (MULTI<=0) { set output BASENAME."-".KIND."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Compute Consumption (".sprintf("%u Kernels", NSAMPLES).")" }
 set grid x y2 linecolor "grey"
 set key left #spacing 0.5
@@ -219,7 +223,7 @@ plot FILEINP using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):FLOP
 
 if (0!=system("sh -c \"if [ -e ".BASENAME."-".KIND.".join ]; then echo 1; else echo 0; fi\"")) {
   reset
-  if (MULTI<=0) { set output "".FILECOUNT."-".FILEOUT; FILECOUNT = FILECOUNT + 1 }
+  if (MULTI<=0) { set output BASENAME."-".KIND."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
   if (MULTI>-1) { set title "Performance (Selected Kernels)" }
   set style fill solid 0.4 border -1
   set style data histograms

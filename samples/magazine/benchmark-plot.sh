@@ -31,6 +31,7 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
+FIND=$(which find)
 SORT=$(which sort)
 JOIN=$(which join)
 CUT=$(which cut)
@@ -43,6 +44,12 @@ if [ "" = "$1" ]; then
   KIND=xsmm
 else
   KIND=$1
+  shift
+fi
+if [ "" = "$1" ]; then
+  FILEEXT=pdf
+else
+  FILEEXT=$1
   shift
 fi
 if [ "" = "$1" ]; then
@@ -82,6 +89,11 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
       -b -n -k1 -k2 -k3 \
     > benchmark-${KIND}.join
   fi
-  env GDFONTPATH=/cygdrive/c/Windows/Fonts KIND=${KIND} MULTI=${MULTI} "${WGNUPLOT}" ${HERE}/benchmark.plt
+  env GDFONTPATH=/cygdrive/c/Windows/Fonts \
+    FILEEXT=${FILEEXT} KIND=${KIND} MULTI=${MULTI} \
+    "${WGNUPLOT}" ${HERE}/benchmark.plt
+  if [ "1" != "${MULTI}" ] && [ "pdf" != "${FILEEXT}" ] && [ "" != "$(which mogrify 2>/dev/null)" ]; then
+    ${FIND} . -name "benchmark*.${FILEEXT}" -type f -exec mogrify -trim -transparent-color white {} \;
+  fi
 fi
 
