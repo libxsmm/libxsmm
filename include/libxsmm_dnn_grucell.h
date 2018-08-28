@@ -99,6 +99,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_grucell {
   libxsmm_dnn_tensor* r;
   libxsmm_dnn_tensor* z;
   libxsmm_dnn_tensor* g;
+  libxsmm_dnn_tensor* d3;
   libxsmm_dnn_tensor* d4;
   libxsmm_dnn_tensor* d5;
   libxsmm_dnn_tensor* d6;
@@ -122,6 +123,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_grucell {
   libxsmm_dnn_tensor* d10M;
   libxsmm_dnn_tensor* d11M;
   libxsmm_dnn_tensor* d18M;
+  libxsmm_dnn_tensor* hrTp;
   libxsmm_dnn_tensor* djdwr;
   libxsmm_dnn_tensor* djdwz;
   libxsmm_dnn_tensor* djdwg;
@@ -158,6 +160,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_assign_internalstate(libxsmm_d
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_tensor(libxsmm_dnn_grucell* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type);
 LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_grucell_get_tensor(libxsmm_dnn_grucell* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_release_tensor(libxsmm_dnn_grucell* handle, const libxsmm_dnn_tensor_type type);
+
+LIBXSMM_API void libxsmm_dnn_grucell_matrix_transpose_b(libxsmm_dnn_grucell* gru, void* src, void* dst, int start_thread, int tid, int nthreads);
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_fwd(libxsmm_dnn_grucell* gru, int start_thread, int tid);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bwd_upd_bu(libxsmm_dnn_grucell* gru, int start_thread, int tid, int pass);

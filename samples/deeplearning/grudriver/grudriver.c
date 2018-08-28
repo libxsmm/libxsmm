@@ -48,12 +48,23 @@
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
 
+LIBXSMM_INLINE void init_buf(float* buf, size_t size) {
+  int i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < size; ++i) {
+    buf[i] = 0.01f;
+  }
+}
+
+
 LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
   int i;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
-  for (i = 0; i < (int)size; ++i) {
+  for (i = 0; i < size; ++i) {
     buf[i] = 0.0f;
   }
 }
@@ -199,7 +210,7 @@ LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
 }
 
 
-void matrix_complement_square(int size, float *src, float *dst)
+LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
 {
   int i;
 #if defined(_OPENMP)
@@ -211,7 +222,7 @@ void matrix_complement_square(int size, float *src, float *dst)
 }
 
 
-void matrix_inverse(int size, float *src, float *dst)
+LIBXSMM_INLINE void matrix_inverse(int size, float *src, float *dst)
 {
   int i;
 #if defined(_OPENMP)
@@ -254,7 +265,7 @@ int main(int argc, char* argv[])
   float *djdxgoldt = NULL, *djdwrgold = NULL, *djdwzgold = NULL, *djdwggold = NULL, *djdurgold = NULL, *djduzgold = NULL, *djduggold = NULL;
   float *djdbrgold = NULL, *djdbzgold = NULL, *djdbggold = NULL, *wrgoldTp = NULL, *wzgoldTp = NULL, *wggoldTp = NULL, *xgoldTp = NULL, *hgoldTp = NULL;
   float *urgoldTp = NULL, *uzgoldTp = NULL, *uggoldTp = NULL;
-  float *d4gold = NULL, *d5gold = NULL, *d6gold = NULL, *d7gold = NULL, *d8gold = NULL, *d9gold = NULL, *d10gold = NULL, *d11gold = NULL, *d12gold = NULL, *d13gold = NULL;
+  float *d3gold = NULL, *d4gold = NULL, *d5gold = NULL, *d6gold = NULL, *d7gold = NULL, *d8gold = NULL, *d9gold = NULL, *d10gold = NULL, *d11gold = NULL, *d12gold = NULL, *d13gold = NULL;
   float *d14gold = NULL, *d15gold = NULL, *d16gold = NULL, *d17gold = NULL, *d18gold = NULL, *d19gold = NULL, *d20gold = NULL, *d21gold = NULL, *d22gold = NULL, *d23gold = NULL;
   float *ht = NULL, *djdht = NULL, *djdxt = NULL, *djdwr = NULL, *djdwz = NULL, *djdwg = NULL, *djdur = NULL, *djduz = NULL, *djdug = NULL, *djdbr = NULL, *djdbz = NULL, *djdbg = NULL;
   float *djdxtestt = NULL, *djdwtest = NULL, *djdutest = NULL, *djdbtest = NULL, *djdwgold3 = NULL, *djdugold3 = NULL, *djdbgold3 = NULL;
@@ -270,7 +281,7 @@ int main(int argc, char* argv[])
   int m = 1024;     /* number of outputs */
   int n = 512;      /* size of mini-batch */
   int k = 256;      /* number of inputs */
-  int t = 5;        /* number of time steps (> 1) */
+  int t = 10;       /* number of time steps (> 1) */
   int reuse = 1;    /* reuse=1 for FWD overwrites the same memory
                      * for intermediate values during inference;
                      * reuse value is immaterial for BWD and UPD */
@@ -450,6 +461,10 @@ int main(int argc, char* argv[])
     wzgold = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
     wggold = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
     hgoldt = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
+    rgoldt = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
+    zgoldt = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
+    ggoldt = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
+    d3gold = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
     d4gold = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
     d5gold = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
     d6gold = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
@@ -470,7 +485,7 @@ int main(int argc, char* argv[])
     d21gold= (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
     d22gold= (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
     d23gold= (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
-    djdhgoldt = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * (t+1), 2097152);
+    djdhgoldt = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
     djdxgoldt = (float*)libxsmm_aligned_malloc(k * n * sizeof(float) * t, 2097152);
     djdurgold = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
     djduzgold = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
@@ -492,14 +507,14 @@ int main(int argc, char* argv[])
     ur = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
     uz = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
     ug = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    xt = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
+    xt = (float*)libxsmm_aligned_malloc(k * n * sizeof(float) * t, 2097152);
     wr = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
     wz = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
     wg = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
     ht = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
-    br = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
-    bz = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
-    bg = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
+    br = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
+    bz = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
+    bg = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
     djdht = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
     djdxt = (float*)libxsmm_aligned_malloc(k * n * sizeof(float) * t, 2097152);
     djdur = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
@@ -512,12 +527,12 @@ int main(int argc, char* argv[])
     djdbz = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
     djdbg = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
     djdxtestt  = (float*)libxsmm_aligned_malloc(k * n * sizeof(float) * t, 2097152);
-    djdutest   = (float*)libxsmm_aligned_malloc(m * k * sizeof(float) * 4, 2097152);
-    djdwtest   = (float*)libxsmm_aligned_malloc(m * m * sizeof(float) * 4, 2097152);
-    djdbtest   = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * 4, 2097152);
-    djdugold3  = (float*)libxsmm_aligned_malloc(m * k * sizeof(float) * 4, 2097152);
-    djdwgold3  = (float*)libxsmm_aligned_malloc(m * m * sizeof(float) * 4, 2097152);
-    djdbgold3  = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * 4, 2097152);
+    djdutest   = (float*)libxsmm_aligned_malloc(m * k * sizeof(float) * 3, 2097152);
+    djdwtest   = (float*)libxsmm_aligned_malloc(m * m * sizeof(float) * 3, 2097152);
+    djdbtest   = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * 3, 2097152);
+    djdugold3  = (float*)libxsmm_aligned_malloc(m * k * sizeof(float) * 3, 2097152);
+    djdwgold3  = (float*)libxsmm_aligned_malloc(m * m * sizeof(float) * 3, 2097152);
+    djdbgold3  = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * 3, 2097152);
   }
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, k * n);
   LIBXSMM_VLA_DECL(2, float, rgoldb, rgoldt, m * n);
@@ -557,21 +572,22 @@ int main(int argc, char* argv[])
     zero_buf(h2gold, m*n);
     zero_buf(h3gold, m*n);
   } else {
-    LIBXSMM_MATINIT(float, 42, urgold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, uzgold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, uggold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wrgold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wzgold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wggold, m, m, m, 1.0);
+    LIBXSMM_MATINIT(float, 42, urgold, m, k, m, 0.01);
+    LIBXSMM_MATINIT(float, 42, uzgold, m, k, m, 0.01);
+    LIBXSMM_MATINIT(float, 42, uggold, m, k, m, 0.01);
+    LIBXSMM_MATINIT(float, 42, wrgold, m, m, m, 0.01);
+    LIBXSMM_MATINIT(float, 42, wzgold, m, m, m, 0.01);
+    LIBXSMM_MATINIT(float, 42, wggold, m, m, m, 0.01);
     for (it = 0; it < t; ++it) {
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, rgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, ggoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 0.01);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 0.01);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, rgoldb, it, 0, m * n), m, n, m, 0.01);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), m, n, m, 0.01);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, ggoldb, it, 0, m * n), m, n, m, 0.01);
+      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 0.01);
+      //init_buf(&LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m*n);
     }
-    zero_buf(&LIBXSMM_VLA_ACCESS(2, djdhgold, t, 0, m * n), m*n);
+    zero_buf(d3gold, m*n);
     zero_buf(d4gold, m*n);
     zero_buf(d5gold, m*n);
     zero_buf(d6gold, m*n);
@@ -580,15 +596,15 @@ int main(int argc, char* argv[])
     zero_buf(d9gold, m*n);
     zero_buf(d10gold, m*n);
     zero_buf(d11gold, m*n);
-    zero_buf(d12gold, m*n);
+    zero_buf(d12gold, k*n);
     zero_buf(d13gold, m*n);
-    zero_buf(d14gold, m*n);
+    zero_buf(d14gold, k*n);
     zero_buf(d15gold, m*n);
     zero_buf(d16gold, m*n);
     zero_buf(d17gold, m*n);
     zero_buf(d18gold, m*n);
     zero_buf(d19gold, m*n);
-    zero_buf(d20gold, m*n);
+    zero_buf(d20gold, k*n);
     zero_buf(d21gold, m*n);
     zero_buf(d22gold, m*n);
     zero_buf(d23gold, m*n);
@@ -671,18 +687,18 @@ int main(int argc, char* argv[])
       m, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
   } else {
-    handleux = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handlewd = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
-      &alpha, &beta, &gemm_flags, &strategy, &order); /* U^T*delta */
+      &alpha, &beta, &gemm_flags, &strategy, &order); /* W^T*delta */
     handlewh = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, m, n, &bm, &bm, &bn, &b_m1, &b_m1, &b_n1, &b_n2,
       &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*h^T */
     handlett = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, k, n, &bm, &bk, &bn, &b_m1, &b_k1, &b_n1, &b_n2,
       &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*x^T */
-    handlewd = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handleux = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       k, n, m, &bk, &bn, &bm, &b_k1, &b_n1, &b_m1, &b_m2,
-      &alpha, &beta, &gemm_flags, &strategy, &order); /* W^T*delta */
+      &alpha, &beta, &gemm_flags, &strategy, &order); /* U^T*delta */
   }
 
   if (LIBXSMM_NEQ(0, check)) {
@@ -720,17 +736,19 @@ int main(int argc, char* argv[])
       matrix_transpose(m, m, wzgold, wzgoldTp);
       matrix_transpose(m, m, wggold, wggoldTp);
       for (j = t-1; j >= 0; j--) {
-        /* d4 = (1 - z).djdh */
+        /* d3 = djdh + d23 (delta) */
+        matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, j, 0, m * n), d23gold, d3gold);
+        /* d4 = (1 - z).d3 */
         matrix_complement(m * n, &LIBXSMM_VLA_ACCESS(2, zgoldb, j, 0, m * n), d4gold);
-        matrix_eltwise_mult(m * n, d4gold, &LIBXSMM_VLA_ACCESS(2, djdhgold, j+1, 0, m * n), d4gold);
+        matrix_eltwise_mult(m * n, d4gold, d3gold, d4gold);
         /* d5 = d3.h */
-        matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, hgoldb, j, 0, m * n), d5gold);
-        /* d6 = 1 - d5 */
+        matrix_eltwise_mult(m * n, d3gold, &LIBXSMM_VLA_ACCESS(2, hgoldb, j, 0, m * n), d5gold);
+        /* d6 = -d5 */
         matrix_inverse(m * n, d5gold, d6gold);
-        /* d7 = djdh.g */
-        matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, ggoldb, j, 0, m * n), d7gold);
-        /* d8 = djdh.z */
-        matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, j+1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, zgoldb, j, 0, m * n), d8gold);
+        /* d7 = d3.g */
+        matrix_eltwise_mult(m * n, d3gold, &LIBXSMM_VLA_ACCESS(2, ggoldb, j, 0, m * n), d7gold);
+        /* d8 = d3.z */
+        matrix_eltwise_mult(m * n, d3gold, &LIBXSMM_VLA_ACCESS(2, zgoldb, j, 0, m * n), d8gold);
         /* d9 = d7 + d8 */
         matrix_add(m * n, d7gold, d8gold, d9gold);
         /* d10 = d8.tanh'(g) */
@@ -740,12 +758,8 @@ int main(int argc, char* argv[])
         matrix_complement(m * n, &LIBXSMM_VLA_ACCESS(2, zgoldb, j, 0, m * n), d11gold);
         matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, zgoldb, j, 0, m * n), d11gold, d11gold);
         matrix_eltwise_mult(m * n, d9gold, d11gold, d11gold);
-        /* d12 = Ug^T * d10 */
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &k, &n, &m, &alpha, uggoldTp, &k, d10gold, &m, &beta0, d12gold, &k);
         /* d13 = Wg^T * d10 */
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &n, &m, &alpha, wggoldTp, &m, d10gold, &m, &beta0, d13gold, &m);
-        /* d14 = Uz^T * d11 */
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &k, &n, &m, &alpha, uzgoldTp, &k, d11gold, &m, &beta0, d14gold, &k);
         /* d15 = Wz^T * d11 */
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &n, &m, &alpha, wzgoldTp, &m, d11gold, &m, &beta0, d15gold, &m);
         /* d16 = d13.h */
@@ -753,44 +767,52 @@ int main(int argc, char* argv[])
         /* d17 = d13.r */
         matrix_eltwise_mult(m * n, d13gold, &LIBXSMM_VLA_ACCESS(2, rgoldb, j, 0, m * n), d17gold);
         /* d18 = d16.sig'(r) */
-        matrix_complement_square(m * n, &LIBXSMM_VLA_ACCESS(2, rgoldb, j, 0, m * n), d18gold);
+        matrix_complement(m * n, &LIBXSMM_VLA_ACCESS(2, rgoldb, j, 0, m * n), d18gold);
         matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, rgoldb, j, 0, m * n), d18gold, d18gold);
         matrix_eltwise_mult(m * n, d16gold, d18gold, d18gold);
         /* d19 = d17 + d4 */
         matrix_add(m * n, d17gold, d4gold, d19gold);
-        /* d20 = Ur^T * d18 */
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &k, &n, &m, &alpha, urgoldTp, &k, d18gold, &m, &beta0, d20gold, &k);
         /* d21 = Wr^T * d18 */
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &n, &m, &alpha, wrgoldTp, &m, d18gold, &m, &beta0, d21gold, &m);
         /* d22 = d21 + d15 */
         matrix_add(m * n, d21gold, d15gold, d22gold);
         /* d23 = d19 + d22 */
         matrix_add(m * n, d19gold, d22gold, d23gold);
-        /* djdx = d12 + d14 + d20 */
-        matrix_add(k * n, d12gold, d14gold, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, m * n));
-        matrix_add(k * n, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, m * n), d20gold, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, m * n));
-        /* djdwr = djdwr + d18 * h^T */
-        matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, hgoldb, j, 0, m * n), hgoldTp);
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &m, &n, &alpha, d18gold, &m, hgoldTp, &n, &beta, djdwr, &m);
-        /* djdwz = djdwz + d11 * h^T */
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &m, &n, &alpha, d11gold, &m, hgoldTp, &n, &beta, djdwz, &m);
-        /* djdwg = djdwg + d10 * (h.r)^T */
-        matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, hgoldb, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, rgoldb, j, 0, m * n), d4gold);
-        matrix_transpose(m, n, d4gold, hgoldTp);
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &m, &n, &alpha, d10gold, &m, hgoldTp, &n, &beta, djdwg, &m);
-        /* djdur = djdur + d18 * x^T */
-        matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, m * n), xgoldTp);
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &k, &n, &alpha, d18gold, &m, xgoldTp, &n, &beta, djdur, &m);
-        /* djduz = djduz + d11 * x^T */
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &k, &n, &alpha, d11gold, &m, xgoldTp, &n, &beta, djduz, &m);
-        /* djdug = djdug + d10 * x^T */
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &k, &n, &alpha, d10gold, &m, xgoldTp, &n, &beta, djdug, &m);
-        /* djdbr = djdbr + d18 */
-        matrix_add(m * n, djdbr, d18gold, djdbr);
-        /* djdbz = djdbz + d11 */
-        matrix_add(m * n, djdbz, d11gold, djdbz);
-        /* djdbg = djdbg + d10 */
-        matrix_add(m * n, djdbg, d10gold, djdbg);
+        if (1 == pass || 3 == pass) {
+          /* d12 = Ug^T * d10 */
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &k, &n, &m, &alpha, uggoldTp, &k, d10gold, &m, &beta0, d12gold, &k);
+          /* d14 = Uz^T * d11 */
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &k, &n, &m, &alpha, uzgoldTp, &k, d11gold, &m, &beta0, d14gold, &k);
+          /* d20 = Ur^T * d18 */
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &k, &n, &m, &alpha, urgoldTp, &k, d18gold, &m, &beta0, d20gold, &k);
+          /* djdx = d12 + d14 + d20 */
+          matrix_add(k * n, d12gold, d14gold, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n));
+          matrix_add(k * n, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n), d20gold, &LIBXSMM_VLA_ACCESS(2, djdxgold, j, 0, k * n));
+        }
+        if (2 == pass || 3 == pass) {
+          /* djdwr = djdwr + d18 * h^T */
+          matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, hgoldb, j, 0, m * n), hgoldTp);
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &m, &n, &alpha, d18gold, &m, hgoldTp, &n, &beta, djdwrgold, &m);
+          /* djdwz = djdwz + d11 * h^T */
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &m, &n, &alpha, d11gold, &m, hgoldTp, &n, &beta, djdwzgold, &m);
+          /* djdwg = djdwg + d10 * (h.r)^T */
+          matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, hgoldb, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, rgoldb, j, 0, m * n), d4gold);
+          matrix_transpose(m, n, d4gold, hgoldTp);
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &m, &n, &alpha, d10gold, &m, hgoldTp, &n, &beta, djdwggold, &m);
+          /* djdur = djdur + d18 * x^T */
+          matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, k * n), xgoldTp);
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &k, &n, &alpha, d18gold, &m, xgoldTp, &n, &beta, djdurgold, &m);
+          /* djduz = djduz + d11 * x^T */
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &k, &n, &alpha, d11gold, &m, xgoldTp, &n, &beta, djduzgold, &m);
+          /* djdug = djdug + d10 * x^T */
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &k, &n, &alpha, d10gold, &m, xgoldTp, &n, &beta, djduggold, &m);
+          /* djdbr = djdbr + d18 */
+          matrix_add(m * n, djdbrgold, d18gold, djdbrgold);
+          /* djdbz = djdbz + d11 */
+          matrix_add(m * n, djdbzgold, d11gold, djdbzgold);
+          /* djdbg = djdbg + d10 */
+          matrix_add(m * n, djdbggold, d10gold, djdbggold);
+        }
       }
     }
     printf("##########################################\n");
@@ -939,24 +961,23 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewh, bggold, &m, bg) );
     } else {
       matrix_transpose(m, k, urgold, urgoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, urgoldTp, &k, ur) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, urgoldTp, &k, ur) );
       matrix_transpose(m, k, uzgold, uzgoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, uzgoldTp, &k, uz) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, uzgoldTp, &k, uz) );
       matrix_transpose(m, k, uggold, uggoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, uggoldTp, &k, ug) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, uggoldTp, &k, ug) );
       for (it = 0; it < t; ++it) {
-        matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), hgoldTp);
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewh, hgoldTp, &m, &LIBXSMM_VLA_ACCESS(2, hb, it, 0, m * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewd, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, hb, it, 0, m * n)) );
         matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), xgoldTp);
         CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlett, xgoldTp, &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
         CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewd, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, djdh, it, 0, m * n)) );
       }
       matrix_transpose(m, m, wrgold, wrgoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, wrgoldTp, &m, wr) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wrgoldTp, &m, wr) );
       matrix_transpose(m, m, wzgold, wzgoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, wzgoldTp, &m, wz) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wzgoldTp, &m, wz) );
       matrix_transpose(m, m, wggold, wggoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, wggoldTp, &m, wg) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wggoldTp, &m, wg) );
     }
 
     /* bind buffers and filter to handle */
@@ -1072,7 +1093,7 @@ int main(int argc, char* argv[])
       /* copy out data */
       LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, k * n);
       for (i = 0; i < t; ++i) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewd, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, k * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handleux, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, k * n)) );
       }
 
       /* compare */
@@ -1105,8 +1126,8 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      LIBXSMM_VLA_DECL(2, float, djdw3test, djdwtest, m * k);
-      LIBXSMM_VLA_DECL(2, float, djdu3test, djdutest, m * m);
+      LIBXSMM_VLA_DECL(2, float, djdw3test, djdwtest, m * m);
+      LIBXSMM_VLA_DECL(2, float, djdu3test, djdutest, m * k);
       LIBXSMM_VLA_DECL(2, float, djdb3test, djdbtest, m * n);
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlett, djdur, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 0, 0, m * k)) );
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlett, djduz, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 1, 0, m * k)) );
@@ -1114,9 +1135,9 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwr, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 0, 0, m * m)) );
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwz, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 1, 0, m * m)) );
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwg, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 2, 0, m * m)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdbr, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 0, 0, m * n)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdbz, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 1, 0, m * n)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdbg, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 2, 0, m * n)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewd, djdbr, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 0, 0, m * n)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewd, djdbz, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 1, 0, m * n)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewd, djdbg, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 2, 0, m * n)) );
       LIBXSMM_VLA_DECL(2, float, djdu3, djdugold3, m * k);
       LIBXSMM_VLA_DECL(2, float, djdw3, djdwgold3, m * m);
       LIBXSMM_VLA_DECL(2, float, djdb3, djdbgold3, m * n);
@@ -1185,7 +1206,7 @@ int main(int argc, char* argv[])
       /* copy out data */
       LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, k * n);
       for (i = 0; i < t; ++i) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewd, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, k * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handleux, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, k * n)) );
       }
       LIBXSMM_VLA_DECL(2, float, djdu3test, djdutest, m * k);
       LIBXSMM_VLA_DECL(2, float, djdw3test, djdwtest, m * m);
@@ -1196,9 +1217,9 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwr, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 0, 0, m * m)) );
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwz, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 1, 0, m * m)) );
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwg, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 2, 0, m * m)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdbr, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 0, 0, m * n)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdbz, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 1, 0, m * n)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdbg, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 2, 0, m * n)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewd, djdbr, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 0, 0, m * n)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewd, djdbz, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 1, 0, m * n)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewd, djdbg, &m, &LIBXSMM_VLA_ACCESS(2, djdb3test, 2, 0, m * n)) );
       LIBXSMM_VLA_DECL(2, float, djdu3, djdugold3, m * k);
       LIBXSMM_VLA_DECL(2, float, djdw3, djdwgold3, m * m);
       LIBXSMM_VLA_DECL(2, float, djdb3, djdbgold3, m * n);
@@ -1235,7 +1256,8 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_w.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_w);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*m*3, 1, djdwgold3, djdwtest, 0, 0, &norms_upd_r);
+      //libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*m*3, 1, djdwgold3, djdwtest, 0, 0, &norms_upd_r);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*m, 1, djdwrgold, &LIBXSMM_VLA_ACCESS(2, djdw3test, 0, 0, m*m), 0, 0, &norms_upd_r);
       printf("Delta recurrent weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_r.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_r.l1_tst);
@@ -1554,6 +1576,7 @@ int main(int argc, char* argv[])
     libxsmm_free(rgoldt);
     libxsmm_free(zgoldt);
     libxsmm_free(ggoldt);
+    libxsmm_free(d3gold);
     libxsmm_free(d4gold);
     libxsmm_free(d5gold);
     libxsmm_free(d6gold);

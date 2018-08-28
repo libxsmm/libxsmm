@@ -201,7 +201,7 @@ LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
 }
 
 
-void matrix_complement_square(int size, float *src, float *dst)
+LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
 {
   int i;
 #if defined(_OPENMP)
