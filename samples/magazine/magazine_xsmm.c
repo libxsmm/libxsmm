@@ -34,6 +34,9 @@
 #if !defined(TYPE)
 # define TYPE double
 #endif
+#if 0 /* No prefetch */
+# define NOPREFETCH
+#endif
 #if 0 /* process batch of A, B, and C in "random" order */
 # define SHUFFLE
 #endif
@@ -54,9 +57,6 @@ int main(int argc, char* argv[])
 {
   /* batch-size is used to stream matrix-operands from memory */
   const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
-#if defined(SHUFFLE)
-  const size_t shuffle = libxsmm_shuffle((unsigned int)size);
-#endif
   /* default: M, N, and K are 13, 5, and 7 respectively */
   const int m = (2 < argc ? atoi(argv[2]) : 13);
   const int n = (3 < argc ? atoi(argv[3]) : 5);
@@ -74,6 +74,9 @@ int main(int argc, char* argv[])
   const size_t nc = LIBXSMM_UP2(sizeof(TYPE) * ldc * n, LIBXSMM_CACHELINE) / sizeof(TYPE);
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? (int)((2ULL << 30/*2 GB*/) / (sizeof(TYPE) * (na + nb + nc))) : batchsize);
+#if defined(SHUFFLE)
+  const size_t shuffle = libxsmm_shuffle((unsigned int)size);
+#endif
   /* allocate A, B, and C matrix buffers */
   TYPE *const a = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * na * size, LIBXSMM_CACHELINE);
   TYPE *const b = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nb * size, LIBXSMM_CACHELINE);
@@ -81,7 +84,7 @@ int main(int argc, char* argv[])
   const double scale = 1.0 / size;
   libxsmm_timer_tickint start;
   double duration;
-  int i;
+  int i, j;
 
   /**
    * LIBXSMM's C interface really is type-specific, and the helper macros (such as LIBXSMM_MMFUNCTION_TYPE)
@@ -89,19 +92,19 @@ int main(int argc, char* argv[])
    * and some helpers for more type-generic programming tasks (e.g., libxsmm_mmfunction<T>).
    */
 #if !defined(AUTO) /* explicitly dispatch a kernel according to parameters */
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
-  LIBXSMM_MMFUNCTION_TYPE(TYPE) xmm = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, NULL);
+  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb), prefetch = LIBXSMM_PREFETCH_AUTO;
+  LIBXSMM_MMFUNCTION_TYPE(TYPE) xmm = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, &prefetch);
 #endif
 
   /* initialize data according to touch-first policy */
 #if defined(_OPENMP)
-# pragma omp parallel for private(i)
+# pragma omp parallel for private(i, j)
 #endif
   for (i = 0; i < size; ++i) {
 #if defined(SHUFFLE)
-    const int j = (i * shuffle) % size;
+    j = (i * shuffle) % size;
 #else
-    const int j = i;
+    j = i;
 #endif
     LIBXSMM_MATINIT(TYPE, 25 + i, a + j * na, m, k, lda, scale);
     LIBXSMM_MATINIT(TYPE, 75 + i, b + j * nb, k, n, ldb, scale);
@@ -119,23 +122,47 @@ int main(int argc, char* argv[])
 #else /* OpenMP thread pool is already populated (parallel region) */
 #   pragma omp single
     start = libxsmm_timer_tick();
-#   pragma omp for private(i)
+#   pragma omp for private(i, j)
 #endif
-    for (i = 0; i < size; ++i) {
+    for (i = 0; i < size - 1; ++i) {
 #if defined(SHUFFLE)
-      const int j = (i * shuffle) % size;
+# if !defined(AUTO) && !defined(NOPREFETCH)
+      const int p = ((i + 1) * shuffle) % size;
+# endif
+      j = (i * shuffle) % size;
 #else
-      const int j = i;
+# if !defined(AUTO) && !defined(NOPREFETCH)
+      const int p = i + 1;
+# endif
+      j = i;
 #endif
 #if defined(AUTO)
       libxsmm_dgemm(&transa, &transb, &m, &n, &k,
         &alpha, a + j * na, &lda, b + j * nb, &ldb,
          &beta, c + j * nc, &ldc);
-#else
+#elif defined(NOPREFETCH)
       xmm(a + j * na, b + j * nb, c + j * nc);
+#else
+      xmm(a + j * na, b + j * nb, c + j * nc,
+          a + p * na, b + p * nb, c + p * nc);
 #endif
     }
   }
+#if defined(SHUFFLE)
+  j = ((size - 1) * shuffle) % size;
+#else
+  j = size - 1;
+#endif
+#if defined(AUTO)
+  libxsmm_dgemm(&transa, &transb, &m, &n, &k,
+    &alpha, a + j * na, &lda, b + j * nb, &ldb,
+     &beta, c + j * nc, &ldc);
+#elif defined(NOPREFETCH)
+  xmm(a + j * na, b + j * nb, c + j * nc);
+#else
+  xmm(a + j * na, b + j * nb, c + j * nc,
+      a + j * na, b + j * nb, c + j * nc);
+#endif
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
   if (0 < duration) {
