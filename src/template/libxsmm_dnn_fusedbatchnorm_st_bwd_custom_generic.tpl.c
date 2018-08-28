@@ -113,17 +113,19 @@ if ( nFmBlock == 16 ) {
     /* @TODO check if we can bake this in into scratch */
     element_stats_type lcl_gamma_ptr[64];
     element_stats_type lcl_beta_ptr[64];
-    element_stats_type* del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
-    element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
+    element_stats_type* del_gamma_img_ptr;
+    element_stats_type* del_beta_img_ptr;
 
     img = imgfm / nBlocksFm;
     fm = imgfm % nBlocksFm;
+    del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
+    del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
 
 #ifdef __INTEL_COMPILER
 #pragma omp simd
 #pragma vector aligned
 #endif
-    for(v=0; v < nBlocksFm; v++) {
+    for(v=0; v < nFmBlock; v++) {
       lcl_gamma_ptr[v] = 0.0f;
       lcl_beta_ptr[v] = 0.0f;
     }
@@ -156,8 +158,6 @@ if ( nFmBlock == 16 ) {
         }
       }
     }
-
-
 
 #ifdef __INTEL_COMPILER
 #pragma omp simd
