@@ -830,6 +830,12 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_bwd_custom_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_bgemm_transpose_b.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_bgemm_convert_b_to_a.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">
