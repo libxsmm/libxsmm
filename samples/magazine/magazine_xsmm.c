@@ -43,8 +43,8 @@
 
 
 /**
- * Example program that multiplies matrices independently (C = A * B).
- * A and B-matrices are not accumulated into a single C matrix.
+ * Example program that multiplies matrices independently (C += A * B).
+ * A and B-matrices are accumulated into a single C matrix (beta=1).
  * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
  * However, running a kernel without loading any matrix operand from
  * memory ("cache-hot loop") is not modeling typical applications
@@ -53,9 +53,9 @@
 int main(int argc, char* argv[])
 {
   /* batch-size is used to stream matrix-operands from memory */
-  const int batchsize = (1 < argc ? atoi(argv[1]) : 1000000);
+  const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
 #if defined(SHUFFLE)
-  const size_t shuffle = libxsmm_shuffle((unsigned int)batchsize);
+  const size_t shuffle = libxsmm_shuffle((unsigned int)size);
 #endif
   /* default: M, N, and K are 13, 5, and 7 respectively */
   const int m = (2 < argc ? atoi(argv[2]) : 13);
@@ -67,20 +67,27 @@ int main(int argc, char* argv[])
   const int ldc = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
   /* micro-kernels are limited to certain alpha- and beta-values */
   const char transa = 'n', transb = 'n';
-  const TYPE alpha = 1, beta = 0;
+  const TYPE alpha = 1, beta = 1;
   /* calculate matrix sizes incl. padded elements */
   const size_t na = LIBXSMM_UP2(sizeof(TYPE) * lda * k, LIBXSMM_CACHELINE) / sizeof(TYPE);
   const size_t nb = LIBXSMM_UP2(sizeof(TYPE) * ldb * n, LIBXSMM_CACHELINE) / sizeof(TYPE);
   const size_t nc = LIBXSMM_UP2(sizeof(TYPE) * ldc * n, LIBXSMM_CACHELINE) / sizeof(TYPE);
+  /* calculate default batch-size to hit work-set size of approx. 2 GB */
+  const int size = (0 >= batchsize ? (int)((2ULL << 30/*2 GB*/) / (sizeof(TYPE) * (na + nb + nc))) : batchsize);
   /* allocate A, B, and C matrix buffers */
-  TYPE *const a = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * na * batchsize, LIBXSMM_CACHELINE);
-  TYPE *const b = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nb * batchsize, LIBXSMM_CACHELINE);
-  TYPE *const c = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nc * batchsize, LIBXSMM_CACHELINE);
-  const double scale = 1.0 / batchsize;
+  TYPE *const a = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * na * size, LIBXSMM_CACHELINE);
+  TYPE *const b = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nb * size, LIBXSMM_CACHELINE);
+  TYPE *const c = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nc * size, LIBXSMM_CACHELINE);
+  const double scale = 1.0 / size;
   libxsmm_timer_tickint start;
   double duration;
   int i;
 
+  /**
+   * LIBXSMM's C interface really is type-specific, and the helper macros (such as LIBXSMM_MMFUNCTION_TYPE)
+   * are only for "entertainment". The C++ interface on the other hand is provides overloaded functions
+   * and some helpers for more type-generic programming tasks (e.g., libxsmm_mmfunction<T>).
+   */
 #if !defined(AUTO) /* explicitly dispatch a kernel according to parameters */
   const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   LIBXSMM_MMFUNCTION_TYPE(TYPE) xmm = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, NULL);
@@ -90,9 +97,9 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
-  for (i = 0; i < batchsize; ++i) {
+  for (i = 0; i < size; ++i) {
 #if defined(SHUFFLE)
-    const int j = (i * shuffle) % batchsize;
+    const int j = (i * shuffle) % size;
 #else
     const int j = i;
 #endif
@@ -114,9 +121,9 @@ int main(int argc, char* argv[])
     start = libxsmm_timer_tick();
 #   pragma omp for private(i)
 #endif
-    for (i = 0; i < batchsize; ++i) {
+    for (i = 0; i < size; ++i) {
 #if defined(SHUFFLE)
-      const int j = (i * shuffle) % batchsize;
+      const int j = (i * shuffle) % size;
 #else
       const int j = i;
 #endif
@@ -133,7 +140,7 @@ int main(int argc, char* argv[])
 
   if (0 < duration) {
     const double gflops = 2.0 * m * n * k * 1E-9;
-    printf("%.1f GFLOPS/s\n", gflops / duration * batchsize);
+    printf("%.1f GFLOPS/s\n", gflops / duration * size);
   }
   printf("%.1f ms\n", 1000.0 * duration);
 
