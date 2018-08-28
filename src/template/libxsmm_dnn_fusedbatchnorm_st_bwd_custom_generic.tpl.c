@@ -100,8 +100,8 @@ if ( nFmBlock == 16 ) {
   LIBXSMM_VLA_DECL(2,       element_stats_type,  dbeta,      (element_stats_type*)handle->grad_beta->data,  16);
   LIBXSMM_VLA_DECL(2, const element_stats_type,  bmean,      (element_stats_type*)handle->expvalue->data,   16);
   LIBXSMM_VLA_DECL(2, const element_stats_type,  brstd,      (element_stats_type*)handle->stddev->data,     16);
-  LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                              nImg, 16);
-  LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img,  ((element_stats_type*)handle->scratch) + (nImg * nBlocksFm * 16),  nImg, 16);
+  LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                                      nImg, 16);
+  LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img,  ((element_stats_type*)handle->scratch) + ((size_t)nImg * nBlocksFm * 16),  nImg, 16);
 
   for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
     /* @TODO check if we can bake this in into scratch */
@@ -142,7 +142,7 @@ if ( nFmBlock == 16 ) {
 #endif
         for(v=0; v < 16; v++) {
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-          del_output_ptr[v] = (output_ptr[v] == 0.0) ? 0.0 : del_output_ptr[v];
+          del_output_ptr[v] = LIBXSMM_FEQ(output_ptr[v], 0) ? 0 : del_output_ptr[v];
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
           del_input_add_ptr[v] = del_output_ptr[v];
