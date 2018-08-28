@@ -84,11 +84,135 @@ int wp = 0;
 libxsmm_barrier_init(handle->barrier, ltid);
 
 /* let's help the vectorizaer for VLEN case */
-#if 0
 if ( nFmBlock == 16 ) {
-} else
+  LIBXSMM_VLA_DECL(5,       element_input_type,  dinput,     (element_input_type* )handle->grad_input->data,  nBlocksFm, fhpi, fwpi, 16);
+  LIBXSMM_VLA_DECL(5,       element_input_type,   input,     (element_input_type* )handle->reg_input->data,   nBlocksFm, fhpi, fwpi, 16);
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
+  LIBXSMM_VLA_DECL(5,       element_input_type,  dinput_add, (element_input_type* )handle->grad_add->data,    nBlocksFm, fhpi, fwpi, 16);
 #endif
-{
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
+  LIBXSMM_VLA_DECL(5, const element_output_type, output,     (element_output_type*)handle->reg_output->data,  nBlocksFm, fhpo, fwpo, 16);
+#endif
+  LIBXSMM_VLA_DECL(5,       element_output_type, doutput,    (element_output_type*)handle->grad_output->data, nBlocksFm, fhpo, fwpo, 16);
+
+  LIBXSMM_VLA_DECL(2, const element_stats_type,  gamma,      (element_stats_type*)handle->reg_gamma->data,  16);
+  LIBXSMM_VLA_DECL(2,       element_stats_type,  dgamma,     (element_stats_type*)handle->grad_gamma->data, 16);
+  LIBXSMM_VLA_DECL(2,       element_stats_type,  dbeta,      (element_stats_type*)handle->grad_beta->data,  16);
+  LIBXSMM_VLA_DECL(2, const element_stats_type,  bmean,      (element_stats_type*)handle->expvalue->data,   16);
+  LIBXSMM_VLA_DECL(2, const element_stats_type,  brstd,      (element_stats_type*)handle->stddev->data,     16);
+  LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                              nImg, 16);
+  LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img,  ((element_stats_type*)handle->scratch) + (nImg * nBlocksFm * 16),  nImg, 16);
+
+  for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
+    /* @TODO check if we can bake this in into scratch */
+    element_stats_type lcl_gamma_ptr[16];
+    element_stats_type lcl_beta_ptr[16];
+    element_stats_type* del_gamma_img_ptr;
+    element_stats_type* del_beta_img_ptr;
+
+    img = imgfm / nBlocksFm;
+    fm = imgfm % nBlocksFm;
+    del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, 16);
+    del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, 16);
+
+#ifdef __INTEL_COMPILER
+#pragma omp simd
+#pragma vector aligned
+#endif
+    for(v=0; v < 16; v++) {
+      lcl_gamma_ptr[v] = 0.0f;
+      lcl_beta_ptr[v] = 0.0f;
+    }
+
+    for(h=iph, hp=oph; h < (fhi + iph); h+=sh, hp++) {
+      for(w=ipw, wp=opw; w < (fwi + ipw); w+=sw, wp++) {
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
+              element_input_type*  del_input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, 16);
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
+        const element_output_type* output_ptr        = &LIBXSMM_VLA_ACCESS(5,     output, img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, 16);
+#endif
+        const element_input_type*  input_ptr         = &LIBXSMM_VLA_ACCESS(5,      input, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, 16);
+              element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5,    doutput, img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, 16);
+        const element_stats_type*  bmean_ptr         = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, 16);
+        const element_stats_type*  brstd_ptr         = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, 16);
+#ifdef __INTEL_COMPILER
+#pragma omp simd
+#pragma vector aligned
+#endif
+        for(v=0; v < 16; v++) {
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
+          del_output_ptr[v] = (output_ptr[v] == 0.0) ? 0.0 : del_output_ptr[v];
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
+          del_input_add_ptr[v] = del_output_ptr[v];
+#endif
+          lcl_gamma_ptr[v] += (input_ptr[v] - bmean_ptr[v]) * del_output_ptr[v] * brstd_ptr[v];
+          lcl_beta_ptr[v]  += del_output_ptr[v];
+        }
+      }
+    }
+
+#ifdef __INTEL_COMPILER
+#pragma omp simd
+#pragma vector aligned
+#endif
+    for(v=0; v < 16; v++) {
+      del_gamma_img_ptr[v] = lcl_gamma_ptr[v];
+      del_beta_img_ptr[v]  = lcl_beta_ptr[v];
+    }
+  }
+
+  libxsmm_barrier_wait(handle->barrier, ltid);
+
+  /* now we need to reduce the del_gamm and del_beta */
+  for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+    for( img=0; img < nImg; img++ ) {
+      element_stats_type* del_gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 0, 16);
+      element_stats_type* del_beta_ptr      = &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 0, 16);
+      element_stats_type* del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, 16);
+      element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, 16);
+
+#ifdef __INTEL_COMPILER
+#pragma omp simd
+#pragma vector aligned
+#endif
+      for(v=0; v < 16; v++) {
+        del_gamma_ptr[v] += del_gamma_img_ptr[v];
+        del_beta_ptr[v] += del_beta_img_ptr[v];
+      }
+    }
+  }
+
+  libxsmm_barrier_wait(handle->barrier, ltid);
+
+  /* now we apply the actual backward batch norm */
+  for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
+    img = imgfm / nBlocksFm;
+    fm = imgfm % nBlocksFm;
+    for(h=iph, hp=oph; h < (fhi + iph); h+=sh, hp++) {
+      for(w=ipw, wp=opw; w < (fwi + ipw); w+=sw, wp++) {
+              element_input_type*  del_input_ptr     = &LIBXSMM_VLA_ACCESS(5,     dinput, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, 16);
+        const element_input_type*  input_ptr         = &LIBXSMM_VLA_ACCESS(5,      input, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, 16);
+        const element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5,    doutput, img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, 16);
+        const element_stats_type*  bmean_ptr         = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, 16);
+        const element_stats_type*  brstd_ptr         = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, 16);
+        const element_stats_type*  gamma_ptr         = &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, 16);
+        const element_stats_type*  del_gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, dgamma,    fm, 0, 16);
+        const element_stats_type*  del_beta_ptr      = &LIBXSMM_VLA_ACCESS(2, dbeta,     fm, 0, 16);
+#ifdef __INTEL_COMPILER
+#pragma omp simd
+#pragma vector aligned
+#pragma vector nontemporal
+#endif
+        for(v=0; v < 16; v++) {
+           del_input_ptr[v] = gamma_ptr[v] * brstd_ptr[v] * recp_nhw * (nhw*del_output_ptr[v] -
+                    (del_beta_ptr[v] + (input_ptr[v] - bmean_ptr[v]) * del_gamma_ptr[v] * brstd_ptr[v]));
+        }
+      }
+    }
+  }
+} else {
   LIBXSMM_VLA_DECL(5,       element_input_type,  dinput,     (element_input_type* )handle->grad_input->data,  nBlocksFm, fhpi, fwpi, nFmBlock);
   LIBXSMM_VLA_DECL(5,       element_input_type,   input,     (element_input_type* )handle->reg_input->data,   nBlocksFm, fhpi, fwpi, nFmBlock);
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
@@ -113,17 +237,19 @@ if ( nFmBlock == 16 ) {
     /* @TODO check if we can bake this in into scratch */
     element_stats_type lcl_gamma_ptr[64];
     element_stats_type lcl_beta_ptr[64];
-    element_stats_type* del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
-    element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
+    element_stats_type* del_gamma_img_ptr;
+    element_stats_type* del_beta_img_ptr;
 
     img = imgfm / nBlocksFm;
     fm = imgfm % nBlocksFm;
+    del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
+    del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
 
 #ifdef __INTEL_COMPILER
 #pragma omp simd
 #pragma vector aligned
 #endif
-    for(v=0; v < nBlocksFm; v++) {
+    for(v=0; v < nFmBlock; v++) {
       lcl_gamma_ptr[v] = 0.0f;
       lcl_beta_ptr[v] = 0.0f;
     }
@@ -156,8 +282,6 @@ if ( nFmBlock == 16 ) {
         }
       }
     }
-
-
 
 #ifdef __INTEL_COMPILER
 #pragma omp simd

@@ -398,7 +398,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_tensor(libxsmm_dnn_fusedb
         handle->grad_add = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
         handle->reg_beta = (libxsmm_dnn_tensor*)tensor;
-      } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+      } else if ( type == LIBXSMM_DNN_GRADIENT_CHANNEL_BETA ) {
         handle->grad_beta = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA ) {
         handle->reg_gamma = (libxsmm_dnn_tensor*)tensor;
