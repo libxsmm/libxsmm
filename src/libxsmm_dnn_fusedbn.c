@@ -543,6 +543,16 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_execute_st(libxsmm_dnn_fusedbn
           }
         }
       } break;
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
+        switch (handle->desc.buffer_format) {
+          case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
+            status = libxsmm_dnn_fusedbn_st_bwd_custom( handle, start_thread, tid );
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN;
+          }
+        }
+      } break;
       default: {
         status = LIBXSMM_DNN_ERR_INVALID_KIND;
       }
