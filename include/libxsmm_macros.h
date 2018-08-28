@@ -288,12 +288,6 @@
 # define LIBXSMM_PRAGMA_NOVECTOR
 #endif
 
-#if defined(_OPENMP)
-# define LIBXSMM_PRAGMA_OMP(...) LIBXSMM_PRAGMA(omp __VA_ARGS__)
-#else
-# define LIBXSMM_PRAGMA_OMP(...)
-#endif
-
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_NONTEMPORAL_VARS(A, ...) LIBXSMM_PRAGMA(vector nontemporal(A, __VA_ARGS__))
 # define LIBXSMM_PRAGMA_NONTEMPORAL LIBXSMM_PRAGMA(vector nontemporal)
@@ -396,7 +390,7 @@
 #define LIBXSMM_ALIGN(POINTER, ALIGNMENT/*POT*/) ((POINTER) + (LIBXSMM_UP2((uintptr_t)(POINTER), ALIGNMENT) - ((uintptr_t)(POINTER))) / sizeof(*(POINTER)))
 #define LIBXSMM_FOLD2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_DIV2((uintptr_t)(POINTER), ALIGNMENT), NPOT)
 
-#if defined(_MSC_VER) /* account for incorrect handling of __VA_ARGS__ */
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) /* account for incorrect handling of __VA_ARGS__ */
 # define LIBXSMM_SELECT_ELEMENT(INDEX1/*one-based*/, .../*elements*/) LIBXSMM_CONCATENATE(LIBXSMM_SELECT_ELEMENT_, INDEX1)LIBXSMM_EXPAND((__VA_ARGS__))
 #else
 # define LIBXSMM_SELECT_ELEMENT(INDEX1/*one-based*/, .../*elements*/) LIBXSMM_CONCATENATE(LIBXSMM_SELECT_ELEMENT_, INDEX1)(__VA_ARGS__)
@@ -430,7 +424,7 @@
  * Please note that the leading dimension (s0) is omitted in the above syntax!
  * TODO: support leading dimension (pitch/stride).
  */
-#if defined(_MSC_VER) /* account for incorrect handling of __VA_ARGS__ */
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) /* account for incorrect handling of __VA_ARGS__ */
 # define LIBXSMM_INDEX1(NDIMS, ...) LIBXSMM_CONCATENATE(LIBXSMM_INDEX1_, NDIMS)LIBXSMM_EXPAND((__VA_ARGS__))
 #else
 # define LIBXSMM_INDEX1(NDIMS, ...) LIBXSMM_CONCATENATE(LIBXSMM_INDEX1_, NDIMS)(__VA_ARGS__)
@@ -483,6 +477,17 @@
 # else
 #   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
 # endif
+#endif
+
+#if defined(_OPENMP)
+# define LIBXSMM_PRAGMA_OMP(...) LIBXSMM_PRAGMA(omp __VA_ARGS__)
+#else
+# define LIBXSMM_PRAGMA_OMP(...)
+#endif
+#if defined(_OPENMP) && defined(_MSC_VER) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER)
+# define LIBXSMM_OMP_VAR(A) LIBXSMM_UNUSED(A) /* suppress warning about "unused" variable */
+#else
+# define LIBXSMM_OMP_VAR(A)
 #endif
 
 #if (defined(__GNUC__) || defined(__clang__)) && !defined(__CYGWIN__) && !defined(__MINGW32__)

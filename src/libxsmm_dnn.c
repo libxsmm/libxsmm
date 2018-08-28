@@ -2664,10 +2664,11 @@ LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length 
   float absmax_value = (float)fabs((double)(in_buffer[0]));
   int i = 0;
 #ifdef _OPENMP
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel private(i)
   {
     float my_absmax_value = absmax_value;
-#   pragma omp for private(i)
+#   pragma omp for
     for( i = 0; i < length; ++i ) {
       if ((float)fabs((double)(in_buffer[i])) > my_absmax_value) {
         my_absmax_value = (float)fabs((double)(in_buffer[i]));
@@ -2868,6 +2869,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
     if ( (cblk_f32 == 16) && (cblk_i16*lp_blk == 16) ) {
       __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
+      LIBXSMM_OMP_VAR(i1);
 #     pragma omp parallel for private(i1)
 #endif
       for( i1 = 0; i1 < (int)(N*C*H*W); i1 += 16 ) {
@@ -2876,6 +2878,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
     } else {
 #endif
 #ifdef _OPENMP
+      LIBXSMM_OMP_VAR(i1); LIBXSMM_OMP_VAR(i2); LIBXSMM_OMP_VAR(i3); LIBXSMM_OMP_VAR(i4); LIBXSMM_OMP_VAR(i5); LIBXSMM_OMP_VAR(i6);
 #     pragma omp parallel for private(i1, i2, i3, i4, i5, i6) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
       for( i1 = 0; i1 < (int)N; ++i1 ) {
@@ -3000,6 +3003,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
     } else {
 #endif
 #ifdef _OPENMP
+      LIBXSMM_OMP_VAR(i1); LIBXSMM_OMP_VAR(i2); LIBXSMM_OMP_VAR(i3); LIBXSMM_OMP_VAR(i4); LIBXSMM_OMP_VAR(i5); LIBXSMM_OMP_VAR(i6); LIBXSMM_OMP_VAR(i7);
 #     pragma omp parallel for private(i1, i2, i3, i4, i5, i6, i7) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
       for( i1 = 0; i1 < (int)kblk; ++i1 ) {
