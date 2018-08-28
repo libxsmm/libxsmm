@@ -161,17 +161,7 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst, float 
 
 LIBXSMM_INLINE void matrix_transpose(int rows, int cols, float *src, float *dst)
 {
-  int i, j;
-  LIBXSMM_VLA_DECL(2, float, src2D, src, cols);
-  LIBXSMM_VLA_DECL(2, float, dst2D, dst, rows);
-#if defined(_OPENMP)
-# pragma omp parallel for private(i, j)
-#endif
-  for (i = 0; i < rows; i++) {
-    for (j = 0; j < cols; j++) {
-      LIBXSMM_VLA_ACCESS(2, dst2D, j, i, rows) = LIBXSMM_VLA_ACCESS(2, src2D, i, j, cols);
-    }
-  }
+  libxsmm_otrans_omp(dst, src, sizeof(float), rows, cols, rows/*ldi*/, rows/*ldo*/);
 }
 
 
