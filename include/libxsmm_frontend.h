@@ -346,18 +346,18 @@
 
 /** Helper macro to setup a matrix with some initial values. */
 #define LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) { \
-  const double libxsmm_matinit_seed1_ = (SCALE) * ((SEED) + 1); \
-  libxsmm_blasint libxsmm_matinit_i_; \
+  const double libxsmm_matinit_seed1_ = (SCALE) * ((double)SEED) + (SCALE); \
+  libxsmm_blasint libxsmm_matinit_i_, libxsmm_matinit_ld_ = (libxsmm_blasint)LD; \
   LIBXSMM_PRAGMA_OMP(parallel for private(libxsmm_matinit_i_)) \
-  for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < (NCOLS); ++libxsmm_matinit_i_) { \
-    libxsmm_blasint libxsmm_matinit_j_ = 0, libxsmm_matinit_k_; \
-    for (; libxsmm_matinit_j_ < (NROWS); ++libxsmm_matinit_j_) { \
-      libxsmm_matinit_k_ = libxsmm_matinit_i_ * (LD) + libxsmm_matinit_j_; \
-      (DST)[libxsmm_matinit_k_] = (TYPE)(libxsmm_matinit_seed1_ / (libxsmm_matinit_k_ + 1)); \
+  for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < ((libxsmm_blasint)NCOLS); ++libxsmm_matinit_i_) { \
+    libxsmm_blasint libxsmm_matinit_j_ = 0; \
+    for (; libxsmm_matinit_j_ < ((libxsmm_blasint)NROWS); ++libxsmm_matinit_j_) { \
+      const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
+      (DST)[libxsmm_matinit_k_] = (TYPE)(libxsmm_matinit_seed1_ / (1.0 + libxsmm_matinit_k_)); \
     } \
-    for (; libxsmm_matinit_j_ < (LD); ++libxsmm_matinit_j_) { \
-      libxsmm_matinit_k_ = libxsmm_matinit_i_ * (LD) + libxsmm_matinit_j_; \
-      (DST)[libxsmm_matinit_k_] = (TYPE)(SEED); \
+    for (; libxsmm_matinit_j_ < libxsmm_matinit_ld_; ++libxsmm_matinit_j_) { \
+      const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
+      (DST)[libxsmm_matinit_k_] = (TYPE)SEED; \
     } \
   } \
 }
