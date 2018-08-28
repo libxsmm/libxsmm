@@ -288,12 +288,6 @@
 # define LIBXSMM_PRAGMA_NOVECTOR
 #endif
 
-#if defined(_OPENMP)
-# define LIBXSMM_PRAGMA_OMP(...) LIBXSMM_PRAGMA(omp __VA_ARGS__)
-#else
-# define LIBXSMM_PRAGMA_OMP(...)
-#endif
-
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_NONTEMPORAL_VARS(A, ...) LIBXSMM_PRAGMA(vector nontemporal(A, __VA_ARGS__))
 # define LIBXSMM_PRAGMA_NONTEMPORAL LIBXSMM_PRAGMA(vector nontemporal)
@@ -483,6 +477,17 @@
 # else
 #   define LIBXSMM_UNUSED(VARIABLE) (void)(VARIABLE)
 # endif
+#endif
+
+#if defined(_OPENMP)
+# define LIBXSMM_PRAGMA_OMP(...) LIBXSMM_PRAGMA(omp __VA_ARGS__)
+#else
+# define LIBXSMM_PRAGMA_OMP(...)
+#endif
+#if defined(_OPENMP) && defined(_MSC_VER) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER)
+# define LIBXSMM_OMP_VAR(A) LIBXSMM_UNUSED(A) /* suppress warning about "unused" variable */
+#else
+# define LIBXSMM_OMP_VAR(A)
 #endif
 
 #if (defined(__GNUC__) || defined(__clang__)) && !defined(__CYGWIN__) && !defined(__MINGW32__)
