@@ -49,7 +49,7 @@ const int fwpi = fwi + 2*ipw;
 const int nBlocksFm = handle->blocksifm;
 const int nFmBlock = handle->fm_lp_block*handle->ifmblock;
 
-const element_stats_type nhw = nImg * fhi * fwi;
+const element_stats_type nhw = (element_stats_type)(nImg * fhi * fwi);
 const element_stats_type recp_nhw = 1.0f/nhw;
 
 /* computing first logical thread */
@@ -228,11 +228,11 @@ if ( nFmBlock == 16 ) {
   LIBXSMM_VLA_DECL(2,       element_stats_type,  dbeta,      (element_stats_type*)handle->grad_beta->data,  nFmBlock);
   LIBXSMM_VLA_DECL(2, const element_stats_type,  bmean,      (element_stats_type*)handle->expvalue->data,   nFmBlock);
   LIBXSMM_VLA_DECL(2, const element_stats_type,  brstd,      (element_stats_type*)handle->stddev->data,     nFmBlock);
-  LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                                    nImg, nFmBlock);
-  LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img,  ((element_stats_type*)handle->scratch) + (nImg * nBlocksFm * nFmBlock),  nImg, nFmBlock);
+  LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                                           nImg, nFmBlock);
+  LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * nBlocksFm * nFmBlock),  nImg, nFmBlock);
 
   assert( nFmBlock <= 64 );
-  
+
   for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
     /* @TODO check if we can bake this in into scratch */
     element_stats_type lcl_gamma_ptr[64];
@@ -272,7 +272,7 @@ if ( nFmBlock == 16 ) {
 #endif
         for(v=0; v < nFmBlock; v++) {
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-          del_output_ptr[v] = (output_ptr[v] == 0.0) ? 0.0 : del_output_ptr[v];
+          del_output_ptr[v] = (LIBXSMM_FEQ(output_ptr[v], 0) ? 0 : del_output_ptr[v]);
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
           del_input_add_ptr[v] = del_output_ptr[v];
