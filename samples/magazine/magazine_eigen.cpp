@@ -42,12 +42,12 @@
 
 
 template<typename T> void init(int seed, T* dst, int nrows, int ncols, int ld, double scale) {
-  const double seed1 = scale * (seed + 1);
+  const double seed1 = scale * seed + scale;
   for (int i = 0; i < ncols; ++i) {
     int j = 0;
     for (; j < nrows; ++j) {
       const int k = i * ld + j;
-      dst[k] = static_cast<T>(seed1 / (k + 1));
+      dst[k] = static_cast<T>(seed1 / (1.0 + k));
     }
     for (; j < ld; ++j) {
       const int k = i * ld + j;
