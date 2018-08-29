@@ -33,6 +33,9 @@
 #endif
 
 #if defined(__EIGEN)
+# if !defined(EIGEN_DONT_PARALLELIZE)
+#   define EIGEN_DONT_PARALLELIZE
+# endif
 # include <bench/BenchTimer.h>
 # include <Eigen/Dense>
 #endif
