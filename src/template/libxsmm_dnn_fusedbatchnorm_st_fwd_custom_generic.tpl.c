@@ -87,8 +87,8 @@ if ( nFmBlock == 16 ) {
   for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
     img = imgfm / nBlocksFm;
     fm = imgfm % nBlocksFm;
-    for( h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
-      for( w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
+    for (h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
+      for (w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
         const element_input_type*  input_ptr     = &LIBXSMM_VLA_ACCESS(5, input,     img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, 16);
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
         const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, 16);
@@ -102,7 +102,7 @@ if ( nFmBlock == 16 ) {
         LIBXSMM_PRAGMA_SIMD
         LIBXSMM_PRAGMA_VALIGNED
         LIBXSMM_PRAGMA_NONTEMPORAL
-        for( v = 0; v < 16; v++ ) {
+        for (v = 0; v < 16; v++ ) {
           /* BN + scale (gamma, beta) */
           float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
           /* Eltwise */
@@ -132,8 +132,8 @@ if ( nFmBlock == 16 ) {
   for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
     img = imgfm / nBlocksFm;
     fm = imgfm % nBlocksFm;
-    for( h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
-      for( w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
+    for (h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
+      for (w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
         const element_input_type*  input_ptr     = &LIBXSMM_VLA_ACCESS(5, input,     img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, nFmBlock);
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
         const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, nFmBlock);
@@ -147,7 +147,7 @@ if ( nFmBlock == 16 ) {
         LIBXSMM_PRAGMA_SIMD
         LIBXSMM_PRAGMA_VALIGNED
         LIBXSMM_PRAGMA_NONTEMPORAL
-        for( v = 0; v < nFmBlock; v++ ) {
+        for (v = 0; v < nFmBlock; v++ ) {
           /* BN + scale (gamma, beta) */
           float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
           /* Eltwise */

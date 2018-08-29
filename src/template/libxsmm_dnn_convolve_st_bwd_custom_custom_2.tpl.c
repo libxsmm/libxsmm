@@ -77,9 +77,9 @@ for (i = thr_begin; i < thr_end; ++i) {
         ij = oj * handle->desc.u - handle->desc.pad_h;
         ii = oi * handle->desc.v - handle->desc.pad_w;
         for (kj = 0; kj < handle->desc.R; ++kj) {
-          if(ij+kj < 0 || ij+kj >= ifh) continue;
+          if (ij+kj < 0 || ij+kj >= ifh) continue;
           for (ki = 0; ki < handle->desc.S; ++ki) {
-            if(ii+ki < 0 || ii+ki >= ifw) continue;
+            if (ii+ki < 0 || ii+ki >= ifw) continue;
             sixteen.xmm(&LIBXSMM_VLA_ACCESS(6, tr_filter_t, ofm1, ifm1, kj,      ki,      0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock) /* A */,
                         &LIBXSMM_VLA_ACCESS(6,    output_t, ofm1, img1, oj,      oi,      0, 0, handle->nBImg, handle->ofhp, handle->ofwp, handle->nbImg, handle->ofmblock) /* B */,
                         &LIBXSMM_VLA_ACCESS(6,     input_t, ifm1, img1, ij + kj, ii + ki, 0, 0, handle->nBImg, handle->ifhp, handle->ifwp, handle->nbImg, handle->ifmblock) /* C */  );

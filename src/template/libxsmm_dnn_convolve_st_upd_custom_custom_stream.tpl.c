@@ -191,7 +191,7 @@ if ( handle->trans_ofw_ifm > 0 ) {
           src_j = dst_j * handle->desc.v;
           for (dst_i=0; dst_i < handle->ifwp_resized; dst_i++) {
             src_i = dst_i * handle->desc.u;
-            for (fm = 0; fm < handle->ifmblock; fm++){
+            for (fm = 0; fm < handle->ifmblock; fm++) {
               LIBXSMM_VLA_ACCESS(5, tr_input_nopad, img, ifm1, dst_j, fm, dst_i, BLOCKSIFM, handle->ifhp_resized, handle->ifmblock, ifwp_extended) =
                 LIBXSMM_VLA_ACCESS(5, input_nopad, img, ifm1, src_j, src_i, fm, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
             }

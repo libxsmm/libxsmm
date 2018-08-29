@@ -2669,7 +2669,7 @@ LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length 
   {
     float my_absmax_value = absmax_value;
 #   pragma omp for
-    for( i = 0; i < length; ++i ) {
+    for (i = 0; i < length; ++i ) {
       if ((float)fabs((double)(in_buffer[i])) > my_absmax_value) {
         my_absmax_value = (float)fabs((double)(in_buffer[i]));
       }
@@ -2682,7 +2682,7 @@ LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length 
     }
   }
 #else
-  for( i = 1; i < length; ++i ) {
+  for (i = 1; i < length; ++i ) {
     if ((float)fabs((double)(in_buffer[i])) > absmax_value) {
       absmax_value = (float)fabs((double)(in_buffer[i]));
     }
@@ -2803,7 +2803,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
 #ifdef _OPENMP
 #     pragma omp parallel for private(i)
 #endif
-      for( i = 0; i < length; i+=16 ) {
+      for (i = 0; i < length; i+=16 ) {
         _mm256_stream_si256( (__m256i *)&(out_buffer[i]), _mm512_quantize_near_ps_epi16( &(in_buffer[i]), vscfq ) );
       }
     } else {
@@ -2811,7 +2811,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
 #ifdef _OPENMP
 #     pragma omp parallel for private(i)
 #endif
-      for( i = 0; i < length; ++i ) {
+      for (i = 0; i < length; ++i ) {
         out_buffer[i] = (short)round((double)in_buffer[i] * scfq);
       }
 #if defined(__AVX512F__)
@@ -2836,7 +2836,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
 #ifdef _OPENMP
 #   pragma omp parallel for private(i)
 #endif
-    for( i = 0; i < length; ++i ) {
+    for (i = 0; i < length; ++i ) {
       out_buffer[i] = libxsmm_internal_quantize_scalar_no_scf( in_buffer[i], max_exp, add_shift, round_mode );
     }
 
@@ -2872,7 +2872,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
       LIBXSMM_OMP_VAR(i1);
 #     pragma omp parallel for private(i1)
 #endif
-      for( i1 = 0; i1 < (int)(N*C*H*W); i1 += 16 ) {
+      for (i1 = 0; i1 < (int)(N*C*H*W); i1 += 16 ) {
         _mm256_stream_si256( (__m256i *)&(out_buffer[i1]), _mm512_quantize_near_ps_epi16( &(in_buffer[i1]), vscfq ) );
       }
     } else {
@@ -2881,12 +2881,12 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
       LIBXSMM_OMP_VAR(i1); LIBXSMM_OMP_VAR(i2); LIBXSMM_OMP_VAR(i3); LIBXSMM_OMP_VAR(i4); LIBXSMM_OMP_VAR(i5); LIBXSMM_OMP_VAR(i6);
 #     pragma omp parallel for private(i1, i2, i3, i4, i5, i6) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-      for( i1 = 0; i1 < (int)N; ++i1 ) {
-        for( i2 = 0; i2 < (int)cblk; ++i2 ) {
-          for( i3 = 0; i3 < (int)H; ++i3 ) {
-            for( i4 = 0; i4 < (int)W; ++i4 ) {
-              for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
-                for( i6 = 0; i6 < (int)lp_blk; ++i6 ) {
+      for (i1 = 0; i1 < (int)N; ++i1 ) {
+        for (i2 = 0; i2 < (int)cblk; ++i2 ) {
+          for (i3 = 0; i3 < (int)H; ++i3 ) {
+            for (i4 = 0; i4 < (int)W; ++i4 ) {
+              for (i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+                for (i6 = 0; i6 < (int)lp_blk; ++i6 ) {
                   const int fi1 = i1;
                   const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)/cblk_f32;
                   const int fi3 = i3;
@@ -2922,12 +2922,12 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
 #ifdef _OPENMP
 #   pragma omp parallel for private(i1, i2, i3, i4, i5, i6) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-    for( i1 = 0; i1 < (int)N; ++i1 ) {
-      for( i2 = 0; i2 < (int)cblk; ++i2 ) {
-        for( i3 = 0; i3 < (int)H; ++i3 ) {
-          for( i4 = 0; i4 < (int)W; ++i4 ) {
-            for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
-              for( i6 = 0; i6 < (int)lp_blk; ++i6 ) {
+    for (i1 = 0; i1 < (int)N; ++i1 ) {
+      for (i2 = 0; i2 < (int)cblk; ++i2 ) {
+        for (i3 = 0; i3 < (int)H; ++i3 ) {
+          for (i4 = 0; i4 < (int)W; ++i4 ) {
+            for (i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+              for (i6 = 0; i6 < (int)lp_blk; ++i6 ) {
                 const int fi1 = i1;
                 const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)/cblk_f32;
                 const int fi3 = i3;
@@ -2978,11 +2978,11 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
 #ifdef _OPENMP
 #     pragma omp parallel for private(i1, i2, i3, i4, i5) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-      for( i1 = 0; i1 < (int)kblk; ++i1 ) {
-        for( i2 = 0; i2 < (int)cblk; ++i2 ) {
-          for( i3 = 0; i3 < (int)R; ++i3 ) {
-            for( i4 = 0; i4 < (int)S; ++i4 ) {
-              for( i5 = 0; i5 < 16; i5+=2 ) {
+      for (i1 = 0; i1 < (int)kblk; ++i1 ) {
+        for (i2 = 0; i2 < (int)cblk; ++i2 ) {
+          for (i3 = 0; i3 < (int)R; ++i3 ) {
+            for (i4 = 0; i4 < (int)S; ++i4 ) {
+              for (i5 = 0; i5 < 16; i5+=2 ) {
                 __m256i even_ch = _mm512_quantize_near_ps_epi16(
                   &LIBXSMM_VLA_ACCESS(6, in, i1, i2, i3, i4, i5 + 0, 0, C / cblk_f32, R, S, cblk_f32, kblk_f32), vscfq);
                 __m256i odd_ch  = _mm512_quantize_near_ps_epi16(
@@ -3006,13 +3006,13 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
       LIBXSMM_OMP_VAR(i1); LIBXSMM_OMP_VAR(i2); LIBXSMM_OMP_VAR(i3); LIBXSMM_OMP_VAR(i4); LIBXSMM_OMP_VAR(i5); LIBXSMM_OMP_VAR(i6); LIBXSMM_OMP_VAR(i7);
 #     pragma omp parallel for private(i1, i2, i3, i4, i5, i6, i7) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-      for( i1 = 0; i1 < (int)kblk; ++i1 ) {
-        for( i2 = 0; i2 < (int)cblk; ++i2 ) {
-          for( i3 = 0; i3 < (int)R; ++i3 ) {
-            for( i4 = 0; i4 < (int)S; ++i4 ) {
-              for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
-                for( i6 = 0; i6 < (int)kblk_i16; ++i6 ) {
-                  for( i7 = 0; i7 < (int)lp_blk; ++i7 ) {
+      for (i1 = 0; i1 < (int)kblk; ++i1 ) {
+        for (i2 = 0; i2 < (int)cblk; ++i2 ) {
+          for (i3 = 0; i3 < (int)R; ++i3 ) {
+            for (i4 = 0; i4 < (int)S; ++i4 ) {
+              for (i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+                for (i6 = 0; i6 < (int)kblk_i16; ++i6 ) {
+                  for (i7 = 0; i7 < (int)lp_blk; ++i7 ) {
                     const int fi1 = ((i1*kblk_i16)+i6)/kblk_f32;
                     const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)/cblk_f32;
                     const int fi3 = i3;
@@ -3050,13 +3050,13 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
 #ifdef _OPENMP
 #   pragma omp parallel for private(i1, i2, i3, i4, i5, i6, i7) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-    for( i1 = 0; i1 < (int)kblk; ++i1 ) {
-      for( i2 = 0; i2 < (int)cblk; ++i2 ) {
-        for( i3 = 0; i3 < (int)R; ++i3 ) {
-          for( i4 = 0; i4 < (int)S; ++i4 ) {
-            for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
-              for( i6 = 0; i6 < (int)kblk_i16; ++i6 ) {
-                for( i7 = 0; i7 < (int)lp_blk; ++i7 ) {
+    for (i1 = 0; i1 < (int)kblk; ++i1 ) {
+      for (i2 = 0; i2 < (int)cblk; ++i2 ) {
+        for (i3 = 0; i3 < (int)R; ++i3 ) {
+          for (i4 = 0; i4 < (int)S; ++i4 ) {
+            for (i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+              for (i6 = 0; i6 < (int)kblk_i16; ++i6 ) {
+                for (i7 = 0; i7 < (int)lp_blk; ++i7 ) {
                   const int fi1 = ((i1*kblk_i16)+i6)/kblk_f32;
                   const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)/cblk_f32;
                   const int fi3 = i3;

@@ -1799,7 +1799,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
           }
         }
 
-        if (i_conv_desc->compute_max == 1){
+        if (i_conv_desc->compute_max == 1) {
           /* Store "max" register (zmm1) to max_vals address  */
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_conv_kernel_config->instruction_set,
@@ -2420,7 +2420,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
       }
 
       /* Update max...*/
-      if (i_conv_desc->compute_max == 1){
+      if (i_conv_desc->compute_max == 1) {
         /* Store "max" register (zmm1) to max_vals address  */
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_conv_kernel_config->instruction_set,
