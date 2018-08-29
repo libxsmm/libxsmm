@@ -98,11 +98,10 @@ if ( nFmBlock == 16 ) {
         const element_stats_type*  beta_ptr      = &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, 16);
         const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, 16);
         const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, 16);
-#ifdef __INTEL_COMPILER
-#pragma omp simd
-#pragma vector aligned
-#pragma vector nontemporal
-#endif
+
+        LIBXSMM_PRAGMA_SIMD
+        LIBXSMM_PRAGMA_VALIGNED
+        LIBXSMM_PRAGMA_NONTEMPORAL
         for( v = 0; v < 16; v++ ) {
           /* BN + scale (gamma, beta) */
           float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
@@ -144,11 +143,10 @@ if ( nFmBlock == 16 ) {
         const element_stats_type*  beta_ptr      = &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, nFmBlock);
         const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
         const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
-#ifdef __INTEL_COMPILER
-#pragma omp simd
-#pragma vector aligned
-#pragma vector nontemporal
-#endif
+
+        LIBXSMM_PRAGMA_SIMD
+        LIBXSMM_PRAGMA_VALIGNED
+        LIBXSMM_PRAGMA_NONTEMPORAL
         for( v = 0; v < nFmBlock; v++ ) {
           /* BN + scale (gamma, beta) */
           float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
