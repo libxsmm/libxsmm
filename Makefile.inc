@@ -360,17 +360,7 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
   $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1) \
   $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1)))))")
 
-ifneq (0,$(INTEL))
-  ifeq (0,$(OFFLOAD))
-    CXXFLAGS += -qno-offload
-    CFLAGS += -qno-offload
-    ifneq (,$(strip $(FC)))
-    ifeq (ifort,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f1))
-      FCFLAGS += -qno-offload
-    endif
-    endif
-  endif
-else
+ifeq (0,$(INTEL))
   ifeq (,$(notdir $(shell which $(CXX) 2>/dev/null)))
     CXX = g++
   else ifneq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
@@ -382,6 +372,7 @@ else
     CC = gcc
   endif
 endif
+
 GFC = $(NULL)
 ifneq (0,$(FORTRAN))
   ifneq (,$(strip $(FC)))
@@ -778,10 +769,23 @@ ifneq (0,$(INTEL))
   CXXFLAGS += $(OPTFLAG)
   CFLAGS += $(OPTFLAG)
   FCFLAGS += $(OPTFLAG)
+  ifeq (0,$(OFFLOAD))
+    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+      CXXFLAGS += -qno-offload
+      CFLAGS += -qno-offload
+    endif
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += -qno-offload
+    endif
+  endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
-    CXXFLAGS += -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
-    CFLAGS += -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
+    CXXFLAGS += -fno-alias -ansi-alias
+    CFLAGS += -fno-alias -ansi-alias
+    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+      CXXFLAGS += -qoverride_limits #-fp-model fast=2
+      CFLAGS += -qoverride_limits #-fp-model fast=2
+    endif
     ifeq (,$(strip $(GFC)))
       FCFLAGS += -qoverride_limits #-fp-model fast=2
       ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
