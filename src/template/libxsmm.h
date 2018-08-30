@@ -68,6 +68,7 @@
 #include "libxsmm_dnn_lstmcell.h"
 #include "libxsmm_dnn_grucell.h"
 #include "libxsmm_dnn_fusedbn.h"
+#include "libxsmm_dnn_pooling.h"
 
 
 /** Initialize the library; pay for setup cost at a specific point. */

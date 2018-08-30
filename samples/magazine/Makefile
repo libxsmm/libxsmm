@@ -62,9 +62,9 @@ XFILES := $(OUTDIR)/$(OUTNAME)_xsmm $(OUTDIR)/$(OUTNAME)_blaze $(OUTDIR)/$(OUTNA
 ifneq (0,$(BLAZE))
 ifeq (,$(strip $(BLAZEROOT)))
   ifneq (,$(wildcard $(DEPDIR)/../blaze*/blaze/Blaze.h))
-    BLAZEROOT = $(wildcard $(DEPDIR)/../blaze*)
+    BLAZEROOT = $(firstword $(wildcard $(DEPDIR)/../blaze*))
   else ifneq (,$(wildcard $(HOME)/blaze*/blaze/Blaze.h))
-    BLAZEROOT = $(wildcard $(HOME)/blaze*)
+    BLAZEROOT = $(firstword $(wildcard $(HOME)/blaze*))
   endif
 endif
 endif
@@ -81,9 +81,9 @@ endif
 ifneq (0,$(EIGEN))
 ifeq (,$(strip $(EIGENROOT)))
   ifneq (,$(wildcard $(DEPDIR)/../eigen*/Eigen/Dense))
-    EIGENROOT = $(wildcard $(DEPDIR)/../eigen*)
+    EIGENROOT = $(firstword $(wildcard $(DEPDIR)/../eigen*))
   else ifneq (,$(wildcard $(HOME)/eigen*/Eigen/Dense))
-    EIGENROOT = $(wildcard $(HOME)/eigen*)
+    EIGENROOT = $(firstword $(wildcard $(HOME)/eigen*))
   else ifneq (,$(wildcard /usr/include/eigen3/Eigen/Dense))
     EIGENROOT = /usr/include/eigen3
   endif
