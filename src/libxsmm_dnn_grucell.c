@@ -1494,41 +1494,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_fwd(libxsmm_dnn_grucell* gru, 
 }
 
 
-LIBXSMM_API void libxsmm_dnn_grucell_matrix_transpose_b(libxsmm_dnn_grucell* gru, void* src, void* dst, int start_thread, int tid, int nthreads)
-{
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  int size;
-  libxsmm_blasint job, i, j, k, l;
-  libxsmm_blasint m = gru->m;
-  libxsmm_blasint n = gru->n;
-  libxsmm_blasint bm = gru->bm;
-  libxsmm_blasint bn = gru->bn;
-  libxsmm_blasint mb = m / bm;
-  libxsmm_blasint nb = n / bn;
-  LIBXSMM_VLA_DECL(4, LIBXSMM_DNN_ELTWISE_FTYPE, real_src, (LIBXSMM_DNN_ELTWISE_FTYPE*)src, mb, bn, bm);
-  LIBXSMM_VLA_DECL(4, LIBXSMM_DNN_ELTWISE_FTYPE, real_dst, (LIBXSMM_DNN_ELTWISE_FTYPE*)dst, nb, bm, bn);
-  ltid = tid - start_thread;
-  /* number of tasks that could be run in parallel */
-  size = m*n;
-  /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
-  /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
-  for (job = thr_begin; job < thr_end; job++) {
-    i = job / (m * bn);
-    j = (job % (m * bn)) / (bm * bn);
-    k = ((job % (m * bn)) % (bm * bn)) / bm;
-    l = ((job % (m * bn)) % (bm * bn)) % bm;
-    LIBXSMM_VLA_ACCESS(4, real_dst, j, i, l, k, nb, bm, bn) =
-      LIBXSMM_VLA_ACCESS(4, real_src, i, j, k, l, mb, bn, bm);
-  }
-}
-
-
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bwd_upd_bu(libxsmm_dnn_grucell* gru, int start_thread, int tid, int pass)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -1665,15 +1630,13 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bwd_upd_bu(libxsmm_dnn_grucell
       libxsmm_bgemm_convert_b_to_a(handlewd, d11, &m, d11M);
       libxsmm_bgemm_convert_b_to_a(handlewd, d18, &m, d18M);
       /* djdwr = djdwr + d18 * h^T */
-      libxsmm_dnn_grucell_matrix_transpose_b(gru, &LIBXSMM_VLA_ACCESS(2, h, j, 0, m * n), hrTp, start_thread, tid, gru->nThreads);
-      /*libxsmm_bgemm_transpose_b(handledh, &LIBXSMM_VLA_ACCESS(2, h, j, 0, m * n), &m, hrTp);*/
+      libxsmm_bgemm_transpose_b(handledh, &LIBXSMM_VLA_ACCESS(2, h, j, 0, m * n), &m, hrTp);
       libxsmm_bgemm_st(handledh, d18M, hrTp, djdwr, start_thread, tid);
       /* djdwz = djdwz + d11 * h^T */
       libxsmm_bgemm_st(handledh, d11M, hrTp, djdwz, start_thread, tid);
       /* djdwg = djdwg + d10 * (h.r)^T */
       libxsmm_internal_matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, h, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, r, j, 0, m * n), d4, start_thread, tid, gru->nThreads);
-      libxsmm_dnn_grucell_matrix_transpose_b(gru, d4, hrTp, start_thread, tid, gru->nThreads);
-      /*libxsmm_bgemm_transpose_b(handledh, d4, &m, hrTp);*/
+      libxsmm_bgemm_transpose_b(handledh, d4, &m, hrTp);
       libxsmm_bgemm_st(handledh, d10M, hrTp, djdwg, start_thread, tid);
       /* djdur = djdur + d18 * x^T */
       libxsmm_bgemm_st(handledx, d18M, &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdur, start_thread, tid);

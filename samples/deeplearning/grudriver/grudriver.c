@@ -47,18 +47,6 @@
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
-
-LIBXSMM_INLINE void init_buf(float* buf, size_t size) {
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; ++i) {
-    buf[i] = 0.01f;
-  }
-}
-
-
 LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
   int i;
 #if defined(_OPENMP)
@@ -585,7 +573,6 @@ int main(int argc, char* argv[])
       LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), m, n, m, 0.01);
       LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, ggoldb, it, 0, m * n), m, n, m, 0.01);
       LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 0.01);
-      //init_buf(&LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m*n);
     }
     zero_buf(d3gold, m*n);
     zero_buf(d4gold, m*n);
@@ -1256,8 +1243,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_w.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_w);
 
-      //libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*m*3, 1, djdwgold3, djdwtest, 0, 0, &norms_upd_r);
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*m, 1, djdwrgold, &LIBXSMM_VLA_ACCESS(2, djdw3test, 0, 0, m*m), 0, 0, &norms_upd_r);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*m*3, 1, djdwgold3, djdwtest, 0, 0, &norms_upd_r);
       printf("Delta recurrent weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_r.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_r.l1_tst);
