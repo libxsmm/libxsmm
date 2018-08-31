@@ -107,6 +107,7 @@ int main(int argc, char* argv[])
   T *const pb = static_cast<T*>(std::align(alignment, sb - alignment + 1, wb, sb));
   T *const pc = static_cast<T*>(std::align(alignment, sc - alignment + 1, wc, sc));
   const double scale = 1.0 / size;
+  blaze::timing::WcTimer timer;
 
   /* initialize data according to touch-first policy */
 #if defined(_OPENMP)
@@ -118,7 +119,6 @@ int main(int argc, char* argv[])
     init(42 + i, pc + i * nc, m, n, ldc, scale);
   }
 
-  blaze::timing::WcTimer timer;
 #if defined(_OPENMP)
 # pragma omp parallel
 #endif

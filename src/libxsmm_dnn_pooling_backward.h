@@ -26,38 +26,15 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#ifndef LIBXSMM_DNN_POOLING_BACKWARD_H
+#define LIBXSMM_DNN_POOLING_BACKWARD_H
 
-LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_TYPE, real_dst, (LIBXSMM_BGEMM_TEMPLATE_TYPE*)dst, handle->kb, handle->bn, handle->bk);
-LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_TYPE, real_src, (const LIBXSMM_BGEMM_TEMPLATE_TYPE*)src, handle->nb, handle->bk, handle->bn);
-libxsmm_blasint kb, nb, bk, bn;
-libxsmm_blasint ii, jj, job, jobT;
+#include <libxsmm_dnn_pooling.h>
 
-if (handle->n == handle->k && handle->bn == handle->bk) {
-  for (kb = 0; kb < handle->kb; ++kb) {
-    for (nb = 0; nb < handle->nb; ++nb) {
-      for (bk = 0; bk < handle->bk; ++bk) {
-        for (bn = 0; bn < handle->bn; ++bn) {
-          LIBXSMM_VLA_ACCESS(4, real_dst, nb, kb, bn, bk, handle->kb, handle->bn, handle->bk) =
-            LIBXSMM_VLA_ACCESS(4, real_src, kb, nb, bk, bn, handle->nb, handle->bk, handle->bn);
-        }
-      }
-    }
-  }
-} else {
-  for (kb = 0; kb < handle->kb; ++kb) {
-    for (nb = 0; nb < handle->nb; ++nb) {
-      for (bk = 0; bk < handle->bk; ++bk) {
-        for (bn = 0; bn < handle->bn; ++bn) {
-          job = (kb*handle->bk + bk)*handle->n + (nb*handle->bn + bn);
-          ii = job / handle->k;
-          jj = job % handle->k;
-          jobT = jj*handle->n + ii;
-          LIBXSMM_VLA_ACCESS(4, real_dst, (jobT/handle->k)/handle->bn, (jobT%handle->k)/handle->bk, (jobT/handle->k)%handle->bn, (jobT%handle->k)%handle->bk, handle->kb, handle->bn, handle->bk) =
-            LIBXSMM_VLA_ACCESS(4, real_src, kb, nb, bk, bn, handle->nb, handle->bk, handle->bn);
-        }
-      }
-    }
-  }
-}
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_pooling_st_bwd_custom(libxsmm_dnn_pooling* handle, int start_thread, int tid);
+
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_pooling_st_bwd_nhwc(libxsmm_dnn_pooling* handle, int start_thread, int tid);
+
+#endif /* LIBXSMM_DNN_POOLING_BACKWARD_H */
