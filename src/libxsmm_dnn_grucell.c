@@ -1584,6 +1584,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bwd_upd_bu(libxsmm_dnn_grucell
     libxsmm_internal_matrix_eltwise_mult(m * n, d3, &LIBXSMM_VLA_ACCESS(2, g, j, 0, m * n), d7, start_thread, tid, gru->nThreads);
     /* d8 = d3.z */
     libxsmm_internal_matrix_eltwise_mult(m * n, d3, &LIBXSMM_VLA_ACCESS(2, z, j, 0, m * n), d8, start_thread, tid, gru->nThreads);
+    libxsmm_barrier_wait(gru->barrier, ltid);
     /* d9 = d7 + d8 */
     libxsmm_internal_matrix_add(m * n, d7, d8, d9, start_thread, tid, gru->nThreads);
     /* d10 = d8.tanh'(g) */
@@ -1593,6 +1594,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bwd_upd_bu(libxsmm_dnn_grucell
     libxsmm_internal_matrix_complement(m * n, &LIBXSMM_VLA_ACCESS(2, z, j, 0, m * n), d11, start_thread, tid, gru->nThreads);
     libxsmm_internal_matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, z, j, 0, m * n), d11, d11, start_thread, tid, gru->nThreads);
     libxsmm_internal_matrix_eltwise_mult(m * n, d9, d11, d11, start_thread, tid, gru->nThreads);
+    libxsmm_barrier_wait(gru->barrier, ltid);
     /* d13 = Wg^T * d10 */
     libxsmm_bgemm_st(handlewd, wg, d10, &LIBXSMM_VLA_ACCESS(2, d13, j, 0, m * n), start_thread, tid);
     /* d15 = Wz^T * d11 */
@@ -1605,12 +1607,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bwd_upd_bu(libxsmm_dnn_grucell
     libxsmm_internal_matrix_complement(m * n, &LIBXSMM_VLA_ACCESS(2, r, j, 0, m * n), d18, start_thread, tid, gru->nThreads);
     libxsmm_internal_matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, r, j, 0, m * n), d18, d18, start_thread, tid, gru->nThreads);
     libxsmm_internal_matrix_eltwise_mult(m * n, d16, d18, d18, start_thread, tid, gru->nThreads);
+    libxsmm_barrier_wait(gru->barrier, ltid);
     /* d19 = d17 + d4 */
     libxsmm_internal_matrix_add(m * n, d17, d4, d19, start_thread, tid, gru->nThreads);
     /* d21 = Wr^T * d18 */
     libxsmm_bgemm_st(handlewd, wr, d18, &LIBXSMM_VLA_ACCESS(2, d21, j, 0, m * n), start_thread, tid);
     /* d22 = d21 + d15 */
     libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, d21, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, d15, j, 0, m * n), d22, start_thread, tid, gru->nThreads);
+    libxsmm_barrier_wait(gru->barrier, ltid); /* This barrier may be removed */
     /* d23 = d19 + d22 */
     libxsmm_internal_matrix_add(m * n, d19, d22, d23, start_thread, tid, gru->nThreads);
     if (1 == pass || 3 == pass) {
@@ -1636,6 +1640,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bwd_upd_bu(libxsmm_dnn_grucell
       libxsmm_bgemm_st(handledh, d11M, hrTp, djdwz, start_thread, tid);
       /* djdwg = djdwg + d10 * (h.r)^T */
       libxsmm_internal_matrix_eltwise_mult(m * n, &LIBXSMM_VLA_ACCESS(2, h, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, r, j, 0, m * n), d4, start_thread, tid, gru->nThreads);
+      libxsmm_barrier_wait(gru->barrier, ltid);
       libxsmm_bgemm_transpose_b(handledh, d4, &m, hrTp);
       libxsmm_bgemm_st(handledh, d10M, hrTp, djdwg, start_thread, tid);
       /* djdur = djdur + d18 * x^T */
