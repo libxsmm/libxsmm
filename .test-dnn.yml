@@ -137,7 +137,7 @@ script:
 
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
    (OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
-    CHECK=1 CHECK_SCALE=0.001 ITERS=1000 MB=${OMP_NUM_THREADS};
+    CHECK=1 ITERS=1000 MB=${OMP_NUM_THREADS};
     for KIND in F B U; do
       echo; echo "--- TEST ResNet-50 (precision=bf16 kind=${KIND} mb=${MB} nt=${OMP_NUM_THREADS})";
       ./run_resnet50.sh ${MB} ${ITERS} -1 bf16 F L 1 &&
