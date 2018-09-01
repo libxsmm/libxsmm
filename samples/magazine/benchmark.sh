@@ -36,7 +36,7 @@ CAT=$(which cat 2>/dev/null)
 TR=$(which tr 2>/dev/null)
 
 # setup thread affinity
-export OMP_PLACES=threads OMP_PROC_BIND=TRUE
+export OMP_SCHEDULE=static OMP_PROC_BIND=TRUE
 
 OUT_BLAZE=benchmark-blaze.txt
 OUT_EIGEN=benchmark-eigen.txt
