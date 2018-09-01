@@ -403,10 +403,12 @@ endif
 
 # fixup FC-default given by MAKE
 ifeq (,$(shell which $(FC) 2>/dev/null))
-ifneq (,$(shell which gfortran 2>/dev/null))
-  GFC = gfortran
-  FC = $(GFC)
-endif
+  ifneq (,$(shell which gfortran 2>/dev/null))
+    GFC = gfortran
+    FC = $(GFC)
+  else
+    FC = $(NULL)
+  endif
 endif
 
 ifneq (,$(strip $(FC)))
