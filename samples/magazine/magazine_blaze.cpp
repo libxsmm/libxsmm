@@ -64,7 +64,7 @@ template<typename T> void init(int seed, T* dst, int nrows, int ncols, int ld, d
 
 /**
  * Example program that multiplies matrices independently (C += A * B).
- * A and B-matrices are accumulated into a single C matrix (beta=1).
+ * A and B-matrices are accumulated into C matrices (beta=1).
  * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
  * However, running a kernel without loading any matrix operand from
  * memory ("cache-hot loop") is not modeling typical applications
