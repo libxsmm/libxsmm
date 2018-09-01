@@ -373,23 +373,6 @@ ifeq (0,$(INTEL))
   endif
 endif
 
-GFC = $(NULL)
-ifneq (0,$(FORTRAN))
-  ifneq (,$(strip $(FC)))
-  ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
-    ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
-      GFC = gfortran
-    endif
-    FC = $(GFC)
-  endif
-  endif
-else
-  FC = $(GFC)
-endif
-ifeq (,$(strip $(FC)))
-  DFLAGS += -DLIBXSMM_NOFORTRAN
-endif
-
 CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
 CXX_VERSION_MAJOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f1)
 CXX_VERSION_MINOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f2)
@@ -473,6 +456,10 @@ else ifneq (0,$(INTEL))
 endif
 endif
 
+ifeq (,$(strip $(FC)))
+  DFLAGS += -DLIBXSMM_NOFORTRAN
+endif
+
 # compiler names
 CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 \
            | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" -e "s/ [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
@@ -491,6 +478,21 @@ ifneq (,$(strip $(FC)))
 endif
 ifeq (,$(strip $(FC_NAME)))
   FC_NAME = $(basename $(notdir $(FC)))
+endif
+
+GFC = $(NULL)
+ifneq (0,$(FORTRAN))
+ifneq (,$(strip $(FC)))
+  ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
+    GFC = $(FC)
+  else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
+    GFC = $(FC)
+  else ifneq (pgfortran,$(CC_NAME))
+    ifneq (,$(findstring gfortran,$(FC_NAME)))
+      GFC = $(FC)
+    endif
+  endif
+endif
 endif
 
 # native GCC?
@@ -513,16 +515,8 @@ ifeq (1,$(GCC))
     GCC = 2
   endif
   ifeq (2,$(GCC))
-  ifneq (,$(strip $(FC)))
-    ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
-      GCC = 3
-    else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
-      GCC = 3
-    else ifneq (pgfortran,$(CC_NAME))
-      ifneq (,$(findstring gfortran,$(FC_NAME)))
-        GCC = 3
-      endif
-    endif
+  ifneq (,$(strip $(GFC)))
+    GCC = 3
   endif
   endif
 endif
