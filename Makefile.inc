@@ -401,6 +401,14 @@ else
   CC_VERSION = 0
 endif
 
+# fixup FC-default given by MAKE
+ifeq (,$(shell which $(FC) 2>/dev/null))
+ifneq (,$(shell which gfortran 2>/dev/null))
+  GFC = gfortran
+  FC = $(GFC)
+endif
+endif
+
 ifneq (,$(strip $(FC)))
   FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
   FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
@@ -456,10 +464,6 @@ else ifneq (0,$(INTEL))
 endif
 endif
 
-ifeq (,$(strip $(FC)))
-  DFLAGS += -DLIBXSMM_NOFORTRAN
-endif
-
 # compiler names
 CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 \
            | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" -e "s/ [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
@@ -480,19 +484,27 @@ ifeq (,$(strip $(FC_NAME)))
   FC_NAME = $(basename $(notdir $(FC)))
 endif
 
-GFC = $(NULL)
 ifneq (0,$(FORTRAN))
-ifneq (,$(strip $(FC)))
-  ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
-    GFC = $(FC)
-  else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
-    GFC = $(FC)
-  else ifneq (pgfortran,$(CC_NAME))
-    ifneq (,$(findstring gfortran,$(FC_NAME)))
-      GFC = $(FC)
+  ifeq (,$(strip $(GFC)))
+    ifneq (,$(strip $(FC)))
+      ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
+        GFC = $(FC)
+      else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
+        GFC = $(FC)
+      else ifneq (pgfortran,$(CC_NAME))
+        ifneq (,$(findstring gfortran,$(FC_NAME)))
+          GFC = $(FC)
+        endif
+      endif
     endif
+  else
+    FORTRAN = 0
   endif
+else
+  FC = $(NULL)
 endif
+ifeq (,$(strip $(FC)))
+  DFLAGS += -DLIBXSMM_NOFORTRAN
 endif
 
 # native GCC?
