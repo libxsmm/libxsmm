@@ -64,6 +64,7 @@ template<typename T> void init(int seed, T* dst, int nrows, int ncols, int ld, d
 }
 
 
+#if defined(__EIGEN)
 template<bool pad> struct stride_helper {
   stride_helper(int pad_a, int pad_b, int pad_c): a(pad_a, 1), b(pad_b, 1), c(pad_c, 1) {}
   Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic> a, b, c;
@@ -72,6 +73,7 @@ template<> struct stride_helper<false> {
   stride_helper(...) {}
   Eigen::Stride<0,0> a, b, c;
 };
+#endif
 
 
 /**
@@ -87,7 +89,7 @@ int main(int argc, char* argv[])
 #if defined(__EIGEN)
   typedef double T;
   typedef Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> matrix_type;
-#if 0 /* dynamic strides make things slower even if lda == m, etc. */
+#if 1 /* dynamic strides make things slower even if lda == m, etc. */
   const size_t alignment = 64; /* must be power of two */
 #else
   const size_t alignment = 1;
