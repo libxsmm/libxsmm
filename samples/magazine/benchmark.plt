@@ -239,11 +239,14 @@ if (0!=system("sh -c \"if [ -e ".BASENAME."-".KIND.".join ]; then echo 1; else e
   plot BASENAME."-".KIND.".join" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") notitle
   if (0!=system("sh -c \"if [ -e ".BASENAME."-blaze.join ]; then echo 1; else echo 0; fi\"")) {
     if (0!=system("sh -c \"if [ -e ".BASENAME."-eigen.join ]; then echo 1; else echo 0; fi\"")) {
-      if (0!=system("sh -c \"if [ -e ".BASENAME."-xsmm.join ]; then echo 1; else echo 0; fi\"")) {
-        set output BASENAME.".".FILEEXT
-        plot BASENAME."-eigen.join" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Eigen", \
-             BASENAME."-blaze.join" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Blaze", \
-             BASENAME."-xsmm.join"  using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "xsmm"
+      if (0!=system("sh -c \"if [ -e ".BASENAME."-blas.join ]; then echo 1; else echo 0; fi\"")) {
+        if (0!=system("sh -c \"if [ -e ".BASENAME."-xsmm.join ]; then echo 1; else echo 0; fi\"")) {
+          set output BASENAME.".".FILEEXT
+          plot BASENAME."-eigen.join" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Eigen", \
+               BASENAME."-blaze.join" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Blaze", \
+               BASENAME."-blaze.join" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "BLAS", \
+               BASENAME."-xsmm.join"  using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "xsmm"
+        }
       }
     }
   }

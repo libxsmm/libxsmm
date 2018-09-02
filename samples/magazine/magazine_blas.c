@@ -132,27 +132,41 @@ int main(int argc, char* argv[])
     init(42 + i, c + i * nc, m, n, ldc, scale);
   }
 
-#if defined(_OPENMP)
-# pragma omp parallel
-  {
-    /* OpenMP thread pool is already populated (parallel region) */
-#   pragma omp single
-    duration = omp_get_wtime();
-#   pragma omp for private(i)
-#endif
-    for (i = 0; i < size; ++i) {
 #if defined(mkl_jit_create_dgemm)
-      kernel(jitter, a + i * na, b + i * nb, c + i * nc);
-#else
-      dgemm_(&transa, &transb, &m, &n, &k,
-        &alpha, a + i * na, &lda, b + i * nb, &ldb,
-         &beta, c + i * nc, &ldc);
-#endif
-    }
+  if (NULL != jitter) {
 #if defined(_OPENMP)
+#   pragma omp parallel
+    { /* OpenMP thread pool is already populated (parallel region) */
+#     pragma omp single
+      duration = omp_get_wtime();
+#     pragma omp for private(i)
+#endif
+      for (i = 0; i < size; ++i) {
+        kernel(jitter, a + i * na, b + i * nb, c + i * nc);
+      }
+    }
   }
+  else
+#endif
+  {
+#if defined(_OPENMP)
+#   pragma omp parallel
+    { /* OpenMP thread pool is already populated (parallel region) */
+#     pragma omp single
+      duration = omp_get_wtime();
+#     pragma omp for private(i)
+#endif
+      for (i = 0; i < size; ++i) {
+        dgemm_(&transa, &transb, &m, &n, &k,
+          &alpha, a + i * na, &lda, b + i * nb, &ldb,
+           &beta, c + i * nc, &ldc);
+      }
+    }
+  }
+#if defined(_OPENMP)
   duration = omp_get_wtime() - duration;
 #endif
+
   if (0 < duration) {
     const double gflops = 2.0 * m * n * k * 1E-9;
     printf("%.1f GFLOPS/s\n", gflops / duration * size);
