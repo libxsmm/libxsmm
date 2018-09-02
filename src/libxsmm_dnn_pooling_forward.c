@@ -55,10 +55,10 @@ libxsmm_dnn_err_t libxsmm_dnn_pooling_st_fwd_custom_f32_f32(libxsmm_dnn_pooling*
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   typedef float element_input_type;
   typedef float element_output_type;
-  typedef int   element_mask_type;
 
   if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_MAX ) {
 # define LIBXSMM_DNN_POOLING_FWD_MAX
+    typedef int   element_mask_type;
 # include "template/libxsmm_dnn_pooling_st_fwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_POOLING_FWD_MAX
   } else if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_AVG ) {
@@ -118,10 +118,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_pooling_st_fwd_custom(libxsmm_d
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef float element_input_type;
       typedef float element_output_type;
-      typedef int   element_mask_type;
 
       if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_MAX ) {
 # define LIBXSMM_DNN_POOLING_FWD_MAX
+        typedef int   element_mask_type;
 # include "template/libxsmm_dnn_pooling_st_fwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_POOLING_FWD_MAX
       } else if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_AVG ) {

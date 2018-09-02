@@ -103,7 +103,9 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
       for( kh = 0; kh < handle->desc.R; kh++ ) {
         if(hi+kh < 0 || hi+kh >= fhi) continue;
         for( kw = 0; kw < handle->desc.S; kw++ ) {
-          if(wi+kw < 0 || wi+kw >= fwi) continue;
+          if(wi+kw < 0 || wi+kw >= fwi) {
+            continue;
+          } else {
             const int                           index = (hi+kh)*fwi*nFmBlock + (wi+kw)*nFmBlock;
             const element_input_type*      input_ptr  = &LIBXSMM_VLA_ACCESS(5, input,      img, fm, hi+kh+iph, wi+kw+ipw, 0, nBlocksFm, fhpi, fwpi, nFmBlock);
                   element_output_type* lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output,             ho-oph,    wo-opw, 0,                   fwo, nFmBlock);
@@ -111,16 +113,17 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
                   element_mask_type*       mask_ptr   = &LIBXSMM_VLA_ACCESS(5, mask,       img, fm,    ho-oph,    wo-opw, 0, nBlocksFm,  fho,  fwo, nFmBlock);
 #endif
 
-          LIBXSMM_PRAGMA_SIMD
-          LIBXSMM_PRAGMA_VALIGNED
-          for( v = 0; v < nFmBlock; v++ ) {
+            LIBXSMM_PRAGMA_SIMD
+            LIBXSMM_PRAGMA_VALIGNED
+            for( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
-            lcl_output_ptr[v] = (input_ptr[v] > lcl_output_ptr[v]) ? input_ptr[v] : lcl_output_ptr[v];
-            mask_ptr[v] = (input_ptr[v] > lcl_output_ptr[v]) ? index + v : mask_ptr[v];
+              lcl_output_ptr[v] = (input_ptr[v] > lcl_output_ptr[v]) ? input_ptr[v] : lcl_output_ptr[v];
+              mask_ptr[v] = (input_ptr[v] > lcl_output_ptr[v]) ? index + v : mask_ptr[v];
 #endif
 #if defined(LIBXSMM_DNN_POOLING_FWD_AVG)
-            lcl_output_ptr[v] += input_ptr[v];
+              lcl_output_ptr[v] += input_ptr[v];
 #endif
+            }
           }
         }
       }
