@@ -30,7 +30,11 @@
 ******************************************************************************/
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
+#define GEMM_float  sgemm
+#define GEMM_double dgemm
 #else /* prototypes for GEMM */
+#define GEMM_float  sgemm_
+#define GEMM_double dgemm_
 void dgemm_(const char*, const char*, const int*, const int*, const int*,
   const double*, const double*, const int*, const double*, const int*,
   const double*, double*, const int*);
@@ -47,6 +51,11 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
 
 #if !defined(TYPE)
 # define TYPE double
+#endif
+#if !defined(GEMM)
+# define CONCATENATE_AUX(A, B) A##B
+# define CONCATENATE(A, B) CONCATENATE_AUX(A, B)
+# define GEMM CONCATENATE(GEMM_, TYPE)
 #endif
 
 
@@ -109,15 +118,15 @@ int main(int argc, char* argv[])
   double duration = 0;
   int i;
 
-#if defined(mkl_jit_create_dgemm) /* explicitly dispatch a kernel according to parameters */
+#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   void* jitter;
-  dgemm_jit_kernel_t kernel = NULL;
-  if (MKL_JIT_SUCCESS == mkl_cblas_jit_create_dgemm(&jitter, MKL_COL_MAJOR,
+  CONCATENATE(GEMM, _jit_kernel_t) kernel = NULL;
+  if (MKL_JIT_SUCCESS == CONCATENATE(mkl_cblas_jit_create_, GEMM)(&jitter, MKL_COL_MAJOR,
     ('N' == transa || 'n' == transa) ? MKL_NOTRANS : MKL_TRANS,
     ('N' == transb || 'n' == transb) ? MKL_NOTRANS : MKL_TRANS,
     m, n, k, alpha, lda, ldb, beta, ldc))
-  {
-    kernel = mkl_jit_get_dgemm_ptr(jitter);
+  { /* explicitly dispatch a kernel according to parameters */
+    kernel = CONCATENATE(CONCATENATE(mkl_jit_get_, GEMM), _ptr)(jitter);
   }
   else jitter = NULL;
 #endif
@@ -132,7 +141,7 @@ int main(int argc, char* argv[])
     init(42 + i, c + i * nc, m, n, ldc, scale);
   }
 
-#if defined(mkl_jit_create_dgemm)
+#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   if (NULL != jitter) {
 #if defined(_OPENMP)
 #   pragma omp parallel
@@ -157,7 +166,7 @@ int main(int argc, char* argv[])
 #     pragma omp for private(i)
 #endif
       for (i = 0; i < size; ++i) {
-        dgemm_(&transa, &transb, &m, &n, &k,
+        GEMM(&transa, &transb, &m, &n, &k,
           &alpha, a + i * na, &lda, b + i * nb, &ldb,
            &beta, c + i * nc, &ldc);
       }
@@ -173,7 +182,7 @@ int main(int argc, char* argv[])
   }
   printf("%.1f ms\n", 1000.0 * duration);
 
-#if defined(mkl_jit_create_dgemm)
+#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   mkl_jit_destroy(jitter);
 #endif
   free(va);
