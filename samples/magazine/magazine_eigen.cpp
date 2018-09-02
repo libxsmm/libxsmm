@@ -60,6 +60,16 @@ template<typename T> void init(int seed, T* dst, int nrows, int ncols, int ld, d
 }
 
 
+template<bool pad> struct stride_helper {
+  stride_helper(int pad_a, int pad_b, int pad_c): a(pad_a, 1), b(pad_b, 1), c(pad_c, 1) {}
+  Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic> a, b, c;
+};
+template<> struct stride_helper<false> {
+  stride_helper(...) {}
+  Eigen::Stride<0,0> a, b, c;
+};
+
+
 /**
  * Example program that multiplies matrices independently (C += A * B).
  * A and B-matrices are accumulated into C matrices (beta=1).
@@ -73,9 +83,11 @@ int main(int argc, char* argv[])
 #if defined(__EIGEN)
   typedef double T;
   typedef Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> matrix_type;
-  typedef Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic> stride_type;
+#if 0 /* dynamic strides make things slower even if lda == m, etc. */
   const size_t alignment = 64; /* must be power of two */
-
+#else
+  const size_t alignment = 1;
+#endif
   /* batch-size is used to stream matrix-operands from memory */
   const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
   /* default: M, N, and K are 13, 5, and 7 respectively */
@@ -83,17 +95,19 @@ int main(int argc, char* argv[])
   const int n = (3 < argc ? atoi(argv[3]) : 5);
   const int k = (4 < argc ? atoi(argv[4]) : 7);
   /* leading dimensions are used to each pad (row-major!) */
-  const stride_type lda(((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
-  const stride_type ldb(((sizeof(T) * k + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
-  const stride_type ldc(((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T), 1);
+  const int lda = ((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const int ldb = ((sizeof(T) * k + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const int ldc = ((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  /* Eigen specifies leading dimensions per "outer stride" */
+  stride_helper<(sizeof(T)<alignment)> stride(lda, ldb, ldc);
 #if 0
   const char transa = 'n', transb = 'n';
 #endif
   const T alpha = 1, beta = 1;
   /* calculate matrix sizes incl. padded elements */
-  const size_t na = ((sizeof(T) * lda.outer() * k + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const size_t nb = ((sizeof(T) * ldb.outer() * n + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const size_t nc = ((sizeof(T) * ldc.outer() * n + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t na = ((sizeof(T) * lda * k + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t nb = ((sizeof(T) * ldb * n + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t nc = ((sizeof(T) * ldc * n + alignment - 1) & ~(alignment - 1)) / sizeof(T);
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? static_cast<int>((2ULL << 30/*2 GB*/) / (sizeof(T) * (na + nb + nc))) : batchsize);
   size_t sa = sizeof(T) * na * size + alignment - 1;
@@ -113,9 +127,9 @@ int main(int argc, char* argv[])
 # pragma omp parallel for
 #endif
   for (int i = 0; i < size; ++i) {
-    init(25 + i, pa + i * na, m, k, static_cast<int>(lda.outer()), scale);
-    init(75 + i, pb + i * nb, k, n, static_cast<int>(ldb.outer()), scale);
-    init(42 + i, pc + i * nc, m, n, static_cast<int>(ldc.outer()), scale);
+    init(25 + i, pa + i * na, m, k, lda, scale);
+    init(75 + i, pb + i * nb, k, n, ldb, scale);
+    init(42 + i, pc + i * nc, m, n, ldc, scale);
   }
 
 #if defined(_OPENMP)
@@ -130,9 +144,10 @@ int main(int argc, char* argv[])
 #   pragma omp for
 #endif
     for (int i = 0; i < size; ++i) {
-      const auto a = matrix_type::Map(pa + i * na, m, k, lda);
-      const auto b = matrix_type::Map(pb + i * nb, k, n, ldb);
-      auto c = matrix_type::Map(pc + i * nc, m, n, ldc);
+      /* using "matrix_type" instead of "auto" induces an unnecessary copy */
+      const auto a = matrix_type::Map/*Aligned*/(pa + i * na, m, k, stride.a);
+      const auto b = matrix_type::Map/*Aligned*/(pb + i * nb, k, n, stride.b);
+            auto c = matrix_type::Map/*Aligned*/(pc + i * nc, m, n, stride.c);
       /**
        * Expression templates attempt to delay evaluation until the sequence point
        * is reached, or an "expression object" goes out of scope and hence must

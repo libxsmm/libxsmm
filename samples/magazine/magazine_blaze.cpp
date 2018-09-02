@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
     for (int i = 0; i < size; ++i) {
       const matrix_type a(pa + i * na, m, k, lda);
       const matrix_type b(pb + i * nb, k, n, ldb);
-      matrix_type c(pc + i * nc, m, n, ldc);
+            matrix_type c(pc + i * nc, m, n, ldc);
       /**
        * Expression templates attempt to delay evaluation until the sequence point
        * is reached, or an "expression object" goes out of scope and hence must
