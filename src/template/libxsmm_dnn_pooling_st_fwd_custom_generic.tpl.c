@@ -106,10 +106,10 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
           if(wi+kw < 0 || wi+kw >= fwi) {
             continue;
           } else {
-            const int                           index = (hi+kh)*fwi*nFmBlock + (wi+kw)*nFmBlock;
             const element_input_type*      input_ptr  = &LIBXSMM_VLA_ACCESS(5, input,      img, fm, hi+kh+iph, wi+kw+ipw, 0, nBlocksFm, fhpi, fwpi, nFmBlock);
                   element_output_type* lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output,             ho-oph,    wo-opw, 0,                   fwo, nFmBlock);
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
+            const int                           index = (hi+kh)*fwi*nFmBlock + (wi+kw)*nFmBlock;
                   element_mask_type*       mask_ptr   = &LIBXSMM_VLA_ACCESS(5, mask,       img, fm,    ho-oph,    wo-opw, 0, nBlocksFm,  fho,  fwo, nFmBlock);
 #endif
 
