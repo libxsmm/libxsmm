@@ -36,8 +36,12 @@
 # if !defined(EIGEN_DONT_PARALLELIZE)
 #   define EIGEN_DONT_PARALLELIZE
 # endif
-# include <bench/BenchTimer.h>
 # include <Eigen/Dense>
+# if defined(_OPENMP)
+#   include <omp.h>
+# else
+#   include <bench/BenchTimer.h>
+# endif
 #endif
 #include <memory>
 #include <cstdlib>
@@ -120,7 +124,10 @@ int main(int argc, char* argv[])
   T *const pb = static_cast<T*>(std::align(alignment, sb - alignment + 1, wb, sb));
   T *const pc = static_cast<T*>(std::align(alignment, sc - alignment + 1, wc, sc));
   const double scale = 1.0 / size;
+  double duration;
+#if !defined(_OPENMP)
   Eigen::BenchTimer timer;
+#endif
 
   /* initialize data according to touch-first policy */
 #if defined(_OPENMP)
@@ -140,7 +147,7 @@ int main(int argc, char* argv[])
     timer.start();
 #else /* OpenMP thread pool is already populated (parallel region) */
 #   pragma omp single
-    timer.start();
+    duration = omp_get_wtime();
 #   pragma omp for
 #endif
     for (int i = 0; i < size; ++i) {
@@ -176,13 +183,17 @@ int main(int argc, char* argv[])
 #endif
     }
   }
+#if defined(_OPENMP)
+  duration = omp_get_wtime() - duration;
+#else
   timer.stop();
-
-  if (0 < timer.total()) {
+  duration = timer.total();
+#endif
+  if (0 < duration) {
     const double gflops = 2.0 * m * n * k * 1E-9;
-    printf("%.1f GFLOPS/s\n", gflops / timer.total() * size);
+    printf("%.1f GFLOPS/s\n", gflops / duration * size);
   }
-  printf("%.1f ms\n", 1000.0 * timer.total());
+  printf("%.1f ms\n", 1000.0 * duration);
 
   free(va);
   free(vb);
