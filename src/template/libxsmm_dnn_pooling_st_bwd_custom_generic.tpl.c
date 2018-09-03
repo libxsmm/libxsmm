@@ -63,31 +63,91 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 int img = 0;
 int fm = 0;
 int imgfm = 0;
-int h = 0;
-int w = 0;
+int ho = 0;
+int wo = 0;
+int hi = 0;
+int wi = 0;
 int v = 0;
-int hp = 0;
-int wp = 0;
+#if defined(LIBXSMM_DNN_POOLING_BWD_AVG)
+int kh = 0;
+int kw = 0;
+element_input_type recp_pool_size = 1.0f/((element_output_type)handle->desc.R*(element_output_type)handle->desc.S);
+#endif
+
+/* multi-dim arrays declaration */
+element_output_type* lcl_buffer_ptr = ((element_input_type*)handle->scratch)+(fhi*fwi*nFmBlock*ltid);
+LIBXSMM_VLA_DECL(5,       element_input_type,     dinput, (element_input_type* )handle->grad_input->data,  nBlocksFm, fhpi, fwpi, nFmBlock);
+LIBXSMM_VLA_DECL(5, const element_output_type,   doutput, (element_output_type*)handle->grad_output->data, nBlocksFm, fhpo, fwpo, nFmBlock);
+#if defined(LIBXSMM_DNN_POOLING_BWD_MAX)
+LIBXSMM_VLA_DECL(5, const  element_mask_type,        mask, (element_mask_type*  )handle->mask->data,        nBlocksFm,  fho,  fwo, nFmBlock);
+#endif
+LIBXSMM_VLA_DECL(3,       element_input_type, lcl_dinput, lcl_buffer_ptr,                                                    fwi, nFmBlock);
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-LIBXSMM_VLA_DECL(5,       element_input_type,  dinput,    (element_input_type* )handle->grad_input->data,  nBlocksFm, fhpi, fwpi, nFmBlock);
-LIBXSMM_VLA_DECL(5, const element_output_type, doutput,   (element_output_type*)handle->grad_output->data, nBlocksFm, fhpo, fwpo, nFmBlock);
-#if defined(LIBXSMM_DNN_POOLING_BWD_MAX)
-LIBXSMM_VLA_DECL(5, const element_mask_type,   mask,      (element_mask_type*  )handle->mask->data,        nBlocksFm, fhpo, fwpo, nFmBlock);
-#endif
-
 for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   img = imgfm / nBlocksFm;
   fm = imgfm % nBlocksFm;
-    for (h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
-      for (w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
-              element_input_type*  dinput_ptr  = &LIBXSMM_VLA_ACCESS(5, dinput,    img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, nFmBlock);
-        const element_output_type* doutput_ptr = &LIBXSMM_VLA_ACCESS(5, doutput,   img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, nFmBlock);
+
+  LIBXSMM_PRAGMA_SIMD
+  LIBXSMM_PRAGMA_VALIGNED
+  for( v = 0; v < fhi*fwi*nFmBlock; v++ ) {
+    lcl_buffer_ptr[v] = (element_input_type)0;
+  }
+
 #if defined(LIBXSMM_DNN_POOLING_BWD_MAX)
-        const element_mask_type*   mask_ptr    = &LIBXSMM_VLA_ACCESS(5, mask,      img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, nFmBlock);
+  for( ho = oph; ho < (fho+oph); ho++ ) {
+    for( wo = opw; wo < (fwo+opw); wo++ ) {
+      const element_output_type* doutput_ptr = &LIBXSMM_VLA_ACCESS(5, doutput, img, fm,     ho,     wo, 0, nBlocksFm, fhpo, fwpo, nFmBlock);
+      const element_mask_type*      mask_ptr = &LIBXSMM_VLA_ACCESS(5, mask,    img, fm, ho-oph, wo-opw, 0, nBlocksFm,  fho,  fwo, nFmBlock);
+
+      LIBXSMM_PRAGMA_SIMD
+      LIBXSMM_PRAGMA_VALIGNED
+      for( v = 0; v < nFmBlock; v++ ) {
+        lcl_buffer_ptr[mask_ptr[v]] += doutput_ptr[v];
+      }
+    }
+  }
 #endif
+#if defined(LIBXSMM_DNN_POOLING_BWD_AVG)
+  for( ho = oph; ho < (fho+oph); ho++ ) {
+    hi = ((ho-oph) * sh) - handle->desc.pad_h;
+    for( wo = opw; wo < (fwo+opw); wo++ ) {
+      wi = ((wo-opw) * sw) - handle->desc.pad_w;
+      for( kh = 0; kh < handle->desc.R; kh++ ) {
+        if(hi+kh < 0 || hi+kh >= fhi) continue;
+        for( kw = 0; kw < handle->desc.S; kw++ ) {
+          if(wi+kw < 0 || wi+kw >= fwi) {
+            continue;
+          } else {
+            const element_output_type*   doutput_ptr = &LIBXSMM_VLA_ACCESS(5, doutput,    img, fm,    ho,    wo, 0, nBlocksFm, fhpo, fwpo, nFmBlock);
+                  element_input_type* lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,          hi+kh, wi+kw, 0,                   fwi, nFmBlock);
+
+            LIBXSMM_PRAGMA_SIMD
+            LIBXSMM_PRAGMA_VALIGNED
+            for( v = 0; v < nFmBlock; v++ ) {
+              lcl_dinput_ptr[v] += (doutput_ptr[v] * recp_pool_size);
+            }
+          }
+        }
+      }
+    }
+  }
+#endif
+
+  /* copy the local buffer into dinput activations */
+  for( hi = iph; hi < (fhi+iph); hi++ ) {
+    for( wi = ipw; wi < (fwi+ipw); wi++ ) {
+      element_input_type*     dinput_ptr = &LIBXSMM_VLA_ACCESS(5, dinput,     img, fm,        hi,        wi, 0, nBlocksFm, fhpi, fwpi, nFmBlock);
+      element_input_type* lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,             hi-iph,    wi-ipw, 0,                   fwi, nFmBlock);
+
+      LIBXSMM_PRAGMA_SIMD
+      LIBXSMM_PRAGMA_VALIGNED
+      LIBXSMM_PRAGMA_NONTEMPORAL
+      for( v = 0; v < nFmBlock; v++ ) {
+        dinput_ptr[v] = lcl_dinput_ptr[v];
+      }
     }
   }
 }

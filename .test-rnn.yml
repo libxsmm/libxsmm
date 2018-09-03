@@ -4,3 +4,6 @@ script:
 
    - make -e ${MAKEJ} && cd samples/deeplearning/lstmdriver && make -e ${MAKEJ} &&
    (echo; echo "--- TEST LSTM"; CHECK=1 ./lstmdriver.sh)
+
+   - make -e ${MAKEJ} && cd samples/deeplearning/grudriver && make -e ${MAKEJ} &&
+   (echo; echo "--- TEST GRU"; CHECK=1 ./grudriver.sh)

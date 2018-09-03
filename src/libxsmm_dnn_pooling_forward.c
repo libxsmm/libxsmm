@@ -38,6 +38,7 @@
 #endif
 #include <string.h>
 #include <math.h>
+#include <float.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -52,14 +53,12 @@ libxsmm_dnn_err_t libxsmm_dnn_pooling_st_fwd_custom_f32_f32(libxsmm_dnn_pooling*
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
-#if 0
   typedef float element_input_type;
   typedef float element_output_type;
-  typedef int   element_mask_type;
 
   if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_MAX ) {
 # define LIBXSMM_DNN_POOLING_FWD_MAX
+    typedef int   element_mask_type;
 # include "template/libxsmm_dnn_pooling_st_fwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_POOLING_FWD_MAX
   } else if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_AVG ) {
@@ -69,7 +68,6 @@ libxsmm_dnn_err_t libxsmm_dnn_pooling_st_fwd_custom_f32_f32(libxsmm_dnn_pooling*
   } else {
     status = LIBXSMM_DNN_ERR_UNSUPPORTED_POOLING;
   }
-#endif
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
@@ -118,14 +116,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_pooling_st_fwd_custom(libxsmm_d
     }
   } else {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
-#if 0
       typedef float element_input_type;
       typedef float element_output_type;
-      typedef int   element_mask_type;
 
       if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_MAX ) {
 # define LIBXSMM_DNN_POOLING_FWD_MAX
+        typedef int   element_mask_type;
 # include "template/libxsmm_dnn_pooling_st_fwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_POOLING_FWD_MAX
       } else if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_AVG ) {
@@ -135,7 +131,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_pooling_st_fwd_custom(libxsmm_d
       } else {
         status = LIBXSMM_DNN_ERR_UNSUPPORTED_POOLING;
       }
-#endif
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
       /* TODO */
     } else {
