@@ -69,97 +69,49 @@ int v = 0;
 int hp = 0;
 int wp = 0;
 
+LIBXSMM_VLA_DECL(5, const element_input_type, input,     (element_input_type* )handle->reg_input->data,  nBlocksFm, fhpi, fwpi, nFmBlock);
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+LIBXSMM_VLA_DECL(5, const element_input_type, input_add, (element_input_type* )handle->reg_add->data,    nBlocksFm, fhpi, fwpi, nFmBlock);
+#endif
+LIBXSMM_VLA_DECL(5, element_output_type,      output,    (element_output_type*)handle->reg_output->data, nBlocksFm, fhpo, fwpo, nFmBlock);
+LIBXSMM_VLA_DECL(2, const element_stats_type, gamma, (element_stats_type*)handle->reg_gamma->data, nFmBlock);
+LIBXSMM_VLA_DECL(2, const element_stats_type, beta,  (element_stats_type*)handle->reg_beta->data,  nFmBlock);
+LIBXSMM_VLA_DECL(2, const element_stats_type, bmean, (element_stats_type*)handle->expvalue->data,  nFmBlock);
+LIBXSMM_VLA_DECL(2, const element_stats_type, brstd, (element_stats_type*)handle->stddev->data,    nFmBlock);
+
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-/* let's help the vectorizaer for VLEN case */
-if ( nFmBlock == 16 ) {
-  LIBXSMM_VLA_DECL(5, const element_input_type, input,     (element_input_type* )handle->reg_input->data,  nBlocksFm, fhpi, fwpi, 16);
+for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
+  img = imgfm / nBlocksFm;
+  fm = imgfm % nBlocksFm;
+  for (h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
+    for (w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
+      const element_input_type*  input_ptr     = &LIBXSMM_VLA_ACCESS(5, input,     img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, nFmBlock);
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-  LIBXSMM_VLA_DECL(5, const element_input_type, input_add, (element_input_type* )handle->reg_add->data,    nBlocksFm, fhpi, fwpi, 16);
+      const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, nFmBlock);
 #endif
-  LIBXSMM_VLA_DECL(5, element_output_type,      output,    (element_output_type*)handle->reg_output->data, nBlocksFm, fhpo, fwpo, 16);
-  LIBXSMM_VLA_DECL(2, const element_stats_type, gamma, (element_stats_type*)handle->reg_gamma->data, 16);
-  LIBXSMM_VLA_DECL(2, const element_stats_type, beta,  (element_stats_type*)handle->reg_beta->data,  16);
-  LIBXSMM_VLA_DECL(2, const element_stats_type, bmean, (element_stats_type*)handle->expvalue->data,  16);
-  LIBXSMM_VLA_DECL(2, const element_stats_type, brstd, (element_stats_type*)handle->stddev->data,    16);
+            element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, nFmBlock);
+      const element_stats_type*  gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, nFmBlock);
+      const element_stats_type*  beta_ptr      = &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, nFmBlock);
+      const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
+      const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
 
-  for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
-    img = imgfm / nBlocksFm;
-    fm = imgfm % nBlocksFm;
-    for (h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
-      for (w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
-        const element_input_type*  input_ptr     = &LIBXSMM_VLA_ACCESS(5, input,     img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, 16);
+      LIBXSMM_PRAGMA_SIMD
+      LIBXSMM_PRAGMA_VALIGNED
+      LIBXSMM_PRAGMA_NONTEMPORAL
+      for (v = 0; v < nFmBlock; v++ ) {
+        /* BN + scale (gamma, beta) */
+        float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
+        /* Eltwise */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-        const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, 16);
+        o += input_add_ptr[v];
 #endif
-              element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, 16);
-        const element_stats_type*  gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, 16);
-        const element_stats_type*  beta_ptr      = &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, 16);
-        const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, 16);
-        const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, 16);
-
-        LIBXSMM_PRAGMA_SIMD
-        LIBXSMM_PRAGMA_VALIGNED
-        LIBXSMM_PRAGMA_NONTEMPORAL
-        for (v = 0; v < 16; v++ ) {
-          /* BN + scale (gamma, beta) */
-          float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
-          /* Eltwise */
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-          o += input_add_ptr[v];
-#endif
-          /* ReLU */
+        /* ReLU */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
-          o = ( o < 0.0f ) ? 0.0f : o;
+        o = ( o < 0.0f ) ? 0.0f : o;
 #endif
-          output_ptr[v] = o;
-        }
-      }
-    }
-  }
-} else {
-  LIBXSMM_VLA_DECL(5, const element_input_type, input,     (element_input_type* )handle->reg_input->data,  nBlocksFm, fhpi, fwpi, nFmBlock);
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-  LIBXSMM_VLA_DECL(5, const element_input_type, input_add, (element_input_type* )handle->reg_add->data,    nBlocksFm, fhpi, fwpi, nFmBlock);
-#endif
-  LIBXSMM_VLA_DECL(5, element_output_type,      output,    (element_output_type*)handle->reg_output->data, nBlocksFm, fhpo, fwpo, nFmBlock);
-  LIBXSMM_VLA_DECL(2, const element_stats_type, gamma, (element_stats_type*)handle->reg_gamma->data, nFmBlock);
-  LIBXSMM_VLA_DECL(2, const element_stats_type, beta,  (element_stats_type*)handle->reg_beta->data,  nFmBlock);
-  LIBXSMM_VLA_DECL(2, const element_stats_type, bmean, (element_stats_type*)handle->expvalue->data,  nFmBlock);
-  LIBXSMM_VLA_DECL(2, const element_stats_type, brstd, (element_stats_type*)handle->stddev->data,    nFmBlock);
-
-  for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
-    img = imgfm / nBlocksFm;
-    fm = imgfm % nBlocksFm;
-    for (h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
-      for (w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
-        const element_input_type*  input_ptr     = &LIBXSMM_VLA_ACCESS(5, input,     img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, nFmBlock);
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-        const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, nFmBlock);
-#endif
-              element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, nFmBlock);
-        const element_stats_type*  gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, nFmBlock);
-        const element_stats_type*  beta_ptr      = &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, nFmBlock);
-        const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
-        const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
-
-        LIBXSMM_PRAGMA_SIMD
-        LIBXSMM_PRAGMA_VALIGNED
-        LIBXSMM_PRAGMA_NONTEMPORAL
-        for (v = 0; v < nFmBlock; v++ ) {
-          /* BN + scale (gamma, beta) */
-          float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
-          /* Eltwise */
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-          o += input_add_ptr[v];
-#endif
-          /* ReLU */
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
-          o = ( o < 0.0f ) ? 0.0f : o;
-#endif
-          output_ptr[v] = o;
-        }
+        output_ptr[v] = o;
       }
     }
   }

@@ -373,23 +373,6 @@ ifeq (0,$(INTEL))
   endif
 endif
 
-GFC = $(NULL)
-ifneq (0,$(FORTRAN))
-  ifneq (,$(strip $(FC)))
-  ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
-    ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
-      GFC = gfortran
-    endif
-    FC = $(GFC)
-  endif
-  endif
-else
-  FC = $(GFC)
-endif
-ifeq (,$(strip $(FC)))
-  DFLAGS += -DLIBXSMM_NOFORTRAN
-endif
-
 CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
 CXX_VERSION_MAJOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f1)
 CXX_VERSION_MINOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f2)
@@ -416,6 +399,16 @@ else ifeq (2,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR)))
 else
   CC_VERSION_STRING = $(NULL)
   CC_VERSION = 0
+endif
+
+# fixup FC-default given by MAKE
+ifeq (,$(shell which $(FC) 2>/dev/null))
+  ifneq (,$(shell which gfortran 2>/dev/null))
+    GFC = gfortran
+    FC = $(GFC)
+  else
+    FC = $(NULL)
+  endif
 endif
 
 ifneq (,$(strip $(FC)))
@@ -493,6 +486,29 @@ ifeq (,$(strip $(FC_NAME)))
   FC_NAME = $(basename $(notdir $(FC)))
 endif
 
+ifneq (0,$(FORTRAN))
+  ifeq (,$(strip $(GFC)))
+    ifneq (,$(strip $(FC)))
+      ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
+        GFC = $(FC)
+      else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
+        GFC = $(FC)
+      else ifneq (pgfortran,$(CC_NAME))
+        ifneq (,$(findstring gfortran,$(FC_NAME)))
+          GFC = $(FC)
+        endif
+      endif
+    endif
+  else
+    FORTRAN = 0
+  endif
+else
+  FC = $(NULL)
+endif
+ifeq (,$(strip $(FC)))
+  DFLAGS += -DLIBXSMM_NOFORTRAN
+endif
+
 # native GCC?
 GCC ?= 0
 ifeq (0,$(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
@@ -513,16 +529,8 @@ ifeq (1,$(GCC))
     GCC = 2
   endif
   ifeq (2,$(GCC))
-  ifneq (,$(strip $(FC)))
-    ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
-      GCC = 3
-    else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
-      GCC = 3
-    else ifneq (pgfortran,$(CC_NAME))
-      ifneq (,$(findstring gfortran,$(FC_NAME)))
-        GCC = 3
-      endif
-    endif
+  ifneq (,$(strip $(GFC)))
+    GCC = 3
   endif
   endif
 endif

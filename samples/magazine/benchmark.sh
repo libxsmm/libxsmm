@@ -36,11 +36,12 @@ CAT=$(which cat 2>/dev/null)
 TR=$(which tr 2>/dev/null)
 
 # setup thread affinity
-export OMP_PLACES=threads OMP_PROC_BIND=TRUE
+export OMP_SCHEDULE=static OMP_PROC_BIND=TRUE
 
 OUT_BLAZE=benchmark-blaze.txt
 OUT_EIGEN=benchmark-eigen.txt
 OUT_XSMM=benchmark-xsmm.txt
+OUT_BLAS=benchmark-blas.txt
 
 # MNK: comma separated numbers are on its own others are combined into triplets
 RUNS=$(${HERE}/../../scripts/libxsmm_utilities.py -1 $((128*128*128)) 11 \
@@ -59,6 +60,7 @@ fi
 ${CAT} /dev/null > ${OUT_BLAZE}
 ${CAT} /dev/null > ${OUT_EIGEN}
 ${CAT} /dev/null > ${OUT_XSMM}
+${CAT} /dev/null > ${OUT_BLAS}
 
 NRUN=1
 NMAX=$(${ECHO} ${RUNS} | wc -w)
@@ -76,6 +78,9 @@ for RUN in ${RUNS} ; do
   ${ECHO} -n "${MVALUE} ${NVALUE} ${KVALUE} "                                   >> ${OUT_XSMM}
   ${HERE}/magazine_xsmm  ${SIZE} ${MVALUE} ${NVALUE} ${KVALUE} | ${TR} "\n" " " >> ${OUT_XSMM}
   ${ECHO}                                                                       >> ${OUT_XSMM}
+  ${ECHO} -n "${MVALUE} ${NVALUE} ${KVALUE} "                                   >> ${OUT_BLAS}
+  ${HERE}/magazine_blas  ${SIZE} ${MVALUE} ${NVALUE} ${KVALUE} | ${TR} "\n" " " >> ${OUT_BLAS}
+  ${ECHO}                                                                       >> ${OUT_BLAS}
   NRUN=$((NRUN+1))
 done
 

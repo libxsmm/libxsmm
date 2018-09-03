@@ -64,7 +64,7 @@ template<typename T> void init(int seed, T* dst, int nrows, int ncols, int ld, d
 
 /**
  * Example program that multiplies matrices independently (C += A * B).
- * A and B-matrices are accumulated into a single C matrix (beta=1).
+ * A and B-matrices are accumulated into C matrices (beta=1).
  * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
  * However, running a kernel without loading any matrix operand from
  * memory ("cache-hot loop") is not modeling typical applications
@@ -133,7 +133,7 @@ int main(int argc, char* argv[])
     for (int i = 0; i < size; ++i) {
       const matrix_type a(pa + i * na, m, k, lda);
       const matrix_type b(pb + i * nb, k, n, ldb);
-      matrix_type c(pc + i * nc, m, n, ldc);
+            matrix_type c(pc + i * nc, m, n, ldc);
       /**
        * Expression templates attempt to delay evaluation until the sequence point
        * is reached, or an "expression object" goes out of scope and hence must
