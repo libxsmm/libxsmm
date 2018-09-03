@@ -82,7 +82,7 @@ LIBXSMM_API libxsmm_dnn_pooling* libxsmm_dnn_create_pooling(libxsmm_dnn_pooling_
       /* calculate scratch size for local pooling copies of one feature map block per thread */
       handle->scratch_size = (sizeof(float) * ( handle->desc.H + 2*LIBXSMM_MAX(handle->desc.pad_h_in, handle->desc.pad_h_out ) )
                                             * ( handle->desc.W + 2*LIBXSMM_MAX(handle->desc.pad_w_in, handle->desc.pad_w_out ) )
-                                            * LIBXSMM_MAX( handle->blocksifm, handle->blocksofm )
+                                            * LIBXSMM_MAX( handle->ofmblock, handle->ifmblock )
                                             * handle->desc.threads );
     } else {
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;

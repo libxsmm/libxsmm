@@ -35,8 +35,8 @@ const int fhi = handle->desc.H;
 const int fwi = handle->desc.W;
 const int sh = handle->desc.u;
 const int sw = handle->desc.v;
-const int fho = fhi/sh;
-const int fwo = fwi/sw;
+const int fho = handle->ofh;
+const int fwo = handle->ofw;
 const int iph = handle->desc.pad_h_in;
 const int ipw = handle->desc.pad_w_in;
 const int oph = handle->desc.pad_h_out;
@@ -122,8 +122,10 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
             LIBXSMM_PRAGMA_VALIGNED
             for( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
-              lcl_output_ptr[v] = (input_ptr[v] > lcl_output_ptr[v]) ? input_ptr[v] : lcl_output_ptr[v];
-              mask_ptr[v] = (input_ptr[v] > lcl_output_ptr[v]) ? index + v : mask_ptr[v];
+              if ( input_ptr[v] > lcl_output_ptr[v] ) {
+                lcl_output_ptr[v] =  input_ptr[v];
+                mask_ptr[v] = index + v;
+              }
 #endif
 #if defined(LIBXSMM_DNN_POOLING_FWD_AVG)
               lcl_output_ptr[v] += input_ptr[v];
