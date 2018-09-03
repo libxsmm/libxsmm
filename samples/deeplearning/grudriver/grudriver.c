@@ -160,20 +160,7 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst, float 
 
 LIBXSMM_INLINE void matrix_transpose(int rows, int cols, float *src, float *dst)
 {
-  int i, j;
-  LIBXSMM_VLA_DECL(2, float, src2D, src, cols);
-  LIBXSMM_VLA_DECL(2, float, dst2D, dst, rows);
-#if defined(_OPENMP)
-# pragma omp parallel for private(i, j)
-#endif
-  for (i = 0; i < rows; i++) {
-    for (j = 0; j < cols; j++) {
-      LIBXSMM_VLA_ACCESS(2, dst2D, j, i, rows) = LIBXSMM_VLA_ACCESS(2, src2D, i, j, cols);
-    }
-  }
-#if 0 
   libxsmm_otrans_omp(dst, src, sizeof(float), rows, cols, rows/*ldi*/, rows/*ldo*/);
-#endif
 }
 
 
@@ -310,7 +297,7 @@ int main(int argc, char* argv[])
 
   unsigned long long l_start, l_end;
   double l_total = 0.0;
-  double flops = 0.0, tempflops = 0.0;
+  double flops = 0.0;
   const double tflops = 12; /* transcendental flops */
   int i, j, it;
 
@@ -935,7 +922,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, uzgold, &m, uz) );
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, uggold, &m, ug) );
       for (it = 0; it < t; ++it) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleux, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleux, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
       }
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewh, wrgold, &m, wr) );
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewh, wzgold, &m, wz) );
