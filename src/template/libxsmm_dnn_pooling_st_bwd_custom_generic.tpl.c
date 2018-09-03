@@ -33,8 +33,10 @@
 const int nImg = handle->desc.N;
 const int fhi = handle->desc.H;
 const int fwi = handle->desc.W;
+#if defined(LIBXSMM_DNN_POOLING_BWD_AVG)
 const int sh = handle->desc.u;
 const int sw = handle->desc.v;
+#endif
 const int fho = handle->ofh;
 const int fwo = handle->ofw;
 const int iph = handle->desc.pad_h_in;

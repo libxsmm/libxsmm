@@ -216,7 +216,7 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
         }
       } else {
         /* shouldn't happen */
-      } 
+      }
 
       for( ho = 0; ho < ofh; ho++ ) {
         hi = (ho * sh) - pad_h;
@@ -231,7 +231,7 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
                 if ( LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw) > LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) ) {
                   LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) = LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw);
                   LIBXSMM_VLA_ACCESS(4, mask, img, fm, ho, wo, nFm, ofh, ofw) = index;
-                }    
+                }
               } else if ( param->type == 1 ) {
                 LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) += LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw);
               } else {
@@ -257,10 +257,10 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
       } else {
         /* shouldn't happen */
       }
-      
+
       free( lcl_buffer_ptr );
     }
-  } 
+  }
 }
 
 LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, const float* doutput_ptr, const int* mask_ptr)
@@ -302,7 +302,7 @@ LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, 
           for( wo = 0; wo < ofw; wo++ ) {
             lcl_buffer_ptr[LIBXSMM_VLA_ACCESS(4, mask, img, fm, ho, wo, nFm, ofh, ofw)] += LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, nFm, ofh, ofw);
           }
-        } 
+        }
       } else if ( param->type == 1 ) {
         for( ho = 0; ho < ofh; ho++ ) {
           hi = (ho * sh) - pad_h;
@@ -326,10 +326,10 @@ LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, 
           LIBXSMM_VLA_ACCESS(4, dinput, img, fm, hi, wi, nFm, ifh, ifw) = LIBXSMM_VLA_ACCESS(2, lcl_buffer, hi, wi, ifw);
         }
       }
-      
+
       free( lcl_buffer_ptr );
     }
-  } 
+  }
 }
 
 
@@ -510,7 +510,7 @@ int main(int argc, char* argv[])
   copy_internal_nchw( naive_output_pad , naive_output, nImg, nFm, ofh, ofw, pad_h_out, pad_w_out);
   init_buf(naive_deloutput,          nImg*nFm*ofh*ofw, 0, 0);
   copy_internal_nchw( naive_deloutput_pad , naive_deloutput, nImg, nFm, ofh, ofw, pad_h_out, pad_w_out);
-  
+
   set_zeropad_nchw(naive_input_pad,   nImg, nFm, ifhp, ifwp, pad_h_in,  pad_w_in);
   set_zeropad_nchw(naive_delinput_pad, nImg, nFm, ifhp, ifwp, pad_h_in,  pad_w_in);
   set_zeropad_nchw(naive_output_pad,   nImg, nFm, ofhp, ofwp, pad_h_out, pad_w_out);
@@ -767,7 +767,7 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_release_tensor( libxsmm_handle, LIBXSMM_DNN_POOLING_MASK ) );
-    
+
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_input ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_delinput ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_output ) );
