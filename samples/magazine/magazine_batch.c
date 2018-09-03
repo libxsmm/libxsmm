@@ -34,14 +34,14 @@
 #if !defined(TYPE)
 # define TYPE double
 #endif
-#if 0 /* No prefetch */
-# define NOPREFETCH
-#endif
 #if 0 /* process batch of A, B, and C in "random" order */
 # define SHUFFLE
 #endif
-#if 0 /* auto-dispatch SMM kernel */
-# define AUTO
+#if 0 /* manually dispatch SMM kernel */
+# define KERNEL
+#endif
+#if 0 /* synchronization among C matrices */
+# define SYNC
 #endif
 
 
@@ -81,87 +81,58 @@ int main(int argc, char* argv[])
   TYPE *const a = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * na * size, LIBXSMM_CACHELINE);
   TYPE *const b = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nb * size, LIBXSMM_CACHELINE);
   TYPE *const c = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nc * size, LIBXSMM_CACHELINE);
+  int *const ia = (int*)libxsmm_malloc(sizeof(int) * size), i;
+  int *const ib = (int*)libxsmm_malloc(sizeof(int) * size);
+  int *const ic = (int*)libxsmm_malloc(sizeof(int) * size);
   const double scale = 1.0 / size;
   libxsmm_timer_tickint start;
   double duration;
-  int i, j;
+#if defined(SYNC)
+  const int xsize = size;
+#else
+  const int xsize = -size;
+#endif
 
   /**
    * LIBXSMM's C interface really is type-specific, and the helper macros (such as LIBXSMM_MMFUNCTION_TYPE)
    * are only for "entertainment". The C++ interface on the other hand is provides overloaded functions
    * and some helpers for more type-generic programming tasks (e.g., libxsmm_mmfunction<T>).
    */
-#if !defined(AUTO) /* explicitly dispatch a kernel according to parameters */
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb), prefetch = LIBXSMM_PREFETCH_AUTO;
-  const LIBXSMM_MMFUNCTION_TYPE(TYPE) xmm = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, &prefetch);
+#if defined(KERNEL) /* explicitly dispatch a kernel according to parameters */
+  libxsmm_descriptor_blob blob;
+  const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_GEMM_PRECISION(TYPE),
+    m, n, k, lda, ldb, ldc, &alpha, &beta, LIBXSMM_GEMM_FLAGS(transa, transb),
+    libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
+  const libxsmm_xmmfunction xmm = libxsmm_xmmdispatch(desc);
 #endif
 
   /* initialize data according to touch-first policy */
 #if defined(_OPENMP)
-# pragma omp parallel for private(i, j)
+# pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; ++i) {
 #if defined(SHUFFLE)
-    j = (i * shuffle) % size;
+    const int j = (i * shuffle) % size;
 #else
-    j = i;
+    const int j = i;
 #endif
     LIBXSMM_MATINIT(TYPE, 25 + i, a + j * na, m, k, lda, scale);
     LIBXSMM_MATINIT(TYPE, 75 + i, b + j * nb, k, n, ldb, scale);
     if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
       LIBXSMM_MATINIT(TYPE, 42 + i, c + j * nc, m, n, ldc, scale);
     }
+    ia[i] = (int)(j * na);
+    ib[i] = (int)(j * nb);
+    ic[i] = (int)(j * nc);
   }
 
-#if defined(_OPENMP)
-# pragma omp parallel
-#endif
-  {
-#if !defined(_OPENMP)
-    start = libxsmm_timer_tick();
-#else /* OpenMP thread pool is already populated (parallel region) */
-#   pragma omp single
-    start = libxsmm_timer_tick();
-#   pragma omp for private(i, j)
-#endif
-    for (i = 0; i < size - 1; ++i) {
-#if defined(SHUFFLE)
-# if !defined(AUTO) && !defined(NOPREFETCH)
-      const int p = ((i + 1) * shuffle) % size;
-# endif
-      j = (i * shuffle) % size;
+  start = libxsmm_timer_tick();
+#if defined(KERNEL) /* explicitly dispatch a kernel according to parameters */
+  libxsmm_mmbatch_omp(xmm, 0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, a, b, c, xsize);
 #else
-# if !defined(AUTO) && !defined(NOPREFETCH)
-      const int p = i + 1;
-# endif
-      j = i;
-#endif
-#if defined(AUTO)
-      libxsmm_dgemm(&transa, &transb, &m, &n, &k,
-        &alpha, a + j * na, &lda, b + j * nb, &ldb,
-         &beta, c + j * nc, &ldc);
-#elif defined(NOPREFETCH)
-      xmm(a + j * na, b + j * nb, c + j * nc);
-#else
-      xmm(a + j * na, b + j * nb, c + j * nc,
-          a + p * na, b + p * nb, c + p * nc);
-#endif
-    }
-  }
-#if defined(SHUFFLE)
-  j = ((size - 1) * shuffle) % size;
-#else
-  j = size - 1;
-#endif
-#if defined(AUTO)
-  libxsmm_dgemm(&transa, &transb, &m, &n, &k,
-    &alpha, a + j * na, &lda, b + j * nb, &ldb,
-     &beta, c + j * nc, &ldc);
-#elif defined(NOPREFETCH)
-  xmm(a + j * na, b + j * nb, c + j * nc);
-#else
-  xmm(a + j * na, b + j * nb, c + j * nc,
-      a + j * na, b + j * nb, c + j * nc);
+  libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(TYPE),
+    &transa, &transb, m, n, k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc,
+    0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, xsize);
 #endif
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
@@ -171,6 +142,9 @@ int main(int argc, char* argv[])
   }
   printf("%.1f ms\n", 1000.0 * duration);
 
+  libxsmm_free(ia);
+  libxsmm_free(ib);
+  libxsmm_free(ic);
   libxsmm_free(a);
   libxsmm_free(b);
   libxsmm_free(c);
