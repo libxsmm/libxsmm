@@ -442,8 +442,8 @@ int main(int argc, char* argv[])
   stride_h = stride;
 
   /* deriving some values for naive code */
-  ofh  = ifh/stride_h;
-  ofw  = ifw/stride_w;
+  ofh = (ifh + 2 * pad_h - kh) / stride_h + 1;
+  ofw = (ifw + 2 * pad_w - kw) / stride_w + 1;
   ifhp = ifh + 2 * pad_h_in;
   ifwp = ifw + 2 * pad_w_in;
   ofhp = ofh + 2 * pad_h_out;
@@ -520,8 +520,8 @@ int main(int argc, char* argv[])
   set_zeropad_nchw(naive_output_pad,   nImg, nFm, ifhp, ifwp, pad_h_out, pad_w_out);
   set_zeropad_nchw(naive_deloutput_pad, nImg, nFm, ifhp, ifwp, pad_h_out, pad_w_out);
 
-  init_buf_i32(naive_mask,      nImg*nFm*ofh *ofw , 0, 0);
-  init_buf_i32(mask_libxsmm,    nImg*nFm*ofhp*ofwp, 0, 0);
+  zero_buf_i32(naive_mask,      nImg*nFm*ofh *ofw);
+  zero_buf_i32(mask_libxsmm,    nImg*nFm*ofhp*ofwp);
 
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");
