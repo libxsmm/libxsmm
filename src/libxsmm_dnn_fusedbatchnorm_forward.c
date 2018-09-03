@@ -59,17 +59,17 @@ libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_fwd_custom_f32_f32(libxsmm_dnn_fusedbn*
   if ( handle->desc.fuse_order != LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU ) {
     status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_ORDER;
   } else {
-    if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE ) {
+    if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN) ) {
 # include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom_generic.tpl.c"
-    } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE ) {
+    } else if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE) ) {
 # define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE
 # include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE
-    } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU ) {
+    } else if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN_RELU) ) {
 # define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
 # include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
-    } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU ) {
+    } else if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE_RELU) ) {
 # define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE
 # define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
 # include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom_generic.tpl.c"
@@ -135,17 +135,17 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_fwd_custom(libxsmm_d
       if ( handle->desc.fuse_order != LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU ) {
         status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_ORDER;
       } else {
-        if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE ) {
+        if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN) ) {
 # include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom_generic.tpl.c"
-        } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE ) {
+        } else if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE) ) {
 # define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE
 # include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE
-        } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU ) {
+        } else if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN_RELU) ) {
 # define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
 # include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
-        } else if ( handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU ) {
+        } else if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE_RELU) ) {
 # define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE
 # define LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU
 # include "template/libxsmm_dnn_fusedbatchnorm_st_fwd_custom_generic.tpl.c"
