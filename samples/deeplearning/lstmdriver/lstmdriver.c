@@ -1061,7 +1061,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wcgold, &m, &LIBXSMM_VLA_ACCESS(2, wi4, 3, 0, m * k)) );
 #endif
       for (it = 0; it < t; ++it) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
       }
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleuh, rigold, &m, ri) );
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleuh, rfgold, &m, rf) );
