@@ -299,6 +299,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "grudriver", "..\samples\dee
 		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "fusedbndriver", "..\samples\deeplearning\fusedbndriver\fusedbndriver.vcxproj", "{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -1005,6 +1010,18 @@ Global
 		{1066873D-98A8-4133-9386-5D1BC113290E}.symbols|Win32.Build.0 = symbols|Win32
 		{1066873D-98A8-4133-9386-5D1BC113290E}.symbols|x64.ActiveCfg = symbols|x64
 		{1066873D-98A8-4133-9386-5D1BC113290E}.symbols|x64.Build.0 = symbols|x64
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.debug|Win32.ActiveCfg = debug|Win32
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.debug|Win32.Build.0 = debug|Win32
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.debug|x64.ActiveCfg = debug|x64
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.debug|x64.Build.0 = debug|x64
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.release|Win32.ActiveCfg = release|Win32
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.release|Win32.Build.0 = release|Win32
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.release|x64.ActiveCfg = release|x64
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.release|x64.Build.0 = release|x64
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.symbols|Win32.ActiveCfg = symbols|Win32
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.symbols|Win32.Build.0 = symbols|Win32
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.symbols|x64.ActiveCfg = symbols|x64
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1077,6 +1094,7 @@ Global
 		{0EC5E28C-54A4-403B-AA7F-541007E74116} = {4E612A76-6EF6-4E71-92A4-B10764E4314E}
 		{D014A987-5908-4BF1-9561-601A3301D103} = {4E612A76-6EF6-4E71-92A4-B10764E4314E}
 		{1066873D-98A8-4133-9386-5D1BC113290E} = {19D4CE59-98AA-421B-B824-34017E235623}
+		{A6E6E8A7-9431-4EAB-AE65-FFAE9ABF2C08} = {19D4CE59-98AA-421B-B824-34017E235623}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DD13D8C2-5B0F-431B-897A-AA0FE5BDFCB2}

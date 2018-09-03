@@ -225,7 +225,7 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
   const int fwpo = fwo + 2*opw;
   const int fhpi = fhi + 2*iph;
   const int fwpi = fwi + 2*ipw;
-  const float nhw = nImg * fhi * fwi;
+  const float nhw = (float)(nImg * fhi * fwi);
   const float recp_nhw = 1.0f/nhw;
 
   int img, fm, h, w, hp, wp;
@@ -252,7 +252,7 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
                 float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, hp, wp, fm, fhpo, fwpo);
 
           /* ReLU */
-          *del_output_ptr    = (output_val == 0.0) ? 0.0 : *del_output_ptr;
+          *del_output_ptr    = LIBXSMM_FEQ(output_val, 0) ? 0 : *del_output_ptr;
           /* elementwise */
           *del_input_add_ptr = *del_output_ptr;
           del_gamma_ptr[fm] += (input_val - expectval_ptr[fm]) * (*del_output_ptr) * stddev_ptr[fm];
