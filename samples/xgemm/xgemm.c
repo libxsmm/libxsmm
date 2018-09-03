@@ -99,12 +99,12 @@ int main(int argc, char* argv[])
     OTYPE* d = 0;
     if (!LIBXSMM_FEQ(0, check)) {
       d = (OTYPE*)libxsmm_malloc((size_t)(ldc * nn * sizeof(OTYPE)));
-      LIBXSMM_MATINIT(OTYPE, 0, d, m, n, ldc, 1.0);
+      LIBXSMM_MATINIT_OMP(OTYPE, 0, d, m, n, ldc, 1.0);
     }
 #endif
-    LIBXSMM_MATINIT(OTYPE,  0, c,  m,  n, ldc, 1.0);
-    LIBXSMM_MATINIT(ITYPE, 42, a, mm, ka, lda, 1.0);
-    LIBXSMM_MATINIT(ITYPE, 24, b, kk, kb, ldb, 1.0);
+    LIBXSMM_MATINIT_OMP(OTYPE,  0, c,  m,  n, ldc, 1.0);
+    LIBXSMM_MATINIT_OMP(ITYPE, 42, a, mm, ka, lda, 1.0);
+    LIBXSMM_MATINIT_OMP(ITYPE, 24, b, kk, kb, ldb, 1.0);
 #if defined(MKL_ENABLE_AVX512)
     mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif

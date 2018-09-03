@@ -548,23 +548,23 @@ int main(int argc, char* argv[])
 
   /* initialize data */
   if (pass == 0) {
-    LIBXSMM_MATINIT(float, 42, wigold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wfgold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wogold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wcgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wigold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wfgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wogold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wcgold, m, k, m, 1.0);
     for (it = 0; it < t; ++it) {
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
     }
-    LIBXSMM_MATINIT(float, 42, rigold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rfgold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rogold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rcgold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 24, hgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rigold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rfgold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rogold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rcgold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, hgold, m, n, m, 1.0);
     matrix_copy(m*n, hgold, hgold_temp); /* Required because hgold may get overwritten */
-    LIBXSMM_MATINIT(float, 24, bigold, m, n, m, 1.0);
-    LIBXSMM_MATINIT(float, 24, bfgold, m, n, m, 1.0);
-    LIBXSMM_MATINIT(float, 24, bogold, m, n, m, 1.0);
-    LIBXSMM_MATINIT(float, 24, bcgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, bigold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, bfgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, bogold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, bcgold, m, n, m, 1.0);
     zero_buf(igold, m*n);
     zero_buf(fgold, m*n);
     zero_buf(ogold, m*n);
@@ -582,23 +582,23 @@ int main(int argc, char* argv[])
     zero_buf(d2gold, m*n);
     zero_buf(dhgold, m*n);
   } else {
-    LIBXSMM_MATINIT(float, 42, wigold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wfgold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wogold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wcgold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rigold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rfgold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rogold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rcgold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wigold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wfgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wogold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wcgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rigold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rfgold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rogold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rcgold, m, m, m, 1.0);
     for (it = 0; it < t; ++it) {
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, igoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, fgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, ogoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, cgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, dgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, igoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, fgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, ogoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, cgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, dgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 1.0);
     }
     zero_buf(i1gold, m*n);
     zero_buf(i2gold, m*n);

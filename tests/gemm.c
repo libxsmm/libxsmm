@@ -108,10 +108,10 @@ int main(void)
   c = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
   d = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
   LIBXSMM_ASSERT(0 != a && 0 != b && 0 != c && 0 != d);
-  LIBXSMM_MATINIT(ITYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
-  LIBXSMM_MATINIT(ITYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
-  LIBXSMM_MATINIT(OTYPE,  0, c, max_size_c, 1, max_size_c, 1.0);
-  LIBXSMM_MATINIT(OTYPE,  0, d, max_size_c, 1, max_size_c, 1.0);
+  LIBXSMM_MATINIT_OMP(ITYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
+  LIBXSMM_MATINIT_OMP(ITYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
+  LIBXSMM_MATINIT_OMP(OTYPE,  0, c, max_size_c, 1, max_size_c, 1.0);
+  LIBXSMM_MATINIT_OMP(OTYPE,  0, d, max_size_c, 1, max_size_c, 1.0);
   memset(&diff, 0, sizeof(diff));
 
   for (test = begin; test < end && EXIT_SUCCESS == result; ++test) {
