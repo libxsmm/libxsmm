@@ -93,7 +93,12 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   LIBXSMM_PRAGMA_SIMD
   LIBXSMM_PRAGMA_VALIGNED
   for( v = 0; v < fho*fwo*nFmBlock; v++ ) {
+#if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
     lcl_buffer_ptr[v] = -FLT_MAX;
+#endif
+#if defined(LIBXSMM_DNN_POOLING_FWD_AVG)
+    lcl_buffer_ptr[v] = (element_output_type)0.0;
+#endif
   }
 
   for( ho = oph; ho < (fho+oph); ho++ ) {
