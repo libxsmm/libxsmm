@@ -170,7 +170,9 @@ int main(int argc, char* argv[])
           &alpha, a + i * na, &lda, b + i * nb, &ldb,
            &beta, c + i * nc, &ldc);
       }
+#if defined(_OPENMP)
     }
+#endif
   }
 #if defined(_OPENMP)
   duration = omp_get_wtime() - duration;
