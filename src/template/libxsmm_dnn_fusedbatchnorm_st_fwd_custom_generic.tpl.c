@@ -87,10 +87,10 @@ LIBXSMM_VLA_DECL(5, const element_input_type, input,     (element_input_type* )h
 LIBXSMM_VLA_DECL(5, const element_input_type, input_add, (element_input_type* )handle->reg_add->data,    nBlocksFm, ifhp, ifwp, nFmBlock);
 #endif
 LIBXSMM_VLA_DECL(5, element_output_type,      output,    (element_output_type*)handle->reg_output->data, nBlocksFm, ofhp, ofwp, nFmBlock);
-LIBXSMM_VLA_DECL(2, const element_stats_type, gamma, (element_stats_type*)handle->reg_gamma->data, nFmBlock);
-LIBXSMM_VLA_DECL(2, const element_stats_type, beta,  (element_stats_type*)handle->reg_beta->data,  nFmBlock);
-LIBXSMM_VLA_DECL(2,       element_stats_type, bmean, (element_stats_type*)handle->expvalue->data,  nFmBlock);
-LIBXSMM_VLA_DECL(2,       element_stats_type, brstd, (element_stats_type*)handle->stddev->data,    nFmBlock);
+LIBXSMM_VLA_DECL(2, const element_stats_type, gamma,     (element_stats_type*)handle->reg_gamma->data,   nFmBlock);
+LIBXSMM_VLA_DECL(2, const element_stats_type, beta,      (element_stats_type*)handle->reg_beta->data,    nFmBlock);
+LIBXSMM_VLA_DECL(2,       element_stats_type, bmean,     (element_stats_type*)handle->expvalue->data,    nFmBlock);
+LIBXSMM_VLA_DECL(2,       element_stats_type, brstd,     (element_stats_type*)(NULL != handle->stddev ? handle->stddev->data : NULL), nFmBlock);
 LIBXSMM_VLA_DECL(3,       element_stats_type, sum_img,   (element_stats_type*)handle->scratch,                                            nImg, nFmBlock);
 LIBXSMM_VLA_DECL(3,       element_stats_type, sumsq_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * nBlocksFm * nFmBlock),  nImg, nFmBlock);
 
@@ -108,7 +108,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     img = imgfm / nBlocksFm;
     fm = imgfm % nBlocksFm;
     sum_img_ptr = &LIBXSMM_VLA_ACCESS(3, sum_img, fm, img, 0, nImg, nFmBlock);
-    sumsq_img_ptr  = &LIBXSMM_VLA_ACCESS(3, sumsq_img,  fm, img, 0, nImg, nFmBlock);
+    sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img,  fm, img, 0, nImg, nFmBlock);
 
     LIBXSMM_PRAGMA_SIMD
     LIBXSMM_PRAGMA_VALIGNED
@@ -119,7 +119,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 
     for ( hi=iph; hi < (ifh + iph); hi++ ) {
       for ( wi=ipw; wi < (ifw + ipw); wi++ ) {
-        const element_input_type* input_ptr  = &LIBXSMM_VLA_ACCESS(5, input, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
+        const element_input_type* input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
 
         LIBXSMM_PRAGMA_SIMD
         LIBXSMM_PRAGMA_VALIGNED
@@ -134,12 +134,13 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     LIBXSMM_PRAGMA_VALIGNED
     for (v=0; v < nFmBlock; v++) {
       sum_img_ptr[v] = lcl_sum_ptr[v];
-      sumsq_img_ptr[v]  = lcl_sumsq_ptr[v];
+      sumsq_img_ptr[v] = lcl_sumsq_ptr[v];
     }
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 
+  LIBXSMM_ASSERT(NULL != brstd);
   /* now we need to reduce the sum and sum^2, we use the final  */
   for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
     /* @TODO check if we can bake this in into scratch */
@@ -171,9 +172,9 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       const element_stats_type tbmean = (recp_nhw * lcl_sum_ptr[v]) ;
-      const element_stats_type tbmeansq  = tbmean * tbmean;
+      const element_stats_type tbmeansq = tbmean * tbmean;
       const element_stats_type tsqbmean = recp_nhw * lcl_sumsq_ptr[v];
-      const element_stats_type tbrstd = (element_stats_type)(1.0/sqrt(tsqbmean - tbmeansq + sqrt_eps));
+      const element_stats_type tbrstd = (element_stats_type)(1.0/sqrt((double)tsqbmean - tbmeansq + sqrt_eps));
       bmean_ptr[v] += tbmean;
       brstd_ptr[v] += tbrstd;
     }
@@ -182,6 +183,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
+LIBXSMM_ASSERT(NULL != brstd);
 /* now we apply the actual forward batch norm */
 for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
   img = imgfm / nBlocksFm;
