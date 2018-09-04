@@ -160,7 +160,7 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst, float 
 
 LIBXSMM_INLINE void matrix_transpose(int rows, int cols, float *src, float *dst)
 {
-  libxsmm_otrans_omp(dst, src, sizeof(float), rows, cols, rows/*ldi*/, rows/*ldo*/);
+  libxsmm_otrans_omp(dst, src, sizeof(float), rows, cols, rows/*ldi*/, cols/*ldo*/);
 }
 
 
@@ -236,7 +236,7 @@ int main(int argc, char* argv[])
   /* Arrays related to FWD pass */
   float *urgold, *uzgold, *uggold, *xgoldt, *wrgold, *wzgold, *wggold, *hgold = NULL, *brgold = NULL, *bzgold = NULL, *bggold = NULL;
   float *rgold = NULL, *zgold = NULL, *ggold = NULL;
-  float *r1gold, *r2gold, *z1gold, *z2gold, *g1gold, *g2gold, *g3gold, *h1gold, *h2gold, *h3gold;
+  float *r1gold = NULL, *r2gold = NULL, *z1gold = NULL, *z2gold = NULL, *g1gold = NULL, *g2gold = NULL, *g3gold = NULL, *h1gold = NULL, *h2gold = NULL, *h3gold = NULL;
   float *ur, *uz, *ug, *xt, *wr, *wz, *wg, *h = NULL, *br, *bz, *bg, *htest = NULL, *hgold_temp = NULL;
   /* Arrays related to BWD and UPD pass */
   float *djdhgoldt = NULL, *rgoldt = NULL, *zgoldt = NULL, *ggoldt = NULL, *hgoldt = NULL;
