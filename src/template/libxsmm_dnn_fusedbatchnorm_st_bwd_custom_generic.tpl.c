@@ -103,81 +103,83 @@ assert( nFmBlock <= 64 );
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
-  /* @TODO check if we can bake this in into scratch */
-  element_stats_type lcl_gamma_ptr[64];
-  element_stats_type lcl_beta_ptr[64];
-  element_stats_type* del_gamma_img_ptr;
-  element_stats_type* del_beta_img_ptr;
+if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
+  for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
+    /* @TODO check if we can bake this in into scratch */
+    element_stats_type lcl_gamma_ptr[64];
+    element_stats_type lcl_beta_ptr[64];
+    element_stats_type* del_gamma_img_ptr;
+    element_stats_type* del_beta_img_ptr;
 
-  img = imgfm / nBlocksFm;
-  fm = imgfm % nBlocksFm;
-  del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
-  del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
-
-  LIBXSMM_PRAGMA_SIMD
-  LIBXSMM_PRAGMA_VALIGNED
-  for (v=0; v < nFmBlock; v++) {
-    lcl_gamma_ptr[v] = 0.0f;
-    lcl_beta_ptr[v] = 0.0f;
-  }
-
-  for (h=iph, hp=oph; h < (fhi + iph); h+=sh, hp++) {
-    for (w=ipw, wp=opw; w < (fwi + ipw); w+=sw, wp++) {
-#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
-            element_input_type*  del_input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, nFmBlock);
-#endif
-#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-      const element_output_type* output_ptr        = &LIBXSMM_VLA_ACCESS(5,     output, img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, nFmBlock);
-#endif
-      const element_input_type*  input_ptr         = &LIBXSMM_VLA_ACCESS(5,      input, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, nFmBlock);
-            element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5,    doutput, img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, nFmBlock);
-      const element_stats_type*  bmean_ptr         = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
-      const element_stats_type*  brstd_ptr         = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
-
-      LIBXSMM_PRAGMA_SIMD
-      LIBXSMM_PRAGMA_VALIGNED
-      for (v=0; v < nFmBlock; v++) {
-#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-        del_output_ptr[v] = (LIBXSMM_FEQ(output_ptr[v], 0) ? 0 : del_output_ptr[v]);
-#endif
-#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
-        del_input_add_ptr[v] = del_output_ptr[v];
-#endif
-        lcl_gamma_ptr[v] += (input_ptr[v] - bmean_ptr[v]) * del_output_ptr[v] * brstd_ptr[v];
-        lcl_beta_ptr[v]  += del_output_ptr[v];
-      }
-    }
-  }
-
-  LIBXSMM_PRAGMA_SIMD
-  LIBXSMM_PRAGMA_VALIGNED
-  for (v=0; v < nFmBlock; v++) {
-    del_gamma_img_ptr[v] = lcl_gamma_ptr[v];
-    del_beta_img_ptr[v]  = lcl_beta_ptr[v];
-  }
-}
-
-libxsmm_barrier_wait(handle->barrier, ltid);
-
-/* now we need to reduce the del_gamm and del_beta */
-for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
-  for (img=0; img < nImg; img++ ) {
-    element_stats_type* del_gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 0, nFmBlock);
-    element_stats_type* del_beta_ptr      = &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 0, nFmBlock);
-    element_stats_type* del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
-    element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
+    img = imgfm / nBlocksFm;
+    fm = imgfm % nBlocksFm;
+    del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
+    del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
 
     LIBXSMM_PRAGMA_SIMD
     LIBXSMM_PRAGMA_VALIGNED
     for (v=0; v < nFmBlock; v++) {
-      del_gamma_ptr[v] += del_gamma_img_ptr[v];
-      del_beta_ptr[v]  += del_beta_img_ptr[v];
+      lcl_gamma_ptr[v] = 0.0f;
+      lcl_beta_ptr[v] = 0.0f;
+    }
+
+    for (h=iph, hp=oph; h < (fhi + iph); h+=sh, hp++) {
+      for (w=ipw, wp=opw; w < (fwi + ipw); w+=sw, wp++) {
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
+              element_input_type*  del_input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, nFmBlock);
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
+        const element_output_type* output_ptr        = &LIBXSMM_VLA_ACCESS(5,     output, img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, nFmBlock);
+#endif
+        const element_input_type*  input_ptr         = &LIBXSMM_VLA_ACCESS(5,      input, img, fm, h,  w,  0, nBlocksFm, fhpi, fwpi, nFmBlock);
+              element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5,    doutput, img, fm, hp, wp, 0, nBlocksFm, fhpo, fwpo, nFmBlock);
+        const element_stats_type*  bmean_ptr         = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
+        const element_stats_type*  brstd_ptr         = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
+
+        LIBXSMM_PRAGMA_SIMD
+        LIBXSMM_PRAGMA_VALIGNED
+        for (v=0; v < nFmBlock; v++) {
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
+          del_output_ptr[v] = (LIBXSMM_FEQ(output_ptr[v], 0) ? 0 : del_output_ptr[v]);
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
+          del_input_add_ptr[v] = del_output_ptr[v];
+#endif
+          lcl_gamma_ptr[v] += (input_ptr[v] - bmean_ptr[v]) * del_output_ptr[v] * brstd_ptr[v];
+          lcl_beta_ptr[v]  += del_output_ptr[v];
+        }
+      }
+    }
+
+    LIBXSMM_PRAGMA_SIMD
+    LIBXSMM_PRAGMA_VALIGNED
+    for (v=0; v < nFmBlock; v++) {
+      del_gamma_img_ptr[v] = lcl_gamma_ptr[v];
+      del_beta_img_ptr[v]  = lcl_beta_ptr[v];
     }
   }
-}
 
-libxsmm_barrier_wait(handle->barrier, ltid);
+  libxsmm_barrier_wait(handle->barrier, ltid);
+
+  /* now we need to reduce the del_gamm and del_beta */
+  for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+    for (img=0; img < nImg; img++ ) {
+      element_stats_type* del_gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 0, nFmBlock);
+      element_stats_type* del_beta_ptr      = &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 0, nFmBlock);
+      element_stats_type* del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
+      element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
+
+      LIBXSMM_PRAGMA_SIMD
+      LIBXSMM_PRAGMA_VALIGNED
+      for (v=0; v < nFmBlock; v++) {
+        del_gamma_ptr[v] += del_gamma_img_ptr[v];
+        del_beta_ptr[v]  += del_beta_img_ptr[v];
+      }
+    }
+  }
+
+  libxsmm_barrier_wait(handle->barrier, ltid);
+}
 
 /* now we apply the actual backward batch norm */
 for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
