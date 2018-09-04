@@ -90,7 +90,7 @@ LIBXSMM_VLA_DECL(5, element_output_type,      output,    (element_output_type*)h
 LIBXSMM_VLA_DECL(2, const element_stats_type, gamma,     (element_stats_type*)handle->reg_gamma->data,   nFmBlock);
 LIBXSMM_VLA_DECL(2, const element_stats_type, beta,      (element_stats_type*)handle->reg_beta->data,    nFmBlock);
 LIBXSMM_VLA_DECL(2,       element_stats_type, bmean,     (element_stats_type*)handle->expvalue->data,    nFmBlock);
-LIBXSMM_VLA_DECL(2,       element_stats_type, brstd,     (element_stats_type*)(NULL != handle->stddev ? handle->stddev->data : NULL), nFmBlock);
+LIBXSMM_VLA_DECL(2,       element_stats_type, brstd,     (element_stats_type*)handle->stddev->data,      nFmBlock);
 LIBXSMM_VLA_DECL(3,       element_stats_type, sum_img,   (element_stats_type*)handle->scratch,                                            nImg, nFmBlock);
 LIBXSMM_VLA_DECL(3,       element_stats_type, sumsq_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * nBlocksFm * nFmBlock),  nImg, nFmBlock);
 
@@ -174,7 +174,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
       const element_stats_type tbmean = (recp_nhw * lcl_sum_ptr[v]) ;
       const element_stats_type tbmeansq = tbmean * tbmean;
       const element_stats_type tsqbmean = recp_nhw * lcl_sumsq_ptr[v];
-      const element_stats_type tbrstd = (element_stats_type)(1.0/sqrt((double)tsqbmean - tbmeansq + sqrt_eps));
+      const element_stats_type tbrstd = (element_stats_type)(1.0/sqrt((double)(tsqbmean - tbmeansq + sqrt_eps)));
       bmean_ptr[v] += tbmean;
       brstd_ptr[v] += tbrstd;
     }
