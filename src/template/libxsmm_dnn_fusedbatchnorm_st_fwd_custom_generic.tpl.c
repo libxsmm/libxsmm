@@ -162,8 +162,8 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
       LIBXSMM_PRAGMA_SIMD
       LIBXSMM_PRAGMA_VALIGNED
       for (v=0; v < nFmBlock; v++) {
-        lcl_sum_ptr[v] = sum_img_ptr[v];
-        lcl_sumsq_ptr[v] = sumsq_img_ptr[v];
+        lcl_sum_ptr[v] += sum_img_ptr[v];
+        lcl_sumsq_ptr[v] += sumsq_img_ptr[v];
       }
     }
 
