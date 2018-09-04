@@ -25,7 +25,7 @@ CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
-BLAS = 0
+BLAS = 1
 SYM = 1
 OMP = 1
 
@@ -57,7 +57,10 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)_xsmm $(OUTDIR)/$(OUTNAME)_blaze $(OUTDIR)/$(OUTNAME)_eigen
+XFILES := $(OUTDIR)/$(OUTNAME)_xsmm $(OUTDIR)/$(OUTNAME)_batch \
+          $(OUTDIR)/$(OUTNAME)_blas \
+          $(OUTDIR)/$(OUTNAME)_blaze \
+          $(OUTDIR)/$(OUTNAME)_eigen
 
 ifneq (0,$(BLAZE))
 ifeq (,$(strip $(BLAZEROOT)))
@@ -117,6 +120,12 @@ compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/$(OUTNAME)_xsmm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(EXTDEP) $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/$(OUTNAME)_batch: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_batch-c.o $(EXTDEP) $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_batch-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/$(OUTNAME)_blas: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blas-c.o $(EXTDEP) $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blas-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 ifneq (,$(BLAZEROOT))
 $(OUTDIR)/$(OUTNAME)_blaze: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blaze-cpp.o

@@ -28,21 +28,52 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
+#if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# include <mkl.h>
+#define GEMM_float  sgemm
+#define GEMM_double dgemm
+#else /* prototypes for GEMM */
+#define GEMM_float  sgemm_
+#define GEMM_double dgemm_
+void dgemm_(const char*, const char*, const int*, const int*, const int*,
+  const double*, const double*, const int*, const double*, const int*,
+  const double*, double*, const int*);
+void sgemm_(const char*, const char*, const int*, const int*, const int*,
+  const double*, const double*, const int*, const double*, const int*,
+  const double*, double*, const int*);
+#endif
+#if defined(_OPENMP)
+# include <omp.h>
+#endif
+#include <stdlib.h>
+#include <stdint.h>
 #include <stdio.h>
 
 #if !defined(TYPE)
 # define TYPE double
 #endif
-#if 0 /* No prefetch */
-# define NOPREFETCH
+#if !defined(GEMM)
+# define CONCATENATE_AUX(A, B) A##B
+# define CONCATENATE(A, B) CONCATENATE_AUX(A, B)
+# define GEMM CONCATENATE(GEMM_, TYPE)
 #endif
-#if 0 /* process batch of A, B, and C in "random" order */
-# define SHUFFLE
-#endif
-#if 0 /* auto-dispatch SMM kernel */
-# define AUTO
-#endif
+
+
+void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
+  const double seed1 = scale * seed + scale;
+  int i;
+  for (i = 0; i < ncols; ++i) {
+    int j = 0;
+    for (; j < nrows; ++j) {
+      const int k = i * ld + j;
+      dst[k] = (TYPE)(seed1 / (1.0 + k));
+    }
+    for (; j < ld; ++j) {
+      const int k = i * ld + j;
+      dst[k] = (TYPE)(seed);
+    }
+  }
+}
 
 
 /**
@@ -55,6 +86,7 @@
  */
 int main(int argc, char* argv[])
 {
+  const int alignment = 64; /* must be power of two */
   /* batch-size is used to stream matrix-operands from memory */
   const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
   /* default: M, N, and K are 13, 5, and 7 respectively */
@@ -62,108 +94,89 @@ int main(int argc, char* argv[])
   const int n = (3 < argc ? atoi(argv[3]) : 5);
   const int k = (4 < argc ? atoi(argv[4]) : 7);
   /* leading dimensions are made multiples of the size of a cache-line */
-  const int lda = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
-  const int ldb = LIBXSMM_UP2(sizeof(TYPE) * k, LIBXSMM_CACHELINE) / sizeof(TYPE);
-  const int ldc = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
+  const int lda = ((sizeof(TYPE) * m + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE);
+  const int ldb = ((sizeof(TYPE) * k + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE);
+  const int ldc = ((sizeof(TYPE) * m + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE);
   /* micro-kernels are limited to certain alpha- and beta-values */
   const char transa = 'n', transb = 'n';
   const TYPE alpha = 1, beta = 1;
   /* calculate matrix sizes incl. padded elements */
-  const size_t na = LIBXSMM_UP2(sizeof(TYPE) * lda * k, LIBXSMM_CACHELINE) / sizeof(TYPE);
-  const size_t nb = LIBXSMM_UP2(sizeof(TYPE) * ldb * n, LIBXSMM_CACHELINE) / sizeof(TYPE);
-  const size_t nc = LIBXSMM_UP2(sizeof(TYPE) * ldc * n, LIBXSMM_CACHELINE) / sizeof(TYPE);
+  const size_t na = ((sizeof(TYPE) * lda * k + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE);
+  const size_t nb = ((sizeof(TYPE) * ldb * n + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE);
+  const size_t nc = ((sizeof(TYPE) * ldc * n + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE);
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? (int)((2ULL << 30/*2 GB*/) / (sizeof(TYPE) * (na + nb + nc))) : batchsize);
-#if defined(SHUFFLE)
-  const size_t shuffle = libxsmm_shuffle((unsigned int)size);
-#endif
   /* allocate A, B, and C matrix buffers */
-  TYPE *const a = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * na * size, LIBXSMM_CACHELINE);
-  TYPE *const b = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nb * size, LIBXSMM_CACHELINE);
-  TYPE *const c = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nc * size, LIBXSMM_CACHELINE);
+  void *const va = malloc(sizeof(TYPE) * na * size + alignment - 1);
+  void *const vb = malloc(sizeof(TYPE) * nb * size + alignment - 1);
+  void *const vc = malloc(sizeof(TYPE) * nc * size + alignment - 1);
+  /* align memory according to alignment */
+  TYPE *const a = (TYPE*)(((uintptr_t)va + alignment - 1) & ~(alignment - 1));
+  TYPE *const b = (TYPE*)(((uintptr_t)vb + alignment - 1) & ~(alignment - 1));
+  TYPE *const c = (TYPE*)(((uintptr_t)vc + alignment - 1) & ~(alignment - 1));
   const double scale = 1.0 / size;
-  libxsmm_timer_tickint start;
-  double duration;
-  int i, j;
+  double duration = 0;
+  int i;
 
-  /**
-   * LIBXSMM's C interface really is type-specific, and the helper macros (such as LIBXSMM_MMFUNCTION_TYPE)
-   * are only for "entertainment". The C++ interface on the other hand is provides overloaded functions
-   * and some helpers for more type-generic programming tasks (e.g., libxsmm_mmfunction<T>).
-   */
-#if !defined(AUTO) /* explicitly dispatch a kernel according to parameters */
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb), prefetch = LIBXSMM_PREFETCH_AUTO;
-  const LIBXSMM_MMFUNCTION_TYPE(TYPE) xmm = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, &prefetch);
+#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
+  void* jitter;
+  CONCATENATE(GEMM, _jit_kernel_t) kernel = NULL;
+  if (MKL_JIT_SUCCESS == CONCATENATE(mkl_cblas_jit_create_, GEMM)(&jitter, MKL_COL_MAJOR,
+    ('N' == transa || 'n' == transa) ? MKL_NOTRANS : MKL_TRANS,
+    ('N' == transb || 'n' == transb) ? MKL_NOTRANS : MKL_TRANS,
+    m, n, k, alpha, lda, ldb, beta, ldc))
+  { /* explicitly dispatch a kernel according to parameters */
+    kernel = CONCATENATE(CONCATENATE(mkl_jit_get_, GEMM), _ptr)(jitter);
+  }
+  else jitter = NULL;
 #endif
 
   /* initialize data according to touch-first policy */
 #if defined(_OPENMP)
-# pragma omp parallel for private(i, j)
+# pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; ++i) {
-#if defined(SHUFFLE)
-    j = (i * shuffle) % size;
-#else
-    j = i;
-#endif
-    LIBXSMM_MATINIT(TYPE, 25 + i, a + j * na, m, k, lda, scale);
-    LIBXSMM_MATINIT(TYPE, 75 + i, b + j * nb, k, n, ldb, scale);
-    if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
-      LIBXSMM_MATINIT(TYPE, 42 + i, c + j * nc, m, n, ldc, scale);
-    }
+    init(25 + i, a + i * na, m, k, lda, scale);
+    init(75 + i, b + i * nb, k, n, ldb, scale);
+    init(42 + i, c + i * nc, m, n, ldc, scale);
   }
 
+#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
+  if (NULL != jitter) {
 #if defined(_OPENMP)
-# pragma omp parallel
+#   pragma omp parallel
+    { /* OpenMP thread pool is already populated (parallel region) */
+#     pragma omp single
+      duration = omp_get_wtime();
+#     pragma omp for private(i)
 #endif
-  {
-#if !defined(_OPENMP)
-    start = libxsmm_timer_tick();
-#else /* OpenMP thread pool is already populated (parallel region) */
-#   pragma omp single
-    start = libxsmm_timer_tick();
-#   pragma omp for private(i, j)
-#endif
-    for (i = 0; i < size - 1; ++i) {
-#if defined(SHUFFLE)
-# if !defined(AUTO) && !defined(NOPREFETCH)
-      const int p = ((i + 1) * shuffle) % size;
-# endif
-      j = (i * shuffle) % size;
-#else
-# if !defined(AUTO) && !defined(NOPREFETCH)
-      const int p = i + 1;
-# endif
-      j = i;
-#endif
-#if defined(AUTO)
-      libxsmm_dgemm(&transa, &transb, &m, &n, &k,
-        &alpha, a + j * na, &lda, b + j * nb, &ldb,
-         &beta, c + j * nc, &ldc);
-#elif defined(NOPREFETCH)
-      xmm(a + j * na, b + j * nb, c + j * nc);
-#else
-      xmm(a + j * na, b + j * nb, c + j * nc,
-          a + p * na, b + p * nb, c + p * nc);
-#endif
+      for (i = 0; i < size; ++i) {
+        kernel(jitter, a + i * na, b + i * nb, c + i * nc);
+      }
     }
   }
-#if defined(SHUFFLE)
-  j = ((size - 1) * shuffle) % size;
-#else
-  j = size - 1;
+  else
 #endif
-#if defined(AUTO)
-  libxsmm_dgemm(&transa, &transb, &m, &n, &k,
-    &alpha, a + j * na, &lda, b + j * nb, &ldb,
-     &beta, c + j * nc, &ldc);
-#elif defined(NOPREFETCH)
-  xmm(a + j * na, b + j * nb, c + j * nc);
-#else
-  xmm(a + j * na, b + j * nb, c + j * nc,
-      a + j * na, b + j * nb, c + j * nc);
+  {
+#if defined(_OPENMP)
+#   pragma omp parallel
+    { /* OpenMP thread pool is already populated (parallel region) */
+#     pragma omp single
+      duration = omp_get_wtime();
+#     pragma omp for private(i)
 #endif
-  duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
+      for (i = 0; i < size; ++i) {
+        GEMM(&transa, &transb, &m, &n, &k,
+          &alpha, a + i * na, &lda, b + i * nb, &ldb,
+           &beta, c + i * nc, &ldc);
+      }
+#if defined(_OPENMP)
+    }
+#endif
+  }
+#if defined(_OPENMP)
+  duration = omp_get_wtime() - duration;
+#endif
 
   if (0 < duration) {
     const double gflops = 2.0 * m * n * k * 1E-9;
@@ -171,9 +184,12 @@ int main(int argc, char* argv[])
   }
   printf("%.1f ms\n", 1000.0 * duration);
 
-  libxsmm_free(a);
-  libxsmm_free(b);
-  libxsmm_free(c);
+#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
+  mkl_jit_destroy(jitter);
+#endif
+  free(va);
+  free(vb);
+  free(vc);
 
   return EXIT_SUCCESS;
 }

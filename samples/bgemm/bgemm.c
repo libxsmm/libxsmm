@@ -122,9 +122,9 @@ int main(int argc, char* argv[])
       &alpha, &beta, &gemm_flags, NULL/*auto-prefetch*/, &order);
 
     if (0 != handle) {
-      LIBXSMM_MATINIT(ITYPE, 42, agold, m, k, lda, 1.0);
-      LIBXSMM_MATINIT(ITYPE, 24, bgold, k, n, ldb, 1.0);
-      LIBXSMM_MATINIT(ITYPE,  0, cgold, m, n, ldc, 1.0);
+      LIBXSMM_MATINIT_OMP(ITYPE, 42, agold, m, k, lda, 1.0);
+      LIBXSMM_MATINIT_OMP(ITYPE, 24, bgold, k, n, ldb, 1.0);
+      LIBXSMM_MATINIT_OMP(ITYPE,  0, cgold, m, n, ldc, 1.0);
       libxsmm_bgemm_copyin_a(handle, agold, &lda, a);
       libxsmm_bgemm_copyin_b(handle, bgold, &ldb, b);
       libxsmm_bgemm_copyin_c(handle, cgold, &ldc, c);

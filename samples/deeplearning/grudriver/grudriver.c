@@ -52,7 +52,7 @@ LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
-  for (i = 0; i < size; ++i) {
+  for (i = 0; i < (int)size; ++i) {
     buf[i] = 0.0f;
   }
 }
@@ -160,17 +160,7 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst, float 
 
 LIBXSMM_INLINE void matrix_transpose(int rows, int cols, float *src, float *dst)
 {
-  int i, j;
-  LIBXSMM_VLA_DECL(2, float, src2D, src, cols);
-  LIBXSMM_VLA_DECL(2, float, dst2D, dst, rows);
-#if defined(_OPENMP)
-# pragma omp parallel for private(i, j)
-#endif
-  for (i = 0; i < rows; i++) {
-    for (j = 0; j < cols; j++) {
-      LIBXSMM_VLA_ACCESS(2, dst2D, j, i, rows) = LIBXSMM_VLA_ACCESS(2, src2D, i, j, cols);
-    }
-  }
+  libxsmm_otrans_omp(dst, src, sizeof(float), rows, cols, rows/*ldi*/, cols/*ldo*/);
 }
 
 
@@ -246,7 +236,7 @@ int main(int argc, char* argv[])
   /* Arrays related to FWD pass */
   float *urgold, *uzgold, *uggold, *xgoldt, *wrgold, *wzgold, *wggold, *hgold = NULL, *brgold = NULL, *bzgold = NULL, *bggold = NULL;
   float *rgold = NULL, *zgold = NULL, *ggold = NULL;
-  float *r1gold, *r2gold, *z1gold, *z2gold, *g1gold, *g2gold, *g3gold, *h1gold, *h2gold, *h3gold;
+  float *r1gold = NULL, *r2gold = NULL, *z1gold = NULL, *z2gold = NULL, *g1gold = NULL, *g2gold = NULL, *g3gold = NULL, *h1gold = NULL, *h2gold = NULL, *h3gold = NULL;
   float *ur, *uz, *ug, *xt, *wr, *wz, *wg, *h = NULL, *br, *bz, *bg, *htest = NULL, *hgold_temp = NULL;
   /* Arrays related to BWD and UPD pass */
   float *djdhgoldt = NULL, *rgoldt = NULL, *zgoldt = NULL, *ggoldt = NULL, *hgoldt = NULL;
@@ -307,7 +297,7 @@ int main(int argc, char* argv[])
 
   unsigned long long l_start, l_end;
   double l_total = 0.0;
-  double flops = 0.0, tempflops = 0.0;
+  double flops = 0.0;
   const double tflops = 12; /* transcendental flops */
   int i, j, it;
 
@@ -532,20 +522,20 @@ int main(int argc, char* argv[])
 
   /* initialize data */
   if (pass == 0) {
-    LIBXSMM_MATINIT(float, 42, urgold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, uzgold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, uggold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, urgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, uzgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, uggold, m, k, m, 1.0);
     for (it = 0; it < t; ++it) {
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
     }
-    LIBXSMM_MATINIT(float, 42, wrgold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wzgold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wggold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 24, hgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wrgold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wzgold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wggold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, hgold, m, n, m, 1.0);
     matrix_copy(m*n, hgold, hgold_temp); /* Required because hgold may get overwritten */
-    LIBXSMM_MATINIT(float, 24, brgold, m, n, m, 1.0);
-    LIBXSMM_MATINIT(float, 24, bzgold, m, n, m, 1.0);
-    LIBXSMM_MATINIT(float, 24, bggold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, brgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, bzgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, bggold, m, n, m, 1.0);
     zero_buf(rgold, m*n);
     zero_buf(zgold, m*n);
     zero_buf(ggold, m*n);
@@ -560,19 +550,19 @@ int main(int argc, char* argv[])
     zero_buf(h2gold, m*n);
     zero_buf(h3gold, m*n);
   } else {
-    LIBXSMM_MATINIT(float, 42, urgold, m, k, m, 0.01);
-    LIBXSMM_MATINIT(float, 42, uzgold, m, k, m, 0.01);
-    LIBXSMM_MATINIT(float, 42, uggold, m, k, m, 0.01);
-    LIBXSMM_MATINIT(float, 42, wrgold, m, m, m, 0.01);
-    LIBXSMM_MATINIT(float, 42, wzgold, m, m, m, 0.01);
-    LIBXSMM_MATINIT(float, 42, wggold, m, m, m, 0.01);
+    LIBXSMM_MATINIT_OMP(float, 42, urgold, m, k, m, 0.01);
+    LIBXSMM_MATINIT_OMP(float, 42, uzgold, m, k, m, 0.01);
+    LIBXSMM_MATINIT_OMP(float, 42, uggold, m, k, m, 0.01);
+    LIBXSMM_MATINIT_OMP(float, 42, wrgold, m, m, m, 0.01);
+    LIBXSMM_MATINIT_OMP(float, 42, wzgold, m, m, m, 0.01);
+    LIBXSMM_MATINIT_OMP(float, 42, wggold, m, m, m, 0.01);
     for (it = 0; it < t; ++it) {
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 0.01);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 0.01);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, rgoldb, it, 0, m * n), m, n, m, 0.01);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), m, n, m, 0.01);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, ggoldb, it, 0, m * n), m, n, m, 0.01);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 0.01);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 0.01);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 0.01);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, rgoldb, it, 0, m * n), m, n, m, 0.01);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), m, n, m, 0.01);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, ggoldb, it, 0, m * n), m, n, m, 0.01);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 0.01);
     }
     zero_buf(d3gold, m*n);
     zero_buf(d4gold, m*n);
@@ -932,7 +922,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, uzgold, &m, uz) );
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, uggold, &m, ug) );
       for (it = 0; it < t; ++it) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleux, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleux, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
       }
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewh, wrgold, &m, wr) );
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewh, wzgold, &m, wz) );
@@ -1319,19 +1309,28 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = m * n; /* delta + delta_out */
-      flops += (6.0 * m * n + tflops * m * n); /* dJdd */
-      flops += (4.0 * m * n); /* dJdc */
-      flops += (4.0 * m * n); /* dJdi */
-      flops += (4.0 * m * n); /* dJdf */
-      flops += (4.0 * m * n + tflops * m * n); /* dJdo */
-      tempflops = (4.0 * m * k); /* W^T */
-      tempflops += (8.0 * m * n * k); /* W^T * dJd{c, i, f, o} */
-      tempflops += (3.0 * m * k); /* summation */
-      flops += tempflops;
-      tempflops = (4.0 * m * m); /* R^T */
-      tempflops += (8.0 * m * n * m); /* R^T * dJd{c, i, f, o} */
-      flops += tempflops;
+      flops = m * n; /* d3 = djdh + d23 (delta) */
+      flops += 2.0 *m * n; /* d4 = (1 - z).d3 */
+      flops += m * n; /* d5 = d3.h */
+      flops += m * n; /* d6 = -d5 */
+      flops += m * n; /* d7 = d3.g */
+      flops += m * n; /* d8 = d3.z */
+      flops += m * n; /* d9 = d7 + d8 */
+      flops += 3.0 * m * n; /* d10 = d8.tanh'(g) */
+      flops += 3.0 * m * n; /* d11 = d9.sig'(z) */
+      flops += (2.0 * m * m * n + m * m) ; /* d13 = Wg^T * d10 (including transpose) */
+      flops += (2.0 * m * m * n + m * m) ; /* d15 = Wz^T * d11 (including transpose) */
+      flops += m * n; /* d16 = d13.z */
+      flops += m * n; /* d17 = d13.r */
+      flops += 3.0 * m * n; /* d18 = d16.sig'(r) */
+      flops += m * n; /* d19 = d17 + d4 */
+      flops += (2.0 * m * m * n + m * m) ; /* d21 = Wr^T * d18 (including transpose) */
+      flops += m * n; /* d22 = d21 + d15 */
+      flops += m * n; /* d23 = d19 + d22 */
+      flops += (2.0 * m * k * n + m * k) ; /* d12 = Ug^T * d10 (including transpose) */
+      flops += (2.0 * m * k * n + m * k) ; /* d14 = Uz^T * d11 (including transpose) */
+      flops += (2.0 * m * k * n + m * k) ; /* d20 = Ur^T * d18 (including transpose) */
+      flops += 2.0 * m * n; /* djdx = d12 + d14 + d20 */
       flops *= t; /* for t time steps */
       flops *= iters;
 
@@ -1364,27 +1363,34 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = m * n; /* delta + delta_out */
-      flops += (6.0 * m * n + tflops * m * n); /* dJdd */
-      flops += (4.0 * m * n); /* dJdc */
-      flops += (4.0 * m * n); /* dJdi */
-      flops += (4.0 * m * n); /* dJdf */
-      flops += (4.0 * m * n + tflops * m * n); /* dJdo */
-      tempflops = (4.0 * m * m); /* R^T */
-      tempflops += (8.0 * m * n * m); /* R^T * dJd{c, i, f, o} */
-      flops += tempflops;
+      flops = m * n; /* d3 = djdh + d23 (delta) */
+      flops += 2.0 *m * n; /* d4 = (1 - z).d3 */
+      flops += m * n; /* d5 = d3.h */
+      flops += m * n; /* d6 = -d5 */
+      flops += m * n; /* d7 = d3.g */
+      flops += m * n; /* d8 = d3.z */
+      flops += m * n; /* d9 = d7 + d8 */
+      flops += 3.0 * m * n; /* d10 = d8.tanh'(g) */
+      flops += 3.0 * m * n; /* d11 = d9.sig'(z) */
+      flops += (2.0 * m * m * n + m * m) ; /* d13 = Wg^T * d10 (including transpose) */
+      flops += (2.0 * m * m * n + m * m) ; /* d15 = Wz^T * d11 (including transpose) */
+      flops += m * n; /* d16 = d13.z */
+      flops += m * n; /* d17 = d13.r */
+      flops += 3.0 * m * n; /* d18 = d16.sig'(r) */
+      flops += m * n; /* d19 = d17 + d4 */
+      flops += (2.0 * m * m * n + m * m) ; /* d21 = Wr^T * d18 (including transpose) */
+      flops += m * n; /* d22 = d21 + d15 */
+      flops += m * n; /* d23 = d19 + d22 */
+      flops += (2.0 * m * n * m + m * n + m * m) ; /* djdwr = djdwr + d18 * h^T */
+      flops += (2.0 * m * n * m + m * n + m * m) ; /* djdwz = djdwz + d11 * h^T */
+      flops += (2.0 * m * n * m + 2.0 * m * n + m * m) ; /* djdwg = djdwg + d10 * (h.r)^T */
+      flops += (2.0 * m * n * k + k * n + m * k) ; /* djdur = djdur + d18 * x^T */
+      flops += (2.0 * m * n * k + k * n + m * k) ; /* djduz = djduz + d11 * x^T */
+      flops += (2.0 * m * n * k + k * n + m * k) ; /* djdug = djdug + d10 * x^T */
+      flops += m * n; /* djdbr = djdbr + d18 */
+      flops += m * n; /* djdbz = djdbz + d11 */
+      flops += m * n; /* djdbg = djdbg + d10 */
       flops *= t; /* for t time steps */
-      tempflops = k * n; /* x^T */
-      tempflops += (8.0 * m * n * k); /* delta{c, i, f, o} * x^T */
-      tempflops *= t; /* for t time steps */
-      tempflops += (4.0 * m * k * (t-1)); /* for summation of dJdW{c, i, f, o} */
-      flops += tempflops;
-      tempflops = 4.0 * m * n; /* delta^T */
-      tempflops += (8.0 * m * n * m); /* delta{c, i, f, o} * delta^T */
-      tempflops *= (t - 1); /* for (t - 1) time steps */
-      tempflops += (4.0 * m * n * (t-2)); /* for summation of dJdR{c, i, f, o} */
-      flops += tempflops;
-      flops += (4.0 * m * n * (t - 1)); /* delbias */
       flops *= iters;
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
@@ -1416,31 +1422,38 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = m * n; /* delta + delta_out */
-      flops += (6.0 * m * n + tflops * m * n); /* dJdd */
-      flops += (4.0 * m * n); /* dJdc */
-      flops += (4.0 * m * n); /* dJdi */
-      flops += (4.0 * m * n); /* dJdf */
-      flops += (4.0 * m * n + tflops * m * n); /* dJdo */
-      tempflops = (4.0 * m * k); /* W^T */
-      tempflops += (8.0 * m * n * k); /* W^T * dJd{c, i, f, o} */
-      tempflops += (3.0 * m * k); /* summation */
-      flops += tempflops;
-      tempflops = (4.0 * m * m); /* R^T */
-      tempflops += (8.0 * m * n * m); /* R^T * dJd{c, i, f, o} */
-      flops += tempflops;
+      flops = m * n; /* d3 = djdh + d23 (delta) */
+      flops += 2.0 *m * n; /* d4 = (1 - z).d3 */
+      flops += m * n; /* d5 = d3.h */
+      flops += m * n; /* d6 = -d5 */
+      flops += m * n; /* d7 = d3.g */
+      flops += m * n; /* d8 = d3.z */
+      flops += m * n; /* d9 = d7 + d8 */
+      flops += 3.0 * m * n; /* d10 = d8.tanh'(g) */
+      flops += 3.0 * m * n; /* d11 = d9.sig'(z) */
+      flops += (2.0 * m * m * n + m * m) ; /* d13 = Wg^T * d10 (including transpose) */
+      flops += (2.0 * m * m * n + m * m) ; /* d15 = Wz^T * d11 (including transpose) */
+      flops += m * n; /* d16 = d13.z */
+      flops += m * n; /* d17 = d13.r */
+      flops += 3.0 * m * n; /* d18 = d16.sig'(r) */
+      flops += m * n; /* d19 = d17 + d4 */
+      flops += (2.0 * m * m * n + m * m) ; /* d21 = Wr^T * d18 (including transpose) */
+      flops += m * n; /* d22 = d21 + d15 */
+      flops += m * n; /* d23 = d19 + d22 */
+      flops += (2.0 * m * k * n + m * k) ; /* d12 = Ug^T * d10 (including transpose) */
+      flops += (2.0 * m * k * n + m * k) ; /* d14 = Uz^T * d11 (including transpose) */
+      flops += (2.0 * m * k * n + m * k) ; /* d20 = Ur^T * d18 (including transpose) */
+      flops += 2.0 * m * n; /* djdx = d12 + d14 + d20 */
+      flops += (2.0 * m * n * m + m * n + m * m) ; /* djdwr = djdwr + d18 * h^T */
+      flops += (2.0 * m * n * m + m * n + m * m) ; /* djdwz = djdwz + d11 * h^T */
+      flops += (2.0 * m * n * m + 2.0 * m * n + m * m) ; /* djdwg = djdwg + d10 * (h.r)^T */
+      flops += (2.0 * m * n * k + k * n + m * k) ; /* djdur = djdur + d18 * x^T */
+      flops += (2.0 * m * n * k + k * n + m * k) ; /* djduz = djduz + d11 * x^T */
+      flops += (2.0 * m * n * k + k * n + m * k) ; /* djdug = djdug + d10 * x^T */
+      flops += m * n; /* djdbr = djdbr + d18 */
+      flops += m * n; /* djdbz = djdbz + d11 */
+      flops += m * n; /* djdbg = djdbg + d10 */
       flops *= t; /* for t time steps */
-      tempflops = k * n; /* x^T */
-      tempflops += (8.0 * m * n * k); /* delta{c, i, f, o} * x^T */
-      tempflops *= t; /* for t time steps */
-      tempflops += (4.0 * m * k * (t-1)); /* for summation of dJdW{c, i, f, o} */
-      flops += tempflops;
-      tempflops = 4.0 * m * n; /* delta^T */
-      tempflops += (8.0 * m * n * m); /* delta{c, i, f, o} * delta^T */
-      tempflops *= (t - 1); /* for (t - 1) time steps */
-      tempflops += (4.0 * m * n * (t-2)); /* for summation of dJdR{c, i, f, o} */
-      flops += tempflops;
-      flops += (4.0 * m * n * (t - 1)); /* delbias */
       flops *= iters;
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);

@@ -24,7 +24,8 @@ matrix:
     compiler: clang
     env: OPT=1
   - os: osx
-    osx_image: xcode6.4
+    # xcode6.4 is deprecated
+    osx_image: xcode7.3
     compiler: clang
     env: DBG=1
 

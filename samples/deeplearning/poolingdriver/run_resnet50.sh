@@ -14,24 +14,22 @@ else # check
   if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=1; fi
 fi
 
-if [ $# -ne 7 ]
+if [ $# -ne 6 ]
 then
-  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) prec (f32,bf16) NORM (0,1) FUSE (0,1,2,3) PASS ('A'-ALL/'F'-FP/'B'-BP); using default values; using default values: 64 1000 1 f32 0 0 A"
+  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) prec (f32,bf16) TYPE (0-max, 1-avg) PASS ('A'-ALL/'F'-FP/'B'-BP) PAD (0-logical,1-physcial) ; using default values; using default values: 64 1000 1 f32 0 A"
   MB=${CHECK_DNN_MB}
   ITERS=${CHECK_DNN_ITERS}
   NUMA=-1
   BIN=f32
-  NORM=0
-  FUSE=0
+  TYPE=0
   PASS="A"
 else
   MB=$1
   ITERS=$2
   NUMA=$3
   BIN=$4
-  NORM=$5
-  FUSE=$6
-  PASS=$7
+  TYPE=$5
+  PASS=$6
 fi
 
 if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
@@ -84,26 +82,6 @@ if [ "" = "${LIBXSMM_TARGET_HIDDEN}" ] || [ "0" = "${LIBXSMM_TARGET_HIDDEN}" ]; 
   echo
 fi
 
-# ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm padw_in padh_in padw_out padh_out stride norm fuse pass
-#
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  112 112 ${MB}   64 3 3 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  256 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}   64 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}   64 1 1 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}   64 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  512 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  56  56  ${MB}  128 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  128 1 1 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  512 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  128 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB} 1024 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}  256 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256 1 1 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB} 1024 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  256 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB} 2048 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  14  14  ${MB}  512 0 0 0 0 2 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512 1 1 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB} 2048 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   7   7  ${MB}  512 0 0 0 0 1 ${NORM} ${FUSE} ${PASS}
+# ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh padw padh padw_in padh_in padw_out padw_in stride type pass
 
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  224  224  ${MB}  64 2 2 0 0 0 0 0 0 1 ${TYPE} ${PASS}

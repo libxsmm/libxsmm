@@ -116,6 +116,25 @@ LIBXSMM_INLINE LIBXSMM_RETARGETABLE libxsmm_blasint randstart(libxsmm_blasint st
 }
 
 
+#if !defined(USE_REFERENCE)
+LIBXSMM_INLINE void matrix_transpose(ELEM_TYPE *LIBXSMM_RESTRICT dst, const ELEM_TYPE *LIBXSMM_RESTRICT src, libxsmm_blasint rows, libxsmm_blasint cols)
+{
+  libxsmm_blasint i, j;
+  LIBXSMM_VLA_DECL(2, const ELEM_TYPE, src_2d, src, cols);
+  LIBXSMM_VLA_DECL(2, ELEM_TYPE, dst_2d, dst, rows);
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(j);
+# pragma omp parallel for private(i, j)
+#endif
+  for (i = 0; i < rows; ++i) {
+    for (j = 0; j < cols; ++j) {
+      LIBXSMM_VLA_ACCESS(2, dst_2d, j, i, rows) = LIBXSMM_VLA_ACCESS(2, src_2d, i, j, cols);
+    }
+  }
+}
+#endif
+
+
 int main(int argc, char* argv[])
 {
   const char t = (char)(1 < argc ? *argv[1] : 'o');
@@ -146,10 +165,7 @@ int main(int argc, char* argv[])
     const int check = (0 == env_check || 0 == *env_check) ? 1/*default*/ : atoi(env_check);
     ELEM_TYPE *const a = (ELEM_TYPE*)libxsmm_malloc((size_t)(ldi * (('o' == t || 'O' == t) ? n : ldo) * sizeof(ELEM_TYPE)));
     ELEM_TYPE *const b = (ELEM_TYPE*)libxsmm_malloc((size_t)(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE)));
-    libxsmm_timer_tickint start, duration = 0;
-#if defined(USE_REFERENCE) /* benchmark against a reference */
-    libxsmm_timer_tickint duration2 = 0;
-#endif
+    libxsmm_timer_tickint start, duration = 0, duration2 = 0;
     libxsmm_blasint i;
     size_t size = 0;
 #if defined(MKL_ENABLE_AVX512)
@@ -202,6 +218,9 @@ int main(int argc, char* argv[])
       size += (size_t)(km * kn * sizeof(ELEM_TYPE));
 
       if (('o' == t || 'O' == t)) {
+#if !defined(USE_REFERENCE)
+        kldi = km; kldo = kn;
+#endif
         if (0 == tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
 #if defined(OTRANS_THREAD)
@@ -257,7 +276,6 @@ int main(int argc, char* argv[])
       }
     }
 
-#if defined(USE_REFERENCE)
     if (0 < check) { /* check shall imply reference (performance-)test */
       srand(RAND_SEED); /* reproduce the same sequence as above */
       for (k = (0 == r ? -1 : 0); k < s && EXIT_SUCCESS == result; ++k) {
@@ -281,16 +299,27 @@ int main(int argc, char* argv[])
         }
 
         if (('o' == t || 'O' == t)) {
+#if defined(USE_REFERENCE)
           start = libxsmm_timer_tick();
           OTRANS_GOLD(&km, &kn, a, &kldi, b, &kldo);
+#else
+          kldi = km; kldo = kn;
+          start = libxsmm_timer_tick();
+          matrix_transpose(b, a, km, kn);
+#endif
           duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
         }
         else {
           assert(('i' == t || 'I' == t) && kldo == kldi);
+#if defined(USE_REFERENCE)
           memcpy(b, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
           start = libxsmm_timer_tick();
           ITRANS_GOLD(&km, &kn, b, &kldi, &kldo);
           duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+#else
+          fprintf(stderr, "Error: no validation routine available!\n");
+          result = EXIT_FAILURE;
+#endif
         }
         if (1 < check || 0 > check) { /* check */
           for (i = 0; i < km; ++i) {
@@ -308,8 +337,6 @@ int main(int argc, char* argv[])
         }
       }
     }
-#endif
-
     if (EXIT_SUCCESS == result) {
       const double d = libxsmm_timer_duration(0, duration);
       if (0 < duration) {
@@ -323,11 +350,9 @@ int main(int argc, char* argv[])
       else {
         fprintf(stdout, "\tduration: %f ms\n", 1000.0 * d);
       }
-#if defined(USE_REFERENCE)
       if (0 < duration2) {
         fprintf(stdout, "\treference: %.1fx\n", (1.0 * duration) / duration2);
       }
-#endif
     }
     else if (0 != check) { /* check */
       fprintf(stderr, "Error: validation failed for m=%lli, n=%lli, ldi=%lli, and ldo=%lli!\n",

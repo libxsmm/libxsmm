@@ -2799,7 +2799,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
     maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     if ( length % 16 == 0 ) {
       __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
@@ -2816,7 +2816,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
       for (i = 0; i < length; ++i ) {
         out_buffer[i] = (short)round((double)in_buffer[i] * scfq);
       }
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     }
 #endif
     /* @TODO, we need to potentially fix this unsigned char problem */
@@ -2867,7 +2867,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
     maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     if ( (cblk_f32 == 16) && (cblk_i16*lp_blk == 16) ) {
       __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
@@ -2902,7 +2902,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
           }
         }
       }
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     }
 #endif
     /* @TODO, we need to potentially fix this unsigned char problem */
@@ -2973,7 +2973,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
     maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     if ( (kblk_f32 == 16) && (cblk_f32 == 16) && (kblk_i16 == 16) && (cblk_i16*lp_blk == 16) ) {
       const __m512 vscfq = _mm512_set1_ps(scfq);
       const __m512i permute_compact_idx = _mm512_set_epi32(15,14,13,12,7,6,5,4,11,10,9,8,3,2,1,0);
@@ -3030,7 +3030,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
           }
         }
       }
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     }
 #endif
     /* @TODO, we need to potentially fix this unsigned char problem */
