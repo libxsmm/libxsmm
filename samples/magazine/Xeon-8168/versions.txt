@@ -1,0 +1,4 @@
+GNU GCC 8.2
+LIBXSMM 1.10
+Eigen 3.3.5
+Blaze 3.4
