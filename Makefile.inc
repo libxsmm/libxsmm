@@ -1149,10 +1149,15 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
           ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
             CTARGET += -mavx512pf -mavx512er
           endif
-        else # SKX
-          ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+        else ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+          ifneq (Darwin,$(UNAME))
             CTARGET += -mavx512dq -mavx512bw -mavx512vl
             #CTARGET += -mavx512ifma -mavx512vbmi
+          else ifneq (,$(filter 1 2 3,$(INTEL) $(GCC)))
+            CTARGET += -mavx512dq -mavx512bw -mavx512vl
+            #CTARGET += -mavx512ifma -mavx512vbmi
+          else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION)))"))
+            CTARGET += -mavx512dq -mavx512bw -mavx512vl
           endif
         endif
       endif
