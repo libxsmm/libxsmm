@@ -105,8 +105,8 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 # endif
         }
         else { /* assume external parallelization */
-          const int nthreads = omp_get_num_threads();
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+          const int nthreads = omp_get_num_threads();
           const int ntasks = (0 == libxsmm_trans_taskscale
             ? (LIBXSMM_TRANS_TASKSCALE)
             : libxsmm_trans_taskscale) * nthreads;
@@ -123,7 +123,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 # else
           libxsmm_matcopy_thread_internal(out, in, typesize,
             (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-            prefetch, tm, tn, kernel, omp_get_thread_num(), nthreads);
+            prefetch, tm, tn, kernel, 0/*tid*/, 1/*nthreads*/);
 # endif
         }
       }
@@ -212,8 +212,8 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 # endif
         }
         else { /* assume external parallelization */
-          const int nthreads = omp_get_num_threads();
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
+          const int nthreads = omp_get_num_threads();
           const int ntasks = (0 == libxsmm_trans_taskscale
             ? (LIBXSMM_TRANS_TASKSCALE)
             : libxsmm_trans_taskscale) * nthreads;
@@ -230,7 +230,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 # else
           libxsmm_otrans_thread_internal(out, in, typesize,
             (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
-            tm, tn, NULL/*kernel*/, omp_get_thread_num(), nthreads);
+            tm, tn, NULL/*kernel*/, 0/*tid*/, 1/*nthreads*/);
 # endif
         }
       }

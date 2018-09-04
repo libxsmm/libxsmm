@@ -472,7 +472,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
 #if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
   const int omp_external = omp_get_active_level(), nthreads = (0 == omp_external ? omp_get_max_threads() : omp_get_num_threads());
 #elif defined(_OPENMP)
-  const int omp_external = omp_in_parallel(), nthreads = (0 == omp_external ? omp_get_max_threads() : omp_get_num_threads());
+  const int omp_external = omp_in_parallel(), nthreads = (0 == omp_external ? omp_get_max_threads() : 1);
 #else
   const int nthreads = 1;
 #endif
@@ -522,7 +522,8 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
 #       pragma omp taskwait
       }
 # else
-      libxsmm_gemm_thread(handle, scratch, a, b, c, omp_get_thread_num());
+      LIBXSMM_ASSERT(1 == handle->nthreads);
+      libxsmm_gemm_thread(handle, scratch, a, b, c, 0/*tid*/);
 # endif
     }
     if (2 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
@@ -536,6 +537,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       }
     }
 #else
+    LIBXSMM_ASSERT(1 == handle->nthreads);
     libxsmm_gemm_thread(handle, scratch, a, b, c, 0/*tid*/);
 #endif /*defined(_OPENMP)*/
     libxsmm_free(scratch);
@@ -631,7 +633,7 @@ LIBXSMM_APIEXT int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blasi
 # else
           result = libxsmm_mmbatch_internal(kernel, index_base, index_stride,
             stride_a, stride_b, stride_c, a, b, c, batchsize,
-            omp_get_thread_num(), omp_get_num_threads(), &info->xgemm);
+            0/*tid*/, 1/*nthreads*/, &info->xgemm);
 # endif
         }
       }
