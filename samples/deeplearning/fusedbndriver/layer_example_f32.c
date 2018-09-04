@@ -52,6 +52,8 @@ typedef struct {
   int pad_w_out;
   int stride_h;
   int stride_w;
+  int norm_type;  /* 0: full batchnorm, 1: batch scaling only */  
+  int fuse_type;  /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
 } naive_fusedbn_t;
 
 LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
@@ -174,12 +176,47 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
   const int fwpo = fwo + 2*opw;
   const int fhpi = fhi + 2*iph;
   const int fwpi = fwi + 2*ipw;
+  const float nhw = (float)(nImg * fhi * fwi);
+  const float recp_nhw = 1.0f/nhw;
+  const float sqrt_eps = 1e-7;
 
   int img, fm, h, w, hp, wp;
 
   LIBXSMM_VLA_DECL(4, const float, input,     input_ptr,     nFm, fhpi, fwpi);
   LIBXSMM_VLA_DECL(4, const float, input_add, input_add_ptr, nFm, fhpi, fwpi);
   LIBXSMM_VLA_DECL(4,       float, output,    output_ptr,    nFm, fhpo, fwpo);
+
+  if ( param->norm_type == 0 ) {
+#if defined(_OPENMP)
+#pragma omp parallel for private(img, fm, h, w, hp, wp)
+#endif
+    for (fm = 0; fm < nFm; fm++) {
+      float ch_sum = 0.0f;
+      float ch_sumsq = 0.0f;
+      float tbmean = 0.0f;
+      float tbmeansq = 0.0f;
+      float tsqbmean = 0.0f;
+      float tbrstd = 0.0f;
+
+      for (img = 0; img < nImg; img++) {
+        for( h=iph; h < (fhi+iph); h++) {
+          for( w=ipw; w < (fwi+ipw); w++) {
+            const float  input_val     =  LIBXSMM_VLA_ACCESS(4, input,     img, fm, h,  w, nFm, fhpi, fwpi);
+
+            ch_sum   += input_val;
+            ch_sumsq += (input_val * input_val);
+          }
+        }
+      }
+
+      tbmean = (recp_nhw * ch_sum) ;
+      tbmeansq  = tbmean * tbmean;
+      tsqbmean = recp_nhw * ch_sumsq;
+      tbrstd = 1.0/sqrt(tsqbmean - tbmeansq + sqrt_eps);
+      expectval_ptr[fm] += tbmean;
+      stddev_ptr[fm] += tbrstd;
+    }
+  }
 
 #if defined(_OPENMP)
 #pragma omp parallel for private(img, fm, h, w, hp, wp)
@@ -195,9 +232,13 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
           /* BN + scale (gamma, beta) */
           float o = gamma_ptr[fm]*(input_val - expectval_ptr[fm])*stddev_ptr[fm] + beta_ptr[fm];
           /* Eltwise */
-          o += input_add_val;
+          if ( (param->fuse_type == 2) || (param->fuse_type == 3) ) { 
+            o += input_add_val;
+          }  
           /* ReLU */
-          o = ( o < 0.0f ) ? 0.0f : o;
+          if ( (param->fuse_type == 1) || (param->fuse_type == 3) ) { 
+            o = ( o < 0.0f ) ? 0.0f : o;
+          }
           *output_ptr2 = o;
         }
       }
@@ -236,27 +277,33 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
   LIBXSMM_VLA_DECL(4, const float, output,     output_ptr,     nFm, fhpo, fwpo);
   LIBXSMM_VLA_DECL(4,       float, doutput,    doutput_ptr,    nFm, fhpo, fwpo);
 
+  if ( param->norm_type == 0 ) {
 #if defined(_OPENMP)
 #pragma omp parallel for private(img, fm, h, w, hp, wp)
 #endif
-  for (fm = 0; fm < nFm; fm++) {
-    del_gamma_ptr[fm] = 0.0f;
-    del_beta_ptr[fm] = 0.0f;
+    for (fm = 0; fm < nFm; fm++) {
+      del_gamma_ptr[fm] = 0.0f;
+      del_beta_ptr[fm] = 0.0f;
 
-    for (img = 0; img < nImg; img++) {
-      for( h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
-        for( w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
-                float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, h,  w,  fm, fhpi, fwpi);
-          const float  output_val        =  LIBXSMM_VLA_ACCESS(4,     output, img, fm, hp, wp, fm, fhpo, fwpo);
-          const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, h,  w,  fm, fhpi, fwpi);
-                float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, hp, wp, fm, fhpo, fwpo);
+      for (img = 0; img < nImg; img++) {
+        for( h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
+          for( w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
+                  float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, h,  w,  fm, fhpi, fwpi);
+            const float  output_val        =  LIBXSMM_VLA_ACCESS(4,     output, img, fm, hp, wp, fm, fhpo, fwpo);
+            const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, h,  w,  fm, fhpi, fwpi);
+                  float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, hp, wp, fm, fhpo, fwpo);
 
-          /* ReLU */
-          *del_output_ptr    = LIBXSMM_FEQ(output_val, 0) ? 0 : *del_output_ptr;
-          /* elementwise */
-          *del_input_add_ptr = *del_output_ptr;
-          del_gamma_ptr[fm] += (input_val - expectval_ptr[fm]) * (*del_output_ptr) * stddev_ptr[fm];
-          del_beta_ptr[fm]  += *del_output_ptr;
+            /* ReLU */
+            if ( (param->fuse_type == 1) || (param->fuse_type == 3) ) { 
+              *del_output_ptr    = LIBXSMM_FEQ(output_val, 0) ? 0 : *del_output_ptr;
+            }
+            /* elementwise */
+            if ( (param->fuse_type == 2) || (param->fuse_type == 3) ) { 
+              *del_input_add_ptr = *del_output_ptr;
+            }
+            del_gamma_ptr[fm] += (input_val - expectval_ptr[fm]) * (*del_output_ptr) * stddev_ptr[fm];
+            del_beta_ptr[fm]  += *del_output_ptr;
+          }
         }
       }
     }
@@ -308,6 +355,8 @@ int main(int argc, char* argv[])
   int pad_w_in = 0;       /* padding mode */
   int pad_h_out = 0;      /* padding mode */
   int pad_w_out = 0;      /* padding mode */
+  int norm_type = 0;      /* 0: full batchnorm, 1: batch scaling only */  
+  int fuse_type = 0;      /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'L';
 
@@ -367,11 +416,21 @@ int main(int argc, char* argv[])
   if (argc > i) pad_w_out  = atoi(argv[i++]);
   if (argc > i) pad_h_out  = atoi(argv[i++]);
   if (argc > i) stride     = atoi(argv[i++]);
+  if (argc > i) norm_type  = atoi(argv[i++]);
+  if (argc > i) fuse_type  = atoi(argv[i++]);
   if (argc > i) type       = *(argv[i++]);
 
   if (type != 'A' && type != 'F' && type != 'B') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only)\n");
-    return 0;
+    return -1;
+  }
+  if ((norm_type != 0) && (norm_type != 1)) {
+    printf("norm type needs to be 0 or 1\n");
+    return -1;
+  }
+  if ((fuse_type < 0) && (fuse_type > 3)) {
+    printf("fuse type needs to be 0, 1, 2, or 3\n");
+    return -1;
   }
 
   stride_w = stride;
@@ -396,6 +455,8 @@ int main(int argc, char* argv[])
   naive_param.pad_w_out = pad_w_out;
   naive_param.stride_h = stride_h;
   naive_param.stride_w = stride_w;
+  naive_param.norm_type = norm_type;
+  naive_param.fuse_type = fuse_type;
 
 #if defined(__SSE3__)
   _MM_SET_FLUSH_ZERO_MODE(_MM_FLUSH_ZERO_ON);
@@ -531,7 +592,33 @@ int main(int argc, char* argv[])
     fusedbn_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     fusedbn_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     fusedbn_desc.fuse_order = LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU;
-    fusedbn_desc.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU;
+    if ( norm_type == 0 ) {
+      if ( fuse_type == 0 ) {
+        fusedbn_desc.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BN;
+      } else if ( fuse_type == 1 ) {
+        fusedbn_desc.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BN_RELU;
+      } else if ( fuse_type == 2 ) {
+        fusedbn_desc.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE;
+      } else if ( fuse_type == 3 ) {
+        fusedbn_desc.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE_RELU;
+      } else {
+        /* shouldn't happen */
+        return -1;
+      }
+    } else {
+      if ( fuse_type == 0 ) {
+        fusedbn_desc.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE;
+      } else if ( fuse_type == 1 ) {
+        fusedbn_desc.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU;
+      } else if ( fuse_type == 2 ) {
+        fusedbn_desc.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE;
+      } else if ( fuse_type == 3 ) {
+        fusedbn_desc.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU;
+      } else {
+        /* shouldn't happen */
+        return -1;
+      }
+    }
 
     libxsmm_handle = libxsmm_dnn_create_fusedbn( fusedbn_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
