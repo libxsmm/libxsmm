@@ -107,13 +107,31 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom(libxsmm_d
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  /* check if we have input, output and filter */
-  if (handle->reg_input == 0  || handle->reg_output == 0  ||
+  /* check if all required tensors are bound */
+  if (handle->reg_input == 0  || handle->reg_gamma == 0   ||
       handle->grad_input == 0 || handle->grad_output == 0 ||
       handle->grad_beta == 0  || handle->grad_gamma == 0  ||
       handle->expvalue == 0   || handle->stddev == 0        ) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
+  }
+  if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
+    if ( handle->scratch == 0 ) {
+      status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+      return status;
+    }
+  }
+  if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE) > 0 ) {
+    if ( handle->grad_add == 0 ) {
+      status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+      return status;
+    }
+  }
+  if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_RELU) > 0 ) {
+    if ( handle->reg_output == 0 ) {
+      status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+      return status;
+    }
   }
 
   /* check if we are on an AVX512 platform */
