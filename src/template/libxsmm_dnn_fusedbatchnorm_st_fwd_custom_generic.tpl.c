@@ -68,7 +68,7 @@ const int thr_begin2 = (ltid * chunksize2 < work2) ? (ltid * chunksize2) : work2
 const int thr_end2 = ((ltid + 1) * chunksize2 < work2) ? ((ltid + 1) * chunksize2) : work2;
 
 /* eps to avoid sqrt of zero */
-const element_stats_type sqrt_eps = 1e-7;
+const element_stats_type sqrt_eps = 1e-7f;
 const element_stats_type nhw = (element_stats_type)(nImg * ifh * ifw);
 const element_stats_type recp_nhw = 1.0f/nhw;
 
@@ -173,7 +173,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
       const element_stats_type tbmean = (recp_nhw * lcl_sum_ptr[v]) ;
       const element_stats_type tbmeansq  = tbmean * tbmean;
       const element_stats_type tsqbmean = recp_nhw * lcl_sumsq_ptr[v];
-      const element_stats_type tbrstd = 1.0/sqrt(tsqbmean - tbmeansq + sqrt_eps);
+      const element_stats_type tbrstd = (element_stats_type)(1.0/sqrt(tsqbmean - tbmeansq + sqrt_eps));
       bmean_ptr[v] += tbmean;
       brstd_ptr[v] += tbrstd;
     }

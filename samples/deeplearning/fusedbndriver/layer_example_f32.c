@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
@@ -52,7 +53,7 @@ typedef struct {
   int pad_w_out;
   int stride_h;
   int stride_w;
-  int norm_type;  /* 0: full batchnorm, 1: batch scaling only */  
+  int norm_type;  /* 0: full batchnorm, 1: batch scaling only */
   int fuse_type;  /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
 } naive_fusedbn_t;
 
@@ -178,7 +179,7 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
   const int fwpi = fwi + 2*ipw;
   const float nhw = (float)(nImg * fhi * fwi);
   const float recp_nhw = 1.0f/nhw;
-  const float sqrt_eps = 1e-7;
+  const float sqrt_eps = 1e-7f;
 
   int img, fm, h, w, hp, wp;
 
@@ -212,7 +213,7 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
       tbmean = (recp_nhw * ch_sum) ;
       tbmeansq  = tbmean * tbmean;
       tsqbmean = recp_nhw * ch_sumsq;
-      tbrstd = 1.0/sqrt(tsqbmean - tbmeansq + sqrt_eps);
+      tbrstd = (float)(1.0/sqrt(tsqbmean - tbmeansq + sqrt_eps));
       expectval_ptr[fm] += tbmean;
       stddev_ptr[fm] += tbrstd;
     }
@@ -232,11 +233,11 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
           /* BN + scale (gamma, beta) */
           float o = gamma_ptr[fm]*(input_val - expectval_ptr[fm])*stddev_ptr[fm] + beta_ptr[fm];
           /* Eltwise */
-          if ( (param->fuse_type == 2) || (param->fuse_type == 3) ) { 
+          if ( (param->fuse_type == 2) || (param->fuse_type == 3) ) {
             o += input_add_val;
-          }  
+          }
           /* ReLU */
-          if ( (param->fuse_type == 1) || (param->fuse_type == 3) ) { 
+          if ( (param->fuse_type == 1) || (param->fuse_type == 3) ) {
             o = ( o < 0.0f ) ? 0.0f : o;
           }
           *output_ptr2 = o;
@@ -294,11 +295,11 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
                   float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, hp, wp, fm, fhpo, fwpo);
 
             /* ReLU */
-            if ( (param->fuse_type == 1) || (param->fuse_type == 3) ) { 
+            if ( (param->fuse_type == 1) || (param->fuse_type == 3) ) {
               *del_output_ptr    = LIBXSMM_FEQ(output_val, 0) ? 0 : *del_output_ptr;
             }
             /* elementwise */
-            if ( (param->fuse_type == 2) || (param->fuse_type == 3) ) { 
+            if ( (param->fuse_type == 2) || (param->fuse_type == 3) ) {
               *del_input_add_ptr = *del_output_ptr;
             }
             del_gamma_ptr[fm] += (input_val - expectval_ptr[fm]) * (*del_output_ptr) * stddev_ptr[fm];
@@ -355,7 +356,7 @@ int main(int argc, char* argv[])
   int pad_w_in = 0;       /* padding mode */
   int pad_h_out = 0;      /* padding mode */
   int pad_w_out = 0;      /* padding mode */
-  int norm_type = 0;      /* 0: full batchnorm, 1: batch scaling only */  
+  int norm_type = 0;      /* 0: full batchnorm, 1: batch scaling only */
   int fuse_type = 0;      /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'L';
