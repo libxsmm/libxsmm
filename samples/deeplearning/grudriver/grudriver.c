@@ -160,7 +160,22 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst, float 
 
 LIBXSMM_INLINE void matrix_transpose(int rows, int cols, float *src, float *dst)
 {
+#if 0
+  int i, j;
+  LIBXSMM_VLA_DECL(2, float, real_src, src, cols);
+  LIBXSMM_VLA_DECL(2, float, real_dst, dst, rows);
+#if defined(_OPENMP)
+# pragma omp parallel for private(i, j)
+#endif
+  for (i = 0; i < rows; i++) {
+    for (j = 0; j < cols; j++) {
+      LIBXSMM_VLA_ACCESS(2, real_dst, j, i, rows) =
+        LIBXSMM_VLA_ACCESS(2, real_src, i, j, cols);
+    }
+  }
+#else
   libxsmm_otrans_omp(dst, src, sizeof(float), rows, cols, rows/*ldi*/, cols/*ldo*/);
+#endif
 }
 
 
@@ -712,6 +727,15 @@ int main(int argc, char* argv[])
       matrix_transpose(m, m, wrgold, wrgoldTp);
       matrix_transpose(m, m, wzgold, wzgoldTp);
       matrix_transpose(m, m, wggold, wggoldTp);
+      int x, y;
+      for(it = 0; it < m*k; it++) {
+        x = it / k;
+        y = it % k;
+        if (urgold[it] != urgoldTp[y*m + x]) {
+          printf("Failed\n");
+          break;
+        }
+      }
       for (j = t-1; j >= 0; j--) {
         /* d3 = djdh + d23 (delta) */
         matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, j, 0, m * n), d23gold, d3gold);
