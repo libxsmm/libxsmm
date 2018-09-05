@@ -140,7 +140,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 
-  LIBXSMM_ASSERT(NULL != brstd);
   /* now we need to reduce the sum and sum^2, we use the final  */
   for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
     /* @TODO check if we can bake this in into scratch */
@@ -183,7 +182,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
-LIBXSMM_ASSERT(NULL != brstd);
 /* now we apply the actual forward batch norm */
 for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
   img = imgfm / nBlocksFm;
