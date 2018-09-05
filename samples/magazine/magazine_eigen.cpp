@@ -38,6 +38,9 @@
 # if !defined(EIGEN_DONT_PARALLELIZE)
 #   define EIGEN_DONT_PARALLELIZE
 # endif
+# if defined(EIGEN_USE_MKL_ALL)
+#   undef EIGEN_USE_MKL_ALL
+# endif
 # include <Eigen/Dense>
 # if defined(_OPENMP)
 #   include <omp.h>
