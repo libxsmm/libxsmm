@@ -30,7 +30,7 @@
 ******************************************************************************/
 #include "magazine.h"
 
-#if !defined(__BLAZE) && 1
+#if !defined(__BLAZE) && 0
 # define __BLAZE
 #endif
 

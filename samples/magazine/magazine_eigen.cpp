@@ -30,7 +30,7 @@
 ******************************************************************************/
 #include "magazine.h"
 
-#if !defined(__EIGEN) && 1
+#if !defined(__EIGEN) && 0
 # define __EIGEN
 #endif
 
