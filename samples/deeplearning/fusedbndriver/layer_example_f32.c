@@ -567,6 +567,7 @@ int main(int argc, char* argv[])
     fusedbn_desc.threads = nThreads;
     fusedbn_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     fusedbn_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+    fusedbn_desc.datatype_stats = LIBXSMM_DNN_DATATYPE_F32;
     fusedbn_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     fusedbn_desc.fuse_order = LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU;
     if ( norm_type == 0 ) {

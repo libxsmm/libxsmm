@@ -69,8 +69,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn_desc {
   int pad_h_out;                             /* height of physical zero-padding in output buffer */
   int pad_w_out;                             /* width of physical zero-padding in output buffer */
   int threads;                               /* number of threads used */
-  libxsmm_dnn_datatype datatype_in;          /* datatypes used for all input related buffer */
-  libxsmm_dnn_datatype datatype_out;         /* datatypes used for all output related buffer */
+  libxsmm_dnn_datatype datatype_in;          /* datatype used for all input related buffers */
+  libxsmm_dnn_datatype datatype_out;         /* datatype used for all output related buffers */
+  libxsmm_dnn_datatype datatype_stats;       /* datatype used for all stats related buffers */ 
   libxsmm_dnn_tensor_format buffer_format;   /* format which is for activation buffers */
   libxsmm_dnn_fusedbn_fuse_order fuse_order; /* additional options */
   libxsmm_dnn_fusedbn_fuse_op fuse_ops;      /* used ops into convolutions */
