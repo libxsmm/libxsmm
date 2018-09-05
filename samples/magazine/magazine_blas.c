@@ -58,6 +58,22 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
 # define GEMM CONCATENATE(GEMM_, TYPE)
 #endif
 
+#if 1
+# define STREAM_A(EXPR) (EXPR)
+#else
+# define STREAM_A(EXPR) 0
+#endif
+#if 1
+# define STREAM_B(EXPR) (EXPR)
+#else
+# define STREAM_B(EXPR) 0
+#endif
+#if 1
+# define STREAM_C(EXPR) (EXPR)
+#else
+# define STREAM_C(EXPR) 0
+#endif
+
 
 void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
   const double seed1 = scale * seed + scale;
@@ -76,14 +92,6 @@ void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
 }
 
 
-/**
- * Example program that multiplies matrices independently (C += A * B).
- * A and B-matrices are accumulated into C matrices (beta=1).
- * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
- * However, running a kernel without loading any matrix operand from
- * memory ("cache-hot loop") is not modeling typical applications
- * since no actual work is performed.
- */
 int main(int argc, char* argv[])
 {
   const int alignment = 64; /* must be power of two */
@@ -136,9 +144,9 @@ int main(int argc, char* argv[])
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; ++i) {
-    init(25 + i, a + i * na, m, k, lda, scale);
-    init(75 + i, b + i * nb, k, n, ldb, scale);
-    init(42 + i, c + i * nc, m, n, ldc, scale);
+    init(25 + i, a + STREAM_A(i * na), m, k, lda, scale);
+    init(75 + i, b + STREAM_B(i * nb), k, n, ldb, scale);
+    init(42 + i, c + STREAM_C(i * nc), m, n, ldc, scale);
   }
 
 #if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
@@ -151,7 +159,7 @@ int main(int argc, char* argv[])
 #     pragma omp for private(i)
 #endif
       for (i = 0; i < size; ++i) {
-        kernel(jitter, a + i * na, b + i * nb, c + i * nc);
+        kernel(jitter, a + STREAM_A(i * na), b + STREAM_B(i * nb), c + STREAM_C(i * nc));
       }
     }
   }
@@ -167,8 +175,8 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < size; ++i) {
         GEMM(&transa, &transb, &m, &n, &k,
-          &alpha, a + i * na, &lda, b + i * nb, &ldb,
-           &beta, c + i * nc, &ldc);
+          &alpha, a + STREAM_A(i * na), &lda, b + STREAM_B(i * nb), &ldb,
+           &beta, c + STREAM_C(i * nc), &ldc);
       }
 #if defined(_OPENMP)
     }

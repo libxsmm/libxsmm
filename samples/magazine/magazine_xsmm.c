@@ -34,9 +34,6 @@
 #if !defined(TYPE)
 # define TYPE double
 #endif
-#if 0 /* No prefetch */
-# define NOPREFETCH
-#endif
 #if 0 /* process batch of A, B, and C in "random" order */
 # define SHUFFLE
 #endif
@@ -44,15 +41,23 @@
 # define AUTO
 #endif
 
+#if 1
+# define STREAM_A(EXPR) (EXPR)
+#else
+# define STREAM_A(EXPR) 0
+#endif
+#if 1
+# define STREAM_B(EXPR) (EXPR)
+#else
+# define STREAM_B(EXPR) 0
+#endif
+#if 1
+# define STREAM_C(EXPR) (EXPR)
+#else
+# define STREAM_C(EXPR) 0
+#endif
 
-/**
- * Example program that multiplies matrices independently (C += A * B).
- * A and B-matrices are accumulated into C matrices (beta=1).
- * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
- * However, running a kernel without loading any matrix operand from
- * memory ("cache-hot loop") is not modeling typical applications
- * since no actual work is performed.
- */
+
 int main(int argc, char* argv[])
 {
   /* batch-size is used to stream matrix-operands from memory */
@@ -92,7 +97,12 @@ int main(int argc, char* argv[])
    * and some helpers for more type-generic programming tasks (e.g., libxsmm_mmfunction<T>).
    */
 #if !defined(AUTO) /* explicitly dispatch a kernel according to parameters */
-  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb), prefetch = LIBXSMM_PREFETCH_AUTO;
+  const int flags = LIBXSMM_GEMM_FLAGS(transa, transb);
+# if (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+  const int prefetch = LIBXSMM_PREFETCH_AUTO;
+# else
+  const int prefetch = LIBXSMM_PREFETCH_NONE;
+# endif
   const LIBXSMM_MMFUNCTION_TYPE(TYPE) xmm = LIBXSMM_MMDISPATCH_SYMBOL(TYPE)(m, n, k, &lda, &ldb, &ldc, &alpha, &beta, &flags, &prefetch);
 #endif
 
@@ -106,10 +116,10 @@ int main(int argc, char* argv[])
 #else
     j = i;
 #endif
-    LIBXSMM_MATINIT(TYPE, 25 + i, a + j * na, m, k, lda, scale);
-    LIBXSMM_MATINIT(TYPE, 75 + i, b + j * nb, k, n, ldb, scale);
+    LIBXSMM_MATINIT(TYPE, 25 + i, a + STREAM_A(j * na), m, k, lda, scale);
+    LIBXSMM_MATINIT(TYPE, 75 + i, b + STREAM_B(j * nb), k, n, ldb, scale);
     if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
-      LIBXSMM_MATINIT(TYPE, 42 + i, c + j * nc, m, n, ldc, scale);
+      LIBXSMM_MATINIT(TYPE, 42 + i, c + STREAM_C(j * nc), m, n, ldc, scale);
     }
   }
 
@@ -126,25 +136,25 @@ int main(int argc, char* argv[])
 #endif
     for (i = 0; i < size - 1; ++i) {
 #if defined(SHUFFLE)
-# if !defined(AUTO) && !defined(NOPREFETCH)
+# if !defined(AUTO) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
       const int p = ((i + 1) * shuffle) % size;
 # endif
       j = (i * shuffle) % size;
 #else
-# if !defined(AUTO) && !defined(NOPREFETCH)
-      const int p = i + 1;
+# if !defined(AUTO) && (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+      const int p = i + 1; /* next location */
 # endif
       j = i;
 #endif
 #if defined(AUTO)
       libxsmm_dgemm(&transa, &transb, &m, &n, &k,
-        &alpha, a + j * na, &lda, b + j * nb, &ldb,
-         &beta, c + j * nc, &ldc);
-#elif defined(NOPREFETCH)
-      xmm(a + j * na, b + j * nb, c + j * nc);
+        &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
+         &beta, c + STREAM_C(j * nc), &ldc);
+#elif (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+      xmm(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc),
+          a + STREAM_A(p * na), b + STREAM_B(p * nb), c + STREAM_C(p * nc));
 #else
-      xmm(a + j * na, b + j * nb, c + j * nc,
-          a + p * na, b + p * nb, c + p * nc);
+      xmm(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
 #endif
     }
   }
@@ -155,13 +165,13 @@ int main(int argc, char* argv[])
 #endif
 #if defined(AUTO)
   libxsmm_dgemm(&transa, &transb, &m, &n, &k,
-    &alpha, a + j * na, &lda, b + j * nb, &ldb,
-     &beta, c + j * nc, &ldc);
-#elif defined(NOPREFETCH)
-  xmm(a + j * na, b + j * nb, c + j * nc);
+    &alpha, a + STREAM_A(j * na), &lda, b + STREAM_B(j * nb), &ldb,
+     &beta, c + STREAM_C(j * nc), &ldc);
+#elif (STREAM_A(1) || STREAM_B(1) || STREAM_C(1)) /* prefetch */
+  xmm(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc),
+      a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
 #else
-  xmm(a + j * na, b + j * nb, c + j * nc,
-      a + j * na, b + j * nb, c + j * nc);
+  xmm(a + STREAM_A(j * na), b + STREAM_B(j * nb), c + STREAM_C(j * nc));
 #endif
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
 

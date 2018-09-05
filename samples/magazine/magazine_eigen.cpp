@@ -47,6 +47,22 @@
 #include <cstdlib>
 #include <cstdio>
 
+#if 1
+# define STREAM_A(EXPR) (EXPR)
+#else
+# define STREAM_A(EXPR) 0
+#endif
+#if 1
+# define STREAM_B(EXPR) (EXPR)
+#else
+# define STREAM_B(EXPR) 0
+#endif
+#if 1
+# define STREAM_C(EXPR) (EXPR)
+#else
+# define STREAM_C(EXPR) 0
+#endif
+
 
 template<typename T> void init(int seed, T* dst, int nrows, int ncols, int ld, double scale) {
   const double seed1 = scale * seed + scale;
@@ -76,14 +92,6 @@ template<> struct stride_helper<false> {
 #endif
 
 
-/**
- * Example program that multiplies matrices independently (C += A * B).
- * A and B-matrices are accumulated into C matrices (beta=1).
- * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
- * However, running a kernel without loading any matrix operand from
- * memory ("cache-hot loop") is not modeling typical applications
- * since no actual work is performed.
- */
 int main(int argc, char* argv[])
 {
 #if defined(__EIGEN)
@@ -154,9 +162,9 @@ int main(int argc, char* argv[])
 #endif
     for (int i = 0; i < size; ++i) {
       /* using "matrix_type" instead of "auto" induces an unnecessary copy */
-      const auto a = matrix_type::Map/*Aligned*/(pa + i * na, m, k, stride.a);
-      const auto b = matrix_type::Map/*Aligned*/(pb + i * nb, k, n, stride.b);
-            auto c = matrix_type::Map/*Aligned*/(pc + i * nc, m, n, stride.c);
+      const auto a = matrix_type::Map/*Aligned*/(pa + STREAM_A(i * na), m, k, stride.a);
+      const auto b = matrix_type::Map/*Aligned*/(pb + STREAM_B(i * nb), k, n, stride.b);
+            auto c = matrix_type::Map/*Aligned*/(pc + STREAM_C(i * nc), m, n, stride.c);
       /**
        * Expression templates attempt to delay evaluation until the sequence point
        * is reached, or an "expression object" goes out of scope and hence must

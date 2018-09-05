@@ -44,15 +44,23 @@
 # define SYNC
 #endif
 
+#if 1
+# define STREAM_A(EXPR) (EXPR)
+#else
+# define STREAM_A(EXPR) 0
+#endif
+#if 1
+# define STREAM_B(EXPR) (EXPR)
+#else
+# define STREAM_B(EXPR) 0
+#endif
+#if 1
+# define STREAM_C(EXPR) (EXPR)
+#else
+# define STREAM_C(EXPR) 0
+#endif
 
-/**
- * Example program that multiplies matrices independently (C += A * B).
- * A and B-matrices are accumulated into C matrices (beta=1).
- * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
- * However, running a kernel without loading any matrix operand from
- * memory ("cache-hot loop") is not modeling typical applications
- * since no actual work is performed.
- */
+
 int main(int argc, char* argv[])
 {
   /* batch-size is used to stream matrix-operands from memory */
@@ -121,9 +129,9 @@ int main(int argc, char* argv[])
     if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
       LIBXSMM_MATINIT(TYPE, 42 + i, c + j * nc, m, n, ldc, scale);
     }
-    ia[i] = (int)(j * na);
-    ib[i] = (int)(j * nb);
-    ic[i] = (int)(j * nc);
+    ia[i] = (int)STREAM_A(j * na);
+    ib[i] = (int)STREAM_B(j * nb);
+    ic[i] = (int)STREAM_C(j * nc);
   }
 
   start = libxsmm_timer_tick();
