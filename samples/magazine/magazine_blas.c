@@ -117,7 +117,9 @@ int main(int argc, char* argv[])
 #if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   if (NULL != jitter) {
 #if !defined(_OPENMP)
+# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     duration = dsecnd();
+# endif
 #else
 #   pragma omp parallel
     { /* OpenMP thread pool is already populated (parallel region) */
@@ -136,7 +138,9 @@ int main(int argc, char* argv[])
 #endif
   {
 #if !defined(_OPENMP)
+# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     duration = dsecnd();
+# endif
 #else
 #   pragma omp parallel
     { /* OpenMP thread pool is already populated (parallel region) */
@@ -155,7 +159,7 @@ int main(int argc, char* argv[])
   }
 #if defined(_OPENMP)
   duration = omp_get_wtime() - duration;
-#else
+#elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
   duration = dsecnd() - duration;
 #endif
 
