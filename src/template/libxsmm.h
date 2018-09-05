@@ -125,25 +125,32 @@ LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libx
 /** Get information about the code registry. */
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (double-precision). */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (double-precision). */
 LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const double* alpha, const double* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (single-precision). */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (single-precision). */
 LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (low/short-precision), int-accumulate */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/short-precision), int-accumulate */
 LIBXSMM_API libxsmm_wimmfunction libxsmm_wimmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (low/short-precision), fp-accumulate */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/short-precision), fp-accumulate */
 LIBXSMM_API libxsmm_wsmmfunction libxsmm_wsmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
+
+/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (double-precision). */
+LIBXSMM_API libxsmm_dmmfunction_reducebatch libxsmm_dmmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta);
+/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (single-precision). */
+LIBXSMM_API libxsmm_smmfunction_reducebatch libxsmm_smmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta);
 
 /** Process a series of matrix multiplications (batch). */
 LIBXSMM_API int libxsmm_mmbatch(
