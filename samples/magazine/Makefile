@@ -27,7 +27,7 @@ IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
 BLAS = 1
 SYM = 1
-OMP = 1
+OMP = 0
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc

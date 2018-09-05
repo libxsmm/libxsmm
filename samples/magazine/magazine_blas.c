@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
   double duration = 0;
   int i;
 
-#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
+#if defined(MKL_JIT_SUCCESS)
   void* jitter;
   CONCATENATE(GEMM, _jit_kernel_t) kernel = NULL;
   if (MKL_JIT_SUCCESS == CONCATENATE(mkl_cblas_jit_create_, GEMM)(&jitter, MKL_COL_MAJOR,
@@ -149,7 +149,7 @@ int main(int argc, char* argv[])
     init(42 + i, c + STREAM_C(i * nc), m, n, ldc, scale);
   }
 
-#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
+#if defined(MKL_JIT_SUCCESS)
   if (NULL != jitter) {
 #if defined(_OPENMP)
 #   pragma omp parallel
@@ -161,7 +161,9 @@ int main(int argc, char* argv[])
       for (i = 0; i < size; ++i) {
         kernel(jitter, a + STREAM_A(i * na), b + STREAM_B(i * nb), c + STREAM_C(i * nc));
       }
+#if defined(_OPENMP)
     }
+#endif
   }
   else
 #endif
@@ -192,7 +194,7 @@ int main(int argc, char* argv[])
   }
   printf("%.1f ms\n", 1000.0 * duration);
 
-#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
+#if defined(MKL_JIT_SUCCESS)
   mkl_jit_destroy(jitter);
 #endif
   free(va);
