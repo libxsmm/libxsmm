@@ -91,7 +91,7 @@ int main(int argc, char* argv[])
   double duration = 0;
   int i;
 
-#if defined(MKL_JIT_SUCCESS)
+#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   void* jitter;
   CONCATENATE(GEMM, _jit_kernel_t) kernel = NULL;
   if (MKL_JIT_SUCCESS == CONCATENATE(mkl_cblas_jit_create_, GEMM)(&jitter, MKL_COL_MAJOR,
@@ -114,9 +114,11 @@ int main(int argc, char* argv[])
     init(42 + i, c + STREAM_C(i * nc), m, n, ldc, scale);
   }
 
-#if defined(MKL_JIT_SUCCESS)
+#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   if (NULL != jitter) {
-#if defined(_OPENMP)
+#if !defined(_OPENMP)
+    duration = dsecnd();
+#else
 #   pragma omp parallel
     { /* OpenMP thread pool is already populated (parallel region) */
 #     pragma omp single
@@ -133,7 +135,9 @@ int main(int argc, char* argv[])
   else
 #endif
   {
-#if defined(_OPENMP)
+#if !defined(_OPENMP)
+    duration = dsecnd();
+#else
 #   pragma omp parallel
     { /* OpenMP thread pool is already populated (parallel region) */
 #     pragma omp single
@@ -151,6 +155,8 @@ int main(int argc, char* argv[])
   }
 #if defined(_OPENMP)
   duration = omp_get_wtime() - duration;
+#else
+  duration = dsecnd() - duration;
 #endif
 
   if (0 < duration) {
@@ -159,7 +165,7 @@ int main(int argc, char* argv[])
   }
   printf("%.1f ms\n", 1000.0 * duration);
 
-#if defined(MKL_JIT_SUCCESS)
+#if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   mkl_jit_destroy(jitter);
 #endif
   free(va);
