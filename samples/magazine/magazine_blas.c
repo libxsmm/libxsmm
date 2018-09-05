@@ -28,6 +28,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include "magazine.h"
+
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
 #define GEMM_float  sgemm
@@ -47,49 +49,12 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
 #endif
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdio.h>
 
-#if !defined(TYPE)
-# define TYPE double
-#endif
 #if !defined(GEMM)
 # define CONCATENATE_AUX(A, B) A##B
 # define CONCATENATE(A, B) CONCATENATE_AUX(A, B)
 # define GEMM CONCATENATE(GEMM_, TYPE)
 #endif
-
-#if 1
-# define STREAM_A(EXPR) (EXPR)
-#else
-# define STREAM_A(EXPR) 0
-#endif
-#if 1
-# define STREAM_B(EXPR) (EXPR)
-#else
-# define STREAM_B(EXPR) 0
-#endif
-#if 1
-# define STREAM_C(EXPR) (EXPR)
-#else
-# define STREAM_C(EXPR) 0
-#endif
-
-
-void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
-  const double seed1 = scale * seed + scale;
-  int i;
-  for (i = 0; i < ncols; ++i) {
-    int j = 0;
-    for (; j < nrows; ++j) {
-      const int k = i * ld + j;
-      dst[k] = (TYPE)(seed1 / (1.0 + k));
-    }
-    for (; j < ld; ++j) {
-      const int k = i * ld + j;
-      dst[k] = (TYPE)(seed);
-    }
-  }
-}
 
 
 int main(int argc, char* argv[])

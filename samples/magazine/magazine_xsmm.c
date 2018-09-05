@@ -28,33 +28,14 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include "magazine.h"
 #include <libxsmm.h>
-#include <stdio.h>
 
-#if !defined(TYPE)
-# define TYPE double
-#endif
 #if 0 /* process batch of A, B, and C in "random" order */
 # define SHUFFLE
 #endif
 #if 0 /* auto-dispatch SMM kernel */
 # define AUTO
-#endif
-
-#if 1
-# define STREAM_A(EXPR) (EXPR)
-#else
-# define STREAM_A(EXPR) 0
-#endif
-#if 1
-# define STREAM_B(EXPR) (EXPR)
-#else
-# define STREAM_B(EXPR) 0
-#endif
-#if 1
-# define STREAM_C(EXPR) (EXPR)
-#else
-# define STREAM_C(EXPR) 0
 #endif
 
 
@@ -116,10 +97,10 @@ int main(int argc, char* argv[])
 #else
     j = i;
 #endif
-    LIBXSMM_MATINIT(TYPE, 25 + i, a + STREAM_A(j * na), m, k, lda, scale);
-    LIBXSMM_MATINIT(TYPE, 75 + i, b + STREAM_B(j * nb), k, n, ldb, scale);
+    init(25 + i, a + STREAM_A(j * na), m, k, lda, scale);
+    init(75 + i, b + STREAM_B(j * nb), k, n, ldb, scale);
     if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
-      LIBXSMM_MATINIT(TYPE, 42 + i, c + STREAM_C(j * nc), m, n, ldc, scale);
+      init(42 + i, c + STREAM_C(j * nc), m, n, ldc, scale);
     }
   }
 

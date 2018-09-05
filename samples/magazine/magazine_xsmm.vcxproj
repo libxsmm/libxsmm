@@ -29,6 +29,9 @@
   <ItemGroup>
     <ClCompile Include="magazine_xsmm.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="magazine.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>magazine_xsmm</ProjectName>
     <ProjectGuid>{0EC5E28C-54A4-403B-AA7F-541007E74116}</ProjectGuid>

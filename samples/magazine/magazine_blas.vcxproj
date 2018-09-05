@@ -29,6 +29,9 @@
   <ItemGroup>
     <ClCompile Include="magazine_blas.c" />
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="magazine.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>magazine_blas</ProjectName>
     <ProjectGuid>{D014A987-5908-4BF1-9561-601A3301D103}</ProjectGuid>
