@@ -527,6 +527,28 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn {
   void* scratch;
 };
 
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
+  libxsmm_dnn_fullyconnected_desc desc;
+  libxsmm_dnn_tensor* reg_input;      /* input tensor */
+  libxsmm_dnn_tensor* reg_output;     /* output tensor */
+  libxsmm_dnn_tensor* grad_input;     /* grad input tensor */
+  libxsmm_dnn_tensor* grad_output;    /* grad output tensor */
+  libxsmm_dnn_tensor* reg_filter;     /* filter tensor */
+  libxsmm_dnn_tensor* grad_filter;    /* grad filter tensor */
+  libxsmm_barrier* barrier;           /* barrier */
+  int ifmblock;
+  int ifmblock_hp;
+  int ofmblock;
+  int ofmblock_lp;
+  int blocksifm;
+  int blocksofm;
+  int blocksifm_lp;  /* not used */
+  int blocksofm_lp;  /* not used */
+  int fm_lp_block;
+  size_t scratch_size;
+  void* scratch;
+};
+
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
   libxsmm_dnn_pooling_desc desc;
   libxsmm_dnn_tensor* reg_input;      /* input tensor */
