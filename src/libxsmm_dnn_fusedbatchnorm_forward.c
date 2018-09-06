@@ -110,7 +110,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_fwd_custom(libxsmm_d
   /* check if all required tensors are bound */
   if (handle->reg_input == 0 || handle->reg_output == 0 ||
       handle->reg_beta == 0  || handle->reg_gamma == 0  ||
-      handle->expvalue == 0  || handle->stddev             ) {
+      handle->expvalue == 0  || handle->stddev == 0        ) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
   }

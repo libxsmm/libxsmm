@@ -47,10 +47,6 @@ typedef struct {
   int C;
   int H;
   int W;
-  int pad_h_in;
-  int pad_w_in;
-  int pad_h_out;
-  int pad_w_out;
   int stride_h;
   int stride_w;
   int norm_type;  /* 0: full batchnorm, 1: batch scaling only */
@@ -86,17 +82,17 @@ LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
   }
 }
 
-LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int H, int W, int pad_h, int pad_w)
+LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int Hp, int Wp, int pad_h, int pad_w)
 {
-  LIBXSMM_VLA_DECL(4, float, input, nchw, C, H, W);
+  LIBXSMM_VLA_DECL(4, float, input, nchw, C, Hp, Wp);
   int n, h, w, c;
 
   for ( n = 0; n < N; n++ ) {
     for ( c = 0; c < C; c++ ) {
-      for ( h = 0; h < H; h++ ) {
-        for ( w = 0; w < W; w++ ) {
-          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w)
-            LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0.0;
+      for ( h = 0; h < Hp; h++ ) {
+        for ( w = 0; w < Wp; w++ ) {
+          if (h < pad_h || h >= Hp-pad_h || w < pad_w || w >= Wp-pad_w)
+            LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, Hp, Wp) = 0.0;
         }
       }
     }
@@ -163,33 +159,25 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
 {
   const int nImg = param->N;
   const int nFm = param->C;
-  const int fhi = param->H;
-  const int fwi = param->W;
-  const int iph = param->pad_h_in;
-  const int ipw = param->pad_w_in;
-  const int oph = param->pad_h_out;
-  const int opw = param->pad_w_out;
+  const int ifh = param->H;
+  const int ifw = param->W;
   const int sh = param->stride_h;
   const int sw = param->stride_w;
-  const int fho = fhi/sh;
-  const int fwo = fwi/sw;
-  const int fhpo = fho + 2*oph;
-  const int fwpo = fwo + 2*opw;
-  const int fhpi = fhi + 2*iph;
-  const int fwpi = fwi + 2*ipw;
-  const float nhw = (float)(nImg * fhi * fwi);
+  const int ofh = ifh/sh;
+  const int ofw = ifw/sw;
+  const float nhw = (float)(nImg * ifh * ifw);
   const float recp_nhw = 1.0f/nhw;
   const float sqrt_eps = 1e-7f;
 
-  int img, fm, h, w, hp, wp;
+  int img, fm, hi, wi, ho, wo;
 
-  LIBXSMM_VLA_DECL(4, const float, input,     input_ptr,     nFm, fhpi, fwpi);
-  LIBXSMM_VLA_DECL(4, const float, input_add, input_add_ptr, nFm, fhpi, fwpi);
-  LIBXSMM_VLA_DECL(4,       float, output,    output_ptr,    nFm, fhpo, fwpo);
+  LIBXSMM_VLA_DECL(4, const float, input,     input_ptr,     nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4, const float, input_add, input_add_ptr, nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4,       float, output,    output_ptr,    nFm, ofh, ofw);
 
   if ( param->norm_type == 0 ) {
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, fm, h, w, hp, wp)
+#pragma omp parallel for private(img, fm, hi, wi)
 #endif
     for (fm = 0; fm < nFm; fm++) {
       float ch_sum = 0.0f;
@@ -199,11 +187,10 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
       float tsqbmean = 0.0f;
       float tbrstd = 0.0f;
 
-      for (img = 0; img < nImg; img++) {
-        for( h=iph; h < (fhi+iph); h++) {
-          for( w=ipw; w < (fwi+ipw); w++) {
-            const float  input_val     =  LIBXSMM_VLA_ACCESS(4, input,     img, fm, h,  w, nFm, fhpi, fwpi);
-
+      for ( img = 0; img < nImg; img++ ) {
+        for( hi = 0; hi < ifh; hi++ ) {
+          for( wi = 0; wi < ifw; wi++ ) {
+            const float input_val = LIBXSMM_VLA_ACCESS(4, input, img, fm, hi, wi, nFm, ifh, ifw);
             ch_sum   += input_val;
             ch_sumsq += (input_val * input_val);
           }
@@ -220,15 +207,15 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
   }
 
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, fm, h, w, hp, wp)
+#pragma omp parallel for private(img, fm, hi, wi, ho, wo)
 #endif
-  for (img = 0; img < nImg; img++) {
-    for (fm = 0; fm < nFm; fm++) {
-      for( h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
-        for( w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
-          const float  input_val     =  LIBXSMM_VLA_ACCESS(4, input,     img, fm, h,  w, nFm, fhpi, fwpi);
-          const float  input_add_val =  LIBXSMM_VLA_ACCESS(4, input_add, img, fm, h,  w, nFm, fhpi, fwpi);
-                float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, hp, wp, nFm, fhpo, fwpo);
+  for ( img = 0; img < nImg; img++ ) {
+    for ( fm = 0; fm < nFm; fm++ ) {
+      for( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
+        for( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
+          const float  input_val     =  LIBXSMM_VLA_ACCESS(4, input,     img, fm, hi, wi, nFm, ifh, ifw);
+          const float  input_add_val =  LIBXSMM_VLA_ACCESS(4, input_add, img, fm, hi, wi, nFm, ifh, ifw);
+                float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofh, ofw);
 
           /* BN + scale (gamma, beta) */
           float o = gamma_ptr[fm]*(input_val - expectval_ptr[fm])*stddev_ptr[fm] + beta_ptr[fm];
@@ -253,46 +240,38 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
 {
   const int nImg = param->N;
   const int nFm = param->C;
-  const int fhi = param->H;
-  const int fwi = param->W;
-  const int iph = param->pad_h_in;
-  const int ipw = param->pad_w_in;
-  const int oph = param->pad_h_out;
-  const int opw = param->pad_w_out;
+  const int ifh = param->H;
+  const int ifw = param->W;
   const int sh = param->stride_h;
   const int sw = param->stride_w;
-  const int fho = fhi/sh;
-  const int fwo = fwi/sw;
-  const int fhpo = fho + 2*oph;
-  const int fwpo = fwo + 2*opw;
-  const int fhpi = fhi + 2*iph;
-  const int fwpi = fwi + 2*ipw;
-  const float nhw = (float)(nImg * fhi * fwi);
+  const int ofh = ifh/sh;
+  const int ofw = ifw/sw;
+  const float nhw = (float)(nImg * ifh * ifw);
   const float recp_nhw = 1.0f/nhw;
 
-  int img, fm, h, w, hp, wp;
+  int img, fm, hi, wi, ho, wo;
 
-  LIBXSMM_VLA_DECL(4, const float, input,      input_ptr,      nFm, fhpi, fwpi);
-  LIBXSMM_VLA_DECL(4,       float, dinput,     dinput_ptr,     nFm, fhpi, fwpi);
-  LIBXSMM_VLA_DECL(4,       float, dinput_add, dinput_add_ptr, nFm, fhpi, fwpi);
-  LIBXSMM_VLA_DECL(4, const float, output,     output_ptr,     nFm, fhpo, fwpo);
-  LIBXSMM_VLA_DECL(4,       float, doutput,    doutput_ptr,    nFm, fhpo, fwpo);
+  LIBXSMM_VLA_DECL(4, const float, input,      input_ptr,      nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4,       float, dinput,     dinput_ptr,     nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4,       float, dinput_add, dinput_add_ptr, nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4, const float, output,     output_ptr,     nFm, ofh, ofw);
+  LIBXSMM_VLA_DECL(4,       float, doutput,    doutput_ptr,    nFm, ofh, ofw);
 
   if ( param->norm_type == 0 ) {
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, fm, h, w, hp, wp)
+#pragma omp parallel for private(img, fm, hi, wi, ho, wo)
 #endif
-    for (fm = 0; fm < nFm; fm++) {
+    for ( fm = 0; fm < nFm; fm++ ) {
       del_gamma_ptr[fm] = 0.0f;
       del_beta_ptr[fm] = 0.0f;
 
-      for (img = 0; img < nImg; img++) {
-        for( h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
-          for( w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
-                  float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, h,  w,  fm, fhpi, fwpi);
-            const float  output_val        =  LIBXSMM_VLA_ACCESS(4,     output, img, fm, hp, wp, fm, fhpo, fwpo);
-            const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, h,  w,  fm, fhpi, fwpi);
-                  float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, hp, wp, fm, fhpo, fwpo);
+      for ( img = 0; img < nImg; img++ ) {
+        for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
+          for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
+                  float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifh, ifw);
+            const float  output_val        =  LIBXSMM_VLA_ACCESS(4,     output, img, fm, ho, wo, fm, ofh, ofw);
+            const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifh, ifw);
+                  float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh, ofw);
 
             /* ReLU */
             if ( (param->fuse_type == 1) || (param->fuse_type == 3) ) {
@@ -311,15 +290,15 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
   }
 
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, fm, h, w, hp, wp)
+#pragma omp parallel for private(img, fm, hi, wi, ho, wo)
 #endif
-  for (img = 0; img < nImg; img++) {
-    for (fm = 0; fm < nFm; fm++) {
-      for( h=iph, hp=oph; h < (fhi+iph); h+=sh, hp++) {
-        for( w=ipw, wp=opw; w < (fwi+ipw); w+=sw, wp++) {
-                float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, h,  w,  fm, fhpi, fwpi);
-          const float  input_val      =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, h,  w,  fm, fhpi, fwpi);
-          const float  del_output_val =  LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, hp, wp, fm, fhpo, fwpo);
+  for ( img = 0; img < nImg; img++ ) {
+    for ( fm = 0; fm < nFm; fm++ ) {
+      for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
+        for( wi = 0, wo = 0; wi < ifw; wi += sw, wo++) {
+                float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifh, ifw);
+          const float  input_val      =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifh, ifw);
+          const float  del_output_val =  LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh, ofw);
 
           *del_input_ptr = gamma_ptr[fm] * stddev_ptr[fm] * recp_nhw * (nhw * del_output_val -
                     (del_beta_ptr[fm] + (input_val - expectval_ptr[fm]) * del_gamma_ptr[fm] * stddev_ptr[fm]));
@@ -332,8 +311,9 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
 
 int main(int argc, char* argv[])
 {
-  float *naive_input, *naive_output, *naive_input_add, *naive_delinput, *naive_deloutput;
-  float *naive_delinput_add, *naive_libxsmm_output, *naive_libxsmm_delinput, *naive_libxsmm_delinput_add;
+  float *naive_input, *naive_output, *naive_input_add, *naive_delinput_add, *naive_delinput, *naive_deloutput;
+  float *naive_input_pad, *naive_output_pad, *naive_input_add_pad, *naive_delinput_add_pad, *naive_delinput_pad, *naive_deloutput_pad;
+  float *naive_libxsmm_output, *naive_libxsmm_delinput, *naive_libxsmm_delinput_add;
   float *naive_beta, *naive_gamma, *naive_delbeta, *naive_delgamma, *naive_expectval, *naive_stddev;
   float *input_libxsmm, *output_libxsmm, *input_add_libxsmm, *delinput_libxsmm, *deloutput_libxsmm, *delinput_add_libxsmm;
   float *beta_libxsmm, *gamma_libxsmm, *delbeta_libxsmm, *delgamma_libxsmm, *expectval_libxsmm, *stddev_libxsmm;
@@ -450,10 +430,6 @@ int main(int argc, char* argv[])
   naive_param.C = nFm;
   naive_param.H = ifh;
   naive_param.W = ifw;
-  naive_param.pad_h_in = pad_h_in;
-  naive_param.pad_w_in = pad_w_in;
-  naive_param.pad_h_out = pad_h_out;
-  naive_param.pad_w_out = pad_w_out;
   naive_param.stride_h = stride_h;
   naive_param.stride_w = stride_w;
   naive_param.norm_type = norm_type;
@@ -482,27 +458,38 @@ int main(int argc, char* argv[])
 #endif
 
   /* allocate data */
-  naive_input                = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_input_add            = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_delinput             = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_delinput_add         = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_output               = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
-  naive_deloutput            = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_input                = (float*)libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
+  naive_input_add            = (float*)libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
+  naive_delinput             = (float*)libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
+  naive_delinput_add         = (float*)libxsmm_aligned_malloc( nImg*nFm*ifh *ifw *sizeof(float), 2097152);
+  naive_output               = (float*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
+  naive_deloutput            = (float*)libxsmm_aligned_malloc( nImg*nFm*ofh *ofw *sizeof(float), 2097152);
+
+  naive_input_pad            = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_input_add_pad        = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_delinput_pad         = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_delinput_add_pad     = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_output_pad           = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+  naive_deloutput_pad        = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+
   naive_libxsmm_output       = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
   naive_libxsmm_delinput     = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
   naive_libxsmm_delinput_add = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
+
   input_libxsmm              = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
   delinput_libxsmm           = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
   input_add_libxsmm          = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
   delinput_add_libxsmm       = (float*)libxsmm_aligned_malloc( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
   output_libxsmm             = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
   deloutput_libxsmm          = (float*)libxsmm_aligned_malloc( nImg*nFm*ofhp*ofwp*sizeof(float), 2097152);
+
   naive_beta                 = (float*)libxsmm_aligned_malloc( nFm*               sizeof(float), 2097152);
   naive_gamma                = (float*)libxsmm_aligned_malloc( nFm*               sizeof(float), 2097152);
   naive_delbeta              = (float*)libxsmm_aligned_malloc( nFm*               sizeof(float), 2097152);
   naive_delgamma             = (float*)libxsmm_aligned_malloc( nFm*               sizeof(float), 2097152);
   naive_expectval            = (float*)libxsmm_aligned_malloc( nFm*               sizeof(float), 2097152);
   naive_stddev               = (float*)libxsmm_aligned_malloc( nFm*               sizeof(float), 2097152);
+
   beta_libxsmm               = (float*)libxsmm_aligned_malloc( nFm*               sizeof(float), 2097152);
   gamma_libxsmm              = (float*)libxsmm_aligned_malloc( nFm*               sizeof(float), 2097152);
   delbeta_libxsmm            = (float*)libxsmm_aligned_malloc( nFm*               sizeof(float), 2097152);
@@ -511,37 +498,26 @@ int main(int argc, char* argv[])
   stddev_libxsmm             = (float*)libxsmm_aligned_malloc( nFm*               sizeof(float), 2097152);
 
   /* initialize data */
-  if (pad_h_in == 0 && pad_w_in == 0) {
-    init_buf(naive_input,          nImg*nFm*ifhp*ifwp, 0, 0);
-    init_buf(naive_delinput,       nImg*nFm*ifhp*ifwp, 0, 0);
-    init_buf(naive_input_add,      nImg*nFm*ifhp*ifwp, 0, 0);
-    init_buf(naive_delinput_add,   nImg*nFm*ifhp*ifwp, 0, 0);
-    init_buf(naive_output,         nImg*nFm*ofhp*ofwp, 0, 0);
-    init_buf(naive_deloutput,      nImg*nFm*ofhp*ofwp, 0, 0);
-  } else {
-    float *naive_tmp = (float*)libxsmm_aligned_scratch( nImg*nFm*ifhp*ifwp*sizeof(float), 2097152);
-    init_buf(naive_tmp,          nImg*nFm*ifh*ifw, 0, 0);
-    copy_internal_nchw( naive_input , naive_tmp, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in);
-    init_buf(naive_tmp,          nImg*nFm*ifh*ifw, 0, 0);
-    copy_internal_nchw( naive_delinput , naive_tmp, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in);
-    init_buf(naive_tmp,          nImg*nFm*ifh*ifw, 0, 0);
-    copy_internal_nchw( naive_input_add , naive_tmp, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in);
-    init_buf(naive_tmp,          nImg*nFm*ifh*ifw, 0, 0);
-    copy_internal_nchw( naive_delinput_add , naive_tmp, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in);
-    libxsmm_free(naive_tmp);
-    naive_tmp = (float*)libxsmm_aligned_scratch( nImg*nFm*ofh*ofw*sizeof(float), 2097152);
-    init_buf(naive_tmp,          nImg*nFm*ofh*ofw, 0, 0);
-    copy_internal_nchw( naive_output , naive_tmp, nImg, nFm, ofh, ofw, pad_h_out, pad_w_out);
-    init_buf(naive_tmp,          nImg*nFm*ofh*ofw, 0, 0);
-    copy_internal_nchw( naive_deloutput , naive_tmp, nImg, nFm, ofh, ofw, pad_h_out, pad_w_out);
-    libxsmm_free(naive_tmp);
-  }
-  set_zeropad_nchw(naive_input,        nImg, nFm, ifhp, ifwp, pad_h_in,  pad_w_in);
-  set_zeropad_nchw(naive_delinput,     nImg, nFm, ifhp, ifwp, pad_h_in,  pad_w_in);
-  set_zeropad_nchw(naive_input_add,    nImg, nFm, ifhp, ifwp, pad_h_in,  pad_w_in);
-  set_zeropad_nchw(naive_delinput_add, nImg, nFm, ifhp, ifwp, pad_h_in,  pad_w_in);
-  set_zeropad_nchw(naive_output,       nImg, nFm, ifhp, ifwp, pad_h_out, pad_w_out);
-  set_zeropad_nchw(naive_deloutput,    nImg, nFm, ifhp, ifwp, pad_h_out, pad_w_out);
+  init_buf( naive_input, nImg*nFm*ifh*ifw, 0, 0 );
+  copy_internal_nchw( naive_input_pad , naive_input, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in );
+  init_buf( naive_delinput, nImg*nFm*ifh*ifw, 0, 0 );
+  copy_internal_nchw( naive_delinput_pad, naive_delinput, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in );
+  init_buf( naive_input_add, nImg*nFm*ifh*ifw, 0, 0 );
+  copy_internal_nchw( naive_input_add_pad, naive_input_add, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in );
+  init_buf( naive_delinput_add, nImg*nFm*ifh*ifw, 0, 0 );
+  copy_internal_nchw( naive_delinput_add_pad, naive_delinput_add, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in );
+  init_buf( naive_output, nImg*nFm*ofh*ofw, 0, 0  );
+  copy_internal_nchw( naive_output_pad, naive_output, nImg, nFm, ofh, ofw, pad_h_out, pad_w_out );
+  init_buf( naive_deloutput, nImg*nFm*ofh*ofw, 0, 0 );
+  copy_internal_nchw( naive_deloutput_pad, naive_deloutput, nImg, nFm, ofh, ofw, pad_h_out, pad_w_out );
+
+  set_zeropad_nchw(naive_input_pad,        nImg, nFm, ifhp, ifwp, pad_h_in,  pad_w_in);
+  set_zeropad_nchw(naive_delinput_pad,     nImg, nFm, ifhp, ifwp, pad_h_in,  pad_w_in);
+  set_zeropad_nchw(naive_input_add_pad,    nImg, nFm, ifhp, ifwp, pad_h_in,  pad_w_in);
+  set_zeropad_nchw(naive_delinput_add_pad, nImg, nFm, ifhp, ifwp, pad_h_in,  pad_w_in);
+  set_zeropad_nchw(naive_output_pad,       nImg, nFm, ofhp, ofwp, pad_h_out, pad_w_out);
+  set_zeropad_nchw(naive_deloutput_pad,    nImg, nFm, ofhp, ofwp, pad_h_out, pad_w_out);
+
   init_buf(naive_beta,      nFm, 0, 0);
   init_buf(naive_gamma,     nFm, 0, 0);
   init_buf(naive_delbeta,   nFm, 0, 0);
@@ -591,6 +567,7 @@ int main(int argc, char* argv[])
     fusedbn_desc.threads = nThreads;
     fusedbn_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     fusedbn_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+    fusedbn_desc.datatype_stats = LIBXSMM_DNN_DATATYPE_F32;
     fusedbn_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     fusedbn_desc.fuse_order = LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU;
     if ( norm_type == 0 ) {
@@ -676,12 +653,12 @@ int main(int argc, char* argv[])
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our
        own external to the library */
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,        (void*)naive_input,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output,       (void*)naive_output,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input_add,    (void*)naive_input_add, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delinput,     (void*)naive_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_deloutput,    (void*)naive_deloutput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delinput_add, (void*)naive_delinput_add, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,        (void*)naive_input_pad,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output,       (void*)naive_output_pad,       LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input_add,    (void*)naive_input_add_pad,    LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delinput,     (void*)naive_delinput_pad,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_deloutput,    (void*)naive_deloutput_pad,    LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delinput_add, (void*)naive_delinput_add_pad, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
     /* bind buffers and filter to handle */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_handle, libxsmm_input,        LIBXSMM_DNN_REGULAR_INPUT ) );
@@ -723,9 +700,10 @@ int main(int argc, char* argv[])
       }
       /* copy out data */
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      copy_internal_nchw( naive_output_pad, naive_output, nImg, nFm, ofh, ofw, pad_h_out, pad_w_out);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nFm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0, &norms_fwd);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nFm*ofhp*ofwp, 1, naive_output_pad, naive_libxsmm_output, 0, 0, &norms_fwd);
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -757,9 +735,11 @@ int main(int argc, char* argv[])
       /* copy out data */
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delinput,     (void*)naive_libxsmm_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delinput_add, (void*)naive_libxsmm_delinput_add, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      copy_internal_nchw( naive_delinput_pad, naive_delinput, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in);
+      copy_internal_nchw( naive_delinput_add_pad, naive_delinput_add, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nFm*ifhp*ifwp, 1, naive_delinput_add, naive_libxsmm_delinput_add, 0, 0, &norms_bwd);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nFm*ifhp*ifwp, 1, naive_delinput_add_pad, naive_libxsmm_delinput_add, 0, 0, &norms_bwd);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -768,7 +748,7 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
       printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_bwd);
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nFm*ifhp*ifwp, 1, naive_delinput, naive_libxsmm_delinput, 0, 0, &norms_bwd);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nFm*ifhp*ifwp, 1, naive_delinput_pad, naive_libxsmm_delinput, 0, 0, &norms_bwd);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -890,6 +870,12 @@ int main(int argc, char* argv[])
   libxsmm_free(naive_delinput);
   libxsmm_free(naive_delinput_add);
   libxsmm_free(naive_deloutput);
+  libxsmm_free(naive_input_pad);
+  libxsmm_free(naive_input_add_pad);
+  libxsmm_free(naive_output_pad);
+  libxsmm_free(naive_delinput_pad);
+  libxsmm_free(naive_delinput_add_pad);
+  libxsmm_free(naive_deloutput_pad);
   libxsmm_free(naive_beta);
   libxsmm_free(naive_gamma);
   libxsmm_free(naive_delbeta);

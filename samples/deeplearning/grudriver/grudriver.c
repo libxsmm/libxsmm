@@ -160,7 +160,7 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst, float 
 
 LIBXSMM_INLINE void matrix_transpose(int rows, int cols, float *src, float *dst)
 {
-  libxsmm_otrans_omp(dst, src, sizeof(float), rows, cols, rows/*ldi*/, cols/*ldo*/);
+  libxsmm_otrans_omp(dst, src, sizeof(float), cols, rows, cols/*ldi*/, rows/*ldo*/);
 }
 
 

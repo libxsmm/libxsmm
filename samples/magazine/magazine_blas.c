@@ -28,6 +28,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include "magazine.h"
+
 #if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
 # include <mkl.h>
 #define GEMM_float  sgemm
@@ -47,11 +49,7 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
 #endif
 #include <stdlib.h>
 #include <stdint.h>
-#include <stdio.h>
 
-#if !defined(TYPE)
-# define TYPE double
-#endif
 #if !defined(GEMM)
 # define CONCATENATE_AUX(A, B) A##B
 # define CONCATENATE(A, B) CONCATENATE_AUX(A, B)
@@ -59,31 +57,6 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
 #endif
 
 
-void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
-  const double seed1 = scale * seed + scale;
-  int i;
-  for (i = 0; i < ncols; ++i) {
-    int j = 0;
-    for (; j < nrows; ++j) {
-      const int k = i * ld + j;
-      dst[k] = (TYPE)(seed1 / (1.0 + k));
-    }
-    for (; j < ld; ++j) {
-      const int k = i * ld + j;
-      dst[k] = (TYPE)(seed);
-    }
-  }
-}
-
-
-/**
- * Example program that multiplies matrices independently (C += A * B).
- * A and B-matrices are accumulated into C matrices (beta=1).
- * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
- * However, running a kernel without loading any matrix operand from
- * memory ("cache-hot loop") is not modeling typical applications
- * since no actual work is performed.
- */
 int main(int argc, char* argv[])
 {
   const int alignment = 64; /* must be power of two */
@@ -136,14 +109,18 @@ int main(int argc, char* argv[])
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; ++i) {
-    init(25 + i, a + i * na, m, k, lda, scale);
-    init(75 + i, b + i * nb, k, n, ldb, scale);
-    init(42 + i, c + i * nc, m, n, ldc, scale);
+    init(25 + i, a + STREAM_A(i * na), m, k, lda, scale);
+    init(75 + i, b + STREAM_B(i * nb), k, n, ldb, scale);
+    init(42 + i, c + STREAM_C(i * nc), m, n, ldc, scale);
   }
 
 #if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   if (NULL != jitter) {
-#if defined(_OPENMP)
+#if !defined(_OPENMP)
+# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+    duration = dsecnd();
+# endif
+#else
 #   pragma omp parallel
     { /* OpenMP thread pool is already populated (parallel region) */
 #     pragma omp single
@@ -151,14 +128,20 @@ int main(int argc, char* argv[])
 #     pragma omp for private(i)
 #endif
       for (i = 0; i < size; ++i) {
-        kernel(jitter, a + i * na, b + i * nb, c + i * nc);
+        kernel(jitter, a + STREAM_A(i * na), b + STREAM_B(i * nb), c + STREAM_C(i * nc));
       }
+#if defined(_OPENMP)
     }
+#endif
   }
   else
 #endif
   {
-#if defined(_OPENMP)
+#if !defined(_OPENMP)
+# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+    duration = dsecnd();
+# endif
+#else
 #   pragma omp parallel
     { /* OpenMP thread pool is already populated (parallel region) */
 #     pragma omp single
@@ -167,8 +150,8 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < size; ++i) {
         GEMM(&transa, &transb, &m, &n, &k,
-          &alpha, a + i * na, &lda, b + i * nb, &ldb,
-           &beta, c + i * nc, &ldc);
+          &alpha, a + STREAM_A(i * na), &lda, b + STREAM_B(i * nb), &ldb,
+           &beta, c + STREAM_C(i * nc), &ldc);
       }
 #if defined(_OPENMP)
     }
@@ -176,6 +159,8 @@ int main(int argc, char* argv[])
   }
 #if defined(_OPENMP)
   duration = omp_get_wtime() - duration;
+#elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+  duration = dsecnd() - duration;
 #endif
 
   if (0 < duration) {

@@ -28,12 +28,9 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include "magazine.h"
 #include <libxsmm.h>
-#include <stdio.h>
 
-#if !defined(TYPE)
-# define TYPE double
-#endif
 #if 0 /* process batch of A, B, and C in "random" order */
 # define SHUFFLE
 #endif
@@ -45,14 +42,6 @@
 #endif
 
 
-/**
- * Example program that multiplies matrices independently (C += A * B).
- * A and B-matrices are accumulated into C matrices (beta=1).
- * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
- * However, running a kernel without loading any matrix operand from
- * memory ("cache-hot loop") is not modeling typical applications
- * since no actual work is performed.
- */
 int main(int argc, char* argv[])
 {
   /* batch-size is used to stream matrix-operands from memory */
@@ -116,14 +105,14 @@ int main(int argc, char* argv[])
 #else
     const int j = i;
 #endif
-    LIBXSMM_MATINIT(TYPE, 25 + i, a + j * na, m, k, lda, scale);
-    LIBXSMM_MATINIT(TYPE, 75 + i, b + j * nb, k, n, ldb, scale);
+    init(25 + i, a + j * na, m, k, lda, scale);
+    init(75 + i, b + j * nb, k, n, ldb, scale);
     if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
-      LIBXSMM_MATINIT(TYPE, 42 + i, c + j * nc, m, n, ldc, scale);
+      init(42 + i, c + j * nc, m, n, ldc, scale);
     }
-    ia[i] = (int)(j * na);
-    ib[i] = (int)(j * nb);
-    ic[i] = (int)(j * nc);
+    ia[i] = (int)STREAM_A(j * na);
+    ib[i] = (int)STREAM_B(j * nb);
+    ic[i] = (int)STREAM_C(j * nc);
   }
 
   start = libxsmm_timer_tick();

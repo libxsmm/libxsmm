@@ -28,6 +28,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#include "magazine.h"
+
 #if !defined(__EIGEN) && 0
 # define __EIGEN
 #endif
@@ -35,6 +37,9 @@
 #if defined(__EIGEN)
 # if !defined(EIGEN_DONT_PARALLELIZE)
 #   define EIGEN_DONT_PARALLELIZE
+# endif
+# if defined(EIGEN_USE_MKL_ALL)
+#   undef EIGEN_USE_MKL_ALL
 # endif
 # include <Eigen/Dense>
 # if defined(_OPENMP)
@@ -45,23 +50,6 @@
 #endif
 #include <memory>
 #include <cstdlib>
-#include <cstdio>
-
-
-template<typename T> void init(int seed, T* dst, int nrows, int ncols, int ld, double scale) {
-  const double seed1 = scale * seed + scale;
-  for (int i = 0; i < ncols; ++i) {
-    int j = 0;
-    for (; j < nrows; ++j) {
-      const int k = i * ld + j;
-      dst[k] = static_cast<T>(seed1 / (1.0 + k));
-    }
-    for (; j < ld; ++j) {
-      const int k = i * ld + j;
-      dst[k] = static_cast<T>(seed);
-    }
-  }
-}
 
 
 #if defined(__EIGEN)
@@ -76,14 +64,6 @@ template<> struct stride_helper<false> {
 #endif
 
 
-/**
- * Example program that multiplies matrices independently (C += A * B).
- * A and B-matrices are accumulated into C matrices (beta=1).
- * Streaming A, B, C, AB, AC, BC, or ABC are other useful benchmarks
- * However, running a kernel without loading any matrix operand from
- * memory ("cache-hot loop") is not modeling typical applications
- * since no actual work is performed.
- */
 int main(int argc, char* argv[])
 {
 #if defined(__EIGEN)
@@ -154,9 +134,9 @@ int main(int argc, char* argv[])
 #endif
     for (int i = 0; i < size; ++i) {
       /* using "matrix_type" instead of "auto" induces an unnecessary copy */
-      const auto a = matrix_type::Map/*Aligned*/(pa + i * na, m, k, stride.a);
-      const auto b = matrix_type::Map/*Aligned*/(pb + i * nb, k, n, stride.b);
-            auto c = matrix_type::Map/*Aligned*/(pc + i * nc, m, n, stride.c);
+      const auto a = matrix_type::Map/*Aligned*/(pa + STREAM_A(i * na), m, k, stride.a);
+      const auto b = matrix_type::Map/*Aligned*/(pb + STREAM_B(i * nb), k, n, stride.b);
+            auto c = matrix_type::Map/*Aligned*/(pc + STREAM_C(i * nc), m, n, stride.c);
       /**
        * Expression templates attempt to delay evaluation until the sequence point
        * is reached, or an "expression object" goes out of scope and hence must
