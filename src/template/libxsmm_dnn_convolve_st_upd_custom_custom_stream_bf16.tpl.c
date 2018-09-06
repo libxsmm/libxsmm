@@ -92,7 +92,7 @@ LIBXSMM_ALIGNED(float *max_vals, 64);
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs = _mm512_setzero_ps();
 #else /* won't happen as this code only runs on AVX512 platforms */
-  LIBXSMM_ASSERT(0);
+LIBXSMM_ASSERT(0);
 #endif
 #endif
 /* lazy barrier init */
@@ -170,7 +170,15 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (handle->reduce_weights) {
   if (handle->desc.C ==3) {
+    __m512 zero_reg =  _mm512_setzero_ps();
     weight_base =  ((float*)handle->scratch4) + (ltid * BLOCKSOFM * BLOCKSIFM * handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
+    /* We DO USE private weights, initialize them to zero...  */
+#if defined(LIBXSMM_INTRINSICS_AVX512)
+    for (i=0; i<reduce_work; i++) {
+      _mm512_store_ps( ((float*) weight_base) + i * 16, zero_reg);
+    }
+#else
+#endif
   } else {
     weight_base = &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid/(handle->desc.threads/handle->weight_copies), 0, handle->weight_copies, handle->ofmblock);
   }

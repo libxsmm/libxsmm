@@ -1330,8 +1330,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
 
         /* FIXME: Specific code generation for first layer of resnet50 */
         if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->use_fastpath == 0) {
-          descriptor.ofw_rb = handle->ofw;
-          descriptor.ofh_rb = handle->ofh;
+          descriptor.ofw_rb = 28;
+          descriptor.ofh_rb = 4;
           handle->upd_ofh_rb = descriptor.ofh_rb;
           handle->upd_ofw_rb = descriptor.ofw_rb;
           descriptor.transpose_ofw_ifm = 0;
