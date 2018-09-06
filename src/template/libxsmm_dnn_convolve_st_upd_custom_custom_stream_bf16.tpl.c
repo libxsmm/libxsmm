@@ -243,9 +243,8 @@ if (handle->reduce_weights) {
 #if defined(LIBXSMM_INTRINSICS_AVX512)
   if (handle->desc.C == 3) {
     const int total_filter_size = reduce_work * handle->ofmblock;
-    weight_ptr = (libxsmm_bfloat16*)handle->grad_filter->data;
+    libxsmm_bfloat16 *dst_weight_ptr = (libxsmm_bfloat16*)handle->grad_filter->data;
     __m512 remote_weight;
-    __m512 reduction_weight;
     __m512 sum_weight;  
     for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
       sum_weight =  _mm512_setzero_ps();
@@ -255,7 +254,7 @@ if (handle->reduce_weights) {
         sum_weight =  _mm512_add_ps( remote_weight, sum_weight);
       }
       __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( sum_weight ), 16));
-      _mm256_storeu_si256( (__m256i*)( ((libxsmm_bfloat16*)weight_ptr)+j*16), vbfp16 );
+      _mm256_storeu_si256( (__m256i*)( ((libxsmm_bfloat16*)dst_weight_ptr)+j*16), vbfp16 );
     }
   } else {
     for ( j = 2*reduce_thr_begin; j < 2*reduce_thr_end; j+=2 ) {
