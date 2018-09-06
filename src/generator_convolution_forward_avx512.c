@@ -654,22 +654,20 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
   unsigned int l_scale;
   unsigned int l_disp;
   unsigned int l_reg_block = i_conv_desc->ofw_rb;
-  unsigned int l_accs;
   unsigned int l_filter_pos = 0;
-  unsigned int l_compute_instr = 0;
   unsigned int l_prefetch_input_index = 0;
   unsigned int prefetch_type_input = LIBXSMM_X86_INSTR_PREFETCHT0;
   unsigned int prefetch_type_weight = LIBXSMM_X86_INSTR_PREFETCHT0;
   unsigned int input_pf_L2_bound =  i_conv_desc->ofw_rb * 64;
   unsigned int input_pf_L2_offset = 0;
   unsigned int step_size = 0;
+  unsigned int l_kw_unroll;
+  unsigned short  perm_array[32];
+  int pi; 
 
   prefetch_type_weight = LIBXSMM_X86_INSTR_PREFETCHT1;
   step_size = 1;
-  unsigned int l_kw_unroll;
 
-  unsigned short  perm_array[32];
-  int pi; 
   for (pi=0; pi<32; pi+=2) {
     perm_array[pi] = pi/2;
     perm_array[pi+1] = 16+pi/2;
