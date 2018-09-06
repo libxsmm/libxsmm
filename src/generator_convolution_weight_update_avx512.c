@@ -1894,11 +1894,34 @@ void libxsmm_generator_convolution_weight_update_avx512_c3k64s2_bf16_all_pixels_
 
   libxsmm_generator_convolution_header_oj_loop(io_generated_code, loop_label_tracker, i_conv_kernel_config, reg_oj_loop);
 
+  /* Perform first vperm ahead of time to implement L/S forwarding optimization  */
+  libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+      i_conv_kernel_config->instruction_set,
+      LIBXSMM_X86_INSTR_VPERMW,
+      0,
+      i_gp_reg_mapping->gp_reg_input,
+      LIBXSMM_X86_GP_REG_UNDEF,
+      LIBXSMM_X86_GP_REG_UNDEF,
+      0,
+      i_conv_kernel_config->vector_name,
+      4,
+      0);
+
+  libxsmm_x86_instruction_vec_move( io_generated_code,
+      i_conv_kernel_config->instruction_set,
+      i_conv_kernel_config->vmove_instruction,
+      dst_scratch_reg,
+      LIBXSMM_X86_GP_REG_UNDEF, 0,
+      0,
+      i_conv_kernel_config->vector_name,
+      0, 0, 0, 1 );
+
   for ( l_k_2 = 0; l_k_2 < i_conv_desc->ofw_rb; l_k_2 += step_size) {
     /* Load 8 pixels, 3 ifms and permute to effective use 4 pixels and 3 ifms...   */
-    if (l_k_2 % 4 == 0) {
+    if (((l_k_2 + 4) % 4 == 0)  && (l_k_2 + 4 < i_conv_desc->ofw_rb)) {
       /* Permute input cache line from input and store to scratch cache line */
-      input_disp = /* l_k_1 * i_conv_desc->stride_h * i_conv_desc->ifw_padded * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in +*/ l_k_2 * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in;
+      input_disp = (l_k_2+4) * i_conv_desc->stride_w * i_conv_kernel_config->l_ld_ifm_act * i_conv_kernel_config->datatype_size_in;
+      dst_scratch_reg = ((l_k_2+4) % 8 == 4) ? i_gp_reg_mapping->gp_reg_help_6 : i_gp_reg_mapping->gp_reg_help_4;
 
       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
           i_conv_kernel_config->instruction_set,
@@ -1922,10 +1945,11 @@ void libxsmm_generator_convolution_weight_update_avx512_c3k64s2_bf16_all_pixels_
           0, 0, 0, 1 );
     }
 
+    if (l_k_2 % 4 == 0) input_reg_to_use = ((l_k_2+4) % 8 == 4) ? i_gp_reg_mapping->gp_reg_help_4 : i_gp_reg_mapping->gp_reg_help_6;  
+
     for (ofmb = 0; ofmb < 4; ofmb++) {
       /* Permute 16 ofms and 2 pixels of the proper vnni format  */
       output_disp =  l_k_2 * i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out
-        /*+ l_k_1 * i_conv_desc->ofw_padded * i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out*/
         + ofmb * i_conv_desc->ofh_padded  * i_conv_desc->ofw_padded * i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out ;
 
       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
@@ -1971,7 +1995,6 @@ void libxsmm_generator_convolution_weight_update_avx512_c3k64s2_bf16_all_pixels_
           16);
 
       for ( l_n = 0; l_n < 3; l_n++) {
-        input_reg_to_use = i_gp_reg_mapping->gp_reg_help_4;
         l_disp = l_n * step_size * i_conv_kernel_config->datatype_size_in
           + ((l_k_2%4)/2) * 3 * step_size * i_conv_kernel_config->datatype_size_in;
 
