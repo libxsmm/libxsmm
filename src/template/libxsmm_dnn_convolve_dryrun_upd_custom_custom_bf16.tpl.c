@@ -35,6 +35,7 @@ int ltid;
 /* FIXME assignments here */
 int BLOCKSIFM = handle->blocksifm;
 int BLOCKSOFM = handle->blocksofm;
+int block_j = handle->upd_ofh_rb;
 
 int IFMBLOCK;
 if (handle->use_lp_kernel) {
@@ -101,6 +102,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   kw = handle->desc.S;
 
   num_ofw_strips = 1;
+  if (handle->desc.C ==3) {
+    num_ofw_strips = handle->ofw/handle->upd_ofw_rb;
+  }
   local_entries = 0;
 
   KW = kw;
@@ -159,7 +163,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
     }
   }
 
-
   /* Allocate auxiliary data structures for index jitting  */
   handle->n_entries_upd[ltid] = local_entries/3;
   compute_indices = (int*)libxsmm_aligned_malloc(((size_t)local_entries + 3) * sizeof(int), 64);
@@ -169,39 +172,25 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->n_upd_code_segments[ltid] = n_code_segments;
   local_entries = 0;
 
-  /* Second run to compute actual indices */
-  if ( !(((handle->desc.C == 512) && (handle->desc.K == 1024)) || ((handle->desc.C == 1024) &&  (handle->desc.K == 256)))  ) {
-    for (imgb = my_img_start; imgb < my_img_end; imgb += img_block_size) {
-      for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
-        for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += block_ifm) {
-          for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+block_ofm, my_ofm_end); ofm1++ ) {
-            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
-              for (img = imgb; img < LIBXSMM_MIN(imgb+img_block_size, my_img_end); img+=handle->blocksimg_blocking)  {
-                for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
-                  for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj_ += handle->upd_ofh_rb) {
+
+  if (handle->desc.C ==3 ) {
+    for (img = my_img_start; img < my_img_end; img++) {
+      for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
+        for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
+          for (ojb = 0; ojb < handle->ofh; ojb += block_j) {
+            for (kj=0; kj < kh; ++kj) {
+              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1+=handle->block_upd_ofm ) {
+                for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
+                  for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+block_j,handle->ofh); oj_ += handle->upd_ofh_rb) {
                     for (oi__=0; oi__<num_ofw_strips; ++oi__) {
-                      for (kj=0; kj < kh; ++kj) {
-                        for (ki=0; ki < KW; ++ki) {
-
-                          oi_=oi__*handle->upd_ofw_rb;
-                          ii_ = oi_*stride_w;
-                          ij_ = oj_*stride_h;
-
-                          if (handle->trans_ofw_ifm == 1 ) {
-                            compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * IFMBLOCK)) * padded_w + (ii_ + ki);
-                          } else {
-                            compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * padded_w) + (ii_ + ki)) *  IFMBLOCK;
-                          }
-                          compute_indices[local_entries+1] = (((ofm1 *  BLOCKSIFM) + ifm1) * handle->desc.R * handle->desc.S *  IFMBLOCK *  handle->ofmblock + kj * handle->desc.S *  IFMBLOCK *  handle->ofmblock + ki * IFMBLOCK *  handle->ofmblock)  * handle->weight_copies;
-
-                          if (handle->desc.C == 3) {
-                            compute_indices[local_entries+1] =   compute_indices[local_entries+1] /  handle->weight_copies;
-                          }
-
-                          compute_indices[local_entries+2] = ((((((img *  BLOCKSOFM) + ofm1) *  handle->ofhp) + oj_) * (handle->ofwp + handle->output_lp_padding)) + oi_) *  handle->ofmblock;
-                          local_entries += 3;
-                        }
-
+                      for (ki=0; ki < KW; ++ki) {
+                        oi_=oi__*handle->upd_ofw_rb;
+                        ii_ = oi_*stride_w;
+                        ij_ = oj_*stride_h;
+                        compute_indices[local_entries] =  ( ( ( ( ( (img *  handle->blocksifm) +  ifm1) * padded_h )  +  (ij_+kj)) * padded_w)  + (ii_ + ki) ) *  handle->ifmblock;
+                        compute_indices[local_entries+1] = ( (ofm1 *  handle->blocksifm )  +  ifm1 ) * handle->desc.R * handle->desc.S *  handle->ifmblock *  handle->ofmblock + kj * handle->desc.S *  handle->ifmblock *  handle->ofmblock + ki * handle->ifmblock *  handle->ofmblock;
+                        compute_indices[local_entries+2] = ( ( ( ( ( (img *  handle->blocksofm) +  ofm1) *  handle->ofhp )  +  oj_ ) * handle->ofwp)  +  oi_ ) *  handle->ofmblock;
+                        local_entries += 3;
                       }
                     }
                   }
@@ -213,32 +202,77 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
       }
     }
   } else {
-    for (imgb = my_img_start; imgb < my_img_end; imgb += img_block_size) {
-      for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += block_ifm) {
+    /* Second run to compute actual indices */
+    if ( !(((handle->desc.C == 512) && (handle->desc.K == 1024)) || ((handle->desc.C == 1024) &&  (handle->desc.K == 256)))  ) {
+      for (imgb = my_img_start; imgb < my_img_end; imgb += img_block_size) {
         for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
-          for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
+          for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += block_ifm) {
             for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+block_ofm, my_ofm_end); ofm1++ ) {
-              for (img = imgb; img < LIBXSMM_MIN(imgb+img_block_size, my_img_end); img+=handle->blocksimg_blocking)  {
-                for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
-                  for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj_ += handle->upd_ofh_rb) {
-                    for (oi__=0; oi__<num_ofw_strips; ++oi__) {
-                      for (kj=0; kj < kh; ++kj) {
-                        for (ki=0; ki < KW; ++ki) {
+              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
+                for (img = imgb; img < LIBXSMM_MIN(imgb+img_block_size, my_img_end); img+=handle->blocksimg_blocking)  {
+                  for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
+                    for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj_ += handle->upd_ofh_rb) {
+                      for (oi__=0; oi__<num_ofw_strips; ++oi__) {
+                        for (kj=0; kj < kh; ++kj) {
+                          for (ki=0; ki < KW; ++ki) {
 
-                          oi_=oi__*handle->upd_ofw_rb;
-                          ii_ = oi_*stride_w;
-                          ij_ = oj_*stride_h;
+                            oi_=oi__*handle->upd_ofw_rb;
+                            ii_ = oi_*stride_w;
+                            ij_ = oj_*stride_h;
 
-                          if (handle->trans_ofw_ifm == 1 ) {
-                            compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * IFMBLOCK)) * padded_w + (ii_ + ki);
-                          } else {
-                            compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * padded_w) + (ii_ + ki)) *  IFMBLOCK;
+                            if (handle->trans_ofw_ifm == 1 ) {
+                              compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * IFMBLOCK)) * padded_w + (ii_ + ki);
+                            } else {
+                              compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * padded_w) + (ii_ + ki)) *  IFMBLOCK;
+                            }
+                            compute_indices[local_entries+1] = (((ofm1 *  BLOCKSIFM) + ifm1) * handle->desc.R * handle->desc.S *  IFMBLOCK *  handle->ofmblock + kj * handle->desc.S *  IFMBLOCK *  handle->ofmblock + ki * IFMBLOCK *  handle->ofmblock)  * handle->weight_copies;
+
+                            if (handle->desc.C == 3) {
+                              compute_indices[local_entries+1] =   compute_indices[local_entries+1] /  handle->weight_copies;
+                            }
+
+                            compute_indices[local_entries+2] = ((((((img *  BLOCKSOFM) + ofm1) *  handle->ofhp) + oj_) * (handle->ofwp + handle->output_lp_padding)) + oi_) *  handle->ofmblock;
+                            local_entries += 3;
                           }
-                          compute_indices[local_entries+1] = (((ofm1 *  BLOCKSIFM) + ifm1) * handle->desc.R * handle->desc.S *  IFMBLOCK *  handle->ofmblock + kj * handle->desc.S *  IFMBLOCK *  handle->ofmblock + ki * IFMBLOCK *  handle->ofmblock)  * handle->weight_copies;
-                          compute_indices[local_entries+2] = ((((((img *  BLOCKSOFM) + ofm1) *  handle->ofhp) + oj_) * (handle->ofwp + handle->output_lp_padding)) + oi_) *  handle->ofmblock;
-                          local_entries += 3;
-                        }
 
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    } else {
+      for (imgb = my_img_start; imgb < my_img_end; imgb += img_block_size) {
+        for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += block_ifm) {
+          for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
+            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
+              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+block_ofm, my_ofm_end); ofm1++ ) {
+                for (img = imgb; img < LIBXSMM_MIN(imgb+img_block_size, my_img_end); img+=handle->blocksimg_blocking)  {
+                  for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
+                    for (oj_ = ojb; oj_ < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj_ += handle->upd_ofh_rb) {
+                      for (oi__=0; oi__<num_ofw_strips; ++oi__) {
+                        for (kj=0; kj < kh; ++kj) {
+                          for (ki=0; ki < KW; ++ki) {
+
+                            oi_=oi__*handle->upd_ofw_rb;
+                            ii_ = oi_*stride_w;
+                            ij_ = oj_*stride_h;
+
+                            if (handle->trans_ofw_ifm == 1 ) {
+                              compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * IFMBLOCK)) * padded_w + (ii_ + ki);
+                            } else {
+                              compute_indices[local_entries] = ((((((img *  BLOCKSIFM) + ifm1) * padded_h) + (ij_ + kj)) * padded_w) + (ii_ + ki)) *  IFMBLOCK;
+                            }
+                            compute_indices[local_entries+1] = (((ofm1 *  BLOCKSIFM) + ifm1) * handle->desc.R * handle->desc.S *  IFMBLOCK *  handle->ofmblock + kj * handle->desc.S *  IFMBLOCK *  handle->ofmblock + ki * IFMBLOCK *  handle->ofmblock)  * handle->weight_copies;
+                            compute_indices[local_entries+2] = ((((((img *  BLOCKSOFM) + ofm1) *  handle->ofhp) + oj_) * (handle->ofwp + handle->output_lp_padding)) + oi_) *  handle->ofmblock;
+                            local_entries += 3;
+                          }
+
+                        }
                       }
                     }
                   }
@@ -249,6 +283,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
         }
       }
     }
+
   }
 
   compute_indices[local_entries] = 0;
