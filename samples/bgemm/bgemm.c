@@ -50,16 +50,13 @@
 #if !defined(ITYPE)
 # define ITYPE float
 #endif
-#if !defined(CHECK) && \
-  (!defined(__BLAS) || (0 != __BLAS)) && /* BLAS available */ \
-  (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double))
+
+#if !defined(CHECK) && (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double))
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE)
 # define CHECK
 #endif
 
 #define MYASSERT(x) if(!(x)) { printf("Assertion %s failed...\n", #x); exit(1);}
-
-
-LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE);
 
 
 int main(int argc, char* argv[])
@@ -85,7 +82,7 @@ int main(int argc, char* argv[])
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const double gflops = 2.0 * m * n * k * 1E-9;
   int result = EXIT_SUCCESS;
-#if defined(CHECK)
+#if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
 #endif
@@ -125,9 +122,9 @@ int main(int argc, char* argv[])
       &alpha, &beta, &gemm_flags, NULL/*auto-prefetch*/, &order);
 
     if (0 != handle) {
-      LIBXSMM_MATINIT(ITYPE, 42, agold, m, k, lda, 1.0);
-      LIBXSMM_MATINIT(ITYPE, 24, bgold, k, n, ldb, 1.0);
-      LIBXSMM_MATINIT(ITYPE,  0, cgold, m, n, ldc, 1.0);
+      LIBXSMM_MATINIT_OMP(ITYPE, 42, agold, m, k, lda, 1.0);
+      LIBXSMM_MATINIT_OMP(ITYPE, 24, bgold, k, n, ldb, 1.0);
+      LIBXSMM_MATINIT_OMP(ITYPE,  0, cgold, m, n, ldc, 1.0);
       libxsmm_bgemm_copyin_a(handle, agold, &lda, a);
       libxsmm_bgemm_copyin_b(handle, bgold, &ldb, b);
       libxsmm_bgemm_copyin_c(handle, cgold, &ldc, c);
@@ -136,7 +133,7 @@ int main(int argc, char* argv[])
 #endif
       /* warm-up OpenMP (populate thread pool) */
       libxsmm_bgemm_omp(handle, a, b, c, 1);
-#if defined(CHECK)
+#if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
       if (!LIBXSMM_FEQ(0, check)) {
         LIBXSMM_GEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, agold, &lda, bgold, &ldb, &beta, cgold, &ldc);
       }
@@ -158,7 +155,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tLIBXSMM: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
         }
       }
-#if defined(CHECK)
+#if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
       if (!LIBXSMM_FEQ(0, check)) { /* validate result against LAPACK/BLAS xGEMM */
         ITYPE* ctest = 0;
         int i;

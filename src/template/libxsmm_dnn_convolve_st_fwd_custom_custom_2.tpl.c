@@ -51,9 +51,9 @@ for (i = thr_begin; i < thr_end; ++i) {
         ij = oj * u - pad_h;
         ii = oi * v - pad_w;
         for (kj = 0; kj < R; ++kj) {
-          if(ij+kj < 0 || ij+kj >= ifh) continue;
+          if (ij+kj < 0 || ij+kj >= ifh) continue;
           for (ki = 0; ki < S; ++ki) {
-            if(ii+ki < 0 || ii+ki >= ifw) continue;
+            if (ii+ki < 0 || ii+ki >= ifw) continue;
             sixteen.xmm(&LIBXSMM_VLA_ACCESS(6, filter_t, ofm1, ifm1, kj,      ki,      0, 0, blocksifm, R, S, ifmblock, ofmblock) ,
                         &LIBXSMM_VLA_ACCESS(6,  input_t, ifm1, img1, ij + kj, ii + ki, 0, 0, nBImg, ifhp, ifwp, nbImg, ifmblock) ,
                         &LIBXSMM_VLA_ACCESS(6, output_t, ofm1, img1, oj,      oi,      0, 0, nBImg, ofhp, ofwp, nbImg, ofmblock) );

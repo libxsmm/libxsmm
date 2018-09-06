@@ -314,6 +314,27 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square(libxsmm_blasin
   }
 }
 
+
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
+{
+  int ltid;
+  int chunksize;
+  int thr_begin;
+  int thr_end;
+  libxsmm_blasint i;
+  ltid = tid - start_thread;
+  /* compute chunk size */
+  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  /* compute thr_begin and thr_end */
+  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+
+  for (i = thr_begin; i < thr_end; i++) {
+    dst[i] = -src[i];
+  }
+}
+
+
 /* #define LSTM_TIMING */
 #if defined(LSTM_TIMING)
 extern double Gbl_t_input_total, Gbl_t_recur_total, Gbl_t_eltwise_total, Gbl_t_nonlin_total;

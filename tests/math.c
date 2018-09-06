@@ -122,7 +122,7 @@ int main(int argc, char* argv[])
   }
 
   { /* check prime factorization */
-    const unsigned int test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 2057, 120, 14, 997 };
+    const unsigned int test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 24, 32, 2057, 120, 14, 997 };
     const int n = sizeof(test) / sizeof(*test);
     unsigned int fact[32];
     for (i = 0; i < n; ++i) {
@@ -134,11 +134,32 @@ int main(int argc, char* argv[])
     }
   }
 
+  { /* check shuffle routine */
+    const unsigned int test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 24, 32, 2057, 120, 14, 997 };
+    const int n = sizeof(test) / sizeof(*test);
+    for (i = 0; i < n; ++i) {
+      const size_t coprime = libxsmm_shuffle(test[i]);
+      const unsigned int gcd = (unsigned int)libxsmm_gcd(coprime, test[i]);
+      if ((0 != coprime || 1 < test[i]) && (test[i] <= coprime || 1 != gcd)) {
+        exit(EXIT_FAILURE);
+      }
+    }
+    if (libxsmm_shuffle(65423) != 32711) exit(EXIT_FAILURE);
+    if (libxsmm_shuffle(1000) != 499) exit(EXIT_FAILURE);
+    if (libxsmm_shuffle(997) != 498) exit(EXIT_FAILURE);
+    if (libxsmm_shuffle(24) != 11) exit(EXIT_FAILURE);
+    if (libxsmm_shuffle(5) != 2) exit(EXIT_FAILURE);
+  }
+
   /* find upper limited product */
   if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 0) != (3 * 7 * 11)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 5 * 7, 32, 0) != (2 * 3 * 5)) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12 * 13, 13, 0) != 13) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12, 6, 0) != 6) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(0, 48, 0) != 0) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(0, 1, 0) != 0) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(0, 0, 0) != 0) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(1, 0, 0) != 0) exit(EXIT_FAILURE);
 
   /* find lower limited product */
   if (libxsmm_product_limit(12 * 5 * 7 * 11 * 13 * 17, 231, 1) != (3 * 7 * 11)) exit(EXIT_FAILURE);
@@ -151,6 +172,10 @@ int main(int argc, char* argv[])
   if (libxsmm_product_limit(1000, 9, 1) != 10) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(12, 7, 1) != 12) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(5, 2, 1) != 5) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(5, 2, 0) != 1) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(0, 1, 1) != 0) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(0, 0, 1) != 0) exit(EXIT_FAILURE);
+  if (libxsmm_product_limit(1, 0, 1) != 0) exit(EXIT_FAILURE);
 
   return EXIT_SUCCESS;
 }

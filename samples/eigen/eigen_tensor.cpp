@@ -50,7 +50,7 @@
 # define __EIGEN
 #endif
 
-#if !defined(EIGEN_USE_THREADS) && defined(__EIGEN) && (defined(_OPENMP) || (defined(__BLAS) && 1 < (__BLAS)))
+#if !defined(EIGEN_USE_THREADS) && defined(__EIGEN) && (defined(_OPENMP) || !defined(__BLAS) || (defined(__BLAS) && 1 < (__BLAS)))
 # define EIGEN_USE_THREADS
 #endif
 
@@ -66,9 +66,6 @@
 #include <iostream>
 #include <cstdlib>
 #include <cstdio>
-#if defined(_OPENMP)
-# include <omp.h>
-#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -77,8 +74,10 @@
 # define ITYPE float
 #endif
 
-
-LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE);
+#if !defined(CHECK) && (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double))
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE)
+# define CHECK
+#endif
 
 
 int main(int argc, char* argv[])
@@ -93,10 +92,12 @@ int main(int argc, char* argv[])
     LIBXSMM_GEMM_CONST libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
     LIBXSMM_GEMM_CONST libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
     const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 13 / LIBXSMM_MAX(1, libxsmm_icbrt_u64(1ULL * m * n * k) >> 10), 3);
-    const char *const env_check = getenv("CHECK"), *const env_nthreads = getenv("NTHREADS");
-    const double check = (0 == env_check ? 1.0 : LIBXSMM_ABS(atof(env_check)));
+    const double env_check = (0 == getenv("CHECK") ? 1.0 : atof(getenv("CHECK")));
+    const double check = LIBXSMM_ABS(env_check);
     const double gflops = 2.0 * m * n * k * 1E-9;
-    const int nthreads = LIBXSMM_MAX(0 == env_nthreads ? 0 : atoi(env_nthreads), 1);
+    const int max_nthreads = Eigen::nbThreads();
+    const int env_nthreads = 0 == getenv("NTHREADS") ? max_nthreads : atoi(getenv("NTHREADS"));
+    const int nthreads = LIBXSMM_CLMP(env_nthreads, 1, max_nthreads);
 # if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 # endif
@@ -104,18 +105,13 @@ int main(int argc, char* argv[])
 # if defined(MKL_ENABLE_AVX512)
       mkl_enable_instructions(MKL_ENABLE_AVX512);
 # endif
-# if defined(_OPENMP)
-      Eigen::ThreadPool threadpool(1 == nthreads ? omp_get_max_threads() : nthreads);
-# else
       Eigen::ThreadPool threadpool(nthreads);
-# endif
       Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
-      Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n), td(m, n);
+      Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n);
       LIBXSMM_GEMM_CONST char transa = 'N', transb = 'N';
-      LIBXSMM_GEMM_CONST ITYPE alpha = 1, beta = 0;
-      libxsmm_matdiff_info diff;
+      LIBXSMM_GEMM_CONST ITYPE alpha(1), beta(0);
       unsigned long long start;
-      double d1, d2;
+      double d1;
       {
         std::array<Eigen::IndexPair<libxsmm_blasint>,1> product_dims = {
           Eigen::IndexPair<libxsmm_blasint>(1, 0),
@@ -127,9 +123,12 @@ int main(int argc, char* argv[])
         }
         d1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       }
-      libxsmm_gemm_print(stdout, LIBXSMM_GEMM_PRECISION(ITYPE), &transa, &transb,
+      libxsmm_gemm_print(stdout, libxsmm_gemm_precision_enum<ITYPE>::value, &transa, &transb,
         &m, &n, &k, &alpha, ta.data(), &m, tb.data(), &k, &beta, tc.data(), &m);
       fprintf(stdout, "\n\n");
+# if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
+      Eigen::Tensor<ITYPE, 2/*nindices*/, 0/*options*/, libxsmm_blasint> td(m, n);
+      double d2;
       {
         start = libxsmm_timer_tick();
         for (int i = 0; i < nrepeat; ++i) {
@@ -139,24 +138,28 @@ int main(int argc, char* argv[])
         }
         d2 = libxsmm_timer_duration(start, libxsmm_timer_tick());
       }
+# endif
       if (0 < d1) {
         fprintf(stdout, "\tEigen"
-#if !defined(USE_LIBXSMM)
+# if !defined(USE_LIBXSMM)
           "+XSMM"
-#endif
+# endif
           ": %.1f GFLOPS/s\n", gflops * nrepeat / d1);
       }
+# if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
       if (0 < d2) {
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / d2);
       }
+      libxsmm_matdiff_info diff;
       result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, td.data(), tc.data(), &m, &m, &diff);
       if (EXIT_SUCCESS == result) {
         fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-        if (check < 100.0 * diff.normf_rel) {
-          fprintf(stderr, "FAILED with an error of %f%%!\n", 100.0 * diff.normf_rel);
+        if (check < diff.l2_rel) {
+          fprintf(stderr, "FAILED.\n");
           result = EXIT_FAILURE;
         }
       }
+# endif
     }
     fprintf(stdout, "Finished\n");
 #endif /*defined(__EIGEN_UNSUPPORTED)*/

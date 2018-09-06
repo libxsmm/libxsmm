@@ -160,20 +160,9 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst, float 
   }
 }
 
-
 LIBXSMM_INLINE void matrix_transpose(int rows, int cols, float *src, float *dst)
 {
-  int i, j;
-  LIBXSMM_VLA_DECL(2, float, src2D, src, cols);
-  LIBXSMM_VLA_DECL(2, float, dst2D, dst, rows);
-#if defined(_OPENMP)
-# pragma omp parallel for private(i, j)
-#endif
-  for (i = 0; i < rows; i++) {
-    for (j = 0; j < cols; j++) {
-      LIBXSMM_VLA_ACCESS(2, dst2D, j, i, rows) = LIBXSMM_VLA_ACCESS(2, src2D, i, j, cols);
-    }
-  }
+  libxsmm_otrans_omp(dst, src, sizeof(float), cols, rows, cols/*ldi*/, rows/*ldo*/);
 }
 
 
@@ -201,7 +190,7 @@ LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
 }
 
 
-void matrix_complement_square(int size, float *src, float *dst)
+LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
 {
   int i;
 #if defined(_OPENMP)
@@ -559,23 +548,23 @@ int main(int argc, char* argv[])
 
   /* initialize data */
   if (pass == 0) {
-    LIBXSMM_MATINIT(float, 42, wigold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wfgold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wogold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wcgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wigold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wfgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wogold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wcgold, m, k, m, 1.0);
     for (it = 0; it < t; ++it) {
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
     }
-    LIBXSMM_MATINIT(float, 42, rigold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rfgold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rogold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rcgold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 24, hgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rigold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rfgold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rogold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rcgold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, hgold, m, n, m, 1.0);
     matrix_copy(m*n, hgold, hgold_temp); /* Required because hgold may get overwritten */
-    LIBXSMM_MATINIT(float, 24, bigold, m, n, m, 1.0);
-    LIBXSMM_MATINIT(float, 24, bfgold, m, n, m, 1.0);
-    LIBXSMM_MATINIT(float, 24, bogold, m, n, m, 1.0);
-    LIBXSMM_MATINIT(float, 24, bcgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, bigold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, bfgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, bogold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, bcgold, m, n, m, 1.0);
     zero_buf(igold, m*n);
     zero_buf(fgold, m*n);
     zero_buf(ogold, m*n);
@@ -593,23 +582,23 @@ int main(int argc, char* argv[])
     zero_buf(d2gold, m*n);
     zero_buf(dhgold, m*n);
   } else {
-    LIBXSMM_MATINIT(float, 42, wigold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wfgold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wogold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, wcgold, m, k, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rigold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rfgold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rogold, m, m, m, 1.0);
-    LIBXSMM_MATINIT(float, 42, rcgold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wigold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wfgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wogold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wcgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rigold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rfgold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rogold, m, m, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, rcgold, m, m, m, 1.0);
     for (it = 0; it < t; ++it) {
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, igoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, fgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, ogoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, cgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, dgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, igoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, fgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, ogoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, cgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, dgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 1.0);
     }
     zero_buf(i1gold, m*n);
     zero_buf(i2gold, m*n);
@@ -1072,7 +1061,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wcgold, &m, &LIBXSMM_VLA_ACCESS(2, wi4, 3, 0, m * k)) );
 #endif
       for (it = 0; it < t; ++it) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
       }
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleuh, rigold, &m, ri) );
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleuh, rfgold, &m, rf) );

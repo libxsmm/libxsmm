@@ -80,8 +80,8 @@ for ( ii = 0; ii < size_tls1; ++ii ) { input_scratch_padding[ii] = (element_inpu
       /* copy weights from BFP16 into float */
       for (kj = 0; kj < handle->desc.R; ++kj) {
         for (ki = 0; ki< handle->desc.S; ++ki) {
-          for( ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2 ) {
-            for( ofm2 = 0; ofm2 < handle->ifmblock*handle->fm_lp_block; ++ofm2 ) {
+          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2 ) {
+            for (ofm2 = 0; ofm2 < handle->ifmblock*handle->fm_lp_block; ++ofm2 ) {
               for ( lp = 0; lp < handle->fm_lp_block; ++lp ) {
                 union libxsmm_bfloat16_hp trans;
                 trans.i[0] = 0;

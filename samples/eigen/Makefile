@@ -61,10 +61,10 @@ XFILES := $(OUTDIR)/$(OUTNAME)_smm $(OUTDIR)/$(OUTNAME)_tensor
 
 ifneq (0,$(EIGEN))
 ifeq (,$(strip $(EIGENROOT)))
-  ifneq (,$(wildcard $(DEPDIR)/../eigen/Eigen/Dense))
-    EIGENROOT = $(DEPDIR)/../eigen
-  else ifneq (,$(wildcard $(HOME)/eigen/Eigen/Dense))
-    EIGENROOT = $(HOME)/eigen
+  ifneq (,$(wildcard $(DEPDIR)/../eigen*/Eigen/Dense))
+    EIGENROOT = $(firstword $(wildcard $(DEPDIR)/../eigen*))
+  else ifneq (,$(wildcard $(HOME)/eigen*/Eigen/Dense))
+    EIGENROOT = $(firstword $(wildcard $(HOME)/eigen*))
   else ifneq (,$(wildcard /usr/include/eigen3/Eigen/Dense))
     EIGENROOT = /usr/include/eigen3
   endif
@@ -75,13 +75,13 @@ ifneq (,$(EIGENROOT))
   DFLAGS += -D__EIGEN
   IFLAGS += -I$(EIGENROOT)
   EIGEN ?= 1
-  ifneq (0,$(shell echo "$$((1 < $(EIGEN)))"))
   ifneq (0,$(MKL))
     DFLAGS += -DEIGEN_USE_MKL_ALL
   endif
-  endif
-  ifneq (0,$(shell echo "$$((2 <= $(BLAS) || 0 != $(OMP) || 1 < $(EIGEN)))"))
+  ifneq (0,$(shell echo "$$((1 < $(BLAS) || 1 < $(EIGEN)))"))
     DFLAGS += -DEIGEN_USE_THREADS
+  else
+    DFLAGS += -DEIGEN_DONT_PARALLELIZE
   endif
   ifneq (,$(wildcard $(EIGENROOT)/unsupported/Eigen/CXX11/ThreadPool))
     DFLAGS += -D__EIGEN_UNSUPPORTED

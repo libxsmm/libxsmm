@@ -277,7 +277,6 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_lstmcell_create_tensor_da
 
               if (0 != layout->dim_type && 0 != layout->dim_size) { /* TODO: handle the error */
                 layout->num_dims = 4;
-                /* TODO: Check if the following layout works for bwd and upd passes */
                 if ( (type == LIBXSMM_DNN_LSTM_REGULAR_INPUT) || (type == LIBXSMM_DNN_LSTM_GRADIENT_INPUT) ) {
                   layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLK;
                   layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLN;
@@ -1258,7 +1257,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bind_tensor(libxsmm_dnn_lstmc
       status = LIBXSMM_DNN_ERR_MISMATCH_TENSOR;
     }
 
-    /* libxsmm_dnn_destroy_tensor_datalayout( handle_layout ); */
+    libxsmm_dnn_destroy_tensor_datalayout( handle_layout );
   }
   else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE_TENSOR;
@@ -1484,6 +1483,7 @@ LIBXSMM_API void libxsmm_dnn_lstmcell_split_wx(libxsmm_dnn_lstmcell* lstm, libxs
       LIBXSMM_VLA_ACCESS(5, real_src, i, j, mb*offset + k, l, p, nb, mb*4, bn, bm);
   }
 }
+
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_fwd(libxsmm_dnn_lstmcell* lstm, int start_thread, int tid)
 {

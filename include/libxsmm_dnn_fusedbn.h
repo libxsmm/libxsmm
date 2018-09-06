@@ -64,9 +64,14 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn_desc {
   int W;                                     /* width of input image */
   int u;                                     /* vertical stride */
   int v;                                     /* horizontal stride */
+  int pad_h_in;                              /* height of physcial zero-padding in input buffer */
+  int pad_w_in;                              /* width of physical zero-padding in input buffer */
+  int pad_h_out;                             /* height of physical zero-padding in output buffer */
+  int pad_w_out;                             /* width of physical zero-padding in output buffer */
   int threads;                               /* number of threads used */
-  libxsmm_dnn_datatype datatype_in;          /* datatypes used for all input related buffer */
-  libxsmm_dnn_datatype datatype_out;         /* datatypes used for all output related buffer */
+  libxsmm_dnn_datatype datatype_in;          /* datatype used for all input related buffers */
+  libxsmm_dnn_datatype datatype_out;         /* datatype used for all output related buffers */
+  libxsmm_dnn_datatype datatype_stats;       /* datatype used for all stats related buffers */
   libxsmm_dnn_tensor_format buffer_format;   /* format which is for activation buffers */
   libxsmm_dnn_fusedbn_fuse_order fuse_order; /* additional options */
   libxsmm_dnn_fusedbn_fuse_op fuse_ops;      /* used ops into convolutions */
@@ -77,9 +82,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_fusedbn(const libxsmm_dnn_fuse
 
 LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_datalayout(const libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status);
 
-LIBXSMM_API size_t libxsmm_dnn_fusedbn_get_scratch_size(const libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_scratch(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_compute_kind kind, const void* scratch);
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_scratch(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_compute_kind kind);
+LIBXSMM_API size_t libxsmm_dnn_fusedbn_get_scratch_size(const libxsmm_dnn_fusedbn* handle, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_scratch(libxsmm_dnn_fusedbn* handle, const void* scratch);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_scratch(libxsmm_dnn_fusedbn* handle);
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type);
 LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_fusedbn_get_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status);

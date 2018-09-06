@@ -116,8 +116,7 @@
 #define LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION)  LIBXSMM_TPREFIX(LIBXSMM_CONCATENATE(ITYPE, OTYPE), FUNCTION)
 
 /** Helper macro for comparing selected types. */
-#define LIBXSMM_EQUAL_CHECK(...) LIBXSMM_SELECT_HEAD(__VA_ARGS__, 0)
-#define LIBXSMM_EQUAL(T1, T2) LIBXSMM_EQUAL_CHECK(LIBXSMM_CONCATENATE2(LIBXSMM_EQUAL_, T1, T2))
+#define LIBXSMM_EQUAL(T1, T2) LIBXSMM_CONCATENATE2(LIBXSMM_EQUAL_, T1, T2)
 #define LIBXSMM_EQUAL_floatfloat 1
 #define LIBXSMM_EQUAL_doubledouble 1
 #define LIBXSMM_EQUAL_floatdouble 0
@@ -166,12 +165,17 @@
 # define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
 #endif
 
-#define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
+#define LIBXSMM_GEMM_SYMBOL_BLAS(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
   void LIBXSMM_GEMM_SYMBOL(TYPE)(CONST char*, CONST char*, \
     CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
     CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
     CONST TYPE*, CONST libxsmm_blasint*, \
-    CONST TYPE*, TYPE*, CONST libxsmm_blasint*)
+    CONST TYPE*, TYPE*, CONST libxsmm_blasint*);
+#if (!defined(__BLAS) || (0 != __BLAS)) /* BLAS available */
+# define LIBXSMM_GEMM_SYMBOL_DECL LIBXSMM_GEMM_SYMBOL_BLAS
+#else
+# define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE)
+#endif
 
 /** Helper macro consolidating the transpose requests into a set of flags. */
 #define LIBXSMM_GEMM_FLAGS(TRANSA, TRANSB) /* check for N/n rather than T/t since C/c is also valid! */ \
@@ -341,22 +345,45 @@
 }
 
 /** Helper macro to setup a matrix with some initial values. */
-#define LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) { \
-  const double libxsmm_matinit_seed1_ = (SCALE) * ((SEED) + 1); \
-  libxsmm_blasint libxsmm_matinit_i_; \
-  LIBXSMM_PRAGMA_OMP(parallel for private(libxsmm_matinit_i_)) \
-  for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < (NCOLS); ++libxsmm_matinit_i_) { \
-    libxsmm_blasint libxsmm_matinit_j_ = 0, libxsmm_matinit_k_; \
-    for (; libxsmm_matinit_j_ < (NROWS); ++libxsmm_matinit_j_) { \
-      libxsmm_matinit_k_ = libxsmm_matinit_i_ * (LD) + libxsmm_matinit_j_; \
-      (DST)[libxsmm_matinit_k_] = (TYPE)(libxsmm_matinit_seed1_ / (libxsmm_matinit_k_ + 1)); \
+#define LIBXSMM_MATINIT_AUX(OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) { \
+  /*const*/ double libxsmm_matinit_seed_ = (double)SEED; /* avoid constant conditional */ \
+  const double libxsmm_matinit_scale_ = (SCALE) * libxsmm_matinit_seed_ + (SCALE); \
+  const libxsmm_blasint libxsmm_matinit_ld_ = (libxsmm_blasint)LD; \
+  libxsmm_blasint libxsmm_matinit_i_, libxsmm_matinit_j_; \
+  if (0 != libxsmm_matinit_seed_) { \
+    OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
+    for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < ((libxsmm_blasint)NCOLS); ++libxsmm_matinit_i_) { \
+      for (libxsmm_matinit_j_ = 0; libxsmm_matinit_j_ < ((libxsmm_blasint)NROWS); ++libxsmm_matinit_j_) { \
+        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
+        (DST)[libxsmm_matinit_k_] = (TYPE)(libxsmm_matinit_scale_ / (1.0 + libxsmm_matinit_k_)); \
+      } \
+      for (; libxsmm_matinit_j_ < libxsmm_matinit_ld_; ++libxsmm_matinit_j_) { \
+        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
+        (DST)[libxsmm_matinit_k_] = (TYPE)SEED; \
+      } \
     } \
-    for (; libxsmm_matinit_j_ < (LD); ++libxsmm_matinit_j_) { \
-      libxsmm_matinit_k_ = libxsmm_matinit_i_ * (LD) + libxsmm_matinit_j_; \
-      (DST)[libxsmm_matinit_k_] = (TYPE)(SEED); \
+  } \
+  else { /* shuffle based initialization */ \
+    const unsigned int libxsmm_matinit_maxval_ = ((unsigned int)NCOLS) * ((unsigned int)libxsmm_matinit_ld_); \
+    const TYPE libxsmm_matinit_maxval2_ = (TYPE)(libxsmm_matinit_maxval_ / 2), libxsmm_matinit_inv_ = (TYPE)((SCALE) / libxsmm_matinit_maxval2_); \
+    const size_t libxsmm_matinit_shuffle_ = libxsmm_shuffle(libxsmm_matinit_maxval_); \
+    LIBXSMM_OMP_VAR(libxsmm_matinit_j_); OMP(parallel for private(libxsmm_matinit_i_, libxsmm_matinit_j_)) \
+    for (libxsmm_matinit_i_ = 0; libxsmm_matinit_i_ < ((libxsmm_blasint)NCOLS); ++libxsmm_matinit_i_) { \
+      for (libxsmm_matinit_j_ = 0; libxsmm_matinit_j_ < libxsmm_matinit_ld_; ++libxsmm_matinit_j_) { \
+        const libxsmm_blasint libxsmm_matinit_k_ = libxsmm_matinit_i_ * libxsmm_matinit_ld_ + libxsmm_matinit_j_; \
+        (DST)[libxsmm_matinit_k_] = libxsmm_matinit_inv_ * /* normalize values to an interval of [-1, +1] */ \
+          ((TYPE)(libxsmm_matinit_shuffle_ * libxsmm_matinit_k_ % libxsmm_matinit_maxval_) - libxsmm_matinit_maxval2_); \
+      } \
     } \
   } \
 }
+
+#define LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
+  LIBXSMM_MATINIT_AUX(LIBXSMM_ELIDE, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
+#define LIBXSMM_MATINIT_SEQ(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
+  LIBXSMM_MATINIT(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
+#define LIBXSMM_MATINIT_OMP(TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE) \
+  LIBXSMM_MATINIT_AUX(LIBXSMM_PRAGMA_OMP, TYPE, SEED, DST, NROWS, NCOLS, LD, SCALE)
 
 /** Call libxsmm_gemm_print using LIBXSMM's GEMM-flags. */
 #define LIBXSMM_GEMM_PRINT(OSTREAM, PRECISION, FLAGS, M, N, K, DALPHA, A, LDA, B, LDB, DBETA, C, LDC) \

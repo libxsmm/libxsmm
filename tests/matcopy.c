@@ -94,12 +94,12 @@ int main(void)
   b = (ELEM_TYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ELEM_TYPE)));
   assert(0 != a && 0 != b);
 
-  LIBXSMM_MATINIT(ELEM_TYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
-  LIBXSMM_MATINIT(ELEM_TYPE,  0, b, max_size_b, 1, max_size_b, 1.0);
+  LIBXSMM_MATINIT_OMP(ELEM_TYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
+  LIBXSMM_MATINIT_OMP(ELEM_TYPE,  0, b, max_size_b, 1, max_size_b, 1.0);
 #if defined(MATCOPY_GOLD)
   c = (ELEM_TYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ELEM_TYPE)));
   assert(0 != c);
-  LIBXSMM_MATINIT(ELEM_TYPE, 0, c, max_size_b, 1, max_size_b, 1.0);
+  LIBXSMM_MATINIT_OMP(ELEM_TYPE, 0, c, max_size_b, 1, max_size_b, 1.0);
 #endif
   for (test = start; test < ntests; ++test) {
     MATCOPY(b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test], prefetch + test);

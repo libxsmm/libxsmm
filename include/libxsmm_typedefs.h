@@ -121,7 +121,7 @@ union libxsmm_bfloat16_hp {
 typedef LIBXSMM_BLASINT libxsmm_blasint;
 
 /** Type representing sufficient storage space for a GEMM handle. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_blob { char data[256]; } libxsmm_gemm_blob;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_blob { char data[128]; } libxsmm_gemm_blob;
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle libxsmm_gemm_handle;
 
 /** Type representing sufficient storage space for descriptors (GEMM, TCOPY, MCOPY). */
@@ -140,6 +140,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor lib
 
 /** Enumerates element/data types. */
 typedef enum libxsmm_datatype {
+  LIBXSMM_DATATYPE_UNSUPPORTED = -1,
   LIBXSMM_DATATYPE_F64,
   LIBXSMM_DATATYPE_F32,
   LIBXSMM_DATATYPE_BF16,
@@ -160,7 +161,7 @@ typedef enum libxsmm_gemm_precision {
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_flags {
-  LIBXSMM_GEMM_FLAG_NONE    = 0,
+  LIBXSMM_GEMM_FLAG_NONE = 0,
   /** Transpose matrix A. */
   LIBXSMM_GEMM_FLAG_TRANS_A = 1,
   /** Transpose matrix B. */
@@ -174,22 +175,24 @@ typedef enum libxsmm_gemm_flags {
   LIBXSMM_GEMM_FLAG_ALPHA_S = 8,
 #endif
   /** Beta=0|1 */
-  LIBXSMM_GEMM_FLAG_BETA_0  = 16,
+  LIBXSMM_GEMM_FLAG_BETA_0 = 16,
 #if 0
   /** Beta=neg|pos */
-  LIBXSMM_GEMM_FLAG_BETA_S  = 32,
+  LIBXSMM_GEMM_FLAG_BETA_S = 32,
 #endif
   /** Generate aligned load instructions. */
   LIBXSMM_GEMM_FLAG_ALIGN_A = 64,
   /** Aligned load/store instructions. */
   LIBXSMM_GEMM_FLAG_ALIGN_C = 128,
+  /** Batch-reduce Ai * Bi. */
+  LIBXSMM_GEMM_FLAG_BATCH_REDUCE = 256,
   /** Marker flag; do not use. */
-  LIBXSMM_GEMM_FLAG_INVALID = 256
+  LIBXSMM_GEMM_FLAG_INVALID = 512
 } libxsmm_gemm_flags;
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_gemm_handle_flags {
-  LIBXSMM_GEMM_HANDLE_FLAG_COPY_AUTO = 0,
+  LIBXSMM_GEMM_HANDLE_FLAG_AUTO   = 0,
   LIBXSMM_GEMM_HANDLE_FLAG_COPY_A = 1,
   LIBXSMM_GEMM_HANDLE_FLAG_COPY_B = 2,
   LIBXSMM_GEMM_HANDLE_FLAG_COPY_C = 4
@@ -479,10 +482,15 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const 
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wimmfunction)(const short* a, const short* b, int* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (low-precision). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wsmmfunction)(const short* a, const short* b, float* c, ...);
+
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction_reducebatch)(const double** a, const double** b, double* c, const unsigned long long* count, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction_reducebatch)(const float** a, const float** b, float* c, const unsigned long long* count, ...);
+
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   void (*xmm)(const void* a, const void* b, void* c, ...);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wimmfunction wimm; libxsmm_wsmmfunction wsmm;
+  libxsmm_dmmfunction_reducebatch dmr; libxsmm_smmfunction_reducebatch smr;
 } libxsmm_xmmfunction;
 
 /** Determines the kernel kind. */

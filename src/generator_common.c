@@ -1243,7 +1243,7 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking( unsigned int
   }
 
   /* if we have perfect blocking, let's swap n2 and n1, set  */
-  if( l_modulo == 0 ) {
+  if (l_modulo == 0 ) {
     l_n1 = l_n2;
     l_N1 = l_N2;
     l_n2 = 0;

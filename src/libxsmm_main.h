@@ -507,15 +507,15 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn {
   libxsmm_dnn_tensor* grad_output;    /* grad output tensor */
   libxsmm_dnn_tensor* reg_add;        /* elementwise tensor */
   libxsmm_dnn_tensor* grad_add;       /* grad elementwise tensor */
-  libxsmm_dnn_tensor* beta;           /* beta tensor */
-  libxsmm_dnn_tensor* gamma;          /* gamma tensor */
+  libxsmm_dnn_tensor* reg_beta;       /* beta tensor */
+  libxsmm_dnn_tensor* reg_gamma;      /* gamma tensor */
   libxsmm_dnn_tensor* grad_beta;      /* grad beta tensor */
   libxsmm_dnn_tensor* grad_gamma;     /* grad gamma tensor */
   libxsmm_dnn_tensor* expvalue;       /* expected value */
   libxsmm_dnn_tensor* stddev;         /* standard derivation */
   libxsmm_barrier* barrier;           /* barrier */
   int ifmblock;
-  int ifmblock_hp;   
+  int ifmblock_hp;
   int ofmblock;
   int ofmblock_lp;
   int blocksifm;
@@ -523,6 +523,31 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn {
   int blocksifm_lp;  /* not used */
   int blocksofm_lp;  /* not used */
   int fm_lp_block;
+  size_t scratch_size;
+  void* scratch;
+};
+
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
+  libxsmm_dnn_pooling_desc desc;
+  libxsmm_dnn_tensor* reg_input;      /* input tensor */
+  libxsmm_dnn_tensor* reg_output;     /* output tensor */
+  libxsmm_dnn_tensor* grad_input;     /* grad input tensor */
+  libxsmm_dnn_tensor* grad_output;    /* grad output tensor */
+  libxsmm_dnn_tensor* mask;           /* elementwise tensor */
+  libxsmm_barrier* barrier;           /* barrier */
+  int ifmblock;
+  int ifmblock_hp;
+  int ofmblock;
+  int ofmblock_lp;
+  int blocksifm;
+  int blocksofm;
+  int blocksifm_lp;  /* not used */
+  int blocksofm_lp;  /* not used */
+  int fm_lp_block;
+  int ofh;
+  int ofw;
+  size_t scratch_size;
+  void* scratch;
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
@@ -658,7 +683,7 @@ LIBXSMM_API unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision preci
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, unsigned int ntry, unsigned int ncol);
 
 /** Returns the current tick of a (monotonic) platform-specific counter; not necessarily CPU cycles. */
-LIBXSMM_API_INTERN unsigned long long libxsmm_timer_tick_rdtsc(void);
+LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
 
 LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);

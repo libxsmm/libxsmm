@@ -191,6 +191,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
     ifmblock = (C >=16) ? 8 : C/2;
     ofmblock = (K >=16) ? 16 : K/2;
     lp_block = 2;
+    if (C == 3) {
+      ifmblock = C;
+      lp_block = 1;
+    }
     ifmblock_hp = ifmblock * lp_block;
     ofmblock_lp = ofmblock / lp_block;
   } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
@@ -222,7 +226,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
   *C_block_hp = ifmblock_hp;
   *K_block_lp = ofmblock_lp;
 
-  return status;  
+  return status;
 }
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxsmm_dnn_layer* handle, int *noarch ) {
@@ -234,7 +238,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxs
     handle->use_lp_kernel = 0;
   }
 
-  status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K, 
+  status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K,
                                                &(handle->ifmblock), &(handle->ifmblock_hp),
                                                &(handle->ofmblock), &(handle->ofmblock_lp),
                                                &(handle->fm_lp_block), handle->datatype_in, handle->datatype_out, noarch );
@@ -1027,7 +1031,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       assert(0/*should not happen*/);
     }
 
-    { libxsmm_dnn_layer mirror_handle;
+    if (handle->exploit_duality) {
+      libxsmm_dnn_layer mirror_handle;
       /* allocate buffers */
       handle->n_entries_bwd = (int*) malloc(handle->desc.threads * sizeof(int));
       handle->compute_bwd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
@@ -1324,6 +1329,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
           }
         }
 
+        /* FIXME: Specific code generation for first layer of resnet50 */
+        if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->use_fastpath == 0) {
+          descriptor.ofw_rb = handle->ofw;
+          descriptor.ofh_rb = handle->ofh;
+          handle->upd_ofh_rb = descriptor.ofh_rb;
+          handle->upd_ofw_rb = descriptor.ofw_rb;
+          descriptor.transpose_ofw_ifm = 0;
+          handle->use_hybrid_wu_parallelism = 0;
+          handle->avoid_input_trans = 1;
+          handle->avoid_output_trans = 1;
+          handle->reduce_weights = 1;
+          handle->weight_copies = handle->desc.threads;
+        }
+
         if (handle->use_fastpath == 1) {
           /* Here starts logic for calculating RB factors for UPD when KS are enabled  */
           int ifw_padded, qfma_padding, kernel_ifw_padded/*, kernel_ofw_padded*/;
@@ -1550,7 +1569,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         /*TRANSPOSE ALL*/
         descriptor.transpose_ofw_ifm = 1;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-        handle->code_upd[1].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+        if (handle->use_fastpath) {
+          handle->code_upd[1].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+        }
 
         /* enable JIT code path */
         handle->use_upd_generic = 0;

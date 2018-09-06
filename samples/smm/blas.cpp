@@ -70,7 +70,7 @@
 #endif
 
 #if (LIBXSMM_VERSION3(11, 2, 0) > INTEL_MKL_VERSION) || !(defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL))
-LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE);
+LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE)
 #endif
 
 
@@ -78,6 +78,10 @@ int main(int argc, char* argv[])
 {
   int result = EXIT_SUCCESS;
   try {
+#if defined(__BLAS) && (0 == __BLAS)
+    LIBXSMM_UNUSED(argc); LIBXSMM_UNUSED(argv);
+    throw "LAPACK/BLAS library must be available for this sample code!";
+#else /* BLAS available */
     const libxsmm_blasint benchmark = 1 < argc ? std::atoi(argv[1]) : 0;
     LIBXSMM_GEMM_CONST libxsmm_blasint m = (2 < argc ? std::atoi(argv[2]) : 23);
     LIBXSMM_GEMM_CONST libxsmm_blasint k = (4 < argc ? std::atoi(argv[4]) : m);
@@ -463,6 +467,7 @@ int main(int argc, char* argv[])
       libxsmm_finalize();
       fprintf(stdout, "Finished\n");
     }
+#endif
   }
   catch(const std::exception& e) {
     fprintf(stderr, "Error: %s\n", e.what());

@@ -127,6 +127,18 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: Invalid padding was specified!";
     case LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL:
       return "LIBXSMM DNN Error: time steps should be >= 2 for RNN/LSTM!";
+    case LIBXSMM_DNN_ERR_CREATE_LAYOUT_ARRAYS:
+      return "LIBXSMM DNN Error: failed to create internal layout arrays!";
+    case LIBXSMM_DNN_ERR_NOT_IMPLEMENTED:
+      return "LIBXSMM DNN Error: the requested functionality is right now not implemented!";
+    case LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_ORDER:
+      return "LIBXSMM DNN Error: the requested order of fusion in batch norm is right now not implemented!";
+    case LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION:
+      return "LIBXSMM DNN Error: the requested fusion in batch norm is right now not implemented!";
+    case LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN:
+      return "LIBXSMM DNN Error: Unsupported format when requesting a fused batch norm!";
+    case LIBXSMM_DNN_ERR_UNSUPPORTED_POOLING:
+      return "LIBXSMM DNN Error: Unsupported pooling operations was requested!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occurred!";
   }
@@ -939,9 +951,9 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
           layout = 0; /* make sure a NULL is returned */
           *status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
         }
-      } else if ( (type == LIBXSMM_DNN_REGULAR_BIAS) || (type == LIBXSMM_DNN_GRADIENT_BIAS) || (type == LIBXSMM_DNN_BIAS) ) {
+      } else if ( (type == LIBXSMM_DNN_REGULAR_CHANNEL_BIAS) || (type == LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS) || (type == LIBXSMM_DNN_CHANNEL_BIAS) ) {
         layout->format = handle->buffer_format;
-        layout->tensor_type = LIBXSMM_DNN_BIAS;
+        layout->tensor_type = LIBXSMM_DNN_CHANNEL_SCALAR;
 
         if ((handle->buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) {
           if ( handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -1367,9 +1379,18 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_tensor(const libxsmm_dnn_tensor
                                             }
                                  }
                                } break;
-      case LIBXSMM_DNN_REGULAR_BIAS:
-      case LIBXSMM_DNN_GRADIENT_BIAS:
-      case LIBXSMM_DNN_BIAS: {
+      case LIBXSMM_DNN_REGULAR_CHANNEL_BIAS:
+      case LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS:
+      case LIBXSMM_DNN_CHANNEL_BIAS:
+      case LIBXSMM_DNN_REGULAR_CHANNEL_BETA:
+      case LIBXSMM_DNN_GRADIENT_CHANNEL_BETA:
+      case LIBXSMM_DNN_CHANNEL_BETA:
+      case LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA:
+      case LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA:
+      case LIBXSMM_DNN_CHANNEL_GAMMA:
+      case LIBXSMM_DNN_CHANNEL_EXPECTVAL:
+      case LIBXSMM_DNN_CHANNEL_STDDEV:
+      case LIBXSMM_DNN_CHANNEL_SCALAR: {
                                switch (in_format) {
                                  case LIBXSMM_DNN_TENSOR_FORMAT_NCHW: {
                                                                         if ( (tensor->layout->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
@@ -1569,9 +1590,18 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsmm_dnn_tenso
                                             }
                                  }
                                } break;
-      case LIBXSMM_DNN_REGULAR_BIAS:
-      case LIBXSMM_DNN_GRADIENT_BIAS:
-      case LIBXSMM_DNN_BIAS: {
+      case LIBXSMM_DNN_REGULAR_CHANNEL_BIAS:
+      case LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS:
+      case LIBXSMM_DNN_CHANNEL_BIAS:
+      case LIBXSMM_DNN_REGULAR_CHANNEL_BETA:
+      case LIBXSMM_DNN_GRADIENT_CHANNEL_BETA:
+      case LIBXSMM_DNN_CHANNEL_BETA:
+      case LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA:
+      case LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA:
+      case LIBXSMM_DNN_CHANNEL_GAMMA:
+      case LIBXSMM_DNN_CHANNEL_EXPECTVAL:
+      case LIBXSMM_DNN_CHANNEL_STDDEV:
+      case LIBXSMM_DNN_CHANNEL_SCALAR: {
                                switch (out_format) {
                                  case LIBXSMM_DNN_TENSOR_FORMAT_NCHW: {
                                                                         if ( (tensor->layout->format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0 ) {
@@ -1668,7 +1698,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_tensor(libxsmm_dnn_layer* handle,
   if ( (type != LIBXSMM_DNN_REGULAR_INPUT)        && (type != LIBXSMM_DNN_GRADIENT_INPUT)  &&
       (type != LIBXSMM_DNN_REGULAR_OUTPUT)       && (type != LIBXSMM_DNN_GRADIENT_OUTPUT) &&
       (type != LIBXSMM_DNN_REGULAR_FILTER)       && (type != LIBXSMM_DNN_GRADIENT_FILTER) &&
-      (type != LIBXSMM_DNN_REGULAR_BIAS)         && (type != LIBXSMM_DNN_GRADIENT_BIAS)   &&
+      (type != LIBXSMM_DNN_REGULAR_CHANNEL_BIAS)         && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS)   &&
       (type != LIBXSMM_DNN_REGULAR_FILTER_TRANS) && (type != LIBXSMM_DNN_BATCH_STATS) && (type != LIBXSMM_DNN_MAX_STATS_FWD) && (type != LIBXSMM_DNN_MAX_STATS_BWD)  && (type != LIBXSMM_DNN_MAX_STATS_UPD)  ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
     return status;
@@ -1690,9 +1720,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_tensor(libxsmm_dnn_layer* handle,
         handle->reg_filter = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_GRADIENT_FILTER ) {
         handle->grad_filter = (libxsmm_dnn_tensor*)tensor;
-      } else if ( type == LIBXSMM_DNN_REGULAR_BIAS ) {
+      } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BIAS ) {
         handle->reg_bias = (libxsmm_dnn_tensor*)tensor;
-      } else if ( type == LIBXSMM_DNN_GRADIENT_BIAS ) {
+      } else if ( type == LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS ) {
         handle->grad_bias = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_REGULAR_FILTER_TRANS ) {
         handle->reg_filter_tr = (libxsmm_dnn_tensor*)tensor;
@@ -1729,7 +1759,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_tensor(libxsmm_dnn_layer* hand
   if ( (type != LIBXSMM_DNN_REGULAR_INPUT)        && (type != LIBXSMM_DNN_GRADIENT_INPUT)  &&
       (type != LIBXSMM_DNN_REGULAR_OUTPUT)       && (type != LIBXSMM_DNN_GRADIENT_OUTPUT) &&
       (type != LIBXSMM_DNN_REGULAR_FILTER)       && (type != LIBXSMM_DNN_GRADIENT_FILTER) &&
-      (type != LIBXSMM_DNN_REGULAR_BIAS)         && (type != LIBXSMM_DNN_GRADIENT_BIAS)   &&
+      (type != LIBXSMM_DNN_REGULAR_CHANNEL_BIAS)         && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS)   &&
       (type != LIBXSMM_DNN_REGULAR_FILTER_TRANS) && (type != LIBXSMM_DNN_BATCH_STATS) && (type != LIBXSMM_DNN_MAX_STATS_FWD) && (type != LIBXSMM_DNN_MAX_STATS_BWD)  && (type != LIBXSMM_DNN_MAX_STATS_UPD)  ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
     return status;
@@ -1748,9 +1778,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_tensor(libxsmm_dnn_layer* hand
       handle->reg_filter = 0;
     } else if ( type == LIBXSMM_DNN_GRADIENT_FILTER ) {
       handle->grad_filter = 0;
-    } else if ( type == LIBXSMM_DNN_REGULAR_BIAS ) {
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BIAS ) {
       handle->reg_bias = 0;
-    } else if ( type == LIBXSMM_DNN_GRADIENT_BIAS ) {
+    } else if ( type == LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS ) {
       handle->grad_bias = 0;
     } else if ( type == LIBXSMM_DNN_REGULAR_FILTER_TRANS ) {
       handle->reg_filter_tr = 0;
@@ -2637,11 +2667,12 @@ LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length 
   float absmax_value = (float)fabs((double)(in_buffer[0]));
   int i = 0;
 #ifdef _OPENMP
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel private(i)
   {
     float my_absmax_value = absmax_value;
-#   pragma omp for private(i)
-    for( i = 0; i < length; ++i ) {
+#   pragma omp for
+    for (i = 0; i < length; ++i ) {
       if ((float)fabs((double)(in_buffer[i])) > my_absmax_value) {
         my_absmax_value = (float)fabs((double)(in_buffer[i]));
       }
@@ -2654,7 +2685,7 @@ LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length 
     }
   }
 #else
-  for( i = 1; i < length; ++i ) {
+  for (i = 1; i < length; ++i ) {
     if ((float)fabs((double)(in_buffer[i])) > absmax_value) {
       absmax_value = (float)fabs((double)(in_buffer[i]));
     }
@@ -2769,13 +2800,13 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
     maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     if ( length % 16 == 0 ) {
       __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
 #     pragma omp parallel for private(i)
 #endif
-      for( i = 0; i < length; i+=16 ) {
+      for (i = 0; i < length; i+=16 ) {
         _mm256_stream_si256( (__m256i *)&(out_buffer[i]), _mm512_quantize_near_ps_epi16( &(in_buffer[i]), vscfq ) );
       }
     } else {
@@ -2783,10 +2814,10 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
 #ifdef _OPENMP
 #     pragma omp parallel for private(i)
 #endif
-      for( i = 0; i < length; ++i ) {
+      for (i = 0; i < length; ++i ) {
         out_buffer[i] = (short)round((double)in_buffer[i] * scfq);
       }
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     }
 #endif
     /* @TODO, we need to potentially fix this unsigned char problem */
@@ -2808,7 +2839,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
 #ifdef _OPENMP
 #   pragma omp parallel for private(i)
 #endif
-    for( i = 0; i < length; ++i ) {
+    for (i = 0; i < length; ++i ) {
       out_buffer[i] = libxsmm_internal_quantize_scalar_no_scf( in_buffer[i], max_exp, add_shift, round_mode );
     }
 
@@ -2837,26 +2868,28 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
     maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     if ( (cblk_f32 == 16) && (cblk_i16*lp_blk == 16) ) {
       __m512 vscfq = _mm512_set1_ps(scfq);
 #ifdef _OPENMP
+      LIBXSMM_OMP_VAR(i1);
 #     pragma omp parallel for private(i1)
 #endif
-      for( i1 = 0; i1 < (int)(N*C*H*W); i1 += 16 ) {
+      for (i1 = 0; i1 < (int)(N*C*H*W); i1 += 16 ) {
         _mm256_stream_si256( (__m256i *)&(out_buffer[i1]), _mm512_quantize_near_ps_epi16( &(in_buffer[i1]), vscfq ) );
       }
     } else {
 #endif
 #ifdef _OPENMP
+      LIBXSMM_OMP_VAR(i1); LIBXSMM_OMP_VAR(i2); LIBXSMM_OMP_VAR(i3); LIBXSMM_OMP_VAR(i4); LIBXSMM_OMP_VAR(i5); LIBXSMM_OMP_VAR(i6);
 #     pragma omp parallel for private(i1, i2, i3, i4, i5, i6) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-      for( i1 = 0; i1 < (int)N; ++i1 ) {
-        for( i2 = 0; i2 < (int)cblk; ++i2 ) {
-          for( i3 = 0; i3 < (int)H; ++i3 ) {
-            for( i4 = 0; i4 < (int)W; ++i4 ) {
-              for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
-                for( i6 = 0; i6 < (int)lp_blk; ++i6 ) {
+      for (i1 = 0; i1 < (int)N; ++i1 ) {
+        for (i2 = 0; i2 < (int)cblk; ++i2 ) {
+          for (i3 = 0; i3 < (int)H; ++i3 ) {
+            for (i4 = 0; i4 < (int)W; ++i4 ) {
+              for (i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+                for (i6 = 0; i6 < (int)lp_blk; ++i6 ) {
                   const int fi1 = i1;
                   const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)/cblk_f32;
                   const int fi3 = i3;
@@ -2870,7 +2903,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
           }
         }
       }
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     }
 #endif
     /* @TODO, we need to potentially fix this unsigned char problem */
@@ -2892,12 +2925,12 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
 #ifdef _OPENMP
 #   pragma omp parallel for private(i1, i2, i3, i4, i5, i6) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-    for( i1 = 0; i1 < (int)N; ++i1 ) {
-      for( i2 = 0; i2 < (int)cblk; ++i2 ) {
-        for( i3 = 0; i3 < (int)H; ++i3 ) {
-          for( i4 = 0; i4 < (int)W; ++i4 ) {
-            for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
-              for( i6 = 0; i6 < (int)lp_blk; ++i6 ) {
+    for (i1 = 0; i1 < (int)N; ++i1 ) {
+      for (i2 = 0; i2 < (int)cblk; ++i2 ) {
+        for (i3 = 0; i3 < (int)H; ++i3 ) {
+          for (i4 = 0; i4 < (int)W; ++i4 ) {
+            for (i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+              for (i6 = 0; i6 < (int)lp_blk; ++i6 ) {
                 const int fi1 = i1;
                 const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)/cblk_f32;
                 const int fi3 = i3;
@@ -2941,18 +2974,18 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
     maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     if ( (kblk_f32 == 16) && (cblk_f32 == 16) && (kblk_i16 == 16) && (cblk_i16*lp_blk == 16) ) {
       const __m512 vscfq = _mm512_set1_ps(scfq);
       const __m512i permute_compact_idx = _mm512_set_epi32(15,14,13,12,7,6,5,4,11,10,9,8,3,2,1,0);
 #ifdef _OPENMP
 #     pragma omp parallel for private(i1, i2, i3, i4, i5) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-      for( i1 = 0; i1 < (int)kblk; ++i1 ) {
-        for( i2 = 0; i2 < (int)cblk; ++i2 ) {
-          for( i3 = 0; i3 < (int)R; ++i3 ) {
-            for( i4 = 0; i4 < (int)S; ++i4 ) {
-              for( i5 = 0; i5 < 16; i5+=2 ) {
+      for (i1 = 0; i1 < (int)kblk; ++i1 ) {
+        for (i2 = 0; i2 < (int)cblk; ++i2 ) {
+          for (i3 = 0; i3 < (int)R; ++i3 ) {
+            for (i4 = 0; i4 < (int)S; ++i4 ) {
+              for (i5 = 0; i5 < 16; i5+=2 ) {
                 __m256i even_ch = _mm512_quantize_near_ps_epi16(
                   &LIBXSMM_VLA_ACCESS(6, in, i1, i2, i3, i4, i5 + 0, 0, C / cblk_f32, R, S, cblk_f32, kblk_f32), vscfq);
                 __m256i odd_ch  = _mm512_quantize_near_ps_epi16(
@@ -2973,15 +3006,16 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
     } else {
 #endif
 #ifdef _OPENMP
+      LIBXSMM_OMP_VAR(i1); LIBXSMM_OMP_VAR(i2); LIBXSMM_OMP_VAR(i3); LIBXSMM_OMP_VAR(i4); LIBXSMM_OMP_VAR(i5); LIBXSMM_OMP_VAR(i6); LIBXSMM_OMP_VAR(i7);
 #     pragma omp parallel for private(i1, i2, i3, i4, i5, i6, i7) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-      for( i1 = 0; i1 < (int)kblk; ++i1 ) {
-        for( i2 = 0; i2 < (int)cblk; ++i2 ) {
-          for( i3 = 0; i3 < (int)R; ++i3 ) {
-            for( i4 = 0; i4 < (int)S; ++i4 ) {
-              for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
-                for( i6 = 0; i6 < (int)kblk_i16; ++i6 ) {
-                  for( i7 = 0; i7 < (int)lp_blk; ++i7 ) {
+      for (i1 = 0; i1 < (int)kblk; ++i1 ) {
+        for (i2 = 0; i2 < (int)cblk; ++i2 ) {
+          for (i3 = 0; i3 < (int)R; ++i3 ) {
+            for (i4 = 0; i4 < (int)S; ++i4 ) {
+              for (i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+                for (i6 = 0; i6 < (int)kblk_i16; ++i6 ) {
+                  for (i7 = 0; i7 < (int)lp_blk; ++i7 ) {
                     const int fi1 = ((i1*kblk_i16)+i6)/kblk_f32;
                     const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)/cblk_f32;
                     const int fi3 = i3;
@@ -2997,7 +3031,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
           }
         }
       }
-#if defined(__AVX512F__)
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     }
 #endif
     /* @TODO, we need to potentially fix this unsigned char problem */
@@ -3019,13 +3053,13 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
 #ifdef _OPENMP
 #   pragma omp parallel for private(i1, i2, i3, i4, i5, i6, i7) LIBXSMM_OPENMP_COLLAPSE(4)
 #endif
-    for( i1 = 0; i1 < (int)kblk; ++i1 ) {
-      for( i2 = 0; i2 < (int)cblk; ++i2 ) {
-        for( i3 = 0; i3 < (int)R; ++i3 ) {
-          for( i4 = 0; i4 < (int)S; ++i4 ) {
-            for( i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
-              for( i6 = 0; i6 < (int)kblk_i16; ++i6 ) {
-                for( i7 = 0; i7 < (int)lp_blk; ++i7 ) {
+    for (i1 = 0; i1 < (int)kblk; ++i1 ) {
+      for (i2 = 0; i2 < (int)cblk; ++i2 ) {
+        for (i3 = 0; i3 < (int)R; ++i3 ) {
+          for (i4 = 0; i4 < (int)S; ++i4 ) {
+            for (i5 = 0; i5 < (int)cblk_i16; ++i5 ) {
+              for (i6 = 0; i6 < (int)kblk_i16; ++i6 ) {
+                for (i7 = 0; i7 < (int)lp_blk; ++i7 ) {
                   const int fi1 = ((i1*kblk_i16)+i6)/kblk_f32;
                   const int fi2 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)/cblk_f32;
                   const int fi3 = i3;

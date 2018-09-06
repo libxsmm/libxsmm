@@ -360,17 +360,7 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
   $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1) \
   $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1)))))")
 
-ifneq (0,$(INTEL))
-  ifeq (0,$(OFFLOAD))
-    CXXFLAGS += -qno-offload
-    CFLAGS += -qno-offload
-    ifneq (,$(strip $(FC)))
-    ifeq (ifort,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f1))
-      FCFLAGS += -qno-offload
-    endif
-    endif
-  endif
-else
+ifeq (0,$(INTEL))
   ifeq (,$(notdir $(shell which $(CXX) 2>/dev/null)))
     CXX = g++
   else ifneq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
@@ -381,22 +371,6 @@ else
   else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CC = gcc
   endif
-endif
-GFC = $(NULL)
-ifneq (0,$(FORTRAN))
-  ifneq (,$(strip $(FC)))
-  ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
-    ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
-      GFC = gfortran
-    endif
-    FC = $(GFC)
-  endif
-  endif
-else
-  FC = $(GFC)
-endif
-ifeq (,$(strip $(FC)))
-  DFLAGS += -DLIBXSMM_NOFORTRAN
 endif
 
 CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
@@ -425,6 +399,16 @@ else ifeq (2,$(words $(CC_VERSION_MAJOR) $(CC_VERSION_MINOR)))
 else
   CC_VERSION_STRING = $(NULL)
   CC_VERSION = 0
+endif
+
+# fixup FC-default given by MAKE
+ifeq (,$(shell which $(FC) 2>/dev/null))
+  ifneq (,$(shell which gfortran 2>/dev/null))
+    GFC = gfortran
+    FC = $(GFC)
+  else
+    FC = $(NULL)
+  endif
 endif
 
 ifneq (,$(strip $(FC)))
@@ -484,13 +468,13 @@ endif
 
 # compiler names
 CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 \
-           | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" \
+           | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" -e "s/ [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
            | rev | cut -d" " -f1 | rev))
 ifeq (,$(strip $(CXX_NAME)))
   CXX_NAME = $(basename $(notdir $(CXX)))
 endif
 CC_NAME = $(basename $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 \
-          | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" \
+          | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" -e "s/ [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
           | rev | cut -d" " -f1 | rev))
 ifeq (,$(strip $(CC_NAME)))
   CC_NAME = $(basename $(notdir $(CC)))
@@ -500,6 +484,29 @@ ifneq (,$(strip $(FC)))
 endif
 ifeq (,$(strip $(FC_NAME)))
   FC_NAME = $(basename $(notdir $(FC)))
+endif
+
+ifneq (0,$(FORTRAN))
+  ifeq (,$(strip $(GFC)))
+    ifneq (,$(strip $(FC)))
+      ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
+        GFC = $(FC)
+      else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
+        GFC = $(FC)
+      else ifneq (pgfortran,$(CC_NAME))
+        ifneq (,$(findstring gfortran,$(FC_NAME)))
+          GFC = $(FC)
+        endif
+      endif
+    endif
+  else
+    FORTRAN = 0
+  endif
+else
+  FC = $(NULL)
+endif
+ifeq (,$(strip $(FC)))
+  DFLAGS += -DLIBXSMM_NOFORTRAN
 endif
 
 # native GCC?
@@ -522,16 +529,8 @@ ifeq (1,$(GCC))
     GCC = 2
   endif
   ifeq (2,$(GCC))
-  ifneq (,$(strip $(FC)))
-    ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
-      GCC = 3
-    else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
-      GCC = 3
-    else ifneq (pgfortran,$(CC_NAME))
-      ifneq (,$(findstring gfortran,$(FC_NAME)))
-        GCC = 3
-      endif
-    endif
+  ifneq (,$(strip $(GFC)))
+    GCC = 3
   endif
   endif
 endif
@@ -559,7 +558,7 @@ MINGW ?= 0
 #endif
 IMPEXT ?= $(LIBEXT)
 
-# Too many ICEs with Clang hence we want to know if we are on Clang
+# Too many ICEs with older Clang (need to know if Clang is used)
 ifeq (0,$(GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
 ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__clang__"; echo "$$?"))
@@ -672,7 +671,7 @@ ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
   ifneq (,$(strip $(LIBGFORTRAN)))
     FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
     LIB_FLD = $(LIB_LD)
-    FLD = $(LD)
+    #FLD = $(LD)
   endif
 endif
 
@@ -724,6 +723,11 @@ ifneq (0,$(INTEL))
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+  ifneq (0,$(shell echo "$$((170000<=$(CXX_VERSION)))"))
+    CXXFLAGS += -std=c++14
+  else ifneq (0,$(shell echo "$$((140000<=$(CXX_VERSION)))"))
+    CXXFLAGS += -std=c++11
+  endif
   CXXFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
   CFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
   ifeq (,$(strip $(GFC)))
@@ -773,10 +777,23 @@ ifneq (0,$(INTEL))
   CXXFLAGS += $(OPTFLAG)
   CFLAGS += $(OPTFLAG)
   FCFLAGS += $(OPTFLAG)
+  ifeq (0,$(OFFLOAD))
+    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+      CXXFLAGS += -qno-offload
+      CFLAGS += -qno-offload
+    endif
+    ifeq (,$(strip $(GFC)))
+      FCFLAGS += -qno-offload
+    endif
+  endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
-    CXXFLAGS += -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
-    CFLAGS += -fno-alias -ansi-alias -qoverride_limits #-fp-model fast=2
+    CXXFLAGS += -fno-alias -ansi-alias
+    CFLAGS += -fno-alias -ansi-alias
+    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+      CXXFLAGS += -qoverride_limits #-fp-model fast=2
+      CFLAGS += -qoverride_limits #-fp-model fast=2
+    endif
     ifeq (,$(strip $(GFC)))
       FCFLAGS += -qoverride_limits #-fp-model fast=2
       ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
@@ -912,7 +929,9 @@ else # GCC assumed
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   LDFLAGS += $(XLIB_BEGIN) -lm $(XLIB_END)
   ifeq (0,$(COMPATIBLE))
-    ifneq (0,$(shell echo "$$((40700<=$(GCC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((50000<=$(GCC_VERSION)))"))
+      CXXFLAGS += -std=c++14
+    else ifneq (0,$(shell echo "$$((40700<=$(GCC_VERSION)))"))
       CXXFLAGS += -std=c++11
     endif
     CXXFLAGS += -Wall -Wno-unused-function #-Wno-attributes
@@ -1038,6 +1057,11 @@ else # GCC assumed
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((1<=$(GCC)))"))
       OMPFLAG = -fopenmp
+    else ifneq (Darwin,$(UNAME))
+      ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION)))"))
+        OMPFLAG = -fopenmp
+        OMPRT = omp
+      endif
     endif
   endif
   ifeq (,$(OMPFLAG))
@@ -1062,11 +1086,20 @@ else # GCC assumed
       # omit passing special OMP into Fortran compiler
       FCFLAGS += $(OMPFLAG)
       CLDFLAGS += $(OMPFLAG)=$(OMP)
-    else ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
-      CXXFLAGS += $(OMPFLAG)
-      CFLAGS += $(OMPFLAG)
-      FCFLAGS += $(OMPFLAG)
-      LDFLAGS += $(OMPFLAG)
+    else #ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
+      LIBOMPRT = $(call libpath,$(LD) $(SLDFLAGS),$(NULL),omp)
+      ifeq (3,$(GCC))
+        CXXFLAGS += $(OMPFLAG)
+        CFLAGS += $(OMPFLAG)
+        FCFLAGS += $(OMPFLAG)
+        LDFLAGS += $(OMPFLAG)
+      else ifneq (,$(strip $(LIBOMPRT)))
+        FLDFLAGS += $(call abslibpath,$(LIBOMPRT)) $(XLIB_BEGIN) $(call abslibfile,$(LIBOMPRT)) $(XLIB_END)
+        CXXFLAGS += $(OMPFLAG)
+        CFLAGS += $(OMPFLAG)
+        FCFLAGS += $(OMPFLAG)
+        LDFLAGS += $(OMPFLAG)
+      endif
     endif
   endif
   endif
@@ -1116,10 +1149,15 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
           ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
             CTARGET += -mavx512pf -mavx512er
           endif
-        else # SKX
-          ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+        else ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+          ifneq (Darwin,$(UNAME))
             CTARGET += -mavx512dq -mavx512bw -mavx512vl
             #CTARGET += -mavx512ifma -mavx512vbmi
+          else ifneq (,$(filter 1 2 3,$(INTEL) $(GCC)))
+            CTARGET += -mavx512dq -mavx512bw -mavx512vl
+            #CTARGET += -mavx512ifma -mavx512vbmi
+          else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION)))"))
+            CTARGET += -mavx512dq -mavx512bw -mavx512vl
           endif
         endif
       endif
@@ -1192,12 +1230,12 @@ ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
 endif
 
 ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
-ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-f.f); \
+ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/libxsmm_XXXXXX-f.f); \
   echo "      PROGRAM test" > $${FINFILE}; \
   echo "      END PROGRAM" >> $${FINFILE}; \
   FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
   if [ "" = "$${FTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-  rm -f /tmp/.libxsmm_??????-f.f .libxsmm_??????-f.o* 2>/dev/null))
+  rm -f /tmp/libxsmm_??????-f.f libxsmm_??????-f.o* 2>/dev/null))
 # inherit CTARGET flags
   FTARGET = $(CTARGET)
 endif
@@ -1309,22 +1347,20 @@ endif
 endif
 
 ifneq (0,$(THREADS))
-  ifeq (0,$(COMPATIBLE))
-    CXXFLAGS += -pthread
-    CFLAGS += -pthread
-    ifneq (0,$(shell echo "$$((0==$(INTEL) || 0!=$(DEPSTATIC)))"))
-      FLDFLAGS += -lpthread
-      ifneq (Windows_NT,$(UNAME))
-        ifneq (Darwin,$(UNAME))
-          CLDFLAGS += -pthread
-        else ifeq (0,$(CLANG))
-          CLDFLAGS += -pthread
-        endif
+ifeq (0,$(COMPATIBLE))
+  CXXFLAGS += -pthread
+  CFLAGS += -pthread
+  ifneq (0,$(shell echo "$$((0==$(INTEL) || 0!=$(DEPSTATIC)))"))
+    FLDFLAGS += -lpthread
+    ifneq (Windows_NT,$(UNAME))
+      ifneq (Darwin,$(UNAME))
+        CLDFLAGS += -pthread
+      else ifeq (0,$(CLANG))
+        CLDFLAGS += -pthread
       endif
     endif
   endif
-else
-  DFLAGS += -DLIBXSMM_NO_SYNC
+endif
 endif
 ifeq (0,$(VLA))
   DFLAGS += -DLIBXSMM_NO_VLA
@@ -1590,13 +1626,19 @@ else ifneq (0,$(BLAS)) # generic
     endif
     ifeq (0,$(OPENBLAS)) # BLAS (reference)
       ifneq (0,$(DEPSTATIC))
-      ifneq (,$(LIBGFORTRAN))
-        BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
-      endif
+        ifneq (,$(LIBGFORTRAN))
+          BLAS_XLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+        else ifneq (,$(strip $(FC)))
+          BLAS_XLDFLAGS += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
+        endif
       endif
       QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
       ifneq (0,$(QUADMATH))
-        BLAS_CLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
+        BLAS_XLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
+      endif
+      BLAS_CLDFLAGS += $(BLAS_XLDFLAGS)
+      ifneq (3,$(GCC))
+        BLAS_LDFLAGS += $(BLAS_XLDFLAGS)
       endif
     endif
   else # BLAS library is specified via BLASLIB
@@ -1613,25 +1655,30 @@ else ifneq (0,$(BLAS)) # generic
   endif
 endif
 
+cleanup = $(strip $(shell echo "$(eval hit :=) $(foreach _,$(shell echo '$1' | rev), \
+                       $(if $(filter $_,${hit}),,$(eval hit += $_))) ${hit}" | rev))
+
 # no-BLAS flags: cleanup and extra flags
-NOBLAS_CXXFLAGS := $(strip $(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
-NOBLAS_FCFLAGS := $(strip $(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
-NOBLAS_CFLAGS := $(strip $(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_LDFLAGS := $(strip $(PICFLAG) $(LDFLAGS) $(ELDFLAGS))
-NOBLAS_CLDFLAGS := $(strip $(CLDFLAGS))
-NOBLAS_FLAGS := $(strip $(DFLAGS))
-NOBLAS_IFLAGS := $(strip $(IFLAGS))
+NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
+NOBLAS_FCFLAGS := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
+NOBLAS_CFLAGS := $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
+NOBLAS_LDFLAGS := $(call cleanup,$(PICFLAG) $(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CLDFLAGS := $(call cleanup,$(CLDFLAGS))
+NOBLAS_FLAGS := $(call cleanup,$(DFLAGS))
+NOBLAS_IFLAGS := $(call cleanup,$(IFLAGS))
 
 # regular flags: cleanup
-CXXFLAGS := $(strip $(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))
-FCFLAGS := $(strip $(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
-CFLAGS := $(strip $(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
-LDFLAGS := $(strip $(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
-CLDFLAGS := $(strip $(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
-DFLAGS := $(strip $(NOBLAS_FLAGS) $(BLAS_FLAGS))
-IFLAGS := $(strip $(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
+CXXFLAGS := $(call cleanup,$(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))
+FCFLAGS := $(call cleanup,$(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
+CFLAGS := $(call cleanup,$(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
+LDFLAGS := $(call cleanup,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
+CLDFLAGS := $(call cleanup,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
+DFLAGS := $(call cleanup,$(NOBLAS_FLAGS) $(BLAS_FLAGS))
+IFLAGS := $(call cleanup,$(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
 # cleanup eventually duplicated flags
+LDFLAGS := $(subst $(NULL) $(XLIB_BEGIN) $(XLIB_END),$(NULL),$(LDFLAGS))
 LDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(LDFLAGS))
+CLDFLAGS := $(subst $(NULL) $(XLIB_BEGIN) $(XLIB_END),$(NULL),$(CLDFLAGS))
 CLDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(CLDFLAGS))
 # cleanup duplicated slashes
 LDFLAGS := $(subst //,/,$(LDFLAGS))

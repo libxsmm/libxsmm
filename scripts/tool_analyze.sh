@@ -33,10 +33,20 @@
 HERE=$(cd $(dirname $0); pwd -P)
 
 cd ${HERE}/..
-make CXX=clang++ CC=clang FC= DBG=1 EFLAGS=--analyze $* 2> .analyze.log
+ARG=$*
+if [ "" = "${ARG}" ]; then
+  ARG=lib
+fi
+make CXX=clang++ CC=clang FC= DBG=1 EFLAGS=--analyze ${ARG} 2> .analyze.log
+ISSUES=$(grep -e "error:" -e "warning:" .analyze.log | grep -v "is never read" | sort -u)
 echo
 echo "================================================================================"
+if [ "" = "${ISSUES}" ]; then
+echo "SUCCESS"
+echo "================================================================================"
+else
 echo "Errors (warnings)"
 echo "================================================================================"
-grep -e "error:" -e "warning:" .analyze.log | grep -v "is never read" | sort -u
+echo "${ISSUES}"
+fi
 

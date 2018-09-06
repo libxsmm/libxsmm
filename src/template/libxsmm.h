@@ -66,7 +66,9 @@
 #include "libxsmm_dnn.h"
 #include "libxsmm_dnn_rnncell.h"
 #include "libxsmm_dnn_lstmcell.h"
+#include "libxsmm_dnn_grucell.h"
 #include "libxsmm_dnn_fusedbn.h"
+#include "libxsmm_dnn_pooling.h"
 
 
 /** Initialize the library; pay for setup cost at a specific point. */
@@ -123,25 +125,32 @@ LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libx
 /** Get information about the code registry. */
 LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info);
 
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (descriptor form). */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (descriptor form). */
 LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descriptor* descriptor);
 
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (double-precision). */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (double-precision). */
 LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const double* alpha, const double* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (single-precision). */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (single-precision). */
 LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (low/short-precision), int-accumulate */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/short-precision), int-accumulate */
 LIBXSMM_API libxsmm_wimmfunction libxsmm_wimmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate a function; return zero if it does not exist or if JIT is not supported (low/short-precision), fp-accumulate */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/short-precision), fp-accumulate */
 LIBXSMM_API libxsmm_wsmmfunction libxsmm_wsmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
+
+/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (double-precision). */
+LIBXSMM_API libxsmm_dmmfunction_reducebatch libxsmm_dmmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta);
+/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (single-precision). */
+LIBXSMM_API libxsmm_smmfunction_reducebatch libxsmm_smmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta);
 
 /** Process a series of matrix multiplications (batch). */
 LIBXSMM_API int libxsmm_mmbatch(
@@ -338,8 +347,11 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const void* alpha, const void* beta, int flags, /*unsigned*/int nthreads);
 
+/** Calculate required scratch buffer size needed to perform libxsmm_gemm_thread. */
+LIBXSMM_API size_t libxsmm_gemm_handle_get_scratch_size(const libxsmm_gemm_handle* handle);
+
 /** Low-level type-agnostic GEMM suitable for external threads or tasks. */
-LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle,
+LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* scratch,
   const void* a, const void* b, void* c, /*unsigned*/int tid);
 
 /** General dense matrix multiplication (libxsmmext); available as xgemm (generic), dgemm (DP), and sgemm (SP). */
@@ -375,19 +387,24 @@ LIBXSMM_API void libxsmm_wsgemm(const char* transa, const char* transb,
 $MNK_INTERFACE_LIST
 #if defined(__cplusplus)
 
-template<typename T> struct libxsmm_gemm_precision_enum {};     /** Map a built-in type to libxsmm_gemm_precision. */
-template<> struct libxsmm_gemm_precision_enum<double>           { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F64; };
-template<> struct libxsmm_gemm_precision_enum<float>            { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F32; };
-template<> struct libxsmm_gemm_precision_enum<int>              { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I32; };
-template<> struct libxsmm_gemm_precision_enum</*signed*/short>  { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
-template<> struct libxsmm_gemm_precision_enum<unsigned short>   { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
-template<> struct libxsmm_gemm_precision_enum<signed char>      { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
-template<> struct libxsmm_gemm_precision_enum<unsigned char>    { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
-template<> struct libxsmm_gemm_precision_enum<char>             { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
+namespace Eigen { struct half; }
+namespace tensorflow { struct bfloat16; }
+/** Map a built-in type to libxsmm_gemm_precision (libxsmm_gemm_precision_enum). */
+template<typename T> struct libxsmm_gemm_precision_enum             { static const libxsmm_gemm_precision value = static_cast<libxsmm_gemm_precision>(LIBXSMM_DATATYPE_UNSUPPORTED); };
+template<> struct libxsmm_gemm_precision_enum<double>               { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F64; };
+template<> struct libxsmm_gemm_precision_enum<float>                { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F32; };
+template<> struct libxsmm_gemm_precision_enum<int>                  { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I32; };
+template<> struct libxsmm_gemm_precision_enum</*signed*/short>      { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
+template<> struct libxsmm_gemm_precision_enum<unsigned short>       { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
+template<> struct libxsmm_gemm_precision_enum<Eigen::half>          { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I16; };
+template<> struct libxsmm_gemm_precision_enum<tensorflow::bfloat16> { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_BF16; };
+template<> struct libxsmm_gemm_precision_enum<signed char>          { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
+template<> struct libxsmm_gemm_precision_enum<unsigned char>        { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
+template<> struct libxsmm_gemm_precision_enum<char>                 { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_I8; };
 
-template<typename INP_TYPE> struct libxsmm_gemm_default_output  { typedef INP_TYPE type; };
-template<> struct libxsmm_gemm_default_output</*signed*/short>  { typedef int type; };
-template<> struct libxsmm_gemm_default_output<unsigned short>   { typedef int type; };
+template<typename INP_TYPE> struct libxsmm_gemm_default_output      { typedef INP_TYPE type; };
+template<> struct libxsmm_gemm_default_output</*signed*/short>      { typedef int type; };
+template<> struct libxsmm_gemm_default_output<unsigned short>       { typedef int type; };
 
 /** Construct and execute a specialized function. */
 template<typename INP_TYPE, typename OUT_TYPE = typename libxsmm_gemm_default_output<INP_TYPE>::type>

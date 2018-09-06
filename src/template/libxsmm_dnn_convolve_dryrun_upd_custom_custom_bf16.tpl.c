@@ -194,6 +194,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                           }
                           compute_indices[local_entries+1] = (((ofm1 *  BLOCKSIFM) + ifm1) * handle->desc.R * handle->desc.S *  IFMBLOCK *  handle->ofmblock + kj * handle->desc.S *  IFMBLOCK *  handle->ofmblock + ki * IFMBLOCK *  handle->ofmblock)  * handle->weight_copies;
 
+                          if (handle->desc.C == 3) {
+                            compute_indices[local_entries+1] =   compute_indices[local_entries+1] /  handle->weight_copies;
+                          }
+
                           compute_indices[local_entries+2] = ((((((img *  BLOCKSOFM) + ofm1) *  handle->ofhp) + oj_) * (handle->ofwp + handle->output_lp_padding)) + oi_) *  handle->ofmblock;
                           local_entries += 3;
                         }

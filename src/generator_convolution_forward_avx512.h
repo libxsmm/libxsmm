@@ -55,6 +55,15 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
                                                                    const libxsmm_convolution_forward_descriptor*     i_conv_desc,
                                                                    const unsigned int                                i_kw_unroll );
 
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_code*                           io_generated_code,
+                                                                   const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
+                                                                   const libxsmm_convolution_kernel_config*          i_conv_kernel_config,
+                                                                   const libxsmm_convolution_forward_descriptor*     i_conv_desc,
+                                                                   const unsigned int                                i_kw_unroll );
+
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_avx512_ifmloop_two_rows( libxsmm_generated_code*                           io_generated_code,
                                                                     const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,

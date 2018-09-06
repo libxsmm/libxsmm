@@ -134,3 +134,13 @@ script:
       ./layer_example_f32 1 299 299 ${MB}   3  32 3 3 0 0 2 U T 1 &&
       ./layer_example_f32 1  13  13 ${MB} 192 384 3 3 1 1 1 B L 1;
     done)
+
+  - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&
+   (OMP_NUM_THREADS=$(if [ "" != "${MB_THREADS}" ]; then echo "${MB_THREADS}" | cut -d_ -f1; else echo "0"; fi);
+    CHECK=1 ITERS=1000 MB=${OMP_NUM_THREADS};
+    for KIND in F B U; do
+      echo; echo "--- TEST ResNet-50 (precision=bf16 kind=${KIND} mb=${MB} nt=${OMP_NUM_THREADS})";
+      ./run_resnet50.sh ${MB} ${ITERS} -1 bf16 F L 1 &&
+      ./run_resnet50.sh ${MB} ${ITERS} -1 bf16 B L 1 &&
+      ./run_resnet50.sh ${MB} ${ITERS} -1 bf16 U L 1;
+    done)

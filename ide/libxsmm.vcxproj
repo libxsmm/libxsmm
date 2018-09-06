@@ -33,6 +33,8 @@
     <ClInclude Include="..\include\libxsmm_config.h" />
     <ClInclude Include="..\include\libxsmm_cpuid.h" />
     <ClInclude Include="..\include\libxsmm_dnn.h" />
+    <ClInclude Include="..\include\libxsmm_dnn_fusedbn.h" />
+    <ClInclude Include="..\include\libxsmm_dnn_grucell.h" />
     <ClInclude Include="..\include\libxsmm_dnn_lstmcell.h" />
     <ClInclude Include="..\include\libxsmm_dnn_rnncell.h" />
     <ClInclude Include="..\include\libxsmm_frontend.h" />
@@ -91,6 +93,8 @@
     <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_forward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.h" />
     <ClInclude Include="..\src\libxsmm_dnn_dryruns.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_fusedbatchnorm_backward.h" />
+    <ClInclude Include="..\src\libxsmm_dnn_fusedbatchnorm_forward.h" />
     <ClInclude Include="..\src\libxsmm_dnn_handle.h" />
     <ClInclude Include="..\src\libxsmm_dnn_setup.h" />
     <ClInclude Include="..\src\libxsmm_hash.h" />
@@ -154,6 +158,10 @@
     <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.c" />
     <ClCompile Include="..\src\libxsmm_dnn_dryruns.c" />
     <ClCompile Include="..\src\libxsmm_dnn_elementwise.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_fusedbatchnorm_backward.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_fusedbatchnorm_forward.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_fusedbn.c" />
+    <ClCompile Include="..\src\libxsmm_dnn_grucell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
     <ClCompile Include="..\src\libxsmm_dnn_lstmcell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_rnncell.c" />
@@ -204,6 +212,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_bgemm_convert_b_to_a.tpl.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_bgemm_copyin_a.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
@@ -229,6 +245,14 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_bgemm_copyout_c.tpl.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_bgemm_transpose_b.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
@@ -917,6 +941,22 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_nhwc_custom-rsck_generic.tpl.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_bwd_custom_generic.tpl.c">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_fwd_custom_generic.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>

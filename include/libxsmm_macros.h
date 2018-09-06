@@ -75,6 +75,7 @@
 #define LIBXSMM_FSYMBOL(SYMBOL) LIBXSMM_CONCATENATE(SYMBOL, _)
 #define LIBXSMM_UNIQUE(NAME) LIBXSMM_CONCATENATE(NAME, __LINE__)
 #define LIBXSMM_EXPAND(...) __VA_ARGS__
+#define LIBXSMM_ELIDE(...)
 
 #define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
 #define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (LIBXSMM_VERSION2(MAJOR, MINOR) + (UPDATE))
@@ -264,40 +265,31 @@
 # endif
 #endif
 
-#if defined(LIBXSMM_OPENMP_SIMD)
-# define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(omp simd reduction(EXPRESSION))
-# define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(omp simd collapse(N))
-# define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(omp simd private(A, __VA_ARGS__))
-# define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(omp simd)
-# if defined(LIBXSMM_INTEL_COMPILER)
-#   define LIBXSMM_PRAGMA_NOVECTOR LIBXSMM_PRAGMA(novector)
-# else
-#   define LIBXSMM_PRAGMA_NOVECTOR
+#if !defined(LIBXSMM_INTEL_COMPILER) || (LIBXSMM_INTEL_COMPILER < 9900)
+# if defined(LIBXSMM_OPENMP_SIMD)
+#   define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(omp simd reduction(EXPRESSION))
+#   define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(omp simd collapse(N))
+#   define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(omp simd private(A, __VA_ARGS__))
+#   define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(omp simd)
+# elif defined(LIBXSMM_INTEL_COMPILER)
+#   define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(simd reduction(EXPRESSION))
+#   define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(simd collapse(N))
+#   define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(simd private(A, __VA_ARGS__))
+#   define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(simd)
 # endif
-#elif defined(LIBXSMM_INTEL_COMPILER)
-# define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(simd reduction(EXPRESSION))
-# define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(simd collapse(N))
-# define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(simd private(A, __VA_ARGS__))
-# define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(simd)
-# define LIBXSMM_PRAGMA_NOVECTOR LIBXSMM_PRAGMA(novector)
-#else
+#endif
+#if !defined(LIBXSMM_PRAGMA_SIMD)
 # define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION)
 # define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N)
 # define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...)
 # define LIBXSMM_PRAGMA_SIMD
-# define LIBXSMM_PRAGMA_NOVECTOR
-#endif
-
-#if defined(_OPENMP)
-# define LIBXSMM_PRAGMA_OMP(...) LIBXSMM_PRAGMA(omp __VA_ARGS__)
-#else
-# define LIBXSMM_PRAGMA_OMP(...)
 #endif
 
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_PRAGMA_NONTEMPORAL_VARS(A, ...) LIBXSMM_PRAGMA(vector nontemporal(A, __VA_ARGS__))
 # define LIBXSMM_PRAGMA_NONTEMPORAL LIBXSMM_PRAGMA(vector nontemporal)
 # define LIBXSMM_PRAGMA_VALIGNED LIBXSMM_PRAGMA(vector aligned)
+# define LIBXSMM_PRAGMA_NOVECTOR LIBXSMM_PRAGMA(novector)
 # define LIBXSMM_PRAGMA_FORCEINLINE LIBXSMM_PRAGMA(forceinline)
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG) LIBXSMM_PRAGMA(loop_count min=MIN max=MAX avg=AVG)
 # define LIBXSMM_PRAGMA_UNROLL_AND_JAM(N) LIBXSMM_PRAGMA(unroll_and_jam(N))
@@ -310,6 +302,7 @@
 # define LIBXSMM_PRAGMA_NONTEMPORAL
 # define LIBXSMM_PRAGMA_VALIGNED_VAR(A)
 # define LIBXSMM_PRAGMA_VALIGNED
+# define LIBXSMM_PRAGMA_NOVECTOR
 # define LIBXSMM_PRAGMA_FORCEINLINE
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG)
 # define LIBXSMM_PRAGMA_UNROLL_AND_JAM(N)
@@ -396,7 +389,7 @@
 #define LIBXSMM_ALIGN(POINTER, ALIGNMENT/*POT*/) ((POINTER) + (LIBXSMM_UP2((uintptr_t)(POINTER), ALIGNMENT) - ((uintptr_t)(POINTER))) / sizeof(*(POINTER)))
 #define LIBXSMM_FOLD2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_DIV2((uintptr_t)(POINTER), ALIGNMENT), NPOT)
 
-#if defined(_MSC_VER) /* account for incorrect handling of __VA_ARGS__ */
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) /* account for incorrect handling of __VA_ARGS__ */
 # define LIBXSMM_SELECT_ELEMENT(INDEX1/*one-based*/, .../*elements*/) LIBXSMM_CONCATENATE(LIBXSMM_SELECT_ELEMENT_, INDEX1)LIBXSMM_EXPAND((__VA_ARGS__))
 #else
 # define LIBXSMM_SELECT_ELEMENT(INDEX1/*one-based*/, .../*elements*/) LIBXSMM_CONCATENATE(LIBXSMM_SELECT_ELEMENT_, INDEX1)(__VA_ARGS__)
@@ -430,7 +423,7 @@
  * Please note that the leading dimension (s0) is omitted in the above syntax!
  * TODO: support leading dimension (pitch/stride).
  */
-#if defined(_MSC_VER) /* account for incorrect handling of __VA_ARGS__ */
+#if defined(_MSC_VER) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) /* account for incorrect handling of __VA_ARGS__ */
 # define LIBXSMM_INDEX1(NDIMS, ...) LIBXSMM_CONCATENATE(LIBXSMM_INDEX1_, NDIMS)LIBXSMM_EXPAND((__VA_ARGS__))
 #else
 # define LIBXSMM_INDEX1(NDIMS, ...) LIBXSMM_CONCATENATE(LIBXSMM_INDEX1_, NDIMS)(__VA_ARGS__)
@@ -485,6 +478,17 @@
 # endif
 #endif
 
+#if defined(_OPENMP)
+# define LIBXSMM_PRAGMA_OMP(...) LIBXSMM_PRAGMA(omp __VA_ARGS__)
+#else
+# define LIBXSMM_PRAGMA_OMP(...)
+#endif
+#if defined(_OPENMP) && defined(_MSC_VER) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER)
+# define LIBXSMM_OMP_VAR(A) LIBXSMM_UNUSED(A) /* suppress warning about "unused" variable */
+#else
+# define LIBXSMM_OMP_VAR(A)
+#endif
+
 #if (defined(__GNUC__) || defined(__clang__)) && !defined(__CYGWIN__) && !defined(__MINGW32__)
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT LIBXSMM_ATTRIBUTE(weak_import)
 # define LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE(weak)
@@ -523,7 +527,7 @@
 #else
 # define LIBXSMM_SNPRINTF(S, N, ...) sprintf(S, __VA_ARGS__); LIBXSMM_UNUSED(N)
 #endif
-#if defined(LIBXSMM_NO_SYNC)
+#if (0 == LIBXSMM_SYNC)
 # define LIBXSMM_FLOCK(FILE)
 # define LIBXSMM_FUNLOCK(FILE)
 #else
@@ -594,7 +598,7 @@
 # define inline LIBXSMM_INLINE_KEYWORD
 #endif
 
-#if !defined(LIBXSMM_NO_SYNC) && !defined(_REENTRANT)
+#if (0 != LIBXSMM_SYNC) && !defined(_REENTRANT)
 # define _REENTRANT
 #endif
 

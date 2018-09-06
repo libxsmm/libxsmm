@@ -206,7 +206,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
 #if defined(__EIGEN)
       case 1: {
@@ -256,7 +256,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - bsize * sizeof(ITYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
 #if defined(__EIGEN)
       case 3: {
@@ -306,7 +306,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - asize * sizeof(ITYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
 #if defined(__EIGEN)
       case 5: {
@@ -360,7 +360,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - 2 * csize * sizeof(OTYPE)) / (duration * (1 << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
 #if defined(__EIGEN)
       case 7: {
@@ -416,7 +416,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-      } /*break;*/
+      } /* fallthrough */
 
 #if defined(__EIGEN)
       case 9: {
