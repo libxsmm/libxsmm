@@ -1075,6 +1075,9 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dn
       else {
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_bf16.tpl.c"
       }
+    } else {
+      /* We come here only when we have C=3  */
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_bf16.tpl.c"
     }
   }
 #else /* should not happen */

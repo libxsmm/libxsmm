@@ -1328,6 +1328,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
           }
         }
 
+        /* FIXME: Specific code generation for first layer of resnet50 */
+        if ( handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->use_fastpath == 0) {
+          descriptor.ofw_rb = handle->ofw;
+          descriptor.ofh_rb = handle->ofh;
+          handle->upd_ofh_rb = descriptor.ofh_rb;
+          handle->upd_ofw_rb = descriptor.ofw_rb;
+          descriptor.transpose_ofw_ifm = 0;
+          handle->use_hybrid_wu_parallelism = 0;
+          handle->avoid_input_trans = 1;
+          handle->avoid_output_trans = 1;
+          handle->reduce_weights = 1;
+          handle->weight_copies = handle->desc.threads;
+        }
+
         if (handle->use_fastpath == 1) {
           /* Here starts logic for calculating RB factors for UPD when KS are enabled  */
           int ifw_padded, qfma_padding, kernel_ifw_padded/*, kernel_ofw_padded*/;
@@ -1554,7 +1568,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         /*TRANSPOSE ALL*/
         descriptor.transpose_ofw_ifm = 1;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
-        handle->code_upd[1].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+        if (handle->use_fastpath) {
+          handle->code_upd[1].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+        }
 
         /* enable JIT code path */
         handle->use_upd_generic = 0;
