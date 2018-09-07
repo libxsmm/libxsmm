@@ -524,6 +524,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_execute_st(libxsmm_dnn_
   LIBXSMM_UNUSED( tid );
 
   if (0 != handle) {
+    LIBXSMM_UNUSED(kind);
     /*switch (kind)*/ {
 #if 0
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
