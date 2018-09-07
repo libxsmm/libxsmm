@@ -1207,6 +1207,12 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
         ifneq (0,$(PGI))
           #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
           CTARGET = -tp=nehalem
+        else ifneq (0,$(GCC))
+          ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
+            CTARGET = -msse4.2
+          else
+            CTARGET = -msse3
+          endif
         endif
         CTARGET ?= -msse4.2
       else # perhaps better to use TARGET flag directly
