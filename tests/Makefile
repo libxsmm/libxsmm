@@ -127,9 +127,10 @@ $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o $(BLDDIR)/headero
 	$(LD) -o $@ $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 else # compile headeronly_aux.c as C++ translation unit
 $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o
-	@ln -fs headeronly_aux.c headeronly_aux.cpp
+	@rm -f $(SRCDIR)/headeronly_aux.cpp
+	@$(CP) $(SRCDIR)/headeronly_aux.c $(SRCDIR)/headeronly_aux.cpp
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $(SRCDIR)/headeronly_aux.cpp -o $(BLDDIR)/headeronly_aux-cpp.o
-	$(XLD) -o $@ headeronly_aux-cpp.o $(BLDDIR)/headeronly-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(XLD) -o $@ $(BLDDIR)/headeronly_aux-cpp.o $(BLDDIR)/headeronly-c.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 	@rm -f headeronly_aux.cpp
 endif
 
