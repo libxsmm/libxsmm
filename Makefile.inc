@@ -569,7 +569,7 @@ endif
 CLANG ?= 0
 
 # Make GCC version number available even when not using GCC
-ifneq (0,$(shell echo "$$((1<=$(GCC)))"))
+ifneq (0,$(GCC))
   GCC_VERSION_STRING = $(CXX_VERSION_STRING)
   GCC_VERSION_MAJOR = $(CXX_VERSION_MAJOR)
   GCC_VERSION_MINOR = $(CXX_VERSION_MINOR)
@@ -979,7 +979,7 @@ else # GCC assumed
       ifneq (Darwin,$(UNAME))
         CPEDANTIC += -Wno-long-long
         CSTD = -std=c89
-      else ifneq (0,$(shell echo "$$((1<=$(GCC)))"))
+      else ifneq (0,$(GCC))
         CPEDANTIC += -Wno-long-long
         CSTD = -std=c89
       else # Clang may run into ICEs under OSX
@@ -1023,9 +1023,9 @@ else # GCC assumed
     # e.g. clang does not need/understand below flag
     ifneq (0,$(shell echo "$$((40300<=$(GCC_VERSION)))"))
       CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
-      ifneq (0,$(shell echo "$$((2<=$(GCC)))"))
+      ifneq (,$(filter 2 3,$(GCC)))
         CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
-        ifneq (0,$(shell echo "$$((3<=$(GCC)))"))
+        ifeq (3,$(GCC))
           FCFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
         endif
       endif
@@ -1055,7 +1055,7 @@ else # GCC assumed
     endif
   endif
   ifeq (0,$(COMPATIBLE))
-    ifneq (0,$(shell echo "$$((1<=$(GCC)))"))
+    ifneq (0,$(GCC))
       OMPFLAG = -fopenmp
     else ifneq (Darwin,$(UNAME))
       ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION)))"))
@@ -1182,6 +1182,12 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
       ifneq (0,$(PGI))
         #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
         CTARGET = -tp=nehalem
+      else ifneq (0,$(GCC))
+        ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
+          CTARGET = -msse4.2
+        else
+          CTARGET = -msse3
+        endif
       endif
       CTARGET ?= -msse4.2
     else ifeq (2,$(SSE))
@@ -1387,10 +1393,10 @@ ifneq (,$(strip $(LIBRT) $(LIBDL)))
 endif
 ifeq (Darwin,$(UNAME))
   # avoid Homebrew based GCC AS; apply the flag only to the non-GCC components
-  ifneq (0,$(shell echo "$$((1<=$(GCC)))"))
+  ifneq (0,$(GCC))
     LDFLAGS += -Wa,-q
     CFLAGS += -Wa,-q
-    ifneq (0,$(shell echo "$$((2<=$(GCC)))"))
+    ifneq (,$(filter 2 3,$(GCC)))
       CXXFLAGS += -Wa,-q
     endif
   endif
