@@ -30,7 +30,7 @@
 ******************************************************************************/
 #include "magazine.h"
 
-#if !defined(__BLAZE) && 0
+#if !defined(__BLAZE) && 1
 # define __BLAZE
 #endif
 
@@ -147,6 +147,15 @@ int main(int argc, char* argv[])
   }
   printf("%.1f ms\n", 1000.0 * timer.total());
 
+  { /* calculate checksum */
+    double check = 0;
+    printf("\n%.1f (check)\n", check);
+    for (int i = 0; i < size; ++i) {
+      const double cn = norm(pc + STREAM_C(i * nc), m, n, ldc);
+      if (check < cn) check = cn;
+    }
+    printf("\n%f (check)\n", check);
+  }
   free(va);
   free(vb);
   free(vc);
