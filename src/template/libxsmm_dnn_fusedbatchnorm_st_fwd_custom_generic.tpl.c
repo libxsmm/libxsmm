@@ -153,6 +153,8 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     for ( v=0; v < nFmBlock; v++ ) {
       lcl_sum_ptr[v]   = (element_stats_type)0;
       lcl_sumsq_ptr[v] = (element_stats_type)0;
+      bmean_ptr[v] = (element_stats_type)0;
+      brstd_ptr[v] = (element_stats_type)0;
     }
 
     for ( img=0; img < nImg; img++ ) {

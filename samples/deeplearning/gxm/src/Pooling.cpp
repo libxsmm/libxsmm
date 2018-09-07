@@ -199,6 +199,9 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
   gparams_.algType = p->get_algo_type();
   gparams_.num_threads = e->get_num_threads();
 
+  //get global scratch tensor buffer
+  tenScratchData_ = e->getScratchBuffer();
+
   eptr_ = e;
 
   configure(p->get_compute_engine());
@@ -234,6 +237,7 @@ void PoolingNode::forwardPropagate()
   impl->set_top_compute_engine(top_compute_engine_);
   impl->set_next_node_type(next_ntype_);
   impl->set_node_name(nname_);
+  impl->set_scratch_buffer(tenScratchData_);
 
   if(first_fp && gparams_.data_type == DT_DFP16)
   {

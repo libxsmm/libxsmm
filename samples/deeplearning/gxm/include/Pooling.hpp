@@ -304,6 +304,7 @@ class PoolingNode : public NNNode
     PoolImplParams gparams_;
     TensorBuf *tenBotDiff_, *tenBotData_;
     TensorBuf *tenTopData_, *tenTopDiff_;
+    TensorBuf *tenScratchData_;
     Shape ts_;
 
     int count_;

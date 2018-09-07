@@ -37,6 +37,7 @@
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
+#include <math.h>
 
 #define CHKERR_LIBXSMM_DNN(A) { const int chkerr_libxsmm_dnn_ = A; if (LIBXSMM_DNN_SUCCESS != chkerr_libxsmm_dnn_) { \
   fprintf(stderr, "%s\n", libxsmm_dnn_get_error(chkerr_libxsmm_dnn_)); global_status = chkerr_libxsmm_dnn_; } \
@@ -438,8 +439,8 @@ int main(int argc, char* argv[])
   stride_h = stride;
 
   /* deriving some values for naive code */
-  ofh = (ifh + 2 * pad_h - kh) / stride_h + 1;
-  ofw = (ifw + 2 * pad_w - kw) / stride_w + 1;
+  ofh = (int)(ceil((float)(ifh + 2 * pad_h - kh) / (float)stride_h)) + 1;
+  ofw = (int)(ceil((float)(ifw + 2 * pad_w - kw) / (float)stride_w)) + 1;
   ifhp = ifh + 2 * pad_h_in;
   ifwp = ifw + 2 * pad_w_in;
   ofhp = ofh + 2 * pad_h_out;
