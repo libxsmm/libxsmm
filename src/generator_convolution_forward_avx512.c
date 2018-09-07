@@ -663,7 +663,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
   unsigned int step_size = 0;
   unsigned int l_kw_unroll;
   unsigned short  perm_array[32];
-  int pi; 
+  int pi;
 
   prefetch_type_weight = LIBXSMM_X86_INSTR_PREFETCHT1;
   step_size = 1;
@@ -698,7 +698,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
             i_conv_kernel_config->vector_name,
             0,
             0,
-            0);  
+            0);
 
         libxsmm_x86_instruction_vec_move( io_generated_code,
             i_conv_kernel_config->instruction_set,
@@ -716,7 +716,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
           i_conv_kernel_config->vector_name,
           0,
           2,
-          0);        
+          0);
 
       /* vpslld  */
       libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
@@ -754,7 +754,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
         l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
         l_scale = 0;
         l_disp = l_k * 2 * i_conv_kernel_config->datatype_size_in
-          + l_kw_unroll * 3 * i_conv_kernel_config->datatype_size_in 
+          + l_kw_unroll * 3 * i_conv_kernel_config->datatype_size_in
           + l_n * 3 * i_conv_kernel_config->datatype_size_in * i_conv_desc->stride_w;
 
         if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {

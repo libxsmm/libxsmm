@@ -80,7 +80,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
       /* create barrier */
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
       /* calculate scratch size for batchstats */
-      handle->scratch_size = (sizeof(float) * (handle->desc.C + handle->desc.K) * handle->desc.N);
+      handle->scratch_size = (sizeof(float) * ((size_t)handle->desc.C + handle->desc.K) * handle->desc.N);
     } else {
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
     }
@@ -524,7 +524,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_execute_st(libxsmm_dnn_
   LIBXSMM_UNUSED( tid );
 
   if (0 != handle) {
-    switch (kind) {
+    /*switch (kind)*/ {
 #if 0
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
@@ -548,7 +548,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_execute_st(libxsmm_dnn_
         }
       } break;
 #endif
-      default: {
+      /*default:*/ {
         status = LIBXSMM_DNN_ERR_INVALID_KIND;
       }
     }

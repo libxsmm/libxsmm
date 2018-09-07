@@ -1500,8 +1500,8 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
   } else {
     /* shouldn't happen */
     return;
-  }  
-  
+  }
+
   for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb; l_k_1++) {
     unsigned int pipeline_vperms = (use_lp_kernel == 1 && (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL || i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE)) ? 1 : 0;
     unsigned int input_reg_to_use;
@@ -1850,16 +1850,19 @@ void libxsmm_generator_convolution_weight_update_avx512_c3k64s2_bf16_all_pixels_
   unsigned int input_disp;
   unsigned int output_disp;
   unsigned int dst_scratch_reg = i_gp_reg_mapping->gp_reg_help_4;
-  unsigned int input_reg_to_use;
+  unsigned int input_reg_to_use = LIBXSMM_X86_GP_REG_UNDEF;
   unsigned int l_disp;
   unsigned int mem_offset;
   unsigned int n_acc_regs = 12;
   unsigned int reg_X;
+#if 0
   unsigned int reg_oj_loop = LIBXSMM_X86_GP_REG_R12;
-
+#endif
   /* Effective Layout: C0: W0W1, C1 W0W1, C2 W0W1, C0 W2W3, C1 W2W3, C2 W2W3  */
   unsigned short  inp_perm_array[32] = {0,6,  1,7,  2,8,  12,18,  13,19,  14,20,  21,21,  21,21,  21,21,  21,21,  21,21,  21,21,  21,21,  21,21,  21,21,  21,21 };
   unsigned short  out_perm_array[32] = {0,16,  1,17,  2,18,  3,19,  4,20,  5,21,  6,22,  7,23,  8,24,  9,25,  10,26,  11,27,  12,28,  13,29,  14,30,  15,31 };
+
+  LIBXSMM_UNUSED(loop_label_tracker);
 
   /* Load  permute mask for input to zmm4  */
   libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
@@ -1948,7 +1951,7 @@ void libxsmm_generator_convolution_weight_update_avx512_c3k64s2_bf16_all_pixels_
             0, 0, 0, 1 );
       }
 
-      if (l_k_2 % 4 == 0) input_reg_to_use = ((l_k_2+4) % 8 == 4) ? i_gp_reg_mapping->gp_reg_help_4 : i_gp_reg_mapping->gp_reg_help_6;  
+      if (l_k_2 % 4 == 0) input_reg_to_use = ((l_k_2+4) % 8 == 4) ? i_gp_reg_mapping->gp_reg_help_4 : i_gp_reg_mapping->gp_reg_help_6;
 
       for (ofmb = 0; ofmb < 4; ofmb++) {
         /* Permute 16 ofms and 2 pixels of the proper vnni format  */
@@ -1996,7 +1999,7 @@ void libxsmm_generator_convolution_weight_update_avx512_c3k64s2_bf16_all_pixels_
             0,
             LIBXSMM_X86_VEC_REG_UNDEF,
             16);
-        
+
         for ( l_n = 0; l_n < 3; l_n++) {
           l_disp = l_n * step_size * i_conv_kernel_config->datatype_size_in
             + ((l_k_2%4)/2) * 3 * step_size * i_conv_kernel_config->datatype_size_in;

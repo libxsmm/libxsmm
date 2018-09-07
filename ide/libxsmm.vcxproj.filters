@@ -258,6 +258,9 @@
     <ClInclude Include="..\src\libxsmm_dnn_fusedbatchnorm_forward.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\libxsmm_dnn_fullyconnected.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -835,6 +838,9 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_bgemm_convert_b_to_a.tpl.c">
       <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_fullyconnected.c">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

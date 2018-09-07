@@ -253,7 +253,7 @@ if (handle->reduce_weights) {
     const int total_filter_size = reduce_work * handle->ofmblock;
     libxsmm_bfloat16 *dst_weight_ptr = (libxsmm_bfloat16*)handle->grad_filter->data;
     __m512 remote_weight;
-    __m512 sum_weight;  
+    __m512 sum_weight;
     for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
       sum_weight =  _mm512_setzero_ps();
       for ( i = 0; i < handle->desc.threads; i++ ) {
