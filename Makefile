@@ -268,7 +268,7 @@ INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRE
 NINDICES = $(words $(INDICES))
 
 HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
-          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c $(ROOTDIR)/$(SRCDIR)/libxsmm_gemm_diff.c \
+          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c \
           $(ROOTDIR)/include/libxsmm_bgemm.h \
           $(ROOTDIR)/include/libxsmm_cpuid.h \
           $(ROOTDIR)/include/libxsmm_dnn.h \

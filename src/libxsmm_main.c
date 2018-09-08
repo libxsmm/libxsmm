@@ -28,7 +28,6 @@
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_gemm_diff.h"
 #include "libxsmm_trace.h"
 #include "libxsmm_trans.h"
 #include "libxsmm_gemm.h"
@@ -480,7 +479,6 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   /* release scratch memory pool */
   libxsmm_release_scratch();
   /* release global services */
-  libxsmm_gemm_diff_finalize();
   libxsmm_hash_finalize();
 
 #if (0 != LIBXSMM_SYNC)
@@ -608,7 +606,6 @@ LIBXSMM_API_INLINE void internal_init(void)
       internal_registry_keys = (libxsmm_kernel_info*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_kernel_info));
       if (0 != new_registry && 0 != internal_registry_keys) {
         const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
-        libxsmm_gemm_diff_init(libxsmm_target_archid);
         libxsmm_trans_init(libxsmm_target_archid);
         libxsmm_hash_init(libxsmm_target_archid);
         libxsmm_dnn_init(libxsmm_target_archid);
@@ -1575,7 +1572,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
   unsigned int cache_index;
   assert(0 != descriptor);
   /* search small cache starting with the last hit on record */
-  cache_index = libxsmm_gemm_diffn(descriptor, &cache.keys, cache.hit, LIBXSMM_CAPACITY_CACHE, LIBXSMM_DESCRIPTOR_MAXSIZE);
+  cache_index = libxsmm_diff_npot(descriptor, &cache.keys, LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, LIBXSMM_CAPACITY_CACHE);
   if ((LIBXSMM_CAPACITY_CACHE) > cache_index && cache.id == internal_teardown) { /* cache hit, and valid */
     flux_entry = cache.code[cache_index];
     cache.hit = cache_index;
@@ -1611,7 +1608,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
       LIBXSMM_LOCK_RELREAD(LIBXSMM_REG1LOCK, &internal_reglock);
 #endif
       if ((0 != flux_entry.ptr_const || 1 == mode) && 2 > mode) { /* check existing entry further */
-        diff = 0 != flux_entry.ptr_const ? libxsmm_gemm_diff(descriptor, &internal_registry_keys[i].xgemm) : 1;
+        diff = (NULL != flux_entry.ptr_const ? libxsmm_diff(descriptor, &internal_registry_keys[i].xgemm, LIBXSMM_DESCRIPTOR_MAXSIZE) : 1);
         if (0 != diff) { /* search for code version */
           if (0 == mode) { /* transition to higher mode */
             i0 = i; /* keep current position on record */

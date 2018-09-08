@@ -69,6 +69,7 @@ class FusedBNormImpl
     int bot_compute_engine=-1;
     bool bpdone=false;
     string nname;
+    TensorBuf* scratchp;
 
   public:
     FusedBNormImpl(FusedBNormImplParams* gp_, int engine_): gp(gp_), engine(engine_) {}
@@ -78,6 +79,7 @@ class FusedBNormImpl
     void set_bpdone(int b) { bpdone = b; }
     bool get_bpdone() { return bpdone; }
     void set_node_name(string s) { nname = s; }
+    void set_scratch_buffer(TensorBuf* sb) { scratchp = sb; }
 
     // Assume external threading, e.g., #pragma omp
    virtual void forwardPropagate(vector<TensorBuf *> inp, TensorBuf* gammap, TensorBuf* betap, float* gmeanp, float* grstdp, TensorBuf *outp, int tid)

@@ -316,6 +316,7 @@ class FusedBNormNode : public NNNode
     TensorBuf *tenShiftData_, *tenShiftDiff_;
     TensorBuf *tenScaleInc_, *tenShiftInc_;
     TensorBuf *tenMeanData_, *tenRstdevData_;
+    TensorBuf *tenScratchData_;
 
     float *gmean_, *grstd_, eps, lr_mult_, decay_mult_;
     string scale_, shift_, mean_, rstdev_;

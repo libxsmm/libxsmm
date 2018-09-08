@@ -37,298 +37,151 @@
 
 #define VLEN 16
 
-void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *maskp, int tid)
+PoolXSMM::PoolXSMM(PoolImplParams *gp, int engine) : PoolImpl(gp, engine)
 {
-  float *inp = (float*)inpb->getBuffer();
-  float *outp = (float*)outpb->getBuffer();
-  float *outpp = (float*)outpb->getPrivBuffer();
+  pooling_desc.N = gp->batch_size;
+  pooling_desc.C = gp->nInput;
+  pooling_desc.H = gp->iHeight;
+  pooling_desc.W = gp->iWidth;
+  pooling_desc.u = gp->stride_h;
+  pooling_desc.v = gp->stride_w;
+  pooling_desc.R = gp->kh;
+  pooling_desc.S = gp->kw;
+  pooling_desc.pad_h = gp->pad_h;
+  pooling_desc.pad_w = gp->pad_w;
+  pooling_desc.pad_h_in = gp->ipad_h;
+  pooling_desc.pad_w_in = gp->ipad_w;
+  pooling_desc.pad_h_out = gp->pad_h;
+  pooling_desc.pad_w_out = gp->pad_w;
+  pooling_desc.threads = gp->num_threads;
+  pooling_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
+  pooling_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+  pooling_desc.datatype_mask = LIBXSMM_DNN_DATATYPE_I32;
+  pooling_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
 
-  int nImg = gp->batch_size;
-  int nIfm = gp->nInput;
-  int nBIfm = gp->nInput/VLEN;
-  int nOfm = gp->nOutput;
-  int nBOfm = gp->nOutput/VLEN;
-  int ifh  = gp->iHeight;
-  int ifw  = gp->iWidth;
-  int ofh  = gp->oHeight;
-  int ofw  = gp->oWidth;
-  int l_pad = gp->pad_w;
-  int t_pad = gp->pad_h;
-  int kh    = gp->kh;
-  int kw    = gp->kw;
-  int stride_h  = gp->stride_h;
-  int stride_w  = gp->stride_w;
-  int pool = gp->pool_mode;
-  int threads = gp->num_threads;
+  if(gp->pool_mode == MAX)
+    pooling_desc.pooling_type = LIBXSMM_DNN_POOLING_MAX;
+  else if(gp->pool_mode == AVE)
+    pooling_desc.pooling_type = LIBXSMM_DNN_POOLING_AVG;
 
-  int lp_ipad = gp->ipad_w;
-  int tp_ipad = gp->ipad_h;
-  int tp_opad = gp->opad_h;
-  int lp_opad = gp->opad_w;
+  libxsmm_handle = libxsmm_dnn_create_pooling( pooling_desc, &status );
+  CHKERR_LIBXSMM_DNN( status );
+}
 
-  bool needs_conversion = false;
+void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *mask, int tid)
+{
+  void *input = inpb->getBuffer();
+  void *output = outpb->getBuffer();
 
-  if(t_pad || l_pad)
+  if(libxsmm_input == NULL && libxsmm_mask == NULL && libxsmm_output == NULL)
   {
-    if ((ofh - 1) * stride_h >= ifh + t_pad) ofh--;
-    if ((ofw - 1) * stride_w >= ifw + l_pad) ofw--;
+    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, &status );
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_input  = libxsmm_dnn_link_tensor( libxsmm_layout, input, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_input,     LIBXSMM_DNN_REGULAR_INPUT ) );
+
+    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT, &status );
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_output  = libxsmm_dnn_link_tensor( libxsmm_layout, output, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_output,    LIBXSMM_DNN_REGULAR_OUTPUT ) );
+
+    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_POOLING_MASK, &status );
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_mask  = libxsmm_dnn_link_tensor( libxsmm_layout, (void*)mask, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_mask  ,    LIBXSMM_DNN_POOLING_MASK ) );
+
+    if(scratch == NULL)
+    {
+      long long mysize = libxsmm_dnn_pooling_get_scratch_size( libxsmm_handle, &status );
+      CHKERR_LIBXSMM_DNN( status );
+      scratch = libxsmm_aligned_scratch( mysize, 2097152 );
+      scratchp->setBuffer(scratch);
+      scratchp->setBufferSize(mysize);
+
+#ifdef USE_MLSL
+      if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
+#endif
+        printf("%s allocated %lld bytes for scratch @ %p\n",nname.c_str(), mysize, scratch);
+    }
+    else
+    {
+      long long int ssize = scratchp->getBufferSize();
+      long long int mysize = libxsmm_dnn_pooling_get_scratch_size( libxsmm_handle, &status );
+
+      CHKERR_LIBXSMM_DNN( status );
+
+      if(ssize < mysize)
+      {
+        libxsmm_free(scratch);
+        scratch = (void*)libxsmm_aligned_malloc(mysize, 2097152);
+        scratchp->setBuffer(scratch);
+        scratchp->setBufferSize(mysize);
+#ifdef USE_MLSL
+        if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
+#endif
+          printf("%s allocated %lld bytes for scratch @ %p, prev size was %lld bytes\n",nname.c_str(), mysize, scratch, ssize);
+      }
+    }
   }
 
-  __assume_aligned(inp,64);
-  __assume_aligned(outp,64);
-  __assume_aligned(maskp,64);
-
-  float (* __restrict input )[nBOfm][ifh][ifw][VLEN] = (float (*)[*][*][*][VLEN])(inp + (tp_ipad * ifw + lp_ipad) * VLEN);
-  float (* __restrict output)[nBOfm][ofh][ofw][VLEN] = (float (*)[*][*][*][VLEN])(outp + (tp_opad *ofw + lp_opad) * VLEN);
-
-  switch(pool)
+  if(!updated_scratch)
   {
-    case MAX:
-      {
-        int (* __restrict mask)[nBOfm][ofh][ofw][VLEN] = (int (*)[*][*][*][VLEN])maskp;
-
-#ifdef _OPENMP
-#pragma omp parallel for collapse(2)
-#endif
-        for(int img = 0; img < nImg; img++) {
-          for(int ofm1=0; ofm1 < nBOfm; ofm1++) {
-            float lcl_buffer[ofh*ofw*VLEN] __attribute__((aligned(64)));
-            float (* __restrict lcl_output)[ofw][VLEN] = (float (*)[*][VLEN])lcl_buffer;
-#pragma simd
-#pragma vector aligned
-            for(int i=0; i<ofh*ofw*VLEN; i++) {
-              lcl_buffer[i] = -FLT_MAX;
-            }
-            for(int oj=0; oj < ofh; oj++) {
-              int ij = oj * stride_h - t_pad;
-              for(int oi=0; oi < ofw; oi++) {
-                int ii = oi * stride_w - l_pad;
-
-                for(int kj = 0; kj < kh; kj++) {
-                  if(ij+kj < 0 || ij+kj >= ifh) continue;
-                  for(int ki = 0; ki < kw; ki++) {
-                    if(ii+ki < 0 || ii+ki >= ifw) continue;
-
-                    int index = img*nBOfm*ifh*ifw*VLEN + ofm1*ifh*ifw*VLEN + (ij+kj)*ifw*VLEN + (ii + ki)*VLEN;
-#pragma simd
-                    for(int ofm2=0; ofm2 < VLEN; ofm2++) {
-                      if(input[img][ofm1][ij+kj][ii+ki][ofm2] > lcl_output[oj][oi][ofm2])
-                      {
-                        lcl_output[oj][oi][ofm2] = input[img][ofm1][ij+kj][ii+ki][ofm2];
-                        mask[img][ofm1][oj][oi][ofm2] = index + ofm2;
-                      }
-                    }
-                  }
-                }
-              }
-            }
-            for(int oj=0; oj < ofh; oj++) {
-              for(int oi=0; oi < ofw; oi++) {
-#pragma simd
-#pragma vector aligned
-#pragma vector nontemporal
-                for(int ofm2=0; ofm2 < VLEN; ofm2++) {
-                  output[img][ofm1][oj][oi][ofm2] = lcl_output[oj][oi][ofm2];
-                }
-              }
-            }
-          }
-        }
-      }
-      break;
-
-
-    case AVE:
-      {
-        float recp_pool_size = 1.0/(kh*kw);
-        float val;
-
-#ifdef _OPENMP
-#pragma omp parallel for collapse(2)
-#endif
-        for(int img = 0; img < nImg; img++) {
-          for(int ofm1 = 0; ofm1 < nBOfm; ofm1++) {
-            float lcl_buffer[ofh*ofw*VLEN] __attribute__((aligned(64)));
-            float (* __restrict lcl_output)[ofw][VLEN] = (float (*)[*][VLEN])lcl_buffer;
-#pragma simd
-#pragma vector aligned
-            for(int i=0; i<ofh*ofw*VLEN; i++) {
-              lcl_buffer[i] = 0.0f;
-            }
-            for(int oj=0; oj < ofh; oj++) {
-              int ij = oj * stride_h - t_pad;
-              for(int oi=0; oi < ofw; oi++) {
-                int ii = oi * stride_w - l_pad;
-
-                for(int kj = 0; kj < kh; kj++) {
-                  if(ij+kj < 0 || ij+kj >= ifh) continue;
-                  for(int ki = 0; ki < kw; ki++) {
-                    if(ii+ki < 0 || ii+ki >= ifw) continue;
-#pragma simd
-                    for(int ofm2=0; ofm2 < VLEN; ofm2++)
-                      lcl_output[oj][oi][ofm2] += input[img][ofm1][ij+kj][ii+ki][ofm2];
-                  }
-                }
-              }
-            }
-
-            for(int oj=0; oj < ofh; oj++) {
-              for(int oi=0; oi < ofw; oi++) {
-#pragma simd
-#pragma vector aligned
-#pragma vector nontemporal
-                for(int ofm2=0; ofm2 < VLEN; ofm2++) {
-                  output[img][ofm1][oj][oi][ofm2] = lcl_output[oj][oi][ofm2] * recp_pool_size;
-                }
-              }
-            }
-          }
-        }
-      }
-      break;
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_scratch( libxsmm_handle, scratch ) );
+    updated_scratch = true;
   }
 
-  if(gp->data_type == DT_DFP16)
+#if defined(_OPENMP)
+#pragma omp parallel
+#endif
   {
-    short* i16_outp = (short*)outpb->getLPBuffer();
-    unsigned char scf_output;
-    libxsmm_dnn_quantize_act((float*)outpb->getBuffer(), i16_outp, nImg, nOfm, ofh, ofw, 16, 8, 2, 2, &scf_output, LIBXSMM_DNN_QUANT_FPHW_ROUND);
-    outpb->setLPSF(scf_output);
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
   }
 }
 
-void PoolXSMM::backPropagate(TensorBuf *deloutpb, int *maskp, TensorBuf *delinpb, int tid)
+void PoolXSMM::backPropagate(TensorBuf *deloutpb, int *mask, TensorBuf *delinpb, int tid)
 {
-  float *deloutp = (float*)deloutpb->getBuffer();
-  float *delinp = (float*)delinpb->getBuffer();
-  float *deloutpp = (float*)deloutpb->getPrivBuffer();
+  void *deloutput = deloutpb->getBuffer();
+  void *delinput = delinpb->getBuffer();
 
-  int nImg  = gp->batch_size;
-  int nIfm = gp->nInput;
-  int nOfm = gp->nOutput;
-  int nBIfm = nIfm/VLEN;
-  int nBOfm = nOfm/VLEN;
-  int ifh  = gp->iHeight;
-  int ifw  = gp->iWidth;
-  int ofh  = gp->oHeight;
-  int ofw  = gp->oWidth;
-  int l_pad = gp->pad_w;
-  int t_pad = gp->pad_h;
-  int kh    = gp->kh;
-  int kw    = gp->kw;
-  int stride_h  = gp->stride_h;
-  int stride_w  = gp->stride_w;
-  int pool = gp->pool_mode;
-  int threads = gp->num_threads;
-
-  int lp_ipad = gp->ipad_w;
-  int tp_ipad = gp->ipad_h;
-  int tp_opad = gp->opad_h;
-  int lp_opad = gp->opad_w;
-
-  bool needs_conversion = false;
-
-  if(t_pad || l_pad)
+  if(scratch != scratchp->getBuffer())
   {
-    if ((ofh - 1) * stride_h >= ifh + t_pad) ofh--;
-    if ((ofw - 1) * stride_w >= ifw + l_pad) ofw--;
+    scratch = scratchp->getBuffer();
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_scratch( libxsmm_handle, scratch ) );
   }
 
-  __assume_aligned(delinp,64);
-  __assume_aligned(deloutp,64);
-  __assume_aligned(maskp,64);
-
-  switch(pool)
+  if(libxsmm_deloutput == NULL && libxsmm_delinput == NULL)
   {
-    case MAX:
-      {
-        float (* __restrict del_output)[nBOfm][ofh][ofw][VLEN] = (float (*)[*][*][*][VLEN])(deloutp + (tp_opad *ofw + lp_opad) * VLEN);
-        int (* __restrict mask)[nBOfm][ofh][ofw][VLEN] = (int (*)[*][*][*][VLEN])maskp;
+    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT, &status );
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_deloutput  = libxsmm_dnn_link_tensor( libxsmm_layout, deloutput, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_deloutput, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
 
-#ifdef _OPENMP
-#pragma omp parallel for collapse(2)
-#endif
-        for(int img = 0; img < nImg; img++) {
-          for(int ifm1=0; ifm1 < nBIfm; ifm1++) {
-            int idx_mask_offset = img*nBOfm*ifh*ifw*VLEN + ifm1*ifh*ifw*VLEN;
-            int idx_input_offset = img*nBIfm*ifh*ifw*VLEN + ifm1*ifh*ifw*VLEN;
-            float lcl_buffer[ifh*ifw*VLEN] __attribute__((aligned(64)));
-#pragma simd
-#pragma vector aligned
-            for(int i=0; i<ifh*ifw*VLEN; i++) {
-              lcl_buffer[i] = 0.0f;
-            }
-            for(int oj=0; oj < ofh; oj++) {
-              for(int oi=0; oi < ofw; oi++) {
-#pragma simd
-                for(int ifm2 = 0; ifm2 <VLEN; ifm2++) {
-                  /*delinp[mask[img][ifm1][oj][oi][ifm2]] += del_output[img][ifm1][oj][oi][ifm2];*/
-                  lcl_buffer[(mask[img][ifm1][oj][oi][ifm2])-idx_mask_offset] += del_output[img][ifm1][oj][oi][ifm2];
-                }
-              }
-            }
-#pragma simd
-#pragma vector aligned
-#pragma vector nontemporal
-            for(int i=0; i<ifh*ifw*VLEN; i++) {
-              delinp[idx_input_offset + i] = lcl_buffer[i];
-            }
-          }
-        }
-      }
-      break;
-
-    case AVE:
-      {
-        float (* __restrict del_input )[nBIfm][ifh][ifw][VLEN] = (float (*)[*][*][*][VLEN])(delinp + (tp_ipad * ifw + lp_ipad) * VLEN);
-        float (* __restrict del_output)[nBOfm][ofh][ofw][VLEN] = (float (*)[*][*][*][VLEN])(deloutp + (tp_opad *ofw + lp_opad) * VLEN);
-
-        float recp_pool_size = 1.0/(kh*kw);
-
-#ifdef _OPENMP
-#pragma omp parallel for collapse(2)
-#endif
-        for(int img = 0; img < nImg; img++) {
-          for(int ifm1 = 0; ifm1 < nBIfm; ifm1++) {
-            float lcl_buffer[ifh*ifw*VLEN] __attribute__((aligned(64)));
-            float (* __restrict lcl_input)[ifw][VLEN] = (float (*)[*][VLEN])lcl_buffer;
-            int idx_input_offset = img*nBIfm*ifh*ifw*VLEN + ifm1*ifh*ifw*VLEN;
-#pragma simd
-#pragma vector aligned
-            for(int i=0; i<ifh*ifw*VLEN; i++) {
-              lcl_buffer[i] = 0.0f;
-            }
-            for(int oj=0; oj < ofh; oj++) {
-              int ij = oj*stride_h - t_pad;
-              for(int oi=0; oi < ofw; oi++) {
-                int ii = oi*stride_w - l_pad;
-                for(int kj=0; kj < kh; kj++) {
-                  if(ij+kj < 0 || ij+kj >= ifh) continue;
-                  for(int ki=0; ki < kw; ki++) {
-                    if(ii+ki < 0 || ii+ki >= ifw) continue;
-#pragma simd
-                    for(int ifm2 = 0; ifm2 <VLEN; ifm2++) {
-                      lcl_input[ij+kj][ii+ki][ifm2] += del_output[img][ifm1][oj][oi][ifm2] * recp_pool_size;
-                    }
-                  }
-                }
-              }
-            }
-            for(int ij=0; ij < ifh; ij++) {
-              for(int ii=0; ii < ifw; ii++) {
-#pragma simd
-#pragma vector aligned
-#pragma vector nontemporal
-                for(int ifm2 = 0; ifm2 <VLEN; ifm2++) {
-                  del_input[img][ifm1][ij][ii][ifm2] = lcl_input[ij][ii][ifm2];
-                }
-              }
-            }
-          }
-        }
-      }
-      break;
+    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT, &status );
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_delinput  = libxsmm_dnn_link_tensor( libxsmm_layout, delinput, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_delinput,  LIBXSMM_DNN_GRADIENT_INPUT ) );
   }
 
+#if defined(_OPENMP)
+#pragma omp parallel
+#endif
+  {
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWD, 0, tid ) );
+  }
   delinpb->setLayoutType(LIBXSMM_CUSTOM_LAYOUT);
 }

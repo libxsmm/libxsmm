@@ -66,7 +66,7 @@ all: $(XFILES)
 compile: $(OBJECTS) $(FTNOBJS)
 
 $(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/layer_example_f32-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $(BLDDIR)/layer_example_f32-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -lm
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

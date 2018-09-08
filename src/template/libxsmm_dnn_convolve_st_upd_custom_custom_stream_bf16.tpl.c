@@ -41,10 +41,9 @@ int OFWP = handle->ofwp+handle->output_lp_padding;
 int ofm1, ifm1, i, j;
 
 /* transpose, copy and reduce work-related variables  */
-int reduce_work = BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*(handle->ifmblock_hp/2);
-if (handle->ifmblock == 3) {
-  reduce_work = BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*handle->ifmblock;
-}
+const int reduce_work = (handle->ifmblock != 3)
+  ? (BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*(handle->ifmblock_hp/2))
+  : (BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*handle->ifmblock);
 const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce_work / handle->desc.threads) : (reduce_work / handle->desc.threads) + 1;
 const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
 const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
@@ -119,10 +118,10 @@ if (handle->reduce_weights == 0) {
     int ofms_per_thread = (BLOCKSOFM+n_ofm_teams-1)/n_ofm_teams;
     int my_ifm_id = ltid/n_ofm_teams;
     int my_ofm_id = ltid%n_ofm_teams;
-    int my_ifm_start =  LIBXSMM_MIN(my_ifm_id * ifms_per_thread, BLOCKSIFM);
-    int my_ifm_end =  LIBXSMM_MIN((my_ifm_id+1) * ifms_per_thread, BLOCKSIFM);
-    int my_ofm_start =  LIBXSMM_MIN(my_ofm_id * ofms_per_thread, BLOCKSOFM);
-    int my_ofm_end =  LIBXSMM_MIN((my_ofm_id+1) * ofms_per_thread, BLOCKSOFM);
+    int my_ifm_start = LIBXSMM_MIN(my_ifm_id * ifms_per_thread, BLOCKSIFM);
+    int my_ifm_end   = LIBXSMM_MIN((my_ifm_id+1) * ifms_per_thread, BLOCKSIFM);
+    int my_ofm_start = LIBXSMM_MIN(my_ofm_id * ofms_per_thread, BLOCKSOFM);
+    int my_ofm_end   = LIBXSMM_MIN((my_ofm_id+1) * ofms_per_thread, BLOCKSOFM);
     int ki, kj;
     element_filter_type *zero_ptr;
 
@@ -170,8 +169,8 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (handle->reduce_weights) {
   if (handle->desc.C ==3) {
-    __m512 zero_reg =  _mm512_setzero_ps();
-    weight_base =  ((float*)handle->scratch4) + (ltid * BLOCKSOFM * BLOCKSIFM * handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
+    __m512 zero_reg = _mm512_setzero_ps();
+    weight_base = ((float*)handle->scratch4) + (ltid * BLOCKSOFM * BLOCKSIFM * handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
     /* We DO USE private weights, initialize them to zero...  */
 #if defined(LIBXSMM_INTRINSICS_AVX512)
     for (i=0; i<reduce_work; i++) {
@@ -252,16 +251,15 @@ if (handle->reduce_weights) {
   if (handle->desc.C == 3) {
     const int total_filter_size = reduce_work * handle->ofmblock;
     libxsmm_bfloat16 *dst_weight_ptr = (libxsmm_bfloat16*)handle->grad_filter->data;
-    __m512 remote_weight;
-    __m512 sum_weight;
     for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
-      sum_weight =  _mm512_setzero_ps();
+      __m512 sum_weight = _mm512_setzero_ps();
+      __m256i vbfp16;
       for ( i = 0; i < handle->desc.threads; i++ ) {
-        float *remote_weight_ptr = ((float*)handle->scratch4) + (i*total_filter_size);
-        remote_weight = LIBXSMM_INTRINSICS_MM512_LOAD_PS( ((float*) remote_weight_ptr) + j*16);
-        sum_weight =  _mm512_add_ps( remote_weight, sum_weight);
+        const float *const remote_weight_ptr = ((float*)handle->scratch4) + (i*total_filter_size);
+        const __m512 remote_weight = LIBXSMM_INTRINSICS_MM512_LOAD_PS(remote_weight_ptr + j*16);
+        sum_weight = _mm512_add_ps( remote_weight, sum_weight);
       }
-      __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( sum_weight ), 16));
+      vbfp16 = _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( sum_weight ), 16));
       _mm256_storeu_si256( (__m256i*)( ((libxsmm_bfloat16*)dst_weight_ptr)+j*16), vbfp16 );
     }
   } else {
@@ -294,7 +292,7 @@ if (handle->reduce_weights) {
   const int transform_thr_end = ((ltid + 1) * transform_chunksize < transform_work) ? ((ltid + 1) * transform_chunksize) : transform_work;
 
   for ( j = 2*transform_thr_begin; j < 2*transform_thr_end; j+=2 ) {
-    libxsmm_bfloat16 *bf16_weight_ptr =  ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16;
+    libxsmm_bfloat16 *bf16_weight_ptr = ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16;
     float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16;
     __m512i fm0 = _mm512_castps_si512(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)fp32_weight_ptr));
     __m512i fm1 = _mm512_castps_si512(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)fp32_weight_ptr + 16));

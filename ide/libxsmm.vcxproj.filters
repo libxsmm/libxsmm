@@ -42,9 +42,6 @@
     <ClInclude Include="..\src\libxsmm_trace.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_gemm_diff.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_gemm.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -273,9 +270,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_trace.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_gemm_diff.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
@@ -840,6 +834,9 @@
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_fullyconnected.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_pooling.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

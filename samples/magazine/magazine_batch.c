@@ -131,6 +131,15 @@ int main(int argc, char* argv[])
   }
   printf("%.1f ms\n", 1000.0 * duration);
 
+  { /* calculate checksum */
+    double check = 0;
+    printf("\n%.1f (check)\n", check);
+    for (i = 0; i < size; ++i) {
+      const double cn = norm(c + STREAM_C(i * nc), m, n, ldc);
+      if (check < cn) check = cn;
+    }
+    printf("\n%f (check)\n", check);
+  }
   libxsmm_free(ia);
   libxsmm_free(ib);
   libxsmm_free(ic);
