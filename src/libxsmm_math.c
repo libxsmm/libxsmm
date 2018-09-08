@@ -236,7 +236,7 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
   LIBXSMM_ASSERT(size <= stride);
   for (i = hint; i < end; ++i) {
     const unsigned int j = (i % n); /* wrap around index */
-    if (0 == libxsmm_diff(a, (const char*)bn + j * stride, size)) {
+    if (0 == libxsmm_diff(a, (const char*)bn + (size_t)j * stride, size)) {
       return j;
     }
   }
@@ -255,7 +255,7 @@ LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsign
 #endif
   for (i = hint; i < end; ++i) {
     const unsigned int j = LIBXSMM_MOD2(i, n); /* wrap around index */
-    if (0 == libxsmm_diff(a, (const char*)bn + j * stride, size)) {
+    if (0 == libxsmm_diff(a, (const char*)bn + (size_t)j * stride, size)) {
       return j;
     }
   }
