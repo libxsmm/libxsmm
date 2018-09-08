@@ -119,12 +119,12 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
   int telem = ts_.dims[0] * ts_.dims[1] * (ts_.dims[2] + 2*ovp[0]) * (ts_.dims[3] + 2*ovp[1]);
 
   // Buffer space for sum and sum^2
-  int tstats;
+  int tstats=0;
   if(compute_stats_)
     tstats = 2*ts_.dims[0]*ts_.dims[1];
 
   if(out_dtype == DT_FLOAT)
-    tsize = telem*sizeof(float) + tstats*sizeof(double);
+    tsize = telem*sizeof(float) + tstats*sizeof(float);
   else if(out_dtype == DT_DFP16)
     tsize = (telem + tstats)*sizeof(short);
 

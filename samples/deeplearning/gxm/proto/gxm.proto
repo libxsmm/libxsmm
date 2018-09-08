@@ -395,7 +395,7 @@ message ConvolutionParameter {
 
   optional bool fusedReLU = 26 [default = false];
   optional bool bwd_relu = 27 [default = false];
-  optional bool compute_stats = 28 [default = true];
+  optional bool compute_stats = 28 [default = false];
   optional bool physical_padding = 29 [default = false];
   optional DataType data_type = 30 [default = FLOAT];
 }

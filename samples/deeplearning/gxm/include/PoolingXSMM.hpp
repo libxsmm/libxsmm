@@ -35,18 +35,32 @@
 #include "libxsmm.h"
 #include "check.hpp"
 
+#define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS )\
+{\
+  fprintf(stdout, "%s, %s\n", gp->node_name.c_str(), libxsmm_dnn_get_error(A) );\
+  fflush(stdout);\
+}
+
 class PoolXSMM : public PoolImpl
 {
   protected:
+    PoolImpl *gp_;
+    libxsmm_dnn_pooling_desc pooling_desc;
+    libxsmm_dnn_pooling* libxsmm_handle;
+    libxsmm_dnn_tensor*  libxsmm_input = NULL;
+    libxsmm_dnn_tensor*  libxsmm_delinput=NULL;
+    libxsmm_dnn_tensor*  libxsmm_output=NULL;
+    libxsmm_dnn_tensor*  libxsmm_deloutput=NULL;
+    libxsmm_dnn_tensor*  libxsmm_mask=NULL;
+    libxsmm_dnn_tensor_datalayout* libxsmm_layout;
+    libxsmm_dnn_err_t status;
+    libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
+    bool updated_scratch=false;
+    void *scratch=NULL;
 
   public:
-    PoolXSMM(PoolImplParams* gp, int engine) : PoolImpl(gp, engine)
-  {
-    top_layout_type = LIBXSMM_CUSTOM_LAYOUT;
-    top_layout = NULL;
-    gbot_layout_type = LIBXSMM_CUSTOM_LAYOUT;
-    gbot_layout = NULL;
-  }
+    PoolXSMM(PoolImplParams* gp, int engine);
+    virtual ~PoolXSMM(void) {}
 
     // Assume external threading, e.g., #pragma omp
     void forwardPropagate(TensorBuf *inp, TensorBuf *outp, int *maskp, int tid);

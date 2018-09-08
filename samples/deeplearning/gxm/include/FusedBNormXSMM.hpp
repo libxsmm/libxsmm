@@ -35,25 +35,40 @@
 #include "check.hpp"
 #include "libxsmm.h"
 
+#define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS )\
+{\
+  fprintf(stdout, "%s, %s\n", gp->node_name.c_str(), libxsmm_dnn_get_error(A) );\
+  fflush(stdout);\
+}
 class FusedBNormXSMM : public FusedBNormImpl
 {
   protected:
-    float *bmeanp=NULL, *brstdp=NULL;
-#if 0
-    float *bstats_op=NULL;
-    float *bstats2_op=NULL;
-#endif
-    float *del_gamma_imgp = NULL, *del_beta_imgp = NULL;
+    FusedBNormImpl *gp_;
+    libxsmm_dnn_fusedbn_desc fusedbn_desc;
+    libxsmm_dnn_fusedbn* libxsmm_handle = NULL;
+    libxsmm_dnn_tensor* libxsmm_input = NULL;
+    libxsmm_dnn_tensor* libxsmm_input_add = NULL;
+    libxsmm_dnn_tensor* libxsmm_output = NULL;
+    libxsmm_dnn_tensor* libxsmm_expectval = NULL;
+    libxsmm_dnn_tensor* libxsmm_stddev = NULL;
+    libxsmm_dnn_tensor* libxsmm_gamma = NULL;
+    libxsmm_dnn_tensor* libxsmm_beta = NULL;
+    libxsmm_dnn_tensor* libxsmm_delinput = NULL;
+    libxsmm_dnn_tensor* libxsmm_delinput_add = NULL;
+    libxsmm_dnn_tensor* libxsmm_deloutput = NULL;
+    libxsmm_dnn_tensor* libxsmm_delgamma = NULL;
+    libxsmm_dnn_tensor* libxsmm_delbeta = NULL;
+    libxsmm_dnn_tensor_datalayout* libxsmm_layout;
+    libxsmm_dnn_err_t status;
+
+    void *bexpect=NULL, *bstddev=NULL;
     float scaling_factor_=0;
-    short *i16_outp=NULL, *i16_delinp_r=NULL, *i16_delinp_l=NULL;
+    void *scratch=NULL;
+    bool updated_scratch=false;
+
   public:
-    FusedBNormXSMM(FusedBNormImplParams* gp, int engine) : FusedBNormImpl(gp, engine)
-    {
-      top_layout_type = LIBXSMM_CUSTOM_LAYOUT;
-      top_layout = NULL;
-      gbot_layout_type = LIBXSMM_CUSTOM_LAYOUT;
-      gbot_layout = NULL;
-    }
+    FusedBNormXSMM(FusedBNormImplParams* gp, int engine);
+    virtual ~FusedBNormXSMM(void) {}
 
     // Assume external threading, e.g., #pragma omp
     void forwardPropagate(vector<TensorBuf*> inp, TensorBuf* gammap, TensorBuf* betap, float *gmeanp, float *grstdp, TensorBuf *outp, int tid);

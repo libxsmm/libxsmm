@@ -293,6 +293,8 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   solver_ = e->getSolver();
   eptr_ = e;
 
+  //get global scratch tensor buffer
+  tenScratchData_ = e->getScratchBuffer();
 #ifdef USE_MLSL
   MLSL::DataType dt = MLSL::DT_FLOAT;
   MLSL::OperationRegInfo *myRegInfo;
@@ -417,9 +419,6 @@ void FusedBNormNode::forwardPropagate()
   {
     int offset = gparams_.batch_size * gparams_.nInput * gparams_.iHeight * gparams_.iWidth;
     float* bot_r = (float*)(tenBotData_[0]->getBuffer());
-    float* mean = bot_r + offset;
-    float* mean2 = mean + gparams_.nInput;
-
     float* bot_l = (float*)(tenBotData_[1]->getBuffer());
 
     float* top = (float*)(tenTopData_->getBuffer());
@@ -433,6 +432,7 @@ void FusedBNormNode::forwardPropagate()
   impl->set_bot_compute_engine(bot_cengine_[0]);
   impl->set_top_compute_engine(top_compute_engine_);
   impl->set_node_name(nname_);
+  impl->set_scratch_buffer(tenScratchData_);
 
   gmean_ = (float*)tenMeanData_->getBuffer();
   grstd_ = (float*)tenRstdevData_->getBuffer();
@@ -506,7 +506,6 @@ void FusedBNormNode::forwardPropagate()
         MeanOfLayer((char*)s.c_str(), p, gparams_.batch_size*gparams_.nInput[1]* gparams_.iHeight*gparams_.iWidth);
     }
 
-#if 1
     s = nname_ + "_gammap";
     float* gamma = (float*)tenScaleData_->getBuffer();
     MeanOfLayer((char*)s.c_str(), gamma, gparams_.nInput[0]);
@@ -515,32 +514,10 @@ void FusedBNormNode::forwardPropagate()
     float* beta = (float*)tenShiftData_->getBuffer();
     MeanOfLayer((char*)s.c_str(), beta, gparams_.nInput[0]);
 
-#ifdef BNTEST
-    s = nname_ + "_meanp";
-    int offset = gparams_.batch_size*gparams_.nInput[0]* (gparams_.iHeight + 2*gparams_.ipad_h) * (gparams_.iWidth + 2*gparams_.ipad_2);
-    float* m = ptr + offset;
-    MeanOfLayer((char*)s.c_str(), m, gparams_.nInput[0]);
-
-    s = nname_ + "_mean2p";
-    float* m2 = m + gparams_.nInput[0];
-    MeanOfLayer((char*)s.c_str(), m2, gparams_.nInput[0]);
-#endif
-
-#if 0
-    s = nname_ + "_gmeanp";
-    MeanOfLayer((char*)s.c_str(), gmean, gparams_.nInput[0]);
-
-    s = nname_ + "_grstdp";
-    MeanOfLayer((char*)s.c_str(), grstd, gparams_.nInput[0]);
-#endif
-#endif
-
-#if 1
     ptr = (float*)tenTopData_->getBuffer();
     s = nname_ + "_Outp";
     int size = gparams_.batch_size * gparams_.nOutput * (gparams_.oHeight/gparams_.stride_h + 2*gparams_.pad_h) * (gparams_.oWidth/gparams_.stride_w + 2*gparams_.pad_w);
     MeanOfLayer((char*)s.c_str(), ptr, size);
-#endif
   }
 #endif
 }
@@ -650,7 +627,7 @@ void FusedBNormNode::backPropagate()
 #endif
   string s;
   float *ptr, *pptr, *p;
-  if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0) //&& gparams_.pad_h && nname_ == "node_64_2_bn1")
+  if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0)
   {
 #if 1
     ptr = (float*)tenTopDiff_->getBuffer();
@@ -755,8 +732,7 @@ void FusedBNormNode::solverStep()
   solver_->applyUpdate(beta, ibeta, delbeta, gparams_.nOutput, 1.0, 0.0);
 
 #ifdef GETSTATS
-  //unsigned int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
-  if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0)// && eptr_->get_current_epoch()==1)
+  if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0)
   {
     string s = nname_ + "_gammap_aft";
     MeanOfLayer((char*)s.c_str(), gamma, gparams_.nInput[0]);
