@@ -62,7 +62,7 @@
   for (libxsmm_math_diff_i_ = 0; libxsmm_math_diff_i_ < (libxsmm_math_diff_n_ - 7); libxsmm_math_diff_i_ += 8) { \
     const unsigned long long *const libxsmm_math_diff_ai_ = (const unsigned long long*)(libxsmm_math_diff_au_ + libxsmm_math_diff_i_); \
     const unsigned long long *const libxsmm_math_diff_bi_ = (const unsigned long long*)(libxsmm_math_diff_bu_ + libxsmm_math_diff_i_); \
-    LIBXSMM_MATH_DIFF_KERNEL(RESULT, libxsmm_math_diff_ai_[libxsmm_math_diff_i_], libxsmm_math_diff_bi_[libxsmm_math_diff_i_]); \
+    LIBXSMM_MATH_DIFF_KERNEL(RESULT, *libxsmm_math_diff_ai_, *libxsmm_math_diff_bi_); \
   } \
   libxsmm_math_diff_au_ += libxsmm_math_diff_i_; \
   libxsmm_math_diff_bu_ += libxsmm_math_diff_i_; \
@@ -233,6 +233,7 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
 {
   const unsigned int end = hint + n;
   unsigned int i;
+  LIBXSMM_ASSERT(size <= stride);
   for (i = hint; i < end; ++i) {
     const unsigned int j = (i % n); /* wrap around index */
     if (0 == libxsmm_diff(a, (const char*)bn + j * stride, size)) {
@@ -247,11 +248,11 @@ LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsign
   unsigned char stride, unsigned int hint, unsigned int n)
 {
   const unsigned int end = hint + n;
+  unsigned int i;
 #if !defined(NDEBUG)
   const unsigned int npot = LIBXSMM_UP2POT(n);
-  assert(n == npot); /* !LIBXSMM_ASSERT */
+  assert(size <= stride && n == npot); /* !LIBXSMM_ASSERT */
 #endif
-  unsigned int i;
   for (i = hint; i < end; ++i) {
     const unsigned int j = LIBXSMM_MOD2(i, n); /* wrap around index */
     if (0 == libxsmm_diff(a, (const char*)bn + j * stride, size)) {
