@@ -1099,7 +1099,7 @@ LIBXSMM_API_INLINE const void* internal_malloc_site(const char* site)
   if (NULL != site) {
 #if !defined(LIBXSMM_STRING_POOLING)
     if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != site) {
-      const uintptr_t hash = libxsmm_hash(site, strlen(site), LIBXSMM_MALLOC_SEED);
+      const uintptr_t hash = libxsmm_crc32(site, strlen(site), LIBXSMM_MALLOC_SEED);
       result = (const void*)((LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE) != hash ? hash : (hash - 1));
       assert((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != result);
     }
@@ -1466,36 +1466,4 @@ LIBXSMM_API size_t libxsmm_get_scratch_limit(void)
   LIBXSMM_INIT
   return libxsmm_scratch_limit;
 }
-
-
-LIBXSMM_API unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed)
-{
-  LIBXSMM_INIT
-  return libxsmm_crc32(data, size, seed);
-}
-
-
-#if defined(LIBXSMM_BUILD)
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* /*data*/, const int* /*size*/, const int* /*seed*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* data, const int* size, const int* seed)
-{
-#if !defined(NDEBUG)
-  static int error_once = 0;
-  if (NULL != hash && NULL != data && NULL != size && NULL != seed)
-#endif
-  {
-    *hash = (libxsmm_hash(data, *size, *seed) & 0x7FFFFFFF);
-  }
-#if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_hash specified!\n");
-  }
-#endif
-}
-
-#endif /*defined(LIBXSMM_BUILD)*/
 

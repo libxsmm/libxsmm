@@ -31,7 +31,7 @@
 
 #include <libxsmm_math.h>
 #include <libxsmm_mhd.h>
-#include "libxsmm_main.h"
+#include "libxsmm_hash.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -47,6 +47,30 @@
 
 #if !defined(LIBXSMM_MATH_MAXPRODUCT)
 # define LIBXSMM_MATH_MAXPRODUCT 1024
+#endif
+#if !defined(LIBXSMM_MATH_MEMCMP) && 0
+# define LIBXSMM_MATH_MEMCMP
+#else
+# define LIBXSMM_MATH_DIFF_KERNEL(RESULT, A, B) (RESULT |= (A) ^ (B))
+# define LIBXSMM_MATH_DIFF(RESULT, A, B, NBYTES) { \
+  const signed char libxsmm_math_diff_n_ = (signed char)LIBXSMM_MIN(NBYTES, 120); \
+  const unsigned char* libxsmm_math_diff_au_ = (const unsigned char*)(A); \
+  const unsigned char* libxsmm_math_diff_bu_ = (const unsigned char*)(B); \
+  unsigned char libxsmm_math_diff_r_, libxsmm_math_diff_u_; \
+  signed char libxsmm_math_diff_i_; \
+  RESULT = 0; \
+  for (libxsmm_math_diff_i_ = 0; libxsmm_math_diff_i_ < (libxsmm_math_diff_n_ - 7); libxsmm_math_diff_i_ += 8) { \
+    const unsigned long long *const libxsmm_math_diff_ai_ = (const unsigned long long*)(libxsmm_math_diff_au_ + libxsmm_math_diff_i_); \
+    const unsigned long long *const libxsmm_math_diff_bi_ = (const unsigned long long*)(libxsmm_math_diff_bu_ + libxsmm_math_diff_i_); \
+    LIBXSMM_MATH_DIFF_KERNEL(RESULT, libxsmm_math_diff_ai_[libxsmm_math_diff_i_], libxsmm_math_diff_bi_[libxsmm_math_diff_i_]); \
+  } \
+  libxsmm_math_diff_au_ += libxsmm_math_diff_i_; \
+  libxsmm_math_diff_bu_ += libxsmm_math_diff_i_; \
+  libxsmm_math_diff_r_ = (unsigned char)((NBYTES) - libxsmm_math_diff_i_); \
+  for (libxsmm_math_diff_u_ = 0; libxsmm_math_diff_u_ < libxsmm_math_diff_r_; ++libxsmm_math_diff_u_) { \
+    LIBXSMM_MATH_DIFF_KERNEL(RESULT, libxsmm_math_diff_au_[libxsmm_math_diff_u_], libxsmm_math_diff_bu_[libxsmm_math_diff_u_]); \
+  } \
+}
 #endif
 
 
@@ -161,6 +185,87 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
     output->l1_ref = input->l1_ref;
     output->l1_tst = input->l1_tst;
   }
+}
+
+
+#if !defined(LIBXSMM_MATH_MEMCMP) && (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
+LIBXSMM_API_INTERN unsigned int libxsmm_diff_sse3(const void* a, const void* b, unsigned char size);
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_SSE3)
+unsigned int libxsmm_diff_sse3(const void* a, const void* b, unsigned char size)
+{
+  unsigned int result;
+  LIBXSMM_MATH_DIFF(result, a, b, size);
+  return result;
+}
+#endif
+
+
+#if !defined(LIBXSMM_MATH_MEMCMP) && (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
+LIBXSMM_API_INTERN unsigned int libxsmm_diff_avx(const void* a, const void* b, unsigned char size);
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
+unsigned int libxsmm_diff_avx(const void* a, const void* b, unsigned char size)
+{
+  unsigned int result;
+  LIBXSMM_MATH_DIFF(result, a, b, size);
+  return result;
+}
+#endif
+
+
+LIBXSMM_API unsigned int libxsmm_diff(const void* a, const void* b, unsigned char size)
+{
+#if defined(LIBXSMM_MATH_MEMCMP)
+  return 0 != memcmp(a, b, size);
+#elif (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
+  return libxsmm_diff_avx(a, b, size);
+#elif (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
+  return libxsmm_diff_sse3(a, b, size);
+#else
+  unsigned int result;
+  LIBXSMM_MATH_DIFF(result, a, b, size);
+  return result;
+#endif
+}
+
+
+LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char size,
+  unsigned char stride, unsigned int hint, unsigned int n)
+{
+  const unsigned int end = hint + n;
+  unsigned int i;
+  for (i = hint; i < end; ++i) {
+    const unsigned int j = (i % n); /* wrap around index */
+    if (0 == libxsmm_diff(a, (const char*)bn + j * stride, size)) {
+      return j;
+    }
+  }
+  return n;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsigned char size,
+  unsigned char stride, unsigned int hint, unsigned int n)
+{
+  const unsigned int end = hint + n;
+#if !defined(NDEBUG)
+  const unsigned int npot = LIBXSMM_UP2POT(n);
+  assert(n == npot); /* !LIBXSMM_ASSERT */
+#endif
+  unsigned int i;
+  for (i = hint; i < end; ++i) {
+    const unsigned int j = LIBXSMM_MOD2(i, n); /* wrap around index */
+    if (0 == libxsmm_diff(a, (const char*)bn + j * stride, size)) {
+      return j;
+    }
+  }
+  return n;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed)
+{
+  LIBXSMM_INIT
+  return libxsmm_crc32(data, size, seed);
 }
 
 
@@ -575,4 +680,29 @@ LIBXSMM_API double libxsmm_rand_f64(void)
   return drand48();
 #endif
 }
+
+
+#if defined(LIBXSMM_BUILD)
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* /*data*/, const int* /*size*/, const int* /*seed*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* data, const int* size, const int* seed)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != hash && NULL != data && NULL != size && NULL != seed)
+#endif
+  {
+    *hash = (libxsmm_hash(data, *size, *seed) & 0x7FFFFFFF);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_hash specified!\n");
+  }
+#endif
+}
+
+#endif /*defined(LIBXSMM_BUILD)*/
 
