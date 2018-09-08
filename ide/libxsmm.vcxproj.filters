@@ -836,6 +836,9 @@
     <ClCompile Include="..\src\libxsmm_dnn_fullyconnected.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_pooling.c">
+      <Filter>src</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">
