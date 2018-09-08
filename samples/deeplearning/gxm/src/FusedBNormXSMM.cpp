@@ -109,7 +109,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
   if(libxsmm_input == NULL && libxsmm_input_add == NULL && libxsmm_expectval == NULL && libxsmm_stddev == NULL
       && libxsmm_gamma == NULL && libxsmm_beta == NULL && libxsmm_output == NULL)
   {
-    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, &status ); 
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_input  = libxsmm_dnn_link_tensor( libxsmm_layout, inp_r, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
@@ -117,7 +117,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
 
     if(gp->eltwise)
     {
-      libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT_ADD, &status ); 
+      libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT_ADD, &status );
       CHKERR_LIBXSMM_DNN( status );
       libxsmm_input_add = libxsmm_dnn_link_tensor( libxsmm_layout, inp_l, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
@@ -130,25 +130,25 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_handle, libxsmm_expectval, LIBXSMM_DNN_CHANNEL_EXPECTVAL ) );
 
-    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_CHANNEL_STDDEV, &status ); 
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_CHANNEL_STDDEV, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_stddev  = libxsmm_dnn_link_tensor( libxsmm_layout, bstddev, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_handle, libxsmm_stddev, LIBXSMM_DNN_CHANNEL_STDDEV ) );
 
-    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA, &status ); 
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_gamma  = libxsmm_dnn_link_tensor( libxsmm_layout, gamma, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_handle, libxsmm_gamma, LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA ) );
 
-    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout(libxsmm_handle, LIBXSMM_DNN_REGULAR_CHANNEL_BETA, &status); 
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout(libxsmm_handle, LIBXSMM_DNN_REGULAR_CHANNEL_BETA, &status);
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_beta  = libxsmm_dnn_link_tensor( libxsmm_layout, beta, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_handle, libxsmm_beta, LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) );
 
-    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT, &status ); 
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_output  = libxsmm_dnn_link_tensor( libxsmm_layout, output, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
@@ -228,13 +228,13 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
   if(libxsmm_deloutput == NULL && libxsmm_delinput == NULL && libxsmm_delinput_add == NULL &&
       libxsmm_delgamma == NULL && libxsmm_delbeta == NULL)
   {
-    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT, &status ); 
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_deloutput = libxsmm_dnn_link_tensor( libxsmm_layout, deloutput, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_handle, libxsmm_deloutput, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
 
-    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT, &status ); 
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_delinput  = libxsmm_dnn_link_tensor( libxsmm_layout, delinp_r, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
@@ -242,20 +242,20 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
 
     if(gp->eltwise)
     {
-      libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout(libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT_ADD, &status); 
+      libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout(libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT_ADD, &status);
       CHKERR_LIBXSMM_DNN( status );
       libxsmm_delinput_add  = libxsmm_dnn_link_tensor( libxsmm_layout, delinp_l, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_handle, libxsmm_delinput_add, LIBXSMM_DNN_GRADIENT_INPUT_ADD ) );
     }
 
-    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout(libxsmm_handle, LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA, &status); 
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout(libxsmm_handle, LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA, &status);
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_delgamma  = libxsmm_dnn_link_tensor( libxsmm_layout, delgamma, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_handle, libxsmm_delgamma, LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA ) );
 
-    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout(libxsmm_handle, LIBXSMM_DNN_GRADIENT_CHANNEL_BETA, &status); 
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout(libxsmm_handle, LIBXSMM_DNN_GRADIENT_CHANNEL_BETA, &status);
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_delbeta  = libxsmm_dnn_link_tensor( libxsmm_layout, delbeta, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );

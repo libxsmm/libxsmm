@@ -75,19 +75,19 @@ void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *mask, in
 
   if(libxsmm_input == NULL && libxsmm_mask == NULL && libxsmm_output == NULL)
   {
-    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, &status ); 
+    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_input  = libxsmm_dnn_link_tensor( libxsmm_layout, input, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_input,     LIBXSMM_DNN_REGULAR_INPUT ) );
 
-    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT, &status ); 
+    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_output  = libxsmm_dnn_link_tensor( libxsmm_layout, output, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_output,    LIBXSMM_DNN_REGULAR_OUTPUT ) );
 
-    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_POOLING_MASK, &status ); 
+    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_POOLING_MASK, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_mask  = libxsmm_dnn_link_tensor( libxsmm_layout, (void*)mask, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
@@ -159,13 +159,13 @@ void PoolXSMM::backPropagate(TensorBuf *deloutpb, int *mask, TensorBuf *delinpb,
 
   if(libxsmm_deloutput == NULL && libxsmm_delinput == NULL)
   {
-    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT, &status ); 
+    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_deloutput  = libxsmm_dnn_link_tensor( libxsmm_layout, deloutput, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_deloutput, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
 
-    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT, &status ); 
+    libxsmm_layout = libxsmm_dnn_pooling_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT, &status );
     CHKERR_LIBXSMM_DNN( status );
     libxsmm_delinput  = libxsmm_dnn_link_tensor( libxsmm_layout, delinput, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
