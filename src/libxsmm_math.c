@@ -53,10 +53,10 @@
 #else
 # define LIBXSMM_MATH_DIFF_KERNEL(RESULT, A, B) (RESULT |= (A) ^ (B))
 # define LIBXSMM_MATH_DIFF(RESULT, A, B, NBYTES) { \
+  union { unsigned long long u; unsigned int v[2]; } libxsmm_math_diff_result_ = { 0 }; \
   const signed char libxsmm_math_diff_n_ = (signed char)LIBXSMM_MIN(NBYTES, 120); \
   const unsigned char* libxsmm_math_diff_au_ = (const unsigned char*)(A); \
   const unsigned char* libxsmm_math_diff_bu_ = (const unsigned char*)(B); \
-  union { unsigned long long u; unsigned int hi, lo; } libxsmm_math_diff_result_ = { 0 }; \
   unsigned char libxsmm_math_diff_r_, libxsmm_math_diff_u_; \
   signed char libxsmm_math_diff_i_; \
   for (libxsmm_math_diff_i_ = 0; libxsmm_math_diff_i_ < (libxsmm_math_diff_n_ - 7); libxsmm_math_diff_i_ += 8) { \
@@ -64,8 +64,7 @@
     const unsigned long long *const libxsmm_math_diff_bi_ = (const unsigned long long*)(libxsmm_math_diff_bu_ + libxsmm_math_diff_i_); \
     LIBXSMM_MATH_DIFF_KERNEL(libxsmm_math_diff_result_.u, *libxsmm_math_diff_ai_, *libxsmm_math_diff_bi_); \
   } \
-  RESULT = 0; \
-  LIBXSMM_MATH_DIFF_KERNEL(RESULT, libxsmm_math_diff_result_.hi, libxsmm_math_diff_result_.lo); \
+  RESULT = libxsmm_math_diff_result_.v[0] | libxsmm_math_diff_result_.v[1]; \
   libxsmm_math_diff_au_ += libxsmm_math_diff_i_; \
   libxsmm_math_diff_bu_ += libxsmm_math_diff_i_; \
   libxsmm_math_diff_r_ = (unsigned char)((NBYTES) - libxsmm_math_diff_i_); \
