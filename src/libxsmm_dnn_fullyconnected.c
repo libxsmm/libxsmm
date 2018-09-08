@@ -28,11 +28,9 @@
 ******************************************************************************/
 /* Alexander Heinecke, Sasikanth Avancha (Intel Corp.)
 ******************************************************************************/
-#if 0
 #include "libxsmm_dnn_fullyconnected_weight_update.h"
 #include "libxsmm_dnn_fullyconnected_backward.h"
 #include "libxsmm_dnn_fullyconnected_forward.h"
-#endif
 #include "libxsmm_dnn_setup.h"
 #include "libxsmm_main.h"
 
@@ -524,31 +522,28 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_execute_st(libxsmm_dnn_
   LIBXSMM_UNUSED( tid );
 
   if (0 != handle) {
-    LIBXSMM_UNUSED(kind);
-    /*switch (kind)*/ {
-#if 0
+    switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
           status = libxsmm_dnn_fullyconnected_st_fwd_custom( handle, start_thread, tid );
         } else {
-          status = LIBXSMM_DNN_ERR_INVALID_FORMAT;
+          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
         }
       } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
           status = libxsmm_dnn_fullyconnected_st_bwd_custom( handle, start_thread, tid );
         } else {
-          status = LIBXSMM_DNN_ERR_INVALID_FORMAT;
+          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
         }
       } break;
       case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
           status = libxsmm_dnn_fullyconnected_st_upd_custom( handle, start_thread, tid );
         } else {
-          status = LIBXSMM_DNN_ERR_INVALID_FORMAT;
+          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
         }
       } break;
-#endif
       /*default:*/ {
         status = LIBXSMM_DNN_ERR_INVALID_KIND;
       }

@@ -139,6 +139,8 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: Unsupported format when requesting a fused batch norm!";
     case LIBXSMM_DNN_ERR_UNSUPPORTED_POOLING:
       return "LIBXSMM DNN Error: Unsupported pooling operations was requested!";
+    case LIBXSMM_DNN_ERR_INVALID_FORMAT_FC:
+      return "LIBXSMM DNN Error: Unsupported format when requesting a fullyconnected layer!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occurred!";
   }
