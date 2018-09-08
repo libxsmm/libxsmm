@@ -58,20 +58,20 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
       /* let's make the description persistent */
       handle->desc = fullyconnected_desc;
       /* we need to compute the memory layout given the */
-      *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.C,
+      *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K,
                                                     &(handle->ifmblock), &(handle->ifmblock_hp),
                                                     &(handle->ofmblock), &(handle->ofmblock_lp),
                                                     &(handle->fm_lp_block), handle->desc.datatype_in, handle->desc.datatype_out, &noarch );
       /* compute the outer blocks */
       if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
         handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
-        handle->blocksofm = handle->desc.C / handle->ofmblock;
+        handle->blocksofm = handle->desc.K / handle->ofmblock;
         handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
-        handle->blocksofm_lp = handle->desc.C / handle->ofmblock;
+        handle->blocksofm_lp = handle->desc.K / handle->ofmblock;
       } else {
         /* this is FP32 */
         handle->blocksifm = handle->desc.C / handle->ifmblock;
-        handle->blocksofm = handle->desc.C / handle->ofmblock;
+        handle->blocksofm = handle->desc.K / handle->ofmblock;
         handle->blocksifm_lp = handle->blocksifm;
         handle->blocksofm_lp = handle->blocksofm;
       }
