@@ -107,7 +107,7 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diff(const libxsmm_ge
   return libxsmm_gemm_diff_sw(reference, desc);
 #elif defined(LIBXSMM_GEMM_DIFF_KNC)
   return libxsmm_gemm_diff_imci(reference, desc);
-#elif (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH) /* eventually no no need for an indirect call */
+#elif (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH) /* eventually no need for an indirect call */
 # if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diff_avx2(reference, desc);
 # elif (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
@@ -278,14 +278,14 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diff_imci(const libxs
 
 
 LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn(const libxsmm_gemm_descriptor* reference,
-  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
+  const void* descs, unsigned int hint, unsigned int ndescs, unsigned int nbytes)
 {
   /* attempt to rely on static code path avoids to rely on capability of inlining pointer-based function call */
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (0 != LIBXSMM_GEMM_DIFF_SW)
   return libxsmm_gemm_diffn_sw(reference, descs, hint, ndescs, nbytes);
 #elif defined(LIBXSMM_GEMM_DIFF_KNC)
   return libxsmm_gemm_diffn_imci(reference, descs, hint, ndescs, nbytes);
-#elif (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH) /* eventually no no need for an indirect call */
+#elif (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH) /* eventually no need for an indirect call */
 # if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
   return libxsmm_gemm_diffn_avx512(reference, descs, hint, ndescs, nbytes);
 # elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
@@ -304,28 +304,24 @@ LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn(const libxsmm_g
 
 
 LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_sw(const libxsmm_gemm_descriptor* reference,
-  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
+  const void* descs, unsigned int hint, unsigned int ndescs, unsigned int nbytes)
 {
-  const char *const desc = (const char*)descs;
   const unsigned int end = hint + ndescs;
   unsigned int i;
-  LIBXSMM_ASSERT(0 <= nbytes);
   for (i = hint; i < end; ++i) {
-    const size_t j = (i % ndescs); /* wrap around index */
-    /* negative stride runs backwards */
-    const libxsmm_gemm_descriptor *const idesc = (const libxsmm_gemm_descriptor*)(
-      0 <= nbytes ? (desc + j * nbytes) : (desc - j * (size_t)(-nbytes)));
-    if (0 == libxsmm_gemm_diff_sw(reference, idesc)) {
+    const unsigned int j = (i % ndescs); /* wrap around index */
+    const libxsmm_gemm_descriptor *const desc = (const libxsmm_gemm_descriptor*)((const char*)descs + j * nbytes);
+    if (0 == libxsmm_gemm_diff_sw(reference, desc)) {
       return (unsigned int)j;
     }
-  }
+  }    
   return ndescs;
 }
 
 
 LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
 unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference,
-  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
+  const void* descs, unsigned int hint, unsigned int ndescs, unsigned int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_AVX)
 # if !defined(NDEBUG)
@@ -382,7 +378,7 @@ unsigned int libxsmm_gemm_diffn_avx(const libxsmm_gemm_descriptor* reference,
 
 LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
 unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference,
-  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
+  const void* descs, unsigned int hint, unsigned int ndescs, unsigned int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_AVX2)
 # if !defined(NDEBUG)
@@ -439,7 +435,7 @@ unsigned int libxsmm_gemm_diffn_avx2(const libxsmm_gemm_descriptor* reference,
 
 LIBXSMM_GEMM_DIFF_API_DEFINITION LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
 unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
-  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
+  const void* descs, unsigned int hint, unsigned int ndescs, unsigned int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_AVX512) && !defined(LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS)
 # if !defined(NDEBUG)
@@ -499,7 +495,7 @@ unsigned int libxsmm_gemm_diffn_avx512(const libxsmm_gemm_descriptor* reference,
 
 
 LIBXSMM_GEMM_DIFF_API_DEFINITION unsigned int libxsmm_gemm_diffn_imci(const libxsmm_gemm_descriptor* reference,
-  const void* descs, unsigned int hint, unsigned int ndescs, int nbytes)
+  const void* descs, unsigned int hint, unsigned int ndescs, unsigned int nbytes)
 {
 #if defined(LIBXSMM_GEMM_DIFF_KNC) && (28 == LIBXSMM_DESCRIPTOR_MAXSIZE)
 # if !defined(NDEBUG)
