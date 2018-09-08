@@ -32,8 +32,15 @@
 #include "libxsmm_gemm.h"
 #include "libxsmm_ext.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <string.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
 #if defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD_EXT)
-# include "libxsmm_gemm_diff.h"
 # include "libxsmm_trace.h"
 #endif
 
@@ -264,7 +271,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
             size = max_size - libxsmm_gemm_batchsize;
             batcharray += libxsmm_gemm_batchsize;
           }
-          i = libxsmm_gemm_diffn_sw(descriptor, batcharray, 0/*hint*/, size, sizeof(libxsmm_gemm_batchitem));
+          i = libxsmm_diff_n(descriptor, batcharray, sizeof(libxsmm_gemm_batchitem), sizeof(libxsmm_gemm_batchitem), 0/*hint*/, size);
 
           if (i < size) { /* update existing entry */
             LIBXSMM_ATOMIC_ADD_FETCH(&batcharray[i].stat.count, 1, LIBXSMM_ATOMIC_RELAXED);
@@ -404,7 +411,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
             size = max_size - libxsmm_gemm_batchsize;
             batcharray += libxsmm_gemm_batchsize;
           }
-          i = libxsmm_gemm_diffn_sw(descriptor, batcharray, 0/*hint*/, size, sizeof(libxsmm_gemm_batchitem));
+          i = libxsmm_diff_n(descriptor, batcharray, sizeof(libxsmm_gemm_batchitem), sizeof(libxsmm_gemm_batchitem), 0/*hint*/, size);
 
           if (i < size) { /* update existing entry */
             LIBXSMM_ATOMIC_ADD_FETCH(&batcharray[i].stat.count, 1, LIBXSMM_ATOMIC_RELAXED);
