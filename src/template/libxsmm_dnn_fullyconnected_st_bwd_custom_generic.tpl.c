@@ -74,6 +74,7 @@ libxsmm_barrier_init(handle->barrier, ltid);
 for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
   ofm1 = ifm1ofm1 / nBlocksIFm;
   ifm1 = ifm1ofm1 % nBlocksIFm;
+
   for (ofm2 = 0; ofm2 < nOFmBlock; ++ofm2) {
     for (ifm2 = 0; ifm2 < nIFmBlock; ++ifm2) {
       LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, ofm2, ifm2, nBlocksOFm, nOFmBlock, nIFmBlock) =

@@ -55,8 +55,15 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom_f32_f32(libxsmm_dnn_f
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
+  typedef libxsmm_smmfunction gemm_function;
+  libxsmm_blasint lda = (libxsmm_blasint)handle->desc.K;
+  libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.N;
+  libxsmm_blasint ldc = (libxsmm_blasint)handle->ofmblock;
+  element_input_type alpha = (element_input_type)1;
+  element_input_type beta = (element_input_type)0;
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
+    gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->desc.N, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
   } else {
     status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
@@ -112,8 +119,15 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom(li
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
+      typedef libxsmm_smmfunction gemm_function;
+      libxsmm_blasint lda = (libxsmm_blasint)handle->desc.K;
+      libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.N;
+      libxsmm_blasint ldc = (libxsmm_blasint)handle->ofmblock;
+      element_input_type alpha = (element_input_type)1;
+      element_input_type beta = (element_input_type)0;
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
+        gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->desc.N, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"
       } else {
         status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
