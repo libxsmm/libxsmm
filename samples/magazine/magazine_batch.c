@@ -133,7 +133,6 @@ int main(int argc, char* argv[])
 
   { /* calculate checksum */
     double check = 0;
-    printf("\n%.1f (check)\n", check);
     for (i = 0; i < size; ++i) {
       const double cn = norm(c + STREAM_C(i * nc), m, n, ldc);
       if (check < cn) check = cn;
