@@ -401,17 +401,16 @@ else
   CC_VERSION = 0
 endif
 
-# fixup FC-default given by MAKE
-ifeq (,$(shell which $(FC) 2>/dev/null))
-  ifneq (,$(shell which gfortran 2>/dev/null))
-    GFC = gfortran
-    FC = $(GFC)
-  else
-    FC = $(NULL)
-  endif
-endif
-
 ifneq (,$(strip $(FC)))
+  # fixup FC-default given by MAKE
+  ifeq (,$(shell which $(FC) 2>/dev/null))
+    ifneq (,$(shell which gfortran 2>/dev/null))
+      GFC = gfortran
+      FC = $(GFC)
+    else
+      FC = $(NULL)
+    endif
+  endif
   FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
   FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
   FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
