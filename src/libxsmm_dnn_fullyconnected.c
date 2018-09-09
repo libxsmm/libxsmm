@@ -544,7 +544,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_execute_st(libxsmm_dnn_
           status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
         }
       } break;
-      /*default:*/ {
+      default: {
         status = LIBXSMM_DNN_ERR_INVALID_KIND;
       }
     }
