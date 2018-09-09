@@ -163,9 +163,17 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 
   /* now we need to reduce the del_gamm and del_beta */
   for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+    element_stats_type* del_gamma_ptr = &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 0, nFmBlock);
+    element_stats_type* del_beta_ptr  = &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 0, nFmBlock);
+
+    LIBXSMM_PRAGMA_SIMD
+    LIBXSMM_PRAGMA_VALIGNED
+    for ( v=0; v < nFmBlock; v++ ) {
+      del_gamma_ptr[v] = (element_stats_type)0;
+      del_beta_ptr[v]  = (element_stats_type)0;
+    }
+
     for ( img=0; img < nImg; img++ ) {
-      element_stats_type* del_gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 0, nFmBlock);
-      element_stats_type* del_beta_ptr      = &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 0, nFmBlock);
       element_stats_type* del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
       element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
 
