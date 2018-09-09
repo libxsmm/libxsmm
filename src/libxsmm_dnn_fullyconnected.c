@@ -58,10 +58,23 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
       /* let's make the description persistent */
       handle->desc = fullyconnected_desc;
       /* we need to compute the memory layout given the */
-      *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K,
-                                                    &(handle->ifmblock), &(handle->ifmblock_hp),
-                                                    &(handle->ofmblock), &(handle->ofmblock_lp),
-                                                    &(handle->fm_lp_block), handle->desc.datatype_in, handle->desc.datatype_out, &noarch );
+      if ( (handle->desc.C % 16 == 0) && (handle->desc.K % 16 == 0) ) { 
+        *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K,
+                                                      &(handle->ifmblock), &(handle->ifmblock_hp),
+                                                      &(handle->ofmblock), &(handle->ofmblock_lp),
+                                                      &(handle->fm_lp_block), handle->desc.datatype_in, handle->desc.datatype_out, &noarch );
+      } else if ( (handle->desc.C % 16 == 0) && (handle->desc.K == 1000) ) {
+        /* @TODO this a hack for the last FC layer */
+        handle->ifmblock = 16;
+        handle->ifmblock_hp = 16;
+        handle->fm_lp_block = 1;
+        handle->ofmblock = 10;
+        handle->ofmblock_lp = 10;
+      } else {
+        *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
+        free( handle );
+        handle = 0;
+      }
       /* compute the outer blocks */
       if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
         handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
