@@ -30,7 +30,6 @@
 ******************************************************************************/
 
 /* size variables, all const */
-/*const int nImg = handle->desc.N;*/
 /* here we assume that input and output blocking is similar */
 const int nBlocksIFm = handle->blocksifm;
 const int nIFmBlock = handle->fm_lp_block*handle->ifmblock;
@@ -56,7 +55,6 @@ const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? 
 const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
 
 /* loop variables */
-int img2 = 0;
 int ofm1 = 0;
 int ofm2 = 0;
 int ifm1 = 0;
@@ -78,7 +76,7 @@ for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
   for (ofm2 = 0; ofm2 < nOFmBlock; ++ofm2) {
     for (ifm2 = 0; ifm2 < nIFmBlock; ++ifm2) {
       LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, ofm2, ifm2, nBlocksOFm, nOFmBlock, nIFmBlock) =
-        LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1, ifm2, ofm2, nBlocksIFm, nIFmBlock, nOFmBlock);
+        LIBXSMM_VLA_ACCESS(4, filter,  ofm1, ifm1, ifm2, ofm2, nBlocksIFm, nIFmBlock, nOFmBlock);
     }
   }
 }
@@ -88,8 +86,8 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 
 for ( ifm1 = thr_begin; ifm1 < thr_end; ++ifm1 ) {  /* outer GEMM m-loop */
   gemm_kernel( &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, 0, 0, 0, nBlocksOFm, nOFmBlock, nIFmBlock),
-               &LIBXSMM_VLA_ACCESS(3, doutput, img2, 0, 0, nBlocksOFm, nOFmBlock),
-               &LIBXSMM_VLA_ACCESS(3, dinput, img2, ifm1, 0, nBlocksIFm, nIFmBlock) );
+               &LIBXSMM_VLA_ACCESS(3, doutput,   0, 0, 0, nBlocksOFm, nOFmBlock),
+               &LIBXSMM_VLA_ACCESS(3, dinput,    0, ifm1, 0, nBlocksIFm, nIFmBlock) );
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);

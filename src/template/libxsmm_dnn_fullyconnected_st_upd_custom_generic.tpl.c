@@ -59,7 +59,6 @@ const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work
 int img2 = 0;
 int ifm1ofm1 = 0;
 int ofm1 = 0;
-/*int ofm2 = 0;*/
 int ifm1 = 0;
 int ifm2 = 0;
 
