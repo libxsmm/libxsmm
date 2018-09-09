@@ -461,15 +461,15 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delfilter,     (void*)naive_libxsmm_delfilter,     LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIFm*nOFm, 1, naive_delfilter, naive_libxsmm_delfilter, 0, 0, &norms_bwd);
-      printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
-      printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
-      printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
-      printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
-      printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
-      printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
-      printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
-      libxsmm_matdiff_reduce(&diff, &norms_bwd);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIFm*nOFm, 1, naive_delfilter, naive_libxsmm_delfilter, 0, 0, &norms_upd);
+      printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_upd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_upd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_upd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_upd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_upd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_upd);
     }
 
     if (type == 'A' || type == 'F') {
@@ -532,8 +532,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", gflop/l_total);
 
       printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
-        nOFm, ((double)(l_total/iters)), gflop/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
-        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
+        nOFm, ((double)(l_total/iters)), gflop/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+        norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
 
     if (type == 'A' || type == 'U') {
@@ -564,8 +564,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", gflop/l_total);
 
       printf("PERFDUMP,UP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
-        nOFm, ((double)(l_total/iters)), gflop/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
-        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
+        nOFm, ((double)(l_total/iters)), gflop/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
 
     /* clean-up */
