@@ -115,7 +115,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom(li
       typedef float element_filter_type;
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-# include "template/libxsmm_dnn_fullyconnected_st_fwd_custom_generic.tpl.c"
+# include "template/libxsmm_dnn_fullyconnected_st_bwd_custom_generic.tpl.c"
       } else {
         status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
       }
