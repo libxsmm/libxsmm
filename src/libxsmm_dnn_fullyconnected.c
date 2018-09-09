@@ -28,11 +28,9 @@
 ******************************************************************************/
 /* Alexander Heinecke, Sasikanth Avancha (Intel Corp.)
 ******************************************************************************/
-#if 0
 #include "libxsmm_dnn_fullyconnected_weight_update.h"
 #include "libxsmm_dnn_fullyconnected_backward.h"
 #include "libxsmm_dnn_fullyconnected_forward.h"
-#endif
 #include "libxsmm_dnn_setup.h"
 #include "libxsmm_main.h"
 
@@ -60,27 +58,28 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
       /* let's make the description persistent */
       handle->desc = fullyconnected_desc;
       /* we need to compute the memory layout given the */
-      *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.C,
+      *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K,
                                                     &(handle->ifmblock), &(handle->ifmblock_hp),
                                                     &(handle->ofmblock), &(handle->ofmblock_lp),
                                                     &(handle->fm_lp_block), handle->desc.datatype_in, handle->desc.datatype_out, &noarch );
       /* compute the outer blocks */
       if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
         handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
-        handle->blocksofm = handle->desc.C / handle->ofmblock;
+        handle->blocksofm = handle->desc.K / handle->ofmblock;
         handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
-        handle->blocksofm_lp = handle->desc.C / handle->ofmblock;
+        handle->blocksofm_lp = handle->desc.K / handle->ofmblock;
       } else {
         /* this is FP32 */
         handle->blocksifm = handle->desc.C / handle->ifmblock;
-        handle->blocksofm = handle->desc.C / handle->ofmblock;
+        handle->blocksofm = handle->desc.K / handle->ofmblock;
         handle->blocksifm_lp = handle->blocksifm;
         handle->blocksofm_lp = handle->blocksofm;
       }
       /* create barrier */
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
       /* calculate scratch size for batchstats */
-      handle->scratch_size = (sizeof(float) * ((size_t)handle->desc.C + handle->desc.K) * handle->desc.N);
+      handle->scratch_size = sizeof(float) * LIBXSMM_MAX( ((size_t)handle->desc.C + (size_t)handle->desc.K) * (size_t)handle->desc.N, 
+                                                           (size_t)handle->desc.C * (size_t)handle->desc.K                            ) ;
     } else {
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
     }
@@ -524,32 +523,29 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_execute_st(libxsmm_dnn_
   LIBXSMM_UNUSED( tid );
 
   if (0 != handle) {
-    LIBXSMM_UNUSED(kind);
-    /*switch (kind)*/ {
-#if 0
+    switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
           status = libxsmm_dnn_fullyconnected_st_fwd_custom( handle, start_thread, tid );
         } else {
-          status = LIBXSMM_DNN_ERR_INVALID_FORMAT;
+          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
         }
       } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
           status = libxsmm_dnn_fullyconnected_st_bwd_custom( handle, start_thread, tid );
         } else {
-          status = LIBXSMM_DNN_ERR_INVALID_FORMAT;
+          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
         }
       } break;
       case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
           status = libxsmm_dnn_fullyconnected_st_upd_custom( handle, start_thread, tid );
         } else {
-          status = LIBXSMM_DNN_ERR_INVALID_FORMAT;
+          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
         }
       } break;
-#endif
-      /*default:*/ {
+      default: {
         status = LIBXSMM_DNN_ERR_INVALID_KIND;
       }
     }

@@ -87,6 +87,7 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION  100031
 #define LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN     100032
 #define LIBXSMM_DNN_ERR_UNSUPPORTED_POOLING        100033
+#define LIBXSMM_DNN_ERR_INVALID_FORMAT_FC          100034
 
 /** Kinds of supported compute flavor operations. */
 typedef enum libxsmm_dnn_compute_kind {
