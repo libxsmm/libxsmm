@@ -54,14 +54,19 @@ int ofm2 = 0;
 int ifm1 = 0;
 int ifm2 = 0;
 
-LIBXSMM_VLA_DECL(3, const element_input_type,  input,     (element_input_type* )handle->reg_input->data,  nBlocksIFm, nIFmBlock);
-LIBXSMM_VLA_DECL(3, element_output_type,       output,    (element_output_type*)handle->reg_output->data, nBlocksOFm, nOFmBlock);
-LIBXSMM_VLA_DECL(4, const element_filter_type, filter,    (element_filter_type*)handle->reg_filter->data,  nBlocksIFm, nIFmBlock, nOFmBlock);
+LIBXSMM_VLA_DECL(3, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, nIFmBlock);
+LIBXSMM_VLA_DECL(3, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, nOFmBlock);
+LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, nIFmBlock, nOFmBlock);
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
 for( ofm1 = thr_begin; ofm1 < thr_end; ++ofm1 ) {  /* outer GEMM m-loop */
+  gemm_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, nIFmBlock, nOFmBlock),
+               &LIBXSMM_VLA_ACCESS(3, input, img2, 0, 0, nBlocksIFm, nIFmBlock),
+               &LIBXSMM_VLA_ACCESS(3, output, img2, ofm1, 0, nBlocksOFm, nOFmBlock) );
+#if 0
+  /* this is a simple replacement code using regular loops */
   for( img2 = 0; img2 < nImg; ++img2 ) {
     LIBXSMM_PRAGMA_SIMD
     for( ofm2 = 0; ofm2 < nOFmBlock; ++ofm2 ) {
@@ -79,7 +84,8 @@ for( ofm1 = thr_begin; ofm1 < thr_end; ++ofm1 ) {  /* outer GEMM m-loop */
         } 
       }
     }
-  }  
+  }
+#endif
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
