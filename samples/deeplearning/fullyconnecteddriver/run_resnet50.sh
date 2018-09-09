@@ -84,5 +84,6 @@ fi
 
 # ./layer_example_${BIN} iters nImg nIfm nOfm fuse pass
 #
+${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 2048 1000 ${FUSE} ${PASS}
 ${NUMACTL} ./layer_example_${BIN} ${ITERS} ${MB} 2048 1024 ${FUSE} ${PASS}
 
