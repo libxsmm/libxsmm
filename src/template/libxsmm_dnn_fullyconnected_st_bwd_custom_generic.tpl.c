@@ -48,7 +48,7 @@ const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* number of tasks for transpose that could be run in parallel */
-int transpose_work = nBlocksIFm * nBlocksOFm;
+const int transpose_work = nBlocksIFm * nBlocksOFm;
 /* compute chunk size */
 const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (transpose_work / handle->desc.threads) : ((transpose_work / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
