@@ -201,8 +201,8 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
       tbmeansq  = tbmean * tbmean;
       tsqbmean = recp_nhw * ch_sumsq;
       tbrstd = (float)(1.0/sqrt(tsqbmean - tbmeansq + sqrt_eps));
-      expectval_ptr[fm] += tbmean;
-      stddev_ptr[fm] += tbrstd;
+      expectval_ptr[fm] = tbmean;
+      stddev_ptr[fm] = tbrstd;
     }
   }
 
