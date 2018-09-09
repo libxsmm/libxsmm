@@ -45,15 +45,28 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_MATH_DISPATCH1) && defined(__INTEL_COMPILER)
+# define LIBXSMM_MATH_DISPATCH1
+#endif
 #if !defined(LIBXSMM_MATH_MAXPRODUCT)
 # define LIBXSMM_MATH_MAXPRODUCT 1024
-#endif
-#if !defined(LIBXSMM_DIFF_DISPATCH) && 0
-# define LIBXSMM_DIFF_DISPATCH
 #endif
 #if !defined(LIBXSMM_MATH_MEMCMP) && 0
 # define LIBXSMM_MATH_MEMCMP
 #endif
+
+#define LIBXSMM_MATH_DIFF(DIFF, MOD, A, BN, ELEMSIZE, STRIDE, HINT, N) { \
+  const char *const libxsmm_diff_b_ = (const char*)(BN); \
+  const unsigned int libxsmm_diff_end_ = (HINT) + (N); \
+  unsigned int libxsmm_diff_i_; \
+  LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, 4) \
+  for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ < libxsmm_diff_end_; ++libxsmm_diff_i_) { \
+    const unsigned int libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); /* wrap around index */ \
+    const unsigned int libxsmm_diff_k_ = libxsmm_diff_j_ * (STRIDE); \
+    if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_k_, ELEMSIZE)) return libxsmm_diff_j_; \
+  } \
+  return N; \
+}
 
 
 LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n,
@@ -239,7 +252,7 @@ LIBXSMM_API unsigned int libxsmm_diff(const void* a, const void* b, unsigned cha
 #elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   result = libxsmm_diff_avx2(a, b, size);
 #else
-# if defined(LIBXSMM_DIFF_DISPATCH)
+# if defined(LIBXSMM_MATH_DISPATCH1)
   if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
     result = libxsmm_diff_avx2(a, b, size);
   }
@@ -256,35 +269,37 @@ LIBXSMM_API unsigned int libxsmm_diff(const void* a, const void* b, unsigned cha
 LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char size,
   unsigned char stride, unsigned int hint, unsigned int n)
 {
-  const unsigned int end = hint + n;
-  unsigned int i;
   LIBXSMM_ASSERT(size <= stride);
-  for (i = hint; i < end; ++i) {
-    const unsigned int j = (i % n); /* wrap around index */
-    if (0 == libxsmm_diff(a, (const char*)bn + (size_t)j * stride, size)) {
-      return j;
-    }
+#if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
+  LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD, a, bn, size, stride, hint, n);
+#else
+  if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
+    LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD, a, bn, size, stride, hint, n);
   }
-  return n;
+  else {
+    LIBXSMM_MATH_DIFF(libxsmm_diff_sw, LIBXSMM_MOD, a, bn, size, stride, hint, n);
+  }
+#endif
 }
 
 
 LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsigned char size,
   unsigned char stride, unsigned int hint, unsigned int n)
 {
-  const unsigned int end = hint + n;
-  unsigned int i;
 #if !defined(NDEBUG)
   const unsigned int npot = LIBXSMM_UP2POT(n);
   assert(size <= stride && n == npot); /* !LIBXSMM_ASSERT */
 #endif
-  for (i = hint; i < end; ++i) {
-    const unsigned int j = LIBXSMM_MOD2(i, n); /* wrap around index */
-    if (0 == libxsmm_diff(a, (const char*)bn + (size_t)j * stride, size)) {
-      return j;
-    }
+#if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
+  LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD2, a, bn, size, stride, hint, n);
+#else
+  if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
+    LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD2, a, bn, size, stride, hint, n);
   }
-  return n;
+  else {
+    LIBXSMM_MATH_DIFF(libxsmm_diff_sw, LIBXSMM_MOD2, a, bn, size, stride, hint, n);
+  }
+#endif
 }
 
 
