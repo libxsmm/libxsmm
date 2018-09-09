@@ -47,21 +47,50 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
+/* number of tasks for transpose that could be run in parallel */
+int transpose_work = nBlocksIFm * nBlocksOFm;
+/* compute chunk size */
+const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (transpose_work / handle->desc.threads) : ((transpose_work / handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
+const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
+
 /* loop variables */
 int img2 = 0;
 int ofm1 = 0;
 int ofm2 = 0;
 int ifm1 = 0;
 int ifm2 = 0;
+int ifm1ofm1 = 0;
 
-LIBXSMM_VLA_DECL(3,        element_input_type,  dinput,    (element_input_type* )handle->grad_input->data,  nBlocksIFm, nIFmBlock);
-LIBXSMM_VLA_DECL(3, const element_output_type, doutput,    (element_output_type*)handle->grad_output->data, nBlocksOFm, nOFmBlock);
-LIBXSMM_VLA_DECL(4, const element_filter_type,  filter,    (element_filter_type*)handle->reg_filter->data,  nBlocksIFm, nIFmBlock, nOFmBlock);
+LIBXSMM_VLA_DECL(3,        element_input_type,    dinput, (element_input_type* )handle->grad_input->data,  nBlocksIFm, nIFmBlock);
+LIBXSMM_VLA_DECL(3, const element_output_type,   doutput, (element_output_type*)handle->grad_output->data, nBlocksOFm, nOFmBlock);
+LIBXSMM_VLA_DECL(4, const element_filter_type,    filter, (element_filter_type*)handle->reg_filter->data,  nBlocksIFm, nIFmBlock, nOFmBlock);
+LIBXSMM_VLA_DECL(4,       element_filter_type, filter_tr, (element_filter_type*)handle->scratch,           nBlocksOFm, nOFmBlock, nIFmBlock);
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
+for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+  ofm1 = ifm1ofm1 / nBlocksIFm;
+  ifm1 = ifm1ofm1 % nBlocksIFm;
+  for (ofm2 = 0; ofm2 < nOFmBlock; ++ofm2) {
+    for (ifm2 = 0; ifm2 < nIFmBlock; ++ifm2) {
+      LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, ofm2, ifm2, nBlocksOFm, nOFmBlock, nIFmBlock) =
+        LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1, ifm2, ofm2, nBlocksIFm, nIFmBlock, nOFmBlock);
+    }
+  }
+}
+
+/* wait for transpose to finish */
+libxsmm_barrier_wait(handle->barrier, ltid);
+
 for( ifm1 = thr_begin; ifm1 < thr_end; ++ifm1 ) {  /* outer GEMM m-loop */
+  gemm_kernel( &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, 0, 0, 0, nBlocksOFm, nOFmBlock, nIFmBlock),
+               &LIBXSMM_VLA_ACCESS(3, doutput, img2, 0, 0, nBlocksOFm, nOFmBlock),
+               &LIBXSMM_VLA_ACCESS(3, dinput, img2, ifm1, 0, nBlocksIFm, nIFmBlock) );
+#if 0
+  /* this is a simple replacement code using regular loops */
   for( img2 = 0; img2 < nImg; ++img2 ) {
     LIBXSMM_PRAGMA_SIMD
     for( ifm2 = 0; ifm2 < nIFmBlock; ++ifm2 ) {
@@ -79,7 +108,8 @@ for( ifm1 = thr_begin; ifm1 < thr_end; ++ifm1 ) {  /* outer GEMM m-loop */
         } 
       }
     }
-  }  
+  }
+#endif  
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
