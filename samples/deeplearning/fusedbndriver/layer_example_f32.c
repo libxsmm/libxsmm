@@ -188,8 +188,8 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
       float tbrstd = 0.0f;
 
       for ( img = 0; img < nImg; img++ ) {
-        for( hi = 0; hi < ifh; hi++ ) {
-          for( wi = 0; wi < ifw; wi++ ) {
+        for ( hi = 0; hi < ifh; hi++ ) {
+          for ( wi = 0; wi < ifw; wi++ ) {
             const float input_val = LIBXSMM_VLA_ACCESS(4, input, img, fm, hi, wi, nFm, ifh, ifw);
             ch_sum   += input_val;
             ch_sumsq += (input_val * input_val);
@@ -211,8 +211,8 @@ LIBXSMM_INLINE void naive_fusedbn_fp(naive_fusedbn_t* param, const float* input_
 #endif
   for ( img = 0; img < nImg; img++ ) {
     for ( fm = 0; fm < nFm; fm++ ) {
-      for( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
-        for( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
+      for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
+        for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
           const float  input_val     =  LIBXSMM_VLA_ACCESS(4, input,     img, fm, hi, wi, nFm, ifh, ifw);
           const float  input_add_val =  LIBXSMM_VLA_ACCESS(4, input_add, img, fm, hi, wi, nFm, ifh, ifw);
                 float* output_ptr2   = &LIBXSMM_VLA_ACCESS(4, output,    img, fm, ho, wo, nFm, ofh, ofw);
@@ -295,7 +295,7 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
   for ( img = 0; img < nImg; img++ ) {
     for ( fm = 0; fm < nFm; fm++ ) {
       for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
-        for( wi = 0, wo = 0; wi < ifw; wi += sw, wo++) {
+        for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++) {
                 float* del_input_ptr  = &LIBXSMM_VLA_ACCESS(4,     dinput, img, fm, hi, wi, fm, ifh, ifw);
           const float  input_val      =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifh, ifw);
           const float  del_output_val =  LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh, ofw);

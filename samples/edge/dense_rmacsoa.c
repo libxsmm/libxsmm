@@ -59,18 +59,18 @@ static void matMulFusedAC(       unsigned int    i_r,
   unsigned int l_k = 0;
 
   /* init result matrix */
-  for( l_m = 0; l_m < i_m; l_m++ ) {
-    for( l_n = 0; l_n < i_n; l_n++ ) {
-      for( l_r = 0; l_r < i_r; l_r++ ) {
+  for ( l_m = 0; l_m < i_m; l_m++ ) {
+    for ( l_n = 0; l_n < i_n; l_n++ ) {
+      for ( l_r = 0; l_r < i_r; l_r++ ) {
         o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] = (i_beta != (REALTYPE)0) ? o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] * i_beta : 0;
       }
     }
   }
   /* perform matmul */
-  for( l_k = 0; l_k < i_k; l_k++ ) {
-    for( l_m = 0; l_m < i_m; l_m++ ) {
-      for( l_n = 0; l_n < i_n; l_n++ ) {
-        for( l_r = 0; l_r < i_r; l_r++ ) {
+  for ( l_k = 0; l_k < i_k; l_k++ ) {
+    for ( l_m = 0; l_m < i_m; l_m++ ) {
+      for ( l_n = 0; l_n < i_n; l_n++ ) {
+        for ( l_r = 0; l_r < i_r; l_r++ ) {
           o_c[l_m*i_ldC*i_r + l_n*i_r + l_r] += i_a[l_m*i_ldA*i_r + l_k*i_r + l_r] * i_b[l_k*i_ldB + l_n];
         }
       }

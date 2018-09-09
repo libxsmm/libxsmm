@@ -59,7 +59,7 @@ const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work
 int img2 = 0;
 int ifm1ofm1 = 0;
 int ofm1 = 0;
-int ofm2 = 0;
+/*int ofm2 = 0;*/
 int ifm1 = 0;
 int ifm2 = 0;
 
@@ -83,7 +83,7 @@ for (ifm1 = transpose_thr_begin; ifm1 < transpose_thr_end; ++ifm1) {
 /* wait for transpose to finish */
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-for( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {  /* outer GEMM m/n-loop */
+for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {  /* outer GEMM m/n-loop */
   ofm1 = ifm1ofm1 / nBlocksIFm;
   ifm1 = ifm1ofm1 % nBlocksIFm;
 

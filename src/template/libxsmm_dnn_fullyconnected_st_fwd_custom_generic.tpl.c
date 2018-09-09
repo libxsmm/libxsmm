@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 /* size variables, all const */
-const int nImg = handle->desc.N;
+/*const int nImg = handle->desc.N;*/
 /* here we assume that input and output blocking is similar */
 const int nBlocksIFm = handle->blocksifm;
 const int nIFmBlock = handle->fm_lp_block*handle->ifmblock;
@@ -50,10 +50,11 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 /* loop variables */
 int img2 = 0;
 int ofm1 = 0;
+#if 0
 int ofm2 = 0;
 int ifm1 = 0;
 int ifm2 = 0;
-
+#endif
 LIBXSMM_VLA_DECL(3, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, nIFmBlock);
 LIBXSMM_VLA_DECL(3, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, nOFmBlock);
 LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, nIFmBlock, nOFmBlock);
@@ -61,7 +62,7 @@ LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)han
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-for( ofm1 = thr_begin; ofm1 < thr_end; ++ofm1 ) {  /* outer GEMM m-loop */
+for ( ofm1 = thr_begin; ofm1 < thr_end; ++ofm1 ) {  /* outer GEMM m-loop */
   gemm_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, nIFmBlock, nOFmBlock),
                &LIBXSMM_VLA_ACCESS(3, input, img2, 0, 0, nBlocksIFm, nIFmBlock),
                &LIBXSMM_VLA_ACCESS(3, output, img2, ofm1, 0, nBlocksOFm, nOFmBlock) );

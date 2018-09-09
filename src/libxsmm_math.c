@@ -217,7 +217,7 @@ unsigned int libxsmm_diff_avx2(const void* a, const void* b, unsigned char size)
   result = 0;
   for (i = 0; i < n; ++i) {
     const __m256i ai = _mm256_loadu_si256(a256 + i), bi = _mm256_loadu_si256(b256 + i);
-    result |= (0xFFFFFFFF != _mm256_movemask_epi8(_mm256_cmpeq_epi8(ai, bi)));
+    result |= (-1 != _mm256_movemask_epi8(_mm256_cmpeq_epi8(ai, bi)));
   }
   for (i <<= 5; i < size; ++i) {
     result |= *((const unsigned char*)a + i) ^ *((const unsigned char*)b + i);

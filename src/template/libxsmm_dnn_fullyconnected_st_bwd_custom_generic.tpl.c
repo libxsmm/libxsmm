@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 /* size variables, all const */
-const int nImg = handle->desc.N;
+/*const int nImg = handle->desc.N;*/
 /* here we assume that input and output blocking is similar */
 const int nBlocksIFm = handle->blocksifm;
 const int nIFmBlock = handle->fm_lp_block*handle->ifmblock;
@@ -86,7 +86,7 @@ for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
 /* wait for transpose to finish */
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-for( ifm1 = thr_begin; ifm1 < thr_end; ++ifm1 ) {  /* outer GEMM m-loop */
+for ( ifm1 = thr_begin; ifm1 < thr_end; ++ifm1 ) {  /* outer GEMM m-loop */
   gemm_kernel( &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, 0, 0, 0, nBlocksOFm, nOFmBlock, nIFmBlock),
                &LIBXSMM_VLA_ACCESS(3, doutput, img2, 0, 0, nBlocksOFm, nOFmBlock),
                &LIBXSMM_VLA_ACCESS(3, dinput, img2, ifm1, 0, nBlocksIFm, nIFmBlock) );

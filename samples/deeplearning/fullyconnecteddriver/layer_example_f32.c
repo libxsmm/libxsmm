@@ -83,7 +83,7 @@ LIBXSMM_INLINE void naive_fullyconnected_fp(naive_fullyconnected_t* param, const
   const int nImg = param->N;
   const int nIFm = param->C;
   const int nOFm = param->K;
-  
+
   int img, ifm, ofm;
 
   LIBXSMM_VLA_DECL(2, const float, input,  input_ptr,  nIFm);
@@ -95,7 +95,7 @@ LIBXSMM_INLINE void naive_fullyconnected_fp(naive_fullyconnected_t* param, const
 #endif
   for (ofm = 0; ofm < nOFm; ++ofm) {
     for(img = 0; img < nImg; ++img) {
-      LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = (float)0; 
+      LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = (float)0;
       for (ifm = 0; ifm < nIFm; ++ifm) {
         LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) +=
           LIBXSMM_VLA_ACCESS(2, filter, ofm, ifm, nIFm) * LIBXSMM_VLA_ACCESS(2, input, img, ifm, nIFm);
@@ -109,7 +109,7 @@ LIBXSMM_INLINE void naive_fullyconnected_bp(naive_fullyconnected_t* param, float
   const int nImg = param->N;
   const int nIFm = param->C;
   const int nOFm = param->K;
-  
+
   int img, ifm, ofm;
 
   LIBXSMM_VLA_DECL(2,       float,  dinput,  delinput_ptr, nIFm);
@@ -121,7 +121,7 @@ LIBXSMM_INLINE void naive_fullyconnected_bp(naive_fullyconnected_t* param, float
 #endif
   for (ifm = 0; ifm < nIFm; ++ifm) {
     for(img = 0; img < nImg; ++img) {
-      LIBXSMM_VLA_ACCESS(2, dinput, img, ifm, nIFm) = (float)0; 
+      LIBXSMM_VLA_ACCESS(2, dinput, img, ifm, nIFm) = (float)0;
       for (ofm = 0; ofm < nOFm; ++ofm) {
         LIBXSMM_VLA_ACCESS(2, dinput, img, ifm, nIFm) +=
           LIBXSMM_VLA_ACCESS(2, filter, ofm, ifm, nIFm) * LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm);
@@ -135,7 +135,7 @@ LIBXSMM_INLINE void naive_fullyconnected_wu(naive_fullyconnected_t* param, const
   const int nImg = param->N;
   const int nIFm = param->C;
   const int nOFm = param->K;
-  
+
   int img, ifm, ofm;
 
   LIBXSMM_VLA_DECL(2, const float,   input,     input_ptr, nIFm);
@@ -147,7 +147,7 @@ LIBXSMM_INLINE void naive_fullyconnected_wu(naive_fullyconnected_t* param, const
 #endif
   for (ofm = 0; ofm < nOFm; ++ofm) {
     for (ifm = 0; ifm < nIFm; ++ifm) {
-      LIBXSMM_VLA_ACCESS(2, dfilter, ofm, ifm, nIFm) = (float)0; 
+      LIBXSMM_VLA_ACCESS(2, dfilter, ofm, ifm, nIFm) = (float)0;
       for(img = 0; img < nImg; ++img) {
         LIBXSMM_VLA_ACCESS(2, dfilter, ofm, ifm, nIFm) +=
           LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) * LIBXSMM_VLA_ACCESS(2, input, img, ifm, nIFm);
