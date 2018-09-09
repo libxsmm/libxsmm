@@ -48,30 +48,11 @@
 #if !defined(LIBXSMM_MATH_MAXPRODUCT)
 # define LIBXSMM_MATH_MAXPRODUCT 1024
 #endif
+#if !defined(LIBXSMM_DIFF_DISPATCH) && 0
+# define LIBXSMM_DIFF_DISPATCH
+#endif
 #if !defined(LIBXSMM_MATH_MEMCMP) && 0
 # define LIBXSMM_MATH_MEMCMP
-#else
-# define LIBXSMM_MATH_DIFF_KERNEL(RESULT, A, B) (RESULT |= (A) ^ (B))
-# define LIBXSMM_MATH_DIFF(RESULT, A, B, NBYTES) { \
-  union { unsigned long long u; unsigned int v[2]; } libxsmm_math_diff_result_ = { 0 }; \
-  const signed char libxsmm_math_diff_n_ = (signed char)LIBXSMM_MIN(NBYTES, 120); \
-  const unsigned char* libxsmm_math_diff_au_ = (const unsigned char*)(A); \
-  const unsigned char* libxsmm_math_diff_bu_ = (const unsigned char*)(B); \
-  unsigned char libxsmm_math_diff_r_, libxsmm_math_diff_u_; \
-  signed char libxsmm_math_diff_i_; \
-  for (libxsmm_math_diff_i_ = 0; libxsmm_math_diff_i_ < (libxsmm_math_diff_n_ - 7); libxsmm_math_diff_i_ += 8) { \
-    const unsigned long long *const libxsmm_math_diff_ai_ = (const unsigned long long*)(libxsmm_math_diff_au_ + libxsmm_math_diff_i_); \
-    const unsigned long long *const libxsmm_math_diff_bi_ = (const unsigned long long*)(libxsmm_math_diff_bu_ + libxsmm_math_diff_i_); \
-    LIBXSMM_MATH_DIFF_KERNEL(libxsmm_math_diff_result_.u, *libxsmm_math_diff_ai_, *libxsmm_math_diff_bi_); \
-  } \
-  RESULT = libxsmm_math_diff_result_.v[0] | libxsmm_math_diff_result_.v[1]; \
-  libxsmm_math_diff_au_ += libxsmm_math_diff_i_; \
-  libxsmm_math_diff_bu_ += libxsmm_math_diff_i_; \
-  libxsmm_math_diff_r_ = (unsigned char)((NBYTES) - libxsmm_math_diff_i_); \
-  for (libxsmm_math_diff_u_ = 0; libxsmm_math_diff_u_ < libxsmm_math_diff_r_; ++libxsmm_math_diff_u_) { \
-    LIBXSMM_MATH_DIFF_KERNEL(RESULT, libxsmm_math_diff_au_[libxsmm_math_diff_u_], libxsmm_math_diff_bu_[libxsmm_math_diff_u_]); \
-  } \
-}
 #endif
 
 
@@ -189,25 +170,59 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 }
 
 
-#if !defined(LIBXSMM_MATH_MEMCMP) && (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
-LIBXSMM_API_INTERN unsigned int libxsmm_diff_sse3(const void* a, const void* b, unsigned char size);
-LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_SSE3)
-unsigned int libxsmm_diff_sse3(const void* a, const void* b, unsigned char size)
+LIBXSMM_API_INTERN unsigned int libxsmm_diff_sw(const void* a, const void* b, unsigned char size);
+LIBXSMM_API_INTERN unsigned int libxsmm_diff_sw(const void* a, const void* b, unsigned char size)
 {
   unsigned int result;
-  LIBXSMM_MATH_DIFF(result, a, b, size);
+  const unsigned char* au = (const unsigned char*)a;
+  const unsigned char* bu = (const unsigned char*)b;
+  unsigned char u;
+  signed char i;
+#if (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
+  const signed char n = (signed char)LIBXSMM_MIN(size, 112) - 15;
+  result = 0;
+  for (i = 0; i < n; i += 16) {
+    const __m128i ai = LIBXSMM_INTRINSICS_LDDQU_SI128((const __m128i*)(au + i));
+    const __m128i bi = LIBXSMM_INTRINSICS_LDDQU_SI128((const __m128i*)(bu + i));
+    result |= (0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8(ai, bi)));
+  }
+#else
+  union { unsigned long long u; unsigned int v[2]; } result8 = { 0 };
+  const signed char n = (signed char)LIBXSMM_MIN(size, 120) - 7;
+  for (i = 0; i < n; i += 8) {
+    const unsigned long long ai = *(const unsigned long long*)(au + i);
+    const unsigned long long bi = *(const unsigned long long*)(bu + i);
+    result8.u |= ai ^ bi;
+  }
+  result = result8.v[0] | result8.v[1];
+#endif
+  for (u = i; u < size; ++u) result |= au[u] ^ bu[u];
   return result;
 }
-#endif
 
 
-#if !defined(LIBXSMM_MATH_MEMCMP) && (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
-LIBXSMM_API_INTERN unsigned int libxsmm_diff_avx(const void* a, const void* b, unsigned char size);
-LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX)
-unsigned int libxsmm_diff_avx(const void* a, const void* b, unsigned char size)
+#if !defined(LIBXSMM_MATH_MEMCMP)
+LIBXSMM_API_INTERN unsigned int libxsmm_diff_avx2(const void* a, const void* b, unsigned char size);
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
+unsigned int libxsmm_diff_avx2(const void* a, const void* b, unsigned char size)
 {
   unsigned int result;
-  LIBXSMM_MATH_DIFF(result, a, b, size);
+#if defined(LIBXSMM_INTRINSICS_AVX2)
+  const signed char n = (signed char)LIBXSMM_MIN(size, 96) - 31;
+  const unsigned char* au = (const unsigned char*)a;
+  const unsigned char* bu = (const unsigned char*)b;
+  unsigned char u;
+  signed char i;
+  result = 0;
+  for (i = 0; i < n; i += 32) {
+    const __m256i ai = _mm256_loadu_si256((const __m256i*)(au + i));
+    const __m256i bi = _mm256_loadu_si256((const __m256i*)(bu + i));
+    result |= (-1 != _mm256_movemask_epi8(_mm256_cmpeq_epi8(ai, bi)));
+  }
+  for (u = i; u < size; ++u) result |= au[u] ^ bu[u];
+#else
+  result = libxsmm_diff_sw(a, b, size);
+#endif
   return result;
 }
 #endif
@@ -215,17 +230,24 @@ unsigned int libxsmm_diff_avx(const void* a, const void* b, unsigned char size)
 
 LIBXSMM_API unsigned int libxsmm_diff(const void* a, const void* b, unsigned char size)
 {
-#if defined(LIBXSMM_MATH_MEMCMP)
-  return 0 != memcmp(a, b, size);
-#elif (LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH)
-  return libxsmm_diff_avx(a, b, size);
-#elif (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
-  return libxsmm_diff_sse3(a, b, size);
-#else
   unsigned int result;
-  LIBXSMM_MATH_DIFF(result, a, b, size);
-  return result;
+#if defined(LIBXSMM_MATH_MEMCMP)
+  const int diff = memcmp(a, b, size);
+  result = LIBXSMM_ABS(diff);
+#elif (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
+  result = libxsmm_diff_avx2(a, b, size);
+#else
+# if defined(LIBXSMM_DIFF_DISPATCH)
+  if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
+    result = libxsmm_diff_avx2(a, b, size);
+  }
+  else
+# endif
+  {
+    result = libxsmm_diff_sw(a, b, size);
+  }
 #endif
+  return result;
 }
 
 
