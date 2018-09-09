@@ -224,8 +224,8 @@ int main(int argc, char* argv[])
   if (argc > i) type       = *(argv[i++]);
   if (argc > i) format     = *(argv[i++]);
 
-  if (type != 'A' && type != 'F' && type != 'B') {
-    printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only)\n");
+  if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
+    printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only)\n");
     return -1;
   }
   if ( fuse_type != 0 ) {

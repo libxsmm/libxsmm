@@ -16,7 +16,7 @@ fi
 
 if [ $# -ne 6 ]
 then
-  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) prec (f32,bf16) FUSE (0) PASS ('A'-ALL/'F'-FP/'B'-BP); using default values; using default values: 64 1000 1 f32 0 A"
+  echo "Usage: $(basename $0) mb iters numa (1-mcdram/0-DDR) prec (f32,bf16) FUSE (0) PASS ('A'-ALL/'F'-FP/'B'-BP/'U'-UP); using default values; using default values: 64 1000 1 f32 0 A"
   MB=${CHECK_DNN_MB}
   ITERS=${CHECK_DNN_ITERS}
   NUMA=-1
@@ -28,8 +28,8 @@ else
   ITERS=$2
   NUMA=$3
   BIN=$4
-  FUSE=$6
-  PASS=$7
+  FUSE=$5
+  PASS=$6
 fi
 
 if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
