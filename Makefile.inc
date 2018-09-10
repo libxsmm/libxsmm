@@ -1184,8 +1184,39 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
   endif
   endif
   ifneq (,$(filter 1 2 3 4,$(SSE) $(AVX)))
-    ifeq (,$(CTARGET))
-    ifneq (,$(filter 10 11 12 13,$(SSE)$(AVX))) # default SSE
+    ifeq (,$(CTARGET)) # SSE-4.2
+      ifneq (,$(filter 40 41 42 43,$(SSE)$(AVX)))
+        ifneq (0,$(PGI))
+          #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
+          CTARGET = -tp=nehalem
+        else ifneq (0,$(GCC))
+          ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
+            CTARGET = -msse4.2
+          else
+            CTARGET = -msse3
+          endif
+        endif
+        CTARGET ?= -msse4.2
+      else ifneq (0,$(SSE)) # better to use TARGET flag directly
+        CTARGET = -msse$(SSE)
+      endif
+    endif
+    ifeq (,$(CTARGET)) # SSE3
+    ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__SSSE3__ -D__SSE3__
+        CTARGET = -tp=penryn
+      endif
+      ifneq (Darwin,$(UNAME))
+        CTARGET ?= -msse3
+      else # prevents Clang BE error (CRC32 and others)
+        CTARGET ?= -msse4.2
+      endif
+    endif
+    endif
+    # SSE=2 is implicitly present (64-bit ABI)
+    ifeq (,$(CTARGET)) # default SSE
+    ifneq (,$(filter 01 02 03 10 11 12 13,$(SSE)$(AVX)))
       ifneq (0,$(PGI))
         #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
         CTARGET = -tp=nehalem
@@ -1198,37 +1229,6 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
       endif
       CTARGET ?= -msse4.2
     endif
-    endif
-    # SSE=2 is implicitly present (64-bit ABI)
-    ifeq (,$(CTARGET))
-    ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX))) # default SSE
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__SSSE3__ -D__SSE3__
-        CTARGET = -tp=penryn
-      endif
-      ifneq (Darwin,$(UNAME))
-        CTARGET ?= -msse3
-      else # prevents Clang BE error (CRC32 and others)
-        CTARGET ?= -msse4.2
-      endif
-    endif
-    endif
-    ifeq (,$(CTARGET))
-      ifneq (,$(filter 40 41 42 43,$(SSE)$(AVX))) # default SSE
-        ifneq (0,$(PGI))
-          #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-          CTARGET = -tp=nehalem
-        else ifneq (0,$(GCC))
-          ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
-            CTARGET = -msse4.2
-          else
-            CTARGET = -msse3
-          endif
-        endif
-        CTARGET ?= -msse4.2
-      else # perhaps better to use TARGET flag directly
-        CTARGET = -msse$(SSE)
-      endif
     endif
   else ifneq (0,$(AVX))
     CTARGET = -march=native
