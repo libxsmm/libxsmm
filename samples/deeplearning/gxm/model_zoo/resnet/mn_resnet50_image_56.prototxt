@@ -83,6 +83,7 @@ node {
     engine: XSMM
     kernel_size: 3
     stride: 2
+    pad: 1
   }
 }
 node {
@@ -957,7 +958,7 @@ node {
     use_global_stats: false
     relu: false
     pad: 0
-    stride: 2
+    stride: 1
     engine: XSMM
   }
   bottom: "node_256_1_conv4"

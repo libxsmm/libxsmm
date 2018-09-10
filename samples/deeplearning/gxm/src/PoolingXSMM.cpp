@@ -51,8 +51,8 @@ PoolXSMM::PoolXSMM(PoolImplParams *gp, int engine) : PoolImpl(gp, engine)
   pooling_desc.pad_w = gp->pad_w;
   pooling_desc.pad_h_in = gp->ipad_h;
   pooling_desc.pad_w_in = gp->ipad_w;
-  pooling_desc.pad_h_out = gp->pad_h;
-  pooling_desc.pad_w_out = gp->pad_w;
+  pooling_desc.pad_h_out = gp->opad_h;
+  pooling_desc.pad_w_out = gp->opad_w;
   pooling_desc.threads = gp->num_threads;
   pooling_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
   pooling_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
