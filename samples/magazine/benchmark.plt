@@ -225,13 +225,13 @@ if (0!=system("sh -c \"if [ -e ".BASENAME."-".KIND.".join ]; then echo 1; else e
   reset
   if (MULTI<=0) { set output BASENAME."-".KIND."-".FILECOUNT.".".FILEEXT; FILECOUNT = FILECOUNT + 1 }
   if (MULTI>-1) { set title "Performance (Selected Kernels)" }
-  set style fill solid 0.4 border -1
+  set style fill solid 0.9 border -1
   set style data histograms
   set style histogram cluster #gap 2
   #set boxwidth 0.5 relative
   set grid y2tics lc "grey"
   set key left #spacing 0.5
-  set xtics rotate by -45 scale 0; set bmargin 6
+  set xtics rotate by -45 scale 0; set bmargin 12
   set ytics format ""
   set y2tics nomirror
   set y2label "GFLOP/s"
@@ -242,10 +242,10 @@ if (0!=system("sh -c \"if [ -e ".BASENAME."-".KIND.".join ]; then echo 1; else e
       if (0!=system("sh -c \"if [ -e ".BASENAME."-blas.join ]; then echo 1; else echo 0; fi\"")) {
         if (0!=system("sh -c \"if [ -e ".BASENAME."-xsmm.join ]; then echo 1; else echo 0; fi\"")) {
           set output BASENAME.".".FILEEXT
-          plot BASENAME."-eigen.join" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Eigen", \
-               BASENAME."-blaze.join" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "Blaze", \
-               BASENAME."-blas.join"  using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "BLAS", \
-               BASENAME."-xsmm.join"  using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") title "xsmm"
+          plot BASENAME."-eigen.join" using FLOPS:xtic("{/=8 (".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")}") title "Eigen", \
+               BASENAME."-blaze.join" using FLOPS title "Blaze", \
+               BASENAME."-blas.join"  using FLOPS title "BLAS", \
+               BASENAME."-xsmm.join"  using FLOPS title "xsmm"
         }
       }
     }
