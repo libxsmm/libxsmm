@@ -703,7 +703,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     /* allocate buffers */
     handle->n_entries_fwd = (int*) malloc(handle->desc.threads * sizeof(int));
     handle->compute_fwd_indices_ptrs = (int**)malloc(handle->desc.threads * sizeof(int*));
-    handle->bn_indices_ptrs = (int**)malloc(handle->desc.threads * sizeof(int*));
+    handle->bn_stats_indices_ptrs = (int**)malloc(handle->desc.threads * sizeof(int*));
     handle->kernel_fwd_variant_ptrs = (char**)malloc(handle->desc.threads * sizeof(char*));
     handle->n_fwd_code_segments = (int*)malloc(handle->desc.threads * sizeof(int));
     handle->fwd_code_segments = (segment_t**)malloc(handle->desc.threads * sizeof(segment_t*));
@@ -712,13 +712,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
 
     /* TODO: proper error handling */
     LIBXSMM_ASSERT(NULL != handle->n_entries_fwd && NULL != handle->compute_fwd_indices_ptrs);
-    LIBXSMM_ASSERT(NULL != handle->bn_indices_ptrs && NULL != handle->kernel_fwd_variant_ptrs);
+    LIBXSMM_ASSERT(NULL != handle->bn_stats_indices_ptrs && NULL != handle->kernel_fwd_variant_ptrs);
     LIBXSMM_ASSERT(NULL != handle->n_fwd_code_segments && NULL != handle->fwd_code_segments);
     LIBXSMM_ASSERT(NULL != handle->ofh_fwd_start && NULL != handle->ofh_fwd_end);
 
     memset( handle->n_entries_fwd, 0, handle->desc.threads * sizeof(int) );
     memset( handle->compute_fwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
-    memset( handle->bn_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
+    memset( handle->bn_stats_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
     memset( handle->kernel_fwd_variant_ptrs, 0, handle->desc.threads * sizeof(char*) );
     memset( handle->n_fwd_code_segments, 0, handle->desc.threads * sizeof(int) );
     memset( handle->fwd_code_segments, 0, handle->desc.threads * sizeof(segment_t*) );

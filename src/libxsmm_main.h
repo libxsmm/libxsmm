@@ -461,7 +461,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
 
   int *n_entries_fwd;
   int **compute_fwd_indices_ptrs;
-  int **bn_indices_ptrs;
+  int **bn_stats_indices_ptrs;
   char **kernel_fwd_variant_ptrs;
   int block_fwd_oj;
   int block_fwd_oi;

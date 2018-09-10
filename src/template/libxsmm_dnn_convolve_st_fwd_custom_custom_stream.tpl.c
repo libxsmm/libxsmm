@@ -58,7 +58,7 @@ int instr, n_segments, offset_bn, offset_i, offset_o, offset_w, pi, po, pw, pc, 
 /* Stream related variables  */
 segment_t *code_stream;
 int *stream = handle->compute_fwd_indices_ptrs[ltid];
-int *bn_stream = handle->bn_indices_ptrs[ltid];
+int *bn_stream = handle->bn_stats_indices_ptrs[ltid];
 
 /* Padding related variables */
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;

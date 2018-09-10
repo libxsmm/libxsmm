@@ -209,7 +209,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   /* BN offsets...  */
   if  (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
     bn_indices = (int*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(int), 64);
-    handle->bn_indices_ptrs[ltid] = bn_indices;
+    handle->bn_stats_indices_ptrs[ltid] = bn_indices;
   }
 
   kernel_variant = (char*)(3 <= local_entries ? libxsmm_aligned_malloc((local_entries / 3) * sizeof(char), 64) : NULL);
