@@ -94,6 +94,20 @@ LIBXSMM_VLA_DECL(2,       element_stats_type, brstd,     (element_stats_type*)ha
 LIBXSMM_VLA_DECL(3,       element_stats_type, sum_img,   (element_stats_type*)handle->scratch,                                            nImg, nFmBlock);
 LIBXSMM_VLA_DECL(3,       element_stats_type, sumsq_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * nBlocksFm * nFmBlock),  nImg, nFmBlock);
 
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+union libxsmm_bfloat16_hp input_f32;
+union libxsmm_bfloat16_hp output_f32;
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+union libxsmm_bfloat16_hp input_add_f32;
+input_add_f32.i[1]  = 0;
+input_add_f32.i[0]  = 0;
+#endif
+input_f32.i[1]  = 0;
+input_f32.i[0]  = 0;
+output_f32.i[1] = 0;
+output_f32.i[0] = 0;
+#endif
+
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
@@ -121,11 +135,19 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
       for ( wi=ipw; wi < (ifw + ipw); wi++ ) {
         const element_input_type* input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
 
+#if !defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
         LIBXSMM_PRAGMA_SIMD
+#endif
         LIBXSMM_PRAGMA_VALIGNED
         for (v=0; v < nFmBlock; v++) {
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+          input_f32.i[1] = input_ptr[v];
+          lcl_sum_ptr[v]   += input_f32.f;
+          lcl_sumsq_ptr[v] += (input_f32.f * input_f32.f);
+#else
           lcl_sum_ptr[v]   += input_ptr[v];
           lcl_sumsq_ptr[v] += (input_ptr[v] * input_ptr[v]);
+#endif
         }
       }
     }
@@ -198,21 +220,38 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
       const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
       const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
 
+#if !defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
       LIBXSMM_PRAGMA_SIMD
+#endif
       LIBXSMM_PRAGMA_VALIGNED
       LIBXSMM_PRAGMA_NONTEMPORAL
       for (v = 0; v < nFmBlock; v++ ) {
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+        input_f32.i[1] = input_ptr[v];
+        float o = gamma_ptr[v]*(input_f32.f - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
+#else
         /* BN + scale (gamma, beta) */
         float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
+#endif
         /* Eltwise */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+        input_add_f32.i[1] = input_add_ptr[v];
+        o += input_add_f32.f;
+#else
         o += input_add_ptr[v];
+#endif
 #endif
         /* ReLU */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
         o = ( o < 0.0f ) ? 0.0f : o;
 #endif
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+        output_f32.f = o;
+        output_ptr[v] = output_f32.i[1];
+#else
         output_ptr[v] = o;
+#endif
       }
     }
   }
