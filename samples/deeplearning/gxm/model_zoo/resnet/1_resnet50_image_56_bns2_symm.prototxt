@@ -85,6 +85,7 @@ node {
     engine: XSMM
     kernel_size: 3
     stride: 2
+    pad: 1
   }
 }
 node {

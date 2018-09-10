@@ -86,14 +86,14 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
   ts_.dims[0] = bs->dims[0]; // Minibatch size
   ts_.dims[1] = bs->dims[1]; // Num output feature maps
 
-  ts_.dims[2] = (int)(ceil((float)(bs->dims[2] - vd[0] + 2*vp[0])/vs[0])) + 1; // Height
+  ts_.dims[2] = (bs->dims[2] - vd[0] + 2*vp[0])/vs[0] + 1; // Height
 
   if(ts_.ndims == 4)
-    ts_.dims[3] = (int)(ceil((float)(bs->dims[3] - vd[1] + 2*vp[1])/vs[1])) + 1; // Width
+    ts_.dims[3] = (bs->dims[3] - vd[1] + 2*vp[1])/vs[1] + 1; // Width
   else if(ts_.ndims == 5)
   {
-    ts_.dims[3] = (int)(ceil((float)(bs->dims[3] - vd[1] + 2*vp[1])/vs[1])) + 1; // Width
-    ts_.dims[4] = (int)(ceil((float)(bs->dims[4] - vd[2] + 2*vp[2])/vs[2])) + 1; // Depth (for 3D)
+    ts_.dims[3] = (bs->dims[3] - vd[1] + 2*vp[1])/vs[1] + 1; // Width
+    ts_.dims[4] = (bs->dims[4] - vd[2] + 2*vp[2])/vs[2] + 1; // Depth (for 3D)
   }
 
   if(vp[0])
