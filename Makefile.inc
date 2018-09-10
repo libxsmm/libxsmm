@@ -1137,30 +1137,31 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
   endif
   ifeq (,$(CTARGET))
   ifeq (3,$(AVX))
-    ifneq (0,$(shell echo "$$(((0!=$(CLANG) && 40000<=$(CC_VERSION)) || 50000<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
-    ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
-      CTARGET = -mavx512f -mavx512cd
-      # fix for Clang
-      CTARGET += -mfma
-      ifneq (,$(MIC)) # specified
-        ifneq (0,$(MIC)) # MIC
-          ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
-            CTARGET += -mavx512pf -mavx512er
-          endif
-        else ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
-          ifneq (Darwin,$(UNAME))
-            CTARGET += -mavx512dq -mavx512bw -mavx512vl
-            #CTARGET += -mavx512ifma -mavx512vbmi
-          else ifneq (,$(filter 1 2 3,$(INTEL) $(GCC)))
-            CTARGET += -mavx512dq -mavx512bw -mavx512vl
-            #CTARGET += -mavx512ifma -mavx512vbmi
-          else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION)))"))
-            CTARGET += -mavx512dq -mavx512bw -mavx512vl
-          endif
+  ifneq (0,$(shell echo "$$(((0!=$(CLANG) && 40000<=$(CC_VERSION)) || 50000<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
+  ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+    CTARGET = -mavx512f -mavx512cd
+    # fix for Clang
+    CTARGET += -mfma
+    ifneq (,$(MIC)) # specified
+      ifneq (0,$(MIC)) # MIC
+        ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+          CTARGET += -mavx512pf -mavx512er
+        endif
+      else ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+        ifneq (Darwin,$(UNAME))
+          CTARGET += -mavx512dq -mavx512bw -mavx512vl
+          #CTARGET += -mavx512ifma -mavx512vbmi
+        else ifneq (,$(filter 1 2 3,$(INTEL) $(GCC)))
+          CTARGET += -mavx512dq -mavx512bw -mavx512vl
+          #CTARGET += -mavx512ifma -mavx512vbmi
+        else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION)))"))
+          CTARGET += -mavx512dq -mavx512bw -mavx512vl
         endif
       endif
     endif
-    endif
+  endif
+  endif
+  endif
   endif
   ifeq (,$(CTARGET)) # fall-back to AVX2
   ifneq (,$(filter 2 3,$(AVX)))
@@ -1182,33 +1183,9 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     endif
   endif
   endif
-  ifneq (0,$(SSE))
-    ifeq (1,$(SSE)) # default
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-        CTARGET = -tp=nehalem
-      else ifneq (0,$(GCC))
-        ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
-          CTARGET = -msse4.2
-        else
-          CTARGET = -msse3
-        endif
-      endif
-      CTARGET ?= -msse4.2
-    else ifeq (2,$(SSE))
-      # implicitly present (64-bit ABI)
-    else
-      ifeq (3,$(SSE))
-        ifneq (0,$(PGI))
-          #DFLAGS += -D__SSSE3__ -D__SSE3__
-          CTARGET = -tp=penryn
-        endif
-        ifneq (Darwin,$(UNAME))
-          CTARGET ?= -msse3
-        else # prevents Clang BE error (CRC32 and others)
-          CTARGET ?= -msse4.2
-        endif
-      else ifeq (4,$(SSE))
+  ifneq (,$(filter 1 2 3 4,$(SSE) $(AVX)))
+    ifeq (,$(CTARGET)) # SSE-4.2
+      ifneq (,$(filter 40 41 42 43,$(SSE)$(AVX)))
         ifneq (0,$(PGI))
           #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
           CTARGET = -tp=nehalem
@@ -1220,13 +1197,41 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
           endif
         endif
         CTARGET ?= -msse4.2
-      else # perhaps better to use TARGET flag directly
+      else ifneq (0,$(SSE)) # better to use TARGET flag directly
         CTARGET = -msse$(SSE)
       endif
     endif
+    ifeq (,$(CTARGET)) # SSE3
+    ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__SSSE3__ -D__SSE3__
+        CTARGET = -tp=penryn
+      endif
+      ifneq (Darwin,$(UNAME))
+        CTARGET ?= -msse3
+      else # prevents Clang BE error (CRC32 and others)
+        CTARGET ?= -msse4.2
+      endif
+    endif
+    endif
+    # SSE=2 is implicitly present (64-bit ABI)
+    ifeq (,$(CTARGET)) # default SSE
+    ifneq (,$(filter 01 02 03 10 11 12 13,$(SSE)$(AVX)))
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
+        CTARGET = -tp=nehalem
+      else ifneq (0,$(GCC))
+        ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
+          CTARGET = -msse4.2
+        else
+          CTARGET = -msse3
+        endif
+      endif
+      CTARGET ?= -msse4.2
+    endif
+    endif
   else ifneq (0,$(AVX))
     CTARGET = -march=native
-  endif
   endif
 endif
 endif
