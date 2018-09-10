@@ -57,7 +57,10 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
 
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input);
 
-/** Calculate whether there is a difference between two (short) buffers. */
+/**
+ * Calculate whether there is a difference between two (short) buffers.
+ * Returns zero if there is no difference; otherwise non-zero.
+ */
 LIBXSMM_API unsigned int libxsmm_diff(const void* a, const void* b, unsigned char size);
 
 /**

@@ -60,7 +60,7 @@
   const unsigned int libxsmm_diff_end_ = (HINT) + (N); \
   unsigned int libxsmm_diff_i_; \
   LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, 4) \
-  for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ < libxsmm_diff_end_; ++libxsmm_diff_i_) { \
+  for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ != libxsmm_diff_end_; ++libxsmm_diff_i_) { \
     const unsigned int libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); /* wrap around index */ \
     const unsigned int libxsmm_diff_k_ = libxsmm_diff_j_ * (STRIDE); \
     if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_k_, ELEMSIZE)) return libxsmm_diff_j_; \
@@ -187,31 +187,28 @@ LIBXSMM_API_INTERN unsigned int libxsmm_diff_sw(const void* a, const void* b, un
 LIBXSMM_API_INTERN unsigned int libxsmm_diff_sw(const void* a, const void* b, unsigned char size)
 {
   unsigned int result;
+  unsigned char i;
 #if (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
   const __m128i *const a128 = (const __m128i*)a;
   const __m128i *const b128 = (const __m128i*)b;
-  const unsigned char n = size >> 4;
-  unsigned char i;
+  const unsigned char n = (unsigned char)(size >> 4);
   result = 0;
-  for (i = 0; i < n; ++i) {
+  for (i = 0; i < n /*&& 0 == result*/; ++i) {
     const __m128i ai = _mm_loadu_si128(a128 + i), bi = _mm_loadu_si128(b128 + i);
     result |= (0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8(ai, bi)));
   }
-  for (i <<= 4; i < size; ++i) {
-    result |= *((const unsigned char*)a + i) ^ *((const unsigned char*)b + i);
-  }
+  i <<= 4;
 #else
   const unsigned long long *const a2 = (const unsigned long long*)a;
   const unsigned long long *const b2 = (const unsigned long long*)b;
   union { unsigned long long u; unsigned int v[2]; } result8 = { 0 };
-  const unsigned char n = size >> 3;
-  unsigned char i;
-  for (i = 0; i < n; ++i) result8.u |= a2[i] ^ b2[i];
-  result = result8.v[0] | result8.v[1];
-  for (i <<= 3; i < size; ++i) {
+  const unsigned char n = (unsigned char)(size >> 3);
+  for (i = 0; i < n /*&& 0 == result8.u*/; ++i) result8.u |= a2[i] ^ b2[i];
+  result = result8.v[0] | result8.v[1]; i <<= 3;
+#endif
+  for (; i < size /*&& 0 == result*/; ++i) {
     result |= *((const unsigned char*)a + i) ^ *((const unsigned char*)b + i);
   }
-#endif
   return result;
 }
 
@@ -225,14 +222,14 @@ unsigned int libxsmm_diff_avx2(const void* a, const void* b, unsigned char size)
 #if defined(LIBXSMM_INTRINSICS_AVX2)
   const __m256i *const a256 = (const __m256i*)a;
   const __m256i *const b256 = (const __m256i*)b;
-  const unsigned char n = size >> 5;
+  const unsigned char n = (unsigned char)(size >> 5);
   unsigned char i;
   result = 0;
-  for (i = 0; i < n; ++i) {
+  for (i = 0; i < n /*&& 0 == result*/; ++i) {
     const __m256i ai = _mm256_loadu_si256(a256 + i), bi = _mm256_loadu_si256(b256 + i);
-    result |= (-1 != _mm256_movemask_epi8(_mm256_cmpeq_epi8(ai, bi)));
+    result |= _mm256_movemask_epi8(_mm256_cmpeq_epi8(ai, bi)) + 1;
   }
-  for (i <<= 5; i < size; ++i) {
+  for (i <<= 5; i < size /*&& 0 == result*/; ++i) {
     result |= *((const unsigned char*)a + i) ^ *((const unsigned char*)b + i);
   }
 #else
