@@ -1136,8 +1136,7 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
   endif
   endif
   ifeq (,$(CTARGET))
-  ifneq (0,$(shell echo "$$((2<=$(AVX)))"))
-    ifeq (3,$(AVX))
+  ifeq (3,$(AVX))
     ifneq (0,$(shell echo "$$(((0!=$(CLANG) && 40000<=$(CC_VERSION)) || 50000<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
     ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
       CTARGET = -mavx512f -mavx512cd
@@ -1162,21 +1161,28 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
       endif
     endif
     endif
-    endif
-    ifeq (,$(CTARGET)) # fall-back to AVX2
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-        CTARGET = -tp=haswell
-      endif
+  endif
+  ifeq (,$(CTARGET)) # fall-back to AVX2
+  ifneq (,$(filter 2 3,$(AVX)))
+    ifneq (0,$(PGI))
+      #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
+      CTARGET = -tp=haswell
+    else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40800<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
       CTARGET ?= -march=core-avx2
     endif
-  else ifeq (1,$(AVX))
+  endif
+  endif
+  ifeq (,$(CTARGET)) # fall-back to AVX
+  ifneq (,$(filter 1 2 3,$(AVX)))
     ifneq (0,$(PGI))
       #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
       CTARGET = -tp=sandybridge
+    else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40400<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
+      CTARGET ?= -mavx
     endif
-    CTARGET ?= -mavx
-  else ifneq (0,$(SSE))
+  endif
+  endif
+  ifneq (0,$(SSE))
     ifeq (1,$(SSE)) # default
       ifneq (0,$(PGI))
         #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
@@ -1279,8 +1285,7 @@ ifeq (0,$(COMPATIBLE))
         ifneq (,$(strip $(SIMD))) # explicit
         ifneq (Darwin,$(UNAME))
         ifneq (,$(CTARGET))
-        ifneq (0,$(shell echo "$$((60000<=$(CC_VERSION)))"))
-        ifneq (0,$(shell echo "$$((60000<=$(CXX_VERSION)))"))
+        ifneq (0,$(shell echo "$$((60000<=$(CC_VERSION) && 60000<=$(CXX_VERSION)))"))
           DFLAGS += -DLIBXSMM_OPENMP_SIMD
           CXXFLAGS += -fopenmp-simd
           CFLAGS += -fopenmp-simd
@@ -1291,7 +1296,6 @@ ifeq (0,$(COMPATIBLE))
           endif
           endif
           endif
-        endif
         endif
         endif
         endif
