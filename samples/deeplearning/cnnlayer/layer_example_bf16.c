@@ -779,11 +779,11 @@ int main(int argc, char* argv[])
 #elif defined(USE_FUSED_BIAS_RELU)
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
 #elif defined(USE_FUSED_BATCH_STATS)
-  conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS;
+  conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD;
 #elif defined(USE_FUSED_RELU_BWD)
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU_BWD;
 #elif defined(USE_FUSED_BATCH_STATCH_RELU_BWD)
-  conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD;
+  conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD_RELU_BWD;
 #else
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
