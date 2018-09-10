@@ -94,7 +94,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_fwd_custom_bf16_bf16(libxsmm_dnn_fusedb
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   typedef libxsmm_bfloat16 element_input_type;
   typedef libxsmm_bfloat16 element_output_type;
-  typedef libxsmm_bfloat16 element_stats_type;
+  typedef float element_stats_type;
 
 # define LIBXSMM_DNN_FUSEDBN_FWD_BF16
   if ( handle->desc.fuse_order != LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU ) {
@@ -196,7 +196,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_fwd_custom(libxsmm_d
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
       typedef libxsmm_bfloat16 element_input_type;
       typedef libxsmm_bfloat16 element_output_type;
-      typedef libxsmm_bfloat16 element_stats_type;
+      typedef float element_stats_type;
 
 # define LIBXSMM_DNN_FUSEDBN_FWD_BF16
       if ( handle->desc.fuse_order != LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU ) {
