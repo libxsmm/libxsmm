@@ -219,6 +219,7 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
       const element_stats_type*  beta_ptr      = &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, nFmBlock);
       const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
       const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
+      float o;
 
 #if !defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
       LIBXSMM_PRAGMA_SIMD
@@ -228,10 +229,10 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
       for (v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
         input_f32.i[1] = input_ptr[v];
-        float o = gamma_ptr[v]*(input_f32.f - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
+        o = gamma_ptr[v]*(input_f32.f - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
 #else
         /* BN + scale (gamma, beta) */
-        float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
+        o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
 #endif
         /* Eltwise */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
