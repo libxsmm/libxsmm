@@ -70,31 +70,29 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
         handle->fm_lp_block = 1;
         handle->ofmblock = 10;
         handle->ofmblock_lp = 10;
-
-        /* compute the outer blocks */
-        if ((handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)) {
-          handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
-          handle->blocksofm = handle->desc.K / handle->ofmblock;
-          handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
-          handle->blocksofm_lp = handle->desc.K / handle->ofmblock;
-        } else {
-          /* this is FP32 */
-          handle->blocksifm = handle->desc.C / handle->ifmblock;
-          handle->blocksofm = handle->desc.K / handle->ofmblock;
-          handle->blocksifm_lp = handle->blocksifm;
-          handle->blocksofm_lp = handle->blocksofm;
-        }
-
-        /* create barrier */
-        handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
-        /* calculate scratch size for batchstats */
-        handle->scratch_size = sizeof(float) * LIBXSMM_MAX(((size_t)handle->desc.C + (size_t)handle->desc.K) * (size_t)handle->desc.N,
-          (size_t)handle->desc.C * (size_t)handle->desc.K);
       } else {
         *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
         free( handle );
-        handle = NULL;
+        return 0;
       }
+      /* compute the outer blocks */
+      if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
+        handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
+        handle->blocksofm = handle->desc.K / handle->ofmblock;
+        handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
+        handle->blocksofm_lp = handle->desc.K / handle->ofmblock;
+      } else {
+        /* this is FP32 */
+        handle->blocksifm = handle->desc.C / handle->ifmblock;
+        handle->blocksofm = handle->desc.K / handle->ofmblock;
+        handle->blocksifm_lp = handle->blocksifm;
+        handle->blocksofm_lp = handle->blocksofm;
+      }
+      /* create barrier */
+      handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
+      /* calculate scratch size for batchstats */
+      handle->scratch_size = sizeof(float) * LIBXSMM_MAX( ((size_t)handle->desc.C + (size_t)handle->desc.K) * (size_t)handle->desc.N,
+                                                           (size_t)handle->desc.C * (size_t)handle->desc.K                            ) ;
     } else {
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
     }
