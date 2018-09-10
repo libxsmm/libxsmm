@@ -79,8 +79,6 @@ LIBXSMM_ALIGNED(float scale_factor, 64);
 LIBXSMM_ALIGNED(float *max_vals, 64) = NULL;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs;
-#else /* won't happen as this code only runs on AVX512 platforms */
-  LIBXSMM_ASSERT(0);
 #endif
 
 /* accumulation scratch for fp32->bf16 downconvert */
@@ -170,6 +168,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 
   /* set accumulation scratch initially to zero */
   if (handle->use_accumulation_scratch) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
     float *scratch_ptr = accumulators_scratch;
     __m512 zero_reg = _mm512_setzero_ps();
     for ( ij = 0; ij < handle->desc.H; ij++ ) {
@@ -178,6 +177,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       }
       scratch_ptr += handle->desc.W*handle->ifmblock_hp;
     }
+#else
+    LIBXSMM_ASSERT(0);
+#endif
   }
 
   if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) {
@@ -250,7 +252,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
           }
         }
 #else /* won't happen as this code only runs on AVX512 platforms */
-  LIBXSMM_ASSERT(0);
+        LIBXSMM_ASSERT(0);
 #endif
       }
     }
@@ -297,23 +299,24 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 
             if ( instr == IFM_LOOP_CLOSE) {
               if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                 element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, /*ifm1*/code_stream[pc].aux_index, 0, 0, 0,
                     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 for ( ij = 0; ij < handle->desc.H; ij++ ) {
                   for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                     max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
-#else /* won't happen as this code only runs on AVX512 platforms */
-                    LIBXSMM_ASSERT(0);
-#endif
                   }
                   cur_vec += handle->ifwp*handle->ifmblock;
                 }
+#else /* won't happen as this code only runs on AVX512 platforms */
+                LIBXSMM_ASSERT(0);
+#endif
               }
 
               /* @TODO this is a hack as it might conflict with MAX STATS fuse */
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                 element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                 float *scratch_ptr = accumulators_scratch;
                 __m512 zero_reg = _mm512_setzero_ps();
@@ -351,6 +354,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                     input_dst += handle->ifwp*handle->ifmblock_hp;
                   }
                 }
+#else
+                LIBXSMM_ASSERT(0);
+#endif
               }
             }
 
@@ -396,23 +402,24 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 
             if ( instr == IFM_LOOP_CLOSE) {
               if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                 element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, /*ifm1*/code_stream[pc].aux_index, 0, 0, 0,
                     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 for ( ij = 0; ij < handle->desc.H; ij++ ) {
                   for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                     max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
-#else /* won't happen as this code only runs on AVX512 platforms */
-                    LIBXSMM_ASSERT(0);
-#endif
                   }
                   cur_vec += handle->ifwp*handle->ifmblock;
                 }
+#else /* won't happen as this code only runs on AVX512 platforms */
+                LIBXSMM_ASSERT(0);
+#endif
               }
 
               /* @TODO this is a hack as it might conflict with MAX STATS fuse */
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                 element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                 float *scratch_ptr = accumulators_scratch;
                 __m512 zero_reg = _mm512_setzero_ps();
@@ -450,6 +457,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                     input_dst += handle->ifwp*handle->ifmblock_hp;
                   }
                 }
+#else /* won't happen as this code only runs on AVX512 platforms */
+                LIBXSMM_ASSERT(0);
+#endif
               }
             }
 
@@ -538,6 +548,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               /* @TODO this is a hack as it might conflict with MAX STATS/ReLU fuse */
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
                   LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                   const element_input_type *orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
@@ -628,6 +639,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                     }
                   }
                 }
+#else /* won't happen as this code only runs on AVX512 platforms */
+                LIBXSMM_ASSERT(0);
+#endif
               }
             }
 
@@ -697,23 +711,24 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               }
 
               if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                 element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, /*ifm1*/code_stream[pc].aux_index, 0, 0, 0,
                     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                 for ( ij = 0; ij < handle->desc.H; ij++ ) {
                   for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                     max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
-#else /* won't happen as this code only runs on AVX512 platforms */
-                    LIBXSMM_ASSERT(0);
-#endif
                   }
                   cur_vec += handle->ifwp*handle->ifmblock_hp;
                 }
+#else /* won't happen as this code only runs on AVX512 platforms */
+                LIBXSMM_ASSERT(0);
+#endif
               }
 
               /* @TODO this is a hack as it might conflict with MAX STATS fuse */
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                 if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
                   LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                   const element_input_type *orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
@@ -804,6 +819,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                     }
                   }
                 }
+#else /* won't happen as this code only runs on AVX512 platforms */
+                LIBXSMM_ASSERT(0);
+#endif
               }
             }
 
@@ -850,6 +868,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2] + ih, NULL, NULL);
             }
 #endif
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
             int h, w;
             __m512 zero_reg = _mm512_setzero_ps();
             for (h = 0; h<handle->bwd_ofh_rb; h++) {
@@ -857,6 +876,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
                 _mm512_store_ps(output_base+stream[i+2]+w*handle->ifmblock_hp+h*handle->ifwp*handle->ifmblock_hp, zero_reg);
               }
             }
+#else /* won't happen as this code only runs on AVX512 platforms */
+            LIBXSMM_ASSERT(0);
+#endif
           }
         }
 
@@ -973,6 +995,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 #if 0
   /* Fuse ReLu here*/
   if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
     int ii, ij, ifm1, ifm2, img;
     img = ltid;
     LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -996,6 +1019,9 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
       }
     }
     libxsmm_barrier_wait(handle->barrier, ltid);
+#else /* won't happen as this code only runs on AVX512 platforms */
+    LIBXSMM_ASSERT(0);
+#endif
   }
 #endif
 }

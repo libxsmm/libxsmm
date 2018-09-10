@@ -105,7 +105,7 @@ union libxsmm_bfloat16_hp del_output_f32;
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
 union libxsmm_bfloat16_hp output_f32;
 #endif
-#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE) && 0
 union libxsmm_bfloat16_hp del_input_add_f32;
 del_input_add_f32.i[1]  = 0;
 del_input_add_f32.i[0]  = 0;
