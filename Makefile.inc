@@ -1088,14 +1088,14 @@ else # GCC assumed
     else #ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
       LIBOMPRT = $(call libpath,$(LD) $(SLDFLAGS),$(NULL),omp)
       ifeq (3,$(GCC))
-        CXXFLAGS += $(OMPFLAG)
         CFLAGS += $(OMPFLAG)
+        CXXFLAGS += $(OMPFLAG)
         FCFLAGS += $(OMPFLAG)
         LDFLAGS += $(OMPFLAG)
       else ifneq (,$(strip $(LIBOMPRT)))
         FLDFLAGS += $(call abslibpath,$(LIBOMPRT)) $(XLIB_BEGIN) $(call abslibfile,$(LIBOMPRT)) $(XLIB_END)
-        CXXFLAGS += $(OMPFLAG)
         CFLAGS += $(OMPFLAG)
+        CXXFLAGS += $(OMPFLAG)
         FCFLAGS += $(OMPFLAG)
         LDFLAGS += $(OMPFLAG)
       endif
@@ -1666,8 +1666,7 @@ else ifneq (0,$(BLAS)) # generic
   endif
 endif
 
-cleanup = $(strip $(shell echo "$(eval hit :=) $(foreach _,$(shell echo '$1' | rev), \
-                       $(if $(filter $_,${hit}),,$(eval hit += $_))) ${hit}" | rev))
+cleanup = $(foreach flag,$1,$(flag))
 
 # no-BLAS flags: cleanup and extra flags
 NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
