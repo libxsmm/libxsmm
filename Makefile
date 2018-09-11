@@ -351,6 +351,9 @@ ifeq (,$(filter Darwin,$(UNAME)))
     endif
   endif
   VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
+  ifeq (,$(VTUNEROOT))
+    VTUNEROOT = $(EBROOTVTUNE)/vtune_amplifier
+  endif
   ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
     LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
     OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
