@@ -48,12 +48,43 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 
 /* loop variables */
 int ofm1 = 0;
-LIBXSMM_VLA_DECL(3, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, nIFmBlock);
+
 LIBXSMM_VLA_DECL(3, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, nOFmBlock);
+#if defined(LIBXSMM_DNN_FULLYCONNECTED_FWD_BF16_F32)
+float* input_f32_ptr = (float*)handle->scratch;
+float* filter_f32_ptr = ((float*)handle->scratch)+(handle->desc.N*handle->desc.C);
+LIBXSMM_VLA_DECL(3, const float,  input, input_f32_ptr,  nBlocksIFm, nIFmBlock);
+LIBXSMM_VLA_DECL(4, const float, filter, filter_f32_ptr, nBlocksIFm, nIFmBlock, nOFmBlock);
+
+/* number of tasks that could be run in parallel */
+const int work_input = handle->desc.N * handle->desc.C;
+/* compute chunk size */
+const int chunksize_input = (work_input % handle->desc.threads == 0) ? (work_input / handle->desc.threads) : ((work_input / handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const int thr_begin_input = (ltid * chunksize_input < work_input) ? (ltid * chunksize_input) : work_input;
+const int thr_end_input = ((ltid + 1) * chunksize_input < work_input) ? ((ltid + 1) * chunksize_input) : work_input;
+
+/* number of tasks that could be run in parallel */
+const int work_filter = handle->desc.C * handle->desc.K;
+/* compute chunk size */
+const int chunksize_filter = (work_filter % handle->desc.threads == 0) ? (work_filter / handle->desc.threads) : ((work_filter / handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const int thr_begin_filter = (ltid * chunksize_filter < work_filter) ? (ltid * chunksize_filter) : work_filter;
+const int thr_end_filter = ((ltid + 1) * chunksize_filter < work_filter) ? ((ltid + 1) * chunksize_filter) : work_filter;
+#else
+LIBXSMM_VLA_DECL(3, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, nIFmBlock);
 LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, nIFmBlock, nOFmBlock);
+#endif
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
+
+#if defined(LIBXSMM_DNN_FULLYCONNECTED_FWD_BF16_F32)
+libxsmm_convert_bf16_f32( ((element_input_type*)handle->reg_input->data)+thr_begin_input,   input_f32_ptr+thr_begin_input,   thr_end_input - thr_begin_input );
+libxsmm_convert_bf16_f32( ((element_filter_type*)handle->reg_filter->data)+thr_begin_filter, filter_f32_ptr+thr_begin_filter, thr_end_filter - thr_begin_filter );
+
+libxsmm_barrier_wait(handle->barrier, ltid);
+#endif
 
 for ( ofm1 = thr_begin; ofm1 < thr_end; ++ofm1 ) {  /* outer GEMM m-loop */
   gemm_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, nIFmBlock, nOFmBlock),

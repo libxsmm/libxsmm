@@ -44,7 +44,7 @@
 
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom_f32_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
-/*LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom_bf16_bf16(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);*/
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom_bf16_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
 
 
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
@@ -68,7 +68,6 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom_f32_f32(libxsmm_dnn_f
   } else {
     status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
   }
-
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
@@ -77,20 +76,35 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom_f32_f32(libxsmm_dnn_f
 }
 
 
-#if 0
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
-libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom_bf16_bf16(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid)
+libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom_bf16_f32(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  /* @TODO */
+  typedef libxsmm_bfloat16 element_input_type;
+  typedef float element_output_type;
+  typedef libxsmm_bfloat16 element_filter_type;
+  typedef libxsmm_smmfunction gemm_function;
+  libxsmm_blasint lda = (libxsmm_blasint)handle->ifmblock;
+  libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.K;
+  libxsmm_blasint ldc = (libxsmm_blasint)handle->desc.C;
+  float alpha = (element_input_type)1;
+  float beta = (element_input_type)0;
+
+  if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
+    gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->desc.N, handle->desc.K, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+# define LIBXSMM_DNN_FULLYCONNECTED_BWD_BF16_F32
+# include "template/libxsmm_dnn_fullyconnected_st_bwd_custom_generic.tpl.c"
+# undef LIBXSMM_DNN_FULLYCONNECTED_BWD_BF16_F32
+  } else {
+    status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+  }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
 }
-#endif
 
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid)
@@ -109,8 +123,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom(li
        libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL    ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fullyconnected_st_bwd_custom_f32_f32( handle, start_thread, tid);
-    } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
-      /* @TODO */
+    } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      status = libxsmm_dnn_fullyconnected_st_bwd_custom_bf16_f32( handle, start_thread, tid);
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -133,8 +147,25 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom(li
       } else {
         status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
       }
-    } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
-      /*status = libxsmm_dnn_fullyconnected_st_bwd_custom_bf16_bf16( handle, start_thread, tid);*/
+    } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      typedef libxsmm_bfloat16 element_input_type;
+      typedef float element_output_type;
+      typedef libxsmm_bfloat16 element_filter_type;
+      typedef libxsmm_smmfunction gemm_function;
+      libxsmm_blasint lda = (libxsmm_blasint)handle->ifmblock;
+      libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.K;
+      libxsmm_blasint ldc = (libxsmm_blasint)handle->desc.C;
+      float alpha = (element_input_type)1;
+      float beta = (element_input_type)0;
+
+      if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
+        gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->desc.N, handle->desc.K, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+# define LIBXSMM_DNN_FULLYCONNECTED_BWD_BF16_F32
+# include "template/libxsmm_dnn_fullyconnected_st_bwd_custom_generic.tpl.c"
+# undef LIBXSMM_DNN_FULLYCONNECTED_BWD_BF16_F32
+      } else {
+        status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+      }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
