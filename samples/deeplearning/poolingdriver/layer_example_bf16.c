@@ -452,8 +452,8 @@ int main(int argc, char* argv[])
   stride_h = stride;
 
   /* deriving some values for naive code */
-  ofh = (int)(ceil((float)(ifh + 2 * pad_h - kh) / (float)stride_h)) + 1;
-  ofw = (int)(ceil((float)(ifw + 2 * pad_w - kw) / (float)stride_w)) + 1;
+  ofh = (ifh + 2 * pad_h - kh)/stride_h + 1;
+  ofw = (ifw + 2 * pad_w - kw)/stride_w + 1;
   ifhp = ifh + 2 * pad_h_in;
   ifwp = ifw + 2 * pad_w_in;
   ofhp = ofh + 2 * pad_h_out;
