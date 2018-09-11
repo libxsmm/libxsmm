@@ -341,8 +341,8 @@ ifneq (,$(strip $(FC)))
   FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
 endif
 
+MSGJITPROFILING = 0
 ifneq (0,$(JIT))
-ifneq (0,$(SYM))
 ifeq (,$(filter Darwin,$(UNAME)))
   ifneq (0,$(PERF))
     DFLAGS += -DLIBXSMM_PERF
@@ -355,16 +355,18 @@ ifeq (,$(filter Darwin,$(UNAME)))
     VTUNEROOT = $(EBROOTVTUNE)/vtune_amplifier
   endif
   ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
-    LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
-    OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
-    DFLAGS += -DLIBXSMM_VTUNE
-    IFLAGS += -I$(VTUNEROOT)/include
-    ifneq (0,$(INTEL))
-      CXXFLAGS += -diag-disable 271
-      CFLAGS += -diag-disable 271
+    ifneq (0,$(SYM))
+      LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
+      OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
+      DFLAGS += -DLIBXSMM_VTUNE
+      IFLAGS += -I$(VTUNEROOT)/include
+      ifneq (0,$(INTEL))
+        CXXFLAGS += -diag-disable 271
+        CFLAGS += -diag-disable 271
+      endif
     endif
+    MSGJITPROFILING = 1
   endif
-endif
 endif
 endif
 
@@ -419,9 +421,13 @@ libxsmm: libs
 endif
 endif
 	$(information)
-ifneq (,$(strip $(LIBJITPROFILING)))
+ifneq (0,$(MSGJITPROFILING))
 	$(info --------------------------------------------------------------------------------)
+ifneq (,$(strip $(LIBJITPROFILING)))
 	$(info Intel VTune Amplifier support has been incorporated.)
+else
+	$(info Intel VTune Amplifier support has been detected (enable with SYM=1).)
+endif
 endif
 	$(info --------------------------------------------------------------------------------)
 
