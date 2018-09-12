@@ -108,9 +108,33 @@ for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 for ( ifm1 = thr_begin; ifm1 < thr_end; ++ifm1 ) {  /* outer GEMM m-loop */
+#if 1
   gemm_kernel( &LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, 0, 0, 0, nBlocksOFm, nOFmBlock, nIFmBlock),
                &LIBXSMM_VLA_ACCESS(3, doutput,   0, 0, 0, nBlocksOFm, nOFmBlock),
                &LIBXSMM_VLA_ACCESS(3, dinput,    0, ifm1, 0, nBlocksIFm, nIFmBlock) );
+#else
+  const int nImg = handle->desc.N;
+  int img2;
+
+  /* this is a simple replacement code using regular loops */
+  for( img2 = 0; img2 < nImg; ++img2 ) {
+    LIBXSMM_PRAGMA_SIMD
+    for( ifm2 = 0; ifm2 < nIFmBlock; ++ifm2 ) {
+      LIBXSMM_VLA_ACCESS(3, dinput, img2, ifm1, ifm2, nBlocksIFm, nIFmBlock) = (element_output_type)0;
+    }
+  }
+  for( ofm1 = 0; ofm1 < nBlocksOFm; ++ofm1 ) {     /* outer GEMM k-loop */
+    for( ofm2 = 0; ofm2 < nOFmBlock; ++ofm2 ) {    /* GEMM K-loop */
+      for( img2 = 0; img2 < nImg; ++img2 ) {       /* GEMM n-loop */
+        LIBXSMM_PRAGMA_SIMD
+        for( ifm2 = 0; ifm2 < nIFmBlock; ++ifm2 ) { /* GEMM m-loop */ 
+          LIBXSMM_VLA_ACCESS(3, dinput, img2, ifm1, ifm2, nBlocksIFm, nIFmBlock) +=
+            LIBXSMM_VLA_ACCESS(4, filter_tr, ifm1, ofm1, ofm2, ifm2, nBlocksOFm, nOFmBlock, nIFmBlock) * LIBXSMM_VLA_ACCESS(3, doutput, img2, ofm1, ofm2, nBlocksOFm, nOFmBlock); 
+        } 
+      }
+    }
+  }
+#endif  
 }
 
 #if defined(LIBXSMM_DNN_FULLYCONNECTED_BWD_BF16_F32)
