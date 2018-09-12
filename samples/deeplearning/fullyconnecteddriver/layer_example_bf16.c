@@ -159,8 +159,11 @@ LIBXSMM_INLINE void naive_fullyconnected_wu(naive_fullyconnected_t* param, const
 int main(int argc, char* argv[])
 {
   float *naive_input, *naive_output, *naive_filter, *naive_delinput, *naive_deloutput, *naive_delfilter;
-  float *naive_libxsmm_output, *naive_libxsmm_delinput, *naive_libxsmm_delfilter;
-  float *input_libxsmm, *output_libxsmm, *filter_libxsmm, *delinput_libxsmm, *deloutput_libxsmm, *delfilter_libxsmm;
+  libxsmm_bfloat16 *naive_input_bf16, *naive_filter_bf16, *naive_delinput_bf16, *naive_delfilter_bf16;
+  float *naive_libxsmm_output, *naive_libxsmm_delinput_f32, *naive_libxsmm_delfilter_f32;
+  libxsmm_bfloat16 *naive_libxsmm_delinput, *naive_libxsmm_delfilter;
+  libxsmm_bfloat16 *input_libxsmm, *filter_libxsmm, *delinput_libxsmm, *delfilter_libxsmm;
+  float *output_libxsmm, *deloutput_libxsmm;
 
   naive_fullyconnected_t naive_param;
   void* scratch;
@@ -255,30 +258,37 @@ int main(int argc, char* argv[])
   printf("##########################################\n");
   printf("PARAMS: N:%d  C:%d  K:%d\n", nImg, nIFm, nOFm);
   printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
-  printf("SIZE Input  (MB): %10.2f MiB\n", (double)(nImg*nIFm*sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Input  (MB): %10.2f MiB\n", (double)(nImg*nIFm*sizeof(libxsmm_bfloat16))/(1024.0*1024.0) );
   printf("SIZE Output (MB): %10.2f MiB\n", (double)(nImg*nOFm*sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Input   (1): %10.2f MiB\n", (double)(1*nIFm*   sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Input   (1): %10.2f MiB\n", (double)(1*nIFm*   sizeof(libxsmm_bfloat16))/(1024.0*1024.0) );
   printf("SIZE Output  (1): %10.2f MiB\n", (double)(1*nOFm*   sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Filter     : %10.2f MiB\n", (double)(nIFm*nOFm*sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Filter     : %10.2f MiB\n", (double)(nIFm*nOFm*sizeof(libxsmm_bfloat16))/(1024.0*1024.0) );
 
   /* allocate data */
-  naive_input                = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
-  naive_delinput             = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
-  naive_output               = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  naive_deloutput            = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  naive_filter               = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
-  naive_delfilter            = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
+  naive_input                 = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
+  naive_delinput              = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
+  naive_output                = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
+  naive_deloutput             = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
+  naive_filter                = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
+  naive_delfilter             = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
 
-  naive_libxsmm_delinput     = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
-  naive_libxsmm_output       = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  naive_libxsmm_delfilter    = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
+  naive_input_bf16            = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_delinput_bf16         = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_filter_bf16           = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_delfilter_bf16        = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
 
-  input_libxsmm              = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
-  delinput_libxsmm           = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
-  output_libxsmm             = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  deloutput_libxsmm          = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  filter_libxsmm             = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
-  delfilter_libxsmm          = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
+  naive_libxsmm_delinput      = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_libxsmm_output        = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
+  naive_libxsmm_delfilter     = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_libxsmm_delinput_f32  = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
+  naive_libxsmm_delfilter_f32 = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
+
+  input_libxsmm               = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
+  delinput_libxsmm            = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
+  output_libxsmm              = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
+  deloutput_libxsmm           = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
+  filter_libxsmm              = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  delfilter_libxsmm           = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
 
   /* initialize data */
   init_buf( naive_input,     nImg*nIFm, 0, 0 );
@@ -287,6 +297,11 @@ int main(int argc, char* argv[])
   init_buf( naive_deloutput, nImg*nOFm, 0, 0 );
   init_buf( naive_filter,    nIFm*nOFm, 0, 0 );
   init_buf( naive_delfilter, nIFm*nOFm, 0, 0 );
+
+  libxsmm_rne_convert_fp32_bfp16( naive_input,     naive_input_bf16,     nImg*nIFm );
+  libxsmm_rne_convert_fp32_bfp16( naive_delinput,  naive_delinput_bf16,  nImg*nIFm );
+  libxsmm_rne_convert_fp32_bfp16( naive_filter,    naive_filter_bf16,    nIFm*nOFm );
+  libxsmm_rne_convert_fp32_bfp16( naive_delfilter, naive_delfilter_bf16, nIFm*nOFm );
 
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");
@@ -317,7 +332,7 @@ int main(int argc, char* argv[])
     fullyconnected_desc.C = nIFm;
     fullyconnected_desc.K = nOFm;
     fullyconnected_desc.threads = nThreads;
-    fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
+    fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_BF16;
     fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
@@ -354,12 +369,12 @@ int main(int argc, char* argv[])
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our
        own external to the library */
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,        (void*)naive_input,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output,       (void*)naive_output,       LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter,       (void*)naive_filter,       LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delinput,     (void*)naive_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_deloutput,    (void*)naive_deloutput,    LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delfilter,    (void*)naive_delfilter,    LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,        (void*)naive_input_bf16,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output,       (void*)naive_output,         LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter,       (void*)naive_filter_bf16,    LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delinput,     (void*)naive_delinput_bf16,  LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_deloutput,    (void*)naive_deloutput,      LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delfilter,    (void*)naive_delfilter_bf16, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
 
     /* bind buffers and filter to handle */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle, libxsmm_input,        LIBXSMM_DNN_REGULAR_INPUT ) );
@@ -428,9 +443,10 @@ int main(int argc, char* argv[])
 
       /* copy out data */
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delinput,     (void*)naive_libxsmm_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      libxsmm_convert_bf16_f32( naive_libxsmm_delinput, naive_libxsmm_delinput_f32, nImg*nIFm );
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIFm, 1, naive_delinput, naive_libxsmm_delinput, 0, 0, &norms_bwd);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIFm, 1, naive_delinput, naive_libxsmm_delinput_f32, 0, 0, &norms_bwd);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -460,9 +476,10 @@ int main(int argc, char* argv[])
 
       /* copy out data */
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delfilter,     (void*)naive_libxsmm_delfilter,     LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+      libxsmm_convert_bf16_f32( naive_libxsmm_delfilter, naive_libxsmm_delfilter_f32, nIFm*nOFm );
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIFm*nOFm, 1, naive_delfilter, naive_libxsmm_delfilter, 0, 0, &norms_upd);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIFm*nOFm, 1, naive_delfilter, naive_libxsmm_delfilter_f32, 0, 0, &norms_upd);
       printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
@@ -596,9 +613,15 @@ int main(int argc, char* argv[])
   libxsmm_free(naive_deloutput);
   libxsmm_free(naive_filter);
   libxsmm_free(naive_delfilter);
+  libxsmm_free(naive_input_bf16);
+  libxsmm_free(naive_delinput_bf16);
+  libxsmm_free(naive_filter_bf16);
+  libxsmm_free(naive_delfilter_bf16);
   libxsmm_free(naive_libxsmm_output);
   libxsmm_free(naive_libxsmm_delinput);
   libxsmm_free(naive_libxsmm_delfilter);
+  libxsmm_free(naive_libxsmm_delinput_f32);
+  libxsmm_free(naive_libxsmm_delfilter_f32);
   libxsmm_free(input_libxsmm);
   libxsmm_free(output_libxsmm);
   libxsmm_free(delinput_libxsmm);

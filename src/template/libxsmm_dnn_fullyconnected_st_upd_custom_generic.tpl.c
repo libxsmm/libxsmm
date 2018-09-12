@@ -64,8 +64,24 @@ int ifm2 = 0;
 
 LIBXSMM_VLA_DECL(3, const element_input_type,  input,    (element_input_type* )handle->reg_input->data,   nBlocksIFm, nIFmBlock);
 LIBXSMM_VLA_DECL(3, const element_output_type, doutput,  (element_output_type*)handle->grad_output->data, nBlocksOFm, nOFmBlock);
+#if defined(LIBXSMM_DNN_FULLYCONNECTED_UPD_BF16_F32)
+float* input_f32_ptr = (float*)handle->scratch;
+float* dfilter_f32_ptr = ((float*)handle->scratch)+(handle->desc.N*handle->desc.C);
+LIBXSMM_VLA_DECL(3, float, input_tr, input_f32_ptr, nIFmBlock, nImg);
+LIBXSMM_VLA_DECL(4, float,  dfilter, dfilter_f32_ptr, nBlocksIFm, nIFmBlock, nOFmBlock);
+
+/* number of tasks that could be run in parallel */
+const int work_filter = handle->desc.C * handle->desc.K;
+/* compute chunk size */
+const int chunksize_filter = (work_filter % handle->desc.threads == 0) ? (work_filter / handle->desc.threads) : ((work_filter / handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const int thr_begin_filter = (ltid * chunksize_filter < work_filter) ? (ltid * chunksize_filter) : work_filter;
+const int thr_end_filter = ((ltid + 1) * chunksize_filter < work_filter) ? ((ltid + 1) * chunksize_filter) : work_filter;
+#else
 LIBXSMM_VLA_DECL(4,       element_filter_type, dfilter,  (element_filter_type*)handle->grad_filter->data, nBlocksIFm, nIFmBlock, nOFmBlock);
 LIBXSMM_VLA_DECL(3,       element_input_type,  input_tr, (element_input_type* )handle->scratch,           nIFmBlock,  nImg);
+#endif
+
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -73,8 +89,15 @@ libxsmm_barrier_init(handle->barrier, ltid);
 for (ifm1 = transpose_thr_begin; ifm1 < transpose_thr_end; ++ifm1) {
   for (ifm2 = 0; ifm2 < nIFmBlock; ++ifm2) {
     for (img2 = 0; img2 < nImg; ++img2) {
+#if defined(LIBXSMM_DNN_FULLYCONNECTED_UPD_BF16_F32)
+      union libxsmm_bfloat16_hp input_f32;
+      input_f32.i[0] = 0;
+      input_f32.i[1] = LIBXSMM_VLA_ACCESS(3, input, img2, ifm1, ifm2, nBlocksIFm, nIFmBlock);
+      LIBXSMM_VLA_ACCESS(3, input_tr, ifm1, ifm2, img2, nIFmBlock, nImg) = input_f32.f;
+#else
       LIBXSMM_VLA_ACCESS(3, input_tr, ifm1, ifm2, img2, nIFmBlock, nImg) =
         LIBXSMM_VLA_ACCESS(3, input, img2, ifm1, ifm2, nBlocksIFm, nIFmBlock);
+#endif
     }
   }
 }
@@ -86,10 +109,40 @@ for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {  /* outer GEMM m/
   ofm1 = ifm1ofm1 / nBlocksIFm;
   ifm1 = ifm1ofm1 % nBlocksIFm;
 
+#if 1
   gemm_kernel( &LIBXSMM_VLA_ACCESS(3, doutput,  0, ofm1, 0, nBlocksOFm, nOFmBlock),
                &LIBXSMM_VLA_ACCESS(3, input_tr, ifm1, 0, 0, nIFmBlock, nImg),
                &LIBXSMM_VLA_ACCESS(4, dfilter,  ofm1, ifm1, 0, 0, nBlocksIFm, nIFmBlock, nOFmBlock) );
+#else
+  {
+    const int nImg = handle->desc.N;
+    int ifm2, ofm2;
+
+    /* this is a simple replacement code using regular loops */
+    for( ifm2 = 0; ifm2 < nIFmBlock; ++ifm2 ) {
+      LIBXSMM_PRAGMA_SIMD
+      for( ofm2 = 0; ofm2 < nOFmBlock; ++ofm2 ) {
+        LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, ifm2, ofm2, nBlocksIFm, nIFmBlock, nOFmBlock) = (element_output_type)0;
+      }
+    }
+    for( img2 = 0; img2 < nImg; ++img2 ) {            /* GEMM k-loop */
+      for( ifm2 = 0; ifm2 < nIFmBlock; ++ifm2 ) {     /* GEMM n-loop */
+        LIBXSMM_PRAGMA_SIMD
+        for( ofm2 = 0; ofm2 < nOFmBlock; ++ofm2 ) { /* GEMM m-loop */
+          LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, ifm2, ofm2, nBlocksIFm, nIFmBlock, nOFmBlock) +=
+            LIBXSMM_VLA_ACCESS(3, doutput, img2, ofm1, ofm2, nBlocksOFm, nOFmBlock) * LIBXSMM_VLA_ACCESS(3, input_tr, ifm1, ifm2, img2, nIFmBlock, nImg);
+        }
+      }
+    }
+  }
+#endif
 }
+
+#if defined(LIBXSMM_DNN_FULLYCONNECTED_UPD_BF16_F32)
+libxsmm_barrier_wait(handle->barrier, ltid);
+
+libxsmm_rne_convert_fp32_bfp16( dfilter_f32_ptr+thr_begin_filter, ((element_input_type*)handle->grad_filter->data)+thr_begin_filter, thr_end_filter-thr_begin_filter );
+#endif
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 

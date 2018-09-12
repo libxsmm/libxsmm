@@ -50,7 +50,7 @@ int ofmb = tensor->layout->dim_size[5];
 #endif
 int C = ifmb * bifm * lpb;
 
-/* printf("Layout if filters fil ofmb %i ifmb %i R %i S %i bifm %i bofm %i lpb %i \n", ofmb, ifmb, R, S, bifm, bofm, lpb); */
+/*printf("Layout of filters fil ofmb %i ifmb %i R %i S %i bifm %i bofm %i lpb %i \n", ofmb, ifmb, R, S, bifm, bofm, lpb);*/
 
 LIBXSMM_VLA_DECL(7, element_type, handle_data_1, (element_type*)tensor->data, ifmb, R, S, bifm, bofm, lpb);
 LIBXSMM_VLA_DECL(6, element_type, handle_data_2, (element_type*)tensor->data, ifmb, R, S, bifm, bofm);
