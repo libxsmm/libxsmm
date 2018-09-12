@@ -83,7 +83,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom_bf16_f32(libxsmm_dnn_
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   typedef libxsmm_bfloat16 element_input_type;
   typedef float element_output_type;
-  typedef libxsmm_bfloat16 element_filter_type;
+  /*typedef libxsmm_bfloat16 element_filter_type;*/
   typedef libxsmm_smmfunction gemm_function;
   libxsmm_blasint lda = (libxsmm_blasint)handle->desc.K;
   libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.N;
@@ -150,7 +150,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom(li
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef libxsmm_bfloat16 element_input_type;
       typedef float element_output_type;
-      typedef libxsmm_bfloat16 element_filter_type;
+      /*typedef libxsmm_bfloat16 element_filter_type;*/
       typedef libxsmm_smmfunction gemm_function;
       libxsmm_blasint lda = (libxsmm_blasint)handle->desc.K;
       libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.N;
