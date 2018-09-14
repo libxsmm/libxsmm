@@ -29,6 +29,16 @@
 /* Alexander Heinecke, Sasikanth Avancha (Intel Corp.)
 ******************************************************************************/
 
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+# define _mm512_load_act(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+# define _mm512_stream_act(A,B) _mm256_stream_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512((B)),16)))
+# define _mm512_store_act(A,B)  _mm256_storeu_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512((B)),16)))
+#else
+# define _mm512_load_act(A)   _mm512_loadu_ps(A)
+# define _mm512_stream_act(A,B) _mm512_stream_ps(A,B)
+# define _mm512_store_act(A,B)  _mm512_storeu_ps(A,B) 
+#endif
+
 /* size variables, all const */
 const int nImg = handle->desc.N;
 const int ifh = handle->desc.H;
@@ -76,7 +86,6 @@ int fm = 0;
 int imgfm = 0;
 int hi = 0;
 int wi = 0;
-int v = 0;
 int ho = 0;
 int wo = 0;
 
@@ -125,19 +134,18 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
       const element_input_type*  input_ptr         = &LIBXSMM_VLA_ACCESS(5,      input, img, fm, hi, ipw, 0, nBlocksFm, ifhp, ifwp, 16);
             element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5,    doutput, img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 16);
       for ( wi=ipw, wo=opw; wi < (ifw + ipw); wi+=sw, wo++ ) {
-        __m512 lcl_vdeloutput = _mm512_loadu_ps( del_output_ptr );
-
+        __m512 lcl_vdeloutput = _mm512_load_act( del_output_ptr );
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-        __mmask16 lcl_mzero = _mm512_cmp_ps_mask( _mm512_loadu_ps( output_ptr ), _mm512_setzero_ps(), _CMP_EQ_UQ );
+        __mmask16 lcl_mzero = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr ), _mm512_setzero_ps(), _CMP_EQ_UQ );
         lcl_vdeloutput = _mm512_mask_blend_ps( lcl_mzero, lcl_vdeloutput, _mm512_setzero_ps() );
-        _mm512_store_ps( del_output_ptr, lcl_vdeloutput );
+        _mm512_store_act( del_output_ptr, lcl_vdeloutput );
         output_ptr += 16;
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
-        _mm512_storeu_ps( del_input_add_ptr, lcl_vdeloutput );
+        _mm512_stream_act( del_input_add_ptr, lcl_vdeloutput );
         del_input_add_ptr += sw*16;
 #endif
-        lcl_vdgamma = _mm512_add_ps( lcl_vdgamma, _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( _mm512_loadu_ps( input_ptr ), lcl_vbmean ), lcl_vdeloutput ), lcl_vbrstd ) );
+        lcl_vdgamma = _mm512_add_ps( lcl_vdgamma, _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( _mm512_load_act( input_ptr ), lcl_vbmean ), lcl_vdeloutput ), lcl_vbrstd ) );
         lcl_vdbeta  = _mm512_add_ps( lcl_vdbeta, lcl_vdeloutput );
 
         input_ptr += sw*16;
@@ -193,15 +201,15 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
     for ( wi=ipw, wo=opw; wi < (ifw + ipw); wi+=sw, wo++ ) {
       __m512 lcl_vdelinput;
 
-      lcl_vdelinput = _mm512_sub_ps( _mm512_loadu_ps( input_ptr ), lcl_vbmean ); 
+      lcl_vdelinput = _mm512_sub_ps( _mm512_load_act( input_ptr ), lcl_vbmean );
       lcl_vdelinput = _mm512_mul_ps( lcl_vdelinput, lcl_vdgamma );
       lcl_vdelinput = _mm512_mul_ps( lcl_vdelinput, lcl_vbrstd  );
       lcl_vdelinput = _mm512_add_ps( lcl_vdbeta, lcl_vdelinput  );
-      lcl_vdelinput = _mm512_sub_ps( _mm512_mul_ps( lcl_vnhw, _mm512_loadu_ps( del_output_ptr ) ), lcl_vdelinput );
+      lcl_vdelinput = _mm512_sub_ps( _mm512_mul_ps( lcl_vnhw, _mm512_load_act( del_output_ptr ) ), lcl_vdelinput );
       lcl_vdelinput = _mm512_mul_ps( lcl_vrec_nhw, lcl_vdelinput );
       lcl_vdelinput = _mm512_mul_ps( lcl_vbrstd, lcl_vdelinput );
       lcl_vdelinput = _mm512_mul_ps( lcl_vgamma, lcl_vdelinput );
-      _mm512_stream_ps( del_input_ptr, lcl_vdelinput );
+      _mm512_stream_act( del_input_ptr, lcl_vdelinput );
 
       del_input_ptr += sw*16;
       input_ptr += sw*16;
@@ -211,4 +219,8 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
+
+# undef _mm512_load_act
+# undef _mm512_stream_act
+# undef _mm512_store_act
 

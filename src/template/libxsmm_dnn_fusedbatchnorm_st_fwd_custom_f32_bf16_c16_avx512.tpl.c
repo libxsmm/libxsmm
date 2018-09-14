@@ -29,6 +29,16 @@
 /* Alexander Heinecke, Sasikanth Avancha (Intel Corp.)
 ******************************************************************************/
 
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+# define _mm512_load_act(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+# define _mm512_stream_act(A,B) _mm256_stream_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512((B)),16)))
+# define _mm512_store_act(A,B)  _mm256_storeu_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512((B)),16)))
+#else
+# define _mm512_load_act(A)   _mm512_loadu_ps(A)
+# define _mm512_stream_act(A,B) _mm512_stream_ps(A,B)
+# define _mm512_store_act(A,B)  _mm512_storeu_ps(A,B) 
+#endif
+
 /* size variables, all const */
 const int nImg = handle->desc.N;
 const int ifh = handle->desc.H;
@@ -77,7 +87,6 @@ int fm = 0;
 int imgfm = 0;
 int hi = 0;
 int wi = 0;
-int v = 0;
 int ho = 0;
 int wo = 0;
 
@@ -111,8 +120,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     for ( hi=iph; hi < (ifh + iph); hi++ ) {
       const element_input_type* input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, fm, hi, ipw, 0, nBlocksFm, ifhp, ifwp, 16);
       for ( wi=ipw; wi < (ifw + ipw); wi++ ) {
-        __m512 lcl_vinput = _mm512_loadu_ps( input_ptr );
-
+        __m512 lcl_vinput = _mm512_load_act( input_ptr );
         lcl_vsum   = _mm512_add_ps( lcl_vsum, lcl_vinput );
         lcl_vsumsq = _mm512_add_ps( lcl_vsumsq, _mm512_mul_ps( lcl_vinput, lcl_vinput ) );
 
@@ -134,8 +142,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     __m512 lcl_vrec_nhw  = _mm512_set1_ps(recp_nhw);
     __m512 lcl_vone      = _mm512_set1_ps(1.0);
     __m512 lcl_vbmean, lcl_vbmeansq, lcl_vsqbmean, lcl_vbrstd;
-    element_stats_type* bmean_ptr = &LIBXSMM_VLA_ACCESS(2, bmean, fm, 0, 16);
-    element_stats_type* brstd_ptr = &LIBXSMM_VLA_ACCESS(2, brstd, fm, 0, 16);
     element_stats_type* sum_img_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, 0, 0, nImg, 16);
     element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, 0, 0, nImg, 16);
 
@@ -179,18 +185,18 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
       __m512 lcl_vo;
 
       /* BN + scale (gamma, beta) */
-      lcl_vo = _mm512_sub_ps( _mm512_loadu_ps( input_ptr ), lcl_vbmean );
+      lcl_vo = _mm512_sub_ps( _mm512_load_act( input_ptr ), lcl_vbmean );
       lcl_vo = _mm512_mul_ps( lcl_vgamma, lcl_vo );
       lcl_vo = _mm512_fmadd_ps( lcl_vo, lcl_vbrstd, lcl_vbeta );
       /* eltwise add */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-      lcl_vo = _mm512_add_ps( lcl_vo, _mm512_loadu_ps( input_add_ptr ) );
+      lcl_vo = _mm512_add_ps( lcl_vo, _mm512_load_act( input_add_ptr ) );
 #endif
       /* ReLU */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
       lcl_vo = _mm512_max_ps( lcl_vo, _mm512_setzero_ps() );
 #endif
-      _mm512_stream_ps( output_ptr, lcl_vo );
+      _mm512_stream_act( output_ptr, lcl_vo );
 
       input_ptr += sw*16;
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
@@ -202,4 +208,8 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
+
+# undef _mm512_load_act
+# undef _mm512_stream_act
+# undef _mm512_store_act
 
