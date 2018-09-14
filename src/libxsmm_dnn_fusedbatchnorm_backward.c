@@ -60,19 +60,19 @@ libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom_f32_f32(libxsmm_dnn_fusedbn*
     status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_ORDER;
   } else {
     if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN) ) {
-# include "template/libxsmm_dnn_fusedbatchnorm_st_bwd_custom_generic.tpl.c"
+# include "template/libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_bf16_c16_avx512.tpl.c"
     } else if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE) ) {
 # define LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE
-# include "template/libxsmm_dnn_fusedbatchnorm_st_bwd_custom_generic.tpl.c"
+# include "template/libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_bf16_c16_avx512.tpl.c"
 # undef LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE
     } else if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN_RELU) ) {
 # define LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU
-# include "template/libxsmm_dnn_fusedbatchnorm_st_bwd_custom_generic.tpl.c"
+# include "template/libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_bf16_c16_avx512.tpl.c"
 # undef LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU
     } else if ( (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU) || (handle->desc.fuse_ops == LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE_RELU) ) {
 # define LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE
 # define LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU
-# include "template/libxsmm_dnn_fusedbatchnorm_st_bwd_custom_generic.tpl.c"
+# include "template/libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_bf16_c16_avx512.tpl.c"
 # undef LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU
 # undef LIBXSMM_DNN_FUSEDBN_bWD_ENABLE_ELTWISE
     } else {
@@ -161,8 +161,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom(libxsmm_d
   }
 
   /* check if we are on an AVX512 platform */
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-       libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL    ) {
+  if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+        libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL     ) && 
+       (handle->ofmblock == 16) ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fusedbn_st_bwd_custom_f32_f32( handle, start_thread, tid );
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
