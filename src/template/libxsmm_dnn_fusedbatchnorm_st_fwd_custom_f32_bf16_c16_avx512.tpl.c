@@ -109,12 +109,14 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img,  fm, img, 0, nImg, 16);
 
     for ( hi=iph; hi < (ifh + iph); hi++ ) {
+      const element_input_type* input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, fm, hi, ipw, 0, nBlocksFm, ifhp, ifwp, 16);
       for ( wi=ipw; wi < (ifw + ipw); wi++ ) {
-        const element_input_type* input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, 16);
         __m512 lcl_vinput = _mm512_loadu_ps( input_ptr );
 
         lcl_vsum   = _mm512_add_ps( lcl_vsum, lcl_vinput );
-        lcl_vsumsq = _mm512_add_ps( lcl_vsumsq, _mm512_mul_ps( lcl_vinput, lcl_vinput ) );  
+        lcl_vsumsq = _mm512_add_ps( lcl_vsumsq, _mm512_mul_ps( lcl_vinput, lcl_vinput ) );
+
+        input_ptr += 16;
       }
     }
 
@@ -134,10 +136,14 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     __m512 lcl_vbmean, lcl_vbmeansq, lcl_vsqbmean, lcl_vbrstd;
     element_stats_type* bmean_ptr = &LIBXSMM_VLA_ACCESS(2, bmean, fm, 0, 16);
     element_stats_type* brstd_ptr = &LIBXSMM_VLA_ACCESS(2, brstd, fm, 0, 16);
+    element_stats_type* sum_img_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, 0, 0, nImg, 16);
+    element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, 0, 0, nImg, 16);
 
     for ( img=0; img < nImg; img++ ) {
-      lcl_vsum   = _mm512_add_ps( lcl_vsum,   _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, img, 0, nImg, 16) ) );
-      lcl_vsumsq = _mm512_add_ps( lcl_vsumsq, _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, img, 0, nImg, 16) ) );
+      lcl_vsum   = _mm512_add_ps( lcl_vsum,   _mm512_loadu_ps( sum_img_ptr ) );
+      lcl_vsumsq = _mm512_add_ps( lcl_vsumsq, _mm512_loadu_ps( sumsq_img_ptr ) );
+      sum_img_ptr   += 16;
+      sumsq_img_ptr += 16;
     }
 
     lcl_vbmean   = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsum   );  /* E(X) */
@@ -164,28 +170,33 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
   lcl_vbrstd = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, 16) );
 
   for ( hi=iph, ho=oph; hi < (ifh+iph); hi+=sh, ho++ ) {
-    for ( wi=ipw, wo=opw; wi < (ifw+ipw); wi+=sw, wo++ ) {
-      const element_input_type*  input_ptr     = &LIBXSMM_VLA_ACCESS(5, input,     img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, 16);
+    const element_input_type*  input_ptr     = &LIBXSMM_VLA_ACCESS(5, input,     img, fm, hi, ipw, 0, nBlocksFm, ifhp, ifwp, 16);
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-      const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, 16);
+    const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, hi, ipw, 0, nBlocksFm, ifhp, ifwp, 16);
 #endif
-            element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, 16);
+          element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 16);
+    for ( wi=ipw, wo=opw; wi < (ifw+ipw); wi+=sw, wo++ ) {
       __m512 lcl_vo;
 
       /* BN + scale (gamma, beta) */
-      lcl_vo = _mm512_sub_ps( _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(5, input,     img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, 16) ), lcl_vbmean );
+      lcl_vo = _mm512_sub_ps( _mm512_loadu_ps( input_ptr ), lcl_vbmean );
       lcl_vo = _mm512_mul_ps( lcl_vgamma, lcl_vo );
       lcl_vo = _mm512_fmadd_ps( lcl_vo, lcl_vbrstd, lcl_vbeta );
       /* eltwise add */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-      lcl_vo = _mm512_add_ps( lcl_vo, _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, 16) ) );
+      lcl_vo = _mm512_add_ps( lcl_vo, _mm512_loadu_ps( input_add_ptr ) );
 #endif
       /* ReLU */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
       lcl_vo = _mm512_max_ps( lcl_vo, _mm512_setzero_ps() );
 #endif
-      _mm512_stream_ps( &LIBXSMM_VLA_ACCESS(5, output,    img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, 16), lcl_vo );
+      _mm512_stream_ps( output_ptr, lcl_vo );
 
+      input_ptr += sw*16;
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+      input_add_ptr += sw*16;
+#endif
+      output_ptr += 16;
     }
   }
 }
