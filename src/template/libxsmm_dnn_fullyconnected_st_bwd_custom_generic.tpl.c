@@ -65,7 +65,7 @@ LIBXSMM_VLA_DECL(3, const element_output_type,   doutput, (element_output_type*)
 LIBXSMM_VLA_DECL(4, const element_filter_type,    filter, (element_filter_type*)handle->reg_filter->data,  nBlocksIFm, nIFmBlock, nOFmBlock);
 #if defined(LIBXSMM_DNN_FULLYCONNECTED_BWD_BF16_F32)
 float* dinput_f32_ptr = (float*)handle->scratch;
-float* filter_f32_ptr = (float*)handle->scratch+(size_t)handle->desc.N*handle->desc.C;
+float* filter_f32_ptr = ((float*)handle->scratch)+((size_t)handle->desc.N*(size_t)handle->desc.C);
 LIBXSMM_VLA_DECL(3,       float,    dinput, dinput_f32_ptr,  nBlocksIFm, nIFmBlock);
 LIBXSMM_VLA_DECL(4,       float, filter_tr, filter_f32_ptr, nBlocksOFm, nOFmBlock, nIFmBlock);
 
