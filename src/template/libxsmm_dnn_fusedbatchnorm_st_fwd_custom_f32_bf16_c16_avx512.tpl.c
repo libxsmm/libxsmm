@@ -36,7 +36,7 @@
 #else
 # define _mm512_load_act(A)   _mm512_loadu_ps(A)
 # define _mm512_stream_act(A,B) _mm512_stream_ps(A,B)
-# define _mm512_store_act(A,B)  _mm512_storeu_ps(A,B) 
+# define _mm512_store_act(A,B)  _mm512_storeu_ps(A,B)
 #endif
 
 /* size variables, all const */
@@ -129,7 +129,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     }
 
     _mm512_storeu_ps( sum_img_ptr,   lcl_vsum );
-    _mm512_storeu_ps( sumsq_img_ptr, lcl_vsumsq ); 
+    _mm512_storeu_ps( sumsq_img_ptr, lcl_vsumsq );
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
@@ -158,7 +158,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     lcl_vbrstd   = _mm512_div_ps( lcl_vone, _mm512_sqrt_ps( _mm512_add_ps( _mm512_sub_ps( lcl_vsqbmean, lcl_vbmeansq), lcl_vsqrt_eps ) ) );
 
     _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, bmean, fm, 0, 16), lcl_vbmean );
-    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, brstd, fm, 0, 16), lcl_vbrstd );  
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, brstd, fm, 0, 16), lcl_vbrstd );
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);

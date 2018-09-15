@@ -52,7 +52,7 @@ int ofm1 = 0;
 LIBXSMM_VLA_DECL(3, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, nOFmBlock);
 #if defined(LIBXSMM_DNN_FULLYCONNECTED_FWD_BF16_F32)
 float* input_f32_ptr = (float*)handle->scratch;
-float* filter_f32_ptr = ((float*)handle->scratch)+(handle->desc.N*handle->desc.C);
+float* filter_f32_ptr = (float*)handle->scratch+(size_t)handle->desc.N*handle->desc.C;
 LIBXSMM_VLA_DECL(3, const float,  input, input_f32_ptr,  nBlocksIFm, nIFmBlock);
 LIBXSMM_VLA_DECL(4, const float, filter, filter_f32_ptr, nBlocksIFm, nIFmBlock, nOFmBlock);
 

@@ -866,6 +866,12 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_bf16_c16_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_fwd_custom_f32_bf16_c16_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">
