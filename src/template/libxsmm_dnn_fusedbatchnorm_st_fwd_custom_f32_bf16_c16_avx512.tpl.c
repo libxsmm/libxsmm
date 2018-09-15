@@ -99,8 +99,8 @@ LIBXSMM_VLA_DECL(2, const element_stats_type, gamma,     (element_stats_type*)ha
 LIBXSMM_VLA_DECL(2, const element_stats_type, beta,      (element_stats_type*)handle->reg_beta->data,    16);
 LIBXSMM_VLA_DECL(2,       element_stats_type, bmean,     (element_stats_type*)handle->expvalue->data,    16);
 LIBXSMM_VLA_DECL(2,       element_stats_type, brstd,     (element_stats_type*)handle->stddev->data,      16);
-LIBXSMM_VLA_DECL(3,       element_stats_type, sum_img,   (element_stats_type*)handle->scratch,                                      nImg, 16);
-LIBXSMM_VLA_DECL(3,       element_stats_type, sumsq_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * nBlocksFm * 16),  nImg, 16);
+LIBXSMM_VLA_DECL(3,       element_stats_type, sum_img,   (element_stats_type*)handle->scratch,                                             nImg, 16);
+LIBXSMM_VLA_DECL(3,       element_stats_type, sumsq_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * 16), nImg, 16);
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);

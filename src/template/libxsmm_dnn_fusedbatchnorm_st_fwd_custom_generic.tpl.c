@@ -91,8 +91,8 @@ LIBXSMM_VLA_DECL(2, const element_stats_type, gamma,     (element_stats_type*)ha
 LIBXSMM_VLA_DECL(2, const element_stats_type, beta,      (element_stats_type*)handle->reg_beta->data,    nFmBlock);
 LIBXSMM_VLA_DECL(2,       element_stats_type, bmean,     (element_stats_type*)handle->expvalue->data,    nFmBlock);
 LIBXSMM_VLA_DECL(2,       element_stats_type, brstd,     (element_stats_type*)handle->stddev->data,      nFmBlock);
-LIBXSMM_VLA_DECL(3,       element_stats_type, sum_img,   (element_stats_type*)handle->scratch,                                            nImg, nFmBlock);
-LIBXSMM_VLA_DECL(3,       element_stats_type, sumsq_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * nBlocksFm * nFmBlock),  nImg, nFmBlock);
+LIBXSMM_VLA_DECL(3,       element_stats_type, sum_img,   (element_stats_type*)handle->scratch,                                                           nImg, nFmBlock);
+LIBXSMM_VLA_DECL(3,       element_stats_type, sumsq_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)nFmBlock), nImg, nFmBlock);
 
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
 union libxsmm_bfloat16_hp input_f32;
