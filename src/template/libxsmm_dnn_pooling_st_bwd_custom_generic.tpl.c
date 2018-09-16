@@ -154,7 +154,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
           } else {
             const element_output_type*   doutput_ptr = &LIBXSMM_VLA_ACCESS(5, doutput,    img, fm,    ho,    wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
-                  float* lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,          hi+kh, wi+kw, 0,                   ifw, nFmBlock);
+                  float*              lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,          hi+kh, wi+kw, 0,                   ifw, nFmBlock);
 #else
                   element_input_type* lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,          hi+kh, wi+kw, 0,                   ifw, nFmBlock);
 #endif
@@ -183,7 +183,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
     for( wi = ipw; wi < (ifw+ipw); wi++ ) {
       element_input_type*     dinput_ptr = &LIBXSMM_VLA_ACCESS(5, dinput,     img, fm,        hi,        wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
-      float* lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,             hi-iph,    wi-ipw, 0,                   ifw, nFmBlock);
+      float*              lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,             hi-iph,    wi-ipw, 0,                   ifw, nFmBlock);
 #else
       element_input_type* lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,             hi-iph,    wi-ipw, 0,                   ifw, nFmBlock);
 #endif

@@ -59,11 +59,11 @@ libxsmm_dnn_err_t libxsmm_dnn_pooling_st_bwd_custom_f32_f32(libxsmm_dnn_pooling*
   if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_MAX ) {
 # define LIBXSMM_DNN_POOLING_BWD_MAX
     typedef int   element_mask_type;
-# include "template/libxsmm_dnn_pooling_st_bwd_custom_generic.tpl.c"
+# include "template/libxsmm_dnn_pooling_st_bwd_custom_f32_bf16_c16_avx512.tpl.c"
 # undef LIBXSMM_DNN_POOLING_BWD_MAX
   } else if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_AVG ) {
 # define LIBXSMM_DNN_POOLING_BWD_AVG
-# include "template/libxsmm_dnn_pooling_st_bwd_custom_generic.tpl.c"
+# include "template/libxsmm_dnn_pooling_st_bwd_custom_f32_bf16_c16_avx512.tpl.c"
 # undef LIBXSMM_DNN_POOLING_BWD_AVG
   } else {
     status = LIBXSMM_DNN_ERR_UNSUPPORTED_POOLING;
@@ -88,11 +88,11 @@ libxsmm_dnn_err_t libxsmm_dnn_pooling_st_bwd_custom_bf16_bf16(libxsmm_dnn_poolin
   if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_MAX ) {
 # define LIBXSMM_DNN_POOLING_BWD_MAX
     typedef int   element_mask_type;
-# include "template/libxsmm_dnn_pooling_st_bwd_custom_generic.tpl.c"
+# include "template/libxsmm_dnn_pooling_st_bwd_custom_f32_bf16_c16_avx512.tpl.c"
 # undef LIBXSMM_DNN_POOLING_BWD_MAX
   } else if ( handle->desc.pooling_type == LIBXSMM_DNN_POOLING_AVG ) {
 # define LIBXSMM_DNN_POOLING_BWD_AVG
-# include "template/libxsmm_dnn_pooling_st_bwd_custom_generic.tpl.c"
+# include "template/libxsmm_dnn_pooling_st_bwd_custom_f32_bf16_c16_avx512.tpl.c"
 # undef LIBXSMM_DNN_POOLING_BWD_AVG
   } else {
     status = LIBXSMM_DNN_ERR_UNSUPPORTED_POOLING;
@@ -118,8 +118,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_pooling_st_bwd_custom(libxsmm_d
   }
 
   /* check if we are on an AVX512 platform */
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-       libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL    ) {
+  if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
+        libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL    ) &&
+       (handle->ofmblock == 16) ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_pooling_st_bwd_custom_f32_f32( handle, start_thread, tid);
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
