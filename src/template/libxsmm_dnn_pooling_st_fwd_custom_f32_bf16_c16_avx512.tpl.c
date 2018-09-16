@@ -155,7 +155,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
         }
       }
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
-      _mm512_storeu_epi32( &LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-oph, wo-opw, 0, nBlocksFm, ofh, ofw, 16), lcl_vmask );
+      _mm512_storeu_si512( &LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-oph, wo-opw, 0, nBlocksFm, ofh, ofw, 16), lcl_vmask );
 #endif
       _mm512_storeu_ps( lcl_output_ptr, lcl_voutput );
     }
