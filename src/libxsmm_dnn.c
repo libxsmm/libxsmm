@@ -198,14 +198,6 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
     return 0;
   }
 
-  /* TODO remove this check later */
-#if 0
-  if (conv_desc.N != conv_desc.threads) {
-    printf("For this version of LIBXSMM minibatch size needs to match with number of threads!\n");
-    exit(-1);
-  }
-#endif
-
   handle = (libxsmm_dnn_layer*)malloc(sizeof(libxsmm_dnn_layer));
 
   if (0 != handle) {
