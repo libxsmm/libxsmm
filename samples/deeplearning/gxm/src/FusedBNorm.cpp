@@ -302,6 +302,8 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   myRegInfo = s->CreateOperationRegInfo(MLSL::OT_BIAS);
   myRegInfo->AddParameterSet(gparams_.nOutput, 1, dt, false);
   myRegInfo->AddParameterSet(gparams_.nOutput, 1, dt, false);
+  myRegInfo->AddParameterSet(gparams_.nOutput, 1, dt, false);
+  myRegInfo->AddParameterSet(gparams_.nOutput, 1, dt, false);
 
   myRegInfo->Validate();
   size_t opIdx = s->AddOperation(myRegInfo, e->get_distribution());
@@ -433,6 +435,10 @@ void FusedBNormNode::forwardPropagate()
   impl->set_top_compute_engine(top_compute_engine_);
   impl->set_node_name(nname_);
   impl->set_scratch_buffer(tenScratchData_);
+  if(eptr_->get_execution_mode() == TRAIN)
+    impl->set_global_stats(false);
+  else if(eptr_->get_execution_mode() == TEST)
+    impl->set_global_stats(true);
 
   gmean_ = (float*)tenMeanData_->getBuffer();
   grstd_ = (float*)tenRstdevData_->getBuffer();
@@ -660,6 +666,11 @@ void FusedBNormNode::weightUpdate()
 #ifdef USE_MLSL
   this->op_->GetParameterSet(0)->StartGradientComm(tenScaleDiff_->getBuffer());
   this->op_->GetParameterSet(1)->StartGradientComm(tenShiftDiff_->getBuffer());
+  if((eptr_->get_execution_mode() == TRAIN) && (eptr_->get_current_epoch() == eptr_->get_num_epochs()-1))
+  {
+    this->op_->GetParameterSet(2)->StartGradientComm(tenMeanData_->getBuffer());
+    this->op_->GetParameterSet(3)->StartGradientComm(tenRstdevData_->getBuffer());
+  }
 #endif
 #endif
 }
@@ -671,6 +682,8 @@ void FusedBNormNode::solverStep()
 
   float *delgamma = (float*)tenScaleDiff_->getBuffer();
   float *delbeta = (float*)tenShiftDiff_->getBuffer();
+  float *gexpect = (float*)tenMeanData_->getBuffer();
+  float *gstddev = (float*)tenRstdevData_->getBuffer();
 
 #if 1
 #ifdef USE_MLSL
@@ -681,6 +694,17 @@ void FusedBNormNode::solverStep()
   mptr = op_->GetParameterSet(1)->WaitGradientComm();
   if(mptr != NULL && mptr != delbeta)
     memcpy((void*)delbeta, mptr, gparams_.nOutput*sizeof(float));
+
+  if((eptr_->get_execution_mode() == TRAIN) && (eptr_->get_current_epoch() == eptr_->get_num_epochs()-1))
+  {
+    mptr = op_->GetParameterSet(2)->WaitGradientComm();
+    if(mptr != NULL && mptr != gexpect)
+      memcpy((void*)gexpect, mptr, gparams_.nOutput*sizeof(float));
+
+    mptr = op_->GetParameterSet(3)->WaitGradientComm();
+    if(mptr != NULL && mptr != gstddev)
+      memcpy((void*)gstddev, mptr, gparams_.nOutput*sizeof(float));
+  }
 #endif
 #endif
 

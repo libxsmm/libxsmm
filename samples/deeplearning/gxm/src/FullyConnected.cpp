@@ -284,6 +284,9 @@ FCNode::FCNode(FCParams *p, MLEngine* e) : NNNode(p, e)
   // get solver
   solver_ = e->getSolver();
 
+  //get global scratch tensor buffer
+  tenScratchData_ = e->getScratchBuffer();
+
   //get engine
   eptr_ = e;
 
@@ -470,6 +473,8 @@ void FCNode::forwardPropagate()
 
   impl->set_bot_compute_engine(bot_cengine_);
   impl->set_top_compute_engine(top_compute_engine_);
+  impl->set_node_name(nname_);
+  impl->set_scratch_buffer(tenScratchData_);
 
   int size = gparams_.batch_size * gparams_.nOutput * gparams_.oHeight * gparams_.oWidth;
   float *out = (float*)(tenTopData_->getBuffer());

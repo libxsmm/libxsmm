@@ -61,12 +61,16 @@ class FCImpl
     void *bot_layout=NULL, *top_layout=NULL, *gbot_layout=NULL;
     int top_compute_engine=-1;
     int bot_compute_engine=-1;
+    string nname;
+    TensorBuf* scratchp;
 
   public:
     FCImpl(FCImplParams* gp_, int engine_): gp(gp_), engine(engine_) {}
 
     void set_top_compute_engine(int e) { top_compute_engine = e;}
     void set_bot_compute_engine(int e) { bot_compute_engine = e;}
+    void set_node_name(string s) { nname = s; }
+    void set_scratch_buffer(TensorBuf* sb) { scratchp = sb; }
 
     virtual void forwardPropagate(TensorBuf *inp, TensorBuf* weightp, TensorBuf* biasp, TensorBuf *outp, int tid) = 0;
     virtual void backPropagate(TensorBuf *deloutp, TensorBuf* weightp, TensorBuf *delinp, int tid) = 0;

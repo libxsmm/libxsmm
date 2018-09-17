@@ -44,15 +44,24 @@ class FusedBNormXSMM : public FusedBNormImpl
 {
   protected:
     FusedBNormImpl *gp_;
-    libxsmm_dnn_fusedbn_desc fusedbn_desc;
-    libxsmm_dnn_fusedbn* libxsmm_handle = NULL;
-    libxsmm_dnn_tensor* libxsmm_input = NULL;
-    libxsmm_dnn_tensor* libxsmm_input_add = NULL;
-    libxsmm_dnn_tensor* libxsmm_output = NULL;
-    libxsmm_dnn_tensor* libxsmm_expectval = NULL;
-    libxsmm_dnn_tensor* libxsmm_stddev = NULL;
-    libxsmm_dnn_tensor* libxsmm_gamma = NULL;
-    libxsmm_dnn_tensor* libxsmm_beta = NULL;
+    libxsmm_dnn_fusedbn_desc fusedbn_desc_train;
+    libxsmm_dnn_fusedbn_desc fusedbn_desc_test;
+    libxsmm_dnn_fusedbn* libxsmm_handle_train = NULL;
+    libxsmm_dnn_fusedbn* libxsmm_handle_test = NULL;
+    libxsmm_dnn_tensor* libxsmm_input_train = NULL;
+    libxsmm_dnn_tensor* libxsmm_input_add_train = NULL;
+    libxsmm_dnn_tensor* libxsmm_output_train = NULL;
+    libxsmm_dnn_tensor* libxsmm_expectval_train = NULL;
+    libxsmm_dnn_tensor* libxsmm_stddev_train = NULL;
+    libxsmm_dnn_tensor* libxsmm_gamma_train = NULL;
+    libxsmm_dnn_tensor* libxsmm_beta_train = NULL;
+    libxsmm_dnn_tensor* libxsmm_input_test = NULL;
+    libxsmm_dnn_tensor* libxsmm_input_add_test = NULL;
+    libxsmm_dnn_tensor* libxsmm_output_test = NULL;
+    libxsmm_dnn_tensor* libxsmm_expectval_test = NULL;
+    libxsmm_dnn_tensor* libxsmm_stddev_test = NULL;
+    libxsmm_dnn_tensor* libxsmm_gamma_test = NULL;
+    libxsmm_dnn_tensor* libxsmm_beta_test = NULL;
     libxsmm_dnn_tensor* libxsmm_delinput = NULL;
     libxsmm_dnn_tensor* libxsmm_delinput_add = NULL;
     libxsmm_dnn_tensor* libxsmm_deloutput = NULL;
