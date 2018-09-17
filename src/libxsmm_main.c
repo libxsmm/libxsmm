@@ -2396,9 +2396,9 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c);
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c)
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c)
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
@@ -2406,10 +2406,10 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
 #endif
   {
 #if !defined(NDEBUG)
-    if (0 != fn->xgemm.xmm)
+    if (0 != fn->xmm)
 #endif
     {
-      fn->xgemm.xmm(a, b, c);
+      fn->xmm(a, b, c);
     }
 #if !defined(NDEBUG)
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -2431,10 +2431,10 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc)
 {
 #if !defined(NDEBUG)
@@ -2443,10 +2443,10 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
 #endif
   {
 #if !defined(NDEBUG)
-    if (0 != fn->xgemm.xmm)
+    if (0 != fn->xmm)
 #endif
     {
-      fn->xgemm.xmm(a, b, c, pa, pb, pc);
+      fn->xmm(a, b, c, pa, pb, pc);
     }
 #if !defined(NDEBUG)
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -2468,10 +2468,10 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc)
 {
   LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(fn, a, b, c, pa, pb, pc);
