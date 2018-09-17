@@ -1297,7 +1297,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
 }
 
 
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_free_structs_code_conv_handle( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_free_structs_code_conv_handle( const libxsmm_dnn_layer* handle ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
