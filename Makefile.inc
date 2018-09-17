@@ -1535,9 +1535,6 @@ ifeq (1,$(MKL)) # sequential
       --end-group"
     endif
   endif
-  ifneq (0,$(THREADS))
-    BLAS_LDFLAGS += -lm $(LIBDL)
-  endif
   BLAS_LDFLAGS += -lm $(LIBDL)
   ifneq (0,$(OFFLOAD))
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
