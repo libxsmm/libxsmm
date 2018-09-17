@@ -902,7 +902,7 @@ ifneq (0,$(INTEL))
     CFLAGS += $(OMPFLAG)
     ifeq (,$(strip $(GFC)))
       FCFLAGS += $(OMPFLAG)
-      LDFLAGS += -l$(OMPRT)
+      LDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
     else
       LDFLAGS += $(OMPFLAG)
     endif
@@ -1388,10 +1388,12 @@ ifneq (0,$(THREADS))
 ifeq (0,$(COMPATIBLE))
   CXXFLAGS += -pthread
   CFLAGS += -pthread
-  ifneq (0,$(shell echo "$$((0==$(INTEL) || 0!=$(DEPSTATIC)))"))
-    FLDFLAGS += -lpthread
+  ifneq (0,$(DEPSTATIC))
+    FLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
     ifneq (Windows_NT,$(UNAME))
-      ifneq (Darwin,$(UNAME))
+      ifneq (0,$(INTEL))
+        CLDFLAGS += $(FLDFLAGS)
+      else ifneq (Darwin,$(UNAME))
         CLDFLAGS += -pthread
       else ifeq (0,$(CLANG))
         CLDFLAGS += -pthread
