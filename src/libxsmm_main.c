@@ -65,6 +65,10 @@
 # define LIBXSMM_CAPACITY_CACHE 4
 #endif
 
+#if !defined(LIBXSMM_DENY_DEREG)
+# define LIBXSMM_DENY_DEREG
+#endif
+
 #if !defined(LIBXSMM_CODE_MAXSIZE)
 # define LIBXSMM_CODE_MAXSIZE 131072
 #endif
@@ -2269,23 +2273,35 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
 LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel)
 {
   if (NULL != jit_kernel) {
+    static int error_once = 0;
     void* extra = 0;
     LIBXSMM_INIT
     if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(jit_kernel, NULL/*size*/, NULL/*flags*/, &extra) && NULL != extra) {
       const unsigned int regindex = *((const unsigned int*)extra);
-      if ((LIBXSMM_CAPACITY_REGISTRY) > regindex) { /* unregister kernel */
+      if ((LIBXSMM_CAPACITY_REGISTRY) <= regindex) {
+        libxsmm_xfree(jit_kernel);
+      }
+      else
+#if defined(LIBXSMM_DENY_DEREG)
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
+       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM WARNING: attempt to unregister a JIT-kernel!\n");
+      }
+#else
+      { /* unregister kernel */
         internal_registry[regindex].pmm = NULL;
-#if !defined(NDEBUG)
+# if !defined(NDEBUG)
         memset(internal_registry_keys + regindex, 0, sizeof(libxsmm_kernel_info));
+# endif
+        libxsmm_xfree(jit_kernel);
+      }
 #endif
-      }
-      libxsmm_xfree(jit_kernel);
     }
-    else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      static int error_once = 0;
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-        fprintf(stderr, "LIBXSMM ERROR: failed to release kernel!\n");
-      }
+    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: failed to release kernel!\n");
     }
   }
 }
