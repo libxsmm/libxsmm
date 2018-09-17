@@ -1445,8 +1445,19 @@ else
   OMPLIB = $(NULL)
 endif
 
+LNKSOFT ?= 1
+ifeq (0,$(STATIC))
+  ifeq (Windows_NT,$(OS)) # !UNAME
+    LNKSOFT = 0
+  else ifeq (Darwin,$(shell uname))
+    LNKSOFT = 0
+  endif
+endif
+
 ifeq (0,$(OMP))
+ifeq (0,$(LNKSOFT))
   EXTLIB += $(OMPLIB)
+endif
 endif
 
 ifeq (Darwin,$(UNAME))
