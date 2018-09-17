@@ -123,7 +123,6 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   for( ho = oph; ho < (ofh+oph); ho++ ) {
     hi = ((ho-oph) * sh) - handle->desc.pad_h;
     for( wo = opw; wo < (ofw+opw); wo++ ) {
-      wi = ((wo-opw) * sw) - handle->desc.pad_w;
 #if defined(LIBXSMM_DNN_POOLING_FWD_BF16)
       float*               lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output, ho-oph, wo-opw, 0, ofw, 16);
 #else
@@ -133,6 +132,8 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
       __m512i lcl_vmask = _mm512_loadu_si512( &LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-oph, wo-opw, 0, nBlocksFm, ofh, ofw, 16) );
 #endif
       __m512 lcl_voutput = _mm512_loadu_ps( lcl_output_ptr );
+
+      wi = ((wo-opw) * sw) - handle->desc.pad_w;
       for( kh = 0; kh < handle->desc.R; kh++ ) {
         if(hi+kh < 0 || hi+kh >= ifh) continue;
         for( kw = 0; kw < handle->desc.S; kw++ ) {

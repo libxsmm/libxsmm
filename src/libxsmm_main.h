@@ -455,8 +455,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_code_pointer matcopy_upd[3];
 
   /* Data structures and metadata related to per-thread private JITing */
-  int use_thread_private_jit;
-  int use_thread_private_filter;
   int trans_ofw_ifm;
 
   int *n_entries_fwd;

@@ -620,9 +620,6 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom_2.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
@@ -870,6 +867,18 @@
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_fwd_custom_f32_bf16_c16_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_pooling_st_fwd_custom_f32_bf16_c16_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_pooling_st_fwd_custom_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_pooling_st_bwd_custom_f32_bf16_c16_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_pooling_st_bwd_custom_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
   </ItemGroup>
