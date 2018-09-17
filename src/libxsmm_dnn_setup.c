@@ -299,7 +299,7 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
     * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
 
   /* minibatch parallel execution of weight update kernel */
-  if ( ((handle->blocksifm * handle->blocksofm) < handle->desc.threads) || (handle->use_thread_private_jit) ) {
+  if ( ((handle->blocksifm * handle->blocksofm) < handle->desc.threads) || ( handle->use_upd_generic == 0 ) ) {
     handle->upd_use_thread_fil = 1;
     handle->scratch4 = 0;
     handle->scratch4_size = (size_t)2 * handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_out);
@@ -363,7 +363,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->bwd_ofh_rb = 1;
   handle->bwd_ofw_rb = handle->ofw;
   handle->fm_lp_block = 1;
-  handle->use_thread_private_jit = 0;
 
   /* here we need to handle BF16 again */
   if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.C % 2 == 0) && (handle->desc.K % 2 == 0) ) {
@@ -811,7 +810,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
   int wrb1 = 0, wrb2 = 0, hrb1 = 0, hrb2 = 0;
   /* Let's check if we can use algorithmic duality for backward convolution! */
   /* TODO: Enable duality even in cases of image parallelism */
-  if ( (handle->use_thread_private_jit > 0) && (handle->desc.N >= handle->desc.threads) && ( (handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.pad_h == 0 && handle->desc.pad_w == 0) || (handle->desc.u == 1 && handle->desc.v == 1) ) && !((handle->desc.R > 1 && handle->desc.pad_h == 0) || (handle->desc.S > 1 && handle->desc.pad_w == 0)) )  {
+  if ( (handle->desc.N >= handle->desc.threads) && ( (handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.pad_h == 0 && handle->desc.pad_w == 0) || (handle->desc.u == 1 && handle->desc.v == 1) ) && !((handle->desc.R > 1 && handle->desc.pad_h == 0) || (handle->desc.S > 1 && handle->desc.pad_w == 0)) )  {
     handle->exploit_duality = 1;
   } else {
     handle->exploit_duality = 0;
@@ -1578,94 +1577,90 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         assert(0/*should not happen*/);
       }
 
-      if ( handle->use_thread_private_jit ) {
-        handle->trans_ofw_ifm = 0;
-        /* Determine if we will be using thread private filters  */
-        if ( (handle->blocksifm_lp * handle->blocksofm < handle->desc.threads) ) {
-          handle->use_thread_private_filter = 1;
-          /* determine if we will transpose input  */
-          if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0 ) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->use_lp_kernel == 1 && ( ((handle->desc.R !=1 || handle->desc.S != 1) && handle->padding_flag == 1) || handle->desc.u != 1 || handle->desc.v != 1 || handle->desc.W%2 != 0 )) ) ) {
-            handle->trans_ofw_ifm = 1;
-          }
-        } else {
-          handle->use_thread_private_filter = 0;
-          /* determine if we will transpose input  */
-          if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC)  || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->use_lp_kernel == 1 && (((handle->desc.R !=1 || handle->desc.S != 1) && handle->padding_flag == 1) || handle->desc.u != 1 || handle->desc.v != 1 ||  handle->desc.W%2 != 0 )) ) ) {
-            handle->trans_ofw_ifm = 1;
-            if ( handle->desc.R !=1 && handle->desc.S != 1 && ( handle->desc.u !=1 || handle->desc.v != 1 )  ) {
-              handle->trans_ofw_ifm = 0;
-            }
-          }
-        }
-
-        if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->use_lp_kernel == 1 && handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
+      handle->trans_ofw_ifm = 0;
+      /* Determine if we will be using thread private filters  */
+      if ( (handle->blocksifm_lp * handle->blocksofm < handle->desc.threads) ) {
+        /* determine if we will transpose input  */
+        if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0 ) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->use_lp_kernel == 1 && ( ((handle->desc.R !=1 || handle->desc.S != 1) && handle->padding_flag == 1) || handle->desc.u != 1 || handle->desc.v != 1 || handle->desc.W%2 != 0 )) ) ) {
           handle->trans_ofw_ifm = 1;
         }
-
-        if (handle->use_fastpath == 0 || handle->enforce_sfma_kernel == 1) {
-          handle->trans_ofw_ifm = 0;
+      } else {
+        /* determine if we will transpose input  */
+        if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC)  || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->use_lp_kernel == 1 && (((handle->desc.R !=1 || handle->desc.S != 1) && handle->padding_flag == 1) || handle->desc.u != 1 || handle->desc.v != 1 ||  handle->desc.W%2 != 0 )) ) ) {
+          handle->trans_ofw_ifm = 1;
+          if ( handle->desc.R !=1 && handle->desc.S != 1 && ( handle->desc.u !=1 || handle->desc.v != 1 )  ) {
+            handle->trans_ofw_ifm = 0;
+          }
         }
+      }
 
-        /* allocate buffers */
-        handle->n_entries_upd = (int*) malloc(handle->desc.threads * sizeof(int));
-        handle->compute_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
-        handle->kernel_upd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
-        handle->n_upd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
-        handle->upd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
-        handle->n_entries_init_upd = (int*) malloc(handle->desc.threads * sizeof(int));
-        handle->init_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
-        handle->n_entries_copy_upd = (int*) malloc(handle->desc.threads * sizeof(int));
-        handle->copy_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+      if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->use_lp_kernel == 1 && handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
+        handle->trans_ofw_ifm = 1;
+      }
 
-        /* TODO: proper error handling */
-        LIBXSMM_ASSERT(NULL != handle->n_entries_upd);
-        LIBXSMM_ASSERT(NULL != handle->compute_upd_indices_ptrs);
-        LIBXSMM_ASSERT(NULL != handle->kernel_upd_variant_ptrs);
-        LIBXSMM_ASSERT(NULL != handle->n_upd_code_segments && NULL != handle->upd_code_segments);
-        LIBXSMM_ASSERT(NULL != handle->n_entries_init_upd && NULL != handle->init_upd_indices_ptrs);
-        LIBXSMM_ASSERT(NULL != handle->n_entries_copy_upd && NULL != handle->copy_upd_indices_ptrs);
-        memset(handle->n_entries_upd, 0, handle->desc.threads * sizeof(int));
-        memset(handle->compute_upd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
-        memset(handle->kernel_upd_variant_ptrs, 0, handle->desc.threads * sizeof(char*));
-        memset(handle->n_upd_code_segments, 0, handle->desc.threads * sizeof(int));
-        memset(handle->upd_code_segments, 0, handle->desc.threads * sizeof(segment_t*));
-        memset(handle->n_entries_init_upd, 0, handle->desc.threads * sizeof(int));
-        memset(handle->init_upd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
-        memset(handle->n_entries_copy_upd, 0, handle->desc.threads * sizeof(int));
-        memset( handle->copy_upd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
+      if (handle->use_fastpath == 0 || handle->enforce_sfma_kernel == 1) {
+        handle->trans_ofw_ifm = 0;
+      }
 
-        matzero_descriptor.n = 1;
-        matzero_descriptor.m = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
-        matzero_descriptor.ldi = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
-        matzero_descriptor.ldo = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
-        matzero_descriptor.prefetch = 0;
-        matzero_descriptor.unroll_level = 6;
-        matzero_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype_out);
-        matzero_descriptor.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
-        handle->matcopy_upd[2].xmatcopy = libxsmm_dispatch_mcopy(&matzero_descriptor);
+      /* allocate buffers */
+      handle->n_entries_upd = (int*) malloc(handle->desc.threads * sizeof(int));
+      handle->compute_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+      handle->kernel_upd_variant_ptrs = (char**) malloc(handle->desc.threads * sizeof(char*));
+      handle->n_upd_code_segments = (int*) malloc(handle->desc.threads * sizeof(int));
+      handle->upd_code_segments = (segment_t**) malloc(handle->desc.threads * sizeof(segment_t*));
+      handle->n_entries_init_upd = (int*) malloc(handle->desc.threads * sizeof(int));
+      handle->init_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
+      handle->n_entries_copy_upd = (int*) malloc(handle->desc.threads * sizeof(int));
+      handle->copy_upd_indices_ptrs = (int**) malloc(handle->desc.threads * sizeof(int*));
 
-        /* Perform the dry-run and generate thread private jit indices to be used for the convolutions */
-        tune_upd_blockings(handle);
-        status = libxsmm_dnn_perform_upd_dryrun_direct(handle);
+      /* TODO: proper error handling */
+      LIBXSMM_ASSERT(NULL != handle->n_entries_upd);
+      LIBXSMM_ASSERT(NULL != handle->compute_upd_indices_ptrs);
+      LIBXSMM_ASSERT(NULL != handle->kernel_upd_variant_ptrs);
+      LIBXSMM_ASSERT(NULL != handle->n_upd_code_segments && NULL != handle->upd_code_segments);
+      LIBXSMM_ASSERT(NULL != handle->n_entries_init_upd && NULL != handle->init_upd_indices_ptrs);
+      LIBXSMM_ASSERT(NULL != handle->n_entries_copy_upd && NULL != handle->copy_upd_indices_ptrs);
+      memset(handle->n_entries_upd, 0, handle->desc.threads * sizeof(int));
+      memset(handle->compute_upd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
+      memset(handle->kernel_upd_variant_ptrs, 0, handle->desc.threads * sizeof(char*));
+      memset(handle->n_upd_code_segments, 0, handle->desc.threads * sizeof(int));
+      memset(handle->upd_code_segments, 0, handle->desc.threads * sizeof(segment_t*));
+      memset(handle->n_entries_init_upd, 0, handle->desc.threads * sizeof(int));
+      memset(handle->init_upd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
+      memset(handle->n_entries_copy_upd, 0, handle->desc.threads * sizeof(int));
+      memset( handle->copy_upd_indices_ptrs, 0, handle->desc.threads * sizeof(int*) );
+
+      matzero_descriptor.n = 1;
+      matzero_descriptor.m = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
+      matzero_descriptor.ldi = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
+      matzero_descriptor.ldo = handle->blocksofm*handle->blocksifm*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock;
+      matzero_descriptor.prefetch = 0;
+      matzero_descriptor.unroll_level = 6;
+      matzero_descriptor.typesize = (unsigned char)libxsmm_dnn_typesize(handle->datatype_out);
+      matzero_descriptor.flags = LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE;
+      handle->matcopy_upd[2].xmatcopy = libxsmm_dispatch_mcopy(&matzero_descriptor);
+
+      /* Perform the dry-run and generate thread private jit indices to be used for the convolutions */
+      tune_upd_blockings(handle);
+      status = libxsmm_dnn_perform_upd_dryrun_direct(handle);
 
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
-        { /* compute kernel stream overhead */
-          int ks_overhead = 0;
-          ks_overhead += handle->desc.threads*4*sizeof(int);
-          ks_overhead += handle->desc.threads*3*sizeof(int*);
-          ks_overhead += handle->desc.threads*sizeof(char*);
-          ks_overhead += handle->desc.threads*sizeof(segment_t*);
-          for ( i = 0; i < handle->desc.threads; ++i ) {
-            ks_overhead += ((handle->n_entries_upd[i]*3)+3)*sizeof(int);
-            ks_overhead += handle->n_entries_upd[i]*sizeof(char);
-            ks_overhead += handle->n_upd_code_segments[i]*sizeof(segment_t);
-            ks_overhead += (handle->n_entries_copy_upd[i]+1)*sizeof(int);
-            ks_overhead += (handle->n_entries_init_upd[i]+1)*sizeof(int);
-          }
-          printf("KS Overhead UPD in KB: %i \n", ks_overhead/1024 );
+      { /* compute kernel stream overhead */
+        int ks_overhead = 0;
+        ks_overhead += handle->desc.threads*4*sizeof(int);
+        ks_overhead += handle->desc.threads*3*sizeof(int*);
+        ks_overhead += handle->desc.threads*sizeof(char*);
+        ks_overhead += handle->desc.threads*sizeof(segment_t*);
+        for ( i = 0; i < handle->desc.threads; ++i ) {
+          ks_overhead += ((handle->n_entries_upd[i]*3)+3)*sizeof(int);
+          ks_overhead += handle->n_entries_upd[i]*sizeof(char);
+          ks_overhead += handle->n_upd_code_segments[i]*sizeof(segment_t);
+          ks_overhead += (handle->n_entries_copy_upd[i]+1)*sizeof(int);
+          ks_overhead += (handle->n_entries_init_upd[i]+1)*sizeof(int);
         }
-#endif
+        printf("KS Overhead UPD in KB: %i \n", ks_overhead/1024 );
       }
+#endif
     } else {
       handle->use_upd_generic = 1;
     }

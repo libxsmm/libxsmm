@@ -88,28 +88,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   handle->use_bwd_generic = 1;
   handle->use_upd_generic = 1;
 
-  handle->use_thread_private_jit = 0;
-  /* If we have AVX512 arch consider kernel streams  */
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  if (/* If we use any options/fuse ops, keep kernel streams disabled */
-    0 >= (handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS)
-    /* If we do not run on custom/custom format, keep kernel streams disabled */
-    && handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM
-    && handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)
-  {
-# if (LIBXSMM_X86_AVX512 > LIBXSMM_STATIC_TARGET_ARCH)
-    if (LIBXSMM_X86_AVX512 <= libxsmm_target_archid)
-# endif
-    {
-      handle->use_thread_private_jit = 1;
-    }
-  }
-#endif
-
   /* If we have AVX512 and kernel streams is enabled, then we generate specialized code */
-  if (handle->use_thread_private_jit != 0) {
-    LIBXSMM_ASSERT(LIBXSMM_X86_AVX512 <= libxsmm_target_archid);
-
+  if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
     /* This is basically a decision pertaining for all three passes: FWD, BWD and UPD */
     /* Initialize fields that control layer fusion */
     noarch = 0;
@@ -126,14 +106,19 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
       return status;
     }
 
-    /* Forward path setup */
-    status = libxsmm_dnn_setup_fwd(handle, &noarch);
+    /* lets check if we actually want to setup kernel streams */
+    if ( ( 0 >= (handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) )
+         && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)
+         && (handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
+      /* Forward path setup */
+      status = libxsmm_dnn_setup_fwd(handle, &noarch);
 
-    /* Backward path setup */
-    status = libxsmm_dnn_setup_bwd(handle, &noarch);
+      /* Backward path setup */
+      status = libxsmm_dnn_setup_bwd(handle, &noarch);
 
-    /* Weight update path setup */
-    status = libxsmm_dnn_setup_upd(handle, &noarch);
+      /* Weight update path setup */
+      status = libxsmm_dnn_setup_upd(handle, &noarch);
+    }
 
     /* Calculate scratch requirements */
     libxsmm_dnn_setup_scratch(handle);
