@@ -1386,18 +1386,16 @@ endif
 
 ifneq (0,$(THREADS))
 ifeq (0,$(COMPATIBLE))
-  CXXFLAGS += -pthread
   CFLAGS += -pthread
-  ifneq (0,$(DEPSTATIC))
-    FLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
-    ifneq (Windows_NT,$(UNAME))
-      ifneq (0,$(INTEL))
-        CLDFLAGS += $(FLDFLAGS)
-      else ifneq (Darwin,$(UNAME))
-        CLDFLAGS += -pthread
-      else ifeq (0,$(CLANG))
-        CLDFLAGS += -pthread
-      endif
+  CXXFLAGS += -pthread
+  FLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
+  ifneq (Windows_NT,$(UNAME))
+    ifneq (0,$(INTEL))
+      CLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
+    else ifneq (Darwin,$(UNAME))
+      CLDFLAGS += -pthread
+    else ifeq (0,$(CLANG))
+      CLDFLAGS += -pthread
     endif
   endif
 endif
