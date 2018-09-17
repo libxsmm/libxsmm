@@ -192,6 +192,11 @@ int main(void)
 
   /* test unregistering and freeing kernels */
   for (i = 0; i < MAX_NKERNELS; ++i) {
+    int j = i + 1;
+    /* avoid to double-release kernels */
+    for (; j < MAX_NKERNELS; ++j) {
+      if (f[i].p == f[j].p) f[j].p = NULL;
+    }
     libxsmm_release_kernel(f[i].p);
   }
 

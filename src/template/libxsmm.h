@@ -311,12 +311,6 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
  * unregisters and releases code from the code registry.
  */
 LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel);
-/**
- * Identical functionality as libxsmm_release_kernel, but different signature.
- * Takes a function pointer to help avoiding warning with libxsmm_release_kernel
- * about non-standard conversion from data-pointer to function-pointer.
- */
-LIBXSMM_API void libxsmm_release_function(void (*jit_kernel)(const void*, ...));
 
 /** Matrix copy function ("in" can be NULL to zero the destination). */
 LIBXSMM_API void libxsmm_matcopy(void* out, const void* in, unsigned int typesize,

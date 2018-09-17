@@ -173,6 +173,14 @@
             INTEGER(C_INTPTR_T) :: handle
         END TYPE
 
+        ! Deallocates JIT'ted code, or unregisters/releases code from registry.
+        INTERFACE libxsmm_release_mmkernel
+          MODULE PROCEDURE libxsmm_release_dmmkernel
+          MODULE PROCEDURE libxsmm_release_smmkernel
+          MODULE PROCEDURE libxsmm_release_wimmkernel
+          MODULE PROCEDURE libxsmm_release_wsmmkernel
+        END INTERFACE
+
         ! Construct JIT-code depending on given argument set.
         INTERFACE libxsmm_mmdispatch
           MODULE PROCEDURE libxsmm_dmmdispatch, libxsmm_smmdispatch
@@ -229,6 +237,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_arch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_verbosity
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_verbosity
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_kernel
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch2
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_abc
@@ -336,6 +345,16 @@
             INTEGER(C_LONG_LONG), INTENT(IN), VALUE :: tick0, tick1
             REAL(C_DOUBLE) :: libxsmm_timer_duration
           END FUNCTION
+
+          ! Deallocates the JIT'ted code, or unregisters
+          ! and releases code from the registry.
+          ! Implicit FORTRAN 77 interface:
+          ! INTEGER(8) :: kernel
+          SUBROUTINE libxsmm_release_kernel(kernel)                     &
+     &    BIND(C, NAME="libxsmm_release_kernel_") ! FORTRAN 77 layer
+            IMPORT :: C_INTPTR_T
+            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
+          END SUBROUTINE
 
           ! Type-generic (unsafe) code dispatch (trylock: impure routine).
           ! Implicit FORTRAN 77 interface:
@@ -638,6 +657,30 @@
           fptr => a(LBOUND(a,1),LBOUND(a,2))
           wrealptr = C_LOC(fptr)
         END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_dmmkernel
+        SUBROUTINE libxsmm_release_dmmkernel(kernel)
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
+          CALL libxsmm_release_kernel(kernel%handle)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_smmkernel
+        SUBROUTINE libxsmm_release_smmkernel(kernel)
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
+          CALL libxsmm_release_kernel(kernel%handle)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_wimmkernel
+        SUBROUTINE libxsmm_release_wimmkernel(kernel)
+          TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
+          CALL libxsmm_release_kernel(kernel%handle)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_wsmmkernel
+        SUBROUTINE libxsmm_release_wsmmkernel(kernel)
+          TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
+          CALL libxsmm_release_kernel(kernel%handle)
+        END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmdispatch
         SUBROUTINE libxsmm_dmmdispatch(kernel,                          &
