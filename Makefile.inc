@@ -900,9 +900,11 @@ ifneq (0,$(INTEL))
   ifneq (0,$(OMP))
     CXXFLAGS += $(OMPFLAG)
     CFLAGS += $(OMPFLAG)
-    LDFLAGS += $(OMPFLAG)
     ifeq (,$(strip $(GFC)))
       FCFLAGS += $(OMPFLAG)
+      LDFLAGS += -l$(OMPRT)
+    else
+      LDFLAGS += $(OMPFLAG)
     endif
   endif
   ifneq (0,$(SIMD))
