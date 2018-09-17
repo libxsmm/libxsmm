@@ -1447,7 +1447,7 @@ else
   OMPLIB = $(NULL)
 endif
 
-LNKSOFT ?= 1
+LNKSOFT ?= $(STATIC)
 ifeq (0,$(STATIC))
   ifeq (Windows_NT,$(OS)) # !UNAME
     LNKSOFT = 0
