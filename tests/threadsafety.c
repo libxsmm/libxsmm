@@ -190,6 +190,11 @@ int main(void)
     }
   }
 
+  /* test unregistering and freeing kernels */
+  for (i = 0; i < MAX_NKERNELS; ++i) {
+    libxsmm_release_kernel(f[i].p);
+  }
+
   /* release buffer of eventually generated code (deep comparison) */
   free(generated_code.generated_code);
   libxsmm_finalize();
