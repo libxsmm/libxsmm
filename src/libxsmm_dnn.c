@@ -296,103 +296,16 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_conv_layer(const libxsmm_dnn_l
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
-    /* deallocate data components; not an error to deallocate a NULL-pointer
-       deallocate code known to be not registered; no index attached
-       do not use libxsmm_release_kernel here! */
-    /* deallocate forward pass */
-    if ( handle->use_fwd_generic == 0 ) {
-      int loop;
-
-      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-        libxsmm_free(handle->code_fwd[0].pmm);
-      }
-      libxsmm_free(handle->code_fwd[1].pmm);
-      libxsmm_free(handle->code_fwd[2].pmm);
-
-      for (loop = 0; loop < handle->desc.threads; loop++) {
-        libxsmm_free( handle->compute_fwd_indices_ptrs[loop] );
-        libxsmm_free( handle->bn_stats_indices_ptrs[loop] );
-        libxsmm_free( handle->kernel_fwd_variant_ptrs[loop] );
-        libxsmm_free( handle->fwd_code_segments[loop] );
-      }
-
-      free( handle->n_entries_fwd );
-      free( handle->compute_fwd_indices_ptrs );
-      free( handle->bn_stats_indices_ptrs );
-      free( handle->kernel_fwd_variant_ptrs );
-      free( handle->n_fwd_code_segments );
-      free( handle->fwd_code_segments );
-      free( handle->ofh_fwd_start );
-      free( handle->ofh_fwd_end );      
-    }
-
-    /* deallocate backward pass */
-    if ( handle->use_bwd_generic == 0 ) {
-      int loop;
-
-      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-        libxsmm_free(handle->code_bwd[0].pmm);
-      }
-      libxsmm_free(handle->code_bwd[1].pmm);
-      libxsmm_free(handle->code_bwd[2].pmm);
-
-      for (loop = 0; loop < handle->desc.threads; loop++) {
-        libxsmm_free( handle->compute_bwd_indices_ptrs[loop] );
-        libxsmm_free( handle->kernel_bwd_variant_ptrs[loop] );
-        libxsmm_free( handle->bwd_code_segments[loop] );
-        libxsmm_free( handle->transpose_bwd_indices_ptrs[loop]);
-      }
-
-      free( handle->n_entries_bwd );
-      free( handle->compute_bwd_indices_ptrs );
-      free( handle->kernel_bwd_variant_ptrs );
-      free( handle->n_bwd_code_segments );
-      free( handle->bwd_code_segments );
-      free( handle->n_entries_trans_bwd );
-      free( handle->transpose_bwd_indices_ptrs );
-      free( handle->ofh_bwd_start );
-      free( handle->ofh_bwd_end );
-    }
-
-    /* deallocate update pass */
-    if ( handle->use_upd_generic == 0 ) {
-      int loop;
-
-      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-        libxsmm_free(handle->code_upd[0].pmm);
-      }
-      libxsmm_free(handle->code_upd[1].pmm);
-
-      for (loop = 0; loop < handle->desc.threads; loop++) {
-        libxsmm_free( handle->compute_upd_indices_ptrs[loop] );
-        libxsmm_free( handle->kernel_upd_variant_ptrs[loop] );
-        libxsmm_free( handle->upd_code_segments[loop] );
-        libxsmm_free( handle->init_upd_indices_ptrs[loop] );
-        libxsmm_free( handle->copy_upd_indices_ptrs[loop] );
-      }
-
-      free( handle->n_entries_upd );
-      free( handle->compute_upd_indices_ptrs );
-      free( handle->kernel_upd_variant_ptrs );
-      free( handle->n_upd_code_segments );
-      free( handle->upd_code_segments );
-      free( handle->n_entries_init_upd );
-      free( handle->init_upd_indices_ptrs );
-      free( handle->n_entries_copy_upd );
-      free( handle->copy_upd_indices_ptrs );
-    }
+    /* free internal structures and code of the handle */
+    libxsmm_dnn_internal_free_structs_code_conv_handle( handle );
 
     /* Deallocate barrier */
     if (handle->barrier != 0 ) { libxsmm_barrier_release((const libxsmm_barrier*)handle->barrier); }
 
-    /* deallocate handle structure */
+    /* deallocate handle structure itself */
     free(/*remove constness*/(libxsmm_dnn_layer*)handle);
   }
-#if 0 /* releasing a NULL-handle should be not an error (similar to freeing a NULL pointer) */
-  else {
-    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
-  }
-#endif
+
   return status;
 }
 
