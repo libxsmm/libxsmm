@@ -196,17 +196,6 @@ TBB ?= 0
 # TBB runtime compatible with oldest supported GCC
 TBB_OLDRTL ?= 0
 
-# C Compiler is used for link stage
-ifneq (Darwin,$(UNAME))
-  XGROUP_BEGIN = -Wl,--start-group
-  XGROUP_END = -Wl,--end-group
-  XLIB_BEGIN = -Wl,--as-needed
-  XLIB_END = -Wl,--no-as-needed
-  XRPATH = -Wl,--rpath=$(NULL)
-else
-  XRPATH = -Xlinker -rpath -Xlinker $(NULL)
-endif
-
 # Enable absolute library paths
 ABSLIBS ?= 0
 
@@ -234,26 +223,6 @@ abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
 # Embedd soname into shared library
 SONAMELNK ?= 2
-ifneq (Darwin,$(UNAME))
-  ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
-    solink = -o $1.$2.$3.$4 -Wl,-soname=$(strip $(notdir $1).$5)
-    ifneq (0,$(SONAMELNK))
-      solink += $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5))
-    endif
-    ifneq (0,$(shell echo "$$((1<$(SONAMELNK) || 0>$(SONAMELNK)))"))
-      solink += $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
-    endif
-  else # MinGW
-    solink = -o $1 -Wl,-soname=$(strip $(notdir $1).$5)
-  endif
-else # osx
-  solink = -o $(basename $1).$2$(suffix $1) \
-           -install_name $(notdir $(basename $1).$2$(suffix $1)) \
-           -current_version $2.$3.$4 -compatibility_version $5
-  ifneq (0,$(SONAMELNK))
-    solink += $(shell cd $(dir $1) && ln -fs $(notdir $(basename $1).$2$(suffix $1)) $(notdir $1))
-  endif
-endif
 
 # Pickup OpenMP library name if passed as OMP=libname|name
 ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
@@ -317,22 +286,6 @@ endif
 
 # BLAS is not used by default
 BLAS ?= 0
-
-LIBDEP = $(LIBNAME).$(IMPEXT)
-MAINLIB = $(call abslib,$(LIBDEP))
-
-FORTDEP = $(LIBNAME)f.$(IMPEXT)
-FORTLIB = $(call abslib,$(FORTDEP))
-
-EXTDEP = $(LIBNAME)ext.$(IMPEXT)
-EXTLIB = $(XLIB_BEGIN) $(call abslib,$(EXTDEP)) $(XLIB_END)
-ifeq (0,$(BLAS))
-  # provides libxsmmnoblas to satisfy BLAS symbols
-  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(IMPEXT)) $(XLIB_END)
-else
-  NOBLASLIB = $(NULL)
-endif
-XBLASLIB ?= $(NOBLASLIB)
 
 COMPILER_VERSION_FLAG ?= --version
 CC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
@@ -660,27 +613,18 @@ LD = $(CC)
 XLD = $(CXX)
 
 ifeq (0,$(DEPSTATIC))
-  LIB_LD := $(LD) -shared
-  LIB_XLD := $(XLD) -shared
+  LIB_LD := $(LD) -shared $(PICFLAG)
+  LIB_XLD := $(XLD) -shared $(PICFLAG)
 else
   LIB_LD := $(LD)
   LIB_XLD := $(XLD)
-endif
-
-ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
-  LIBGFORTRAN = $(call libpath,$(FC) $(SLDFLAGS),$(NULL),gfortran)
-  ifneq (,$(strip $(LIBGFORTRAN)))
-    FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
-    LIB_FLD = $(LIB_LD)
-    #FLD = $(LD)
-  endif
 endif
 
 ifeq (,$(strip $(FLD)))
 ifneq (,$(strip $(FC)))
   FLD = $(FC)
   ifeq (0,$(DEPSTATIC))
-    LIB_FLD := $(FLD) -shared
+    LIB_FLD := $(FLD) -shared $(PICFLAG)
   else
     LIB_FLD := $(FLD)
   endif
@@ -719,6 +663,72 @@ ifneq (0,$(DYNAMIC))
 endif
 #endif
 
+# Compiler is used for link stage
+ifneq (Darwin,$(UNAME))
+  ifneq (ld,$(LD))
+    XLNK_BEGIN = -Wl,
+    XLNK_END = $(NULL)
+  endif
+  XGROUP_BEGIN = $(XLNK_BEGIN)--start-group
+  XGROUP_END = $(XLNK_BEGIN)--end-group
+  XLIB_BEGIN = $(XLNK_BEGIN)--as-needed
+  XLIB_END = $(XLNK_BEGIN)--no-as-needed
+  XRPATH = $(XLNK_BEGIN)--rpath=$(NULL)
+else
+  ifneq (ld,$(LD))
+    XLNK_BEGIN = -Xlinker $(NULL)
+    XLNK_END = $(NULL) -Xlinker
+  endif
+  XRPATH = $(XLNK_BEGIN) -rpath $(XLNK_END)
+endif
+
+LIBDEP = $(LIBNAME).$(IMPEXT)
+MAINLIB = $(call abslib,$(LIBDEP))
+
+FORTDEP = $(LIBNAME)f.$(IMPEXT)
+FORTLIB = $(call abslib,$(FORTDEP))
+
+EXTDEP = $(LIBNAME)ext.$(IMPEXT)
+EXTLIB = $(XLIB_BEGIN) $(call abslib,$(EXTDEP)) $(XLIB_END)
+ifeq (0,$(BLAS))
+  # provides libxsmmnoblas to satisfy BLAS symbols
+  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(IMPEXT)) $(XLIB_END)
+else
+  NOBLASLIB = $(NULL)
+endif
+XBLASLIB ?= $(NOBLASLIB)
+
+ifneq (Darwin,$(UNAME))
+  ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
+    solink = -o $1.$2.$3.$4 $(XLNK_BEGIN)-soname=$(strip $(notdir $1).$5)
+    ifneq (0,$(SONAMELNK))
+      solink += $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5))
+    endif
+    ifneq (0,$(shell echo "$$((1<$(SONAMELNK) || 0>$(SONAMELNK)))"))
+      solink += $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
+    endif
+  else # MinGW
+    solink = -o $1 $(XLNK_BEGIN)-soname=$(strip $(notdir $1).$5)
+  endif
+  solink += $(XLNK_END)
+else # osx
+  solink = -o $(basename $1).$2$(suffix $1) \
+           -install_name $(notdir $(basename $1).$2$(suffix $1)) \
+           -current_version $2.$3.$4 -compatibility_version $5
+  ifneq (0,$(SONAMELNK))
+    solink += $(shell cd $(dir $1) && ln -fs $(notdir $(basename $1).$2$(suffix $1)) $(notdir $1))
+  endif
+endif
+
+ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
+  LIBGFORTRAN = $(call libpath,$(FC) $(SLDFLAGS),$(NULL),gfortran)
+  ifneq (,$(strip $(LIBGFORTRAN)))
+    FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
+    LIB_FLD = $(LIB_LD)
+    #FLD = $(LD)
+  endif
+endif
+
 ifneq (0,$(INTEL))
   AR ?= xiar
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
@@ -732,7 +742,9 @@ ifneq (0,$(INTEL))
   CXXFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
   CFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
   ifeq (,$(strip $(GFC)))
-    LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
+    ifneq (ld,$(LD))
+      LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
+    endif
     FCFLAGS += -diag-disable 10006,10010,10411,13003
     ifneq (0,$(THREADS))
       FCMTFLAGS += -threads
@@ -1336,27 +1348,29 @@ ifeq (0,$(COMPATIBLE))
       CXXFLAGS += -fno-stack-protector
       CFLAGS += -fno-stack-protector
     endif
+    ifneq (ld,$(LD))
     ifneq (Windows_NT,$(UNAME))
       # Linux distributions may apply similar hardening
-      LDFLAGS += -Wl,-z,relro,-z,now
+      LDFLAGS += $(XLNK_BEGIN)-z,relro,-z,now
       ifneq (0,$(DEPSTATIC))
         ifneq (0,$(HARDEN))
           ifneq (,$(strip $(HARDEN))) # explicit
-            LDFLAGS += -Wl,--export-dynamic
+            LDFLAGS += $(XLNK_BEGIN)--export-dynamic
           else ifneq (0,$(SYM))
-            LDFLAGS += -Wl,--export-dynamic
+            LDFLAGS += $(XLNK_BEGIN)--export-dynamic
           endif
         else ifneq (0,$(SYM))
-          LDFLAGS += -Wl,--export-dynamic
+          LDFLAGS += $(XLNK_BEGIN)--export-dynamic
         endif
       endif
+    endif
     endif
     # flag -fvisibility=hidden is causing crashes (assertions during validation)
     CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
     CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
     FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
     # --gc-sections: relies on section-flags present at compile-stage
-    LDFLAGS += -Wl,--gc-sections
+    LDFLAGS += $(XLNK_BEGIN)--gc-sections
   endif
   ifeq (0,$(EXP))
     CXXFLAGS += -fno-exceptions
@@ -1680,7 +1694,7 @@ cleanup = $(foreach flag,$1,$(flag))
 NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
 NOBLAS_FCFLAGS := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
 NOBLAS_CFLAGS := $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_LDFLAGS := $(call cleanup,$(PICFLAG) $(LDFLAGS) $(ELDFLAGS))
+NOBLAS_LDFLAGS := $(call cleanup,$(LDFLAGS) $(ELDFLAGS))
 NOBLAS_CLDFLAGS := $(call cleanup,$(CLDFLAGS))
 NOBLAS_FLAGS := $(call cleanup,$(DFLAGS))
 NOBLAS_IFLAGS := $(call cleanup,$(IFLAGS))
