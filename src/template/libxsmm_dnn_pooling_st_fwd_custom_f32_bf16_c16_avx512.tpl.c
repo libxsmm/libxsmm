@@ -36,7 +36,7 @@
 #else
 # define _mm512_load_act(A)     _mm512_loadu_ps(A)
 # define _mm512_stream_act(A,B) _mm512_stream_ps(A,B)
-# define _mm512_store_act(A,B)  _mm512_storeu_ps(A,B) 
+# define _mm512_store_act(A,B)  _mm512_storeu_ps(A,B)
 #endif
 
 /* size variables, all const */
@@ -142,7 +142,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
             const element_input_type*      input_ptr  = &LIBXSMM_VLA_ACCESS(5, input,      img, fm, hi+kh+iph, wi+kw+ipw, 0, nBlocksFm, ifhp, ifwp, 16);
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
             __m512i lcl_vnewmask = _mm512_add_epi32( lcl_viadd, _mm512_set1_epi32((hi+kh)*ifw*16 + (wi+kw)*16) );
-            __m512 lcl_vinput  = _mm512_load_act( input_ptr );           
+            __m512 lcl_vinput  = _mm512_load_act( input_ptr );
             __mmask16 lcl_mlt = _mm512_cmp_ps_mask( lcl_voutput, lcl_vinput, _CMP_LT_OQ );
             lcl_voutput  = _mm512_mask_blend_ps( lcl_mlt, lcl_voutput, lcl_vinput );
             lcl_vmask = _mm512_mask_blend_epi32( lcl_mlt, lcl_vmask,   lcl_vnewmask );
