@@ -848,6 +848,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
     return;
   }
 
+#if 0
   if ( ((i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM && i_conv_desc->ofw_rb <= 14 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1) || (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1)) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) ) {
     /* determining the number of accumulators */
     l_accs = (i_conv_desc->ofw_rb < 9) ? 3 : 2;
@@ -893,6 +894,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
       }
     }
   } else {
+#endif
     /* adding to C, so let's load C */
     for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
       for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
@@ -932,7 +934,9 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
         }
       }
     }
+#if 0
   }
+#endif
 }
 
 LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
@@ -1032,6 +1036,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
 #endif
   }
 
+#if 0
   if ( ((i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM && i_conv_desc->ofw_rb <= 14 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1)
      || (i_conv_desc->ofw_rb < 12 && i_conv_desc->ofh_rb == 1 && l_reg_per_block == 1)) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX2) )
   {
@@ -1502,6 +1507,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
 #endif
     }
   } else {
+#endif
     /* adding to C, so let's store C */
     if ( (i_conv_desc->use_fwd_generator_for_bwd == 0) || (i_conv_desc->stride_w_store == 1 && i_conv_desc->stride_h_store == 1) ) {
       /* In case of LP kernel convert the kernels to F32  */
@@ -2450,7 +2456,9 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
       }
 
     }
+#if 0
   }
+#endif
 }
 
 LIBXSMM_API_INTERN
