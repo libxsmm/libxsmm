@@ -813,7 +813,7 @@ void libxsmm_generator_convolution_forward_load_output( libxsmm_generated_code* 
   /* start register of accumulator */
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofh_rb * i_conv_desc->ofw_rb * l_reg_per_block);
   /* register blocking counter  */
-  unsigned int l_i, l_j, l_k, l_accs;
+  unsigned int l_i, l_j, l_k;/* l_accs;*/
   /* block-feature map offset, leading dimension */
   unsigned int l_lead_dim = 0;
 
@@ -949,7 +949,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
   /* start register of accumulator */
   const unsigned int l_vec_reg_acc_start = i_conv_kernel_config->vector_reg_count - (i_conv_desc->ofh_rb * i_conv_desc->ofw_rb * l_reg_per_block);
   /* register blocking counter  */
-  unsigned int l_i, l_j, l_k, l_accs, i, j;
+  unsigned int l_i, l_j, l_k, /*l_accs,*/ i, j;
   /* block-feature map offset, leading dimension */
   unsigned int l_lead_dim = 0;
   /* store instruction to use */
