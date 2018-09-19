@@ -35,6 +35,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <math.h>
 #if defined(_OPENMP)
 # include <omp.h>
 #endif
@@ -973,6 +974,7 @@ int main(int argc, char* argv[])
         printf("Linf abs.error: %.24f\n", norms_batchstats.linf_abs);
         printf("Linf rel.error: %.24f\n", norms_batchstats.linf_rel);
         printf("Check-norm    : %.24f\n", norms_batchstats.normf_rel);
+        libxsmm_matdiff_reduce(&diff, &norms_batchstats);
 
         libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, stddev_naive, stddev_fuse, 0, 0, &norms_batchstats);
         printf("Stdev values:\n");
@@ -983,6 +985,7 @@ int main(int argc, char* argv[])
         printf("Linf abs.error: %.24f\n", norms_batchstats.linf_abs);
         printf("Linf rel.error: %.24f\n", norms_batchstats.linf_rel);
         printf("Check-norm    : %.24f\n", norms_batchstats.normf_rel);
+        libxsmm_matdiff_reduce(&diff, &norms_batchstats);
 
         free(expectval_naive);
         free(stddev_naive);
