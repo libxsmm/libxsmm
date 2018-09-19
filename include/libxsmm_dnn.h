@@ -48,6 +48,7 @@
 /** Opaque handles which represents convolutions and LIBXSMM datatypes */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer libxsmm_dnn_layer;
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor libxsmm_dnn_tensor;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn libxsmm_dnn_fusedbn;
 typedef unsigned int libxsmm_dnn_err_t;
 
 /** Define error and warning codes */
@@ -338,6 +339,7 @@ typedef enum libxsmm_dnn_conv_fuse_op {
   LIBXSMM_DNN_CONV_FUSE_MAX_STATS = 16,
   LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_BWD = 32,
   LIBXSMM_DNN_CONV_FUSE_ELTWISE_BWD = 64,
+  LIBXSMM_DNN_CONV_FUSE_BATCHNORM_STATS = 128,
   LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD_RELU_BWD = LIBXSMM_DNN_CONV_FUSE_RELU_BWD | LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD,
   LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD_RELU_BWD_AND_MAX = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD_RELU_BWD | LIBXSMM_DNN_CONV_FUSE_MAX_STATS,
   LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD_AND_MAX = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD |  LIBXSMM_DNN_CONV_FUSE_MAX_STATS,
@@ -387,6 +389,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   libxsmm_dnn_conv_algo algo;               /* convolution algorithm used */
   libxsmm_dnn_conv_option options;          /* additional options */
   libxsmm_dnn_conv_fuse_op fuse_ops;        /* used ops into convolutions */
+  libxsmm_dnn_fusedbn *pre_bn;              /* pointer to pre bn layer to accommodate bn fusion  */             
+  libxsmm_dnn_fusedbn *post_bn;             /* pointer to post bn layer to accommodate bn fusion  */  
 } libxsmm_dnn_conv_desc;
 
 /** these are some quantization definitions, not sure if we want to

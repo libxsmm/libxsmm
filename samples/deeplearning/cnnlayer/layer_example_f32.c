@@ -41,8 +41,9 @@
 
 # define USE_OVERWRITE
 /*# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE*/
-/*# define USE_FUSED_BATCH_STATS*/
-/*#define USE_FUSED_RELU_BWD*/
+# define USE_FUSED_BATCH_STATS_FWD
+/*# define USE_FUSED_BATCH_STATS_BWD*/
+/*# define USE_FUSED_RELU_BWD*/
 
 #if !defined(USE_FUSED_BIAS) && 0
 # define USE_FUSED_BIAS
@@ -436,7 +437,9 @@ int main(int argc, char* argv[])
   float *input_nhwc, *output_nhwc, *filter_rsck, *dinput_nhwc, *doutput_nhwc, *dfilter_rsck, *naive_output_nhwc, *naive_input_nhwc;
   float *naive_bias, *bias_libxsmm, *naive_dbias, *dbias_libxsmm, *bias_nhwc, *dbias_nhwc;
   float *input_libxsmm, *filter_libxsmm, *output_libxsmm, *dinput_libxsmm, *dfilter_libxsmm, *doutput_libxsmm, *filtertr_libxsmm;
-  float *batchstats_libxsmm;
+  float *expectval_libxsmm, *stddev_libxsmm;
+  libxsmm_dnn_fusedbn_desc fusedbn_desc;
+  libxsmm_dnn_fusedbn* libxsmm_bn_handle;
 
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
@@ -487,8 +490,9 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_filter_tr;
   libxsmm_dnn_tensor* libxsmm_bias;
   libxsmm_dnn_tensor* libxsmm_dbias;
-#ifdef USE_FUSED_BATCH_STATS
-  libxsmm_dnn_tensor* libxsmm_batchstats;
+#ifdef USE_FUSED_BATCH_STATS_FWD
+  libxsmm_dnn_tensor*  libxsmm_expectval;
+  libxsmm_dnn_tensor*  libxsmm_stddev;
 #endif
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
@@ -632,7 +636,10 @@ int main(int argc, char* argv[])
   dfilter_libxsmm       = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
   doutput_libxsmm       = (float*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(float), 2097152);
   filtertr_libxsmm      = (float*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(float), 2097152);
-  batchstats_libxsmm    = (float*)libxsmm_aligned_malloc( 2*nImg*nOfm*        sizeof(float), 2097152);
+#ifdef USE_FUSED_BATCH_STATS_FWD
+  expectval_libxsmm     = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
+  stddev_libxsmm        = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
+#endif
   naive_bias            = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
   naive_dbias           = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
   bias_libxsmm          = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
@@ -782,8 +789,8 @@ int main(int argc, char* argv[])
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU;
 #elif defined(USE_FUSED_BIAS_RELU)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
-#elif defined(USE_FUSED_BATCH_STATS)
-    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD;
+#elif (defined(USE_FUSED_BATCH_STATS_FWD) || defined(USE_FUSED_BATCH_STATS_BWD))
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCHNORM_STATS;
 #elif defined(USE_FUSED_RELU_BWD)
    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU_BWD;
 #elif defined(USE_FUSED_BATCH_STATCH_RELU_BWD)
@@ -794,6 +801,30 @@ int main(int argc, char* argv[])
     /*conv_desc.options = LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE;*/
     conv_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+    conv_desc.pre_bn = NULL;
+    conv_desc.post_bn = NULL;
+
+#if defined(USE_FUSED_BATCH_STATS_FWD)
+    fusedbn_desc.N = nImg;
+    fusedbn_desc.C = nOfm;
+    fusedbn_desc.H = ofh;
+    fusedbn_desc.W = ofw;
+    fusedbn_desc.u = stride_h;
+    fusedbn_desc.v = stride_w;
+    fusedbn_desc.pad_h_in = pad_h_in;
+    fusedbn_desc.pad_w_in = pad_w_in;
+    fusedbn_desc.pad_h_out = pad_h_out;
+    fusedbn_desc.pad_w_out = pad_w_out;
+    fusedbn_desc.threads = nThreads;
+    fusedbn_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
+    fusedbn_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+    fusedbn_desc.datatype_stats = LIBXSMM_DNN_DATATYPE_F32;
+    fusedbn_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+    fusedbn_desc.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BN;
+    libxsmm_bn_handle = libxsmm_dnn_create_fusedbn( fusedbn_desc, &status );
+    CHKERR_LIBXSMM_DNN( status );
+    conv_desc.post_bn = libxsmm_bn_handle;
+#endif
 
     libxsmm_handle = libxsmm_dnn_create_conv_layer( conv_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
@@ -823,9 +854,13 @@ int main(int argc, char* argv[])
     libxsmm_filter_tr  = libxsmm_dnn_link_tensor( libxsmm_layout, filtertr_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-#ifdef USE_FUSED_BATCH_STATS
-    libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_BATCH_STATS, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_batchstats  = libxsmm_dnn_link_tensor( libxsmm_layout, batchstats_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
+#ifdef USE_FUSED_BATCH_STATS_FWD
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_bn_handle, LIBXSMM_DNN_CHANNEL_EXPECTVAL, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_expectval  = libxsmm_dnn_link_tensor( libxsmm_layout, expectval_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_bn_handle, LIBXSMM_DNN_CHANNEL_STDDEV, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_stddev  = libxsmm_dnn_link_tensor( libxsmm_layout, stddev_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 #endif
 
@@ -837,7 +872,6 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)naive_filter,      LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_bias,   (void*)naive_bias,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
     zero_buf(filtertr_libxsmm, nOfm*nIfm*kh*kw);
-    zero_buf(batchstats_libxsmm, 2*nImg*nOfm);
 
     /* bind buffers and filter to handle */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_input,      LIBXSMM_DNN_REGULAR_INPUT ) );
@@ -849,15 +883,18 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_bias,       LIBXSMM_DNN_REGULAR_CHANNEL_BIAS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_dbias,      LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_filter_tr,  LIBXSMM_DNN_REGULAR_FILTER_TRANS ) );
-#ifdef USE_FUSED_BATCH_STATS
-   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_batchstats, LIBXSMM_DNN_BATCH_STATS ) );
+#ifdef USE_FUSED_BATCH_STATS_FWD
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_bn_handle, libxsmm_expectval,    LIBXSMM_DNN_CHANNEL_EXPECTVAL ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_bn_handle, libxsmm_stddev,       LIBXSMM_DNN_CHANNEL_STDDEV ) );
 #endif
 
     /* let's allocate and bind scratch */
     scratch_size = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
     CHKERR_LIBXSMM_DNN( status );
+
     scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
+
     /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
     init_buf( (float*)scratch, scratch_size/4, 0, 0 );
 
@@ -891,48 +928,44 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_fwd);
 
-#if defined(USE_FUSED_BATCH_STATS)
+#if defined(USE_FUSED_BATCH_STATS_FWD)
       {
-        float *ch_sum, *ch_sum_fuse;
-        float *ch_sum2, *ch_sum2_fuse;
-        int img_i = 0;
-        int ch_i = 0;
-        int ch_j = 0;
-        int pxl_i = 0;
-        LIBXSMM_VLA_DECL(4, float, sum_fuse,  batchstats_libxsmm, nOfm/16, nImg, 16);
-        LIBXSMM_VLA_DECL(3, float, sum_naive, naive_output,       nOfm, ofhp*ofwp);
+        float *expectval_naive, *expectval_fuse, *stddev_naive, *stddev_fuse;
+        int img_i = 0, ch_i = 0, ch_j = 0, pxl_i = 0;
+        LIBXSMM_VLA_DECL(3, float, out_naive, naive_output,       nOfm, ofhp*ofwp);
+        float recp_nhw = 1.0f/(nImg * ofh * ofw);
+        float meansq, sqbmean;
+        const float sqrt_eps = 1e-7f;
 
-        ch_sum       = (float*) malloc(nOfm*sizeof(float));
-        ch_sum_fuse  = (float*) malloc(nOfm*sizeof(float));
-        ch_sum2      = (float*) malloc(nOfm*sizeof(float));
-        ch_sum2_fuse = (float*) malloc(nOfm*sizeof(float));
+        expectval_naive = (float*) malloc(nOfm*sizeof(float));
+        expectval_fuse  = expectval_libxsmm;
+        stddev_naive    = (float*) malloc(nOfm*sizeof(float));
+        stddev_fuse     = stddev_libxsmm;
 
         for ( ch_i = 0; ch_i < nOfm; ++ch_i ) {
-          ch_sum_fuse[ch_i] = 0.0f;
-          ch_sum2_fuse[ch_i] = 0.0f;
-          ch_sum[ch_i] = 0.0f;
-          ch_sum2[ch_i] = 0.0f;
+          expectval_naive[ch_i] = 0.0f;
+          stddev_naive[ch_i] = 0.0f;
         }
-        for ( ch_i = 0; ch_i < nOfm/16; ++ch_i ) {
-          for ( img_i = 0; img_i < nImg; ++img_i ) {
-            for ( ch_j = 0; ch_j < 16; ++ch_j ) {
-              ch_sum_fuse[(ch_i*16) + ch_j]  += LIBXSMM_VLA_ACCESS(4, sum_fuse, 0, ch_i, img_i, ch_j, nOfm/16, nImg, 16);
-              ch_sum2_fuse[(ch_i*16) + ch_j] += LIBXSMM_VLA_ACCESS(4, sum_fuse, 1, ch_i, img_i, ch_j, nOfm/16, nImg, 16);
-            }
-          }
-        }
+
         for ( img_i = 0; img_i < nImg; ++img_i ) {
           for ( ch_i = 0; ch_i < nOfm; ++ch_i ) {
             for ( pxl_i = 0; pxl_i < ofhp*ofwp; ++pxl_i ) {
-              const float f = LIBXSMM_VLA_ACCESS(3, sum_naive, img_i, ch_i, pxl_i, nOfm, ofhp*ofwp);
-              ch_sum2[ch_i] += f * f;
-              ch_sum[ch_i]  += f;
+              const float f = LIBXSMM_VLA_ACCESS(3, out_naive, img_i, ch_i, pxl_i, nOfm, ofhp*ofwp);
+              stddev_naive[ch_i] += f * f;
+              expectval_naive[ch_i]  += f;
             }
           }
         }
 
-        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum, ch_sum_fuse, 0, 0, &norms_batchstats);
-        printf("Channel Sum:\n");
+        for ( ch_i = 0; ch_i < nOfm; ++ch_i ) {
+          expectval_naive[ch_i] = expectval_naive[ch_i] * recp_nhw;
+          meansq = expectval_naive[ch_i] * expectval_naive[ch_i];
+          sqbmean = recp_nhw * stddev_naive[ch_i];
+          stddev_naive[ch_i] = (float) (1.0/sqrt((double)sqbmean - meansq + sqrt_eps));
+        }
+
+        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, expectval_naive, expectval_fuse, 0, 0, &norms_batchstats);
+        printf("Expected values:\n");
         printf("L1 reference  : %.25g\n", norms_batchstats.l1_ref);
         printf("L1 test       : %.25g\n", norms_batchstats.l1_tst);
         printf("L2 abs.error  : %.24f\n", norms_batchstats.l2_abs);
@@ -941,8 +974,8 @@ int main(int argc, char* argv[])
         printf("Linf rel.error: %.24f\n", norms_batchstats.linf_rel);
         printf("Check-norm    : %.24f\n", norms_batchstats.normf_rel);
 
-        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum2, ch_sum2_fuse, 0, 0, &norms_batchstats);
-        printf("Channel Sum2:\n");
+        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, stddev_naive, stddev_fuse, 0, 0, &norms_batchstats);
+        printf("Stdev values:\n");
         printf("L1 reference  : %.25g\n", norms_batchstats.l1_ref);
         printf("L1 test       : %.25g\n", norms_batchstats.l1_tst);
         printf("L2 abs.error  : %.24f\n", norms_batchstats.l2_abs);
@@ -951,10 +984,8 @@ int main(int argc, char* argv[])
         printf("Linf rel.error: %.24f\n", norms_batchstats.linf_rel);
         printf("Check-norm    : %.24f\n", norms_batchstats.normf_rel);
 
-        free(ch_sum);
-        free(ch_sum2);
-        free(ch_sum_fuse);
-        free(ch_sum2_fuse);
+        free(expectval_naive);
+        free(stddev_naive);
       }
 #endif
     }
@@ -1064,8 +1095,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
-        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
+          ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
+          norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
     }
 
     if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
@@ -1097,8 +1128,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
-        norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
+          ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+          norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
 
     if (type == 'A' || type == 'U') {
@@ -1133,8 +1164,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
-        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
+          ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+          norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
 
     /* clean-up */
@@ -1387,8 +1418,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-RSCK,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
-        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
+          ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
+          norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
     }
 
     if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
@@ -1419,8 +1450,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-RSCK,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
-        norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
+          ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+          norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
 
     if (type == 'A' || type == 'U') {
@@ -1454,8 +1485,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,RSCK) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-RSCK,WU,%s,%i,%i,%i,%i,%i,%i,%i, %i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
-        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
+          ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+          norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
 
     /* clean-up */
@@ -1703,8 +1734,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-custom,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
-        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
+          ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
+          norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
     }
 
     if ( (type == 'A' || type == 'B') && (nIfm > 3) ) {
@@ -1735,8 +1766,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-custom,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
-        norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
+          ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+          norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
 
     if (type == 'A' || type == 'U') {
@@ -1770,8 +1801,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS (NHWC,custom) = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP-NHWC-custom,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIfm, nOfm,
-        ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
-        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
+          ifw, ifh, kw, kh, stride, padw, padh, ((double)(l_total/iters)), (flops*1e-9)/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+          norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
 
     /* clean-up */
@@ -1825,7 +1856,6 @@ int main(int argc, char* argv[])
   libxsmm_free(dfilter_libxsmm);
   libxsmm_free(doutput_libxsmm);
   libxsmm_free(filtertr_libxsmm);
-  libxsmm_free(batchstats_libxsmm);
   libxsmm_free(naive_bias);
   libxsmm_free(naive_dbias);
   libxsmm_free(bias_nhwc);

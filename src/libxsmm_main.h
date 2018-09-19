@@ -323,6 +323,10 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_convolution_winograd_descriptor cwino_upd;
   libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
+  /* These are the batchnorm handles in case of fusion  */
+  libxsmm_dnn_fusedbn* pre_bn;
+  libxsmm_dnn_fusedbn* post_bn;
+
   /* additional size for internal data types */
   int ifhp;
   int ifwp;

@@ -332,6 +332,16 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
     handle->scratch2 = 0;
     handle->scratch2_size = 0;
   }
+
+  /* Allocate scratch for auxiliary batchstats (sum and sum^2 for FWD)  */
+  if ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0  ) {
+    handle->scratch7 = 0;
+    handle->scratch7_size = (size_t) 2 * handle->desc.K * handle->desc.N * sizeof(float);
+  } else {
+    handle->scratch7 = 0;
+    handle->scratch7_size = 0;
+  }
+
 }
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_layer* handle ) {

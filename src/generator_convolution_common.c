@@ -1226,7 +1226,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
           }
         }
       }
-
       /* Load running sums to registers (zmm2, zmm3) */
 
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -1263,7 +1262,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
           1,
           3,
           1);
-
 
       /* store both registers (zmm0, zmm1) to external buffers */
       libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -1907,7 +1905,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
             1,
             3,
             1);
-
 
         /* store both registers (zmm0, zmm1) to external buffers */
         libxsmm_x86_instruction_vec_move( io_generated_code,
