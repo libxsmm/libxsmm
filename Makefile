@@ -183,15 +183,8 @@ ifneq (0,$(MKL))
 endif
 endif
 
-BLAS_WARNING ?= 0
-ifeq (0,$(STATIC))
-  ifeq (Windows_NT,$(OS)) # !UNAME
-    BLAS_WARNING = 1
-    BLAS ?= 2
-  else ifeq (Darwin,$(shell uname))
-    BLAS_WARNING = 1
-    BLAS ?= 2
-  endif
+ifeq (0,$(LNKSOFT))
+  BLAS ?= 2
 endif
 
 ifneq (1,$(CACHE))
@@ -207,7 +200,7 @@ endif
 DOCEXT = pdf
 
 # state to be excluded from tracking the (re-)build state
-EXCLUDE_STATE = BLAS_WARNING PREFIX DESTDIR INSTALL_ROOT
+EXCLUDE_STATE = PREFIX DESTDIR INSTALL_ROOT
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
@@ -386,17 +379,16 @@ information = \
 	$(info --------------------------------------------------------------------------------) \
 	$(info The shared link-time wrapper (libxsmmext) is not supported under Windows/Cygwin!), \
 	$(NULL)) \
-	$(if $(filter _0_,_$(BLAS_WARNING)_),$(NULL), \
+	$(if $(filter _0_,_$(LNKSOFT)_), \
 	$(info --------------------------------------------------------------------------------) \
 	$(info Building a shared library requires to link against BLAS since there is) \
-	$(info no runtime resolution/search for weak symbols implemented for this OS.)) \
+	$(info no runtime resolution/search for weak symbols implemented for this OS.),$(NULL)) \
 	$(if $(filter _0_,_$(BLAS)_), \
 	$(if $(filter _0_,_$(NOBLAS)_),$(NULL), \
 	$(info LIBXSMM's link-time BLAS dependency is removed (fallback might be unavailable!))), \
-	$(if $(filter _0_,_$(BLAS_WARNING)_), \
+	$(if $(filter _0_,_$(LNKSOFT)_),$(NULL), \
 	$(info LIBXSMM is link-time agnostic with respect to BLAS/GEMM!) \
-	$(info Linking a certain BLAS library may prevent users to decide.), \
-	$(NULL)) \
+	$(info Linking a certain BLAS library may prevent users to decide.)) \
 	$(if $(filter _1_,_$(BLAS)_), \
 	$(info A parallelized BLAS should be linked with LIBXSMM.), \
 	$(NULL)))

@@ -106,13 +106,8 @@ char *variant = handle->kernel_fwd_variant_ptrs[ltid];
 int pool_index = 0;
 /* Stream for BN offsets */
 int bn_i = 0;
-#ifndef FP64_BN_STATS
 float *bn_sum_base;
 float *bn_sum_base2;
-#else
-double *bn_sum_base;
-double *bn_sum_base2;
-#endif
 
 /* accumulation scratch for fp32->bf16 downconvert */
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
@@ -505,7 +500,6 @@ if (n_segments) {
             /* Compute batch norm statistics... */
             if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0) && (handle->use_accumulation_scratch == 0) ) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-#ifndef FP64_BN_STATS
               LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->scratch7,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
               element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
@@ -525,39 +519,6 @@ if (n_segments) {
                     BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
               _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, code_stream[pc].aux_index/*ofm1*/, img, 0,
                     BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
-#else
-              ofm1 =  code_stream[pc].aux_index;
-              {
-                LIBXSMM_VLA_DECL(4, double, stats, (double*)handle->scratch7,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
-                element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                    BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
-                __m512d bsum1a = _mm512_setzero_pd();
-                __m512d bsum1b = _mm512_setzero_pd();
-                __m512d bsum2a = _mm512_setzero_pd();
-                __m512d bsum2b = _mm512_setzero_pd();
-
-                for ( oj = 0; oj < handle->ofh; oj++ ) {
-                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                    __m512d btmpa = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+0)) );
-                    __m512d btmpb = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+8)) );
-                    bsum1a = _mm512_add_pd( bsum1a, btmpa);
-                    bsum1b = _mm512_add_pd( bsum1b, btmpb);
-                    bsum2a = _mm512_add_pd( bsum2a, _mm512_mul_pd( btmpa, btmpa ) );
-                    bsum2b = _mm512_add_pd( bsum2b, _mm512_mul_pd( btmpb, btmpb ) );
-                  }
-                  red += handle->ofwp*handle->ofmblock;
-                }
-
-                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
-                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
-                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
-                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
-                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
-                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
-              }
-#endif
 #else /* won't happen as this code only runs on AVX512 platforms */
               LIBXSMM_ASSERT(0);
 #endif
@@ -722,7 +683,6 @@ if (n_segments) {
             /* Compute batch norm statistics... */
             if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0) && (handle->use_accumulation_scratch == 0) ) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-#ifndef FP64_BN_STATS
               LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->scratch7,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
               element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0,
                   BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
@@ -742,39 +702,6 @@ if (n_segments) {
                     BLOCKSOFM, handle->desc.N,  handle->ofmblock), bsum );
               _mm512_store_ps( &LIBXSMM_VLA_ACCESS(4, stats, 1, code_stream[pc].aux_index/*ofm1*/, img, 0,
                     BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2 );
-#else
-              ofm1 =  code_stream[pc].aux_index;
-              {
-                LIBXSMM_VLA_DECL(4, double, stats, (double*)handle->scratch7,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
-                element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0,
-                    BLOCKSOFM, handle->ofhp, handle->ofwp, handle->ofmblock);
-                __m512d bsum1a = _mm512_setzero_pd();
-                __m512d bsum1b = _mm512_setzero_pd();
-                __m512d bsum2a = _mm512_setzero_pd();
-                __m512d bsum2b = _mm512_setzero_pd();
-
-                for ( oj = 0; oj < handle->ofh; oj++ ) {
-                  for ( oi = 0; oi < handle->ofw*handle->ofmblock; oi+=16 ) {
-                    __m512d btmpa = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+0)) );
-                    __m512d btmpb = _mm512_cvtps_pd ( _mm256_load_ps((const float*) (red+oi+8)) );
-                    bsum1a = _mm512_add_pd( bsum1a, btmpa);
-                    bsum1b = _mm512_add_pd( bsum1b, btmpb);
-                    bsum2a = _mm512_add_pd( bsum2a, _mm512_mul_pd( btmpa, btmpa ) );
-                    bsum2b = _mm512_add_pd( bsum2b, _mm512_mul_pd( btmpb, btmpb ) );
-                  }
-                  red += handle->ofwp*handle->ofmblock;
-                }
-
-                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 0,
-                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1a );
-                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 0, ofm1, img, 8,
-                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum1b );
-                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 0,
-                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2a );
-                _mm512_store_pd( &LIBXSMM_VLA_ACCESS(4, stats, 1, ofm1, img, 8,
-                      BLOCKSOFM, handle->desc.N, handle->ofmblock), bsum2b );
-              }
-#endif
 #else /* won't happen as this code only runs on AVX512 platforms */
               LIBXSMM_ASSERT(0);
 #endif
@@ -869,11 +796,7 @@ if (n_segments) {
 } else {
   /* Run the stream of convolutions, no extra operations are required... */
   if ( handle->compute_batch_stats_in_kernel == 1 ) { /* We  do BN stuff in the kernel  */
-#ifndef FP64_BN_STATS
     LIBXSMM_VLA_DECL(4, float, kernel_stats, (float*)handle->scratch7, BLOCKSOFM, handle->desc.N, handle->ofmblock);
-#else
-    LIBXSMM_VLA_DECL(4, double, kernel_stats, (double*)handle->scratch7, BLOCKSOFM, handle->desc.N, handle->ofmblock);
-#endif
     bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
     bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
     if (handle->n_variants  == 2) {
