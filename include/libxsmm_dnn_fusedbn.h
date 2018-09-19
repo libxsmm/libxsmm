@@ -35,9 +35,6 @@
 #include "libxsmm_typedefs.h"
 #include "libxsmm_dnn.h"
 
-/** Opaque handles which represents LIBXSMM fusedbn */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn libxsmm_dnn_fusedbn;
-
 typedef enum libxsmm_dnn_fusedbn_fuse_order {
   /* the fuse order is: 1. BN, 2. eltwise 3. RELU */
   LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU = 0
