@@ -178,7 +178,7 @@ if (handle->use_accumulation_scratch) {
 }
 
 /* Initialize scratch7 to zero in case of batch stats fusion  */
-if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0) {
+if (handle->fuse_batchstats_fwd == 1) {
   LIBXSMM_VLA_DECL(4, float, kernel_stats, (float*)handle->scratch7, BLOCKSOFM, handle->desc.N, handle->ofmblock);
   bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
   bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
@@ -410,7 +410,7 @@ if (n_segments) {
                 __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
                 __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
                 __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
-                if ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0 ) {
+                if ( handle->fuse_batchstats_fwd == 1 ) {
                   LIBXSMM_VLA_DECL(4, float, stats, (float*)handle->scratch7,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
                   __m512 bsum  = _mm512_setzero_ps();
                   __m512 bsum2 = _mm512_setzero_ps();
@@ -460,7 +460,7 @@ if (n_segments) {
                   }
                 }
               } else {
-                if ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0 ) {
+                if ( handle->fuse_batchstats_fwd == 1 ) {
                   LIBXSMM_VLA_DECL(4, float, stats, (float*)handle->scratch7,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
                   __m512 bsum  = _mm512_setzero_ps();
                   __m512 bsum2 = _mm512_setzero_ps();
@@ -498,7 +498,7 @@ if (n_segments) {
             }
 
             /* Compute batch norm statistics... */
-            if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0) && (handle->use_accumulation_scratch == 0) ) {
+            if ( (handle->fuse_batchstats_fwd == 1) && (handle->use_accumulation_scratch == 0) ) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
               LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->scratch7,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
               element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0,
@@ -591,7 +591,7 @@ if (n_segments) {
                 __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
                 __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
                 __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
-                if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0) {
+                if (handle->fuse_batchstats_fwd == 1) {
                   LIBXSMM_VLA_DECL(4, float, stats, (float*)handle->scratch7,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
 
                   __m512 bsum  = _mm512_setzero_ps();
@@ -642,7 +642,7 @@ if (n_segments) {
                   }
                 }
               } else {
-                if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0) {
+                if (handle->fuse_batchstats_fwd == 1) {
                   LIBXSMM_VLA_DECL(4, float, stats, (float*)handle->scratch7,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
 
                   __m512 bsum  = _mm512_setzero_ps();
@@ -681,7 +681,7 @@ if (n_segments) {
             }
 
             /* Compute batch norm statistics... */
-            if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0) && (handle->use_accumulation_scratch == 0) ) {
+            if ( (handle->fuse_batchstats_fwd == 1) && (handle->use_accumulation_scratch == 0) ) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
               LIBXSMM_VLA_DECL(4, element_output_type, stats, (element_output_type*)handle->scratch7,  BLOCKSOFM, handle->desc.N, handle->ofmblock);
               element_output_type* red = &LIBXSMM_VLA_ACCESS(5, output, img, code_stream[pc].aux_index/*ofm1*/, 0, 0, 0,
@@ -875,7 +875,7 @@ if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) > 0) {
+if (handle->fuse_batchstats_fwd == 1) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   /* Perform reduction and calculate expectation and standard deviation  */
   bn_handle = handle->post_bn;
