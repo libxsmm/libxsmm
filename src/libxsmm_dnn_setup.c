@@ -123,7 +123,7 @@ LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *
   const int max_r = 28;
   int n_variants = 0;
   unsigned int wrb1 = 0, hrb1 = 0, wrb2 = 0, hrb2 = 0;
-  unsigned int foo1, foo2;
+  unsigned int range1, range2;
 
   /* Case 1: min_r <= W <= max_r  */
   if (min_r <= W && W <= max_r) {
@@ -133,11 +133,22 @@ LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *
   }
   /* Case 2: max_r < W  */
   if (max_r < W) {
-    libxsmm_compute_equalized_blocking(W, max_r, &foo1, &wrb1, &foo2, &wrb2);
+    libxsmm_compute_equalized_blocking(W, max_r, &range1, &wrb1, &range2, &wrb2);
     if (wrb2 == 0) {
       n_variants = 1;
     } else {
       n_variants = 2;
+      if (range2 != wrb2) {
+        if (wrb1 < wrb2) {
+          wrb1 = wrb2;
+        }
+        wrb2 = W % wrb1;
+      } else {
+        if (wrb2 > wrb1) {
+          wrb1 = wrb2;
+          wrb2 = W % wrb1;
+        }
+      }
     }
     hrb1 = 1;
     hrb2 = 1;
@@ -147,11 +158,22 @@ LIBXSMM_API_INLINE int find_rb(int W, int H, int *wrb1_res, int *hrb1_res, int *
   if (W < min_r) {
     wrb1 = W;
     wrb2 = W;
-    libxsmm_compute_equalized_blocking(H, max_r/W, &foo1, &hrb1, &foo2, &hrb2);
+    libxsmm_compute_equalized_blocking(H, max_r/W, &range1, &hrb1, &range2, &hrb2);
     if (hrb2 == 0) {
       n_variants = 1;
     } else {
       n_variants = 2;
+      if (range2 != hrb2) {
+        if (hrb1 < hrb2) {
+          hrb1 = hrb2;
+        }
+        hrb2 = H % hrb1;
+      } else {
+        if (hrb2 > hrb1) {
+          hrb1 = hrb2;
+          hrb2 = H % hrb1;
+        }
+      }
     }
   }
 
