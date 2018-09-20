@@ -243,7 +243,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel(
       l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_weight_pf,
       l_gp_reg_mapping.gp_reg_output_pf, i_arch );
 
-  if ( i_conv_desc->compute_batch_stats > 0 && i_conv_desc->ifm_block != 3 ) {
+  if ( i_conv_desc->compute_batch_stats_fwd > 0 && i_conv_desc->ifm_block != 3 ) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         l_conv_kernel_config.alu_mov_instruction,
         LIBXSMM_X86_GP_REG_RSP,
@@ -439,7 +439,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel(
           }
         }
 
-        if ( (i_conv_desc->compute_batch_stats > 0) && (peel_index == 2) ) {
+        if ( (i_conv_desc->compute_batch_stats_fwd > 0) && (peel_index == 2) ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
               LIBXSMM_X86_INSTR_PREFETCHT1,
               l_gp_reg_mapping.gp_reg_help_2,

@@ -337,7 +337,7 @@ void libxsmm_generator_convolution_forward_load_output_bf16( libxsmm_generated_c
 
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
     /* @TODO this is a re-computation from the init call ?! */
-    if (i_conv_desc->compute_batch_stats == 1) {
+    if (i_conv_desc->compute_batch_stats_fwd == 1) {
       rsp_offset = 64;
     }
     if (i_conv_desc->perform_relu_in_kernel == 1) {
@@ -385,7 +385,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
   unsigned int index_zero;
   unsigned int reg_X;
 
-  if ( (i_conv_desc->compute_batch_stats > 0) ) {
+  if ( (i_conv_desc->compute_batch_stats_fwd > 0) ) {
     /* set zmm2 and 3 to zero */
     libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
         i_conv_kernel_config->instruction_set,
@@ -489,7 +489,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
       reg_X =  l_vec_reg_acc_start + (l_i * i_conv_desc->ofw_rb) + l_j;
       store_offset = ((l_i * i_conv_desc->stride_h_store) * lead_dim_w + l_j * i_conv_desc->stride_w_store) * i_conv_kernel_config->vector_length_out * datatype_output_size;
 
-      if ( (i_conv_desc->compute_batch_stats > 0) ) {
+      if ( (i_conv_desc->compute_batch_stats_fwd > 0) ) {
         /* compute sum of channels */
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
             i_conv_kernel_config->instruction_set,
@@ -741,7 +741,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
   }
 
   /* load the current batch status value and update */
-  if ( (i_conv_desc->compute_batch_stats > 0) ) {
+  if ( (i_conv_desc->compute_batch_stats_fwd > 0) ) {
     /* Load running sum and sum_2 to registers (zmm1, zmm0) */
     libxsmm_x86_instruction_vec_move( io_generated_code,
         i_conv_kernel_config->instruction_set,
@@ -941,7 +941,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
     l_intr_store = LIBXSMM_X86_INSTR_VMOVNTPS;
   }
 
-  if ( (i_conv_desc->compute_batch_stats > 0) /*&& (i_conv_desc->ifm_block != 3)*/ ) {
+  if ( (i_conv_desc->compute_batch_stats_fwd > 0) /*&& (i_conv_desc->ifm_block != 3)*/ ) {
     libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_3);
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_conv_kernel_config->alu_mov_instruction,
@@ -981,7 +981,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
       libxsmm_x86_instruction_alu_reg( io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
       /* Scale factor offset in rsp */
       rsp_offset = 48;
-      if (i_conv_desc->compute_batch_stats == 1) {
+      if (i_conv_desc->compute_batch_stats_fwd == 1) {
         rsp_offset = 64;
       }
       if (i_conv_desc->perform_relu_in_kernel == 1) {
@@ -1162,7 +1162,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
     }
 
     /* check if we need to calculate batch stats */
-    if ( i_conv_desc->compute_batch_stats > 0 ) {
+    if ( i_conv_desc->compute_batch_stats_fwd > 0 ) {
       /* reset zmm0 and zmm1 */
       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
           i_conv_kernel_config->instruction_set,
@@ -1286,7 +1286,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
       }
     }
 
-    if ( i_conv_desc->compute_batch_stats > 0 ) {
+    if ( i_conv_desc->compute_batch_stats_fwd > 0 ) {
       for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
         for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
           for ( l_k = 0; l_k < l_reg_per_block; l_k++ ) {
@@ -1371,7 +1371,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
       libxsmm_x86_instruction_alu_reg(io_generated_code, i_conv_kernel_config->alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, i_gp_reg_mapping->gp_reg_help_5);
       /* Scale factor offset in rsp */
       rsp_offset = 48;
-      if (i_conv_desc->compute_batch_stats == 1) {
+      if (i_conv_desc->compute_batch_stats_fwd == 1) {
         rsp_offset = 64;
       }
       if (i_conv_desc->perform_relu_in_kernel == 1) {

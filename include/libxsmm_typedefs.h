@@ -344,6 +344,45 @@ typedef enum libxsmm_dnn_conv_option {
   LIBXSMM_DNN_CONV_OPTION_NO_TRANSPOSES_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_OVERWRITE | LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE | LIBXSMM_DNN_CONV_OPTION_UPD_NO_INPUT_TRANSPOSE
 } libxsmm_dnn_conv_option;
 
+typedef enum libxsmm_dnn_fusedbn_fuse_order {
+  /* the fuse order is: 1. BN, 2. eltwise 3. RELU */
+  LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU = 0
+} libxsmm_dnn_fusedbn_fuse_order;
+
+typedef enum libxsmm_dnn_fusedbn_fuse_op {
+  /* the fuse order is: 1. BN, 2. eltwise 3. RELU */
+  LIBXSMM_DNN_FUSEDBN_OPS_BN = 1,
+  LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE = 2,
+  LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE = 4,
+  LIBXSMM_DNN_FUSEDBN_OPS_RELU = 8,
+  LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE = LIBXSMM_DNN_FUSEDBN_OPS_BN | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE,
+  LIBXSMM_DNN_FUSEDBN_OPS_BN_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BN | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
+  LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BN | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
+  LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE,
+  LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE | LIBXSMM_DNN_FUSEDBN_OPS_RELU,
+  LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE | LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE | LIBXSMM_DNN_FUSEDBN_OPS_RELU
+} libxsmm_dnn_fusedbn_fuse_op;
+
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn_desc {
+  int N;                                     /* number of images in mini-batch */
+  int C;                                     /* number of input feature maps */
+  int H;                                     /* height of input image */
+  int W;                                     /* width of input image */
+  int u;                                     /* vertical stride */
+  int v;                                     /* horizontal stride */
+  int pad_h_in;                              /* height of physcial zero-padding in input buffer */
+  int pad_w_in;                              /* width of physical zero-padding in input buffer */
+  int pad_h_out;                             /* height of physical zero-padding in output buffer */
+  int pad_w_out;                             /* width of physical zero-padding in output buffer */
+  int threads;                               /* number of threads used */
+  libxsmm_dnn_datatype datatype_in;          /* datatype used for all input related buffers */
+  libxsmm_dnn_datatype datatype_out;         /* datatype used for all output related buffers */
+  libxsmm_dnn_datatype datatype_stats;       /* datatype used for all stats related buffers */
+  libxsmm_dnn_tensor_format buffer_format;   /* format which is for activation buffers */
+  libxsmm_dnn_fusedbn_fuse_order fuse_order; /* additional options */
+  libxsmm_dnn_fusedbn_fuse_op fuse_ops;      /* used ops into convolutions */
+} libxsmm_dnn_fusedbn_desc;
+
 /** Structure storing the convolution argument description. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_descriptor {
   unsigned int kh;                              /* kernel height */
@@ -374,7 +413,11 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_de
   unsigned int extra_L2_prefetching;
   unsigned int input_L2_prefetching;
   unsigned int lookahead;
-  unsigned int compute_batch_stats;
+  unsigned int compute_batch_stats_fwd;
+  unsigned int compute_batch_stats_bwd;
+  unsigned int compute_eltwise;
+  libxsmm_dnn_fusedbn_desc* pre_bn;
+  libxsmm_dnn_fusedbn_desc* post_bn;
   unsigned int compute_max;
   unsigned int perform_relu_in_kernel;
   unsigned int n_variants;
