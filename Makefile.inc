@@ -1459,9 +1459,7 @@ else
 endif
 
 ifeq (0,$(OMP))
-ifeq (0,$(LNKSOFT))
   EXTLIB += $(OMPLIB)
-endif
 endif
 
 ifeq (Darwin,$(UNAME))
