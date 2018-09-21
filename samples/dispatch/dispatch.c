@@ -34,6 +34,7 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdlib.h>
+#include <string.h>
 #include <stdio.h>
 #if defined(_OPENMP)
 # include <omp.h>
@@ -236,13 +237,14 @@ int main(int argc, char* argv[])
       double check = 0;
       for (i = 0; i < size; ++i) {
         const int j = (int)((shuffle * i) % size);
-        libxsmm_matdiff_info diff = { 0 };
+        libxsmm_matdiff_info diff;
 #if defined(mkl_jit_create_dgemm)
         const dgemm_jit_kernel_t kernel = mkl_jit_get_dgemm_ptr(jitter[j]);
 #else
         const libxsmm_dmmfunction kernel = libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k,
           &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
 #endif
+        memset(&diff, 0, sizeof(diff));
         if (NULL != kernel) {
 #if defined(mkl_jit_create_dgemm)
           kernel(jitter[j], a, b, c);
