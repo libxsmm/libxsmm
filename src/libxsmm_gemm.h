@@ -46,7 +46,6 @@
 #endif
 #include <limits.h>
 #include <stdio.h>
-#include <math.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif

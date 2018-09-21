@@ -46,7 +46,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif
