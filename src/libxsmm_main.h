@@ -372,7 +372,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int use_fastpath;
   int use_hybrid_wu_parallelism;
   int weight_copies;
-  int compute_batch_stats_in_kernel;
+  int compute_batch_stats_in_kernel_fwd;
+  int compute_batch_stats_in_kernel_bwd;
   int compute_max_in_kernel_fwd;
   int compute_max_in_kernel_bwd;
   int fuse_batchstats_fwd;

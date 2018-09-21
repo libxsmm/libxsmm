@@ -93,7 +93,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     /* This is basically a decision pertaining for all three passes: FWD, BWD and UPD */
     /* Initialize fields that control layer fusion */
     noarch = 0;
-    handle->compute_batch_stats_in_kernel = 0;
+    handle->compute_batch_stats_in_kernel_fwd = 0;
     handle->compute_max_in_kernel_fwd = 0;
     handle->compute_max_in_kernel_bwd = 0;
     handle->perform_relu_in_kernel = 0;

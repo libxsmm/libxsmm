@@ -703,10 +703,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
 
     if ( (handle->fuse_batchstats_fwd == 1) && (handle->use_nts_fwd == 1) && (handle->use_fwd_for_bwd == 0) ) {
       descriptor.compute_batch_stats_fwd = 1;
-      handle->compute_batch_stats_in_kernel = 1;
+      handle->compute_batch_stats_in_kernel_fwd = 1;
     } else {
       descriptor.compute_batch_stats_fwd = 0;
-      handle->compute_batch_stats_in_kernel = 0;
+      handle->compute_batch_stats_in_kernel_fwd = 0;
     }
 
     if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_nts_fwd == 1) && (handle->use_fwd_for_bwd == 0) ) {
