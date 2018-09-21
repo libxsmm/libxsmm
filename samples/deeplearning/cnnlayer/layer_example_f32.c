@@ -438,10 +438,11 @@ int main(int argc, char* argv[])
   float *input_nhwc, *output_nhwc, *filter_rsck, *dinput_nhwc, *doutput_nhwc, *dfilter_rsck, *naive_output_nhwc, *naive_input_nhwc;
   float *naive_bias, *bias_libxsmm, *naive_dbias, *dbias_libxsmm, *bias_nhwc, *dbias_nhwc;
   float *input_libxsmm, *filter_libxsmm, *output_libxsmm, *dinput_libxsmm, *dfilter_libxsmm, *doutput_libxsmm, *filtertr_libxsmm;
+#if defined(USE_FUSED_BATCH_STATS_FWD)
   float *expectval_libxsmm, *stddev_libxsmm;
   libxsmm_dnn_fusedbn_desc fusedbn_desc;
   libxsmm_dnn_fusedbn* libxsmm_bn_handle;
-
+#endif
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
