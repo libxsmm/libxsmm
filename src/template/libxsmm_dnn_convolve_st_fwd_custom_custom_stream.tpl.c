@@ -61,11 +61,11 @@ int *stream = handle->compute_fwd_indices_ptrs[ltid];
 int *bn_stream = handle->bn_stats_indices_ptrs[ltid];
 
 /* Batch stats related variables */
-int nImg = 0, nBlocksFm = 0, work = 0, chunksize = 0, thr_begin = 0, thr_end = 0, fm = 0;
+int nImg = 0, work = 0, chunksize = 0, thr_begin = 0, thr_end = 0, fm = 0;
 float nhw, recp_nhw, sqrt_eps = 1e-7f;
 float *sum_img_ptr = NULL, *sumsq_img_ptr = NULL;
 libxsmm_dnn_fusedbn *bn_handle = NULL;
-#if defined(LIBXSMM_INTRINSICS_AVX512) 
+#if defined(LIBXSMM_INTRINSICS_AVX512)
 __m512 lcl_vsum, lcl_vsumsq, lcl_vsqrt_eps, lcl_vrec_nhw, lcl_vone, lcl_vbmean, lcl_vbmeansq, lcl_vsqbmean, lcl_vbrstd;
 #else
 #endif
@@ -77,15 +77,6 @@ int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
 int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
 int my_ofm_start = 0;
 int my_ofm_end = BLOCKSOFM;
-
-if ( imgpt <= 1 ) {
-  my_img_start = LIBXSMM_MIN( ltid / threads_per_image, handle->desc.N);
-  my_img_end = LIBXSMM_MIN( my_img_start + 1, handle->desc.N);
-  myOfmId = ltid % threads_per_image;
-  nOfmBlocks = (BLOCKSOFM + threads_per_image -1) / threads_per_image;
-  my_ofm_start = LIBXSMM_MIN(myOfmId * nOfmBlocks, BLOCKSOFM);
-  my_ofm_end = LIBXSMM_MIN((myOfmId+1) * nOfmBlocks, BLOCKSOFM);
-}
 
 /* Padding related variables */
 const int padded_h = handle->ifhp + 2 * handle->desc.pad_h;
@@ -126,6 +117,15 @@ LIBXSMM_ASSERT(0);
 
 kernel_pool[0] = kernel;
 kernel_pool[1] = kernel2;
+
+if ( imgpt <= 1 ) {
+  my_img_start = LIBXSMM_MIN(ltid / threads_per_image, handle->desc.N);
+  my_img_end = LIBXSMM_MIN(my_img_start + 1, handle->desc.N);
+  myOfmId = ltid % threads_per_image;
+  nOfmBlocks = (BLOCKSOFM + threads_per_image - 1) / threads_per_image;
+  my_ofm_start = LIBXSMM_MIN(myOfmId * nOfmBlocks, BLOCKSOFM);
+  my_ofm_end = LIBXSMM_MIN((myOfmId+1) * nOfmBlocks, BLOCKSOFM);
+}
 
 /* Initialize base pointers */
 if (handle->padding_flag == 1) {
@@ -180,15 +180,15 @@ if (handle->use_accumulation_scratch) {
 /* Initialize scratch7 to zero in case of batch stats fusion  */
 if (handle->fuse_batchstats_fwd == 1) {
   LIBXSMM_VLA_DECL(4, float, kernel_stats, (float*)handle->scratch7, BLOCKSOFM, handle->desc.N, handle->ofmblock);
+  const __m512 zero_reg = _mm512_setzero_ps();
   bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
   bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
-  __m512 zero_reg = _mm512_setzero_ps();
   for (ofm1 = my_ofm_start; ofm1 < my_ofm_end; ofm1++) {
     for (img = my_img_start; img < my_img_end; img++) {
       _mm512_storeu_ps(bn_sum_base+img*handle->ofmblock+ofm1*handle->desc.N*handle->ofmblock, zero_reg);
       _mm512_storeu_ps(bn_sum_base2+img*handle->ofmblock+ofm1*handle->desc.N*handle->ofmblock, zero_reg);
     }
-  } 
+  }
 }
 
 i = 0;
@@ -878,16 +878,15 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 if (handle->fuse_batchstats_fwd == 1) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   /* Perform reduction and calculate expectation and standard deviation  */
+  LIBXSMM_VLA_DECL(3, float, sum_img,   (float*)handle->scratch7,                                                                      handle->post_bn->desc.N, 16);
+  LIBXSMM_VLA_DECL(3, float, sumsq_img, (float*)handle->scratch7 + ((size_t)handle->post_bn->desc.N * (size_t)handle->blocksofm * 16), handle->post_bn->desc.N, 16);
+  LIBXSMM_VLA_DECL(2, float, bmean,     (float*)handle->post_bn->expvalue->data,    16);
+  LIBXSMM_VLA_DECL(2, float, brstd,     (float*)handle->post_bn->stddev->data,      16);
   bn_handle = handle->post_bn;
   nImg = bn_handle->desc.N;
-  nBlocksFm = handle->blocksofm;
-  LIBXSMM_VLA_DECL(3, float, sum_img,   (float*)handle->scratch7,                                             nImg, 16);
-  LIBXSMM_VLA_DECL(3, float, sumsq_img, ((float*)handle->scratch7) + ((size_t)nImg * (size_t)nBlocksFm * 16), nImg, 16);
-  LIBXSMM_VLA_DECL(2, float, bmean,     (float*)bn_handle->expvalue->data,    16);
-  LIBXSMM_VLA_DECL(2, float, brstd,     (float*)bn_handle->stddev->data,      16);
-  nhw = (float)(nImg * bn_handle->desc.H * bn_handle->desc.W); 
+  nhw = (float)(nImg * bn_handle->desc.H * bn_handle->desc.W);
   recp_nhw = 1.0f/nhw;
-  work = nBlocksFm;
+  work = handle->blocksofm;
   chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
   thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
   thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
