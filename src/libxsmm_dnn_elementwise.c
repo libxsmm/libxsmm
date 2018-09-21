@@ -42,17 +42,13 @@
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_zero(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
     src[i] = (LIBXSMM_DNN_ELTWISE_FTYPE)0;
@@ -62,17 +58,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_zero(libxsmm_blasint size, LIBXS
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_add(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *a, LIBXSMM_DNN_ELTWISE_FTYPE *b, LIBXSMM_DNN_ELTWISE_FTYPE *c, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
     c[i] = a[i] + b[i];
@@ -82,17 +74,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_add(libxsmm_blasint size, LIBXSM
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_eltwise_mult(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *a, LIBXSMM_DNN_ELTWISE_FTYPE *b, LIBXSMM_DNN_ELTWISE_FTYPE *c, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
     c[i] = a[i] * b[i];
@@ -102,21 +90,16 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_eltwise_mult(libxsmm_blasint siz
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  LIBXSMM_DNN_ELTWISE_FTYPE exp_value;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
-    exp_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[i]);
+    const LIBXSMM_DNN_ELTWISE_FTYPE exp_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[i]);
     dst[i] = 1 / (1 + exp_value);
   }
 }
@@ -124,17 +107,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid(libxsmm_blasint size, LI
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
     dst[i] = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double)src[i]);
@@ -144,17 +123,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh(libxsmm_blasint size, LIBXS
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
     dst[i] = (src[i] >= 0) ? src[i] : 0;
@@ -164,23 +139,17 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu(libxsmm_blasint size, LIBXS
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  LIBXSMM_DNN_ELTWISE_FTYPE exp_value;
-  LIBXSMM_DNN_ELTWISE_FTYPE sig_exp;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
-    exp_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[i]);
-    sig_exp = 1 / (1 + exp_value);
+    const LIBXSMM_DNN_ELTWISE_FTYPE exp_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[i]);
+    const LIBXSMM_DNN_ELTWISE_FTYPE sig_exp = 1 / (1 + exp_value);
     dst[i] = (1 - sig_exp)*sig_exp;
   }
 }
@@ -188,21 +157,16 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_inverse(libxsmm_blasint 
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  LIBXSMM_DNN_ELTWISE_FTYPE tanh_value;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
-    tanh_value = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double)src[i]);
+    const LIBXSMM_DNN_ELTWISE_FTYPE tanh_value = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double)src[i]);
     dst[i] = 1 - (tanh_value * tanh_value);
   }
 }
@@ -210,17 +174,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse(libxsmm_blasint siz
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, LIBXSMM_DNN_ELTWISE_FTYPE *input, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
     dst[i] = (input[i] >= 0) ? src[i] : 0;
@@ -230,26 +190,21 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint siz
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_transpose(libxsmm_blasint rows, libxsmm_blasint cols, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  int size;
-  libxsmm_blasint job, i, j;
+  const int ltid = tid - start_thread;
+  /* number of tasks that could be run in parallel */
+  const libxsmm_blasint size = rows * cols;
+  /* compute chunk size */
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, src2D, src, cols);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, dst2D, dst, rows);
-  ltid = tid - start_thread;
-  /* number of tasks that could be run in parallel */
-  size = rows*cols;
-  /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
-  /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint job;
 
-  for (job = thr_begin; job < thr_end; job++) {
-    i = job / cols;
-    j = job % cols;
+  for (job = thr_begin; job < thr_end; ++job) {
+    const libxsmm_blasint i = job / cols;
+    const libxsmm_blasint j = job % cols;
     LIBXSMM_VLA_ACCESS(2, dst2D, j, i, rows) = LIBXSMM_VLA_ACCESS(2, src2D, i, j, cols);
   }
 }
@@ -257,17 +212,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_transpose(libxsmm_blasint rows, 
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_copy(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
     dst[i] = src[i];
@@ -277,17 +228,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_copy(libxsmm_blasint size, LIBXS
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
     dst[i] = 1 - src[i];
@@ -297,17 +244,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement(libxsmm_blasint size,
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
     dst[i] = 1 - (src[i] * src[i]);
@@ -317,17 +260,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square(libxsmm_blasin
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
 {
-  int ltid;
-  int chunksize;
-  int thr_begin;
-  int thr_end;
-  libxsmm_blasint i;
-  ltid = tid - start_thread;
+  const int ltid = tid - start_thread;
   /* compute chunk size */
-  chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
+  const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
-  thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
     dst[i] = -src[i];

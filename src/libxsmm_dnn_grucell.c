@@ -270,19 +270,19 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_grucell_create_tensor_dat
                   layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLN;
                   layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLK;
                   layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLN;
-                  layout->dim_size[0] = handle->bk;
-                  layout->dim_size[1] = handle->bn;
-                  layout->dim_size[2] = handle->k / handle->bk;
-                  layout->dim_size[3] = handle->n / handle->bn;
+                  layout->dim_size[0] = (unsigned int)handle->bk;
+                  layout->dim_size[1] = (unsigned int)handle->bn;
+                  layout->dim_size[2] = (unsigned int)(handle->k / handle->bk);
+                  layout->dim_size[3] = (unsigned int)(handle->n / handle->bn);
                 } else if ( (type == LIBXSMM_DNN_GRU_REGULAR_HIDDEN_STATE) || (type == LIBXSMM_DNN_GRU_GRADIENT_HIDDEN_STATE) ) {
                   layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLM;
                   layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLN;
                   layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLM;
                   layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLN;
-                  layout->dim_size[0] = handle->bm;
-                  layout->dim_size[1] = handle->bn;
-                  layout->dim_size[2] = handle->m / handle->bm;
-                  layout->dim_size[3] = handle->n / handle->bn;
+                  layout->dim_size[0] = (unsigned int)handle->bm;
+                  layout->dim_size[1] = (unsigned int)handle->bn;
+                  layout->dim_size[2] = (unsigned int)(handle->m / handle->bm);
+                  layout->dim_size[3] = (unsigned int)(handle->n / handle->bn);
                 } else if ( (type == LIBXSMM_DNN_GRU_REGULAR_WEIGHT_R) || (type == LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_R) ||
                             (type == LIBXSMM_DNN_GRU_REGULAR_WEIGHT_Z) || (type == LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_Z) ||
                             (type == LIBXSMM_DNN_GRU_REGULAR_WEIGHT_G) || (type == LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_G) ) {
@@ -290,10 +290,10 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_grucell_create_tensor_dat
                   layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLK;
                   layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLK;
                   layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLM;
-                  layout->dim_size[0] = handle->bm;
-                  layout->dim_size[1] = handle->bk;
-                  layout->dim_size[2] = handle->k / handle->bk;
-                  layout->dim_size[3] = handle->m / handle->bm;
+                  layout->dim_size[0] = (unsigned int)handle->bm;
+                  layout->dim_size[1] = (unsigned int)handle->bk;
+                  layout->dim_size[2] = (unsigned int)(handle->k / handle->bk);
+                  layout->dim_size[3] = (unsigned int)(handle->m / handle->bm);
                 } else if ( (type == LIBXSMM_DNN_GRU_REGULAR_RECUR_WEIGHT_R) || (type == LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_R) ||
                             (type == LIBXSMM_DNN_GRU_REGULAR_RECUR_WEIGHT_Z) || (type == LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_Z) ||
                             (type == LIBXSMM_DNN_GRU_REGULAR_RECUR_WEIGHT_G) || (type == LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_G) ) {
@@ -301,10 +301,10 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_grucell_create_tensor_dat
                   layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLM;
                   layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLM;
                   layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLM;
-                  layout->dim_size[0] = handle->bm;
-                  layout->dim_size[1] = handle->bm;
-                  layout->dim_size[2] = handle->m / handle->bm;
-                  layout->dim_size[3] = handle->m / handle->bm;
+                  layout->dim_size[0] = (unsigned int)handle->bm;
+                  layout->dim_size[1] = (unsigned int)handle->bm;
+                  layout->dim_size[2] = (unsigned int)(handle->m / handle->bm);
+                  layout->dim_size[3] = (unsigned int)(handle->m / handle->bm);
                 } else if ( (type == LIBXSMM_DNN_GRU_REGULAR_BIAS_R) || (type == LIBXSMM_DNN_GRU_GRADIENT_BIAS_R) ||
                             (type == LIBXSMM_DNN_GRU_REGULAR_BIAS_Z) || (type == LIBXSMM_DNN_GRU_GRADIENT_BIAS_Z) ||
                             (type == LIBXSMM_DNN_GRU_REGULAR_BIAS_G) || (type == LIBXSMM_DNN_GRU_GRADIENT_BIAS_G) ) {
@@ -312,10 +312,10 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_grucell_create_tensor_dat
                   layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLN;
                   layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLM;
                   layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_RLN;
-                  layout->dim_size[0] = handle->bm;
-                  layout->dim_size[1] = handle->bn;
-                  layout->dim_size[2] = handle->m / handle->bm;
-                  layout->dim_size[3] = handle->n / handle->bn;
+                  layout->dim_size[0] = (unsigned int)handle->bm;
+                  layout->dim_size[1] = (unsigned int)handle->bn;
+                  layout->dim_size[2] = (unsigned int)(handle->m / handle->bm);
+                  layout->dim_size[3] = (unsigned int)(handle->n / handle->bn);
                 } else {
                   free(layout->dim_type);
                   free(layout->dim_size);
@@ -356,86 +356,86 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_grucell_create_tensor_dat
 
 LIBXSMM_API size_t libxsmm_dnn_grucell_get_scratch_size(const libxsmm_dnn_grucell* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status)
 {
-  size_t sizeof_datatype = sizeof(float);
+  const size_t sizeof_datatype = sizeof(float);
   size_t size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* r1t */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* r1t */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* r2t */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* r2t */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* z1t */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* z1t */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* z2t */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* z2t */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* g1t */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* g1t */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* g2t */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* g2t */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* g3 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* g3 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* h1 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* h1 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* h2 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* h2 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* h3 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* h3 */
                                            size += 64;
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d3 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d3 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d4 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d4 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d5 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d5 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d6 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d6 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d7 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d7 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d8 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d8 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d9 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d9 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d10 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d10 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d11 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d11 */
                                            size += 64;
-                                           size += (size_t)handle->k * handle->n * sizeof_datatype * handle->t; /* d12 */
+                                           size += (size_t)handle->k * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* d12 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* d13 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* d13 */
                                            size += 64;
-                                           size += (size_t)handle->k * handle->n * sizeof_datatype * handle->t; /* d14 */
+                                           size += (size_t)handle->k * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* d14 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* d15 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* d15 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d16 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d16 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d17 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d17 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d18 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d18 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d19 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d19 */
                                            size += 64;
-                                           size += (size_t)handle->k * handle->n * sizeof_datatype * handle->t; /* d20 */
+                                           size += (size_t)handle->k * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* d20 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* d21 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* d21 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d22 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d22 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d23 */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d23 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d10M */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d10M */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d11M */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d11M */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* d18M */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* d18M */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* hrTp */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* hrTp */
                                            size += 64;
                                          } break;
       default: {
@@ -456,7 +456,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
   uintptr_t address = (uintptr_t)scratch;
   size_t offset = 0;
   size_t scratch_size = 0;
-  size_t sizeof_datatype = sizeof(float);
+  const size_t sizeof_datatype = sizeof(float);
 
   if (scratch == 0) {
     status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
@@ -472,7 +472,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->r1t->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->r2t->data = (void*)address;
@@ -480,7 +480,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->r2t->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->z1t->data = (void*)address;
@@ -488,7 +488,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->z1t->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->z2t->data = (void*)address;
@@ -496,7 +496,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->z2t->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->g1t->data = (void*)address;
@@ -504,7 +504,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->g1t->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->g2t->data = (void*)address;
@@ -512,7 +512,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->g2t->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->g3->data = (void*)address;
@@ -520,7 +520,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->g3->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->h1->data = (void*)address;
@@ -528,7 +528,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->h1->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->h2->data = (void*)address;
@@ -536,7 +536,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->h2->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->h3->data = (void*)address;
@@ -554,7 +554,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d3->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d4->data = (void*)address;
@@ -562,7 +562,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d4->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d5->data = (void*)address;
@@ -570,7 +570,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d5->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d6->data = (void*)address;
@@ -578,7 +578,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d6->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d7->data = (void*)address;
@@ -586,7 +586,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d7->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d8->data = (void*)address;
@@ -594,7 +594,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d8->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d9->data = (void*)address;
@@ -602,7 +602,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d9->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d10->data = (void*)address;
@@ -610,7 +610,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d10->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d11->data = (void*)address;
@@ -618,7 +618,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d11->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d12->data = (void*)address;
@@ -626,7 +626,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d12->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->k * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->k * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d13->data = (void*)address;
@@ -634,7 +634,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d13->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d14->data = (void*)address;
@@ -642,7 +642,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d14->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->k * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->k * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d15->data = (void*)address;
@@ -650,7 +650,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d15->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d16->data = (void*)address;
@@ -658,7 +658,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d16->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d17->data = (void*)address;
@@ -666,7 +666,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d17->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d18->data = (void*)address;
@@ -674,7 +674,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d18->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d19->data = (void*)address;
@@ -682,7 +682,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d19->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d20->data = (void*)address;
@@ -690,7 +690,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d20->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->k * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->k * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d21->data = (void*)address;
@@ -698,7 +698,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d21->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d22->data = (void*)address;
@@ -706,7 +706,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d22->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d23->data = (void*)address;
@@ -714,7 +714,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d23->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d10M->data = (void*)address;
@@ -722,7 +722,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d10M->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d11M->data = (void*)address;
@@ -730,7 +730,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d11M->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->d18M->data = (void*)address;
@@ -738,7 +738,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                              offset = (64 - address % 64);
                                              handle->d18M->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->hrTp->data = (void*)address;
@@ -875,28 +875,28 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_release_scratch(libxsmm_dnn_gr
 
 LIBXSMM_API size_t libxsmm_dnn_grucell_get_internalstate_size(const libxsmm_dnn_grucell* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status)
 {
-  size_t sizeof_datatype = sizeof(float);
+  const size_t sizeof_datatype = sizeof(float);
   size_t size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* r */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* r */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* z */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* z */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* g */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* g */
                                            size += 64;
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* r */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* r */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* z */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* z */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype * handle->t; /* g */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* g */
                                            size += 64;
                                          } break;
       default: {
@@ -917,7 +917,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_internalstate(libxsmm_dnn
   uintptr_t address = (uintptr_t)internalstate;
   size_t offset = 0;
   size_t scratch_size = 0;
-  size_t sizeof_datatype = sizeof(float);
+  const size_t sizeof_datatype = sizeof(float);
 
   if (internalstate == 0) {
     status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
@@ -933,7 +933,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_internalstate(libxsmm_dnn
                                              offset = (64 - address % 64);
                                              handle->r->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->z->data = (void*)address;
@@ -941,7 +941,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_internalstate(libxsmm_dnn
                                              offset = (64 - address % 64);
                                              handle->z->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->g->data = (void*)address;
@@ -959,7 +959,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_internalstate(libxsmm_dnn
                                              offset = (64 - address % 64);
                                              handle->r->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->z->data = (void*)address;
@@ -967,7 +967,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_internalstate(libxsmm_dnn
                                              offset = (64 - address % 64);
                                              handle->z->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->g->data = (void*)address;
@@ -1565,7 +1565,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bwd_upd_bu(libxsmm_dnn_grucell
   libxsmm_bgemm_handle *handledh = gru->handlewh;
   libxsmm_bgemm_handle *handledx = gru->handlett;
   libxsmm_bgemm_handle *handlewd = gru->handlewd;
-  int j;
+  libxsmm_blasint j;
   const int ltid = tid - start_thread;
 
   libxsmm_barrier_init(gru->barrier, ltid);

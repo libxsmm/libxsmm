@@ -127,13 +127,13 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
         const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
         const libxsmm_mhd_elemtype type_dst = LIBXSMM_MAX(LIBXSMM_MHD_ELEMTYPE_U8, type_src);
         char filename[256];
-        size_t size[2], pr[2]; size[0] = mm; size[1] = nn; pr[0] = ldr; pr[1] = nn;
+        size_t size[2], pr[2]; size[0] = (size_t)mm; size[1] = (size_t)nn; pr[0] = (size_t)ldr; pr[1] = (size_t)nn;
         LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-ref%p.mhd", defaultname, ref);
         libxsmm_mhd_write(filename, NULL/*offset*/, size, pr, 2/*ndims*/, 1/*ncomponents*/,
           type_src, &type_dst, ref, NULL/*header_size*/, NULL/*extension_header*/,
           NULL/*extension*/, 0/*extension_size*/);
         if (NULL != tst) {
-          size_t pt[2]; pt[0] = ldt; pt[1] = nn;
+          size_t pt[2]; pt[0] = (size_t)ldt; pt[1] = (size_t)nn;
           LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-tst%p.mhd", defaultname, tst);
           libxsmm_mhd_write(filename, NULL/*offset*/, size, pt, 2/*ndims*/, 1/*ncomponents*/,
             type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,

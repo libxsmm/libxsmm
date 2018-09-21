@@ -260,7 +260,7 @@ int main(int argc, char* argv[])
           if (check < diff.l1_tst) check = diff.l1_tst;
         }
         else {
-          printf(" m=%i n=%i k=%i", rnd[j].m, rnd[j].n, rnd[j].k);
+          printf(" m=%u n=%u k=%u", (unsigned int)rnd[j].m, (unsigned int)rnd[j].n, (unsigned int)rnd[j].k);
           i = size; /* break */
           check = -1;
         }
