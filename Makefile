@@ -183,10 +183,6 @@ ifneq (0,$(MKL))
 endif
 endif
 
-ifeq (0,$(LNKSOFT))
-  BLAS ?= 2
-endif
-
 ifneq (1,$(CACHE))
   DFLAGS += -DLIBXSMM_CAPACITY_CACHE=$(CACHE)
 endif
