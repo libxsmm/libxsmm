@@ -271,7 +271,7 @@ else # shared (DLL)
   BLASLIBEXT ?= $(IMPEXT)
 endif
 
-LNKSOFT ?= $(STATIC)
+LNKSOFT ?= 1
 ifeq (0,$(STATIC))
   ifeq (Windows_NT,$(UNAME))
     LNKSOFT = 0
@@ -655,13 +655,13 @@ else
 endif
 DYNAMIC ?= 0
 
-#ifneq (0,$(CRAY))
+ifneq (0,$(CRAY))
 ifneq (0,$(DYNAMIC))
   XLD := $(XLD) -dynamic
   FLD := $(FLD) -dynamic
   LD := $(LD) -dynamic
 endif
-#endif
+endif
 
 # Compiler is used for link stage
 ifneq (Darwin,$(UNAME))
