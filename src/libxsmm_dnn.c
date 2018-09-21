@@ -2600,7 +2600,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* 
 
 LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length );
 LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length ) {
-  float absmax_value = (float)fabs((double)(in_buffer[0]));
+  float absmax_value = LIBXSMM_ABS(in_buffer[0]);
   int i = 0;
 #ifdef _OPENMP
   LIBXSMM_OMP_VAR(i);
@@ -2609,8 +2609,8 @@ LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length 
     float my_absmax_value = absmax_value;
 #   pragma omp for
     for (i = 0; i < length; ++i ) {
-      if ((float)fabs((double)(in_buffer[i])) > my_absmax_value) {
-        my_absmax_value = (float)fabs((double)(in_buffer[i]));
+      if (LIBXSMM_ABS(in_buffer[i]) > my_absmax_value) {
+        my_absmax_value = LIBXSMM_ABS(in_buffer[i]);
       }
     }
 #   pragma omp critical
@@ -2622,8 +2622,8 @@ LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length 
   }
 #else
   for (i = 1; i < length; ++i ) {
-    if ((float)fabs((double)(in_buffer[i])) > absmax_value) {
-      absmax_value = (float)fabs((double)(in_buffer[i]));
+    if (LIBXSMM_ABS(in_buffer[i]) > absmax_value) {
+      absmax_value = LIBXSMM_ABS(in_buffer[i]);
     }
   }
 #endif
@@ -2701,7 +2701,7 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
     } else if (round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND) {
       /* stochastic rounding, as implemented in the IBM paper from 2015, @TODO, fix F64 and DFP8 */
       const float eps = LIXSMMM_DNN_RES_DFP16;
-      const float r = (float)fabs((double)rand());
+      const float r = (float)rand();
       libxsmm_intfloat fvalue;
       float p, q;
       /* masking all bits which will be shifted out */
