@@ -556,7 +556,7 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
       machdep.cpu.leaf7_features \
     | cut -d: -f2- | tr "\n" " " | tr [:upper:] [:lower:]; \
   fi))
-SSE ?= 0
+SSE ?= 1
 ifeq (0,$(SSE)) # discover AVX
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
@@ -579,7 +579,7 @@ else ifeq (1,$(SSE)) # discover SSE
     SSE = 4
   else ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS))))
     SSE = 3
-  else #ifeq (,$(SSE))
+  else ifneq (,$(CPUFLAGS))
     SSE = 0
   endif
 else ifneq (0,$(KNC))
@@ -1228,7 +1228,7 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
           endif
         endif
         CTARGET ?= -msse4.2
-      else ifneq (0,$(SSE)) # better to use TARGET flag directly
+      else ifneq (,$(filter-out 0 1,$(SSE))) # better to use TARGET flag directly
         CTARGET = -msse$(SSE)
       endif
     endif
