@@ -113,8 +113,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
   for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
     __m512 lcl_vdgamma = _mm512_setzero_ps();
     __m512 lcl_vdbeta  = _mm512_setzero_ps();
-    __m512 lcl_vbmean = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, bmean, fm, 0, 16) );
-    __m512 lcl_vbrstd = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, brstd, fm, 0, 16) );
+    __m512 lcl_vbmean, lcl_vbrstd;
     element_stats_type* del_gamma_img_ptr;
     element_stats_type* del_beta_img_ptr;
 
@@ -122,6 +121,8 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     fm = imgfm % nBlocksFm;
     del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, 16);
     del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, 16);
+    lcl_vbmean = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, bmean, fm, 0, 16) );
+    lcl_vbrstd = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, brstd, fm, 0, 16) );
 
     for ( hi=iph, ho=oph; hi < (ifh + iph); hi+=sh, ho++ ) {
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
