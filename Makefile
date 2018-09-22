@@ -114,6 +114,10 @@ THREADS ?= 1
 # 1: library archives suitable for static linkage
 STATIC ?= 1
 
+# 0: link all dependencies as specified for the target
+# 1: attempt to avoid dependencies if not referenced
+ASNEEDED ?= 0
+
 # 0: build according to the value of STATIC
 # 1: build according to STATIC=0 and STATIC=1
 SHARED ?= 0

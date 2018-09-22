@@ -292,7 +292,7 @@ CC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
 FC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
 CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 
-# Automatically pickup the environment (make -e not needed),
+# Automatically pickup the environment (make -e is not required),
 # or pickup the Intel Compiler (if available).
 ifneq (,$(notdir $(shell which icpc 2>/dev/null)))
   CXX = icpc
@@ -672,8 +672,10 @@ ifneq (Darwin,$(UNAME))
   abslibrpath = $(strip $(if $(wildcard $1),$(call linkopt,--rpath,$(dir $(abspath $1))),$(NULL)))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
-  XLIB_BEGIN = $(XLNKOPT)--as-needed
-  XLIB_END = $(XLNKOPT)--no-as-needed
+  ifneq (0,$(ASNEEDED))
+    XLIB_BEGIN = $(XLNKOPT)--as-needed
+    XLIB_END = $(XLNKOPT)--no-as-needed
+  endif
 else
   ifneq (ld,$(notdir $(LD)))
     XLNKOPT = -Xlinker
