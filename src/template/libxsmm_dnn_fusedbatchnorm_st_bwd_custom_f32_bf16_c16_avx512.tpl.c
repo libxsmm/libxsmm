@@ -135,7 +135,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
       for ( wi=ipw, wo=opw; wi < (ifw + ipw); wi+=sw, wo++ ) {
         __m512 lcl_vdeloutput = _mm512_load_act( del_output_ptr );
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-        __mmask16 lcl_mzero = _mm512_cmpeq_ps_mask( _mm512_load_act( output_ptr ), _mm512_setzero_ps() );
+        __mmask16 lcl_mzero = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr ), _mm512_setzero_ps(), _CMP_EQ_OQ );
         lcl_vdeloutput = _mm512_mask_blend_ps( lcl_mzero, lcl_vdeloutput, _mm512_setzero_ps() );
         _mm512_store_act( del_output_ptr, lcl_vdeloutput );
         output_ptr += 16;
