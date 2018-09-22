@@ -1157,6 +1157,7 @@ endif
 ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3>$(DBG)))"))
   # prevents Clang BE error (CRC32 and others)
+  ifneq (Windows_NT,$(UNAME))
   ifneq (Darwin,$(UNAME))
   ifeq (3,$(GCC))
   ifeq (0,$(DEPSTATIC))
@@ -1165,6 +1166,7 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     ifneq (,$(SHARED))
       CTARGET = -msse3
     endif
+  endif
   endif
   endif
   endif
