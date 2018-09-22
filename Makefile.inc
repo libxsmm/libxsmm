@@ -66,7 +66,9 @@ endif
 
 ifneq (Darwin,$(UNAME))
   ifneq (,$(strip $(CP)))
+  ifneq (FreeBSD,$(UNAME))
     CP += -u
+  endif
   endif
   DLIBEXT ?= so
   SLIBEXT ?= a
