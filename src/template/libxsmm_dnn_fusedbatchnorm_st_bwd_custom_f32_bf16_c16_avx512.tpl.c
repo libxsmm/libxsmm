@@ -57,7 +57,6 @@ const int ifhp = ifh + 2*iph;
 const int ifwp = ifw + 2*ipw;
 /* here we assume that input and output blocking is similar */
 const int nBlocksFm = handle->blocksifm;
-const int nFmBlock = handle->fm_lp_block*handle->ifmblock;
 
 const element_stats_type nhw = (element_stats_type)(nImg * ifh * ifw);
 const element_stats_type recp_nhw = 1.0f/nhw;
@@ -104,8 +103,8 @@ LIBXSMM_VLA_DECL(2,       element_stats_type,  dgamma,     (element_stats_type*)
 LIBXSMM_VLA_DECL(2,       element_stats_type,  dbeta,      (element_stats_type*)handle->grad_beta->data,  16);
 LIBXSMM_VLA_DECL(2, const element_stats_type,  bmean,      (element_stats_type*)handle->expvalue->data,   16);
 LIBXSMM_VLA_DECL(2, const element_stats_type,  brstd,      (element_stats_type*)handle->stddev->data,     16);
-LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                                                          nImg, 16);
-LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)nFmBlock), nImg, 16);
+LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                                                    nImg, 16);
+LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)16), nImg, 16);
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -136,7 +135,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
       for ( wi=ipw, wo=opw; wi < (ifw + ipw); wi+=sw, wo++ ) {
         __m512 lcl_vdeloutput = _mm512_load_act( del_output_ptr );
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-        __mmask16 lcl_mzero = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr ), _mm512_setzero_ps(), _CMP_EQ_UQ );
+        __mmask16 lcl_mzero = _mm512_cmpeq_ps_mask( _mm512_load_act( output_ptr ), _mm512_setzero_ps() );
         lcl_vdeloutput = _mm512_mask_blend_ps( lcl_mzero, lcl_vdeloutput, _mm512_setzero_ps() );
         _mm512_store_act( del_output_ptr, lcl_vdeloutput );
         output_ptr += 16;
@@ -174,7 +173,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     }
 
     _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 0, 16), lcl_vdgamma );
-    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 0, 16),  lcl_vdbeta  );
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 0, 16), lcl_vdbeta  );
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
