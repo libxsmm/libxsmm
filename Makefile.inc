@@ -1125,15 +1125,16 @@ else # GCC assumed
     ifneq (0,$(OMP))
       # clang: OMP=libomp
       ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
-        CXXFLAGS += $(OMPFLAG)=$(OMP)
-        CFLAGS += $(OMPFLAG)=$(OMP)
         # omit passing special OMP into Fortran compiler
         FCFLAGS += $(OMPFLAG)
         CLDFLAGS += $(OMPFLAG)=$(OMP)
-      else ifneq (,$(strip $(OMPLIBFILE)))
-        ifneq (3,$(GCC))
+        CXXFLAGS += $(OMPFLAG)=$(OMP)
+        CFLAGS += $(OMPFLAG)=$(OMP)
+      else
+        ifeq (3,$(GCC))
+          LDFLAGS += $(OMPFLAG)
+        else ifneq (,$(strip $(OMPLIBFILE)))
           BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
-          FLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
         endif
         CXXFLAGS += $(OMPFLAG)
         FCFLAGS += $(OMPFLAG)
@@ -1142,8 +1143,7 @@ else # GCC assumed
     endif
     ifneq (3,$(GCC))
     ifneq (,$(strip $(OMPLIBFILE)))
-      FLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
-      LDFLAGS += $(call abslibpath,$(OMPLIBFILE)) 
+      LDFLAGS += $(call abslibpath,$(OMPLIBFILE))
     endif
     endif
   endif
