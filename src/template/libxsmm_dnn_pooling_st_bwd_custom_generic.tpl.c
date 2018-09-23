@@ -111,7 +111,6 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   fm = imgfm % nBlocksFm;
 
   LIBXSMM_PRAGMA_SIMD
-  LIBXSMM_PRAGMA_VALIGNED
   for( v = 0; v < ifh*ifw*nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
     lcl_buffer_ptr[v] = (float)0;
@@ -129,7 +128,6 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #if !defined(LIBXSMM_DNN_POOLING_BWD_BF16)
       LIBXSMM_PRAGMA_SIMD
 #endif
-      LIBXSMM_PRAGMA_VALIGNED
       for( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
         del_output_f32.i[1] = doutput_ptr[v];
@@ -162,7 +160,6 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #if !defined(LIBXSMM_DNN_POOLING_BWD_BF16)
             LIBXSMM_PRAGMA_SIMD
 #endif
-            LIBXSMM_PRAGMA_VALIGNED
             for( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
               del_output_f32.i[1] = doutput_ptr[v];
@@ -191,8 +188,6 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #if !defined(LIBXSMM_DNN_POOLING_BWD_BF16)
       LIBXSMM_PRAGMA_SIMD
 #endif
-      LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_NONTEMPORAL
       for( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
         del_input_f32.f = lcl_dinput_ptr[v];
