@@ -752,8 +752,10 @@ ifneq (0,$(INTEL))
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  ifneq (0,$(shell echo "$$((170000<=$(CXX_VERSION)))"))
-    ifneq (0,$(COMPATIBLE))
+  ifneq (0,$(shell echo "$$((200000<=$(CXX_VERSION)))"))
+    CXXFLAGS += -std=c++14
+  else ifneq (0,$(COMPATIBLE))
+    ifneq (0,$(shell echo "$$((170000<=$(CXX_VERSION)))"))
       CXXFLAGS += -std=c++14
     endif
   else ifneq (0,$(shell echo "$$((140000<=$(CXX_VERSION)))"))
