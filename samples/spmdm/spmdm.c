@@ -39,12 +39,13 @@
 # include <omp.h>
 #endif
 
-/* #define USE_BFLOAT */
-#ifdef USE_BFLOAT
+#if !defined(USE_BFLOAT) && 0
+# define USE_BFLOAT
 typedef uint16_t real;
 #else
 typedef float real;
 #endif
+
 
 LIBXSMM_INLINE
 void spmdm_check_c( const libxsmm_spmdm_handle* handle,
@@ -86,7 +87,7 @@ void spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
 
   int i;
 # if defined(_OPENMP)
-# pragma omp parallel
+# pragma omp parallel private(i)
 # endif
   {
 # if defined(_OPENMP)
@@ -127,7 +128,7 @@ void spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
 
   int i;
 # if defined(_OPENMP)
-# pragma omp parallel
+# pragma omp parallel private(i)
 # endif
   {
 # if defined(_OPENMP)
@@ -172,7 +173,7 @@ int main(int argc, char *argv[])
   int i, j, k;
   size_t l;
 
-  /* Step 1: Initalize handle */
+  /* Step 1: Initialize handle */
   M = 0; N = 0; K = 0; alpha = (real)1.0; beta = (real)0.0;   reps = 0; transA = 'N'; transB = 'N';
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
@@ -242,7 +243,7 @@ int main(int argc, char *argv[])
   flops = (double)M * (double)N * (double)K * 2.0;
 
   /*----------------------------------------------------------------------------------------------------------------------*/
-  /* Step 4: Initialize libxsmm for these sizes - allocates handle and temporary space for the sparse data structure for A */
+  /* Step 4: Initialize LIBXSMM for these sizes - allocates handle and temporary space for the sparse data structure for A */
 # if defined(_OPENMP)
   max_threads = omp_get_max_threads();
 # else
@@ -268,7 +269,7 @@ int main(int argc, char *argv[])
 
   /* Compute a "gold" answer sequentially - we can also use MKL; not using MKL now due to difficulty for bfloat16 */
 #if defined(_OPENMP)
-# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2)
+# pragma omp parallel for private(i, j, k) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (i = 0; i < M; i++) {
     for (j = 0; j < N; j++) {
