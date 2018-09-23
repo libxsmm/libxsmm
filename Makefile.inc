@@ -981,18 +981,20 @@ else # GCC assumed
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wintrinsics-std \
                  -Wimplicit-interface -Wimplicit-procedure
-    ifneq (0,$(shell echo "$$((40200<=$(FC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((40200<=$(CC_VERSION)))"))
       CPEDANTIC += -Wno-overlength-strings
     else ifneq (0,$(CLANG))
       CPEDANTIC += -Wno-overlength-strings
     endif
-    ifneq (0,$(shell echo "$$((40500<=$(FC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((40500<=$(CC_VERSION)))"))
       CPEDANTIC += -Wshadow
     endif
+    ifneq (,$(strip $(FC)))
     ifneq (0,$(shell echo "$$((50000<=$(FC_VERSION)))"))
       FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
                    -Wrealloc-lhs -Wrealloc-lhs-all \
                    -Wreal-q-constant -Wconversion-extra
+    endif
     endif
     ifeq (0,$(MINGW))
       CPEDANTIC += -Wformat=2
