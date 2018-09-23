@@ -145,6 +145,10 @@ ifneq (0,$(JIT))
   SSE ?= 1
 endif
 
+ifneq (,$(MAXTARGET))
+  DFLAGS += -DLIBXSMM_MAXTARGET=$(MAXTARGET)
+endif
+
 # Profiling JIT code using Linux Perf
 # PERF=0: disabled (default)
 # PERF=1: enabled (without JITDUMP)

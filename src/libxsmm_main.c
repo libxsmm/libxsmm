@@ -555,7 +555,11 @@ LIBXSMM_API_INLINE void internal_init(void)
       assert(1 <= libxsmm_scratch_scale);
     }
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
-    libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set libxsmm_target_archid */
+#if defined(LIBXSMM_MAXTARGET)
+    libxsmm_set_target_arch(LIBXSMM_STRINGIFY(LIBXSMM_MAXTARGET));
+#else /* attempt to set libxsmm_target_archid per environment variable */
+    libxsmm_set_target_arch(getenv("LIBXSMM_TARGET"));
+#endif
     { const char *const env = getenv("LIBXSMM_SYNC");
       libxsmm_nosync = (0 == env || 0 == *env) ? 0/*default*/ : atoi(env);
     }
@@ -931,7 +935,8 @@ LIBXSMM_API const char* libxsmmf_get_target_arch(int* length)
 
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
-  int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
+  const int cpuid = libxsmm_cpuid();
+  int target_archid;
   if (0 != arch && 0 != *arch) {
     const int jit = atoi(arch);
     if (0 == strcmp("0", arch)) {
@@ -978,18 +983,20 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (0 == strcmp("generic", arch) || 0 == strcmp("none", arch)) {
       target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
     }
+    else {
+      target_archid = cpuid;
+    }
   }
-
-  if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid || LIBXSMM_X86_AVX512_ICL < target_archid) {
-    target_archid = libxsmm_cpuid();
+  else {
+    target_archid = cpuid;
   }
-  else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-    const int cpuid = libxsmm_cpuid();
-    if (cpuid < target_archid) {
+  if (cpuid < target_archid) { /* limit code path to what was identified per CPUID */
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
       const char *const target_arch = internal_get_target_arch(target_archid);
-      fprintf(stderr, "LIBXSMM WARNING: \"%s\" code will fail to run on \"%s\"!\n",
+      fprintf(stderr, "LIBXSMM WARNING: \"%s\" code would fail to run on \"%s\"!\n",
         target_arch, internal_get_target_arch(cpuid));
     }
+    target_archid = cpuid;
   }
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 }
