@@ -355,6 +355,7 @@ int main(int argc, char* argv[])
   double gb = 0.0;
   double gib = 0.0;
   int i;
+  int relu_no_match;
 
   libxsmm_dnn_fusedbn_desc fusedbn_desc;
   libxsmm_dnn_fusedbn* libxsmm_handle;
@@ -733,6 +734,16 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
       printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_fwd);
+
+      /* let's check ReLU positions */
+      relu_no_match = 0;
+      for ( i = 0; i < nImg*nFm*ofhp*ofwp; ++i ) {
+        if ( (naive_output_pad[i] == 0.0f && naive_libxsmm_output[i] != 0.0f) ||
+             (naive_output_pad[i] != 0.0f && naive_libxsmm_output[i] == 0.0f)    ) {
+          relu_no_match++;
+        }
+      }
+      printf("ReLU mismatch count: %i\n", relu_no_match );
     }
 
     if ( (type == 'A' || type == 'B') && LIBXSMM_NEQ(0, check) ) {
