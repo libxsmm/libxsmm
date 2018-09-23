@@ -125,7 +125,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img,  fm, img, 0, nImg, nFmBlock);
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       lcl_sum_ptr[v] = (element_stats_type)0;
       lcl_sumsq_ptr[v] = (element_stats_type)0;
@@ -138,7 +137,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 #if !defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
         LIBXSMM_PRAGMA_SIMD
 #endif
-        LIBXSMM_PRAGMA_VALIGNED
         for (v=0; v < nFmBlock; v++) {
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
           input_f32.i[1] = input_ptr[v];
@@ -153,7 +151,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     }
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for (v=0; v < nFmBlock; v++) {
       sum_img_ptr[v] = lcl_sum_ptr[v];
       sumsq_img_ptr[v] = lcl_sumsq_ptr[v];
@@ -171,7 +168,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     element_stats_type* brstd_ptr = &LIBXSMM_VLA_ACCESS(2, brstd, fm, 0, nFmBlock);
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       lcl_sum_ptr[v]   = (element_stats_type)0;
       lcl_sumsq_ptr[v] = (element_stats_type)0;
@@ -182,7 +178,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
       element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, img, 0, nImg, nFmBlock);
 
       LIBXSMM_PRAGMA_SIMD
-      LIBXSMM_PRAGMA_VALIGNED
       for ( v=0; v < nFmBlock; v++ ) {
         lcl_sum_ptr[v] += sum_img_ptr[v];
         lcl_sumsq_ptr[v] += sumsq_img_ptr[v];
@@ -190,7 +185,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     }
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       const element_stats_type tbmean = (recp_nhw * lcl_sum_ptr[v]) ;
       const element_stats_type tbmeansq = tbmean * tbmean;
@@ -224,8 +218,6 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
 #if !defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
       LIBXSMM_PRAGMA_SIMD
 #endif
-      LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_NONTEMPORAL
       for (v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
         input_f32.i[1] = input_ptr[v];
