@@ -27,14 +27,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="libxsmm_spmdm_csr_asparse.c" />
+    <ClCompile Include="spmdm.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
+    <None Include="spmdm.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>spmdm</ProjectName>
     <ProjectGuid>{61BF5F50-3B4C-488B-9D0F-9AAB008B3184}</ProjectGuid>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
@@ -67,7 +69,7 @@
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
     <UseIntelMKL>Sequential</UseIntelMKL>
-    <PlatformToolset>v140</PlatformToolset>
+    <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
     <WholeProgramOptimization>true</WholeProgramOptimization>
@@ -356,7 +358,7 @@
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
       <UseProcessorExtensions>HOST</UseProcessorExtensions>
-      <OpenMPSupport>true</OpenMPSupport>
+      <OpenMPSupport>false</OpenMPSupport>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>

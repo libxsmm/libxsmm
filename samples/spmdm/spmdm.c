@@ -100,13 +100,13 @@ void spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
 #   pragma omp for
 # endif
     for ( i = 0; i < num_createSparseSlice_blocks; i++ ) {
-      libxsmm_spmdm_createSparseSlice_fp32_thread( handle, transA, A, A_sparse, i, tid, nthreads);
+      libxsmm_spmdm_createSparseSlice_fp32_thread(handle, transA, A, A_sparse, i, tid, nthreads);
     }
 # if defined(_OPENMP)
 #   pragma omp for
 # endif
     for ( i = 0; i < num_compute_blocks; i++ ) {
-      libxsmm_spmdm_compute_fp32_thread( handle, transA, transB, alpha, A_sparse, B, transC, beta, C, i, tid, nthreads);
+      libxsmm_spmdm_compute_fp32_thread(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, i, tid, nthreads);
     }
   }
 }
@@ -141,13 +141,13 @@ void spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
 #   pragma omp for
 # endif
     for ( i = 0; i < num_createSparseSlice_blocks; i++ ) {
-      libxsmm_spmdm_createSparseSlice_bfloat16_thread( handle, transA, A, A_sparse, i, tid, nthreads);
+      libxsmm_spmdm_createSparseSlice_bfloat16_thread(handle, transA, A, A_sparse, i, tid, nthreads);
     }
 # if defined(_OPENMP)
 #   pragma omp for
 # endif
     for ( i = 0; i < num_compute_blocks; i++ ) {
-      libxsmm_spmdm_compute_bfloat16_thread( handle, transA, transB, alpha, A_sparse, B, transC, beta, C, i, tid, nthreads);
+      libxsmm_spmdm_compute_bfloat16_thread(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, i, tid, nthreads);
     }
   }
 }
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   int max_threads;
 
   /* Step 1: Read in args */
-  unsigned long long start, end;
+  libxsmm_timer_tickint start, end;
   double flops, duration;
   char transA, transB, transC;
   int i, j, k;
@@ -191,20 +191,20 @@ int main(int argc, char *argv[])
 
   /* reading new values from cli */
   i = 1;
-  if (argc > i) M      = atoi(argv[i++]);
-  if (argc > i) N      = atoi(argv[i++]);
-  if (argc > i) K      = atoi(argv[i++]);
+  if (argc > i) M = atoi(argv[i++]);
+  if (argc > i) N = atoi(argv[i++]);
+  if (argc > i) K = atoi(argv[i++]);
   if (argc > i) { transA = argv[i][0]; i++; }
   if (argc > i) { transB = argv[i][0]; i++; }
   if (argc > i) { transC = argv[i][0]; i++; }
-  if (argc > i) reps   = atoi(argv[i++]);
+  if (argc > i) reps = atoi(argv[i++]);
 
   /* Step 2: allocate data */
-  A_gold = (real*)libxsmm_aligned_malloc( M*K*sizeof(real), 64 );
-  B_gold = (real*)libxsmm_aligned_malloc( K*N*sizeof(real), 64 );
-  C_gold = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 64 );
+  A_gold  = (real*)libxsmm_aligned_malloc( M*K*sizeof(real), 64 );
+  B_gold  = (real*)libxsmm_aligned_malloc( K*N*sizeof(real), 64 );
+  C_gold  = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 64 );
   C0_gold = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 64 );
-  C      = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 64 );
+  C       = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 64 );
 
   /* Step 3: init data */
   libxsmm_srand(1);
@@ -237,7 +237,7 @@ int main(int argc, char *argv[])
     C_gold[l] = C0_gold[l];
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
-    C[l]      = (float)C0_gold[l];
+    C[l] = (float)C0_gold[l];
   }
   flops = (double)M * (double)N * (double)K * 2.0;
 
@@ -371,7 +371,7 @@ int main(int argc, char *argv[])
     }
   }
   for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
-    C[l]      = (float)C0_gold[l];
+    C[l] = (float)C0_gold[l];
   }
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
   /* Currently ignores alpha */
