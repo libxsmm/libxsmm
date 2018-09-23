@@ -356,6 +356,11 @@ else
   CC_VERSION = 0
 endif
 
+# disable Fortran per user-request
+ifeq (0,$(FORTRAN))
+  override FC = $(NULL)
+endif
+
 # fixup FC-default given by MAKE
 ifneq (,$(strip $(FC)))
 ifeq (,$(shell which $(FC) 2>/dev/null))
@@ -367,59 +372,57 @@ ifeq (,$(shell which $(FC) 2>/dev/null))
   endif
 endif
 endif
+
 ifneq (,$(strip $(FC)))
   FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
   FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
   FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
   FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
-endif
-ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-  FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
-else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-  FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
-  FC_VERSION_PATCH = 0
-else
-  FC_VERSION_STRING = $(NULL)
-  FC_VERSION = 0
+  ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
+    FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
+  else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
+    FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
+    FC_VERSION_PATCH = 0
+  else
+    FC_VERSION_STRING = $(NULL)
+    FC_VERSION = 0
+  endif
+  ifeq (GNU,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f1))
+    ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
+      ifneq (gfortran,$(notdir $(FC)))
+        FC = gfortran
+        FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+        FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
+        FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
+        FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
+        ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
+          FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
+        else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
+          FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
+          FC_VERSION_PATCH = 0
+        else
+          FC_VERSION = 0
+        endif
+        ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
+          override FC = $(NULL)
+        endif
+      else
+        override FC = $(NULL)
+      endif
+    endif
+  else ifneq (0,$(INTEL))
+    ifneq (0,$(shell echo "$$((130000>$(FC_VERSION) && 0<$(FC_VERSION)))"))
+      override FC = $(NULL)
+    endif
+  endif
 endif
 
-ifneq (,$(strip $(FC)))
-ifeq (GNU,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f1))
-  ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
-  ifneq (gfortran,$(notdir $(FC)))
-    FC = gfortran
-    FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
-    FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
-    FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
-    FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
-    ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-      FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
-    else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-      FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
-      FC_VERSION_PATCH = 0
-    else
-      FC_VERSION = 0
-    endif
-    ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
-      # keep FC_VERSION_STRING available for message about outdated compiler
-      override FC = $(NULL)
-      FC_VERSION = 0
-      FORTRAN = 0
-    endif
-  else
-    # keep FC_VERSION_STRING available for message about outdated compiler
-    override FC = $(NULL)
-    FC_VERSION = 0
+ifeq (,$(strip $(FC)))
+  ifeq (0,$(FORTRAN))
+    FC_VERSION_STRING = $(NULL)
+  else # keep FC_VERSION_STRING for message about outdated compiler
     FORTRAN = 0
   endif
-  endif
-else ifneq (0,$(INTEL))
-  ifneq (0,$(shell echo "$$((130000>$(FC_VERSION) && 0<$(FC_VERSION)))"))
-    override FC = $(NULL)
-    FC_VERSION = 0
-    FORTRAN = 0
-  endif
-endif
 endif
 
 # compiler names
@@ -825,6 +828,7 @@ ifneq (0,$(INTEL))
       CFLAGS += -qoverride_limits #-fp-model fast=2
     endif
     ifeq (,$(strip $(GFC)))
+    ifneq (,$(strip $(FC)))
       FCFLAGS += -qoverride_limits #-fp-model fast=2
       ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
         FCFLAGS += -align array64byte
@@ -832,6 +836,7 @@ ifneq (0,$(INTEL))
       ifneq (0,$(IPO))
         FCFLAGS += -ipo
       endif
+    endif
     endif
     ifneq (0,$(IPO))
       CXXFLAGS += -ipo
@@ -918,10 +923,10 @@ ifneq (0,$(INTEL))
     CXXFLAGS += $(OMPFLAG)
     CFLAGS += $(OMPFLAG)
     ifeq (,$(strip $(GFC)))
+      BLAS_LDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
       FCFLAGS += $(OMPFLAG)
-      LDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
     else
-      LDFLAGS += $(OMPFLAG)
+      BLAS_LDFLAGS += $(OMPFLAG)
     endif
   endif
   ifneq (0,$(SIMD))
@@ -1121,16 +1126,16 @@ else # GCC assumed
     else #ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
       LIBOMPRT = $(call libpath,$(LD) $(SLDFLAGS),$(NULL),omp)
       ifeq (3,$(GCC))
-        CFLAGS += $(OMPFLAG)
+        BLAS_LDFLAGS += $(OMPFLAG)
         CXXFLAGS += $(OMPFLAG)
         FCFLAGS += $(OMPFLAG)
-        LDFLAGS += $(OMPFLAG)
+        CFLAGS += $(OMPFLAG)
       else ifneq (,$(strip $(LIBOMPRT)))
         FLDFLAGS += $(call abslibpath,$(LIBOMPRT)) $(XLIB_BEGIN) $(call abslibfile,$(LIBOMPRT)) $(XLIB_END)
-        CFLAGS += $(OMPFLAG)
+        BLAS_LDFLAGS += $(OMPFLAG)
         CXXFLAGS += $(OMPFLAG)
         FCFLAGS += $(OMPFLAG)
-        LDFLAGS += $(OMPFLAG)
+        CFLAGS += $(OMPFLAG)
       endif
     endif
   endif
@@ -1552,16 +1557,16 @@ ifeq (1,$(MKL)) # sequential
   BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
-    BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
+    BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential $(BLAS_LDFLAGS)
     ifneq (0,$(OFFLOAD))
       BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential"
     endif
   else # static
-    BLAS_LDFLAGS += $(XGROUP_BEGIN) \
+    BLAS_LDFLAGS := $(XGROUP_BEGIN) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_sequential.$(SLIBEXT) \
-    $(XGROUP_END)
+    $(XGROUP_END) $(BLAS_LDFLAGS)
     ifneq (0,$(OFFLOAD))
       BLAS_LDFLAGS += -qoffload-option,mic,ld,"--start-group \
         $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
@@ -1570,7 +1575,7 @@ ifeq (1,$(MKL)) # sequential
       --end-group"
     endif
   endif
-  BLAS_LDFLAGS += -lm $(LIBDL)
+  BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifneq (0,$(OFFLOAD))
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
   endif
@@ -1579,20 +1584,20 @@ else ifneq (0,$(MKL)) # multi-threaded
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     ifneq (0,$(INTEL))
-      BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread
+      BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread $(BLAS_LDFLAGS)
       ifneq (0,$(OFFLOAD))
         BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread"
       endif
     else # assuming GNU toolchain
-      BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_gnu_thread
+      BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_gnu_thread $(BLAS_LDFLAGS)
     endif
   else # static
     ifneq (0,$(INTEL))
-      BLAS_LDFLAGS += $(XGROUP_BEGIN) \
+      BLAS_LDFLAGS := $(XGROUP_BEGIN) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_thread.$(SLIBEXT) \
-      $(XGROUP_END)
+      $(XGROUP_END) $(BLAS_LDFLAGS)
       ifneq (0,$(OFFLOAD))
         BLAS_LDFLAGS += -qoffload-option,mic,ld,"--start-group \
           $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
@@ -1601,20 +1606,21 @@ else ifneq (0,$(MKL)) # multi-threaded
         --end-group"
       endif
     else # assuming GNU toolchain
-      BLAS_LDFLAGS += $(XGROUP_BEGIN) \
+      BLAS_LDFLAGS := $(XGROUP_BEGIN) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_gnu_thread.$(SLIBEXT) \
-      $(XGROUP_END) $(LIBDL)
+      $(XGROUP_END) $(BLAS_LDFLAGS)
+      #BLAS_LDFLAGS += $(XLIB_BEGIN) $(LIBDL) $(XLIB_END)
     endif
   endif
   ifeq (0,$(OMP))
     BLAS_LDFLAGS += $(OMPLIB)
   endif
   ifneq (0,$(THREADS))
-    BLAS_LDFLAGS += -lpthread
+    BLAS_LDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
   endif
-  BLAS_LDFLAGS += -lm $(LIBDL)
+  BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"

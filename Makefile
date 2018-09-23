@@ -378,7 +378,7 @@ information = \
 	$(info --------------------------------------------------------------------------------) \
 	$(if $(strip $(FC_VERSION_STRING)), \
 	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!), \
-	$(info Fortran Compiler is missing: no Fortran interface is built!))) \
+	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
 	$(if $(filter Windows_NT0,$(UNAME)$(STATIC)), \
 	$(info --------------------------------------------------------------------------------) \
 	$(info The shared link-time wrapper (libxsmmext) is not supported under Windows/Cygwin!), \
