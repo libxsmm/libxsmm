@@ -206,7 +206,7 @@ BRACE_CLOSE := )
 
 libpath = $(strip $(if $1, \
   $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL), \
-    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>/dev/null | grep "$3" | tail -n1 | grep -o "[^ ()]*" | grep "\/")))), \
+    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>/dev/null | grep "lib$3" | grep -o "\/..*[ $(BRACE_CLOSE)]" | grep -o "..*[^$(BRACE_CLOSE)]" | tail -n1)))), \
   $(NULL)))
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
@@ -739,7 +739,7 @@ else # osx
 endif
 
 ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
-  LIBGFORTRAN = $(call libpath,$(FC) $(SLDFLAGS),$(NULL),gfortran)
+  LIBGFORTRAN = $(call libpath,$(FC),$(SLDFLAGS),gfortran)
   ifneq (,$(strip $(LIBGFORTRAN)))
     FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
     LIB_FLD = $(LIB_LD)
@@ -1106,9 +1106,11 @@ else # GCC assumed
     endif
   endif
   ifeq (,$(OMPFLAG))
-  ifneq (,$(filter environment% override command%,$(origin OMP)))
-    OMPFLAG = -fopenmp
-  endif
+    ifneq (,$(filter environment% override command%,$(origin OMP)))
+      OMPFLAG = -fopenmp
+    endif
+  else ifeq (FreeBSD,$(UNAME))
+    OMPFLAG += -I/usr/local/include
   endif
   # account for missing TLS/OMP
   ifeq (,$(OMPFLAG))
@@ -1118,31 +1120,32 @@ else # GCC assumed
   ifeq (,$(strip $(OMPRT)))
     OMPRT = gomp
   endif
-  ifneq (0,$(OMP))
+  OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG) -L/usr/local/lib,$(OMPRT))
   ifneq (,$(OMPFLAG))
-    # clang: OMP=libomp
-    ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
-      CXXFLAGS += $(OMPFLAG)=$(OMP)
-      CFLAGS += $(OMPFLAG)=$(OMP)
-      # omit passing special OMP into Fortran compiler
-      FCFLAGS += $(OMPFLAG)
-      CLDFLAGS += $(OMPFLAG)=$(OMP)
-    else #ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
-      LIBOMPRT = $(call libpath,$(LD) $(SLDFLAGS),$(NULL),omp)
-      ifeq (3,$(GCC))
-        BLAS_LDFLAGS += $(OMPFLAG)
-        CXXFLAGS += $(OMPFLAG)
+    ifneq (0,$(OMP))
+      # clang: OMP=libomp
+      ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
+        CXXFLAGS += $(OMPFLAG)=$(OMP)
+        CFLAGS += $(OMPFLAG)=$(OMP)
+        # omit passing special OMP into Fortran compiler
         FCFLAGS += $(OMPFLAG)
-        CFLAGS += $(OMPFLAG)
-      else ifneq (,$(strip $(LIBOMPRT)))
-        FLDFLAGS += $(call abslibpath,$(LIBOMPRT)) $(XLIB_BEGIN) $(call abslibfile,$(LIBOMPRT)) $(XLIB_END)
-        BLAS_LDFLAGS += $(OMPFLAG)
+        CLDFLAGS += $(OMPFLAG)=$(OMP)
+      else ifneq (,$(strip $(OMPLIBFILE)))
+        ifneq (3,$(GCC))
+          BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
+          FLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
+        endif
         CXXFLAGS += $(OMPFLAG)
         FCFLAGS += $(OMPFLAG)
         CFLAGS += $(OMPFLAG)
       endif
     endif
-  endif
+    ifneq (3,$(GCC))
+    ifneq (,$(strip $(OMPLIBFILE)))
+      FLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
+      LDFLAGS += $(call abslibpath,$(OMPLIBFILE)) 
+    endif
+    endif
   endif
   ifeq (1,$(STATIC))
     SLDFLAGS += -Bstatic -static-libstdc++
@@ -1464,15 +1467,11 @@ ifeq (Darwin,$(UNAME))
   FCFLAGS += -Wa,-q
 endif
 
-ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
-  OMPLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(NULL),$(OMPRT))
-  ifneq (,$(strip $(OMPLIBFILE)))
-    OMPLIB = $(call abslib,$(OMPLIBFILE))
-  else
-    OMPLIB = -l$(OMPRT)
-  endif
+OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG) -L/usr/local/lib,$(OMPRT))
+ifneq (,$(strip $(OMPLIBFILE)))
+  OMPLIB = $(call abslib,$(OMPLIBFILE))
 else
-  OMPLIB = $(NULL)
+  OMPLIB = -l$(OMPRT)
 endif
 
 ifeq (0,$(OMP))
@@ -1648,14 +1647,14 @@ else ifneq (0,$(BLAS)) # generic
       BLASROOT = /usr
     endif
     ifeq (0,$(BLAS_STATIC)) # shared
-      BLASLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
+      BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
       ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
-        BLASLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(BLASDIR),openblas$(BLAS_BITS))
+        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),openblas$(BLAS_BITS))
       endif
     else # static
-      BLASLIBFILE = $(call libpath,$(LD) -static,$(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
+      BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
       ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
-        BLASLIBFILE = $(call libpath,$(LD) -static,$(BLASDIR),openblas$(BLAS_BITS))
+        BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),openblas$(BLAS_BITS))
       endif
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
@@ -1672,11 +1671,11 @@ else ifneq (0,$(BLAS)) # generic
     else # BLAS (reference)
       BLAS_FLAGS += -D__BLAS
       ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
-        BLASLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(BLASDIR),blas$(BLAS_BITS).dll)
+        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),blas$(BLAS_BITS).dll)
       else ifeq (0,$(BLAS_STATIC)) # potentially shared
-        BLASLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(BLASDIR),blas$(BLAS_BITS))
+        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),blas$(BLAS_BITS))
       else # static
-        BLASLIBFILE = $(call libpath,$(LD) -static,$(BLASDIR),blas$(BLAS_BITS))
+        BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),blas$(BLAS_BITS))
       endif
     endif
     ifneq (,$(BLASLIBFILE))
