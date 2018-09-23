@@ -275,7 +275,7 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
 
             /* ReLU */
             if ( (param->fuse_type == 1) || (param->fuse_type == 3) ) {
-              *del_output_ptr    = LIBXSMM_FEQ(output_val, 0) ? 0 : *del_output_ptr;
+              *del_output_ptr    = (output_val == 0) ? 0 : *del_output_ptr;
             }
             /* elementwise */
             if ( (param->fuse_type == 2) || (param->fuse_type == 3) ) {
