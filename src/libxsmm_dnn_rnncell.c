@@ -898,11 +898,13 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
     for (i = 0; i < t; ++i) {
       libxsmm_bgemm_st(handledh, &LIBXSMM_VLA_ACCESS(2, deltaM, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, h, i, 0, m * n), djdu, start_thread, tid);
       libxsmm_bgemm_st(handledx, &LIBXSMM_VLA_ACCESS(2, deltaM, i, 0, m * n), &LIBXSMM_VLA_ACCESS(2, x, i, 0, k * m), djdw, start_thread, tid);
-      for (j = 0; j < n/bn; j++) {
-        for (q = 0; q < m/bm; k++) {
-          for (l = 0; l < bn; l++) {
-            for (p = 0; p < bm; p++) {
-              djdb[q*bm+p] += LIBXSMM_VLA_ACCESS(2, delta, i, j*m*bn+q*bm*bn+l*bm+p, m * n);
+      if (tid - start_thread == 0) {
+        for (j = 0; j < n/bn; j++) {
+          for (q = 0; q < m/bm; q++) {
+            for (l = 0; l < bn; l++) {
+              for (p = 0; p < bm; p++) {
+                djdb[q*bm+p] += LIBXSMM_VLA_ACCESS(2, delta, i, j*m*bn+q*bm*bn+l*bm+p, m * n);
+              }
             }
           }
         }

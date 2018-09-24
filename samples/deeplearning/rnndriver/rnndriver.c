@@ -115,7 +115,7 @@ LIBXSMM_INLINE void matrix_relu(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (src[i] >= 0) ? src[i] : 0;
+    dst[i] = (src[i] > 0) ? src[i] : 0;
   }
 }
 
@@ -429,32 +429,30 @@ int main(int argc, char* argv[])
   LIBXSMM_VLA_DECL(2, float, djdx, djdxt, k * n);
 
   /* initialize data */
+  /* All data in gold is considered to be in column-major format */
   if (pass == 0) {
-    LIBXSMM_MATINIT_OMP(float, 42, wgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wgold, k, m, k, 1.0);
     for (it = 0; it < t; ++it) {
-      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), n, k, n, 1.0);
     }
     LIBXSMM_MATINIT_OMP(float, 42, ugold, m, m, m, 1.0);
-    LIBXSMM_MATINIT_OMP(float, 24, hgold, m, n, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, hgold, n, m, n, 1.0);
     matrix_copy(m*n, hgold, hgold_temp); /* Required because hgold may get overwritten */
     LIBXSMM_MATINIT_OMP(float, 42, bgold, m, 1, m, 1.0);
-    zero_buf(bgold, m); //KB
     for (j = 0; j < n; j++) {
-      for (i = 0; i < m; i++) {
-        bmgold[i*n + j] = bgold[i];
-      }
+      matrix_copy(m, &(bmgold[j*m]), bgold);
     }
     zero_buf(z1gold, m*n);
     zero_buf(z2gold, m*n);
     zero_buf(zgold, m*n);
   } else {
     LIBXSMM_MATINIT_OMP(float, 42, ugold, m, m, m, 1.0);
-    LIBXSMM_MATINIT_OMP(float, 42, wgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wgold, k, m, k, 1.0);
     for (it = 0; it < t; ++it) {
-      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
-      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), n, m, n, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), n, m, n, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), n, k, n, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), n, m, n, 1.0);
     }
     zero_buf(deltagoldt, m*n*t);
     zero_buf(djdugold, m*m);
@@ -563,19 +561,19 @@ int main(int argc, char* argv[])
         matrix_eltwise_mult(m * n, zigold, di2gold, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n));
       }
       if (pass == 1 || pass == 3) {
-        matrix_transpose(m, k, wgold, wgoldTp);
+        matrix_transpose(k, m, wgold, wgoldTp);
         for (i = 0; i < t; ++i) {
           LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &k, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &m, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, i, 0, k * n), &k);
         }
       }
       if (pass == 2 || pass == 3) {
         for (i = 0; i < t; ++i) {
-          matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, hgoldb, i, 0, m * n), hgoldTp);
+          matrix_transpose(n, m, &LIBXSMM_VLA_ACCESS(2, hgoldb, i, 0, m * n), hgoldTp);
           LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &m, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &m, hgoldTp, &n, &beta, djdugold, &m);
-          matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, k * n), xgoldTp);
+          matrix_transpose(n, k, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, k * n), xgoldTp);
           LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &k, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &m, xgoldTp, &n, &beta, djdwgold, &m);
           for (j = 0; j < m*n; j++) {
-            djdbgold[j/n] += LIBXSMM_VLA_ACCESS(2, deltagold, i, j, m * n);
+            djdbgold[j%n] += LIBXSMM_VLA_ACCESS(2, deltagold, i, j, m * n);
           }
         }
       }
@@ -670,17 +668,17 @@ int main(int argc, char* argv[])
         CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, hgold_temp, &m, &LIBXSMM_VLA_ACCESS(2, hnr, 0, 0, m * n)) );
         zero_buf(&LIBXSMM_VLA_ACCESS(2, hnr, 1, 0, m * n), m * n * t);
       }
-      matrix_copy(m * n, bgold, b); 
+      matrix_copy(m, bgold, b); 
     } else {
       matrix_transpose(m, m, ugold, ugoldTp);
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, ugoldTp, &m, u) );
       for (it = 0; it < t; ++it) {
-        matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), hgoldTp);
+        matrix_transpose(n, m, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), hgoldTp);
         CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, hgoldTp, &n, &LIBXSMM_VLA_ACCESS(2, hb, it, 0, m * n)) );
-        matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), xgoldTp);
+        matrix_transpose(n, k, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), xgoldTp);
         CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlett, xgoldTp, &n, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
       }
-      matrix_transpose(m, k, wgold, wgoldTp);
+      matrix_transpose(k, m, wgold, wgoldTp);
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wgoldTp, &k, w) );
       for (it = 0; it < t; ++it) {
         CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, djdh, it, 0, m * n)) );

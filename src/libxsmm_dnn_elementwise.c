@@ -132,7 +132,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu(libxsmm_blasint size, LIBXS
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
-    dst[i] = (src[i] >= 0) ? src[i] : 0;
+    dst[i] = (src[i] > 0) ? src[i] : 0;
   }
 }
 
@@ -334,13 +334,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_recursive_step(libxsmm_bgemm_handle* ha
       dst = temp;
       break;
     case 1:
-      libxsmm_internal_matrix_relu(size, temp, dst, start_thread, ltid, handle->nthreads);
+      libxsmm_internal_matrix_relu(size, temp, dst, start_thread, tid, handle->nthreads);
       break;
     case 2:
-      libxsmm_internal_matrix_sigmoid(size, temp, dst, start_thread, ltid, handle->nthreads);
+      libxsmm_internal_matrix_sigmoid(size, temp, dst, start_thread, tid, handle->nthreads);
       break;
     case 3:
-      libxsmm_internal_matrix_tanh(size, temp, dst, start_thread, ltid, handle->nthreads);
+      libxsmm_internal_matrix_tanh(size, temp, dst, start_thread, tid, handle->nthreads);
       break;
     default:
       /* fprintf(stdout, "Unsupported activation function: %d\n", act); */
