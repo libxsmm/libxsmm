@@ -73,6 +73,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int nOfmBlocks;
   int n_code_segments;
   int mark_ofm_init, mark_ofm_close, mark_img_init, mark_ifm_close;
+  int record_bnstats_offset, record_aux_stats_offset, record_aux_input_offset;
   int *tmp_expanded_stream, tmp_stream_index;
   segment_t *encoded_code_segments = NULL;
   int expanded_size;
@@ -80,6 +81,11 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int encoded_stream_index;
   int lookahead_index;
 
+  /* Handle for bn fusion */
+  libxsmm_dnn_fusedbn *post_bn = handle->post_bn;
+  int ifhp_bn = 0, ifwp_bn = 0, u_bn = 0, v_bn = 0;
+  int *aux_stat_indices = 0, *aux_input_indices = 0;
+  
   /* Arrays of stream indices */
   int *compute_indices, *bn_indices = 0;
   char *kernel_variant;
@@ -104,9 +110,22 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   mark_ofm_init =  ((((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd == 0) ) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;
   /* FIXME: MAke sure the variable below is enabled when we fuse for bwd... */
   mark_ofm_close = ((((handle->fuse_batchstats_fwd == 1) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) ) ||
-                    ((((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0) ) ) ? 1 : 0;
+      ((handle->fuse_batchstats_bwd == 1) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0)) || 
+      ((((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0) ) ) ? 1 : 0;
   mark_ifm_close = 0;
   mark_img_init = ( (handle->padding_flag == 1) || (mark_ofm_close == 1) || (mark_ifm_close == 1) ) ? 1 : 0;
+
+
+  record_bnstats_offset = (((handle->fuse_batchstats_fwd == 1) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1)) || 
+      ((handle->fuse_batchstats_bwd == 1) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 1))) ? 1 : 0;
+  record_aux_stats_offset = ((handle->fuse_batchstats_bwd == 1) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 1)) ? 1 : 0;
+  record_aux_input_offset = (((handle->fuse_batchstats_bwd == 1) || (handle->fuse_eltwise_bwd == 1)) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 1) ) ? 1 : 0;
+  if (record_aux_input_offset) {
+    ifhp_bn = post_bn->desc.H + 2 * post_bn->desc.pad_h_in;
+    ifwp_bn = post_bn->desc.W + 2 * post_bn->desc.pad_w_in;
+    u_bn = post_bn->desc.u;
+    v_bn = post_bn->desc.v;
+  }
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
   if (loop_order == MIXED) {
@@ -240,10 +259,17 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
 
   /* BN offsets...  */
-  /* FIXME: Make sure we enable condition below for bwd stats */
-  if  ((handle->fuse_batchstats_fwd == 1) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) && 0 != local_entries) {
+  if  (record_bnstats_offset && 0 != local_entries) {
     bn_indices = (int*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(int), 64);
     handle->bn_stats_indices_ptrs[ltid] = bn_indices;
+  }
+  if  (record_aux_stats_offset && 0 != local_entries) {
+    aux_stat_indices = (int*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(int), 64);
+    handle->bn_aux_stats_indices_ptrs[ltid] = aux_stat_indices;
+  }
+  if  (record_aux_input_offset && 0 != local_entries) {
+    aux_input_indices = (int*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(int), 64);
+    handle->bn_aux_input_indices_ptrs[ltid] = aux_input_indices;
   }
 
   kernel_variant = (char*)(3 <= local_entries ? libxsmm_aligned_malloc((local_entries / 3) * sizeof(char), 64) : NULL);
@@ -316,10 +342,15 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         }
                       }
 
-                      if ((handle->fuse_batchstats_fwd == 1) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
+                      if (record_bnstats_offset) {
                         bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
                       }
-
+                      if (record_aux_stats_offset) {
+                        aux_stat_indices[local_entries/3] = ofm1 * handle->ofmblock;             
+                      }
+                      if (record_aux_input_offset) {
+                        aux_input_indices[local_entries/3] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  ifhp_bn )  +  (oj_use * v_bn)) * ifwp_bn)  +  (oi_use * u_bn)) *  handle->ofmblock;
+                      }
                       local_entries += 3;
 
                       if (0 != tmp_expanded_stream) {
@@ -394,9 +425,14 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         }
                       }
 
-
-                      if ((handle->fuse_batchstats_fwd == 1) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
+                      if (record_bnstats_offset) {
                         bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
+                      }
+                      if (record_aux_stats_offset) {
+                        aux_stat_indices[local_entries/3] = ofm1 * handle->ofmblock;             
+                      }
+                      if (record_aux_input_offset) {
+                        aux_input_indices[local_entries/3] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  ifhp_bn )  +  (oj_use * v_bn)) * ifwp_bn)  +  (oi_use * u_bn)) *  handle->ofmblock;
                       }
 
                       local_entries += 3;
@@ -482,8 +518,14 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       }
                     }
 
-                    if ((handle->fuse_batchstats_fwd == 1) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
-                      bn_indices[local_entries/3] = img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
+                    if (record_bnstats_offset) {
+                      bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
+                    }
+                    if (record_aux_stats_offset) {
+                      aux_stat_indices[local_entries/3] = ofm1 * handle->ofmblock;             
+                    }
+                    if (record_aux_input_offset) {
+                      aux_input_indices[local_entries/3] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  ifhp_bn )  +  (oj_use * v_bn)) * ifwp_bn)  +  (oi_use * u_bn)) *  handle->ofmblock;
                     }
 
                     local_entries += 3;

@@ -62,6 +62,13 @@ element_input_type *output_base;
 element_output_type *copy_ptr;
 element_output_type *prefetch_ptr;
 
+/* BN Fusion related pointer variables */
+float *bmean_ptr = NULL, *brstd_ptr = NULL, *beta_ptr = NULL, *gamma_ptr = NULL;
+element_input_type *input_bn_ptr = NULL, *input_add_ptr = NULL;
+int *bn_outstats_stream, *bn_instats_stream, *bn_input_stream;
+int stats_in_offset = 0, stats_out_offset = 0, bn_input_offset = 0;
+int bn_stream_index = 0;
+
 /* Padding related variables */
 const int padded_h = handle->ofhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ofwp + 2 * handle->desc.pad_w;
@@ -263,6 +270,10 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   pool_index = 0;
   i = 0;
 
+  bn_outstats_stream = handle->bn_stats_indices_ptrs[ltid];
+  bn_instats_stream = handle->bn_aux_stats_indices_ptrs[ltid];
+  bn_input_stream = handle->bn_aux_input_indices_ptrs[ltid];
+
   if (n_segments) {
     /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
     code_stream = handle->bwd_code_segments[ltid];
@@ -369,10 +380,15 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
+              stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
+              stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
+              bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
               kernel_pool[vi](
-                input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                input_base + pi, weight_base + pw, output_base + po,
-                regular_input_base + offset_o, &scale_factor, max_vals, accumulators_scratch + offset_o);
+                  input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+                  input_base + pi, weight_base + pw, output_base + po,
+                  regular_input_base + offset_o, &scale_factor, max_vals, accumulators_scratch + offset_o,
+                  bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+              bn_stream_index++;
               ++pool_index;
               i += 3;
             }
@@ -471,10 +487,15 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
+              stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
+              stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
+              bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;                      
               kernel(
-                input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                input_base + pi, weight_base + pw, output_base + po,
-                regular_input_base + offset_o, &scale_factor, max_vals, accumulators_scratch + offset_o);
+                  input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+                  input_base + pi, weight_base + pw, output_base + po,
+                  regular_input_base + offset_o, &scale_factor, max_vals, accumulators_scratch + offset_o,
+                  bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+              bn_stream_index++;  
               i += 3;
             }
           }
@@ -654,9 +675,14 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
+              stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
+              stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
+              bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
               kernel_pool[vi](
-                input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_o);
+                  input_base + offset_i, weight_base + offset_w, output_base + offset_o,
+                  input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_o,
+                  NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+              bn_stream_index++;
               ++pool_index;
               i += 3;
             }
@@ -833,9 +859,14 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               pi = stream[i+3];
               pw = stream[i+4];
               po = stream[i+5];
+              stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
+              stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
+              bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
               kernel(
                   input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                  input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_o);
+                  input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_o,
+                  NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+              bn_stream_index++;
               i += 3;
             }
           }
@@ -915,10 +946,15 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
+            stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
+            stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
+            bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
             kernel_pool[vi](
                 input_base + offset_i, weight_base + offset_w, output_base + offset_o,
                 input_base + pi, weight_base + pw, output_base + po,
-                regular_input_base + offset_o, &scale_factor, max_vals);
+                regular_input_base + offset_o, &scale_factor, max_vals,
+                NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+            bn_stream_index++;
             i += 3;
           }
         } else {
@@ -929,10 +965,15 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
+            stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
+            stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
+            bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;  
             kernel(
                 input_base + offset_i, weight_base + offset_w, output_base + offset_o,
                 input_base + pi, weight_base + pw, output_base + po,
-                regular_input_base + offset_o, &scale_factor, max_vals);
+                regular_input_base + offset_o, &scale_factor, max_vals,
+                NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+            bn_stream_index++;
             i += 3;
           }
         }
@@ -946,9 +987,14 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
+            stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
+            stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
+            bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
             kernel_pool[vi](
                 input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals,
+                NULL, NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+            bn_stream_index++;
             i += 3;
           }
         } else {
@@ -959,9 +1005,14 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             pi = stream[i+3];
             pw = stream[i+4];
             po = stream[i+5];
+            stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
+            stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
+            bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
             kernel(
                 input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
+                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals,
+                NULL, NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+            bn_stream_index++;      
             i += 3;
           }
         }
