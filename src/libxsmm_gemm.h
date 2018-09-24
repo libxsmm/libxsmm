@@ -144,7 +144,7 @@
       dlerror(); /* clear an eventual error status */ \
       libxsmm_gemm_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMM_SYMBOL(TYPE))); \
       /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemm_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
-      ORIGINAL = libxsmm_gemm_wrapper_dynamic_.pf; \
+      ORIGINAL = (NULL == dlerror() ? libxsmm_gemm_wrapper_dynamic_.pf : NULL); \
       LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, LIBXSMM_GEMM_SYMBOL(TYPE)); \
     }
 # define LIBXSMM_GEMV_WRAPPER_DYNAMIC(TYPE, ORIGINAL) \
@@ -153,7 +153,7 @@
       dlerror(); /* clear an eventual error status */ \
       libxsmm_gemv_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMV_SYMBOL(TYPE))); \
       /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemv_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
-      ORIGINAL = libxsmm_gemv_wrapper_dynamic_.pf; \
+      ORIGINAL = (NULL == dlerror() ? libxsmm_gemv_wrapper_dynamic_.pf : NULL); \
       LIBXSMM_GEMV_WRAPPER_BLAS(TYPE, ORIGINAL, LIBXSMM_GEMV_SYMBOL(TYPE)); \
     }
 #else
