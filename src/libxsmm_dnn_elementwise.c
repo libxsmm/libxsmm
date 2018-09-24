@@ -172,7 +172,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse(libxsmm_blasint siz
 }
 
 
-LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, LIBXSMM_DNN_ELTWISE_FTYPE *input, int start_thread, int tid, int nthreads)
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint size, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
 {
   const int ltid = tid - start_thread;
   /* compute chunk size */
@@ -183,7 +183,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint siz
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
-    dst[i] = (input[i] >= 0) ? src[i] : 0;
+    dst[i] = (src[i] > 0) ? 1 : 0;
   }
 }
 
@@ -270,6 +270,30 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_inverse(libxsmm_blasint size, LI
 
   for (i = thr_begin; i < thr_end; i++) {
     dst[i] = -src[i];
+  }
+}
+
+
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_1D_2D(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint bm, libxsmm_blasint bn, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int start_thread, int tid, int nthreads)
+{
+  const int ltid = tid - start_thread;
+  /* compute chunk size */
+  const libxsmm_blasint chunksize = (m % nthreads == 0) ? (m / nthreads) : (m / nthreads) + 1;
+  /* compute thr_begin and thr_end */
+  const libxsmm_blasint thr_begin = (ltid * chunksize < m) ? (ltid * chunksize) : m;
+  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < m) ? ((ltid + 1) * chunksize) : m;
+  libxsmm_blasint i, j;
+  LIBXSMM_VLA_DECL(4, LIBXSMM_DNN_ELTWISE_FTYPE, real_dst, (LIBXSMM_DNN_ELTWISE_FTYPE*)dst, m/bm, bn, bm);
+  ltid = tid - start_thread;
+
+  for (i = thr_begin; i < thr_end; i++) {
+    const libxsmm_blasint mb = i/bm;
+    const libxsmm_blasint ibm = i%bm;
+    for (j = 0; j < n; j++) {
+      const libxsmm_blasint nb = j/bn;
+      const libxsmm_blasint ibn = j%bn;
+      LIBXSMM_VLA_ACCESS(4, real_dst, nb, mb, ibn, ibm, m/bm, bn, bm) = src[i];
+    }
   }
 }
 
