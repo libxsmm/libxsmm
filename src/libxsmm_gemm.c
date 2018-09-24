@@ -95,7 +95,7 @@ LIBXSMM_APIVAR(float internal_gemm_nstretch);
 LIBXSMM_APIVAR(float internal_gemm_kstretch);
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
+LIBXSMM_ATTRIBUTE_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
   static /*volatile*/ libxsmm_dgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(double, original);
@@ -104,7 +104,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK libxsmm_dgemm_function libxsmm_original_dgemm
 }
 
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
+LIBXSMM_ATTRIBUTE_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
   static /*volatile*/ libxsmm_sgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(float, original);

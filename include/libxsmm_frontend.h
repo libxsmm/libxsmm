@@ -434,8 +434,8 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemv_function)(
   const double*, double*, const libxsmm_blasint*);
 
 /** The original GEMM functions (SGEMM and DGEMM). */
-LIBXSMM_API libxsmm_dgemm_function libxsmm_original_dgemm(void);
-LIBXSMM_API libxsmm_sgemm_function libxsmm_original_sgemm(void);
+LIBXSMM_ATTRIBUTE_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void);
+LIBXSMM_ATTRIBUTE_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void);
 
 /**
  * General dense matrix multiplication, which re-exposes LAPACK/BLAS
