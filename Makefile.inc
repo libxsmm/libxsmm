@@ -776,7 +776,7 @@ ifneq (0,$(INTEL))
   ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
     CPEDANTIC += -Wcheck
   endif
-  CPEDANTIC += -diag-disable 177,1419,2547,10382
+  CPEDANTIC += -diag-disable 177,1419,1572,2547,10382
   CWARNEXTRA = -Wremarks
   ifeq (1,$(PEDANTIC))
     CSTD = -std=c99
