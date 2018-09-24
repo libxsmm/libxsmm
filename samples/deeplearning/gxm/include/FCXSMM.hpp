@@ -34,19 +34,35 @@
 
 #include <omp.h>
 #include "FCImpl.hpp"
+#include "libxsmm.h"
+
+#define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS )\
+{\
+  fprintf(stdout, "%s, %s\n", gp->node_name.c_str(), libxsmm_dnn_get_error(A) );\
+  fflush(stdout);\
+}
 
 class FCXSMM : public FCImpl
 {
   protected:
+    FCImpl *gp_;
+    libxsmm_dnn_fullyconnected_desc fullyconnected_desc;
+    libxsmm_dnn_fullyconnected* libxsmm_handle;
+    libxsmm_dnn_tensor*  libxsmm_input=NULL;
+    libxsmm_dnn_tensor*  libxsmm_delinput=NULL;
+    libxsmm_dnn_tensor*  libxsmm_output=NULL;
+    libxsmm_dnn_tensor*  libxsmm_deloutput=NULL;
+    libxsmm_dnn_tensor*  libxsmm_filter=NULL;
+    libxsmm_dnn_tensor*  libxsmm_delfilter=NULL;
+    libxsmm_dnn_tensor_datalayout* libxsmm_layout;
+    libxsmm_dnn_err_t status;
+    libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
+    bool updated_scratch=false;
+    void *scratch=NULL;
 
   public:
-    FCXSMM(FCImplParams* gp, int engine) : FCImpl(gp, engine)
-    {
-      top_layout_type = NCHW;
-      top_layout = NULL;
-      gbot_layout_type = NCHW;
-      gbot_layout = NULL;
-    }
+    FCXSMM(FCImplParams* gp, int engine);
+    virtual ~FCXSMM(void) {}
 
     bool firstTimeFwd=true, firstTimeBwd=true;
 
