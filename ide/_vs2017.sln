@@ -309,6 +309,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "magazine_batch", "..\sample
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spmdm", "..\samples\spmdm\spmdm.vcxproj", "{61BF5F50-3B4C-488B-9D0F-9AAB008B3184}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
