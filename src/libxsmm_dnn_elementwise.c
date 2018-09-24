@@ -284,7 +284,6 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_1D_2D(libxsmm_blasint m, libxsmm
   const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < m) ? ((ltid + 1) * chunksize) : m;
   libxsmm_blasint i, j;
   LIBXSMM_VLA_DECL(4, LIBXSMM_DNN_ELTWISE_FTYPE, real_dst, (LIBXSMM_DNN_ELTWISE_FTYPE*)dst, m/bm, bn, bm);
-  ltid = tid - start_thread;
 
   for (i = thr_begin; i < thr_end; i++) {
     const libxsmm_blasint mb = i/bm;
