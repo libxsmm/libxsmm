@@ -903,7 +903,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
           for (q = 0; q < m/bm; q++) {
             for (l = 0; l < bn; l++) {
               for (p = 0; p < bm; p++) {
-                djdb[q*bm+p] += LIBXSMM_VLA_ACCESS(2, delta, i, j*m*bn+q*bm*bn+l*bm+p, m * n);
+                djdb[q*bm+p] += LIBXSMM_VLA_ACCESS(2, delta, i, j*m*bn+(size_t)q*bm*bn+(size_t)l*bm+p, m * n);
               }
             }
           }
