@@ -347,10 +347,10 @@ int main(int argc, char* argv []) {
       l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags,
       /* translate an eventual LIBXSMM_PREFETCH_AUTO */
       libxsmm_get_gemm_prefetch(l_prefetch));
-    l_a_d = (double*)libxsmm_aligned_malloc(l_lda * l_k * sizeof(double), 64);
-    l_b_d = (double*)libxsmm_aligned_malloc(l_ldb * l_n * sizeof(double), 64);
-    l_c_d = (double*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(double), 64);
-    l_c_gold_d = (double*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(double), 64);
+    l_a_d = (double*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(double), 64);
+    l_b_d = (double*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(double), 64);
+    l_c_d = (double*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(double), 64);
+    l_c_gold_d = (double*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(double), 64);
     /* touch A */
     for (l_i = 0; l_i < l_lda; l_i++) {
       for (l_j = 0; l_j < l_k; l_j++) {
@@ -374,10 +374,10 @@ int main(int argc, char* argv []) {
   else if (strcmp(l_precision, "SP") == 0) {
     l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F32,
       l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-    l_a_f = (float*)libxsmm_aligned_malloc(l_lda * l_k * sizeof(float), 64);
-    l_b_f = (float*)libxsmm_aligned_malloc(l_ldb * l_n * sizeof(float), 64);
-    l_c_f = (float*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(float), 64);
-    l_c_gold_f = (float*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(float), 64);
+    l_a_f = (float*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(float), 64);
+    l_b_f = (float*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(float), 64);
+    l_c_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
+    l_c_gold_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
     /* touch A */
     for (l_i = 0; l_i < l_lda; l_i++) {
       for (l_j = 0; l_j < l_k; l_j++) {
@@ -402,10 +402,10 @@ int main(int argc, char* argv []) {
     l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
       LIBXSMM_GEMM_PRECISION_I16, LIBXSMM_GEMM_PRECISION_I32,
       l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-    l_a_w = (short*)libxsmm_aligned_malloc(l_lda * l_k * sizeof(short), 64);
-    l_b_w = (short*)libxsmm_aligned_malloc(l_ldb * l_n * sizeof(short), 64);
-    l_c_w_i = (int*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(int), 64);
-    l_c_gold_w_i = (int*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(int), 64);
+    l_a_w = (short*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(short), 64);
+    l_b_w = (short*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(short), 64);
+    l_c_w_i = (int*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(int), 64);
+    l_c_gold_w_i = (int*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(int), 64);
 
     /* touch A */
     for (l_i = 0; l_i < l_lda; l_i++) {
@@ -431,10 +431,10 @@ int main(int argc, char* argv []) {
     l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
       LIBXSMM_GEMM_PRECISION_I16, LIBXSMM_GEMM_PRECISION_F32,
       l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-    l_a_w = (short*)libxsmm_aligned_malloc(l_lda * l_k * sizeof(short), 64);
-    l_b_w = (short*)libxsmm_aligned_malloc(l_ldb * l_n * sizeof(short), 64);
-    l_c_w_f = (float*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(float), 64);
-    l_c_gold_w_f = (float*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(float), 64);
+    l_a_w = (short*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(short), 64);
+    l_b_w = (short*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(short), 64);
+    l_c_w_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
+    l_c_gold_w_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
     /* touch A */
     for (l_i = 0; l_i < l_lda; l_i++) {
       for (l_j = 0; l_j < l_k; l_j++) {
@@ -459,10 +459,10 @@ int main(int argc, char* argv []) {
     l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
       LIBXSMM_GEMM_PRECISION_I8, LIBXSMM_GEMM_PRECISION_I32,
       l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
-    l_a_b = (unsigned char*)libxsmm_aligned_malloc(l_lda * l_k * sizeof(unsigned char), 64);
-    l_b_b = (char*)libxsmm_aligned_malloc(l_ldb * l_n * sizeof(char), 64);
-    l_c_b = (int*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(int), 64);
-    l_c_gold_b = (int*)libxsmm_aligned_malloc(l_ldc * l_n * sizeof(int), 64);
+    l_a_b = (unsigned char*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(unsigned char), 64);
+    l_b_b = (char*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_n * sizeof(char), 64);
+    l_c_b = (int*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(int), 64);
+    l_c_gold_b = (int*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(int), 64);
     /* touch A */
     for (l_i = 0; l_i < l_lda; l_i++) {
       for (l_j = 0; l_j < (l_k / 2); l_j++) {

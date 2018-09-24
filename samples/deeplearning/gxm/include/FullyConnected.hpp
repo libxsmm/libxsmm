@@ -230,6 +230,7 @@ class FCNode: public NNNode
     TensorBuf *tenTopData_=NULL, *tenTopDiff_=NULL;
     TensorBuf *tenWeightDiff_=NULL, *tenWeightData_=NULL, *tenWeightInc_=NULL;
     TensorBuf *tenBiasData_=NULL, *tenBiasDiff_=NULL, *tenBiasInc_=NULL;
+    TensorBuf *tenScratchData_=NULL;
     Shape bs_, ts_, ws_;
 
     int bot_cengine_;

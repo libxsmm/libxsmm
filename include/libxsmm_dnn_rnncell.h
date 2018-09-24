@@ -47,6 +47,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
   int bk;    /* blocksize for k */
   int reuse; /* reuse/overwrite memory for FWD */
   int pass;  /* denotes whether it is FWD/BWD/UPD */
+  int nonlin;/* denotes which non-linear function to be used: tanh, relu, sigmoid */
   libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
   libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
@@ -59,30 +60,34 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_datatype datatype_out;
   libxsmm_dnn_tensor_format buffer_format;
   libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts  */
-  int m;
-  int n;
-  int k;
-  int t;
-  int bm;
-  int bn;
-  int bk;
+  libxsmm_blasint m;
+  libxsmm_blasint n;
+  libxsmm_blasint k;
+  libxsmm_blasint t;
+  libxsmm_blasint bm;
+  libxsmm_blasint bn;
+  libxsmm_blasint bk;
   int reuse;
   int pass;
-  int b_m1;
-  int b_n1;
-  int b_k1;
-  int b_m2;
-  int b_n2;
-  int b_k2;
+  int nonlin;
+  libxsmm_blasint b_m1;
+  libxsmm_blasint b_n1;
+  libxsmm_blasint b_k1;
+  libxsmm_blasint b_m2;
+  libxsmm_blasint b_n2;
+  libxsmm_blasint b_k2;
   libxsmm_dnn_tensor* w;
   libxsmm_dnn_tensor* xt;
   libxsmm_dnn_tensor* u;
   libxsmm_dnn_tensor* h;
+  libxsmm_dnn_tensor* b;
   libxsmm_dnn_tensor* z;
   libxsmm_dnn_tensor* djdht;
   libxsmm_dnn_tensor* djdu;
   libxsmm_dnn_tensor* djdw;
   libxsmm_dnn_tensor* djdxt;
+  libxsmm_dnn_tensor* djdb;
+  libxsmm_dnn_tensor* bM;
   libxsmm_dnn_tensor* deltat;
   libxsmm_dnn_tensor* z1t;
   libxsmm_dnn_tensor* z2;

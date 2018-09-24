@@ -275,7 +275,7 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
 
             /* ReLU */
             if ( (param->fuse_type == 1) || (param->fuse_type == 3) ) {
-              *del_output_ptr    = LIBXSMM_FEQ(output_val, 0) ? 0 : *del_output_ptr;
+              *del_output_ptr    = (output_val == 0) ? 0 : *del_output_ptr;
             }
             /* elementwise */
             if ( (param->fuse_type == 2) || (param->fuse_type == 3) ) {
@@ -355,6 +355,7 @@ int main(int argc, char* argv[])
   double gb = 0.0;
   double gib = 0.0;
   int i;
+  int relu_no_match;
 
   libxsmm_dnn_fusedbn_desc fusedbn_desc;
   libxsmm_dnn_fusedbn* libxsmm_handle;
@@ -703,6 +704,27 @@ int main(int argc, char* argv[])
       copy_internal_nchw( naive_output_pad, naive_output, nImg, nFm, ofh, ofw, pad_h_out, pad_w_out);
 
       /* compare */
+      printf("stddev:\n");
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nFm, 1, naive_stddev, stddev_libxsmm, 0, 0, &norms_fwd);
+      printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_fwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_fwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_fwd);
+      printf("expected value:\n");
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nFm, 1, naive_expectval, expectval_libxsmm, 0, 0, &norms_fwd);
+      printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_fwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_fwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_fwd);
+      printf("output:\n");
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nFm*ofhp*ofwp, 1, naive_output_pad, naive_libxsmm_output, 0, 0, &norms_fwd);
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
@@ -712,6 +734,16 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
       printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_fwd);
+
+      /* let's check ReLU positions */
+      relu_no_match = 0;
+      for ( i = 0; i < nImg*nFm*ofhp*ofwp; ++i ) {
+        if ( (naive_output_pad[i] == 0.0f && naive_libxsmm_output[i] != 0.0f) ||
+             (naive_output_pad[i] != 0.0f && naive_libxsmm_output[i] == 0.0f)    ) {
+          relu_no_match++;
+        }
+      }
+      printf("ReLU mismatch count: %i\n", relu_no_match );
     }
 
     if ( (type == 'A' || type == 'B') && LIBXSMM_NEQ(0, check) ) {
@@ -739,6 +771,7 @@ int main(int argc, char* argv[])
       copy_internal_nchw( naive_delinput_add_pad, naive_delinput_add, nImg, nFm, ifh, ifw, pad_h_in, pad_w_in);
 
       /* compare */
+      printf("delinput_add:\n");
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nFm*ifhp*ifwp, 1, naive_delinput_add_pad, naive_libxsmm_delinput_add, 0, 0, &norms_bwd);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
@@ -748,6 +781,27 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
       printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_bwd);
+      printf("delbeta:\n");
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nFm, 1, naive_delbeta, delbeta_libxsmm, 0, 0, &norms_bwd);
+      printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_bwd);
+      printf("delgamma:\n");
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nFm, 1, naive_delgamma, delgamma_libxsmm, 0, 0, &norms_bwd);
+      printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
+      printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_bwd.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_bwd.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_bwd.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_bwd);
+      printf("delinput:\n");
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nFm*ifhp*ifwp, 1, naive_delinput_pad, naive_libxsmm_delinput, 0, 0, &norms_bwd);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);

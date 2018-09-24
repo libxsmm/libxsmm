@@ -66,7 +66,9 @@ endif
 
 ifneq (Darwin,$(UNAME))
   ifneq (,$(strip $(CP)))
+  ifneq (FreeBSD,$(UNAME))
     CP += -u
+  endif
   endif
   DLIBEXT ?= so
   SLIBEXT ?= a
@@ -199,25 +201,12 @@ TBB_OLDRTL ?= 0
 # Enable absolute library paths
 ABSLIBS ?= 0
 
-abslibrpath = $(strip $(if $(wildcard $1),$(XRPATH)$(dir $(abspath $1)),$(NULL)))
-absliblpath = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
-  $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)),$(NULL)))
-abslibfile = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
-  $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
-    -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
-
-ifneq (0,$(ABSLIBS))
-  abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
-else
-  abslibpath = $(call absliblpath,$1)
-endif
-
 BRACE_OPEN := (
 BRACE_CLOSE := )
 
 libpath = $(strip $(if $1, \
   $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL), \
-    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>/dev/null | grep "$3" | tail -n1 | grep -o "[^ ()]*" | grep "\/")))), \
+    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>/dev/null | grep "lib$3" | grep -o "\/..*[ $(BRACE_CLOSE)]" | grep -o "..*[^$(BRACE_CLOSE)]" | tail -n1)))), \
   $(NULL)))
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
@@ -284,15 +273,28 @@ else # shared (DLL)
   BLASLIBEXT ?= $(IMPEXT)
 endif
 
+LNKSOFT ?= 1
+ifeq (0,$(STATIC))
+  ifeq (Windows_NT,$(UNAME))
+    LNKSOFT = 0
+  else ifeq (Darwin,$(UNAME))
+    LNKSOFT = 0
+  endif
+endif
+
 # BLAS is not used by default
-BLAS ?= 0
+ifneq (0,$(LNKSOFT))
+  BLAS ?= 0
+else
+  BLAS ?= 2
+endif
 
 COMPILER_VERSION_FLAG ?= --version
 CC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
 FC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
 CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 
-# Automatically pickup the environment (make -e not needed),
+# Automatically pickup the environment (make -e is not required),
 # or pickup the Intel Compiler (if available).
 ifneq (,$(notdir $(shell which icpc 2>/dev/null)))
   CXX = icpc
@@ -354,6 +356,11 @@ else
   CC_VERSION = 0
 endif
 
+# disable Fortran per user-request
+ifeq (0,$(FORTRAN))
+  override FC = $(NULL)
+endif
+
 # fixup FC-default given by MAKE
 ifneq (,$(strip $(FC)))
 ifeq (,$(shell which $(FC) 2>/dev/null))
@@ -365,59 +372,57 @@ ifeq (,$(shell which $(FC) 2>/dev/null))
   endif
 endif
 endif
+
 ifneq (,$(strip $(FC)))
   FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
   FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
   FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
   FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
-endif
-ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-  FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
-else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-  FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
-  FC_VERSION_PATCH = 0
-else
-  FC_VERSION_STRING = $(NULL)
-  FC_VERSION = 0
+  ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
+    FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
+  else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
+    FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
+    FC_VERSION_PATCH = 0
+  else
+    FC_VERSION_STRING = $(NULL)
+    FC_VERSION = 0
+  endif
+  ifeq (GNU,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f1))
+    ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
+      ifneq (gfortran,$(notdir $(FC)))
+        FC = gfortran
+        FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+        FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
+        FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
+        FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
+        ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
+          FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
+        else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
+          FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
+          FC_VERSION_PATCH = 0
+        else
+          FC_VERSION = 0
+        endif
+        ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
+          override FC = $(NULL)
+        endif
+      else
+        override FC = $(NULL)
+      endif
+    endif
+  else ifneq (0,$(INTEL))
+    ifneq (0,$(shell echo "$$((130000>$(FC_VERSION) && 0<$(FC_VERSION)))"))
+      override FC = $(NULL)
+    endif
+  endif
 endif
 
-ifneq (,$(strip $(FC)))
-ifeq (GNU,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f1))
-  ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
-  ifneq (gfortran,$(notdir $(FC)))
-    FC = gfortran
-    FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
-    FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
-    FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
-    FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
-    ifeq (3,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR) $(FC_VERSION_PATCH)))
-      FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100+$(FC_VERSION_PATCH)))")
-    else ifeq (2,$(words $(FC_VERSION_MAJOR) $(FC_VERSION_MINOR)))
-      FC_VERSION = $(shell echo "$$(($(FC_VERSION_MAJOR)*10000+$(FC_VERSION_MINOR)*100))")
-      FC_VERSION_PATCH = 0
-    else
-      FC_VERSION = 0
-    endif
-    ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
-      # keep FC_VERSION_STRING available for message about outdated compiler
-      override FC = $(NULL)
-      FC_VERSION = 0
-      FORTRAN = 0
-    endif
-  else
-    # keep FC_VERSION_STRING available for message about outdated compiler
-    override FC = $(NULL)
-    FC_VERSION = 0
+ifeq (,$(strip $(FC)))
+  ifeq (0,$(FORTRAN))
+    FC_VERSION_STRING = $(NULL)
+  else # keep FC_VERSION_STRING for message about outdated compiler
     FORTRAN = 0
   endif
-  endif
-else ifneq (0,$(INTEL))
-  ifneq (0,$(shell echo "$$((130000>$(FC_VERSION) && 0<$(FC_VERSION)))"))
-    override FC = $(NULL)
-    FC_VERSION = 0
-    FORTRAN = 0
-  endif
-endif
 endif
 
 # compiler names
@@ -556,7 +561,7 @@ CPUFLAGS = $(strip $(shell if [ -e /proc/cpuinfo ]; then \
       machdep.cpu.leaf7_features \
     | cut -d: -f2- | tr "\n" " " | tr [:upper:] [:lower:]; \
   fi))
-SSE ?= 0
+SSE ?= 1
 ifeq (0,$(SSE)) # discover AVX
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
@@ -579,7 +584,7 @@ else ifeq (1,$(SSE)) # discover SSE
     SSE = 4
   else ifneq (0,$(words $(filter sse3 ssse3,$(CPUFLAGS))))
     SSE = 3
-  else #ifeq (,$(SSE))
+  else ifneq (,$(CPUFLAGS))
     SSE = 0
   endif
 else ifneq (0,$(KNC))
@@ -655,31 +660,45 @@ else
 endif
 DYNAMIC ?= 0
 
-#ifneq (0,$(CRAY))
+ifneq (0,$(CRAY))
 ifneq (0,$(DYNAMIC))
   XLD := $(XLD) -dynamic
   FLD := $(FLD) -dynamic
   LD := $(LD) -dynamic
 endif
-#endif
+endif
 
 # Compiler is used for link stage
 ifneq (Darwin,$(UNAME))
-  ifneq (ld,$(LD))
-    XLNK_BEGIN = -Wl,
-    XLNK_END = $(NULL)
+  ifneq (ld,$(notdir $(LD)))
+    XLNKOPT = -Wl,
   endif
-  XGROUP_BEGIN = $(XLNK_BEGIN)--start-group
-  XGROUP_END = $(XLNK_BEGIN)--end-group
-  XLIB_BEGIN = $(XLNK_BEGIN)--as-needed
-  XLIB_END = $(XLNK_BEGIN)--no-as-needed
-  XRPATH = $(XLNK_BEGIN)--rpath=$(NULL)
+  linkopt = $(XLNKOPT)$(if $2,$1=$2,$1)
+  abslibrpath = $(strip $(if $(wildcard $1),$(call linkopt,--rpath,$(dir $(abspath $1))),$(NULL)))
+  XGROUP_BEGIN = $(XLNKOPT)--start-group
+  XGROUP_END = $(XLNKOPT)--end-group
+  ifneq (0,$(ASNEEDED))
+    XLIB_BEGIN = $(XLNKOPT)--as-needed
+    XLIB_END = $(XLNKOPT)--no-as-needed
+  endif
 else
-  ifneq (ld,$(LD))
-    XLNK_BEGIN = -Xlinker $(NULL)
-    XLNK_END = $(NULL) -Xlinker
+  ifneq (ld,$(notdir $(LD)))
+    XLNKOPT = -Xlinker
   endif
-  XRPATH = $(XLNK_BEGIN) -rpath $(XLNK_END)
+  linkopt = $(XLNKOPT) $1 $(XLNKOPT) $2
+  abslibrpath = $(strip $(if $(wildcard $1),$(call linkopt,-rpath,$(dir $(abspath $1))),$(NULL)))
+endif
+
+absliblpath = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+  $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)),$(NULL)))
+abslibfile = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+  $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
+    -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
+
+ifneq (0,$(ABSLIBS))
+  abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
+else
+  abslibpath = $(call absliblpath,$1)
 endif
 
 LIBDEP = $(LIBNAME).$(IMPEXT)
@@ -700,7 +719,7 @@ XBLASLIB ?= $(NOBLASLIB)
 
 ifneq (Darwin,$(UNAME))
   ifeq (0,$(shell ln -fs this-file-does-not-exist .ln 2>/dev/null && echo "$$?" && rm .ln 2>/dev/null))
-    solink = -o $1.$2.$3.$4 $(XLNK_BEGIN)-soname=$(strip $(notdir $1).$5)
+    solink = -o $1.$2.$3.$4 $(XLNKOPT)-soname=$(strip $(notdir $1).$5)
     ifneq (0,$(SONAMELNK))
       solink += $(shell cd $(dir $1) && ln -fs $(notdir $1.$2.$3.$4) $(notdir $1.$5))
     endif
@@ -708,9 +727,8 @@ ifneq (Darwin,$(UNAME))
       solink += $(shell cd $(dir $1) && ln -fs $(notdir $1.$5) $(notdir $1))
     endif
   else # MinGW
-    solink = -o $1 $(XLNK_BEGIN)-soname=$(strip $(notdir $1).$5)
+    solink = -o $1 $(XLNKOPT)-soname=$(strip $(notdir $1).$5)
   endif
-  solink += $(XLNK_END)
 else # osx
   solink = -o $(basename $1).$2$(suffix $1) \
            -install_name $(notdir $(basename $1).$2$(suffix $1)) \
@@ -721,7 +739,7 @@ else # osx
 endif
 
 ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
-  LIBGFORTRAN = $(call libpath,$(FC) $(SLDFLAGS),$(NULL),gfortran)
+  LIBGFORTRAN = $(call libpath,$(FC),$(SLDFLAGS),gfortran)
   ifneq (,$(strip $(LIBGFORTRAN)))
     FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
     LIB_FLD = $(LIB_LD)
@@ -734,15 +752,19 @@ ifneq (0,$(INTEL))
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
   CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
-  ifneq (0,$(shell echo "$$((170000<=$(CXX_VERSION)))"))
+  ifneq (0,$(shell echo "$$((200000<=$(CXX_VERSION)))"))
     CXXFLAGS += -std=c++14
-  else ifneq (0,$(shell echo "$$((140000<=$(CXX_VERSION)))"))
-    CXXFLAGS += -std=c++11
+  else ifneq (0,$(COMPATIBLE))
+    ifneq (0,$(shell echo "$$((170000<=$(CXX_VERSION)))"))
+      CXXFLAGS += -std=c++14
+    else ifneq (0,$(shell echo "$$((140000<=$(CXX_VERSION)))"))
+      CXXFLAGS += -std=c++11
+    endif
   endif
   CXXFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
   CFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
   ifeq (,$(strip $(GFC)))
-    ifneq (ld,$(LD))
+    ifneq (ld,$(notdir $(LD)))
       LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
     endif
     FCFLAGS += -diag-disable 10006,10010,10411,13003
@@ -754,7 +776,7 @@ ifneq (0,$(INTEL))
   ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
     CPEDANTIC += -Wcheck
   endif
-  CPEDANTIC += -diag-disable 177,1419,2547,10382
+  CPEDANTIC += -diag-disable 177,1419,1572,2547,10382
   CWARNEXTRA = -Wremarks
   ifeq (1,$(PEDANTIC))
     CSTD = -std=c99
@@ -808,6 +830,7 @@ ifneq (0,$(INTEL))
       CFLAGS += -qoverride_limits #-fp-model fast=2
     endif
     ifeq (,$(strip $(GFC)))
+    ifneq (,$(strip $(FC)))
       FCFLAGS += -qoverride_limits #-fp-model fast=2
       ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
         FCFLAGS += -align array64byte
@@ -815,6 +838,7 @@ ifneq (0,$(INTEL))
       ifneq (0,$(IPO))
         FCFLAGS += -ipo
       endif
+    endif
     endif
     ifneq (0,$(IPO))
       CXXFLAGS += -ipo
@@ -901,10 +925,10 @@ ifneq (0,$(INTEL))
     CXXFLAGS += $(OMPFLAG)
     CFLAGS += $(OMPFLAG)
     ifeq (,$(strip $(GFC)))
+      BLAS_LDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
       FCFLAGS += $(OMPFLAG)
-      LDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
     else
-      LDFLAGS += $(OMPFLAG)
+      BLAS_LDFLAGS += $(OMPFLAG)
     endif
   endif
   ifneq (0,$(SIMD))
@@ -957,18 +981,20 @@ else # GCC assumed
                  -Wcharacter-truncation -Wline-truncation \
                  -Wconversion -Wintrinsics-std \
                  -Wimplicit-interface -Wimplicit-procedure
-    ifneq (0,$(shell echo "$$((40200<=$(FC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((40200<=$(CC_VERSION)))"))
       CPEDANTIC += -Wno-overlength-strings
     else ifneq (0,$(CLANG))
       CPEDANTIC += -Wno-overlength-strings
     endif
-    ifneq (0,$(shell echo "$$((40500<=$(FC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((40500<=$(CC_VERSION)))"))
       CPEDANTIC += -Wshadow
     endif
+    ifneq (,$(strip $(FC)))
     ifneq (0,$(shell echo "$$((50000<=$(FC_VERSION)))"))
       FWARNEXTRA = -Wuse-without-only -Wc-binding-type \
                    -Wrealloc-lhs -Wrealloc-lhs-all \
                    -Wreal-q-constant -Wconversion-extra
+    endif
     endif
     ifeq (0,$(MINGW))
       CPEDANTIC += -Wformat=2
@@ -1080,9 +1106,11 @@ else # GCC assumed
     endif
   endif
   ifeq (,$(OMPFLAG))
-  ifneq (,$(filter environment% override command%,$(origin OMP)))
-    OMPFLAG = -fopenmp
-  endif
+    ifneq (,$(filter environment% override command%,$(origin OMP)))
+      OMPFLAG = -fopenmp
+    endif
+  else ifeq (FreeBSD,$(UNAME))
+    OMPFLAG += -I/usr/local/include
   endif
   # account for missing TLS/OMP
   ifeq (,$(OMPFLAG))
@@ -1092,31 +1120,34 @@ else # GCC assumed
   ifeq (,$(strip $(OMPRT)))
     OMPRT = gomp
   endif
-  ifneq (0,$(OMP))
+  OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG) -L/usr/local/lib,$(OMPRT))
   ifneq (,$(OMPFLAG))
-    # clang: OMP=libomp
-    ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
-      CXXFLAGS += $(OMPFLAG)=$(OMP)
-      CFLAGS += $(OMPFLAG)=$(OMP)
-      # omit passing special OMP into Fortran compiler
-      FCFLAGS += $(OMPFLAG)
-      CLDFLAGS += $(OMPFLAG)=$(OMP)
-    else #ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
-      LIBOMPRT = $(call libpath,$(LD) $(SLDFLAGS),$(NULL),omp)
-      ifeq (3,$(GCC))
-        CFLAGS += $(OMPFLAG)
-        CXXFLAGS += $(OMPFLAG)
+    ifneq (0,$(OMP))
+      # clang: OMP=libomp
+      ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
+        # omit passing special OMP into Fortran compiler
         FCFLAGS += $(OMPFLAG)
-        LDFLAGS += $(OMPFLAG)
-      else ifneq (,$(strip $(LIBOMPRT)))
-        FLDFLAGS += $(call abslibpath,$(LIBOMPRT)) $(XLIB_BEGIN) $(call abslibfile,$(LIBOMPRT)) $(XLIB_END)
-        CFLAGS += $(OMPFLAG)
-        CXXFLAGS += $(OMPFLAG)
-        FCFLAGS += $(OMPFLAG)
-        LDFLAGS += $(OMPFLAG)
+        CLDFLAGS += $(OMPFLAG)=$(OMP)
+        CXXFLAGS += $(OMPFLAG)=$(OMP)
+        CFLAGS += $(OMPFLAG)=$(OMP)
+      else
+        ifeq (3,$(GCC))
+          LDFLAGS += $(OMPFLAG)
+        else ifneq (,$(strip $(OMPLIBFILE)))
+          BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
+        endif
+        ifneq (Darwin,$(UNAME))
+          CXXFLAGS += $(OMPFLAG)
+          FCFLAGS += $(OMPFLAG)
+          CFLAGS += $(OMPFLAG)
+        endif
       endif
     endif
-  endif
+    ifneq (3,$(GCC))
+    ifneq (,$(strip $(OMPLIBFILE)))
+      LDFLAGS += $(call abslibpath,$(OMPLIBFILE))
+    endif
+    endif
   endif
   ifeq (1,$(STATIC))
     SLDFLAGS += -Bstatic -static-libstdc++
@@ -1140,6 +1171,7 @@ endif
 ifeq (,$(CTARGET))
 ifneq (0,$(shell echo "$$((3>$(DBG)))"))
   # prevents Clang BE error (CRC32 and others)
+  ifneq (Windows_NT,$(UNAME))
   ifneq (Darwin,$(UNAME))
   ifeq (3,$(GCC))
   ifeq (0,$(DEPSTATIC))
@@ -1148,6 +1180,7 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     ifneq (,$(SHARED))
       CTARGET = -msse3
     endif
+  endif
   endif
   endif
   endif
@@ -1213,7 +1246,7 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
           endif
         endif
         CTARGET ?= -msse4.2
-      else ifneq (0,$(SSE)) # better to use TARGET flag directly
+      else ifneq (,$(filter-out 0 1,$(SSE))) # better to use TARGET flag directly
         CTARGET = -msse$(SSE)
       endif
     endif
@@ -1350,19 +1383,19 @@ ifeq (0,$(COMPATIBLE))
       CXXFLAGS += -fno-stack-protector
       CFLAGS += -fno-stack-protector
     endif
-    ifneq (ld,$(LD))
+    ifneq (ld,$(notdir $(LD)))
     ifneq (Windows_NT,$(UNAME))
       # Linux distributions may apply similar hardening
-      LDFLAGS += $(XLNK_BEGIN)-z,relro,-z,now
+      LDFLAGS += $(XLNKOPT)-z,relro,-z,now
       ifneq (0,$(DEPSTATIC))
         ifneq (0,$(HARDEN))
           ifneq (,$(strip $(HARDEN))) # explicit
-            LDFLAGS += $(XLNK_BEGIN)--export-dynamic
+            LDFLAGS += $(XLNKOPT)--export-dynamic
           else ifneq (0,$(SYM))
-            LDFLAGS += $(XLNK_BEGIN)--export-dynamic
+            LDFLAGS += $(XLNKOPT)--export-dynamic
           endif
         else ifneq (0,$(SYM))
-          LDFLAGS += $(XLNK_BEGIN)--export-dynamic
+          LDFLAGS += $(XLNKOPT)--export-dynamic
         endif
       endif
     endif
@@ -1372,7 +1405,7 @@ ifeq (0,$(COMPATIBLE))
     CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
     FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
     # --gc-sections: relies on section-flags present at compile-stage
-    LDFLAGS += $(XLNK_BEGIN)--gc-sections
+    LDFLAGS += $(XLNKOPT)--gc-sections
   endif
   ifeq (0,$(EXP))
     CXXFLAGS += -fno-exceptions
@@ -1436,30 +1469,13 @@ ifeq (Darwin,$(UNAME))
   FCFLAGS += -Wa,-q
 endif
 
-ifneq (0,$(shell $(LD) $(SLDFLAGS) -l$(OMPRT) 2>&1 | grep -q "\-l$(OMPRT)"; echo "$$?"))
-  OMPLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(NULL),$(OMPRT))
-  ifneq (,$(strip $(OMPLIBFILE)))
-    OMPLIB = $(call abslib,$(OMPLIBFILE))
-  else
-    OMPLIB = -l$(OMPRT)
-  endif
-else
-  OMPLIB = $(NULL)
-endif
-
-LNKSOFT ?= $(STATIC)
-ifeq (0,$(STATIC))
-  ifeq (Windows_NT,$(OS)) # !UNAME
-    LNKSOFT = 0
-  else ifeq (Darwin,$(shell uname))
-    LNKSOFT = 0
-  endif
+OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG) -L/usr/local/lib,$(OMPRT))
+ifneq (,$(strip $(OMPLIBFILE)))
+  OMPLIB = $(call abslib,$(OMPLIBFILE))
 endif
 
 ifeq (0,$(OMP))
-ifeq (0,$(LNKSOFT))
   EXTLIB += $(OMPLIB)
-endif
 endif
 
 ifeq (Darwin,$(UNAME))
@@ -1544,16 +1560,16 @@ ifeq (1,$(MKL)) # sequential
   BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
-    BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential
+    BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential $(BLAS_LDFLAGS)
     ifneq (0,$(OFFLOAD))
       BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential"
     endif
   else # static
-    BLAS_LDFLAGS += $(XGROUP_BEGIN) \
+    BLAS_LDFLAGS := $(XGROUP_BEGIN) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
       $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_sequential.$(SLIBEXT) \
-    $(XGROUP_END)
+    $(XGROUP_END) $(BLAS_LDFLAGS)
     ifneq (0,$(OFFLOAD))
       BLAS_LDFLAGS += -qoffload-option,mic,ld,"--start-group \
         $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
@@ -1562,7 +1578,7 @@ ifeq (1,$(MKL)) # sequential
       --end-group"
     endif
   endif
-  BLAS_LDFLAGS += -lm $(LIBDL)
+  BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifneq (0,$(OFFLOAD))
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
   endif
@@ -1571,20 +1587,20 @@ else ifneq (0,$(MKL)) # multi-threaded
   BLAS_IFLAGS += -I$(MKLROOT)/include
   ifeq (0,$(BLAS_STATIC)) # shared
     ifneq (0,$(INTEL))
-      BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread
+      BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread $(BLAS_LDFLAGS)
       ifneq (0,$(OFFLOAD))
         BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread"
       endif
     else # assuming GNU toolchain
-      BLAS_LDFLAGS += -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_gnu_thread
+      BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_gnu_thread $(BLAS_LDFLAGS)
     endif
   else # static
     ifneq (0,$(INTEL))
-      BLAS_LDFLAGS += $(XGROUP_BEGIN) \
+      BLAS_LDFLAGS := $(XGROUP_BEGIN) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_thread.$(SLIBEXT) \
-      $(XGROUP_END)
+      $(XGROUP_END) $(BLAS_LDFLAGS)
       ifneq (0,$(OFFLOAD))
         BLAS_LDFLAGS += -qoffload-option,mic,ld,"--start-group \
           $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
@@ -1593,20 +1609,21 @@ else ifneq (0,$(MKL)) # multi-threaded
         --end-group"
       endif
     else # assuming GNU toolchain
-      BLAS_LDFLAGS += $(XGROUP_BEGIN) \
+      BLAS_LDFLAGS := $(XGROUP_BEGIN) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
         $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_gnu_thread.$(SLIBEXT) \
-      $(XGROUP_END) $(LIBDL)
+      $(XGROUP_END) $(BLAS_LDFLAGS)
+      #BLAS_LDFLAGS += $(XLIB_BEGIN) $(LIBDL) $(XLIB_END)
     endif
   endif
   ifeq (0,$(OMP))
     BLAS_LDFLAGS += $(OMPLIB)
   endif
   ifneq (0,$(THREADS))
-    BLAS_LDFLAGS += -lpthread
+    BLAS_LDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
   endif
-  BLAS_LDFLAGS += -lm $(LIBDL)
+  BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
@@ -1630,14 +1647,14 @@ else ifneq (0,$(BLAS)) # generic
       BLASROOT = /usr
     endif
     ifeq (0,$(BLAS_STATIC)) # shared
-      BLASLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
+      BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
       ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
-        BLASLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(BLASDIR),openblas$(BLAS_BITS))
+        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),openblas$(BLAS_BITS))
       endif
     else # static
-      BLASLIBFILE = $(call libpath,$(LD) -static,$(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
+      BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
       ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
-        BLASLIBFILE = $(call libpath,$(LD) -static,$(BLASDIR),openblas$(BLAS_BITS))
+        BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),openblas$(BLAS_BITS))
       endif
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
@@ -1654,11 +1671,11 @@ else ifneq (0,$(BLAS)) # generic
     else # BLAS (reference)
       BLAS_FLAGS += -D__BLAS
       ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
-        BLASLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(BLASDIR),blas$(BLAS_BITS).dll)
+        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),blas$(BLAS_BITS).dll)
       else ifeq (0,$(BLAS_STATIC)) # potentially shared
-        BLASLIBFILE = $(call libpath,$(LD) $(SLDFLAGS),$(BLASDIR),blas$(BLAS_BITS))
+        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),blas$(BLAS_BITS))
       else # static
-        BLASLIBFILE = $(call libpath,$(LD) -static,$(BLASDIR),blas$(BLAS_BITS))
+        BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),blas$(BLAS_BITS))
       endif
     endif
     ifneq (,$(BLASLIBFILE))
@@ -1674,7 +1691,7 @@ else ifneq (0,$(BLAS)) # generic
       ifneq (0,$(DEPSTATIC))
         ifneq (,$(LIBGFORTRAN))
           BLAS_XLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
-        else ifneq (,$(strip $(FC)))
+        else ifeq (3,$(GCC))
           BLAS_XLDFLAGS += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
         endif
       endif

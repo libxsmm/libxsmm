@@ -1737,7 +1737,7 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
                                              if (handle->scratch7_size != 0) {
                                                l_scratch_size += handle->scratch7_size + 64;
                                              }
-#endif                                          
+#endif
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
                                              /* we need filter for transpose, + 64 to do alignment while performing bind, scratch1 */
@@ -1754,7 +1754,7 @@ LIBXSMM_API size_t libxsmm_dnn_get_scratch_size(const libxsmm_dnn_layer* handle,
                                              if (handle->scratch7_size != 0) {
                                                l_scratch_size += handle->scratch7_size + 64;
                                              }
-#endif                                            
+#endif
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
                                              if (handle->use_lp_kernel == 1) {
@@ -1982,7 +1982,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                }
                                                address += handle->scratch7_size + 64;
                                              }
-#endif                                           
+#endif
                                            } break;
         case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
                                              /* we need a minibatch copy for transpose of input, scratch3 */
@@ -2132,8 +2132,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
                                                  handle->scratch7 = (void*)(address+offset);
                                                }
                                                address += handle->scratch7_size + 64;
-                                            }   
-#endif                                      
+                                            }
+#endif
                                            } break;
         default: {
           status = LIBXSMM_DNN_ERR_INVALID_KIND;
@@ -2176,7 +2176,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_scratch(libxsmm_dnn_layer* han
                                              handle->scratch5 = 0;
 #if !defined(LIBXSMM_DNN_VLA_TLS3)
                                              handle->scratch7 = 0;
-#endif                                     
+#endif
         } break;
         case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
                                              handle->scratch2 = 0;
@@ -2600,7 +2600,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* 
 
 LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length );
 LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length ) {
-  float absmax_value = (float)fabs((double)(in_buffer[0]));
+  float absmax_value = LIBXSMM_ABS(in_buffer[0]);
   int i = 0;
 #ifdef _OPENMP
   LIBXSMM_OMP_VAR(i);
@@ -2609,8 +2609,8 @@ LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length 
     float my_absmax_value = absmax_value;
 #   pragma omp for
     for (i = 0; i < length; ++i ) {
-      if ((float)fabs((double)(in_buffer[i])) > my_absmax_value) {
-        my_absmax_value = (float)fabs((double)(in_buffer[i]));
+      if (LIBXSMM_ABS(in_buffer[i]) > my_absmax_value) {
+        my_absmax_value = LIBXSMM_ABS(in_buffer[i]);
       }
     }
 #   pragma omp critical
@@ -2622,8 +2622,8 @@ LIBXSMM_API_INTERN float libxsmm_internal_get_max( float* in_buffer, int length 
   }
 #else
   for (i = 1; i < length; ++i ) {
-    if ((float)fabs((double)(in_buffer[i])) > absmax_value) {
-      absmax_value = (float)fabs((double)(in_buffer[i]));
+    if (LIBXSMM_ABS(in_buffer[i]) > absmax_value) {
+      absmax_value = LIBXSMM_ABS(in_buffer[i]);
     }
   }
 #endif
@@ -2701,7 +2701,7 @@ LIBXSMM_API_INLINE short libxsmm_internal_quantize_scalar_no_scf( float input, u
     } else if (round_mode == LIBXSMM_DNN_QUANT_STOCH_ROUND) {
       /* stochastic rounding, as implemented in the IBM paper from 2015, @TODO, fix F64 and DFP8 */
       const float eps = LIXSMMM_DNN_RES_DFP16;
-      const float r = (float)fabs((double)rand());
+      const float r = (float)rand();
       libxsmm_intfloat fvalue;
       float p, q;
       /* masking all bits which will be shifted out */

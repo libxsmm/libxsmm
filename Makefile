@@ -114,6 +114,10 @@ THREADS ?= 1
 # 1: library archives suitable for static linkage
 STATIC ?= 1
 
+# 0: link all dependencies as specified for the target
+# 1: attempt to avoid dependencies if not referenced
+ASNEEDED ?= 0
+
 # 0: build according to the value of STATIC
 # 1: build according to STATIC=0 and STATIC=1
 SHARED ?= 0
@@ -139,6 +143,10 @@ INSTRUMENT ?= $(TRACE)
 # target library for a broad range of systems
 ifneq (0,$(JIT))
   SSE ?= 1
+endif
+
+ifneq (,$(MAXTARGET))
+  DFLAGS += -DLIBXSMM_MAXTARGET=$(MAXTARGET)
 endif
 
 # Profiling JIT code using Linux Perf
@@ -181,10 +189,6 @@ ifneq (,$(MKL))
 ifneq (0,$(MKL))
   BLAS = $(MKL)
 endif
-endif
-
-ifeq (0,$(LNKSOFT))
-  BLAS ?= 2
 endif
 
 ifneq (1,$(CACHE))
@@ -303,7 +307,7 @@ SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_dnn_convolution_winograd_weight_update.o )
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
-SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c) libxsmm_trace.c libxsmm_generator.c)
+SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c) libxsmm_generator.c libxsmm_trace.c)
 SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
 SRCFILES_GEN_CONVWINO_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_convolution_winograd_driver.c)
 SRCFILES_GEN_CONV_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_convolution_driver.c)
@@ -311,7 +315,6 @@ OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCF
 OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
 OBJFILES_GEN_CONVWINO_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_CONVWINO_BIN))))
 OBJFILES_GEN_CONV_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_CONV_BIN))))
-OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB))))
 KRNOBJS_HST  = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
@@ -374,7 +377,7 @@ information = \
 	$(info --------------------------------------------------------------------------------) \
 	$(if $(strip $(FC_VERSION_STRING)), \
 	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!), \
-	$(info Fortran Compiler is missing: no Fortran interface is built!))) \
+	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
 	$(if $(filter Windows_NT0,$(UNAME)$(STATIC)), \
 	$(info --------------------------------------------------------------------------------) \
 	$(info The shared link-time wrapper (libxsmmext) is not supported under Windows/Cygwin!), \

@@ -37,7 +37,6 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <string.h>
-#include <math.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -74,7 +73,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom_f32_f32(libxsmm_dnn_fusedbn*
 # define LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU
 # include "template/libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_bf16_c16_avx512.tpl.c"
 # undef LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU
-# undef LIBXSMM_DNN_FUSEDBN_bWD_ENABLE_ELTWISE
+# undef LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE
     } else {
       status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
     }
@@ -115,7 +114,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom_bf16_bf16(libxsmm_dnn_fusedb
 # define LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU
 # include "template/libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_bf16_c16_avx512.tpl.c"
 # undef LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU
-# undef LIBXSMM_DNN_FUSEDBN_bWD_ENABLE_ELTWISE
+# undef LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE
     } else {
       status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
     }
@@ -225,7 +224,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom(libxsmm_d
 # define LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU
 # include "template/libxsmm_dnn_fusedbatchnorm_st_bwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU
-# undef LIBXSMM_DNN_FUSEDBN_bWD_ENABLE_ELTWISE
+# undef LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE
         } else {
           status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
         }

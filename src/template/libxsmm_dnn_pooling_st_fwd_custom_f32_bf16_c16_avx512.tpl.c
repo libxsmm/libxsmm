@@ -144,7 +144,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
             __m512i lcl_vnewmask = _mm512_add_epi32( lcl_viadd, _mm512_set1_epi32((hi+kh)*ifw*16 + (wi+kw)*16) );
             __m512 lcl_vinput  = _mm512_load_act( input_ptr );
-            __mmask16 lcl_mlt = _mm512_cmp_ps_mask( lcl_voutput, lcl_vinput, _CMP_LT_OQ );
+            __mmask16 lcl_mlt = _mm512_cmp_ps_mask( lcl_voutput, lcl_vinput, _CMP_LT_OS );
             lcl_voutput  = _mm512_mask_blend_ps( lcl_mlt, lcl_voutput, lcl_vinput );
             lcl_vmask = _mm512_mask_blend_epi32( lcl_mlt, lcl_vmask,   lcl_vnewmask );
 #endif
@@ -170,11 +170,14 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
     element_output_type* lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output,          ho-oph,   0, 0,                   ofw, 16);
 #endif
     for( wo = opw; wo < (ofw+opw); wo++ ) {
+#if defined(LIBXSMM_DNN_POOLING_FWD_AVG)
+      const __m512 recp_pool_size_ps = _mm512_set1_ps( recp_pool_size );
+#endif
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
       _mm512_stream_act( output_ptr, _mm512_loadu_ps( lcl_output_ptr ) );
 #endif
 #if defined(LIBXSMM_DNN_POOLING_FWD_AVG)
-      _mm512_stream_act( output_ptr, _mm512_mul_ps( _mm512_loadu_ps( lcl_output_ptr ), _mm512_set1_ps( recp_pool_size ) ) );
+      _mm512_stream_act( output_ptr, _mm512_mul_ps( _mm512_loadu_ps( lcl_output_ptr ), recp_pool_size_ps ) );
 #endif
       output_ptr += 16;
       lcl_output_ptr += 16;

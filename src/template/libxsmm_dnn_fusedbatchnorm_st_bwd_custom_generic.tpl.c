@@ -134,7 +134,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       lcl_gamma_ptr[v] = 0.0f;
       lcl_beta_ptr[v] = 0.0f;
@@ -156,14 +155,13 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 #if !defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
         LIBXSMM_PRAGMA_SIMD
 #endif
-        LIBXSMM_PRAGMA_VALIGNED
         for ( v=0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
           del_output_f32.i[1] = del_output_ptr[v];
           del_output_f32.i[0] = 0;
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
           output_f32.i[1] = output_ptr[v];
-          del_output_f32.f = (LIBXSMM_FEQ(output_f32.f, 0) ? 0 : del_output_f32.f);
+          del_output_f32.f = LIBXSMM_FEQ(output_f32.f, 0) ? 0 : del_output_f32.f;
           del_output_ptr[v] = del_output_f32.i[1];
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
@@ -174,7 +172,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
           lcl_beta_ptr[v]  += del_output_f32.f;
 #else
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-          del_output_ptr[v] = (LIBXSMM_FEQ(output_ptr[v], 0) ? 0 : del_output_ptr[v]);
+          del_output_ptr[v] = LIBXSMM_FEQ(output_ptr[v], 0) ? 0 : del_output_ptr[v];
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
           del_input_add_ptr[v] = del_output_ptr[v];
@@ -187,7 +185,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     }
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       del_gamma_img_ptr[v] = lcl_gamma_ptr[v];
       del_beta_img_ptr[v]  = lcl_beta_ptr[v];
@@ -202,7 +199,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     element_stats_type* del_beta_ptr  = &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 0, nFmBlock);
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       del_gamma_ptr[v] = (element_stats_type)0;
       del_beta_ptr[v]  = (element_stats_type)0;
@@ -213,7 +209,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
       element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
 
       LIBXSMM_PRAGMA_SIMD
-      LIBXSMM_PRAGMA_VALIGNED
       for ( v=0; v < nFmBlock; v++ ) {
         del_gamma_ptr[v] += del_gamma_img_ptr[v];
         del_beta_ptr[v]  += del_beta_img_ptr[v];
@@ -242,8 +237,6 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
 #if !defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
       LIBXSMM_PRAGMA_SIMD
 #endif
-      LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_NONTEMPORAL
       for ( v=0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
         del_output_f32.i[1] = del_output_ptr[v];

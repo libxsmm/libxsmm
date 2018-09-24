@@ -109,7 +109,6 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   fm = imgfm % nBlocksFm;
 
   LIBXSMM_PRAGMA_SIMD
-  LIBXSMM_PRAGMA_VALIGNED
   for( v = 0; v < ofh*ofw*nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
     lcl_buffer_ptr[v] = -FLT_MAX;
@@ -140,17 +139,16 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
                   element_output_type* lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output,             ho-oph,    wo-opw, 0,                   ofw, nFmBlock);
 #endif
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
-            const int                           index = (hi+kh)*ifw*nFmBlock + (wi+kw)*nFmBlock;
-                  element_mask_type*       mask_ptr   = &LIBXSMM_VLA_ACCESS(5, mask,       img, fm,    ho-oph,    wo-opw, 0, nBlocksFm,  ofh,  ofw, nFmBlock);
+            const int                             idx = (hi+kh)*ifw*nFmBlock + (wi+kw)*nFmBlock;
+                  element_mask_type*         mask_ptr = &LIBXSMM_VLA_ACCESS(5, mask,       img, fm,    ho-oph,    wo-opw, 0, nBlocksFm,  ofh,  ofw, nFmBlock);
 #endif
 #if defined(LIBXSMM_DNN_POOLING_FWD_BF16)
-            LIBXSMM_PRAGMA_VALIGNED
             for( v = 0; v < nFmBlock; v++ ) {
               input_f32.i[1] = input_ptr[v];
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
               if ( input_f32.f > lcl_output_ptr[v] ) {
                 lcl_output_ptr[v] =  input_f32.f;
-                mask_ptr[v] = index + v;
+                mask_ptr[v] = idx + v;
               }
 #endif
 #if defined(LIBXSMM_DNN_POOLING_FWD_AVG)
@@ -159,12 +157,11 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
             }
 #else
             LIBXSMM_PRAGMA_SIMD
-            LIBXSMM_PRAGMA_VALIGNED
             for( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
               if ( input_ptr[v] > lcl_output_ptr[v] ) {
                 lcl_output_ptr[v] =  input_ptr[v];
-                mask_ptr[v] = index + v;
+                mask_ptr[v] = idx + v;
               }
 #endif
 #if defined(LIBXSMM_DNN_POOLING_FWD_AVG)
@@ -189,8 +186,6 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #endif
 
 #if defined(LIBXSMM_DNN_POOLING_FWD_BF16)
-      LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_NONTEMPORAL
       for( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
         output_f32.f = lcl_output_ptr[v];
@@ -202,8 +197,6 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
       }
 #else
       LIBXSMM_PRAGMA_SIMD
-      LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_NONTEMPORAL
       for( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
         output_ptr[v] = lcl_output_ptr[v];

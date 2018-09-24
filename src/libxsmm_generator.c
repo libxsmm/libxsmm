@@ -38,6 +38,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_PRODUCT_LIMIT)
+# define LIBXSMM_PRODUCT_LIMIT 1024
+#endif
+
 
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
@@ -345,5 +349,131 @@ LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descri
     ;
   }
   return result.ptr;
+}
+
+
+LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b)
+{
+  while (0 != b) {
+    const size_t r = a % b;
+    a = b;
+    b = r;
+  }
+  return a;
+}
+
+
+LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b)
+{
+  return (a * b) / libxsmm_gcd(a, b);
+}
+
+
+LIBXSMM_API int libxsmm_primes_u32(unsigned int num, unsigned int num_factors_n32[])
+{
+  unsigned int c = num, i;
+  int n = 0;
+  if (0 < c && 0 == (c & 1)) { /* non-zero even */
+    unsigned int j = c / 2;
+    while (c == (2 * j)) {
+      num_factors_n32[n++] = 2;
+      c = j; j /= 2;
+    }
+  }
+  for (i = 3; i <= c; i += 2) {
+    unsigned int j = c / i;
+    while (c == (i * j)) {
+      num_factors_n32[n++] = i;
+      c = j; j /= i;
+    }
+    if ((i * i) > num) {
+      break;
+    }
+  }
+  if (1 < c && 0 != n) {
+    num_factors_n32[n++] = c;
+  }
+  return n;
+}
+
+
+LIBXSMM_API_INLINE unsigned int internal_product_limit(unsigned int product, unsigned int limit)
+{
+  unsigned int fact[32], maxp = limit, result = 1;
+  int i, n;
+  /* attempt to lower the memory requirement for DP; can miss best solution */
+  if (LIBXSMM_PRODUCT_LIMIT < limit) {
+    const unsigned int minfct = (limit + limit - 1) / LIBXSMM_PRODUCT_LIMIT;
+    const unsigned int maxfct = (unsigned int)libxsmm_gcd(product, limit);
+    result = maxfct;
+    if (minfct < maxfct) {
+      n = libxsmm_primes_u32(result, fact);
+      for (i = 0; i < n; ++i) {
+        if (minfct < fact[i]) {
+          result = fact[i];
+          i = n; /* break */
+        }
+      }
+    }
+    maxp /= result;
+  }
+  if (LIBXSMM_PRODUCT_LIMIT >= maxp) {
+    unsigned int k[2][LIBXSMM_PRODUCT_LIMIT], *k0 = k[0], *k1 = k[1], *kt, p;
+    n = libxsmm_primes_u32(product / result, fact);
+    /* initialize table with trivial factor */
+    for (p = 0; p <= maxp; ++p) k[0][p] = 1;
+    k[0][0] = k[1][0] = 1;
+    for (i = 1; i <= n; ++i) {
+      for (p = 1; p <= maxp; ++p) {
+        const unsigned int f = fact[i - 1], h = k0[p];
+        if (p < f) {
+          k1[p] = h;
+        }
+        else {
+          const unsigned int g = f * k0[p / f];
+          k1[p] = LIBXSMM_MAX(g, h);
+        }
+      }
+      kt = k0; k0 = k1; k1 = kt;
+    }
+    result *= k0[maxp];
+  }
+  else { /* trivial approximation */
+    n = libxsmm_primes_u32(product, fact);
+    for (i = 0; i < n; ++i) {
+      const unsigned int f = result * fact[i];
+      if (f <= limit) {
+        result = f;
+      }
+      else i = n; /* break */
+    }
+  }
+  return result;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned int limit, int is_lower)
+{
+  unsigned int result;
+  if (1 < limit) { /* check for fast-path */
+    result = internal_product_limit(product, limit);
+  }
+  else {
+    result = limit;
+  }
+  if (0 != is_lower && limit < product) {
+    if (result < limit) {
+      result = internal_product_limit(product, 2 * limit - 1);
+    }
+    if (result < limit) {
+      result = product;
+    }
+    LIBXSMM_ASSERT(limit <= result);
+  }
+  if (product < result) {
+    result = product;
+  }
+  LIBXSMM_ASSERT(result <= product);
+  return result;
 }
 

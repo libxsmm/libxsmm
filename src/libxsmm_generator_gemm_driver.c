@@ -47,7 +47,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    LDA (if < 1 --> A sparse)\n");
   printf("    LDB (if < 1 --> B sparse)\n");
   printf("    LDC\n");
-  printf("    alpha: -1 or 1\n");
+  printf("    alpha: 1\n");
   printf("    beta: 0 or 1\n");
   printf("    0: unaligned A, otherwise aligned (ignored for sparse)\n");
   printf("    0: unaligned C, otherwise aligned (ignored for sparse)\n");
@@ -272,6 +272,11 @@ int main(int argc, char* argv []) {
       print_help();
       return EXIT_FAILURE;
     }
+  }
+
+  if (NULL == l_xgemm_desc) {
+    print_help();
+    return EXIT_FAILURE;
   }
 
   if ( strcmp(l_type, "sparse") == 0 || strcmp(l_type, "sparse_csr") == 0 ||

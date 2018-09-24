@@ -131,21 +131,6 @@
 # define LIBXSMM_GEMM_CONST const
 #endif
 
-#if defined(LIBXSMM_BUILD_EXT)
-# define LIBXSMM_WEAK
-# define LIBXSMM_EXT_WEAK LIBXSMM_ATTRIBUTE_WEAK
-#else
-# define LIBXSMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
-# define LIBXSMM_EXT_WEAK
-#endif
-#if defined(LIBXSMM_BUILD) && defined(__STATIC) /*&& defined(LIBXSMM_GEMM_WRAP)*/
-# define LIBXSMM_GEMM_WEAK LIBXSMM_WEAK
-# define LIBXSMM_EXT_GEMM_WEAK LIBXSMM_EXT_WEAK
-#else
-# define LIBXSMM_GEMM_WEAK
-# define LIBXSMM_EXT_GEMM_WEAK
-#endif
-
 #if !defined(LIBXSMM_NO_BLAS)
 # if !defined(__BLAS) || (0 != __BLAS)
 #   define LIBXSMM_NO_BLAS 0
@@ -160,6 +145,9 @@
 # elif defined(LIBXSMM_NO_BLAS) && (1 == LIBXSMM_NO_BLAS)
 #   define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_API
 # endif
+# define LIBXSMM_WEAK LIBXSMM_EXTERN_C
+#else
+# define LIBXSMM_WEAK LIBXSMM_API_INLINE
 #endif
 #if !defined(LIBXSMM_GEMM_SYMBOL_VISIBILITY)
 # define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
@@ -449,8 +437,8 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemv_function)(
   const double*, double*, const libxsmm_blasint*);
 
 /** The original GEMM functions (SGEMM and DGEMM). */
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void);
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void);
+LIBXSMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void);
+LIBXSMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void);
 
 /**
  * General dense matrix multiplication, which re-exposes LAPACK/BLAS

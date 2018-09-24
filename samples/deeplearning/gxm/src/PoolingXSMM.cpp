@@ -72,6 +72,7 @@ void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *mask, in
 {
   void *input = inpb->getBuffer();
   void *output = outpb->getBuffer();
+  void *scratch = scratchp->getBuffer();
 
   if(libxsmm_input == NULL && libxsmm_mask == NULL && libxsmm_output == NULL)
   {

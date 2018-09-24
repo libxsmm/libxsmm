@@ -134,7 +134,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
     new_handle->N_chunksize = 16;
     new_handle->kernel = libxsmm_dmmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, 0, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
     /* copy A over */
-    new_handle->a_dense = (double*)libxsmm_aligned_malloc((size_t)M * K * sizeof(double), 64);
+    new_handle->a_dense = (double*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(double), 64);
     for ( i = 0; i < M; ++i ) {
       for ( j = 0; j < K; ++j ) {
         new_handle->a_dense[(i*K)+j] = a_dense[(i*lda)+j];
@@ -240,7 +240,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
     new_handle->N_chunksize = 16;
     new_handle->kernel = libxsmm_smmdispatch(new_handle->N_chunksize, M, K, &ldb, &K, &ldc, &alpha, &beta, 0, (const int*)LIBXSMM_GEMM_PREFETCH_NONE);
     /* copy A over */
-    new_handle->a_dense = (float*)libxsmm_aligned_malloc((size_t)M * K * sizeof(float), 64);
+    new_handle->a_dense = (float*)libxsmm_aligned_malloc((size_t)M * (size_t)K * sizeof(float), 64);
     for ( i = 0; i < M; ++i ) {
       for ( j = 0; j < K; ++j ) {
         new_handle->a_dense[(i*K)+j] = a_dense[(i*lda)+j];

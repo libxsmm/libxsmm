@@ -1037,7 +1037,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
         for (ind_mask = 0; ind_mask < 16; ind_mask++) {
           mask_array[ind_mask] = 0x7FFFFFFF;
         }
- 
+
         libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
             (const unsigned char*) mask_array,
             "abs_mask",
@@ -1421,7 +1421,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
             i_conv_kernel_config->instruction_set,
             i_conv_kernel_config->vxor_instruction,
              i_conv_kernel_config->vector_name, 1, 1, 1);
- 
+
         { /* Initialize "zmm mask" in zmm2 */
           int mask_array[64];
           int ind_mask;
