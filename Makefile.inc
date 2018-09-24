@@ -1136,9 +1136,11 @@ else # GCC assumed
         else ifneq (,$(strip $(OMPLIBFILE)))
           BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
         endif
-        CXXFLAGS += $(OMPFLAG)
-        FCFLAGS += $(OMPFLAG)
-        CFLAGS += $(OMPFLAG)
+        ifneq (Darwin,$(UNAME))
+          CXXFLAGS += $(OMPFLAG)
+          FCFLAGS += $(OMPFLAG)
+          CFLAGS += $(OMPFLAG)
+        endif
       endif
     endif
     ifneq (3,$(GCC))
