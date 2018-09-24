@@ -1010,7 +1010,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
         fwd_equivalent_descriptor.compute_max = 0;
         handle->compute_max_in_kernel_bwd = 0;
       }
-      fwd_equivalent_descriptor.perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
+      fwd_equivalent_descriptor.perform_relu_in_kernel = ((handle->fuse_relu_bwd > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
       if (handle->padding_flag == 1) {
         matcopy_descriptor.n = handle->ofhp;
         matcopy_descriptor.m = handle->ofwp * handle->ofmblock;
@@ -1123,8 +1123,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       mirror_handle.fwd_code_segments = handle->bwd_code_segments;
       mirror_handle.ofh_fwd_start = handle->ofh_bwd_start;
       mirror_handle.ofh_fwd_end = handle->ofh_bwd_end;
-      mirror_handle.perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
-      handle->perform_relu_in_kernel = (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
+      mirror_handle.perform_relu_in_kernel = ((handle->fuse_relu_bwd > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
+      handle->perform_relu_in_kernel = ((handle->fuse_relu_bwd > 0) && (handle->use_nts_bwd == 1)) ? 1 : 0;
 
       tune_fwd_blockings(&mirror_handle);
       status = libxsmm_dnn_perform_fwd_dryrun_direct(&mirror_handle);

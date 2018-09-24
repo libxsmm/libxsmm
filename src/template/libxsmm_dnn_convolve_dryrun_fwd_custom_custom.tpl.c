@@ -111,7 +111,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   /* FIXME: MAke sure the variable below is enabled when we fuse for bwd... */
   mark_ofm_close = ((((handle->fuse_batchstats_fwd == 1) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) ) ||
       ((handle->fuse_batchstats_bwd == 1) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0)) || 
-      ((((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0) ) ) ? 1 : 0;
+      (((handle->fuse_relu_bwd > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0) ) ) ? 1 : 0;
   mark_ifm_close = 0;
   mark_img_init = ( (handle->padding_flag == 1) || (mark_ofm_close == 1) || (mark_ifm_close == 1) ) ? 1 : 0;
 

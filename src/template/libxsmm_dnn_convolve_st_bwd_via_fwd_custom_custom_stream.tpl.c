@@ -526,7 +526,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             }
 
             if ( instr == IFM_LOOP_CLOSE ) {
-              if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_accumulation_scratch == 0) ) {
+              if ( (handle->fuse_relu_bwd > 0) && (handle->use_accumulation_scratch == 0) ) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                 LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -570,7 +570,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
+                if (handle->fuse_relu_bwd > 0) {
                   LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                   const element_input_type *orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                   element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
@@ -711,7 +711,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
             }
 
             if ( instr == IFM_LOOP_CLOSE ) {
-              if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) && (handle->use_accumulation_scratch == 0) ) {
+              if ( (handle->fuse_relu_bwd > 0) && (handle->use_accumulation_scratch == 0) ) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
                 LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                 LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
@@ -755,7 +755,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
               /* down-convert to bf16 from fp32 */
               if (handle->use_accumulation_scratch) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
+                if (handle->fuse_relu_bwd > 0) {
                   LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                   const element_input_type *orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
                   element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
@@ -1045,7 +1045,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 
 #if 0
   /* Fuse ReLu here*/
-  if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) {
+  if (handle->fuse_relu_bwd > 0) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
     int ii, ij, ifm1, ifm2, img;
     img = ltid;
