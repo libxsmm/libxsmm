@@ -1903,7 +1903,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
     if (j == t-1) {
       libxsmm_internal_matrix_copy(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, t-1, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, t-1, 0, m * n), start_thread, tid, lstm->nThreads);
     } else {
-      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, dout, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdh, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), start_thread, tid, lstm->nThreads); 
+      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, dout, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, djdh, j, 0, m * n), &LIBXSMM_VLA_ACCESS(2, delta, j, 0, m * n), start_thread, tid, lstm->nThreads);
     }
     libxsmm_barrier_wait(lstm->barrier, ltid);
     /* compute djdd */
