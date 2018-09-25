@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
     return 0;
   }
   if (nonlin != 1 && nonlin != 2 && nonlin != 3) {
-    printf("Unsupported non-linear function used [0--tanh, 1--ReLU, 2--sigmoid]\n\n");
+    printf("Unsupported non-linear function used [1--ReLU, 2--sigmoid, 3--tanh]\n\n");
     return 0;
   }
 
@@ -424,7 +424,6 @@ int main(int argc, char* argv[])
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, k * n);
   LIBXSMM_VLA_DECL(2, float, hgoldb, hgoldt, m * n);
   LIBXSMM_VLA_DECL(2, float, djdh, djdht, m * n);
-  /*LIBXSMM_VLA_DECL(2, float, xb, xt, k * n);*/
   LIBXSMM_VLA_DECL(2, float, hb, ht, m * n);
   LIBXSMM_VLA_DECL(2, float, djdx, djdxt, k * n);
 
@@ -438,9 +437,9 @@ int main(int argc, char* argv[])
     LIBXSMM_MATINIT_OMP(float, 42, ugold, m, m, m, 1.0);
     LIBXSMM_MATINIT_OMP(float, 24, hgold, n, m, n, 1.0);
     matrix_copy(m*n, hgold, hgold_temp); /* Required because hgold may get overwritten */
-    LIBXSMM_MATINIT_OMP(float, 42, bgold, m, 1, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, bgold, 1, m, 1, 1.0);
     for (j = 0; j < n; j++) {
-      matrix_copy(m, &(bmgold[j*m]), bgold);
+      matrix_copy(m, bgold, &(bmgold[j*m]));
     }
     zero_buf(z1gold, m*n);
     zero_buf(z2gold, m*n);
@@ -573,7 +572,7 @@ int main(int argc, char* argv[])
           matrix_transpose(n, k, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, k * n), xgoldTp);
           LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &k, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &m, xgoldTp, &n, &beta, djdwgold, &m);
           for (j = 0; j < m*n; j++) {
-            djdbgold[j%n] += LIBXSMM_VLA_ACCESS(2, deltagold, i, j, m * n);
+            djdbgold[j%m] += LIBXSMM_VLA_ACCESS(2, deltagold, i, j, m * n);
           }
         }
       }

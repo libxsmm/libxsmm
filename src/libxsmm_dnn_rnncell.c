@@ -287,7 +287,7 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
                                            size += 64;
                                            size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype * (size_t)handle->t; /* z2 */
                                            size += 64;
-                                           size += (size_t)handle->m * handle->n * sizeof_datatype; /* bM */
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* bM */
                                            size += 64;
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
@@ -348,7 +348,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
                                              offset = (64 - address % 64);
                                              handle->z2->data = (void*)(address+offset);
                                            }
-                                           scratch_size = (size_t)handle->m * handle->n * sizeof_datatype * handle->t;
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype * handle->t;
                                            address += scratch_size + 64;
                                            if (address % 64 == 0) {
                                              handle->bM->data = (void*)address;
