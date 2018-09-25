@@ -1998,10 +1998,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
           for (q = 0; q < m/bm; q++) {
             for (l = 0; l < bn; l++) {
               for (p = 0; p < bm; p++) {
-                djdbi[q*bm+p] += LIBXSMM_VLA_ACCESS(2, djdi, j+1, s*m*bn+q*bm*bn+l*bm+p, m * n);
-                djdbf[q*bm+p] += LIBXSMM_VLA_ACCESS(2, djdf, j+1, s*m*bn+q*bm*bn+l*bm+p, m * n);
-                djdbo[q*bm+p] += LIBXSMM_VLA_ACCESS(2, djdo, j+1, s*m*bn+q*bm*bn+l*bm+p, m * n);
-                djdbc[q*bm+p] += LIBXSMM_VLA_ACCESS(2, djdc, j+1, s*m*bn+q*bm*bn+l*bm+p, m * n);
+                djdbi[q*bm+p] += LIBXSMM_VLA_ACCESS(2, djdi, j+1, s*m*bn + (size_t)q*bm*bn + (size_t)l*bm+p, m * n);
+                djdbf[q*bm+p] += LIBXSMM_VLA_ACCESS(2, djdf, j+1, s*m*bn + (size_t)q*bm*bn + (size_t)l*bm+p, m * n);
+                djdbo[q*bm+p] += LIBXSMM_VLA_ACCESS(2, djdo, j+1, s*m*bn + (size_t)q*bm*bn + (size_t)l*bm+p, m * n);
+                djdbc[q*bm+p] += LIBXSMM_VLA_ACCESS(2, djdc, j+1, s*m*bn + (size_t)q*bm*bn + (size_t)l*bm+p, m * n);
               }
             }
           }
