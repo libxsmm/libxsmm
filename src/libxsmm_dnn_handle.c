@@ -1311,11 +1311,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_free_structs_code_conv
       libxsmm_free(handle->code_fwd[1].pmm);
       libxsmm_free(handle->code_fwd[2].pmm);
 
-      for (loop = 0; loop < handle->desc.threads; loop++) {
-        libxsmm_free( handle->compute_fwd_indices_ptrs[loop] );
-        libxsmm_free( handle->bn_stats_indices_ptrs[loop] );
-        libxsmm_free( handle->kernel_fwd_variant_ptrs[loop] );
-        libxsmm_free( handle->fwd_code_segments[loop] );
+      if ( handle->algo == LIBXSMM_DNN_CONV_ALGO_DIRECT ) {
+        for (loop = 0; loop < handle->desc.threads; loop++) {
+          libxsmm_free( handle->compute_fwd_indices_ptrs[loop] );
+          libxsmm_free( handle->bn_stats_indices_ptrs[loop] );
+          libxsmm_free( handle->kernel_fwd_variant_ptrs[loop] );
+          libxsmm_free( handle->fwd_code_segments[loop] );
+        }
       }
 
       free( handle->n_entries_fwd );
@@ -1338,11 +1340,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_free_structs_code_conv
       libxsmm_free(handle->code_bwd[1].pmm);
       libxsmm_free(handle->code_bwd[2].pmm);
 
-      for (loop = 0; loop < handle->desc.threads; loop++) {
-        libxsmm_free( handle->compute_bwd_indices_ptrs[loop] );
-        libxsmm_free( handle->kernel_bwd_variant_ptrs[loop] );
-        libxsmm_free( handle->bwd_code_segments[loop] );
-        libxsmm_free( handle->transpose_bwd_indices_ptrs[loop]);
+      if ( handle->algo == LIBXSMM_DNN_CONV_ALGO_DIRECT ) {
+        for (loop = 0; loop < handle->desc.threads; loop++) {
+          libxsmm_free( handle->compute_bwd_indices_ptrs[loop] );
+          libxsmm_free( handle->kernel_bwd_variant_ptrs[loop] );
+          libxsmm_free( handle->bwd_code_segments[loop] );
+          libxsmm_free( handle->transpose_bwd_indices_ptrs[loop]);
+        }
       }
 
       free( handle->n_entries_bwd );
@@ -1365,12 +1369,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_free_structs_code_conv
       }
       libxsmm_free(handle->code_upd[1].pmm);
 
-      for (loop = 0; loop < handle->desc.threads; loop++) {
-        libxsmm_free( handle->compute_upd_indices_ptrs[loop] );
-        libxsmm_free( handle->kernel_upd_variant_ptrs[loop] );
-        libxsmm_free( handle->upd_code_segments[loop] );
-        libxsmm_free( handle->init_upd_indices_ptrs[loop] );
-        libxsmm_free( handle->copy_upd_indices_ptrs[loop] );
+      if ( handle->algo == LIBXSMM_DNN_CONV_ALGO_DIRECT ) {
+        for (loop = 0; loop < handle->desc.threads; loop++) {
+          libxsmm_free( handle->compute_upd_indices_ptrs[loop] );
+          libxsmm_free( handle->kernel_upd_variant_ptrs[loop] );
+          libxsmm_free( handle->upd_code_segments[loop] );
+          libxsmm_free( handle->init_upd_indices_ptrs[loop] );
+          libxsmm_free( handle->copy_upd_indices_ptrs[loop] );
+        }
       }
 
       free( handle->n_entries_upd );
