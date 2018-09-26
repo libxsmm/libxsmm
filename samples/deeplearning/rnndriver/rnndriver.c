@@ -115,7 +115,7 @@ LIBXSMM_INLINE void matrix_relu(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (src[i] > 0) ? src[i] : 0;
+    dst[i] = (src[i] > 0.0f) ? src[i] : 0.0f;
   }
 }
 
@@ -154,7 +154,7 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (float)(src[i] > 0 ? 1 : 0);
+    dst[i] = (float)(src[i] > 0.0f ? 1.0f : 0.0f);
   }
 }
 
@@ -239,8 +239,8 @@ int main(int argc, char* argv[])
   int iters = 10; /* repetitions of benchmark */
   int pass = 3;   /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
   int nonlin = 3; /* nonlin=1 denotes ReLU, 2 denotes sigmoid, 3 denotes tanh */
-  int m = 1024;   /* number of outputs */
-  int n = 512;    /* size of mini-batch */
+  int m = 512 ;   /* number of outputs */
+  int n = 128;    /* size of mini-batch */
   int k = 256;    /* number of inputs */
   int t = 5;      /* number of time steps (> 1) */
   int reuse = 1;  /* reuse=1 for FWD overwrites the same memory

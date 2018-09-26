@@ -254,9 +254,9 @@ int main(int argc, char* argv[])
 
   int iters = 10;   /* repetitions of benchmark */
   int pass = 3;     /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
-  int m = 1024;     /* number of outputs */
+  int m = 256;      /* number of outputs */
   int n = 128;      /* size of mini-batch */
-  int k = 256;      /* number of inputs */
+  int k = 512;      /* number of inputs */
   int t = 5;        /* number of time steps (> 1) */
   int reuse = 1;    /* reuse=1 for FWD overwrites the same memory
                      * for intermediate values during inference;
