@@ -28,6 +28,63 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
+# define _mm512_load_act(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+# define _mm512_stream_act(A,B) _mm256_stream_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512((B)),16)))
+# define _mm512_store_act(A,B)  _mm256_storeu_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512((B)),16)))
+#else
+# define _mm512_load_act(A)   _mm512_loadu_ps(A)
+# define _mm512_stream_act(A,B) _mm512_stream_ps(A,B)
+# define _mm512_store_act(A,B)  _mm512_storeu_ps(A,B)
+#endif
+
+if (compute_batch_stats_bwd_externally) {
+#if defined(LIBXSMM_INTRINSICS_AVX512)
+  int hi, ho, iph = bn_iph, oph = bn_oph, ifh = bn_ifh, sh = bn_sh, wi, ipw = bn_ipw, wo, opw = bn_opw, ifw = bn_ifw, sw = bn_sw;
+  fm = code_stream[pc].aux_index;
+  __m512 lcl_vdgamma = _mm512_setzero_ps();
+  __m512 lcl_vdbeta  = _mm512_setzero_ps();
+  __m512 lcl_vbmean, lcl_vbrstd;
+  float* del_gamma_img_ptr;
+  float* del_beta_img_ptr;
+  LIBXSMM_VLA_DECL(2, const float,  bmean,      (float*)pre_bn->expvalue->data,   16);
+  LIBXSMM_VLA_DECL(2, const float,  brstd,      (float*)pre_bn->stddev->data,     16);
+  LIBXSMM_VLA_DECL(4, float,  kernel_stats, (float*)handle->scratch7, bn_nBlocksFm, nImg, 16);
+  LIBXSMM_VLA_DECL(5, element_input_type,  bn_dinput_add, (element_input_type*) pre_bn->grad_add->data, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+  LIBXSMM_VLA_DECL(5, const element_output_type, bn_output,     (element_output_type*)pre_bn->reg_output->data,  bn_nBlocksFm, bn_ofhp, bn_ofwp, 16);
+  LIBXSMM_VLA_DECL(5,       element_input_type,   bn_input,     (element_input_type*)pre_bn->reg_input->data,   bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+  LIBXSMM_VLA_DECL(5,       element_output_type, bn_doutput,    (element_output_type*)pre_bn->grad_output->data, bn_nBlocksFm, bn_ofhp, bn_ofwp, 16);
+
+  del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, fm, img, 0, bn_nBlocksFm, handle->desc.N, 16);
+  del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, fm, img, 0, bn_nBlocksFm, handle->desc.N, 16);
+  lcl_vbmean = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, bmean, fm, 0, 16) );
+  lcl_vbrstd = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, brstd, fm, 0, 16) );
+  for ( hi=iph, ho=oph; hi < (ifh + iph); hi+=sh, ho++ ) {
+    element_input_type*  del_input_add_ptr = &LIBXSMM_VLA_ACCESS(5, bn_dinput_add, img, fm, hi, ipw, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    const element_output_type* output_ptr  = &LIBXSMM_VLA_ACCESS(5, bn_output, img, fm, ho, opw, 0, bn_nBlocksFm, bn_ofhp, bn_ofwp, 16);
+    const element_input_type*  input_ptr   = &LIBXSMM_VLA_ACCESS(5, bn_input, img, fm, hi, ipw, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5, bn_doutput, img, fm, ho, opw, 0, bn_nBlocksFm, bn_ofhp, bn_ofwp, 16);
+    for ( wi=ipw, wo=opw; wi < (ifw + ipw); wi+=sw, wo++ ) {
+      __m512 lcl_vdeloutput = _mm512_load_act( del_output_ptr );
+      const __m512 zero_ps = _mm512_setzero_ps();
+      const __mmask16 lcl_mzero = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr ), zero_ps, _CMP_EQ_OQ );
+      lcl_vdeloutput = _mm512_mask_blend_ps( lcl_mzero, lcl_vdeloutput, zero_ps );
+      _mm512_store_act( del_output_ptr, lcl_vdeloutput );
+      output_ptr += 16;
+      _mm512_stream_act( del_input_add_ptr, lcl_vdeloutput );
+      del_input_add_ptr += sw*16;
+      lcl_vdgamma = _mm512_add_ps( lcl_vdgamma, _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( _mm512_load_act( input_ptr ), lcl_vbmean ), lcl_vdeloutput ), lcl_vbrstd ) );
+      lcl_vdbeta  = _mm512_add_ps( lcl_vdbeta, lcl_vdeloutput );
+      input_ptr += sw*16;
+      del_output_ptr += 16;
+    }
+  }
+  _mm512_storeu_ps( del_gamma_img_ptr, lcl_vdgamma );
+  _mm512_storeu_ps( del_beta_img_ptr,  lcl_vdbeta );
+#else
+#endif
+}
+
 
 if (fuse_relu_externally && downconvert_to_bf16_externally) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/

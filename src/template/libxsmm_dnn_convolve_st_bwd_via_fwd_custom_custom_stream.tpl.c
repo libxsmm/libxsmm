@@ -56,7 +56,7 @@ const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? 
 const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
 
 /* fusion flags */
-int fuse_postconv_ops_in_kernel = 0, overwrite_output_externally = 0, fuse_relu_externally = 0, downconvert_to_bf16_externally = 0;
+int fuse_postconv_ops_in_kernel = 0, compute_batch_stats_bwd_externally = 0, overwrite_output_externally = 0, fuse_relu_externally = 0, downconvert_to_bf16_externally = 0;
 
 /* Pointer variables  */
 element_output_type *input_base;
@@ -71,7 +71,7 @@ element_output_type *prefetch_ptr;
 float *bmean_ptr = NULL, *brstd_ptr = NULL, *dbeta_ptr = NULL, *dgamma_ptr = NULL;
 element_input_type *input_bn_ptr = NULL, *input_add_ptr = NULL;
 int *bn_outstats_stream, *bn_instats_stream, *bn_input_stream;
-int stats_in_offset = 0, stats_out_offset = 0, bn_input_offset = 0;
+int stats_in_offset = 0, stats_out_offset = 0, bn_input_offset = 0, fm = 0;
 int bn_stream_index = 0;
 float placeholder = 0.0;
 libxsmm_dnn_fusedbn *pre_bn = handle->pre_bn;
@@ -90,6 +90,7 @@ const int bn_ofwp = bn_ofw + 2*bn_opw;
 const int bn_ifhp = bn_ifh + 2*bn_iph;
 const int bn_ifwp = bn_ifw + 2*bn_ipw;
 const int bn_nBlocksFm = pre_bn->blocksifm;
+const int nImg = handle->desc.N;
 
 /* Scratch7 zeroing related logistics  */
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -280,25 +281,25 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
     input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);    
     LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
     LIBXSMM_VLA_DECL(5, element_input_type, bn_input,     (element_input_type* )pre_bn->reg_input->data,   bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
-    LIBXSMM_VLA_DECL(2, float,  bmean,      (float*)pre_bn->expvalue->data,   16);
-    LIBXSMM_VLA_DECL(2, float,  brstd,      (float*)pre_bn->stddev->data,     16);
-    LIBXSMM_VLA_DECL(4, float,  kernel_stats, (float*)handle->scratch7, bn_nBlocksFm, handle->desc.N, 16);
+    LIBXSMM_VLA_DECL(2, float,  bmean_lcl,      (float*)pre_bn->expvalue->data,   16);
+    LIBXSMM_VLA_DECL(2, float,  brstd_lcl,      (float*)pre_bn->stddev->data,     16);
+    LIBXSMM_VLA_DECL(4, float,  kernel_stats_lcl, (float*)handle->scratch7, bn_nBlocksFm, handle->desc.N, 16);
 
     regular_input_base  = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
     input_add_ptr       = &LIBXSMM_VLA_ACCESS(5, dinput_add, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
-    bmean_ptr           = &LIBXSMM_VLA_ACCESS(2, bmean,     0, 0, 16);
-    brstd_ptr           = &LIBXSMM_VLA_ACCESS(2, brstd,     0, 0, 16);
+    bmean_ptr           = &LIBXSMM_VLA_ACCESS(2, bmean_lcl,     0, 0, 16);
+    brstd_ptr           = &LIBXSMM_VLA_ACCESS(2, brstd_lcl,     0, 0, 16);
     input_bn_ptr        = &LIBXSMM_VLA_ACCESS(5, bn_input, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
-    dbeta_ptr            = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
-    dgamma_ptr           = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+    dbeta_ptr           = &LIBXSMM_VLA_ACCESS(4, kernel_stats_lcl, 0, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+    dgamma_ptr          = &LIBXSMM_VLA_ACCESS(4, kernel_stats_lcl, 1, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
   }
 
   /* Initialize scratch7 to zero in case of batch stats fusion  */
   if (handle->fuse_batchstats_bwd == 1) {
-    LIBXSMM_VLA_DECL(4, float, kernel_stats, (float*)handle->scratch7, bn_nBlocksFm, handle->desc.N, 16);
+    LIBXSMM_VLA_DECL(4, float, kernel_stats_lcl, (float*)handle->scratch7, bn_nBlocksFm, handle->desc.N, 16);
     const __m512 zero_reg = _mm512_setzero_ps();
-    dbeta_ptr  = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
-    dgamma_ptr = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+    dbeta_ptr  = &LIBXSMM_VLA_ACCESS(4, kernel_stats_lcl, 0, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+    dgamma_ptr = &LIBXSMM_VLA_ACCESS(4, kernel_stats_lcl, 1, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
     for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
       for (img = my_img_start; img < my_img_end; img++) {
         _mm512_storeu_ps(dbeta_ptr+img*16+ifm1*handle->desc.N*16, zero_reg);
@@ -317,6 +318,7 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   overwrite_output_externally = (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0)) ? 1 : 0;
   fuse_relu_externally = (handle->perform_relu_in_kernel) ? 0 : 1;
   downconvert_to_bf16_externally = (handle->use_accumulation_scratch) ? 1 : 0;
+  compute_batch_stats_bwd_externally = (handle->compute_batch_stats_in_kernel_bwd) ? 0 : 1;
 
   for (pc = 0; pc < n_segs; pc++) {
     switch (segment_type)
