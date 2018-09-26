@@ -73,6 +73,31 @@ element_input_type *input_bn_ptr = NULL, *input_add_ptr = NULL;
 int *bn_outstats_stream, *bn_instats_stream, *bn_input_stream;
 int stats_in_offset = 0, stats_out_offset = 0, bn_input_offset = 0;
 int bn_stream_index = 0;
+float placeholder = 0.0;
+libxsmm_dnn_fusedbn *pre_bn = handle->pre_bn;
+const int bn_ifh = pre_bn->desc.H;
+const int bn_ifw = pre_bn->desc.W;
+const int bn_sh = pre_bn->desc.u;
+const int bn_sw = pre_bn->desc.v;
+const int bn_ofh = bn_ifh/bn_sh;
+const int bn_ofw = bn_ifw/bn_sw;
+const int bn_iph = pre_bn->desc.pad_h_in;
+const int bn_ipw = pre_bn->desc.pad_w_in;
+const int bn_oph = pre_bn->desc.pad_h_out;
+const int bn_opw = pre_bn->desc.pad_w_out;
+const int bn_ofhp = bn_ofh + 2*bn_oph;
+const int bn_ofwp = bn_ofw + 2*bn_opw;
+const int bn_ifhp = bn_ifh + 2*bn_iph;
+const int bn_ifwp = bn_ifw + 2*bn_ipw;
+const int bn_nBlocksFm = pre_bn->blocksifm;
+
+/* Scratch7 zeroing related logistics  */
+int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
+int threads_per_image = handle->desc.threads / handle->desc.N;
+int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
+int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
+int my_ifm_start = 0;
+int my_ifm_end = bn_nBlocksFm;
 
 /* Padding related variables */
 const int padded_h = handle->ofhp + 2 * handle->desc.pad_h;
@@ -231,27 +256,55 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   bn_instats_stream = handle->bn_aux_stats_indices_ptrs[ltid];
   bn_input_stream = handle->bn_aux_input_indices_ptrs[ltid];
 
+  /* Initialize potential bn-fuse related base pointers */
+  bmean_ptr = (float*) &placeholder;
+  brstd_ptr = (float*) &placeholder;
+  input_bn_ptr = (element_input_type*) &placeholder;
+  gamma_ptr = (float*) &placeholder;
+  beta_ptr = (float*) &placeholder;
+  input_add_ptr = (element_input_type*) output_base;
+  regular_input_base = (element_input_type*) &placeholder;
+
+  if (handle->compute_eltwise_in_kernel_bwd) {
+    LIBXSMM_VLA_DECL(5, element_input_type,  dinput_add, (element_input_type*) pre_bn->grad_add->data, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+  }   
+
   if (handle->perform_relu_in_kernel) {    
     LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
     regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-  } else {
-    regular_input_base = output_base;
+  } 
+
+  if (handle->compute_batch_stats_in_kernel_bwd) {
+    LIBXSMM_VLA_DECL(5, element_input_type, dinput_add, (element_input_type*) pre_bn->grad_add->data, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);    
+    LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+    LIBXSMM_VLA_DECL(5, element_input_type, bn_input,     (element_input_type* )pre_bn->reg_input->data,   bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    LIBXSMM_VLA_DECL(2, float,  bmean,      (float*)pre_bn->expvalue->data,   16);
+    LIBXSMM_VLA_DECL(2, float,  brstd,      (float*)pre_bn->stddev->data,     16);
+    LIBXSMM_VLA_DECL(4, float,  kernel_stats, (float*)handle->scratch7, bn_nBlocksFm, handle->desc.N, 16);
+
+    regular_input_base  = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+    input_add_ptr       = &LIBXSMM_VLA_ACCESS(5, dinput_add, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    bmean_ptr           = &LIBXSMM_VLA_ACCESS(2, bmean,     0, 0, 16);
+    brstd_ptr           = &LIBXSMM_VLA_ACCESS(2, brstd,     0, 0, 16);
+    input_bn_ptr        = &LIBXSMM_VLA_ACCESS(5, bn_input, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    beta_ptr            = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+    gamma_ptr           = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
   }
 
-  if (handle->compute_batch_stats_in_kernel_bwd) {  
-    bmean_ptr = (float*) output_base;
-    brstd_ptr = (float*) output_base;
-    input_bn_ptr = (float*) output_base;
-    gamma_ptr = (float*) output_base;
-    beta_ptr = (float*) output_base;
-    input_add_ptr = (float*) output_base;
-  } else {
-    bmean_ptr = (float*) output_base;
-    brstd_ptr = (float*) output_base;
-    input_bn_ptr = (float*) output_base;
-    gamma_ptr = (float*) output_base;
-    beta_ptr = (float*) output_base;
-    input_add_ptr = (float*) output_base;
+  /* Initialize scratch7 to zero in case of batch stats fusion  */
+  if (handle->fuse_batchstats_bwd == 1) {
+    LIBXSMM_VLA_DECL(4, float, kernel_stats, (float*)handle->scratch7, bn_nBlocksFm, handle->desc.N, 16);
+    const __m512 zero_reg = _mm512_setzero_ps();
+    beta_ptr  = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+    gamma_ptr = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+    for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
+      for (img = my_img_start; img < my_img_end; img++) {
+        _mm512_storeu_ps(beta_ptr+img*16+ifm1*handle->desc.N*16, zero_reg);
+        _mm512_storeu_ps(gamma_ptr+img*16+ifm1*handle->desc.N*16, zero_reg);
+      }
+    }
   }
 
   /* Parse properly the first segment out of the hot loop to deal with the case with 0 segments  */
@@ -297,8 +350,8 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
       stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
       bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
       kernel_pool[vi](input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,
-                      regular_input_base + offset_o, accumulators_scratch + offset_o,
-                      bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+          regular_input_base + offset_o, accumulators_scratch + offset_o,
+          bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
       bn_stream_index++;
       pool_index++;
       i += 3;
