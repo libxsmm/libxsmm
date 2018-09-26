@@ -296,18 +296,21 @@ CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 
 # Automatically pickup the environment (make -e is not required),
 # or pickup the Intel Compiler (if available).
-ifneq (,$(notdir $(shell which icpc 2>/dev/null)))
-  CXX = icpc
-else ifneq (,$(notdir $(shell which icpx 2>/dev/null)))
-  CXX = icpx
-endif
-ifneq (,$(notdir $(shell which icc 2>/dev/null)))
-  CC = icc
-else ifneq (,$(notdir $(shell which icx 2>/dev/null)))
-  CC = icx
-endif
-ifneq (,$(notdir $(shell which ifort 2>/dev/null)))
-  FC = ifort
+GNU ?= 0
+ifeq (0,$(GNU))
+  ifneq (,$(notdir $(shell which icpc 2>/dev/null)))
+    CXX = icpc
+  else ifneq (,$(notdir $(shell which icpx 2>/dev/null)))
+    CXX = icpx
+  endif
+  ifneq (,$(notdir $(shell which icc 2>/dev/null)))
+    CC = icc
+  else ifneq (,$(notdir $(shell which icx 2>/dev/null)))
+    CC = icx
+  endif
+  ifneq (,$(notdir $(shell which ifort 2>/dev/null)))
+    FC = ifort
+  endif
 endif
 
 # check if the Intel Development Tools are available
@@ -365,6 +368,7 @@ endif
 ifneq (,$(strip $(FC)))
 ifeq (,$(shell which $(FC) 2>/dev/null))
   ifneq (,$(shell which gfortran 2>/dev/null))
+    MKL_FCRTL = gf
     GFC = gfortran
     FC = $(GFC)
   else
@@ -489,10 +493,13 @@ ifeq (1,$(GCC))
   endif
   ifeq (2,$(GCC))
   ifneq (,$(strip $(GFC)))
+    MKL_FCRTL = gf
     GCC = 3
   endif
   endif
 endif
+# Fortran runtime library
+MKL_FCRTL ?= intel
 
 FORCE_CXX ?= 0
 ifneq (0,$(FORCE_CXX))
@@ -594,8 +601,10 @@ AVX ?= 0
 
 ifneq (0,$(INTEL))
   SUITE = Intel Compiler
+  MKL_OMPRTL = intel
 else ifneq (0,$(GCC))
   SUITE = GNU Compiler Collection
+  MKL_OMPRTL = gnu
 else
   SUITE = Compiler
   ifeq (0,$(CLANG))
@@ -607,9 +616,11 @@ else
       CRAY ?= 1
     else
       PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
+      MKL_OMPRTL = pgi
     endif
   endif
 endif
+MKL_OMPRTL ?= gnu
 CRAY ?= 0
 PGI ?= 0
 
@@ -1558,72 +1569,21 @@ endif
 
 ifeq (1,$(MKL)) # sequential
   BLAS_FLAGS += -D__BLAS=1 -D__MKL=1
-  BLAS_IFLAGS += -I$(MKLROOT)/include
-  ifeq (0,$(BLAS_STATIC)) # shared
-    BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential $(BLAS_LDFLAGS)
-    ifneq (0,$(OFFLOAD))
-      BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_sequential"
-    endif
-  else # static
-    BLAS_LDFLAGS := $(XGROUP_BEGIN) \
-      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
-      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
-      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_sequential.$(SLIBEXT) \
-    $(XGROUP_END) $(BLAS_LDFLAGS)
-    ifneq (0,$(OFFLOAD))
-      BLAS_LDFLAGS += -qoffload-option,mic,ld,"--start-group \
-        $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
-        $(MKLROOT)/lib/mic/libmkl_core.$(SLIBEXT) \
-        $(MKLROOT)/lib/mic/libmkl_sequential.$(SLIBEXT) \
-      --end-group"
-    endif
-  endif
-  BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
+  MKL_THREADS = sequential
+  ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
   endif
+  endif
 else ifneq (0,$(MKL)) # multi-threaded
   BLAS_FLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
-  BLAS_IFLAGS += -I$(MKLROOT)/include
-  ifeq (0,$(BLAS_STATIC)) # shared
-    ifneq (0,$(INTEL))
-      BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread $(BLAS_LDFLAGS)
-      ifneq (0,$(OFFLOAD))
-        BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_intel_thread"
-      endif
-    else # assuming GNU toolchain
-      BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_intel_$(MKL_BITS) -lmkl_core -lmkl_gnu_thread $(BLAS_LDFLAGS)
-    endif
-  else # static
-    ifneq (0,$(INTEL))
-      BLAS_LDFLAGS := $(XGROUP_BEGIN) \
-        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
-        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
-        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_thread.$(SLIBEXT) \
-      $(XGROUP_END) $(BLAS_LDFLAGS)
-      ifneq (0,$(OFFLOAD))
-        BLAS_LDFLAGS += -qoffload-option,mic,ld,"--start-group \
-          $(MKLROOT)/lib/mic/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
-          $(MKLROOT)/lib/mic/libmkl_core.$(SLIBEXT) \
-          $(MKLROOT)/lib/mic/libmkl_intel_thread.$(SLIBEXT) \
-        --end-group"
-      endif
-    else # assuming GNU toolchain
-      BLAS_LDFLAGS := $(XGROUP_BEGIN) \
-        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_intel_$(MKL_BITS).$(SLIBEXT) \
-        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
-        $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_gnu_thread.$(SLIBEXT) \
-      $(XGROUP_END) $(BLAS_LDFLAGS)
-      #BLAS_LDFLAGS += $(XLIB_BEGIN) $(LIBDL) $(XLIB_END)
-    endif
-  endif
+  MKL_THREADS = $(MKL_OMPRTL)_thread
   ifeq (0,$(OMP))
     BLAS_LDFLAGS += $(OMPLIB)
   endif
   ifneq (0,$(THREADS))
     BLAS_LDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
   endif
-  BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifneq (0,$(INTEL))
   ifneq (0,$(OFFLOAD))
     BLAS_LDFLAGS += -qoffload-option,mic,ld,"-lm $(LIBDL)"
@@ -1631,6 +1591,33 @@ else ifneq (0,$(MKL)) # multi-threaded
       BLAS_LDFLAGS += -qoffload-option,mic,ld,"$(OMPLIB)"
     endif
   endif
+  endif
+endif
+ifneq (0,$(MKL))
+  BLAS_IFLAGS += -I$(MKLROOT)/include
+  BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
+  ifeq (0,$(BLAS_STATIC)) # shared
+    BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_$(MKL_FCRTL)_$(MKL_BITS) -lmkl_core -lmkl_$(MKL_THREADS) $(BLAS_LDFLAGS)
+    ifneq (0,$(INTEL))
+    ifneq (0,$(OFFLOAD))
+      BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_$(MKL_FCRTL)_$(MKL_BITS) -lmkl_core -lmkl_$(MKL_THREADS)"
+    endif
+    endif
+  else # static
+    BLAS_LDFLAGS := $(XGROUP_BEGIN) \
+      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(SLIBEXT) \
+      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_core.$(SLIBEXT) \
+      $(MKLROOT)/lib/$(MKL_ARCH)/libmkl_$(MKL_THREADS).$(SLIBEXT) \
+    $(XGROUP_END) $(BLAS_LDFLAGS)
+    ifneq (0,$(INTEL))
+    ifneq (0,$(OFFLOAD))
+      BLAS_LDFLAGS += -qoffload-option,mic,ld,"--start-group \
+        $(MKLROOT)/lib/mic/libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(SLIBEXT) \
+        $(MKLROOT)/lib/mic/libmkl_core.$(SLIBEXT) \
+        $(MKLROOT)/lib/mic/libmkl_$(MKL_THREADS).$(SLIBEXT) \
+      --end-group"
+    endif
+    endif
   endif
 else ifneq (0,$(BLAS)) # generic
   ifeq (,$(strip $(BLASLIB)))

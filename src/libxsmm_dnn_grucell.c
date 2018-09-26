@@ -141,6 +141,9 @@ LIBXSMM_API libxsmm_dnn_grucell* libxsmm_dnn_create_grucell(libxsmm_dnn_grucell_
     handle->r   = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->z   = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->g   = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
+    handle->brm = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
+    handle->bzm = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
+    handle->bgm = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->d3  = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->d4  = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->d5  = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
@@ -181,6 +184,7 @@ LIBXSMM_API libxsmm_dnn_grucell* libxsmm_dnn_create_grucell(libxsmm_dnn_grucell_
     if (NULL == handle->r1t || NULL == handle->r2t || NULL == handle->z1t || NULL == handle->z2t || NULL == handle->g1t ||
         NULL == handle->g2t || NULL == handle->g3 || NULL == handle->h1 || NULL == handle->h2 || NULL == handle->h3 ||
         NULL == handle->r || NULL == handle->z || NULL == handle->g || NULL == handle->barrier ||
+        NULL == handle->brm || NULL == handle->bzm || NULL == handle->bgm ||
         NULL == handle->djdwr || NULL == handle->djdwz ||NULL == handle->djdwg || NULL == handle->djdxt ||
         NULL == handle->djdur || NULL == handle->djduz ||NULL == handle->djdug || NULL == handle->djdht ||
         NULL == handle->djdbr || NULL == handle->djdbz ||NULL == handle->djdbg || NULL == handle->hrTp || NULL == handle->d3 ||
@@ -192,7 +196,7 @@ LIBXSMM_API libxsmm_dnn_grucell* libxsmm_dnn_create_grucell(libxsmm_dnn_grucell_
     {
       free(handle->r1t); free(handle->r2t); free(handle->z1t); free(handle->z2t); free(handle->g1t);
       free(handle->g2t); free(handle->g3); free(handle->h1); free(handle->h2); free(handle->h3);
-      free(handle->r); free(handle->z); free(handle->g);
+      free(handle->r); free(handle->z); free(handle->g); free(handle->brm); free(handle->bzm); free(handle->bgm);
       free(handle->djdwr); free(handle->djdwz); free(handle->djdwg); free(handle->djdxt);
       free(handle->djdur); free(handle->djduz); free(handle->djdug); free(handle->djdht);
       free(handle->djdbr); free(handle->djdbz); free(handle->djdbg); free(handle->hrTp); free(handle->d3);
@@ -215,7 +219,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_grucell(const libxsmm_dnn_gruc
   if (0 != handle) {
     free(handle->r1t); free(handle->r2t); free(handle->z1t); free(handle->z2t); free(handle->g1t);
     free(handle->g2t); free(handle->g3); free(handle->h1); free(handle->h2); free(handle->h3);
-    free(handle->r); free(handle->z); free(handle->g);
+    free(handle->r); free(handle->z); free(handle->g); free(handle->brm); free(handle->bzm); free(handle->bgm);
     free(handle->djdwr); free(handle->djdwz); free(handle->djdwg); free(handle->djdxt);
     free(handle->djdur); free(handle->djduz); free(handle->djdug); free(handle->djdht);
     free(handle->djdbr); free(handle->djdbz); free(handle->djdbg); free(handle->hrTp); free(handle->d3);
@@ -383,6 +387,12 @@ LIBXSMM_API size_t libxsmm_dnn_grucell_get_scratch_size(const libxsmm_dnn_grucel
                                            size += 64;
                                            size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* h3 */
                                            size += 64;
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* brm */
+                                           size += 64;
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* bzm */
+                                           size += 64;
+                                           size += (size_t)handle->m * (size_t)handle->n * sizeof_datatype; /* bgm */
+                                           size += 64;
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
@@ -543,6 +553,30 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bind_scratch(libxsmm_dnn_gruce
                                            } else {
                                              offset = (64 - address % 64);
                                              handle->h3->data = (void*)(address+offset);
+                                           }
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
+                                           address += scratch_size + 64;
+                                           if (address % 64 == 0) {
+                                             handle->brm->data = (void*)address;
+                                           } else {
+                                             offset = (64 - address % 64);
+                                             handle->brm->data = (void*)(address+offset);
+                                           }
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
+                                           address += scratch_size + 64;
+                                           if (address % 64 == 0) {
+                                             handle->bzm->data = (void*)address;
+                                           } else {
+                                             offset = (64 - address % 64);
+                                             handle->bzm->data = (void*)(address+offset);
+                                           }
+                                           scratch_size = (size_t)handle->m * (size_t)handle->n * sizeof_datatype;
+                                           address += scratch_size + 64;
+                                           if (address % 64 == 0) {
+                                             handle->bgm->data = (void*)address;
+                                           } else {
+                                             offset = (64 - address % 64);
+                                             handle->bgm->data = (void*)(address+offset);
                                            }
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
@@ -776,6 +810,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_release_scratch(libxsmm_dnn_gr
                                            handle->h1->data = 0;
                                            handle->h2->data = 0;
                                            handle->h3->data = 0;
+                                           handle->brm->data = 0;
+                                           handle->bzm->data = 0;
+                                           handle->bgm->data = 0;
                                            handle->r1t = 0;
                                            handle->r2t = 0;
                                            handle->z1t = 0;
@@ -786,6 +823,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_release_scratch(libxsmm_dnn_gr
                                            handle->h1 = 0;
                                            handle->h2 = 0;
                                            handle->h3 = 0;
+                                           handle->brm = 0;
+                                           handle->bzm = 0;
+                                           handle->bgm = 0;
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
@@ -1291,6 +1331,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_fwd(libxsmm_dnn_grucell* gru, 
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   libxsmm_blasint m = gru->m;
   libxsmm_blasint n = gru->n;
+  libxsmm_blasint bm = gru->bm;
+  libxsmm_blasint bn = gru->bn;
   libxsmm_blasint k = gru->k;
   libxsmm_blasint t = gru->t;
 #if defined(LSTM_TIMING)
@@ -1313,6 +1355,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_fwd(libxsmm_dnn_grucell* gru, 
   LIBXSMM_DNN_ELTWISE_FTYPE *br  = (LIBXSMM_DNN_ELTWISE_FTYPE*)gru->br->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *bz  = (LIBXSMM_DNN_ELTWISE_FTYPE*)gru->bz->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *bg  = (LIBXSMM_DNN_ELTWISE_FTYPE*)gru->bg->data;
+  LIBXSMM_DNN_ELTWISE_FTYPE *brm = (LIBXSMM_DNN_ELTWISE_FTYPE*)gru->brm->data;
+  LIBXSMM_DNN_ELTWISE_FTYPE *bzm = (LIBXSMM_DNN_ELTWISE_FTYPE*)gru->bzm->data;
+  LIBXSMM_DNN_ELTWISE_FTYPE *bgm = (LIBXSMM_DNN_ELTWISE_FTYPE*)gru->bgm->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *r1t = (LIBXSMM_DNN_ELTWISE_FTYPE*)gru->r1t->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *r2t = (LIBXSMM_DNN_ELTWISE_FTYPE*)gru->r2t->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *z1t = (LIBXSMM_DNN_ELTWISE_FTYPE*)gru->z1t->data;
@@ -1354,6 +1399,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_fwd(libxsmm_dnn_grucell* gru, 
 #if defined(LSTM_TIMING)
   if (ltid == 0) { start = libxsmm_timer_tick(); }
 #endif
+  libxsmm_internal_matrix_1D_2D(m, n, bm, bn, br, brm, start_thread, tid, gru->nThreads);
+  libxsmm_internal_matrix_1D_2D(m, n, bm, bn, bz, bzm, start_thread, tid, gru->nThreads);
+  libxsmm_internal_matrix_1D_2D(m, n, bm, bn, bg, bgm, start_thread, tid, gru->nThreads);
 
   if (reuse) {
 #if defined(LSTM_TIMING)
@@ -1372,9 +1420,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_fwd(libxsmm_dnn_grucell* gru, 
 #if defined(LSTM_TIMING)
       if (ltid == 0) { Gbl_t_eltwise = libxsmm_timer_tick(); }
 #endif
-      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, r1, j, 0, m * n), br, &LIBXSMM_VLA_ACCESS(2, r1, j, 0, m * n), start_thread, tid, gru->nThreads);
-      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, z1, j, 0, m * n), bz, &LIBXSMM_VLA_ACCESS(2, z1, j, 0, m * n), start_thread, tid, gru->nThreads);
-      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, g1, j, 0, m * n), bg, &LIBXSMM_VLA_ACCESS(2, g1, j, 0, m * n), start_thread, tid, gru->nThreads);
+      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, r1, j, 0, m * n), brm, &LIBXSMM_VLA_ACCESS(2, r1, j, 0, m * n), start_thread, tid, gru->nThreads);
+      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, z1, j, 0, m * n), bzm, &LIBXSMM_VLA_ACCESS(2, z1, j, 0, m * n), start_thread, tid, gru->nThreads);
+      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, g1, j, 0, m * n), bgm, &LIBXSMM_VLA_ACCESS(2, g1, j, 0, m * n), start_thread, tid, gru->nThreads);
       libxsmm_barrier_wait(gru->barrier, ltid);
 #if defined(LSTM_TIMING)
       if (ltid == 0) {
@@ -1432,9 +1480,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_fwd(libxsmm_dnn_grucell* gru, 
 #if defined(LSTM_TIMING)
       if (ltid == 0) { Gbl_t_eltwise = libxsmm_timer_tick(); }
 #endif
-      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, r1, j, 0, m * n), br, &LIBXSMM_VLA_ACCESS(2, r1, j, 0, m * n), start_thread, tid, gru->nThreads);
-      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, z1, j, 0, m * n), bz, &LIBXSMM_VLA_ACCESS(2, z1, j, 0, m * n), start_thread, tid, gru->nThreads);
-      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, g1, j, 0, m * n), bg, &LIBXSMM_VLA_ACCESS(2, g1, j, 0, m * n), start_thread, tid, gru->nThreads);
+      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, r1, j, 0, m * n), brm, &LIBXSMM_VLA_ACCESS(2, r1, j, 0, m * n), start_thread, tid, gru->nThreads);
+      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, z1, j, 0, m * n), bzm, &LIBXSMM_VLA_ACCESS(2, z1, j, 0, m * n), start_thread, tid, gru->nThreads);
+      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, g1, j, 0, m * n), bgm, &LIBXSMM_VLA_ACCESS(2, g1, j, 0, m * n), start_thread, tid, gru->nThreads);
       libxsmm_barrier_wait(gru->barrier, ltid);
 #if defined(LSTM_TIMING)
       if (ltid == 0) {
@@ -1499,6 +1547,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bwd_upd_bu(libxsmm_dnn_grucell
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   libxsmm_blasint m = gru->m;
   libxsmm_blasint n = gru->n;
+  libxsmm_blasint bm = gru->bm;
+  libxsmm_blasint bn = gru->bn;
   libxsmm_blasint k = gru->k;
   libxsmm_blasint t = gru->t;
   LIBXSMM_DNN_ELTWISE_FTYPE *wr = (LIBXSMM_DNN_ELTWISE_FTYPE*)gru->wr->data;
@@ -1565,14 +1615,18 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bwd_upd_bu(libxsmm_dnn_grucell
   libxsmm_bgemm_handle *handledh = gru->handlewh;
   libxsmm_bgemm_handle *handledx = gru->handlett;
   libxsmm_bgemm_handle *handlewd = gru->handlewd;
-  libxsmm_blasint j;
+  libxsmm_blasint j, s, q, l, p;
   const int ltid = tid - start_thread;
 
   libxsmm_barrier_init(gru->barrier, ltid);
   /* libxsmm_internal_matrix_zero(m * n, d23, start_thread, tid, gru->nThreads); */
   for (j = t-1; j >= 0; j--) {
     /* d3 = djdh + d23 (delta) */
-    libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, j, 0, m * n), d23, d3, start_thread, tid, gru->nThreads);
+    if (j == t-1) {
+      libxsmm_internal_matrix_copy(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, t-1, 0, m * n), d3, start_thread, tid, gru->nThreads);
+    } else {
+      libxsmm_internal_matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdh, j, 0, m * n), d23, d3, start_thread, tid, gru->nThreads);
+    }
     /* d4 = (1 - z).d3 */
     libxsmm_internal_matrix_complement(m * n, &LIBXSMM_VLA_ACCESS(2, z, j, 0, m * n), d4, start_thread, tid, gru->nThreads);
     libxsmm_internal_matrix_eltwise_mult(m * n, d4, d3, d4, start_thread, tid, gru->nThreads);
@@ -1649,12 +1703,22 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_grucell_bwd_upd_bu(libxsmm_dnn_grucell
       libxsmm_bgemm_st(handledx, d11M, &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djduz, start_thread, tid);
       /* djdug = djdug + d10 * x^T */
       libxsmm_bgemm_st(handledx, d10M, &LIBXSMM_VLA_ACCESS(2, x, j, 0, k * n), djdug, start_thread, tid);
-      /* djdbr = djdbr + d18 */
-      libxsmm_internal_matrix_add(m * n, djdbr, d18, djdbr, start_thread, tid, gru->nThreads);
-      /* djdbz = djdbz + d11 */
-      libxsmm_internal_matrix_add(m * n, djdbz, d11, djdbz, start_thread, tid, gru->nThreads);
-      /* djdbg = djdbg + d10 */
-      libxsmm_internal_matrix_add(m * n, djdbg, d10, djdbg, start_thread, tid, gru->nThreads);
+      if ((tid - start_thread) == 0) {
+        for (s = 0; s < n/bn; s++) {
+          for (q = 0; q < m/bm; q++) {
+            for (l = 0; l < bn; l++) {
+              for (p = 0; p < bm; p++) {
+                /* djdbr = djdbr + d18 */
+                djdbr[q*bm+p] += d18[(size_t)s*m*bn + (size_t)q*bm*bn + (size_t)l*bm+p];
+                /* djdbz = djdbz + d11 */
+                djdbz[q*bm+p] += d11[(size_t)s*m*bn + (size_t)q*bm*bn + (size_t)l*bm+p];
+                /* djdbg = djdbg + d10 */
+                djdbg[q*bm+p] += d10[(size_t)s*m*bn + (size_t)q*bm*bn + (size_t)l*bm+p];
+              }
+            }
+          }
+        }
+      }
     }
     libxsmm_barrier_wait(gru->barrier, ltid);
   }

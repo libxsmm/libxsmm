@@ -82,16 +82,16 @@ element_input_type recp_pool_size = 1.0f/((element_input_type)handle->desc.R*(el
 
 /* multi-dim arrays declaration */
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
-float* lcl_buffer_ptr = ((float*)handle->scratch)+(ifh*ifw*nFmBlock*ltid);
-LIBXSMM_VLA_DECL(3,       float, lcl_dinput, lcl_buffer_ptr,                                                    ifw, nFmBlock);
+float *const lcl_buffer_ptr = (float*)handle->scratch + (size_t)ifh*ifw*nFmBlock*ltid;
+LIBXSMM_VLA_DECL(3,                    float, lcl_dinput, lcl_buffer_ptr,                                                    ifw, nFmBlock);
 #else
-element_output_type* lcl_buffer_ptr = ((element_input_type*)handle->scratch)+(ifh*ifw*nFmBlock*ltid);
+element_output_type *const lcl_buffer_ptr = (element_input_type*)handle->scratch + (size_t)ifh*ifw*nFmBlock*ltid;
 LIBXSMM_VLA_DECL(3,       element_input_type, lcl_dinput, lcl_buffer_ptr,                                                    ifw, nFmBlock);
 #endif
 LIBXSMM_VLA_DECL(5,       element_input_type,     dinput, (element_input_type* )handle->grad_input->data,  nBlocksFm, ifhp, ifwp, nFmBlock);
 LIBXSMM_VLA_DECL(5, const element_output_type,   doutput, (element_output_type*)handle->grad_output->data, nBlocksFm, ofhp, ofwp, nFmBlock);
 #if defined(LIBXSMM_DNN_POOLING_BWD_MAX)
-LIBXSMM_VLA_DECL(5, const  element_mask_type,        mask, (element_mask_type*  )handle->mask->data,        nBlocksFm,  ofh,  ofw, nFmBlock);
+LIBXSMM_VLA_DECL(5, const element_mask_type,        mask, (element_mask_type*  )handle->mask->data,        nBlocksFm,  ofh,  ofw, nFmBlock);
 #endif
 
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)

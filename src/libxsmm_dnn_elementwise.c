@@ -132,7 +132,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu(libxsmm_blasint size, LIBXS
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
-    dst[i] = (src[i] > 0) ? src[i] : 0;
+    dst[i] = (src[i] > 0.0f) ? src[i] : 0.0f;
   }
 }
 
@@ -183,7 +183,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint siz
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
-    dst[i] = (LIBXSMM_DNN_ELTWISE_FTYPE)(src[i] > 0 ? 1 : 0);
+    dst[i] = (LIBXSMM_DNN_ELTWISE_FTYPE)(src[i] > 0.0f ? 1.0f : 0.0f);
   }
 }
 
