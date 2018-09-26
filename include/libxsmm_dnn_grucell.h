@@ -85,6 +85,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_grucell {
   libxsmm_dnn_tensor* br;
   libxsmm_dnn_tensor* bz;
   libxsmm_dnn_tensor* bg;
+  libxsmm_dnn_tensor* brm;
+  libxsmm_dnn_tensor* bzm;
+  libxsmm_dnn_tensor* bgm;
   libxsmm_dnn_tensor* h;
   libxsmm_dnn_tensor* r1t;
   libxsmm_dnn_tensor* r2t;

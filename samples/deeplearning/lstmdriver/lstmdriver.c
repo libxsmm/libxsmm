@@ -621,11 +621,6 @@ int main(int argc, char* argv[])
       LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, cgoldb, it, 0, m * n), n, m, n, 1.0);
       LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, dgoldb, it, 0, m * n), n, m, n, 1.0);
       LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), n, m, n, 1.0);
-#if 0
-      for(j = 0; j < m*n; j++) {
-        LIBXSMM_VLA_ACCESS(2, hgoldb, it, j, m * n) = 1;
-      }
-#endif
     }
     zero_buf(i1gold, m*n);
     zero_buf(i2gold, m*n);
