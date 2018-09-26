@@ -68,7 +68,7 @@ element_output_type *copy_ptr;
 element_output_type *prefetch_ptr;
 
 /* BN Fusion related pointer variables */
-float *bmean_ptr = NULL, *brstd_ptr = NULL, *beta_ptr = NULL, *gamma_ptr = NULL;
+float *bmean_ptr = NULL, *brstd_ptr = NULL, *dbeta_ptr = NULL, *dgamma_ptr = NULL;
 element_input_type *input_bn_ptr = NULL, *input_add_ptr = NULL;
 int *bn_outstats_stream, *bn_instats_stream, *bn_input_stream;
 int stats_in_offset = 0, stats_out_offset = 0, bn_input_offset = 0;
@@ -260,8 +260,8 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   bmean_ptr = (float*) &placeholder;
   brstd_ptr = (float*) &placeholder;
   input_bn_ptr = (element_input_type*) &placeholder;
-  gamma_ptr = (float*) &placeholder;
-  beta_ptr = (float*) &placeholder;
+  dgamma_ptr = (float*) &placeholder;
+  dbeta_ptr = (float*) &placeholder;
   input_add_ptr = (element_input_type*) output_base;
   regular_input_base = (element_input_type*) &placeholder;
 
@@ -289,20 +289,20 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
     bmean_ptr           = &LIBXSMM_VLA_ACCESS(2, bmean,     0, 0, 16);
     brstd_ptr           = &LIBXSMM_VLA_ACCESS(2, brstd,     0, 0, 16);
     input_bn_ptr        = &LIBXSMM_VLA_ACCESS(5, bn_input, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
-    beta_ptr            = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
-    gamma_ptr           = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+    dbeta_ptr            = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+    dgamma_ptr           = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
   }
 
   /* Initialize scratch7 to zero in case of batch stats fusion  */
   if (handle->fuse_batchstats_bwd == 1) {
     LIBXSMM_VLA_DECL(4, float, kernel_stats, (float*)handle->scratch7, bn_nBlocksFm, handle->desc.N, 16);
     const __m512 zero_reg = _mm512_setzero_ps();
-    beta_ptr  = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
-    gamma_ptr = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+    dbeta_ptr  = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+    dgamma_ptr = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
     for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
       for (img = my_img_start; img < my_img_end; img++) {
-        _mm512_storeu_ps(beta_ptr+img*16+ifm1*handle->desc.N*16, zero_reg);
-        _mm512_storeu_ps(gamma_ptr+img*16+ifm1*handle->desc.N*16, zero_reg);
+        _mm512_storeu_ps(dbeta_ptr+img*16+ifm1*handle->desc.N*16, zero_reg);
+        _mm512_storeu_ps(dgamma_ptr+img*16+ifm1*handle->desc.N*16, zero_reg);
       }
     }
   }
@@ -351,7 +351,7 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
       bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
       kernel_pool[vi](input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,
           regular_input_base + offset_o, accumulators_scratch + offset_o,
-          bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+          bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, dgamma_ptr + stats_out_offset, dbeta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
       bn_stream_index++;
       pool_index++;
       i += 3;
@@ -367,55 +367,3 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
-
-#if 0
-if (hanlde->n_variants == 1) {
-  if (fuse_postconv_ops_in_kernel) {
-    for (conv_i = 0; conv_i < n_convs; conv_i++) {
-      offset_i = stream[i]; offset_w = stream[i+1]; offset_o = stream[i+2]; pi = stream[i+3]; pw = stream[i+4]; po = stream[i+5];
-      stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
-      stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
-      bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;                      
-      kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,
-          regular_input_base + offset_o, accumulators_scratch + offset_o, 
-          bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-      bn_stream_index++;  
-      i += 3;
-    }
-  } else {
-    for (conv_i = 0; conv_i < n_convs; conv_i++) {
-      offset_i = stream[i]; offset_w = stream[i+1]; offset_o = stream[i+2]; pi = stream[i+3]; pw = stream[i+4]; po = stream[i+5];
-      kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,
-          regular_input_base + offset_o, accumulators_scratch + offset_o, 
-          bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-      bn_stream_index++;  
-      i += 3;
-    }
-  }
-} else {
-  if (fuse_postconv_ops_in_kernel) {
-    for (conv_i = 0; conv_i < n_convs; conv_i++) {
-      const int vi = variant[pool_index]; offset_i = stream[i]; offset_w = stream[i+1]; offset_o = stream[i+2]; pi = stream[i+3]; pw = stream[i+4]; po = stream[i+5];
-      stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
-      stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
-      bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
-      kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,
-          regular_input_base + offset_o, accumulators_scratch + offset_o,
-          bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-      bn_stream_index++;
-      pool_index++;
-      i += 3;
-    }      
-  } else {
-    for (conv_i = 0; conv_i < n_convs; conv_i++) {
-      const int vi = variant[pool_index]; offset_i = stream[i]; offset_w = stream[i+1]; offset_o = stream[i+2]; pi = stream[i+3]; pw = stream[i+4]; po = stream[i+5];
-      kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,
-          regular_input_base + offset_o, accumulators_scratch + offset_o,
-          bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-      bn_stream_index++;
-      pool_index++;
-      i += 3;
-    }           
-  }
-}
-#endif
