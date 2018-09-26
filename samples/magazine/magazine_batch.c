@@ -124,7 +124,11 @@ int main(int argc, char* argv[])
 
   start = libxsmm_timer_tick();
 #if defined(KERNEL) /* explicitly dispatch a kernel according to parameters */
-  USEOMP(libxsmm_mmbatch)(xmm, 0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, a, b, c, xsize);
+# if defined(_OPENMP)
+  libxsmm_mmbatch_omp(xmm, 0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, a, b, c, xsize);
+# else
+  libxsmm_mmbatch(xmm, 0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, a, b, c, xsize, 0/*tid*/, 1/*nthreads*/);
+# endif
 #else
   USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(TYPE),
     &transa, &transb, m, n, k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc,
