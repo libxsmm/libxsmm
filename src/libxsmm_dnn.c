@@ -247,8 +247,6 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
       }
       if (handle->desc.pre_bn != NULL) {
         handle->fuse_batchstats_bwd = 1;
-        handle->fuse_eltwise_bwd = 1;
-        handle->fuse_relu_bwd = 1;
      }
     }
 

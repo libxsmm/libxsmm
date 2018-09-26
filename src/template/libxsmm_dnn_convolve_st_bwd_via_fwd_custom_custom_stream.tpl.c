@@ -74,23 +74,26 @@ int *bn_outstats_stream, *bn_instats_stream, *bn_input_stream;
 int stats_in_offset = 0, stats_out_offset = 0, bn_input_offset = 0, fm = 0;
 int bn_stream_index = 0;
 float placeholder = 0.0;
+int bn_ifh, bn_ifw, bn_sh, bn_sw, bn_ofh, bn_ofw, bn_iph, bn_ipw, bn_oph, bn_opw, bn_ofhp, bn_ofwp, bn_ifhp, bn_ifwp, bn_nBlocksFm, nImg;
 libxsmm_dnn_fusedbn *pre_bn = handle->pre_bn;
-const int bn_ifh = pre_bn->desc.H;
-const int bn_ifw = pre_bn->desc.W;
-const int bn_sh = pre_bn->desc.u;
-const int bn_sw = pre_bn->desc.v;
-const int bn_ofh = bn_ifh/bn_sh;
-const int bn_ofw = bn_ifw/bn_sw;
-const int bn_iph = pre_bn->desc.pad_h_in;
-const int bn_ipw = pre_bn->desc.pad_w_in;
-const int bn_oph = pre_bn->desc.pad_h_out;
-const int bn_opw = pre_bn->desc.pad_w_out;
-const int bn_ofhp = bn_ofh + 2*bn_oph;
-const int bn_ofwp = bn_ofw + 2*bn_opw;
-const int bn_ifhp = bn_ifh + 2*bn_iph;
-const int bn_ifwp = bn_ifw + 2*bn_ipw;
-const int bn_nBlocksFm = pre_bn->blocksifm;
-const int nImg = handle->desc.N;
+if (handle->fuse_batchstats_bwd) {
+  bn_ifh = pre_bn->desc.H;
+  bn_ifw = pre_bn->desc.W;
+  bn_sh = pre_bn->desc.u;
+  bn_sw = pre_bn->desc.v;
+  bn_ofh = bn_ifh/bn_sh;
+  bn_ofw = bn_ifw/bn_sw;
+  bn_iph = pre_bn->desc.pad_h_in;
+  bn_ipw = pre_bn->desc.pad_w_in;
+  bn_oph = pre_bn->desc.pad_h_out;
+  bn_opw = pre_bn->desc.pad_w_out;
+  bn_ofhp = bn_ofh + 2*bn_oph;
+  bn_ofwp = bn_ofw + 2*bn_opw;
+  bn_ifhp = bn_ifh + 2*bn_iph;
+  bn_ifwp = bn_ifw + 2*bn_ipw;
+  bn_nBlocksFm = pre_bn->blocksifm;
+  nImg = handle->desc.N;
+}
 
 /* Scratch7 zeroing related logistics  */
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -105,8 +108,8 @@ const int padded_h = handle->ofhp + 2 * handle->desc.pad_h;
 const int padded_w = handle->ofwp + 2 * handle->desc.pad_w;
 const size_t output_buffer_size = BLOCKSOFM * padded_h * padded_w * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output_buffer,
-  (element_output_type*)(((char*)handle->scratch5) + ltid * LIBXSMM_UP2(output_buffer_size * sizeof(element_output_type), LIBXSMM_CACHELINE)),
-  padded_h, padded_w, handle->ofmblock_lp, handle->fm_lp_block);
+    (element_output_type*)(((char*)handle->scratch5) + ltid * LIBXSMM_UP2(output_buffer_size * sizeof(element_output_type), LIBXSMM_CACHELINE)),
+    padded_h, padded_w, handle->ofmblock_lp, handle->fm_lp_block);
 
 libxsmm_convfunction kernel_bwd = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
 libxsmm_convfunction kernel2_bwd = (libxsmm_convfunction)handle->code_bwd[1].xconv.sconv;
@@ -116,7 +119,7 @@ char *variant = handle->kernel_bwd_variant_ptrs[ltid];
 /* accumulation scratch for fp32->bf16 downconvert */
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
 float *const accumulators_scratch = (float*)(((char*)handle->scratch6) +
-  ltid * LIBXSMM_UP2(handle->ifmblock_hp * handle->desc.W * handle->desc.H * sizeof(float), LIBXSMM_CACHELINE));
+    ltid * LIBXSMM_UP2(handle->ifmblock_hp * handle->desc.W * handle->desc.H * sizeof(float), LIBXSMM_CACHELINE));
 #else
 float accumulators_scratch_array[handle->ifmblock_hp * handle->desc.W * handle->desc.H];
 float *const accumulators_scratch = accumulators_scratch_array;
@@ -213,38 +216,38 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
       }
     } else {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-        int icb, okb, t1;
-        const __m512i permute_index = _mm512_set_epi32(15,13,11,9,7,5,3,1,14,12,10,8,6,4,2,0);
-        const  __m256i scatter_index = _mm256_set_epi32(7*32, 6*32, 5*32, 4*32,  3*32, 2*32, 1*32, 0*32);
-        for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-          icb = ifm1ofm1 / oKB;
-          okb = ifm1ofm1 % oKB;
-          for (kj=0; kj < handle->desc.R; kj++) {
-            for (ki=0; ki < handle->desc.S; ki++) {
-              for (t1 = 0; t1 < 8; t1++) {
-                __m512i cur_cache_line = _mm512_loadu_si512(&LIBXSMM_VLA_ACCESS(7, wt, okb, icb, kj, ki, t1, 0, 0,
-                  BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block));
-                __m512i permuted_cache_line = _mm512_permutexvar_epi32(permute_index, cur_cache_line);
-                __m256i lo_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(permuted_cache_line, 0);
-                __m256i hi_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(permuted_cache_line, 1);
-                __m256i lo_zipped = _mm256_unpacklo_epi16(lo_half, hi_half);
-                __m256i hi_zipped = _mm256_unpackhi_epi16(lo_half, hi_half);
-                __m128i part0 = _mm256_extractf128_si256(lo_zipped,0);
-                __m128i part2 = _mm256_extractf128_si256(lo_zipped,1);
-                __m128i part1 = _mm256_extractf128_si256(hi_zipped,0);
-                __m128i part3 =  _mm256_extractf128_si256(hi_zipped,1);
-                __m512i compact = _mm512_inserti32x4(LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), part0, 0);
-                compact = _mm512_inserti32x4 (compact, part1, 1);
-                compact = _mm512_inserti32x4 (compact, part2, 2);
-                compact = _mm512_inserti32x4 (compact, part3, 3);
-                _mm512_i32scatter_epi64((long long int*)&LIBXSMM_VLA_ACCESS(7, tr_wt2, icb, okb, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 2*t1, 0,
-                  BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block), scatter_index, compact, 2);
-              }
+      int icb, okb, t1;
+      const __m512i permute_index = _mm512_set_epi32(15,13,11,9,7,5,3,1,14,12,10,8,6,4,2,0);
+      const  __m256i scatter_index = _mm256_set_epi32(7*32, 6*32, 5*32, 4*32,  3*32, 2*32, 1*32, 0*32);
+      for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
+        icb = ifm1ofm1 / oKB;
+        okb = ifm1ofm1 % oKB;
+        for (kj=0; kj < handle->desc.R; kj++) {
+          for (ki=0; ki < handle->desc.S; ki++) {
+            for (t1 = 0; t1 < 8; t1++) {
+              __m512i cur_cache_line = _mm512_loadu_si512(&LIBXSMM_VLA_ACCESS(7, wt, okb, icb, kj, ki, t1, 0, 0,
+                    BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block));
+              __m512i permuted_cache_line = _mm512_permutexvar_epi32(permute_index, cur_cache_line);
+              __m256i lo_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(permuted_cache_line, 0);
+              __m256i hi_half = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(permuted_cache_line, 1);
+              __m256i lo_zipped = _mm256_unpacklo_epi16(lo_half, hi_half);
+              __m256i hi_zipped = _mm256_unpackhi_epi16(lo_half, hi_half);
+              __m128i part0 = _mm256_extractf128_si256(lo_zipped,0);
+              __m128i part2 = _mm256_extractf128_si256(lo_zipped,1);
+              __m128i part1 = _mm256_extractf128_si256(hi_zipped,0);
+              __m128i part3 =  _mm256_extractf128_si256(hi_zipped,1);
+              __m512i compact = _mm512_inserti32x4(LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), part0, 0);
+              compact = _mm512_inserti32x4 (compact, part1, 1);
+              compact = _mm512_inserti32x4 (compact, part2, 2);
+              compact = _mm512_inserti32x4 (compact, part3, 3);
+              _mm512_i32scatter_epi64((long long int*)&LIBXSMM_VLA_ACCESS(7, tr_wt2, icb, okb, handle->desc.R-1-kj, handle->desc.S-1-ki, 0, 2*t1, 0,
+                    BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block), scatter_index, compact, 2);
             }
           }
         }
+      }
 #else /* won't happen as this code only runs on AVX512 platforms */
-        LIBXSMM_ASSERT(0);
+      LIBXSMM_ASSERT(0);
 #endif
     }
     weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
@@ -318,7 +321,7 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   overwrite_output_externally = (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0)) ? 1 : 0;
   fuse_relu_externally = (handle->perform_relu_in_kernel) ? 0 : 1;
   downconvert_to_bf16_externally = (handle->use_accumulation_scratch) ? 1 : 0;
-  compute_batch_stats_bwd_externally = (handle->compute_batch_stats_in_kernel_bwd) ? 0 : 1;
+  compute_batch_stats_bwd_externally = (handle->compute_batch_stats_in_kernel_bwd == 0 && handle->fuse_batchstats_bwd == 1) ? 1 : 0;
 
   for (pc = 0; pc < n_segs; pc++) {
     switch (segment_type)
