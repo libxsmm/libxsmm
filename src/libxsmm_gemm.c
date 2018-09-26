@@ -60,9 +60,9 @@
 #endif
 
 #if defined(LIBXSMM_BUILD)
-# define LIBXSMM_WEAK_IMPL LIBXSMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
+# define LIBXSMM_WEAK LIBXSMM_API_EXPORT LIBXSMM_ATTRIBUTE_WEAK
 #else
-# define LIBXSMM_WEAK_IMPL LIBXSMM_WEAK
+# define LIBXSMM_WEAK LIBXSMM_API_EXPORT
 #endif
 
 #if (0 != LIBXSMM_SYNC) /** Locks for the batch interface (duplicated C indexes). */
@@ -101,7 +101,7 @@ LIBXSMM_APIVAR(float internal_gemm_nstretch);
 LIBXSMM_APIVAR(float internal_gemm_kstretch);
 
 
-LIBXSMM_WEAK_IMPL libxsmm_dgemm_function libxsmm_original_dgemm(void)
+LIBXSMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
   static /*volatile*/ libxsmm_dgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(double, original);
@@ -110,7 +110,7 @@ LIBXSMM_WEAK_IMPL libxsmm_dgemm_function libxsmm_original_dgemm(void)
 }
 
 
-LIBXSMM_WEAK_IMPL libxsmm_sgemm_function libxsmm_original_sgemm(void)
+LIBXSMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
   static /*volatile*/ libxsmm_sgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(float, original);
