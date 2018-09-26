@@ -367,5 +367,33 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
+
+  if (handle->fuse_batchstats_bwd == 1) {
+    /* now we need to reduce the del_gamm and del_beta */
+    LIBXSMM_VLA_DECL(4, float,  kernel_stats_red, (float*)handle->scratch7, bn_nBlocksFm, handle->desc.N, 16);
+    LIBXSMM_VLA_DECL(2, float,  dgamma_result,     (float*)pre_bn->grad_gamma->data, 16);
+    LIBXSMM_VLA_DECL(2, float,  dbeta_result,      (float*)pre_bn->grad_beta->data,  16);
+    const int work = bn_nBlocksFm;
+    const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
+    const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+    const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+    for ( fm = thr_begin; fm < thr_end; ++fm ) {
+      float *del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(4, kernel_stats_red, 1, fm, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+      float *del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(4, kernel_stats_red, 0, fm, 0, 0, bn_nBlocksFm, handle->desc.N, 16);
+      __m512 lcl_vdgamma = _mm512_setzero_ps();
+      __m512 lcl_vdbeta  = _mm512_setzero_ps();
+
+      for ( img=0; img < nImg; img++ ) {
+        lcl_vdgamma = _mm512_add_ps( lcl_vdgamma, _mm512_loadu_ps( del_gamma_img_ptr ) );
+        lcl_vdbeta  = _mm512_add_ps( lcl_vdbeta,  _mm512_loadu_ps( del_beta_img_ptr  ) );
+        del_gamma_img_ptr += 16;
+        del_beta_img_ptr  += 16;
+      }
+
+      _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dgamma_result, fm, 0, 16), lcl_vdgamma );
+      _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dbeta_result,  fm, 0, 16), lcl_vdbeta  );
+    }
+    libxsmm_barrier_wait(handle->barrier, ltid);
+  }
 }
 
