@@ -31,6 +31,12 @@
 #include "magazine.h"
 #include <libxsmm.h>
 
+#if defined(_OPENMP)
+# define USEOMP(FUNCTION) LIBXSMM_USEOMP(FUNCTION)
+#else
+# define USEOMP(FUNCTION)
+#endif
+
 #if 0 /* process batch of A, B, and C in "random" order */
 # define SHUFFLE
 #endif
@@ -118,9 +124,9 @@ int main(int argc, char* argv[])
 
   start = libxsmm_timer_tick();
 #if defined(KERNEL) /* explicitly dispatch a kernel according to parameters */
-  libxsmm_mmbatch_omp(xmm, 0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, a, b, c, xsize);
+  USEOMP(libxsmm_mmbatch)(xmm, 0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, a, b, c, xsize);
 #else
-  libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(TYPE),
+  USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(TYPE),
     &transa, &transb, m, n, k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc,
     0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, xsize);
 #endif
