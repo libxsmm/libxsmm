@@ -54,11 +54,16 @@ const int transpose_chunksize = (transpose_work % handle->desc.threads == 0) ? (
 /* compute thr_begin and thr_end */
 const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? (ltid * transpose_chunksize) : transpose_work;
 const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
+
+/* fusion flags */
+int fuse_postconv_ops_in_kernel = 0, overwrite_output_externally = 0, fuse_relu_externally = 0, downconvert_to_bf16_externally = 0;
+
 /* Pointer variables  */
 element_output_type *input_base;
 element_output_type *input_ptr;
 element_filter_type *weight_base;
 element_input_type *output_base;
+element_input_type *regular_input_base;
 element_output_type *copy_ptr;
 element_output_type *prefetch_ptr;
 
@@ -82,12 +87,6 @@ libxsmm_convfunction kernel2_bwd = (libxsmm_convfunction)handle->code_bwd[1].xco
 libxsmm_convfunction kernel_pool[2];
 char *variant = handle->kernel_bwd_variant_ptrs[ltid];
 
-LIBXSMM_ALIGNED(float scale_factor, 64);
-LIBXSMM_ALIGNED(float *max_vals, 64) = NULL;
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-__m512 max_abs;
-#endif
-
 /* accumulation scratch for fp32->bf16 downconvert */
 #if !defined(LIBXSMM_DNN_VLA_TLS2)
 float *const accumulators_scratch = (float*)(((char*)handle->scratch6) +
@@ -100,31 +99,10 @@ float *const accumulators_scratch = accumulators_scratch_array;
 /* Input tensor declaration */
 /* regular/high precision */
 element_input_type* del_in = 0;
-
 kernel_pool[0] = kernel_bwd;
 kernel_pool[1] = kernel2_bwd;
 
-/* select pointer based on precision */
-if (handle->datatype_in != handle->datatype_out) {
-  del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock_hp);
-} else {
-  del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock_hp);
-}
-
-if (handle->use_lp_kernel == 1) {
-  scale_factor = libxsmm_sexp2(-1.f*((float)(handle->reg_filter->scf + handle->grad_output->scf)));
-}
-
-if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-  LIBXSMM_VLA_DECL(2, float, maxstats, (float*)handle->maxstats_bwd->data, handle->ifmblock_hp);
-  max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, handle->ifmblock_hp);
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  max_abs = _mm512_setzero_ps();
-  _mm512_store_ps(max_vals, max_abs);
-#else /* won't happen as this code only runs on AVX512 platforms */
-  LIBXSMM_ASSERT(0);
-#endif
-}
+del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * (handle->ifmblock_hp);
 
 { /* open new scope for additional variable declarations (C89) */
   LIBXSMM_VLA_DECL(5, element_input_type, del_input, del_in, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
@@ -137,7 +115,7 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   LIBXSMM_VLA_DECL(7, element_filter_type, tr_wt2, (element_filter_type*)handle->scratch1, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ofmblock_lp, handle->ifmblock_hp, handle->fm_lp_block);
 
   /* Auxiliary integer variables   */
-  int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i, n_convs, conv_i, ifm1, img = 0, ifm2, ij, ii;
+  int instr, n_segments, offset_i, offset_o, offset_w, pi, po, pw, pc, i, n_convs, conv_i, ifm1, img = 0, ifm2, ij, ii, n_segs, vi = 0, segment_type;
   /* Stream related variables  */
   segment_t *code_stream;
   int *stream = handle->compute_bwd_indices_ptrs[ltid];
@@ -208,25 +186,6 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
         }
       }
     } else {
-      if  (( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)) && ((handle->desc.options & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0))  {
-        int fm_lp_ind;
-        for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
-          ifm1 = ifm1ofm1 / oKB;
-          ofm1 = ifm1ofm1 % oKB;
-          for (kj=0; kj < handle->desc.R; kj++) {
-            for (ki=0; ki < handle->desc.S; ki++) {
-              for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-                for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-                  for (fm_lp_ind = 0; fm_lp_ind < handle->fm_lp_block; fm_lp_ind++) {
-                    LIBXSMM_VLA_ACCESS(7, tr_wt2, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, ofm2/handle->fm_lp_block, ifm2*handle->fm_lp_block+fm_lp_ind, ofm2%handle->fm_lp_block, BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block) =
-                      LIBXSMM_VLA_ACCESS(7, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, fm_lp_ind, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
-                  }
-                }
-              }
-            }
-          }
-        }
-      } else {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
         int icb, okb, t1;
         const __m512i permute_index = _mm512_set_epi32(15,13,11,9,7,5,3,1,14,12,10,8,6,4,2,0);
@@ -261,7 +220,6 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
 #else /* won't happen as this code only runs on AVX512 platforms */
         LIBXSMM_ASSERT(0);
 #endif
-      }
     }
     weight_base = &LIBXSMM_VLA_ACCESS(7, tr_wt2, 0, 0, 0, 0, 0, 0, 0,
         BLOCKSOFM, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock, handle->fm_lp_block);
@@ -269,811 +227,142 @@ if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
   }
   pool_index = 0;
   i = 0;
-
   bn_outstats_stream = handle->bn_stats_indices_ptrs[ltid];
   bn_instats_stream = handle->bn_aux_stats_indices_ptrs[ltid];
   bn_input_stream = handle->bn_aux_input_indices_ptrs[ltid];
 
-  if (n_segments) {
-    /* We have segmented the stream of convolutions since we need to inject different functionalities...  */
-    code_stream = handle->bwd_code_segments[ltid];
-    /* TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images */
-    if (handle->desc.N*BLOCKSIFM >= handle->desc.threads && !((handle->desc.N == 1) && (handle->bwd_ofh_rb == 1))) {
-      if (handle->perform_relu_in_kernel == 1) {/* do RELU stuff in the kernel  */
-        LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-        element_input_type *regular_input_base;
-        regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-
-        if (handle->n_variants == 2) {
-          for (pc = 0; pc < n_segments; pc++) {
-            instr = code_stream[pc].segment_type;
-            n_convs = code_stream[pc].n_convs;
-
-            if (instr == IMG_LOOP_INIT) {
-              img = code_stream[pc].aux_index;
-              /* Apply padding  */
-              if (handle->padding_flag == 1) {
-#               include "libxsmm_dnn_bwd_custom_custom_padding.tpl.c"
-              }
-            }
-
-            if ( instr == IFM_LOOP_INIT ) {
-              /* Apply bias if requested  */
-              if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
-                /*#include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"*/
-              }
-              /* Overwrite output with zeros if requested */
-              if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0) ) {
-                jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
-              }
-            }
-
-            if ( instr == IFM_LOOP_CLOSE) {
-              if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, /*ifm1*/code_stream[pc].aux_index, 0, 0, 0,
-                    handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                  for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
-                  }
-                  cur_vec += handle->ifwp*handle->ifmblock;
-                }
-#else /* won't happen as this code only runs on AVX512 platforms */
-                LIBXSMM_ASSERT(0);
-#endif
-              }
-
-              /* @TODO this is a hack as it might conflict with MAX STATS fuse */
-              /* down-convert to bf16 from fp32 */
-              if (handle->use_accumulation_scratch) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                float *scratch_ptr = accumulators_scratch;
-                __m512 zero_reg = _mm512_setzero_ps();
-                if ( handle->f32_bf16_cvt_rne ) {
-                  __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
-                  __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
-                  __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
-                  __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
-                  for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                      __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
-                      __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
-                      __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
-                      __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
-                      __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
-                      __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
-                      __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
-                      __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
-                      __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
-                      _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                      _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                    }
-                    scratch_ptr += handle->desc.W*handle->ifmblock_hp;
-                    input_dst += handle->ifwp*handle->ifmblock_hp;
-                  }
-                } else {
-                  for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                      __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
-                      __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
-                      _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                      _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                    }
-                    scratch_ptr += handle->desc.W*handle->ifmblock_hp;
-                    input_dst += handle->ifwp*handle->ifmblock_hp;
-                  }
-                }
-#else
-                LIBXSMM_ASSERT(0);
-#endif
-              }
-            }
-
-            /* Run the stream of convolutions for this segment */
-            for (conv_i = 0; conv_i < n_convs; conv_i++) {
-              const int vi = variant[pool_index]; /* avoid warning about char used as array index */
-              offset_i = stream[i];
-              offset_w = stream[i+1];
-              offset_o = stream[i+2];
-              pi = stream[i+3];
-              pw = stream[i+4];
-              po = stream[i+5];
-              stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
-              stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
-              bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
-              kernel_pool[vi](
-                  input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                  input_base + pi, weight_base + pw, output_base + po,
-                  regular_input_base + offset_o, &scale_factor, max_vals, accumulators_scratch + offset_o,
-                  bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-              bn_stream_index++;
-              ++pool_index;
-              i += 3;
-            }
-          }
-        } else {
-          for (pc = 0; pc < n_segments; pc++) {
-            instr = code_stream[pc].segment_type;
-            n_convs = code_stream[pc].n_convs;
-            if (instr == IMG_LOOP_INIT) {
-              img = code_stream[pc].aux_index;
-              /* Apply padding  */
-              if (handle->padding_flag == 1) {
-#include "libxsmm_dnn_bwd_custom_custom_padding.tpl.c"
-              }
-            }
-
-            if ( instr == IFM_LOOP_INIT ) {
-              /* Apply bias if requested  */
-              if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
-                /*#include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"*/
-              }
-              /* Overwrite output with zeros if requested */
-              if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0) ) {
-                jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
-              }
-            }
-
-            if ( instr == IFM_LOOP_CLOSE) {
-              if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, /*ifm1*/code_stream[pc].aux_index, 0, 0, 0,
-                    handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                  for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
-                  }
-                  cur_vec += handle->ifwp*handle->ifmblock;
-                }
-#else /* won't happen as this code only runs on AVX512 platforms */
-                LIBXSMM_ASSERT(0);
-#endif
-              }
-
-              /* @TODO this is a hack as it might conflict with MAX STATS fuse */
-              /* down-convert to bf16 from fp32 */
-              if (handle->use_accumulation_scratch) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                float *scratch_ptr = accumulators_scratch;
-                __m512 zero_reg = _mm512_setzero_ps();
-                if ( handle->f32_bf16_cvt_rne ) {
-                  __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
-                  __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
-                  __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
-                  __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
-                  for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock; ii+=16 ) {
-                      __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
-                      __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
-                      __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
-                      __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
-                      __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
-                      __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
-                      __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
-                      __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
-                      __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
-                      _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                      _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                    }
-                    scratch_ptr += handle->desc.W*handle->ifmblock;
-                    input_dst += handle->ifwp*handle->ifmblock;
-                  }
-                } else {
-                  for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                    for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                      __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
-                      __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
-                      _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                      _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                    }
-                    scratch_ptr += handle->desc.W*handle->ifmblock_hp;
-                    input_dst += handle->ifwp*handle->ifmblock_hp;
-                  }
-                }
-#else /* won't happen as this code only runs on AVX512 platforms */
-                LIBXSMM_ASSERT(0);
-#endif
-              }
-            }
-
-            /* Run the stream of convolutions for this segment */
-            for (conv_i = 0; conv_i < n_convs; conv_i++) {
-              offset_i = stream[i];
-              offset_w = stream[i+1];
-              offset_o = stream[i+2];
-              pi = stream[i+3];
-              pw = stream[i+4];
-              po = stream[i+5];
-              stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
-              stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
-              bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;                      
-              kernel(
-                  input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                  input_base + pi, weight_base + pw, output_base + po,
-                  regular_input_base + offset_o, &scale_factor, max_vals, accumulators_scratch + offset_o,
-                  bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-              bn_stream_index++;  
-              i += 3;
-            }
-          }
-        }
-      } else { /* We don't do RELU stuff in the kernel  */
-        if (handle->n_variants == 2) {
-          for (pc = 0; pc < n_segments; pc++) {
-            instr = code_stream[pc].segment_type;
-            n_convs = code_stream[pc].n_convs;
-
-            if (instr == IMG_LOOP_INIT) {
-              img = code_stream[pc].aux_index;
-              /* Apply padding  */
-              if (handle->padding_flag == 1) {
-#include "libxsmm_dnn_bwd_custom_custom_padding.tpl.c"
-              }
-            }
-
-            if ( instr == IFM_LOOP_INIT ) {
-              /* Apply bias if requested  */
-              if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
-                /*#include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"*/
-              }
-              /* Overwrite output with zeros if requested */
-              if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0) ) {
-                jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
-              }
-            }
-
-            if ( instr == IFM_LOOP_CLOSE ) {
-              if ( (handle->fuse_relu_bwd > 0) && (handle->use_accumulation_scratch == 0) ) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                element_input_type *orig_input_ptr;
-                element_input_type *del_input_ptr;
-                __m512 zero_reg  = _mm512_setzero_ps();
-                __m512 orig_reg;
-                __mmask16 mask;
-                orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                for (ij = 0; ij < handle->desc.H; ij++) {
-                  for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
-                    orig_reg  = LIBXSMM_INTRINSICS_MM512_LOAD_PS(orig_input_ptr + ii);
-                    mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
-                    _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
-                  }
-                  orig_input_ptr += handle->ifwp * 16;
-                  del_input_ptr += handle->ifwp *16;
-                }
-#else /* won't happen as this code only runs on AVX512 platforms */
-                LIBXSMM_ASSERT(0);
-#endif
-              }
-
-              if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-                element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, /*ifm1*/code_stream[pc].aux_index, 0, 0, 0,
-                    handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                  for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
-#else /* won't happen as this code only runs on AVX512 platforms */
-                    LIBXSMM_ASSERT(0);
-#endif
-                  }
-                  cur_vec += handle->ifwp*handle->ifmblock_hp;
-                }
-              }
-
-              /* @TODO this is a hack as it might conflict with MAX STATS/ReLU fuse */
-              /* down-convert to bf16 from fp32 */
-              if (handle->use_accumulation_scratch) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                if (handle->fuse_relu_bwd > 0) {
-                  LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                  const element_input_type *orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                  element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                  float *scratch_ptr = accumulators_scratch;
-                  const __m512 zero_reg = _mm512_setzero_ps();
-                  if ( handle->f32_bf16_cvt_rne ) {
-                    const __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
-                    const __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
-                    const __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
-                    const __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
-                    for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                      for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        const __m512i vfp32 = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
-                        const __m256i orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
-                        const __m512i orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
-                        const __mmask16 mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
-                        const __m512i vfp32_masked = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
-                        const __m512i vfp32nan = _mm512_and_epi32( vfp32_masked, vnaninf );
-                        const __m512i vfp32fixup = _mm512_and_epi32( vfp32_masked, vfixupmask );
-                        const __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
-                        const __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
-                        const __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
-                        const __m512i vfp32rne = _mm512_mask_add_epi32( vfp32_masked, rnemask, vfp32_masked, vrnd );
-                        const __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
-                        const __m256i vbfp16 = _mm512_cvtepi32_epi16( vbfp16_32 );
-                        _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                        _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                      }
-                      scratch_ptr += handle->desc.W*handle->ifmblock_hp;
-                      input_dst += handle->ifwp*handle->ifmblock_hp;
-                      orig_input_ptr += handle->ifwp * 16;
-                    }
-                  } else {
-                    for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                      for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        const __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
-                        const __m512i vfp32 = _mm512_castps_si512(tmp);
-                        const __m256i orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
-                        const __m512i orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
-                        const __mmask16 mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
-                        const __m512i vfp32_masked = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
-                        const __m256i vbfp16 = _mm512_cvtepi32_epi16(_mm512_srai_epi32( vfp32_masked, 16));
-                        _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                        _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                      }
-                      scratch_ptr += handle->desc.W*handle->ifmblock_hp;
-                      input_dst += handle->ifwp*handle->ifmblock_hp;
-                      orig_input_ptr += handle->ifwp * 16;
-                    }
-                  }
-                } else {
-                  element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                  float *scratch_ptr = accumulators_scratch;
-                  __m512 zero_reg = _mm512_setzero_ps();
-                  if ( handle->f32_bf16_cvt_rne ) {
-                    __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
-                    __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
-                    __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
-                    __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
-                    for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                      for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
-                        __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
-                        __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
-                        __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
-                        __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
-                        __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
-                        __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
-                        __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
-                        __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
-                        _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                        _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                      }
-                      scratch_ptr += handle->desc.W*handle->ifmblock_hp;
-                      input_dst += handle->ifwp*handle->ifmblock_hp;
-                    }
-                  } else {
-                    for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                      for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
-                        __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
-                        _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                        _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                      }
-                      scratch_ptr += handle->desc.W*handle->ifmblock_hp;
-                      input_dst += handle->ifwp*handle->ifmblock_hp;
-                    }
-                  }
-                }
-#else /* won't happen as this code only runs on AVX512 platforms */
-                LIBXSMM_ASSERT(0);
-#endif
-              }
-            }
-
-            /* Run the stream of convolutions for this segment */
-            for (conv_i = 0; conv_i < n_convs; conv_i++) {
-              const int vi = variant[pool_index]; /* avoid warning about char used as array index */
-              offset_i = stream[i];
-              offset_w = stream[i+1];
-              offset_o = stream[i+2];
-              pi = stream[i+3];
-              pw = stream[i+4];
-              po = stream[i+5];
-              stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
-              stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
-              bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
-              kernel_pool[vi](
-                  input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                  input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_o,
-                  NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-              bn_stream_index++;
-              ++pool_index;
-              i += 3;
-            }
-          }
-        } else {
-          for (pc = 0; pc < n_segments; pc++) {
-            instr = code_stream[pc].segment_type;
-            n_convs = code_stream[pc].n_convs;
-            if (instr == IMG_LOOP_INIT) {
-              img = code_stream[pc].aux_index;
-              /* Apply padding  */
-              if (handle->padding_flag == 1) {
-#include "libxsmm_dnn_bwd_custom_custom_padding.tpl.c"
-              }
-            }
-
-            if ( instr == IFM_LOOP_INIT ) {
-              /* Apply bias if requested  */
-              if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) {
-                /*#include "libxsmm_dnn_fwd_custom_custom_bias.tpl.c"*/
-              }
-              /* Overwrite output with zeros if requested */
-              if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0) ) {
-                jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
-              }
-            }
-
-            if ( instr == IFM_LOOP_CLOSE ) {
-              if ( (handle->fuse_relu_bwd > 0) && (handle->use_accumulation_scratch == 0) ) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                element_input_type *orig_input_ptr;
-                element_input_type *del_input_ptr;
-                __m512 zero_reg  = _mm512_setzero_ps();
-                __m512 orig_reg;
-                __mmask16 mask;
-                orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                for (ij = 0; ij < handle->desc.H; ij++) {
-                  for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
-                    orig_reg  = LIBXSMM_INTRINSICS_MM512_LOAD_PS(orig_input_ptr + ii);
-                    mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
-                    _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
-                  }
-                  orig_input_ptr += handle->ifwp * 16;
-                  del_input_ptr += handle->ifwp *16;
-                }
-#else /* won't happen as this code only runs on AVX512 platforms */
-                LIBXSMM_ASSERT(0);
-#endif
-              }
-
-              if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                element_input_type* cur_vec = &LIBXSMM_VLA_ACCESS(5, del_input, img, /*ifm1*/code_stream[pc].aux_index, 0, 0, 0,
-                    handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                  for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                    max_abs = _mm512_max_ps(max_abs, LIBXSMM_INTRINSICS_MM512_ABS_PS(LIBXSMM_INTRINSICS_MM512_LOAD_PS(cur_vec+ii)));
-                  }
-                  cur_vec += handle->ifwp*handle->ifmblock_hp;
-                }
-#else /* won't happen as this code only runs on AVX512 platforms */
-                LIBXSMM_ASSERT(0);
-#endif
-              }
-
-              /* @TODO this is a hack as it might conflict with MAX STATS fuse */
-              /* down-convert to bf16 from fp32 */
-              if (handle->use_accumulation_scratch) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-                if (handle->fuse_relu_bwd > 0) {
-                  LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*) handle->reg_input->data,  handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                  const element_input_type *orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, /*ifm1*/code_stream[pc].aux_index, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                  element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                  float *scratch_ptr = accumulators_scratch;
-                  const __m512 zero_reg = _mm512_setzero_ps();
-                  if ( handle->f32_bf16_cvt_rne ) {
-                    const __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
-                    const __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
-                    const __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
-                    const __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
-                    for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                      for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        const __m512i vfp32 = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
-                        const __m256i orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
-                        const __m512i orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
-                        const __mmask16 mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
-                        const __m512i vfp32_masked = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
-                        const __m512i vfp32nan = _mm512_and_epi32( vfp32_masked, vnaninf );
-                        const __m512i vfp32fixup = _mm512_and_epi32( vfp32_masked, vfixupmask );
-                        const __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
-                        const __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
-                        const __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
-                        const __m512i vfp32rne = _mm512_mask_add_epi32( vfp32_masked, rnemask, vfp32_masked, vrnd );
-                        const __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
-                        const __m256i vbfp16 = _mm512_cvtepi32_epi16( vbfp16_32 );
-                        _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                        _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                      }
-                      scratch_ptr += handle->desc.W*handle->ifmblock_hp;
-                      input_dst += handle->ifwp*handle->ifmblock_hp;
-                      orig_input_ptr += handle->ifwp * 16;
-                    }
-                  } else {
-                    for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                      for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        const __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
-                        const __m512i vfp32 = _mm512_castps_si512(tmp);
-                        const __m256i orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
-                        const __m512i orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
-                        const __mmask16 mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
-                        const __m512i vfp32_masked = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
-                        const __m256i vbfp16 = _mm512_cvtepi32_epi16(_mm512_srai_epi32( vfp32_masked, 16));
-                        _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                        _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                      }
-                      scratch_ptr += handle->desc.W*handle->ifmblock_hp;
-                      input_dst += handle->ifwp*handle->ifmblock_hp;
-                      orig_input_ptr += handle->ifwp * 16;
-                    }
-                  }
-                } else {
-                  element_input_type *input_dst = &LIBXSMM_VLA_ACCESS(5, del_input, img, code_stream[pc].aux_index/*ifm1*/, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock_hp);
-                  float *scratch_ptr = accumulators_scratch;
-                  __m512 zero_reg = _mm512_setzero_ps();
-                  if ( handle->f32_bf16_cvt_rne ) {
-                    __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
-                    __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
-                    __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
-                    __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
-                    for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                      for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        __m512i vfp32     = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
-                        __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
-                        __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
-                        __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
-                        __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
-                        __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
-                        __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
-                        __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
-                        __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
-                        _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                        _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                      }
-                      scratch_ptr += handle->desc.W*handle->ifmblock_hp;
-                      input_dst += handle->ifwp*handle->ifmblock_hp;
-                    }
-                  } else {
-                    for ( ij = 0; ij < handle->desc.H; ij++ ) {
-                      for ( ii = 0; ii < handle->desc.W*handle->ifmblock_hp; ii+=16 ) {
-                        __m512 tmp = _mm512_loadu_ps(scratch_ptr+ii);
-                        __m256i vbfp16 =  _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( tmp ), 16));
-                        _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
-                        _mm256_storeu_si256( (__m256i*)(input_dst+ii), vbfp16 );
-                      }
-                      scratch_ptr += handle->desc.W*handle->ifmblock_hp;
-                      input_dst += handle->ifwp*handle->ifmblock_hp;
-                    }
-                  }
-                }
-#else /* won't happen as this code only runs on AVX512 platforms */
-                LIBXSMM_ASSERT(0);
-#endif
-              }
-            }
-
-            /* Run the stream of convolutions for this segment */
-            for (conv_i = 0; conv_i < n_convs; conv_i++) {
-              offset_i = stream[i];
-              offset_w = stream[i+1];
-              offset_o = stream[i+2];
-              pi = stream[i+3];
-              pw = stream[i+4];
-              po = stream[i+5];
-              stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
-              stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
-              bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
-              kernel(
-                  input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                  input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals, accumulators_scratch + offset_o,
-                  NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-              bn_stream_index++;
-              i += 3;
-            }
-          }
-        }
-      }
-    } else { /* This is the the img par branch...  */
-      /* Use fine-grained operations since we are in the img_par path, so update relevant kernel pointers... */
-      int input_h_start = LIBXSMM_MAX(0,  handle->ofh_bwd_start[ltid] - handle->desc.R + 1);
-      int input_h_end = LIBXSMM_MIN(handle->ifhp, (handle->ofh_bwd_end[ltid] + handle->desc.R - 1) * handle->desc.u);
-#if 0
-      int my_h_out = handle->ofh_bwd_end[ltid] - handle->ofh_bwd_start[ltid];
-#endif
-      int ih;
-      jitted_zero_overwrite = handle->matcopy_bwd[3].xmatcopy;
-      jitted_matcopy = handle->matcopy_bwd[2].xmatcopy;
-      for (pc = 0; pc < n_segments; pc++) {
-        instr = code_stream[pc].segment_type;
-        n_convs = code_stream[pc].n_convs;
-        if (instr == IMG_LOOP_INIT) {
-          /* Padding code via jitted matcopy kernel */
-#         include "libxsmm_dnn_bwd_custom_custom_padding_img_par.tpl.c"
-        }
-
-        if ( instr == IFM_LOOP_INIT ) {
-          /* Overwrite output with zeros if requested */
-          if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
-#if 0
-            int ih;
-            for (ih = 0; ih < my_h_out * handle->ifmblock_hp * handle->ifwp; ih += handle->ifmblock_hp * handle->ifwp) {
-              jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2] + ih, NULL, NULL);
-            }
-#endif
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-            int h, w;
-            __m512 zero_reg = _mm512_setzero_ps();
-            for (h = 0; h<handle->bwd_ofh_rb; h++) {
-              for (w = 0; w<handle->bwd_ofw_rb; w++) {
-                _mm512_store_ps(output_base+stream[i+2]+w*handle->ifmblock_hp+h*handle->ifwp*handle->ifmblock_hp, zero_reg);
-              }
-            }
-#else /* won't happen as this code only runs on AVX512 platforms */
-            LIBXSMM_ASSERT(0);
-#endif
-          }
-        }
-
-        /* Run the stream of convolutions for this segment */
-        for (conv_i = 0; conv_i < n_convs; conv_i++) {
-          offset_i = stream[i];
-          offset_w = stream[i+1];
-          offset_o = stream[i+2];
-          pi = stream[i+3];
-          pw = stream[i+4];
-          po = stream[i+5];
-          kernel(
-              input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-              input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-          i += 3;
-        }
-      }
-    }
+  if (handle->perform_relu_in_kernel) {    
+    LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+    regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
   } else {
-    /* TODO: Second condition guarantees we run the img_par code when we have MB=1 -- and hopefully HUGE images */
-    if (handle->desc.N*BLOCKSIFM >= handle->desc.threads && !((handle->desc.N == 1) && (handle->bwd_ofh_rb == 1))) {
-      /* Run the stream of convolutions, no extra operations are required... */
-      if (handle->perform_relu_in_kernel == 1) { /* do RELU stuff in the kernel  */
-        LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
-        element_input_type *regular_input_base;
-        regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
+    regular_input_base = output_base;
+  }
 
-        if (handle->n_variants == 2) {
-          for (pc = 0; pc < instr; pc += 1) {
-            const int vi = variant[pc]; /* avoid warning about char used as array index */
-            offset_i = stream[i];
-            offset_w = stream[i+1];
-            offset_o = stream[i+2];
-            pi = stream[i+3];
-            pw = stream[i+4];
-            po = stream[i+5];
-            stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
-            stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
-            bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
-            kernel_pool[vi](
-                input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                input_base + pi, weight_base + pw, output_base + po,
-                regular_input_base + offset_o, &scale_factor, max_vals,
-                NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-            bn_stream_index++;
-            i += 3;
-          }
-        } else {
-          for (pc = 0; pc < instr; pc++) {
-            offset_i = stream[i];
-            offset_w = stream[i+1];
-            offset_o = stream[i+2];
-            pi = stream[i+3];
-            pw = stream[i+4];
-            po = stream[i+5];
-            stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
-            stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
-            bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;  
-            kernel(
-                input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                input_base + pi, weight_base + pw, output_base + po,
-                regular_input_base + offset_o, &scale_factor, max_vals,
-                NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-            bn_stream_index++;
-            i += 3;
-          }
+  if (handle->compute_batch_stats_in_kernel_bwd) {  
+    bmean_ptr = (float*) output_base;
+    brstd_ptr = (float*) output_base;
+    input_bn_ptr = (float*) output_base;
+    gamma_ptr = (float*) output_base;
+    beta_ptr = (float*) output_base;
+    input_add_ptr = (float*) output_base;
+  } else {
+    bmean_ptr = (float*) output_base;
+    brstd_ptr = (float*) output_base;
+    input_bn_ptr = (float*) output_base;
+    gamma_ptr = (float*) output_base;
+    beta_ptr = (float*) output_base;
+    input_add_ptr = (float*) output_base;
+  }
+
+  /* Parse properly the first segment out of the hot loop to deal with the case with 0 segments  */
+  n_segs =        (n_segments == 0) ? 1 : n_segments;
+  n_convs =       (n_segments == 0) ? instr : code_stream[0].n_convs;
+  segment_type =  (n_segments == 0) ? CONVOLUTION_KERNEL : code_stream[0].segment_type;
+
+  /* Set properly the fusion flags  */
+  fuse_postconv_ops_in_kernel = (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd || handle->perform_relu_in_kernel) ? 1 : 0;
+  overwrite_output_externally = (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0)) ? 1 : 0;
+  fuse_relu_externally = (handle->perform_relu_in_kernel) ? 0 : 1;
+  downconvert_to_bf16_externally = (handle->use_accumulation_scratch) ? 1 : 0;
+
+  for (pc = 0; pc < n_segs; pc++) {
+    switch (segment_type)
+    {
+      case IMG_LOOP_INIT:
+        img = code_stream[pc].aux_index;
+        if (handle->padding_flag) {
+#include "libxsmm_dnn_bwd_custom_custom_padding.tpl.c"
         }
-      } else {
-        if (handle->n_variants == 2) {
-          for (pc = 0; pc < instr; pc += 1) {
-            const int vi = variant[pc]; /* avoid warning about char used as array index */
-            offset_i = stream[i];
-            offset_w = stream[i+1];
-            offset_o = stream[i+2];
-            pi = stream[i+3];
-            pw = stream[i+4];
-            po = stream[i+5];
-            stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
-            stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
-            bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
-            kernel_pool[vi](
-                input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals,
-                NULL, NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-            bn_stream_index++;
-            i += 3;
-          }
-        } else {
-          for (pc = 0; pc < instr; pc++) {
-            offset_i = stream[i];
-            offset_w = stream[i+1];
-            offset_o = stream[i+2];
-            pi = stream[i+3];
-            pw = stream[i+4];
-            po = stream[i+5];
-            stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
-            stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
-            bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
-            kernel(
-                input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-                input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals,
-                NULL, NULL, bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
-            bn_stream_index++;      
-            i += 3;
-          }
+        break;
+      case IFM_LOOP_INIT:
+        if (overwrite_output_externally) {
+          jitted_zero_overwrite(NULL, NULL, output_base + stream[i+2], NULL, NULL);
         }
-      }
-    } else {
-      /* This is the the img par branch...  */
-      for (pc = 0; pc < instr; pc++) {
-        offset_i = stream[i];
-        offset_w = stream[i+1];
-        offset_o = stream[i+2];
-        pi = stream[i+3];
-        pw = stream[i+4];
-        po = stream[i+5];
-        kernel(
-            input_base + offset_i, weight_base + offset_w, output_base + offset_o,
-            input_base + pi, weight_base + pw, output_base + po, &scale_factor, max_vals);
-        i += 3;
-      }
+        break;
+      case IFM_LOOP_CLOSE:
+#include "libxsmm_dnn_bwd_fuse_postconv_ops_externally.tpl.c"
+        break;
+      case CONVOLUTION_KERNEL:
+        /* TODO: Make CONVOLUTION_STREAK segment and move convolution loop  here */
+        break;
+      default:
+        break;
+    }
+
+    /* Run the stream of convolutions  */
+    for (conv_i = 0; conv_i < n_convs; conv_i++) {
+      vi = (handle->n_variants == 1) ? 0 : variant[pool_index]; 
+      offset_i = stream[i]; offset_w = stream[i+1]; offset_o = stream[i+2]; pi = stream[i+3]; pw = stream[i+4]; po = stream[i+5];
+      stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
+      stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
+      bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
+      kernel_pool[vi](input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,
+                      regular_input_base + offset_o, accumulators_scratch + offset_o,
+                      bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+      bn_stream_index++;
+      pool_index++;
+      i += 3;
+    }   
+
+    /* Set up for next segment */
+    if (pc+1 < n_segs) {
+      n_convs       = code_stream[pc+1].n_convs;
+      segment_type  = code_stream[pc+1].segment_type;
     }
   }
 
-  if ( ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) && (handle->use_lp_kernel == 1) && (handle->compute_max_in_kernel_bwd == 0) ) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-    _mm512_store_ps(max_vals, max_abs);
-#else /* won't happen as this code only runs on AVX512 platforms */
-    LIBXSMM_ASSERT(0);
-#endif
-  }
   libxsmm_barrier_wait(handle->barrier, ltid);
-
-#if 0
-  /* Fuse ReLu here*/
-  if (handle->fuse_relu_bwd > 0) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-    int ii, ij, ifm1, ifm2, img;
-    img = ltid;
-    LIBXSMM_VLA_DECL(5, element_input_type, input, (element_input_type*) handle->reg_input->data,  BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
-    LIBXSMM_VLA_DECL(5, element_input_type, del_input_2, (element_input_type*) handle->grad_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
-    element_input_type *orig_input_ptr;
-    element_input_type *del_input_ptr;
-    __m512 zero_reg  = _mm512_setzero_ps();
-    __m512 orig_reg;
-    __mmask16 mask;
-    for (ifm1 = 0; ifm1 < BLOCKSIFM; ifm1++ ) {
-      orig_input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
-      del_input_ptr = &LIBXSMM_VLA_ACCESS(5, del_input_2, img, ifm1, handle->desc.pad_h_in, handle->desc.pad_w_in, 0, BLOCKSIFM, handle->ifhp, handle->ifwp, handle->ifmblock);
-      for (ij = 0; ij < handle->desc.H; ij++) {
-        for (ii = 0; ii < handle->desc.W * 16; ii += 16) {
-          orig_reg  = LIBXSMM_INTRINSICS_MM512_LOAD_PS(orig_input_ptr + ii);
-          mask = _mm512_cmp_ps_mask(zero_reg, orig_reg, _CMP_EQ_OQ);
-          _mm512_mask_storeu_ps(del_input_ptr + ii, mask, zero_reg);
-        }
-        orig_input_ptr += handle->ifwp * 16;
-        del_input_ptr += handle->ifwp *16;
-      }
-    }
-    libxsmm_barrier_wait(handle->barrier, ltid);
-#else /* won't happen as this code only runs on AVX512 platforms */
-    LIBXSMM_ASSERT(0);
-#endif
-  }
-#endif
 }
 
+
+#if 0
+if (hanlde->n_variants == 1) {
+  if (fuse_postconv_ops_in_kernel) {
+    for (conv_i = 0; conv_i < n_convs; conv_i++) {
+      offset_i = stream[i]; offset_w = stream[i+1]; offset_o = stream[i+2]; pi = stream[i+3]; pw = stream[i+4]; po = stream[i+5];
+      stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
+      stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
+      bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;                      
+      kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,
+          regular_input_base + offset_o, accumulators_scratch + offset_o, 
+          bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+      bn_stream_index++;  
+      i += 3;
+    }
+  } else {
+    for (conv_i = 0; conv_i < n_convs; conv_i++) {
+      offset_i = stream[i]; offset_w = stream[i+1]; offset_o = stream[i+2]; pi = stream[i+3]; pw = stream[i+4]; po = stream[i+5];
+      kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,
+          regular_input_base + offset_o, accumulators_scratch + offset_o, 
+          bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+      bn_stream_index++;  
+      i += 3;
+    }
+  }
+} else {
+  if (fuse_postconv_ops_in_kernel) {
+    for (conv_i = 0; conv_i < n_convs; conv_i++) {
+      const int vi = variant[pool_index]; offset_i = stream[i]; offset_w = stream[i+1]; offset_o = stream[i+2]; pi = stream[i+3]; pw = stream[i+4]; po = stream[i+5];
+      stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
+      stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
+      bn_input_offset =  (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd) ? bn_input_stream[bn_stream_index] : 0;
+      kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,
+          regular_input_base + offset_o, accumulators_scratch + offset_o,
+          bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+      bn_stream_index++;
+      pool_index++;
+      i += 3;
+    }      
+  } else {
+    for (conv_i = 0; conv_i < n_convs; conv_i++) {
+      const int vi = variant[pool_index]; offset_i = stream[i]; offset_w = stream[i+1]; offset_o = stream[i+2]; pi = stream[i+3]; pw = stream[i+4]; po = stream[i+5];
+      kernel_pool[vi]( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po,
+          regular_input_base + offset_o, accumulators_scratch + offset_o,
+          bmean_ptr + stats_in_offset, brstd_ptr + stats_in_offset, input_bn_ptr + bn_input_offset, gamma_ptr + stats_out_offset, beta_ptr + stats_out_offset, input_add_ptr + bn_input_offset);
+      bn_stream_index++;
+      pool_index++;
+      i += 3;
+    }           
+  }
+}
+#endif

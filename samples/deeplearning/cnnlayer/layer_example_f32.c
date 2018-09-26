@@ -44,7 +44,7 @@
 /*# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE*/
 /*# define USE_FUSED_BATCH_STATS_FWD*/
 /*# define USE_FUSED_BATCH_STATS_BWD*/
-/*# define USE_FUSED_RELU_BWD*/
+# define USE_FUSED_RELU_BWD
 
 #if !defined(USE_FUSED_BIAS) && 0
 # define USE_FUSED_BIAS

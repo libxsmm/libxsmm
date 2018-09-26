@@ -340,8 +340,9 @@ void libxsmm_generator_convolution_forward_load_output_bf16( libxsmm_generated_c
     if (i_conv_desc->compute_batch_stats_fwd == 1) {
       rsp_offset = 64;
     }
-    if (i_conv_desc->perform_relu_in_kernel == 1) {
-      rsp_offset = 56;
+
+    if (i_conv_desc->use_fwd_generator_for_bwd == 1) {
+      rsp_offset = 40;
     }
 
     /* Load  address of "scratch" -- scratch vals is always next to max_vals in RSP, thus +16 in RSP offset */
