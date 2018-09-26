@@ -296,18 +296,21 @@ CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 
 # Automatically pickup the environment (make -e is not required),
 # or pickup the Intel Compiler (if available).
-ifneq (,$(notdir $(shell which icpc 2>/dev/null)))
-  CXX = icpc
-else ifneq (,$(notdir $(shell which icpx 2>/dev/null)))
-  CXX = icpx
-endif
-ifneq (,$(notdir $(shell which icc 2>/dev/null)))
-  CC = icc
-else ifneq (,$(notdir $(shell which icx 2>/dev/null)))
-  CC = icx
-endif
-ifneq (,$(notdir $(shell which ifort 2>/dev/null)))
-  FC = ifort
+GNU ?= 0
+ifeq (0,$(GNU))
+  ifneq (,$(notdir $(shell which icpc 2>/dev/null)))
+    CXX = icpc
+  else ifneq (,$(notdir $(shell which icpx 2>/dev/null)))
+    CXX = icpx
+  endif
+  ifneq (,$(notdir $(shell which icc 2>/dev/null)))
+    CC = icc
+  else ifneq (,$(notdir $(shell which icx 2>/dev/null)))
+    CC = icx
+  endif
+  ifneq (,$(notdir $(shell which ifort 2>/dev/null)))
+    FC = ifort
+  endif
 endif
 
 # check if the Intel Development Tools are available
