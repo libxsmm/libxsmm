@@ -288,9 +288,11 @@ Please note that comparing performance results depends on whether the operands o
 
 ## Articles
 
-**\[1]&#160;[https://medium.com/@rmfarber/libxsmm-brings-deep-learning-lessons-learned-to-many-hpc-applications-9143c6c93125](https://medium.com/@rmfarber/libxsmm-brings-deep-learning-lessons-learned-to-many-hpc-applications-9143c6c93125)**: LIBXSMM Brings Deep-learning "Lessons Learned" to Many HPC Applications. An article written by Rob Farber, 2018.
+**\[1]&#160;[https://software.intel.com/sites/default/files/parallel-universe-issue-34.pdf](https://software.intel.com/en-us/download/parallel-universe-magazine-issue-34-october-2018)**: LIBXSMM: An Open Source-Based Inspiration for Hardware and Software Development at Intel. An article written by Hans Pabst, Greg Henry, and Alexander Heinecke, 2018.
 
-**\[2]&#160;[https://www.rdmag.com/article/2018/02/largest-supercomputer-simulation-sumatra-andaman-earthquake](https://www.rdmag.com/article/2018/02/largest-supercomputer-simulation-sumatra-andaman-earthquake)**: Largest Supercomputer Simulation of Sumatra-Andaman Earthquake. An article written by Linda Barney, 2018.
+**\[2]&#160;[https://medium.com/@rmfarber/libxsmm-brings-deep-learning-lessons-learned-to-many-hpc-applications-9143c6c93125](https://medium.com/@rmfarber/libxsmm-brings-deep-learning-lessons-learned-to-many-hpc-applications-9143c6c93125)**: LIBXSMM Brings Deep-learning "Lessons Learned" to Many HPC Applications. An article written by Rob Farber, 2018.
+
+**\[3]&#160;[https://www.rdmag.com/article/2018/02/largest-supercomputer-simulation-sumatra-andaman-earthquake](https://www.rdmag.com/article/2018/02/largest-supercomputer-simulation-sumatra-andaman-earthquake)**: Largest Supercomputer Simulation of Sumatra-Andaman Earthquake. An article written by Linda Barney, 2018.
 
 **\[3]&#160;[https://software.intel.com/en-us/articles/intel-xeon-phi-delivers-competitive-performance-for-deep-learning-and-getting-better-fast](https://software.intel.com/en-us/articles/intel-xeon-phi-delivers-competitive-performance-for-deep-learning-and-getting-better-fast)**: Intel Xeon&#160;Phi Delivers Competitive Performance For Deep Learning - And Getting Better Fast. Article mentioning LIBXSMM's performance of convolution kernels with [DeepBench](https://github.com/baidu-research/DeepBench/tree/master/code/intel/convolution/libxsmm_conv). Intel Corporation, 2016.
 
