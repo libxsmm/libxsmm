@@ -319,12 +319,16 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
   $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1)))))")
 
 ifeq (0,$(INTEL))
-  ifeq (,$(notdir $(shell which $(CXX) 2>/dev/null)))
+  ifeq (,$(shell which $(CXX) 2>/dev/null))
     CXX = g++
   else ifneq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CXX = g++
+  else ifneq (gcc,$(notdir $(shell which $(CC) 2>/dev/null)))
+    ifeq (g++,$(notdir $(shell which $(CXX) 2>/dev/null)))
+      CC = gcc
+    endif
   endif
-  ifeq (,$(notdir $(shell which $(CC) 2>/dev/null)))
+  ifeq (,$(shell which $(CC) 2>/dev/null))
     CC = gcc
   else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CC = gcc
@@ -366,15 +370,25 @@ endif
 
 # fixup FC-default given by MAKE
 ifneq (,$(strip $(FC)))
-ifeq (,$(shell which $(FC) 2>/dev/null))
-  ifneq (,$(shell which gfortran 2>/dev/null))
-    MKL_FCRTL = gf
-    GFC = gfortran
-    FC = $(GFC)
-  else
-    FC = $(NULL)
+  FIXFC ?= 0
+  ifeq (,$(shell which $(FC) 2>/dev/null))
+    FIXFC = 1
+  else ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
+    FIXFC = 1
+  else ifneq (gfortran,$(notdir $(shell which $(FC) 2>/dev/null)))
+    ifeq (g++,$(notdir $(shell which $(CXX) 2>/dev/null)))
+      FIXFC = 1
+    endif
   endif
-endif
+  ifneq (0,$(FIXFC))
+    ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
+      MKL_FCRTL = gf
+      GFC = gfortran
+      FC = $(GFC)
+    else
+      FC = $(NULL)
+    endif
+  endif
 endif
 
 ifneq (,$(strip $(FC)))
