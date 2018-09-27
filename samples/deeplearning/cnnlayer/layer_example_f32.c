@@ -444,7 +444,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_fusedbn* libxsmm_bn_handle_post;
 #endif
 #if defined(USE_FUSED_BATCH_STATS_BWD)
-  float *dbeta_libxsmm, *dgamma_libxsmm;
+  float *dbeta_libxsmm, *dgamma_libxsmm, *bmean_libxsmm, *brstd_libxsmm, *del_input_add_libxsmm;
   libxsmm_dnn_fusedbn_desc  fusedbn_desc_pre;
   libxsmm_dnn_fusedbn* libxsmm_bn_handle_pre;
 #endif  
@@ -504,6 +504,9 @@ int main(int argc, char* argv[])
 #ifdef USE_FUSED_BATCH_STATS_BWD
   libxsmm_dnn_tensor*  libxsmm_dbeta;
   libxsmm_dnn_tensor*  libxsmm_dgamma;
+  libxsmm_dnn_tensor*  libxsmm_bmean;
+  libxsmm_dnn_tensor*  libxsmm_brstd;
+  libxsmm_dnn_tensor*  libxsmm_del_input_add;
 #endif
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
@@ -654,6 +657,9 @@ int main(int argc, char* argv[])
 #ifdef USE_FUSED_BATCH_STATS_BWD
   dbeta_libxsmm         = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
   dgamma_libxsmm        = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
+  del_input_add_libxsmm = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  brstd_libxsmm         = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
+  bmean_libxsmmm        = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
 #endif  
   naive_bias            = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
   naive_dbias           = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
@@ -906,6 +912,18 @@ int main(int argc, char* argv[])
     libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_bn_handle_pre, LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dgamma  = libxsmm_dnn_link_tensor( libxsmm_layout, dgamma_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_bn_handle_post, LIBXSMM_DNN_CHANNEL_EXPECTVAL, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_bmean  = libxsmm_dnn_link_tensor( libxsmm_layout, bmean_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_bn_handle_post, LIBXSMM_DNN_CHANNEL_STDDEV, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_brstd  = libxsmm_dnn_link_tensor( libxsmm_layout, brstd_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+    libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_bn_handle_post, LIBXSMM_DNN_GRADIENT_INPUT_ADD, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_del_input_add  = libxsmm_dnn_link_tensor( libxsmm_layout, del_input_add_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 #endif
 
     /* copy in data to LIBXSMM format */
@@ -934,8 +952,11 @@ int main(int argc, char* argv[])
 #ifdef USE_FUSED_BATCH_STATS_BWD
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_bn_handle_post, libxsmm_dbeta,    LIBXSMM_DNN_GRADIENT_CHANNEL_BETA ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_bn_handle_post, libxsmm_dgamma,   LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_bn_handle_post, libxsmm_bmean,    LIBXSMM_DNN_CHANNEL_EXPECTVAL ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_bn_handle_post, libxsmm_brstd,   LIBXSMM_DNN_CHANNEL_STDDEV ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_bn_handle_post, libxsmm_del_input_add,    LIBXSMM_DNN_GRADIENT_INPUT_ADD ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbn_bind_tensor( libxsmm_bn_handle_post, libxsmm_input,   LIBXSMM_DNN_REGULAR_OUTPUT ) );
 #endif
-
 
     /* let's allocate and bind scratch */
     scratch_size = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
