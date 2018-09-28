@@ -270,8 +270,8 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   regular_input_base = (element_input_type*) &placeholder;
 
   if (handle->compute_eltwise_in_kernel_bwd) {
-    LIBXSMM_VLA_DECL(5, element_input_type,  dinput_add, (element_input_type*) pre_bn->grad_add->data, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
-    input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    //LIBXSMM_VLA_DECL(5, element_input_type,  dinput_add, (element_input_type*) pre_bn->grad_add->data, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    //input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
   }   
 
   if (handle->perform_relu_in_kernel) {    
@@ -280,10 +280,10 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   } 
 
   if (handle->compute_batch_stats_in_kernel_bwd) {
-    LIBXSMM_VLA_DECL(5, element_input_type, dinput_add, (element_input_type*) pre_bn->grad_add->data, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    LIBXSMM_VLA_DECL(5, element_input_type, dinput_add, ((element_input_type*) pre_bn->grad_add->data)  + (pre_bn->desc.pad_h_in * bn_ifwp + pre_bn->desc.pad_w_in) * handle->ifmblock, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
     input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);    
-    LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-    LIBXSMM_VLA_DECL(5, element_input_type, bn_input,     (element_input_type* )pre_bn->reg_input->data,   bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->ifmblock, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+    LIBXSMM_VLA_DECL(5, element_input_type, bn_input, ((element_input_type* )pre_bn->reg_input->data) + (pre_bn->desc.pad_h_in * bn_ifwp + pre_bn->desc.pad_w_in) * handle->ifmblock,   bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
     LIBXSMM_VLA_DECL(2, float,  bmean_lcl,      (float*)pre_bn->expvalue->data,   16);
     LIBXSMM_VLA_DECL(2, float,  brstd_lcl,      (float*)pre_bn->stddev->data,     16);
     LIBXSMM_VLA_DECL(4, float,  kernel_stats_lcl, (float*)handle->scratch7, bn_nBlocksFm, handle->desc.N, 16);

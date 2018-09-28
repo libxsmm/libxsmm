@@ -83,6 +83,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
 
   /* Handle for bn fusion */
   libxsmm_dnn_fusedbn *post_bn = handle->post_bn;
+  libxsmm_dnn_fusedbn *pre_bn = handle->pre_bn;
   int ifhp_bn = 0, ifwp_bn = 0, u_bn = 0, v_bn = 0;
   int *aux_stat_indices = 0, *aux_input_indices = 0;
   
@@ -121,10 +122,10 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   record_aux_stats_offset = ((handle->fuse_batchstats_bwd == 1) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 1)) ? 1 : 0;
   record_aux_input_offset = (((handle->fuse_batchstats_bwd == 1) || (handle->fuse_eltwise_bwd == 1)) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 1) ) ? 1 : 0;
   if (record_aux_input_offset) {
-    ifhp_bn = post_bn->desc.H + 2 * post_bn->desc.pad_h_in;
-    ifwp_bn = post_bn->desc.W + 2 * post_bn->desc.pad_w_in;
-    u_bn = post_bn->desc.u;
-    v_bn = post_bn->desc.v;
+    ifhp_bn = pre_bn->desc.H + 2 * pre_bn->desc.pad_h_in;
+    ifwp_bn = pre_bn->desc.W + 2 * pre_bn->desc.pad_w_in;
+    u_bn = pre_bn->desc.u;
+    v_bn = pre_bn->desc.v;
   }
 
   /* Perform a dryrun to compute the memory requirements of the stream of indices */
