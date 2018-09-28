@@ -781,9 +781,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   LIBXSMM_DNN_ELTWISE_FTYPE *z2t = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->z2->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *z = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->z->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *bM = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->bM->data;
-  /* libxsmm_bgemm_handle *handlewx = rnn->handlewx; */
-  libxsmm_bgemm_handle *handleuh = rnn->handleuh;
-  libxsmm_bgemm_handle *handlett = rnn->handlett;
+  /*libxsmm_bgemm_handle *handlewx = rnn->handlewx;*/
+  /*libxsmm_bgemm_handle *handleuh = rnn->handleuh;*/
+  /*libxsmm_bgemm_handle *handlett = rnn->handlett;*/
   /*
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, x, xt, k * n);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, z1, z1t, m * n);
@@ -800,6 +800,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, znr, z, n, m);
   libxsmm_blasint i, im, in, ik, jm, jn, jk, em, en, ek, ih, ihn;
   LIBXSMM_DNN_ELTWISE_FTYPE mid_value;
+  LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(bn); LIBXSMM_UNUSED(bm); LIBXSMM_UNUSED(bM); /* TODO: remove */
 
   /* All data is in column-major format */
   for (i = 0; i < t; ++i) {
