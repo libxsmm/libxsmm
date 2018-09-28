@@ -215,7 +215,7 @@ set autoscale fix
 plot BASENAME."-cp2k.dat" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):FLOPS notitle smooth sbezier with lines linecolor "grey" linewidth 2, \
                        "" using ((column(MPARM)*column(NPARM)*column(KPARM))**(1.0/3.0)):FLOPS notitle with points pointtype 7 pointsize 0.1
 
-if (0!=system("sh -c \"if [[ -e eigen_smm-plot-join.dat ]]; then echo 1; else echo 0; fi\"")) {
+if (0!=system("sh -c \"if [ -e eigen_smm-plot-join.dat ]; then echo 1; else echo 0; fi\"")) {
 reset
 if (MULTI<=0) { set output "".FILECOUNT."-".FILENAME; FILECOUNT = FILECOUNT + 1 }
 if (MULTI>-1) { set title "Performance (Selected Kernels)" }
