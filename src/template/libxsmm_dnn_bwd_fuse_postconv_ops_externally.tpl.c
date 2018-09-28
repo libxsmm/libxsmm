@@ -55,8 +55,8 @@ if (compute_batch_stats_bwd_externally) {
   LIBXSMM_VLA_DECL(5,       element_input_type,   bn_input,     (element_input_type*)pre_bn->reg_input->data,   bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
   LIBXSMM_VLA_DECL(5,       element_output_type, bn_doutput,    (element_output_type*)pre_bn->grad_output->data, bn_nBlocksFm, bn_ofhp, bn_ofwp, 16);
 
-  del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, fm, img, 0, bn_nBlocksFm, handle->desc.N, 16);
-  del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, fm, img, 0, bn_nBlocksFm, handle->desc.N, 16);
+  del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, fm, img, 0, bn_nBlocksFm, handle->desc.N, 16);
+  del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, fm, img, 0, bn_nBlocksFm, handle->desc.N, 16);
   lcl_vbmean = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, bmean, fm, 0, 16) );
   lcl_vbrstd = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, brstd, fm, 0, 16) );
   for ( hi=iph, ho=oph; hi < (ifh + iph); hi+=sh, ho++ ) {

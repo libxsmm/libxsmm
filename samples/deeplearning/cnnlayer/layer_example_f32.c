@@ -248,7 +248,7 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
 
   LIBXSMM_VLA_DECL(4, const float, input,      input_ptr,      nFm, ifh, ifw);
   LIBXSMM_VLA_DECL(4,       float, dinput_add, dinput_add_ptr, nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4,       float, doutput,    doutput_ptr,    nFm, ofh, ofw);
+  LIBXSMM_VLA_DECL(4,       float, doutput,    doutput_ptr,    nFm, ofh+2, ofw+2);
 
 #if defined(_OPENMP)
 #pragma omp parallel for private(img, fm, hi, wi, ho, wo)
@@ -258,11 +258,11 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
     del_beta_ptr[fm] = 0.0f;
 
     for ( img = 0; img < nImg; img++ ) {
-      for ( hi = 0, ho = 0; hi < ifh; hi += sh, ho++ ) {
-        for ( wi = 0, wo = 0; wi < ifw; wi += sw, wo++ ) {
+      for ( hi = 0, ho = 1; hi < ifh; hi += sh, ho++ ) {
+        for ( wi = 0, wo = 1; wi < ifw; wi += sw, wo++ ) {
           float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifh, ifw);
           const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifh, ifw);
-          float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh, ofw);
+          float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh+2, ofw+2);
           /* The ReLU is done in the convolution reference...  */
           /* elementwise */
           *del_input_add_ptr = *del_output_ptr;
@@ -797,7 +797,8 @@ int main(int argc, char* argv[])
   init_buf(naive_brstd,           nIfm, 0, 0);
   init_buf(naive_dgamma,          nIfm, 0, 0);
   init_buf(naive_dbeta,           nIfm, 0, 0);  
-  init_buf(naive_del_input_add,   nImg*nIfm*ifhp*ifwp, 0, 0);
+//  init_buf(naive_del_input_add,   nImg*nIfm*ifhp*ifwp, 0, 0);
+  zero_buf( naive_del_input_add  , nImg*nIfm*ifhp*ifwp );
   init_buf(naive_bn_input,        nImg*nIfm*ifhp*ifwp, 0, 0);
 #endif
 
@@ -925,8 +926,8 @@ int main(int argc, char* argv[])
     fusedbn_desc_pre.v = stride_w;
     fusedbn_desc_pre.pad_h_in = 0;//pad_h_in;
     fusedbn_desc_pre.pad_w_in = 0;//pad_w_in;
-    fusedbn_desc_pre.pad_h_out = 0;//pad_h_out;
-    fusedbn_desc_pre.pad_w_out = 0;//pad_w_out;
+    fusedbn_desc_pre.pad_h_out = pad_h_out;
+    fusedbn_desc_pre.pad_w_out = pad_w_out;
     fusedbn_desc_pre.threads = nThreads;
     fusedbn_desc_pre.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     fusedbn_desc_pre.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
@@ -996,7 +997,7 @@ int main(int argc, char* argv[])
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
     libxsmm_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout( libxsmm_bn_handle_pre, LIBXSMM_DNN_REGULAR_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_del_input_add  = libxsmm_dnn_link_tensor( libxsmm_layout, bn_input_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_bn_input  = libxsmm_dnn_link_tensor( libxsmm_layout, bn_input_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 #endif
 
