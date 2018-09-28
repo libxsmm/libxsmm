@@ -389,7 +389,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descrip
 #endif
 
   if (0 != dst_entry->ptr_const) { /* collision? */
-    /* start at a re-hashed idx position */
+    /* start at a re-hashed index position */
     const unsigned int start = LIBXSMM_HASH_MOD(libxsmm_crc32_u32(151981/*seed*/, hash), LIBXSMM_CAPACITY_REGISTRY);
     unsigned int i0, i, next;
 #if defined(LIBXSMM_HASH_COLLISION)
@@ -420,6 +420,9 @@ LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descrip
 
 LIBXSMM_API_INLINE void internal_finalize(void)
 {
+  char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES")
+    ? getenv("LIBXSMM_DUMP_FILES")
+    : getenv("LIBXSMM_DUMP_FILE"));
   libxsmm_finalize();
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
@@ -427,13 +430,13 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       ? internal_get_target_arch(libxsmm_target_archid)
       : NULL/*hidden*/;
     const double regsize = 1.0 * internal_registry_nbytes / (1ULL << 20);
+    const int verbose = (1 < libxsmm_verbosity || 0 > libxsmm_verbosity);
     libxsmm_scratch_info scratch_info;
     unsigned int linebreak;
 
     /* synchronize I/O */
     LIBXSMM_STDIO_ACQUIRE();
-
-    if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
+    if (0 != verbose) {
       fprintf(stderr, "\nLIBXSMM_VERSION=%s-%s", LIBXSMM_BRANCH, LIBXSMM_VERSION);
     }
     linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
@@ -441,7 +444,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       fprintf(stderr, "\nLIBXSMM_TARGET=%s", target_arch);
     }
     fprintf(stderr, "\nRegistry: %.f MB", regsize);
-    if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
+    if (0 != verbose) {
       size_t ngemms = 0;
       int i; for (i = 0; i < 4; ++i) {
         ngemms += (size_t)internal_statistic[0/*DP*/][i].nsta + internal_statistic[1/*SP*/][i].nsta;
@@ -450,40 +453,72 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       fprintf(stderr, " (gemm=%lu mcopy=%u tcopy=%u)", (unsigned long int)ngemms,
         internal_statistic_num_mcopy, internal_statistic_num_tcopy);
     }
-    if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.size) {
-      fprintf(stderr, "\nScratch: %.f MB", 1.0 * scratch_info.size / (1ULL << 20));
-      if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
+    if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info)) {
+      const unsigned int scratch_internal = (unsigned int)(((512ULL << 10)/*rounding*/ + scratch_info.internal) / (1ULL << 20));
+      const unsigned int scratch_size = (unsigned int)(((512ULL << 10)/*rounding*/ + scratch_info.size) / (1ULL << 20));
+      if (0 != scratch_size || (0 != verbose && 0 != scratch_internal)) {
+        fprintf(stderr, "\nScratch: %u MB", scratch_size);
+        if (0 != verbose) {
 #if (0 != LIBXSMM_SYNC)
-        if (1 < libxsmm_threads_count) {
-          fprintf(stderr, " (mallocs=%lu, pools=%u, threads=%u)\n",
-            (unsigned long int)scratch_info.nmallocs,
-            scratch_info.npools, libxsmm_threads_count);
-        }
-        else
+          if (1 < libxsmm_threads_count) {
+            fprintf(stderr, " (mallocs=%lu, pools=%u, threads=%u, internal=%u MB)\n",
+              (unsigned long int)scratch_info.nmallocs, scratch_info.npools,
+              libxsmm_threads_count, scratch_internal);
+          }
+          else
 #endif
-        {
-          fprintf(stderr, " (mallocs=%lu, pools=%u)\n",
-            (unsigned long int)scratch_info.nmallocs,
-            scratch_info.npools);
+          {
+            fprintf(stderr, " (mallocs=%lu, pools=%u, internal=%u MB)\n",
+              (unsigned long int)scratch_info.nmallocs, scratch_info.npools,
+              scratch_internal);
+          }
         }
-      }
-      else {
-        fprintf(stderr, "\n");
+        else {
+          fprintf(stderr, "\n");
+        }
       }
     }
     else {
       fprintf(stderr, "\n");
     }
-
     /* synchronize I/O */
     LIBXSMM_STDIO_RELEASE();
   }
-
   /* release scratch memory pool */
   libxsmm_release_scratch();
   /* release global services */
   libxsmm_hash_finalize();
-
+  /* dump per-node info */
+  if (NULL != env_dump_files && 0 != *env_dump_files) {
+#if defined(_WIN32)
+    const HANDLE singleton = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
+    const char *const delims = ";,";
+#else
+    const char *const delims = ";,:", *const filename_global = "/tmp/GlobalLIBXSMM";
+    const int singleton = open(filename_global, O_CREAT | O_EXCL, S_IRUSR);
+#endif
+    if (0/*NULL*/ != singleton) {
+      const char *filename = strtok(env_dump_files, delims);
+      LIBXSMM_STDIO_ACQUIRE();
+      for (; NULL != filename; filename = strtok(NULL, delims)) {
+        FILE *const file = fopen(filename, "r"), *const ostream = stdout;
+        if (NULL != file) {
+          int c = fgetc(file);
+          fprintf(ostream, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
+          for (; EOF != c; c = fgetc(file)) fputc(c, ostream);
+          fputc('\n', ostream);
+          fclose(file);
+        }
+      }
+      LIBXSMM_STDIO_RELEASE();
+#if defined(_WIN32)
+      ReleaseMutex(singleton);
+#else
+      unlink(filename_global);
+      close(singleton);
+#endif
+    }
+  }
 #if (0 != LIBXSMM_SYNC)
   { /* release locks */
 # if (0 < INTERNAL_REGLOCK_MAXN)

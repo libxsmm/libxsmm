@@ -117,7 +117,7 @@ LIBXSMM_INLINE void matrix_relu(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (src[i] > 0) ? src[i] : 0;
+    dst[i] = (src[i] > 0) ? src[i] : 0.f;
   }
 }
 
@@ -156,7 +156,7 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (src[i] >= 0) ? 1 : 0;
+    dst[i] = (src[i] >= 0) ? 1.f : 0.f;
   }
 }
 

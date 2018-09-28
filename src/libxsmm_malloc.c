@@ -1429,6 +1429,7 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
     unsigned int i;
     assert(sizeof(internal_malloc_pool_type) <= (LIBXSMM_CACHELINE));
     memset(info, 0, sizeof(libxsmm_scratch_info));
+    info->internal = ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pools[0].instance.site ? 0 : pools[0].instance.minsize);
     info->npending = pools[0].instance.counter;
     info->nmallocs = internal_malloc_scratch_nmallocs;
     info->npools = LIBXSMM_MIN(1, libxsmm_scratch_pools);
@@ -1440,6 +1441,9 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
       if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pool->instance.site) {
         info->npools += (unsigned int)LIBXSMM_MIN(pool->instance.minsize, 1);
         info->npending += pool->instance.counter;
+      }
+      else {
+        info->internal += pool->instance.minsize;
       }
     }
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/

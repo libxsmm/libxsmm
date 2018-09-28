@@ -34,6 +34,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <math.h>
 #include <string.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -726,6 +727,34 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_tensor(libxsmm_dnn_rnn
   return status;
 }
 
+#if 0
+void sgemm_colmajor(LIBXSMM_DNN_ELTWISE_FTYPE *a, LIBXSMM_DNN_ELTWISE_FTYPE *b, LIBXSMM_DNN_ELTWISE_FTYPE *c, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, int beta)
+{
+  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, a2D, a, m);
+  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, b2D, b, k);
+  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, c2D, c, m);
+  libxsmm_blasint im, in, ik, jm, jn, jk, em, en, ek;
+  for (in = 0; in < n; in+=32) {
+    for (im = 0; im < m; im+=32) {
+      for (ik = 0; ik < k; ik+=32) {
+        for (jn = 0; jn < 32; jn++) {
+          for (jm = 0; jm < 32; jm++) {
+            en = in*32 + jn;
+            em = im*32 + jm;
+            if (beta == 0) {
+              c2D[en][em] = 0.0f;
+            }
+            for (jk = 0; jk < 32; jk++) {
+              ek = ik*32 + jk;
+              c2D[en][em] += (b2D[en][ek] * a2D[ek][em]);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+#endif
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, int start_thread, int tid)
 {
@@ -752,14 +781,88 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   LIBXSMM_DNN_ELTWISE_FTYPE *z2t = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->z2->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *z = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->z->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *bM = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->bM->data;
-  /* libxsmm_bgemm_handle *handlewx = rnn->handlewx; */
-  libxsmm_bgemm_handle *handleuh = rnn->handleuh;
-  libxsmm_bgemm_handle *handlett = rnn->handlett;
+  /*libxsmm_bgemm_handle *handlewx = rnn->handlewx;*/
+  /*libxsmm_bgemm_handle *handleuh = rnn->handleuh;*/
+  /*libxsmm_bgemm_handle *handlett = rnn->handlett;*/
+  /*
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, x, xt, k * n);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, z1, z1t, m * n);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, z2, z2t, m * n);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, hnr, h, m * n);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, znr, z, m * n);
+  */
+  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, w2D, w, m);
+  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, u2D, u, m);
+  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, x, xt, n, k);
+  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, z1, z1t, n, m);
+  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, z2, z2t, n, m);
+  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, hnr, h, n, m);
+  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, znr, z, n, m);
+  libxsmm_blasint i, im, in, ik, jm, jn, jk, em, en, ek, ih, ihn;
+  LIBXSMM_DNN_ELTWISE_FTYPE mid_value;
+  LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(bn); LIBXSMM_UNUSED(bm); LIBXSMM_UNUSED(bM); /* TODO: remove */
+
+  /* All data is in column-major format */
+  for (i = 0; i < t; ++i) {
+    /* z1 = W.x */
+    for (in = 0; in < n; in+=32) {
+      for (im = 0; im < m; im+=32) {
+        for (jn = 0; jn < 32; jn++) {
+          for (jm = 0; jm < 32; jm++) {
+            en = in + jn;
+            em = im + jm;
+            for (ik = 0; ik < k; ik+=32) {
+              for (jk = 0; jk < 32; jk++) {
+                ek = ik + jk;
+                LIBXSMM_VLA_ACCESS(3, z1, i, en, em, n, m) +=
+                  LIBXSMM_VLA_ACCESS(3, x, i, en, ek, n, k) * LIBXSMM_VLA_ACCESS(2, w2D, ek, em, m);
+              }
+            }
+          }
+        }
+      }
+    }
+    if (reuse) {
+      ih = 0;
+      ihn = 0;
+    } else {
+      ih = i;
+      ihn = i + 1;
+    }
+    /* z2 = U.h */
+    for (in = 0; in < n; in+=32) {
+      for (im = 0; im < m; im+=32) {
+        for (jn = 0; jn < 32; jn++) {
+          for (jm = 0; jm < 32; jm++) {
+            en = in + jn;
+            em = im + jm;
+            for (ik = 0; ik < m; ik+=32) {
+              for (jk = 0; jk < 32; jk++) {
+                ek = ik + jk;
+                LIBXSMM_VLA_ACCESS(3, z2, i, en, em, n, m) +=
+                  LIBXSMM_VLA_ACCESS(3, hnr, ih, en, ek, n, m) * LIBXSMM_VLA_ACCESS(2, u2D, ek, em, m);
+              }
+            }
+            /* z = z1 + z2 */
+            LIBXSMM_VLA_ACCESS(3, znr, i, en, em, n, m) = LIBXSMM_VLA_ACCESS(3, z1, i, en, em, n, m) + LIBXSMM_VLA_ACCESS(3, z2, i, en, em, n, m);
+            /* z += b */
+            LIBXSMM_VLA_ACCESS(3, znr, i, en, em, n, m) += b[em];
+            /* Apply non-linearity */
+            if (1 == nonlin) {
+              LIBXSMM_VLA_ACCESS(3, hnr, ihn, en, em, n, m) =
+                (LIBXSMM_VLA_ACCESS(3, znr, i, en, em, n, m) > 0) ? LIBXSMM_VLA_ACCESS(3, znr, i, en, em, n, m) : 0;
+            } else if (2 == nonlin) {
+              mid_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -LIBXSMM_VLA_ACCESS(3, znr, i, en, em, n, m));
+              LIBXSMM_VLA_ACCESS(3, hnr, ihn, en, em, n, m) = 1 / (1 + mid_value);
+            } else {
+              LIBXSMM_VLA_ACCESS(3, hnr, ihn, en, em, n, m) = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double)LIBXSMM_VLA_ACCESS(3, znr, i, en, em, n, m));
+            }
+          }
+        }
+      }
+    }
+  }
+#if 0
 #if defined(LSTM_TIMING)
   unsigned long long start;
   double duration;
@@ -815,6 +918,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
     }
   }
 #endif
+#endif /* if 0 */
 
   return status;
 }

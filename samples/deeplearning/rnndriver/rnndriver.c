@@ -243,7 +243,7 @@ int main(int argc, char* argv[])
   int n = 128;    /* size of mini-batch */
   int k = 256;    /* number of inputs */
   int t = 5;      /* number of time steps (> 1) */
-  int reuse = 1;  /* reuse=1 for FWD overwrites the same memory
+  int reuse = 0;  /* reuse=1 for FWD overwrites the same memory
                    * for intermediate values during inference;
                    * reuse value is immaterial for BWD and UPD */
   int bm = 32;    /* first blocking factor for m */
@@ -656,6 +656,7 @@ int main(int argc, char* argv[])
 
     /* copy in data to LIBXSMM format */
     if (pass == 0) {
+#if 0
       CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wgold, &m, w) );
       for (it = 0; it < t; ++it) {
         CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
@@ -666,6 +667,16 @@ int main(int argc, char* argv[])
       } else {
         CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, hgold_temp, &m, &LIBXSMM_VLA_ACCESS(2, hnr, 0, 0, m * n)) );
         zero_buf(&LIBXSMM_VLA_ACCESS(2, hnr, 1, 0, m * n), m * n * t);
+      }
+#endif
+      matrix_copy(m*k, wgold, w);
+      matrix_copy(k*n*t, xgoldt, xt);
+      matrix_copy(m*m, ugold, u);
+      if (reuse) {
+        matrix_copy(m*n, hgold_temp, h);
+      } else {
+        zero_buf(h, m*n*(t+1));
+        matrix_copy(m*n, hgold_temp, h);
       }
       matrix_copy(m, bgold, b);
     } else {

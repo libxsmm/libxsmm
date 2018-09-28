@@ -146,9 +146,6 @@
 # elif defined(LIBXSMM_NO_BLAS) && (1 == LIBXSMM_NO_BLAS)
 #   define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_API
 # endif
-# define LIBXSMM_WEAK LIBXSMM_EXTERN_C
-#else
-# define LIBXSMM_WEAK LIBXSMM_API_INLINE
 #endif
 #if !defined(LIBXSMM_GEMM_SYMBOL_VISIBILITY)
 # define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
@@ -438,8 +435,8 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemv_function)(
   const double*, double*, const libxsmm_blasint*);
 
 /** The original GEMM functions (SGEMM and DGEMM). */
-LIBXSMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void);
-LIBXSMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void);
+LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void);
+LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void);
 
 /**
  * General dense matrix multiplication, which re-exposes LAPACK/BLAS
