@@ -495,7 +495,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     const char *const delims = ";,";
 #else
     const char *const delims = ";,:", *const filename_global = "/tmp/GlobalLIBXSMM";
-    const int singleton = open(filename_global, O_CREAT | O_EXCL);
+    const int singleton = open(filename_global, O_CREAT | O_EXCL, S_IRUSR);
 #endif
     if (0/*NULL*/ != singleton) {
       const char *filename = strtok(env_dump_files, delims);
