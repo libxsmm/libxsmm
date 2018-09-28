@@ -420,6 +420,9 @@ LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descrip
 
 LIBXSMM_API_INLINE void internal_finalize(void)
 {
+  char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES")
+    ? getenv("LIBXSMM_DUMP_FILES")
+    : getenv("LIBXSMM_DUMP_FILE"));
   libxsmm_finalize();
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
@@ -433,7 +436,6 @@ LIBXSMM_API_INLINE void internal_finalize(void)
 
     /* synchronize I/O */
     LIBXSMM_STDIO_ACQUIRE();
-
     if (0 != verbose) {
       fprintf(stderr, "\nLIBXSMM_VERSION=%s-%s", LIBXSMM_BRANCH, LIBXSMM_VERSION);
     }
@@ -479,16 +481,34 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     else {
       fprintf(stderr, "\n");
     }
-
     /* synchronize I/O */
     LIBXSMM_STDIO_RELEASE();
   }
-
   /* release scratch memory pool */
   libxsmm_release_scratch();
   /* release global services */
   libxsmm_hash_finalize();
-
+  /* dump per-node info */
+  if (NULL != env_dump_files && 0 != *env_dump_files) {
+#if defined(_WIN32)
+    const char *const delims = ";,";
+#else
+    const char *const delims = ";,:";
+#endif
+    const char *filename = strtok(env_dump_files, delims);
+    LIBXSMM_STDIO_ACQUIRE();
+    for (; NULL != filename; filename = strtok(NULL, delims)) {
+      FILE *const file = fopen(filename, "r"), *const ostream = stdout;
+      if (NULL != file) {
+        int c = fgetc(file);
+        fprintf(ostream, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
+        for (; EOF != c; c = fgetc(file)) fputc(c, ostream);
+        fputc('\n', ostream);
+        fclose(file);
+      }
+    }
+    LIBXSMM_STDIO_RELEASE();
+  }
 #if (0 != LIBXSMM_SYNC)
   { /* release locks */
 # if (0 < INTERNAL_REGLOCK_MAXN)
