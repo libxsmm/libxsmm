@@ -234,9 +234,7 @@ LIBXSMM_INLINE void naive_copy_RSCK_to_KCRS(const float* rsck, float* kcrs, int 
   }
 }
 
-LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_ptr, float* dinput_ptr, const float* output_ptr, float* doutput_ptr, float* dinput_add_ptr,
-    const float* beta_ptr, float* del_beta_ptr, const float* gamma_ptr, float* del_gamma_ptr,
-    const float* expectval_ptr, const float* stddev_ptr)
+LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_ptr, float* doutput_ptr, float* dinput_add_ptr, float* del_beta_ptr,  float* del_gamma_ptr, const float* expectval_ptr, const float* stddev_ptr)
 {
   const int nImg = param->N;
   const int nFm = param->C;
@@ -246,9 +244,6 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
   const int sw = param->stride_w;
   const int ofh = ifh/sh;
   const int ofw = ifw/sw;
-  const float nhw = (float)(nImg * ifh * ifw);
-  const float recp_nhw = 1.0f/nhw;
-
   int img, fm, hi, wi, ho, wo;
 
   LIBXSMM_VLA_DECL(4, const float, input,      input_ptr,      nFm, ifh, ifw);
@@ -1198,7 +1193,7 @@ int main(int argc, char* argv[])
         naive_param.stride_h = stride_h;
         naive_param.stride_w = stride_w;
 
-        naive_fusedbn_bp(&naive_param, naive_bn_input, NULL, NULL, naive_input, naive_del_input_add, NULL, naive_dbeta, NULL, naive_dgamma, naive_bmean, naive_brstd);
+        naive_fusedbn_bp(&naive_param, naive_bn_input, naive_input, naive_del_input_add, naive_dbeta, naive_dgamma, naive_bmean, naive_brstd);
 
         libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIfm, 1, naive_dbeta, dbeta_libxsmm, 0, 0, &norms_batchstats);
         printf("\nDelta beta values:\n");
@@ -1222,7 +1217,6 @@ int main(int argc, char* argv[])
         printf("Check-norm    : %.24f\n\n", norms_batchstats.normf_rel);
         libxsmm_matdiff_reduce(&diff, &norms_batchstats);
 
-        /* copy out data */
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_del_input_add, (void*)naive_libxsmm_del_input_add, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
         libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_del_input_add, naive_libxsmm_del_input_add, 0, 0, &norms_bwd);
         printf("Del input add values:\n");
