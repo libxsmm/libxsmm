@@ -92,6 +92,10 @@ typedef struct {
   int W;
   int stride_h;
   int stride_w;
+  int pad_h_in;
+  int pad_w_in;
+  int pad_w_out;
+  int pad_h_out;
   int norm_type;  /* 0: full batchnorm, 1: batch scaling only */
   int fuse_type;  /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
 } naive_fusedbn_t;
@@ -245,10 +249,18 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
   const int ofh = ifh/sh;
   const int ofw = ifw/sw;
   int img, fm, hi, wi, ho, wo;
+  int iph = param->pad_h_in;
+  int ipw = param->pad_w_in;
+  int oph = param->pad_h_out;
+  int opw = param->pad_w_out;
+  int ifhp = ifh + 2*iph;
+  int ifwp = ifw + 2*ipw;
+  int ofhp = ofh + 2*oph;
+  int ofwp = ofw + 2*opw;
 
-  LIBXSMM_VLA_DECL(4, const float, input,      input_ptr,      nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4,       float, dinput_add, dinput_add_ptr, nFm, ifh, ifw);
-  LIBXSMM_VLA_DECL(4,       float, doutput,    doutput_ptr,    nFm, ofh+2, ofw+2);
+  LIBXSMM_VLA_DECL(4, const float, input,      input_ptr,      nFm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4,       float, dinput_add, dinput_add_ptr, nFm, ifhp, ifwp);
+  LIBXSMM_VLA_DECL(4,       float, doutput,    doutput_ptr,    nFm, ofhp, ofwp);
 
 #if defined(_OPENMP)
 #pragma omp parallel for private(img, fm, hi, wi, ho, wo)
@@ -258,11 +270,11 @@ LIBXSMM_INLINE void naive_fusedbn_bp(naive_fusedbn_t* param, const float* input_
     del_beta_ptr[fm] = 0.0f;
 
     for ( img = 0; img < nImg; img++ ) {
-      for ( hi = 0, ho = 1; hi < ifh; hi += sh, ho++ ) {
-        for ( wi = 0, wo = 1; wi < ifw; wi += sw, wo++ ) {
-          float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifh, ifw);
-          const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifh, ifw);
-          float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh+2, ofw+2);
+      for ( hi = iph , ho = oph; hi < (ifh+iph); hi += sh, ho++ ) {
+        for ( wi = ipw, wo = opw; wi < (ifw+ipw); wi += sw, wo++ ) {
+          float* del_input_add_ptr = &LIBXSMM_VLA_ACCESS(4, dinput_add, img, fm, hi, wi, fm, ifhp, ifwp);
+          const float  input_val         =  LIBXSMM_VLA_ACCESS(4,      input, img, fm, hi, wi, fm, ifhp, ifwp);
+          float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofhp, ofwp);
           /* The ReLU is done in the convolution reference...  */
           /* elementwise */
           *del_input_add_ptr = *del_output_ptr;
@@ -797,8 +809,7 @@ int main(int argc, char* argv[])
   init_buf(naive_brstd,           nIfm, 0, 0);
   init_buf(naive_dgamma,          nIfm, 0, 0);
   init_buf(naive_dbeta,           nIfm, 0, 0);  
-//  init_buf(naive_del_input_add,   nImg*nIfm*ifhp*ifwp, 0, 0);
-  zero_buf( naive_del_input_add  , nImg*nIfm*ifhp*ifwp );
+  zero_buf( naive_del_input_add,  nImg*nIfm*ifhp*ifwp );
   init_buf(naive_bn_input,        nImg*nIfm*ifhp*ifwp, 0, 0);
 #endif
 
@@ -1193,6 +1204,10 @@ int main(int argc, char* argv[])
         naive_param.W = ifw;
         naive_param.stride_h = stride_h;
         naive_param.stride_w = stride_w;
+        naive_param.pad_h_in = fusedbn_desc_pre.pad_h_in;
+        naive_param.pad_w_in = fusedbn_desc_pre.pad_w_in;
+        naive_param.pad_h_out = fusedbn_desc_pre.pad_h_out;
+        naive_param.pad_w_out = fusedbn_desc_pre.pad_w_out;
 
         naive_fusedbn_bp(&naive_param, naive_bn_input, naive_input, naive_del_input_add, naive_dbeta, naive_dgamma, naive_bmean, naive_brstd);
 
