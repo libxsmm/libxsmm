@@ -491,23 +491,33 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   /* dump per-node info */
   if (NULL != env_dump_files && 0 != *env_dump_files) {
 #if defined(_WIN32)
+    const HANDLE singleton = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
     const char *const delims = ";,";
 #else
-    const char *const delims = ";,:";
+    const char *const delims = ";,:", *const filename_global = "/tmp/GlobalLIBXSMM";
+    const int singleton = open(filename_global, O_CREAT | O_EXCL);
 #endif
-    const char *filename = strtok(env_dump_files, delims);
-    LIBXSMM_STDIO_ACQUIRE();
-    for (; NULL != filename; filename = strtok(NULL, delims)) {
-      FILE *const file = fopen(filename, "r"), *const ostream = stdout;
-      if (NULL != file) {
-        int c = fgetc(file);
-        fprintf(ostream, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
-        for (; EOF != c; c = fgetc(file)) fputc(c, ostream);
-        fputc('\n', ostream);
-        fclose(file);
+    if (0/*NULL*/ != singleton) {
+      const char *filename = strtok(env_dump_files, delims);
+      LIBXSMM_STDIO_ACQUIRE();
+      for (; NULL != filename; filename = strtok(NULL, delims)) {
+        FILE *const file = fopen(filename, "r"), *const ostream = stdout;
+        if (NULL != file) {
+          int c = fgetc(file);
+          fprintf(ostream, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
+          for (; EOF != c; c = fgetc(file)) fputc(c, ostream);
+          fputc('\n', ostream);
+          fclose(file);
+        }
       }
+      LIBXSMM_STDIO_RELEASE();
+#if defined(_WIN32)
+      ReleaseMutex(singleton);
+#else
+      unlink(filename_global);
+      close(singleton);
+#endif
     }
-    LIBXSMM_STDIO_RELEASE();
   }
 #if (0 != LIBXSMM_SYNC)
   { /* release locks */
