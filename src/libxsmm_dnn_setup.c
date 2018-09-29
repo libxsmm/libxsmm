@@ -1014,6 +1014,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       if ( (handle->fuse_batchstats_bwd == 1) && (handle->use_nts_bwd == 1) ) {
         fwd_equivalent_descriptor.compute_batch_stats_bwd = 1;
         fwd_equivalent_descriptor.compute_batch_stats_fwd = 0;
+        fwd_equivalent_descriptor.pre_bn = &(handle->pre_bn->desc);
         handle->compute_batch_stats_in_kernel_bwd = 1;
       } else {
         fwd_equivalent_descriptor.compute_batch_stats_fwd = 0;
