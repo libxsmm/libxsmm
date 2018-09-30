@@ -757,11 +757,18 @@ int main(int argc, char* argv[])
 #endif
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
       }
+#if 0
       /* copy out data */
       if (reuse) {
         libxsmm_bgemm_copyout_b( m, n, bm, bn, h, htest );
       } else {
         libxsmm_bgemm_copyout_b( m, n, bm, bn, &LIBXSMM_VLA_ACCESS(2, hnr, t, 0, m * n), htest );
+      }
+#endif
+      if (reuse) {
+        matrix_copy(m*n, h, htest);
+      } else {
+        matrix_copy(m*n, &LIBXSMM_VLA_ACCESS(2, hnr, t, 0, m * n), htest );
       }
 
       /* compare */
