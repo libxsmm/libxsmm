@@ -802,10 +802,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, z2, z2t, n, m);
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, hnr, h, n, m);
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, znr, z, n, m);
-  libxsmm_blasint i, im, in, ik, jm, jn, jk, ih, ihn;
+  libxsmm_blasint i, im, in, ik, ih, ihn;
   libxsmm_smmfunction gemmkernela = libxsmm_smmdispatch( bm, bn, bk, &m, &k, &m, NULL, NULL, NULL, NULL );
   libxsmm_smmfunction gemmkernelb = libxsmm_smmdispatch( bm, bn, bm, &m, &m, &m, NULL, NULL, NULL, NULL );
-  LIBXSMM_DNN_ELTWISE_FTYPE mid_value;
   LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(bM); /* TODO: remove */
 
   /* All data is in column-major format */
