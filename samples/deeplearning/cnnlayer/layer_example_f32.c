@@ -514,6 +514,7 @@ int main(int argc, char* argv[])
 #endif  
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
+  int pad_bn = 0, stride_bn = 1;
   naive_conv_t naive_param;
   void* scratch;
   size_t scratch_size = 0;
@@ -606,6 +607,8 @@ int main(int argc, char* argv[])
   if (argc > i) type       = *(argv[i++]);
   if (argc > i) format     = *(argv[i++]);
   if (argc > i) padding_mode = atoi(argv[i++]);
+  if (argc > i) pad_bn     = atoi(argv[i++]);
+  if (argc > i) stride_bn  = atoi(argv[i++]);
 
   if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (WU only)\n");
@@ -720,17 +723,17 @@ int main(int argc, char* argv[])
   stddev_libxsmm        = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
 #endif
 #ifdef USE_FUSED_BATCH_STATS_BWD
-  naive_bn_input        = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_del_input_add   = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  naive_bn_input        = (float*)libxsmm_aligned_malloc( nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp)*sizeof(float), 2097152);
+  naive_del_input_add   = (float*)libxsmm_aligned_malloc( nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp)*sizeof(float), 2097152);
   naive_dbeta           = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
   naive_dgamma          = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
   naive_bmean           = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
   naive_brstd           = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
   dbeta_libxsmm         = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
   dgamma_libxsmm        = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
-  del_input_add_libxsmm = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  naive_libxsmm_del_input_add = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
-  bn_input_libxsmm      = (float*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(float), 2097152);
+  del_input_add_libxsmm = (float*)libxsmm_aligned_malloc( nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp)*sizeof(float), 2097152);
+  naive_libxsmm_del_input_add = (float*)libxsmm_aligned_malloc( nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp)*sizeof(float), 2097152);
+  bn_input_libxsmm      = (float*)libxsmm_aligned_malloc( nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp)*sizeof(float), 2097152);
   brstd_libxsmm         = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
   bmean_libxsmm         = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
 #endif  
@@ -809,8 +812,8 @@ int main(int argc, char* argv[])
   init_buf(naive_brstd,           nIfm, 0, 0);
   init_buf(naive_dgamma,          nIfm, 0, 0);
   init_buf(naive_dbeta,           nIfm, 0, 0);  
-  zero_buf( naive_del_input_add,  nImg*nIfm*ifhp*ifwp );
-  init_buf(naive_bn_input,        nImg*nIfm*ifhp*ifwp, 0, 0);
+  zero_buf( naive_del_input_add,  nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp) );
+  init_buf(naive_bn_input,        nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp), 0, 0);
 #endif
 
   /* first touch LIBXSMM */
@@ -931,12 +934,12 @@ int main(int argc, char* argv[])
 #if defined(USE_FUSED_BATCH_STATS_BWD)
     fusedbn_desc_pre.N = nImg;
     fusedbn_desc_pre.C = nIfm;
-    fusedbn_desc_pre.H = ifh;
-    fusedbn_desc_pre.W = ifw;
-    fusedbn_desc_pre.u = stride_h;
-    fusedbn_desc_pre.v = stride_w;
-    fusedbn_desc_pre.pad_h_in = 0;//pad_h_in;
-    fusedbn_desc_pre.pad_w_in = 0;//pad_w_in;
+    fusedbn_desc_pre.H = ifh*stride_bn;
+    fusedbn_desc_pre.W = ifw*stride_bn;
+    fusedbn_desc_pre.u = stride_bn;
+    fusedbn_desc_pre.v = stride_bn;
+    fusedbn_desc_pre.pad_h_in = pad_bn;
+    fusedbn_desc_pre.pad_w_in = pad_bn;
     fusedbn_desc_pre.pad_h_out = pad_h_out;
     fusedbn_desc_pre.pad_w_out = pad_w_out;
     fusedbn_desc_pre.threads = nThreads;
@@ -1200,8 +1203,8 @@ int main(int argc, char* argv[])
         naive_fusedbn_t naive_param;
         naive_param.N = nImg;
         naive_param.C = nIfm;
-        naive_param.H = ifh;
-        naive_param.W = ifw;
+        naive_param.H = ifh*stride_bn;
+        naive_param.W = ifw*stride_bn;
         naive_param.stride_h = stride_h;
         naive_param.stride_w = stride_w;
         naive_param.pad_h_in = fusedbn_desc_pre.pad_h_in;
@@ -1234,7 +1237,7 @@ int main(int argc, char* argv[])
         libxsmm_matdiff_reduce(&diff, &norms_batchstats);
 
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_del_input_add, (void*)naive_libxsmm_del_input_add, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_del_input_add, naive_libxsmm_del_input_add, 0, 0, &norms_bwd);
+        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp), 1, naive_del_input_add, naive_libxsmm_del_input_add, 0, 0, &norms_bwd);
         printf("Del input add values:\n");
         printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
         printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
