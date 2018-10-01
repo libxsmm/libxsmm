@@ -297,7 +297,11 @@ typedef enum libxsmm_dnn_tensor_format {
   /* use RSCK format internally, this allows no-copy operations  */
   LIBXSMM_DNN_TENSOR_FORMAT_RSCK = 8,
   /* use KCRS format internally, this will include shadow copies, not preferred */
-  LIBXSMM_DNN_TENSOR_FORMAT_KCRS = 16
+  LIBXSMM_DNN_TENSOR_FORMAT_KCRS = 16,
+  LIBXSMM_DNN_TENSOR_FORMAT_CK   = 32,
+  LIBXSMM_DNN_TENSOR_FORMAT_KCCK = 64,
+  LIBXSMM_DNN_TENSOR_FORMAT_NCNC = 128,
+  LIBXSMM_DNN_TENSOR_FORMAT_NC   = 256
 } libxsmm_dnn_tensor_format;
 
 typedef enum libxsmm_dnn_internal_format {

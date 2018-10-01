@@ -38,44 +38,38 @@
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
   int nThreads;
-  int m;     /* number of outputs */
-  int n;     /* size of the minibatch */
-  int k;     /* number of inputs */
+  int K;     /* number of outputs */
+  int N;     /* size of the minibatch */
+  int C;     /* number of inputs */
   int t;     /* number of time steps */
+#if 0
   int bm;    /* blocksize for m */
   int bn;    /* blocksize for n */
   int bk;    /* blocksize for k */
+#endif
   int reuse; /* reuse/overwrite memory for FWD */
   int pass;  /* denotes whether it is FWD/BWD/UPD */
   int nonlin;/* denotes which non-linear function to be used: tanh, relu, sigmoid */
   libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
   libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
+  libxsmm_dnn_tensor_format filter_format;  /* format which is for buffer buffers */
 } libxsmm_dnn_rnncell_desc;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
-  int nThreads;
   libxsmm_dnn_rnncell_desc desc;
-  libxsmm_dnn_datatype datatype_in;
-  libxsmm_dnn_datatype datatype_out;
-  libxsmm_dnn_tensor_format buffer_format;
   libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts  */
-  libxsmm_blasint m;
-  libxsmm_blasint n;
-  libxsmm_blasint k;
-  libxsmm_blasint t;
-  libxsmm_blasint bm;
-  libxsmm_blasint bn;
   libxsmm_blasint bk;
-  int reuse;
-  int pass;
-  int nonlin;
+  libxsmm_blasint bn;
+  libxsmm_blasint bc;
+#if 0
   libxsmm_blasint b_m1;
   libxsmm_blasint b_n1;
   libxsmm_blasint b_k1;
   libxsmm_blasint b_m2;
   libxsmm_blasint b_n2;
   libxsmm_blasint b_k2;
+#endif
   libxsmm_dnn_tensor* w;
   libxsmm_dnn_tensor* xt;
   libxsmm_dnn_tensor* u;
