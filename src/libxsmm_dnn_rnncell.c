@@ -81,9 +81,9 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     if (rnncell_desc.t < 1) {
       *status = LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL;
     }
-    handle->bk = 32; /* rnncell_desc.bk; */
-    handle->bn = 32; /* rnncell_desc.bn; */
-    handle->bc = 32; /* rnncell_desc.bc; */
+    handle->bk = 64; /* rnncell_desc.bk; */
+    handle->bn = 64; /* rnncell_desc.bn; */
+    handle->bc = 64; /* rnncell_desc.bc; */
 #if 0
     handle->b_m1 = b_m1;
     handle->b_n1 = b_n1;
@@ -914,7 +914,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
         /* we nee to set z1 to zero */
         libxsmm_internal_matrix_zero_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, z1, in, ik, K));
 
-        /* z1 = W.x */
+
+        /* z += W.x */
         for (ic = 0; ic < C; ic += bc) {
           /* this is a small matmul */
           gemmkernela( &LIBXSMM_VLA_ACCESS(2, w, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, x, i, in, ic, N, C), &LIBXSMM_VLA_ACCESS(2, z1, in, ik, K) );
