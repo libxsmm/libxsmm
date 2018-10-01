@@ -1733,8 +1733,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
       for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
         for ( l_k = 0; l_k < l_reg_per_block; l_k++ ) {
           reg_X =  l_vec_reg_acc_start + l_k + (l_j * l_reg_per_block) + (i_conv_desc->ofw_rb * l_reg_per_block * l_i);
-          bn_aux_offset = ( l_i * sh_bn * ifwp_bn * l_lead_dim * i_conv_kernel_config->datatype_size_out) +
-            ( l_j * sw_bn * l_lead_dim * i_conv_kernel_config->datatype_size_out ) +
+          bn_aux_offset = ( l_i * i_conv_desc->stride_h_store * sh_bn * ifwp_bn * l_lead_dim * i_conv_kernel_config->datatype_size_out) +
+            ( l_j * i_conv_desc->stride_w_store * sw_bn * l_lead_dim * i_conv_kernel_config->datatype_size_out ) +
             ( l_k * i_conv_kernel_config->vector_length_out * i_conv_kernel_config->datatype_size_out );
 
           /* ELTWISE STORE  */
