@@ -590,19 +590,17 @@ int main(int argc, char* argv[])
 
     /* setup LIBXSMM handle */
     rnncell_desc.nThreads = nThreads;
-    rnncell_desc.m = m;
-    rnncell_desc.n = n;
-    rnncell_desc.k = k;
+    rnncell_desc.N = n;
+    rnncell_desc.C = k;
+    rnncell_desc.K = m;
     rnncell_desc.t = t;
     rnncell_desc.nonlin = nonlin;
-    rnncell_desc.bm = bm;
-    rnncell_desc.bn = bn;
-    rnncell_desc.bk = bk;
     rnncell_desc.reuse = reuse;
     rnncell_desc.pass = pass;
     rnncell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
-    rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+    rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NC;
+    rnncell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_CK;
 
     libxsmm_handle = libxsmm_dnn_create_rnncell( rnncell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
@@ -611,7 +609,7 @@ int main(int argc, char* argv[])
     libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_input = libxsmm_dnn_link_tensor( libxsmm_layout, xt, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
+    
     libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_WEIGHT, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_weight = libxsmm_dnn_link_tensor( libxsmm_layout, w, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
