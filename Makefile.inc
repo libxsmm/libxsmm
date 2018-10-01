@@ -1549,6 +1549,20 @@ else
   MKL_BITS = lp64
 endif
 
+ifneq (0,$(BLAS))
+  ifneq (Darwin,$(UNAME))
+    MKL_PLATFORM = linux
+  else # OSX
+    MKL_PLATFORM = mac
+  endif
+endif
+
+ifeq (,$(strip $(MKLROOT)))
+  MKL_INCFILE = $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h)))
+  ifneq (,$(strip $(MKL_INCFILE)))
+    MKLROOT = $(dir $(MKL_INCFILE))/..
+  endif
+endif
 ifneq (,$(strip $(MKLROOT)))
   MKL ?= $(BLAS)
   ifneq (,$(strip $(FC)))
