@@ -47,9 +47,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
   int bn;    /* blocksize for n */
   int bk;    /* blocksize for k */
 #endif
-  int reuse; /* reuse/overwrite memory for FWD */
   int pass;  /* denotes whether it is FWD/BWD/UPD */
-  int nonlin;/* denotes which non-linear function to be used: tanh, relu, sigmoid */
+  int nonlin;/* denotes which non-linear function to be used: relu, sigmoid, tanh */
   libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
   libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for buffer buffers */
@@ -83,7 +82,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_tensor* djdb;
   libxsmm_dnn_tensor* bM;
   libxsmm_dnn_tensor* deltat;
-  libxsmm_dnn_tensor* z1t;
+  libxsmm_dnn_tensor* z1;
   libxsmm_dnn_tensor* z2;
   libxsmm_dnn_tensor* di1;
   libxsmm_dnn_tensor* di2;
