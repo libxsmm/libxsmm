@@ -388,6 +388,17 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_add_colvector_ld(libxsmm_blasint
   }
 }
 
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_bcst_colvector_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *srcdst, LIBXSMM_DNN_ELTWISE_FTYPE *colv) {
+  libxsmm_blasint i, j;
+
+  for ( j = 0; j < n; ++j ) {
+    LIBXSMM_PRAGMA_SIMD
+    for ( i = 0; i < m; ++i ) {
+      srcdst[(j*ld)+i] = colv[i];
+    }
+  }
+}
+
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
   libxsmm_blasint i, j;
 

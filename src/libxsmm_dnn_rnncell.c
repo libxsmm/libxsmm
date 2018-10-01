@@ -90,9 +90,9 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     if (rnncell_desc.t < 2) {
       *status = LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL;
     }
-    handle->bk = 32; /* rnncell_desc.bk; */
-    handle->bn = 32; /* rnncell_desc.bn; */
-    handle->bc = 32; /* rnncell_desc.bc; */
+    handle->bk = 64; /* rnncell_desc.bk; */
+    handle->bn = 64; /* rnncell_desc.bn; */
+    handle->bc = 64; /* rnncell_desc.bc; */
 #if 0
     handle->b_m1 = b_m1;
     handle->b_n1 = b_n1;
@@ -930,16 +930,20 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
   LIBXSMM_DNN_ELTWISE_FTYPE *u = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->u->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *b = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->b->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *h = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->h->data;
+#if 0
   LIBXSMM_DNN_ELTWISE_FTYPE *z1t = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->z1t->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *z2t = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->z2->data;
+#endif
   LIBXSMM_DNN_ELTWISE_FTYPE *z = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->z->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *bM = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->bM->data;
 
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, w2D, w, K);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, u2D, u, K);
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, x, xt, N, C);
+#if 0
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, z1, z1t, N, K);
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, z2, z2t, N, K);
+#endif
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, hnr, h, N, K);
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, znr, z, N, K);
   libxsmm_blasint i, ik, in, ic, ih, ihn;
@@ -960,31 +964,43 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
     /* let's run the cell in blocks for good locality */
     for (in = 0; in < N; in += bn) {
       for (ik = 0; ik < K; ik += bk) {
-        /* we nee to set z1 to zero */
+#if 0
+        /* we need to set z1 to zero */
         libxsmm_internal_matrix_zero_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z1, i, in, ik, N, K));
+#endif
+        /* z = per_col(b) */
+        libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, znr, i, in, ik, N, K), &b[ik] );
 
-        /* z1 = W.x */
+        /* z += W.x */
         for (ic = 0; ic < C; ic += bc) {
           /* this is a small matmul */
+#if 0
           gemmkernela( &LIBXSMM_VLA_ACCESS(2, w2D, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, x, i, in, ic, N, C), &LIBXSMM_VLA_ACCESS(3, z1, i, in, ik, N, K) );
+#endif
+          gemmkernela( &LIBXSMM_VLA_ACCESS(2, w2D, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, x, i, in, ic, N, C), &LIBXSMM_VLA_ACCESS(3, znr, i, in, ik, N, K) );
         }
 
-        /* we nee to set z2 to zero */
+#if 0
+        /* we need to set z2 to zero */
         libxsmm_internal_matrix_zero_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z2, i, in, ik, N, K));
-
-        /* z2 = U.h */
+#endif
+        /* z += U.h */
         for (ic = 0; ic < K; ic += bk) {
           /* this is a small matmul */
+#if 0
           gemmkernelb( &LIBXSMM_VLA_ACCESS(2, u2D, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, hnr, ih, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, z2, i, in, ik, N, K) );
+#endif
+          gemmkernelb( &LIBXSMM_VLA_ACCESS(2, u2D, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, hnr, ih, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, znr, i, in, ik, N, K) );
         }
-
+#if 0
         /* now let's run the elementwise kernels */
         libxsmm_internal_matrix_add_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z1, i, in, ik, N, K),
                                                    &LIBXSMM_VLA_ACCESS(3, z2, i, in, ik, N, K),
                                                    &LIBXSMM_VLA_ACCESS(3, znr, i, in, ik, N, K) );
 
         libxsmm_internal_matrix_add_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, znr, i, in, ik, N, K), &b[ik] );
-
+#endif
+        /* let's apply activation function */
         if (1 == nonlin) {
           libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, znr, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, hnr, ihn, in, ik, N, K) );
         } else if (2 == nonlin) {
