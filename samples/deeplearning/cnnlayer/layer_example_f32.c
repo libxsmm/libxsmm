@@ -812,7 +812,7 @@ int main(int argc, char* argv[])
   init_buf(naive_brstd,           nIfm, 0, 0);
   init_buf(naive_dgamma,          nIfm, 0, 0);
   init_buf(naive_dbeta,           nIfm, 0, 0);  
-  zero_buf( naive_del_input_add,  nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp) );
+  zero_buf(naive_del_input_add,   nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp) );
   init_buf(naive_bn_input,        nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp), 0, 0);
 #endif
 
@@ -1205,8 +1205,8 @@ int main(int argc, char* argv[])
         naive_param.C = nIfm;
         naive_param.H = ifh*stride_bn;
         naive_param.W = ifw*stride_bn;
-        naive_param.stride_h = stride_h;
-        naive_param.stride_w = stride_w;
+        naive_param.stride_h = stride_bn;
+        naive_param.stride_w = stride_bn;
         naive_param.pad_h_in = fusedbn_desc_pre.pad_h_in;
         naive_param.pad_w_in = fusedbn_desc_pre.pad_w_in;
         naive_param.pad_h_out = fusedbn_desc_pre.pad_h_out;
