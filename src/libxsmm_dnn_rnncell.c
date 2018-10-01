@@ -711,8 +711,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_assign_internalstate(libxsmm_d
 
   if (handle != 0 && zgoldtb != 0) {
     const libxsmm_blasint K = handle->desc.K, N = handle->desc.N, t = handle->desc.t;
-    LIBXSMM_VLA_DECL(2, const LIBXSMM_DNN_ELTWISE_FTYPE, zgold, (const LIBXSMM_DNN_ELTWISE_FTYPE*)zgoldtb, K * N);
-    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, z, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->z->data, K * N);
+    /*LIBXSMM_VLA_DECL(2, const LIBXSMM_DNN_ELTWISE_FTYPE, zgold, (const LIBXSMM_DNN_ELTWISE_FTYPE*)zgoldtb, K * N);*/
+    /*LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, z, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->z->data, K * N);*/
     libxsmm_blasint it;
     for (it = 0; it < t; ++it) {
       libxsmm_internal_matrix_copy(K*N*t, (LIBXSMM_DNN_ELTWISE_FTYPE*)zgoldtb, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->z->data, 0, 0, 1);
@@ -994,7 +994,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, zi, ziD, K);
 
   libxsmm_blasint i, ik, in, ic, jk, jn, jc, ek, en, ec;
-  const int ltid = tid - start_thread;
+  /*const int ltid = tid - start_thread;*/
 
   /* initialization is done at the beginning */
   libxsmm_internal_matrix_zero(N*C*t, djdxt, start_thread, tid, nThreads);
