@@ -724,9 +724,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_assign_internalstate(libxsmm_d
     LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, z, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->z->data, K * N);
     libxsmm_blasint it;
     for (it = 0; it < t; ++it) {
-#if 0
-      libxsmm_bgemm_copyin_b(handle->handlewx, &LIBXSMM_VLA_ACCESS(2, zgold, it, 0, K * N), &m, &LIBXSMM_VLA_ACCESS(2, z, it, 0, K * N));
-#endif
+      libxsmm_bgemm_copyin_b(handle->handlewx, &LIBXSMM_VLA_ACCESS(2, zgold, it, 0, K * N), &K, &LIBXSMM_VLA_ACCESS(2, z, it, 0, K * N));
     }
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE_TENSOR;
