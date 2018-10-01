@@ -405,7 +405,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_ld(libxsmm_blasint m, li
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
     for ( i = 0; i < m; ++i ) {
-      LIBXSMM_DNN_ELTWISE_FTYPE mid_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp(((LIBXSMM_DNN_ELTWISE_FTYPE)-1)*src[(j*ld)+i]);
+      const LIBXSMM_DNN_ELTWISE_FTYPE mid_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp(-1.0*src[(j*ld)+i]);
       dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 / ((LIBXSMM_DNN_ELTWISE_FTYPE)1 + mid_value);
     }
   }
