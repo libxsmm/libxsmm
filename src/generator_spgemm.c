@@ -433,10 +433,9 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
   }
 
   /* append code to source file */
-  {
+  if ( l_generated_code.generated_code != NULL ) {
     FILE *const l_file_handle = fopen( i_file_out, "a" );
     if ( l_file_handle != NULL ) {
-      assert(l_generated_code.generated_code != NULL);
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {

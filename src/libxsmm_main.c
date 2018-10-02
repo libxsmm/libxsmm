@@ -508,7 +508,10 @@ LIBXSMM_API_INLINE void internal_finalize(void)
         if (NULL != file) {
           int c = fgetc(file);
           fprintf(ostream, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
-          for (; EOF != c; c = fgetc(file)) fputc(c, ostream);
+          while (EOF != c) {
+            fputc(c, ostream);
+            c = fgetc(file);
+          }
           fputc('\n', ostream);
           fclose(file);
         }

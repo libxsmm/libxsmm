@@ -53,10 +53,9 @@
 
 #define LIBXSMM_MATH_DIFF(DIFF, MOD, A, BN, ELEMSIZE, STRIDE, HINT, N) { \
   const char *const libxsmm_diff_b_ = (const char*)(BN); \
-  const unsigned int libxsmm_diff_end_ = (HINT) + (N); \
   unsigned int libxsmm_diff_i_; \
   LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, 4) \
-  for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ != libxsmm_diff_end_; ++libxsmm_diff_i_) { \
+  for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ != ((HINT) + (N)); ++libxsmm_diff_i_) { \
     const unsigned int libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); /* wrap around index */ \
     const unsigned int libxsmm_diff_k_ = libxsmm_diff_j_ * (STRIDE); \
     if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_k_, ELEMSIZE)) return libxsmm_diff_j_; \
@@ -121,7 +120,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
       const char *const env = getenv("LIBXSMM_DUMP");
       if (0 != env && 0 != *env && (('0' < *env && '9' >= *env) || '0' != *env)) {
         const char *const defaultname = ('0' < *env && '9' >= *env) ? "libxsmm_dump" : env;
-        const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
+        const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)((int)datatype);
         const libxsmm_mhd_elemtype type_dst = LIBXSMM_MAX(LIBXSMM_MHD_ELEMTYPE_U8, type_src);
         char filename[256];
         size_t size[2], pr[2]; size[0] = (size_t)mm; size[1] = (size_t)nn; pr[0] = (size_t)ldr; pr[1] = (size_t)nn;

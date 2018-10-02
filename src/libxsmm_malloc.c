@@ -502,7 +502,7 @@ LIBXSMM_API_INLINE void* internal_xmap(const char* dir, size_t size, int flags, 
   int i = 0;
   assert(NULL != rx);
   if (NULL != dir) {
-    LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/.libxsmm_XXXXXX.jit", dir);
+    i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/.libxsmm_XXXXXX.jit", dir);
   }
   if (0 < i && i < (int)sizeof(filename)) {
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(2, 19) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__)
