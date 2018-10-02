@@ -667,11 +667,11 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
     : NULL;
   int result = EXIT_SUCCESS;
 
-  /* source data type is not required to have MHD element name (type-size is needed) */
-  libxsmm_mhd_typename(type_data, &typesize_data, NULL/*ctypename*/);
-  if (0 != file && 0 < typesize_data) {
+  if (0 != file) {
     size_t i;
-    if (0 < fprintf(file, "NDims = %u\nElementNumberOfChannels = %u\nElementByteOrderMSB = False\nDimSize =",
+    /* source data type is not required to have MHD element name (type-size is needed) */
+    libxsmm_mhd_typename(type_data, &typesize_data, NULL/*ctypename*/);
+    if (0 < typesize_data && 0 < fprintf(file, "NDims = %u\nElementNumberOfChannels = %u\nElementByteOrderMSB = False\nDimSize =",
       (unsigned int)ndims, (unsigned int)ncomponents))
     {
       for (i = 0; i != ndims; ++i) {
@@ -712,7 +712,7 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
       if (0 != header_size) *header_size = ftell(file); /* determine the header size */
       result = internal_mhd_write(file,
         ((const char*)data) + libxsmm_offset(offset, shape, ndims, 0/*size*/) * ncomponents * typesize_data,
-        size, pitch, ndims, ncomponents, type_data, elemtype, typesize_data, typesize);
+        size, shape, ndims, ncomponents, type_data, elemtype, typesize_data, typesize);
     }
     /* append the extension data after the regular data section */
     if (EXIT_SUCCESS == result && 0 < extension_size) {

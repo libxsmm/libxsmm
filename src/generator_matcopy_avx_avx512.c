@@ -181,10 +181,10 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
     assert(0 < i_matcopy_desc->typesize);
     l_kernel_config.datatype_size = i_matcopy_desc->typesize;
     if ( i_matcopy_desc->typesize == 4  ) {
-      /* Use streaming stores if we want to zero the destination */
-      if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & i_matcopy_desc->flags)) {
+      /* TODO: use streaming stores if we want to zero the destination */
+      /*if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & i_matcopy_desc->flags)) {
         l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
-      } else {
+      } else*/ {
         l_kernel_config.vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
       }
       l_kernel_config.vector_length = 16;
