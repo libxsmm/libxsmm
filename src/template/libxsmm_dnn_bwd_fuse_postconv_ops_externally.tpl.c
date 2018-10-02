@@ -28,11 +28,13 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
-#if defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
+#if 0
 # define _mm512_load_act(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 # define _mm512_stream_act(A,B) _mm256_stream_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512((B)),16)))
 # define _mm512_store_act(A,B)  _mm256_storeu_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512((B)),16)))
-#else
+#endif
+
+#if defined(LIBXSMM_INTRINSICS_AVX512)
 # define _mm512_load_act(A)   _mm512_loadu_ps(A)
 # define _mm512_stream_act(A,B) _mm512_stream_ps((float*)A,B)
 # define _mm512_store_act(A,B)  _mm512_storeu_ps((float*)A,B)
@@ -62,7 +64,7 @@ if (compute_batch_stats_bwd_externally) {
   for ( hi=iph, ho=oph; hi < (ifh + iph); hi+=sh, ho++ ) {
     element_input_type*  del_input_add_ptr = &LIBXSMM_VLA_ACCESS(5, bn_dinput_add, img, fm, hi, ipw, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
     const element_output_type* output_ptr  = &LIBXSMM_VLA_ACCESS(5, bn_output, img, fm, ho, opw, 0, bn_nBlocksFm, bn_ofhp, bn_ofwp, 16);
-    const element_input_type*  input_ptr   = &LIBXSMM_VLA_ACCESS(5, bn_input, img, fm, hi, ipw, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    const element_input_type*  input_ptr_lcl   = &LIBXSMM_VLA_ACCESS(5, bn_input, img, fm, hi, ipw, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
     element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5, bn_doutput, img, fm, ho, opw, 0, bn_nBlocksFm, bn_ofhp, bn_ofwp, 16);
     for ( wi=ipw, wo=opw; wi < (ifw + ipw); wi+=sw, wo++ ) {
       __m512 lcl_vdeloutput = _mm512_load_act( del_output_ptr );
@@ -73,9 +75,9 @@ if (compute_batch_stats_bwd_externally) {
       output_ptr += 16;
       _mm512_stream_act(del_input_add_ptr, lcl_vdeloutput );
       del_input_add_ptr += sw*16;
-      lcl_vdgamma = _mm512_add_ps( lcl_vdgamma, _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( _mm512_load_act( input_ptr ), lcl_vbmean ), lcl_vdeloutput ), lcl_vbrstd ) );
+      lcl_vdgamma = _mm512_add_ps( lcl_vdgamma, _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( _mm512_load_act( input_ptr_lcl ), lcl_vbmean ), lcl_vdeloutput ), lcl_vbrstd ) );
       lcl_vdbeta  = _mm512_add_ps( lcl_vdbeta, lcl_vdeloutput );
-      input_ptr += sw*16;
+      input_ptr_lcl += sw*16;
       del_output_ptr += 16;
     }
   }
