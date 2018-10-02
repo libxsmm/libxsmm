@@ -225,20 +225,29 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
     handle->filter_format = conv_desc.filter_format;
     handle->fuse_ops = conv_desc.fuse_ops;
     handle->post_bn = handle->desc.post_bn;
+    handle->pre_bn = handle->desc.pre_bn;
     handle->fuse_batchstats_fwd = 0;
     handle->fuse_batchstats_bwd = 0;
+    handle->fuse_eltwise_bwd = 0;
+    handle->fuse_relu_bwd = 0;
 
     /* TODO: This check should be removed when this fuse flag is deprecated */
     if (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD) {
       handle->fuse_batchstats_fwd = 1;
     }
 
+    if (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) {
+      handle->fuse_relu_bwd = 1;
+    } 
+
     /* Enable batchnorm fusion depending on the input */
     if (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCHNORM_STATS) {
       if (handle->desc.post_bn != NULL) {
         handle->fuse_batchstats_fwd = 1;
       }
-      /* TODO: Similar check/setup for bwd */
+      if (handle->desc.pre_bn != NULL) {
+        handle->fuse_batchstats_bwd = 1;
+     }
     }
 
     handle->options = conv_desc.options;

@@ -197,7 +197,7 @@ if (n_segments) {
   code_stream = handle->fwd_code_segments[ltid];
   /* If we are in the img_par execution then avoid fine-grained copy in case of padding...  */
   if ( handle->fwd_img_par == 0 ) {
-    if (handle->compute_batch_stats_in_kernel == 1) { /* We  do BN stuff in the kernel  */
+    if (handle->compute_batch_stats_in_kernel_fwd == 1) { /* We  do BN stuff in the kernel  */
       LIBXSMM_VLA_DECL(4, float, kernel_stats, (float*)handle->scratch7, BLOCKSOFM, handle->desc.N, handle->ofmblock);
       bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
       bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
@@ -795,7 +795,7 @@ if (n_segments) {
   }
 } else {
   /* Run the stream of convolutions, no extra operations are required... */
-  if ( handle->compute_batch_stats_in_kernel == 1 ) { /* We  do BN stuff in the kernel  */
+  if ( handle->compute_batch_stats_in_kernel_fwd == 1 ) { /* We  do BN stuff in the kernel  */
     LIBXSMM_VLA_DECL(4, float, kernel_stats, (float*)handle->scratch7, BLOCKSOFM, handle->desc.N, handle->ofmblock);
     bn_sum_base =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
     bn_sum_base2 =  &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, 0, 0, 0, BLOCKSOFM, handle->desc.N, handle->ofmblock);
