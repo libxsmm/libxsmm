@@ -880,7 +880,6 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
               }
             }
           }
-
         }
       }
       l_filter_pos +=  i_conv_kernel_config->l_ld_ofm_fil * 2 * i_conv_kernel_config->datatype_size_wt;

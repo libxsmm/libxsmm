@@ -304,6 +304,10 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
   else {
     *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
   }
+  /* account for eventually deallocated handle */
+  if ( LIBXSMM_DNN_SUCCESS != *status ) {
+    handle = 0;
+  }
   return handle;
 }
 
