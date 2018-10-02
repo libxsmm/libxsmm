@@ -1449,7 +1449,11 @@ ifeq (0,$(COMPATIBLE))
   FLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
   ifneq (Windows_NT,$(UNAME))
     ifneq (0,$(INTEL))
-      CLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
+      ifeq (0,$(OFFLOAD))
+        CLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
+      else
+        CLDFLAGS += -pthread
+      endif
     else ifneq (Darwin,$(UNAME))
       CLDFLAGS += -pthread
     else ifeq (0,$(CLANG))
