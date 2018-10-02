@@ -611,13 +611,11 @@ int main(int argc, char* argv[])
 
     /* copy in data to LIBXSMM format */
     if (pass == 0) {
-      rnn_copyin(k, m, bk, bm, wgold, w);
-      for (i = 0; i < t; i++) {
-        rnn_copyin(n, k, bn, bk, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, k*n), &LIBXSMM_VLA_ACCESS(2, x, i, 0, k*n));
-      }
-      rnn_copyin(m, m, bm, bm, ugold, u);
+      matrix_copy( k*m, wgold, w );
+      matrix_copy( t*n*k, xgoldt, xt );
+      matrix_copy( m*m, ugold, u );
       zero_buf(h, m*n*(t+1));
-      rnn_copyin(n, m, bn, bm, hgold_temp, &LIBXSMM_VLA_ACCESS(2, hnr, 0, 0, m*n));
+      matrix_copy( n*m, hgold_temp, h );
       matrix_copy(m, bgold, b);
     } else {
       /* matrix_transpose(m, m, ugold, ugoldTp); */
@@ -701,7 +699,7 @@ int main(int argc, char* argv[])
 #endif
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
       }
-      rnn_copyout(n, m, 32, 32, &LIBXSMM_VLA_ACCESS(2, hnr, t, 0, m * n), htest);
+      matrix_copy( n*m, h+(t*m*n), htest );
 
       /* compare */
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*n, 1, hgold, htest, 0, 0, &norms_fwd);
