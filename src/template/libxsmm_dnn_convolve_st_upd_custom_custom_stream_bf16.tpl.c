@@ -105,43 +105,6 @@ if (handle->padding_flag == 1) {
   input_base = &LIBXSMM_VLA_ACCESS(5, tr_input_nopad, 0, 0, 0, 0, 0, BLOCKSIFM, dst_ifhp, handle->ifmblock_hp, ifwp_extended);
 }
 
-if (handle->reduce_weights == 0) {
-  int team_div = (int) libxsmm_isqrt_u32(handle->desc.threads);
-  while ( handle->desc.threads % team_div != 0  ) {
-    team_div--;
-  }
-#if 0
-  {
-    int n_ifm_teams = (BLOCKSIFM > BLOCKSOFM) ? handle->desc.threads / team_div : team_div;
-    int n_ofm_teams = (BLOCKSIFM > BLOCKSOFM) ? team_div : handle->desc.threads / team_div;
-    int ifms_per_thread = (BLOCKSIFM+n_ifm_teams-1)/n_ifm_teams;
-    int ofms_per_thread = (BLOCKSOFM+n_ofm_teams-1)/n_ofm_teams;
-    int my_ifm_id = ltid/n_ofm_teams;
-    int my_ofm_id = ltid%n_ofm_teams;
-    int my_ifm_start = LIBXSMM_MIN(my_ifm_id * ifms_per_thread, BLOCKSIFM);
-    int my_ifm_end   = LIBXSMM_MIN((my_ifm_id+1) * ifms_per_thread, BLOCKSIFM);
-    int my_ofm_start = LIBXSMM_MIN(my_ofm_id * ofms_per_thread, BLOCKSOFM);
-    int my_ofm_end   = LIBXSMM_MIN((my_ofm_id+1) * ofms_per_thread, BLOCKSOFM);
-    int ki, kj;
-    element_filter_type *zero_ptr;
-
-    for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++ ) {
-      for ( ofm1 = my_ofm_start; ofm1 < my_ofm_end; ofm1++ ) {
-        for (kj=0; kj < handle->desc.R; kj++) {
-          for (ki=0; ki < handle->desc.S; ki++) {
-            zero_ptr = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0, BLOCKSIFM, handle->desc.R, handle->desc.S, handle->ifmblock_hp, handle->ofmblock);
-            memset(zero_ptr, 0, handle->ifmblock_hp*handle->ofmblock*sizeof(element_filter_type));
-          }
-        }
-      }
-    }
-  }
-#endif
-}
-
-
-libxsmm_barrier_wait(handle->barrier, ltid);
-
 if (handle->padding_flag == 1) {
   int img = ltid, ij, ifm2, ii, lp;
   for (ifm1 = 0; ifm1 < handle->blocksifm_lp; ++ifm1) {
@@ -197,9 +160,7 @@ if (handle->reduce_weights) {
 #else
 #endif
 }
-
-/*LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->reg_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);*/
-/*LIBXSMM_VLA_DECL(6, element_output_type, lp_output, (element_output_type*)handle->grad_output->data, BLOCKSOFM, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);*/
+libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (handle->trans_ofw_ifm == 1) {
   if (handle->padding_flag == 1) {
@@ -217,12 +178,6 @@ if (handle->trans_ofw_ifm == 1) {
   }
 }
 
-
-#if 0
-element_output_type *const grad_out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp * handle->ofmblock_lp * handle->fm_lp_block /*+ handle->desc.pad_w_out*/);
-LIBXSMM_VLA_DECL(6, element_output_type, lp_output, grad_out, BLOCKSOFM, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
-output_base = &LIBXSMM_VLA_ACCESS(6, lp_output, 0, 0, 0, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);
-#else
 if (handle->avoid_output_trans) {
   element_output_type *const grad_out = ((element_output_type*)handle->grad_output->data) + (handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock_lp * handle->fm_lp_block;
   LIBXSMM_VLA_DECL(6, element_output_type, lp_output, grad_out, BLOCKSOFM, handle->ofhp, handle->ofwp/pixels_lp, handle->ofmblock, pixels_lp);
@@ -231,7 +186,6 @@ if (handle->avoid_output_trans) {
   LIBXSMM_VLA_DECL(6, element_output_type, scratch_out, (element_output_type*)handle->scratch2 , BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
   output_base = &LIBXSMM_VLA_ACCESS(6, scratch_out, 0, 0, 0, 0, 0, 0, BLOCKSOFM, handle->ofhp, OFWP/pixels_lp, handle->ofmblock, pixels_lp);
 }
-#endif
 
 i = 0;
 instr = handle->n_entries_upd[ltid];
@@ -239,12 +193,7 @@ instr = handle->n_entries_upd[ltid];
 if (handle->use_lp_kernel == 1) {
   scale_factor = libxsmm_sexp2(-1.f*((float)(handle->reg_input->scf + handle->grad_output->scf)));
 }
-#if 0
-if ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0) {
-  LIBXSMM_VLA_DECL(2, float, maxstats, (float*)handle->maxstats_upd->data, 16);
-  max_vals = (float*) &LIBXSMM_VLA_ACCESS(2, maxstats, ltid, 0, 16);
-}
-#endif
+
 for (pc = 0; pc < instr; pc++) {
   offset_i = stream[i];
   offset_w = stream[i+1];
