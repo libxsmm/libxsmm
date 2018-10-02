@@ -169,10 +169,10 @@ libxsmm_barrier_wait(handle->barrier, ltid);
 
 if (handle->reduce_weights) {
   if (handle->desc.C ==3) {
-    __m512 zero_reg = _mm512_setzero_ps();
     weight_base = ((float*)handle->scratch4) + (ltid * BLOCKSOFM * BLOCKSIFM * handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
     /* We DO USE private weights, initialize them to zero...  */
 #if defined(LIBXSMM_INTRINSICS_AVX512)
+    __m512 zero_reg = _mm512_setzero_ps();
     for (i=0; i<reduce_work; i++) {
       _mm512_store_ps( ((float*) weight_base) + i * 16, zero_reg);
     }
@@ -183,8 +183,20 @@ if (handle->reduce_weights) {
   }
 } else {
   weight_base = weight_ptr;
+  /* Initialize accumulation scratch to zero...  */
+#if defined(LIBXSMM_INTRINSICS_AVX512)
+  __m512 zero_reg = _mm512_setzero_ps();
+  const int zero_work = (BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*handle->ifmblock_hp);
+  const int zero_chunksize = (zero_work % handle->desc.threads == 0) ? (zero_work / handle->desc.threads) : (zero_work / handle->desc.threads) + 1;
+  const int zero_thr_begin = (ltid * zero_chunksize < zero_work) ? (ltid * zero_chunksize) : zero_work;
+  const int zero_thr_end = ((ltid + 1) * zero_chunksize < zero_work) ? ((ltid + 1) * zero_chunksize) : zero_work;  
+  for ( j = zero_thr_begin; j < zero_thr_end; j++ ) {
+    float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16;
+    _mm512_store_ps(fp32_weight_ptr, zero_reg);
+  }
+#else
+#endif
 }
-
 
 /*LIBXSMM_VLA_DECL(6, element_input_type, lp_input, (element_input_type*)handle->reg_input->data, BLOCKSIFM, handle->ifhp, handle->ifwp/2, handle->ifmblock_hp, 2);*/
 /*LIBXSMM_VLA_DECL(6, element_output_type, lp_output, (element_output_type*)handle->grad_output->data, BLOCKSOFM, handle->ofhp, handle->ofwp/2, handle->ofmblock, 2);*/
