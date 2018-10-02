@@ -53,6 +53,7 @@
 # include <Windows.h>
 #else
 # include <sys/mman.h>
+# include <sys/stat.h>
 # include <unistd.h>
 # include <fcntl.h>
 #endif
