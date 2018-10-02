@@ -371,6 +371,7 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   libxsmm_barrier_wait(handle->barrier, ltid);
 
   if (handle->fuse_batchstats_bwd == 1) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
     /* now we need to reduce the del_gamm and del_beta */
     LIBXSMM_VLA_DECL(4, float,  kernel_stats_red, (float*)handle->scratch7, bn_nBlocksFm, handle->desc.N, 16);
     LIBXSMM_VLA_DECL(2, float,  dgamma_result,     (float*)pre_bn->grad_gamma->data, 16);
@@ -396,6 +397,8 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
       _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dbeta_result,  fm, 0, 16), lcl_vdbeta  );
     }
     libxsmm_barrier_wait(handle->barrier, ltid);
+#else
+#endif
   }
 }
 
