@@ -56,7 +56,7 @@ const int transpose_thr_begin = (ltid * transpose_chunksize < transpose_work) ? 
 const int transpose_thr_end = ((ltid + 1) * transpose_chunksize < transpose_work) ? ((ltid + 1) * transpose_chunksize) : transpose_work;
 
 /* fusion flags */
-int fuse_postconv_ops_in_kernel = 0, compute_batch_stats_bwd_externally = 0, overwrite_output_externally = 0, fuse_relu_externally = 0, downconvert_to_bf16_externally = 0;
+int compute_batch_stats_bwd_externally = 0, overwrite_output_externally = 0, fuse_relu_externally = 0, downconvert_to_bf16_externally = 0;
 
 /* Pointer variables  */
 element_output_type *input_base;
@@ -74,7 +74,7 @@ int *bn_outstats_stream, *bn_instats_stream, *bn_input_stream;
 int stats_in_offset = 0, stats_out_offset = 0, bn_input_offset = 0, fm = 0;
 int bn_stream_index = 0;
 float placeholder = 0.0;
-int bn_ifh, bn_ifw, bn_sh, bn_sw, bn_ofh, bn_ofw, bn_iph, bn_ipw, bn_oph, bn_opw, bn_ofhp, bn_ofwp, bn_ifhp, bn_ifwp, bn_nBlocksFm, nImg;
+int bn_ifh=0, bn_ifw=0, bn_sh=0, bn_sw=0, bn_ofh=0, bn_ofw=0, bn_iph=0, bn_ipw=0, bn_oph=0, bn_opw=0, bn_ofhp=0, bn_ofwp=0, bn_ifhp=0, bn_ifwp=0, bn_nBlocksFm=0, nImg=0;
 libxsmm_dnn_fusedbn *pre_bn = handle->pre_bn;
 if (handle->fuse_batchstats_bwd) {
   bn_ifh = pre_bn->desc.H;
@@ -97,7 +97,6 @@ if (handle->fuse_batchstats_bwd) {
 
 /* Scratch7 zeroing related logistics  */
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
-int threads_per_image = handle->desc.threads / handle->desc.N;
 int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
 int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
 int my_ifm_start = 0;
@@ -151,7 +150,6 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   int pool_index;
   int ifm1ofm1, kj, ki, ofm2, ofm1;
   /* Kernel related variables  */
-  libxsmm_convfunction kernel = (libxsmm_convfunction)handle->code_bwd[0].xconv.sconv;
   libxsmm_xmcopyfunction jitted_matcopy = handle->matcopy_bwd[0].xmatcopy;
   libxsmm_xmcopyfunction jitted_zero_overwrite = handle->matcopy_bwd[1].xmatcopy;
 
@@ -316,7 +314,7 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   segment_type =  (n_segments == 0) ? CONVOLUTION_KERNEL : code_stream[0].segment_type;
 
   /* Set properly the fusion flags  */
-  fuse_postconv_ops_in_kernel = (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd || handle->perform_relu_in_kernel) ? 1 : 0;
+  //fuse_postconv_ops_in_kernel = (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd || handle->perform_relu_in_kernel) ? 1 : 0;
   overwrite_output_externally = (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0)) ? 1 : 0;
   fuse_relu_externally = (handle->perform_relu_in_kernel) ? 0 : 1;
   downconvert_to_bf16_externally = (handle->use_accumulation_scratch) ? 1 : 0;

@@ -34,8 +34,8 @@
 # define _mm512_store_act(A,B)  _mm256_storeu_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512((B)),16)))
 #else
 # define _mm512_load_act(A)   _mm512_loadu_ps(A)
-# define _mm512_stream_act(A,B) _mm512_stream_ps(A,B)
-# define _mm512_store_act(A,B)  _mm512_storeu_ps(A,B)
+# define _mm512_stream_act(A,B) _mm512_stream_ps((float*)A,B)
+# define _mm512_store_act(A,B)  _mm512_storeu_ps((float*)A,B)
 #endif
 
 if (compute_batch_stats_bwd_externally) {
@@ -71,7 +71,7 @@ if (compute_batch_stats_bwd_externally) {
       lcl_vdeloutput = _mm512_mask_blend_ps( lcl_mzero, lcl_vdeloutput, zero_ps );
       _mm512_store_act( del_output_ptr, lcl_vdeloutput );
       output_ptr += 16;
-      _mm512_stream_act( del_input_add_ptr, lcl_vdeloutput );
+      _mm512_stream_act(del_input_add_ptr, lcl_vdeloutput );
       del_input_add_ptr += sw*16;
       lcl_vdgamma = _mm512_add_ps( lcl_vdgamma, _mm512_mul_ps( _mm512_mul_ps( _mm512_sub_ps( _mm512_load_act( input_ptr ), lcl_vbmean ), lcl_vdeloutput ), lcl_vbrstd ) );
       lcl_vdbeta  = _mm512_add_ps( lcl_vdbeta, lcl_vdeloutput );

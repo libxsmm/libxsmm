@@ -82,7 +82,6 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   int lookahead_index;
 
   /* Handle for bn fusion */
-  libxsmm_dnn_fusedbn *post_bn = handle->post_bn;
   libxsmm_dnn_fusedbn *pre_bn = handle->pre_bn;
   int ifhp_bn = 0, ifwp_bn = 0, u_bn = 0, v_bn = 0;
   int *aux_stat_indices = 0, *aux_input_indices = 0;
