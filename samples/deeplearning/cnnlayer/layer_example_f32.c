@@ -511,7 +511,7 @@ int main(int argc, char* argv[])
   float *dbeta_libxsmm, *dgamma_libxsmm, *bmean_libxsmm, *brstd_libxsmm, *del_input_add_libxsmm, *bn_input_libxsmm;
   libxsmm_dnn_fusedbn_desc  fusedbn_desc_pre;
   libxsmm_dnn_fusedbn *libxsmm_bn_handle_pre;
-#endif  
+#endif
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   int pad_bn = 0, stride_bn = 1;
@@ -736,7 +736,7 @@ int main(int argc, char* argv[])
   bn_input_libxsmm      = (float*)libxsmm_aligned_malloc( nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp)*sizeof(float), 2097152);
   brstd_libxsmm         = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
   bmean_libxsmm         = (float*)libxsmm_aligned_malloc( nIfm*               sizeof(float), 2097152);
-#endif  
+#endif
   naive_bias            = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
   naive_dbias           = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
   bias_libxsmm          = (float*)libxsmm_aligned_malloc( nOfm*               sizeof(float), 2097152);
@@ -811,7 +811,7 @@ int main(int argc, char* argv[])
   init_buf(naive_bmean,           nIfm, 0, 0);
   init_buf(naive_brstd,           nIfm, 0, 0);
   init_buf(naive_dgamma,          nIfm, 0, 0);
-  init_buf(naive_dbeta,           nIfm, 0, 0);  
+  init_buf(naive_dbeta,           nIfm, 0, 0);
   zero_buf(naive_del_input_add,   nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp) );
   init_buf(naive_bn_input,        nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp), 0, 0);
 #endif

@@ -1647,7 +1647,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
     }
   }
 
-  /* Do the bwd BN stuff here  */  
+  /* Do the bwd BN stuff here  */
   if ( i_conv_desc->compute_batch_stats_bwd) {
     /* The eltwise offset */
     libxsmm_x86_instruction_alu_mem( io_generated_code,
@@ -1766,7 +1766,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
                 i_conv_kernel_config->vector_name,
                 2,
                 reg_X,
-                2); 
+                2);
 
             libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
                 i_conv_kernel_config->instruction_set,
@@ -1774,7 +1774,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
                 i_conv_kernel_config->vector_name,
                 2,
                 1,
-                2);    
+                2);
 
             libxsmm_x86_instruction_vec_compute_mem(  io_generated_code,
                 i_conv_kernel_config->instruction_set,
@@ -1823,7 +1823,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
                 i_conv_kernel_config->vector_name,
                 l_vec_reg_acc_start,
                 reg_X,
-                l_vec_reg_acc_start); 
+                l_vec_reg_acc_start);
 
             libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
                 i_conv_kernel_config->instruction_set,
@@ -1839,7 +1839,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
                 i_conv_kernel_config->vector_name,
                 reg_X,
                 3,
-                3); 
+                3);
 
             libxsmm_x86_instruction_vec_compute_reg(  io_generated_code,
                 i_conv_kernel_config->instruction_set,

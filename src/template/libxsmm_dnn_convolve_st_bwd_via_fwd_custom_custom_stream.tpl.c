@@ -270,12 +270,12 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   if (handle->compute_eltwise_in_kernel_bwd) {
     //LIBXSMM_VLA_DECL(5, element_input_type,  dinput_add, (element_input_type*) pre_bn->grad_add->data, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
     //input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
-  }   
+  }
 
-  if (handle->perform_relu_in_kernel) {    
+  if (handle->perform_relu_in_kernel) {
     LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
     regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-  } 
+  }
 
   if (handle->compute_batch_stats_in_kernel_bwd) {
     LIBXSMM_VLA_DECL(5, element_input_type, dinput_add, ((element_input_type*) pre_bn->grad_add->data)  + (pre_bn->desc.pad_h_in * bn_ifwp + pre_bn->desc.pad_w_in) * handle->ifmblock, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
@@ -346,7 +346,7 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
 
     /* Run the stream of convolutions  */
     for (conv_i = 0; conv_i < n_convs; conv_i++) {
-      vi = (handle->n_variants == 1) ? 0 : variant[pool_index]; 
+      vi = (handle->n_variants == 1) ? 0 : variant[pool_index];
       offset_i = stream[i]; offset_w = stream[i+1]; offset_o = stream[i+2]; pi = stream[i+3]; pw = stream[i+4]; po = stream[i+5];
       stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
       stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
@@ -357,7 +357,7 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
       bn_stream_index++;
       pool_index++;
       i += 3;
-    }   
+    }
 
     /* Set up for next segment */
     if (pc+1 < n_segs) {

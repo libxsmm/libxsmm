@@ -752,7 +752,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     memset( handle->compute_fwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
     memset( handle->bn_stats_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
     memset( handle->bn_aux_stats_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
-    memset( handle->bn_aux_input_indices_ptrs, 0, handle->desc.threads * sizeof(int*));      
+    memset( handle->bn_aux_input_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
     memset( handle->kernel_fwd_variant_ptrs, 0, handle->desc.threads * sizeof(char*) );
     memset( handle->n_fwd_code_segments, 0, handle->desc.threads * sizeof(int) );
     memset( handle->fwd_code_segments, 0, handle->desc.threads * sizeof(segment_t*) );

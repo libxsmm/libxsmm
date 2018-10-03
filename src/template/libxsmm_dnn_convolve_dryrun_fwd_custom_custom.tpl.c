@@ -85,7 +85,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   libxsmm_dnn_fusedbn *pre_bn = handle->pre_bn;
   int ifhp_bn = 0, ifwp_bn = 0, u_bn = 0, v_bn = 0;
   int *aux_stat_indices = 0, *aux_input_indices = 0;
-  
+
   /* Arrays of stream indices */
   int *compute_indices, *bn_indices = 0;
   char *kernel_variant;
@@ -110,13 +110,13 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   mark_ofm_init =  ((((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd == 0) ) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;
   /* FIXME: MAke sure the variable below is enabled when we fuse for bwd... */
   mark_ofm_close = ((((handle->fuse_batchstats_fwd == 1) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) ) ||
-      ((handle->fuse_batchstats_bwd == 1) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0)) || 
+      ((handle->fuse_batchstats_bwd == 1) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0)) ||
       (((handle->fuse_relu_bwd > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0) ) ) ? 1 : 0;
   mark_ifm_close = 0;
   mark_img_init = ( (handle->padding_flag == 1) || (mark_ofm_close == 1) || (mark_ifm_close == 1) ) ? 1 : 0;
 
 
-  record_bnstats_offset = (((handle->fuse_batchstats_fwd == 1) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1)) || 
+  record_bnstats_offset = (((handle->fuse_batchstats_fwd == 1) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1)) ||
       ((handle->fuse_batchstats_bwd == 1) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 1))) ? 1 : 0;
   record_aux_stats_offset = ((handle->fuse_batchstats_bwd == 1) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 1)) ? 1 : 0;
   record_aux_input_offset = (((handle->fuse_batchstats_bwd == 1) || (handle->fuse_eltwise_bwd == 1)) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 1) ) ? 1 : 0;
@@ -346,7 +346,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
                       }
                       if (record_aux_stats_offset) {
-                        aux_stat_indices[local_entries/3] = ofm1 * handle->ofmblock;             
+                        aux_stat_indices[local_entries/3] = ofm1 * handle->ofmblock;
                       }
                       if (record_aux_input_offset) {
                         aux_input_indices[local_entries/3] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  ifhp_bn )  +  (oj_use * v_bn)) * ifwp_bn)  +  (oi_use * u_bn)) *  handle->ofmblock;
@@ -429,7 +429,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
                       }
                       if (record_aux_stats_offset) {
-                        aux_stat_indices[local_entries/3] = ofm1 * handle->ofmblock;             
+                        aux_stat_indices[local_entries/3] = ofm1 * handle->ofmblock;
                       }
                       if (record_aux_input_offset) {
                         aux_input_indices[local_entries/3] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  ifhp_bn )  +  (oj_use * v_bn)) * ifwp_bn)  +  (oi_use * u_bn)) *  handle->ofmblock;
@@ -522,7 +522,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                       bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
                     }
                     if (record_aux_stats_offset) {
-                      aux_stat_indices[local_entries/3] = ofm1 * handle->ofmblock;             
+                      aux_stat_indices[local_entries/3] = ofm1 * handle->ofmblock;
                     }
                     if (record_aux_input_offset) {
                       aux_input_indices[local_entries/3] = ( ( ( ( ( (img *  BLOCKSOFM) +  ofm1) *  ifhp_bn )  +  (oj_use * v_bn)) * ifwp_bn)  +  (oi_use * u_bn)) *  handle->ofmblock;
