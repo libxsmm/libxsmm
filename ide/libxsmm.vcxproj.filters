@@ -893,6 +893,9 @@
     <ClCompile Include="..\src\libxsmm_dnn_pooling_forward.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_bwd_fuse_postconv_ops_externally.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">
