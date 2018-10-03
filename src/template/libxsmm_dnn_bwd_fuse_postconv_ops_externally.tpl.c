@@ -213,3 +213,8 @@ if (!fuse_relu_externally && downconvert_to_bf16_externally) {
   LIBXSMM_ASSERT(0);
 #endif
 }
+
+#undef _mm512_load_act
+#undef _mm512_stream_act
+#undef _mm512_store_act
+
