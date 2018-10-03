@@ -428,7 +428,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_ld(libxsmm_blasint m, libxs
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
     for ( i = 0; i < m; ++i ) {
-     dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh(src[(j*ld)+i]);
+      dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double) src[(j*ld)+i]);
     }
   }
 }
@@ -463,7 +463,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse_ld(libxsmm_blasint 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
     for ( i = 0; i < m; ++i ) {
-     LIBXSMM_DNN_ELTWISE_FTYPE tanh_value = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh(src[i]);
+     LIBXSMM_DNN_ELTWISE_FTYPE tanh_value = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double) src[i]);
      dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 - (tanh_value * tanh_value);
     }
   }
