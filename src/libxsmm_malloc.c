@@ -325,7 +325,7 @@ LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
   if (NULL == libxsmm_default_malloc_fn.function || NULL == libxsmm_default_free_fn.function) {
     const libxsmm_malloc_function null_malloc_fn = { NULL };
     const libxsmm_free_function null_free_fn = { NULL };
-    libxsmm_xset_default_allocator(lock, NULL/*context*/, null_malloc_fn, null_free_fn);
+    libxsmm_xset_default_allocator(NULL/*already locked*/, NULL/*context*/, null_malloc_fn, null_free_fn);
   }
   if (NULL == malloc_fn.function && NULL == free_fn.function) { /* adopt default allocator */
     libxsmm_scratch_allocator_context = libxsmm_default_allocator_context;
@@ -499,9 +499,12 @@ LIBXSMM_API_INLINE void* internal_xmap(const char* dir, size_t size, int flags, 
 {
   void* result = MAP_FAILED;
   char filename[4096];
-  int i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/.libxsmm_XXXXXX.jit", dir);
+  int i = 0;
   assert(NULL != rx);
-  if (0 <= i && i < (int)sizeof(filename)) {
+  if (NULL != dir) {
+    i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/.libxsmm_XXXXXX.jit", dir);
+  }
+  if (0 < i && i < (int)sizeof(filename)) {
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(2, 19) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__)
     i = mkstemps(filename, 4/*.jit*/);
 #else
