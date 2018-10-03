@@ -658,7 +658,7 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   libxsmm_mhd_elemtype type_data, const libxsmm_mhd_elemtype* type, const void* data, size_t* header_size,
   const char extension_header[], const void* extension, size_t extension_size)
 {
-  size_t typesize_data = 0, typesize = 0;
+  size_t typesize = 0;
   const libxsmm_mhd_elemtype elemtype = (NULL == type ? type_data : *type);
   const char *const elemname = libxsmm_mhd_typename(elemtype, &typesize, NULL/*ctypename*/);
   FILE *const file = (0 != filename && 0 != *filename &&
@@ -668,10 +668,8 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   int result = EXIT_SUCCESS;
 
   if (0 != file) {
-    size_t i;
-    /* source data type is not required to have MHD element name (type-size is needed) */
-    libxsmm_mhd_typename(type_data, &typesize_data, NULL/*ctypename*/);
-    if (0 < typesize_data && 0 < fprintf(file, "NDims = %u\nElementNumberOfChannels = %u\nElementByteOrderMSB = False\nDimSize =",
+    size_t typesize_data = 0, i;
+    if (0 < fprintf(file, "NDims = %u\nElementNumberOfChannels = %u\nElementByteOrderMSB = False\nDimSize =",
       (unsigned int)ndims, (unsigned int)ncomponents))
     {
       for (i = 0; i != ndims; ++i) {
@@ -706,6 +704,10 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
         result = EXIT_FAILURE;
       }
     }
+    /* source data type is not required to have MHD element name (type-size is needed) */
+    libxsmm_mhd_typename(type_data, &typesize_data, NULL/*ctypename*/);
+    if (0 == typesize_data) result = EXIT_FAILURE;
+
     /* ElementDataFile must be the last entry before writing the data */
     if (EXIT_SUCCESS == result && 0 < fprintf(file, "\nElementType = %s\nElementDataFile = LOCAL\n", elemname)) {
       const size_t *const shape = (0 != pitch ? pitch : size);
