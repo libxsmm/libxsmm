@@ -135,9 +135,10 @@ if (handle->reduce_weights) {
     weight_base = ((float*)handle->scratch4) + (ltid * BLOCKSOFM * BLOCKSIFM * handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock);
     /* We DO USE private weights, initialize them to zero...  */
 #if defined(LIBXSMM_INTRINSICS_AVX512)
-    __m512 zero_reg = _mm512_setzero_ps();
-    for (i=0; i<reduce_work; i++) {
-      _mm512_store_ps( ((float*) weight_base) + i * 16, zero_reg);
+    { const __m512 zero_reg = _mm512_setzero_ps();
+      for (i=0; i<reduce_work; i++) {
+        _mm512_store_ps( ((float*) weight_base) + i * 16, zero_reg);
+      }
     }
 #else
 #endif
@@ -148,14 +149,15 @@ if (handle->reduce_weights) {
   weight_base = weight_ptr;
   /* Initialize accumulation scratch to zero...  */
 #if defined(LIBXSMM_INTRINSICS_AVX512)
-  __m512 zero_reg = _mm512_setzero_ps();
-  const int zero_work = (BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*handle->ifmblock_hp);
-  const int zero_chunksize = (zero_work % handle->desc.threads == 0) ? (zero_work / handle->desc.threads) : (zero_work / handle->desc.threads) + 1;
-  const int zero_thr_begin = (ltid * zero_chunksize < zero_work) ? (ltid * zero_chunksize) : zero_work;
-  const int zero_thr_end = ((ltid + 1) * zero_chunksize < zero_work) ? ((ltid + 1) * zero_chunksize) : zero_work;  
-  for ( j = zero_thr_begin; j < zero_thr_end; j++ ) {
-    float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16;
-    _mm512_store_ps(fp32_weight_ptr, zero_reg);
+  { const __m512 zero_reg = _mm512_setzero_ps();
+    const int zero_work = (BLOCKSOFM*BLOCKSIFM*handle->desc.R*handle->desc.S*handle->ifmblock_hp);
+    const int zero_chunksize = (zero_work % handle->desc.threads == 0) ? (zero_work / handle->desc.threads) : (zero_work / handle->desc.threads) + 1;
+    const int zero_thr_begin = (ltid * zero_chunksize < zero_work) ? (ltid * zero_chunksize) : zero_work;
+    const int zero_thr_end = ((ltid + 1) * zero_chunksize < zero_work) ? ((ltid + 1) * zero_chunksize) : zero_work;
+    for ( j = zero_thr_begin; j < zero_thr_end; j++ ) {
+      float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16;
+      _mm512_store_ps(fp32_weight_ptr, zero_reg);
+    }
   }
 #else
 #endif

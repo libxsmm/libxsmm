@@ -238,7 +238,7 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
 
     if (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) {
       handle->fuse_relu_bwd = 1;
-    } 
+    }
 
     /* Enable batchnorm fusion depending on the input */
     if (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCHNORM_STATS) {
@@ -312,6 +312,10 @@ LIBXSMM_API libxsmm_dnn_layer* libxsmm_dnn_create_conv_layer(
   }
   else {
     *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
+  }
+  /* account for eventually deallocated handle */
+  if ( LIBXSMM_DNN_SUCCESS != *status ) {
+    handle = 0;
   }
   return handle;
 }
