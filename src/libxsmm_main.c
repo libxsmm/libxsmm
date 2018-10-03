@@ -556,7 +556,7 @@ LIBXSMM_API_INLINE void internal_init(void)
 #endif
   if (0 == internal_registry) { /* double-check after acquiring the lock(s) */
     assert(0 == internal_registry_keys); /* should never happen */
-#if !defined(_WIN32)
+#if !defined(_WIN32) && 0
     umask(S_IRUSR | S_IWUSR); /* setup default/secure file mask */
 #endif
     libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
