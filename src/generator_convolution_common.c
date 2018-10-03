@@ -1649,6 +1649,12 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
 
   /* Do the bwd BN stuff here  */
   if ( i_conv_desc->compute_batch_stats_bwd) {
+    int ifwp_bn = i_conv_desc->pre_bn->W + 2 * i_conv_desc->pre_bn->pad_w_in;
+    int sw_bn = i_conv_desc->pre_bn->v;
+    int sh_bn = i_conv_desc->pre_bn->u;
+    unsigned int bn_aux_offset;
+    unsigned int reg_X;
+
     /* The eltwise offset */
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_conv_kernel_config->alu_mov_instruction,
@@ -1723,12 +1729,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_convolution_forward_store_output(
         1, 0, 1, 0);
 
     /* Do the bwd BN stuff here  */
-    unsigned int reg_X;
-    unsigned int bn_aux_offset;
-    int ifwp_bn = i_conv_desc->pre_bn->W + 2 * i_conv_desc->pre_bn->pad_w_in;
-    int sw_bn = i_conv_desc->pre_bn->v;
-    int sh_bn = i_conv_desc->pre_bn->u;
-
     for ( l_i = 0; l_i < i_conv_desc->ofh_rb; l_i++ ) {
       for ( l_j = 0; l_j < i_conv_desc->ofw_rb; l_j++ ) {
         for ( l_k = 0; l_k < l_reg_per_block; l_k++ ) {
