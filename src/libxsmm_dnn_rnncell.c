@@ -61,9 +61,9 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     if (rnncell_desc.t < 1) {
       *status = LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL;
     }
-    handle->bk = rnncell_desc.bk;
-    handle->bn = rnncell_desc.bn;
-    handle->bc = rnncell_desc.bc;
+    handle->bk = 64;
+    handle->bn = 64;
+    handle->bc = 64;
     /* Need to allocate space for scratch libxsmm_dnn_tensor's */
     handle->z  = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->deltat = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
