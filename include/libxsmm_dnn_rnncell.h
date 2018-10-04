@@ -42,11 +42,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
   int N;     /* size of the minibatch */
   int C;     /* number of inputs */
   int t;     /* number of time steps */
-#if 0
-  int bm;    /* blocksize for m */
-  int bn;    /* blocksize for n */
-  int bk;    /* blocksize for k */
-#endif
+  int bk;    /* blocksize for K */
+  int bn;    /* blocksize for N */
+  int bc;    /* blocksize for C */
   int pass;  /* denotes whether it is FWD/BWD/UPD */
   int nonlin;/* denotes which non-linear function to be used: relu, sigmoid, tanh */
   libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
@@ -61,14 +59,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_blasint bk;
   libxsmm_blasint bn;
   libxsmm_blasint bc;
-#if 0
-  libxsmm_blasint b_m1;
-  libxsmm_blasint b_n1;
-  libxsmm_blasint b_k1;
-  libxsmm_blasint b_m2;
-  libxsmm_blasint b_n2;
-  libxsmm_blasint b_k2;
-#endif
   libxsmm_dnn_tensor* w;
   libxsmm_dnn_tensor* xt;
   libxsmm_dnn_tensor* u;
@@ -80,17 +70,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_tensor* djdw;
   libxsmm_dnn_tensor* djdxt;
   libxsmm_dnn_tensor* djdb;
-  libxsmm_dnn_tensor* bM;
+  libxsmm_dnn_tensor* zi;
   libxsmm_dnn_tensor* deltat;
-  libxsmm_dnn_tensor* z1;
-  libxsmm_dnn_tensor* z2;
-  libxsmm_dnn_tensor* di1;
-  libxsmm_dnn_tensor* di2;
-  libxsmm_dnn_tensor* deltaMt;
-  libxsmm_bgemm_handle* handlewx;
-  libxsmm_bgemm_handle* handleuh;
-  libxsmm_bgemm_handle* handlett;
-  libxsmm_bgemm_handle* handlewd;
   libxsmm_barrier* barrier; /* barrier */
 } libxsmm_dnn_rnncell;
 

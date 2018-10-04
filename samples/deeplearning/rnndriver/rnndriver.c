@@ -554,6 +554,9 @@ int main(int argc, char* argv[])
     rnncell_desc.t = t;
     rnncell_desc.nonlin = nonlin;
     rnncell_desc.pass = pass;
+    rnncell_desc.bn = bn;
+    rnncell_desc.bc = bk;
+    rnncell_desc.bk = bm;
     rnncell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NC;
