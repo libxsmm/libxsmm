@@ -365,7 +365,7 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           size = 0;
+                                           size += 0;
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
@@ -769,7 +769,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, 
           /* this is a small matmul */
           gemmkernela( &LIBXSMM_VLA_ACCESS(2, w, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, x, i, in, ic, N, C), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
         }
-        /* z2 += U.h */
+        /* z += U.h */
         for (ic = 0; ic < K; ic += bk) {
           /* this is a small matmul */
           gemmkernelb( &LIBXSMM_VLA_ACCESS(2, u, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );

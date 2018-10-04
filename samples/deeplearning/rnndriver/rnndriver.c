@@ -307,7 +307,7 @@ int main(int argc, char* argv[])
   memset(&diff, 0, sizeof(diff));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("\nUsage: ./rnndriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [nonlin: 1--ReLU, 2--sigmoid, 3--tanh] [M] [N] [K] [time_steps > 1]\n\n");
+    printf("\nUsage: ./rnndriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [nonlin: 1--ReLU, 2--sigmoid, 3--tanh] [M] [N] [K] [time_steps > 0]\n\n");
     return 0;
   }
   libxsmm_srand(1);
