@@ -752,7 +752,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     memset( handle->compute_fwd_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
     memset( handle->bn_stats_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
     memset( handle->bn_aux_stats_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
-    memset( handle->bn_aux_input_indices_ptrs, 0, handle->desc.threads * sizeof(int*));      
+    memset( handle->bn_aux_input_indices_ptrs, 0, handle->desc.threads * sizeof(int*));
     memset( handle->kernel_fwd_variant_ptrs, 0, handle->desc.threads * sizeof(char*) );
     memset( handle->n_fwd_code_segments, 0, handle->desc.threads * sizeof(int) );
     memset( handle->fwd_code_segments, 0, handle->desc.threads * sizeof(segment_t*) );
@@ -814,11 +814,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       }
       handle->matcopy_fwd[3].xmatcopy = libxsmm_dispatch_mcopy(&matzero_descriptor);
     }
-
-    /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
-    tune_fwd_blockings(handle);
-    status = libxsmm_dnn_perform_fwd_dryrun_direct(handle);
-
+    if (LIBXSMM_DNN_SUCCESS == status) { /* check status for any previous error */
+      /* Perform the dryrun and generate thread private jit indices to be used for the convolutions */
+      tune_fwd_blockings(handle);
+      status = libxsmm_dnn_perform_fwd_dryrun_direct(handle);
+    }
 #if defined(LIBXSMM_DNN_HANDLE_DEBUG)
     { /* compute kernel stream overhead */
       int ks_overhead = 0;

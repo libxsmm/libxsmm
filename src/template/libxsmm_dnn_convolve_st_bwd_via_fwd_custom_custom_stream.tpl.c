@@ -74,33 +74,13 @@ int *bn_outstats_stream, *bn_instats_stream, *bn_input_stream;
 int stats_in_offset = 0, stats_out_offset = 0, bn_input_offset = 0, fm = 0;
 int bn_stream_index = 0;
 float placeholder = 0.0;
-int bn_ifh=0, bn_ifw=0, bn_sh=0, bn_sw=0, bn_ofh=0, bn_ofw=0, bn_iph=0, bn_ipw=0, bn_oph=0, bn_opw=0, bn_ofhp=0, bn_ofwp=0, bn_ifhp=0, bn_ifwp=0, bn_nBlocksFm=0, nImg=0;
-libxsmm_dnn_fusedbn *pre_bn = handle->pre_bn;
-if (handle->fuse_batchstats_bwd) {
-  bn_ifh = pre_bn->desc.H;
-  bn_ifw = pre_bn->desc.W;
-  bn_sh = pre_bn->desc.u;
-  bn_sw = pre_bn->desc.v;
-  bn_ofh = bn_ifh/bn_sh;
-  bn_ofw = bn_ifw/bn_sw;
-  bn_iph = pre_bn->desc.pad_h_in;
-  bn_ipw = pre_bn->desc.pad_w_in;
-  bn_oph = pre_bn->desc.pad_h_out;
-  bn_opw = pre_bn->desc.pad_w_out;
-  bn_ofhp = bn_ofh + 2*bn_oph;
-  bn_ofwp = bn_ofw + 2*bn_opw;
-  bn_ifhp = bn_ifh + 2*bn_iph;
-  bn_ifwp = bn_ifw + 2*bn_ipw;
-  bn_nBlocksFm = pre_bn->blocksifm;
-  nImg = handle->desc.N;
-}
 
 /* Scratch7 zeroing related logistics  */
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
 int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
 int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
 int my_ifm_start = 0;
-int my_ifm_end = bn_nBlocksFm;
+int my_ifm_end;
 
 /* Padding related variables */
 const int padded_h = handle->ofhp + 2 * handle->desc.pad_h;
@@ -127,6 +107,29 @@ float *const accumulators_scratch = accumulators_scratch_array;
 /* Input tensor declaration */
 /* regular/high precision */
 element_input_type* del_in = 0;
+
+int bn_ifh=0, bn_ifw=0, bn_sh=0, bn_sw=0, bn_ofh=0, bn_ofw=0, bn_iph=0, bn_ipw=0, bn_oph=0, bn_opw=0, bn_ofhp=0, bn_ofwp=0, bn_ifhp=0, bn_ifwp=0, bn_nBlocksFm=0, nImg=0;
+libxsmm_dnn_fusedbn *pre_bn = handle->pre_bn;
+if (handle->fuse_batchstats_bwd) {
+  bn_ifh = pre_bn->desc.H;
+  bn_ifw = pre_bn->desc.W;
+  bn_sh = pre_bn->desc.u;
+  bn_sw = pre_bn->desc.v;
+  bn_ofh = bn_ifh/bn_sh;
+  bn_ofw = bn_ifw/bn_sw;
+  bn_iph = pre_bn->desc.pad_h_in;
+  bn_ipw = pre_bn->desc.pad_w_in;
+  bn_oph = pre_bn->desc.pad_h_out;
+  bn_opw = pre_bn->desc.pad_w_out;
+  bn_ofhp = bn_ofh + 2*bn_oph;
+  bn_ofwp = bn_ofw + 2*bn_opw;
+  bn_ifhp = bn_ifh + 2*bn_iph;
+  bn_ifwp = bn_ifw + 2*bn_ipw;
+  bn_nBlocksFm = pre_bn->blocksifm;
+  nImg = handle->desc.N;
+}
+my_ifm_end = bn_nBlocksFm;
+
 kernel_pool[0] = kernel_bwd;
 kernel_pool[1] = kernel2_bwd;
 
@@ -266,16 +269,16 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   dbeta_ptr = (float*) &placeholder;
   input_add_ptr = (element_input_type*) output_base;
   regular_input_base = (element_input_type*) &placeholder;
-
+#if 0
   if (handle->compute_eltwise_in_kernel_bwd) {
-    //LIBXSMM_VLA_DECL(5, element_input_type,  dinput_add, (element_input_type*) pre_bn->grad_add->data, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
-    //input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
-  }   
-
-  if (handle->perform_relu_in_kernel) {    
+    LIBXSMM_VLA_DECL(5, element_input_type,  dinput_add, (element_input_type*) pre_bn->grad_add->data, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+    input_add_ptr = &LIBXSMM_VLA_ACCESS(5, dinput_add, 0, 0, 0, 0, 0, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
+  }
+#endif
+  if (handle->perform_relu_in_kernel) {
     LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in * handle->ifmblock), handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
     regular_input_base = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-  } 
+  }
 
   if (handle->compute_batch_stats_in_kernel_bwd) {
     LIBXSMM_VLA_DECL(5, element_input_type, dinput_add, ((element_input_type*) pre_bn->grad_add->data)  + (pre_bn->desc.pad_h_in * bn_ifwp + pre_bn->desc.pad_w_in) * handle->ifmblock, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
@@ -314,7 +317,7 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
   segment_type =  (n_segments == 0) ? CONVOLUTION_KERNEL : code_stream[0].segment_type;
 
   /* Set properly the fusion flags  */
-  //fuse_postconv_ops_in_kernel = (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd || handle->perform_relu_in_kernel) ? 1 : 0;
+  /*fuse_postconv_ops_in_kernel = (handle->compute_batch_stats_in_kernel_bwd || handle->compute_eltwise_in_kernel_bwd || handle->perform_relu_in_kernel) ? 1 : 0;*/
   overwrite_output_externally = (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_bwd == 0)) ? 1 : 0;
   fuse_relu_externally = (handle->perform_relu_in_kernel) ? 0 : 1;
   downconvert_to_bf16_externally = (handle->use_accumulation_scratch) ? 1 : 0;
@@ -346,7 +349,7 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
 
     /* Run the stream of convolutions  */
     for (conv_i = 0; conv_i < n_convs; conv_i++) {
-      vi = (handle->n_variants == 1) ? 0 : variant[pool_index]; 
+      vi = (handle->n_variants == 1) ? 0 : variant[pool_index];
       offset_i = stream[i]; offset_w = stream[i+1]; offset_o = stream[i+2]; pi = stream[i+3]; pw = stream[i+4]; po = stream[i+5];
       stats_in_offset =  (handle->compute_batch_stats_in_kernel_bwd) ? bn_instats_stream[bn_stream_index] : 0;
       stats_out_offset = (handle->compute_batch_stats_in_kernel_bwd) ? bn_outstats_stream[bn_stream_index] : 0;
@@ -357,7 +360,7 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
       bn_stream_index++;
       pool_index++;
       i += 3;
-    }   
+    }
 
     /* Set up for next segment */
     if (pc+1 < n_segs) {

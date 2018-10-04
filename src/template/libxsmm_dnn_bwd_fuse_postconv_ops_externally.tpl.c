@@ -43,7 +43,6 @@
 if (compute_batch_stats_bwd_externally) {
 #if defined(LIBXSMM_INTRINSICS_AVX512)
   int hi, ho, iph = bn_iph, oph = bn_oph, ifh = bn_ifh, sh = bn_sh, wi, ipw = bn_ipw, wo, opw = bn_opw, ifw = bn_ifw, sw = bn_sw;
-  fm = code_stream[pc].aux_index;
   __m512 lcl_vdgamma = _mm512_setzero_ps();
   __m512 lcl_vdbeta  = _mm512_setzero_ps();
   __m512 lcl_vbmean, lcl_vbrstd;
@@ -57,6 +56,7 @@ if (compute_batch_stats_bwd_externally) {
   LIBXSMM_VLA_DECL(5,       element_input_type,   bn_input,     (element_input_type*)pre_bn->reg_input->data,   bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
   LIBXSMM_VLA_DECL(5,       element_output_type, bn_doutput,    (element_output_type*)pre_bn->grad_output->data, bn_nBlocksFm, bn_ofhp, bn_ofwp, 16);
 
+  fm = code_stream[pc].aux_index;
   del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 1, fm, img, 0, bn_nBlocksFm, handle->desc.N, 16);
   del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(4, kernel_stats, 0, fm, img, 0, bn_nBlocksFm, handle->desc.N, 16);
   lcl_vbmean = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, bmean, fm, 0, 16) );
@@ -213,3 +213,8 @@ if (!fuse_relu_externally && downconvert_to_bf16_externally) {
   LIBXSMM_ASSERT(0);
 #endif
 }
+
+#undef _mm512_load_act
+#undef _mm512_stream_act
+#undef _mm512_store_act
+

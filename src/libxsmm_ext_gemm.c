@@ -212,7 +212,9 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       || ((unsigned int)*m) != libxsmm_gemm_batchdesc.m
       || ((unsigned int)*n) != libxsmm_gemm_batchdesc.n
       || ((unsigned int)*k) != libxsmm_gemm_batchdesc.k
-      || (0 > (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb))) /* false */
+#if 0 /* always false */
+      || (0 > (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)))
+#endif
       || flags != (flags & libxsmm_gemm_batchdesc.flags)
       || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_gemm_batchdesc.flags) ? 0 : */1, *alpha)
       || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 0 : 1, *beta))
@@ -352,7 +354,9 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       || ((unsigned int)*m) != libxsmm_gemm_batchdesc.m
       || ((unsigned int)*n) != libxsmm_gemm_batchdesc.n
       || ((unsigned int)*k) != libxsmm_gemm_batchdesc.k
-      || (0 > (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb))) /* false */
+#if 0 /* always false */
+      || (0 > (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)))
+#endif
       || flags != (flags & libxsmm_gemm_batchdesc.flags)
       || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_gemm_batchdesc.flags) ? 0 : */1, *alpha)
       || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 0 : 1, *beta))

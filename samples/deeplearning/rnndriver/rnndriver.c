@@ -129,7 +129,7 @@ LIBXSMM_INLINE void matrix_sigmoid_inverse(int size, float *src, float *dst)
   for (i = 0; i < size; i++) {
     const float exp_value = (float)exp((double) -src[i]);
     const float sig_exp = 1 / (1 + exp_value);
-    dst[i] = (1 - sig_exp)*sig_exp;
+    dst[i] = (1.0f - sig_exp)*sig_exp;
   }
 }
 
@@ -142,7 +142,7 @@ LIBXSMM_INLINE void matrix_tanh_inverse(int size, float *src, float *dst)
 #endif
   for (i = 0; i < size; i++) {
     const float tanh_value = (float)tanh((double)src[i]);
-    dst[i] = 1 - (tanh_value * tanh_value);
+    dst[i] = 1.0f - (tanh_value * tanh_value);
   }
 }
 
@@ -184,7 +184,7 @@ LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = 1 - src[i];
+    dst[i] = 1.0f - src[i];
   }
 }
 
@@ -196,7 +196,7 @@ LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = 1 - (src[i] * src[i]);
+    dst[i] = 1.0f - (src[i] * src[i]);
   }
 }
 
@@ -257,14 +257,14 @@ int main(int argc, char* argv[])
 
   int iters = 10; /* repetitions of benchmark */
   int pass = 3;   /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
-  int nonlin = 3; /* nonlin=1 denotes ReLU, 2 denotes sigmoid, 3 denotes tanh */
-  int m = 64;     /* number of outputs */
+  int nonlin = 2; /* nonlin=1 denotes ReLU, 2 denotes sigmoid, 3 denotes tanh */
+  int m = 256;    /* number of outputs */
   int n = 128;    /* size of mini-batch */
-  int k = 256;    /* number of inputs */
-  int t = 5;      /* number of time steps (> 1) */
-  int bm = 32;    /* blocking factor for m */
-  int bn = 32;    /* blocking factor for n */
-  int bk = 32;    /* blocking factor for k */
+  int k = 512;    /* number of inputs */
+  int t = 4;      /* number of time steps (> 1) */
+  int bm = 64;    /* blocking factor for m */
+  int bn = 64;    /* blocking factor for n */
+  int bk = 64;    /* blocking factor for k */
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 0/*disabled by default*/ : atof(env_check));
@@ -626,6 +626,7 @@ int main(int argc, char* argv[])
       matrix_copy(m*k, wgold, w);
       matrix_copy(m*n*t, hgoldt, ht);
       matrix_copy(k*n*t, xgoldt, xt);
+      matrix_copy(m*n*t, djdhgoldt, djdht);
 #if 0
       for (it = 0; it < t; ++it) {
         /* matrix_transpose(n, m, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), hgoldTp); */

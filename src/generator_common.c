@@ -1178,6 +1178,7 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
   return error_message;
 }
 
+LIBXSMM_API_INTERN
 void libxsmm_convfunction_signature_fp32( libxsmm_generated_code*         io_generated_code,
                                           const char*                     i_routine_name ) {
   char l_new_code[512];
@@ -1265,3 +1266,4 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking( unsigned int
 
   return l_ret;
 }
+

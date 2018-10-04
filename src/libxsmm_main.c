@@ -53,6 +53,7 @@
 # include <Windows.h>
 #else
 # include <sys/mman.h>
+# include <sys/stat.h>
 # include <unistd.h>
 # include <fcntl.h>
 #endif
@@ -493,11 +494,13 @@ LIBXSMM_API_INLINE void internal_finalize(void)
 #if defined(_WIN32)
     const HANDLE singleton = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
     const char *const delims = ";,";
+    if (NULL != singleton) /* valid handle? */
 #else
     const char *const delims = ";,:", *const filename_global = "/tmp/GlobalLIBXSMM";
     const int singleton = open(filename_global, O_CREAT | O_EXCL, S_IRUSR);
+    if (0 <= singleton) /* valid descriptor? */
 #endif
-    if (0/*NULL*/ != singleton) {
+    {
       const char *filename = strtok(env_dump_files, delims);
       LIBXSMM_STDIO_ACQUIRE();
       for (; NULL != filename; filename = strtok(NULL, delims)) {
@@ -505,7 +508,10 @@ LIBXSMM_API_INLINE void internal_finalize(void)
         if (NULL != file) {
           int c = fgetc(file);
           fprintf(ostream, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
-          for (; EOF != c; c = fgetc(file)) fputc(c, ostream);
+          while (EOF != c) {
+            fputc(c, ostream);
+            c = fgetc(file);
+          }
           fputc('\n', ostream);
           fclose(file);
         }
@@ -550,6 +556,9 @@ LIBXSMM_API_INLINE void internal_init(void)
 #endif
   if (0 == internal_registry) { /* double-check after acquiring the lock(s) */
     assert(0 == internal_registry_keys); /* should never happen */
+#if !defined(_WIN32) && 0
+    umask(S_IRUSR | S_IWUSR); /* setup default/secure file mask */
+#endif
     libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
     libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
@@ -1749,7 +1758,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
           flux_entry.pmm = 0;
           diff = 0;
         }
-        if (LIBXSMM_KERNEL_KIND_MATMUL == descriptor->iflags) {
+        if (((int)LIBXSMM_KERNEL_KIND_MATMUL) == descriptor->iflags) {
           internal_update_mmstatistic(descriptor, 1/*try*/, 0);
         }
       }
