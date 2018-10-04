@@ -1223,8 +1223,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_win
         }
       }
 
-      wino_desc_wu.ur_ifm = 1;
-
+      wino_desc_wu.blocks_ifm = wino_desc_wu.ur_ifm = 1;
       handle->cwino_upd = wino_desc_wu;
       /* TODO check JIT errors */
       if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
