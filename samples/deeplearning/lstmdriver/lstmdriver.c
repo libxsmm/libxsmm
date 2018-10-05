@@ -91,7 +91,7 @@ LIBXSMM_INLINE void matrix_sigmoid(int size, float *src, float *dst)
 #endif
   for (i = 0; i < size; i++) {
     const float exp_value = (float)exp((double) -src[i]);
-    dst[i] = 1 / (1 + exp_value);
+    dst[i] = 1.0f / (1.0f + exp_value);
   }
 }
 
@@ -115,7 +115,7 @@ LIBXSMM_INLINE void matrix_relu(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (src[i] > 0) ? src[i] : 0.f;
+    dst[i] = (src[i] > 0.0f) ? src[i] : 0.0f;
   }
 }
 
@@ -128,8 +128,8 @@ LIBXSMM_INLINE void matrix_sigmoid_inverse(int size, float *src, float *dst)
 #endif
   for (i = 0; i < size; i++) {
     const float exp_value = (float)exp((double) -src[i]);
-    const float sig_exp = 1 / (1 + exp_value);
-    dst[i] = (1 - sig_exp)*sig_exp;
+    const float sig_exp = 1.0f / (1.0f + exp_value);
+    dst[i] = (1.0f - sig_exp)*sig_exp;
   }
 }
 
@@ -142,7 +142,7 @@ LIBXSMM_INLINE void matrix_tanh_inverse(int size, float *src, float *dst)
 #endif
   for (i = 0; i < size; i++) {
     const float tanh_value = (float)tanh((double)src[i]);
-    dst[i] = 1 - (tanh_value * tanh_value);
+    dst[i] = 1.0f - (tanh_value * tanh_value);
   }
 }
 
@@ -154,7 +154,7 @@ LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (src[i] >= 0) ? 1.f : 0.f;
+    dst[i] = (src[i] > 0.0f) ? 1.0f : 0.0f;
   }
 }
 
@@ -183,7 +183,7 @@ LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = 1 - src[i];
+    dst[i] = 1.0f - src[i];
   }
 }
 
@@ -195,7 +195,7 @@ LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = 1 - (src[i] * src[i]);
+    dst[i] = 1.0f - (src[i] * src[i]);
   }
 }
 

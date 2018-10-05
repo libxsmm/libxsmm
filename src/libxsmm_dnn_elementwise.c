@@ -502,3 +502,25 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_elt_mult_tanh_ld(libxsmm_blasint
   }
 }
 
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
+  libxsmm_blasint i, j;
+
+  for ( j = 0; j < n; ++j ) {
+    LIBXSMM_PRAGMA_SIMD
+    for ( i = 0; i < m; ++i ) {
+     dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 - src[(j*ld)+i];
+    }
+  }
+}
+
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
+  libxsmm_blasint i, j;
+
+  for ( j = 0; j < n; ++j ) {
+    LIBXSMM_PRAGMA_SIMD
+    for ( i = 0; i < m; ++i ) {
+     dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 - (src[(j*ld)+i] * src[(j*ld)+i]);
+    }
+  }
+}
+

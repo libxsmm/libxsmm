@@ -824,14 +824,18 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, h, ht, N, K);
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, djdx, djdxt, N, C);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, zi, ziD, K);
-
   libxsmm_blasint i, ik, in, ic, jk, jn, jc, ek, en, ec;
   /*const int ltid = tid - start_thread;*/
 
   /* initialization is done at the beginning */
-  libxsmm_internal_matrix_zero(N*C*t, djdxt, start_thread, tid, nThreads);
-  libxsmm_internal_matrix_zero(C*K,   djdwD, start_thread, tid, nThreads);
-  libxsmm_internal_matrix_zero(K*K,   djduD, start_thread, tid, nThreads);
+  if (1 == pass || 3 == pass) {
+    libxsmm_internal_matrix_zero(N*C*t, djdxt, start_thread, tid, nThreads);
+  }
+  if (2 == pass || 3 == pass) {
+    libxsmm_internal_matrix_zero(C*K,   djdwD, start_thread, tid, nThreads);
+    libxsmm_internal_matrix_zero(K*K,   djduD, start_thread, tid, nThreads);
+    libxsmm_internal_matrix_zero(K,     djdb,  start_thread, tid, nThreads);
+  }
   /* The following code is for time step t-1 */
   for (in = 0; in < N; in += bn) {
     for (ik = 0; ik < K; ik += bk) {
@@ -845,11 +849,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
       libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, zi, in, ik, K),
                                                           &LIBXSMM_VLA_ACCESS(3, djdh,  t-1, in, ik, N, K),
                                                           &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K) );
-      for (jn = 0; jn < bn; jn++) {
-        for (jk = 0; jk < bk; jk++) {
-          en = in + jn;
-          ek = ik + jk;
-          if (1 == pass || 3 == pass) {
+      if (1 == pass || 3 == pass) {
+        for (jn = 0; jn < bn; jn++) {
+          for (jk = 0; jk < bk; jk++) {
+            en = in + jn;
+            ek = ik + jk;
             /* djdx = W^T * delta */
             for (ic = 0; ic < C; ic += bc) {
               for (jc = 0; jc < bc; jc++) {
@@ -858,7 +862,13 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
               }
             }
           }
-          if (2 == pass || 3 == pass) {
+        }
+      }
+      if (2 == pass || 3 == pass) {
+        for (jn = 0; jn < bn; jn++) {
+          for (jk = 0; jk < bk; jk++) {
+            en = in + jn;
+            ek = ik + jk;
             /* djdu = delta * h^T */
             for (ic = 0; ic < K; ic += bk) {
               for (jc = 0; jc < bk; jc++) {
