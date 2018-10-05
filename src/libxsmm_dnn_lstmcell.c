@@ -1239,10 +1239,16 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
               for (ic = 0; ic < K; ic += bk) {
                 for (jc = 0; jc < bk; jc++) {
                   ec = ic + jc;
+                  /*
                   LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ek, N, K) += LIBXSMM_VLA_ACCESS(3, djdi, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(2, ri, ek, ec, K);
                   LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ek, N, K) += LIBXSMM_VLA_ACCESS(3, djdf, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(2, rf, ek, ec, K);
                   LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ek, N, K) += LIBXSMM_VLA_ACCESS(3, djdo, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(2, ro, ek, ec, K);
                   LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ek, N, K) += LIBXSMM_VLA_ACCESS(3, djdc, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(2, rc, ek, ec, K);
+                  */
+                  LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ec, N, K) += LIBXSMM_VLA_ACCESS(3, djdi, j, en, ek, N, K) * LIBXSMM_VLA_ACCESS(2, ri, ec, ek, K);
+                  LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ec, N, K) += LIBXSMM_VLA_ACCESS(3, djdf, j, en, ek, N, K) * LIBXSMM_VLA_ACCESS(2, rf, ec, ek, K);
+                  LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ec, N, K) += LIBXSMM_VLA_ACCESS(3, djdo, j, en, ek, N, K) * LIBXSMM_VLA_ACCESS(2, ro, ec, ek, K);
+                  LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ec, N, K) += LIBXSMM_VLA_ACCESS(3, djdc, j, en, ek, N, K) * LIBXSMM_VLA_ACCESS(2, rc, ec, ek, K);
                 }
               }
             }
@@ -1260,14 +1266,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
             }
             if (2 == pass || 3 == pass) {
               /* djdr = delta * h^T */
-              if (j < t-1) {
+              if (j > 0) {
                 for (ic = 0; ic < K; ic += bk) {
                   for (jc = 0; jc < bk; jc++) {
                     ec = ic + jc;
-                    LIBXSMM_VLA_ACCESS(2, djdri, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, h, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(3, djdi, j+1, en, ek, N, K);
-                    LIBXSMM_VLA_ACCESS(2, djdrf, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, h, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(3, djdf, j+1, en, ek, N, K);
-                    LIBXSMM_VLA_ACCESS(2, djdro, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, h, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(3, djdo, j+1, en, ek, N, K);
-                    LIBXSMM_VLA_ACCESS(2, djdrc, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, h, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(3, djdc, j+1, en, ek, N, K);
+                    LIBXSMM_VLA_ACCESS(2, djdri, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, h, j-1, en, ec, N, K) * LIBXSMM_VLA_ACCESS(3, djdi, j, en, ek, N, K);
+                    LIBXSMM_VLA_ACCESS(2, djdrf, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, h, j-1, en, ec, N, K) * LIBXSMM_VLA_ACCESS(3, djdf, j, en, ek, N, K);
+                    LIBXSMM_VLA_ACCESS(2, djdro, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, h, j-1, en, ec, N, K) * LIBXSMM_VLA_ACCESS(3, djdo, j, en, ek, N, K);
+                    LIBXSMM_VLA_ACCESS(2, djdrc, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, h, j-1, en, ec, N, K) * LIBXSMM_VLA_ACCESS(3, djdc, j, en, ek, N, K);
                   }
                 }
               }
@@ -1281,11 +1287,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
                   LIBXSMM_VLA_ACCESS(2, djdwc, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, x, j, en, ec, N, C) * LIBXSMM_VLA_ACCESS(3, djdc, j, en, ek, N, K);
                 }
               }
-              if (j < t-1) {
-                djdbi[ek] += LIBXSMM_VLA_ACCESS(3, djdi, j+1, en, ek, N, K);
-                djdbf[ek] += LIBXSMM_VLA_ACCESS(3, djdf, j+1, en, ek, N, K);
-                djdbo[ek] += LIBXSMM_VLA_ACCESS(3, djdo, j+1, en, ek, N, K);
-                djdbc[ek] += LIBXSMM_VLA_ACCESS(3, djdc, j+1, en, ek, N, K);
+              if (j > 0) {
+                djdbi[ek] += LIBXSMM_VLA_ACCESS(3, djdi, j, en, ek, N, K);
+                djdbf[ek] += LIBXSMM_VLA_ACCESS(3, djdf, j, en, ek, N, K);
+                djdbo[ek] += LIBXSMM_VLA_ACCESS(3, djdo, j, en, ek, N, K);
+                djdbc[ek] += LIBXSMM_VLA_ACCESS(3, djdc, j, en, ek, N, K);
               }
             }
           }
