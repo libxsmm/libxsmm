@@ -1185,6 +1185,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
     libxsmm_internal_matrix_zero(K,     djdbo,  start_thread, tid, nThreads);
     libxsmm_internal_matrix_zero(K,     djdbc,  start_thread, tid, nThreads);
   }
+  libxsmm_internal_matrix_zero(N*K*t, doutt,  start_thread, tid, nThreads);
   for (j = t-1; j >= 0; --j) {
     /* let's run the cell in blocks for good locality */
     for (in = 0; in < N; in += bn) {
@@ -1235,16 +1236,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
             ek = ik + jk;
             /* compute dout */
             if (j >= 1) {
-              LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ek, N, K) = (LIBXSMM_DNN_ELTWISE_FTYPE)0;
               for (ic = 0; ic < K; ic += bk) {
                 for (jc = 0; jc < bk; jc++) {
                   ec = ic + jc;
-                  /*
-                  LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ek, N, K) += LIBXSMM_VLA_ACCESS(3, djdi, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(2, ri, ek, ec, K);
-                  LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ek, N, K) += LIBXSMM_VLA_ACCESS(3, djdf, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(2, rf, ek, ec, K);
-                  LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ek, N, K) += LIBXSMM_VLA_ACCESS(3, djdo, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(2, ro, ek, ec, K);
-                  LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ek, N, K) += LIBXSMM_VLA_ACCESS(3, djdc, j, en, ec, N, K) * LIBXSMM_VLA_ACCESS(2, rc, ek, ec, K);
-                  */
                   LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ec, N, K) += LIBXSMM_VLA_ACCESS(3, djdi, j, en, ek, N, K) * LIBXSMM_VLA_ACCESS(2, ri, ec, ek, K);
                   LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ec, N, K) += LIBXSMM_VLA_ACCESS(3, djdf, j, en, ek, N, K) * LIBXSMM_VLA_ACCESS(2, rf, ec, ek, K);
                   LIBXSMM_VLA_ACCESS(3, dout, j-1, en, ec, N, K) += LIBXSMM_VLA_ACCESS(3, djdo, j, en, ek, N, K) * LIBXSMM_VLA_ACCESS(2, ro, ec, ek, K);
