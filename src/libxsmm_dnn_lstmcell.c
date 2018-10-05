@@ -1235,7 +1235,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
             en = in + jn;
             ek = ik + jk;
             /* compute dout */
-            if (j >= 1) {
+            if (j > 0) {
               for (ic = 0; ic < K; ic += bk) {
                 for (jc = 0; jc < bk; jc++) {
                   ec = ic + jc;
