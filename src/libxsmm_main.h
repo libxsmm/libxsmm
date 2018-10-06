@@ -582,6 +582,30 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
   void* scratch;
 };
 
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
+  libxsmm_dnn_rnncell_desc desc;
+  libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts  */
+  libxsmm_blasint bk;
+  libxsmm_blasint bn;
+  libxsmm_blasint bc;
+  libxsmm_dnn_tensor* w;
+  libxsmm_dnn_tensor* xt;
+  libxsmm_dnn_tensor* u;
+  libxsmm_dnn_tensor* h;
+  libxsmm_dnn_tensor* b;
+  libxsmm_dnn_tensor* z;
+  libxsmm_dnn_tensor* djdht;
+  libxsmm_dnn_tensor* djdu;
+  libxsmm_dnn_tensor* djdw;
+  libxsmm_dnn_tensor* djdxt;
+  libxsmm_dnn_tensor* djdb;
+  libxsmm_dnn_tensor* zi;
+  libxsmm_dnn_tensor* deltat;
+  int use_fwd_generic;
+  int use_bwdupd_generic; 
+  libxsmm_barrier* barrier; /* barrier */
+};
+
 struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {
   int M;
   int N;

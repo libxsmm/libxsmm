@@ -36,6 +36,8 @@
 #include "libxsmm_dnn.h"
 
 
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell libxsmm_dnn_rnncell;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
   int nThreads;
   int K;     /* number of outputs */
@@ -49,28 +51,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for activation buffers */
   libxsmm_dnn_tensor_format filter_format;  /* format which is for filter buffers */
 } libxsmm_dnn_rnncell_desc;
-
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
-  libxsmm_dnn_rnncell_desc desc;
-  libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts  */
-  libxsmm_blasint bk;
-  libxsmm_blasint bn;
-  libxsmm_blasint bc;
-  libxsmm_dnn_tensor* w;
-  libxsmm_dnn_tensor* xt;
-  libxsmm_dnn_tensor* u;
-  libxsmm_dnn_tensor* h;
-  libxsmm_dnn_tensor* b;
-  libxsmm_dnn_tensor* z;
-  libxsmm_dnn_tensor* djdht;
-  libxsmm_dnn_tensor* djdu;
-  libxsmm_dnn_tensor* djdw;
-  libxsmm_dnn_tensor* djdxt;
-  libxsmm_dnn_tensor* djdb;
-  libxsmm_dnn_tensor* zi;
-  libxsmm_dnn_tensor* deltat;
-  libxsmm_barrier* barrier; /* barrier */
-} libxsmm_dnn_rnncell;
 
 LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_desc rnncell_desc, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_rnncell(const libxsmm_dnn_rnncell* handle);
