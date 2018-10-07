@@ -51,9 +51,12 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_nc_ck_f32_f32(libxsmm_dnn_rnncell* 
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
+#if 0
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
+#endif
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -76,6 +79,7 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_ncnc_kcck_f32_f32(libxsmm_dnn_rnnce
   typedef float element_filter_type;
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_ncnc_kcck_generic.tpl.c"
 #endif
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
@@ -99,9 +103,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_nc_ck(libxsmm_dn
   /* check if we have a kernel JITed */
   if ( handle->use_fwd_generic != 0 ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+#if 0
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
+#endif
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
