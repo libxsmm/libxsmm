@@ -547,7 +547,7 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
 
     /* setup LIBXSMM handle */
-    rnncell_desc.nThreads = nThreads;
+    rnncell_desc.threads = nThreads;
     rnncell_desc.N = n;
     rnncell_desc.C = k;
     rnncell_desc.K = m;

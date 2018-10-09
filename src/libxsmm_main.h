@@ -601,8 +601,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_tensor* djdb;
   libxsmm_dnn_tensor* zi;
   libxsmm_dnn_tensor* deltat;
-  int use_fwd_generic;
-  int use_bwdupd_generic; 
+  int fwd_generic;
+  int bwdupd_generic; 
   libxsmm_barrier* barrier; /* barrier */
 };
 
