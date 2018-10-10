@@ -31,7 +31,14 @@
 
 /* @TODO: use for-loops to potentially leverage NUMA in the future */
 int i1, i2, i3, i4, i5, i6, i7;
-int lpb, bofm, bifm, S, R, ifmb, ofmb, C;
+int lpb = 0;
+int bofm = 0;
+int bifm = 0;
+int S = 0;
+int R = 0;
+int ifmb = 0; 
+int ofmb = 0;
+int C = 0;
 /* low precision formatting */
 if ( tensor->layout->num_dims == 7 ) {
   lpb = tensor->layout->dim_size[0];
