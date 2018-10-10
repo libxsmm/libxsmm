@@ -1261,21 +1261,15 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyin_tensor(const libxsmm_dnn_tensor
                                                                                                              } break;
                                                                               case LIBXSMM_DNN_DATATYPE_BF16: {
                                                                                                                typedef libxsmm_bfloat16 element_type;
-#define LIBXSMM_DNN_COPY_LOW_PRECISION
 #include "template/libxsmm_dnn_tensor_filter_copy_in_kcrs.tpl.c"
-#undef LIBXSMM_DNN_COPY_LOW_PRECISION
                                                                                                              } break;
                                                                               case LIBXSMM_DNN_DATATYPE_I16: {
                                                                                                                typedef short element_type;
-#define LIBXSMM_DNN_COPY_LOW_PRECISION
 #include "template/libxsmm_dnn_tensor_filter_copy_in_kcrs.tpl.c"
-#undef LIBXSMM_DNN_COPY_LOW_PRECISION
                                                                                                              } break;
                                                                               case LIBXSMM_DNN_DATATYPE_I8: {
                                                                                                               typedef char element_type;
-#define LIBXSMM_DNN_COPY_LOW_PRECISION
 #include "template/libxsmm_dnn_tensor_filter_copy_in_kcrs.tpl.c"
-#undef LIBXSMM_DNN_COPY_LOW_PRECISION
                                                                                                             } break;
                                                                               default: {
                                                                                          status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
@@ -1468,9 +1462,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsmm_dnn_tenso
 
                                                                               case LIBXSMM_DNN_DATATYPE_BF16: {
                                                                                                                typedef libxsmm_bfloat16 element_type;
-#define LIBXSMM_DNN_COPY_LOW_PRECISION
 #include "template/libxsmm_dnn_tensor_filter_copy_out_kcrs.tpl.c"
-#undef LIBXSMM_DNN_COPY_LOW_PRECISION
                                                                                                              } break;
                                                                                    case LIBXSMM_DNN_DATATYPE_I32: {
                                                                                                                    typedef int element_type;
@@ -1478,15 +1470,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_copyout_tensor(const libxsmm_dnn_tenso
                                                                                                                  } break;
                                                                                    case LIBXSMM_DNN_DATATYPE_I16: {
                                                                                                                typedef short  element_type;
-#define LIBXSMM_DNN_COPY_LOW_PRECISION
 #include "template/libxsmm_dnn_tensor_filter_copy_out_kcrs.tpl.c"
-#undef LIBXSMM_DNN_COPY_LOW_PRECISION
                                                                                                              } break;
                                                                               case LIBXSMM_DNN_DATATYPE_I8: {
                                                                                                               typedef char element_type;
-#define LIBXSMM_DNN_COPY_LOW_PRECISION
 #include "template/libxsmm_dnn_tensor_filter_copy_out_kcrs.tpl.c"
-#undef LIBXSMM_DNN_COPY_LOW_PRECISION
                                                                                                             } break;
                                                                               default: {
                                                                                          status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
