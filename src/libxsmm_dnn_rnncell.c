@@ -31,6 +31,7 @@
 
 #include <libxsmm.h>
 
+#include "libxsmm_dnn_rnncell_forward.h"
 #include "libxsmm_dnn_elementwise.h"
 #include "libxsmm_main.h"
 
@@ -64,11 +65,18 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->bk = 64;
     handle->bn = 64;
     handle->bc = 64;
+    if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
+      handle->fwd_generic = 0;
+      handle->bwdupd_generic = 0;
+    } else {
+      handle->fwd_generic = 1;
+      handle->bwdupd_generic = 1;
+    }
     /* Need to allocate space for scratch libxsmm_dnn_tensor's */
     handle->z  = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->deltat = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->zi = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
-    handle->barrier = libxsmm_barrier_create(handle->desc.nThreads, 1);
+    handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
     if (NULL == handle->deltat || NULL == handle->z || NULL == handle->zi ||
         NULL == handle->barrier)
     {
@@ -395,36 +403,37 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
   size_t scratch_size = 0;
   const size_t sizeof_datatype = sizeof(float);
 
-  if (scratch == 0) {
-    status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
-    return status;
-  }
-
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                         } break;
+        /* forward only has no scratch need */
+      } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           if (address % 64 == 0) {
-                                             handle->zi->data = (void*)address;
-                                           } else {
-                                             offset = (64 - address % 64);
-                                             handle->zi->data = (void*)(address+offset);
-                                           }
-                                           scratch_size = (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype;
-                                           address += scratch_size + 64;
-                                           if (address % 64 == 0) {
-                                             handle->deltat->data = (void*)address;
-                                           } else {
-                                             offset = (64 - address % 64);
-                                             handle->deltat->data = (void*)(address+offset);
-                                           }
-                                         } break;
+        if (scratch == 0) {
+          status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
+          return status;
+        }
+
+        if (address % 64 == 0) {
+          handle->zi->data = (void*)address;
+        } else {
+          offset = (64 - address % 64);
+          handle->zi->data = (void*)(address+offset);
+        }
+        scratch_size = (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype;
+        address += scratch_size + 64;
+        if (address % 64 == 0) {
+          handle->deltat->data = (void*)address;
+        } else {
+          offset = (64 - address % 64);
+          handle->deltat->data = (void*)(address+offset);
+        }
+      } break;
       default: {
-                 status = LIBXSMM_DNN_ERR_INVALID_KIND;
-               }
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
     }
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
@@ -441,18 +450,19 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rn
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                         } break;
+        /* forward only has no scratch need */
+      } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           handle->zi->data = 0;
-                                           handle->deltat->data = 0;
-                                           handle->zi = 0;
-                                           handle->deltat = 0;
-                                         } break;
+        handle->zi->data = 0;
+        handle->deltat->data = 0;
+        handle->zi = 0;
+        handle->deltat = 0;
+      } break;
       default: {
-                 status = LIBXSMM_DNN_ERR_INVALID_KIND;
-               }
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
     }
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
@@ -728,67 +738,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_tensor(libxsmm_dnn_rnn
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_fwd(libxsmm_dnn_rnncell* rnn, int start_thread, int tid)
-{
-  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  libxsmm_blasint K = rnn->desc.K;
-  libxsmm_blasint N = rnn->desc.N;
-  libxsmm_blasint C = rnn->desc.C;
-  libxsmm_blasint t = rnn->desc.t;
-  libxsmm_blasint bk = rnn->bk;
-  libxsmm_blasint bn = rnn->bn;
-  libxsmm_blasint bc = rnn->bc;
-  int nonlin = rnn->desc.nonlin;
-  /* The following code should be in template */
-  LIBXSMM_DNN_ELTWISE_FTYPE *wD = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->w->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *xt = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->xt->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *uD = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->u->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *b = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->b->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *ht = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->h->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *zt = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->z->data;
-  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, w, wD, K);
-  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, u, uD, K);
-  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, x, xt, N, C);
-  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, h, ht, N, K);
-  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, z, zt, N, K);
-  libxsmm_blasint i, ik, in, ic;
-  libxsmm_smmfunction gemmkernela = libxsmm_smmdispatch( bk, bn, bc, &K, &C, &K, NULL, NULL, NULL, NULL );
-  libxsmm_smmfunction gemmkernelb = libxsmm_smmdispatch( bk, bn, bk, &K, &K, &K, NULL, NULL, NULL, NULL );
-  LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(start_thread); /* TODO: remove */
-
-  /* All data is in column-major format */
-  for (i = 0; i < t; ++i) {
-    /* let's run the cell in blocks for good locality */
-    for (in = 0; in < N; in += bn) {
-      for (ik = 0; ik < K; ik += bk) {
-        /* z = per_col(b) */
-        libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &b[ik] );
-
-        /* z += W.x */
-        for (ic = 0; ic < C; ic += bc) {
-          /* this is a small matmul */
-          gemmkernela( &LIBXSMM_VLA_ACCESS(2, w, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, x, i, in, ic, N, C), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
-        }
-        /* z += U.h */
-        for (ic = 0; ic < K; ic += bk) {
-          /* this is a small matmul */
-          gemmkernelb( &LIBXSMM_VLA_ACCESS(2, u, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
-        }
-        if (1 == nonlin) {
-          libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i+1, in, ik, N, K) );
-        } else if (2 == nonlin) {
-          libxsmm_internal_matrix_sigmoid_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i+1, in, ik, N, K) );
-        } else {
-          libxsmm_internal_matrix_tanh_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i+1, in, ik, N, K) );
-        }
-      }
-    }
-  }
-
-  return status;
-}
-
-
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell* rnn, int start_thread, int tid, int pass)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -800,7 +749,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell
   libxsmm_blasint bn = rnn->bn;
   libxsmm_blasint bc = rnn->bc;
   int nonlin = rnn->desc.nonlin;
-  int nThreads = rnn->desc.nThreads;
+  int nThreads = rnn->desc.threads;
   LIBXSMM_DNN_ELTWISE_FTYPE *djdht = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->djdht->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *zt = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->z->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *deltat = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->deltat->data;
@@ -958,21 +907,27 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_st(libxsmm_dnn_rnncell
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           status = libxsmm_dnn_rnncell_fwd(handle, start_thread, tid);
-                                         } break;
+        if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CK) ) {
+          status = libxsmm_dnn_rnncell_st_fwd_nc_ck( handle, start_thread, tid );
+        } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK)  ) {
+          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+          /*status = libxsmm_dnn_rnncell_st_fwd_ncnc_kcck( handle, start_thread, tid );*/
+        } else {
+          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+        }
+      } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-                                           status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 1);
-                                         } break;
+        status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 1);
+      } break;
       case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
-                                           status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 2);
-                                         } break;
+        status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 2);
+      } break;
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 3);
-                                         } break;
-
+        status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 3);
+      } break;
       default: {
-                  status = LIBXSMM_DNN_ERR_INVALID_KIND;
-               }
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
     }
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
