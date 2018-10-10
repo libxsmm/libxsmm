@@ -31,24 +31,28 @@
 
 /* @TODO: use for-loops to potentially leverage NUMA in the future */
 int i1, i2, i3, i4, i5, i6, i7;
-#if defined(LIBXSMM_DNN_COPY_LOW_PRECISION)
-int lpb = tensor->layout->dim_size[0];
-int bofm = tensor->layout->dim_size[1];
-int bifm = tensor->layout->dim_size[2];
-int S = tensor->layout->dim_size[3];
-int R = tensor->layout->dim_size[4];
-int ifmb = tensor->layout->dim_size[5];
-int ofmb = tensor->layout->dim_size[6];
-#else
-int lpb = 1;
-int bofm = tensor->layout->dim_size[0];
-int bifm = tensor->layout->dim_size[1];
-int S = tensor->layout->dim_size[2];
-int R = tensor->layout->dim_size[3];
-int ifmb = tensor->layout->dim_size[4];
-int ofmb = tensor->layout->dim_size[5];
-#endif
-int C = ifmb * bifm * lpb;
+int lpb, bofm, bifm, S, R, ifmb, ofmb, C;
+/* low precision formatting */
+if ( tensor->layout->num_dims == 7 ) {
+  lpb = tensor->layout->dim_size[0];
+  bofm = tensor->layout->dim_size[1];
+  bifm = tensor->layout->dim_size[2];
+  S = tensor->layout->dim_size[3];
+  R = tensor->layout->dim_size[4];
+  ifmb = tensor->layout->dim_size[5];
+  ofmb = tensor->layout->dim_size[6];
+} else if ( tensor->layout->num_dims == 6 ) {
+  lpb = 1;
+  bofm = tensor->layout->dim_size[0];
+  bifm = tensor->layout->dim_size[1];
+  S = tensor->layout->dim_size[2];
+  R = tensor->layout->dim_size[3];
+  ifmb = tensor->layout->dim_size[4];
+  ofmb = tensor->layout->dim_size[5];
+} else {
+  /* should not happen, @TODO throw ERR */
+}
+C = ifmb * bifm * lpb;
 
 /*printf("Layout of filters fil ofmb %i ifmb %i R %i S %i bifm %i bofm %i lpb %i \n", ofmb, ifmb, R, S, bifm, bofm, lpb);*/
 
