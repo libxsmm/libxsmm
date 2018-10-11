@@ -826,7 +826,7 @@ int main(int argc, char* argv[])
 #else
         const int tid = 0;
 #endif
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, 0, tid ) );
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid ) );
       }
 
       LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, k * n);
@@ -1024,7 +1024,7 @@ int main(int argc, char* argv[])
         const int tid = 0;
 #endif
         for (i = 0; i < iters; ++i) {
-          libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, 0, tid );
+          libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
         }
       }
       l_end = libxsmm_timer_tick();

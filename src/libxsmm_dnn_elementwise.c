@@ -388,6 +388,17 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_eltwise_mult_ld(libxsmm_blasint 
   }
 }
 
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_inplace_eltwise_mult_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src0, LIBXSMM_DNN_ELTWISE_FTYPE *srcdst) {
+  libxsmm_blasint i, j;
+
+  for ( j = 0; j < n; ++j ) {
+    LIBXSMM_PRAGMA_SIMD
+    for ( i = 0; i < m; ++i ) {
+      srcdst[(j*ld)+i] *= src0[(j*ld)+i];
+    }
+  }
+}
+
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_eltwise_fma_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src0, LIBXSMM_DNN_ELTWISE_FTYPE *src1, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
   libxsmm_blasint i, j;
 
