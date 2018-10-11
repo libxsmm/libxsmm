@@ -552,8 +552,15 @@ int main(int argc, char* argv[])
     rnncell_desc.C = k;
     rnncell_desc.K = m;
     rnncell_desc.t = t;
-    rnncell_desc.nonlin = nonlin;
-    rnncell_desc.pass = pass;
+    if ( nonlin == 1 ) {
+      rnncell_desc.cell_type = LIBXSMM_DNN_RNNCELL_RNN_RELU;
+    } else if ( nonlin == 2 ) {
+      rnncell_desc.cell_type = LIBXSMM_DNN_RNNCELL_RNN_SIGMOID;
+    } else if ( nonlin == 3 ) {
+      rnncell_desc.cell_type = LIBXSMM_DNN_RNNCELL_RNN_TANH;
+    } else {
+      /* should not happen */
+    }
     rnncell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NC;
