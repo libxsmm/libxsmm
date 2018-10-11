@@ -32,6 +32,7 @@
 #include <libxsmm.h>
 
 #include "libxsmm_dnn_rnncell_forward.h"
+#include "libxsmm_dnn_rnncell_backward_weight_update.h"
 #include "libxsmm_dnn_elementwise.h"
 #include "libxsmm_main.h"
 
@@ -75,12 +76,11 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     /* Need to allocate space for scratch libxsmm_dnn_tensor's */
     handle->z  = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->deltat = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
-    handle->zi = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
-    if (NULL == handle->deltat || NULL == handle->z || NULL == handle->zi ||
+    if (NULL == handle->deltat || NULL == handle->z ||
         NULL == handle->barrier)
     {
-      free(handle->deltat); free(handle->z); free(handle->zi);
+      free(handle->deltat); free(handle->z);
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
     }
   } else {
@@ -94,7 +94,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_rnncell(const libxsmm_dnn_rnnc
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   if (0 != handle) {
-    free(handle->deltat); free(handle->z); free(handle->zi);
+    free(handle->deltat); free(handle->z);
     /* Deallocate barrier */
     if (handle->barrier != 0 ) { libxsmm_barrier_release((const libxsmm_barrier*)handle->barrier); }
     /* deallocate handle structure */
@@ -377,9 +377,8 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
                                          } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           size += (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype; /* zi */
-                                           size += 64;
                                            size += (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype * (size_t)handle->desc.t; /* deltat */
                                            size += 64;
                                          } break;
@@ -410,20 +409,13 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
       } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
         if (scratch == 0) {
           status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
           return status;
         }
 
-        if (address % 64 == 0) {
-          handle->zi->data = (void*)address;
-        } else {
-          offset = (64 - address % 64);
-          handle->zi->data = (void*)(address+offset);
-        }
-        scratch_size = (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype;
-        address += scratch_size + 64;
         if (address % 64 == 0) {
           handle->deltat->data = (void*)address;
         } else {
@@ -454,10 +446,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rn
       } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-        handle->zi->data = 0;
         handle->deltat->data = 0;
-        handle->zi = 0;
         handle->deltat = 0;
       } break;
       default: {
@@ -480,18 +471,19 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_internalstate_size(const libxsmm_dnn_
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           size += (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype * (size_t)handle->desc.t; /* zt */
-                                           size += 64;
-                                         } break;
+        size += (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype * (size_t)handle->desc.t; /* zt */
+        size += 64;
+      } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           size += (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype * (size_t)handle->desc.t; /* zt */
-                                           size += 64;
-                                         } break;
+        size += (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype * (size_t)handle->desc.t; /* zt */
+        size += 64;
+      } break;
       default: {
-                 *status = LIBXSMM_DNN_ERR_INVALID_KIND;
-               }
+        *status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
     }
   } else {
     *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
@@ -515,26 +507,27 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_internalstate(libxsmm_dnn
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           if (address % 64 == 0) {
-                                             handle->z->data = (void*)address;
-                                           } else {
-                                             offset = (64 - address % 64);
-                                             handle->z->data = (void*)(address+offset);
-                                           }
-                                         } break;
+        if (address % 64 == 0) {
+          handle->z->data = (void*)address;
+        } else {
+          offset = (64 - address % 64);
+          handle->z->data = (void*)(address+offset);
+        }
+      } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           if (address % 64 == 0) {
-                                             handle->z->data = (void*)address;
-                                           } else {
-                                             offset = (64 - address % 64);
-                                             handle->z->data = (void*)(address+offset);
-                                           }
-                                         } break;
+        if (address % 64 == 0) {
+          handle->z->data = (void*)address;
+        } else {
+          offset = (64 - address % 64);
+          handle->z->data = (void*)(address+offset);
+        }
+      } break;
       default: {
-                 status = LIBXSMM_DNN_ERR_INVALID_KIND;
-               }
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
     }
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
@@ -551,18 +544,19 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_internalstate(libxsmm_
   if (0 != handle) {
     switch (kind) {
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-                                           handle->z->data = 0;
-                                           handle->z = 0;
-                                         } break;
+        handle->z->data = 0;
+        handle->z = 0;
+      } break;
       case LIBXSMM_DNN_COMPUTE_KIND_BWD:
       case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
       case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-                                           handle->z->data = 0;
-                                           handle->z = 0;
-                                         } break;
+        handle->z->data = 0;
+        handle->z = 0;
+      } break;
       default: {
-                 status = LIBXSMM_DNN_ERR_INVALID_KIND;
-               }
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
     }
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
@@ -738,167 +732,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_tensor(libxsmm_dnn_rnn
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bwd_upd_bu(libxsmm_dnn_rnncell* rnn, int start_thread, int tid, int pass)
-{
-  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  libxsmm_blasint K = rnn->desc.K;
-  libxsmm_blasint N = rnn->desc.N;
-  libxsmm_blasint C = rnn->desc.C;
-  libxsmm_blasint t = rnn->desc.t;
-  libxsmm_blasint bk = rnn->bk;
-  libxsmm_blasint bn = rnn->bn;
-  libxsmm_blasint bc = rnn->bc;
-  int nonlin = rnn->desc.nonlin;
-  int nThreads = rnn->desc.threads;
-  LIBXSMM_DNN_ELTWISE_FTYPE *djdht = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->djdht->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *zt = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->z->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *deltat = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->deltat->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *uD = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->u->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *xt = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->xt->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *ht = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->h->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *wD = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->w->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *djduD = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->djdu->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *djdwD = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->djdw->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *djdb = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->djdb->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *djdxt = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->djdxt->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE* ziD = (LIBXSMM_DNN_ELTWISE_FTYPE*)rnn->zi->data;
-  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, u, uD, K);
-  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, w, wD, K);
-  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, djdu, djduD, K);
-  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, djdw, djdwD, K);
-  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, djdh, djdht, N, K);
-  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, z, zt, N, K);
-  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, delta, deltat, N, K);
-  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, x, xt, N, C);
-  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, h, ht, N, K);
-  LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, djdx, djdxt, N, C);
-  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, zi, ziD, K);
-  libxsmm_blasint i, ik, in, ic, jk, jn, jc, ek, en, ec;
-  /*const int ltid = tid - start_thread;*/
-
-  /* initialization is done at the beginning */
-  if (1 == pass || 3 == pass) {
-    libxsmm_internal_matrix_zero(N*C*t, djdxt, start_thread, tid, nThreads);
-  }
-  if (2 == pass || 3 == pass) {
-    libxsmm_internal_matrix_zero(C*K,   djdwD, start_thread, tid, nThreads);
-    libxsmm_internal_matrix_zero(K*K,   djduD, start_thread, tid, nThreads);
-    libxsmm_internal_matrix_zero(K,     djdb,  start_thread, tid, nThreads);
-  }
-  /* The following code is for time step t-1 */
-  for (in = 0; in < N; in += bn) {
-    for (ik = 0; ik < K; ik += bk) {
-      if (1 == nonlin) {
-        libxsmm_internal_matrix_relu_inverse_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, zi, in, ik, K) );
-      } else if (2 == nonlin) {
-        libxsmm_internal_matrix_sigmoid_inverse_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, zi, in, ik, K) );
-      } else {
-        libxsmm_internal_matrix_tanh_inverse_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, zi, in, ik, K) );
-      }
-      libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, zi, in, ik, K),
-                                                          &LIBXSMM_VLA_ACCESS(3, djdh,  t-1, in, ik, N, K),
-                                                          &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K) );
-      if (1 == pass || 3 == pass) {
-        for (jn = 0; jn < bn; jn++) {
-          for (jk = 0; jk < bk; jk++) {
-            en = in + jn;
-            ek = ik + jk;
-            /* djdx = W^T * delta */
-            for (ic = 0; ic < C; ic += bc) {
-              for (jc = 0; jc < bc; jc++) {
-                ec = ic + jc;
-                LIBXSMM_VLA_ACCESS(3, djdx, t-1, en, ec, N, C) += LIBXSMM_VLA_ACCESS(3, delta, t-1, en, ek, N, K) * LIBXSMM_VLA_ACCESS(2, w, ec, ek, K);
-              }
-            }
-          }
-        }
-      }
-      if (2 == pass || 3 == pass) {
-        for (jn = 0; jn < bn; jn++) {
-          for (jk = 0; jk < bk; jk++) {
-            en = in + jn;
-            ek = ik + jk;
-            /* djdu = delta * h^T */
-            for (ic = 0; ic < K; ic += bk) {
-              for (jc = 0; jc < bk; jc++) {
-                ec = ic + jc;
-                LIBXSMM_VLA_ACCESS(2, djdu, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, h, t-1, en, ec, N, K) * LIBXSMM_VLA_ACCESS(3, delta, t-1, en, ek, N, K);
-              }
-            }
-            /* djdw = delta * x^T */
-            for (ic = 0; ic < C; ic += bc) {
-              for (jc = 0; jc < bc; jc++) {
-                ec = ic + jc;
-                LIBXSMM_VLA_ACCESS(2, djdw, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, x, t-1, en, ec, N, C) * LIBXSMM_VLA_ACCESS(3, delta, t-1, en, ek, N, K);
-              }
-            }
-            djdb[ek] += LIBXSMM_VLA_ACCESS(3, delta, t-1, en, ek, N, K);
-          }
-        }
-      }
-    }
-  }
-  for (i = t-2; i >= 0; --i) {
-    /* let's run the cell in blocks for good locality */
-    for (in = 0; in < N; in += bn) {
-      for (ik = 0; ik < K; ik += bk) {
-        if (1 == nonlin) {
-          libxsmm_internal_matrix_relu_inverse_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, zi, in, ik, K) );
-        } else if (2 == nonlin) {
-          libxsmm_internal_matrix_sigmoid_inverse_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, zi, in, ik, K) );
-        } else {
-          libxsmm_internal_matrix_tanh_inverse_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, zi, in, ik, K) );
-        }
-        /* di1 = U^T * delta */
-        for (jn = 0; jn < bn; jn++) {
-          for (jk = 0; jk < bk; jk++) {
-            en = in + jn;
-            ek = ik + jk;
-            LIBXSMM_VLA_ACCESS(3, delta, i, en, ek, N, K) = (LIBXSMM_DNN_ELTWISE_FTYPE)0;
-            for (ic = 0; ic < K; ic += bk) {
-              for (jc = 0; jc < bk; jc++) {
-                ec = ic + jc;
-                LIBXSMM_VLA_ACCESS(3, delta, i, en, ek, N, K) += LIBXSMM_VLA_ACCESS(3, delta, i+1, en, ec, N, K) * LIBXSMM_VLA_ACCESS(2, u, ek, ec, K);
-              }
-            }
-            LIBXSMM_VLA_ACCESS(3, delta, i, en, ek, N, K) += LIBXSMM_VLA_ACCESS(3, djdh, i, en, ek, N, K);
-            LIBXSMM_VLA_ACCESS(3, delta, i, en, ek, N, K) *= LIBXSMM_VLA_ACCESS(2, zi, en, ek, K);
-            if (1 == pass || 3 == pass) {
-              /* djdx = W^T * delta */
-              for (ic = 0; ic < C; ic += bc) {
-                for (jc = 0; jc < bc; jc++) {
-                  ec = ic + jc;
-                  LIBXSMM_VLA_ACCESS(3, djdx, i, en, ec, N, C) += LIBXSMM_VLA_ACCESS(3, delta, i, en, ek, N, K) * LIBXSMM_VLA_ACCESS(2, w, ec, ek, K);
-                }
-              }
-            }
-            if (2 == pass || 3 == pass) {
-              /* djdu = delta * h^T */
-              for (ic = 0; ic < K; ic += bk) {
-                for (jc = 0; jc < bk; jc++) {
-                  ec = ic + jc;
-                  LIBXSMM_VLA_ACCESS(2, djdu, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, h, i, en, ec, N, K) * LIBXSMM_VLA_ACCESS(3, delta, i, en, ek, N, K);
-                }
-              }
-              /* djdw = delta * x^T */
-              for (ic = 0; ic < C; ic += bc) {
-                for (jc = 0; jc < bc; jc++) {
-                  ec = ic + jc;
-                  LIBXSMM_VLA_ACCESS(2, djdw, ec, ek, K) += LIBXSMM_VLA_ACCESS(3, x, i, en, ec, N, C) * LIBXSMM_VLA_ACCESS(3, delta, i, en, ek, N, K);
-                }
-              }
-              djdb[ek] += LIBXSMM_VLA_ACCESS(3, delta, i, en, ek, N, K);
-            }
-          }
-        }
-      }
-    }
-  }
-
-  return status;
-}
-
-
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_st(libxsmm_dnn_rnncell* handle, libxsmm_dnn_compute_kind kind,
   /*unsigned*/int start_thread, /*unsigned*/int tid)
 {
@@ -916,14 +749,17 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_st(libxsmm_dnn_rnncell
           status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
         }
       } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
-        status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 1);
-      } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
-        status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 2);
-      } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-        status = libxsmm_dnn_rnncell_bwd_upd_bu(handle, start_thread, tid, 3);
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+      case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD: {
+        if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CK) ) {
+          status = libxsmm_dnn_rnncell_st_bwdupd_nc_ck( handle, kind, start_thread, tid );
+        } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK)  ) {
+          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+          /*status = libxsmm_dnn_rnncell_st_bwdupd_ncnc_kcck( handle, kind, start_thread, tid );*/
+        } else {
+          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
+        }
       } break;
       default: {
         status = LIBXSMM_DNN_ERR_INVALID_KIND;

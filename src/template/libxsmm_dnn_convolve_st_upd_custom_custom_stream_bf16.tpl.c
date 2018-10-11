@@ -214,35 +214,98 @@ if (handle->reduce_weights) {
   if (handle->desc.C == 3) {
     const int total_filter_size = reduce_work * handle->ofmblock;
     libxsmm_bfloat16 *dst_weight_ptr = (libxsmm_bfloat16*)handle->grad_filter->data;
-    for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
-      __m512 sum_weight = _mm512_setzero_ps();
-      __m256i vbfp16;
-      for ( i = 0; i < handle->desc.threads; i++ ) {
-        const float *const remote_weight_ptr = ((float*)handle->scratch4) + (i*total_filter_size);
-        const __m512 remote_weight = LIBXSMM_INTRINSICS_MM512_LOAD_PS(remote_weight_ptr + j*16);
-        sum_weight = _mm512_add_ps( remote_weight, sum_weight);
+    if ( handle->f32_bf16_cvt_rne ) {
+      __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
+      __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
+      __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
+      __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
+      for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
+        __m512 sum_weight = _mm512_setzero_ps();
+        for ( i = 0; i < handle->desc.threads; i++ ) {
+          const float *const remote_weight_ptr = ((float*)handle->scratch4) + (i*total_filter_size);
+          const __m512 remote_weight = LIBXSMM_INTRINSICS_MM512_LOAD_PS(remote_weight_ptr + j*16);
+          sum_weight = _mm512_add_ps( remote_weight, sum_weight);
+        }
+        __m512i vfp32     = _mm512_castps_si512( sum_weight);
+        __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
+        __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
+        __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
+        __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
+        __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
+        __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
+        __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
+        __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
+        _mm256_storeu_si256( (__m256i*)( ((libxsmm_bfloat16*)dst_weight_ptr)+j*16), vbfp16 );
+      }      
+    } else {
+      for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
+        __m512 sum_weight = _mm512_setzero_ps();
+        __m256i vbfp16;
+        for ( i = 0; i < handle->desc.threads; i++ ) {
+          const float *const remote_weight_ptr = ((float*)handle->scratch4) + (i*total_filter_size);
+          const __m512 remote_weight = LIBXSMM_INTRINSICS_MM512_LOAD_PS(remote_weight_ptr + j*16);
+          sum_weight = _mm512_add_ps( remote_weight, sum_weight);
+        }
+        vbfp16 = _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( sum_weight ), 16));
+        _mm256_storeu_si256( (__m256i*)( ((libxsmm_bfloat16*)dst_weight_ptr)+j*16), vbfp16 );
       }
-      vbfp16 = _mm512_cvtepi32_epi16(_mm512_srai_epi32( _mm512_castps_si512( sum_weight ), 16));
-      _mm256_storeu_si256( (__m256i*)( ((libxsmm_bfloat16*)dst_weight_ptr)+j*16), vbfp16 );
     }
   } else {
-    for ( j = 2*reduce_thr_begin; j < 2*reduce_thr_end; j+=2 ) {
-      __m512 weight_sum_lo = _mm512_setzero_ps();
-      __m512 weight_sum_hi = _mm512_setzero_ps();
-      __m512i fm0, fm1, pair_fms;
-      for ( i = 0; i < handle->weight_copies; i++ ) {
-        weight_sum_lo = _mm512_add_ps(weight_sum_lo, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
+    if ( handle->f32_bf16_cvt_rne ) {
+      __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
+      __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
+      __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
+      __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );    
+      for ( j = 2*reduce_thr_begin; j < 2*reduce_thr_end; j+=2 ) {
+        __m512 weight_sum_lo = _mm512_setzero_ps();
+        __m512 weight_sum_hi = _mm512_setzero_ps();
+        __m512i fm0, fm1, pair_fms;
+        for ( i = 0; i < handle->weight_copies; i++ ) {
+          weight_sum_lo = _mm512_add_ps(weight_sum_lo, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
+        }
+        for ( i = 0; i < handle->weight_copies; i++ ) {
+          weight_sum_hi = _mm512_add_ps(weight_sum_hi, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->weight_copies, 16)));
+        }
+        __m512i vfp32     = _mm512_castps_si512( weight_sum_lo);
+        __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
+        __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
+        __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
+        __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
+        __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
+        __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
+        __m512i vbfp16_32_lo = _mm512_srli_epi32( vfp32rne, 16 );
+
+        vfp32     = _mm512_castps_si512( weight_sum_hi);
+        vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
+        vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
+        rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
+        fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
+        vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
+        vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
+        __m512i vbfp16_32_hi = _mm512_srli_epi32( vfp32rne, 16 );
+        vbfp16_32_hi = _mm512_slli_epi32(vbfp16_32_hi, 16);
+        pair_fms = _mm512_or_epi32(vbfp16_32_lo, vbfp16_32_hi);
+        _mm512_store_epi32( ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16, pair_fms);
       }
-      for ( i = 0; i < handle->weight_copies; i++ ) {
-        weight_sum_hi = _mm512_add_ps(weight_sum_hi, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->weight_copies, 16)));
+    } else {
+      for ( j = 2*reduce_thr_begin; j < 2*reduce_thr_end; j+=2 ) {
+        __m512 weight_sum_lo = _mm512_setzero_ps();
+        __m512 weight_sum_hi = _mm512_setzero_ps();
+        __m512i fm0, fm1, pair_fms;
+        for ( i = 0; i < handle->weight_copies; i++ ) {
+          weight_sum_lo = _mm512_add_ps(weight_sum_lo, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
+        }
+        for ( i = 0; i < handle->weight_copies; i++ ) {
+          weight_sum_hi = _mm512_add_ps(weight_sum_hi, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->weight_copies, 16)));
+        }
+        fm0 = _mm512_castps_si512(weight_sum_lo);
+        fm1 = _mm512_castps_si512(weight_sum_hi);
+        fm0 = _mm512_srli_epi32(fm0, 16);
+        fm1 = _mm512_srli_epi32(fm1, 16);
+        fm1 = _mm512_slli_epi32(fm1, 16);
+        pair_fms = _mm512_or_epi32(fm0, fm1);
+        _mm512_store_epi32( ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16, pair_fms);
       }
-      fm0 = _mm512_castps_si512(weight_sum_lo);
-      fm1 = _mm512_castps_si512(weight_sum_hi);
-      fm0 = _mm512_srli_epi32(fm0, 16);
-      fm1 = _mm512_srli_epi32(fm1, 16);
-      fm1 = _mm512_slli_epi32(fm1, 16);
-      pair_fms = _mm512_or_epi32(fm0, fm1);
-      _mm512_store_epi32( ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16, pair_fms);
     }
 #else
 #endif
@@ -253,18 +316,47 @@ if (handle->reduce_weights) {
   const int transform_chunksize = (transform_work % handle->desc.threads == 0) ? (transform_work / handle->desc.threads) : (transform_work / handle->desc.threads) + 1;
   const int transform_thr_begin = (ltid * transform_chunksize < transform_work) ? (ltid * transform_chunksize) : transform_work;
   const int transform_thr_end = ((ltid + 1) * transform_chunksize < transform_work) ? ((ltid + 1) * transform_chunksize) : transform_work;
-
-  for ( j = 2*transform_thr_begin; j < 2*transform_thr_end; j+=2 ) {
-    libxsmm_bfloat16 *bf16_weight_ptr = ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16;
-    float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16;
-    __m512i fm0 = _mm512_castps_si512(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)fp32_weight_ptr));
-    __m512i fm1 = _mm512_castps_si512(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)fp32_weight_ptr + 16));
-    __m512i pair_fms;
-    fm0 = _mm512_srli_epi32 (fm0, 16);
-    fm1 = _mm512_srli_epi32 (fm1, 16);
-    fm1 = _mm512_slli_epi32 (fm1, 16);
-    pair_fms = _mm512_or_epi32(fm0, fm1);
-    _mm512_store_epi32( ((libxsmm_bfloat16*) bf16_weight_ptr), pair_fms);
+  if ( handle->f32_bf16_cvt_rne ) {
+    __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
+    __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
+    __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
+    __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );    
+    for ( j = 2*transform_thr_begin; j < 2*transform_thr_end; j+=2 ) {
+      libxsmm_bfloat16 *bf16_weight_ptr = ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16;
+      float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16;
+      __m512i vfp32     = _mm512_castps_si512( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)fp32_weight_ptr));
+      __m512i vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
+      __m512i vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
+      __mmask16 rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
+      __mmask16 fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
+      __m512i vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
+      __m512i vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
+      __m512i vbfp16_32_lo = _mm512_srli_epi32( vfp32rne, 16 );
+      vfp32     = _mm512_castps_si512( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)fp32_weight_ptr + 16));
+      vfp32nan  = _mm512_and_epi32( vfp32, vnaninf );
+      vfp32fixup  = _mm512_and_epi32( vfp32, vfixupmask );
+      rnemask = _mm512_cmp_epi32_mask( vfp32nan, vnaninf, _MM_CMPINT_NE );
+      fixupmask = _mm512_cmp_epi32_mask( vfp32fixup, vfixupmask, _MM_CMPINT_EQ );
+      vrnd = _mm512_mask_add_epi32( vrneadd , fixupmask, vrneadd, vfixup );
+      vfp32rne  = _mm512_mask_add_epi32( vfp32, rnemask, vfp32, vrnd );
+      __m512i vbfp16_32_hi = _mm512_srli_epi32( vfp32rne, 16 );
+      vbfp16_32_hi = _mm512_slli_epi32(vbfp16_32_hi, 16);
+      __m512i pair_fms = _mm512_or_epi32(vbfp16_32_lo, vbfp16_32_hi);
+      _mm512_store_epi32( ((libxsmm_bfloat16*) bf16_weight_ptr), pair_fms);
+    }  
+  } else {
+    for ( j = 2*transform_thr_begin; j < 2*transform_thr_end; j+=2 ) {
+      libxsmm_bfloat16 *bf16_weight_ptr = ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16;
+      float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16;
+      __m512i fm0 = _mm512_castps_si512(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)fp32_weight_ptr));
+      __m512i fm1 = _mm512_castps_si512(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)fp32_weight_ptr + 16));
+      __m512i pair_fms;
+      fm0 = _mm512_srli_epi32 (fm0, 16);
+      fm1 = _mm512_srli_epi32 (fm1, 16);
+      fm1 = _mm512_slli_epi32 (fm1, 16);
+      pair_fms = _mm512_or_epi32(fm0, fm1);
+      _mm512_store_epi32( ((libxsmm_bfloat16*) bf16_weight_ptr), pair_fms);
+    }
   }
 }
 

@@ -99,6 +99,8 @@ typedef enum libxsmm_dnn_compute_kind {
   LIBXSMM_DNN_COMPUTE_KIND_BWD,
   /** Updated weights. */
   LIBXSMM_DNN_COMPUTE_KIND_UPD,
+  /** Backward and weightupdate combined, useful for RNNs */
+  LIBXSMM_DNN_COMPUTE_KIND_BWDUPD,
   /** All routines, need for some init routines. */
   LIBXSMM_DNN_COMPUTE_KIND_ALL
 } libxsmm_dnn_compute_kind;

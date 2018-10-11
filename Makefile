@@ -294,7 +294,7 @@ SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_spmdm.c libxsmm_fsspmdm.c \
           libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c \
           libxsmm_dnn_elementwise.c libxsmm_dnn_rnncell.c libxsmm_dnn_lstmcell.c libxsmm_dnn_grucell.c \
-          libxsmm_dnn_rnncell_forward.c \
+          libxsmm_dnn_rnncell_forward.c libxsmm_dnn_rnncell_backward_weight_update.c \
           libxsmm_dnn_fusedbn.c libxsmm_dnn_fusedbatchnorm_forward.c \
           libxsmm_dnn_fusedbatchnorm_backward.c \
           libxsmm_dnn_pooling.c libxsmm_dnn_pooling_forward.c \
