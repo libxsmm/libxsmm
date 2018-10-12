@@ -395,6 +395,7 @@ LIBXSMM_API size_t libxsmm_dnn_lstmcell_get_internalstate_size(const libxsmm_dnn
   const size_t sizeof_datatype = sizeof(float);
   size_t size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
+  LIBXSMM_UNUSED(sizeof_datatype); LIBXSMM_UNUSED(size);
 
   if (0 != handle) {
     switch (kind) {
@@ -425,6 +426,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bind_internalstate(libxsmm_dn
   size_t offset = 0;
   size_t scratch_size = 0;
   const size_t sizeof_datatype = sizeof(float);
+  LIBXSMM_UNUSED(sizeof_datatype); LIBXSMM_UNUSED(address); LIBXSMM_UNUSED(offset); LIBXSMM_UNUSED(scratch_size);
 
   /*
   if (internalstate == 0) {
