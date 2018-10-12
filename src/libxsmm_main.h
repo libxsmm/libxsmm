@@ -588,21 +588,29 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_blasint bk;
   libxsmm_blasint bn;
   libxsmm_blasint bc;
+  /* extrenal tensors */
   libxsmm_dnn_tensor* w;
   libxsmm_dnn_tensor* xt;
   libxsmm_dnn_tensor* u;
-  libxsmm_dnn_tensor* h;
+  libxsmm_dnn_tensor* ht;
   libxsmm_dnn_tensor* b;
-  libxsmm_dnn_tensor* z;
   libxsmm_dnn_tensor* djdht;
   libxsmm_dnn_tensor* djdu;
   libxsmm_dnn_tensor* djdw;
   libxsmm_dnn_tensor* djdxt;
   libxsmm_dnn_tensor* djdb;
-  libxsmm_dnn_tensor* zi;
-  libxsmm_dnn_tensor* deltat;
+  /* internal  state */
+  void* internal_z;
+  /* scratch pointers */
+  void* scratch_deltat;
+  void* scratch_wT;
+  void* scratch_uT;
+  void* scratch_xT;
+  void* scratch_hT;
+  /* options */
   int fwd_generic;
-  int bwdupd_generic; 
+  int bwdupd_generic;
+  /* barrier */ 
   libxsmm_barrier* barrier; /* barrier */
 };
 
