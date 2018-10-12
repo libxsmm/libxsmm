@@ -38,14 +38,25 @@
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell libxsmm_dnn_rnncell;
 
+/** Type of algorithm used for convolutions. */
+typedef enum libxsmm_dnn_rnncell_type {
+  /** simple RNN cell with ReLU as activation function */
+  LIBXSMM_DNN_RNNCELL_RNN_RELU,
+  /** simple RNN cell with sigmoid as activation function */
+  LIBXSMM_DNN_RNNCELL_RNN_SIGMOID,
+  /** simple RNN cell with tanh as activation function */
+  LIBXSMM_DNN_RNNCELL_RNN_TANH,
+  /** LSTM cell */
+  LIBXSMM_DNN_RNNCELL_LSTM
+} libxsmm_dnn_rnncell_type;
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
   int threads;
   int K;     /* number of outputs */
   int N;     /* size of the minibatch */
   int C;     /* number of inputs */
   int t;     /* number of time steps */
-  int pass;  /* denotes whether it is FWD/BWD/UPD */
-  int nonlin;/* denotes which non-linear function to be used: relu, sigmoid, tanh */
+  libxsmm_dnn_rnncell_type cell_type;       /* cell type RNN ReLU, RNN Sigmoid, RNN Tanh, LSTM */
   libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
   libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for activation buffers */

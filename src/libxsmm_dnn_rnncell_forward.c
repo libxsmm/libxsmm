@@ -29,8 +29,9 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_rnncell_forward.h"
-#include <libxsmm_intrinsics_x86.h>
+#include "libxsmm_dnn_elementwise.h"
 #include "libxsmm_main.h"
+#include <libxsmm_intrinsics_x86.h>
 #include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -54,15 +55,15 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_nc_ck_f32_f32(libxsmm_dnn_rnncell* 
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
-  if ( handle->desc.nonlin == 1 ) {
+  if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_RELU ) {
 #define LIBXSMM_DNN_RNN_RELU_FWD
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_RELU_FWD
-  } else if ( handle->desc.nonlin == 2 ) {
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_SIGMOID ) {
 #define LIBXSMM_DNN_RNN_SIGMOID_FWD
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_SIGMOID_FWD
-  } else if ( handle->desc.nonlin == 3 ) {
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_TANH ) {
 #define LIBXSMM_DNN_RNN_TANH_FWD
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_TANH_FWD
@@ -118,15 +119,15 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_nc_ck(libxsmm_dn
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-      if ( handle->desc.nonlin == 1 ) {
+      if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_RELU ) {
 #define LIBXSMM_DNN_RNN_RELU_FWD
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_RELU_FWD
-      } else if ( handle->desc.nonlin == 2 ) {
+      } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_SIGMOID ) {
 #define LIBXSMM_DNN_RNN_SIGMOID_FWD
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_SIGMOID_FWD
-      } else if ( handle->desc.nonlin == 3 ) {
+      } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_TANH ) {
 #define LIBXSMM_DNN_RNN_TANH_FWD
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_TANH_FWD

@@ -29,8 +29,9 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_rnncell_backward_weight_update.h"
-#include <libxsmm_intrinsics_x86.h>
+#include "libxsmm_dnn_elementwise.h"
 #include "libxsmm_main.h"
+#include <libxsmm_intrinsics_x86.h>
 #include <libxsmm.h>
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -54,15 +55,15 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck_f32_f32(libxsmm_dnn_rnncel
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
-  if ( handle->desc.nonlin == 1 ) {
+  if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_RELU ) {
 #define LIBXSMM_DNN_RNN_RELU_BWDUPD
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_RELU_BWDUPD
-  } else if ( handle->desc.nonlin == 2 ) {
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_SIGMOID ) {
 #define LIBXSMM_DNN_RNN_SIGMOID_BWDUPD
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_SIGMOID_BWDUPD
-  } else if ( handle->desc.nonlin == 3 ) {
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_TANH ) {
 #define LIBXSMM_DNN_RNN_TANH_BWDUPD
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_TANH_BWDUPD
@@ -71,7 +72,7 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck_f32_f32(libxsmm_dnn_rnncel
   }
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
 #else /* should not happen */
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(kind);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
@@ -91,9 +92,9 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_ncnc_kcck_f32_f32(libxsmm_dnn_rn
   typedef float element_filter_type;
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_ncnc_kcck_generic.tpl.c"
 #endif
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(kind);
 #else /* should not happen */
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(kind);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
   return status;
@@ -118,15 +119,15 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck(libxsmm
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-      if ( handle->desc.nonlin == 1 ) {
+      if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_RELU ) {
 #define LIBXSMM_DNN_RNN_RELU_BWDUPD
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_RELU_BWDUPD
-      } else if ( handle->desc.nonlin == 2 ) {
+      } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_SIGMOID ) {
 #define LIBXSMM_DNN_RNN_SIGMOID_BWDUPD
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_SIGMOID_BWDUPD
-      } else if ( handle->desc.nonlin == 3 ) {
+      } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_TANH ) {
 #define LIBXSMM_DNN_RNN_TANH_BWDUPD
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_TANH_BWDUPD
