@@ -69,6 +69,7 @@ class PoolImpl
     int top_compute_engine=-1;
     int bot_compute_engine=-1;
     string next_ntype, nname;
+    TensorBuf* scratchp;
 
   public:
     PoolImpl(PoolImplParams* gp_, int engine_) : gp(gp_), engine(engine_) {}
@@ -77,6 +78,7 @@ class PoolImpl
     void set_bot_compute_engine(int e) { bot_compute_engine = e;}
     void set_next_node_type(string s) { next_ntype = s; }
     void set_node_name(string s) { nname = s; }
+    void set_scratch_buffer(TensorBuf* sb) { scratchp = sb; }
 
     // Assume external threading, e.g., #pragma omp
     virtual void forwardPropagate(TensorBuf *inp, TensorBuf *outp, int *maskp, int tid) = 0;

@@ -779,11 +779,11 @@ int main(int argc, char* argv[])
 #elif defined(USE_FUSED_BIAS_RELU)
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
 #elif defined(USE_FUSED_BATCH_STATS)
-  conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS;
+  conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD;
 #elif defined(USE_FUSED_RELU_BWD)
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_RELU_BWD;
 #elif defined(USE_FUSED_BATCH_STATCH_RELU_BWD)
-  conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD;
+  conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD_RELU_BWD;
 #else
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
 #endif
@@ -854,7 +854,7 @@ int main(int argc, char* argv[])
   scratch = libxsmm_aligned_scratch( scratch_size, 2097152 );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
   /* set scratch to bogus to make sure that libxsmm takes care of zeroing internally */
-  /*init_buf_int16( (libxsmm_bfloat16*)scratch, scratch_size/2, 0, 0 );*/
+  init_buf( scratch, scratch_size/4, 0, 0 );
 
   if ((type == 'A' || type == 'F') && LIBXSMM_NEQ(0, check)) {
     printf("##############################################\n");

@@ -57,6 +57,26 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
 
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input);
 
+/**
+ * Calculate whether there is a difference between two (short) buffers.
+ * Returns zero if there is no difference; otherwise non-zero.
+ */
+LIBXSMM_API unsigned int libxsmm_diff(const void* a, const void* b, unsigned char size);
+
+/**
+ * Calculate whether there is a difference between two series of items.
+ * Returns the index of the first match (or "n" in case of no match).
+ */
+LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char size,
+  unsigned char stride, unsigned int hint, unsigned int n);
+
+/** Similar to libxsmm_diff_n but expects n to be power of two. */
+LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsigned char size,
+  unsigned char stride, unsigned int hint, unsigned int n);
+
+/** Calculate a hash value for a given buffer. */
+LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed);
+
 /** Greatest common divisor. */
 LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b);
 /** Least common multiple. */

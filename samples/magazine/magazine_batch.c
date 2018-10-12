@@ -31,6 +31,12 @@
 #include "magazine.h"
 #include <libxsmm.h>
 
+#if defined(_OPENMP)
+# define USEOMP(FUNCTION) LIBXSMM_USEOMP(FUNCTION)
+#else
+# define USEOMP(FUNCTION) (FUNCTION)
+#endif
+
 #if 0 /* process batch of A, B, and C in "random" order */
 # define SHUFFLE
 #endif
@@ -47,13 +53,13 @@ int main(int argc, char* argv[])
   /* batch-size is used to stream matrix-operands from memory */
   const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
   /* default: M, N, and K are 13, 5, and 7 respectively */
-  const int m = (2 < argc ? atoi(argv[2]) : 13);
-  const int n = (3 < argc ? atoi(argv[3]) : 5);
-  const int k = (4 < argc ? atoi(argv[4]) : 7);
+  const libxsmm_blasint m = (2 < argc ? atoi(argv[2]) : 13);
+  const libxsmm_blasint n = (3 < argc ? atoi(argv[3]) : 5);
+  const libxsmm_blasint k = (4 < argc ? atoi(argv[4]) : 7);
   /* leading dimensions are made multiples of the size of a cache-line */
-  const int lda = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
-  const int ldb = LIBXSMM_UP2(sizeof(TYPE) * k, LIBXSMM_CACHELINE) / sizeof(TYPE);
-  const int ldc = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
+  const libxsmm_blasint lda = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
+  const libxsmm_blasint ldb = LIBXSMM_UP2(sizeof(TYPE) * k, LIBXSMM_CACHELINE) / sizeof(TYPE);
+  const libxsmm_blasint ldc = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
   /* micro-kernels are limited to certain alpha- and beta-values */
   const char transa = 'n', transb = 'n';
   const TYPE alpha = 1, beta = 1;
@@ -70,17 +76,18 @@ int main(int argc, char* argv[])
   TYPE *const a = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * na * size, LIBXSMM_CACHELINE);
   TYPE *const b = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nb * size, LIBXSMM_CACHELINE);
   TYPE *const c = (TYPE*)libxsmm_aligned_malloc(sizeof(TYPE) * nc * size, LIBXSMM_CACHELINE);
-  int *const ia = (int*)libxsmm_malloc(sizeof(int) * size), i;
-  int *const ib = (int*)libxsmm_malloc(sizeof(int) * size);
-  int *const ic = (int*)libxsmm_malloc(sizeof(int) * size);
+  libxsmm_blasint *const ia = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
+  libxsmm_blasint *const ib = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
+  libxsmm_blasint *const ic = (libxsmm_blasint*)libxsmm_malloc(sizeof(libxsmm_blasint) * size);
   const double scale = 1.0 / size;
   libxsmm_timer_tickint start;
   double duration;
 #if defined(SYNC)
-  const int xsize = size;
+  const libxsmm_blasint xsize = size;
 #else
-  const int xsize = -size;
+  const libxsmm_blasint xsize = -size;
 #endif
+  int i;
 
   /**
    * LIBXSMM's C interface really is type-specific, and the helper macros (such as LIBXSMM_MMFUNCTION_TYPE)
@@ -117,9 +124,13 @@ int main(int argc, char* argv[])
 
   start = libxsmm_timer_tick();
 #if defined(KERNEL) /* explicitly dispatch a kernel according to parameters */
+# if defined(_OPENMP)
   libxsmm_mmbatch_omp(xmm, 0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, a, b, c, xsize);
+# else
+  libxsmm_mmbatch(xmm, 0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, a, b, c, xsize, 0/*tid*/, 1/*nthreads*/);
+# endif
 #else
-  libxsmm_gemm_batch_omp(LIBXSMM_GEMM_PRECISION(TYPE),
+  USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(TYPE),
     &transa, &transb, m, n, k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc,
     0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, xsize);
 #endif
@@ -131,6 +142,14 @@ int main(int argc, char* argv[])
   }
   printf("%.1f ms\n", 1000.0 * duration);
 
+  { /* calculate checksum */
+    double check = 0;
+    for (i = 0; i < size; ++i) {
+      const double cn = norm(c + STREAM_C(i * nc), m, n, ldc);
+      if (check < cn) check = cn;
+    }
+    printf("\n%f (check)\n", check);
+  }
   libxsmm_free(ia);
   libxsmm_free(ib);
   libxsmm_free(ic);

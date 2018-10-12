@@ -107,7 +107,7 @@ int main(int argc, char* argv[])
       assert(count <= MAX_MALLOC_N);
       for (j = 0; j < count; ++j) {
         const int k = (i * count + j) % (MAX_MALLOC_N);
-        const size_t nbytes = (r[k] % (MAX_MALLOC_MB) + 1) << 20;
+        const size_t nbytes = ((size_t)r[k] % (MAX_MALLOC_MB) + 1) << 20;
         const unsigned long long t1 = libxsmm_timer_tick();
         p[j] = libxsmm_aligned_scratch(nbytes, 0/*auto*/);
         d1 += libxsmm_timer_diff(t1, libxsmm_timer_tick());
@@ -136,7 +136,7 @@ int main(int argc, char* argv[])
 
     if (EXIT_SUCCESS == libxsmm_get_scratch_info(&info) && 0 < info.size) {
       fprintf(stdout, "\nScratch: %.f MB (mallocs=%lu, pools=%u",
-        1.0 * info.size / (1 << 20), (unsigned long int)info.nmallocs, info.npools);
+        1.0 * info.size / (1ULL << 20), (unsigned long int)info.nmallocs, info.npools);
       if (1 < nthreads) fprintf(stdout, ", threads=%i)\n", nthreads); else fprintf(stdout, ")\n");
       libxsmm_release_scratch(); /* suppress LIBXSMM's termination message about scratch */
     }

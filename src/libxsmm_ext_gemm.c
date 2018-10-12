@@ -32,8 +32,15 @@
 #include "libxsmm_gemm.h"
 #include "libxsmm_ext.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <string.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
 #if defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD_EXT)
-# include "libxsmm_gemm_diff.h"
 # include "libxsmm_trace.h"
 #endif
 
@@ -53,8 +60,7 @@ LIBXSMM_EXTVAR(unsigned int internal_ext_gemm_batchsize);
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
 #if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
-LIBXSMM_APIEXT LIBXSMM_GEMM_WEAK
-libxsmm_dgemm_function libxsmm_original_dgemm(void)
+LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
   static libxsmm_dgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(double, original);
@@ -63,8 +69,7 @@ libxsmm_dgemm_function libxsmm_original_dgemm(void)
 }
 
 
-LIBXSMM_APIEXT LIBXSMM_GEMM_WEAK
-libxsmm_sgemm_function libxsmm_original_sgemm(void)
+LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
   static libxsmm_sgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(float, original);
@@ -207,7 +212,9 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       || ((unsigned int)*m) != libxsmm_gemm_batchdesc.m
       || ((unsigned int)*n) != libxsmm_gemm_batchdesc.n
       || ((unsigned int)*k) != libxsmm_gemm_batchdesc.k
-      || (0 > (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb))) /* false */
+#if 0 /* always false */
+      || (0 > (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)))
+#endif
       || flags != (flags & libxsmm_gemm_batchdesc.flags)
       || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_gemm_batchdesc.flags) ? 0 : */1, *alpha)
       || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 0 : 1, *beta))
@@ -264,7 +271,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
             size = max_size - libxsmm_gemm_batchsize;
             batcharray += libxsmm_gemm_batchsize;
           }
-          i = libxsmm_gemm_diffn_sw(descriptor, batcharray, 0/*hint*/, size, sizeof(libxsmm_gemm_batchitem));
+          i = libxsmm_diff_n(descriptor, batcharray, sizeof(libxsmm_gemm_batchitem), sizeof(libxsmm_gemm_batchitem), 0/*hint*/, size);
 
           if (i < size) { /* update existing entry */
             LIBXSMM_ATOMIC_ADD_FETCH(&batcharray[i].stat.count, 1, LIBXSMM_ATOMIC_RELAXED);
@@ -347,7 +354,9 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       || ((unsigned int)*m) != libxsmm_gemm_batchdesc.m
       || ((unsigned int)*n) != libxsmm_gemm_batchdesc.n
       || ((unsigned int)*k) != libxsmm_gemm_batchdesc.k
-      || (0 > (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb))) /* false */
+#if 0 /* always false */
+      || (0 > (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)))
+#endif
       || flags != (flags & libxsmm_gemm_batchdesc.flags)
       || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_gemm_batchdesc.flags) ? 0 : */1, *alpha)
       || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0  & libxsmm_gemm_batchdesc.flags) ? 0 : 1, *beta))
@@ -404,7 +413,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
             size = max_size - libxsmm_gemm_batchsize;
             batcharray += libxsmm_gemm_batchsize;
           }
-          i = libxsmm_gemm_diffn_sw(descriptor, batcharray, 0/*hint*/, size, sizeof(libxsmm_gemm_batchitem));
+          i = libxsmm_diff_n(descriptor, batcharray, sizeof(libxsmm_gemm_batchitem), sizeof(libxsmm_gemm_batchitem), 0/*hint*/, size);
 
           if (i < size) { /* update existing entry */
             LIBXSMM_ATOMIC_ADD_FETCH(&batcharray[i].stat.count, 1, LIBXSMM_ATOMIC_RELAXED);

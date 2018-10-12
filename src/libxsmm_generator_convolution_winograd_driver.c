@@ -28,12 +28,11 @@
 ******************************************************************************/
 /* Kunal Banerjee (Intel Corp.), Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
-#include <libxsmm_generator.h>
-#include <libxsmm_macros.h>
+#include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+
 
 LIBXSMM_INLINE void print_help(void) {
   printf("\nwrong usage -> exit!\n\n\n");
@@ -51,56 +50,6 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    Pass: fwd, bwd, upd");
   printf("    ur_ifm:");
   printf("\n\n\n\n");
-}
-
-
-void factors( unsigned int num,
-              unsigned int num_factors[] );
-
-/* This function finds the prime factors of a number */
-void factors( unsigned int num,
-              unsigned int num_factors[] )
-{
-  unsigned int primes[] = {2, 3, 5, 7, 11, 13, 17, 19, 23, 29};
-  int i;
-  unsigned int total_primes = 10;
-  unsigned int index = 0;
-
-  for ( i = total_primes-1; i >= 0; i-- ) {
-    while((num % primes[i]) == 0) {
-      num_factors[index] = primes[i];
-      index++;
-      num = num/primes[i];
-    }
-  }
-}
-
-
-void factors_all( unsigned int  product,
-                  unsigned int* ur,
-                  unsigned int  max_acc );
-
-/* This function finds the unroll factor for itiles*jtiles*bimg such that ur <= max_acc */
-/* The following loop may not give an optimal solution (knapsack problem)               */
-/* Eg, 12 = 3*2*2, MAX_ACC = 4, this algorithm: 3, best: 2*2                            */
-void factors_all( unsigned int  product,
-                  unsigned int* ur,
-                  unsigned int  max_acc )
-{
-  unsigned int i;
-  unsigned int fact[10];
-
-  for ( i = 0; i < 10; i++ ) {
-    fact[i] = 1;
-  }
-  factors(product, fact);
-
-  *ur = 1;
-  for ( i = 0; fact[i] != 1; i++ ) {
-    if ( (fact[i] * (*ur)) <= max_acc ) {
-      *ur = (*ur)*fact[i];
-    }
-  }
 }
 
 
@@ -205,9 +154,9 @@ int main(int argc, char* argv []) {
     if ( flag_ur ) {
       if ( (strcmp(l_arch, "knm") == 0) &&
            (strcmp(l_pass, "upd") == 0) ) {
-        factors_all( l_conv_desc.itiles*l_conv_desc.jtiles*l_conv_desc.bimg/4, &(l_conv_desc.ur), 26 );
+        l_conv_desc.ur = libxsmm_product_limit(l_conv_desc.itiles * l_conv_desc.jtiles * l_conv_desc.bimg / 4, 26, 0);
       } else {
-        factors_all( l_conv_desc.itiles*l_conv_desc.jtiles*l_conv_desc.bimg, &(l_conv_desc.ur), 26 );
+        l_conv_desc.ur = libxsmm_product_limit(l_conv_desc.itiles * l_conv_desc.jtiles * l_conv_desc.bimg, 26, 0);
       }
     }
 

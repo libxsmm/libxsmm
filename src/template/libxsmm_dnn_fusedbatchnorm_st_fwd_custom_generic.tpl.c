@@ -91,8 +91,22 @@ LIBXSMM_VLA_DECL(2, const element_stats_type, gamma,     (element_stats_type*)ha
 LIBXSMM_VLA_DECL(2, const element_stats_type, beta,      (element_stats_type*)handle->reg_beta->data,    nFmBlock);
 LIBXSMM_VLA_DECL(2,       element_stats_type, bmean,     (element_stats_type*)handle->expvalue->data,    nFmBlock);
 LIBXSMM_VLA_DECL(2,       element_stats_type, brstd,     (element_stats_type*)handle->stddev->data,      nFmBlock);
-LIBXSMM_VLA_DECL(3,       element_stats_type, sum_img,   (element_stats_type*)handle->scratch,                                            nImg, nFmBlock);
-LIBXSMM_VLA_DECL(3,       element_stats_type, sumsq_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * nBlocksFm * nFmBlock),  nImg, nFmBlock);
+LIBXSMM_VLA_DECL(3,       element_stats_type, sum_img,   (element_stats_type*)handle->scratch,                                                           nImg, nFmBlock);
+LIBXSMM_VLA_DECL(3,       element_stats_type, sumsq_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)nFmBlock), nImg, nFmBlock);
+
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+union libxsmm_bfloat16_hp input_f32;
+union libxsmm_bfloat16_hp output_f32;
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+union libxsmm_bfloat16_hp input_add_f32;
+input_add_f32.i[1]  = 0;
+input_add_f32.i[0]  = 0;
+#endif
+input_f32.i[1]  = 0;
+input_f32.i[0]  = 0;
+output_f32.i[1] = 0;
+output_f32.i[0] = 0;
+#endif
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -111,7 +125,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img,  fm, img, 0, nImg, nFmBlock);
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       lcl_sum_ptr[v] = (element_stats_type)0;
       lcl_sumsq_ptr[v] = (element_stats_type)0;
@@ -121,17 +134,23 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
       for ( wi=ipw; wi < (ifw + ipw); wi++ ) {
         const element_input_type* input_ptr = &LIBXSMM_VLA_ACCESS(5, input, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
 
+#if !defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
         LIBXSMM_PRAGMA_SIMD
-        LIBXSMM_PRAGMA_VALIGNED
+#endif
         for (v=0; v < nFmBlock; v++) {
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+          input_f32.i[1] = input_ptr[v];
+          lcl_sum_ptr[v]   += input_f32.f;
+          lcl_sumsq_ptr[v] += (input_f32.f * input_f32.f);
+#else
           lcl_sum_ptr[v]   += input_ptr[v];
           lcl_sumsq_ptr[v] += (input_ptr[v] * input_ptr[v]);
+#endif
         }
       }
     }
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for (v=0; v < nFmBlock; v++) {
       sum_img_ptr[v] = lcl_sum_ptr[v];
       sumsq_img_ptr[v] = lcl_sumsq_ptr[v];
@@ -149,7 +168,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     element_stats_type* brstd_ptr = &LIBXSMM_VLA_ACCESS(2, brstd, fm, 0, nFmBlock);
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       lcl_sum_ptr[v]   = (element_stats_type)0;
       lcl_sumsq_ptr[v] = (element_stats_type)0;
@@ -160,7 +178,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
       element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, img, 0, nImg, nFmBlock);
 
       LIBXSMM_PRAGMA_SIMD
-      LIBXSMM_PRAGMA_VALIGNED
       for ( v=0; v < nFmBlock; v++ ) {
         lcl_sum_ptr[v] += sum_img_ptr[v];
         lcl_sumsq_ptr[v] += sumsq_img_ptr[v];
@@ -168,14 +185,13 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     }
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       const element_stats_type tbmean = (recp_nhw * lcl_sum_ptr[v]) ;
       const element_stats_type tbmeansq = tbmean * tbmean;
       const element_stats_type tsqbmean = recp_nhw * lcl_sumsq_ptr[v];
       const element_stats_type tbrstd = (element_stats_type)(1.0/sqrt((double)tsqbmean - tbmeansq + sqrt_eps));
-      bmean_ptr[v] += tbmean;
-      brstd_ptr[v] += tbrstd;
+      bmean_ptr[v] = tbmean;
+      brstd_ptr[v] = tbrstd;
     }
   }
 
@@ -197,22 +213,38 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
       const element_stats_type*  beta_ptr      = &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, nFmBlock);
       const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
       const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
+      float o;
 
+#if !defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
       LIBXSMM_PRAGMA_SIMD
-      LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_NONTEMPORAL
+#endif
       for (v = 0; v < nFmBlock; v++ ) {
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+        input_f32.i[1] = input_ptr[v];
+        o = gamma_ptr[v]*(input_f32.f - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
+#else
         /* BN + scale (gamma, beta) */
-        float o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
+        o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
+#endif
         /* Eltwise */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+        input_add_f32.i[1] = input_add_ptr[v];
+        o += input_add_f32.f;
+#else
         o += input_add_ptr[v];
+#endif
 #endif
         /* ReLU */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
         o = ( o < 0.0f ) ? 0.0f : o;
 #endif
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+        output_f32.f = o;
+        output_ptr[v] = output_f32.i[1];
+#else
         output_ptr[v] = o;
+#endif
       }
     }
   }

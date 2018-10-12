@@ -27,7 +27,7 @@ IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
 # Fortran code here does not allow for PEDANTIC=2
 override PEDANTIC = 1
-BLAS = 0
+BLAS = 1
 OMP = 0
 SYM = 1
 

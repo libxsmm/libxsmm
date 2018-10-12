@@ -104,7 +104,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   }
 
   mark_ofm_init = 0; /* ((((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && (handle->use_nts_fwd == 0) ) || ( (handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) > 0) ) ? 1 : 0;*/
-  /*mark_ofm_close = (((((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) ) ||
+  /*mark_ofm_close = ((((handle->fuse_batchstats_fwd == 1) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 0) ) ||
     ((((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_RELU_BWD) > 0) || ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_MAX_STATS) > 0)) && (handle->use_fwd_for_bwd == 1) && (handle->use_nts_bwd == 0) ) ) ? 1 : 0;*/
   handle->use_accumulation_scratch = use_accumulation_scratch;
   mark_ofm_close = use_accumulation_scratch;
@@ -207,9 +207,9 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
   handle->compute_fwd_indices_ptrs[ltid] = compute_indices;
 
   /* BN offsets...  */
-  if  (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
+  if  ((handle->fuse_batchstats_fwd == 1) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
     bn_indices = (int*) libxsmm_aligned_malloc( (local_entries/3) * sizeof(int), 64);
-    handle->bn_indices_ptrs[ltid] = bn_indices;
+    handle->bn_stats_indices_ptrs[ltid] = bn_indices;
   }
 
   kernel_variant = (char*)(3 <= local_entries ? libxsmm_aligned_malloc((local_entries / 3) * sizeof(char), 64) : NULL);
@@ -288,7 +288,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                     }
 
 
-                    if (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
+                    if ((handle->fuse_batchstats_fwd == 1) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
                       bn_indices[local_entries/3] =  img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
                     }
 
@@ -374,7 +374,7 @@ for (ltid = 0; ltid < handle->desc.threads; ltid++)
                         }
                       }
 
-                      if (((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCH_STATS) > 0) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
+                      if ((handle->fuse_batchstats_fwd == 1) && (handle->use_fwd_for_bwd == 0) && (handle->use_nts_fwd == 1) ) {
                         bn_indices[local_entries/3] = img * handle->ofmblock + ofm1 * handle->ofmblock * handle->desc.N;
                       }
 

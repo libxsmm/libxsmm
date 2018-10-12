@@ -121,9 +121,7 @@ script:
     CHECK=1 ITERS=1000 MB=${OMP_NUM_THREADS};
     for PAD in 0 1; do
       echo; echo "--- TEST ResNet-50 (precision=16-bit pad=${PAD} mb=${MB} nt=${OMP_NUM_THREADS})";
-      ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 F L ${PAD} &&
-      ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 B L ${PAD} &&
-      ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 U L ${PAD};
+      ./run_resnet50.sh ${MB} ${ITERS} -1 qi16f32 F L ${PAD};
     done)
 
   - make -e ${MAKEJ} && cd samples/deeplearning/cnnlayer && make -e ${MAKEJ} &&

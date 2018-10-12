@@ -51,7 +51,16 @@ int main(void)
     NULL/*flags*/, NULL/*prefetch*/);
   const LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) fb = mmdispatch(m, n, k);
   int result = EXIT_SUCCESS;
-  if (fa != fb) {
+
+  if (fa == fb) { /* test unregistering and freeing kernel */
+    union {
+      LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) f;
+      const void* p;
+    } kernel;
+    kernel.f = fa;
+    libxsmm_release_kernel(kernel.p);
+  }
+  else {
     result = EXIT_FAILURE;
   }
   return result;

@@ -658,7 +658,7 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
   libxsmm_mhd_elemtype type_data, const libxsmm_mhd_elemtype* type, const void* data, size_t* header_size,
   const char extension_header[], const void* extension, size_t extension_size)
 {
-  size_t typesize_data = 0, typesize = 0;
+  size_t typesize = 0;
   const libxsmm_mhd_elemtype elemtype = (NULL == type ? type_data : *type);
   const char *const elemname = libxsmm_mhd_typename(elemtype, &typesize, NULL/*ctypename*/);
   FILE *const file = (0 != filename && 0 != *filename &&
@@ -667,10 +667,8 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
     : NULL;
   int result = EXIT_SUCCESS;
 
-  /* source data type is not required to have MHD element name (type-size is needed) */
-  libxsmm_mhd_typename(type_data, &typesize_data, NULL/*ctypename*/);
-  if (0 != file && 0 < typesize_data) {
-    size_t i;
+  if (0 != file) {
+    size_t typesize_data = 0, i;
     if (0 < fprintf(file, "NDims = %u\nElementNumberOfChannels = %u\nElementByteOrderMSB = False\nDimSize =",
       (unsigned int)ndims, (unsigned int)ncomponents))
     {
@@ -706,13 +704,17 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
         result = EXIT_FAILURE;
       }
     }
+    /* source data type is not required to have MHD element name (type-size is needed) */
+    libxsmm_mhd_typename(type_data, &typesize_data, NULL/*ctypename*/);
+    if (0 == typesize_data) result = EXIT_FAILURE;
+
     /* ElementDataFile must be the last entry before writing the data */
     if (EXIT_SUCCESS == result && 0 < fprintf(file, "\nElementType = %s\nElementDataFile = LOCAL\n", elemname)) {
       const size_t *const shape = (0 != pitch ? pitch : size);
       if (0 != header_size) *header_size = ftell(file); /* determine the header size */
       result = internal_mhd_write(file,
         ((const char*)data) + libxsmm_offset(offset, shape, ndims, 0/*size*/) * ncomponents * typesize_data,
-        size, pitch, ndims, ncomponents, type_data, elemtype, typesize_data, typesize);
+        size, shape, ndims, ncomponents, type_data, elemtype, typesize_data, typesize);
     }
     /* append the extension data after the regular data section */
     if (EXIT_SUCCESS == result && 0 < extension_size) {

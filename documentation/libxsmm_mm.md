@@ -190,7 +190,7 @@ Intercepted GEMMs can also build a sophisticated statistic (histogram) with LIBX
 
 #### Static Linkage
 
-An application which is linked statically against BLAS requires to wrap the 'sgemm_' and the 'dgemm_' symbol (an alternative is to wrap only 'dgemm_'), and a special build of the libxsmm(ext) library is required (`make WRAP=1` to wrap SGEMM and DGEMM or `make WRAP=2` to wrap only DGEMM). To relink the application (without editing the build system) can often be accomplished by copying and pasting the linker command as it appeared in the console output of the build system, and then re-invoking a modified link step:
+An application which is linked statically against BLAS requires to wrap the 'sgemm_' and the 'dgemm_' symbol (an alternative is to wrap only 'dgemm_'). To relink the application (without editing the build system) can often be accomplished by copying and pasting the linker command as it appeared in the console output of the build system, and then re-invoking a modified link step:
 
 ```bash
 gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ \
@@ -198,7 +198,7 @@ gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ \
           /path/to/your_regular_blas.a
 ```
 
-**NOTE**: The static link-time wrapper technique may only work with a GCC tool chain (GNU&#160;Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU&#160;GCC, Intel&#160;Compiler, and Clang. However, this does not work under Microsoft Windows (even when using the GNU tool chain or Cygwin), and it may not work under OS&#160;X (Compiler&#160;6.1 or earlier, later versions have not been tested).
+**NOTE**: The static link-time wrapper technique may only work with a GCC tool chain (GNU&#160;Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU&#160;GCC, Intel&#160;Compiler, and Clang. However, this does not work under Microsoft Windows (even when using the GNU tool chain or Cygwin).
 
 #### Dynamic Linkage
 

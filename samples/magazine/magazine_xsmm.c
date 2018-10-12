@@ -44,13 +44,13 @@ int main(int argc, char* argv[])
   /* batch-size is used to stream matrix-operands from memory */
   const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
   /* default: M, N, and K are 13, 5, and 7 respectively */
-  const int m = (2 < argc ? atoi(argv[2]) : 13);
-  const int n = (3 < argc ? atoi(argv[3]) : 5);
-  const int k = (4 < argc ? atoi(argv[4]) : 7);
+  const libxsmm_blasint m = (2 < argc ? atoi(argv[2]) : 13);
+  const libxsmm_blasint n = (3 < argc ? atoi(argv[3]) : 5);
+  const libxsmm_blasint k = (4 < argc ? atoi(argv[4]) : 7);
   /* leading dimensions are made multiples of the size of a cache-line */
-  const int lda = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
-  const int ldb = LIBXSMM_UP2(sizeof(TYPE) * k, LIBXSMM_CACHELINE) / sizeof(TYPE);
-  const int ldc = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
+  const libxsmm_blasint lda = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
+  const libxsmm_blasint ldb = LIBXSMM_UP2(sizeof(TYPE) * k, LIBXSMM_CACHELINE) / sizeof(TYPE);
+  const libxsmm_blasint ldc = LIBXSMM_UP2(sizeof(TYPE) * m, LIBXSMM_CACHELINE) / sizeof(TYPE);
   /* micro-kernels are limited to certain alpha- and beta-values */
   const char transa = 'n', transb = 'n';
   const TYPE alpha = 1, beta = 1;
@@ -162,6 +162,14 @@ int main(int argc, char* argv[])
   }
   printf("%.1f ms\n", 1000.0 * duration);
 
+  { /* calculate checksum */
+    double check = 0;
+    for (i = 0; i < size; ++i) {
+      const double cn = norm(c + STREAM_C(i * nc), m, n, ldc);
+      if (check < cn) check = cn;
+    }
+    printf("\n%f (check)\n", check);
+  }
   libxsmm_free(a);
   libxsmm_free(b);
   libxsmm_free(c);

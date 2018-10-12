@@ -29,12 +29,26 @@
 /* Sasikanth Avancha, Dhiraj Kalamkar (Intel Corp.)
 ******************************************************************************/
 
-
-
 #include "FCXSMM.hpp"
-#include "cblas.h"
 
 extern int iter;
+
+FCXSMM::FCXSMM(FCImplParams *gp, int engine) : FCImpl(gp, engine)
+{
+  /* setup LIBXSMM handle */
+  fullyconnected_desc.N = gp->batch_size;
+  fullyconnected_desc.C = gp->nInput;
+  fullyconnected_desc.K = gp->nOutput;
+  fullyconnected_desc.threads = gp->num_threads;
+  fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
+  fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+  fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+  fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+  fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE;
+
+  libxsmm_handle = libxsmm_dnn_create_fullyconnected( fullyconnected_desc, &status );
+  CHKERR_LIBXSMM_DNN( status );
+}
 
 void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* biaspb, TensorBuf *outpb, int tid)
 {
@@ -42,71 +56,105 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* b
   return;
 #endif
 
-
   assert(top_compute_engine != -1);
   assert(bot_compute_engine != -1);
 
-  float *inp = (float*)inpb->getBuffer();
-
-  float *weightp = (float*)weightpb->getBuffer();
-  float *biasp;
+  void *input = inpb->getBuffer();
+  void *weight = weightpb->getBuffer();
+  void *bias;
   if(gp->bias_term)
-    biasp = (float*)biaspb->getBuffer();
-  float *outp = (float*)outpb->getBuffer();
+    bias = biaspb->getBuffer();
+  void *output = outpb->getBuffer();
+  void *scratch = scratchp->getBuffer();
 
-  __assume_aligned(inp,64);
-  __assume_aligned(weightp,64);
-  __assume_aligned(biasp, 64);
-  __assume_aligned(outp,64);
+  __assume_aligned(input,64);
+  __assume_aligned(weight,64);
+  __assume_aligned(bias, 64);
+  __assume_aligned(output,64);
 
-  int M = gp->batch_size;
-  int K = gp->nInput;
-  int N = gp->nOutput;
 
-  int IH = gp->iHeight;
-  int IW = gp->iWidth;
-  int OH = gp->oHeight;
-  int OW = gp->oWidth;
+  /* setup LIBXSMM buffers */
+  if(libxsmm_input == NULL && libxsmm_filter == NULL && libxsmm_output == NULL)
+  {
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout(libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, &status);
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_input  = libxsmm_dnn_link_tensor( libxsmm_layout, input, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle, libxsmm_input, LIBXSMM_DNN_REGULAR_INPUT));
 
-  cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasTrans, M, N*OH*OW, K*IH*IW, (float)1., inp, K*IH*IW, weightp, K*IH*IW, (float)0., outp, N*OH*OW);
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout(libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER, &status);
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_filter  = libxsmm_dnn_link_tensor( libxsmm_layout, weight, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle, libxsmm_filter, LIBXSMM_DNN_REGULAR_FILTER ) );
+
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout(libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT, &status);
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_output  = libxsmm_dnn_link_tensor( libxsmm_layout, output, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle, libxsmm_output, LIBXSMM_DNN_REGULAR_OUTPUT ) );
+
+    if(scratch == NULL)
+    {
+      long long mysize = libxsmm_dnn_fullyconnected_get_scratch_size( libxsmm_handle, &status );
+      CHKERR_LIBXSMM_DNN( status );
+      scratch = libxsmm_aligned_scratch( mysize, 2097152 );
+      scratchp->setBuffer(scratch);
+      scratchp->setBufferSize(mysize);
+
+#ifdef USE_MLSL
+      if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
+#endif
+        printf("%s allocated %lld bytes for scratch @ %p\n",nname.c_str(), mysize, scratch);
+    }
+    else
+    {
+      long long int ssize = scratchp->getBufferSize();
+      long long int mysize = libxsmm_dnn_fullyconnected_get_scratch_size( libxsmm_handle, &status );
+
+      CHKERR_LIBXSMM_DNN( status );
+
+      if(ssize < mysize)
+      {
+        libxsmm_free(scratch);
+        scratch = (void*)libxsmm_aligned_malloc(mysize, 2097152);
+        scratchp->setBuffer(scratch);
+        scratchp->setBufferSize(mysize);
+#ifdef USE_MLSL
+        if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
+#endif
+          printf("%s allocated %lld bytes for scratch @ %p, prev size was %lld bytes\n",nname.c_str(), mysize, scratch, ssize);
+      }
+    }
+  }
+
+  if(!updated_scratch)
+  {
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle, scratch ) );
+    updated_scratch = true;
+  }
+
+#if defined(_OPENMP)
+#pragma omp parallel
+#endif
+  {
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
+  }
 
   if(gp->bias_term)
   {
 #ifdef _OPENMP
 #pragma omp parallel for collapse(2)
 #endif
-    for(int img=0; img<M; img++)
-      for(int ofm=0; ofm<N; ofm++)
-        outp[img*M+ofm] += biasp[ofm];
+    for(int img=0; img<gp->batch_size; img++)
+      for(int ofm=0; ofm<gp->nOutput; ofm++)
+        ((float*)output)[img*gp->batch_size+ofm] += ((float*)bias)[ofm];
   }
-
-#ifdef DUMP_ACT_DATA
-  string fname = gp->node_name + "_fp_out_" + to_string(iter);
-  FILE *f = fopen(fname.c_str(), "w");
-  for(int i=0; i<M*N*OH*OW; i++)
-    fprintf(f, "%g\n", outp[i]);
-  fclose(f);
-
-  fname = gp->node_name + "_fp_in_" + to_string(iter);
-  f = fopen(fname.c_str(), "w");
-  for(int i=0; i<M*K*IH*IW; i++)
-    fprintf(f, "%g\n", inp[i]);
-  fclose(f);
-
-  fname = gp->node_name + "_fp_wt_" + to_string(iter);
-  f = fopen(fname.c_str(), "w");
-  for(int i=0; i<N*OH*OW*K*IH*IW; i++)
-    fprintf(f, "%g\n", weightp[i]);
-  fclose(f);
-
-  fname = gp->node_name + "_fp_bias_" + to_string(iter);
-  f = fopen(fname.c_str(), "w");
-  for(int i=0; i<N; i++)
-    fprintf(f, "%g\n", biasp[i]);
-  fclose(f);
-
-#endif
-
 }
 
 void FCXSMM::backPropagate(TensorBuf *deloutpb, TensorBuf *weightpb, TensorBuf *delinpb, int tid)
@@ -118,45 +166,45 @@ void FCXSMM::backPropagate(TensorBuf *deloutpb, TensorBuf *weightpb, TensorBuf *
   assert(top_compute_engine != -1);
   assert(bot_compute_engine != -1);
 
-  float *deloutp = (float*)deloutpb->getBuffer();
-  float *delinp = (float*)delinpb->getBuffer();
-  float *weightp = (float*)weightpb->getBuffer();
+  void *deloutput = deloutpb->getBuffer();
+  void *delinput = delinpb->getBuffer();
 
-  __assume_aligned(deloutp,64);
-  __assume_aligned(weightp,64);
-  __assume_aligned(delinp,64);
+  __assume_aligned(deloutput, 64);
+  __assume_aligned(delinput, 64);
 
-  int M = gp->batch_size;
-  int K = gp->nInput;
-  int N = gp->nOutput;
+  if(scratch != scratchp->getBuffer())
+  {
+    scratch = scratchp->getBuffer();
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle, scratch ) );
+  }
 
-  int IH = gp->iHeight;
-  int IW = gp->iWidth;
-  int OH = gp->oHeight;
-  int OW = gp->oWidth;
+  if(libxsmm_deloutput == NULL && libxsmm_delinput == NULL)
+  {
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT, &status );
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_deloutput  = libxsmm_dnn_link_tensor( libxsmm_layout, deloutput, &status );
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle, libxsmm_deloutput, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
 
-  cblas_sgemm(CblasRowMajor, CblasNoTrans, CblasNoTrans, M, K*IH*IW, N*OH*OW, (float)1., deloutp, N*OH*OW, weightp, K*IH*IW, (float)0., delinp, K*IH*IW);
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT, &status );
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_delinput  = libxsmm_dnn_link_tensor( libxsmm_layout, delinput, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle, libxsmm_delinput, LIBXSMM_DNN_GRADIENT_INPUT ) );
+  }
 
-#ifdef DUMP_ACT_DATA
-  string fname = gp->node_name + "_bp_delout_" + to_string(iter);
-  FILE *f = fopen(fname.c_str(), "w");
-  for(int i=0; i<M*N*OH*OW; i++)
-    fprintf(f, "%10g\n", deloutp[i]);
-  fclose(f);
-
-  fname = gp->node_name + "_bp_wt_" + to_string(iter);
-  f = fopen(fname.c_str(), "w");
-  for(int i=0; i<N*OH*OW*K*IH*IW; i++)
-    fprintf(f, "%g\n", weightp[i]);
-  fclose(f);
-
-  fname = gp->node_name + "_bp_delin_" + to_string(iter);
-  f = fopen(fname.c_str(), "w");
-  for(int i=0; i<M*K*IH*IW; i++)
-    fprintf(f, "%g\n", delinp[i]);
-  fclose(f);
-
+#if defined(_OPENMP)
+#pragma omp parallel
 #endif
+  {
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWD, 0, tid ) );
+  }
 }
 
 void FCXSMM::weightUpdate(TensorBuf *deloutpb, TensorBuf *inpb, TensorBuf *delweightpb, TensorBuf *delbiaspb, int tid)
@@ -168,65 +216,51 @@ void FCXSMM::weightUpdate(TensorBuf *deloutpb, TensorBuf *inpb, TensorBuf *delwe
   assert(top_compute_engine != -1);
   assert(bot_compute_engine != -1);
 
-  float *inp = (float*)inpb->getBuffer();
-  float *deloutp = (float*)deloutpb->getBuffer();
-  float *delweightp = (float*)delweightpb->getBuffer();
-  float *delbiasp;
+  void *deloutput = deloutpb->getBuffer();
+  void *delweight = delweightpb->getBuffer();
+  void *delbias;
   if(gp->bias_term)
-    delbiasp = (float*)delbiaspb->getBuffer();
+    delbias = delbiaspb->getBuffer();
 
-  __assume_aligned(deloutp,64);
-  __assume_aligned(inp,64);
-  __assume_aligned(delweightp,64);
-  __assume_aligned(delbiasp, 64);
+  __assume_aligned(delweight,64);
+  __assume_aligned(delbias, 64);
 
-  int M = gp->batch_size;
-  int K = gp->nInput;
-  int N = gp->nOutput;
+  if(scratch != scratchp->getBuffer())
+  {
+    scratch = scratchp->getBuffer();
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle, scratch ) );
+  }
 
-  int IH = gp->iHeight;
-  int IW = gp->iWidth;
-  int OH = gp->oHeight;
-  int OW = gp->oWidth;
+  if(libxsmm_delfilter == NULL)
+  {
+    libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER, &status );
+    CHKERR_LIBXSMM_DNN( status );
+    libxsmm_delfilter  = libxsmm_dnn_link_tensor( libxsmm_layout, delweight, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle, libxsmm_delfilter, LIBXSMM_DNN_GRADIENT_FILTER ) );
+  }
+
+#if defined(_OPENMP)
+#pragma omp parallel
+#endif
+  {
+#if defined(_OPENMP)
+    const int tid = omp_get_thread_num();
+#else
+    const int tid = 0;
+#endif
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid ) );
+  }
 
   if(gp->bias_term)
   {
 #ifdef _OPENMP
 #pragma omp parallel for collapse(2)
 #endif
-    for(int ofm=0; ofm<N; ofm++) {
-      for(int img=0; img<M; img++)
-        delbiasp[ofm] += deloutp[img*N+ofm];
+    for(int ofm=0; ofm<gp->nOutput; ofm++) {
+      for(int img=0; img<gp->batch_size; img++)
+        ((float*)delbias)[ofm] += ((float*)deloutput)[img*gp->nOutput+ofm];
     }
   }
 
-  cblas_sgemm(CblasRowMajor, CblasTrans, CblasNoTrans, N*OH*OW, K*IH*IW, M, (float)1., deloutp, N*OH*OW, inp, K*IH*IW, (float)0., delweightp, K*IH*IW);
-
-#ifdef DUMP_ACT_DATA
-  string fname = gp->node_name + "_wu_delout_" + to_string(iter);
-  FILE *f = fopen(fname.c_str(), "w");
-  for(int i=0; i<M*N*OH*OW; i++)
-    fprintf(f, "%g\n", deloutp[i]);
-  fclose(f);
-
-  fname = gp->node_name + "_wu_in_" + to_string(iter);
-  f = fopen(fname.c_str(), "w");
-  for(int i=0; i<M*K*IH*IW; i++)
-    fprintf(f, "%g\n", inp[i]);
-  fclose(f);
-#endif
-
-#ifdef DUMP_WT_DATA
-  string fname = gp->node_name + "_wu_delwt_" + to_string(iter);
-  FILE* f = fopen(fname.c_str(), "w");
-  for(int i=0; i<N*OH*OW*K*IH*IW; i++)
-    fprintf(f, "%g\n", delweightp[i]);
-  fclose(f);
-
-  fname = gp->node_name + "_wu_delbias_" + to_string(iter);
-  f = fopen(fname.c_str(), "w");
-  for(int i=0; i<N; i++)
-    fprintf(f, "%g\n", delbiasp[i]);
-  fclose(f);
-#endif
 }

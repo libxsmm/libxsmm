@@ -26,23 +26,15 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 ) {
-  if ( handle->use_thread_private_jit ) {
-    if ( handle->exploit_duality == 1  ) {
-#include "libxsmm_dnn_convolve_st_bwd_via_fwd_custom_custom_stream.tpl.c"
-    } else {
-#include "libxsmm_dnn_convolve_st_bwd_custom_custom_stream.tpl.c"
-    }
-  } else {
-    /* should not happen as we use the generic code */
-  }
-} else if (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-#if 0
-#include "libxsmm_dnn_convolve_st_bwd_custom_custom_2.tpl.c"
-#endif
-}
-else {
-  /* New custom format code here */
-}
+#ifndef LIBXSMM_DNN_FULLYCONNECTED_WEIGHT_UPDATE_H
+#define LIBXSMM_DNN_FULLYCONNECTED_WEIGHT_UPDATE_H
+
+#include <libxsmm_dnn_fullyconnected.h>
+
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
+
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_nhwc(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
+
+#endif /* LIBXSMM_DNN_FULLYCONNECTED_WEIGHT_UPDATE_H */

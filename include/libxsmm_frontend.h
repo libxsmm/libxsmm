@@ -99,6 +99,7 @@
 #define LIBXSMM_TPREFIX_short LIBXSMM_TPREFIX_shortint
 
 /** Construct symbol name from a given real type name (float, double and short). */
+#define LIBXSMM_USEOMP(FUNCTION)        LIBXSMM_CONCATENATE(FUNCTION, _omp)
 #define LIBXSMM_GEMM_SYMBOL(TYPE)       LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_GEMV_SYMBOL(TYPE)       LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemv))
 #define LIBXSMM_GEMMFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm_function))
@@ -107,7 +108,7 @@
 #define LIBXSMM_MMDISPATCH_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmdispatch))
 #define LIBXSMM_XBLAS_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(TYPE, gemm))
 #define LIBXSMM_XGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm))
-#define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(LIBXSMM_XGEMM_SYMBOL(TYPE), _omp)
+#define LIBXSMM_YGEMM_SYMBOL(TYPE)      LIBXSMM_USEOMP(LIBXSMM_XGEMM_SYMBOL(TYPE))
 
 /* Construct prefix names, function type or dispatch function from given input and output types. */
 #define LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE)    LIBXSMM_MMFUNCTION_TYPE(LIBXSMM_CONCATENATE(ITYPE, OTYPE))
@@ -129,21 +130,6 @@
 # define LIBXSMM_GEMM_CONST
 #else
 # define LIBXSMM_GEMM_CONST const
-#endif
-
-#if defined(LIBXSMM_BUILD_EXT)
-# define LIBXSMM_WEAK
-# define LIBXSMM_EXT_WEAK LIBXSMM_ATTRIBUTE_WEAK
-#else
-# define LIBXSMM_WEAK LIBXSMM_ATTRIBUTE_WEAK
-# define LIBXSMM_EXT_WEAK
-#endif
-#if defined(LIBXSMM_BUILD) && defined(__STATIC) /*&& defined(LIBXSMM_GEMM_WRAP)*/
-# define LIBXSMM_GEMM_WEAK LIBXSMM_WEAK
-# define LIBXSMM_EXT_GEMM_WEAK LIBXSMM_EXT_WEAK
-#else
-# define LIBXSMM_GEMM_WEAK
-# define LIBXSMM_EXT_GEMM_WEAK
 #endif
 
 #if !defined(LIBXSMM_NO_BLAS)
@@ -449,8 +435,8 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemv_function)(
   const double*, double*, const libxsmm_blasint*);
 
 /** The original GEMM functions (SGEMM and DGEMM). */
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void);
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void);
+LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void);
+LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void);
 
 /**
  * General dense matrix multiplication, which re-exposes LAPACK/BLAS

@@ -131,7 +131,9 @@ then
   fi
   if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
     export HT=$((NT/(NC)))
-    export MAKEJ="-j ${NC}"
+    if [ "" = "${MAKEJ}" ]; then
+      export MAKEJ="-j ${NC}"
+    fi
   else
     export NS=1 NC=1 NT=1 HT=1
   fi

@@ -323,6 +323,10 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_convolution_winograd_descriptor cwino_upd;
   libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
+  /* These are the batchnorm handles in case of fusion  */
+  libxsmm_dnn_fusedbn* pre_bn;
+  libxsmm_dnn_fusedbn* post_bn;
+
   /* additional size for internal data types */
   int ifhp;
   int ifwp;
@@ -368,10 +372,16 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int use_fastpath;
   int use_hybrid_wu_parallelism;
   int weight_copies;
-  int compute_batch_stats_in_kernel;
+  int compute_batch_stats_in_kernel_fwd;
+  int compute_batch_stats_in_kernel_bwd;
+  int compute_eltwise_in_kernel_bwd;
+  int perform_relu_in_kernel;
   int compute_max_in_kernel_fwd;
   int compute_max_in_kernel_bwd;
-  int perform_relu_in_kernel;
+  int fuse_batchstats_fwd;
+  int fuse_batchstats_bwd;
+  int fuse_eltwise_bwd;
+  int fuse_relu_bwd;
   int use_lp_kernel;
   int output_lp_padding;
   int reduce_weights;
@@ -455,13 +465,13 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_code_pointer matcopy_upd[3];
 
   /* Data structures and metadata related to per-thread private JITing */
-  int use_thread_private_jit;
-  int use_thread_private_filter;
   int trans_ofw_ifm;
 
   int *n_entries_fwd;
   int **compute_fwd_indices_ptrs;
-  int **bn_indices_ptrs;
+  int **bn_stats_indices_ptrs;
+  int **bn_aux_stats_indices_ptrs;
+  int **bn_aux_input_indices_ptrs;
   char **kernel_fwd_variant_ptrs;
   int block_fwd_oj;
   int block_fwd_oi;
@@ -527,6 +537,28 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn {
   void* scratch;
 };
 
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
+  libxsmm_dnn_fullyconnected_desc desc;
+  libxsmm_dnn_tensor* reg_input;      /* input tensor */
+  libxsmm_dnn_tensor* reg_output;     /* output tensor */
+  libxsmm_dnn_tensor* grad_input;     /* grad input tensor */
+  libxsmm_dnn_tensor* grad_output;    /* grad output tensor */
+  libxsmm_dnn_tensor* reg_filter;     /* filter tensor */
+  libxsmm_dnn_tensor* grad_filter;    /* grad filter tensor */
+  libxsmm_barrier* barrier;           /* barrier */
+  int ifmblock;
+  int ifmblock_hp;
+  int ofmblock;
+  int ofmblock_lp;
+  int blocksifm;
+  int blocksofm;
+  int blocksifm_lp;  /* not used */
+  int blocksofm_lp;  /* not used */
+  int fm_lp_block;
+  size_t scratch_size;
+  void* scratch;
+};
+
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
   libxsmm_dnn_pooling_desc desc;
   libxsmm_dnn_tensor* reg_input;      /* input tensor */
@@ -548,6 +580,38 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
   int ofw;
   size_t scratch_size;
   void* scratch;
+};
+
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
+  libxsmm_dnn_rnncell_desc desc;
+  libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts  */
+  libxsmm_blasint bk;
+  libxsmm_blasint bn;
+  libxsmm_blasint bc;
+  /* extrenal tensors */
+  libxsmm_dnn_tensor* w;
+  libxsmm_dnn_tensor* xt;
+  libxsmm_dnn_tensor* u;
+  libxsmm_dnn_tensor* ht;
+  libxsmm_dnn_tensor* b;
+  libxsmm_dnn_tensor* djdht;
+  libxsmm_dnn_tensor* djdu;
+  libxsmm_dnn_tensor* djdw;
+  libxsmm_dnn_tensor* djdxt;
+  libxsmm_dnn_tensor* djdb;
+  /* internal  state */
+  void* internal_z;
+  /* scratch pointers */
+  void* scratch_deltat;
+  void* scratch_wT;
+  void* scratch_uT;
+  void* scratch_xT;
+  void* scratch_hT;
+  /* options */
+  int fwd_generic;
+  int bwdupd_generic;
+  /* barrier */ 
+  libxsmm_barrier* barrier; /* barrier */
 };
 
 struct LIBXSMM_RETARGETABLE libxsmm_dfsspmdm {

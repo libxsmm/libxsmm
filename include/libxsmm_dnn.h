@@ -48,6 +48,8 @@
 /** Opaque handles which represents convolutions and LIBXSMM datatypes */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer libxsmm_dnn_layer;
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor libxsmm_dnn_tensor;
+/** Opaque handles which represents LIBXSMM fusedbn */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn libxsmm_dnn_fusedbn;
 typedef unsigned int libxsmm_dnn_err_t;
 
 /** Define error and warning codes */
@@ -87,6 +89,7 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION  100031
 #define LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN     100032
 #define LIBXSMM_DNN_ERR_UNSUPPORTED_POOLING        100033
+#define LIBXSMM_DNN_ERR_INVALID_FORMAT_FC          100034
 
 /** Kinds of supported compute flavor operations. */
 typedef enum libxsmm_dnn_compute_kind {
@@ -96,6 +99,8 @@ typedef enum libxsmm_dnn_compute_kind {
   LIBXSMM_DNN_COMPUTE_KIND_BWD,
   /** Updated weights. */
   LIBXSMM_DNN_COMPUTE_KIND_UPD,
+  /** Backward and weightupdate combined, useful for RNNs */
+  LIBXSMM_DNN_COMPUTE_KIND_BWDUPD,
   /** All routines, need for some init routines. */
   LIBXSMM_DNN_COMPUTE_KIND_ALL
 } libxsmm_dnn_compute_kind;
@@ -199,14 +204,18 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_RNN_REGULAR_WEIGHT,
   /** regular recurrent weight */
   LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT,
-  /** regular gradient input buffer */
+  /** regular bias */
+  LIBXSMM_DNN_RNN_REGULAR_BIAS,
+  /** gradient input buffer */
   LIBXSMM_DNN_RNN_GRADIENT_INPUT,
-  /** regular gradient hidden state buffer */
+  /** gradient hidden state buffer */
   LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE,
-  /** regular gradient weight */
+  /** gradient weight */
   LIBXSMM_DNN_RNN_GRADIENT_WEIGHT,
-  /** regular gradient recurrent weight */
+  /** gradient recurrent weight */
   LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT,
+  /** gradient bias */
+  LIBXSMM_DNN_RNN_GRADIENT_BIAS,
 
   /** regular input buffer */
   LIBXSMM_DNN_LSTM_REGULAR_INPUT,
@@ -236,33 +245,33 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_LSTM_REGULAR_BIAS_O,
   /** regular bias c */
   LIBXSMM_DNN_LSTM_REGULAR_BIAS_C,
-  /** regular gradient input buffer */
+  /** gradient input buffer */
   LIBXSMM_DNN_LSTM_GRADIENT_INPUT,
-  /** regular gradient hidden state buffer */
+  /** gradient hidden state buffer */
   LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE,
-  /** regular gradient weight i */
+  /** gradient weight i */
   LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_I,
-  /** regular gradient weight f */
+  /** gradient weight f */
   LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_F,
-  /** regular gradient weight o */
+  /** gradient weight o */
   LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_O,
-  /** regular gradient weight c */
+  /** gradient weight c */
   LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_C,
-  /** regular gradient recurrent weight i */
+  /** gradient recurrent weight i */
   LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_I,
-  /** regular gradient recurrent weight f */
+  /** gradient recurrent weight f */
   LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_F,
-  /** regular gradient recurrent weight o */
+  /** gradient recurrent weight o */
   LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_O,
-  /** regular gradient recurrent weight c */
+  /** gradient recurrent weight c */
   LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_C,
-  /** regular gradient bias i */
+  /** gradient bias i */
   LIBXSMM_DNN_LSTM_GRADIENT_BIAS_I,
-  /** regular gradient bias f */
+  /** gradient bias f */
   LIBXSMM_DNN_LSTM_GRADIENT_BIAS_F,
-  /** regular gradient bias o */
+  /** gradient bias o */
   LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O,
-  /** regular gradient bias c */
+  /** gradient bias c */
   LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C,
 
   /** regular input buffer */
@@ -287,27 +296,27 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_GRU_REGULAR_BIAS_Z,
   /** regular bias g */
   LIBXSMM_DNN_GRU_REGULAR_BIAS_G,
-  /** regular gradient input buffer */
+  /** gradient input buffer */
   LIBXSMM_DNN_GRU_GRADIENT_INPUT,
-  /** regular gradient hidden state buffer */
+  /** gradient hidden state buffer */
   LIBXSMM_DNN_GRU_GRADIENT_HIDDEN_STATE,
-  /** regular gradient weight r */
+  /** gradient weight r */
   LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_R,
-  /** regular gradient weight z */
+  /** gradient weight z */
   LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_Z,
-  /** regular gradient weight g */
+  /** gradient weight g */
   LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_G,
-  /** regular gradient recurrent weight r */
+  /** gradient recurrent weight r */
   LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_R,
-  /** regular gradient recurrent weight z */
+  /** gradient recurrent weight z */
   LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_Z,
-  /** regular gradient recurrent weight g */
+  /** gradient recurrent weight g */
   LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_G,
-  /** regular gradient bias r */
+  /** gradient bias r */
   LIBXSMM_DNN_GRU_GRADIENT_BIAS_R,
-  /** regular gradient bias z */
+  /** gradient bias z */
   LIBXSMM_DNN_GRU_GRADIENT_BIAS_Z,
-  /** regular gradient bias g */
+  /** gradient bias g */
   LIBXSMM_DNN_GRU_GRADIENT_BIAS_G
 } libxsmm_dnn_tensor_type;
 
@@ -333,11 +342,14 @@ typedef enum libxsmm_dnn_conv_fuse_op {
   /* we fuse ReLU calculation into bwd convolution op */
   LIBXSMM_DNN_CONV_FUSE_RELU_BWD = 4,
   /* we fuse batch stats */
-  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS = 8,
+  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD = 8,
   LIBXSMM_DNN_CONV_FUSE_MAX_STATS = 16,
-  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD = LIBXSMM_DNN_CONV_FUSE_RELU_BWD | LIBXSMM_DNN_CONV_FUSE_BATCH_STATS,
-  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD_AND_MAX = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD | LIBXSMM_DNN_CONV_FUSE_MAX_STATS,
-  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_AND_MAX = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS |  LIBXSMM_DNN_CONV_FUSE_MAX_STATS,
+  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_BWD = 32,
+  LIBXSMM_DNN_CONV_FUSE_ELTWISE_BWD = 64,
+  LIBXSMM_DNN_CONV_FUSE_BATCHNORM_STATS = 128,
+  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD_RELU_BWD = LIBXSMM_DNN_CONV_FUSE_RELU_BWD | LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD,
+  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD_RELU_BWD_AND_MAX = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD_RELU_BWD | LIBXSMM_DNN_CONV_FUSE_MAX_STATS,
+  LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD_AND_MAX = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD |  LIBXSMM_DNN_CONV_FUSE_MAX_STATS,
   LIBXSMM_DNN_CONV_FUSE_RELU_BWD_AND_MAX = LIBXSMM_DNN_CONV_FUSE_RELU_BWD | LIBXSMM_DNN_CONV_FUSE_MAX_STATS,
     /* we fuse bias addition and ReLU into convolution op */
   LIBXSMM_DNN_CONV_FUSE_RELU = LIBXSMM_DNN_CONV_FUSE_RELU_FWD | LIBXSMM_DNN_CONV_FUSE_RELU_BWD,
@@ -384,6 +396,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   libxsmm_dnn_conv_algo algo;               /* convolution algorithm used */
   libxsmm_dnn_conv_option options;          /* additional options */
   libxsmm_dnn_conv_fuse_op fuse_ops;        /* used ops into convolutions */
+  libxsmm_dnn_fusedbn *pre_bn;              /* pointer to pre bn layer to accommodate bn fusion  */
+  libxsmm_dnn_fusedbn *post_bn;             /* pointer to post bn layer to accommodate bn fusion  */
 } libxsmm_dnn_conv_desc;
 
 /** these are some quantization definitions, not sure if we want to

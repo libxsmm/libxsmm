@@ -245,7 +245,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel(
       l_gp_reg_mapping.gp_reg_input_pf, l_gp_reg_mapping.gp_reg_weight_pf,
       l_gp_reg_mapping.gp_reg_output_pf, i_arch );
 
-  if ( i_conv_desc->compute_batch_stats > 0 && i_conv_desc->ifm_block != 3 ) {
+  if ( i_conv_desc->compute_batch_stats_fwd > 0 && i_conv_desc->ifm_block != 3 ) {
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         l_conv_kernel_config.alu_mov_instruction,
         LIBXSMM_X86_GP_REG_RSP,
@@ -441,7 +441,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel(
           }
         }
 
-        if ( (i_conv_desc->compute_batch_stats > 0) && (peel_index == 2) ) {
+        if ( (i_conv_desc->compute_batch_stats_fwd > 0) && (peel_index == 2) ) {
           libxsmm_x86_instruction_prefetch( io_generated_code,
               LIBXSMM_X86_INSTR_PREFETCHT1,
               l_gp_reg_mapping.gp_reg_help_2,
@@ -453,19 +453,6 @@ void libxsmm_generator_convolution_forward_avx512_kernel(
               l_gp_reg_mapping.gp_reg_help_3,
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               0);
-#ifdef FP64_BN_STATS
-          libxsmm_x86_instruction_prefetch( io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT1,
-              l_gp_reg_mapping.gp_reg_help_2,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              64);
-
-          libxsmm_x86_instruction_prefetch( io_generated_code,
-              LIBXSMM_X86_INSTR_PREFETCHT1,
-              l_gp_reg_mapping.gp_reg_help_3,
-              LIBXSMM_X86_GP_REG_UNDEF, 0,
-              64);
-#endif
         }
 
 
@@ -643,6 +630,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop( libxsmm_generated_cod
   }
 }
 
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_code*                           io_generated_code,
     const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
@@ -664,36 +652,22 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
   unsigned int input_pf_L2_offset = 0;
   unsigned int step_size = 0;
   unsigned int l_kw_unroll;
-  unsigned short  perm_array[32];
-  int pi;
-  unsigned int wt_reg = 0; 
+  unsigned short perm_array[32];
+  unsigned short pi;
+  unsigned int wt_reg = 0;
 
   prefetch_type_weight = LIBXSMM_X86_INSTR_PREFETCHT1;
   step_size = 1;
 
-  for (pi=0; pi<32; pi+=2) {
-    perm_array[pi] = pi/2;
-    perm_array[pi+1] = 16+pi/2;
-  }
-
-  if  ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX ) {
-    libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
-        (const unsigned char*) perm_array,
-        "perm_mask",
-        i_conv_kernel_config->vector_name,
-        2);
-    libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-        i_conv_kernel_config->instruction_set,
-        i_conv_kernel_config->vxor_instruction,
-        i_conv_kernel_config->vector_name,
-        1,
-        1,
-        1);  
+  for (pi = 0; pi < 32; pi += 2) {
+    const unsigned short pi2 = (unsigned short)(pi / 2);
+    perm_array[pi] = pi2;
+    perm_array[pi+1] = (unsigned short)(pi2 + 16);
   }
 
   for ( l_kw_unroll = 0; l_kw_unroll < i_kw_unroll; l_kw_unroll++ ) {
     for ( l_k = 0; l_k < 2; l_k+=step_size ) {
-      if  ( i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX ) {
+      if ( i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX ) {
         libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
             (const unsigned char*) perm_array,
             "perm_mask",
@@ -702,26 +676,23 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
       }
 
       if (l_k == 0) {
-        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+        libxsmm_x86_instruction_vec_move( io_generated_code,
             i_conv_kernel_config->instruction_set,
-            LIBXSMM_X86_INSTR_VPERMW,
-            0,
+            LIBXSMM_X86_INSTR_VMOVUPS,
             i_gp_reg_mapping->gp_reg_weight,
-            LIBXSMM_X86_GP_REG_UNDEF,
-            LIBXSMM_X86_GP_REG_UNDEF,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
             l_filter_pos,
-            i_conv_kernel_config->vector_name,
-            2,
-            0);
+            i_conv_kernel_config->vector_name, 0,
+            0, 1, 0 );
       } else {
-        if  ( i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX ) {
+        if ( i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX ) {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
               i_conv_kernel_config->instruction_set,
               i_conv_kernel_config->vxor_instruction,
               i_conv_kernel_config->vector_name,
               0,
               0,
-              0);  
+              0);
 
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_conv_kernel_config->instruction_set,
@@ -731,7 +702,6 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
               l_filter_pos,
               'y', 0,
               0, 1, 0 );
-
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
               i_conv_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VPERMW,
@@ -758,7 +728,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
         }
       }
 
-      if  ( i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX ) {
+      if ( i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX ) {
         /* vpslld  */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             i_conv_kernel_config->instruction_set,
@@ -788,8 +758,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
             0,
             LIBXSMM_X86_VEC_REG_UNDEF,
             16);
-      }
-
+       }
 
       /* compute vectorwidth (A) * column broadcast (B) */
       for ( l_n = 0; l_n < i_conv_desc->ofw_rb; l_n++) {
@@ -797,10 +766,10 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
         l_input_idx = LIBXSMM_X86_GP_REG_UNDEF;
         l_scale = 0;
         l_disp = l_k * 2 * i_conv_kernel_config->datatype_size_in
-          + l_kw_unroll * 3 * i_conv_kernel_config->datatype_size_in 
+          + l_kw_unroll * 3 * i_conv_kernel_config->datatype_size_in
           + l_n * 3 * i_conv_kernel_config->datatype_size_in * i_conv_desc->stride_w;
 
-        if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {
+        if ( i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX ) {
           /* bcast  */
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_conv_kernel_config->instruction_set,
@@ -858,7 +827,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
               0,
               3,
               i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
-        } else if (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX) {
+        } else {
           wt_reg = (l_k == 0) ? 0 : 1;
           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
               i_conv_kernel_config->instruction_set,
@@ -956,6 +925,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
   }
 }
 
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_generated_code*                           io_generated_code,
     const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
@@ -971,7 +941,9 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
   unsigned int l_displacement_k = 0;
   unsigned int l_w;
   unsigned int l_reg_block;
+#if 0
   unsigned int l_accs;
+#endif
   unsigned int l_filter_pos = 0;
   unsigned int l_compute_instr = 0;
   unsigned int l_prefetch_input_index = 0;
@@ -1071,10 +1043,13 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
 
     /* apply additional register block to hide FMA latencies */
     l_reg_block = i_conv_desc->ofw_rb;
+#if 0
+    l_accs = 1;
     if ( i_conv_desc->ofw_rb <= 14 && step_size > 1) {
       l_accs = (i_conv_desc->ofw_rb < 9) ? 3 : 2;
       l_reg_block = (((l_k%(4*l_accs))/4)+1)*i_conv_desc->ofw_rb;
     }
+#endif
 
     /* compute vectorwidth (A) * column broadcast (B) */
     for ( l_n = 0; l_n < i_conv_desc->ofw_rb; l_n++) {

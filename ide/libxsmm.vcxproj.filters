@@ -42,9 +42,6 @@
     <ClInclude Include="..\src\libxsmm_trace.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_gemm_diff.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_gemm.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -258,6 +255,24 @@
     <ClInclude Include="..\src\libxsmm_dnn_fusedbatchnorm_forward.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\libxsmm_dnn_fullyconnected.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_fullyconnected_backward.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_fullyconnected_forward.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_fullyconnected_weight_update.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_pooling_backward.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_pooling_forward.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -270,9 +285,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_trace.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_gemm_diff.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
@@ -614,9 +626,6 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom_2.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
@@ -834,6 +843,57 @@
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_bgemm_convert_b_to_a.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_fullyconnected.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_pooling.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_fullyconnected_backward.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_fullyconnected_forward.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_fullyconnected_weight_update.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_bwd_custom_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_fwd_custom_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_bf16_c16_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_fwd_custom_f32_bf16_c16_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_pooling_st_fwd_custom_f32_bf16_c16_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_pooling_st_fwd_custom_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_pooling_st_bwd_custom_f32_bf16_c16_avx512.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_pooling_st_bwd_custom_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_pooling_backward.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_pooling_forward.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_bwd_fuse_postconv_ops_externally.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
   </ItemGroup>

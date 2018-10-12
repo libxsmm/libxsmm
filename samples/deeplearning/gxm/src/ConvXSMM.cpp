@@ -84,9 +84,9 @@ ConvXSMM::ConvXSMM(ConvImplParams* gp, int engine) : ConvImpl(gp, engine)
   if(gp->bias_term && gp->relu)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS_RELU;
   if(gp->compute_stats)
-    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS;
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD;
   if(gp->compute_stats && gp->bwd_relu)
-    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_RELU_BWD;
+    conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BATCH_STATS_FWD_RELU_BWD;
 
   if(gp->in_data_type == DT_DFP16 && gp->out_data_type == DT_FLOAT)
   {

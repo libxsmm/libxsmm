@@ -804,12 +804,13 @@ void libxsmm_reset_jump_label_tracker( libxsmm_jump_label_tracker* io_jump_label
 
 LIBXSMM_API_INTERN
 void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_code,
-                                  const char*                     i_routine_name,
-                                  const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+                                   const char*                     i_routine_name,
+                                   const libxsmm_gemm_descriptor*  i_xgemm_desc ) {
   char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;
 
+  LIBXSMM_ASSERT_MSG(NULL != i_xgemm_desc, "Invalid descriptor!");
   if ( io_generated_code->code_type > 1 ) {
     return;
   } else if ( io_generated_code->code_type == 1 ) {
@@ -1181,6 +1182,7 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
   return error_message;
 }
 
+LIBXSMM_API_INTERN
 void libxsmm_convfunction_signature_fp32( libxsmm_generated_code*         io_generated_code,
                                           const char*                     i_routine_name ) {
   char l_new_code[512];
@@ -1268,3 +1270,4 @@ LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking( unsigned int
 
   return l_ret;
 }
+

@@ -115,7 +115,7 @@ LIBXSMM_INLINE void matrix_relu(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (src[i] >= 0) ? src[i] : 0;
+    dst[i] = (src[i] > 0.0f) ? src[i] : 0.0f;
   }
 }
 
@@ -129,7 +129,7 @@ LIBXSMM_INLINE void matrix_sigmoid_inverse(int size, float *src, float *dst)
   for (i = 0; i < size; i++) {
     const float exp_value = (float)exp((double) -src[i]);
     const float sig_exp = 1 / (1 + exp_value);
-    dst[i] = (1 - sig_exp)*sig_exp;
+    dst[i] = (1.0f - sig_exp)*sig_exp;
   }
 }
 
@@ -142,19 +142,19 @@ LIBXSMM_INLINE void matrix_tanh_inverse(int size, float *src, float *dst)
 #endif
   for (i = 0; i < size; i++) {
     const float tanh_value = (float)tanh((double)src[i]);
-    dst[i] = 1 - (tanh_value * tanh_value);
+    dst[i] = 1.0f - (tanh_value * tanh_value);
   }
 }
 
 
-LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst, float *input)
+LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst)
 {
   int i;
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = (input[i] >= 0) ? src[i] : 0;
+    dst[i] = (float)(src[i] > 0.0f ? 1.0f : 0.0f);
   }
 }
 
@@ -184,7 +184,7 @@ LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = 1 - src[i];
+    dst[i] = 1.0f - src[i];
   }
 }
 
@@ -196,23 +196,42 @@ LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    dst[i] = 1 - (src[i] * src[i]);
+    dst[i] = 1.0f - (src[i] * src[i]);
   }
 }
 
 
-LIBXSMM_INLINE void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, float *src, float *dst)
+LIBXSMM_INLINE void rnn_copyin(int N, int C, int bn, int bc, float *src, float *dst)
 {
-  LIBXSMM_VLA_DECL(4, float, real_src, src, k/blk_k, blk_n, blk_k);
-  LIBXSMM_VLA_DECL(2, float, real_dst, dst, k);
-  int kb, nb, bk, bn;
+  LIBXSMM_VLA_DECL(2, float, real_src, src, C);
+  LIBXSMM_VLA_DECL(4, float, real_dst, dst, C/bc, bn, bc);
+  int in, ic, jn, jc;
 
-  for (nb = 0; nb < (n/blk_n); ++nb) {
-    for (kb = 0; kb < (k/blk_k); ++kb) {
-      for (bn = 0; bn < blk_n; ++bn) {
-        for (bk = 0; bk < blk_k; ++bk) {
-          LIBXSMM_VLA_ACCESS(2, real_dst, nb * blk_n + bn, kb * blk_k + bk, k) =
-            LIBXSMM_VLA_ACCESS(4, real_src, nb, kb, bn, bk, k/blk_k, blk_n, blk_k);
+  for (in = 0; in < N; in += bn) {
+    for (ic = 0; ic < C; ic += bc) {
+      for (jn = 0; jn < bn; jn++) {
+        for (jc = 0; jc < bc; jc++) {
+          LIBXSMM_VLA_ACCESS(4, real_dst, in/bn, ic/bc, jn, jc, C/bc, bn, bc) =
+            LIBXSMM_VLA_ACCESS(2, real_src, in + jn, ic + jc, C);
+        }
+      }
+    }
+  }
+}
+
+
+LIBXSMM_INLINE void rnn_copyout(int N, int C, int bn, int bc, float *src, float *dst)
+{
+  LIBXSMM_VLA_DECL(4, float, real_src, src, C/bc, bn, bc);
+  LIBXSMM_VLA_DECL(2, float, real_dst, dst, C);
+  int in, ic, jn, jc;
+
+  for (in = 0; in < N; in += bn) {
+    for (ic = 0; ic < C; ic += bc) {
+      for (jn = 0; jn < bn; jn++) {
+        for (jc = 0; jc < bc; jc++) {
+          LIBXSMM_VLA_ACCESS(2, real_dst, in + jn, ic + jc, C) =
+            LIBXSMM_VLA_ACCESS(4, real_src, in/bn, ic/bc, jn, jc, C/bc, bn, bc);
         }
       }
     }
@@ -223,12 +242,12 @@ LIBXSMM_INLINE void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, 
 int main(int argc, char* argv[])
 {
   /* Arrays related to FWD pass */
-  float *wgold, *xgoldt, *ugold, *hgold = NULL, *z1gold = NULL, *z2gold = NULL, *zgold = NULL;
-  float *w, *xt, *u, *h = NULL, *htest = NULL, *hgold_temp = NULL;
+  float *wgold, *xgoldt, *ugold, *hgold = NULL, *z1gold = NULL, *z2gold = NULL, *zgold = NULL, *bgold = NULL, *bmgold = NULL;
+  float *w, *xt, *u, *h = NULL, *htest = NULL, *hgold_temp = NULL, *b = NULL;
   /* Arrays related to BWD and UPD pass */
-  float *djdhgoldt = NULL, *zgoldt = NULL, *deltagoldt = NULL, *hgoldt = NULL, *djdugold = NULL, *djdwgold = NULL, *djdxgoldt = NULL;
-  float *zigold = NULL, *di1gold = NULL, *di2gold = NULL, *dj1gold = NULL, *dw1gold = NULL, *ugoldTp = NULL, *wgoldTp = NULL, *hgoldTp = NULL, *xgoldTp = NULL;
-  float *djdht = NULL, *ht = NULL, *djdu = NULL, *djdw = NULL, *djdxt = NULL, *djdxtestt = NULL, *djdwtest = NULL, *djdutest = NULL;
+  float *djdhgoldt = NULL, *zgoldt = NULL, *deltagoldt = NULL, *hgoldt = NULL, *djdugold = NULL, *djdwgold = NULL, *djdxgoldt = NULL, *djdbgold = NULL;
+  float *zigold = NULL, *di1gold = NULL, *di2gold = NULL, *ugoldTp = NULL, *wgoldTp = NULL, *hgoldTp = NULL, *xgoldTp = NULL;
+  float *djdht = NULL, *ht = NULL, *djdu = NULL, *djdw = NULL, *djdxt = NULL, *djdb = NULL, *djdxtestt = NULL, *djdwtest = NULL, *djdutest = NULL;
 
   const char transa = 'N', transb = 'N'; /* no transposes */
   const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
@@ -237,39 +256,15 @@ int main(int argc, char* argv[])
   size_t scratch_size = 0, internalstate_size = 0;
 
   int iters = 10; /* repetitions of benchmark */
-  int pass = 3;   /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
-  int m = 1024;   /* number of outputs */
-  int n = 512;    /* size of mini-batch */
-  int k = 256;    /* number of inputs */
-  int t = 5;      /* number of time steps (> 1) */
-  int reuse = 1;  /* reuse=1 for FWD overwrites the same memory
-                   * for intermediate values during inference;
-                   * reuse value is immaterial for BWD and UPD */
-  int bm = 32;    /* first blocking factor for m */
-  int bn = 32;    /* first blocking factor for n */
-  int bk = 32;    /* first blocking factor for k */
-  /* denotes order of execution for bgemm */
-  libxsmm_bgemm_order order = LIBXSMM_BGEMM_ORDER_JIK;
-  const char *const env_b_m1 = getenv("LIBXSMM_BGEMM_M1");
-  const int b_m1 = (0 == env_b_m1) ? 1 : atoi(env_b_m1);
-  const char *const env_b_n1 = getenv("LIBXSMM_BGEMM_N1");
-  const int b_n1 = (0 == env_b_n1) ? 1 : atoi(env_b_n1);
-  const char *const env_b_k1 = getenv("LIBXSMM_BGEMM_K1");
-  const int b_k1 = (0 == env_b_k1) ? 1 : atoi(env_b_k1);
-  const char *const env_b_m2 = getenv("LIBXSMM_BGEMM_M2");
-  const int b_m2 = (0 == env_b_m2) ? 1 : atoi(env_b_m2);
-  const char *const env_b_n2 = getenv("LIBXSMM_BGEMM_N2");
-  const int b_n2 = (0 == env_b_n2) ? 1 : atoi(env_b_n2);
-  const char *const env_b_k2 = getenv("LIBXSMM_BGEMM_K2");
-  const int b_k2 = (0 == env_b_k2) ? 1 : atoi(env_b_k2);
-  libxsmm_bgemm_handle* handlewx = 0;
-  libxsmm_bgemm_handle* handleuh = 0;
-  libxsmm_bgemm_handle* handlett = 0;
-  libxsmm_bgemm_handle* handlewd = 0;
-  const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
+  int pass = 0;   /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
+  int nonlin = 2; /* nonlin=1 denotes ReLU, 2 denotes sigmoid, 3 denotes tanh */
+  int N = 128;    /* size of mini-batch */
+  int C = 512;    /* number of inputs */
+  int K = 256;    /* number of outputs */
+  int t = 4;      /* number of time steps (> 1) */
 
   const char *const env_check = getenv("CHECK");
-  const double check = LIBXSMM_ABS(0 == env_check ? 0/*disabled by default*/ : atof(env_check));
+  const double check = LIBXSMM_ABS(0 == env_check ? 1/*enable by default*/ : atof(env_check));
 
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads(); /* number of threads */
@@ -281,7 +276,7 @@ int main(int argc, char* argv[])
   double l_total = 0.0;
   double flops = 0.0, tempflops = 0.0;
   const double tflops = 12; /* transcendental flops */
-  int i, it;
+  int i, j, it;
 
   libxsmm_dnn_rnncell_desc rnncell_desc;
   libxsmm_dnn_rnncell* libxsmm_handle;
@@ -289,24 +284,27 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_hidden_state;
   libxsmm_dnn_tensor* libxsmm_weight;
   libxsmm_dnn_tensor* libxsmm_recur_weight;
+  libxsmm_dnn_tensor* libxsmm_bias = NULL;
   libxsmm_dnn_tensor* libxsmm_dinput = NULL;
   libxsmm_dnn_tensor* libxsmm_dhidden_state = NULL;
   libxsmm_dnn_tensor* libxsmm_dweight = NULL;
   libxsmm_dnn_tensor* libxsmm_drecur_weight = NULL;
+  libxsmm_dnn_tensor* libxsmm_dbias = NULL;
 
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
-  libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd_w, norms_upd_u, diff;
+  libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd_w, norms_upd_u, norms_upd_b, diff;
   memset(&norms_fwd, 0, sizeof(norms_fwd));
   memset(&norms_bwd, 0, sizeof(norms_bwd));
   memset(&norms_upd_w, 0, sizeof(norms_upd_w));
   memset(&norms_upd_u, 0, sizeof(norms_upd_u));
+  memset(&norms_upd_b, 0, sizeof(norms_upd_b));
   memset(&diff, 0, sizeof(diff));
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("\nUsage: ./rnndriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [M] [N] [K] [time_steps > 1] [reuse (for FWD): 0/1] [bm] [bn] [bk]\n\n");
+    printf("\nUsage: ./rnndriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [nonlin: 1--ReLU, 2--sigmoid, 3--tanh] [N] [C] [K] [time_steps > 0]\n\n");
     return 0;
   }
   libxsmm_srand(1);
@@ -315,26 +313,22 @@ int main(int argc, char* argv[])
   i = 1;
   if (argc > i) iters = atoi(argv[i++]);
   if (argc > i) pass  = atoi(argv[i++]);
-  if (argc > i) m     = atoi(argv[i++]);
-  if (argc > i) n     = atoi(argv[i++]);
-  if (argc > i) k     = atoi(argv[i++]);
+  if (argc > i) nonlin= atoi(argv[i++]);
+  if (argc > i) N     = atoi(argv[i++]);
+  if (argc > i) C     = atoi(argv[i++]);
+  if (argc > i) K     = atoi(argv[i++]);
   if (argc > i) t     = atoi(argv[i++]);
-  if (argc > i) reuse = atoi(argv[i++]);
-  if (argc > i) bm    = atoi(argv[i++]);
-  if (argc > i) bn    = atoi(argv[i++]);
-  if (argc > i) bk    = atoi(argv[i++]);
 
-  if (t <= 1) {
-    printf("time_steps %d should be greater than 1\n\n", t);
+  if (t <= 0) {
+    printf("time_steps %d should be greater than 0\n\n", t);
     return 0;
   }
   if (!(pass == 0 || pass == 1 || pass == 2 || pass == 3)) {
     printf("Unknown pass: %d, valid arguments for pass = {0(FWD), 1(BWD), 2(UPD), 3(BWD+UPD)\n\n", pass);
     return 0;
   }
-  if ( (pass == 1 || pass == 2 || pass == 3) &&
-      !(bm == bn && bn == bk && b_m1 == b_n1 && b_n1 == b_k1 && b_m2 == b_n2 && b_n2 == b_k2) ) {
-    printf("Required condition for BWD/UPD, bm == bn == bk and bm1 == bn1 == bk1 and bm2 == bn2 == bk2\n\n");
+  if (nonlin != 1 && nonlin != 2 && nonlin != 3) {
+    printf("Unsupported non-linear function used [1--ReLU, 2--sigmoid, 3--tanh]\n\n");
     return 0;
   }
 
@@ -348,157 +342,132 @@ int main(int argc, char* argv[])
   printf("##########################################\n");
   printf("#          Setting Up (Common)           #\n");
   printf("##########################################\n");
-  printf("PARAMS: M:%d  N:%d  K:%d  T:%d\n", m, n, k, t);
+  printf("PARAMS: N:%d  C:%d  K:%d  T:%d\n", N, C, K, t);
   printf("PARAMS: ITERS:%d", iters); if (LIBXSMM_FEQ(0, check)) printf("  Threads:%d\n", nThreads); else printf("\n");
-  printf("SIZE Weight (MB): %10.2f MiB\n", (double)(m*k*sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Input (MB): %10.2f MiB\n", (double)(k*n*sizeof(float))/(1024.0*1024.0) );
-  printf("SIZE Hidden State: %10.2f MiB\n", (double)(m*n*sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Weight (MB): %10.2f MiB\n", (double)(C*K*sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Input (MB): %10.2f MiB\n", (double)(N*C*sizeof(float))/(1024.0*1024.0) );
+  printf("SIZE Hidden State: %10.2f MiB\n", (double)(K*N*sizeof(float))/(1024.0*1024.0) );
 
   /* allocate data */
   if (pass == 0) {
-    wgold  = (float*)libxsmm_aligned_malloc( m*k*sizeof(float), 2097152);
-    xgoldt = (float*)libxsmm_aligned_malloc( k*n*t*sizeof(float), 2097152);
-    ugold  = (float*)libxsmm_aligned_malloc( m*m*sizeof(float), 2097152);
-    hgold  = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
-    z1gold = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
-    z2gold = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
-    zgold  = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
-    w      = (float*)libxsmm_aligned_malloc( m*k*sizeof(float), 2097152);
-    xt     = (float*)libxsmm_aligned_malloc( k*n*t*sizeof(float), 2097152);
-    u      = (float*)libxsmm_aligned_malloc( m*m*sizeof(float), 2097152);
-    if (reuse) {
-      h      = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
-    } else {
-      h      = (float*)libxsmm_aligned_malloc( m*n*(t+1)*sizeof(float), 2097152);
-    }
-    htest  = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
-    hgold_temp = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
+    wgold  = (float*)libxsmm_aligned_malloc( C*K*sizeof(float), 2097152);
+    xgoldt = (float*)libxsmm_aligned_malloc( N*C*t*sizeof(float), 2097152);
+    ugold  = (float*)libxsmm_aligned_malloc( K*K*sizeof(float), 2097152);
+    hgold  = (float*)libxsmm_aligned_malloc( K*N*sizeof(float), 2097152);
+    bgold  = (float*)libxsmm_aligned_malloc( K*sizeof(float), 2097152);
+    z1gold = (float*)libxsmm_aligned_malloc( K*N*sizeof(float), 2097152);
+    z2gold = (float*)libxsmm_aligned_malloc( K*N*sizeof(float), 2097152);
+    zgold  = (float*)libxsmm_aligned_malloc( K*N*sizeof(float), 2097152);
+    bmgold = (float*)libxsmm_aligned_malloc( K*N*sizeof(float), 2097152);
+    w      = (float*)libxsmm_aligned_malloc( C*K*sizeof(float), 2097152);
+    xt     = (float*)libxsmm_aligned_malloc( N*C*t*sizeof(float), 2097152);
+    u      = (float*)libxsmm_aligned_malloc( K*K*sizeof(float), 2097152);
+    h      = (float*)libxsmm_aligned_malloc( K*N*(t+1)*sizeof(float), 2097152);
+    b      = (float*)libxsmm_aligned_malloc( K*sizeof(float), 2097152);
+    htest  = (float*)libxsmm_aligned_malloc( K*N*sizeof(float), 2097152);
+    hgold_temp = (float*)libxsmm_aligned_malloc( K*N*sizeof(float), 2097152);
   } else {
-    djdhgoldt  = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
-    zgoldt     = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
-    deltagoldt = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
-    ugold      = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    xgoldt     = (float*)libxsmm_aligned_malloc(k * n * sizeof(float) * t, 2097152);
-    hgoldt     = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
-    djdugold   = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    djdwgold   = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    djdxgoldt  = (float*)libxsmm_aligned_malloc(k * n * sizeof(float) * t, 2097152);
-    wgold      = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    zigold     = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
-    di1gold    = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
-    di2gold    = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
-    dj1gold    = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    dw1gold    = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    ugoldTp    = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    wgoldTp    = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    hgoldTp    = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
-    xgoldTp    = (float*)libxsmm_aligned_malloc(k * n * sizeof(float), 2097152);
-    w          = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    xt         = (float*)libxsmm_aligned_malloc(k * n * sizeof(float) * t, 2097152);
-    u          = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    ht         = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
-    djdw       = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    djdxt      = (float*)libxsmm_aligned_malloc(k * n * sizeof(float) * t, 2097152);
-    djdu       = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    djdht      = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
-    djdwtest   = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    djdxtestt  = (float*)libxsmm_aligned_malloc(k * n * sizeof(float) * t, 2097152);
-    djdutest   = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
+    djdhgoldt  = (float*)libxsmm_aligned_malloc(K*N * sizeof(float) * t, 2097152);
+    zgoldt     = (float*)libxsmm_aligned_malloc(K*N * sizeof(float) * t, 2097152);
+    deltagoldt = (float*)libxsmm_aligned_malloc(K*N * sizeof(float) * t, 2097152);
+    ugold      = (float*)libxsmm_aligned_malloc(K*K * sizeof(float), 2097152);
+    xgoldt     = (float*)libxsmm_aligned_malloc(N*C * sizeof(float) * t, 2097152);
+    hgoldt     = (float*)libxsmm_aligned_malloc(K*N * sizeof(float) * t, 2097152);
+    djdugold   = (float*)libxsmm_aligned_malloc(K*K * sizeof(float), 2097152);
+    djdwgold   = (float*)libxsmm_aligned_malloc(C*K * sizeof(float), 2097152);
+    djdbgold   = (float*)libxsmm_aligned_malloc(K * sizeof(float), 2097152);
+    djdxgoldt  = (float*)libxsmm_aligned_malloc(N*C * sizeof(float) * t, 2097152);
+    wgold      = (float*)libxsmm_aligned_malloc(C*K * sizeof(float), 2097152);
+    zigold     = (float*)libxsmm_aligned_malloc(K*N * sizeof(float), 2097152);
+    di1gold    = (float*)libxsmm_aligned_malloc(K*N * sizeof(float), 2097152);
+    di2gold    = (float*)libxsmm_aligned_malloc(K*N * sizeof(float), 2097152);
+    ugoldTp    = (float*)libxsmm_aligned_malloc(K*K * sizeof(float), 2097152);
+    wgoldTp    = (float*)libxsmm_aligned_malloc(C*K * sizeof(float), 2097152);
+    hgoldTp    = (float*)libxsmm_aligned_malloc(K*N * sizeof(float), 2097152);
+    xgoldTp    = (float*)libxsmm_aligned_malloc(N*C * sizeof(float), 2097152);
+    w          = (float*)libxsmm_aligned_malloc(C*K * sizeof(float), 2097152);
+    xt         = (float*)libxsmm_aligned_malloc(N*C * sizeof(float) * t, 2097152);
+    u          = (float*)libxsmm_aligned_malloc(K*K * sizeof(float), 2097152);
+    ht         = (float*)libxsmm_aligned_malloc(K*N * sizeof(float) * t, 2097152);
+    djdw       = (float*)libxsmm_aligned_malloc(C*K * sizeof(float), 2097152);
+    djdxt      = (float*)libxsmm_aligned_malloc(N*C * sizeof(float) * t, 2097152);
+    djdu       = (float*)libxsmm_aligned_malloc(K*K * sizeof(float), 2097152);
+    djdb       = (float*)libxsmm_aligned_malloc(K * sizeof(float), 2097152);
+    djdht      = (float*)libxsmm_aligned_malloc(K*N * sizeof(float) * t, 2097152);
+    djdwtest   = (float*)libxsmm_aligned_malloc(C*K * sizeof(float), 2097152);
+    djdxtestt  = (float*)libxsmm_aligned_malloc(N*C * sizeof(float) * t, 2097152);
+    djdutest   = (float*)libxsmm_aligned_malloc(K*K * sizeof(float), 2097152);
   }
-  LIBXSMM_VLA_DECL(2, float, djdhgold, djdhgoldt, m * n);
-  LIBXSMM_VLA_DECL(2, float, djdxgold, djdxgoldt, k * n);
-  LIBXSMM_VLA_DECL(2, float, zgoldb, zgoldt, m * n);
-  LIBXSMM_VLA_DECL(2, float, deltagold, deltagoldt, m * n);
-  LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, k * n);
-  LIBXSMM_VLA_DECL(2, float, hgoldb, hgoldt, m * n);
-  LIBXSMM_VLA_DECL(2, float, djdh, djdht, m * n);
-  /*LIBXSMM_VLA_DECL(2, float, xb, xt, k * n);*/
-  LIBXSMM_VLA_DECL(2, float, hb, ht, m * n);
-  LIBXSMM_VLA_DECL(2, float, djdx, djdxt, k * n);
+  LIBXSMM_VLA_DECL(2, float, djdhgold, djdhgoldt, K*N);
+  LIBXSMM_VLA_DECL(2, float, djdxgold, djdxgoldt, N*C);
+  LIBXSMM_VLA_DECL(2, float, zgoldb, zgoldt, K*N);
+  LIBXSMM_VLA_DECL(2, float, deltagold, deltagoldt, K*N);
+  LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N*C);
+  LIBXSMM_VLA_DECL(2, float, hgoldb, hgoldt, K*N);
+  LIBXSMM_VLA_DECL(2, float, djdh, djdht, K*N);
+  LIBXSMM_VLA_DECL(2, float, hb, ht, K*N);
+  LIBXSMM_VLA_DECL(2, float, djdx, djdxt, N*C);
 
   /* initialize data */
+  /* All data in gold is considered to be in column-major format */
   if (pass == 0) {
-    LIBXSMM_MATINIT_OMP(float, 42, wgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wgold, C, K, C, 1.0);
     for (it = 0; it < t; ++it) {
-      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, N*C), N, C, N, 1.0);
     }
-    LIBXSMM_MATINIT_OMP(float, 42, ugold, m, m, m, 1.0);
-    LIBXSMM_MATINIT_OMP(float, 24, hgold, m, n, m, 1.0);
-    matrix_copy(m*n, hgold, hgold_temp); /* Required because hgold may get overwritten */
-    zero_buf(z1gold, m*n);
-    zero_buf(z2gold, m*n);
-    zero_buf(zgold, m*n);
+    LIBXSMM_MATINIT_OMP(float, 42, ugold, K, K, K, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 24, hgold, N, K, N, 1.0);
+    matrix_copy(K*N, hgold, hgold_temp); /* Required because hgold may get overwritten */
+    LIBXSMM_MATINIT_OMP(float, 42, bgold, 1, K, 1, 1.0);
+    for (j = 0; j < N; j++) {
+      matrix_copy(K, bgold, &(bmgold[j*K]));
+    }
+    zero_buf(z1gold, K*N);
+    zero_buf(z2gold, K*N);
+    zero_buf(zgold, K*N);
   } else {
-    LIBXSMM_MATINIT_OMP(float, 42, ugold, m, m, m, 1.0);
-    LIBXSMM_MATINIT_OMP(float, 42, wgold, m, k, m, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, ugold, K, K, K, 1.0);
+    LIBXSMM_MATINIT_OMP(float, 42, wgold, C, K, C, 1.0);
     for (it = 0; it < t; ++it) {
-      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, m * n), m, n, m, 1.0);
-      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), k, n, k, 1.0);
-      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), m, n, m, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, K*N), N, K, N, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, zgoldb, it, 0, K*N), N, K, N, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, N*C), N, C, N, 1.0);
+      LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, K*N), N, K, N, 1.0);
     }
-    zero_buf(deltagoldt, m*n*t);
-    zero_buf(djdugold, m*m);
-    zero_buf(djdwgold, m*k);
-    zero_buf(djdxgoldt, k*n*t);
-    zero_buf(zigold, m*n);
-    zero_buf(di1gold, m*n);
-    zero_buf(di2gold, m*n);
-    zero_buf(dj1gold, m*m);
-    zero_buf(dw1gold, m*k);
-    zero_buf(ugoldTp, m*m);
-    zero_buf(wgoldTp, m*k);
-    zero_buf(hgoldTp, m*n);
-    zero_buf(xgoldTp, k*n);
+    zero_buf(deltagoldt, K*N*t);
+    zero_buf(djdugold, K*K);
+    zero_buf(djdwgold, C*K);
+    zero_buf(djdbgold, K);
+    zero_buf(djdxgoldt, N*C*t);
+    zero_buf(zigold, K*N);
+    zero_buf(di1gold, K*N);
+    zero_buf(di2gold, K*N);
+    zero_buf(ugoldTp, K*K);
+    zero_buf(wgoldTp, C*K);
+    zero_buf(hgoldTp, K*N);
+    zero_buf(xgoldTp, N*C);
   }
 
   /* first touch LIBXSMM */
   if (pass == 0) {
-    zero_buf(w,  m*k);
-    zero_buf(xt, k*n*t);
-    zero_buf(u,  m*m);
-    if (reuse) {
-      zero_buf(h, m*n);
-    } else {
-      zero_buf(h, m*n*(t+1));
-    }
+    zero_buf(w,  C*K);
+    zero_buf(xt, N*C*t);
+    zero_buf(u,  K*K);
+    zero_buf(b,  K);
+    zero_buf(h, K*N*(t+1));
   } else {
-    zero_buf(w, m*k);
-    zero_buf(xt, k*n*t);
-    zero_buf(u, m*m);
-    zero_buf(ht, m*n*t);
-    zero_buf(djdw, m*k);
-    zero_buf(djdxt, k*n*t);
-    zero_buf(djdu, m*m);
-    zero_buf(djdht, m*n*t);
+    zero_buf(w, C*K);
+    zero_buf(xt, N*C*t);
+    zero_buf(u, K*K);
+    zero_buf(ht, K*N*t);
+    zero_buf(djdw, C*K);
+    zero_buf(djdxt, N*C*t);
+    zero_buf(djdu, K*K);
+    zero_buf(djdb, K);
+    zero_buf(djdht, K*N*t);
   }
-  LIBXSMM_VLA_DECL(2, float, x, xt, k * n);
-  LIBXSMM_VLA_DECL(2, float, hnr, h, m * n);
-
-  if (pass == 0) {
-    handlewx = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
-      m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
-      &alpha, &beta, &gemm_flags, &strategy, &order);
-    handleuh = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
-      m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
-      &alpha, &beta, &gemm_flags, &strategy, &order);
-    handlett = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
-      m, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
-      &alpha, &beta, &gemm_flags, &strategy, &order);
-  } else {
-    handlewx = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
-      m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
-      &alpha, &beta, &gemm_flags, &strategy, &order); /* U^T*delta */
-    handleuh = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
-      m, m, n, &bm, &bm, &bn, &b_m1, &b_m1, &b_n1, &b_n2,
-      &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*h^T */
-    handlett = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
-      m, k, n, &bm, &bk, &bn, &b_m1, &b_k1, &b_n1, &b_n2,
-      &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*x^T */
-    handlewd = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
-      k, n, m, &bk, &bn, &bm, &b_k1, &b_n1, &b_m1, &b_m2,
-      &alpha, &beta, &gemm_flags, &strategy, &order); /* W^T*delta */
-  }
+  LIBXSMM_VLA_DECL(2, float, x, xt, N*C);
+  LIBXSMM_VLA_DECL(2, float, hnr, h, K*N);
 
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");
@@ -506,34 +475,57 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
     if (pass == 0) {
       for (i = 0; i < t; ++i) {
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &n, &k, &alpha, wgold, &m, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, k * n), &k, &beta0, z1gold, &m);
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &n, &m, &alpha, ugold, &m, hgold, &m, &beta0, z2gold, &m);
-        matrix_add(m*n, z1gold, z2gold, zgold);
-        matrix_sigmoid(m*n, zgold, hgold);
+        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &N, &C, &alpha, wgold, &K, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, N*C), &C, &beta0, z1gold, &K);
+        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &N, &K, &alpha, ugold, &K, hgold, &K, &beta0, z2gold, &K);
+        matrix_add(K*N, z1gold, z2gold, zgold);
+        matrix_add(K*N, zgold, bmgold, zgold);
+        if (1 == nonlin) {
+          matrix_relu(K*N, zgold, hgold);
+        } else if (2 == nonlin) {
+          matrix_sigmoid(K*N, zgold, hgold);
+        } else {
+          matrix_tanh(K*N, zgold, hgold);
+        }
       }
     } else {
-      zero_buf(&LIBXSMM_VLA_ACCESS(2, deltagold, t-1, 0, m * n), m*n);
-      matrix_transpose(m, m, ugold, ugoldTp);
+      /* Conceptually, delta iterates over 0 ... t-1, whereas, djdh and z iterates over 1 ... t */
+      /* Hence these have identical array indices */
+      if (1 == nonlin) {
+        matrix_relu_inverse(K*N, &LIBXSMM_VLA_ACCESS(2, zgoldb, t-1, 0, K*N), zigold);
+      } else if (2 == nonlin) {
+        matrix_sigmoid_inverse(K*N, &LIBXSMM_VLA_ACCESS(2, zgoldb, t-1, 0, K*N), zigold);
+      } else {
+        matrix_tanh_inverse(K*N, &LIBXSMM_VLA_ACCESS(2, zgoldb, t-1, 0, K*N), zigold);
+      }
+      matrix_eltwise_mult(K*N, zigold, &LIBXSMM_VLA_ACCESS(2, djdhgold, t-1, 0, K*N), &LIBXSMM_VLA_ACCESS(2, deltagold, t-1, 0, K*N));
+      matrix_transpose(K, K, ugold, ugoldTp);
       for (i = t-2; i >= 0; --i) {
-        matrix_sigmoid_inverse(m * n, &LIBXSMM_VLA_ACCESS(2, zgoldb, i+1, 0, m * n), zigold);
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &n, &m, &alpha, ugoldTp, &m, &LIBXSMM_VLA_ACCESS(2, deltagold, i+1, 0, m * n), &m, &beta0, di1gold, &m);
-        matrix_add(m * n, &LIBXSMM_VLA_ACCESS(2, djdhgold, i+1, 0, m * n), di1gold, di2gold);
-        matrix_eltwise_mult(m * n, zigold, di2gold, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n));
+        if (1 == nonlin) {
+          matrix_relu_inverse(K*N, &LIBXSMM_VLA_ACCESS(2, zgoldb, i, 0, K*N), zigold);
+        } else if (2 == nonlin) {
+          matrix_sigmoid_inverse(K*N, &LIBXSMM_VLA_ACCESS(2, zgoldb, i, 0, K*N), zigold);
+        } else {
+          matrix_tanh_inverse(K*N, &LIBXSMM_VLA_ACCESS(2, zgoldb, i, 0, K*N), zigold);
+        }
+        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &N, &K, &alpha, ugoldTp, &K, &LIBXSMM_VLA_ACCESS(2, deltagold, i+1, 0, K*N), &K, &beta0, di1gold, &K);
+        matrix_add(K*N, &LIBXSMM_VLA_ACCESS(2, djdhgold, i, 0, K*N), di1gold, di2gold);
+        matrix_eltwise_mult(K*N, zigold, di2gold, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, K*N));
       }
       if (pass == 1 || pass == 3) {
-        matrix_transpose(m, k, wgold, wgoldTp);
+        matrix_transpose(C, K, wgold, wgoldTp);
         for (i = 0; i < t; ++i) {
-          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &k, &n, &m, &alpha, wgoldTp, &k, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &m, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, i, 0, k * n), &k);
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &C, &N, &K, &alpha, wgoldTp, &C, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, K*N), &K, &beta0, &LIBXSMM_VLA_ACCESS(2, djdxgold, i, 0, N*C), &C);
         }
       }
       if (pass == 2 || pass == 3) {
         for (i = 0; i < t; ++i) {
-          matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, hgoldb, i, 0, m * n), hgoldTp);
-          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &m, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &m, hgoldTp, &n, &beta0, dj1gold, &m);
-          matrix_add(m*m, dj1gold, djdugold, djdugold);
-          matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, k * n), xgoldTp);
-          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &m, &k, &n, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, m * n), &m, xgoldTp, &n, &beta0, dw1gold, &m);
-          matrix_add(m*k, dw1gold, djdwgold, djdwgold);
+          matrix_transpose(N, K, &LIBXSMM_VLA_ACCESS(2, hgoldb, i, 0, K*N), hgoldTp);
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, K*N), &K, hgoldTp, &N, &beta, djdugold, &K);
+          matrix_transpose(N, C, &LIBXSMM_VLA_ACCESS(2, xgold, i, 0, N*C), xgoldTp);
+          LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &C, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, deltagold, i, 0, K*N), &K, xgoldTp, &N, &beta, djdwgold, &K);
+          for (j = 0; j < K*N; j++) {
+            djdbgold[j%K] += LIBXSMM_VLA_ACCESS(2, deltagold, i, j, K*N);
+          }
         }
       }
     }
@@ -549,19 +541,24 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
 
     /* setup LIBXSMM handle */
-    rnncell_desc.nThreads = nThreads;
-    rnncell_desc.m = m;
-    rnncell_desc.n = n;
-    rnncell_desc.k = k;
+    rnncell_desc.threads = nThreads;
+    rnncell_desc.N = N;
+    rnncell_desc.C = C;
+    rnncell_desc.K = K;
     rnncell_desc.t = t;
-    rnncell_desc.bm = bm;
-    rnncell_desc.bn = bn;
-    rnncell_desc.bk = bk;
-    rnncell_desc.reuse = reuse;
-    rnncell_desc.pass = pass;
+    if ( nonlin == 1 ) {
+      rnncell_desc.cell_type = LIBXSMM_DNN_RNNCELL_RNN_RELU;
+    } else if ( nonlin == 2 ) {
+      rnncell_desc.cell_type = LIBXSMM_DNN_RNNCELL_RNN_SIGMOID;
+    } else if ( nonlin == 3 ) {
+      rnncell_desc.cell_type = LIBXSMM_DNN_RNNCELL_RNN_TANH;
+    } else {
+      /* should not happen */
+    }
     rnncell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
-    rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+    rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NC;
+    rnncell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_CK;
 
     libxsmm_handle = libxsmm_dnn_create_rnncell( rnncell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
@@ -583,6 +580,10 @@ int main(int argc, char* argv[])
       libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_hidden_state = libxsmm_dnn_link_tensor( libxsmm_layout, h, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+      libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_BIAS, &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_bias = libxsmm_dnn_link_tensor( libxsmm_layout, b, &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     } else {
       libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_hidden_state = libxsmm_dnn_link_tensor( libxsmm_layout, ht, &status ); CHKERR_LIBXSMM_DNN( status );
@@ -603,35 +604,39 @@ int main(int argc, char* argv[])
       libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dhidden_state = libxsmm_dnn_link_tensor( libxsmm_layout, djdht, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+      libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_BIAS, &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_dbias = libxsmm_dnn_link_tensor( libxsmm_layout, djdb, &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     }
 
     /* copy in data to LIBXSMM format */
     if (pass == 0) {
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, wgold, &m, w) );
-      for (it = 0; it < t; ++it) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
-      }
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleuh, ugold, &m, u) );
-      if (reuse) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, hgold_temp, &m, h) );
-      } else {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, hgold_temp, &m, &LIBXSMM_VLA_ACCESS(2, hnr, 0, 0, m * n)) );
-        zero_buf(&LIBXSMM_VLA_ACCESS(2, hnr, 1, 0, m * n), m * n * t);
-      }
+      matrix_copy( C*K, wgold, w );
+      matrix_copy( t*N*C, xgoldt, xt );
+      matrix_copy( K*K, ugold, u );
+      zero_buf(h, K*N*(t+1));
+      matrix_copy( N*K, hgold_temp, h );
+      matrix_copy( K, bgold, b);
     } else {
-      matrix_transpose(m, m, ugold, ugoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewx, ugoldTp, &m, u) );
+      /* matrix_transpose(K, K, ugold, ugoldTp); */
+      /* rnn_copyin(K, K, bm, bm, ugold, u); */
+      matrix_copy(K*K, ugold, u);
+      /* matrix_transpose(C, K, wgold, wgoldTp); */
+      /* rnn_copyin(C, K, bk, bm, wgold, w); */
+      matrix_copy(C*K, wgold, w);
+      matrix_copy(K*N*t, hgoldt, ht);
+      matrix_copy(N*C*t, xgoldt, xt);
+      matrix_copy(K*N*t, djdhgoldt, djdht);
+#if 0
       for (it = 0; it < t; ++it) {
-        matrix_transpose(m, n, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), hgoldTp);
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleuh, hgoldTp, &n, &LIBXSMM_VLA_ACCESS(2, hb, it, 0, m * n)) );
-        matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), xgoldTp);
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlett, xgoldTp, &n, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
+        /* matrix_transpose(N, K, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, K*N), hgoldTp); */
+        rnn_copyin(N, K, bN, bK, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, K*N), &LIBXSMM_VLA_ACCESS(2, hb, it, 0, K*N));
+        /* matrix_transpose(N, C, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, N*C), xgoldTp); */
+        rnn_copyin(N, C, bN, bC, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, N*C), &LIBXSMM_VLA_ACCESS(2, x, it, 0, N*C));
+        rnn_copyin(N, K, bN, bK, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, K*N), &LIBXSMM_VLA_ACCESS(2, djdh, it, 0, K*N));
       }
-      matrix_transpose(m, k, wgold, wgoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wgoldTp, &k, w) );
-      for (it = 0; it < t; ++it) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewx, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, djdh, it, 0, m * n)) );
-      }
+#endif
     }
 
     /* bind buffers and filter to handle */
@@ -639,11 +644,14 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_hidden_state, LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_weight, LIBXSMM_DNN_RNN_REGULAR_WEIGHT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_recur_weight, LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT ) );
-    if (pass != 0) {
+    if (pass == 0) {
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_bias, LIBXSMM_DNN_RNN_REGULAR_BIAS ) );
+    } else {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_dinput, LIBXSMM_DNN_RNN_GRADIENT_INPUT ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_dhidden_state, LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_dweight, LIBXSMM_DNN_RNN_GRADIENT_WEIGHT ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_drecur_weight, LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_dbias, LIBXSMM_DNN_RNN_GRADIENT_BIAS ) );
     }
 
     /* let's allocate and bind scratch */
@@ -693,15 +701,10 @@ int main(int argc, char* argv[])
 #endif
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
       }
-      /* copy out data */
-      if (reuse) {
-        libxsmm_bgemm_copyout_b( m, n, bm, bn, h, htest );
-      } else {
-        libxsmm_bgemm_copyout_b( m, n, bm, bn, &LIBXSMM_VLA_ACCESS(2, hnr, t, 0, m * n), htest );
-      }
+      matrix_copy( N*K, h+(t*K*N), htest );
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*n, 1, hgold, htest, 0, 0, &norms_fwd);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, K*N, 1, hgold, htest, 0, 0, &norms_fwd);
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -729,14 +732,17 @@ int main(int argc, char* argv[])
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWD, 0, tid ) );
       }
 
-      LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, k * n);
+      LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, N*C);
       /* copy out data */
+      /*
       for (i = 0; i < t; ++i) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewd, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, k * n)) );
+        rnn_copyout(n, k, bn, bk, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, N*C), &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, N*C));
       }
+      */
+      matrix_copy(N*C*t, djdxt, djdxtestt);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, k*n*t, 1, djdxgoldt, djdxtestt, 0, 0, &norms_bwd);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, N*C*t, 1, djdxgoldt, djdxtestt, 0, 0, &norms_bwd);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -765,11 +771,15 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlett, djdw, &m, djdwtest) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handleuh, djdu, &m, djdutest) );
+      /*
+      rnn_copyout(k, m, bk, bm, djdw, djdwtest);
+      rnn_copyout(m, m, bm, bm, djdu, djdutest);
+      */
+      matrix_copy(C*K, djdw, djdwtest);
+      matrix_copy(K*K, djdu, djdutest);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*k, 1, djdwgold, djdwtest, 0, 0, &norms_upd_w);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, C*K, 1, djdwgold, djdwtest, 0, 0, &norms_upd_w);
       printf("Delta weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_w.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_w.l1_tst);
@@ -780,7 +790,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_w.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_w);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*m, 1, djdugold, djdutest, 0, 0, &norms_upd_u);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, K*K, 1, djdugold, djdutest, 0, 0, &norms_upd_u);
       printf("Delta recurrent weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_u.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_u.l1_tst);
@@ -790,6 +800,17 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_upd_u.linf_rel);
       printf("Check-norm    : %.24f\n", norms_upd_u.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_u);
+
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, K, 1, djdbgold, djdb, 0, 0, &norms_upd_b);
+      printf("Delta bias\n");
+      printf("L1 reference  : %.25g\n", norms_upd_b.l1_ref);
+      printf("L1 test       : %.25g\n", norms_upd_b.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_upd_b.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_upd_b.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_upd_b.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_upd_b.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_upd_b.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_upd_b);
     }
 
     if ( (pass == 3) && LIBXSMM_NEQ(0, check) ) {
@@ -806,19 +827,24 @@ int main(int argc, char* argv[])
 #else
         const int tid = 0;
 #endif
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, 0, tid ) );
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid ) );
       }
 
-      LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, k * n);
+      LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, N*C);
       /* copy out data */
+      /*
       for (i = 0; i < t; ++i) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewd, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, k * n)) );
+        rnn_copyout(N, C, bN, bC, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, N*C), &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, N*C));
       }
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlett, djdw, &m, djdwtest) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handleuh, djdu, &m, djdutest) );
+      rnn_copyout(C, K, bC, bK, djdw, djdwtest);
+      rnn_copyout(K, K, bK, bK, djdu, djdutest);
+      */
+      matrix_copy(N*C*t, djdxt, djdxtestt);
+      matrix_copy(C*K, djdw, djdwtest);
+      matrix_copy(K*K, djdu, djdutest);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, k*n*t, 1, djdxgoldt, djdxtestt, 0, 0, &norms_bwd);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, N*C*t, 1, djdxgoldt, djdxtestt, 0, 0, &norms_bwd);
       printf("Delta input\n");
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
@@ -829,7 +855,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_bwd);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*k, 1, djdwgold, djdwtest, 0, 0, &norms_upd_w);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, C*K, 1, djdwgold, djdwtest, 0, 0, &norms_upd_w);
       printf("Delta weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_w.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_w.l1_tst);
@@ -840,7 +866,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_w.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_w);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, m*m, 1, djdugold, djdutest, 0, 0, &norms_upd_u);
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, K*K, 1, djdugold, djdutest, 0, 0, &norms_upd_u);
       printf("Delta recurrent weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_u.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_u.l1_tst);
@@ -850,6 +876,17 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_upd_u.linf_rel);
       printf("Check-norm    : %.24f\n", norms_upd_u.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_u);
+
+      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, K, 1, djdbgold, djdb, 0, 0, &norms_upd_b);
+      printf("Delta bias\n");
+      printf("L1 reference  : %.25g\n", norms_upd_b.l1_ref);
+      printf("L1 test       : %.25g\n", norms_upd_b.l1_tst);
+      printf("L2 abs.error  : %.24f\n", norms_upd_b.l2_abs);
+      printf("L2 rel.error  : %.24f\n", norms_upd_b.l2_rel);
+      printf("Linf abs.error: %.24f\n", norms_upd_b.linf_abs);
+      printf("Linf rel.error: %.24f\n", norms_upd_b.linf_rel);
+      printf("Check-norm    : %.24f\n", norms_upd_b.normf_rel);
+      libxsmm_matdiff_reduce(&diff, &norms_upd_b);
     }
 
     if ( pass == 0 ) {
@@ -874,13 +911,13 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = ((2.0 * m * n * k) + (2.0 * m * n * m) + (m * n) + (tflops * m * n)) * (double)t * (double)iters;
+      flops = ((2.0 * K*N*C) + (2.0 * K*N*K) + (K*N) + (tflops * K*N)) * (double)t * (double)iters;
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, m, n, k, t, bm, bn, bk, ((double)(l_total/iters)), (flops*1e-9)/l_total);
+      printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
     }
 
     if ( pass == 1 ) {
@@ -905,14 +942,14 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = m * m; /* U^T */
-      flops += (2.0 * m * n * m); /* U^T * delta */
-      flops += (m * n); /* dJdh + (U^T * delta) */
-      flops += (tflops * m * n); /* sigma'(Z) */
-      flops += (m * n); /* sigma'(Z) * (dJdh + (U^T * delta)) */
+      flops = K*K; /* U^T */
+      flops += (2.0 * K*N*K); /* U^T * delta */
+      flops += (K*N); /* dJdh + (U^T * delta) */
+      flops += (tflops * K*N); /* sigma'(Z) */
+      flops += (K*N); /* sigma'(Z) * (dJdh + (U^T * delta)) */
       flops *= t; /* for t time steps */
-      tempflops = m * k; /* W^T */
-      tempflops += (2.0 * m * n * k); /* W^T * delta */
+      tempflops = C*K; /* W^T */
+      tempflops += (2.0 * K*N*C); /* W^T * delta */
       tempflops *= t; /* for t time steps of input */
       flops += tempflops;
       flops *= iters;
@@ -921,7 +958,7 @@ int main(int argc, char* argv[])
       printf("bp time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, m, n, k, t, bm, bn, bk, ((double)(l_total/iters)), (flops*1e-9)/l_total);
+      printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
     }
 
     if ( pass == 2 ) {
@@ -946,21 +983,21 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = m * m; /* U^T */
-      flops += (2.0 * m * n * m); /* U^T * delta */
-      flops += (m * n); /* dJdh + (U^T * delta) */
-      flops += (tflops * m * n); /* sigma'(Z) */
-      flops += (m * n); /* sigma'(Z) * (dJdh + (U^T * delta)) */
+      flops = K*K; /* U^T */
+      flops += (2.0 * K*N*K); /* U^T * delta */
+      flops += (K*N); /* dJdh + (U^T * delta) */
+      flops += (tflops * K*N); /* sigma'(Z) */
+      flops += (K*N); /* sigma'(Z) * (dJdh + (U^T * delta)) */
       flops *= t; /* for t time steps */
-      tempflops = m * n; /* h^T */
-      tempflops += (2.0 * m * n * m); /* delta * h^T */
+      tempflops = K*N; /* h^T */
+      tempflops += (2.0 * K*N*K); /* delta * h^T */
       tempflops *= t; /* for t time steps */
-      tempflops += (m * m * (t-1)); /* for summation of dJdU */
+      tempflops += (K*K * (t-1)); /* for summation of dJdU */
       flops += tempflops;
-      tempflops = k * n; /* x^T */
-      tempflops += (2.0 * m * n * k); /* delta * x^T */
+      tempflops = N*C; /* x^T */
+      tempflops += (2.0 * K*N*C); /* delta * x^T */
       tempflops *= t; /* for t time steps */
-      tempflops += (m * k * (t-1)); /* for summation of dJdW */
+      tempflops += (C*K * (t-1)); /* for summation of dJdW */
       flops += tempflops;
       flops *= iters;
 
@@ -968,7 +1005,7 @@ int main(int argc, char* argv[])
       printf("wu time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP,WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, m, n, k, t, bm, bn, bk, ((double)(l_total/iters)), (flops*1e-9)/l_total);
+      printf("PERFDUMP,WU,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
     }
 
     if ( pass == 3 ) {
@@ -988,29 +1025,29 @@ int main(int argc, char* argv[])
         const int tid = 0;
 #endif
         for (i = 0; i < iters; ++i) {
-          libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, 0, tid );
+          libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
         }
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = m * m; /* U^T */
-      flops += (2.0 * m * n * m); /* U^T * delta */
-      flops += (m * n); /* dJdh + (U^T * delta) */
-      flops += (tflops * m * n); /* sigma'(Z) */
-      flops += (m * n); /* sigma'(Z) * (dJdh + (U^T * delta)) */
+      flops = K*K; /* U^T */
+      flops += (2.0 * K*N*K); /* U^T * delta */
+      flops += (K*N); /* dJdh + (U^T * delta) */
+      flops += (tflops * K*N); /* sigma'(Z) */
+      flops += (K*N); /* sigma'(Z) * (dJdh + (U^T * delta)) */
       flops *= t; /* for t time steps */
-      tempflops = m * n; /* h^T */
-      tempflops += (2.0 * m * n * m); /* delta * h^T */
+      tempflops = K*N; /* h^T */
+      tempflops += (2.0 * K*N*K); /* delta * h^T */
       tempflops *= t; /* for t time steps */
-      tempflops += (m * m * (t-1)); /* for summation of dJdU */
+      tempflops += (K*K * (t-1)); /* for summation of dJdU */
       flops += tempflops;
-      tempflops = k * n; /* x^T */
-      tempflops += (2.0 * m * n * k); /* delta * x^T */
+      tempflops = N*C; /* x^T */
+      tempflops += (2.0 * K*N*C); /* delta * x^T */
       tempflops *= t; /* for t time steps */
-      tempflops += (m * k * (t-1)); /* for summation of dJdW */
+      tempflops += (C*K * (t-1)); /* for summation of dJdW */
       flops += tempflops;
-      tempflops = m * k; /* W^T */
-      tempflops += (2.0 * m * n * k); /* W^T * delta */
+      tempflops = C*K; /* W^T */
+      tempflops += (2.0 * K*N*C); /* W^T * delta */
       tempflops *= t; /* for t time steps of input */
       flops += tempflops;
       flops *= iters;
@@ -1019,7 +1056,7 @@ int main(int argc, char* argv[])
       printf("bp+wu time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
-      printf("PERFDUMP,BP+WU,%s,%i,%i,%i,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, m, n, k, t, bm, bn, bk, ((double)(l_total/iters)), (flops*1e-9)/l_total);
+      printf("PERFDUMP,BP+WU,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
     }
 
     /* clean-up */
@@ -1036,21 +1073,27 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_tensor( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_tensor( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_WEIGHT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_tensor( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT ) );
-    if (pass != 0) {
+    if (pass == 0) {
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_tensor( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_BIAS ) );
+    } else {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_tensor( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_INPUT ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_tensor( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_tensor( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_WEIGHT ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_tensor( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_release_tensor( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_BIAS ) );
     }
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_input ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_hidden_state ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_recur_weight ) );
-    if (pass != 0) {
+    if (pass == 0) {
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias ) );
+    } else {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dinput ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dhidden_state ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dweight ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_drecur_weight ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dbias ) );
     }
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_rnncell( libxsmm_handle ) );
   }
@@ -1061,12 +1104,15 @@ int main(int argc, char* argv[])
     libxsmm_free(xgoldt);
     libxsmm_free(ugold);
     libxsmm_free(hgold);
+    libxsmm_free(bgold);
+    libxsmm_free(bmgold);
     libxsmm_free(z1gold);
     libxsmm_free(z2gold);
     libxsmm_free(zgold);
     libxsmm_free(w);
     libxsmm_free(xt);
     libxsmm_free(u);
+    libxsmm_free(b);
     libxsmm_free(h);
     libxsmm_free(htest);
     libxsmm_free(hgold_temp);
@@ -1078,14 +1124,13 @@ int main(int argc, char* argv[])
     libxsmm_free(djdwgold);
     libxsmm_free(djdxgoldt);
     libxsmm_free(djdugold);
+    libxsmm_free(djdbgold);
     libxsmm_free(djdhgoldt);
     libxsmm_free(zgoldt);
     libxsmm_free(deltagoldt);
     libxsmm_free(zigold);
     libxsmm_free(di1gold);
     libxsmm_free(di2gold);
-    libxsmm_free(dj1gold);
-    libxsmm_free(dw1gold);
     libxsmm_free(wgoldTp);
     libxsmm_free(xgoldTp);
     libxsmm_free(ugoldTp);
@@ -1097,6 +1142,7 @@ int main(int argc, char* argv[])
     libxsmm_free(djdw);
     libxsmm_free(djdxt);
     libxsmm_free(djdu);
+    libxsmm_free(djdb);
     libxsmm_free(djdht);
     libxsmm_free(djdwtest);
     libxsmm_free(djdxtestt);

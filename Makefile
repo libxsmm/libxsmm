@@ -114,6 +114,10 @@ THREADS ?= 1
 # 1: library archives suitable for static linkage
 STATIC ?= 1
 
+# 0: link all dependencies as specified for the target
+# 1: attempt to avoid dependencies if not referenced
+ASNEEDED ?= 0
+
 # 0: build according to the value of STATIC
 # 1: build according to STATIC=0 and STATIC=1
 SHARED ?= 0
@@ -139,6 +143,10 @@ INSTRUMENT ?= $(TRACE)
 # target library for a broad range of systems
 ifneq (0,$(JIT))
   SSE ?= 1
+endif
+
+ifneq (,$(MAXTARGET))
+  DFLAGS += -DLIBXSMM_MAXTARGET=$(MAXTARGET)
 endif
 
 # Profiling JIT code using Linux Perf
@@ -183,17 +191,6 @@ ifneq (0,$(MKL))
 endif
 endif
 
-BLAS_WARNING ?= 0
-ifeq (0,$(STATIC))
-  ifeq (Windows_NT,$(OS)) # !UNAME
-    BLAS_WARNING = 1
-    BLAS ?= 2
-  else ifeq (Darwin,$(shell uname))
-    BLAS_WARNING = 1
-    BLAS ?= 2
-  endif
-endif
-
 ifneq (1,$(CACHE))
   DFLAGS += -DLIBXSMM_CAPACITY_CACHE=$(CACHE)
 endif
@@ -207,7 +204,7 @@ endif
 DOCEXT = pdf
 
 # state to be excluded from tracking the (re-)build state
-EXCLUDE_STATE = BLAS_WARNING PREFIX DESTDIR INSTALL_ROOT
+EXCLUDE_STATE = PREFIX DESTDIR INSTALL_ROOT
 
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
@@ -268,12 +265,13 @@ INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRE
 NINDICES = $(words $(INDICES))
 
 HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
-          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c $(ROOTDIR)/$(SRCDIR)/libxsmm_gemm_diff.c \
+          $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c \
           $(ROOTDIR)/include/libxsmm_bgemm.h \
           $(ROOTDIR)/include/libxsmm_cpuid.h \
           $(ROOTDIR)/include/libxsmm_dnn.h \
           $(ROOTDIR)/include/libxsmm_dnn_fusedbn.h \
           $(ROOTDIR)/include/libxsmm_dnn_pooling.h \
+          $(ROOTDIR)/include/libxsmm_dnn_fullyconnected.h \
           $(ROOTDIR)/include/libxsmm_dnn_rnncell.h \
           $(ROOTDIR)/include/libxsmm_dnn_lstmcell.h \
           $(ROOTDIR)/include/libxsmm_dnn_grucell.h \
@@ -296,10 +294,13 @@ SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_spmdm.c libxsmm_fsspmdm.c \
           libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c \
           libxsmm_dnn_elementwise.c libxsmm_dnn_rnncell.c libxsmm_dnn_lstmcell.c libxsmm_dnn_grucell.c \
+          libxsmm_dnn_rnncell_forward.c libxsmm_dnn_rnncell_backward_weight_update.c \
           libxsmm_dnn_fusedbn.c libxsmm_dnn_fusedbatchnorm_forward.c \
           libxsmm_dnn_fusedbatchnorm_backward.c \
           libxsmm_dnn_pooling.c libxsmm_dnn_pooling_forward.c \
           libxsmm_dnn_pooling_backward.c libxsmm_dnn_convolution_forward.c \
+          libxsmm_dnn_fullyconnected.c libxsmm_dnn_fullyconnected_forward.c \
+          libxsmm_dnn_fullyconnected_backward.c libxsmm_dnn_fullyconnected_weight_update.c \
           libxsmm_dnn_convolution_backward.c \
           libxsmm_dnn_convolution_weight_update.c \
           libxsmm_dnn_convolution_winograd_forward.c \
@@ -307,7 +308,7 @@ SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_dnn_convolution_winograd_weight_update.o )
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
-SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c) libxsmm_trace.c libxsmm_generator.c)
+SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c) libxsmm_generator.c libxsmm_trace.c)
 SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
 SRCFILES_GEN_CONVWINO_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_convolution_winograd_driver.c)
 SRCFILES_GEN_CONV_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_convolution_driver.c)
@@ -315,7 +316,6 @@ OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCF
 OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
 OBJFILES_GEN_CONVWINO_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_CONVWINO_BIN))))
 OBJFILES_GEN_CONV_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_CONV_BIN))))
-OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB))))
 KRNOBJS_HST  = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
@@ -338,8 +338,8 @@ ifneq (,$(strip $(FC)))
   FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
 endif
 
+MSGJITPROFILING = 0
 ifneq (0,$(JIT))
-ifneq (0,$(SYM))
 ifeq (,$(filter Darwin,$(UNAME)))
   ifneq (0,$(PERF))
     DFLAGS += -DLIBXSMM_PERF
@@ -348,17 +348,22 @@ ifeq (,$(filter Darwin,$(UNAME)))
     endif
   endif
   VTUNEROOT = $(shell env | grep VTUNE_AMPLIFIER | grep -m1 _DIR | cut -d= -f2-)
-  ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
-    LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
-    OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
-    DFLAGS += -DLIBXSMM_VTUNE
-    IFLAGS += -I$(VTUNEROOT)/include
-    ifneq (0,$(INTEL))
-      CXXFLAGS += -diag-disable 271
-      CFLAGS += -diag-disable 271
-    endif
+  ifeq (,$(VTUNEROOT))
+    VTUNEROOT = $(EBROOTVTUNE)/vtune_amplifier
   endif
-endif
+  ifneq (,$(wildcard $(VTUNEROOT)/lib64/libjitprofiling.$(SLIBEXT)))
+    ifneq (0,$(SYM))
+      LIBJITPROFILING = $(BLDDIR)/jitprofiling/libjitprofiling.$(SLIBEXT)
+      OBJJITPROFILING = $(BLDDIR)/jitprofiling/*.o
+      DFLAGS += -DLIBXSMM_VTUNE
+      IFLAGS += -I$(VTUNEROOT)/include
+      ifneq (0,$(INTEL))
+        CXXFLAGS += -diag-disable 271
+        CFLAGS += -diag-disable 271
+      endif
+    endif
+    MSGJITPROFILING = 1
+  endif
 endif
 endif
 
@@ -373,22 +378,21 @@ information = \
 	$(info --------------------------------------------------------------------------------) \
 	$(if $(strip $(FC_VERSION_STRING)), \
 	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!), \
-	$(info Fortran Compiler is missing: no Fortran interface is built!))) \
+	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
 	$(if $(filter Windows_NT0,$(UNAME)$(STATIC)), \
 	$(info --------------------------------------------------------------------------------) \
 	$(info The shared link-time wrapper (libxsmmext) is not supported under Windows/Cygwin!), \
 	$(NULL)) \
-	$(if $(filter _0_,_$(BLAS_WARNING)_),$(NULL), \
+	$(if $(filter _0_,_$(LNKSOFT)_), \
 	$(info --------------------------------------------------------------------------------) \
 	$(info Building a shared library requires to link against BLAS since there is) \
-	$(info no runtime resolution/search for weak symbols implemented for this OS.)) \
+	$(info no runtime resolution/search for weak symbols implemented for this OS.),$(NULL)) \
 	$(if $(filter _0_,_$(BLAS)_), \
 	$(if $(filter _0_,_$(NOBLAS)_),$(NULL), \
 	$(info LIBXSMM's link-time BLAS dependency is removed (fallback might be unavailable!))), \
-	$(if $(filter _0_,_$(BLAS_WARNING)_), \
+	$(if $(filter _0_,_$(LNKSOFT)_),$(NULL), \
 	$(info LIBXSMM is link-time agnostic with respect to BLAS/GEMM!) \
-	$(info Linking a certain BLAS library may prevent users to decide.), \
-	$(NULL)) \
+	$(info Linking a certain BLAS library may prevent users to decide.)) \
 	$(if $(filter _1_,_$(BLAS)_), \
 	$(info A parallelized BLAS should be linked with LIBXSMM.), \
 	$(NULL)))
@@ -413,9 +417,13 @@ libxsmm: libs
 endif
 endif
 	$(information)
-ifneq (,$(strip $(LIBJITPROFILING)))
+ifneq (0,$(MSGJITPROFILING))
 	$(info --------------------------------------------------------------------------------)
+ifneq (,$(strip $(LIBJITPROFILING)))
 	$(info Intel VTune Amplifier support has been incorporated.)
+else
+	$(info Intel VTune Amplifier support has been detected (enable with SYM=1).)
+endif
 endif
 	$(info --------------------------------------------------------------------------------)
 
@@ -576,6 +584,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template
 	@$(CP) $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_fusedbn.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_fullyconnected.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_pooling.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_rnncell.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_lstmcell.h $(INCDIR) 2>/dev/null || true

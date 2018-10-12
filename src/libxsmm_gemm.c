@@ -59,6 +59,12 @@
 # define LIBXSMM_GEMM_BATCHGRAIN 128
 #endif
 
+#if defined(LIBXSMM_BUILD)
+# define LIBXSMM_WEAK LIBXSMM_API_EXPORT LIBXSMM_ATTRIBUTE_WEAK
+#else
+# define LIBXSMM_WEAK LIBXSMM_API_EXPORT
+#endif
+
 #if (0 != LIBXSMM_SYNC) /** Locks for the batch interface (duplicated C indexes). */
 # define LIBXSMM_GEMM_LOCKIDX(IDX, NPOT) LIBXSMM_MOD2(LIBXSMM_CONCATENATE(libxsmm_crc32_u,LIBXSMM_BLASINT_NBITS)(2507/*seed*/, IDX), NPOT)
 # define LIBXSMM_GEMM_LOCKPTR(PTR, NPOT) LIBXSMM_MOD2(libxsmm_crc32_u64(1975/*seed*/, (uintptr_t)(PTR)), NPOT)
@@ -95,7 +101,7 @@ LIBXSMM_APIVAR(float internal_gemm_nstretch);
 LIBXSMM_APIVAR(float internal_gemm_kstretch);
 
 
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
+LIBXSMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
   static /*volatile*/ libxsmm_dgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(double, original);
@@ -104,7 +110,7 @@ LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void
 }
 
 
-LIBXSMM_API LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
+LIBXSMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
   static /*volatile*/ libxsmm_sgemm_function original = 0;
   LIBXSMM_GEMM_WRAPPER(float, original);

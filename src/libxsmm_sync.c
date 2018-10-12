@@ -42,7 +42,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 #if defined(_WIN32)
 # include <windows.h>
 # include <process.h>

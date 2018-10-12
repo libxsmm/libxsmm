@@ -133,8 +133,8 @@ LIBXSMM_API int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info*
 
 /** Information about the scratch memory domain. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
-  /** Total size of all scratch memory pools. */
-  size_t size;
+  /** Allocated memory in all pools (size), and library-internal memory (internal). */
+  size_t size, internal;
   /** Pending allocations (not released). */
   size_t npending;
   /** Number of allocations so far. */
@@ -154,9 +154,6 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
 LIBXSMM_API void libxsmm_set_scratch_limit(size_t nbytes);
 /** Get the maximum size of the scratch memory domain. */
 LIBXSMM_API size_t libxsmm_get_scratch_limit(void);
-
-/** Calculate a hash value for a given buffer. */
-LIBXSMM_API unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed);
 
 /**
  * Calculate the linear offset of the n-dimensional (ndims) offset (can be NULL),

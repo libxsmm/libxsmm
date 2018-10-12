@@ -73,17 +73,35 @@ int v = 0;
 #if defined(LIBXSMM_DNN_POOLING_BWD_AVG)
 int kh = 0;
 int kw = 0;
-element_input_type recp_pool_size = 1.0f/((element_output_type)handle->desc.R*(element_output_type)handle->desc.S);
+#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
+float recp_pool_size = 1.0f/((float)handle->desc.R*(float)handle->desc.S);
+#else
+element_input_type recp_pool_size = 1.0f/((element_input_type)handle->desc.R*(element_input_type)handle->desc.S);
+#endif
 #endif
 
 /* multi-dim arrays declaration */
-element_output_type* lcl_buffer_ptr = ((element_input_type*)handle->scratch)+(ifh*ifw*nFmBlock*ltid);
+#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
+float *const lcl_buffer_ptr = (float*)handle->scratch + (size_t)ifh*ifw*nFmBlock*ltid;
+LIBXSMM_VLA_DECL(3,                    float, lcl_dinput, lcl_buffer_ptr,                                                    ifw, nFmBlock);
+#else
+element_output_type *const lcl_buffer_ptr = (element_input_type*)handle->scratch + (size_t)ifh*ifw*nFmBlock*ltid;
+LIBXSMM_VLA_DECL(3,       element_input_type, lcl_dinput, lcl_buffer_ptr,                                                    ifw, nFmBlock);
+#endif
 LIBXSMM_VLA_DECL(5,       element_input_type,     dinput, (element_input_type* )handle->grad_input->data,  nBlocksFm, ifhp, ifwp, nFmBlock);
 LIBXSMM_VLA_DECL(5, const element_output_type,   doutput, (element_output_type*)handle->grad_output->data, nBlocksFm, ofhp, ofwp, nFmBlock);
 #if defined(LIBXSMM_DNN_POOLING_BWD_MAX)
-LIBXSMM_VLA_DECL(5, const  element_mask_type,        mask, (element_mask_type*  )handle->mask->data,        nBlocksFm,  ofh,  ofw, nFmBlock);
+LIBXSMM_VLA_DECL(5, const element_mask_type,        mask, (element_mask_type*  )handle->mask->data,        nBlocksFm,  ofh,  ofw, nFmBlock);
 #endif
-LIBXSMM_VLA_DECL(3,       element_input_type, lcl_dinput, lcl_buffer_ptr,                                                    ifw, nFmBlock);
+
+#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
+union libxsmm_bfloat16_hp del_input_f32;
+union libxsmm_bfloat16_hp del_output_f32;
+del_input_f32.i[1]  = 0;
+del_input_f32.i[0]  = 0;
+del_output_f32.i[1] = 0;
+del_output_f32.i[0] = 0;
+#endif
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -93,9 +111,12 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   fm = imgfm % nBlocksFm;
 
   LIBXSMM_PRAGMA_SIMD
-  LIBXSMM_PRAGMA_VALIGNED
   for( v = 0; v < ifh*ifw*nFmBlock; v++ ) {
+#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
+    lcl_buffer_ptr[v] = (float)0;
+#else
     lcl_buffer_ptr[v] = (element_input_type)0;
+#endif
   }
 
 #if defined(LIBXSMM_DNN_POOLING_BWD_MAX)
@@ -104,10 +125,16 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
       const element_output_type* doutput_ptr = &LIBXSMM_VLA_ACCESS(5, doutput, img, fm,     ho,     wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
       const element_mask_type*      mask_ptr = &LIBXSMM_VLA_ACCESS(5, mask,    img, fm, ho-oph, wo-opw, 0, nBlocksFm,  ofh,  ofw, nFmBlock);
 
+#if !defined(LIBXSMM_DNN_POOLING_BWD_BF16)
       LIBXSMM_PRAGMA_SIMD
-      LIBXSMM_PRAGMA_VALIGNED
+#endif
       for( v = 0; v < nFmBlock; v++ ) {
+#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
+        del_output_f32.i[1] = doutput_ptr[v];
+        lcl_buffer_ptr[mask_ptr[v]] += del_output_f32.f;
+#else
         lcl_buffer_ptr[mask_ptr[v]] += doutput_ptr[v];
+#endif
       }
     }
   }
@@ -124,12 +151,22 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
             continue;
           } else {
             const element_output_type*   doutput_ptr = &LIBXSMM_VLA_ACCESS(5, doutput,    img, fm,    ho,    wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
+#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
+                  float*              lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,          hi+kh, wi+kw, 0,                   ifw, nFmBlock);
+#else
                   element_input_type* lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,          hi+kh, wi+kw, 0,                   ifw, nFmBlock);
+#endif
 
+#if !defined(LIBXSMM_DNN_POOLING_BWD_BF16)
             LIBXSMM_PRAGMA_SIMD
-            LIBXSMM_PRAGMA_VALIGNED
+#endif
             for( v = 0; v < nFmBlock; v++ ) {
+#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
+              del_output_f32.i[1] = doutput_ptr[v];
+              lcl_dinput_ptr[v] += (del_output_f32.f * recp_pool_size);
+#else
               lcl_dinput_ptr[v] += (doutput_ptr[v] * recp_pool_size);
+#endif
             }
           }
         }
@@ -142,13 +179,22 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   for( hi = iph; hi < (ifh+iph); hi++ ) {
     for( wi = ipw; wi < (ifw+ipw); wi++ ) {
       element_input_type*     dinput_ptr = &LIBXSMM_VLA_ACCESS(5, dinput,     img, fm,        hi,        wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
+#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
+      float*              lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,             hi-iph,    wi-ipw, 0,                   ifw, nFmBlock);
+#else
       element_input_type* lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,             hi-iph,    wi-ipw, 0,                   ifw, nFmBlock);
+#endif
 
+#if !defined(LIBXSMM_DNN_POOLING_BWD_BF16)
       LIBXSMM_PRAGMA_SIMD
-      LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_NONTEMPORAL
+#endif
       for( v = 0; v < nFmBlock; v++ ) {
+#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
+        del_input_f32.f = lcl_dinput_ptr[v];
+        dinput_ptr[v] = del_input_f32.i[1];
+#else
         dinput_ptr[v] = lcl_dinput_ptr[v];
+#endif
       }
     }
   }

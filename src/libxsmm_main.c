@@ -28,7 +28,6 @@
 ******************************************************************************/
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_gemm_diff.h"
 #include "libxsmm_trace.h"
 #include "libxsmm_trans.h"
 #include "libxsmm_gemm.h"
@@ -47,7 +46,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <math.h>
 #if !defined(NDEBUG)
 # include <errno.h>
 #endif
@@ -55,6 +53,7 @@
 # include <Windows.h>
 #else
 # include <sys/mman.h>
+# include <sys/stat.h>
 # include <unistd.h>
 # include <fcntl.h>
 #endif
@@ -64,6 +63,10 @@
 
 #if !defined(LIBXSMM_CAPACITY_CACHE)
 # define LIBXSMM_CAPACITY_CACHE 4
+#endif
+
+#if !defined(LIBXSMM_DENY_DEREG)
+# define LIBXSMM_DENY_DEREG
 #endif
 
 #if !defined(LIBXSMM_CODE_MAXSIZE)
@@ -390,7 +393,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descrip
 #endif
 
   if (0 != dst_entry->ptr_const) { /* collision? */
-    /* start at a re-hashed idx position */
+    /* start at a re-hashed index position */
     const unsigned int start = LIBXSMM_HASH_MOD(libxsmm_crc32_u32(151981/*seed*/, hash), LIBXSMM_CAPACITY_REGISTRY);
     unsigned int i0, i, next;
 #if defined(LIBXSMM_HASH_COLLISION)
@@ -421,6 +424,9 @@ LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descrip
 
 LIBXSMM_API_INLINE void internal_finalize(void)
 {
+  char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES")
+    ? getenv("LIBXSMM_DUMP_FILES")
+    : getenv("LIBXSMM_DUMP_FILE"));
   libxsmm_finalize();
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
@@ -428,13 +434,13 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       ? internal_get_target_arch(libxsmm_target_archid)
       : NULL/*hidden*/;
     const double regsize = 1.0 * internal_registry_nbytes / (1ULL << 20);
+    const int verbose = (1 < libxsmm_verbosity || 0 > libxsmm_verbosity);
     libxsmm_scratch_info scratch_info;
     unsigned int linebreak;
 
     /* synchronize I/O */
     LIBXSMM_STDIO_ACQUIRE();
-
-    if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
+    if (0 != verbose) {
       fprintf(stderr, "\nLIBXSMM_VERSION=%s-%s", LIBXSMM_BRANCH, LIBXSMM_VERSION);
     }
     linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
@@ -442,7 +448,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       fprintf(stderr, "\nLIBXSMM_TARGET=%s", target_arch);
     }
     fprintf(stderr, "\nRegistry: %.f MB", regsize);
-    if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
+    if (0 != verbose) {
       size_t ngemms = 0;
       int i; for (i = 0; i < 4; ++i) {
         ngemms += (size_t)internal_statistic[0/*DP*/][i].nsta + internal_statistic[1/*SP*/][i].nsta;
@@ -451,41 +457,77 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       fprintf(stderr, " (gemm=%lu mcopy=%u tcopy=%u)", (unsigned long int)ngemms,
         internal_statistic_num_mcopy, internal_statistic_num_tcopy);
     }
-    if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.size) {
-      fprintf(stderr, "\nScratch: %.f MB", 1.0 * scratch_info.size / (1ULL << 20));
-      if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
+    if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info)) {
+      const unsigned int scratch_internal = (unsigned int)(((512ULL << 10)/*rounding*/ + scratch_info.internal) / (1ULL << 20));
+      const unsigned int scratch_size = (unsigned int)(((512ULL << 10)/*rounding*/ + scratch_info.size) / (1ULL << 20));
+      if (0 != scratch_size || (0 != verbose && 0 != scratch_internal)) {
+        fprintf(stderr, "\nScratch: %u MB", scratch_size);
+        if (0 != verbose) {
 #if (0 != LIBXSMM_SYNC)
-        if (1 < libxsmm_threads_count) {
-          fprintf(stderr, " (mallocs=%lu, pools=%u, threads=%u)\n",
-            (unsigned long int)scratch_info.nmallocs,
-            scratch_info.npools, libxsmm_threads_count);
-        }
-        else
+          if (1 < libxsmm_threads_count) {
+            fprintf(stderr, " (mallocs=%lu, pools=%u, threads=%u, internal=%u MB)\n",
+              (unsigned long int)scratch_info.nmallocs, scratch_info.npools,
+              libxsmm_threads_count, scratch_internal);
+          }
+          else
 #endif
-        {
-          fprintf(stderr, " (mallocs=%lu, pools=%u)\n",
-            (unsigned long int)scratch_info.nmallocs,
-            scratch_info.npools);
+          {
+            fprintf(stderr, " (mallocs=%lu, pools=%u, internal=%u MB)\n",
+              (unsigned long int)scratch_info.nmallocs, scratch_info.npools,
+              scratch_internal);
+          }
         }
-      }
-      else {
-        fprintf(stderr, "\n");
+        else {
+          fprintf(stderr, "\n");
+        }
       }
     }
     else {
       fprintf(stderr, "\n");
     }
-
     /* synchronize I/O */
     LIBXSMM_STDIO_RELEASE();
   }
-
   /* release scratch memory pool */
   libxsmm_release_scratch();
   /* release global services */
-  libxsmm_gemm_diff_finalize();
   libxsmm_hash_finalize();
-
+  /* dump per-node info */
+  if (NULL != env_dump_files && 0 != *env_dump_files) {
+#if defined(_WIN32)
+    const HANDLE singleton = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
+    const char *const delims = ";,";
+    if (NULL != singleton) /* valid handle? */
+#else
+    const char *const delims = ";,:", *const filename_global = "/tmp/GlobalLIBXSMM";
+    const int singleton = open(filename_global, O_CREAT | O_EXCL, S_IRUSR);
+    if (0 <= singleton) /* valid descriptor? */
+#endif
+    {
+      const char *filename = strtok(env_dump_files, delims);
+      LIBXSMM_STDIO_ACQUIRE();
+      for (; NULL != filename; filename = strtok(NULL, delims)) {
+        FILE *const file = fopen(filename, "r"), *const ostream = stdout;
+        if (NULL != file) {
+          int c = fgetc(file);
+          fprintf(ostream, "\n\nLIBXSMM_DUMP_FILE: %s\n", filename);
+          while (EOF != c) {
+            fputc(c, ostream);
+            c = fgetc(file);
+          }
+          fputc('\n', ostream);
+          fclose(file);
+        }
+      }
+      LIBXSMM_STDIO_RELEASE();
+#if defined(_WIN32)
+      ReleaseMutex(singleton);
+#else
+      unlink(filename_global);
+      close(singleton);
+#endif
+    }
+  }
 #if (0 != LIBXSMM_SYNC)
   { /* release locks */
 # if (0 < INTERNAL_REGLOCK_MAXN)
@@ -517,6 +559,9 @@ LIBXSMM_API_INLINE void internal_init(void)
 #endif
   if (0 == internal_registry) { /* double-check after acquiring the lock(s) */
     assert(0 == internal_registry_keys); /* should never happen */
+#if !defined(_WIN32) && 0
+    umask(S_IRUSR | S_IWUSR); /* setup default/secure file mask */
+#endif
     libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
     libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
@@ -557,7 +602,11 @@ LIBXSMM_API_INLINE void internal_init(void)
       assert(1 <= libxsmm_scratch_scale);
     }
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
-    libxsmm_set_target_arch(getenv("LIBXSMM_TARGET")); /* set libxsmm_target_archid */
+#if defined(LIBXSMM_MAXTARGET)
+    libxsmm_set_target_arch(LIBXSMM_STRINGIFY(LIBXSMM_MAXTARGET));
+#else /* attempt to set libxsmm_target_archid per environment variable */
+    libxsmm_set_target_arch(getenv("LIBXSMM_TARGET"));
+#endif
     { const char *const env = getenv("LIBXSMM_SYNC");
       libxsmm_nosync = (0 == env || 0 == *env) ? 0/*default*/ : atoi(env);
     }
@@ -611,7 +660,6 @@ LIBXSMM_API_INLINE void internal_init(void)
       internal_registry_keys = (libxsmm_kernel_info*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_kernel_info));
       if (0 != new_registry && 0 != internal_registry_keys) {
         const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
-        libxsmm_gemm_diff_init(libxsmm_target_archid);
         libxsmm_trans_init(libxsmm_target_archid);
         libxsmm_hash_init(libxsmm_target_archid);
         libxsmm_dnn_init(libxsmm_target_archid);
@@ -698,8 +746,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     static int counter = 0, once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
 #endif
-      libxsmm_timer_tickint s1 = libxsmm_timer_tick_rtc(), t1 = libxsmm_timer_tick(); /* warm-up */
-      const libxsmm_timer_tickint s0 = libxsmm_timer_tick_rtc(), t0 = libxsmm_timer_tick();
 #if (0 != LIBXSMM_SYNC)
       const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
       LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_LOCK) attr_global;
@@ -734,9 +780,15 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGNLOCK, &attr);
 # endif
 #endif
-      s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick(); /* final timings */
-      if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && s0 != s1 && t0 != t1) {
-        libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / (t0 < t1 ? (t1 - t0) : (t0 - t1));
+      { /* calibrate timer */
+        libxsmm_timer_tickint s0, t0, s1, t1;
+        libxsmm_timer_tick_rtc(); libxsmm_timer_tick(); /* warm-up */
+        s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick(); /* start timing */
+        internal_init();
+        s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick(); /* final timing */
+        if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && s0 != s1 && t0 != t1) {
+          libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / (t0 < t1 ? (t1 - t0) : (t0 - t1));
+        }
       }
 #if (0 != LIBXSMM_SYNC)
       once = 1;
@@ -931,7 +983,8 @@ LIBXSMM_API const char* libxsmmf_get_target_arch(int* length)
 
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
-  int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
+  const int cpuid = libxsmm_cpuid();
+  int target_archid;
   if (0 != arch && 0 != *arch) {
     const int jit = atoi(arch);
     if (0 == strcmp("0", arch)) {
@@ -981,18 +1034,20 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (0 == strcmp("generic", arch) || 0 == strcmp("none", arch)) {
       target_archid = LIBXSMM_TARGET_ARCH_GENERIC;
     }
+    else {
+      target_archid = cpuid;
+    }
   }
-
-  if (LIBXSMM_TARGET_ARCH_UNKNOWN == target_archid || LIBXSMM_X86_AVX512_CPX < target_archid) {
-    target_archid = libxsmm_cpuid();
+  else {
+    target_archid = cpuid;
   }
-  else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-    const int cpuid = libxsmm_cpuid();
-    if (cpuid < target_archid) {
+  if (cpuid < target_archid) { /* limit code path to what was identified per CPUID */
+    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
       const char *const target_arch = internal_get_target_arch(target_archid);
-      fprintf(stderr, "LIBXSMM WARNING: \"%s\" code will fail to run on \"%s\"!\n",
+      fprintf(stderr, "LIBXSMM WARNING: \"%s\" code would fail to run on \"%s\"!\n",
         target_arch, internal_get_target_arch(cpuid));
     }
+    target_archid = cpuid;
   }
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 }
@@ -1582,7 +1637,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
   unsigned int cache_index;
   assert(0 != descriptor);
   /* search small cache starting with the last hit on record */
-  cache_index = libxsmm_gemm_diffn(descriptor, &cache.keys, cache.hit, LIBXSMM_CAPACITY_CACHE, LIBXSMM_DESCRIPTOR_MAXSIZE);
+  cache_index = libxsmm_diff_npot(descriptor, &cache.keys, LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, LIBXSMM_CAPACITY_CACHE);
   if ((LIBXSMM_CAPACITY_CACHE) > cache_index && cache.id == internal_teardown) { /* cache hit, and valid */
     flux_entry = cache.code[cache_index];
     cache.hit = cache_index;
@@ -1618,7 +1673,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
       LIBXSMM_LOCK_RELREAD(LIBXSMM_REG1LOCK, &internal_reglock);
 #endif
       if ((0 != flux_entry.ptr_const || 1 == mode) && 2 > mode) { /* check existing entry further */
-        diff = 0 != flux_entry.ptr_const ? libxsmm_gemm_diff(descriptor, &internal_registry_keys[i].xgemm) : 1;
+        diff = (NULL != flux_entry.ptr_const ? libxsmm_diff(descriptor, &internal_registry_keys[i].xgemm, LIBXSMM_DESCRIPTOR_MAXSIZE) : 1);
         if (0 != diff) { /* search for code version */
           if (0 == mode) { /* transition to higher mode */
             i0 = i; /* keep current position on record */
@@ -1710,9 +1765,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
           flux_entry.pmm = 0;
           diff = 0;
         }
-      }
-      if (LIBXSMM_KERNEL_KIND_MATMUL == descriptor->iflags) {
-        internal_update_mmstatistic(descriptor, 1/*try*/, 0);
+        if (((int)LIBXSMM_KERNEL_KIND_MATMUL) == descriptor->iflags) {
+          internal_update_mmstatistic(descriptor, 1/*try*/, 0);
+        }
       }
     }
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
@@ -2272,24 +2327,37 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
 }
 
 
-LIBXSMM_API void libxsmm_release_kernel(const void* jit_code)
+LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel)
 {
-  void* extra = 0;
-  LIBXSMM_INIT
-  if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(jit_code, NULL/*size*/, NULL/*flags*/, &extra) && 0 != extra) {
-    const unsigned int regindex = *((const unsigned int*)extra);
-    if ((LIBXSMM_CAPACITY_REGISTRY) <= regindex) {
-      libxsmm_xfree(jit_code);
-    }
-#if !defined(NDEBUG)
-    else { /* TODO: implement to unregister GEMM kernels */
-      fprintf(stderr, "LIBXSMM WARNING: attempt to unregister a JIT-kernel!\n");
-    }
-#endif
-  }
-  else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+  if (NULL != jit_kernel) {
     static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    void* extra = 0;
+    LIBXSMM_INIT
+    if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(jit_kernel, NULL/*size*/, NULL/*flags*/, &extra) && NULL != extra) {
+      const unsigned int regindex = *((const unsigned int*)extra);
+      if ((LIBXSMM_CAPACITY_REGISTRY) <= regindex) {
+        libxsmm_xfree(jit_kernel);
+      }
+      else
+#if defined(LIBXSMM_DENY_DEREG)
+      if (0 != libxsmm_verbosity /* library code is expected to be mute */
+       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM WARNING: attempt to unregister a JIT-kernel!\n");
+      }
+#else
+      { /* unregister kernel */
+        internal_registry[regindex].pmm = NULL;
+# if !defined(NDEBUG)
+        memset(internal_registry_keys + regindex, 0, sizeof(libxsmm_kernel_info));
+# endif
+        libxsmm_xfree(jit_kernel);
+      }
+#endif
+    }
+    else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
       fprintf(stderr, "LIBXSMM ERROR: failed to release kernel!\n");
     }
   }
@@ -2311,6 +2379,29 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_finalize)(void);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_finalize)(void)
 {
   libxsmm_finalize();
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_release_kernel)(const void** jit_kernel);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_release_kernel)(const void** jit_kernel)
+{
+#if !defined(NDEBUG)
+  if (NULL != jit_kernel)
+#endif
+  {
+    libxsmm_release_kernel(*jit_kernel);
+  }
+#if !defined(NDEBUG)
+  else {
+    static int error_once = 0;
+    if (0 != libxsmm_verbosity /* library code is expected to be mute */
+     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: invalid argument passed into libxsmm_release_kernel!\n");
+    }
+  }
+#endif
 }
 
 
@@ -2392,9 +2483,9 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch)(intptr_t* fn,
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c);
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c)
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c)
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
@@ -2402,10 +2493,10 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
 #endif
   {
 #if !defined(NDEBUG)
-    if (0 != fn->xgemm.xmm)
+    if (0 != fn->xmm)
 #endif
     {
-      fn->xgemm.xmm(a, b, c);
+      fn->xmm(a, b, c);
     }
 #if !defined(NDEBUG)
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -2427,10 +2518,10 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_abc)(
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc)
 {
 #if !defined(NDEBUG)
@@ -2439,10 +2530,10 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
 #endif
   {
 #if !defined(NDEBUG)
-    if (0 != fn->xgemm.xmm)
+    if (0 != fn->xmm)
 #endif
     {
-      fn->xgemm.xmm(a, b, c, pa, pb, pc);
+      fn->xmm(a, b, c, pa, pb, pc);
     }
 #if !defined(NDEBUG)
     else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -2464,10 +2555,10 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
-  const libxsmm_code_pointer* fn, const void* a, const void* b, void* c,
+  const libxsmm_xmmfunction* fn, const void* a, const void* b, void* c,
   const void* pa, const void* pb, const void* pc)
 {
   LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(fn, a, b, c, pa, pb, pc);

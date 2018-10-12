@@ -174,6 +174,14 @@
             INTEGER(C_INTPTR_T) :: handle
         END TYPE
 
+        ! Deallocates JIT'ted code, or unregisters/releases code from registry.
+        INTERFACE libxsmm_release_mmkernel
+          MODULE PROCEDURE libxsmm_release_dmmkernel
+          MODULE PROCEDURE libxsmm_release_smmkernel
+          MODULE PROCEDURE libxsmm_release_wimmkernel
+          MODULE PROCEDURE libxsmm_release_wsmmkernel
+        END INTERFACE
+
         ! Construct JIT-code depending on given argument set.
         INTERFACE libxsmm_mmdispatch
           MODULE PROCEDURE libxsmm_dmmdispatch, libxsmm_smmdispatch
@@ -230,6 +238,7 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_arch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_verbosity
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_verbosity
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_kernel
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch2
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_abc
@@ -338,6 +347,16 @@
             REAL(C_DOUBLE) :: libxsmm_timer_duration
           END FUNCTION
 
+          ! Deallocates the JIT'ted code, or unregisters
+          ! and releases code from the registry.
+          ! Implicit FORTRAN 77 interface:
+          ! INTEGER(8) :: kernel
+          SUBROUTINE libxsmm_release_kernel(kernel)                     &
+     &    BIND(C, NAME="libxsmm_release_kernel_")
+            IMPORT :: C_INTPTR_T
+            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
+          END SUBROUTINE
+
           ! Type-generic (unsafe) code dispatch (trylock: impure routine).
           ! Implicit FORTRAN 77 interface:
           ! INTEGER(4)   :: prec, flags, prefetch
@@ -346,7 +365,7 @@
           ! INTEGER(8)   :: kernel
           SUBROUTINE libxsmm_xmmdispatch(kernel, prec,                  &
      &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
-     &    BIND(C, NAME="libxsmm_xmmdispatch_") ! FORTRAN 77 layer
+     &    BIND(C, NAME="libxsmm_xmmdispatch_")
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INTPTR_T), INTENT(OUT) :: kernel
             INTEGER(C_INT), INTENT(IN) :: prec
@@ -364,7 +383,7 @@
           ! INTEGER(8)   :: kernel
           SUBROUTINE libxsmm_xmmdispatch2(kernel, iprec, oprec,         &
      &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
-     &    BIND(C, NAME="libxsmm_xmmdispatch2_") ! FORTRAN 77 layer
+     &    BIND(C, NAME="libxsmm_xmmdispatch2_")
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(C_INTPTR_T), INTENT(OUT) :: kernel
             INTEGER(C_INT), INTENT(IN) :: iprec, oprec
@@ -378,8 +397,8 @@
           ! Implicit FORTRAN 77 interface:
           ! REAL(4|8)  :: a(1), b(1), c(1)
           ! INTEGER(8) :: kernel
-          PURE SUBROUTINE libxsmm_xmmcall_abc(kernel, a, b, c)            &
-     &    BIND(C, NAME="libxsmm_xmmcall_abc_") ! FORTRAN 77 layer
+          PURE SUBROUTINE libxsmm_xmmcall_abc(kernel, a, b, c)          &
+     &    BIND(C, NAME="libxsmm_xmmcall_abc_")
             IMPORT :: C_INTPTR_T, C_PTR
             INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
@@ -389,8 +408,8 @@
           ! Implicit FORTRAN 77 interface:
           ! REAL(4|8)  :: a(1), b(1), c(1), pa(1), pb(1), pc(1)
           ! INTEGER(8) :: kernel
-          PURE SUBROUTINE libxsmm_xmmcall_prf(kernel, a,b,c, pa,pb,pc)  &
-     &    BIND(C, NAME="libxsmm_xmmcall_prf_") ! FORTRAN 77 layer
+          PURE SUBROUTINE libxsmm_xmmcall_prf(kernel,                   &
+     &    a,b,c, pa,pb,pc)  BIND(C, NAME="libxsmm_xmmcall_prf_")
             IMPORT :: C_INTPTR_T, C_PTR
             INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
@@ -401,8 +420,8 @@
           ! INTEGER(4|8) :: m, n, ldi, ldo
           ! ANY ARRAY    :: output, input
           ! INTEGER(4)   :: typesize
-          PURE SUBROUTINE libxsmm_otrans_omp(output, input, typesize,   &
-     &    m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_omp_") ! FORTRAN 77 layer
+          PURE SUBROUTINE libxsmm_otrans_omp(output, input,             &
+     &    typesize, m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_omp_")
             IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ldi, ldo
             TYPE(C_PTR), INTENT(IN), VALUE :: output, input
@@ -413,7 +432,7 @@
           ! Implicit FORTRAN 77 interface: similar to DGEMM.
           PURE SUBROUTINE libxsmm_dgemm_omp(transa, transb, m, n, k,    &
      &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
-     &    BIND(C, NAME="libxsmm_dgemm_omp_") ! FORTRAN 77 layer
+     &    BIND(C, NAME="libxsmm_dgemm_omp_")
             IMPORT C_DOUBLE, C_CHAR, LIBXSMM_BLASINT_KIND
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -427,7 +446,7 @@
           ! Implicit FORTRAN 77 interface: similar to SGEMM.
           PURE SUBROUTINE libxsmm_sgemm_omp(transa, transb, m, n, k,    &
      &    alpha, a, lda, b, ldb, beta, c, ldc)                          &
-     &    BIND(C, NAME="libxsmm_sgemm_omp_") ! FORTRAN 77 layer
+     &    BIND(C, NAME="libxsmm_sgemm_omp_")
             IMPORT C_FLOAT, C_CHAR, LIBXSMM_BLASINT_KIND
             CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -449,7 +468,7 @@
           PURE SUBROUTINE libxsmm_gemm_batch(prec, transa, transb,      &
      &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, index_base,     &
      &    index_stride, stride_a, stride_b, stride_c, batchsize)        &
-     &    BIND(C, NAME="libxsmm_gemm_batch_") ! FORTRAN 77 layer
+     &    BIND(C, NAME="libxsmm_gemm_batch_")
             IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
@@ -477,7 +496,7 @@
           PURE SUBROUTINE libxsmm_gemm_batch_omp(prec, transa, transb,  &
      &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, index_base,     &
      &    index_stride, stride_a, stride_b, stride_c, batchsize)        &
-     &    BIND(C, NAME="libxsmm_gemm_batch_omp_") ! FORTRAN 77 layer
+     &    BIND(C, NAME="libxsmm_gemm_batch_omp_")
             IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
@@ -502,7 +521,7 @@
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
           PURE SUBROUTINE libxsmm_mmbatch(kernel, index_base,           &
      &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
-     &    batchsize, tid, nthreads) BIND(C, NAME="libxsmm_mmbatch_") ! FORTRAN 77 layer
+     &    batchsize, tid, nthreads) BIND(C, NAME="libxsmm_mmbatch_")
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             ! Determines index-base (1 for one-based indexes);
             ! uses the same unit as the strides.
@@ -545,7 +564,7 @@
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
           PURE SUBROUTINE libxsmm_mmbatch_omp(kernel, index_base,       &
      &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
-     &    batchsize) BIND(C, NAME="libxsmm_mmbatch_omp_") ! FORTRAN 77 layer
+     &    batchsize) BIND(C, NAME="libxsmm_mmbatch_omp_")
             IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
@@ -640,6 +659,30 @@
           wrealptr = C_LOC(fptr)
         END FUNCTION
 
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_dmmkernel
+        SUBROUTINE libxsmm_release_dmmkernel(kernel)
+          TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
+          CALL libxsmm_release_kernel(kernel%handle)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_smmkernel
+        SUBROUTINE libxsmm_release_smmkernel(kernel)
+          TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
+          CALL libxsmm_release_kernel(kernel%handle)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_wimmkernel
+        SUBROUTINE libxsmm_release_wimmkernel(kernel)
+          TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
+          CALL libxsmm_release_kernel(kernel%handle)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_wsmmkernel
+        SUBROUTINE libxsmm_release_wsmmkernel(kernel)
+          TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
+          CALL libxsmm_release_kernel(kernel%handle)
+        END SUBROUTINE
+
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmdispatch
         SUBROUTINE libxsmm_dmmdispatch(kernel,                          &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
@@ -705,25 +748,25 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmavailable
-        LOGICAL PURE FUNCTION libxsmm_dmmavailable(kernel)
+        LOGICAL ELEMENTAL FUNCTION libxsmm_dmmavailable(kernel)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_dmmavailable = 0.NE.kernel%handle
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmavailable
-        LOGICAL PURE FUNCTION libxsmm_smmavailable(kernel)
+        LOGICAL ELEMENTAL FUNCTION libxsmm_smmavailable(kernel)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_smmavailable = 0.NE.kernel%handle
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmavailable
-        LOGICAL PURE FUNCTION libxsmm_wimmavailable(kernel)
+        LOGICAL ELEMENTAL FUNCTION libxsmm_wimmavailable(kernel)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_wimmavailable = 0.NE.kernel%handle
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsmmavailable
-        LOGICAL PURE FUNCTION libxsmm_wsmmavailable(kernel)
+        LOGICAL ELEMENTAL FUNCTION libxsmm_wsmmavailable(kernel)
           TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_wsmmavailable = 0.NE.kernel%handle
         END FUNCTION
@@ -1031,7 +1074,8 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmatmul
-        SUBROUTINE libxsmm_dmatmul(c, a, b, alpha, beta, transa, transb)
+        SUBROUTINE libxsmm_dmatmul(c, a, b,                             &
+     &  alpha, beta, transa, transb)
           REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
           REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
@@ -1091,7 +1135,8 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smatmul
-        SUBROUTINE libxsmm_smatmul(c, a, b, alpha, beta, transa, transb)
+        SUBROUTINE libxsmm_smatmul(c, a, b,                             &
+     &  alpha, beta, transa, transb)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
           REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
@@ -1152,78 +1197,91 @@
 
         ! Matrix-copy (2-dimensional copy) routine. If the input (optional)
         ! is not present, the routine is used to zero-fill the out-matrix.
+        ! Implicit FORTRAN 77 interface:
+        ! ARRAY        :: input, output
+        ! INTEGER(4|8) :: m, n, ldi, ldo
+        ! INTEGER(4)   :: typesize, prefetch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matcopy
-        SUBROUTINE libxsmm_matcopy(output, input, typesize,             &
+        PURE SUBROUTINE libxsmm_matcopy(output, input, typesize,        &
      &  m, n, ldi, ldo, prefetch)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
-     &                                OPTIONAL, TARGET :: n, ldi, ldo
-          INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: prefetch
+     &                                OPTIONAL :: n, ldi, ldo
+          INTEGER(C_INT), INTENT(IN), OPTIONAL :: prefetch
           INTEGER(C_INT), INTENT(IN) :: typesize
           TYPE(C_PTR), INTENT(IN), OPTIONAL :: input
           TYPE(C_PTR), INTENT(IN) :: output
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_matcopy
           INTERFACE
             PURE SUBROUTINE internal_matcopy(output, input, typesize,   &
-     &      m, n, ldi, ldo, prefetch) BIND(C, NAME="libxsmm_matcopy_") ! FORTRAN 77 layer
+     &      m, n, ldi, ldo, prefetch) BIND(C, NAME="libxsmm_matcopy_")
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-              TYPE(C_PTR), INTENT(IN), VALUE :: n, ldi, ldo
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldi, ldo
               TYPE(C_PTR), INTENT(IN), VALUE :: output, input
-              TYPE(C_PTR), INTENT(IN), VALUE :: prefetch
-              INTEGER(C_INT), INTENT(IN) :: typesize
+              INTEGER(C_INT), INTENT(IN) :: typesize, prefetch
             END SUBROUTINE
           END INTERFACE
           CALL internal_matcopy(output, input, typesize,                &
-     &      m, C_LOC(n), C_LOC(ldi), C_LOC(ldo), C_LOC(prefetch))
+     &      m, n, ldi, ldo, prefetch)
         END SUBROUTINE
 
         ! Transpose a matrix (out-of-place form).
+        ! Implicit FORTRAN 77 interface:
+        ! ARRAY        :: input, output
+        ! INTEGER(4|8) :: m, n, ldi, ldo
+        ! INTEGER(4)   :: typesize
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans
-        SUBROUTINE libxsmm_otrans(output, input, typesize,              &
+        PURE SUBROUTINE libxsmm_otrans(output, input, typesize,         &
      &  m, n, ldi, ldo)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
-     &                                   OPTIONAL, TARGET :: n, ldi, ldo
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldi
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldo
           TYPE(C_PTR), INTENT(IN) :: output, input
           INTEGER(C_INT), INTENT(IN) :: typesize
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_otrans
           INTERFACE
             PURE SUBROUTINE internal_otrans(output, input, typesize,    &
-     &      m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_") ! FORTRAN 77 layer
+     &      m, n, ldi, ldo) BIND(C, NAME="libxsmm_otrans_")
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-              TYPE(C_PTR), INTENT(IN), VALUE :: n, ldi, ldo
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldi, ldo
               TYPE(C_PTR), INTENT(IN), VALUE :: output, input
               INTEGER(C_INT), INTENT(IN) :: typesize
             END SUBROUTINE
           END INTERFACE
-          CALL internal_otrans(output, input, typesize,                 &
-     &      m, C_LOC(n), C_LOC(ldi), C_LOC(ldo))
+          CALL internal_otrans(output, input, typesize, m, n, ldi, ldo)
         END SUBROUTINE
 
         ! Transpose a matrix (in-place form).
+        ! Implicit FORTRAN 77 interface:
+        ! ARRAY        :: matrix
+        ! INTEGER(4|8) :: m, n, ld
+        ! INTEGER(4)   :: typesize
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_itrans
-        SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)
+        PURE SUBROUTINE libxsmm_itrans(matrix, typesize, m, n, ld)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
-     &                                   OPTIONAL, TARGET :: n, ld
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: n, ld
           TYPE(C_PTR), INTENT(IN) :: matrix
           INTEGER(C_INT), INTENT(IN) :: typesize
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_itrans
           INTERFACE
             PURE SUBROUTINE internal_itrans(matrix, typesize, m, n, ld) &
-     &      BIND(C, NAME="libxsmm_itrans_") ! FORTRAN 77 layer
+     &      BIND(C, NAME="libxsmm_itrans_")
               IMPORT LIBXSMM_BLASINT_KIND, C_PTR, C_INT
-              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
-              TYPE(C_PTR), INTENT(IN), VALUE :: n, ld, matrix
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, ld
+              TYPE(C_PTR), INTENT(IN), VALUE :: matrix
               INTEGER(C_INT), INTENT(IN) :: typesize
             END SUBROUTINE
           END INTERFACE
-          CALL internal_itrans(matrix, typesize, m, C_LOC(n), C_LOC(ld))
+          CALL internal_itrans(matrix, typesize, m, n, ld)
         END SUBROUTINE
 
         ! Calculate a hash value for a given key value (array).
+        ! Implicit FORTRAN 77 interface:
+        ! INTEGER(4) :: key, keysize, seed
+        ! INTEGER(4) :: hash (OUT)
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash
         PURE FUNCTION libxsmm_hash(key, seed)
           INTEGER(C_INT), DIMENSION(:), INTENT(IN) :: key
@@ -1232,7 +1290,7 @@
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
           INTERFACE
             PURE SUBROUTINE internal_hash(hash, key, keysize, seed)     &
-     &      BIND(C, NAME="libxsmm_hash_") ! FORTRAN 77 layer
+     &      BIND(C, NAME="libxsmm_hash_")
               IMPORT C_INT
               INTEGER(C_INT), INTENT(IN)  :: key
               INTEGER(C_INT), INTENT(IN)  :: keysize

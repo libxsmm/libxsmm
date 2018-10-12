@@ -181,14 +181,14 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
       libxsmm_xmcopyfunction kernel = NULL;
       if (m < (libxsmm_blasint)tm || n < (libxsmm_blasint)tn) {
         if (1 < nthreads) {
-          const unsigned int tasksize = (((unsigned int)m) * n) / ((unsigned int)(nthreads * libxsmm_trans_tile_stretch));
+          const unsigned int tasksize = (((unsigned int)m) * (unsigned int)n) / ((unsigned int)(nthreads * libxsmm_trans_tile_stretch));
           const unsigned int nn = libxsmm_isqrt_u32(tasksize);
           const unsigned int mm = (unsigned int)(libxsmm_trans_tile_stretch * nn);
           tn = LIBXSMM_CLMP((unsigned int)n, 1, nn);
           tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
         }
         else {
-          tm = m; tn = n;
+          tm = (unsigned int)m; tn = (unsigned int)n;
         }
       }
       else {
@@ -309,7 +309,7 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
           const libxsmm_trans_descriptor* desc;
           libxsmm_descriptor_blob blob;
           if (1 < nthreads) {
-            const unsigned int tasksize = (((unsigned int)m) * n) / ((unsigned int)(nthreads * libxsmm_trans_tile_stretch));
+            const unsigned int tasksize = (((unsigned int)m) * (unsigned int)n) / ((unsigned int)(nthreads * libxsmm_trans_tile_stretch));
             const unsigned int nn = libxsmm_isqrt_u32(tasksize);
             const unsigned int mm = (unsigned int)(libxsmm_trans_tile_stretch * nn);
             tn = LIBXSMM_CLMP((unsigned int)n, 1, nn);
@@ -328,7 +328,7 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
               LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
               return; /* fast path */
             }
-            tm = m; tn = n;
+            tm = (unsigned int)m; tn = (unsigned int)n;
           }
         }
         libxsmm_otrans_thread_internal(out, in, typesize,

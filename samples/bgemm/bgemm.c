@@ -102,12 +102,12 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    ITYPE* agold = (ITYPE*)libxsmm_malloc((size_t)(lda * k * sizeof(ITYPE)));
-    ITYPE* bgold = (ITYPE*)libxsmm_malloc((size_t)(ldb * n * sizeof(ITYPE)));
-    ITYPE* cgold = (ITYPE*)libxsmm_malloc((size_t)(ldc * n * sizeof(ITYPE)));
-    ITYPE* a = (ITYPE*)libxsmm_malloc((size_t)(m * k * sizeof(ITYPE)));
-    ITYPE* b = (ITYPE*)libxsmm_malloc((size_t)(k * n * sizeof(ITYPE)));
-    ITYPE* c = (ITYPE*)libxsmm_malloc((size_t)(m * n * sizeof(ITYPE)));
+    ITYPE* agold = (ITYPE*)libxsmm_malloc((size_t)lda * k * sizeof(ITYPE));
+    ITYPE* bgold = (ITYPE*)libxsmm_malloc((size_t)ldb * n * sizeof(ITYPE));
+    ITYPE* cgold = (ITYPE*)libxsmm_malloc((size_t)ldc * n * sizeof(ITYPE));
+    ITYPE* a = (ITYPE*)libxsmm_malloc((size_t)m * k * sizeof(ITYPE));
+    ITYPE* b = (ITYPE*)libxsmm_malloc((size_t)k * n * sizeof(ITYPE));
+    ITYPE* c = (ITYPE*)libxsmm_malloc((size_t)m * n * sizeof(ITYPE));
     libxsmm_bgemm_handle* handle = 0;
     unsigned long long start;
     double duration;
@@ -173,7 +173,7 @@ int main(int argc, char* argv[])
         libxsmm_free(a); a = 0;
         libxsmm_free(b); b = 0;
         /* allocate C-matrix in regular format, and perform copy-out */
-        ctest = (ITYPE*)libxsmm_malloc((size_t)(ldc * n * sizeof(ITYPE)));
+        ctest = (ITYPE*)libxsmm_malloc((size_t)ldc * n * sizeof(ITYPE));
         if (0 != ctest) {
           libxsmm_matdiff_info diff;
           libxsmm_bgemm_copyout_c(handle, c, &ldc, ctest);

@@ -95,8 +95,25 @@ LIBXSMM_VLA_DECL(2,       element_stats_type,  dgamma,     (element_stats_type*)
 LIBXSMM_VLA_DECL(2,       element_stats_type,  dbeta,      (element_stats_type*)handle->grad_beta->data,  nFmBlock);
 LIBXSMM_VLA_DECL(2, const element_stats_type,  bmean,      (element_stats_type*)handle->expvalue->data,   nFmBlock);
 LIBXSMM_VLA_DECL(2, const element_stats_type,  brstd,      (element_stats_type*)handle->stddev->data,     nFmBlock);
-LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                                           nImg, nFmBlock);
-LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * nBlocksFm * nFmBlock),  nImg, nFmBlock);
+LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                                                          nImg, nFmBlock);
+LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)nFmBlock), nImg, nFmBlock);
+
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
+union libxsmm_bfloat16_hp input_f32;
+union libxsmm_bfloat16_hp del_input_f32;
+union libxsmm_bfloat16_hp del_output_f32;
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
+union libxsmm_bfloat16_hp output_f32;
+output_f32.i[1] = 0;
+output_f32.i[0] = 0;
+#endif
+input_f32.i[1]  = 0;
+input_f32.i[0]  = 0;
+del_output_f32.i[1] = 0;
+del_output_f32.i[0] = 0;
+del_input_f32.i[1] = 0;
+del_input_f32.i[0] = 0;
+#endif
 
 assert( nFmBlock <= 64 );
 
@@ -117,7 +134,6 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       lcl_gamma_ptr[v] = 0.0f;
       lcl_beta_ptr[v] = 0.0f;
@@ -136,23 +152,39 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
         const element_stats_type*  bmean_ptr         = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
         const element_stats_type*  brstd_ptr         = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
 
+#if !defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
         LIBXSMM_PRAGMA_SIMD
-        LIBXSMM_PRAGMA_VALIGNED
+#endif
         for ( v=0; v < nFmBlock; v++ ) {
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
+          del_output_f32.i[1] = del_output_ptr[v];
+          del_output_f32.i[0] = 0;
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-          del_output_ptr[v] = (LIBXSMM_FEQ(output_ptr[v], 0) ? 0 : del_output_ptr[v]);
+          output_f32.i[1] = output_ptr[v];
+          del_output_f32.f = LIBXSMM_FEQ(output_f32.f, 0) ? 0 : del_output_f32.f;
+          del_output_ptr[v] = del_output_f32.i[1];
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
+          del_input_add_ptr[v] = del_output_ptr[v];
+#endif
+          input_f32.i[1] = input_ptr[v];
+          lcl_gamma_ptr[v] += (input_f32.f - bmean_ptr[v]) * del_output_f32.f * brstd_ptr[v];
+          lcl_beta_ptr[v]  += del_output_f32.f;
+#else
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
+          del_output_ptr[v] = LIBXSMM_FEQ(output_ptr[v], 0) ? 0 : del_output_ptr[v];
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
           del_input_add_ptr[v] = del_output_ptr[v];
 #endif
           lcl_gamma_ptr[v] += (input_ptr[v] - bmean_ptr[v]) * del_output_ptr[v] * brstd_ptr[v];
           lcl_beta_ptr[v]  += del_output_ptr[v];
+#endif
         }
       }
     }
 
     LIBXSMM_PRAGMA_SIMD
-    LIBXSMM_PRAGMA_VALIGNED
     for ( v=0; v < nFmBlock; v++ ) {
       del_gamma_img_ptr[v] = lcl_gamma_ptr[v];
       del_beta_img_ptr[v]  = lcl_beta_ptr[v];
@@ -163,14 +195,20 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 
   /* now we need to reduce the del_gamm and del_beta */
   for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+    element_stats_type* del_gamma_ptr = &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 0, nFmBlock);
+    element_stats_type* del_beta_ptr  = &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 0, nFmBlock);
+
+    LIBXSMM_PRAGMA_SIMD
+    for ( v=0; v < nFmBlock; v++ ) {
+      del_gamma_ptr[v] = (element_stats_type)0;
+      del_beta_ptr[v]  = (element_stats_type)0;
+    }
+
     for ( img=0; img < nImg; img++ ) {
-      element_stats_type* del_gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 0, nFmBlock);
-      element_stats_type* del_beta_ptr      = &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 0, nFmBlock);
       element_stats_type* del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
       element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
 
       LIBXSMM_PRAGMA_SIMD
-      LIBXSMM_PRAGMA_VALIGNED
       for ( v=0; v < nFmBlock; v++ ) {
         del_gamma_ptr[v] += del_gamma_img_ptr[v];
         del_beta_ptr[v]  += del_beta_img_ptr[v];
@@ -196,12 +234,20 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
       const element_stats_type*  del_gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, dgamma,    fm, 0, nFmBlock);
       const element_stats_type*  del_beta_ptr      = &LIBXSMM_VLA_ACCESS(2, dbeta,     fm, 0, nFmBlock);
 
+#if !defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
       LIBXSMM_PRAGMA_SIMD
-      LIBXSMM_PRAGMA_VALIGNED
-      LIBXSMM_PRAGMA_NONTEMPORAL
+#endif
       for ( v=0; v < nFmBlock; v++ ) {
-         del_input_ptr[v] = gamma_ptr[v] * brstd_ptr[v] * recp_nhw * (nhw*del_output_ptr[v] -
-                  (del_beta_ptr[v] + (input_ptr[v] - bmean_ptr[v]) * del_gamma_ptr[v] * brstd_ptr[v]));
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
+        del_output_f32.i[1] = del_output_ptr[v];
+        input_f32.i[1] = input_ptr[v];
+        del_input_f32.f = gamma_ptr[v] * brstd_ptr[v] * recp_nhw * (nhw*del_output_f32.f -
+                 (del_beta_ptr[v] + (input_f32.f - bmean_ptr[v]) * del_gamma_ptr[v] * brstd_ptr[v]));
+        del_input_ptr[v] = del_input_f32.i[1];
+#else
+        del_input_ptr[v] = gamma_ptr[v] * brstd_ptr[v] * recp_nhw * (nhw*del_output_ptr[v] -
+                 (del_beta_ptr[v] + (input_ptr[v] - bmean_ptr[v]) * del_gamma_ptr[v] * brstd_ptr[v]));
+#endif
       }
     }
   }

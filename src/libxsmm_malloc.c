@@ -325,7 +325,7 @@ LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
   if (NULL == libxsmm_default_malloc_fn.function || NULL == libxsmm_default_free_fn.function) {
     const libxsmm_malloc_function null_malloc_fn = { NULL };
     const libxsmm_free_function null_free_fn = { NULL };
-    libxsmm_xset_default_allocator(lock, NULL/*context*/, null_malloc_fn, null_free_fn);
+    libxsmm_xset_default_allocator(NULL/*already locked*/, NULL/*context*/, null_malloc_fn, null_free_fn);
   }
   if (NULL == malloc_fn.function && NULL == free_fn.function) { /* adopt default allocator */
     libxsmm_scratch_allocator_context = libxsmm_default_allocator_context;
@@ -499,9 +499,12 @@ LIBXSMM_API_INLINE void* internal_xmap(const char* dir, size_t size, int flags, 
 {
   void* result = MAP_FAILED;
   char filename[4096];
-  int i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/.libxsmm_XXXXXX.jit", dir);
+  int i = 0;
   assert(NULL != rx);
-  if (0 <= i && i < (int)sizeof(filename)) {
+  if (NULL != dir) {
+    i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/.libxsmm_XXXXXX.jit", dir);
+  }
+  if (0 < i && i < (int)sizeof(filename)) {
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(2, 19) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__)
     i = mkstemps(filename, 4/*.jit*/);
 #else
@@ -1099,7 +1102,7 @@ LIBXSMM_API_INLINE const void* internal_malloc_site(const char* site)
   if (NULL != site) {
 #if !defined(LIBXSMM_STRING_POOLING)
     if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != site) {
-      const uintptr_t hash = libxsmm_hash(site, strlen(site), LIBXSMM_MALLOC_SEED);
+      const uintptr_t hash = libxsmm_crc32(site, strlen(site), LIBXSMM_MALLOC_SEED);
       result = (const void*)((LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE) != hash ? hash : (hash - 1));
       assert((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != result);
     }
@@ -1429,6 +1432,7 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
     unsigned int i;
     assert(sizeof(internal_malloc_pool_type) <= (LIBXSMM_CACHELINE));
     memset(info, 0, sizeof(libxsmm_scratch_info));
+    info->internal = ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pools[0].instance.site ? 0 : pools[0].instance.minsize);
     info->npending = pools[0].instance.counter;
     info->nmallocs = internal_malloc_scratch_nmallocs;
     info->npools = LIBXSMM_MIN(1, libxsmm_scratch_pools);
@@ -1440,6 +1444,9 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
       if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pool->instance.site) {
         info->npools += (unsigned int)LIBXSMM_MIN(pool->instance.minsize, 1);
         info->npending += pool->instance.counter;
+      }
+      else {
+        info->internal += pool->instance.minsize;
       }
     }
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
@@ -1466,36 +1473,4 @@ LIBXSMM_API size_t libxsmm_get_scratch_limit(void)
   LIBXSMM_INIT
   return libxsmm_scratch_limit;
 }
-
-
-LIBXSMM_API unsigned int libxsmm_hash(const void* data, size_t size, unsigned int seed)
-{
-  LIBXSMM_INIT
-  return libxsmm_crc32(data, size, seed);
-}
-
-
-#if defined(LIBXSMM_BUILD)
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* /*data*/, const int* /*size*/, const int* /*seed*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* data, const int* size, const int* seed)
-{
-#if !defined(NDEBUG)
-  static int error_once = 0;
-  if (NULL != hash && NULL != data && NULL != size && NULL != seed)
-#endif
-  {
-    *hash = (libxsmm_hash(data, *size, *seed) & 0x7FFFFFFF);
-  }
-#if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_hash specified!\n");
-  }
-#endif
-}
-
-#endif /*defined(LIBXSMM_BUILD)*/
 

@@ -255,7 +255,7 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
   double* l_values = NULL;
   unsigned int l_row_count;
   unsigned int l_column_count;
-  unsigned int l_element_count;
+  unsigned int l_element_count = 0;
 
   /* init generated code object */
   libxsmm_generated_code l_generated_code;
@@ -278,8 +278,8 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
     /* read CSC file and construct CSC data structure */
     libxsmm_sparse_csc_reader( &l_generated_code, i_file_in, &l_row_idx, &l_column_idx, &l_values, &l_row_count, &l_column_count, &l_element_count );
 
+    if (0 != l_row_idx && 0 != l_column_idx && 0 != l_values) {
 #if !defined(NDEBUG)
-    {
       double *const l_tmp = (double*)malloc((size_t)l_row_count * l_column_count * sizeof(double));
       unsigned int l_n;
       unsigned int l_m;
@@ -330,22 +330,22 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       }
 
       free( l_tmp );
-    }
 #endif
-    /* generate the actual kernel code for current description depending on the architecture */
-    if (i_is_csr == 0) {
-      libxsmm_generator_spgemm_csc_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
-    } else if (i_is_csr == 10) {
-      libxsmm_generator_spgemm_csc_soa_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
-    } else {
-      assert(0/*should not happen*/);
+      /* generate the actual kernel code for current description depending on the architecture */
+      if (i_is_csr == 0) {
+        libxsmm_generator_spgemm_csc_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
+      } else if (i_is_csr == 10) {
+        libxsmm_generator_spgemm_csc_soa_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
+      } else {
+        assert(0/*should not happen*/);
+      }
     }
   } else {
     /* read CSR file and construct CSR data structure */
     libxsmm_sparse_csr_reader( &l_generated_code, i_file_in, &l_row_idx, &l_column_idx, &l_values, &l_row_count, &l_column_count, &l_element_count );
 
+    if (0 != l_row_idx && 0 != l_column_idx && 0 != l_values) { /* libxsmm_sparse_*_reader may have deallocated l_values */
 #if !defined(NDEBUG)
-    {
       double *const l_tmp = (double*)malloc((size_t)l_row_count * l_column_count * sizeof(double));
       unsigned int l_n;
       unsigned int l_m;
@@ -396,19 +396,19 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
       }
 
       free( l_tmp );
-    }
 #endif
-    if (i_is_csr == 1) {
-      /* generate the actual kernel code for current description depending on the architecture */
-      libxsmm_generator_spgemm_csr_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
-    } else if (i_is_csr == 2) {
-      /* generate the actual kernel code for current description depending on the architecture */
-      libxsmm_generator_spgemm_csr_soa_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
-    } else if (i_is_csr == 3) {
-      /* generate the actual kernel code for current description depending on the architecture */
-      libxsmm_generator_spgemm_csr_reg_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
-    } else {
-      assert(0/*should not happen*/);
+      if (i_is_csr == 1) {
+        /* generate the actual kernel code for current description depending on the architecture */
+        libxsmm_generator_spgemm_csr_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
+      } else if (i_is_csr == 2) {
+        /* generate the actual kernel code for current description depending on the architecture */
+        libxsmm_generator_spgemm_csr_soa_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
+      } else if (i_is_csr == 3) {
+        /* generate the actual kernel code for current description depending on the architecture */
+        libxsmm_generator_spgemm_csr_reg_kernel( &l_generated_code, i_xgemm_desc, i_arch, l_row_idx, l_column_idx, l_values );
+      } else {
+        assert(0/*should not happen*/);
+      }
     }
   }
 
@@ -433,10 +433,9 @@ void libxsmm_generator_spgemm( const char*                    i_file_out,
   }
 
   /* append code to source file */
-  {
+  if ( l_generated_code.generated_code != NULL ) {
     FILE *const l_file_handle = fopen( i_file_out, "a" );
     if ( l_file_handle != NULL ) {
-      assert(l_generated_code.generated_code != NULL);
       fputs( (const char*)l_generated_code.generated_code, l_file_handle );
       fclose( l_file_handle );
     } else {

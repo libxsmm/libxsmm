@@ -296,22 +296,23 @@ LIBXSMM_HASH_API_DEFINITION void libxsmm_hash_init(int target_arch)
   else
 # endif
 #endif
+#if (LIBXSMM_X86_SSE4 > LIBXSMM_STATIC_TARGET_ARCH)
   {
+# if !defined(LIBXSMM_INTRINSICS_SSE4)
+    static int error_once = 0;
+    if (0 == error_once && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+      fprintf(stderr, "LIBXSMM WARNING: unable to access CRC32 instructions due to the compiler used!\n");
+      error_once = 1; /* no need for atomics */
+    }
+# endif
     internal_hash_u32_function = libxsmm_crc32_u32_sw;
     internal_hash_u64_function = libxsmm_crc32_u64_sw;
     internal_hash_function = libxsmm_crc32_sw;
   }
+#endif
   LIBXSMM_ASSERT(0 != internal_hash_u32_function);
   LIBXSMM_ASSERT(0 != internal_hash_u64_function);
   LIBXSMM_ASSERT(0 != internal_hash_function);
-#if !defined(LIBXSMM_INTRINSICS_SSE4)
-  { static int error_once = 0;
-    if (0 == error_once && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      fprintf(stderr, "LIBXSMM WARNING: unable to access CRC32 instructions due to the compiler used!\n");
-      error_once = 1; /* no need for atom*/
-    }
-  }
-#endif
 }
 
 

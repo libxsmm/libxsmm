@@ -70,5 +70,20 @@ void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
   }
 }
 
+
+double norm(const TYPE* src, int nrows, int ncols, int ld) {
+  int i, j;
+  double result = 0, comp = 0;
+  for (i = 0; i < ncols; ++i) {
+    for (j = 0; j < nrows; ++j) {
+      const int k = i * ld + j;
+      const TYPE v = src[k], a = (0 <= v ? v : -v) - comp, b = result + a;
+      comp = (b - result) - a;
+      result = b;
+    }
+  }
+  return result;
+}
+
 #endif /*MAGAZINE_H*/
 
