@@ -1041,6 +1041,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
   else {
     target_archid = cpuid;
   }
+#if 0
   if (cpuid < target_archid) { /* limit code path to what was identified per CPUID */
     if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
       const char *const target_arch = internal_get_target_arch(target_archid);
@@ -1049,6 +1050,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     }
     target_archid = cpuid;
   }
+#endif
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 }
 
