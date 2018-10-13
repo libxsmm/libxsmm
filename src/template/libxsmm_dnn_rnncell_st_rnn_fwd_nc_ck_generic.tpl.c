@@ -44,8 +44,8 @@ element_filter_type *wD = (element_filter_type*)handle->w->data;
 element_input_type  *xt = (element_input_type* )handle->xt->data;
 element_filter_type *uD = (element_filter_type*)handle->u->data;
 element_output_type *b  = (element_output_type*)handle->b->data;
-element_output_type *ht = (element_output_type*)handle->h->data;
-element_output_type *zt = (element_output_type*)handle->z->data;
+element_output_type *ht = (element_output_type*)handle->ht->data;
+element_output_type *zt = (element_output_type*)handle->internal_z;
 LIBXSMM_VLA_DECL(2, element_filter_type, w, wD, K);
 LIBXSMM_VLA_DECL(2, element_filter_type, u, uD, K);
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
@@ -64,6 +64,9 @@ const libxsmm_blasint chunksize = (work % (libxsmm_blasint)handle->desc.threads 
 /* compute thr_begin and thr_end */
 const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+
+/* lazy barrier init */
+libxsmm_barrier_init(handle->barrier, ltid);
 
 /* All data is in column-major format */
 for (i = 0; i < t; ++i) {
@@ -96,3 +99,5 @@ for (i = 0; i < t; ++i) {
 #endif
   }
 }
+
+libxsmm_barrier_wait(handle->barrier, ltid);

@@ -1959,7 +1959,7 @@ void libxsmm_generator_convolution_weight_update_avx512_c3k64s2_bf16_all_pixels_
           + l_k_2 * i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out
           + ofmb * i_conv_desc->ofh_padded  * i_conv_desc->ofw_padded * i_conv_kernel_config->l_ld_ofm_act * i_conv_kernel_config->datatype_size_out ;
 
-       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
             i_conv_kernel_config->instruction_set,
             LIBXSMM_X86_INSTR_VPERMW,
             0,
