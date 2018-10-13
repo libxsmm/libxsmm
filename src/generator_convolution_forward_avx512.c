@@ -667,13 +667,17 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
 
   for ( l_kw_unroll = 0; l_kw_unroll < i_kw_unroll; l_kw_unroll++ ) {
     for ( l_k = 0; l_k < 2; l_k+=step_size ) {
+#if 0
       if ( i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX ) {
+#endif
         libxsmm_x86_instruction_full_vec_load_of_constants ( io_generated_code,
             (const unsigned char*) perm_array,
             "perm_mask",
             i_conv_kernel_config->vector_name,
             2);
+#if 0
       }
+#endif
 
       if (l_k == 0) {
         libxsmm_x86_instruction_vec_move( io_generated_code,
@@ -702,13 +706,6 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
               l_filter_pos,
               'y', 0,
               0, 1, 0 );
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_conv_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPERMW,
-              i_conv_kernel_config->vector_name,
-              0,
-              2,
-              0);  
         } else {
           libxsmm_x86_instruction_vec_move( io_generated_code,
               i_conv_kernel_config->instruction_set,
@@ -718,17 +715,18 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
               l_filter_pos,
               'y', 1,
               0, 1, 0 );
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_conv_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPERMW,
-              i_conv_kernel_config->vector_name,
-              1,
-              2,
-              1);     
         }
       }
 
       if ( i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX ) {
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+            i_conv_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VPERMW,
+            i_conv_kernel_config->vector_name,
+            0,
+            2,
+            0);
+ 
         /* vpslld  */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             i_conv_kernel_config->instruction_set,
@@ -758,7 +756,15 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
             0,
             LIBXSMM_X86_VEC_REG_UNDEF,
             16);
-       }
+      } else {
+        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
+            i_conv_kernel_config->instruction_set,
+            LIBXSMM_X86_INSTR_VPERMW,
+            i_conv_kernel_config->vector_name,
+            1,
+            2,
+            1);
+      }
 
       /* compute vectorwidth (A) * column broadcast (B) */
       for ( l_n = 0; l_n < i_conv_desc->ofw_rb; l_n++) {
