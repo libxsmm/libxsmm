@@ -31,10 +31,10 @@
 #ifndef LIBXSMM_DNN_FUSEDBATCHNORM_BACKWARD_H
 #define LIBXSMM_DNN_FUSEDBATCHNORM_BACKWARD_H
 
-#include <libxsmm_dnn_fusedbn.h>
+#include <libxsmm_dnn_fusedbatchnorm.h>
 
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom(libxsmm_dnn_fusedbn* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_custom(libxsmm_dnn_fusedbatchnorm* handle, int start_thread, int tid);
 
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_nhwc(libxsmm_dnn_fusedbn* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_nhwc(libxsmm_dnn_fusedbatchnorm* handle, int start_thread, int tid);
 
 #endif /* LIBXSMM_DNN_FUSEDBATCHNORM_BACKWARD_H */

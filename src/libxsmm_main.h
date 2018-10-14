@@ -324,8 +324,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
   /* These are the batchnorm handles in case of fusion  */
-  libxsmm_dnn_fusedbn* pre_bn;
-  libxsmm_dnn_fusedbn* post_bn;
+  libxsmm_dnn_fusedbatchnorm* pre_bn;
+  libxsmm_dnn_fusedbatchnorm* post_bn;
 
   /* additional size for internal data types */
   int ifhp;
@@ -509,8 +509,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int **copy_upd_indices_ptrs;
 };
 
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn {
-  libxsmm_dnn_fusedbn_desc desc;
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm {
+  libxsmm_dnn_fusedbatchnorm_desc desc;
   libxsmm_dnn_tensor* reg_input;      /* input tensor */
   libxsmm_dnn_tensor* reg_output;     /* output tensor */
   libxsmm_dnn_tensor* grad_input;     /* grad input tensor */
@@ -522,7 +522,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn {
   libxsmm_dnn_tensor* grad_beta;      /* grad beta tensor */
   libxsmm_dnn_tensor* grad_gamma;     /* grad gamma tensor */
   libxsmm_dnn_tensor* expvalue;       /* expected value */
-  libxsmm_dnn_tensor* stddev;         /* standard derivation */
+  libxsmm_dnn_tensor* rcpstddev;      /* reciprocal of standard derivation */
+  libxsmm_dnn_tensor* variance;       /* variance */
   libxsmm_barrier* barrier;           /* barrier */
   int ifmblock;
   int ifmblock_hp;

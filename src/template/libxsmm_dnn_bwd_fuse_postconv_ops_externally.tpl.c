@@ -49,7 +49,7 @@ if (compute_batch_stats_bwd_externally) {
   float* del_gamma_img_ptr;
   float* del_beta_img_ptr;
   LIBXSMM_VLA_DECL(2, const float,  bmean,      (float*)pre_bn->expvalue->data,   16);
-  LIBXSMM_VLA_DECL(2, const float,  brstd,      (float*)pre_bn->stddev->data,     16);
+  LIBXSMM_VLA_DECL(2, const float,  brstd,      (float*)pre_bn->rcpstddev->data,     16);
   LIBXSMM_VLA_DECL(4, float,  kernel_stats, (float*)handle->scratch7, bn_nBlocksFm, nImg, 16);
   LIBXSMM_VLA_DECL(5, element_input_type,  bn_dinput_add, (element_input_type*) pre_bn->grad_add->data, bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
   LIBXSMM_VLA_DECL(5, const element_output_type, bn_output,     (element_output_type*)pre_bn->reg_output->data,  bn_nBlocksFm, bn_ofhp, bn_ofwp, 16);

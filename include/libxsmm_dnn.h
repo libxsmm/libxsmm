@@ -48,8 +48,8 @@
 /** Opaque handles which represents convolutions and LIBXSMM datatypes */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer libxsmm_dnn_layer;
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor libxsmm_dnn_tensor;
-/** Opaque handles which represents LIBXSMM fusedbn */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbn libxsmm_dnn_fusedbn;
+/** Opaque handles which represents LIBXSMM fusedbatchnorm */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm libxsmm_dnn_fusedbatchnorm;
 typedef unsigned int libxsmm_dnn_err_t;
 
 /** Define error and warning codes */
@@ -183,7 +183,9 @@ typedef enum libxsmm_dnn_tensor_type {
   /* regular beta */
   LIBXSMM_DNN_CHANNEL_EXPECTVAL,
   /* regular beta */
-  LIBXSMM_DNN_CHANNEL_STDDEV,
+  LIBXSMM_DNN_CHANNEL_RCPSTDDEV,
+  /* variance */
+  LIBXSMM_DNN_CHANNEL_VARIANCE,
   /** general bias type */
   LIBXSMM_DNN_CHANNEL_SCALAR,
   /** batch stats */
@@ -396,8 +398,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_conv_desc {
   libxsmm_dnn_conv_algo algo;               /* convolution algorithm used */
   libxsmm_dnn_conv_option options;          /* additional options */
   libxsmm_dnn_conv_fuse_op fuse_ops;        /* used ops into convolutions */
-  libxsmm_dnn_fusedbn *pre_bn;              /* pointer to pre bn layer to accommodate bn fusion  */
-  libxsmm_dnn_fusedbn *post_bn;             /* pointer to post bn layer to accommodate bn fusion  */
+  libxsmm_dnn_fusedbatchnorm *pre_bn;       /* pointer to pre bn layer to accommodate bn fusion  */
+  libxsmm_dnn_fusedbatchnorm *post_bn;      /* pointer to post bn layer to accommodate bn fusion  */
 } libxsmm_dnn_conv_desc;
 
 /** these are some quantization definitions, not sure if we want to

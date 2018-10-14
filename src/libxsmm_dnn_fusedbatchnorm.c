@@ -42,20 +42,20 @@
 #endif
 
 
-LIBXSMM_API libxsmm_dnn_fusedbn* libxsmm_dnn_create_fusedbn(libxsmm_dnn_fusedbn_desc fusedbn_desc, libxsmm_dnn_err_t* status) {
-  libxsmm_dnn_fusedbn* handle = 0;
+LIBXSMM_API libxsmm_dnn_fusedbatchnorm* libxsmm_dnn_create_fusedbatchnorm(libxsmm_dnn_fusedbatchnorm_desc fusedbatchnorm_desc, libxsmm_dnn_err_t* status) {
+  libxsmm_dnn_fusedbatchnorm* handle = 0;
   int noarch;
 
-  if ( ((fusedbn_desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (fusedbn_desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)) ||
-       ((fusedbn_desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (fusedbn_desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32))    ) {
-    handle = (libxsmm_dnn_fusedbn*)malloc(sizeof(libxsmm_dnn_fusedbn));
+  if ( ((fusedbatchnorm_desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (fusedbatchnorm_desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)) ||
+       ((fusedbatchnorm_desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (fusedbatchnorm_desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32))    ) {
+    handle = (libxsmm_dnn_fusedbatchnorm*)malloc(sizeof(libxsmm_dnn_fusedbatchnorm));
 
     if (0 != handle) {
       *status = LIBXSMM_DNN_SUCCESS;
       /* zero entire content; not only safer but also sets data and code pointers to NULL */
       memset(handle, 0, sizeof(*handle));
       /* let's make the description persistent */
-      handle->desc = fusedbn_desc;
+      handle->desc = fusedbatchnorm_desc;
       /* we need to compute the memory layout given the */
       *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.C,
                                                     &(handle->ifmblock), &(handle->ifmblock_hp),
@@ -89,14 +89,14 @@ LIBXSMM_API libxsmm_dnn_fusedbn* libxsmm_dnn_create_fusedbn(libxsmm_dnn_fusedbn_
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_fusedbn(const libxsmm_dnn_fusedbn* handle) {
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_fusedbatchnorm(const libxsmm_dnn_fusedbatchnorm* handle) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
     /* Deallocate barrier */
     if (handle->barrier != 0 ) { libxsmm_barrier_release((const libxsmm_barrier*)handle->barrier); }
     /* deallocate handle structure */
-    free(/*remove constness*/(libxsmm_dnn_fusedbn*)handle);
+    free(/*remove constness*/(libxsmm_dnn_fusedbatchnorm*)handle);
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
   }
@@ -105,7 +105,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_fusedbn(const libxsmm_dnn_fuse
 }
 
 
-LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_datalayout(const libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status) {
+LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout(const libxsmm_dnn_fusedbatchnorm* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_tensor_datalayout* layout;
 
   *status = LIBXSMM_DNN_SUCCESS;
@@ -245,9 +245,9 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
           layout = 0; /* make sure a NULL is returned */
           *status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
         }
-      } else if ( (type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  || (type == LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  || (type == LIBXSMM_DNN_CHANNEL_BETA)  ||
-                  (type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) || (type == LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) || (type == LIBXSMM_DNN_CHANNEL_GAMMA) ||
-                  (type == LIBXSMM_DNN_CHANNEL_EXPECTVAL)     || (type == LIBXSMM_DNN_CHANNEL_STDDEV)                                                     ) {
+      } else if ( (type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  || (type == LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  || (type == LIBXSMM_DNN_CHANNEL_BETA)     ||
+                  (type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) || (type == LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) || (type == LIBXSMM_DNN_CHANNEL_GAMMA)    ||
+                  (type == LIBXSMM_DNN_CHANNEL_EXPECTVAL)     || (type == LIBXSMM_DNN_CHANNEL_RCPSTDDEV)      || (type == LIBXSMM_DNN_CHANNEL_VARIANCE)    ) {
         layout->tensor_type = LIBXSMM_DNN_CHANNEL_SCALAR;
 
         if ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) > 0) {
@@ -313,7 +313,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbn_create_tensor_dat
   return layout;
 }
 
-LIBXSMM_API size_t libxsmm_dnn_fusedbn_get_scratch_size(const libxsmm_dnn_fusedbn* handle, libxsmm_dnn_err_t* status) {
+LIBXSMM_API size_t libxsmm_dnn_fusedbatchnorm_get_scratch_size(const libxsmm_dnn_fusedbatchnorm* handle, libxsmm_dnn_err_t* status) {
   size_t l_scratch_size = 0;
   *status = LIBXSMM_DNN_SUCCESS;
 
@@ -327,7 +327,7 @@ LIBXSMM_API size_t libxsmm_dnn_fusedbn_get_scratch_size(const libxsmm_dnn_fusedb
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_scratch(libxsmm_dnn_fusedbn* handle, const void* scratch) {
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_bind_scratch(libxsmm_dnn_fusedbatchnorm* handle, const void* scratch) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   uintptr_t address = (uintptr_t)scratch;
   size_t offset = 0;
@@ -353,7 +353,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_scratch(libxsmm_dnn_fused
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_scratch(libxsmm_dnn_fusedbn* handle) {
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_release_scratch(libxsmm_dnn_fusedbatchnorm* handle) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
@@ -366,7 +366,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_scratch(libxsmm_dnn_fu
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type) {
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_bind_tensor(libxsmm_dnn_fusedbatchnorm* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check for tensor type */
@@ -375,13 +375,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_tensor(libxsmm_dnn_fusedb
        (type != LIBXSMM_DNN_REGULAR_INPUT_ADD)     && (type != LIBXSMM_DNN_GRADIENT_INPUT_ADD)     &&
        (type != LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  &&
        (type != LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) &&
-       (type != LIBXSMM_DNN_CHANNEL_EXPECTVAL)     && (type != LIBXSMM_DNN_CHANNEL_STDDEV)            ) {
+       (type != LIBXSMM_DNN_CHANNEL_EXPECTVAL)     && (type != LIBXSMM_DNN_CHANNEL_RCPSTDDEV)      &&
+       (type != LIBXSMM_DNN_CHANNEL_VARIANCE)                                                          ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
     return status;
   }
 
   if (handle != 0 && tensor != 0) {
-    libxsmm_dnn_tensor_datalayout* handle_layout = libxsmm_dnn_fusedbn_create_tensor_datalayout(handle, type, &status);
+    libxsmm_dnn_tensor_datalayout* handle_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout(handle, type, &status);
 
     if ( libxsmm_dnn_compare_tensor_datalayout(handle_layout, tensor->layout, &status) == 0 ) {
       if ( type == LIBXSMM_DNN_REGULAR_INPUT ) {
@@ -406,8 +407,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_tensor(libxsmm_dnn_fusedb
         handle->grad_gamma = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_CHANNEL_EXPECTVAL ) {
         handle->expvalue = (libxsmm_dnn_tensor*)tensor;
-      } else if ( type == LIBXSMM_DNN_CHANNEL_STDDEV ) {
-        handle->stddev = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_CHANNEL_RCPSTDDEV ) {
+        handle->rcpstddev = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_CHANNEL_VARIANCE ) {
+        handle->variance = (libxsmm_dnn_tensor*)tensor;
       } else {
         /* cannot happen */
       }
@@ -425,7 +428,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_bind_tensor(libxsmm_dnn_fusedb
 }
 
 
-LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_fusedbn_get_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status) {
+LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_fusedbatchnorm_get_tensor(libxsmm_dnn_fusedbatchnorm* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_tensor* return_tensor = 0;
 
   *status = LIBXSMM_DNN_SUCCESS;
@@ -436,7 +439,8 @@ LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_fusedbn_get_tensor(libxsmm_dnn_fused
        (type != LIBXSMM_DNN_REGULAR_INPUT_ADD)     && (type != LIBXSMM_DNN_GRADIENT_INPUT_ADD)     &&
        (type != LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  &&
        (type != LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) &&
-       (type != LIBXSMM_DNN_CHANNEL_EXPECTVAL)     && (type != LIBXSMM_DNN_CHANNEL_STDDEV)            ) {
+       (type != LIBXSMM_DNN_CHANNEL_EXPECTVAL)     && (type != LIBXSMM_DNN_CHANNEL_RCPSTDDEV)      &&
+       (type != LIBXSMM_DNN_CHANNEL_VARIANCE)                                                          ) {
     *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
     return return_tensor;
   }
@@ -464,8 +468,10 @@ LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_fusedbn_get_tensor(libxsmm_dnn_fused
       return_tensor = handle->grad_gamma;
     } else if ( type == LIBXSMM_DNN_CHANNEL_EXPECTVAL ) {
       return_tensor = handle->expvalue;
-    } else if ( type == LIBXSMM_DNN_CHANNEL_STDDEV ) {
-      return_tensor = handle->stddev;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_RCPSTDDEV ) {
+      return_tensor = handle->rcpstddev;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_VARIANCE ) {
+      return_tensor = handle->variance;
     } else {
       /* cannot happen */
     }
@@ -477,7 +483,7 @@ LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_fusedbn_get_tensor(libxsmm_dnn_fused
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_tensor(libxsmm_dnn_fusedbn* handle, const libxsmm_dnn_tensor_type type) {
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_release_tensor(libxsmm_dnn_fusedbatchnorm* handle, const libxsmm_dnn_tensor_type type) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check for tensor type */
@@ -486,7 +492,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_tensor(libxsmm_dnn_fus
        (type != LIBXSMM_DNN_REGULAR_INPUT_ADD)     && (type != LIBXSMM_DNN_GRADIENT_INPUT_ADD)     &&
        (type != LIBXSMM_DNN_REGULAR_CHANNEL_BETA)  && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_BETA)  &&
        (type != LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA) && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA) &&
-       (type != LIBXSMM_DNN_CHANNEL_EXPECTVAL)     && (type != LIBXSMM_DNN_CHANNEL_STDDEV)            ) {
+       (type != LIBXSMM_DNN_CHANNEL_EXPECTVAL)     && (type != LIBXSMM_DNN_CHANNEL_RCPSTDDEV)      &&
+       (type != LIBXSMM_DNN_CHANNEL_VARIANCE)                                                          ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
     return status;
   }
@@ -514,8 +521,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_tensor(libxsmm_dnn_fus
       handle->grad_gamma = 0;
     } else if ( type == LIBXSMM_DNN_CHANNEL_EXPECTVAL ) {
       handle->expvalue = 0;
-    } else if ( type == LIBXSMM_DNN_CHANNEL_STDDEV ) {
-      handle->stddev = 0;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_RCPSTDDEV ) {
+      handle->rcpstddev = 0;
+    } else if ( type == LIBXSMM_DNN_CHANNEL_VARIANCE ) {
+      handle->variance = 0;
     } else {
       /* cannot happen */
     }
@@ -527,7 +536,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_release_tensor(libxsmm_dnn_fus
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_execute_st(libxsmm_dnn_fusedbn* handle, libxsmm_dnn_compute_kind kind,
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_execute_st(libxsmm_dnn_fusedbatchnorm* handle, libxsmm_dnn_compute_kind kind,
   /*unsigned*/int start_thread, /*unsigned*/int tid) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
@@ -536,7 +545,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_execute_st(libxsmm_dnn_fusedbn
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
         switch (handle->desc.buffer_format) {
           case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
-            status = libxsmm_dnn_fusedbn_st_fwd_custom( handle, start_thread, tid );
+            status = libxsmm_dnn_fusedbatchnorm_st_fwd_custom( handle, start_thread, tid );
           } break;
           default: {
             status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN;
@@ -546,7 +555,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbn_execute_st(libxsmm_dnn_fusedbn
       case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
         switch (handle->desc.buffer_format) {
           case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
-            status = libxsmm_dnn_fusedbn_st_bwd_custom( handle, start_thread, tid );
+            status = libxsmm_dnn_fusedbatchnorm_st_bwd_custom( handle, start_thread, tid );
           } break;
           default: {
             status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN;

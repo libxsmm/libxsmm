@@ -102,7 +102,7 @@ LIBXSMM_VLA_DECL(2, const element_stats_type,  gamma,      (element_stats_type*)
 LIBXSMM_VLA_DECL(2,       element_stats_type,  dgamma,     (element_stats_type*)handle->grad_gamma->data, 16);
 LIBXSMM_VLA_DECL(2,       element_stats_type,  dbeta,      (element_stats_type*)handle->grad_beta->data,  16);
 LIBXSMM_VLA_DECL(2, const element_stats_type,  bmean,      (element_stats_type*)handle->expvalue->data,   16);
-LIBXSMM_VLA_DECL(2, const element_stats_type,  brstd,      (element_stats_type*)handle->stddev->data,     16);
+LIBXSMM_VLA_DECL(2, const element_stats_type,  brstd,      (element_stats_type*)handle->rcpstddev->data,  16);
 LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                                                    nImg, 16);
 LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)16), nImg, 16);
 

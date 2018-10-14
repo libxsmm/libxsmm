@@ -64,9 +64,9 @@ int *bn_stream = handle->bn_stats_indices_ptrs[ltid];
 int nImg = 0, work = 0, chunksize = 0, thr_begin = 0, thr_end = 0, fm = 0;
 float nhw, recp_nhw, sqrt_eps = 1e-7f;
 float *sum_img_ptr = NULL, *sumsq_img_ptr = NULL;
-libxsmm_dnn_fusedbn *bn_handle = NULL;
+libxsmm_dnn_fusedbatchnorm *bn_handle = NULL;
 #if defined(LIBXSMM_INTRINSICS_AVX512)
-__m512 lcl_vsum, lcl_vsumsq, lcl_vsqrt_eps, lcl_vrec_nhw, lcl_vone, lcl_vbmean, lcl_vbmeansq, lcl_vsqbmean, lcl_vbrstd;
+__m512 lcl_vsum, lcl_vsumsq, lcl_vsqrt_eps, lcl_vrec_nhw, lcl_vone, lcl_vbmean, lcl_vbmeansq, lcl_vsqbmean, lcl_vbrstd, lcl_vvar;
 #else
 #endif
 
@@ -880,8 +880,9 @@ if (handle->fuse_batchstats_fwd == 1) {
   /* Perform reduction and calculate expectation and standard deviation  */
   LIBXSMM_VLA_DECL(3, float, sum_img,   (float*)handle->scratch7,                                                                      handle->post_bn->desc.N, 16);
   LIBXSMM_VLA_DECL(3, float, sumsq_img, (float*)handle->scratch7 + ((size_t)handle->post_bn->desc.N * (size_t)handle->blocksofm * 16), handle->post_bn->desc.N, 16);
-  LIBXSMM_VLA_DECL(2, float, bmean,     (float*)handle->post_bn->expvalue->data,    16);
-  LIBXSMM_VLA_DECL(2, float, brstd,     (float*)handle->post_bn->stddev->data,      16);
+  LIBXSMM_VLA_DECL(2, float, bmean,     (float*)handle->post_bn->expvalue->data,   16);
+  LIBXSMM_VLA_DECL(2, float, brstd,     (float*)handle->post_bn->rcpstddev->data,  16);
+  LIBXSMM_VLA_DECL(2, float, variance,  (float*)handle->post_bn->variance->data,   16);
   bn_handle = handle->post_bn;
   nImg = bn_handle->desc.N;
   nhw = (float)(nImg * bn_handle->desc.H * bn_handle->desc.W);
@@ -905,12 +906,14 @@ if (handle->fuse_batchstats_fwd == 1) {
       sum_img_ptr   += 16;
       sumsq_img_ptr += 16;
     }
-    lcl_vbmean   = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsum   );  /* E(X) */
-    lcl_vbmeansq = _mm512_mul_ps( lcl_vbmean,   lcl_vbmean );  /* E(X)^2 */
-    lcl_vsqbmean = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsumsq );  /* E(X^2) */
-    lcl_vbrstd   = _mm512_div_ps( lcl_vone, _mm512_sqrt_ps( _mm512_add_ps( _mm512_sub_ps( lcl_vsqbmean, lcl_vbmeansq), lcl_vsqrt_eps ) ) );
+    lcl_vbmean   = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsum   );   /* E(X) */
+    lcl_vbmeansq = _mm512_mul_ps( lcl_vbmean,   lcl_vbmean );   /* E(X)^2 */
+    lcl_vsqbmean = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsumsq );   /* E(X^2) */
+    lcl_vvar     = _mm512_sub_ps( lcl_vsqbmean, lcl_vbmeansq ); /* variance */
+    lcl_vbrstd   = _mm512_div_ps( lcl_vone, _mm512_sqrt_ps( _mm512_add_ps( lcl_vvar, lcl_vsqrt_eps ) ) );
     _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, bmean, fm, 0, 16), lcl_vbmean );
     _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, brstd, fm, 0, 16), lcl_vbrstd );
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, variance, fm, 0, 16), lcl_vvar );
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);

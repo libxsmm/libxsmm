@@ -42,12 +42,12 @@
 #endif
 
 
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom_f32_f32(libxsmm_dnn_fusedbn* handle, int start_thread, int tid);
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom_bf16_bf16(libxsmm_dnn_fusedbn* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_f32(libxsmm_dnn_fusedbatchnorm* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_custom_bf16_bf16(libxsmm_dnn_fusedbatchnorm* handle, int start_thread, int tid);
 
 
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
-libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom_f32_f32(libxsmm_dnn_fusedbn* handle, int start_thread, int tid)
+libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_f32(libxsmm_dnn_fusedbatchnorm* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
@@ -87,7 +87,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom_f32_f32(libxsmm_dnn_fusedbn*
 
 
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
-libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom_bf16_bf16(libxsmm_dnn_fusedbn* handle, int start_thread, int tid)
+libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_custom_bf16_bf16(libxsmm_dnn_fusedbatchnorm* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
@@ -128,15 +128,15 @@ libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom_bf16_bf16(libxsmm_dnn_fusedb
 }
 
 
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom(libxsmm_dnn_fusedbn* handle, int start_thread, int tid)
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_custom(libxsmm_dnn_fusedbatchnorm* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check if all required tensors are bound */
-  if (handle->reg_input == 0  || handle->reg_gamma == 0   ||
-      handle->grad_input == 0 || handle->grad_output == 0 ||
-      handle->grad_beta == 0  || handle->grad_gamma == 0  ||
-      handle->expvalue == 0   || handle->stddev == 0        ) {
+  if ( handle->reg_input == 0  || handle->reg_gamma == 0   ||
+       handle->grad_input == 0 || handle->grad_output == 0 ||
+       handle->grad_beta == 0  || handle->grad_gamma == 0  ||
+       handle->expvalue == 0   || handle->rcpstddev == 0      ) {
     status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
     return status;
   }
@@ -164,9 +164,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom(libxsmm_d
         libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL     ) &&
        (handle->ofmblock == 16) ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      status = libxsmm_dnn_fusedbn_st_bwd_custom_f32_f32( handle, start_thread, tid );
+      status = libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_f32( handle, start_thread, tid );
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
-      status = libxsmm_dnn_fusedbn_st_bwd_custom_bf16_bf16( handle, start_thread, tid );
+      status = libxsmm_dnn_fusedbatchnorm_st_bwd_custom_bf16_bf16( handle, start_thread, tid );
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -240,7 +240,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_custom(libxsmm_d
 }
 
 
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbn_st_bwd_nhwc(libxsmm_dnn_fusedbn* handle, int start_thread, int tid)
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_nhwc(libxsmm_dnn_fusedbatchnorm* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
   LIBXSMM_UNUSED( handle );
