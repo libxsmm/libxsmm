@@ -259,6 +259,7 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
   LIBXSMM_VLA_DECL(4,       float, dinput_add, dinput_add_ptr, nFm, ifh, ifw);
   LIBXSMM_VLA_DECL(4, const float, output,     output_ptr,     nFm, ofh, ofw);
   LIBXSMM_VLA_DECL(4,       float, doutput,    doutput_ptr,    nFm, ofh, ofw);
+  LIBXSMM_UNUSED(beta_ptr);
 
   if ( param->norm_type == 0 ) {
 #if defined(_OPENMP)

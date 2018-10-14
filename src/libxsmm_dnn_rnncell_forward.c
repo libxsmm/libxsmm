@@ -56,21 +56,23 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_nc_ck_f32_f32(libxsmm_dnn_rnncell* 
   typedef float element_output_type;
   typedef float element_filter_type;
   if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_RELU ) {
-#define LIBXSMM_DNN_RNN_RELU_FWD
+# define LIBXSMM_DNN_RNN_RELU_FWD
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
-#undef LIBXSMM_DNN_RNN_RELU_FWD
+# undef LIBXSMM_DNN_RNN_RELU_FWD
   } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_SIGMOID ) {
-#define LIBXSMM_DNN_RNN_SIGMOID_FWD
+# define LIBXSMM_DNN_RNN_SIGMOID_FWD
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
-#undef LIBXSMM_DNN_RNN_SIGMOID_FWD
+# undef LIBXSMM_DNN_RNN_SIGMOID_FWD
   } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_TANH ) {
-#define LIBXSMM_DNN_RNN_TANH_FWD
+# define LIBXSMM_DNN_RNN_TANH_FWD
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
-#undef LIBXSMM_DNN_RNN_TANH_FWD
+# undef LIBXSMM_DNN_RNN_TANH_FWD
   } else {
     /* should not happen */
   }
+  { /* open new scope for additional variable declarations (C89) */
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
+  }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;

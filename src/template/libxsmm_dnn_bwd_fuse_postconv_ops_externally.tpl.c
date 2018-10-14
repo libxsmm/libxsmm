@@ -105,7 +105,7 @@ if (fuse_relu_externally && downconvert_to_bf16_externally) {
         const __m512i vfp32 = _mm512_castps_si512( _mm512_loadu_ps(scratch_ptr+ii) );
         const __m256i orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
         const __m512i orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
-        const __mmask16 mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
+        const __mmask16 mask = _mm512_cmp_epi32_mask(_mm512_castps_si512(zero_reg), orig_reg_fp32, _MM_CMPINT_EQ);
         const __m512i vfp32_masked = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
         const __m512i vfp32nan = _mm512_and_epi32( vfp32_masked, vnaninf );
         const __m512i vfp32fixup = _mm512_and_epi32( vfp32_masked, vfixupmask );
@@ -129,7 +129,7 @@ if (fuse_relu_externally && downconvert_to_bf16_externally) {
         const __m512i vfp32 = _mm512_castps_si512(tmp);
         const __m256i orig_reg = _mm256_loadu_si256( (__m256i*) (orig_input_ptr + ii));
         const __m512i orig_reg_fp32 = _mm512_cvtepi16_epi32( orig_reg );
-        const __mmask16 mask = _mm512_cmp_epi32_mask((__m512i)zero_reg, orig_reg_fp32, _MM_CMPINT_EQ);
+        const __mmask16 mask = _mm512_cmp_epi32_mask(_mm512_castps_si512(zero_reg), orig_reg_fp32, _MM_CMPINT_EQ);
         const __m512i vfp32_masked = _mm512_mask_blend_epi32(mask, vfp32, orig_reg_fp32);
         const __m256i vbfp16 = _mm512_cvtepi32_epi16(_mm512_srai_epi32( vfp32_masked, 16));
         _mm512_storeu_ps(scratch_ptr+ii, zero_reg);
