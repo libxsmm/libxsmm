@@ -206,6 +206,9 @@ DOCEXT = pdf
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE = PREFIX DESTDIR INSTALL_ROOT
 
+# avoid to link with C++ standard library
+FORCE_CXX = 0
+
 # include common Makefile artifacts
 include $(ROOTDIR)/Makefile.inc
 
