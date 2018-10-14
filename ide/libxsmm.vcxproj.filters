@@ -246,9 +246,6 @@
     <ClInclude Include="..\include\libxsmm_dnn_grucell.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_dnn_fusedbn.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_dnn_fusedbatchnorm_backward.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -271,6 +268,18 @@
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_dnn_pooling_forward.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_dnn_fusedbatchnorm.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_dnn_pooling.h">
+      <Filter>include</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_rnncell_backward_weight_update.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_dnn_rnncell_forward.h">
       <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
@@ -821,9 +830,6 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_bf16.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_fusedbn.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_grucell.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -895,6 +901,27 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_bwd_fuse_postconv_ops_externally.tpl.c">
       <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_upd_custom_custom_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_fusedbatchnorm.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_rnncell_backward_weight_update.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_rnncell_forward.c">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
