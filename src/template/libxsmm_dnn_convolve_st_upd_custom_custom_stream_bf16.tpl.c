@@ -236,7 +236,7 @@ if (handle->reduce_weights) {
         __m512i vbfp16_32 = _mm512_srai_epi32( vfp32rne, 16 );
         __m256i vbfp16    = _mm512_cvtepi32_epi16( vbfp16_32 );
         _mm256_storeu_si256( (__m256i*)( ((libxsmm_bfloat16*)dst_weight_ptr)+j*16), vbfp16 );
-      }      
+      }
     } else {
       for ( j = reduce_thr_begin; j < reduce_thr_end; j++) {
         __m512 sum_weight = _mm512_setzero_ps();
@@ -255,7 +255,7 @@ if (handle->reduce_weights) {
       __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
       __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
       __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
-      __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );    
+      __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
       for ( j = 2*reduce_thr_begin; j < 2*reduce_thr_end; j+=2 ) {
         __m512 weight_sum_lo = _mm512_setzero_ps();
         __m512 weight_sum_hi = _mm512_setzero_ps();
@@ -320,7 +320,7 @@ if (handle->reduce_weights) {
     __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
     __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
     __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
-    __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );    
+    __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
     for ( j = 2*transform_thr_begin; j < 2*transform_thr_end; j+=2 ) {
       libxsmm_bfloat16 *bf16_weight_ptr = ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16;
       float *fp32_weight_ptr = ((float*) weight_ptr) + j * 16;
@@ -343,7 +343,7 @@ if (handle->reduce_weights) {
       vbfp16_32_hi = _mm512_slli_epi32(vbfp16_32_hi, 16);
       __m512i pair_fms = _mm512_or_epi32(vbfp16_32_lo, vbfp16_32_hi);
       _mm512_store_epi32( ((libxsmm_bfloat16*) bf16_weight_ptr), pair_fms);
-    }  
+    }
   } else {
     for ( j = 2*transform_thr_begin; j < 2*transform_thr_end; j+=2 ) {
       libxsmm_bfloat16 *bf16_weight_ptr = ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16;

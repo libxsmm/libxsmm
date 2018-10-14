@@ -149,10 +149,10 @@ for (in = 0; in < N; in += bn) {
 #if defined(LIBXSMM_DNN_RNN_SIGMOID_BWDUPD)
     libxsmm_internal_matrix_sigmoid_inverse_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K) );
 #endif
-#if defined(LIBXSMM_DNN_RNN_TANH_BWDUPD)      
+#if defined(LIBXSMM_DNN_RNN_TANH_BWDUPD)
     libxsmm_internal_matrix_tanh_inverse_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K) );
 #endif
-    
+
     libxsmm_internal_matrix_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, djdh,  t-1, in, ik, N, K),
                                                                 &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K) );
 

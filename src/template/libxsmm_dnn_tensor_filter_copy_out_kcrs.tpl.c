@@ -36,7 +36,7 @@ int bofm = 0;
 int bifm = 0;
 int S = 0;
 int R = 0;
-int ifmb = 0; 
+int ifmb = 0;
 int ofmb = 0;
 int C = 0;
 /* low precision formatting */

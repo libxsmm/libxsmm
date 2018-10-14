@@ -225,13 +225,13 @@ int main(int argc, char* argv[])
   float *wigold, *wfgold, *wogold, *wcgold, *xgoldt, *rigold, *rfgold, *rogold, *rcgold, *hgold = NULL, *bigold = NULL, *bfgold = NULL, *bogold = NULL, *bcgold = NULL;
   float *igold = NULL, *fgold = NULL, *ogold = NULL, *cgold = NULL, *dgold = NULL, *bimgold = NULL, *bfmgold = NULL, *bomgold = NULL, *bcmgold = NULL, *doutgoldt = NULL;
   float *i1gold, *i2gold, *f1gold, *f2gold, *o1gold, *o2gold, *c1gold, *c2gold, *d1gold, *d2gold, *dhgold = NULL;
-  float *wi, *wf, *wo, *wc, *xt, *ri, *rf, *ro, *rc, *h = NULL, *bi = NULL, *bf = NULL, *bo = NULL, *bc = NULL, *htest = NULL, *hgold_temp = NULL;
+  float *w, *xt, *h = NULL, *b = NULL, *htest = NULL, *hgold_temp = NULL;
   /* Arrays related to BWD and UPD pass */
   float *hgoldt = NULL, *igoldt = NULL, *fgoldt = NULL, *ogoldt = NULL, *cgoldt = NULL, *i3gold = NULL, *f3gold = NULL, *d3gold = NULL, *d4gold = NULL, *dgoldt = NULL, *deltagoldt = NULL;
   float *djdhgoldt = NULL, *djddgoldt = NULL, *djdigoldt = NULL, *djdfgoldt = NULL, *djdcgoldt = NULL, *djdogoldt = NULL, *djdxgoldt = NULL;
   float *djdwigold = NULL, *djdwfgold = NULL, *djdwogold = NULL, *djdwcgold = NULL, *djdrigold = NULL, *djdrfgold = NULL, *djdrogold = NULL, *djdrcgold = NULL;
   float *djdbigold = NULL, *djdbfgold = NULL, *djdbogold = NULL, *djdbcgold = NULL, *wgoldTp = NULL, *rgoldTp = NULL, *xgoldTp = NULL, *hgoldTp = NULL;
-  float *ht = NULL, *djdht = NULL, *djdxt = NULL, *djdwi = NULL, *djdwf = NULL, *djdwo = NULL, *djdwc = NULL, *djdri = NULL, *djdrf = NULL, *djdro = NULL, *djdrc = NULL, *djdbi = NULL, *djdbf = NULL, *djdbo = NULL, *djdbc = NULL;
+  float *ht = NULL, *djdht = NULL, *djdxt = NULL, *djdw = NULL, *djdb = NULL;
   float *djdxtestt = NULL, *djdwtest = NULL, *djdrtest = NULL, *djdbtest = NULL, *djdwgold4 = NULL, *djdrgold4 = NULL, *djdbgold4 = NULL;
 
   const char transa = 'N', transb = 'N'; /* no transposes */
@@ -268,33 +268,23 @@ int main(int argc, char* argv[])
   libxsmm_dnn_lstmcell_desc lstmcell_desc;
   libxsmm_dnn_lstmcell* libxsmm_handle;
   libxsmm_dnn_tensor* libxsmm_input;
+  libxsmm_dnn_tensor* libxsmm_cs_prev;
+  libxsmm_dnn_tensor* libxsmm_hidden_state_prev;
+  libxsmm_dnn_tensor* libxsmm_weight;
+  libxsmm_dnn_tensor* libxsmm_bias;
+  libxsmm_dnn_tensor* libxsmm_cs;
   libxsmm_dnn_tensor* libxsmm_hidden_state;
-  libxsmm_dnn_tensor* libxsmm_weight_i;
-  libxsmm_dnn_tensor* libxsmm_weight_f;
-  libxsmm_dnn_tensor* libxsmm_weight_o;
-  libxsmm_dnn_tensor* libxsmm_weight_c;
-  libxsmm_dnn_tensor* libxsmm_recur_weight_i;
-  libxsmm_dnn_tensor* libxsmm_recur_weight_f;
-  libxsmm_dnn_tensor* libxsmm_recur_weight_o;
-  libxsmm_dnn_tensor* libxsmm_recur_weight_c;
-  libxsmm_dnn_tensor* libxsmm_bias_i;
-  libxsmm_dnn_tensor* libxsmm_bias_f;
-  libxsmm_dnn_tensor* libxsmm_bias_o;
-  libxsmm_dnn_tensor* libxsmm_bias_c;
+  libxsmm_dnn_tensor* libxsmm_internal_i;
+  libxsmm_dnn_tensor* libxsmm_internal_f;
+  libxsmm_dnn_tensor* libxsmm_internal_o;
+  libxsmm_dnn_tensor* libxsmm_internal_c;
   libxsmm_dnn_tensor* libxsmm_dinput = NULL;
+  libxsmm_dnn_tensor* libxsmm_dcs_prev = NULL;
+  libxsmm_dnn_tensor* libxsmm_dhidden_state_prev = NULL;
+  libxsmm_dnn_tensor* libxsmm_dweight = NULL;
+  libxsmm_dnn_tensor* libxsmm_dbias = NULL;
+  libxsmm_dnn_tensor* libxsmm_dcs = NULL;
   libxsmm_dnn_tensor* libxsmm_dhidden_state = NULL;
-  libxsmm_dnn_tensor* libxsmm_dweight_i = NULL;
-  libxsmm_dnn_tensor* libxsmm_dweight_f = NULL;
-  libxsmm_dnn_tensor* libxsmm_dweight_o = NULL;
-  libxsmm_dnn_tensor* libxsmm_dweight_c = NULL;
-  libxsmm_dnn_tensor* libxsmm_drecur_weight_i = NULL;
-  libxsmm_dnn_tensor* libxsmm_drecur_weight_f = NULL;
-  libxsmm_dnn_tensor* libxsmm_drecur_weight_o = NULL;
-  libxsmm_dnn_tensor* libxsmm_drecur_weight_c = NULL;
-  libxsmm_dnn_tensor* libxsmm_dbias_i = NULL;
-  libxsmm_dnn_tensor* libxsmm_dbias_f = NULL;
-  libxsmm_dnn_tensor* libxsmm_dbias_o = NULL;
-  libxsmm_dnn_tensor* libxsmm_dbias_c = NULL;
 
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
@@ -387,20 +377,10 @@ int main(int argc, char* argv[])
     d1gold = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
     d2gold = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
     dhgold = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
-    wi     = (float*)libxsmm_aligned_malloc( m*k*sizeof(float), 2097152);
-    wf     = (float*)libxsmm_aligned_malloc( m*k*sizeof(float), 2097152);
-    wo     = (float*)libxsmm_aligned_malloc( m*k*sizeof(float), 2097152);
-    wc     = (float*)libxsmm_aligned_malloc( m*k*sizeof(float), 2097152);
+    w      = (float*)libxsmm_aligned_malloc( (m*k*4 + m*m*4)*sizeof(float), 2097152);
     xt     = (float*)libxsmm_aligned_malloc( k*n*t*sizeof(float), 2097152);
-    ri     = (float*)libxsmm_aligned_malloc( m*m*sizeof(float), 2097152);
-    rf     = (float*)libxsmm_aligned_malloc( m*m*sizeof(float), 2097152);
-    ro     = (float*)libxsmm_aligned_malloc( m*m*sizeof(float), 2097152);
-    rc     = (float*)libxsmm_aligned_malloc( m*m*sizeof(float), 2097152);
     h      = (float*)libxsmm_aligned_malloc( m*n*(t+1)*sizeof(float), 2097152);
-    bi    = (float*)libxsmm_aligned_malloc( m*sizeof(float), 2097152);
-    bf    = (float*)libxsmm_aligned_malloc( m*sizeof(float), 2097152);
-    bo    = (float*)libxsmm_aligned_malloc( m*sizeof(float), 2097152);
-    bc    = (float*)libxsmm_aligned_malloc( m*sizeof(float), 2097152);
+    b      = (float*)libxsmm_aligned_malloc( m*4*sizeof(float), 2097152);
     htest  = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
     hgold_temp = (float*)libxsmm_aligned_malloc( m*n*sizeof(float), 2097152);
   } else {
@@ -458,34 +438,14 @@ int main(int argc, char* argv[])
     xgoldTp = (float*)libxsmm_aligned_malloc(k * n * sizeof(float), 2097152);
     hgoldTp = (float*)libxsmm_aligned_malloc(m * n * sizeof(float), 2097152);
     doutgoldt = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
-    wi = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    wf = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    wo = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    wc = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
+    w  = (float*)libxsmm_aligned_malloc((m*k*4 + m*m*4) * sizeof(float), 2097152);
     xt = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
-    ri = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    rf = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    ro = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    rc = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
     ht = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
-    bi = (float*)libxsmm_aligned_malloc(m * sizeof(float), 2097152);
-    bf = (float*)libxsmm_aligned_malloc(m * sizeof(float), 2097152);
-    bo = (float*)libxsmm_aligned_malloc(m * sizeof(float), 2097152);
-    bc = (float*)libxsmm_aligned_malloc(m * sizeof(float), 2097152);
+    b  = (float*)libxsmm_aligned_malloc(m * 4 * sizeof(float), 2097152);
     djdht = (float*)libxsmm_aligned_malloc(m * n * sizeof(float) * t, 2097152);
     djdxt = (float*)libxsmm_aligned_malloc(k * n * sizeof(float) * t, 2097152);
-    djdwi = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    djdwf = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    djdwo = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    djdwc = (float*)libxsmm_aligned_malloc(m * k * sizeof(float), 2097152);
-    djdri = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    djdrf = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    djdro = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    djdrc = (float*)libxsmm_aligned_malloc(m * m * sizeof(float), 2097152);
-    djdbi = (float*)libxsmm_aligned_malloc(m * sizeof(float), 2097152);
-    djdbf = (float*)libxsmm_aligned_malloc(m * sizeof(float), 2097152);
-    djdbo = (float*)libxsmm_aligned_malloc(m * sizeof(float), 2097152);
-    djdbc = (float*)libxsmm_aligned_malloc(m * sizeof(float), 2097152);
+    djdw  = (float*)libxsmm_aligned_malloc((m*k*4 + m*m*4) * sizeof(float), 2097152);
+    djdb  = (float*)libxsmm_aligned_malloc(m * 4 * sizeof(float), 2097152);
     djdxtestt  = (float*)libxsmm_aligned_malloc(k * n * sizeof(float) * t, 2097152);
     djdwtest   = (float*)libxsmm_aligned_malloc(m * k * sizeof(float) * 4, 2097152);
     djdrtest   = (float*)libxsmm_aligned_malloc(m * m * sizeof(float) * 4, 2097152);
@@ -613,50 +573,20 @@ int main(int argc, char* argv[])
 
   /* first touch LIBXSMM */
   if (pass == 0) {
-    zero_buf(wi, m*k);
-    zero_buf(wf, m*k);
-    zero_buf(wo, m*k);
-    zero_buf(wc, m*k);
+    zero_buf(w,  m*k*4 + m*m*4);
     zero_buf(xt, k*n*t);
-    zero_buf(ri, m*m);
-    zero_buf(rf, m*m);
-    zero_buf(ro, m*m);
-    zero_buf(rc, m*m);
-    zero_buf(h, m*n*(t+1));
-    zero_buf(bi, m);
-    zero_buf(bf, m);
-    zero_buf(bo, m);
-    zero_buf(bc, m);
+    zero_buf(h,  m*n*(t+1));
+    zero_buf(b,  m*4);
   }
   else {
-    zero_buf(wi, m*k);
-    zero_buf(wf, m*k);
-    zero_buf(wo, m*k);
-    zero_buf(wc, m*k);
+    zero_buf(w,  m*k*4 + m*m*4);
     zero_buf(xt, k*n*t);
-    zero_buf(ri, m*m);
-    zero_buf(rf, m*m);
-    zero_buf(ro, m*m);
-    zero_buf(rc, m*m);
     zero_buf(ht, m*n*t);
-    zero_buf(bi, m);
-    zero_buf(bf, m);
-    zero_buf(bo, m);
-    zero_buf(bc, m);
-    zero_buf(djdwi, m*k);
-    zero_buf(djdwf, m*k);
-    zero_buf(djdwo, m*k);
-    zero_buf(djdwc, m*k);
+    zero_buf(b,  m*4);
+    zero_buf(djdw,  m*k*4 + m*m*4);
     zero_buf(djdxt, k*n*t);
-    zero_buf(djdri, m*m);
-    zero_buf(djdrf, m*m);
-    zero_buf(djdro, m*m);
-    zero_buf(djdrc, m*m);
     zero_buf(djdht, m*n*t);
-    zero_buf(djdbi, m);
-    zero_buf(djdbf, m);
-    zero_buf(djdbo, m);
-    zero_buf(djdbc, m);
+    zero_buf(djdb,  m*4);
   }
   LIBXSMM_VLA_DECL(2, float, x, xt, k * n);
   LIBXSMM_VLA_DECL(2, float, hnr, h, m * n);
@@ -820,52 +750,12 @@ int main(int argc, char* argv[])
     libxsmm_input = libxsmm_dnn_link_tensor( libxsmm_layout, xt, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_I, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_weight_i = libxsmm_dnn_link_tensor( libxsmm_layout, wi, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_weight = libxsmm_dnn_link_tensor( libxsmm_layout, w, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_F, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_weight_f = libxsmm_dnn_link_tensor( libxsmm_layout, wf, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_O, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_weight_o = libxsmm_dnn_link_tensor( libxsmm_layout, wo, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_C, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_weight_c = libxsmm_dnn_link_tensor( libxsmm_layout, wc, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_I, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_recur_weight_i = libxsmm_dnn_link_tensor( libxsmm_layout, ri, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_F, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_recur_weight_f = libxsmm_dnn_link_tensor( libxsmm_layout, rf, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_O, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_recur_weight_o = libxsmm_dnn_link_tensor( libxsmm_layout, ro, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_C, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_recur_weight_c = libxsmm_dnn_link_tensor( libxsmm_layout, rc, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_I, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_bias_i = libxsmm_dnn_link_tensor( libxsmm_layout, bi, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_F, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_bias_f = libxsmm_dnn_link_tensor( libxsmm_layout, bf, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_O, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_bias_o = libxsmm_dnn_link_tensor( libxsmm_layout, bo, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_C, &status ); CHKERR_LIBXSMM_DNN( status );
-    libxsmm_bias_c = libxsmm_dnn_link_tensor( libxsmm_layout, bc, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_bias = libxsmm_dnn_link_tensor( libxsmm_layout, b, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
     if (pass == 0) {
@@ -881,93 +771,53 @@ int main(int argc, char* argv[])
       libxsmm_dinput = libxsmm_dnn_link_tensor( libxsmm_layout, djdxt, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_I, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dweight_i = libxsmm_dnn_link_tensor( libxsmm_layout, djdwi, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_F, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dweight_f = libxsmm_dnn_link_tensor( libxsmm_layout, djdwf, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_O, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dweight_o = libxsmm_dnn_link_tensor( libxsmm_layout, djdwo, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_C, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dweight_c = libxsmm_dnn_link_tensor( libxsmm_layout, djdwc, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_I, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_drecur_weight_i = libxsmm_dnn_link_tensor( libxsmm_layout, djdri, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_F, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_drecur_weight_f = libxsmm_dnn_link_tensor( libxsmm_layout, djdrf, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_O, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_drecur_weight_o = libxsmm_dnn_link_tensor( libxsmm_layout, djdro, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_C, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_drecur_weight_c = libxsmm_dnn_link_tensor( libxsmm_layout, djdrc, &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT, &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_dweight = libxsmm_dnn_link_tensor( libxsmm_layout, djdw, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
       libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dhidden_state = libxsmm_dnn_link_tensor( libxsmm_layout, djdht, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_I, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dbias_i = libxsmm_dnn_link_tensor( libxsmm_layout, djdbi, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_F, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dbias_f = libxsmm_dnn_link_tensor( libxsmm_layout, djdbf, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dbias_o = libxsmm_dnn_link_tensor( libxsmm_layout, djdbo, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C, &status ); CHKERR_LIBXSMM_DNN( status );
-      libxsmm_dbias_c = libxsmm_dnn_link_tensor( libxsmm_layout, djdbc, &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_layout = libxsmm_dnn_lstmcell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS, &status ); CHKERR_LIBXSMM_DNN( status );
+      libxsmm_dbias = libxsmm_dnn_link_tensor( libxsmm_layout, djdb, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     }
 
     /* copy in data to LIBXSMM format */
     if (pass == 0) {
-      matrix_copy(m*k, wigold, wi);
-      matrix_copy(m*k, wfgold, wf);
-      matrix_copy(m*k, wogold, wo);
-      matrix_copy(m*k, wcgold, wc);
-      matrix_copy(m*m, rigold, ri);
-      matrix_copy(m*m, rfgold, rf);
-      matrix_copy(m*m, rogold, ro);
-      matrix_copy(m*m, rcgold, rc);
+      matrix_copy(m*k, wigold, &(w[0]));
+      matrix_copy(m*k, wfgold, &(w[m*k]));
+      matrix_copy(m*k, wogold, &(w[2*m*k]));
+      matrix_copy(m*k, wcgold, &(w[3*m*k]));
+      matrix_copy(m*m, rigold, &(w[4*m*k]));
+      matrix_copy(m*m, rfgold, &(w[4*m*k + m*m]));
+      matrix_copy(m*m, rogold, &(w[4*m*k + 2*m*m]));
+      matrix_copy(m*m, rcgold, &(w[4*m*k + 3*m*m]));
       matrix_copy(k*n*t, xgoldt, xt);
       zero_buf(h, m*n*(t+1));
       matrix_copy(m*n, hgold_temp, h);
-      matrix_copy(m, bigold, bi);
-      matrix_copy(m, bfgold, bf);
-      matrix_copy(m, bogold, bo);
-      matrix_copy(m, bcgold, bc);
+      matrix_copy(m, bigold, &(b[0]));
+      matrix_copy(m, bfgold, &(b[m]));
+      matrix_copy(m, bogold, &(b[2*m]));
+      matrix_copy(m, bcgold, &(b[3*m]));
     } else {
       /* matrix_transpose(k, m, wigold, wgoldTp); */
-      matrix_copy(m*k, wigold, wi);
+      matrix_copy(m*k, wigold, &(w[0]));
       /* matrix_transpose(k, m, wfgold, wgoldTp); */
-      matrix_copy(m*k, wfgold, wf);
+      matrix_copy(m*k, wfgold, &(w[m*k]));
       /* matrix_transpose(k, m, wogold, wgoldTp); */
-      matrix_copy(m*k, wogold, wo);
+      matrix_copy(m*k, wogold, &(w[2*m*k]));
       /* matrix_transpose(k, m, wcgold, wgoldTp); */
-      matrix_copy(m*k, wcgold, wc);
+      matrix_copy(m*k, wcgold, &(w[3*m*k]));
       /* matrix_transpose(m, m, rigold, rgoldTp); */
-      matrix_copy(m*m, rigold, ri);
+      matrix_copy(m*m, rigold, &(w[4*m*k]));
       /* matrix_transpose(m, m, rfgold, rgoldTp); */
-      matrix_copy(m*m, rfgold, rf);
+      matrix_copy(m*m, rfgold, &(w[4*m*k + m*m]));
       /* matrix_transpose(m, m, rogold, rgoldTp); */
-      matrix_copy(m*m, rogold, ro);
+      matrix_copy(m*m, rogold, &(w[4*m*k + 2*m*m]));
       /* matrix_transpose(m, m, rcgold, rgoldTp); */
-      matrix_copy(m*m, rcgold, rc);
+      matrix_copy(m*m, rcgold, &(w[4*m*k + 3*m*m]));
       /* matrix_transpose(n, m, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), hgoldTp); */
       /* matrix_transpose(n, k, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), xgoldTp);  */
       matrix_copy(m*n*t, hgoldt, ht);
@@ -978,34 +828,14 @@ int main(int argc, char* argv[])
     /* bind buffers and filter to handle */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_input, LIBXSMM_DNN_LSTM_REGULAR_INPUT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_hidden_state, LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_weight_i, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_I ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_weight_f, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_F ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_weight_o, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_O ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_weight_c, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_C ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_recur_weight_i, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_I ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_recur_weight_f, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_F ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_recur_weight_o, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_O ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_recur_weight_c, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_C ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_bias_i, LIBXSMM_DNN_LSTM_REGULAR_BIAS_I ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_bias_f, LIBXSMM_DNN_LSTM_REGULAR_BIAS_F ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_bias_o, LIBXSMM_DNN_LSTM_REGULAR_BIAS_O ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_bias_c, LIBXSMM_DNN_LSTM_REGULAR_BIAS_C ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_weight, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_bias, LIBXSMM_DNN_LSTM_REGULAR_BIAS ) );
 
     if (pass != 0) {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dinput, LIBXSMM_DNN_LSTM_GRADIENT_INPUT ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dhidden_state, LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dweight_i, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_I ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dweight_f, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_F ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dweight_o, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_O ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dweight_c, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_C ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_drecur_weight_i, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_I ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_drecur_weight_f, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_F ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_drecur_weight_o, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_O ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_drecur_weight_c, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_C ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dbias_i, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_I ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dbias_f, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_F ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dbias_o, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dbias_c, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dweight, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_bind_tensor( libxsmm_handle, libxsmm_dbias, LIBXSMM_DNN_LSTM_GRADIENT_BIAS ) );
     }
 
     /* let's allocate and bind scratch */
@@ -1070,6 +900,7 @@ int main(int argc, char* argv[])
       libxsmm_matdiff_reduce(&diff, &norms_fwd);
     }
 
+#if 0
     if ( (pass == 1) && LIBXSMM_NEQ(0, check) ) {
       printf("##########################################\n");
       printf("#   Correctness - BWD (custom-Storage)   #\n");
@@ -1281,6 +1112,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_b.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_b);
     }
+#endif
 
     if ( pass == 0 ) {
       printf("##########################################\n");
@@ -1478,71 +1310,23 @@ int main(int argc, char* argv[])
     libxsmm_free(internalstate);
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_INPUT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_I ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_F ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_O ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_C ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_I ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_F ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_O ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_C ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_I ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_F ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_O ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS_C ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_WEIGHT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_REGULAR_BIAS ) );
     if (pass != 0) {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_INPUT ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_I ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_F ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_O ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_C ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_I ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_F ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_O ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_C ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_I ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_F ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_lstmcell_release_tensor( libxsmm_handle, LIBXSMM_DNN_LSTM_GRADIENT_BIAS ) );
     }
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_input ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_hidden_state ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_i ) );
-    if (pass == 0) {
-#if defined(NON_FUSED_INPUT_GEMM)
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_f ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_o ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_c ) );
-#endif
-    } else {
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_f ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_o ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight_c ) );
-    }
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_recur_weight_i ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_recur_weight_f ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_recur_weight_o ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_recur_weight_c ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias_i ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias_f ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias_o ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias_c ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_weight ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_bias ) );
     if (pass != 0) {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dinput ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dhidden_state ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dweight_i ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dweight_f ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dweight_o ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dweight_c ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_drecur_weight_i ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_drecur_weight_f ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_drecur_weight_o ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_drecur_weight_c ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dbias_i ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dbias_f ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dbias_o ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dbias_c ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dweight ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dbias ) );
     }
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_lstmcell( libxsmm_handle ) );
   }
@@ -1583,20 +1367,10 @@ int main(int argc, char* argv[])
     libxsmm_free(d1gold);
     libxsmm_free(d2gold);
     libxsmm_free(dhgold);
-    libxsmm_free(wi);
-    libxsmm_free(wf);
-    libxsmm_free(wo);
-    libxsmm_free(wc);
+    libxsmm_free(w);
     libxsmm_free(xt);
-    libxsmm_free(ri);
-    libxsmm_free(rf);
-    libxsmm_free(ro);
-    libxsmm_free(rc);
     libxsmm_free(h);
-    libxsmm_free(bi);
-    libxsmm_free(bf);
-    libxsmm_free(bo);
-    libxsmm_free(bc);
+    libxsmm_free(b);
     libxsmm_free(htest);
     libxsmm_free(hgold_temp);
   } else {
@@ -1654,34 +1428,14 @@ int main(int argc, char* argv[])
     libxsmm_free(xgoldTp);
     libxsmm_free(hgoldTp);
     libxsmm_free(doutgoldt);
-    libxsmm_free(wi);
-    libxsmm_free(wf);
-    libxsmm_free(wo);
-    libxsmm_free(wc);
+    libxsmm_free(w);
     libxsmm_free(xt);
-    libxsmm_free(ri);
-    libxsmm_free(rf);
-    libxsmm_free(ro);
-    libxsmm_free(rc);
     libxsmm_free(ht);
-    libxsmm_free(bi);
-    libxsmm_free(bf);
-    libxsmm_free(bo);
-    libxsmm_free(bc);
+    libxsmm_free(b);
     libxsmm_free(djdht);
     libxsmm_free(djdxt);
-    libxsmm_free(djdwi);
-    libxsmm_free(djdwf);
-    libxsmm_free(djdwo);
-    libxsmm_free(djdwc);
-    libxsmm_free(djdri);
-    libxsmm_free(djdrf);
-    libxsmm_free(djdro);
-    libxsmm_free(djdrc);
-    libxsmm_free(djdbi);
-    libxsmm_free(djdbf);
-    libxsmm_free(djdbo);
-    libxsmm_free(djdbc);
+    libxsmm_free(djdw);
+    libxsmm_free(djdb);
     libxsmm_free(djdxtestt);
     libxsmm_free(djdwtest);
     libxsmm_free(djdrtest);

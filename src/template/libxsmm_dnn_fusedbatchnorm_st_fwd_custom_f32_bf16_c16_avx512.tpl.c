@@ -171,7 +171,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 
     _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, bmean,    fm, 0, 16), lcl_vbmean );
     _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,    fm, 0, 16), lcl_vbrstd );
-    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, variance, fm, 0, 16), lcl_vvar ); 
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, variance, fm, 0, 16), lcl_vvar );
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);

@@ -611,7 +611,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   /* options */
   int fwd_generic;
   int bwdupd_generic;
-  /* barrier */ 
+  /* barrier */
   libxsmm_barrier* barrier; /* barrier */
 };
 

@@ -221,60 +221,40 @@ typedef enum libxsmm_dnn_tensor_type {
 
   /** regular input buffer */
   LIBXSMM_DNN_LSTM_REGULAR_INPUT,
+  /** regular previous cell state buffer */
+  LIBXSMM_DNN_LSTM_REGULAR_CS_PREV,
+  /** regular previous hidden state buffer */
+  LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE_PREV,
+  /** regular weight (includes wi, wf, wo, wc, ri, rf, ro, rc) */
+  LIBXSMM_DNN_LSTM_REGULAR_WEIGHT,
+  /** regular bias (includes bi, bf, bo, bc) */
+  LIBXSMM_DNN_LSTM_REGULAR_BIAS,
+  /** regular output cell state buffer */
+  LIBXSMM_DNN_LSTM_REGULAR_CS,
   /** regular hidden state buffer */
   LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE,
-  /** regular weight i */
-  LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_I,
-  /** regular weight f */
-  LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_F,
-  /** regular weight o */
-  LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_O,
-  /** regular weight c */
-  LIBXSMM_DNN_LSTM_REGULAR_WEIGHT_C,
-  /** regular recurrent weight i */
-  LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_I,
-  /** regular recurrent weight f */
-  LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_F,
-  /** regular recurrent weight o */
-  LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_O,
-  /** regular recurrent weight c */
-  LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT_C,
-  /** regular bias i */
-  LIBXSMM_DNN_LSTM_REGULAR_BIAS_I,
-  /** regular bias f */
-  LIBXSMM_DNN_LSTM_REGULAR_BIAS_F,
-  /** regular bias o */
-  LIBXSMM_DNN_LSTM_REGULAR_BIAS_O,
-  /** regular bias c */
-  LIBXSMM_DNN_LSTM_REGULAR_BIAS_C,
+  /** internal i buffer */
+  LIBXSMM_DNN_LSTM_INTERNAL_I,
+  /** internal f buffer */
+  LIBXSMM_DNN_LSTM_INTERNAL_F,
+  /** internal o buffer */
+  LIBXSMM_DNN_LSTM_INTERNAL_O,
+  /** internal c buffer */
+  LIBXSMM_DNN_LSTM_INTERNAL_C,
   /** gradient input buffer */
   LIBXSMM_DNN_LSTM_GRADIENT_INPUT,
+  /** gradient previous cell state buffer */
+  LIBXSMM_DNN_LSTM_GRADIENT_CS_PREV,
+  /** gradient previous hidden state buffer */
+  LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE_PREV,
+  /** gradient weight */
+  LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT,
+  /** gradient bias */
+  LIBXSMM_DNN_LSTM_GRADIENT_BIAS,
+  /** gradient output cell state buffer */
+  LIBXSMM_DNN_LSTM_GRADIENT_CS,
   /** gradient hidden state buffer */
   LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE,
-  /** gradient weight i */
-  LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_I,
-  /** gradient weight f */
-  LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_F,
-  /** gradient weight o */
-  LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_O,
-  /** gradient weight c */
-  LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT_C,
-  /** gradient recurrent weight i */
-  LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_I,
-  /** gradient recurrent weight f */
-  LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_F,
-  /** gradient recurrent weight o */
-  LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_O,
-  /** gradient recurrent weight c */
-  LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT_C,
-  /** gradient bias i */
-  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_I,
-  /** gradient bias f */
-  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_F,
-  /** gradient bias o */
-  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_O,
-  /** gradient bias c */
-  LIBXSMM_DNN_LSTM_GRADIENT_BIAS_C,
 
   /** regular input buffer */
   LIBXSMM_DNN_GRU_REGULAR_INPUT,
