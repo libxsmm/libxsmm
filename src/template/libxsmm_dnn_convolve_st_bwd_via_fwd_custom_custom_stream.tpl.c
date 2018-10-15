@@ -96,13 +96,8 @@ libxsmm_convfunction kernel_pool[2];
 char *variant = handle->kernel_bwd_variant_ptrs[ltid];
 
 /* accumulation scratch for fp32->bf16 downconvert */
-#if !defined(LIBXSMM_DNN_VLA_TLS2)
 float *const accumulators_scratch = (float*)(((char*)handle->scratch6) +
     ltid * LIBXSMM_UP2(handle->ifmblock_hp * handle->desc.W * handle->desc.H * sizeof(float), LIBXSMM_CACHELINE));
-#else
-float accumulators_scratch_array[handle->ifmblock_hp * handle->desc.W * handle->desc.H];
-float *const accumulators_scratch = accumulators_scratch_array;
-#endif
 
 /* Input tensor declaration */
 /* regular/high precision */
