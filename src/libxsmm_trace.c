@@ -336,13 +336,12 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
             if (0 != c) {
               xpos[1] = 0;
               fd = mkstemp(filename);
-              xpos[1] = c;
             }
             else {
               fd = -1;
             }
 #endif
-            if (0 <= fd && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
+            if (0 <= fd && 0 == unlink(filename) && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
               char *const buffer = (char*)mmap(NULL, LIBXSMM_TRACE_SYMBOLSIZE,
                 PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 

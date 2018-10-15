@@ -114,6 +114,9 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #   define LIBXSMM_MALLOC_FALLBACK 0
 # endif
 #endif /*defined(LIBXSMM_VTUNE)*/
+#if !defined(LIBXSMM_MALLOC_XMAP_TEMPLATE)
+# define LIBXSMM_MALLOC_XMAP_TEMPLATE ".libxsmm_XXXXXX.jit"
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -498,13 +501,13 @@ LIBXSMM_API_INLINE void internal_mhint(void* buffer, size_t size)
 LIBXSMM_API_INLINE void* internal_xmap(const char* dir, size_t size, int flags, void** rx)
 {
   void* result = MAP_FAILED;
-  char filename[4096];
+  char filename[4096] = LIBXSMM_MALLOC_XMAP_TEMPLATE;
   int i = 0;
   assert(NULL != rx);
   if (NULL != dir) {
-    i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/.libxsmm_XXXXXX.jit", dir);
+    i = LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s/" LIBXSMM_MALLOC_XMAP_TEMPLATE, dir);
   }
-  if (0 < i && i < (int)sizeof(filename)) {
+  if (0 <= i && i < (int)sizeof(filename)) {
 #if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(2, 19) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__)
     i = mkstemps(filename, 4/*.jit*/);
 #else
@@ -513,7 +516,6 @@ LIBXSMM_API_INLINE void* internal_xmap(const char* dir, size_t size, int flags, 
     if (0 != c) {
       xpos[1] = 0;
       i = mkstemp(filename);
-      xpos[1] = c;
     }
     else {
       i = -1;
