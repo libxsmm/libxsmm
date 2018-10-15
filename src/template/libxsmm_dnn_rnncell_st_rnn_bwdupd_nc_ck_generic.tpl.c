@@ -72,6 +72,10 @@ LIBXSMM_VLA_DECL(2, element_output_type, hT, scratch_hT, N);
 element_output_type *zt = (element_output_type*)handle->internal_z;
 LIBXSMM_VLA_DECL(3, element_output_type, z, zt, N, K);
 #endif
+/* define gemm kernels */
+libxsmm_smmfunction gemmkernela = libxsmm_smmdispatch( bc, bn, bk, &C, &K, &C, NULL, NULL, NULL, NULL );
+libxsmm_smmfunction gemmkernelb = libxsmm_smmdispatch( bk, bk, bn, &K, &N, &K, NULL, NULL, NULL, NULL );
+libxsmm_smmfunction gemmkernelc = libxsmm_smmdispatch( bk, bc, bn, &K, &N, &K, NULL, NULL, NULL, NULL );
 
 /* computing first logical thread */
 const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_thread;
@@ -160,6 +164,11 @@ for (in = 0; in < N; in += bn) {
                                                                 &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K) );
 
     if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+      /* gemm kernel bwd_d */
+      for (ic = 0; ic < C; ic += bc) {
+        gemmkernela( &LIBXSMM_VLA_ACCESS(2, wT, ik, ic, C), &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, djdx, t-1, in, ic, N, C) );
+      }
+#if 0
       for (jn = 0; jn < bn; jn++) {
         for (jk = 0; jk < bk; jk++) {
           en = in + jn;
@@ -173,8 +182,26 @@ for (in = 0; in < N; in += bn) {
           }
         }
       }
+#endif
     }
     if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+      /* recurrent weight gradient */
+      for (ic = 0; ic < K; ic += bk) {
+        gemmkernelb( &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, djdu, ic, ik, K)  );
+      }
+      /* weight gradient */
+      for (ic = 0; ic < C; ic += bc) {
+        gemmkernelc( &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, djdw, ic, ik, K)  );
+      }
+      /* bias gradient */
+      for (jn = 0; jn < bn; jn++) {
+        for (jk = 0; jk < bk; jk++) {
+          en = in + jn;
+          ek = ik + jk;
+          djdb[ek] += LIBXSMM_VLA_ACCESS(3, delta, t-1, en, ek, N, K);
+        }
+      }
+#if 0
       for (jn = 0; jn < bn; jn++) {
         for (jk = 0; jk < bk; jk++) {
           en = in + jn;
@@ -196,6 +223,7 @@ for (in = 0; in < N; in += bn) {
           djdb[ek] += LIBXSMM_VLA_ACCESS(3, delta, t-1, en, ek, N, K);
         }
       }
+#endif
     }
   }
 }
