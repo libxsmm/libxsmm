@@ -51,7 +51,7 @@ LIBXSMM_VLA_DECL(2, element_filter_type, u, uD, K);
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, z, zt, N, K);
-/* define gemm kernels */ 
+/* define gemm kernels */
 libxsmm_smmfunction gemmkernela = libxsmm_smmdispatch( bk, bn, bc, &K, &C, &K, NULL, NULL, NULL, NULL );
 libxsmm_smmfunction gemmkernelb = libxsmm_smmdispatch( bk, bn, bk, &K, &K, &K, NULL, NULL, NULL, NULL );
 /* parallelize over C-blocks */

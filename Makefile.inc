@@ -515,9 +515,10 @@ endif
 # Fortran runtime library
 MKL_FCRTL ?= intel
 
-FORCE_CXX ?= 0
+ifneq (,$(FORCE_CXX))
 ifneq (0,$(FORCE_CXX))
   CC = $(CXX)
+endif
 endif
 
 ifeq (Windows_NT,$(UNAME))
@@ -775,8 +776,11 @@ endif
 ifneq (0,$(INTEL))
   AR ?= xiar
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
-  FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
-  CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+  FCLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
+  ifneq (0,$(FORCE_CXX))
+    FCLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+    CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+  endif
   ifneq (0,$(shell echo "$$((200000<=$(CXX_VERSION)))"))
     CXXFLAGS += -std=c++14
   else ifneq (0,$(COMPATIBLE))
@@ -988,10 +992,13 @@ ifneq (0,$(INTEL))
     CFLAGS += -D_Float128=__float128
   endif
 else # GCC assumed
-  FCLDFLAGS += $(XLIB_BEGIN) -lc -lstdc++ $(XLIB_END)
-  CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+  FCLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   CXXLDFLAGS += $(XLIB_BEGIN) -lc $(XLIB_END)
   LDFLAGS += $(XLIB_BEGIN) -lm $(XLIB_END)
+  ifneq (0,$(FORCE_CXX))
+    FCLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+    CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
+  endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(shell echo "$$((50000<=$(GCC_VERSION)))"))
       CXXFLAGS += -std=c++14

@@ -65,8 +65,4 @@ class PoolXSMM : public PoolImpl
     // Assume external threading, e.g., #pragma omp
     void forwardPropagate(TensorBuf *inp, TensorBuf *outp, int *maskp, int tid);
     void backPropagate(TensorBuf *deloutp, int *maskp, TensorBuf *delinp, int tid);
-    void convert_NCHW_to_NCHWV(float*, int, int, int, int, float*);
-    void convert_NCHWV_to_NCHW(float*, int, int, int, int, float*);
-    void convert_NCHW_to_NHWC(float*, int, int, int, int, float*);
-    void convert_NHWC_to_NCHW(float*, int, int, int, int, float*);
 };

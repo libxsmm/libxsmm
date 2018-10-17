@@ -31,8 +31,18 @@
 
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
 # define _mm512_load_act(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+#if 1
+__m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
+__m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
+__m512i vfixup = _mm512_set1_epi32( 0x00000001 );
+__m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
+# define _mm512_roundbf16rne(A) _mm512_mask_add_epi32( _mm512_castps_si512( A ), _mm512_cmp_epi32_mask( _mm512_and_epi32( _mm512_castps_si512( A ), vnaninf ), vnaninf, _MM_CMPINT_NE ), _mm512_castps_si512( A ), _mm512_mask_add_epi32( vrneadd , _mm512_cmp_epi32_mask( _mm512_and_epi32( _mm512_castps_si512( A ), vfixupmask ), vfixupmask, _MM_CMPINT_EQ ), vrneadd, vfixup ) )
+# define _mm512_stream_act(A,B) _mm256_stream_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
+# define _mm512_store_act(A,B)  _mm256_storeu_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
+#else
 # define _mm512_stream_act(A,B) _mm256_stream_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512((B)),16)))
 # define _mm512_store_act(A,B)  _mm256_storeu_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512((B)),16)))
+#endif
 #else
 # define _mm512_load_act(A)   _mm512_loadu_ps(A)
 # define _mm512_stream_act(A,B) _mm512_stream_ps(A,B)
@@ -102,7 +112,7 @@ LIBXSMM_VLA_DECL(2, const element_stats_type,  gamma,      (element_stats_type*)
 LIBXSMM_VLA_DECL(2,       element_stats_type,  dgamma,     (element_stats_type*)handle->grad_gamma->data, 16);
 LIBXSMM_VLA_DECL(2,       element_stats_type,  dbeta,      (element_stats_type*)handle->grad_beta->data,  16);
 LIBXSMM_VLA_DECL(2, const element_stats_type,  bmean,      (element_stats_type*)handle->expvalue->data,   16);
-LIBXSMM_VLA_DECL(2, const element_stats_type,  brstd,      (element_stats_type*)handle->stddev->data,     16);
+LIBXSMM_VLA_DECL(2, const element_stats_type,  brstd,      (element_stats_type*)handle->rcpstddev->data,  16);
 LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                                                    nImg, 16);
 LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)16), nImg, 16);
 

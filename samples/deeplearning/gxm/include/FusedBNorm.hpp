@@ -288,6 +288,7 @@ class FusedBNormNode : public NNNode
     void Checkpoint(TensorBuf *tBuf, string name, string format);
     void fillBuffer(TensorBuf *tBuf, int buftype, long long int bytes);
     void fillBiasMultipliers(float* lr_mult, float* decay_mult, long long int bytes);
+    void convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len);
 
     virtual ~FusedBNormNode(void) {}
 
@@ -307,7 +308,7 @@ class FusedBNormNode : public NNNode
     Tensor* tenTop_;
     vector<Tensor *> tenBot_;
     Tensor *tenScale_, *tenShift_;
-    Tensor *tenMean_, *tenRstdev_;
+    Tensor *tenMean_, *tenVar_;
 
     FusedBNormImplParams gparams_;
     vector<TensorBuf *> tenBotDiff_, tenBotData_;
@@ -315,14 +316,16 @@ class FusedBNormNode : public NNNode
     TensorBuf *tenScaleData_, *tenScaleDiff_;
     TensorBuf *tenShiftData_, *tenShiftDiff_;
     TensorBuf *tenScaleInc_, *tenShiftInc_;
-    TensorBuf *tenMeanData_, *tenRstdevData_;
+    TensorBuf *tenMeanData_, *tenVarData_;
     TensorBuf *tenScratchData_;
 
-    float *gmean_, *grstd_, eps, lr_mult_, decay_mult_;
-    string scale_, shift_, mean_, rstdev_;
+    float *gmean_, *gvar_, eps, lr_mult_, decay_mult_;
+    float *stptr=NULL, cbptr[16];
+    string scale_, shift_, mean_, var_;
     bool first_fp=true, first_bp=true;
 
-    int count_;
+    int count_, in_dtype, out_dtype;
+    float scf=0;
 
     vector<int> bot_cengine_;
     Shape ts_;

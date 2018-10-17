@@ -47,7 +47,7 @@ typedef struct {
   int oHeight, oWidth;
   int kh, kw;
   bool bias_term;
-  int data_type;
+  int in_data_type, out_data_type;
   int algType;
   int num_threads;
 } FCImplParams;

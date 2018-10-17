@@ -279,7 +279,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_input;
   libxsmm_dnn_tensor* libxsmm_output;
   libxsmm_dnn_tensor* libxsmm_filter;
-  libxsmm_dnn_tensor* libxsmm_batchstats;
+  libxsmm_dnn_tensor* libxsmm_batchstats = NULL;
 #ifdef USE_FUSED_MAX_STATS
   libxsmm_dnn_tensor* libxsmm_maxstats_fwd;
 #endif

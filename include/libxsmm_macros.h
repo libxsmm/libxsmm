@@ -425,7 +425,7 @@
  * Please note that the leading dimension (s0) is omitted in the above syntax!
  * TODO: support leading dimension (pitch/stride).
  */
-#if defined(_MSC_VER) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) /* account for incorrect handling of __VA_ARGS__ */
+#if defined(_MSC_VER) && !defined(__clang__) /* account for incorrect handling of __VA_ARGS__ */
 # define LIBXSMM_INDEX1(NDIMS, ...) LIBXSMM_CONCATENATE(LIBXSMM_INDEX1_, NDIMS)LIBXSMM_EXPAND((__VA_ARGS__))
 #else
 # define LIBXSMM_INDEX1(NDIMS, ...) LIBXSMM_CONCATENATE(LIBXSMM_INDEX1_, NDIMS)(__VA_ARGS__)
@@ -449,8 +449,10 @@
  * Syntax: LIBXSMM_VLA_ACCESS(<ndims>, <array>, <i0>, ..., <i(ndims-1)>, <s1>, ..., <s(ndims-1)>).
  * Please note that the syntax is similar to LIBXSMM_INDEX1, and the leading dimension (s0) is omitted!
  */
-#if defined(LIBXSMM_VLA)
+#if !defined(LIBXSMM_VLA_POSTFIX)
 # define LIBXSMM_VLA_POSTFIX _
+#endif
+#if defined(LIBXSMM_VLA)
 # define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) LIBXSMM_VLA_ACCESS_Z(NDIMS, LIBXSMM_CONCATENATE(ARRAY, LIBXSMM_VLA_POSTFIX), LIBXSMM_VLA_ACCESS_X, __VA_ARGS__)
 # define LIBXSMM_VLA_ACCESS_X(S) + 0 * (S)
 # define LIBXSMM_VLA_ACCESS_Y(...)
@@ -468,9 +470,9 @@
     ELEMENT_TYPE LIBXSMM_VLA_ACCESS_Z(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *LIBXSMM_RESTRICT LIBXSMM_CONCATENATE(ARRAY_VAR, LIBXSMM_VLA_POSTFIX), LIBXSMM_VLA_ACCESS_Y, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/) = \
    (ELEMENT_TYPE LIBXSMM_VLA_ACCESS_Z(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *, LIBXSMM_VLA_ACCESS_Y, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/))(INIT_VALUE)
 #else /* calculate linear index */
-# define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) (LIBXSMM_CONCATENATE(ARRAY, _)[LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)])
+# define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) (LIBXSMM_CONCATENATE(ARRAY, LIBXSMM_VLA_POSTFIX)[LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)])
 # define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, ARRAY_VAR, INIT_VALUE, .../*bounds*/) \
-    ELEMENT_TYPE *LIBXSMM_RESTRICT LIBXSMM_CONCATENATE(ARRAY_VAR, _) = /*(ELEMENT_TYPE*)*/(INIT_VALUE)
+    ELEMENT_TYPE *LIBXSMM_RESTRICT LIBXSMM_CONCATENATE(ARRAY_VAR, LIBXSMM_VLA_POSTFIX) = /*(ELEMENT_TYPE*)*/(INIT_VALUE)
 #endif
 
 #if !defined(LIBXSMM_UNUSED)
@@ -522,7 +524,10 @@
 # define LIBXSMM_MAY_ALIAS
 #endif
 
-#if defined(_WIN32)
+#if !defined(LIBXSMM_MKTEMP_PATTERN)
+# define LIBXSMM_MKTEMP_PATTERN "XXXXXX"
+#endif
+#if defined(_WIN32) && 0
 # define LIBXSMM_SNPRINTF(S, N, ...) _snprintf_s(S, N, _TRUNCATE, __VA_ARGS__)
 # define setenv(NAME, VALUE, OVERWRITE) _putenv(NAME "=" VALUE)
 #elif defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
@@ -533,17 +538,15 @@
 #if (0 == LIBXSMM_SYNC)
 # define LIBXSMM_FLOCK(FILE)
 # define LIBXSMM_FUNLOCK(FILE)
-#else
-# if defined(_WIN32)
-#   define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
-#   define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
-# elif !defined(__CYGWIN__)
-#   define LIBXSMM_FLOCK(FILE) flockfile(FILE)
-#   define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
-# else /* Only available with __CYGWIN__ *and* C++0x. */
-#   define LIBXSMM_FLOCK(FILE)
-#   define LIBXSMM_FUNLOCK(FILE)
-# endif
+#elif defined(_WIN32)
+# define LIBXSMM_FLOCK(FILE) _lock_file(FILE)
+# define LIBXSMM_FUNLOCK(FILE) _unlock_file(FILE)
+#elif !defined(__CYGWIN__)
+# define LIBXSMM_FLOCK(FILE) flockfile(FILE)
+# define LIBXSMM_FUNLOCK(FILE) funlockfile(FILE)
+#else /* Only available with __CYGWIN__ *and* C++0x. */
+# define LIBXSMM_FLOCK(FILE)
+# define LIBXSMM_FUNLOCK(FILE)
 #endif
 
 /** Synchronize console output */

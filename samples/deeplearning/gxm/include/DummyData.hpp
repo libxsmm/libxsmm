@@ -37,6 +37,7 @@
 #include "Params.hpp"
 #include "Tensor.hpp"
 #include "proto/gxm.pb.h"
+#include "check.hpp"
 
 using namespace std;
 using namespace gxm;
@@ -92,6 +93,9 @@ class DummyDataParams: public NNParams
       shape_.dims[3] = width;
     }
 
+    void set_pad_h(int ph) {pad_h_ = ph;}
+    void set_pad_w(int pw) {pad_w_ = pw;}
+
     void set_num_train_files(int t) {ntrain_ = t; }
     void set_num_test_files(int t) {ntest_ = t;}
 
@@ -114,6 +118,9 @@ class DummyDataParams: public NNParams
     int get_lookahead() { return lookahead_; }
     int get_chunk_size() { return chunk_; }
     Shape* get_shape() { return &shape_; }
+    int get_pad_h() { return pad_h_; }
+    int get_pad_w() { return pad_w_; }
+
     string get_filler_type() { return filler_type_; }
     float get_filler_val() { return filler_val_; }
     int get_num_train_files() {return ntrain_;}
@@ -122,7 +129,7 @@ class DummyDataParams: public NNParams
   protected:
     int lookahead_, compute_engine_;
     int chunk_, ntrain_=0, ntest_=0;
-    int data_type_;
+    int data_type_, pad_h_, pad_w_;
     Shape shape_;
     string filler_type_;
     float filler_val_;
@@ -187,6 +194,9 @@ static MLParams* parseDummyDataParams(NodeParameter* np)
       p->set_num_test_files(s.dim(0));
     }
 
+    p->set_pad_h(ddp->pad_h());
+    p->set_pad_w(ddp->pad_w());
+
     FillerParameter dfp = ddp->data_filler(0);
     p->set_filler_type(dfp.type());
     if(dfp.value())
@@ -210,8 +220,8 @@ class DummyDataNode : public NNNode
     virtual ~DummyDataNode(void) {}
 
     void fillData(float* ptr, long long int size);
-    void fillData(int* ptr, long long int size);
     void fillData(short int* ptr, long long int size);
+    void fillData(int* ptr, long long int size);
 
   protected:
     Tensor *tenBot_;
@@ -220,7 +230,10 @@ class DummyDataNode : public NNNode
     string node_name_, node_type_;
     string filler_type_;
     float filler_val_;
+    int pad_h_, pad_w_;
     int global_batch_size_, num_machines_;
+    Shape* ts_;
+    bool first_fp=true;
 
     void forwardPropagate();
 };

@@ -40,15 +40,19 @@
 int main(/*int argc, char* argv[]*/)
 {
   int ni = 9, nj = 7, nk = 3, i, j, k, linear = 0, result = EXIT_SUCCESS;
-  ELEM_TYPE* in1 = (ELEM_TYPE*)malloc(ni * nj * nk * sizeof(ELEM_TYPE));
-  LIBXSMM_VLA_DECL(3, const ELEM_TYPE, in3, in1, nj, nk);
+  ELEM_TYPE* input = (ELEM_TYPE*)malloc(ni * nj * nk * sizeof(ELEM_TYPE));
+  LIBXSMM_VLA_DECL(1, const ELEM_TYPE, in1, input, nj, nk);
+  LIBXSMM_VLA_DECL(3, const ELEM_TYPE, in3, input, nj, nk);
 
-  assert(0 != in1);
-  for (i = 0; i < (ni * nj * nk); ++i) in1[i] = (ELEM_TYPE)i;
+  assert(NULL != input);
+  for (i = 0; i < (ni * nj * nk); ++i) input[i] = (ELEM_TYPE)i;
   for (i = 0; i < ni; ++i) {
     for (j = 0; j < nj; ++j) {
       for (k = 0; k < nk; ++k) {
-        if (in1[linear] != LIBXSMM_VLA_ACCESS(3, in3, i, j, k, nj, nk)) {
+        const ELEM_TYPE gold = input[linear];
+        if (gold != LIBXSMM_VLA_ACCESS(3, in3, i, j, k, nj, nk) ||
+            gold != LIBXSMM_VLA_ACCESS(1, in1, linear))
+        {
           result = EXIT_FAILURE;
           i = ni; j = nj;
           break;
@@ -58,6 +62,6 @@ int main(/*int argc, char* argv[]*/)
     }
   }
 
-  free(in1);
+  free(input);
   return result;
 }

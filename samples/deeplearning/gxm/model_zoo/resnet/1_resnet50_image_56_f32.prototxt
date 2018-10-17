@@ -1,51 +1,42 @@
-#############################################################################
-# Copyright (c) 2017-2018, Intel Corporation                                #
-# All rights reserved.                                                      #
-#                                                                           #
-# Redistribution and use in source and binary forms, with or without        #
-# modification, are permitted provided that the following conditions        #
-# are met:                                                                  #
-# 1. Redistributions of source code must retain the above copyright         #
-#    notice, this list of conditions and the following disclaimer.          #
-# 2. Redistributions in binary form must reproduce the above copyright      #
-#    notice, this list of conditions and the following disclaimer in the    #
-#    documentation and/or other materials provided with the distribution.   #
-# 3. Neither the name of the copyright holder nor the names of its          #
-#    contributors may be used to endorse or promote products derived        #
-#    from this software without specific prior written permission.          #
-#                                                                           #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       #
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     #
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      #
-# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    #
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  #
-# TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    #
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    #
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      #
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        #
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              #
-#############################################################################
-# Sasikanth Avancha, Dhiraj Kalamkar, Alexander Heinecke (Intel Corp.)
-#############################################################################
-
 node {
   name: "data"
-  type: "DummyData"
+  type: "JitterData"
   top: "data"
   top: "label"
-  mode: TRAIN
   propagate_down: false
-  dummy_data_param {
-    shape: { dim: 22400 dim: 224 dim: 3 dim: 224 dim: 224 }
-    data_filler {
-      type: "constant"
-      value: 0.1
-    }
+  mode: TRAIN
+  data_param {
+    train_source: "/scratch/savancha/jpegs_256resized"
+    train_list: "/scratch/savancha/jpegs_256resized/train_images_labels.list"
+    test_source: "/scratch/savancha/jpegs_256resized"
+    test_list: "/scratch/savancha/jpegs_256resized/val_images_labels.list"
+    batch_size: 56
+    num_train_files: 1281167
+    num_test_files: 50000
+    numsplits: 1
+    lookahead: 2 
+    shuffle: true
     engine: XSMM
     data_type: FLOAT
+
+    image_xform_param {
+      orig_size: 256
+      mirror: true
+      crop_image: true
+      physical_padding: true
+      crop_size: 224
+      pad_h: 3
+      pad_w: 3
+      mean_values: 0.406
+      mean_values: 0.456
+      mean_values: 0.485
+      scale_values: 0.225
+      scale_values: 0.224
+      scale_values: 0.229
+      test_views: 1
+    }
   }
-} 
+}
 node {
   name: "conv1"
   type: "Convolution"
@@ -62,7 +53,7 @@ node {
     num_output: 64
     pad: 3
     bias_term: false
-    bwd_relu: false
+    physical_padding: true
     kernel_size: 7
     stride: 2
     weight_filler {
@@ -81,7 +72,7 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: true
+    ipad: 3
     pad: 0
     stride: 1
     engine: XSMM
@@ -100,6 +91,7 @@ node {
     engine: XSMM
     kernel_size: 3
     stride: 2
+    pad: 1
   }
 }
 node {
@@ -116,7 +108,6 @@ node {
     engine: XSMM
     num_output: 256
     pad: 0
-    bwd_relu: false
     bias_term: false
     kernel_size: 1
     stride: 1
@@ -133,7 +124,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     relu: false
-    bwd_relu: false
     pad: 0
     stride: 1
     engine: XSMM
@@ -155,7 +145,6 @@ node {
     engine: XSMM
     num_output: 64
     pad: 0
-    bwd_relu: false
     bias_term: false
     kernel_size: 1
     stride: 1
@@ -171,7 +160,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -195,7 +183,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -211,7 +198,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -235,7 +221,6 @@ node {
     num_output: 256
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -251,7 +236,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -275,7 +259,6 @@ node {
     num_output: 64
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -290,7 +273,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -314,7 +296,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -330,7 +311,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -354,7 +334,6 @@ node {
     num_output: 256
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -370,7 +349,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -394,7 +372,6 @@ node {
     num_output: 64
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -409,7 +386,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -433,7 +409,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -449,7 +424,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -473,7 +447,6 @@ node {
     num_output: 256
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -489,9 +462,8 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: false
     pad: 0
-    stride: 1
+    stride: 2
     engine: XSMM
   }
   bottom: "node_64_3_conv3"
@@ -513,9 +485,8 @@ node {
     num_output: 512
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -529,7 +500,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     relu: false
-    bwd_relu: false
     pad: 0
     stride: 1
     engine: XSMM
@@ -552,9 +522,8 @@ node {
     num_output: 128
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -567,7 +536,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -591,7 +559,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -607,7 +574,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -631,7 +597,6 @@ node {
     num_output: 512
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -647,7 +612,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -671,7 +635,6 @@ node {
     num_output: 128
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -686,7 +649,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -710,7 +672,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -726,7 +687,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -750,7 +710,6 @@ node {
     num_output: 512
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -766,7 +725,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -790,7 +748,6 @@ node {
     num_output: 128
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -805,7 +762,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -829,7 +785,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -845,7 +800,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -869,7 +823,6 @@ node {
     num_output: 512
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -885,7 +838,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -909,7 +861,6 @@ node {
     num_output: 128
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -924,7 +875,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -948,7 +898,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -964,7 +913,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -988,7 +936,6 @@ node {
     num_output: 512
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1004,9 +951,8 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: false
     pad: 0
-    stride: 1
+    stride: 2
     engine: XSMM
   }
   bottom: "node_128_4_conv3"
@@ -1028,9 +974,8 @@ node {
     num_output: 1024
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -1044,7 +989,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     relu: false
-    bwd_relu: false
     pad: 0
     stride: 1
     engine: XSMM
@@ -1067,9 +1011,8 @@ node {
     num_output: 256
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -1082,7 +1025,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1106,7 +1048,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1122,7 +1063,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1146,7 +1086,6 @@ node {
     num_output: 1024
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1162,7 +1101,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1186,7 +1124,6 @@ node {
     num_output: 256
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1201,7 +1138,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1225,7 +1161,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1241,7 +1176,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1265,7 +1199,6 @@ node {
     num_output: 1024
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1281,7 +1214,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1305,7 +1237,6 @@ node {
     num_output: 256
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1320,7 +1251,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1344,7 +1274,6 @@ node {
     pad: 1
     opad: 1 
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1360,7 +1289,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1384,7 +1312,6 @@ node {
     num_output: 1024
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1400,7 +1327,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1424,7 +1350,6 @@ node {
     num_output: 256
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1439,7 +1364,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1463,7 +1387,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1479,7 +1402,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1503,7 +1425,6 @@ node {
     num_output: 1024
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1519,7 +1440,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1543,7 +1463,6 @@ node {
     num_output: 256
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1558,7 +1477,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1582,7 +1500,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1598,7 +1515,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1622,7 +1538,6 @@ node {
     num_output: 1024
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1638,7 +1553,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1662,7 +1576,6 @@ node {
     num_output: 256
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1677,7 +1590,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1701,7 +1613,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1717,7 +1628,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1741,7 +1651,6 @@ node {
     num_output: 1024
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1757,9 +1666,8 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: false
     pad: 0
-    stride: 1
+    stride: 2
     engine: XSMM
   }
   bottom: "node_256_6_conv3"
@@ -1781,9 +1689,8 @@ node {
     num_output: 2048
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -1797,7 +1704,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     relu: false
-    bwd_relu: false
     pad: 0
     stride: 1
     engine: XSMM
@@ -1820,9 +1726,8 @@ node {
     num_output: 512
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -1835,7 +1740,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1859,7 +1763,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1875,7 +1778,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1899,7 +1801,6 @@ node {
     num_output: 2048
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1915,7 +1816,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1939,7 +1839,6 @@ node {
     num_output: 512
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1954,7 +1853,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1978,7 +1876,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1994,7 +1891,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -2018,7 +1914,6 @@ node {
     num_output: 2048
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -2034,7 +1929,6 @@ node {
     data_type: FLOAT
     use_global_stats: false
     eltwise: true
-    bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -2058,7 +1952,6 @@ node {
     num_output: 512
     pad: 0
     bias_term: false
-    bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -2073,7 +1966,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -2097,7 +1989,6 @@ node {
     pad: 1
     opad: 1
     bias_term: false
-    bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -2113,7 +2004,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -2137,7 +2027,6 @@ node {
     num_output: 2048
     pad: 0
     bias_term: false
-    bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -2152,7 +2041,6 @@ node {
   fused_bnorm_param {
     data_type: FLOAT
     use_global_stats: false
-    bwd_relu: true
     eltwise: true
     pad: 0
     stride: 1

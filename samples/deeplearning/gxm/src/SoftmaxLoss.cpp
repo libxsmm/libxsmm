@@ -170,17 +170,10 @@ void SoftmaxLossNode::forwardPropagate()
 
   impl->forwardPropagate(bot, label, top);
 
-#ifdef DUMP_ACT_DATA
-  int iter = eptr_->get_current_batch();
-  string fname = gparams_.node_name + "_fp_out_" + to_string(iter);
-  FILE* f = fopen(fname.c_str(), "w");
-  for(int i=0; i<gparams_.batch_size*gparams_.nOutput; i++)
-    fprintf(f, "%10g\n", top[i]);
-  fclose(f);
-#endif
-
-#ifdef DEBUG
-  MeanOfLayer("FPOut", top, gparams_.batch_size*gparams_.nOutput);
+#ifdef GETSTATS
+  MeanOfLayer("SMFPIn", bot, gparams_.batch_size*gparams_.nInput);
+  MeanOfLayer("SMFPOut", top, gparams_.batch_size*gparams_.nOutput);
+  MeanOfLayer("SMFPLabel", label, gparams_.batch_size);
 #endif
 
 #ifdef USE_MLSL

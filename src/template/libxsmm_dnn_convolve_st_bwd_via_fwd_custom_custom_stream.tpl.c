@@ -96,20 +96,15 @@ libxsmm_convfunction kernel_pool[2];
 char *variant = handle->kernel_bwd_variant_ptrs[ltid];
 
 /* accumulation scratch for fp32->bf16 downconvert */
-#if !defined(LIBXSMM_DNN_VLA_TLS2)
 float *const accumulators_scratch = (float*)(((char*)handle->scratch6) +
     ltid * LIBXSMM_UP2(handle->ifmblock_hp * handle->desc.W * handle->desc.H * sizeof(float), LIBXSMM_CACHELINE));
-#else
-float accumulators_scratch_array[handle->ifmblock_hp * handle->desc.W * handle->desc.H];
-float *const accumulators_scratch = accumulators_scratch_array;
-#endif
 
 /* Input tensor declaration */
 /* regular/high precision */
 element_input_type* del_in = 0;
 
 int bn_ifh=0, bn_ifw=0, bn_sh=0, bn_sw=0, bn_ofh=0, bn_ofw=0, bn_iph=0, bn_ipw=0, bn_oph=0, bn_opw=0, bn_ofhp=0, bn_ofwp=0, bn_ifhp=0, bn_ifwp=0, bn_nBlocksFm=0, nImg=0;
-libxsmm_dnn_fusedbn *pre_bn = handle->pre_bn;
+libxsmm_dnn_fusedbatchnorm *pre_bn = handle->pre_bn;
 if (handle->fuse_batchstats_bwd) {
   bn_ifh = pre_bn->desc.H;
   bn_ifw = pre_bn->desc.W;
@@ -285,7 +280,7 @@ del_in = ((element_input_type*)handle->grad_input->data) + (handle->desc.pad_h_i
     LIBXSMM_VLA_DECL(5, element_input_type, original_input, ((element_input_type*)handle->reg_input->data) + (handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->ifmblock, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
     LIBXSMM_VLA_DECL(5, element_input_type, bn_input, ((element_input_type* )pre_bn->reg_input->data) + (pre_bn->desc.pad_h_in * bn_ifwp + pre_bn->desc.pad_w_in) * handle->ifmblock,   bn_nBlocksFm, bn_ifhp, bn_ifwp, 16);
     LIBXSMM_VLA_DECL(2, float,  bmean_lcl,      (float*)pre_bn->expvalue->data,   16);
-    LIBXSMM_VLA_DECL(2, float,  brstd_lcl,      (float*)pre_bn->stddev->data,     16);
+    LIBXSMM_VLA_DECL(2, float,  brstd_lcl,      (float*)pre_bn->rcpstddev->data,     16);
     LIBXSMM_VLA_DECL(4, float,  kernel_stats_lcl, (float*)handle->scratch7, bn_nBlocksFm, handle->desc.N, 16);
 
     regular_input_base  = &LIBXSMM_VLA_ACCESS(5, original_input, 0, 0, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
