@@ -95,7 +95,7 @@ JitterDataNode::JitterDataNode(JitterDataParams* p, MLEngine* e) : NNNode(p, e)
       bool phys_padding = p->get_physical_padding();
       if(phys_padding)
       {
-        gparams_.pad_h = p->get_pad_h();  
+        gparams_.pad_h = p->get_pad_h();
         gparams_.pad_w = p->get_pad_w();
         size = size * (tts.dims[2] + 2*gparams_.pad_h) * (tts.dims[3] + 2*gparams_.pad_w);
       }

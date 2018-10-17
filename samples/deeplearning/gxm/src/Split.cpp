@@ -113,7 +113,7 @@ SplitNode::SplitNode(SplitParams *p, MLEngine *e) : NNNode(p, e)
     if(bp_flag_)
     {
       tenBotDiff_ = tenBot_->addBuf();
-      tenBotDiff_->setDataType(in_dtype); 
+      tenBotDiff_->setDataType(in_dtype);
       tenBotDiff_->setBufferType(DIFF);
       tenBotDiff_->setBufferSize(tenBotData_->getBufferSize());
     }

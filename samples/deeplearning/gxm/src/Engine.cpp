@@ -566,7 +566,7 @@ void MLEngine::run(int mode)
   }
 }
 
-void MLEngine::convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len) 
+void MLEngine::convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len)
 {
   unsigned int i = 0;
 #pragma omp parallel for private(i)

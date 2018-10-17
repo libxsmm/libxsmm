@@ -51,7 +51,7 @@ FusedBNormXSMM::FusedBNormXSMM(FusedBNormImplParams* gp, int engine) : FusedBNor
   fusedbn_desc_train.pad_h_out = gp->pad_h;
   fusedbn_desc_train.pad_w_out = gp->pad_w;
   fusedbn_desc_train.threads = gp->num_threads;
-  
+
   if(gp->in_data_type == DT_FLOAT && gp->out_data_type == DT_FLOAT)
   {
     fusedbn_desc_train.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
@@ -171,7 +171,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
   void *scratch = scratchp->getBuffer();
 
   if(libxsmm_input_train == NULL && libxsmm_input_add_train == NULL && libxsmm_expectval_train == NULL &&
-      libxsmm_stddev_train == NULL && libxsmm_variance_train == NULL && libxsmm_gamma_train == NULL && 
+      libxsmm_stddev_train == NULL && libxsmm_variance_train == NULL && libxsmm_gamma_train == NULL &&
       libxsmm_beta_train == NULL && libxsmm_output_train == NULL)
   {
     libxsmm_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout( libxsmm_handle_train, LIBXSMM_DNN_REGULAR_INPUT, &status );
@@ -353,7 +353,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
       __m512 vbvar = _mm512_load_ps(&bvar[b][0]);
 
       _mm512_store_ps( &(gexpect[b*VLEN]), _mm512_add_ps(_mm512_mul_ps(_mm512_load_ps( &(gexpect[b*VLEN]) ), vmmf), vbm));
-      _mm512_store_ps( &(gvariance[b*VLEN]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(gvariance[b*VLEN]) ), vmmf), _mm512_mul_ps(vnhw_ratio, vbvar)));      
+      _mm512_store_ps( &(gvariance[b*VLEN]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(gvariance[b*VLEN]) ), vmmf), _mm512_mul_ps(vnhw_ratio, vbvar)));
     }
 #else
 

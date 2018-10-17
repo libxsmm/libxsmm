@@ -125,7 +125,7 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
 
   tenTopData_->setBufferSize(tsize);
 
-  // Tensor representing mask of selected neurons. 
+  // Tensor representing mask of selected neurons.
   long long int size = 1;
   for(int i=0; i<ts_.ndims; i++)
     size = size*ts_.dims[i];
