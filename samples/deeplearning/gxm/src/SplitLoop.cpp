@@ -39,16 +39,9 @@
 
 void SplitLoop::forwardPropagate(TensorBuf *inpb, vector<TensorBuf*>& outpb, int tid)
 {
-  int in_dtype = inpb->getDataType();
-
   for(int i=0; i<outpb.size(); i++)
   {
     outpb[i]->setBuffer(inpb->getBuffer());
-    if(in_dtype == DT_DFP16)
-    {
-      outpb[i]->setLPBuffer(inpb->getLPBuffer());
-      outpb[i]->setLPSF(inpb->getLPSF());
-    }
     outpb[i]->setBufferSize(inpb->getBufferSize());
     outpb[i]->setLayoutType(inpb->getLayoutType());
   }
@@ -63,95 +56,124 @@ void SplitLoop::backPropagate(vector<TensorBuf *>& deloutpb, TensorBuf *delinpb,
   int ifh = gp->iHeight;
   int ifw = gp->iWidth;
 
-  // TODO: Handle DFP16 type if/when required.
-  int dtype = delinpb->getDataType();
+  int in_dtype = delinpb->getDataType();
+  int out_dtype = deloutpb[0]->getDataType();
 
-  float* delinp = (float*)delinpb->getBuffer();
+  void* delinp = delinpb->getBuffer();
 
-  float *deloutp[deloutpb.size()];
+  void *deloutp[deloutpb.size()];
   int num_outp = 1;
   int size = nImg*nIfm*ifh*ifw;
 
-  deloutp[0] = (float*)(deloutpb[0]->getBuffer());
+  deloutp[0] = deloutpb[0]->getBuffer();
 
   for(int i=1; i<deloutpb.size(); i++)
   {
     if(deloutpb[i] == NULL) continue;
 
-    deloutp[num_outp] = (float*)(deloutpb[i]->getBuffer());
+    deloutp[num_outp] = deloutpb[i]->getBuffer();
     num_outp++;
   }
 
+  if(in_dtype == DT_FLOAT && out_dtype == DT_FLOAT)
+  {
 #ifdef __AVX512F__
-  if (size % 16 == 0) {
-    if ( num_outp == 2 ) {
-      float* out1 = deloutp[0];
-      float* out2 = deloutp[1];
+    if (size % 16 == 0) {
+      if ( num_outp == 2 ) {
+        float* out1 = (float*)deloutp[0];
+        float* out2 = (float*)deloutp[1];
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for(int j=0; j<size; j+=16) {
-        __m512 vo = _mm512_load_ps( out1+j );
-        vo = _mm512_add_ps( vo, _mm512_load_ps( out2+j ) );
+        for(int j=0; j<size; j+=16) {
+          __m512 vo = _mm512_load_ps( out1+j );
+          vo = _mm512_add_ps( vo, _mm512_load_ps( out2+j ) );
 #ifdef USE_NTS_SPLIT
-        _mm512_stream_ps( &(delinp[j]), vo );
+          _mm512_stream_ps( &(((float*)delinp)[j]), vo );
 #else
-        _mm512_store_ps( &(delinp[j]), vo );
+          _mm512_store_ps( &(((float*)delinp)[j]), vo );
 #endif
-      }
-    } else if ( num_outp == 1 ) {
-      float* out1 = deloutp[0];
+        }
+      } else if ( num_outp == 1 ) {
+        float* out1 = (float*)deloutp[0];
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for(int j=0; j<size; j+=16) {
-        __m512 vo = _mm512_load_ps( out1+j );
+        for(int j=0; j<size; j+=16) {
+          __m512 vo = _mm512_load_ps( out1+j );
 #ifdef USE_NTS_SPLIT
-        _mm512_stream_ps( &(delinp[j]), vo );
+          _mm512_stream_ps( &(((float*)delinp)[j]), vo );
 #else
-        _mm512_store_ps( &(delinp[j]), vo );
+          _mm512_store_ps( &(((float*)delinp)[j]), vo );
 #endif
+        }
+      } else {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+        for(int j=0; j<size; j+=16) {
+          __m512 vo = _mm512_load_ps( &(((float*)deloutp[0])[j]) );
+          for(int i=1; i<num_outp; i++) {
+            vo = _mm512_add_ps( vo, _mm512_load_ps( &(((float*)deloutp[i])[j]) ) );
+          }
+#ifdef USE_NTS_SPLIT
+          _mm512_stream_ps( &(((float*)delinp)[j]), vo );
+#else
+          _mm512_store_ps( &(((float*)delinp)[j]), vo );
+#endif
+        }
       }
     } else {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for(int j=0; j<size; j+=16) {
-        __m512 vo = _mm512_load_ps( &((deloutp[0])[j]) );
+      for(int j=0; j<size; j++) {
+        float o = ((float*)deloutp[0])[j];
         for(int i=1; i<num_outp; i++) {
-          vo = _mm512_add_ps( vo, _mm512_load_ps( &((deloutp[i])[j]) ) );
+          o += ((float*)deloutp[i])[j];
         }
-#ifdef USE_NTS_SPLIT
-        _mm512_stream_ps( &(delinp[j]), vo );
-#else
-        _mm512_store_ps( &(delinp[j]), vo );
-#endif
+        ((float*)delinp)[j] = o;
       }
     }
-  } else {
+#else
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
     for(int j=0; j<size; j++) {
-      float o = (deloutp[0])[j];
+      float o = ((float*)deloutp[0])[j];
       for(int i=1; i<num_outp; i++) {
-        o += (deloutp[i])[j];
+        o += ((float*)deloutp[i])[j];
       }
       delinp[j] = o;
     }
-  }
-#else
-#ifdef _OPENMP
-#pragma omp parallel for
 #endif
-  for(int j=0; j<size; j++) {
-    float o = (deloutp[0])[j];
-    for(int i=1; i<num_outp; i++) {
-      o += (deloutp[i])[j];
+  }
+  else if(in_dtype == DT_BF16 && out_dtype == DT_BF16)
+  {
+#if defined(_OPENMP)
+#pragma omp parallel
+#endif
+    {
+      union libxsmm_bfloat16_hp deloutput_32_0, deloutput_32_1;
+
+      deloutput_32_0.i[0] = 0;
+      deloutput_32_0.i[1] = 0;
+      deloutput_32_1.i[0] = 0;
+      deloutput_32_1.i[1] = 0;
+
+#pragma omp for
+      for(int j=0; j<size; j++) {
+        deloutput_32_0.i[1] = ((libxsmm_bfloat16*)deloutp[0])[j];
+        for(int i=1; i<num_outp; i++) {
+          deloutput_32_1.i[1] = ((libxsmm_bfloat16*)deloutp[i])[j];
+          deloutput_32_0.f += deloutput_32_1.f;
+        }
+        ((libxsmm_bfloat16*)delinp)[j] = deloutput_32_0.i[1];
+        deloutput_32_0.i[0] = 0;
+        deloutput_32_0.i[1] = 0;
+      }
     }
-    delinp[j] = o;
   }
-#endif
 
   delinpb->setLayoutType(deloutpb[0]->getLayoutType());
 }

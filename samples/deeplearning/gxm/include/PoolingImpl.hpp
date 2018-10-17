@@ -45,6 +45,7 @@ typedef struct {
   int bdims, tdims;
   int nInput, nOutput;
   int batch_size;
+  int in_data_type, out_data_type;
   int iHeight, iWidth, iDepth;
   int oHeight, oWidth, oDepth;
   int ipad_h, ipad_w, ipad_d;

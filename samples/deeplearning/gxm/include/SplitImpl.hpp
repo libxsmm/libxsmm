@@ -48,6 +48,7 @@ typedef struct {
   int iHeight, iWidth, iDepth;
   int oHeight, oWidth, oDepth;
   int stride_h, stride_w, stride_d;
+  int in_data_type, out_data_type;
   int num_threads;
 } SplitImplParams;
 

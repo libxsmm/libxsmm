@@ -202,17 +202,20 @@ class FCNode: public NNNode
     string get_bias_filler_type() { return bfiller_type_; }
     float get_value() { return value_; }
 
-    void fillWeightBuffers(TensorBuf* tBuf, int buftype, long long int size, int machines);
+    void fillWeightBuffers(TensorBuf* tBuf, int buftype, long long int size);
     void fillWeightMultipliers(float* lr_mult, float* decay_mult, long long int bytes);
     void fillBiasBuffers(TensorBuf* tBuf, int buftype, long long int size);
     void fillBiasMultipliers(float *lr_mult, float *decay_mult, long long int bytes);
     void Checkpoint(TensorBuf *ptr, string name, string format);
+    void convert_bf16_f32(libxsmm_bfloat16*, float*, int);
+    void convert_f32_bf16(float*, libxsmm_bfloat16*, int);
 
   protected:
     void forwardPropagate();
     void backPropagate();
     void weightUpdate();
     void solverStep();
+    void truncate_mask_fp32_bfp16(float* in, float* out, unsigned int len);
     void shape_setzero(Shape* s)
     {
       for(int i=0; i<MAX_DIMS; i++)
@@ -241,6 +244,9 @@ class FCNode: public NNNode
     string weight_, bias_;
     float std_, value_;
     int variance_norm_;
+    float *stptr=NULL, cbptr[16];
+    int in_dtype, out_dtype;
+    float *dwptr=NULL;
 
     vector<float> lr_mult_, decay_mult_;
 

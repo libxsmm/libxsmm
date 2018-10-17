@@ -90,15 +90,22 @@ JitterDataNode::JitterDataNode(JitterDataParams* p, MLEngine* e) : NNNode(p, e)
 
       tenTop_[i]->setShape(&tts);
 
-      long long int size = 1;
-      for(int j=0; j<tts.ndims; j++)
-        size *= tts.dims[j];
+      long long int size = tts.dims[0] * tts.dims[1];
 
-      // Size of data tensor buffer = batch_size * channels * height * width * sizeof(float/short int)
+      bool phys_padding = p->get_physical_padding();
+      if(phys_padding)
+      {
+        gparams_.pad_h = p->get_pad_h();  
+        gparams_.pad_w = p->get_pad_w();
+        size = size * (tts.dims[2] + 2*gparams_.pad_h) * (tts.dims[3] + 2*gparams_.pad_w);
+      }
+      else
+        size = size * tts.dims[2] * tts.dims[3];
+
       if(dtype == DT_FLOAT)
         size = size*sizeof(float);
-      else if(dtype == DT_INT16)
-        size = size*sizeof(short int);
+      else if(dtype == DT_BF16)
+        size = size*sizeof(float);
 
       tenTopData_[i]->setBufferSize(size);
 
@@ -482,6 +489,10 @@ void JitterDataNode::imageTransform(vector<cv::Mat>& vcrop, float* outp)
   int nOfm = gparams_.channels;
   int ofh = gparams_.crop_sizes[0];
   int ofw = gparams_.crop_sizes[1];
+  int padh = gparams_.pad_h;
+  int padw = gparams_.pad_w;
+  int ofhp = ofh + 2*padh;
+  int ofwp = ofw + 2*padw;
   vector<float>& mean = gparams_.mean_values;
   vector<float> rscale;
   rscale.resize(gparams_.scale_values.size());
@@ -493,7 +504,7 @@ void JitterDataNode::imageTransform(vector<cv::Mat>& vcrop, float* outp)
 #pragma omp parallel for
 #endif
   for(int img = 0; img < nImg; img++) {
-    for(int h = 0; h < ofh; h++) {
+    for(int h=0; h < ofh; h++) {
       const unsigned char* ptr = vcrop[img].ptr<uchar>(h);
       int img_index = 0;
       for(int w = 0; w < ofw; w++) {
@@ -513,15 +524,17 @@ void JitterDataNode::imageTransform(vector<cv::Mat>& vcrop, float* outp)
           else
             out_idx = ((img * nOfm + ofm) * ofh + h) * ofw + w;
 #endif
+          int oh = h+padh;
+          int ow = w+padw;
           if(gparams_.exec_mode == TRAIN)
           {
             if((augmentation[img] < 6) && (ap.mirror == true))
-              out_idx = img * ofh * ofw * nOfm + h * ofw * nOfm + (ofw-w-1) * nOfm + ofm;
+              out_idx = img * ofhp * ofwp * nOfm + oh * ofwp * nOfm + (ofwp-ow-1) * nOfm + ofm;
             else
-              out_idx = img * ofh * ofw * nOfm + h * ofw * nOfm + w * nOfm + ofm;
+              out_idx = img * ofhp * ofwp * nOfm + oh * ofwp * nOfm + ow * nOfm + ofm;
           }
           else
-              out_idx = img * ofh * ofw * nOfm + h * ofw * nOfm + w * nOfm + ofm;
+              out_idx = img * ofhp * ofwp * nOfm + oh * ofwp * nOfm + ow * nOfm + ofm;
 
 
           float inp = static_cast<float>(ptr[img_index++]);
@@ -536,14 +549,43 @@ void JitterDataNode::imageTransform(vector<cv::Mat>& vcrop, float* outp)
 
 int myrandom (int i) { return std::rand()%i;}
 
+/* it's fine to alias in and out */
+void JitterDataNode::convert_f32_bf16(float* in, libxsmm_bfloat16* out, unsigned int len) {
+  unsigned int i = 0;
+
+#pragma omp parallel for private(i)
+  for ( i = 0; i < len; i+=16 ) {
+    __m512  vfp32  = gxm_fp32_to_bfp16_rne_adjustment_avx512f( _mm512_loadu_ps( in+i ) );
+    __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f( vfp32 );
+    _mm256_storeu_si256( (__m256i*)(out+i), vbfp16 );
+  }
+}
+
 void JitterDataNode::forwardPropagate()
 {
+  int nImg = gparams_.batch_size;
+  int nOfm = gparams_.channels;
+  int ofh = gparams_.crop_sizes[0];
+  int ofw = gparams_.crop_sizes[1];
+  int padh = gparams_.pad_h;
+  int padw = gparams_.pad_w;
+  int ofhp = ofh + 2*padh;
+  int ofwp = ofw + 2*padw;
+
   float *topdata = (float*)(tenTopData_[0]->getBuffer());
   int* toplabel = (int*)(tenTopData_[1]->getBuffer());
 
-#if 0 //def DEBUG
-  printf("Executing FP %s: Data %p, Label %p\n", NNNode::nname_.c_str(),topdata, toplabel);
+  if(first_fp)
+  {
+    int size = nImg * nOfm * ofhp *ofwp;
+#ifdef _OPENMP
+#pragma omp parallel for
 #endif
+    for(int i=0; i<size; i++)
+      topdata[i] = 0.0f;
+
+    first_fp = false;
+  }
 
   int em = eptr_->get_execution_mode();
   gparams_.exec_mode = em;
@@ -570,10 +612,6 @@ void JitterDataNode::forwardPropagate()
           }
 
           labels_[i][img] = train_list_[fileidx].second;
-
-#if 0 //def DEBUG
-          printf("filename: %s label: %d\n", train_list_[fileidx].first.c_str(), train_list_[fileidx].second);
-#endif
         }
       }
       ctrain_pf_mb_ += gparams_.lookahead;
@@ -581,7 +619,7 @@ void JitterDataNode::forwardPropagate()
     }
     else {
       if(ctrain_pf_mb_ < train_batches_) {
-        int i = ctrain_pf_mb_ % gparams_.lookahead;
+        int mbs = ctrain_pf_mb_ % gparams_.lookahead;
 
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -590,16 +628,12 @@ void JitterDataNode::forwardPropagate()
           int idx = ctrain_pf_mb_ * gparams_.batch_size + img;
           int fileidx = train_list_per_mc_[idx];
           string path = train_source_path_ + "/" + train_list_[fileidx].first;
-          tempbuf_[i][img] = cv::imread(path, true);
-          if(!tempbuf_[i][img].data) {
+          tempbuf_[mbs][img] = cv::imread(path, true);
+          if(!tempbuf_[mbs][img].data) {
             printf("Null data read from %s.. exiting\n",path.c_str());
             exit(1);
           }
-          labels_[i][img] = train_list_[fileidx].second;
-
-#if 0 //def DEBUG
-          printf("filename: %s label: %d\n", train_list_[fileidx].first, train_list_[fileidx].second);
-#endif
+          labels_[mbs][img] = train_list_[fileidx].second;
         }
         ctrain_pf_mb_++;
       }
@@ -617,7 +651,6 @@ void JitterDataNode::forwardPropagate()
     for(int i=0; i<gparams_.batch_size; i++)
       toplabel[i] = labels_[mbslot][i];
 
-//    ridx_ = 0;
     for(int i=0; i<gparams_.batch_size; i++)
     {
       for(int attempts=0; attempts<60; attempts++) {
@@ -630,8 +663,6 @@ void JitterDataNode::forwardPropagate()
       augmentation[i] = lrand48() % 12;
     }
 
-//    int r_off, c_off;
-
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -643,9 +674,22 @@ void JitterDataNode::forwardPropagate()
 
     imageTransform(cropbuf_[mbslot], topdata);
 
+    int out_dtype = tenTopData_[0]->getDataType();
+    int crop_img_size = nImg * ofhp * ofwp * nOfm;
+
+    if(out_dtype == DT_BF16)
+    {
+      if(bf16_img == NULL)
+      {
+        bf16_img = _mm_malloc(crop_img_size*sizeof(libxsmm_bfloat16), 64);
+        tenTopData_[0]->setLPBuffer(bf16_img);
+      }
+      convert_f32_bf16(topdata, (libxsmm_bfloat16*)bf16_img, crop_img_size);
+    }
+
 #ifdef GETSTATS
-    int crop_img_size = gparams_.crop_sizes[0]*gparams_.crop_sizes[1]*gparams_.channels;
-    MeanOfLayer("Data", topdata, gparams_.batch_size*crop_img_size);
+    MeanOfLayer("Data", topdata, crop_img_size);
+    MeanOfLayer("Labels", toplabel, gparams_.batch_size);
 #endif
 
     ctrain_proc_mb_++;
@@ -670,10 +714,6 @@ void JitterDataNode::forwardPropagate()
             exit(1);
           }
           labels_[i][img] = test_list_[fileidx].second;
-
-#if 0 //def DEBUG
-          printf("filename: %s label: %d\n",test_list_[fileidx].first.c_str(), labels_[i][img]);
-#endif
         }
       }
       ctest_pf_mb_ += gparams_.lookahead;
@@ -699,10 +739,6 @@ void JitterDataNode::forwardPropagate()
               exit(1);
             }
             labels_[i][img] = test_list_[fileidx].second;
-
-#if 0 //def DEBUG
-            printf("filename: %s label: %d\n",test_list_[fileidx].first.c_str(), labels_[i][img]);
-#endif
           }
           ctest_pf_mb_++;
         }
@@ -727,6 +763,15 @@ void JitterDataNode::forwardPropagate()
     }
 
     imageTransform(cropbuf_[mbslot], topdata);
+
+    int out_dtype = tenTopData_[0]->getDataType();
+    int crop_img_size = nImg * ofhp * ofwp * nOfm;
+
+    if(out_dtype == DT_BF16)
+    {
+      assert(bf16_img != NULL);
+      convert_f32_bf16(topdata, (libxsmm_bfloat16*)bf16_img, crop_img_size);
+    }
 
     ctest_proc_mb_++;
     if(ctest_proc_mb_ == test_batches_)

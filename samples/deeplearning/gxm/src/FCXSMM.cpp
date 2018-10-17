@@ -40,8 +40,17 @@ FCXSMM::FCXSMM(FCImplParams *gp, int engine) : FCImpl(gp, engine)
   fullyconnected_desc.C = gp->nInput;
   fullyconnected_desc.K = gp->nOutput;
   fullyconnected_desc.threads = gp->num_threads;
-  fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
-  fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+
+  if(gp->in_data_type == DT_FLOAT)
+    fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
+  else if(gp->in_data_type == DT_BF16)
+    fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_BF16;
+
+  if(gp->out_data_type == DT_FLOAT)
+    fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+  else if(gp->out_data_type == DT_BF16)
+    fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_BF16;
+
   fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
   fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
   fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE;
@@ -60,7 +69,12 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* b
   assert(bot_compute_engine != -1);
 
   void *input = inpb->getBuffer();
-  void *weight = weightpb->getBuffer();
+  void *weight;
+  if(weightpb->getLPBuffer() != NULL)
+    weight = weightpb->getLPBuffer();
+  else
+    weight = weightpb->getBuffer();
+
   void *bias;
   if(gp->bias_term)
     bias = biaspb->getBuffer();

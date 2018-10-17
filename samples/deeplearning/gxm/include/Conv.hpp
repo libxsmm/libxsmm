@@ -436,16 +436,14 @@ class ConvNode : public NNNode
     void fillBiasBuffers(TensorBuf* tBuf, int buftype, long long int size);
     void fillBiasMultipliers(float* lr_mult, float* decay_mult, long long int bytes);
     void Checkpoint(TensorBuf* tBuf, string name, string format);
-
+    void convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len);
+    void convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len);
 
   protected:
     void forwardPropagate();
     void backPropagate();
     void weightUpdate();
     void solverStep();
-
-    void convert_NCHW_to_NCHWV(float*, int, int, int, int, float*);
-    void convert_NCHWV_to_NCHWV(float*, int, int, int, int, float*);
 
     void configure(int engine);
 
@@ -463,7 +461,7 @@ class ConvNode : public NNNode
     TensorBuf *tenTopDiff_; // Output data
     TensorBuf *tenWeightDiff_, *tenWeightData_, *tenWeightInc_; // Weight gradients, data, increments
     TensorBuf *tenBiasData_, *tenBiasDiff_, *tenBiasInc_; // Bias data, gradients, increments
-    TensorBuf *tenScratchData_, *tenTRWData_;
+    TensorBuf *tenScratchData_;
 
     Shape ts_, ws_;
     string wfiller_type_, bfiller_type_;
@@ -471,12 +469,12 @@ class ConvNode : public NNNode
     int variance_norm_;
     float std_, value_;
     int bot_cengine_;
-    int count_;
+    int count_, in_dtype, out_dtype;
     vector<float> lr_mult_, decay_mult_;
     bool first_fp = true, first_bp=true;
     bool compute_stats_;
-    short* i16_wt_ptr=NULL;
-
+    libxsmm_bfloat16* bf16_wt_ptr=NULL;
+    float cbptr[16], *stptr=NULL, *dwptr=NULL;
     ConvImpl *impl=NULL;
 
     SolverNode *solver_;

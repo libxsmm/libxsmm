@@ -43,6 +43,7 @@ warmup_lr: 0.1
 max_iter: 450450
 type: "NESTEROV"
 global: true
+data_type: FLOAT
 load_checkpoint: false
 checkpoint_dir: "./weights"
 checkpoint_format: "binary"
