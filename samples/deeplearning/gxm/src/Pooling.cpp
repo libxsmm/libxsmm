@@ -65,9 +65,9 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
 
   tenBotData_ = tenBot_->getBuf(DATA);
 
-  //Output tensor data type = input tensor data type
-  int dtype = p->get_data_type();
-  tenTopData_->setDataType(dtype);
+  out_dtype = p->get_data_type();
+  tenTopData_->setDataType(out_dtype);
+  in_dtype = tenBotData_->getDataType();
 
   // Get input tensor shape (bottom)
   Shape* bs = tenBot_->getShape();
@@ -118,19 +118,14 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
   for(int i=0; i<ts_.ndims; i++)
     tsize = tsize*ts_.dims[i];
 
-  // For now, we only support float
-  if(dtype == DT_FLOAT)
+  if(out_dtype == DT_FLOAT)
     tsize = tsize*sizeof(float);
-  else if(dtype == DT_DFP16)
-    tsize = tsize*sizeof(float) + tsize*sizeof(short);
-  else if(dtype == DT_INT)
-    tsize = tsize*sizeof(int);
+  else if(out_dtype == DT_BF16)
+    tsize = tsize*sizeof(libxsmm_bfloat16);
 
-  // Set the logical size of the tensor buffer for bufId=0 (forward data buffer).
-  // Note: we have no knowledge of the machine parameters here, so effectively this is single-machine config
   tenTopData_->setBufferSize(tsize);
 
-  // Tensor representing mask of selected neurons. Shape is that of output tensor
+  // Tensor representing mask of selected neurons. 
   long long int size = 1;
   for(int i=0; i<ts_.ndims; i++)
     size = size*ts_.dims[i];
@@ -142,16 +137,16 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
     if(NNNode::bp_flag_)
     {
       tenBotDiff_ = tenBot_->addBuf(); // DIFF type and index
-      tenBotDiff_->setDataType(dtype);
+      tenBotDiff_->setDataType(in_dtype);
       tenBotDiff_->setBufferType(DIFF);
 
       long long int bsize = 1;
       for(int i=0; i<bs->ndims; i++)
         bsize = bsize*bs->dims[i];
-      if(dtype == DT_FLOAT)
+      if(in_dtype == DT_FLOAT)
         bsize = bsize*sizeof(float);
-      else if(dtype == DT_DFP16)
-        bsize = bsize*sizeof(float);
+      else if(in_dtype == DT_BF16)
+        bsize = bsize*sizeof(libxsmm_bfloat16);
 
       // Set the size of the input-gradient buffer
       tenBotDiff_->setBufferSize(bsize);
@@ -195,7 +190,8 @@ PoolingNode::PoolingNode(PoolingParams* p, MLEngine* e): NNNode(p, e)
 
   gparams_.pool_mode = p->get_pool_mode();
 
-  gparams_.data_type = dtype;
+  gparams_.in_data_type = in_dtype;
+  gparams_.out_data_type = out_dtype;
   gparams_.algType = p->get_algo_type();
   gparams_.num_threads = e->get_num_threads();
 
@@ -217,11 +213,25 @@ void PoolingNode::configure(int engine)
   }
 }
 
+void PoolingNode::convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len)
+{
+  int i;
+
+#ifdef _OPENMP
+#pragma omp parallel for private(i)
+#endif
+  for ( i = 0; i < len; i+=16 ) {
+    __m256i vbfp16    = _mm256_loadu_si256( (const __m256i*)(in+i) );
+    __m512  vfp32     = gxm_bfp16_to_fp32_avx512f( vbfp16 );
+    _mm512_storeu_ps( out+i, vfp32 );
+  }
+}
+
 void PoolingNode::forwardPropagate()
 {
 #ifdef DEBUG
-  float* bot = (float*)(tenBotData_->getBuffer());
-  float* top = (float*)(tenTopData_->getBuffer());
+  void *bot = tenBotData_->getBuffer();
+  void *top = tenTopData_->getBuffer();
 
   printf("Executing FP %s: input %p, output %p mask %p\n",NNNode::nname_.c_str(), bot, top, tenMask_);
   printf("Inputs: %d x %d x %d\n",gparams_.nInput, gparams_.iHeight, gparams_.iWidth);
@@ -229,7 +239,9 @@ void PoolingNode::forwardPropagate()
 #endif
 
   int nImg = gparams_.batch_size;
-  int nOfm = gparams_.nOutput;
+  int ofm = gparams_.nOutput;
+  int ifh = gparams_.iHeight;
+  int ifw = gparams_.iWidth;
   int ofh = gparams_.oHeight;
   int ofw = gparams_.oWidth;
 
@@ -239,22 +251,31 @@ void PoolingNode::forwardPropagate()
   impl->set_node_name(nname_);
   impl->set_scratch_buffer(tenScratchData_);
 
-  if(first_fp && gparams_.data_type == DT_DFP16)
-  {
-    tenTopData_->setLPBuffer(tenTopData_->getBuffer() + nImg*nOfm*ofh*ofw*sizeof(float));
-    first_fp = false;
-  }
-
   impl->forwardPropagate(tenBotData_, tenTopData_, tenMask_);
 
 #ifdef CHECK_BLOWUP_FP32
-  float* ptr = (float*)tenTopData_->getBuffer();
-  for(int i=0; i<16; i++)
+  if(out_dtype == DT_FLOAT)
   {
-    if(isnan(ptr[i]) || isinf(ptr[i]))
+    for(int i=0; i<16; i++)
     {
-      printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
-      exit(-1);
+      float v = ((float*)tenTopData_->getBuffer())[i];
+      if(isnan(v) || isinf(v))
+      {
+        printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
+        exit(-1);
+      }
+    }
+  }
+  else if(out_dtype == DT_BF16)
+  {
+    convert_bf16_f32((libxsmm_bfloat16*)tenTopData_->getBuffer(), cbptr, 16);
+    for(int i=0; i<16; i++)
+    {
+      if(isnan(cbptr[i]) || isinf(cbptr[i]))
+      {
+        printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
+        exit(-1);
+      }
     }
   }
 #endif
@@ -267,30 +288,58 @@ void PoolingNode::forwardPropagate()
 #endif
   if(node_id==0 && eptr_->get_current_batch() % STATFREQ == 0)
   {
-    float *ptr = (float*)tenBotData_->getBuffer();
-    float *pptr = (float*)tenBotData_->getPrivBuffer();
-    float *p = (pptr == NULL) ? ptr : pptr;
-    string s = nname_ + "_Inp";
-    MeanOfLayer((char*)s.c_str(), p, gparams_.batch_size*gparams_.nInput* gparams_.iHeight*gparams_.iWidth);
+    if(gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_FLOAT)
+    {
+      float *ptr = (float*)tenBotData_->getBuffer();
+      string s = nname_ + "_Inp";
+      MeanOfLayer((char*)s.c_str(), ptr, nImg*ofm*ifh*ifw);
 
-    ptr = (float*)tenTopData_->getBuffer();
-    pptr = (float*)tenTopData_->getPrivBuffer();
-    p = (pptr == NULL) ? ptr : pptr;
-    s = nname_ + "_Outp";
-    MeanOfLayer((char*)s.c_str(), p, gparams_.batch_size*gparams_.nOutput* gparams_.oHeight*gparams_.oWidth);
+      ptr = (float*)tenTopData_->getBuffer();
+      s = nname_ + "_Outp";
+      MeanOfLayer((char*)s.c_str(), ptr, nImg*ofm*ofh*ofw);
+    }
+    else if(gparams_.in_data_type == DT_BF16 && gparams_.out_data_type == DT_BF16)
+    {
+      if(stptr == NULL)
+      {
+        int s = nImg*ofm*ofh*ofw;
+        int is = nImg*ofm*ifh*ifw;
+        if(s > is)
+          stptr = (float*)libxsmm_aligned_malloc(s*sizeof(float), 2097152);
+        else
+          stptr = (float*)libxsmm_aligned_malloc(is*sizeof(float), 2097152);
+      }
+
+      libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenBotData_->getBuffer();
+      convert_bf16_f32(ptr, stptr,  nImg*ofm*ifh*ifw);
+      string s = nname_ + "_Inp";
+      MeanOfLayer((char*)s.c_str(), stptr, nImg*ofm*ifh*ifw);
+
+      ptr = (libxsmm_bfloat16*)tenTopData_->getBuffer();
+      convert_bf16_f32(ptr, stptr,  nImg*ofm*ofh*ofw);
+      s = nname_ + "_Outp";
+      MeanOfLayer((char*)s.c_str(), stptr, nImg*ofm*ofh*ofw);
+    }
   }
 #endif
 }
 
 void PoolingNode::backPropagate()
 {
+  int nImg = gparams_.batch_size;
+  int ofm = gparams_.nOutput;
+  int ifh = gparams_.iHeight;
+  int ifw = gparams_.iWidth;
+  int ofh = gparams_.oHeight;
+  int ofw = gparams_.oWidth;
+
   tenTopDiff_ = tenTop_->getBuf(DIFF);
 
 #ifdef DEBUG
-  float *gtop = (float*)(tenTopDiff_->getBuffer());
+  void *gtop = tenTopDiff_->getBuffer();
   assert(gtop != NULL);
 
-  float* gbot = (float*)(tenBotDiff_->getBuffer());
+  void* gbot = tenBotDiff_->getBuffer();
 
   printf("Executing BP %s: grad_output %p, grad_input %p\n",NNNode::nname_.c_str(), gtop, gbot);
   printf("Grad Outputs: %d x %d x %d\n", gparams_.nOutput, gparams_.oHeight, gparams_.oWidth);
@@ -300,13 +349,28 @@ void PoolingNode::backPropagate()
   impl->backPropagate(tenTopDiff_, tenMask_, tenBotDiff_);
 
 #ifdef CHECK_BLOWUP_FP32
-  float* ptr = (float*)tenTopDiff_->getBuffer();
-  for(int i=0; i<16; i++)
+  if(out_dtype == DT_FLOAT)
   {
-    if(isnan(ptr[i]) || isinf(ptr[i]))
+    for(int i=0; i<16; i++)
     {
-      printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
-      exit(-1);
+      float v = ((float*)tenBotDiff_->getBuffer())[i];
+      if(isnan(v) || isinf(v))
+      {
+        printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
+        exit(-1);
+      }
+    }
+  }
+  else if(out_dtype == DT_BF16)
+  {
+    convert_bf16_f32((libxsmm_bfloat16*)tenBotDiff_->getBuffer(), cbptr, 16);
+    for(int i=0; i<16; i++)
+    {
+      if(isnan(cbptr[i]) || isinf(cbptr[i]))
+      {
+        printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
+        exit(-1);
+      }
     }
   }
 #endif
@@ -319,17 +383,28 @@ void PoolingNode::backPropagate()
 #endif
   if(node_id==0 && eptr_->get_current_batch() % STATFREQ == 0)
   {
-    float *ptr = (float*)tenTopDiff_->getBuffer();
-    float *pptr = (float*)tenTopDiff_->getPrivBuffer();
-    float *p = (pptr == NULL) ? ptr : pptr;
-    string s = nname_ + "_delOutp";
-    MeanOfLayer((char*)s.c_str(), p, gparams_.batch_size*gparams_.nOutput* gparams_.oHeight*gparams_.oWidth);
+    if(gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_FLOAT)
+    {
+      float *ptr = (float*)tenTopDiff_->getBuffer();
+      string s = nname_ + "_delOutp";
+      MeanOfLayer((char*)s.c_str(), ptr, nImg*ofm*ofh*ofw);
 
-    ptr = (float*)tenBotDiff_->getBuffer();
-    pptr = (float*)tenBotDiff_->getPrivBuffer();
-    p = (pptr == NULL) ? ptr : pptr;
-    s = nname_ + "_delInp";
-    MeanOfLayer((char*)s.c_str(), p, gparams_.batch_size*gparams_.nInput* gparams_.iHeight*gparams_.iWidth);
+      ptr = (float*)tenBotDiff_->getBuffer();
+      s = nname_ + "_delInp";
+      MeanOfLayer((char*)s.c_str(), ptr, nImg*ofm*ifh*ifw);
+    }
+    else if(gparams_.in_data_type == DT_BF16 && gparams_.out_data_type == DT_BF16)
+    {
+      libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenTopDiff_->getBuffer();
+      convert_bf16_f32(ptr, stptr, nImg*ofm*ofh*ofw);
+      string s = nname_ + "_delOutp";
+      MeanOfLayer((char*)s.c_str(), stptr, nImg*ofm*ofh*ofw);
+
+      ptr = (libxsmm_bfloat16*)tenBotDiff_->getBuffer();
+      convert_bf16_f32(ptr, stptr, nImg*ofm*ifh*ifw);
+      s = nname_ + "_delInp";
+      MeanOfLayer((char*)s.c_str(), stptr, nImg*ofm*ifh*ifw);
+    }
   }
 #endif
 }

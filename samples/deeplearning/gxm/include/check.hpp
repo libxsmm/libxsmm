@@ -35,9 +35,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
+#include "libxsmm.h"
 
  void check_physical_pad(const char *s, float *tensor, int nImg, int nBfm, int fh, int fw, int ifm, int iph, int ipw );
- void check_physical_pad(const char *s, short *tensor, int nImg, int nBfm, int fh, int fw, int ifm, int iph, int ipw );
+ void check_physical_pad(const char *s, libxsmm_bfloat16 *tensor, int nImg, int nBfm, int fh, int fw, int ifm, int iph, int ipw );
  void MeanOfLayer(char *s, float *array, int size);
  void MeanOfLayer(char *s, double *array, int size);
  void MeanOfLayer(char *s, int *array, int size);

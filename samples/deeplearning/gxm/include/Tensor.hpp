@@ -39,9 +39,9 @@
 
 using namespace std;
 
-enum TensorDataType {DT_FLOAT, DT_INT, DT_DFP16, DT_INT16, DT_DFP8, DT_INT8};
+enum TensorDataType {DT_FLOAT, DT_INT, DT_BF16, DT_INT16, DT_DFP8, DT_INT8};
 enum TensorBufType {DATA, DIFF, HISTORY, PRIVATE}; //also used as indices into tBuf_; should change
-enum TensorType {INPUT, LABEL, ACT, INPUT_ACT, ACT_LABEL, CONVWEIGHT, CONVBIAS, FCWEIGHT, FCBIAS, BNORMSCALE, BNORMSHIFT, BNORMMEAN, BNORMRSTDEV};
+enum TensorType {INPUT, LABEL, ACT, INPUT_ACT, ACT_LABEL, CONVWEIGHT, CONVBIAS, FCWEIGHT, FCBIAS, BNORMSCALE, BNORMSHIFT, BNORMMEAN, BNORMVAR};
 enum TensorLayoutType {NCHW, NHWC, NCHWV, KCRS, RSCK, LIBXSMM_CUSTOM_LAYOUT, NUM_LAYOUTS};
 
 class Tensor;
@@ -51,10 +51,8 @@ class TensorBuf {
     Tensor *tensor_;
     void *buf_; // Pointer to buffer
     void *lpbuf_; // Pointer to LP object
-    unsigned char sf_;
     void *prv_buf_;
     void *lp_prv_buf_;
-    unsigned char psf_;
     TensorLayoutType layout_type_;
     void *layout_;
     int dType_; // Data type for this buffer
@@ -65,10 +63,8 @@ class TensorBuf {
     TensorBuf(Tensor* tensor, int dtype = DT_FLOAT, int size = 0) : tensor_(tensor) {
       buf_ = NULL;
       lpbuf_ = NULL;
-      sf_ = '\0';
       prv_buf_ = NULL;
       lp_prv_buf_ = NULL;
-      psf_ = '\0';
       layout_type_ = NCHW;
       layout_ = NULL;
       dType_ = dtype;
@@ -95,19 +91,13 @@ class TensorBuf {
     void* getBuffer() { return buf_; }
 
     void setLPBuffer(void* bptr) { lpbuf_ = bptr; }
-    void setLPSF(unsigned char sf) { sf_ = sf; }
-
     void* getLPBuffer() { return lpbuf_; }
-    unsigned char getLPSF() { return sf_; }
 
     void setPrivBuffer(void* bptr) { prv_buf_ = bptr; }
     void* getPrivBuffer() { return prv_buf_; }
 
     void setLPPrivBuffer(void* bptr) { lp_prv_buf_ = bptr; }
-    void setLPPrivSF(unsigned char sf) {psf_ = sf; }
-
     void* getLPPrivBuffer() { return lp_prv_buf_; }
-    unsigned char getLPPrivSF() { return psf_; }
 
     void setLayoutType(TensorLayoutType lt) { layout_type_ = lt; }
     TensorLayoutType getLayoutType() { return layout_type_; }

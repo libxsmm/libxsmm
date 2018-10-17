@@ -1,34 +1,3 @@
-#############################################################################
-# Copyright (c) 2017-2018, Intel Corporation                                #
-# All rights reserved.                                                      #
-#                                                                           #
-# Redistribution and use in source and binary forms, with or without        #
-# modification, are permitted provided that the following conditions        #
-# are met:                                                                  #
-# 1. Redistributions of source code must retain the above copyright         #
-#    notice, this list of conditions and the following disclaimer.          #
-# 2. Redistributions in binary form must reproduce the above copyright      #
-#    notice, this list of conditions and the following disclaimer in the    #
-#    documentation and/or other materials provided with the distribution.   #
-# 3. Neither the name of the copyright holder nor the names of its          #
-#    contributors may be used to endorse or promote products derived        #
-#    from this software without specific prior written permission.          #
-#                                                                           #
-# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       #
-# "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         #
-# LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     #
-# A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      #
-# HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    #
-# SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  #
-# TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    #
-# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    #
-# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      #
-# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        #
-# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              #
-#############################################################################
-# Sasikanth Avancha, Dhiraj Kalamkar, Alexander Heinecke (Intel Corp.)
-#############################################################################
-
 node {
   name: "data"
   type: "DummyData"
@@ -37,13 +6,15 @@ node {
   mode: TRAIN
   propagate_down: false
   dummy_data_param {
-    shape: { dim: 5600 dim: 56 dim: 3 dim: 224 dim: 224 }
+    shape: { dim: 5600 dim: 28 dim: 3 dim: 224 dim: 224 }
+    pad_h: 3
+    pad_w: 3
     data_filler {
       type: "constant"
       value: 0.1
     }
     engine: XSMM
-    data_type: FLOAT
+    data_type: BF16
   }
 } 
 node {
@@ -57,12 +28,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 64
     pad: 3
     bias_term: false
-    #bwd_relu: false
+    physical_padding: true
     kernel_size: 7
     stride: 2
     weight_filler {
@@ -79,9 +50,9 @@ node {
   name: "bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: FLOAT
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: true
+    ipad: 3
     pad: 0
     stride: 1
     engine: XSMM
@@ -95,11 +66,12 @@ node {
   bottom: "bn1"
   top: "conv1_pool"
   pooling_param {
-    data_type: DFP16
+    data_type: BF16
     pool: MAX
     engine: XSMM
     kernel_size: 3
     stride: 2
+    pad: 1
   }
 }
 node {
@@ -112,11 +84,10 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 0
-    #bwd_relu: false
     bias_term: false
     kernel_size: 1
     stride: 1
@@ -130,10 +101,9 @@ node {
   name: "node_64_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     relu: false
-    #bwd_relu: false
     pad: 0
     stride: 1
     engine: XSMM
@@ -151,11 +121,10 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 64
     pad: 0
-    #bwd_relu: false
     bias_term: false
     kernel_size: 1
     stride: 1
@@ -169,9 +138,8 @@ node {
   name: "node_64_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -189,13 +157,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 64
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -209,9 +176,8 @@ node {
   name: "node_64_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -230,12 +196,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -248,10 +213,9 @@ node {
   name: "node_64_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -270,12 +234,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 64
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -288,9 +251,8 @@ node {
   name: "node_64_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -308,13 +270,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 64
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -328,9 +289,8 @@ node {
   name: "node_64_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -349,12 +309,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -367,10 +326,9 @@ node {
   name: "node_64_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -389,12 +347,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 64
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -407,9 +364,8 @@ node {
   name: "node_64_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -427,13 +383,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 64
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -447,9 +402,8 @@ node {
   name: "node_64_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -468,12 +422,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -486,12 +439,11 @@ node {
   name: "node_64_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: false
     pad: 0
-    stride: 1
+    stride: 2
     engine: XSMM
   }
   bottom: "node_64_3_conv3"
@@ -508,14 +460,13 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 512
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -526,10 +477,9 @@ node {
   name: "node_128_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     relu: false
-    #bwd_relu: false
     pad: 0
     stride: 1
     engine: XSMM
@@ -547,14 +497,13 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 128
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -565,9 +514,8 @@ node {
   name: "node_128_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -585,13 +533,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 128
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -605,9 +552,8 @@ node {
   name: "node_128_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -626,12 +572,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 512
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -644,10 +589,9 @@ node {
   name: "node_128_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -666,12 +610,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 128
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -684,9 +627,8 @@ node {
   name: "node_128_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -704,13 +646,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 128
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -724,9 +665,8 @@ node {
   name: "node_128_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -745,12 +685,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 512
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -763,10 +702,9 @@ node {
   name: "node_128_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -785,12 +723,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 128
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -803,9 +740,8 @@ node {
   name: "node_128_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -823,13 +759,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 128
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -843,9 +778,8 @@ node {
   name: "node_128_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -864,12 +798,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 512
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -882,10 +815,9 @@ node {
   name: "node_128_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -904,12 +836,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 128
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -922,9 +853,8 @@ node {
   name: "node_128_4_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -942,13 +872,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 128
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -962,9 +891,8 @@ node {
   name: "node_128_4_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -983,12 +911,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 512
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1001,12 +928,11 @@ node {
   name: "node_128_4_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: false
     pad: 0
-    stride: 1
+    stride: 2
     engine: XSMM
   }
   bottom: "node_128_4_conv3"
@@ -1023,14 +949,13 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 1024
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -1041,10 +966,9 @@ node {
   name: "node_256_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     relu: false
-    #bwd_relu: false
     pad: 0
     stride: 1
     engine: XSMM
@@ -1062,14 +986,13 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -1080,9 +1003,8 @@ node {
   name: "node_256_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1100,13 +1022,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1120,9 +1041,8 @@ node {
   name: "node_256_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1141,12 +1061,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 1024
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1159,10 +1078,9 @@ node {
   name: "node_256_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1181,12 +1099,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1199,9 +1116,8 @@ node {
   name: "node_256_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1219,13 +1135,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1239,9 +1154,8 @@ node {
   name: "node_256_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1260,12 +1174,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 1024
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1278,10 +1191,9 @@ node {
   name: "node_256_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1300,12 +1212,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1318,9 +1229,8 @@ node {
   name: "node_256_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1338,13 +1248,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 1
     opad: 1 
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1358,9 +1267,8 @@ node {
   name: "node_256_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1379,12 +1287,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 1024
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1397,10 +1304,9 @@ node {
   name: "node_256_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1419,12 +1325,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1437,9 +1342,8 @@ node {
   name: "node_256_4_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1457,13 +1361,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1477,9 +1380,8 @@ node {
   name: "node_256_4_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1498,12 +1400,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 1024
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1516,10 +1417,9 @@ node {
   name: "node_256_4_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1538,12 +1438,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1556,9 +1455,8 @@ node {
   name: "node_256_5_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1576,13 +1474,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1596,9 +1493,8 @@ node {
   name: "node_256_5_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1617,12 +1513,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 1024
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1635,10 +1530,9 @@ node {
   name: "node_256_5_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1657,12 +1551,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1675,9 +1568,8 @@ node {
   name: "node_256_6_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1695,13 +1587,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 256
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1715,9 +1606,8 @@ node {
   name: "node_256_6_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1736,12 +1626,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 1024
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1754,12 +1643,11 @@ node {
   name: "node_256_6_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: false
     pad: 0
-    stride: 1
+    stride: 2
     engine: XSMM
   }
   bottom: "node_256_6_conv3"
@@ -1776,14 +1664,13 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 2048
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -1794,10 +1681,9 @@ node {
   name: "node_512_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     relu: false
-    #bwd_relu: false
     pad: 0
     stride: 1
     engine: XSMM
@@ -1815,14 +1701,13 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 512
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
-    stride: 2
+    stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
@@ -1833,9 +1718,8 @@ node {
   name: "node_512_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1853,13 +1737,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 512
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1873,9 +1756,8 @@ node {
   name: "node_512_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -1894,12 +1776,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 2048
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1912,10 +1793,9 @@ node {
   name: "node_512_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -1934,12 +1814,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 512
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -1952,9 +1831,8 @@ node {
   name: "node_512_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -1972,13 +1850,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 512
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -1992,9 +1869,8 @@ node {
   name: "node_512_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -2013,12 +1889,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 2048
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -2031,10 +1906,9 @@ node {
   name: "node_512_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
     eltwise: true
-    #bwd_relu: true
     pad: 0
     stride: 1
     engine: XSMM
@@ -2053,12 +1927,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 512
     pad: 0
     bias_term: false
-    #bwd_relu: false
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -2071,9 +1944,8 @@ node {
   name: "node_512_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     pad: 1
     stride: 1
     engine: XSMM
@@ -2091,13 +1963,12 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 512
     pad: 1
     opad: 1
     bias_term: false
-    #bwd_relu: true
     physical_padding: true
     kernel_size: 3
     stride: 1
@@ -2111,9 +1982,8 @@ node {
   name: "node_512_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: false
     ipad: 1
     pad: 0
     stride: 1
@@ -2132,12 +2002,11 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: FLOAT
+    data_type: BF16
     engine: XSMM
     num_output: 2048
     pad: 0
     bias_term: false
-    #bwd_relu: true
     kernel_size: 1
     stride: 1
     weight_filler {
@@ -2150,9 +2019,8 @@ node {
   name: "node_512_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: DFP16
+    data_type: BF16
     use_global_stats: false
-    #bwd_relu: true
     eltwise: true
     pad: 0
     stride: 1
@@ -2168,6 +2036,7 @@ node {
   bottom: "node_512_3_bn3"
   top: "pool5"
   pooling_param {
+    data_type: BF16
     engine: XSMM
     pool: AVE
     kernel_size: 7
@@ -2184,6 +2053,7 @@ node {
     decay_mult: 1.0
   }
   fc_param {
+    data_type: FLOAT
     num_output: 1000
     engine: XSMM
     bias_term: false

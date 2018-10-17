@@ -36,6 +36,7 @@
 #include "MLNode.hpp"
 #include "Engine.hpp"
 #include <math.h>
+#include "libxsmm.h"
 
 using namespace std;
 
@@ -128,13 +129,16 @@ class SolverParams : public MLParams
     void setGlobalFlag(bool g) { global_ = g; }
     bool getGlobalFlag() { return global_; }
 
+    void setDataType(int t) { data_type_ = t; }
+    int getDataType() { return data_type_; }
+
   protected:
     vector<float> lr_, momentum_, decay_, warmup_lr_;
     vector<int> lrcepochs_, stepvalues_;
     int epochs_, test_epoch_, step_size_, max_iter_;
     string solver_type_, lr_policy_;
     float gamma_, power_;
-    int warmup_epochs_;
+    int warmup_epochs_, data_type_;
     bool global_;
 };
 
@@ -148,49 +152,22 @@ static SolverParams* parseSolverParams(SolverParameter* p)
   string policy = p->lr_policy();
   sp->setLRPolicy(policy);
 
-  if(policy.compare("pcl_dnn") == 0)
+  sp->setLearningRate(p->learning_rate(0));
+  sp->setWarmupLR(p->warmup_lr(0));
+  sp->setMomentum(p->momentum(0));
+  sp->setWeightDecay(p->weight_decay(0));
+  sp->setPower(p->power());
+  sp->setGamma(p->gamma());
+  sp->setStepSize(p->stepsize());
+  sp->setMaxIter(p->max_iter());
+  if(p->step_values_size() > 0)
   {
-    assert(p->learning_rate_size() > 0);
-    for(int i=0; i<p->learning_rate_size(); i++)
-      temp.push_back(p->learning_rate(i));
-    sp->setLearningRates(temp);
-
-    temp.clear();
-    assert(p->momentum_size() > 0);
-    for(int i=0; i<p->momentum_size(); i++)
-      temp.push_back(p->momentum(i));
-    sp->setMomentums(temp);
-
-    temp.clear();
-    assert(p->weight_decay_size() > 0);
-    for(int i=0; i<p->weight_decay_size(); i++)
-      temp.push_back(p->weight_decay(i));
-    sp->setWeightDecays(temp);
-
-    assert(p->lr_change_epochs_size() > 0);
-    for(int i=0; i<p->lr_change_epochs_size(); i++)
-      itemp.push_back(p->lr_change_epochs(i));
-    sp->setLRChangeEpochs(itemp);
+    itemp.resize(p->step_values_size());
+    for(int i=0; i<itemp.size(); i++)
+      itemp[i] = p->step_values(i);
+    sp->setStepValues(itemp);
   }
-  else // all other policy types implemented via formula
-  {
-    sp->setLearningRate(p->learning_rate(0));
-    sp->setWarmupLR(p->warmup_lr(0));
-    sp->setMomentum(p->momentum(0));
-    sp->setWeightDecay(p->weight_decay(0));
-    sp->setPower(p->power());
-    sp->setGamma(p->gamma());
-    sp->setStepSize(p->stepsize());
-    sp->setMaxIter(p->max_iter());
-    if(p->step_values_size() > 0)
-    {
-      itemp.resize(p->step_values_size());
-      for(int i=0; i<itemp.size(); i++)
-        itemp[i] = p->step_values(i);
-      sp->setStepValues(itemp);
-    }
-    sp->setWarmupEpochs(p->warmup_epochs());
-  }
+  sp->setWarmupEpochs(p->warmup_epochs());
 
   assert(p->max_epochs() >= 1);
   sp->setEpochs(p->max_epochs());
@@ -198,6 +175,7 @@ static SolverParams* parseSolverParams(SolverParameter* p)
   sp->setTestEpoch(p->test_epoch());
 
   sp->setSolverType(p->type());
+  sp->setDataType(p->data_type());
 
   sp->setGlobalFlag(p->global());
 
@@ -211,8 +189,8 @@ class SolverNode : public MLNode
     SolverNode(SolverParams* p, MLEngine* e);
     virtual ~SolverNode(void) {}
 
-    void applyUpdate(float *blob, float *inc, float *grad, int size, float lr_mult, float decay_mult);
-    void applyUpdate(float *blob, float *inc, float *grad, int size, float* lr_mult, float* decay_mult);
+    void applyUpdate(float*, float*, void*, int, float*, float*, string);
+    void convert_bf16_f32(libxsmm_bfloat16*, float*, int);
     bool getGlobalFlag() { return global_; }
 
   protected:
@@ -220,11 +198,13 @@ class SolverNode : public MLNode
     vector<int> lrcepochs_, stepvalues_;
     int epochs_, test_epoch_, step_size_, max_iter_;
     int stepidx_, warmup_max_epoch_;
+    int data_type_;
     bool global_;
     string solver_type_, lr_policy_;
     map<int, vector<float>> hpmap_;
     float base_lr_, lrval_, mval_, decayval_;
     float gamma_, power_, warmup_lr_;
     float mc_, mc1_, mc2_, prev_lrval_=-1, prev_lrval_1_=-1;
+    float *tmp_grad=NULL;
     MLEngine *eptr_;
 };

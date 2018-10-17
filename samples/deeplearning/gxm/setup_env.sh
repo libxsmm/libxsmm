@@ -8,7 +8,7 @@ export PATH=${BIN_PATH}:$PATH
 source /swtools/intel/compilers_and_libraries_2017.4.196/linux/bin/compilervars.sh intel64
 source /swtools/intel/impi/2017.3.196/bin64/mpivars.sh
 
-export MLSL_ROOT=/nfs_home/savancha/pcl_aist-mlsl/_install
+export MLSL_ROOT=/nfs_home/savancha/MLSL/_install
 
 if [ -z "${I_MPI_ROOT}" ]
 then

@@ -49,7 +49,6 @@ class PoolingParams : public NNParams
 {
   public:
     PoolingParams(void)  {}
-
     ~PoolingParams(void) {}
 
     void set_kernel_dims(int kdims, int ksize)
@@ -284,7 +283,6 @@ class PoolingNode : public NNNode
 {
   public:
     PoolingNode(PoolingParams* p, MLEngine* e);
-
     virtual ~PoolingNode(void) {}
 
   protected:
@@ -297,6 +295,7 @@ class PoolingNode : public NNNode
     }
 
     void configure(int engine);
+    void convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len);
 
     Tensor* tenTop_; // Output tensor pointer
     Tensor* tenBot_; // Input tensor pointer
@@ -307,11 +306,11 @@ class PoolingNode : public NNNode
     TensorBuf *tenScratchData_;
     Shape ts_;
 
-    int count_;
+    int count_, in_dtype, out_dtype;
     int bot_cengine_;
     bool first_fp=true;
+    float *stptr=NULL, cbptr[16];
 
-    void* maskBuf_;
     PoolImpl* impl;
     MLEngine* eptr_;
 };

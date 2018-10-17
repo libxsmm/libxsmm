@@ -45,6 +45,7 @@
 #include "Task.hpp"
 #include "Solver.hpp"
 #include "libxsmm.h"
+#include "common.hpp"
 
 using namespace std;
 using namespace gxm;
@@ -111,10 +112,10 @@ class MLEngine
     float *bias_lr_mult_, *bias_decay_mult_;
 
     void *input_buf_=NULL;
-    void *fact_buf_=NULL, *bact_buf_=NULL;
-    void *weight_buf_=NULL, *wdiff_buf_=NULL, *winc_buf_=NULL;
+    void *fact_buf_=NULL, *bact_buf_=NULL, *wbuf_=NULL;
+    void *weight_buf_=NULL, *wdiff_buf_=NULL, *winc_buf_=NULL, *lpweight_buf_=NULL;
     void *bias_buf_=NULL, *bidiff_buf_=NULL, *biinc_buf_=NULL, *stats_buf_=NULL;
-    int total_weights_, total_biases_;
+    int total_weights_, total_biases_, orig_total_weights_;
 
     vector<int> input_can_ptr;
     vector<int> fact_can_ptr, bact_can_ptr;
@@ -131,10 +132,11 @@ class MLEngine
     void read_checkpoint_file(TensorBuf*, string, string);
     void load_checkpoint(TensorList, string);
     void canary_check(void*, vector<int>&, int);
-    void* allocate_memory(string, TensorList, int, vector<int>&, int*, long long int*, long long int*, int);
+    void* allocate_memory(string, TensorList, int, vector<int>&, int*, long long int*);
     void* allocate_gradient_tensor(TensorList, int, int, long long int);
     void insertSplitNodes(NTGParameter& p, NTGParameter* ps);
-    void quantize_and_transpose_weights(TensorList L);
+    void convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len);
+    void convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len);
 
   public:
     MLEngine() {}

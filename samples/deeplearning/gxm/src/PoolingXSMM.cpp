@@ -54,8 +54,18 @@ PoolXSMM::PoolXSMM(PoolImplParams *gp, int engine) : PoolImpl(gp, engine)
   pooling_desc.pad_h_out = gp->opad_h;
   pooling_desc.pad_w_out = gp->opad_w;
   pooling_desc.threads = gp->num_threads;
-  pooling_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
-  pooling_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+
+  if(gp->in_data_type == DT_FLOAT && gp->out_data_type == DT_FLOAT)
+  {
+    pooling_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
+    pooling_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+  }
+  else if(gp->in_data_type == DT_BF16 && gp->out_data_type == DT_BF16)
+  {
+    pooling_desc.datatype_in = LIBXSMM_DNN_DATATYPE_BF16;
+    pooling_desc.datatype_out = LIBXSMM_DNN_DATATYPE_BF16;
+  }
+
   pooling_desc.datatype_mask = LIBXSMM_DNN_DATATYPE_I32;
   pooling_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
 

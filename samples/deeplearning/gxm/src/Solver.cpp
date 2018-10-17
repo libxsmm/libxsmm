@@ -41,181 +41,84 @@ using namespace gxm;
 SolverNode::SolverNode(SolverParams* p, MLEngine* e): MLNode(p, e)
 {
   lr_policy_ = p->getLRPolicy();
-
-  if(lr_policy_.compare("pcl_dnn") == 0)
-  {
-    lr_ = p->getLearningRates();
-    momentum_ = p->getMomentums();
-    decay_ = p->getWeightDecays();
-    lrcepochs_ = p->getLRChangeEpochs();
-    vector<float> temp(3);
-
-    for(int i=0; i<lr_.size(); i++)
-    {
-      temp[0] = lr_[i];
-      temp[1] = momentum_[i];
-      temp[2] = decay_[i];
-      hpmap_.insert(pair<int, vector<float> >(lrcepochs_[i], temp));
-    }
-  }
-  else
-  {
-    base_lr_ = p->getLearningRate();
-    warmup_lr_ = p->getWarmupLR();
-    mval_ = p->getMomentum();
-    decayval_ = p->getWeightDecay();
-    power_ = p->getPower();
-    gamma_ = p->getGamma();
-    step_size_ = p->getStepSize();
-    max_iter_ = p->getMaxIter();
-    stepvalues_ = p->getStepValues();
-    warmup_max_epoch_ = p->getWarmupEpochs();
-  }
+  base_lr_ = p->getLearningRate();
+  warmup_lr_ = p->getWarmupLR();
+  mval_ = p->getMomentum();
+  decayval_ = p->getWeightDecay();
+  power_ = p->getPower();
+  gamma_ = p->getGamma();
+  step_size_ = p->getStepSize();
+  max_iter_ = p->getMaxIter();
+  stepvalues_ = p->getStepValues();
+  warmup_max_epoch_ = p->getWarmupEpochs();
 
   stepidx_ = 0;
   epochs_ = p->getEpochs();
   test_epoch_ = p->getTestEpoch();
   solver_type_ = p->getSolverType();
   global_ = p->getGlobalFlag();
+  data_type_ = p->getDataType();
 
   eptr_ = e;
 }
 
-void SolverNode::applyUpdate(float *blob, float *inc, float *grad, int s, float lr_mult, float decay_mult)
+void SolverNode::convert_bf16_f32(libxsmm_bfloat16 *in, float* out, int len)
 {
-  if(lr_policy_.compare("pcl_dnn") == 0)
-  {
-    vector<float> temp;
-    map<int, vector<float>>::iterator it;
-
-    int epoch = eptr_->get_current_epoch();
-    it = hpmap_.find(epoch);
-    if(it != hpmap_.end())
-    {
-      temp = it->second;
-      lrval_ = temp[0];
-      mval_ = temp[1];
-      decayval_ = temp[2];
-    }
-  }
-  else
-  {
-    int iter = eptr_->get_current_batch() + eptr_->get_num_train_batches() * eptr_->get_current_epoch();
-    int warmup_max_iter = eptr_->get_num_train_batches() * warmup_max_epoch_; // Warm-up
-
-    if(eptr_->get_current_epoch() < warmup_max_epoch_)
-    {
-        lrval_ = (iter*base_lr_ + (warmup_max_iter - iter) * warmup_lr_)/warmup_max_iter;
-#if 0
-      if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
-        printf("warmup lrval = %g\n",lrval_);
-#endif
-    }
-    else if(lr_policy_.compare("fixed") == 0)
-      lrval_ = base_lr_;
-    else if(lr_policy_.compare("step") == 0)
-      lrval_ = base_lr_ * pow(gamma_, floor((double)iter/(double)step_size_));
-    else if(lr_policy_.compare("poly") == 0)
-      lrval_ = base_lr_ * pow(((float)1. - ((float)iter/(float)max_iter_)), power_);
-    else if(lr_policy_.compare("inv") == 0)
-      lrval_ = base_lr_ * pow((1 + gamma_ * iter), (-power_));
-    else if(lr_policy_.compare("multistep") == 0)
-    {
-      if(stepidx_ < stepvalues_.size() && iter > stepvalues_[stepidx_])
-        stepidx_++;
-      lrval_ = base_lr_ * pow(gamma_, (float)stepidx_);
-    }
-
-#if 0
-size_t node_id = MLSL::Environment::GetENv().GetProcessIdx();
-if(node_id == 0)
-  printf("iter %d: lrval_ = %f\n",iter,lrval_);
-#endif
-  }
-
-  eptr_->set_learning_rate(lrval_);
-
-  if(solver_type_.compare("SGD") == 0)
-  {
-    float lr = lrval_ * lr_mult;
-    float decay = decayval_ * decay_mult;
-
-#ifdef DEBUG
-    printf("size = %d\n", s);
-    printf("lr = %f, momentum = %f, decay = %f\n",lr, mval_, decay);
-#endif
+  int i;
 
 #ifdef _OPENMP
-#pragma omp parallel for simd
+#pragma omp parallel for private(i)
 #endif
-    for(int i=0; i<s; i++)
-    {
-#if 0
-      inc[i] = mval_*inc[i] - lrval_*(grad[i] + decayval_ * blob[i]);
-      blob[i] = blob[i] + inc[i];
-#else
-      inc[i] = mval_*inc[i] + lr*(grad[i] + decay * blob[i]);
-      blob[i] = blob[i] - inc[i];
-#endif
-      grad[i] = 0.0;
-    }
+  for ( i = 0; i < len; i+=16 ) {
+    __m256i vbfp16    = _mm256_loadu_si256( (const __m256i*)(in+i) );
+    __m512  vfp32     = gxm_bfp16_to_fp32_avx512f( vbfp16 );
+    _mm512_storeu_ps( out+i, vfp32 );
   }
-  else if(solver_type_.compare("ADAGRAD") == 0)
-  {}
 }
 
-void SolverNode::applyUpdate(float *blob, float *inc, float *grad, int s, float* lr_mult, float* decay_mult)
+void SolverNode::applyUpdate(float *blob, float *inc, void *grad, int s, float* lr_mult, float* decay_mult, string tensorType)
 {
-  if(lr_policy_.compare("pcl_dnn") == 0)
+  int iter = eptr_->get_current_batch() + eptr_->get_num_train_batches() * eptr_->get_current_epoch();
+  int warmup_max_iter = eptr_->get_num_train_batches() * warmup_max_epoch_; // Warm-up
+
+  if(eptr_->get_current_epoch() < warmup_max_epoch_)
+    lrval_ = (iter*base_lr_ + (warmup_max_iter - iter) * warmup_lr_)/warmup_max_iter;
+  else if(lr_policy_.compare("fixed") == 0)
+    lrval_ = base_lr_;
+  else if(lr_policy_.compare("step") == 0)
+    lrval_ = base_lr_ * pow(gamma_, floor((double)iter/(double)step_size_));
+  else if(lr_policy_.compare("poly") == 0)
+    lrval_ = base_lr_ * pow(((float)1. - ((float)iter/(float)max_iter_)), power_);
+  else if(lr_policy_.compare("inv") == 0)
+    lrval_ = base_lr_ * pow((1 + gamma_ * iter), (-power_));
+  else if(lr_policy_.compare("multistep") == 0)
   {
-    vector<float> temp;
-    map<int, vector<float>>::iterator it;
-
-    int epoch = eptr_->get_current_epoch();
-    it = hpmap_.find(epoch);
-    if(it != hpmap_.end())
-    {
-      temp = it->second;
-      lrval_ = temp[0];
-      mval_ = temp[1];
-      decayval_ = temp[2];
-    }
+    if(stepidx_ < stepvalues_.size() && iter > stepvalues_[stepidx_])
+      stepidx_++;
+    lrval_ = base_lr_ * pow(gamma_, (float)stepidx_);
   }
-  else
-  {
-    int iter = eptr_->get_current_batch() + eptr_->get_num_train_batches() * eptr_->get_current_epoch();
-    int warmup_max_iter = eptr_->get_num_train_batches() * warmup_max_epoch_; // Warm-up
-
-    if(eptr_->get_current_epoch() < warmup_max_epoch_)
-    {
-        lrval_ = (iter*base_lr_ + (warmup_max_iter - iter) * warmup_lr_)/warmup_max_iter;
-#if 0
-      if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
-        printf("warmup lrval = %g\n",lrval_);
-#endif
-    }
-    else if(lr_policy_.compare("fixed") == 0)
-      lrval_ = base_lr_;
-    else if(lr_policy_.compare("step") == 0)
-      lrval_ = base_lr_ * pow(gamma_, floor((double)iter/(double)step_size_));
-    else if(lr_policy_.compare("poly") == 0)
-      lrval_ = base_lr_ * pow(((float)1. - ((float)iter/(float)max_iter_)), power_);
-    else if(lr_policy_.compare("inv") == 0)
-      lrval_ = base_lr_ * pow((1 + gamma_ * iter), (-power_));
-    else if(lr_policy_.compare("multistep") == 0)
-    {
-      if(stepidx_ < stepvalues_.size() && iter > stepvalues_[stepidx_])
-        stepidx_++;
-      lrval_ = base_lr_ * pow(gamma_, (float)stepidx_);
-    }
-  }
-
-#if 0
-  if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
-    printf("lrval = %g\n",lrval_);
-#endif
 
   eptr_->set_learning_rate(lrval_);
+
+  float *wgrad_ptr;
+  if(tensorType=="WEIGHT" && data_type_ == BF16)
+  {
+    if(tmp_grad == NULL)
+      tmp_grad = (float*)libxsmm_aligned_malloc(s*sizeof(float), 2097152);
+    convert_bf16_f32((libxsmm_bfloat16*)grad, tmp_grad, s);
+
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for(int i=0; i<s/16; i++)
+#pragma omp simd
+      for(int j=0; j<16; j++)
+        ((libxsmm_bfloat16*)grad)[i*16+j] = 0;
+
+    wgrad_ptr = tmp_grad;
+  }
+  else if(tensorType=="WEIGHT" && data_type_ == FLOAT || tensorType=="BIAS")
+    wgrad_ptr = (float*)grad;
 
   if(solver_type_.compare("SGD") == 0)
   {
@@ -232,9 +135,9 @@ void SolverNode::applyUpdate(float *blob, float *inc, float *grad, int s, float*
 #pragma omp simd
       for(int i=tb; i<te; i++)
       {
-        inc[i] = mval_*inc[i] + lrval_ * lr_mult[i] * (grad[i] + decayval_ * decay_mult[i] * blob[i]);
+        inc[i] = mval_*inc[i] + lrval_ * lr_mult[i] * (wgrad_ptr[i] + decayval_ * decay_mult[i] * blob[i]);
         blob[i] = blob[i] - inc[i];
-        grad[i] = 0.0;
+        wgrad_ptr[i] = 0.0;
       }
     }
   }
@@ -265,9 +168,9 @@ void SolverNode::applyUpdate(float *blob, float *inc, float *grad, int s, float*
 #pragma omp simd
       for(int i=tb; i<te; i++)
       {
-        inc[i] = mval_*mc_*inc[i] + lrval_ * lr_mult[i] * (grad[i] + decayval_ * decay_mult[i] * blob[i]);
+        inc[i] = mval_*mc_*inc[i] + lrval_ * lr_mult[i] * (wgrad_ptr[i] + decayval_ * decay_mult[i] * blob[i]);
         blob[i] = blob[i] - inc[i];
-        grad[i] = 0.0;
+        wgrad_ptr[i] = 0.0;
       }
     }
   }
@@ -300,10 +203,10 @@ void SolverNode::applyUpdate(float *blob, float *inc, float *grad, int s, float*
       for(int i=tb; i<te; i++)
       {
         float tinc = inc[i];
-        inc[i] = mval_*mc1_*inc[i] + lrval_ * lr_mult[i] * (grad[i] + decayval_ * decay_mult[i] * blob[i]);
+        inc[i] = mval_*mc1_*inc[i] + lrval_ * lr_mult[i] * (wgrad_ptr[i] + decayval_ * decay_mult[i] * blob[i]);
         tinc = (1 + mval_*mc1_) * inc[i] - mval_*mc2_*tinc;
         blob[i] = blob[i] - tinc;
-        grad[i] = 0.0;
+        wgrad_ptr[i] = 0.0;
       }
     }
   }

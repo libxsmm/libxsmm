@@ -67,7 +67,7 @@ class FusedBNormImpl
     void *bot_layout, *top_layout, *gbot_layout;
     int top_compute_engine=-1;
     int bot_compute_engine=-1;
-    bool bpdone=false, use_global_stats;
+    bool use_global_stats;
     string nname;
     TensorBuf* scratchp;
 
@@ -76,8 +76,6 @@ class FusedBNormImpl
 
     void set_top_compute_engine(int e) { top_compute_engine = e;}
     void set_bot_compute_engine(int e) { bot_compute_engine = e;}
-    void set_bpdone(int b) { bpdone = b; }
-    bool get_bpdone() { return bpdone; }
     void set_node_name(string s) { nname = s; }
     void set_scratch_buffer(TensorBuf* sb) { scratchp = sb; }
     void set_global_stats(bool s) { use_global_stats = s; }

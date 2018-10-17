@@ -120,7 +120,8 @@ class SplitNode : public NNNode
       vector<TensorBuf *> tenTopData_, tenTopDiff_;
       TensorBuf *tenBotData_, *tenBotDiff_;
       int bot_cengine_;
-      int count_;
+      int count_, in_dtype, out_dtype;
+      float *stptr=NULL, cbptr[16];
 
       SplitImplParams gparams_;
       SplitImpl *impl=NULL;
