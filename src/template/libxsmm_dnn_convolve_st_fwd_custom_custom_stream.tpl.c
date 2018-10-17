@@ -101,13 +101,8 @@ float *bn_sum_base;
 float *bn_sum_base2;
 
 /* accumulation scratch for fp32->bf16 downconvert */
-#if !defined(LIBXSMM_DNN_VLA_TLS2)
 float *const accumulators_scratch = (float*)(((char*)handle->scratch6) +
     ltid * LIBXSMM_UP2(handle->ofmblock * handle->ofw * handle->ofh * sizeof(float), LIBXSMM_CACHELINE));
-#else
-float accumulators_scratch_array[handle->ofmblock * handle->ofw * handle->ofh];
-float *const accumulators_scratch = accumulators_scratch_array;
-#endif
 
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 __m512 max_abs;

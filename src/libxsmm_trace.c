@@ -327,22 +327,9 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
             }
           }
           else {
-            char filename[] = "/tmp/.libxsmm_XXXXXX.map";
-#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(2, 19) <= LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__)
-            fd = mkstemps(filename, 4/*.map*/);
-#else
-            char *const xpos = strrchr(filename, 'X');
-            const char c = (char)(NULL != xpos ? *(xpos + 1) : 0);
-            if (0 != c) {
-              xpos[1] = 0;
-              fd = mkstemp(filename);
-              xpos[1] = c;
-            }
-            else {
-              fd = -1;
-            }
-#endif
-            if (0 <= fd && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
+            char filename[] = "/tmp/.libxsmm_map." LIBXSMM_MKTEMP_PATTERN;
+            fd = mkstemp(filename);
+            if (0 <= fd && 0 == unlink(filename) && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
               char *const buffer = (char*)mmap(NULL, LIBXSMM_TRACE_SYMBOLSIZE,
                 PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
