@@ -45,24 +45,6 @@
   fflush(stdout);\
 }
 
-#define CHKERR_LIBXSMM_DNN_CREATE(t, A) if ( A != LIBXSMM_DNN_SUCCESS )\
-{\
-  fprintf(stdout, "Creating tensor %s in %s, %s\n", t, gp->node_name.c_str(), libxsmm_dnn_get_error(A) );\
-  fflush(stdout);\
-}
-
-#define CHKERR_LIBXSMM_DNN_LINK(t, A) if ( A != LIBXSMM_DNN_SUCCESS )\
-{\
-  fprintf(stdout, "Linking tensor %s in %s, %s\n", t, gp->node_name.c_str(), libxsmm_dnn_get_error(A) );\
-  fflush(stdout);\
-}
-
-#define CHKERR_LIBXSMM_DNN_BIND(t, A) if ( A != LIBXSMM_DNN_SUCCESS )\
-{\
-  fprintf(stdout, "Binding tensor %s in %s, %s\n", t, gp->node_name.c_str(), libxsmm_dnn_get_error(A) );\
-  fflush(stdout);\
-}
-
 class ConvXSMM : public ConvImpl
 {
   protected:
@@ -72,6 +54,7 @@ class ConvXSMM : public ConvImpl
     libxsmm_dnn_tensor* libxsmm_input = NULL;
     libxsmm_dnn_tensor* libxsmm_output = NULL;
     libxsmm_dnn_tensor* libxsmm_filter = NULL;
+    libxsmm_dnn_tensor* libxsmm_checkpoint_filter = NULL;
     libxsmm_dnn_tensor* libxsmm_delinput = NULL;
     libxsmm_dnn_tensor* libxsmm_deloutput = NULL;
     libxsmm_dnn_tensor* libxsmm_delfilter = NULL;
@@ -81,18 +64,11 @@ class ConvXSMM : public ConvImpl
 
     ConvImplParams *cp;
     float *dinptr, *dwtptr;
-    libxsmm_dnn_tensor_datalayout* in_buffer_layout, *out_buffer_layout;
-    libxsmm_dnn_tensor_datalayout* din_buffer_layout, *dout_buffer_layout;
-    bool dout_converted_in_BP = false;
-    bool destroyed_in_=false, destroyed_out_=false, destroyed_din_=false, destroyed_dout_=false;
     bool updated_scratch=false;
-    short *i16_in_ptr, *i16_wt_ptr, *i16_dout_ptr;
-    float *f32_in_ptr, *f32_wt_ptr, *f32_dout_ptr;
-    void *in_ptr=NULL, *in_prv_ptr=NULL, *wt_ptr=NULL, *out_ptr=NULL, *out_prv_ptr=NULL;
-    void *din_ptr=NULL, *din_prv_ptr=NULL, *dwt_ptr=NULL, *dwt_prv_ptr=NULL, *dout_ptr=NULL, *dout_prv_ptr=NULL;
+    libxsmm_bfloat16 *bf16_in_ptr, *bf16_wt_ptr, *bf16_dout_ptr;
+    void *in_ptr=NULL, *wt_ptr=NULL, *out_ptr=NULL;
+    void *din_ptr=NULL, *dwt_ptr=NULL, *dwt_prv_ptr=NULL, *dout_ptr=NULL;
     void *scratch=NULL;
-
-    unsigned char scf_input, scf_filter, scf_deloutput, pscf_deloutput;
 
   public:
     ConvXSMM(ConvImplParams *gp, int engine);

@@ -76,8 +76,8 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
     tenBotData_[i] = tenBot_[i]->getBuf(DATA);
   }
 
-  int in_dtype = tenBotData_[0]->getDataType();
-  int out_dtype = p->get_data_type();
+  in_dtype = tenBotData_[0]->getDataType();
+  out_dtype = p->get_data_type();
 
   tenTopData_->setDataType(out_dtype);
 
@@ -106,10 +106,10 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
 
   if(in_dtype == DT_FLOAT && out_dtype == DT_FLOAT)
     tsize = telem*sizeof(float);
-  else if(in_dtype == DT_FLOAT && out_dtype == DT_DFP16)
-    tsize = telem*sizeof(float) + telem*sizeof(short);
-  else if(in_dtype == DT_DFP16 && out_dtype == DT_DFP16)
-    tsize = telem*sizeof(short);
+  else if(in_dtype == DT_FLOAT && out_dtype == DT_BF16)
+    tsize = telem*sizeof(float) + telem*sizeof(libxsmm_bfloat16);
+  else if(in_dtype == DT_BF16 && out_dtype == DT_BF16)
+    tsize = telem*sizeof(libxsmm_bfloat16);
 
   tenTopData_->setBufferSize(tsize);
 
@@ -125,7 +125,7 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   tenScale_->setType(BNORMSCALE);
   tenScale_->setShape(&sss);
   tenScaleData_ = tenScale_->getBuf(DATA);
-  tenScaleData_->setDataType(DT_FLOAT); //TODO: Eventually move to dfp16 gamma. Currently it is FP32
+  tenScaleData_->setDataType(DT_FLOAT); 
   tenScaleData_->setBufferType(DATA);
 
   telem = sss.dims[0];
@@ -139,7 +139,7 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   tenShift_->setType(BNORMSHIFT);
   tenShift_->setShape(&sss);
   tenShiftData_ = tenShift_->getBuf(DATA);
-  tenShiftData_->setDataType(DT_FLOAT); //TODO: Eventually move to dfp16 beta. Currently it is FP32
+  tenShiftData_->setDataType(DT_FLOAT); 
   tenShiftData_->setBufferType(DATA);
 
   tenShiftData_->setBufferSize(tsize);
@@ -159,16 +159,16 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   tenMeanData_->setBufferType(DATA);
   tenMeanData_->setBufferSize(tsize);
 
-  rstdev_ = top_[0] + "_rstdev";
-  tenRstdev_ = new Tensor(rstdev_);
-  assert(tenRstdev_ != NULL);
-  tenRstdev_->setOwner(this);
-  tenRstdev_->setType(BNORMRSTDEV);
-  tenRstdev_->setShape(&sss);
-  tenRstdevData_ = tenRstdev_->getBuf(DATA);
-  tenRstdevData_->setDataType(DT_FLOAT);
-  tenRstdevData_->setBufferType(DATA);
-  tenRstdevData_->setBufferSize(tsize);
+  var_ = top_[0] + "_var";
+  tenVar_ = new Tensor(var_);
+  assert(tenVar_ != NULL);
+  tenVar_->setOwner(this);
+  tenVar_->setType(BNORMVAR);
+  tenVar_->setShape(&sss);
+  tenVarData_ = tenVar_->getBuf(DATA);
+  tenVarData_->setDataType(DT_FLOAT);
+  tenVarData_->setBufferType(DATA);
+  tenVarData_->setBufferSize(tsize);
 
   for(int i=0; i<bottom_.size(); i++)
   {
@@ -191,12 +191,10 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
 
         if(in_dtype == DT_FLOAT && out_dtype == DT_FLOAT)
           bsize = belem*sizeof(float);
-        else if(in_dtype == DT_FLOAT && out_dtype == DT_DFP16)
-          bsize = belem*sizeof(float) + belem*sizeof(short);
-        else if(in_dtype == DT_DFP16 && out_dtype == DT_DFP16)
-          // BN computes delinput in FP32, then quantizes to DFP16; so need space for both buffers
-          // DFP16 buffer needs extra element to hold scaling factor after quantization
-          bsize = belem*sizeof(short);
+        else if(in_dtype == DT_FLOAT && out_dtype == DT_BF16)
+          bsize = belem*sizeof(float) + belem*sizeof(libxsmm_bfloat16);
+        else if(in_dtype == DT_BF16 && out_dtype == DT_BF16)
+          bsize = belem*sizeof(libxsmm_bfloat16);
 
         // Set the size of the input-gradient buffer
         tenBotDiff_[i]->setBufferSize(bsize);
@@ -256,9 +254,9 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   if(!inserted)
     printf("Warning: Tensor %s already registered\n",mean_.c_str());
 
-  inserted = e->register_tensor(rstdev_, BNORMRSTDEV, tenRstdev_);
+  inserted = e->register_tensor(var_, BNORMVAR, tenVar_);
   if(!inserted)
-    printf("Warning: Tensor %s already registered\n",rstdev_.c_str());
+    printf("Warning: Tensor %s already registered\n",var_.c_str());
 
   gparams_.bdims = gparams_.tdims = bs->ndims;
   gparams_.batch_size = bs->dims[0];
@@ -322,22 +320,35 @@ void FusedBNormNode::configure(int engine)
   }
 }
 
+void FusedBNormNode::convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len)
+{
+  int i;
+
+#ifdef _OPENMP
+#pragma omp parallel for private(i)
+#endif
+  for ( i = 0; i < len; i+=16 ) {
+    __m256i vbfp16    = _mm256_loadu_si256( (const __m256i*)(in+i) );
+    __m512  vfp32     = gxm_bfp16_to_fp32_avx512f( vbfp16 );
+    _mm512_storeu_ps( out+i, vfp32 );
+  }
+}
+
 void FusedBNormNode::fillBuffer(TensorBuf *tBuf, int buftype, long long int bytes)
 {
   int ttype = tBuf->getTensor()->getType();
   int dtype = tBuf->getDataType();
   void *ptr = tBuf->getBuffer();
-  float value;
+
   if(ttype==BNORMSCALE && buftype == DATA)
   {
     if(nname_.find("bn3") == nname_.npos)
-      value = 1;
+      initConstantBuffer(ptr, dtype, bytes, "CONSTANT", 1.0f);
     else
-      value = 0.;
+      initConstantBuffer(ptr, dtype, bytes, "CONSTANT", 0.0f);
   }
   else
-    value = 0;
-  initConstantBuffer(ptr, dtype, bytes, "CONSTANT", value);
+    initConstantBuffer(ptr, dtype, bytes, "CONSTANT", 0.0f);
 }
 
 void FusedBNormNode::fillBiasMultipliers(float* lr, float* decay, long long int size)
@@ -399,11 +410,6 @@ void FusedBNormNode::Checkpoint(TensorBuf *tBuf, string name, string format)
           for(int i=0; i<bytes/sizeof(float); i++)
             fprintf(f, "%f\n", *((float*)ptr + i));
         }
-        else if(dtype == DT_INT16)
-        {
-          for(int i=0; i<bytes/sizeof(short int); i++)
-            fprintf(f, "%d\n", *((short int*)ptr + i));
-        }
         else
           printf("Warning: could not checkpoint to file %s\n",name.c_str());
       }
@@ -417,16 +423,28 @@ void FusedBNormNode::Checkpoint(TensorBuf *tBuf, string name, string format)
 }
 void FusedBNormNode::forwardPropagate()
 {
+  int nImg = gparams_.batch_size;
+  int ifm0 = gparams_.nInput[0];
+  int ifm1 = gparams_.nInput[1];
+  int ofm = gparams_.nOutput;
+  int ifh = gparams_.iHeight;
+  int ifhp = ifh + 2*gparams_.ipad_h;
+  int ifw = gparams_.iWidth;
+  int ifwp = ifw + 2*gparams_.ipad_w;
+  int ofh = gparams_.oHeight;
+  int ofw = gparams_.oWidth;
+  int ofhp = ofh + 2*gparams_.pad_h;
+  int ofwp = ofw + 2*gparams_.pad_w;
+
 #ifdef DEBUG
   {
-    int offset = gparams_.batch_size * gparams_.nInput * gparams_.iHeight * gparams_.iWidth;
     float* bot_r = (float*)(tenBotData_[0]->getBuffer());
     float* bot_l = (float*)(tenBotData_[1]->getBuffer());
 
     float* top = (float*)(tenTopData_->getBuffer());
 
     printf("Executing FP %s: input_r %p, mean %p, mean2 %p, input_l %p, output %p\n",NNNode::nname_.c_str(), bot_r, mean, mean2, bot_l, top);
-    printf("Inputs: %d x %d x %d\n",gparams_.nInput, gparams_.iHeight, gparams_.iWidth);
+    printf("Inputs: %d x %d x %d\n",gparams_.nInput[0], gparams_.iHeight, gparams_.iWidth);
     printf("Outputs: %d x %d x %d\n",gparams_.nOutput, gparams_.oHeight, gparams_.oWidth);
   }
 #endif
@@ -441,14 +459,16 @@ void FusedBNormNode::forwardPropagate()
     impl->set_global_stats(true);
 
   gmean_ = (float*)tenMeanData_->getBuffer();
-  grstd_ = (float*)tenRstdevData_->getBuffer();
+  gvar_ = (float*)tenVarData_->getBuffer();
 
   if(first_fp)
   {
-    int size = gparams_.batch_size * gparams_.nOutput * (gparams_.oHeight/gparams_.stride_h + 2*gparams_.pad_h) * (gparams_.oWidth/gparams_.stride_w + 2*gparams_.pad_w);
+    int size = gparams_.batch_size * gparams_.nOutput * 
+              (gparams_.oHeight/gparams_.stride_h + 2*gparams_.pad_h) * 
+              (gparams_.oWidth/gparams_.stride_w + 2*gparams_.pad_w);
 
     if((gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_FLOAT)
-      || (gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_DFP16))
+      || (gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_BF16))
     {
       float* ptr = (float*)tenTopData_->getBuffer();
 
@@ -458,12 +478,12 @@ void FusedBNormNode::forwardPropagate()
       for(int i=0; i<size; i++)
         ptr[i] = 0;
 
-      if(gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_DFP16)
+      if(gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_BF16)
         tenTopData_->setLPBuffer(ptr + size);
     }
-    else if(gparams_.in_data_type == DT_DFP16 && gparams_.out_data_type == DT_DFP16)
+    else if(gparams_.in_data_type == DT_BF16 && gparams_.out_data_type == DT_BF16)
     {
-      short* ptr = (short*)tenTopData_->getBuffer();
+      libxsmm_bfloat16* ptr = (libxsmm_bfloat16*)tenTopData_->getBuffer();
 
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -474,16 +494,31 @@ void FusedBNormNode::forwardPropagate()
     first_fp = false;
   }
 
-  impl->forwardPropagate(tenBotData_, tenScaleData_, tenShiftData_, gmean_, grstd_, tenTopData_, 0);
+  impl->forwardPropagate(tenBotData_, tenScaleData_, tenShiftData_, gmean_, gvar_, tenTopData_, 0);
 
 #ifdef CHECK_BLOWUP_FP32
-  float* ptr = (float*)tenTopData_->getBuffer();
-  for(int i=0; i<16; i++)
+  if(out_dtype == DT_FLOAT)
   {
-    if(isnan(ptr[i]) || isinf(ptr[i]))
+    for(int i=0; i<16; i++)
     {
-      printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
-      exit(-1);
+      float v = ((float*)tenTopData_->getBuffer())[i];
+      if(isnan(v) || isinf(v))
+      {
+        printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
+        exit(-1);
+      }
+    }
+  }
+  else if(out_dtype == DT_BF16)
+  {
+    convert_bf16_f32((libxsmm_bfloat16*)tenTopData_->getBuffer(), cbptr, 16);
+    for(int i=0; i<16; i++)
+    {
+      if(isnan(cbptr[i]) || isinf(cbptr[i]))
+      {
+        printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
+        exit(-1);
+      }
     }
   }
 #endif
@@ -496,23 +531,46 @@ void FusedBNormNode::forwardPropagate()
 #endif
   if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0)
   {
-    float *ptr = (float*)tenBotData_[0]->getBuffer();
-    float *pptr = (float*)tenBotData_[0]->getPrivBuffer();
-    float *p = (pptr == NULL) ? ptr : pptr;
-    string s = nname_ + "_r_Inp";
-    MeanOfLayer((char*)s.c_str(), p, gparams_.batch_size*gparams_.nInput[0]* (gparams_.iHeight + 2*gparams_.ipad_h) * (gparams_.iWidth + 2*gparams_.ipad_w) );
-
-    if(gparams_.nInput.size() > 1)
+    if(in_dtype == DT_FLOAT)
     {
-      ptr = (float*)tenBotData_[1]->getBuffer();
-      pptr = (float*)tenBotData_[1]->getPrivBuffer();
-      p = (pptr == NULL) ? ptr : pptr;
-      s = nname_ + "_l_Inp";
-      if(p != NULL)
-        MeanOfLayer((char*)s.c_str(), p, gparams_.batch_size*gparams_.nInput[1]* gparams_.iHeight*gparams_.iWidth);
+      float *ptr = (float*)tenBotData_[0]->getBuffer();
+      string s = nname_ + "_r_Inp";
+      MeanOfLayer((char*)s.c_str(), ptr, nImg*ifm0*ifhp*ifwp);
+
+      if(gparams_.nInput.size() > 1)
+      {
+        ptr = (float*)tenBotData_[1]->getBuffer();
+        s = nname_ + "_l_Inp";
+        MeanOfLayer((char*)s.c_str(), ptr, nImg*ifm1*ifh*ifw);
+      }
+    }
+    else if(in_dtype == DT_BF16)
+    {
+      if(stptr == NULL)
+      {
+        int s = nImg*ofm*ofhp*ofwp;
+        int is = nImg*ofm*ifhp*ifwp;
+        if(s > is)
+          stptr = (float*)libxsmm_aligned_malloc(s*sizeof(float), 2097152);
+        else
+          stptr = (float*)libxsmm_aligned_malloc(is*sizeof(float), 2097152);
+      }
+
+      libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenBotData_[0]->getBuffer();
+      string s = nname_ + "_r_Inp";
+      convert_bf16_f32(ptr, stptr, nImg*ifm0*ifhp*ifwp);
+      MeanOfLayer((char*)s.c_str(), stptr, nImg*ifm0*ifhp*ifwp);
+
+      if(gparams_.nInput.size() > 1)
+      {
+        ptr = (libxsmm_bfloat16*)tenBotData_[1]->getBuffer();
+        convert_bf16_f32(ptr, stptr, nImg*ifm1*ifhp*ifwp);
+        s = nname_ + "_l_Inp";
+        MeanOfLayer((char*)s.c_str(), stptr, nImg*ifm1*ifh*ifw);
+      }
     }
 
-    s = nname_ + "_gammap";
+    string s = nname_ + "_gammap";
     float* gamma = (float*)tenScaleData_->getBuffer();
     MeanOfLayer((char*)s.c_str(), gamma, gparams_.nInput[0]);
 
@@ -520,19 +578,43 @@ void FusedBNormNode::forwardPropagate()
     float* beta = (float*)tenShiftData_->getBuffer();
     MeanOfLayer((char*)s.c_str(), beta, gparams_.nInput[0]);
 
-    ptr = (float*)tenTopData_->getBuffer();
-    s = nname_ + "_Outp";
-    int size = gparams_.batch_size * gparams_.nOutput * (gparams_.oHeight/gparams_.stride_h + 2*gparams_.pad_h) * (gparams_.oWidth/gparams_.stride_w + 2*gparams_.pad_w);
-    MeanOfLayer((char*)s.c_str(), ptr, size);
+    if(out_dtype == DT_FLOAT)
+    {
+      float *ptr = (float*)tenTopData_->getBuffer();
+      string s = nname_ + "_Outp";
+      int size = nImg*ofm*(ofh/gparams_.stride_h + 2*gparams_.pad_h)*(ofw/gparams_.stride_w + 2*gparams_.pad_w);
+      MeanOfLayer((char*)s.c_str(), ptr, size);
+    }
+    else if(out_dtype == DT_BF16)
+    {
+      libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenTopData_->getBuffer();
+      s = nname_ + "_Outp";
+      int size = nImg*ofm*(ofh/gparams_.stride_h + 2*gparams_.pad_h)*(ofw/gparams_.stride_w + 2*gparams_.pad_w);
+      convert_bf16_f32(ptr, stptr, size);
+      MeanOfLayer((char*)s.c_str(), stptr, size);
+    }
   }
 #endif
 }
 
 void FusedBNormNode::backPropagate()
 {
+  int nImg = gparams_.batch_size;
+  int ifm0 = gparams_.nInput[0];
+  int ifm1 = gparams_.nInput[1];
+  int ofm = gparams_.nOutput;
+  int ifh = gparams_.iHeight;
+  int ifhp = ifh + 2*gparams_.ipad_h;
+  int ifw = gparams_.iWidth;
+  int ifwp = ifw + 2*gparams_.ipad_w;
+  int ofh = gparams_.oHeight;
+  int ofw = gparams_.oWidth;
+  int ofhp = ofh + 2*gparams_.pad_h;
+  int ofwp = ofw + 2*gparams_.pad_w;
+
   tenTopDiff_ = tenTop_->getBuf(DIFF);
 
-#ifdef DEBUG
+#ifndef NDEBUG
   int offset = gparams_.batch_size * gparams_.nInput[0] * gparams_.iHeight * gparams_.iWidth;
   float *gtop = (float*)(tenTopDiff_->getBuffer());
   assert(gtop != NULL);
@@ -550,14 +632,9 @@ void FusedBNormNode::backPropagate()
 
   if(first_bp)
   {
-    const int size = gparams_.batch_size * gparams_.nInput[0] * (gparams_.iHeight + 2*gparams_.ipad_h) *
-      (gparams_.iWidth + 2*gparams_.ipad_w);
+    int size = nImg*ifm0*ifhp*ifwp;
 
-    int in_dtype = tenBotData_[0]->getDataType();
-    int out_dtype = tenTopData_->getDataType();
-
-    if((in_dtype == DT_FLOAT && out_dtype == DT_FLOAT) ||
-        (in_dtype == DT_FLOAT && out_dtype == DT_DFP16))
+    if(in_dtype == DT_FLOAT)
     {
       float* gbot0 = (float*)(tenBotDiff_[0]->getBuffer());
       float* gbot1 = gparams_.eltwise ? (float*)(tenBotDiff_[1]->getBuffer()) : NULL;
@@ -569,9 +646,6 @@ void FusedBNormNode::backPropagate()
       for(int i=0; i<size; i++)
         gbot0[i] = 0.0f;
 
-      if(in_dtype == DT_FLOAT && out_dtype == DT_DFP16)
-        tenBotDiff_[0]->setLPBuffer(gbot0 + size);
-
       if(gbot1)
       {
 #ifdef _OPENMP
@@ -579,31 +653,28 @@ void FusedBNormNode::backPropagate()
 #endif
         for(int i=0; i<size; i++)
           gbot1[i] = 0.0f;
-
-        if(in_dtype == DT_FLOAT && out_dtype == DT_DFP16)
-          tenBotDiff_[1]->setLPBuffer(gbot1 + size);
       }
 #endif
     }
-    else if(in_dtype == DT_DFP16 && out_dtype == DT_DFP16)
+    else if(in_dtype == DT_BF16 && out_dtype == DT_BF16)
     {
-      short* gbot0 = (short*)(tenBotDiff_[0]->getBuffer());
-      short* gbot1 = gparams_.eltwise ? (short*)(tenBotDiff_[1]->getBuffer()) : NULL;
+      libxsmm_bfloat16* gbot0 = (libxsmm_bfloat16*)(tenBotDiff_[0]->getBuffer());
+      libxsmm_bfloat16* gbot1 = gparams_.eltwise ? (libxsmm_bfloat16*)(tenBotDiff_[1]->getBuffer()) : NULL;
 
 #if 1
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for(int i=0; i<size+1; i++)
-        gbot0[i] = 0.0f;
+      for(int i=0; i<size; i++)
+        gbot0[i] = 0;
 
       if(gbot1)
       {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-        for(int i=0; i<size+1; i++)
-          gbot1[i] = 0.0f;
+        for(int i=0; i<size; i++)
+          gbot1[i] = 0;
       }
 #endif
     }
@@ -614,13 +685,28 @@ void FusedBNormNode::backPropagate()
   impl->backPropagate(tenBotData_, tenTopData_, tenScaleData_, tenTopDiff_, tenScaleDiff_, tenShiftDiff_, tenBotDiff_, 0);
 
 #ifdef CHECK_BLOWUP_FP32
-  float* cbptr = (float*)tenTopDiff_->getBuffer();
-  for(int i=0; i<16; i++)
+  if(out_dtype == DT_FLOAT)
   {
-    if(isnan(cbptr[i]) || isinf(cbptr[i]))
+    for(int i=0; i<16; i++)
     {
-      printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
-      exit(-1);
+      float v = ((float*)tenBotDiff_[0]->getBuffer())[i];
+      if(isnan(v) || isinf(v))
+      {
+        printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
+        exit(-1);
+      }
+    }
+  }
+  else if(out_dtype == DT_BF16)
+  {
+    convert_bf16_f32((libxsmm_bfloat16*)tenBotDiff_[0]->getBuffer(), cbptr, 16);
+    for(int i=0; i<16; i++)
+    {
+      if(isnan(cbptr[i]) || isinf(cbptr[i]))
+      {
+        printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
+        exit(-1);
+      }
     }
   }
 #endif
@@ -631,20 +717,25 @@ void FusedBNormNode::backPropagate()
 #else
   unsigned int node_id = 0;
 #endif
-  string s;
-  float *ptr, *pptr, *p;
   if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0)
   {
-#if 1
-    ptr = (float*)tenTopDiff_->getBuffer();
-    pptr = (float*)tenTopDiff_->getPrivBuffer();
-    int size = gparams_.batch_size * gparams_.nOutput * (gparams_.oHeight/gparams_.stride_h + 2*gparams_.pad_h) * (gparams_.oWidth/gparams_.stride_w + 2*gparams_.pad_w);
-    p = (pptr == NULL) ? ptr : pptr;
-    s = nname_ + "_delOutp";
-    MeanOfLayer((char*)s.c_str(), p, size);
-#endif
+    if(out_dtype == DT_FLOAT)
+    {
+      float *ptr = (float*)tenTopDiff_->getBuffer();
+      int size = nImg*ofm*(ofh/gparams_.stride_h + 2*gparams_.pad_h) * (ofw/gparams_.stride_w + 2*gparams_.pad_w);
+      string s = nname_ + "_delOutp";
+      MeanOfLayer((char*)s.c_str(), ptr, size);
+    }
+    else if(out_dtype == DT_BF16)
+    {
+      libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenTopDiff_->getBuffer();
+      int size = nImg*ofm*(ofh/gparams_.stride_h + 2*gparams_.pad_h) * (ofw/gparams_.stride_w + 2*gparams_.pad_w);
+      convert_bf16_f32(ptr, stptr, size);
+      string s = nname_ + "_delOutp";
+      MeanOfLayer((char*)s.c_str(), stptr, size);
+    }
 
-    s = nname_ + "_delgammap";
+    string s = nname_ + "_delgammap";
     float* delgamma = (float*)tenScaleDiff_->getBuffer();
     MeanOfLayer((char*)s.c_str(), delgamma, gparams_.nOutput);
 
@@ -652,40 +743,49 @@ void FusedBNormNode::backPropagate()
     float* delbeta = (float*)tenShiftDiff_->getBuffer();
     MeanOfLayer((char*)s.c_str(), delbeta, gparams_.nOutput);
 
-    ptr = (float*)tenBotDiff_[0]->getBuffer();
-    s = nname_ + "_delInp";
-    MeanOfLayer((char*)s.c_str(), ptr, gparams_.batch_size*gparams_.nInput[0]* (gparams_.iHeight + 2*gparams_.ipad_h) * (gparams_.iWidth + 2*gparams_.ipad_w));
-
+    if(in_dtype == DT_FLOAT)
+    {
+      float *ptr = (float*)tenBotDiff_[0]->getBuffer();
+      string s = nname_ + "_delInp";
+      int size = nImg*ifm0*ifhp*ifwp;
+      MeanOfLayer((char*)s.c_str(), ptr, size);
+    }
+    else if(in_dtype == DT_BF16)
+    {
+      libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenBotDiff_[0]->getBuffer();
+      s = nname_ + "_delInp";
+      int size = nImg*ifm0*ifhp*ifwp;
+      convert_bf16_f32(ptr, stptr, size);
+      MeanOfLayer((char*)s.c_str(), stptr, size);
+    }
   }
 #endif
 }
 
 void FusedBNormNode::weightUpdate()
 {
-#if 1
 #ifdef USE_MLSL
   this->op_->GetParameterSet(0)->StartGradientComm(tenScaleDiff_->getBuffer());
   this->op_->GetParameterSet(1)->StartGradientComm(tenShiftDiff_->getBuffer());
-  if((eptr_->get_execution_mode() == TRAIN) && (eptr_->get_current_epoch() == eptr_->get_num_epochs()-1))
-  {
-    this->op_->GetParameterSet(2)->StartGradientComm(tenMeanData_->getBuffer());
-    this->op_->GetParameterSet(3)->StartGradientComm(tenRstdevData_->getBuffer());
-  }
+
+#ifdef _OPENMP
+#pragma omp parallel for
 #endif
+  for(int i=0; i<gparams_.nOutput; i++)
+  {
+    gmean_[i] = gmean_[i]/eptr_->get_num_machines();
+    gvar_[i] = gvar_[i]/eptr_->get_num_machines();
+  }
+  this->op_->GetParameterSet(2)->StartGradientComm(gmean_);
+  this->op_->GetParameterSet(3)->StartGradientComm(gvar_);
 #endif
 }
 
 void FusedBNormNode::solverStep()
 {
-  if(!impl->get_bpdone())
-    printf("Warning! Solver task before BP/WU task... old gradients\n");
-
   float *delgamma = (float*)tenScaleDiff_->getBuffer();
   float *delbeta = (float*)tenShiftDiff_->getBuffer();
-  float *gexpect = (float*)tenMeanData_->getBuffer();
-  float *gstddev = (float*)tenRstdevData_->getBuffer();
 
-#if 1
 #ifdef USE_MLSL
   void *mptr = op_->GetParameterSet(0)->WaitGradientComm();
   if(mptr != NULL && mptr != delgamma)
@@ -695,17 +795,13 @@ void FusedBNormNode::solverStep()
   if(mptr != NULL && mptr != delbeta)
     memcpy((void*)delbeta, mptr, gparams_.nOutput*sizeof(float));
 
-  if((eptr_->get_execution_mode() == TRAIN) && (eptr_->get_current_epoch() == eptr_->get_num_epochs()-1))
-  {
-    mptr = op_->GetParameterSet(2)->WaitGradientComm();
-    if(mptr != NULL && mptr != gexpect)
-      memcpy((void*)gexpect, mptr, gparams_.nOutput*sizeof(float));
+  mptr = op_->GetParameterSet(2)->WaitGradientComm();
+  if(mptr != NULL && mptr != gmean_)
+    memcpy((void*)gmean_, mptr, gparams_.nOutput*sizeof(float));
 
-    mptr = op_->GetParameterSet(3)->WaitGradientComm();
-    if(mptr != NULL && mptr != gstddev)
-      memcpy((void*)gstddev, mptr, gparams_.nOutput*sizeof(float));
-  }
-#endif
+  mptr = op_->GetParameterSet(3)->WaitGradientComm();
+  if(mptr != NULL && mptr != gvar_)
+    memcpy((void*)gvar_, mptr, gparams_.nOutput*sizeof(float));
 #endif
 
 #ifdef CHECK_BLOWUP_FP32
@@ -724,57 +820,6 @@ void FusedBNormNode::solverStep()
       printf("Warning! %s layer Solver beta gradients are NaN or Inf\n", nname_.c_str());
       exit(-1);
     }
-  }
-#endif
-
-#ifdef GETSTATS
-#ifdef USE_MLSL
-  unsigned int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
-#else
-  unsigned int node_id = 0;
-#endif
-  if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0) // && gparams_.pad_h && nname_ == "node_64_2_bn1")
-  {
-    string s = nname_ + "_delgammap_bef";
-    MeanOfLayer((char*)s.c_str(), delgamma, gparams_.nOutput);
-    s = nname_ + "_delbetap_bef";
-    MeanOfLayer((char*)s.c_str(), delbeta, gparams_.nOutput);
-  }
-#endif
-
-  impl->set_bpdone(false);
-
-  float* gamma = (float*)tenScaleData_->getBuffer();
-  float* igamma =(float*)tenScaleInc_->getBuffer();
-  float* beta = (float*)tenShiftData_->getBuffer();
-  float* ibeta = (float*)tenShiftInc_->getBuffer();
-
-  if(solver_->getGlobalFlag())
-    return;
-
-  solver_->applyUpdate(gamma, igamma, delgamma, gparams_.nOutput, 1.0, 0.0);
-  solver_->applyUpdate(beta, ibeta, delbeta, gparams_.nOutput, 1.0, 0.0);
-
-#ifdef GETSTATS
-  if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0)
-  {
-    string s = nname_ + "_gammap_aft";
-    MeanOfLayer((char*)s.c_str(), gamma, gparams_.nInput[0]);
-
-    s = nname_ + "_delgammap_aft";
-    MeanOfLayer((char*)s.c_str(), delgamma, gparams_.nOutput);
-
-    s = nname_ + "_igamma";
-    MeanOfLayer((char*)s.c_str(), igamma, gparams_.nOutput);
-
-    s = nname_ + "_betap_aft";
-    MeanOfLayer((char*)s.c_str(), beta, gparams_.nInput[0]);
-
-    s = nname_ + "_delbetap_aft";
-    MeanOfLayer((char*)s.c_str(), delbeta, gparams_.nOutput);
-
-    s = nname_ + "_ibeta";
-    MeanOfLayer((char*)s.c_str(), ibeta, gparams_.nOutput);
   }
 #endif
 }

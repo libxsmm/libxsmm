@@ -80,13 +80,13 @@ void check_physical_pad(const char *s, float *tensor, int nImg, int nBfm, int fh
   }
 }
 
-void check_physical_pad(const char *s, short *tensor, int nImg, int nBfm, int fh, int fw, int ifm, int iph, int ipw ) {
+void check_physical_pad(const char *s, libxsmm_bfloat16 *tensor, int nImg, int nBfm, int fh, int fw, int ifm, int iph, int ipw ) {
   int fhi = fh + 2*iph;
   int fwi = fw + 2*ipw;
   bool success = true;
   bool padded = false;
 
-  short (* __restrict tensor_vla)[nBfm][fhi][fwi][ifm] = (short (*)[*][*][*][ifm])tensor;
+  libxsmm_bfloat16 (* __restrict tensor_vla)[nBfm][fhi][fwi][ifm] = (libxsmm_bfloat16 (*)[*][*][*][ifm])tensor;
 
   if (iph > 0 || iph > 0) {
     for (int img = 0; img < nImg; img++) {
@@ -344,7 +344,6 @@ void MeanOfLayer(char *s, int *array, int size)
   int nnz, mmt;
   int max, min;
   int sum, absum;
-  double stddev_sum, stddev_absum;
 
   max = array[0];
   min = array[0];
@@ -375,26 +374,9 @@ void MeanOfLayer(char *s, int *array, int size)
     absum += fabs(array[i]);
   }
 
-  double mean = sum/size;
-  double absmean = absum/size;
-
-  stddev_sum = 0;
-  stddev_absum = 0;
-  for(int i=0; i<size; i++)
-  {
-    stddev_sum += (array[i] - mean)*(array[i] - mean);
-    stddev_absum += (array[i] - absmean)*(array[i] - absmean);
-  }
-
-  stddev_sum = stddev_sum/size;
-  stddev_absum = stddev_absum/size;
-
-  double stddev = sqrt(stddev_sum);
-  double abstddev = sqrt(stddev_absum);
-
     //printf("layer:%s(%d) mean:%f stddev=%f max:%f(%d) min:%f(%d) \n", layer, size,  mean, stddev, max, which_max, min, which_min);
 
 //  printf("%s:[%d] mean:%.10f (abs mean:%.10f) stddev:%.10f (abs stdev %.10f) max:%.10f(%d) min:%.10f(%d) nnz-perc:%.10f(%d:f=%d l=%d) \n",
 //      s, size,  mean, absmean, stddev, abstddev, max, which_max, min, which_min, ((double)nnz)/((double)size), nnz, first_nz, last_nz);
-  printf("%s %.10f %.10f %d %d\n", s, mean, stddev, max, min);
+  printf("%s %d %d %d %d\n", s, sum, absum, max, min);
 }

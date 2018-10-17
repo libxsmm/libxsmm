@@ -61,26 +61,25 @@ DummyDataNode::DummyDataNode(DummyDataParams* p, MLEngine* e) : NNNode(p, e)
       // FIXME: the data type should be set elsewhere...
       dtype = p->get_data_type();
       tenTopData_[i]->setDataType(dtype);
-      Shape* ts = p->get_shape();
-      tenTop_[i]->setShape(ts);
+      ts_ = p->get_shape();
+      pad_h_ = p->get_pad_h();
+      pad_w_ = p->get_pad_w();
 
-      long long int size = 1;
-      for(int j=0; j<ts->ndims; j++)
-        size *= ts->dims[j];
+      tenTop_[i]->setShape(ts_);
+
+      long long int size = ts_->dims[0] * ts_->dims[1] * (ts_->dims[2] + 2*pad_h_) * (ts_->dims[3] + 2*pad_w_);
 
       if(dtype == DT_FLOAT)
         size = size*sizeof(float);
-      else if(dtype == DT_INT16)
+      else if(dtype == DT_BF16)
         size = size*sizeof(short int);
-      else if(dtype == DT_INT)
-        size = size*sizeof(int);
 
       // Set the logical size of the tensor buffer for bufId=0 (forward data buffer).
       // Note: we have no knowledge of the machine parameters here, so effectively this is single-machine config
       tenTop_[i]->setDataBufferSize(DATA, size);
 
       num_machines_ = e->get_num_machines();
-      global_batch_size_ = num_machines_ * ts->dims[0];
+      global_batch_size_ = num_machines_ * ts_->dims[0];
 printf("gbs = %d\n", global_batch_size_);
 #ifdef USE_MLSL
       MLSL::Session *s = e->get_session();
@@ -88,15 +87,15 @@ printf("gbs = %d\n", global_batch_size_);
 #endif
 
       if(p->get_num_train_files() != 0)
-        e->set_num_train_batches(p->get_num_train_files()/ts->dims[0]);
+        e->set_num_train_batches(p->get_num_train_files()/ts_->dims[0]);
 
       if(p->get_num_test_files() != 0)
       {
-        e->set_num_test_batches(p->get_num_test_files()/ts->dims[0]);
+        e->set_num_test_batches(p->get_num_test_files()/ts_->dims[0]);
         e->set_num_test_views(1);
       }
 
-      e->set_batch_size(ts->dims[0]);
+      e->set_batch_size(ts_->dims[0]);
       bool inserted = e->register_tensor(top_[i], INPUT, tenTop_[i]);
       if(!inserted)
         printf("Warning: Tensor %s already registered\n",top_[i].c_str());
@@ -129,37 +128,58 @@ printf("gbs = %d\n", global_batch_size_);
 
   //No input tensor to this node
   this->tenBot_ = NULL;
-
-
 }
 
 void DummyDataNode::fillData(float* ptr, long long int size)
 {
-  if(filler_type_.compare("rand") == 0)
+  if(first_fp)
   {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for(long long int i=0; i<size; i++)
-      ptr[i] = rand()/RAND_MAX;
-#if 0
-    for(int i=0; i<10; i++)
-      printf("%f ",ptr[i]);
-    printf("\n");
-#endif
+    for(int i=0; i<size; i++)
+      ptr[i] = 0;
+
+    first_fp = false;
   }
-  if(filler_type_.compare("constant") == 0)
+
+  Shape *ts = tenTop_[0]->getShape();
+  
+  int ifhp = ts->dims[2]+2*pad_h_;
+  int ifwp = ts->dims[3]+2*pad_w_;
+  int nFM = ts->dims[1];
+
+  float (* __restrict input)[ifhp][ifwp][nFM] = (float (*)[*][*][*])ptr;
+
+  if(filler_type_ == "rand")
   {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for(long long int i=0; i<size; i++)
-      ptr[i] = filler_val_;
-#if 0
-    for(int i=0; i<10; i++)
-      printf("%f ",ptr[i]);
-    printf("\n");
+    for(int img=0; img<ts->dims[0]; img++) {
+      for(int h=pad_h_; h<ts->dims[2]+pad_h_; h++) {
+        for(int w=pad_w_; w<ts->dims[3]+pad_w_; w++) {
+          for(int fm=0; fm<ts->dims[1]; fm++) {
+            input[img][h][w][fm] = (float)(rand()/RAND_MAX);
+          }
+        }
+      }
+    }
+  }
+  else if(filler_type_ == "constant")
+  {
+#ifdef _OPENMP
+#pragma omp parallel for
 #endif
+    for(int img=0; img<ts->dims[0]; img++) {
+      for(int h=pad_h_; h<ts->dims[2]+pad_h_; h++) {
+        for(int w=pad_w_; w<ts->dims[3]+pad_w_; w++) {
+          for(int fm=0; fm<ts->dims[1]; fm++) {
+            input[img][h][w][fm] = filler_val_;
+          }
+        }
+      }
+    }
   }
 }
 
@@ -172,11 +192,6 @@ void DummyDataNode::fillData(int* ptr, long long int size)
 #endif
     for(long long int i=0; i<size; i++)
       ptr[i] = rand()%1000;
-#if 0
-    for(int i=0; i<10; i++)
-      printf("%d ",ptr[i]);
-    printf("\n");
-#endif
   }
   else if(filler_type_.compare("constant") == 0)
   {
@@ -185,43 +200,57 @@ void DummyDataNode::fillData(int* ptr, long long int size)
 #endif
     for(long long int i=0; i<size; i++)
       ptr[i] = filler_val_;
-#if 0
-    for(int i=0; i<10; i++)
-      printf("%d ",ptr[i]);
-    printf("\n");
-#endif
-
   }
 }
 
 void DummyDataNode::fillData(short int* ptr, long long int size)
 {
+  int ifhp = ts_->dims[2]+2*pad_h_;
+  int ifwp = ts_->dims[3]+2*pad_w_;
+  int nFM = ts_->dims[1];
+
+  if(first_fp)
+  {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for(int i=0; i<size; i++)
+      ptr[i] = 0;
+
+    first_fp = false;
+  }
+
+  short (* __restrict input)[ifhp][ifwp][nFM] = (short (*)[*][*][*])ptr;
+
   if(filler_type_.compare("rand") == 0)
   {
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for(long long int i=0; i<size; i++)
-      ptr[i] = (short int)(rand()%size);
-#if 0
-    for(int i=0; i<10; i++)
-      printf("%d ",ptr[i]);
-    printf("\n");
-#endif
+    for(int img=0; img<ts_->dims[0]; img++) {
+      for(int h=pad_h_; h<ts_->dims[2]+pad_h_; h++) {
+        for(int w=pad_w_; w<ts_->dims[3]+pad_w_; w++) {
+          for(int fm=0; fm<ts_->dims[1]; fm++) {
+            input[img][h][w][fm] = (short int)rand();
+          }
+        }
+      }
+    }
   }
   else if(filler_type_.compare("constant") == 0)
   {
-#ifdef _OEPNMP
+#ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for(long long int i=0; i<size; i++)
-      ptr[i] = filler_val_;
-#if 0
-    for(int i=0; i<10; i++)
-      printf("%d ",ptr[i]);
-    printf("\n");
-#endif
-
+    for(int img=0; img<ts_->dims[0]; img++) {
+      for(int h=pad_h_; h<ts_->dims[2]+pad_h_; h++) {
+        for(int w=pad_w_; w<ts_->dims[3]+pad_w_; w++) {
+          for(int fm=0; fm<ts_->dims[1]; fm++) {
+            input[img][h][w][fm] = (short int)filler_val_;
+          }
+        }
+      }
+    }
   }
 }
 
@@ -244,7 +273,7 @@ void DummyDataNode::forwardPropagate()
       printf("Executing FP %s: Data %p\n",node_name_.c_str(), top);
 #endif
     }
-    else if(dtype == DT_INT16)
+    else if(dtype == DT_BF16)
     {
       short int* top = (short int*)(tenTopData_[i]->getBuffer());
       fillData(top, bytes/sizeof(short int));

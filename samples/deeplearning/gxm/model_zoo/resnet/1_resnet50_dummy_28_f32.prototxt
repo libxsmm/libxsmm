@@ -1,38 +1,22 @@
 node {
   name: "data"
-  type: "JitterData"
+  type: "DummyData"
   top: "data"
   top: "label"
-  propagate_down: false
   mode: TRAIN
-  data_param {
-    train_source: "/home/local_scratch/jpegs_256resized"
-    train_list: "/home/local_scratch/train_images_labels.list"
-    test_source: "/home/local_scratch/jpegs_256resized"
-    test_list: "/home/local_scratch/val_images_labels.list"
-    batch_size: 54    #number of cores(56) - number of EP servers (2)
-    num_train_files: 80073  # per node when numsplits=16
-    num_test_files: 3125    # per node when numsplits=16
-    numsplits: 16
-    lookahead: 2
-    shuffle: true
-    engine: XSMM
-
-    image_xform_param {
-      orig_size: 256
-      mirror: true
-      crop_image: true
-      crop_size: 224
-      mean_values: 0.406
-      mean_values: 0.456
-      mean_values: 0.485
-      scale_values: 0.225
-      scale_values: 0.224
-      scale_values: 0.229
-      test_views: 1
+  propagate_down: false
+  dummy_data_param {
+    shape: { dim: 5600 dim: 28 dim: 3 dim: 224 dim: 224 }
+    pad_h: 3
+    pad_w: 3
+    data_filler {
+      type: "constant"
+      value: 0.1
     }
+    engine: XSMM
+    data_type: FLOAT
   }
-}
+} 
 node {
   name: "conv1"
   type: "Convolution"
@@ -49,6 +33,7 @@ node {
     num_output: 64
     pad: 3
     bias_term: false
+    physical_padding: true
     kernel_size: 7
     stride: 2
     weight_filler {
@@ -65,7 +50,9 @@ node {
   name: "bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
+    ipad: 3
     pad: 0
     stride: 1
     engine: XSMM
@@ -79,6 +66,7 @@ node {
   bottom: "bn1"
   top: "conv1_pool"
   pooling_param {
+    data_type: FLOAT
     pool: MAX
     engine: XSMM
     kernel_size: 3
@@ -113,6 +101,7 @@ node {
   name: "node_64_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     relu: false
     pad: 0
@@ -149,6 +138,7 @@ node {
   name: "node_64_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -186,6 +176,7 @@ node {
   name: "node_64_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -222,6 +213,7 @@ node {
   name: "node_64_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -259,6 +251,7 @@ node {
   name: "node_64_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -296,6 +289,7 @@ node {
   name: "node_64_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -332,6 +326,7 @@ node {
   name: "node_64_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -369,6 +364,7 @@ node {
   name: "node_64_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -406,6 +402,7 @@ node {
   name: "node_64_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -442,6 +439,7 @@ node {
   name: "node_64_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -479,6 +477,7 @@ node {
   name: "node_128_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     relu: false
     pad: 0
@@ -515,6 +514,7 @@ node {
   name: "node_128_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -552,6 +552,7 @@ node {
   name: "node_128_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -588,6 +589,7 @@ node {
   name: "node_128_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -625,6 +627,7 @@ node {
   name: "node_128_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -662,6 +665,7 @@ node {
   name: "node_128_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -698,6 +702,7 @@ node {
   name: "node_128_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -735,6 +740,7 @@ node {
   name: "node_128_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -772,6 +778,7 @@ node {
   name: "node_128_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -808,6 +815,7 @@ node {
   name: "node_128_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -845,6 +853,7 @@ node {
   name: "node_128_4_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -882,6 +891,7 @@ node {
   name: "node_128_4_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -918,6 +928,7 @@ node {
   name: "node_128_4_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -955,6 +966,7 @@ node {
   name: "node_256_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     relu: false
     pad: 0
@@ -991,6 +1003,7 @@ node {
   name: "node_256_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1028,6 +1041,7 @@ node {
   name: "node_256_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1064,6 +1078,7 @@ node {
   name: "node_256_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1101,6 +1116,7 @@ node {
   name: "node_256_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1138,6 +1154,7 @@ node {
   name: "node_256_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1174,6 +1191,7 @@ node {
   name: "node_256_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1211,6 +1229,7 @@ node {
   name: "node_256_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1248,6 +1267,7 @@ node {
   name: "node_256_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1284,6 +1304,7 @@ node {
   name: "node_256_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1321,6 +1342,7 @@ node {
   name: "node_256_4_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1358,6 +1380,7 @@ node {
   name: "node_256_4_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1394,6 +1417,7 @@ node {
   name: "node_256_4_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1431,6 +1455,7 @@ node {
   name: "node_256_5_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1468,6 +1493,7 @@ node {
   name: "node_256_5_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1504,6 +1530,7 @@ node {
   name: "node_256_5_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1541,6 +1568,7 @@ node {
   name: "node_256_6_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1578,6 +1606,7 @@ node {
   name: "node_256_6_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1614,6 +1643,7 @@ node {
   name: "node_256_6_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1651,6 +1681,7 @@ node {
   name: "node_512_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     relu: false
     pad: 0
@@ -1687,6 +1718,7 @@ node {
   name: "node_512_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1724,6 +1756,7 @@ node {
   name: "node_512_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1760,6 +1793,7 @@ node {
   name: "node_512_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1797,6 +1831,7 @@ node {
   name: "node_512_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1834,6 +1869,7 @@ node {
   name: "node_512_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1870,6 +1906,7 @@ node {
   name: "node_512_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1907,6 +1944,7 @@ node {
   name: "node_512_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1944,6 +1982,7 @@ node {
   name: "node_512_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1980,6 +2019,7 @@ node {
   name: "node_512_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1996,6 +2036,7 @@ node {
   bottom: "node_512_3_bn3"
   top: "pool5"
   pooling_param {
+    data_type: FLOAT
     engine: XSMM
     pool: AVE
     kernel_size: 7
@@ -2012,6 +2053,7 @@ node {
     decay_mult: 1.0
   }
   fc_param {
+    data_type: FLOAT
     num_output: 1000
     engine: XSMM
     bias_term: false

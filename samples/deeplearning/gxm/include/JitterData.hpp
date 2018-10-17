@@ -51,6 +51,7 @@
 #include "Shape.h"
 #include "io.hpp"
 #include "check.hpp"
+#include "common.hpp"
 
 #define SQUARE 1
 #define RECT 2
@@ -73,6 +74,7 @@ typedef struct
   int channels;
   vector<int> orig_sizes;
   vector<int> crop_sizes;
+  int pad_w, pad_h;
   vector<float> mean_values;
   vector<float> scale_values;
   int scalejittering_min, scalejittering_max;
@@ -194,6 +196,15 @@ class JitterDataParams : public NNParams
 
     vector<int>& get_crop_sizes() { return crop_sizes_; }
 
+    void set_physical_padding(bool p) {phys_pad_ = p; }
+    bool get_physical_padding() { return phys_pad_; }
+
+    void set_pad_h(int h) { pad_h_ = h; }
+    int get_pad_h() {return pad_h_; }
+
+    void set_pad_w(int w) { pad_w_ = w; }
+    int get_pad_w() {return pad_w_; }
+
     void set_orig_sizes(int s, int v1, int v2)
     {
       if(s == SQUARE)
@@ -245,7 +256,8 @@ class JitterDataParams : public NNParams
 
   protected:
     vector <int> crop_sizes_, orig_sizes_;
-    bool crop_image_;
+    int pad_h_, pad_w_;
+    bool crop_image_, phys_pad_;
     vector <float> mean_values_, scale_values_;
     int batch_size_, channels_, lookahead_, numsplits_;
     int num_train_files_, num_test_files_;
@@ -367,6 +379,10 @@ static MLParams* parseJitterDataParams(NodeParameter* np)
     jp->set_orig_sizes(RECT, oh, ow);
   }
 
+  jp->set_pad_h(itp.pad_h());
+  jp->set_pad_w(itp.pad_w());
+  jp->set_physical_padding(itp.physical_padding());
+
   int channels = itp.channels();
   bool force_color = itp.force_color();
   bool force_gray = itp.force_gray();
@@ -426,6 +442,7 @@ class JitterDataNode : public NNNode
     double *drand1, *drand2, *drand3;
     int *augmentation;
     float* mean_data_;
+    bool first_fp=true;
 
     vector < vector<cv::Mat> > tempbuf_, cropbuf_;
     vector < vector<int> > labels_;
@@ -441,6 +458,7 @@ class JitterDataNode : public NNNode
     int num_train_files_, num_test_files_, num_machines_;
     int train_files_, test_files_, train_files_per_mc_, test_files_per_mc_;
     int global_node_id_, ridx_;
+    void* bf16_img=NULL;
 
     JitterAugmentParams ap;
 
@@ -458,4 +476,5 @@ class JitterDataNode : public NNNode
     void imageTransform(vector<cv::Mat>&, float*);
     void setupTrainIndices();
     void setupTestIndices();
+    void convert_f32_bf16(float* in, libxsmm_bfloat16* out, unsigned int len);
 };
