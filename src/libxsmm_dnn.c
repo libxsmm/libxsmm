@@ -2680,7 +2680,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
 #     pragma omp parallel for private(i)
 #endif
       for (i = 0; i < length; i+=16 ) {
-        _mm256_stream_si256( (__m256i *)&(out_buffer[i]), _mm512_quantize_near_ps_epi16( &(in_buffer[i]), vscfq ) );
+        _mm256_stream_si256( (__m256i *)&(out_buffer[i]), LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16( &(in_buffer[i]), vscfq ) );
       }
     } else {
 #endif
@@ -2749,7 +2749,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
 #     pragma omp parallel for private(i1)
 #endif
       for (i1 = 0; i1 < (int)(N*C*H*W); i1 += 16 ) {
-        _mm256_stream_si256( (__m256i *)&(out_buffer[i1]), _mm512_quantize_near_ps_epi16( &(in_buffer[i1]), vscfq ) );
+        _mm256_stream_si256( (__m256i *)&(out_buffer[i1]), LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16( &(in_buffer[i1]), vscfq ) );
       }
     } else {
 #endif
@@ -2859,9 +2859,9 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
           for (i3 = 0; i3 < (int)R; ++i3 ) {
             for (i4 = 0; i4 < (int)S; ++i4 ) {
               for (i5 = 0; i5 < 16; i5+=2 ) {
-                __m256i even_ch = _mm512_quantize_near_ps_epi16(
+                __m256i even_ch = LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16(
                   &LIBXSMM_VLA_ACCESS(6, in, i1, i2, i3, i4, i5 + 0, 0, C / cblk_f32, R, S, cblk_f32, kblk_f32), vscfq);
-                __m256i odd_ch  = _mm512_quantize_near_ps_epi16(
+                __m256i odd_ch  = LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16(
                   &LIBXSMM_VLA_ACCESS(6, in, i1, i2, i3, i4, i5 + 1, 0, C / cblk_f32, R, S, cblk_f32, kblk_f32), vscfq);
                 __m256i compressed_lo = _mm256_unpacklo_epi16(even_ch, odd_ch);
                 __m256i compressed_hi = _mm256_unpackhi_epi16(even_ch, odd_ch);
