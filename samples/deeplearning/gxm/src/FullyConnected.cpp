@@ -546,7 +546,7 @@ void FCNode::forwardPropagate()
   if(eptr_->get_current_batch() % STATFREQ == 0)
 #endif
   {
-    if(in_dtype == DT_FLOAT) 
+    if(in_dtype == DT_FLOAT)
     {
       string s = nname_ + "_Inp";
       float *ptr = (float*)tenBotData_->getBuffer();
@@ -743,7 +743,7 @@ void FCNode::weightUpdate()
   void *mp = (mpptr == NULL) ? mptr : mpptr;
 
   if(in_dtype == DT_BF16)
-  { 
+  {
     if(dwptr == NULL)
       dwptr = (float*)_mm_malloc(gparams_.nInput*gparams_.nOutput*sizeof(float), 64);
     convert_bf16_f32((libxsmm_bfloat16*)mp, dwptr, gparams_.nInput*gparams_.nOutput);

@@ -125,7 +125,7 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   tenScale_->setType(BNORMSCALE);
   tenScale_->setShape(&sss);
   tenScaleData_ = tenScale_->getBuf(DATA);
-  tenScaleData_->setDataType(DT_FLOAT); 
+  tenScaleData_->setDataType(DT_FLOAT);
   tenScaleData_->setBufferType(DATA);
 
   telem = sss.dims[0];
@@ -139,7 +139,7 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   tenShift_->setType(BNORMSHIFT);
   tenShift_->setShape(&sss);
   tenShiftData_ = tenShift_->getBuf(DATA);
-  tenShiftData_->setDataType(DT_FLOAT); 
+  tenShiftData_->setDataType(DT_FLOAT);
   tenShiftData_->setBufferType(DATA);
 
   tenShiftData_->setBufferSize(tsize);
@@ -463,8 +463,8 @@ void FusedBNormNode::forwardPropagate()
 
   if(first_fp)
   {
-    int size = gparams_.batch_size * gparams_.nOutput * 
-              (gparams_.oHeight/gparams_.stride_h + 2*gparams_.pad_h) * 
+    int size = gparams_.batch_size * gparams_.nOutput *
+              (gparams_.oHeight/gparams_.stride_h + 2*gparams_.pad_h) *
               (gparams_.oWidth/gparams_.stride_w + 2*gparams_.pad_w);
 
     if((gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_FLOAT)

@@ -525,7 +525,7 @@ void ConvNode::configure(int engine)
   }
 }
 
-void ConvNode::convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len) 
+void ConvNode::convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len)
 {
   int i;
 
@@ -739,7 +739,7 @@ void ConvNode::forwardPropagate()
       {
         string s = nname_ + "_Inp";
         libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenBotData_->getBuffer();
-        convert_bf16_f32(ptr, stptr, nImg*ifm*ifhp*ifwp);        
+        convert_bf16_f32(ptr, stptr, nImg*ifm*ifhp*ifwp);
         MeanOfLayer((char*)s.c_str(), stptr, nImg*ifm*ifhp*ifwp);
 
         s = nname_ + "_Wt";
@@ -756,7 +756,7 @@ void ConvNode::forwardPropagate()
         s = nname_ + "_Outp";
         ptr = (libxsmm_bfloat16*)tenTopData_->getBuffer();
         memset(stptr, 0, nImg*ofm*ofhp*ofwp);
-        convert_bf16_f32(ptr, stptr, nImg*ofm*ofhp*ofwp);        
+        convert_bf16_f32(ptr, stptr, nImg*ofm*ofhp*ofwp);
         MeanOfLayer((char*)s.c_str(), stptr, nImg*ofm*ofhp*ofwp);
 
         if(compute_stats_)
@@ -1001,7 +1001,7 @@ void ConvNode::weightUpdate()
   void *mp = (mpptr == NULL) ? mptr : mpptr;
 
   if(in_dtype == DT_BF16)
-  { 
+  {
     if(dwptr == NULL)
       dwptr = (float*)_mm_malloc(ifm*ofm*kh*kw*sizeof(float), 64);
     convert_bf16_f32((libxsmm_bfloat16*)mp, dwptr, ifm*ofm*kh*kw);

@@ -385,7 +385,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-/** Intrinsic-specific fix-ups */
+/**
+ * Intrinsic-specific fix-ups
+ */
 #if defined(__clang__)
 # define LIBXSMM_INTRINSICS_LDDQU_SI128(A) _mm_loadu_si128(A)
 #else
@@ -445,6 +447,9 @@
 # define LIBXSMM_INTRINSICS_MM_UNDEFINED_PD() _mm_set1_pd(0)
 #endif
 
+/**
+ * Pseudo intrinsics for portability
+ */
 LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD32_SW(unsigned int n) {
   unsigned int i, r = 0; if (0 != n) for (i = 1; 0 == (n & i); i <<= 1) { ++r; } return r;
 }
@@ -484,6 +489,9 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
 # define LIBXSMM_INTRINSICS_BITSCANBWD64 LIBXSMM_INTRINSICS_BITSCANBWD64_SW
 #endif
 
+/**
+ * Target attribution
+ */
 #if !defined(LIBXSMM_INTRINSICS_KNC) && !defined(LIBXSMM_INTRINSICS_NONE) && defined(__MIC__)
 # define LIBXSMM_INTRINSICS_KNC
 #endif
@@ -536,6 +544,22 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
 #if !defined(LIBXSMM_INTRINSICS_AVX512_ICL) && !defined(LIBXSMM_INTRINSICS_NONE) && (LIBXSMM_X86_AVX512_ICL <= LIBXSMM_STATIC_TARGET_ARCH || \
    (!defined(LIBXSMM_INTRINSICS_STATIC) && LIBXSMM_X86_AVX512_ICL <= LIBXSMM_MAX_STATIC_TARGET_ARCH))
 # define LIBXSMM_INTRINSICS_AVX512_ICL
+#endif
+
+/**
+ * Pseudo intrinsics that eventually need target-attribution (AVX-512)
+ */
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
+# define LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16( A, B ) _mm512_cvtepi32_epi16(_mm512_cvt_roundps_epi32( \
+    _mm512_mul_ps(_mm512_load_ps(A), B), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC))
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(__m512 a) {
+  const __m512i vnaninf = _mm512_set1_epi32(0x7f800000), vrneadd = _mm512_set1_epi32(0x00007fff);
+  const __m512i vfixup = _mm512_set1_epi32(0x00000001), vfixupmask = _mm512_set1_epi32(0x00010000);
+  const __m512i mm512_roundbf16rne_a_ = _mm512_castps_si512(a);
+  const __mmask16 mm512_roundbf16rne_mask1_ = _mm512_cmp_epi32_mask(_mm512_and_epi32(mm512_roundbf16rne_a_, vnaninf), vnaninf, _MM_CMPINT_NE);
+  const __mmask16 mm512_roundbf16rne_mask2_ = _mm512_cmp_epi32_mask(_mm512_and_epi32(mm512_roundbf16rne_a_, vfixupmask), vfixupmask, _MM_CMPINT_EQ);
+  return _mm512_mask_add_epi32(mm512_roundbf16rne_a_, mm512_roundbf16rne_mask1_, mm512_roundbf16rne_a_, _mm512_mask_add_epi32(vrneadd, mm512_roundbf16rne_mask2_, vrneadd, vfixup));
+}
 #endif
 
 #endif /*LIBXSMM_INTRINSICS_X86_H*/

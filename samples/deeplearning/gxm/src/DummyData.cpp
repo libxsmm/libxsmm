@@ -144,7 +144,7 @@ void DummyDataNode::fillData(float* ptr, long long int size)
   }
 
   Shape *ts = tenTop_[0]->getShape();
-  
+
   int ifhp = ts->dims[2]+2*pad_h_;
   int ifwp = ts->dims[3]+2*pad_w_;
   int nFM = ts->dims[1];

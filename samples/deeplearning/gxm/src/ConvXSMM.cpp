@@ -173,7 +173,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *b
 
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)wt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
       memcpy(wt_ptr, wt_prv_ptr, welem*sizeof(float));
-      
+
       libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor(libxsmm_layout, wt_ptr, &status);
       CHKERR_LIBXSMM_DNN( status );
 
@@ -226,7 +226,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *b
 
     if(gp->compute_stats)
     {
-      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_BATCH_STATS, &status ); 
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_BATCH_STATS, &status );
       CHKERR_LIBXSMM_DNN( status );
       libxsmm_batchstats  = libxsmm_dnn_link_tensor( libxsmm_layout, stats_ptr, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
