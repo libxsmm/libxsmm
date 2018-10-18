@@ -11,7 +11,7 @@ node {
     pad_w: 3
     data_filler {
       type: "constant"
-      value: 0.1
+      value: 1
     }
     engine: XSMM
     data_type: BF16
