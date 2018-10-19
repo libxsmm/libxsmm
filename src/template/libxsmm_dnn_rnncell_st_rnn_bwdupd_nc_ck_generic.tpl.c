@@ -166,7 +166,7 @@ for (icin = thr_begin_nc; icin < thr_end_nc; ++icin ) {
       en = in + jn;
       ec = ic + jc;
       LIBXSMM_VLA_ACCESS(2, xT, ec, en, N) =  LIBXSMM_VLA_ACCESS(3, x, t-1, en, ec, N, C);
-    } 
+    }
   }
 }
 
@@ -345,7 +345,7 @@ for (i = t-2; i >= 0; --i) {
     for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
       ic = (ikic / (K/bk))*bc;
       ik = (ikic % (K/bk))*bk;
-        
+
       for (in = 0; in < N; in += bn ) {
         gemmkernelc( &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, djdw, ic, ik, K) );
       }
