@@ -319,6 +319,8 @@ for (i = t-2; i >= 0; --i) {
     }
   }
 
+  libxsmm_barrier_wait(handle->barrier, ltid);
+
   if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* djdx = W^T * delta */
     for (inic = thr_begin_nc; inic < thr_end_nc; ++inic ) {
@@ -351,6 +353,6 @@ for (i = t-2; i >= 0; --i) {
       }
     }
   }
-}
 
-libxsmm_barrier_wait(handle->barrier, ltid);
+  libxsmm_barrier_wait(handle->barrier, ltid);
+}
