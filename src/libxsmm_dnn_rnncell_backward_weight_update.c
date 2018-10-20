@@ -70,9 +70,6 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck_f32_f32(libxsmm_dnn_rnncel
   } else {
     /* should not happen */
   }
-  { /* open new scope for additional variable declarations (C89) */
-# include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
-  }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(kind);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
