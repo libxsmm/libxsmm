@@ -899,7 +899,7 @@ endif
 
 .PHONY: clib_hst
 clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
-$(OUTDIR)/libxsmm.$(LIBEXT): $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(OUTDIR)/libxsmm.pc
+$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/libxsmm.pc
 ifeq (0,$(STATIC))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
 else # static
@@ -958,7 +958,7 @@ endif
 .PHONY: ext_hst
 ext_hst: $(OUTDIR)/libxsmmext.$(LIBEXT)
 ifeq (0,$(STATIC))
-$(OUTDIR)/libxsmmext.$(LIBEXT): $(EXTOBJS_HST) $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/libxsmmext.pc
+$(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/libxsmmext.pc
 ifneq (Darwin,$(UNAME))
 	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
@@ -970,7 +970,7 @@ else # osx
 			$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 endif
 else # static
-$(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST) $(OUTDIR)/libxsmmext.pc
+$(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(OUTDIR)/libxsmmext.pc
 	$(AR) -rs $@ $(EXTOBJS_HST)
 endif
 
@@ -1709,7 +1709,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@$(CP) -v .state $(INSTALL_ROOT)/$(PDOCDIR)/artifacts/make.txt
 endif
 
-$(OUTDIR)/libxsmm.pc: $(OUTDIR)/.make
+$(OUTDIR)/libxsmm.pc: $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
 	@echo "Name: libxsmm" > $@
 	@echo "Description: Matrix operations and deep learning primitives" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
@@ -1721,14 +1721,14 @@ $(OUTDIR)/libxsmm.pc: $(OUTDIR)/.make
 	@echo >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
 	@echo "Libs: -L\$${libdir} -lxsmm" >> $@
-	@echo -n "Libs.private:" >> $@
 ifeq (Windows_NT,$(UNAME))
-	@echo " -ldbghelp" >> $@
+	@echo "Libs.private: -ldbghelp" >> $@
 else ifneq (Darwin,$(UNAME))
 ifneq (FreeBSD,$(UNAME))
-	@echo " -lpthread -lrt" >> $@
+	@echo "Libs.private: -lpthread -lrt -ldl -lm -lc" >> $@
+else
+	@echo "Libs.private: -ldl -lm -lc" >> $@
 endif
-	@echo " -ldl -lm -lc" >> $@
 endif
 
 $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmm.pc
@@ -1745,7 +1745,7 @@ $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmm.pc
 	@echo "Cflags: -I\$${includedir}" >> $@
 	@echo "Libs: -L\$${libdir} -lxsmmf" >> $@
 
-$(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmm.pc
+$(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmm.pc $(EXTOBJS_HST)
 	@echo "Name: libxsmm/ext" > $@
 	@echo "Description: LIBXSMM/multithreaded for OpenMP" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
