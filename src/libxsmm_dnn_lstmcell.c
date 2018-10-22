@@ -71,7 +71,7 @@ LIBXSMM_API libxsmm_dnn_lstmcell* libxsmm_dnn_create_lstmcell(libxsmm_dnn_lstmce
     handle->t2 = (libxsmm_dnn_tensor*)malloc(sizeof(libxsmm_dnn_tensor));
     handle->barrier = libxsmm_barrier_create(handle->desc.nThreads, 1);
     if (NULL == handle->dit  || NULL == handle->dft   || NULL == handle->dot ||
-        NULL == handle->dcit || NULL == handle->doutt || NULL == handle->t1  || 
+        NULL == handle->dcit || NULL == handle->doutt || NULL == handle->t1  ||
         NULL == handle->t2     || NULL == handle->barrier)
     {
       free(handle->dit);   free(handle->dft); free(handle->dot); free(handle->dcit);
@@ -883,8 +883,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   libxsmm_blasint bc = lstm->bc;
   int nThreads = lstm->desc.nThreads;
   LIBXSMM_DNN_ELTWISE_FTYPE *xt   = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->xt->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *csp  = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->csp->data;
-  LIBXSMM_DNN_ELTWISE_FTYPE *hpD  = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->hp->data;
+  /*LIBXSMM_DNN_ELTWISE_FTYPE *csp  = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->csp->data;*/
+  /*LIBXSMM_DNN_ELTWISE_FTYPE *hpD  = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->hp->data;*/
   LIBXSMM_DNN_ELTWISE_FTYPE *w    = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->w->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *r    = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->r->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *wiD  = &(w[0]);
@@ -920,7 +920,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   LIBXSMM_DNN_ELTWISE_FTYPE *dbc  = &(db[K]);
   LIBXSMM_DNN_ELTWISE_FTYPE *dbf  = &(db[2*K]);
   LIBXSMM_DNN_ELTWISE_FTYPE *dbo  = &(db[3*K]);
-  LIBXSMM_DNN_ELTWISE_FTYPE *dcsD = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->dcs->data;
+  /*LIBXSMM_DNN_ELTWISE_FTYPE *dcsD = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->dcs->data;*/
   LIBXSMM_DNN_ELTWISE_FTYPE *dht  = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->dht->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *dit  = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->dit->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *dft  = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->dft->data;
@@ -930,8 +930,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   LIBXSMM_DNN_ELTWISE_FTYPE *t1D = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->t1->data;
   LIBXSMM_DNN_ELTWISE_FTYPE *t2D = (LIBXSMM_DNN_ELTWISE_FTYPE*)lstm->t2->data;
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, x, xt, N, C);
-  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, cp, csp, K);
-  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, hp, hpD, K);
+  /*LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, cp, csp, K);*/
+  /*LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, hp, hpD, K);*/
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, wi, wiD, K);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, wf, wfD, K);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, wo, woD, K);
@@ -958,7 +958,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bwd_upd_bu(libxsmm_dnn_lstmce
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, drf, drfD, K);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, dro, droD, K);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, drc, drcD, K);
-  LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, dcs, dcsD, K);
+  /*LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, dcs, dcsD, K);*/
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, dh, dht, N, K);
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, di, dit, N, K);
   LIBXSMM_VLA_DECL(3, LIBXSMM_DNN_ELTWISE_FTYPE, df, dft, N, K);

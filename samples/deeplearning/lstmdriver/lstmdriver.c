@@ -226,7 +226,7 @@ int main(int argc, char* argv[])
   float *igoldt, *fgoldt, *ogoldt, *cgoldt, *dgoldt, *bimgold, *bfmgold, *bomgold, *bcmgold, *doutgoldt;
   float *i1gold, *i2gold, *f1gold, *f2gold, *o1gold, *o2gold, *c1gold, *c2gold, *d1gold, *d2gold, *dhgold;
   float *xt, *csp, *hp, *w, *r, *b, *cst, *ht;
-  float *it, *ft, *ot, *cit, *cot; 
+  float *it, *ft, *ot, *cit, *cot;
   float *dxt, *dcspt, *dhpt, *dw, *dr, *db, *dcs, *dht;
   float *i3gold, *f3gold, *d3gold, *d4gold, *deltagoldt;
   float *djdhgoldt, *djddgoldt, *djdigoldt, *djdfgoldt, *djdcgoldt, *djdogoldt, *djdxgoldt;
