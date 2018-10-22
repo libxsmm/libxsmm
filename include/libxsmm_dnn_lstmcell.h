@@ -59,29 +59,31 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_lstmcell {
   libxsmm_dnn_tensor* csp;
   libxsmm_dnn_tensor* hp;
   libxsmm_dnn_tensor* w;
+  libxsmm_dnn_tensor* r;
   libxsmm_dnn_tensor* b;
   libxsmm_dnn_tensor* cst;
   libxsmm_dnn_tensor* ht;
   libxsmm_dnn_tensor* it;
   libxsmm_dnn_tensor* ft;
   libxsmm_dnn_tensor* ot;
-  libxsmm_dnn_tensor* ct;
+  libxsmm_dnn_tensor* cit;
+  libxsmm_dnn_tensor* cot;
   libxsmm_dnn_tensor* dxt;
-  libxsmm_dnn_tensor* dcsp;
-  libxsmm_dnn_tensor* dhp;
+  libxsmm_dnn_tensor* dcspt;
+  libxsmm_dnn_tensor* dhpt;
   libxsmm_dnn_tensor* dw;
+  libxsmm_dnn_tensor* dr;
   libxsmm_dnn_tensor* db;
-  libxsmm_dnn_tensor* dcst;
+  libxsmm_dnn_tensor* dcs;
   libxsmm_dnn_tensor* dht;
   libxsmm_dnn_tensor* dit;
   libxsmm_dnn_tensor* dft;
-  libxsmm_dnn_tensor* dct;
   libxsmm_dnn_tensor* dot;
-  libxsmm_dnn_tensor* deltat;
+  libxsmm_dnn_tensor* dcit;
   libxsmm_dnn_tensor* doutt;
   libxsmm_dnn_tensor* t1;
   libxsmm_dnn_tensor* t2;
-  libxsmm_barrier* barrier; /* barrier */
+  libxsmm_barrier* barrier;
 } libxsmm_dnn_lstmcell;
 
 LIBXSMM_API libxsmm_dnn_lstmcell* libxsmm_dnn_create_lstmcell(libxsmm_dnn_lstmcell_desc lstmcell_desc, libxsmm_dnn_err_t* status);
@@ -96,8 +98,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_release_scratch(libxsmm_dnn_l
 LIBXSMM_API size_t libxsmm_dnn_lstmcell_get_internalstate_size(const libxsmm_dnn_lstmcell* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bind_internalstate(libxsmm_dnn_lstmcell* handle, const libxsmm_dnn_compute_kind kind, const void* internalstate);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_release_internalstate(libxsmm_dnn_lstmcell* handle, const libxsmm_dnn_compute_kind kind);
-
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_assign_internalstate(libxsmm_dnn_lstmcell* handle, const void* igoldtb, const void* fgoldtb, const void* ogoldtb, const void* cgoldtb, const void* dgoldtb);
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_lstmcell_bind_tensor(libxsmm_dnn_lstmcell* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type);
 LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_lstmcell_get_tensor(libxsmm_dnn_lstmcell* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status);
