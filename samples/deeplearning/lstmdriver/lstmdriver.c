@@ -222,7 +222,7 @@ void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, float *src, flo
 int main(int argc, char* argv[])
 {
   float *wigold, *wfgold, *wogold, *wcgold, *xgoldt, *rigold, *rfgold, *rogold, *rcgold, *hgoldt, *bigold, *bfgold, *bogold, *bcgold;
-  float *cspgold, *hpgold, *dcspgold, *dhpgold;
+  float *cspgold, *hpgold/*, *dcspgold, *dhpgold*/;
   float *igoldt, *fgoldt, *ogoldt, *cgoldt, *dgoldt, *bimgold, *bfmgold, *bomgold, *bcmgold, *doutgoldt;
   float *i1gold, *i2gold, *f1gold, *f2gold, *o1gold, *o2gold, *c1gold, *c2gold, *d1gold, *d2gold, *dhgold;
   float *xt, *csp, *hp, *w, *r, *b, *cst, *ht;
@@ -235,7 +235,6 @@ int main(int argc, char* argv[])
   float *htest, *djdxtestt, *djdwtest, *djdrtest, *djdbtest, *djdwgold4, *djdrgold4, *djdbgold4;
 
   const char transa = 'N', transb = 'N'; /* no transposes */
-  const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const float alpha = 1, beta = 1, beta0 = 0;
   void *scratch, *internalstate;
   size_t scratch_size = 0, internalstate_size = 0;
@@ -456,6 +455,11 @@ int main(int argc, char* argv[])
   LIBXSMM_VLA_DECL(2, float, djdcgold, djdcgoldt, m * n);
   LIBXSMM_VLA_DECL(2, float, djdxgold, djdxgoldt, k * n);
 
+  /*LIBXSMM_VLA_DECL(2, float, x, xt, k * n);*/
+  LIBXSMM_VLA_DECL(2, float, h, ht, m * n);
+  /*LIBXSMM_VLA_DECL(2, float, dx, dxt, k * n);*/
+  /*LIBXSMM_VLA_DECL(2, float, dh, dht, m * n);*/
+
   /* initialize data */
   /* FWD */
   LIBXSMM_MATINIT_OMP(float, 24, cspgold,n, m, n, 1.0);
@@ -555,10 +559,6 @@ int main(int argc, char* argv[])
   zero_buf(db,    m*4);
   zero_buf(dcs,   m*n);
   zero_buf(dht,   m*n*t);
-  LIBXSMM_VLA_DECL(2, float, x, xt, k * n);
-  LIBXSMM_VLA_DECL(2, float, h, ht, m * n);
-  LIBXSMM_VLA_DECL(2, float, dx, dxt, k * n);
-  LIBXSMM_VLA_DECL(2, float, dh, dht, m * n);
 
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");
@@ -1139,7 +1139,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel private(i)
+#     pragma omp parallel private(j)
 #endif
       {
 #if defined(_OPENMP)
@@ -1170,7 +1170,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel private(i)
+#     pragma omp parallel private(j)
 #endif
       {
 #if defined(_OPENMP)
@@ -1215,7 +1215,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel private(i)
+#     pragma omp parallel private(j)
 #endif
       {
 #if defined(_OPENMP)
@@ -1267,7 +1267,7 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
-#     pragma omp parallel private(i)
+#     pragma omp parallel private(j)
 #endif
       {
 #if defined(_OPENMP)
