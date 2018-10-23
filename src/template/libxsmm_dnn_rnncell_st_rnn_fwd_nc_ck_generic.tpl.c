@@ -42,7 +42,7 @@ const libxsmm_blasint bc = handle->bc;
 /* define tensors */
 element_filter_type *wD = (element_filter_type*)handle->w->data;
 element_input_type  *xt = (element_input_type* )handle->xt->data;
-element_filter_type *uD = (element_filter_type*)handle->u->data;
+element_filter_type *uD = (element_filter_type*)handle->r->data;
 element_output_type *b  = (element_output_type*)handle->b->data;
 element_output_type *ht = (element_output_type*)handle->ht->data;
 element_output_type *zt = (element_output_type*)handle->internal_z;
