@@ -250,7 +250,6 @@ int main(int argc, char* argv[])
   float *djdht = NULL, *ht = NULL, *djdu = NULL, *djdw = NULL, *djdxt = NULL, *djdb = NULL, *djdxtestt = NULL, *djdwtest = NULL, *djdutest = NULL;
 
   const char transa = 'N', transb = 'N'; /* no transposes */
-  const int gemm_flags = LIBXSMM_GEMM_FLAGS(transa, transb);
   const float alpha = 1, beta = 1, beta0 = 0;
   void *scratch, *internalstate;
   size_t scratch_size = 0, internalstate_size = 0;
@@ -404,9 +403,9 @@ int main(int argc, char* argv[])
   LIBXSMM_VLA_DECL(2, float, deltagold, deltagoldt, K*N);
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N*C);
   LIBXSMM_VLA_DECL(2, float, hgoldb, hgoldt, K*N);
-  LIBXSMM_VLA_DECL(2, float, djdh, djdht, K*N);
-  LIBXSMM_VLA_DECL(2, float, hb, ht, K*N);
-  LIBXSMM_VLA_DECL(2, float, djdx, djdxt, N*C);
+  /*LIBXSMM_VLA_DECL(2, float, djdh, djdht, K*N);*/
+  /*LIBXSMM_VLA_DECL(2, float, hb, ht, K*N);*/
+  /*LIBXSMM_VLA_DECL(2, float, djdx, djdxt, N*C);*/
 
   /* initialize data */
   /* All data in gold is considered to be in column-major format */
@@ -466,8 +465,8 @@ int main(int argc, char* argv[])
     zero_buf(djdb, K);
     zero_buf(djdht, K*N*t);
   }
-  LIBXSMM_VLA_DECL(2, float, x, xt, N*C);
-  LIBXSMM_VLA_DECL(2, float, hnr, h, K*N);
+  /*LIBXSMM_VLA_DECL(2, float, x, xt, N*C);*/
+  /*LIBXSMM_VLA_DECL(2, float, hnr, h, K*N);*/
 
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");
@@ -732,9 +731,9 @@ int main(int argc, char* argv[])
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWD, 0, tid ) );
       }
 
-      LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, N*C);
       /* copy out data */
       /*
+      LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, N*C);
       for (i = 0; i < t; ++i) {
         rnn_copyout(n, k, bn, bk, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, N*C), &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, N*C));
       }
@@ -830,9 +829,9 @@ int main(int argc, char* argv[])
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid ) );
       }
 
-      LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, N*C);
       /* copy out data */
       /*
+      LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, N*C);
       for (i = 0; i < t; ++i) {
         rnn_copyout(N, C, bN, bC, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, N*C), &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, N*C));
       }
