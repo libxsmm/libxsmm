@@ -40,18 +40,18 @@ libxsmm_blasint bk = handle->bk;
 libxsmm_blasint bn = handle->bn;
 libxsmm_blasint bc = handle->bc;
 /* tensor raw pointers */
-element_output_type *djdht = (element_output_type*)handle->djdht->data;
+element_output_type *djdht = (element_output_type*)handle->dht->data;
 element_output_type *deltat = (element_output_type*)handle->scratch_deltat;
-element_filter_type *uD = (element_filter_type*)handle->u->data;
+element_filter_type *uD = (element_filter_type*)handle->r->data;
 element_input_type *xt = (element_input_type*)handle->xt->data;
 element_output_type *ht = (element_output_type*)handle->ht->data;
 element_filter_type *wD = (element_filter_type*)handle->w->data;
-element_filter_type *djduD = (element_filter_type*)handle->djdu->data;
-element_filter_type *djdwD = (element_filter_type*)handle->djdw->data;
-element_output_type *djdb = (element_output_type*)handle->djdb->data;
-element_input_type *djdxt = (element_input_type*)handle->djdxt->data;
+element_filter_type *djduD = (element_filter_type*)handle->dr->data;
+element_filter_type *djdwD = (element_filter_type*)handle->dw->data;
+element_output_type *djdb = (element_output_type*)handle->db->data;
+element_input_type *djdxt = (element_input_type*)handle->dxt->data;
 element_filter_type *scratch_wT = (element_filter_type*)handle->scratch_wT;
-element_filter_type *scratch_uT = (element_filter_type*)handle->scratch_uT;
+element_filter_type *scratch_uT = (element_filter_type*)handle->scratch_rT;
 element_input_type *scratch_xT = (element_input_type*)handle->scratch_xT;
 element_output_type *scratch_hT = (element_output_type*)handle->scratch_hT;
 /* multidimensional arrays */

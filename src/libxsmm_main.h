@@ -586,24 +586,41 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_blasint bn;
   libxsmm_blasint bc;
   /* extrenal tensors */
-  libxsmm_dnn_tensor* w;
   libxsmm_dnn_tensor* xt;
-  libxsmm_dnn_tensor* u;
-  libxsmm_dnn_tensor* ht;
+  libxsmm_dnn_tensor* csp;
+  libxsmm_dnn_tensor* hp;
+  libxsmm_dnn_tensor* w;
+  libxsmm_dnn_tensor* r;
   libxsmm_dnn_tensor* b;
-  libxsmm_dnn_tensor* djdht;
-  libxsmm_dnn_tensor* djdu;
-  libxsmm_dnn_tensor* djdw;
-  libxsmm_dnn_tensor* djdxt;
-  libxsmm_dnn_tensor* djdb;
+  libxsmm_dnn_tensor* cst;
+  libxsmm_dnn_tensor* ht;
+  libxsmm_dnn_tensor* dxt;
+  libxsmm_dnn_tensor* dcspt;
+  libxsmm_dnn_tensor* dhpt;
+  libxsmm_dnn_tensor* dw;
+  libxsmm_dnn_tensor* dr;
+  libxsmm_dnn_tensor* db;
+  libxsmm_dnn_tensor* dcs;
+  libxsmm_dnn_tensor* dht;
+  libxsmm_dnn_tensor* it;
+  libxsmm_dnn_tensor* ft;
+  libxsmm_dnn_tensor* ot;
+  libxsmm_dnn_tensor* cit;
+  libxsmm_dnn_tensor* cot;
   /* internal  state */
   void* internal_z;
   /* scratch pointers */
-  void* scratch_deltat;
   void* scratch_wT;
-  void* scratch_uT;
+  void* scratch_rT;
   void* scratch_xT;
   void* scratch_hT;
+  void* scratch_deltat;
+  void* scratch_dit;
+  void* scratch_dft;
+  void* scratch_dot;
+  void* scratch_dcit;
+  void* t1;
+  void* t2;
   /* options */
   int fwd_generic;
   int bwdupd_generic;
