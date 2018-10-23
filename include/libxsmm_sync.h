@@ -57,7 +57,7 @@
 # endif
 #endif
 
-#if !defined(LIBXSMM_GCC_BASELINE) && defined(__GNUC__) && \
+#if !defined(LIBXSMM_GCC_BASELINE) && !defined(LIBXSMM_SYNC_LEGACY) && defined(__GNUC__) && \
   LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
 # define LIBXSMM_GCC_BASELINE
 #endif
