@@ -125,8 +125,8 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
            (type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV) || (type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV) ||
            (type == LIBXSMM_DNN_RNN_REGULAR_CS) || (type == LIBXSMM_DNN_RNN_GRADIENT_CS) ||
            (type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE) || (type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE) ||
-           (type == LIBXSMM_DNN_RNN_INTERNAL_I) || (type == LIBXSMM_DNN_RNN_INTERNAL_F) || 
-           (LIBXSMM_DNN_RNN_INTERNAL_O) || (type == LIBXSMM_DNN_RNN_INTERNAL_CI) ||
+           (type == LIBXSMM_DNN_RNN_INTERNAL_I) || (type == LIBXSMM_DNN_RNN_INTERNAL_F) ||
+           (type == LIBXSMM_DNN_RNN_INTERNAL_O) || (type == LIBXSMM_DNN_RNN_INTERNAL_CI) ||
            (type == LIBXSMM_DNN_RNN_INTERNAL_CO) ) {
         layout->format = handle->desc.buffer_format;
         layout->tensor_type = LIBXSMM_DNN_ACTIVATION;
@@ -415,7 +415,7 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
             *status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       case  LIBXSMM_DNN_RNNCELL_LSTM: {
         switch (kind) {
           case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -441,7 +441,7 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
             *status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       default: {
         *status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
@@ -522,7 +522,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
             status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       case LIBXSMM_DNN_RNNCELL_LSTM: {
         switch (kind) {
           case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -629,7 +629,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
             status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       default: {
         status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
@@ -669,7 +669,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rn
             status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       case LIBXSMM_DNN_RNNCELL_LSTM: {
         switch (kind) {
           case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -695,7 +695,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rn
             status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       default: {
         status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
@@ -732,7 +732,7 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_internalstate_size(const libxsmm_dnn_
             *status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       case LIBXSMM_DNN_RNNCELL_LSTM: {
         switch (kind) {
           case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -748,7 +748,7 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_internalstate_size(const libxsmm_dnn_
             *status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       default: {
         *status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
@@ -800,7 +800,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_internalstate(libxsmm_dnn
             status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       case LIBXSMM_DNN_RNNCELL_LSTM: {
         switch (kind) {
           case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -814,7 +814,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_internalstate(libxsmm_dnn
             status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       default: {
         status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
@@ -850,7 +850,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_internalstate(libxsmm_
             status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       case LIBXSMM_DNN_RNNCELL_LSTM: {
         switch (kind) {
           case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
@@ -864,7 +864,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_internalstate(libxsmm_
             status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       default: {
         status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
@@ -911,7 +911,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_tensor(libxsmm_dnn_rnncel
        (type != LIBXSMM_DNN_RNN_REGULAR_CS) && (type != LIBXSMM_DNN_RNN_GRADIENT_CS) &&
        (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE) && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE) &&
        (type != LIBXSMM_DNN_RNN_INTERNAL_I) && (type != LIBXSMM_DNN_RNN_INTERNAL_F) &&
-       (type != LIBXSMM_DNN_RNN_INTERNAL_O) && (type != LIBXSMM_DNN_RNN_INTERNAL_CI) && 
+       (type != LIBXSMM_DNN_RNN_INTERNAL_O) && (type != LIBXSMM_DNN_RNN_INTERNAL_CI) &&
        (type != LIBXSMM_DNN_RNN_INTERNAL_CO) ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
     return status;
@@ -995,7 +995,7 @@ LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_rnncell_get_tensor(libxsmm_dnn_rnnce
        (type != LIBXSMM_DNN_RNN_REGULAR_CS) && (type != LIBXSMM_DNN_RNN_GRADIENT_CS) &&
        (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE) && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE) &&
        (type != LIBXSMM_DNN_RNN_INTERNAL_I) && (type != LIBXSMM_DNN_RNN_INTERNAL_F) &&
-       (type != LIBXSMM_DNN_RNN_INTERNAL_O) && (type != LIBXSMM_DNN_RNN_INTERNAL_CI) && 
+       (type != LIBXSMM_DNN_RNN_INTERNAL_O) && (type != LIBXSMM_DNN_RNN_INTERNAL_CI) &&
        (type != LIBXSMM_DNN_RNN_INTERNAL_CO) ) {
     return tensor;
   }
@@ -1066,7 +1066,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_tensor(libxsmm_dnn_rnn
        (type != LIBXSMM_DNN_RNN_REGULAR_CS) && (type != LIBXSMM_DNN_RNN_GRADIENT_CS) &&
        (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE) && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE) &&
        (type != LIBXSMM_DNN_RNN_INTERNAL_I) && (type != LIBXSMM_DNN_RNN_INTERNAL_F) &&
-       (type != LIBXSMM_DNN_RNN_INTERNAL_O) && (type != LIBXSMM_DNN_RNN_INTERNAL_CI) && 
+       (type != LIBXSMM_DNN_RNN_INTERNAL_O) && (type != LIBXSMM_DNN_RNN_INTERNAL_CI) &&
        (type != LIBXSMM_DNN_RNN_INTERNAL_CO) ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
     return status;
