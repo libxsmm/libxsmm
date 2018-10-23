@@ -443,7 +443,10 @@ else
 endif
 
 .PHONY: all
-all: libxsmm samples
+all: libxsmm
+
+.PHONY: realall
+realall: all samples
 
 .PHONY: headers
 headers: cheader cheader_only fheader
