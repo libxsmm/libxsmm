@@ -107,7 +107,7 @@ for (j = 0; j < t; ++j) {
     in = (inik / (K/bk))*bn;
     ik = (inik % (K/bk))*bk;
     /* initialize i with bi */
-    libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &b[ik] );
+    libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &bi[ik] );
     /* i += W.x */
     for (ic = 0; ic < C; ic += bc) {
       gemmkernela( &LIBXSMM_VLA_ACCESS(2, wi, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, x, j, in, ic, N, C), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K) );

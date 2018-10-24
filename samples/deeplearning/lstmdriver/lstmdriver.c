@@ -221,6 +221,7 @@ void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, float *src, flo
 
 int main(int argc, char* argv[])
 {
+#if 0
   float *wigold, *wfgold, *wogold, *wcgold, *xgoldt, *rigold, *rfgold, *rogold, *rcgold, *hgoldt, *bigold, *bfgold, *bogold, *bcgold;
   float *cspgold, *hpgold/*, *dcspgold, *dhpgold*/;
   float *igoldt, *fgoldt, *ogoldt, *cgoldt, *dgoldt, *bimgold, *bfmgold, *bomgold, *bcmgold, *doutgoldt;
@@ -1474,5 +1475,6 @@ int main(int argc, char* argv[])
   printf("\n\n\n");
 
   return EXIT_SUCCESS;
+#endif
 }
 
