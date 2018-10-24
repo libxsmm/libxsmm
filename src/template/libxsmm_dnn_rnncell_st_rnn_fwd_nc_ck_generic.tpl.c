@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
 /* helper variables */
@@ -42,12 +42,12 @@ const libxsmm_blasint bc = handle->bc;
 /* define tensors */
 element_filter_type *wD = (element_filter_type*)handle->w->data;
 element_input_type  *xt = (element_input_type* )handle->xt->data;
-element_filter_type *uD = (element_filter_type*)handle->r->data;
+element_filter_type *rD = (element_filter_type*)handle->r->data;
 element_output_type *b  = (element_output_type*)handle->b->data;
 element_output_type *ht = (element_output_type*)handle->ht->data;
 element_output_type *zt = (element_output_type*)handle->internal_z;
 LIBXSMM_VLA_DECL(2, element_filter_type, w, wD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, u, uD, K);
+LIBXSMM_VLA_DECL(2, element_filter_type, r, rD, K);
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, z, zt, N, K);
@@ -86,7 +86,7 @@ for (i = 0; i < t; ++i) {
     /* z += U.h */
     for (ic = 0; ic < K; ic += bk) {
       /* this is a small matmul */
-      gemmkernelb( &LIBXSMM_VLA_ACCESS(2, u, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
+      gemmkernelb( &LIBXSMM_VLA_ACCESS(2, r, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
     }
 #if defined(LIBXSMM_DNN_RNN_RELU_FWD)
     libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i+1, in, ik, N, K) );

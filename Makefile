@@ -277,7 +277,6 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
           $(ROOTDIR)/include/libxsmm_dnn_pooling.h \
           $(ROOTDIR)/include/libxsmm_dnn_fullyconnected.h \
           $(ROOTDIR)/include/libxsmm_dnn_rnncell.h \
-          $(ROOTDIR)/include/libxsmm_dnn_lstmcell.h \
           $(ROOTDIR)/include/libxsmm_dnn_grucell.h \
           $(ROOTDIR)/include/libxsmm_frontend.h \
           $(ROOTDIR)/include/libxsmm_fsspmdm.h \
@@ -297,7 +296,7 @@ SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_gemm.c libxsmm_trans.c libxsmm_bgemm.c \
           libxsmm_spmdm.c libxsmm_fsspmdm.c \
           libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c \
-          libxsmm_dnn_elementwise.c libxsmm_dnn_rnncell.c libxsmm_dnn_lstmcell.c libxsmm_dnn_grucell.c \
+          libxsmm_dnn_elementwise.c libxsmm_dnn_rnncell.c libxsmm_dnn_grucell.c \
           libxsmm_dnn_rnncell_forward.c libxsmm_dnn_rnncell_backward_weight_update.c \
           libxsmm_dnn_fusedbatchnorm.c libxsmm_dnn_fusedbatchnorm_forward.c \
           libxsmm_dnn_fusedbatchnorm_backward.c \
@@ -594,7 +593,6 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_fullyconnected.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_pooling.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_rnncell.h $(INCDIR) 2>/dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_lstmcell.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_grucell.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_fsspmdm.h $(INCDIR) 2>/dev/null || true

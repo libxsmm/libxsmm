@@ -36,7 +36,6 @@
     <ClInclude Include="..\include\libxsmm_dnn_fullyconnected.h" />
     <ClInclude Include="..\include\libxsmm_dnn_fusedbatchnorm.h" />
     <ClInclude Include="..\include\libxsmm_dnn_grucell.h" />
-    <ClInclude Include="..\include\libxsmm_dnn_lstmcell.h" />
     <ClInclude Include="..\include\libxsmm_dnn_pooling.h" />
     <ClInclude Include="..\include\libxsmm_dnn_rnncell.h" />
     <ClInclude Include="..\include\libxsmm_frontend.h" />
@@ -175,7 +174,6 @@
     <ClCompile Include="..\src\libxsmm_dnn_fusedbatchnorm_forward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_grucell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
-    <ClCompile Include="..\src\libxsmm_dnn_lstmcell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_pooling.c" />
     <ClCompile Include="..\src\libxsmm_dnn_pooling_backward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_pooling_forward.c" />

@@ -243,48 +243,6 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_RNN_INTERNAL_CO,
 
   /** regular input buffer */
-  LIBXSMM_DNN_LSTM_REGULAR_INPUT,
-  /** regular previous cell state buffer */
-  LIBXSMM_DNN_LSTM_REGULAR_CS_PREV,
-  /** regular previous hidden state buffer */
-  LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE_PREV,
-  /** regular weight (includes wi, wc, wf, wo) */
-  LIBXSMM_DNN_LSTM_REGULAR_WEIGHT,
-  /** regular recurrent weight (includes ri, rc, rf, ro) */
-  LIBXSMM_DNN_LSTM_REGULAR_RECUR_WEIGHT,
-  /** regular bias (includes bi, bc, bf, bo) */
-  LIBXSMM_DNN_LSTM_REGULAR_BIAS,
-  /** regular output cell state buffer */
-  LIBXSMM_DNN_LSTM_REGULAR_CS,
-  /** regular hidden state buffer */
-  LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE,
-  /** internal i buffer */
-  LIBXSMM_DNN_LSTM_INTERNAL_I,
-  /** internal f buffer */
-  LIBXSMM_DNN_LSTM_INTERNAL_F,
-  /** internal o buffer */
-  LIBXSMM_DNN_LSTM_INTERNAL_O,
-  /** internal ci buffer */
-  LIBXSMM_DNN_LSTM_INTERNAL_CI,
-  /** internal co buffer */
-  LIBXSMM_DNN_LSTM_INTERNAL_CO,
-  /** gradient input buffer */
-  LIBXSMM_DNN_LSTM_GRADIENT_INPUT,
-  /** gradient previous cell state buffer */
-  LIBXSMM_DNN_LSTM_GRADIENT_CS_PREV,
-  /** gradient previous hidden state buffer */
-  LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE_PREV,
-  /** gradient weight */
-  LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT,
-  /** gradient recurrent weight */
-  LIBXSMM_DNN_LSTM_GRADIENT_RECUR_WEIGHT,
-  /** gradient bias */
-  LIBXSMM_DNN_LSTM_GRADIENT_BIAS,
-  /** gradient output cell state buffer */
-  LIBXSMM_DNN_LSTM_GRADIENT_CS,
-  /** gradient hidden state buffer */
-  LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE,
-  /** regular input buffer */
   LIBXSMM_DNN_GRU_REGULAR_INPUT,
   /** regular hidden state buffer */
   LIBXSMM_DNN_GRU_REGULAR_HIDDEN_STATE,

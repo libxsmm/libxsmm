@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_rnncell_forward.h"
 #include "libxsmm_dnn_elementwise.h"
@@ -67,6 +67,8 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_nc_ck_f32_f32(libxsmm_dnn_rnncell* 
 # define LIBXSMM_DNN_RNN_TANH_FWD
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
 # undef LIBXSMM_DNN_RNN_TANH_FWD
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
+# include "template/libxsmm_dnn_rnncell_st_lstm_fwd_nc_ck_generic.tpl.c"
   } else {
     /* should not happen */
   }
@@ -130,6 +132,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_nc_ck(libxsmm_dn
 #define LIBXSMM_DNN_RNN_TANH_FWD
 # include "template/libxsmm_dnn_rnncell_st_rnn_fwd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_TANH_FWD
+      } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
+# include "template/libxsmm_dnn_rnncell_st_lstm_fwd_nc_ck_generic.tpl.c"
       } else {
         /* should not happen */
       }

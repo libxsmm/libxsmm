@@ -123,9 +123,6 @@
     <ClInclude Include="..\src\libxsmm_dnn_setup.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_dnn_lstmcell.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_dnn_rnncell.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -366,9 +363,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_rnncell.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_lstmcell.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_fwd_custom_custom_padding_img_par.tpl.c">
