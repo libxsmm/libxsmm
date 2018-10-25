@@ -260,7 +260,7 @@ for (j = t-1; j >= 0; --j) {
     for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
       ik = (ikin / (N/bn))*bk;
       in = (ikin % (N/bn))*bn;
-  
+
       for (jk = 0; jk < bk; ++jk) {
         for (jn = 0; jn < bn; ++jn) {
           en = in + jn;
