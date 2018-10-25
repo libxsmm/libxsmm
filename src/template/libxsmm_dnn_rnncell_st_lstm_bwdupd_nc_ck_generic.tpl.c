@@ -39,6 +39,7 @@ libxsmm_blasint t = handle->desc.t;
 libxsmm_blasint bk = handle->bk;
 libxsmm_blasint bn = handle->bn;
 libxsmm_blasint bc = handle->bc;
+libxsmm_blasint K4 = K * 4;
 /* tensor raw pointers */
 element_input_type  *xt    = (element_input_type* )handle->xt->data;
 /* element_input_type *csp   = (element_input_type* )handle->csp->data; */
@@ -71,6 +72,7 @@ element_filter_type *scratch_wT  = (element_filter_type*)handle->scratch_wT;
 element_filter_type *scratch_rT  = (element_filter_type*)handle->scratch_rT;
 element_input_type  *scratch_xT  = (element_input_type* )handle->scratch_xT;
 element_output_type *scratch_hT  = (element_output_type*)handle->scratch_hT;
+#if 0
 element_filter_type *wiD   = &(w[0]);
 element_filter_type *wcD   = &(w[C*K]);
 element_filter_type *wfD   = &(w[2*C*K]);
@@ -87,6 +89,23 @@ element_filter_type *driD  = &(dr[0]);
 element_filter_type *drcD  = &(dr[K*K]);
 element_filter_type *drfD  = &(dr[2*K*K]);
 element_filter_type *droD  = &(dr[3*K*K]);
+#endif
+element_filter_type *wiD   = &(w[0]);
+element_filter_type *wcD   = &(w[K]);
+element_filter_type *wfD   = &(w[2*K]);
+element_filter_type *woD   = &(w[3*K]);
+element_filter_type *riD   = &(r[0]);
+element_filter_type *rcD   = &(r[K]);
+element_filter_type *rfD   = &(r[2*K]);
+element_filter_type *roD   = &(r[3*K]);
+element_filter_type *dwiD  = &(dw[0]);
+element_filter_type *dwcD  = &(dw[K]);
+element_filter_type *dwfD  = &(dw[2*K]);
+element_filter_type *dwoD  = &(dw[3*K]);
+element_filter_type *driD  = &(dr[0]);
+element_filter_type *drcD  = &(dr[K]);
+element_filter_type *drfD  = &(dr[2*K]);
+element_filter_type *droD  = &(dr[3*K]);
 element_output_type *dbi   = &(db[0]);
 element_output_type *dbc   = &(db[K]);
 element_output_type *dbf   = &(db[2*K]);
@@ -103,14 +122,14 @@ element_filter_type *scratch_roT = &(scratch_rT[3*K*K]);
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 /* LIBXSMM_VLA_DECL(2, element_input_type,  cp, csp, K); */
 /* LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K); */
-LIBXSMM_VLA_DECL(2, element_filter_type, wi, wiD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, wf, wfD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, wo, woD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, wc, wcD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, ri, riD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, rf, rfD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, ro, roD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, rc, rcD, K);
+LIBXSMM_VLA_DECL(2, element_filter_type, wi, wiD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, wf, wfD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, wo, woD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, wc, wcD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, ri, riD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, rf, rfD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, ro, roD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, rc, rcD, 4*K);
 LIBXSMM_VLA_DECL(3, element_output_type, cs, cst, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, i, it, N, K);
@@ -121,14 +140,14 @@ LIBXSMM_VLA_DECL(3, element_output_type, co, cot, N, K);
 LIBXSMM_VLA_DECL(3, element_input_type,  dx, dxt, N, C);
 LIBXSMM_VLA_DECL(3, element_input_type,  dcp, dcspt, N, K);
 LIBXSMM_VLA_DECL(3, element_input_type,  dhp, dhpt, N, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, dwi, dwiD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, dwf, dwfD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, dwo, dwoD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, dwc, dwcD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, dri, driD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, drf, drfD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, dro, droD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, drc, drcD, K);
+LIBXSMM_VLA_DECL(2, element_filter_type, dwi, dwiD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, dwf, dwfD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, dwo, dwoD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, dwc, dwcD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, dri, driD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, drf, drfD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, dro, droD, 4*K);
+LIBXSMM_VLA_DECL(2, element_filter_type, drc, drcD, 4*K);
 /* LIBXSMM_VLA_DECL(2, element_output_type, dcs, dcsD, K); */
 LIBXSMM_VLA_DECL(3, element_output_type, dh, dht, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, di, dit, N, K);
@@ -150,8 +169,12 @@ LIBXSMM_VLA_DECL(2, element_input_type,  xT, scratch_xT, N);
 LIBXSMM_VLA_DECL(2, element_output_type, hT, scratch_hT, N);
 /* define gemm kernels */
 libxsmm_smmfunction gemmkernela = libxsmm_smmdispatch( bc, bn, bk, &C, &K, &C, NULL, NULL, NULL, NULL );
+#if 0
 libxsmm_smmfunction gemmkernelb = libxsmm_smmdispatch( bk, bk, bn, &K, &N, &K, NULL, NULL, NULL, NULL );
 libxsmm_smmfunction gemmkernelc = libxsmm_smmdispatch( bk, bc, bn, &K, &N, &K, NULL, NULL, NULL, NULL );
+#endif
+libxsmm_smmfunction gemmkernelb = libxsmm_smmdispatch( bk, bk, bn, &K, &N, &K4, NULL, NULL, NULL, NULL );
+libxsmm_smmfunction gemmkernelc = libxsmm_smmdispatch( bk, bc, bn, &K, &N, &K4, NULL, NULL, NULL, NULL );
 libxsmm_smmfunction gemmkerneld = libxsmm_smmdispatch( bk, bn, bk, &K, &K, &K, NULL, NULL, NULL, NULL );
 
 /* computing first logical thread */
@@ -189,6 +212,13 @@ const libxsmm_blasint chunksize_kk = (work_kk % (libxsmm_blasint)handle->desc.th
 const libxsmm_blasint thr_begin_kk = (ltid * chunksize_kk < work_kk) ? (ltid * chunksize_kk) : work_kk;
 const libxsmm_blasint thr_end_kk = ((ltid + 1) * chunksize_kk < work_kk) ? ((ltid + 1) * chunksize_kk) : work_kk;
 
+/* number of tasks that could be run in parallel for K blocks*/
+/* compute chunk size */
+const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads == 0) ? (K / (libxsmm_blasint)handle->desc.threads) : ((K / (libxsmm_blasint)handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
+const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
+
 int ikic, inic, inik, icin, ikin;
 
 /* lazy barrier init */
@@ -213,10 +243,16 @@ for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
     for (jc = 0; jc < bc; ++jc) {
       ek = ik + jk;
       ec = ic + jc;
+#if 0
       LIBXSMM_VLA_ACCESS(2, wiT, ek, ec, C) =  LIBXSMM_VLA_ACCESS(2, wi, ec, ek, K);
       LIBXSMM_VLA_ACCESS(2, wcT, ek, ec, C) =  LIBXSMM_VLA_ACCESS(2, wc, ec, ek, K);
       LIBXSMM_VLA_ACCESS(2, wfT, ek, ec, C) =  LIBXSMM_VLA_ACCESS(2, wf, ec, ek, K);
       LIBXSMM_VLA_ACCESS(2, woT, ek, ec, C) =  LIBXSMM_VLA_ACCESS(2, wo, ec, ek, K);
+#endif
+      LIBXSMM_VLA_ACCESS(2, wiT, ek, ec, C) =  LIBXSMM_VLA_ACCESS(2, wi, ec, ek, 4*K);
+      LIBXSMM_VLA_ACCESS(2, wcT, ek, ec, C) =  LIBXSMM_VLA_ACCESS(2, wc, ec, ek, 4*K);
+      LIBXSMM_VLA_ACCESS(2, wfT, ek, ec, C) =  LIBXSMM_VLA_ACCESS(2, wf, ec, ek, 4*K);
+      LIBXSMM_VLA_ACCESS(2, woT, ek, ec, C) =  LIBXSMM_VLA_ACCESS(2, wo, ec, ek, 4*K);
     }
   }
 }
@@ -230,10 +266,16 @@ for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
     for (jc = 0; jc < bk; ++jc) {
       ek = ik + jk;
       ec = ic + jc;
+#if 0
       LIBXSMM_VLA_ACCESS(2, riT, ek, ec, K) =  LIBXSMM_VLA_ACCESS(2, ri, ec, ek, K);
       LIBXSMM_VLA_ACCESS(2, rcT, ek, ec, K) =  LIBXSMM_VLA_ACCESS(2, rc, ec, ek, K);
       LIBXSMM_VLA_ACCESS(2, rfT, ek, ec, K) =  LIBXSMM_VLA_ACCESS(2, rf, ec, ek, K);
       LIBXSMM_VLA_ACCESS(2, roT, ek, ec, K) =  LIBXSMM_VLA_ACCESS(2, ro, ec, ek, K);
+#endif
+      LIBXSMM_VLA_ACCESS(2, riT, ek, ec, K) =  LIBXSMM_VLA_ACCESS(2, ri, ec, ek, 4*K);
+      LIBXSMM_VLA_ACCESS(2, rcT, ek, ec, K) =  LIBXSMM_VLA_ACCESS(2, rc, ec, ek, 4*K);
+      LIBXSMM_VLA_ACCESS(2, rfT, ek, ec, K) =  LIBXSMM_VLA_ACCESS(2, rf, ec, ek, 4*K);
+      LIBXSMM_VLA_ACCESS(2, roT, ek, ec, K) =  LIBXSMM_VLA_ACCESS(2, ro, ec, ek, 4*K);
     }
   }
 }
@@ -317,29 +359,13 @@ for (j = t-1; j >= 0; --j) {
     libxsmm_internal_matrix_complement_ld(   bk, bn, K, &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
     libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
     libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), &LIBXSMM_VLA_ACCESS(3, dp, j, in, ik, N, K) );
-
+  
     /* dout-1 += R^T * difoc */
     for (ic = 0; ic < K; ic += bk) {
       gemmkerneld( &LIBXSMM_VLA_ACCESS(2, riT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, di,  j, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dout, j-1, in, ik, N, K) );
       gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rfT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, df,  j, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dout, j-1, in, ik, N, K) );
       gemmkerneld( &LIBXSMM_VLA_ACCESS(2, roT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dp,  j, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dout, j-1, in, ik, N, K) );
       gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rcT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dci, j, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dout, j-1, in, ik, N, K) );
-    }
-
-    /* gradient bias */
-    if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-      if (j > 0) {
-        for (jn = 0; jn < bn; jn++) {
-          for (jk = 0; jk < bk; jk++) {
-            en = in + jn;
-            ek = ik + jk;
-            dbi[ek] += LIBXSMM_VLA_ACCESS(3, di,  j, en, ek, N, K);
-            dbf[ek] += LIBXSMM_VLA_ACCESS(3, df,  j, en, ek, N, K);
-            dbo[ek] += LIBXSMM_VLA_ACCESS(3, dp,  j, en, ek, N, K);
-            dbc[ek] += LIBXSMM_VLA_ACCESS(3, dci, j, en, ek, N, K);
-          }
-        }
-      }
     }
   }
 
@@ -361,30 +387,41 @@ for (j = t-1; j >= 0; --j) {
   }
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-    /* dr = difoc * h^T */
     if (j > 0) {
+      /* gradient bias */
+      for (ik = thr_begin_k; ik < thr_end_k; ik++) {
+        for (in = 0; in < N; in++) {
+          dbi[ik] += LIBXSMM_VLA_ACCESS(3, di,  j, in, ik, N, K);
+          dbf[ik] += LIBXSMM_VLA_ACCESS(3, df,  j, in, ik, N, K);
+          dbo[ik] += LIBXSMM_VLA_ACCESS(3, dp,  j, in, ik, N, K);
+          dbc[ik] += LIBXSMM_VLA_ACCESS(3, dci, j, in, ik, N, K);
+        }
+      }
+
+      /* dr = difoc * h^T */
       for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
         ic = (ikic / (K/bk))*bk;
         ik = (ikic % (K/bk))*bk;
 
         for (in = 0; in < N; in += bn) {
-          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, di,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dri, ic, ik, K) );
-          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, df,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, drf, ic, ik, K) );
-          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, dp,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dro, ic, ik, K) );
-          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, dci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, drc, ic, ik, K) );
+          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, di,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dri, ic, ik, 4*K) );
+          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, df,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, drf, ic, ik, 4*K) );
+          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, dp,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dro, ic, ik, 4*K) );
+          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, dci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, drc, ic, ik, 4*K) );
         }
       }
     }
+
     /* dw = difoc * x^T */
     for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
       ic = (ikic / (K/bk))*bc;
       ik = (ikic % (K/bk))*bk;
 
       for (in = 0; in < N; in += bn ) {
-        gemmkernelc( &LIBXSMM_VLA_ACCESS(3, di,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dwi, ic, ik, K) );
-        gemmkernelc( &LIBXSMM_VLA_ACCESS(3, df,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dwf, ic, ik, K) );
-        gemmkernelc( &LIBXSMM_VLA_ACCESS(3, dp,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dwo, ic, ik, K) );
-        gemmkernelc( &LIBXSMM_VLA_ACCESS(3, dci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dwc, ic, ik, K) );
+        gemmkernelc( &LIBXSMM_VLA_ACCESS(3, di,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dwi, ic, ik, 4*K) );
+        gemmkernelc( &LIBXSMM_VLA_ACCESS(3, df,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dwf, ic, ik, 4*K) );
+        gemmkernelc( &LIBXSMM_VLA_ACCESS(3, dp,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dwo, ic, ik, 4*K) );
+        gemmkernelc( &LIBXSMM_VLA_ACCESS(3, dci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dwc, ic, ik, 4*K) );
       }
     }
   }

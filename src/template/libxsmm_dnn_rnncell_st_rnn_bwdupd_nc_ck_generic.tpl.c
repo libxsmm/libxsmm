@@ -113,6 +113,13 @@ const libxsmm_blasint chunksize_kk = (work_kk % (libxsmm_blasint)handle->desc.th
 const libxsmm_blasint thr_begin_kk = (ltid * chunksize_kk < work_kk) ? (ltid * chunksize_kk) : work_kk;
 const libxsmm_blasint thr_end_kk = ((ltid + 1) * chunksize_kk < work_kk) ? ((ltid + 1) * chunksize_kk) : work_kk;
 
+/* number of tasks that could be run in parallel for K blocks*/
+/* compute chunk size */
+const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads == 0) ? (K / (libxsmm_blasint)handle->desc.threads) : ((K / (libxsmm_blasint)handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
+const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
+
 int ikic, inic, inik, icin, ikin;
 
 /* lazy barrier init */
@@ -203,17 +210,6 @@ for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
 
   libxsmm_internal_matrix_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dh,    t-1, in, ik, N, K),
                                                               &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K) );
-
-  if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-    /* bias gradient */
-    for (jn = 0; jn < bn; jn++) {
-      for (jk = 0; jk < bk; jk++) {
-        en = in + jn;
-        ek = ik + jk;
-        db[ek] += LIBXSMM_VLA_ACCESS(3, delta, t-1, en, ek, N, K);
-      }
-    }
-  }
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
@@ -230,6 +226,13 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   }
 }
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+  /* gradient bias */
+  for (ik = thr_begin_k; ik < thr_end_k; ik++) {
+    for (in = 0; in < N; in++) {
+      db[ik] += LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K);
+    }
+  }
+
   /* dr = delta * h^T */
   for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
     ic = (ikic / (K/bk))*bk;
@@ -239,6 +242,7 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
       gemmkernelb( &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dr, ic, ik, K)  );
     }
   }
+
   /* dw = delta * x^T */
   for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
     ic = (ikic / (K/bk))*bc;
@@ -306,17 +310,6 @@ for (i = t-2; i >= 0; --i) {
 #if defined(LIBXSMM_DNN_RNN_TANH_BWDUPD)
     libxsmm_internal_matrix_tanh_inverse_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) );
 #endif
-
-    /* gradient bias */
-    if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-      for (jn = 0; jn < bn; jn++) {
-        for (jk = 0; jk < bk; jk++) {
-          en = in + jn;
-          ek = ik + jk;
-          db[ek] += LIBXSMM_VLA_ACCESS(3, delta, i, en, ek, N, K);
-        }
-      }
-    }
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
@@ -334,6 +327,13 @@ for (i = t-2; i >= 0; --i) {
   }
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+    /* gradient bias */
+    for (ik = thr_begin_k; ik < thr_end_k; ik++) {
+      for (in = 0; in < N; in++) {
+        db[ik] += LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K);
+      }
+    }
+
     /* dr = delta * h^T */
     for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
       ic = (ikic / (K/bk))*bk;
@@ -343,6 +343,7 @@ for (i = t-2; i >= 0; --i) {
         gemmkernelb( &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dr, ic, ik, K) );
       }
     }
+
     /* dw = delta * x^T */
     for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
       ic = (ikic / (K/bk))*bc;

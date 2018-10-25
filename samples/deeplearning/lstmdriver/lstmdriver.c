@@ -199,20 +199,32 @@ LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
   }
 }
 
-
-void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, float *src, float *dst)
+LIBXSMM_INLINE void convert_ck_c4k(int C, int K, int offset, float *src, float *dst)
 {
-  LIBXSMM_VLA_DECL(4, float, real_src, src, k/blk_k, blk_n, blk_k);
-  LIBXSMM_VLA_DECL(2, float, real_dst, dst, k);
-  int kb, nb, bk, bn;
+  /* offsets: i--0, c--1, f--2, o--3 */ 
+  int x, y;
+#if defined(_OPENMP)
+# pragma omp parallel for private(x, y)
+#endif
+  for (y = 0; y < C; y++) {
+    for (x = 0; x < K; x++) {
+      dst[y*4*K + offset*K + x] = src[y*K + x];
+    }
+  }
+}
 
-  for (nb = 0; nb < (n/blk_n); ++nb) {
-    for (kb = 0; kb < (k/blk_k); ++kb) {
-      for (bn = 0; bn < blk_n; ++bn) {
-        for (bk = 0; bk < blk_k; ++bk) {
-          LIBXSMM_VLA_ACCESS(2, real_dst, nb * blk_n + bn, kb * blk_k + bk, k) =
-            LIBXSMM_VLA_ACCESS(4, real_src, nb, kb, bn, bk, k/blk_k, blk_n, blk_k);
-        }
+
+LIBXSMM_INLINE void convert_c4k_4ck(int C, int K, float *src, float *dst)
+{
+  /* offsets: i--0, c--1, f--2, o--3 */ 
+  int x, y, offset;
+#if defined(_OPENMP)
+# pragma omp parallel for private(x, y, offset)
+#endif
+  for (offset = 0; offset < 4; offset++) {
+    for (y = 0; y < C; y++) {
+      for (x = 0; x < K; x++) {
+        dst[offset*C*K + y*K + x] = src[y*4*K + offset*K + x];
       }
     }
   }
@@ -805,6 +817,7 @@ int main(int argc, char* argv[])
     matrix_copy(N*C*t, xgoldt, xt);
     matrix_copy(K*N, cspgold, csp);
     matrix_copy(K*N, hpgold, hp);
+#if 0
     matrix_copy(C*K, wigold, &(w[0]));
     matrix_copy(C*K, wcgold, &(w[C*K]));
     matrix_copy(C*K, wfgold, &(w[2*C*K]));
@@ -813,6 +826,15 @@ int main(int argc, char* argv[])
     matrix_copy(K*K, rcgold, &(r[K*K]));
     matrix_copy(K*K, rfgold, &(r[2*K*K]));
     matrix_copy(K*K, rogold, &(r[3*K*K]));
+#endif
+    convert_ck_c4k(C, K, 0, wigold, w);
+    convert_ck_c4k(C, K, 1, wcgold, w);
+    convert_ck_c4k(C, K, 2, wfgold, w);
+    convert_ck_c4k(C, K, 3, wogold, w);
+    convert_ck_c4k(K, K, 0, rigold, r);
+    convert_ck_c4k(K, K, 1, rcgold, r);
+    convert_ck_c4k(K, K, 2, rfgold, r);
+    convert_ck_c4k(K, K, 3, rogold, r);
     matrix_copy(K, bigold, &(b[0]));
     matrix_copy(K, bcgold, &(b[K]));
     matrix_copy(K, bfgold, &(b[2*K]));
@@ -964,9 +986,11 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
+      convert_c4k_4ck(C, K, dw, djdwtest);
+      convert_c4k_4ck(K, K, dr, djdrtest);
+#if 0
       LIBXSMM_VLA_DECL(2, float, djdw4test, djdwtest, C*K);
       LIBXSMM_VLA_DECL(2, float, djdr4test, djdrtest, K*K);
-      LIBXSMM_VLA_DECL(2, float, djdb4test, djdbtest, K);
       matrix_copy(C*K, &(dw[0]),     &LIBXSMM_VLA_ACCESS(2, djdw4test, 0, 0, C*K));
       matrix_copy(C*K, &(dw[C*K]),   &LIBXSMM_VLA_ACCESS(2, djdw4test, 1, 0, C*K));
       matrix_copy(C*K, &(dw[2*C*K]), &LIBXSMM_VLA_ACCESS(2, djdw4test, 2, 0, C*K));
@@ -975,6 +999,8 @@ int main(int argc, char* argv[])
       matrix_copy(K*K, &(dr[K*K]),   &LIBXSMM_VLA_ACCESS(2, djdr4test, 1, 0, K*K));
       matrix_copy(K*K, &(dr[2*K*K]), &LIBXSMM_VLA_ACCESS(2, djdr4test, 2, 0, K*K));
       matrix_copy(K*K, &(dr[3*K*K]), &LIBXSMM_VLA_ACCESS(2, djdr4test, 3, 0, K*K));
+#endif
+      LIBXSMM_VLA_DECL(2, float, djdb4test, djdbtest, K);
       matrix_copy(K, &(db[0]),   &LIBXSMM_VLA_ACCESS(2, djdb4test, 0, 0, K));
       matrix_copy(K, &(db[K]),   &LIBXSMM_VLA_ACCESS(2, djdb4test, 1, 0, K));
       matrix_copy(K, &(db[2*K]), &LIBXSMM_VLA_ACCESS(2, djdb4test, 2, 0, K));
@@ -1049,9 +1075,11 @@ int main(int argc, char* argv[])
 
       /* copy out data */
       matrix_copy(N*C*t, dxt, djdxtestt);
+      convert_c4k_4ck(C, K, dw, djdwtest);
+      convert_c4k_4ck(K, K, dr, djdrtest);
       LIBXSMM_VLA_DECL(2, float, djdw4test, djdwtest, C*K);
       LIBXSMM_VLA_DECL(2, float, djdr4test, djdrtest, K*K);
-      LIBXSMM_VLA_DECL(2, float, djdb4test, djdbtest, K);
+#if 0
       matrix_copy(C*K, &(dw[0]),     &LIBXSMM_VLA_ACCESS(2, djdw4test, 0, 0, C*K));
       matrix_copy(C*K, &(dw[C*K]),   &LIBXSMM_VLA_ACCESS(2, djdw4test, 1, 0, C*K));
       matrix_copy(C*K, &(dw[2*C*K]), &LIBXSMM_VLA_ACCESS(2, djdw4test, 2, 0, C*K));
@@ -1060,6 +1088,8 @@ int main(int argc, char* argv[])
       matrix_copy(K*K, &(dr[K*K]),   &LIBXSMM_VLA_ACCESS(2, djdr4test, 1, 0, K*K));
       matrix_copy(K*K, &(dr[2*K*K]), &LIBXSMM_VLA_ACCESS(2, djdr4test, 2, 0, K*K));
       matrix_copy(K*K, &(dr[3*K*K]), &LIBXSMM_VLA_ACCESS(2, djdr4test, 3, 0, K*K));
+#endif
+      LIBXSMM_VLA_DECL(2, float, djdb4test, djdbtest, K);
       matrix_copy(K, &(db[0]),   &LIBXSMM_VLA_ACCESS(2, djdb4test, 0, 0, K));
       matrix_copy(K, &(db[K]),   &LIBXSMM_VLA_ACCESS(2, djdb4test, 1, 0, K));
       matrix_copy(K, &(db[2*K]), &LIBXSMM_VLA_ACCESS(2, djdb4test, 2, 0, K));
