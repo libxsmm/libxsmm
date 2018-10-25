@@ -201,7 +201,7 @@ LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
 
 LIBXSMM_INLINE void convert_ck_c4k(int C, int K, int offset, float *src, float *dst)
 {
-  /* offsets: i--0, c--1, f--2, o--3 */ 
+  /* offsets: i--0, c--1, f--2, o--3 */
   int x, y;
 #if defined(_OPENMP)
 # pragma omp parallel for private(x, y)
@@ -216,7 +216,7 @@ LIBXSMM_INLINE void convert_ck_c4k(int C, int K, int offset, float *src, float *
 
 LIBXSMM_INLINE void convert_c4k_4ck(int C, int K, float *src, float *dst)
 {
-  /* offsets: i--0, c--1, f--2, o--3 */ 
+  /* offsets: i--0, c--1, f--2, o--3 */
   int x, y, offset;
 #if defined(_OPENMP)
 # pragma omp parallel for private(x, y, offset)
