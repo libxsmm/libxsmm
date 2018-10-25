@@ -256,15 +256,17 @@ for (j = t-1; j >= 0; --j) {
   }
 
   /* transpose ht for current timestep */
-  for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
-    ik = (ikin / (N/bn))*bk;
-    in = (ikin % (N/bn))*bn;
-
-    for (jk = 0; jk < bk; ++jk) {
-      for (jn = 0; jn < bn; ++jn) {
-        en = in + jn;
-        ek = ik + jk;
-        LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(3, h, j, en, ek, N, K);
+  if (j > 0) {
+    for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
+      ik = (ikin / (N/bn))*bk;
+      in = (ikin % (N/bn))*bn;
+  
+      for (jk = 0; jk < bk; ++jk) {
+        for (jn = 0; jn < bn; ++jn) {
+          en = in + jn;
+          ek = ik + jk;
+          LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(3, h, j-1, en, ek, N, K);
+        }
       }
     }
   }
@@ -324,7 +326,7 @@ for (j = t-1; j >= 0; --j) {
       gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rcT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dci, j, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dout, j-1, in, ik, N, K) );
     }
 
-    /* gradient bais */
+    /* gradient bias */
     if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
       if (j > 0) {
         for (jn = 0; jn < bn; jn++) {
@@ -360,15 +362,17 @@ for (j = t-1; j >= 0; --j) {
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* dr = difoc * h^T */
-    for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
-      ic = (ikic / (K/bk))*bk;
-      ik = (ikic % (K/bk))*bk;
+    if (j > 0) {
+      for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
+        ic = (ikic / (K/bk))*bk;
+        ik = (ikic % (K/bk))*bk;
 
-      for (in = 0; in < N; in += bn) {
-        gemmkernelb( &LIBXSMM_VLA_ACCESS(3, di,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dri, ic, ik, K) );
-        gemmkernelb( &LIBXSMM_VLA_ACCESS(3, df,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, drf, ic, ik, K) );
-        gemmkernelb( &LIBXSMM_VLA_ACCESS(3, dp,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dro, ic, ik, K) );
-        gemmkernelb( &LIBXSMM_VLA_ACCESS(3, dci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, drc, ic, ik, K) );
+        for (in = 0; in < N; in += bn) {
+          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, di,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dri, ic, ik, K) );
+          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, df,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, drf, ic, ik, K) );
+          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, dp,  j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, dro, ic, ik, K) );
+          gemmkernelb( &LIBXSMM_VLA_ACCESS(3, dci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N), &LIBXSMM_VLA_ACCESS(2, drc, ic, ik, K) );
+        }
       }
     }
     /* dw = difoc * x^T */

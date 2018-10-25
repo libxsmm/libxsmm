@@ -307,7 +307,7 @@ for (i = t-2; i >= 0; --i) {
     libxsmm_internal_matrix_tanh_inverse_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) );
 #endif
 
-    /* gradient bais */
+    /* gradient bias */
     if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
       for (jn = 0; jn < bn; jn++) {
         for (jk = 0; jk < bk; jk++) {

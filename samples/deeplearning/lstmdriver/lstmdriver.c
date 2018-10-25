@@ -874,7 +874,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       printf("#   Correctness - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
-      /* run LIBXSMM RNN */
+      /* run LIBXSMM LSTM */
 #if defined(_OPENMP)
 #     pragma omp parallel
 #endif
@@ -918,7 +918,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       printf("#   Correctness - BWD (custom-Storage)   #\n");
       printf("##########################################\n");
-      /* run LIBXSMM RNN */
+      /* run LIBXSMM LSTM */
 #if defined(_OPENMP)
 #     pragma omp parallel
 #endif
@@ -950,7 +950,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       printf("#   Correctness - UPD (custom-Storage)   #\n");
       printf("##########################################\n");
-      /* run LIBXSMM RNN */
+      /* run LIBXSMM LSTM */
 #if defined(_OPENMP)
 #     pragma omp parallel
 #endif
@@ -1034,7 +1034,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       printf("# Correctness - BWD+UPD (custom-Storage) #\n");
       printf("##########################################\n");
-      /* run LIBXSMM RNN */
+      /* run LIBXSMM LSTM */
 #if defined(_OPENMP)
 #     pragma omp parallel
 #endif
@@ -1130,7 +1130,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       printf("#   Performance - FWD (custom-Storage)   #\n");
       printf("##########################################\n");
-      /* run LIBXSMM RNN for performance */
+      /* run LIBXSMM LSTM for performance */
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
@@ -1161,7 +1161,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       printf("#   Performance - BWD (custom-Storage)   #\n");
       printf("##########################################\n");
-      /* run LIBXSMM RNN for performance */
+      /* run LIBXSMM LSTM for performance */
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
@@ -1206,7 +1206,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       printf("#   Performance - UPD (custom-Storage)   #\n");
       printf("##########################################\n");
-      /* run LIBXSMM RNN for performance */
+      /* run LIBXSMM LSTM for performance */
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
@@ -1258,7 +1258,7 @@ int main(int argc, char* argv[])
       printf("##########################################\n");
       printf("# Performance - BWD+UPD (custom-Storage) #\n");
       printf("##########################################\n");
-      /* run LIBXSMM RNN for performance */
+      /* run LIBXSMM LSTM for performance */
       l_start = libxsmm_timer_tick();
 
 #if defined(_OPENMP)
