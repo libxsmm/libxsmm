@@ -68,9 +68,9 @@ element_output_type *dcit  = (element_output_type*)handle->scratch_dcit;
 element_output_type *doutt = (element_output_type*)handle->scratch_deltat;
 element_output_type *t1D   = (element_output_type*)handle->scratch_t1;
 element_output_type *t2D   = (element_output_type*)handle->scratch_t2;
+element_input_type  *scratch_xT  = (element_input_type* )handle->scratch_xT;
 element_filter_type *scratch_wT  = (element_filter_type*)handle->scratch_wT;
 element_filter_type *scratch_rT  = (element_filter_type*)handle->scratch_rT;
-element_input_type  *scratch_xT  = (element_input_type* )handle->scratch_xT;
 element_output_type *scratch_hT  = (element_output_type*)handle->scratch_hT;
 #if 0
 element_filter_type *wiD   = &(w[0]);
@@ -157,6 +157,7 @@ LIBXSMM_VLA_DECL(3, element_output_type, dci, dcit, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, dout, doutt, N, K);
 LIBXSMM_VLA_DECL(2, element_output_type, t1, t1D, K);
 LIBXSMM_VLA_DECL(2, element_output_type, t2, t2D, K);
+LIBXSMM_VLA_DECL(2, element_input_type,  xT, scratch_xT, N);
 LIBXSMM_VLA_DECL(2, element_filter_type, wiT, scratch_wiT, C);
 LIBXSMM_VLA_DECL(2, element_filter_type, wcT, scratch_wcT, C);
 LIBXSMM_VLA_DECL(2, element_filter_type, wfT, scratch_wfT, C);
@@ -165,7 +166,6 @@ LIBXSMM_VLA_DECL(2, element_filter_type, riT, scratch_riT, K);
 LIBXSMM_VLA_DECL(2, element_filter_type, rcT, scratch_rcT, K);
 LIBXSMM_VLA_DECL(2, element_filter_type, rfT, scratch_rfT, K);
 LIBXSMM_VLA_DECL(2, element_filter_type, roT, scratch_roT, K);
-LIBXSMM_VLA_DECL(2, element_input_type,  xT, scratch_xT, N);
 LIBXSMM_VLA_DECL(2, element_output_type, hT, scratch_hT, N);
 /* define gemm kernels */
 libxsmm_smmfunction gemmkernela = libxsmm_smmdispatch( bc, bn, bk, &C, &K, &C, NULL, NULL, NULL, NULL );

@@ -40,33 +40,35 @@ libxsmm_blasint bk = handle->bk;
 libxsmm_blasint bn = handle->bn;
 libxsmm_blasint bc = handle->bc;
 /* tensor raw pointers */
+element_input_type  *xt  = (element_input_type* )handle->xt->data;
+element_input_type  *hpD = (element_input_type* )handle->hp->data;
+element_filter_type *wD  = (element_filter_type*)handle->w->data;
+element_filter_type *rD  = (element_filter_type*)handle->r->data;
+element_output_type *ht  = (element_output_type*)handle->ht->data;
+element_input_type  *dxt = (element_input_type*)handle->dxt->data;
+element_filter_type *dwD = (element_filter_type*)handle->dw->data;
+element_filter_type *drD = (element_filter_type*)handle->dr->data;
+element_output_type *db  = (element_output_type*)handle->db->data;
 element_output_type *dht = (element_output_type*)handle->dht->data;
 element_output_type *deltat = (element_output_type*)handle->scratch_deltat;
-element_filter_type *rD  = (element_filter_type*)handle->r->data;
-element_input_type  *xt  = (element_input_type* )handle->xt->data;
-element_output_type *ht  = (element_output_type*)handle->ht->data;
-element_filter_type *wD  = (element_filter_type*)handle->w->data;
-element_filter_type *drD = (element_filter_type*)handle->dr->data;
-element_filter_type *dwD = (element_filter_type*)handle->dw->data;
-element_output_type *db  = (element_output_type*)handle->db->data;
-element_input_type  *dxt = (element_input_type*)handle->dxt->data;
+element_input_type  *scratch_xT = (element_input_type*)handle->scratch_xT;
 element_filter_type *scratch_wT = (element_filter_type*)handle->scratch_wT;
 element_filter_type *scratch_rT = (element_filter_type*)handle->scratch_rT;
-element_input_type  *scratch_xT = (element_input_type*)handle->scratch_xT;
 element_output_type *scratch_hT = (element_output_type*)handle->scratch_hT;
 /* multidimensional arrays */
-LIBXSMM_VLA_DECL(2, element_filter_type, r, rD, K);
+LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
+LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
 LIBXSMM_VLA_DECL(2, element_filter_type, w, wD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, dr, drD, K);
+LIBXSMM_VLA_DECL(2, element_filter_type, r, rD, K);
+LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
+LIBXSMM_VLA_DECL(3, element_input_type,  dx, dxt, N, C);
 LIBXSMM_VLA_DECL(2, element_filter_type, dw, dwD, K);
+LIBXSMM_VLA_DECL(2, element_filter_type, dr, drD, K);
 LIBXSMM_VLA_DECL(3, element_output_type, dh, dht, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, delta, deltat, N, K);
-LIBXSMM_VLA_DECL(3, element_input_type, x, xt, N, C);
-LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
-LIBXSMM_VLA_DECL(3, element_input_type, dx, dxt, N, C);
+LIBXSMM_VLA_DECL(2, element_input_type,  xT, scratch_xT, N);
 LIBXSMM_VLA_DECL(2, element_filter_type, wT, scratch_wT, C);
 LIBXSMM_VLA_DECL(2, element_filter_type, rT, scratch_rT, K);
-LIBXSMM_VLA_DECL(2, element_input_type, xT, scratch_xT, N);
 LIBXSMM_VLA_DECL(2, element_output_type, hT, scratch_hT, N);
 #if defined(LIBXSMM_DNN_RNN_RELU_BWDUPD) || defined(LIBXSMM_DNN_RNN_SIGMOID_BWDUPD) || defined(LIBXSMM_DNN_RNN_TANH_BWDUPD)
 element_output_type *zt = (element_output_type*)handle->internal_z;
@@ -186,7 +188,7 @@ for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
     for (jn = 0; jn < bn; ++jn) {
       en = in + jn;
       ek = ik + jk;
-      LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(3, h, t-1, en, ek, N, K);
+      LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(3, h, t-2, en, ek, N, K);
     }
   }
 }
@@ -272,15 +274,30 @@ for (i = t-2; i >= 0; --i) {
   }
 
   /* transpose ht for current timestep */
-  for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
-    ik = (ikin / (N/bn))*bk;
-    in = (ikin % (N/bn))*bn;
-
-    for (jk = 0; jk < bk; ++jk) {
-      for (jn = 0; jn < bn; ++jn) {
-        en = in + jn;
-        ek = ik + jk;
-        LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(3, h, i, en, ek, N, K);
+  if (0 == i) {
+    for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
+      ik = (ikin / (N/bn))*bk;
+      in = (ikin % (N/bn))*bn;
+  
+      for (jk = 0; jk < bk; ++jk) {
+        for (jn = 0; jn < bn; ++jn) {
+          en = in + jn;
+          ek = ik + jk;
+          LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(2, hp, en, ek, K);
+        }
+      }
+    }
+  } else {
+    for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
+      ik = (ikin / (N/bn))*bk;
+      in = (ikin % (N/bn))*bn;
+  
+      for (jk = 0; jk < bk; ++jk) {
+        for (jn = 0; jn < bn; ++jn) {
+          en = in + jn;
+          ek = ik + jk;
+          LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(3, h, i-1, en, ek, N, K);
+        }
       }
     }
   }

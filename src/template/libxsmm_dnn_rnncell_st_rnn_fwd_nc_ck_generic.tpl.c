@@ -40,15 +40,17 @@ const libxsmm_blasint bk = handle->bk;
 const libxsmm_blasint bn = handle->bn;
 const libxsmm_blasint bc = handle->bc;
 /* define tensors */
-element_filter_type *wD = (element_filter_type*)handle->w->data;
 element_input_type  *xt = (element_input_type* )handle->xt->data;
+element_input_type  *hpD= (element_input_type* )handle->hp->data;
+element_filter_type *wD = (element_filter_type*)handle->w->data;
 element_filter_type *rD = (element_filter_type*)handle->r->data;
 element_output_type *b  = (element_output_type*)handle->b->data;
 element_output_type *ht = (element_output_type*)handle->ht->data;
 element_output_type *zt = (element_output_type*)handle->internal_z;
+LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
+LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
 LIBXSMM_VLA_DECL(2, element_filter_type, w, wD, K);
 LIBXSMM_VLA_DECL(2, element_filter_type, r, rD, K);
-LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, z, zt, N, K);
 /* define gemm kernels */
@@ -84,18 +86,25 @@ for (i = 0; i < t; ++i) {
       gemmkernela( &LIBXSMM_VLA_ACCESS(2, w, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, x, i, in, ic, N, C), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
     }
     /* z += U.h */
-    for (ic = 0; ic < K; ic += bk) {
-      /* this is a small matmul */
-      gemmkernelb( &LIBXSMM_VLA_ACCESS(2, r, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
+    if (0 == i) {
+      for (ic = 0; ic < K; ic += bk) {
+        /* this is a small matmul */
+        gemmkernelb( &LIBXSMM_VLA_ACCESS(2, r, ic, ik, K), &LIBXSMM_VLA_ACCESS(2, hp, in, ic, K), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
+      }
+    } else {
+      for (ic = 0; ic < K; ic += bk) {
+        /* this is a small matmul */
+        gemmkernelb( &LIBXSMM_VLA_ACCESS(2, r, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, h, i-1, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
+      }
     }
 #if defined(LIBXSMM_DNN_RNN_RELU_FWD)
-    libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i+1, in, ik, N, K) );
+    libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ik, N, K) );
 #endif
 #if defined(LIBXSMM_DNN_RNN_SIGMOID_FWD)
-    libxsmm_internal_matrix_sigmoid_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i+1, in, ik, N, K) );
+    libxsmm_internal_matrix_sigmoid_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ik, N, K) );
 #endif
 #if defined(LIBXSMM_DNN_RNN_TANH_FWD)
-    libxsmm_internal_matrix_tanh_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i+1, in, ik, N, K) );
+    libxsmm_internal_matrix_tanh_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ik, N, K) );
 #endif
   }
 
