@@ -1396,7 +1396,6 @@ int main(int argc, char* argv[])
   }
 
   /* deallocate data */
-  /*
   libxsmm_free(xgoldt);
   libxsmm_free(cspgold);
   libxsmm_free(hpgold);
@@ -1478,14 +1477,17 @@ int main(int argc, char* argv[])
   libxsmm_free(db);
   libxsmm_free(dcs);
   libxsmm_free(dht);
+  libxsmm_free(it);
+  libxsmm_free(ft);
+  libxsmm_free(ot);
+  libxsmm_free(cit);
+  libxsmm_free(cot);
   libxsmm_free(htest);
   libxsmm_free(djdxtestt);
-  libxsmm_free(djdwtest);
   libxsmm_free(djdrtest);
   libxsmm_free(djdbtest);
   libxsmm_free(djdrgold4);
   libxsmm_free(djdbgold4);
-  */
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
