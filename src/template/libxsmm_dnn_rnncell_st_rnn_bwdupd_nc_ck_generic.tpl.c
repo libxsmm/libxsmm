@@ -278,7 +278,7 @@ for (i = t-2; i >= 0; --i) {
     for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
       ik = (ikin / (N/bn))*bk;
       in = (ikin % (N/bn))*bn;
-  
+
       for (jk = 0; jk < bk; ++jk) {
         for (jn = 0; jn < bn; ++jn) {
           en = in + jn;
@@ -291,7 +291,7 @@ for (i = t-2; i >= 0; --i) {
     for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
       ik = (ikin / (N/bn))*bk;
       in = (ikin % (N/bn))*bn;
-  
+
       for (jk = 0; jk < bk; ++jk) {
         for (jn = 0; jn < bn; ++jn) {
           en = in + jn;
