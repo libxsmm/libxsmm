@@ -160,6 +160,7 @@ LIBXSMM_APIVAR(unsigned int internal_statistic_med);
 LIBXSMM_APIVAR(unsigned int internal_statistic_mnk);
 LIBXSMM_APIVAR(unsigned int internal_statistic_num_mcopy);
 LIBXSMM_APIVAR(unsigned int internal_statistic_num_tcopy);
+LIBXSMM_APIVAR(unsigned int internal_statistic_num_trsm);
 LIBXSMM_APIVAR(unsigned int internal_teardown);
 LIBXSMM_APIVAR(int internal_dispatch_trylock_locked);
 LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
@@ -862,6 +863,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
           }
           else if (LIBXSMM_KERNEL_KIND_TRANS == registry_keys[i].xgemm.iflags) {
             ++internal_statistic_num_tcopy;
+          }
+          else if (LIBXSMM_KERNEL_KIND_TRSM == registry_keys[i].xgemm.iflags) {
+            ++internal_statistic_num_trsm;
           }
           else {
             fprintf(stderr, "LIBXSMM ERROR: code registry is corrupted!\n");
