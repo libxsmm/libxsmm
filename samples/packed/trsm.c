@@ -456,8 +456,6 @@ int main(int argc, char* argv[])
   unsigned int ncorr;
   int i, j;
   char side, uplo, trans, diag;
-  unsigned int typesize8 = 8;
-  unsigned int typesize4 = 4;
   float  *sa, *sb, *sc, *sd;
   double *da, *db, *dc, *dd, *tmpbuf;
   double dalpha = 1.0;
@@ -465,8 +463,12 @@ int main(int argc, char* argv[])
   double dtmp;
   const unsigned char *cptr;
   unsigned long op_count;
+  unsigned int typesize8 = 8;
   const libxsmm_trsm_descriptor* desc8 = NULL;
+#ifdef TEST_SINGLE
+  unsigned int typesize4 = 4;
   const libxsmm_trsm_descriptor* desc4 = NULL;
+#endif
   libxsmm_descriptor_blob blob;
   union {
     libxsmm_xtrsmfunction dp;
@@ -558,14 +560,18 @@ int main(int argc, char* argv[])
 #endif
 
   desc8 = libxsmm_trsm_descriptor_init(&blob, typesize8, m, n, lda, ldb, &dalpha, trans, diag, side, uplo, layout);
+#ifdef TEST_SINGLE
   desc4 = libxsmm_trsm_descriptor_init(&blob, typesize4, m, n, lda, ldb, &salpha, trans, diag, side, uplo, layout);
+#endif
 #ifdef USE_XSMM_GENERATED
   printf("calling libxsmm_dispatch_trsm: typesize8=%u\n",typesize8);
   mykernel.dp = libxsmm_dispatch_trsm(desc8);
   printf("done calling libxsmm_dispatch_trsm: typesize8=%u\n",typesize8);
   if ( mykernel.dp == NULL ) printf("R8 Kernel after the create call is null\n");
+#ifdef TEST_SINGLE
   mykernel.sp = libxsmm_dispatch_trsm(desc4);
   if ( mykernel.sp == NULL ) printf("R4 kernel after the create call is null\n");
+#endif
 #endif
 
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
