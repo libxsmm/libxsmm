@@ -126,6 +126,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #   if !defined(LIBXSMM_REGNLOCK)
 #     define LIBXSMM_REGNLOCK LIBXSMM_LOCK_DEFAULT
 #   endif
+#   if !defined(LIBXSMM_CLEANUP_NTRY)
+#     define LIBXSMM_CLEANUP_NTRY 7
+#   endif
 #   if LIBXSMM_LOCK_TYPE_ISPOD(LIBXSMM_REGNLOCK)
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
   char pad[LIBXSMM_CACHELINE];
@@ -815,9 +818,16 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     int i;
 #if (0 != LIBXSMM_SYNC)
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, &libxsmm_lock_global);
-    /* acquire locks and thereby shortcut lazy initialization later on */
 # if (0 < INTERNAL_REGLOCK_MAXN)
-    for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_ACQUIRE(LIBXSMM_REGNLOCK, &internal_reglock[i].state);
+    { /* acquire locks and thereby shortcut lazy initialization later on */
+      int ntry = 0, n;
+      do {
+        for (i = 0, n = 0; i < internal_reglock_count; ++i) {
+          if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REGNLOCK) == LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REGNLOCK, &internal_reglock[i].state)) ++n;
+        }
+        ntry += (0 == n ? 1 : 0);
+      } while (n < internal_reglock_count && ntry < LIBXSMM_CLEANUP_NTRY);
+    }
 # else
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_REG1LOCK, &internal_reglock);
 # endif
