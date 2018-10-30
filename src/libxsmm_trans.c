@@ -115,6 +115,7 @@ LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsi
   LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size!");
   LIBXSMM_ASSERT_MSG(0 < tm && 0 < tn, "Invalid tile size!");
   LIBXSMM_ASSERT_MSG(typesize <= 255, "Invalid type-size!");
+  LIBXSMM_ASSERT(0 < mtasks);
 
   if (nthreads <= mtasks) { /* parallelized over M */
     const unsigned int mt = (m + nthreads - 1) / nthreads;
@@ -257,6 +258,7 @@ LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsig
   LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size!");
   LIBXSMM_ASSERT_MSG(0 < tm && 0 < tn, "Invalid tile size!");
   LIBXSMM_ASSERT_MSG(typesize <= 255, "Invalid type-size!");
+  LIBXSMM_ASSERT(0 < mtasks);
 
   if (nthreads <= mtasks) { /* parallelized over M */
     const unsigned int mt = (m + nthreads - 1) / nthreads;
