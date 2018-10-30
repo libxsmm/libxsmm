@@ -1,1 +1,1 @@
-master-1.9-2197
+fix_pkg_config_all_static-1.9-2198
