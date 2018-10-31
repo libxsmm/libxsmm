@@ -1219,16 +1219,14 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
   ifeq (,$(CTARGET))
   ifeq (3,$(AVX))
   ifneq (0,$(shell echo "$$(((0!=$(CLANG) && 40000<=$(CC_VERSION)) || 50000<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
-  ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
-    CTARGET = -mavx512f -mavx512cd
-    # fix for Clang
-    CTARGET += -mfma
-    ifneq (,$(MIC)) # specified
-      ifneq (0,$(MIC)) # MIC
-        ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
-          CTARGET += -mavx512pf -mavx512er
-        endif
-      else ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+  ifeq (0,$(shell $(CC) -E -mfma -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+    CTARGET = -mfma -mavx512f -mavx512cd
+    ifneq (0,$(lastword $(sort 0 $(MIC)))) # MIC
+      ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+        CTARGET += -mavx512pf -mavx512er
+      endif
+    else ifneq (file,$(origin MIC))
+      ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
         ifneq (Darwin,$(UNAME))
           CTARGET += -mavx512dq -mavx512bw -mavx512vl
           #CTARGET += -mavx512ifma -mavx512vbmi
