@@ -899,8 +899,8 @@ endif
 endif
 
 .PHONY: clib_hst
-clib_hst: $(OUTDIR)/libxsmm.$(LIBEXT)
-$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/libxsmm.pc
+clib_hst: $(OUTDIR)/libxsmm.pc
+$(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
 ifeq (0,$(STATIC))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
 else # static
@@ -928,17 +928,17 @@ endif
 
 .PHONY: flib_hst
 ifneq (,$(strip $(FC)))
-flib_hst: $(OUTDIR)/libxsmmf.$(LIBEXT)
+flib_hst: $(OUTDIR)/libxsmmf.pc
 ifeq (0,$(STATIC))
-$(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/libxsmmf.pc
+$(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT)
 	$(LIB_FLD) $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(FLDFLAGS)
 else # static
-$(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmmf.pc
+$(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
 endif
 else
-.PHONY: $(OUTDIR)/libxsmmf.$(LIBEXT)
+.PHONY: $(OUTDIR)/libxsmmf.pc
 endif
 
 .PHONY: ext_mic
@@ -957,9 +957,9 @@ endif
 endif
 
 .PHONY: ext_hst
-ext_hst: $(OUTDIR)/libxsmmext.$(LIBEXT)
+ext_hst: $(OUTDIR)/libxsmmext.pc
 ifeq (0,$(STATIC))
-$(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/libxsmm.$(LIBEXT) $(OUTDIR)/libxsmmext.pc
+$(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/libxsmm.$(LIBEXT) $(EXTOBJS_HST)
 ifneq (Darwin,$(UNAME))
 	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
@@ -971,7 +971,7 @@ else # osx
 			$(EXTOBJS_HST)  $(call abslib,$(OUTDIR)/libxsmm.$(IMPEXT)) $(LDFLAGS) $(CLDFLAGS)
 endif
 else # static
-$(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(OUTDIR)/libxsmmext.pc
+$(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST)
 	$(AR) -rs $@ $(EXTOBJS_HST)
 endif
 
@@ -1715,20 +1715,19 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 endif
 
 ifeq (Windows_NT,$(UNAME))
-  XSMM_PKG_CONFIG_LIBS_PRIVATE = "-ldbghelp"
+  XSMM_PKG_CONFIG_LIBS_PRIVATE = -ldbghelp
 else ifneq (Darwin,$(UNAME))
   ifneq (FreeBSD,$(UNAME))
-    XSMM_PKG_CONFIG_LIBS_PRIVATE = "-lpthread -lrt -ldl -lm -lc"
+    XSMM_PKG_CONFIG_LIBS_PRIVATE = -lpthread -lrt -ldl -lm -lc
   else
-    XSMM_PKG_CONFIG_LIBS_PRIVATE = "-ldl -lm -lc"
+    XSMM_PKG_CONFIG_LIBS_PRIVATE = -ldl -lm -lc
   endif
 endif
-
 ifneq (Darwin,$(UNAME))
-  XSMMEXT_PKG_CONFIG_LIBS_PRIVATE = "-fopenmp"
+  XSMMEXT_PKG_CONFIG_LIBS_PRIVATE = -fopenmp
 endif
 
-$(OUTDIR)/libxsmm.pc: $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING)
+$(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" > $@
 	@echo "Description: Matrix operations and deep learning primitives" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
@@ -1739,16 +1738,18 @@ $(OUTDIR)/libxsmm.pc: $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNO
 	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
 	@echo >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
-ifneq (0,$(SHARED))
+ifneq (,$(XSMM_PKG_CONFIG_LIBS_PRIVATE))
+	@if [ -e $(OUTDIR)/libxsmm.$(DLIBEXT) ]; then \
+		echo "Libs: -L\$${libdir} -lxsmm" >> $@; \
+		echo "Libs.private: $(XSMM_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+	else \
+		echo "Libs: -L\$${libdir} -lxsmm $(XSMM_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+	fi
+else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmm" >> $@
-ifneq (0,$(STATIC))
-	@echo "Libs.private: $(XSMM_PKG_CONFIG_LIBS_PRIVATE)" >> $@
-endif
-else
-	@echo "Libs: -L\$${libdir} -lxsmm $(XSMM_PKG_CONFIG_LIBS_PRIVATE)" >> $@
 endif
 
-$(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmm.pc
+$(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 	@echo "Name: libxsmm/f" > $@
 	@echo "Description: LIBXSMM for Fortran" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
@@ -1762,7 +1763,7 @@ $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmm.pc
 	@echo "Cflags: -I\$${includedir}" >> $@
 	@echo "Libs: -L\$${libdir} -lxsmmf" >> $@
 
-$(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmm.pc $(EXTOBJS_HST)
+$(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmmext.$(LIBEXT)
 	@echo "Name: libxsmm/ext" > $@
 	@echo "Description: LIBXSMM/multithreaded for OpenMP" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
@@ -1774,20 +1775,16 @@ $(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmm.pc $(EXTOBJS_HST)
 	@echo >> $@
 	@echo "Requires: libxsmm" >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
-ifneq (0,$(SHARED))
+ifneq (,$(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE))
+	@if [ -e $(OUTDIR)/libxsmmext.$(DLIBEXT) ]; then \
+		echo "Libs: -L\$${libdir} -lxsmmext" >> $@; \
+		echo "Libs.private: $(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+	else \
+		echo "Libs: -L\$${libdir} -lxsmmext $(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+	fi
+else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmmext" >> $@
-ifneq (0,$(STATIC))
-	@echo "Libs.private: $(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE)" >> $@
 endif
-else
-	@echo "Libs: -L\$${libdir} -lxsmmext $(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE)" >> $@
-endif
-
-.PHONY: pkg-config
-pkg-config: $(OUTDIR)/libxsmm.pc $(OUTDIR)/libxsmmf.pc $(OUTDIR)/libxsmmext.pc
-
-.PHONY: pkg
-pkg: pkg-config
 
 .PHONY: deb
 deb:
