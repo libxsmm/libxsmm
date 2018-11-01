@@ -36,7 +36,11 @@
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
 
-#if !defined(LIBXSMM_INTRINSICS_STATIC) && /* GCC 4.4 (target-attribute) */ \
+#if defined(__PGI) /* no intrinsics: tested with 17.x and 18.x */
+# if !defined(LIBXSMM_INTRINSICS_NONE)
+#   define LIBXSMM_INTRINSICS_NONE
+# endif
+#elif !defined(LIBXSMM_INTRINSICS_STATIC) && /* GCC 4.4 (target-attribute) */ \
     (defined(__GNUC__) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) && !defined(_CRAYC) && \
      LIBXSMM_VERSION3(4, 4, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
  || (defined(__clang__) && LIBXSMM_VERSION3(3, 7, 0) > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
@@ -47,11 +51,6 @@
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-
-/** PGI's intrinsic headers do not compile, __SSE4_x__/__AVX__ etc. are never defined (-tp=haswell, etc.) */
-#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(__PGI)
-# define LIBXSMM_INTRINSICS_NONE
 #endif
 
 #if defined(__MIC__) && !defined(LIBXSMM_INTRINSICS_NONE)
@@ -138,7 +137,8 @@
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
-#   elif (LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) && !defined(__PGI)
+#   elif (defined(__GNUC__) && LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
+      && !defined(__PGI)
       /* AVX-512 pseudo intrinsics are missing e.g., reductions */
 #     if !defined(LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS)
 #       define LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS
@@ -150,7 +150,8 @@
 #     endif
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
-#   elif (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) && !defined(__PGI)
+#   elif (defined(__GNUC__) && LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
+      && !defined(__PGI)
       /* too many AVX-512 (pseudo-)intrinsics are missing e.g., reductions, or casts (_mm512_castps_si512) */
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     define LIBXSMM_INTRINSICS_INCLUDE
@@ -180,9 +181,6 @@
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
 #       if !defined(LIBXSMM_INTRINSICS_STATIC) && (LIBXSMM_STATIC_TARGET_ARCH < LIBXSMM_X86_AVX2/*workaround*/)
 #         define LIBXSMM_INTRINSICS_STATIC
-#       endif
-#       if !defined(LIBXSMM_INTRINSICS_NONE) && defined(__PGI)
-#         define LIBXSMM_INTRINSICS_NONE
 #       endif
 #     endif
 #     if !defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(__PGI)
