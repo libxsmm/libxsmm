@@ -141,7 +141,7 @@ JIT ?= 1
 INSTRUMENT ?= $(TRACE)
 
 # explicitly target all objects
-ifneq (,$(strip $(OPT)$(SSE)$(AVX)$(MIC)))
+ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
   TGT ?= 1
 endif
 TGT ?= 0
