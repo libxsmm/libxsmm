@@ -115,6 +115,45 @@ LIBXSMM_API_INLINE void compact_set_one_ (
      libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) vector, "loadone", regset, reg );
 }
 
+LIBXSMM_API_INLINE void compact_store_matrix_gen_ (
+     libxsmm_generated_code* io_code,
+     unsigned int lda,
+     unsigned int i,
+     unsigned int j,
+     unsigned int reg,
+     unsigned int number,
+     unsigned int datasize,
+     char regset, 
+     unsigned int matrix_gpreg )
+{
+     int element = number*(j-1)*lda + number*(i-1);
+     int offset = element * datasize;
+     unsigned int i_vmove_instr;
+     int i_instruction_set;
+
+     if ( datasize == 8 )
+     {
+        i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPD;
+     } else if ( datasize == 4 )
+     {
+        i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPS;
+     } else {
+        fprintf(stderr,"compact_store_matrix1 has strange datasize=%u\n",datasize);
+        exit(-1);
+     }
+     if ( regset == 'z' )
+     {
+        i_instruction_set = LIBXSMM_X86_AVX512;
+     } else if ( regset == 'y' ) {
+        i_instruction_set = LIBXSMM_X86_AVX2;
+     } else {
+        fprintf(stderr,"Unsupported instruction set in compact_store_matrix1\n");
+        exit(-1);
+     }
+
+     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, matrix_gpreg, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0, 1 );
+}
+
 LIBXSMM_API_INLINE void compact_store_matrix1_ (
      libxsmm_generated_code* io_code,
      unsigned int lda,
@@ -265,6 +304,45 @@ LIBXSMM_API_INLINE void compact_load_matrix1_ (
      }
 
      libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, LIBXSMM_X86_GP_REG_RDI, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0, 0 );
+}
+
+LIBXSMM_API_INLINE void compact_load_matrix_gen_ (
+     libxsmm_generated_code* io_code,
+     unsigned int lda,
+     unsigned int i,
+     unsigned int j,
+     unsigned int reg,
+     unsigned int number,
+     unsigned int datasize,
+     char regset, 
+     unsigned int matrix_gpreg )
+{
+     int element = number*(j-1)*lda + number*(i-1);
+     int offset = element * datasize;
+     unsigned int i_vmove_instr;
+     int i_instruction_set;
+
+     if ( datasize == 8 )
+     {
+        i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPD;
+     } else if ( datasize == 4 )
+     {
+        i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPS;
+     } else {
+        fprintf(stderr,"compact_load_matrix1 has strange datasize=%u\n",datasize);
+        exit(-1);
+     }
+     if ( regset == 'z' )
+     {
+        i_instruction_set = LIBXSMM_X86_AVX512;
+     } else if ( regset == 'y' ) {
+        i_instruction_set = LIBXSMM_X86_AVX2;
+     } else {
+        fprintf(stderr,"Unsupported instruction set in compact_load_matrix1\n");
+        exit(-1);
+     }
+
+     libxsmm_x86_instruction_vec_move ( io_code, i_instruction_set, i_vmove_instr, matrix_gpreg, LIBXSMM_X86_GP_REG_UNDEF, 1, offset, regset, reg, 0, 0, 0 );
 }
 
 LIBXSMM_API_INLINE void compact_load_matrix2_ (

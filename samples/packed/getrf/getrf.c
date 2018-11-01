@@ -28,28 +28,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Greg Henry (Intel Corp.)
 ******************************************************************************/
-#if 1
-#define USE_KERNEL_GENERATION_DIRECTLY
-#endif
-#if 0
-#define USE_PREDEFINED_ASSEMBLY
-#define USE_XSMM_GENERATED
-#define TIME_MKL
-#endif
-
-#if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(TIME_MKL) && \
-   (!defined(__linux__) || !defined(USE_KERNEL_GENERATION_DIRECTLY))
-# if 0 /* TODO: provide TRMM API */
-# define USE_XSMM_GENERATED
-# endif
-# include <libxsmm.h>
-#else
-# include <libxsmm_source.h>
-# include <unistd.h>
-# include <signal.h>
-# include <malloc.h>
-# include <sys/mman.h>
-#endif
+#include <libxsmm.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -202,83 +181,70 @@ void scopy_from_temp ( int layout, float *A, int lda, int m, int n, float *Atemp
 }
 
 #if !defined(USE_MKL_FOR_REFERENCE) && !defined(LIBXSMM_NOFORTRAN) && (!defined(__BLAS) || (0 != __BLAS))
-extern void dtrmm_();
+extern void dgetrf_();
+extern void mkl_dgetrfnpi_();
 
-/* Reference code for compact dtrmm. Note that this just copies data into
-   a buffer from the compact storage and calls the regular dtrmm code. This
+/* Reference code for compact dgetrf. Note that this just copies data into
+   a buffer from the compact storage and calls the regular dgetrf code. This
    is very naive reference code just used for testing purposes */
-/* Note: if layout==101 (row major), then this code is known to only work when
- *        nmat == VLEN. To check for accuracy otherwise, transpose everything */
 LIBXSMM_INLINE
-void compact_dtrmm_ ( unsigned int *layout, char *side, char *uplo,
-                      char *transa, char *diag, unsigned int *m,
-                      unsigned int *n, double *alpha, double *A,
-                      unsigned int *lda, double *B, unsigned int *ldb,
+void compact_dgetrf_ ( unsigned int *layout, unsigned int *m,
+                      unsigned int *n, double *A, unsigned int *lda,
                       unsigned int *nmat, unsigned int *VLEN )
 {
-    int i, j, num, asize, offseta, offsetb;
-    double *Ap, *Bp, Atemp[BUFSIZE], Btemp[BUFSIZE];
+    int i, j, num, info, nfact=LIBXSMM_MIN(*m,*n);
+    double *Ap, Atemp[BUFSIZE];
     static int ntimes = 0;
+    extern void mkl_dgetrfnpi();
 
-    if ( ++ntimes < 3 ) printf("Inside reference compact_dtrmm_()\n");
-    if ( *layout == 102 )
+    if ( ++ntimes < 3 ) printf("Inside reference compact_dgetrf_()\n");
+    if ( ++ntimes < 3 ) printf("layout=%d m=%d n=%d lda=%d nmat=%d VLEN=%d\n",*layout,*m,*n,*lda,*nmat,*VLEN);
+    for ( i = 0, num = 0 ; i < (*nmat) ; i+= *VLEN, num++ )
     {
-       if ( (*side == 'L') || (*side == 'l') ) asize = *m;
-       else asize = *n;
-       offsetb = (*ldb)*(*n)*(*VLEN);
-    } else {
-       if ( (*side == 'L') || (*side == 'l') ) asize = *n;
-       else asize = *m;
-       offsetb = (*ldb)*(*m)*(*VLEN);
-    }
-    offseta = (*lda)*asize*(*VLEN);
-    if ( ++ntimes < 3 ) printf("m/n=%u,%u layout=%u asize=%i VLEN=%u nmat=%u offseta=%i offsetb=%i\n",*m,*n,*layout, asize, *VLEN, *nmat, offseta, offsetb );
-    for ( i = 0, num = 0 ; i < (int)(*nmat) ; i+= *VLEN, num++ )
-    {
-       for ( j = 0 ; j < (int)*VLEN ; j++ )
+       for ( j = 0 ; j < *VLEN ; j++ )
        {
-           /* Unpack the data, call a reference DTRMM, repack the data */
-           Ap = &A[j+num*offseta];
-           Bp = &B[j+num*offsetb];
-if (++ntimes < 15 ) printf("Doing a dtrmm at place i=%d j=%d num=%d Ap[%d]=%g Bp[%d]=%g\n",i,j,num,j+num*offseta,Ap[0],j+num*offsetb,Bp[0]);
-           dcopy_to_temp ( *layout, Ap, *lda, asize, asize, Atemp, *VLEN );
-           dcopy_to_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
-           dtrmm_ ( side, uplo, transa, diag, m, n, alpha, Atemp, &asize, Btemp, m);
-           dcopy_from_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
+           /* Unpack the data, call a reference DGETRF, repack the data */
+           Ap = &A[j+num*(*lda)*(*n)*(*VLEN)];
+if (++ntimes < 3 ) printf("Doing a dgetrf at place i=%d j=%d num=%d Ap[%d]=%g\n",i,j,num,j+num*(*lda)*(*n)*(*VLEN),Ap[0]);
+           dcopy_to_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
+           mkl_dgetrfnpi_ ( m, n, &nfact, Atemp, m, &info );
+           if ( info != 0 ) printf("Bad news reference code got info=%d\n",info);
+           dcopy_from_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
        }
     }
 }
 
-extern void strmm_();
+extern void sgetrf_();
+extern void mkl_sgetrfnpi_();
 
-/* Reference code for compact strmm. Note that this just copies data into
-   a buffer from the compact storage and calls the regular strmm code. This
+/* Reference code for compact sgetrf. Note that this just copies data into
+   a buffer from the compact storage and calls the regular sgetrf code. This
    is very naive reference code just used for testing purposes */
 /* Note: if layout==101 (row major), then this code is known to only work when
  *        nmat == VLEN. To check for accuracy otherwise, transpose everything */
 LIBXSMM_INLINE
-void compact_strmm_ ( unsigned int *layout, char *side, char *uplo,
-                      char *transa, char *diag, unsigned int *m,
-                      unsigned int *n, float *alpha, float *A,
-                      unsigned int *lda, float *B, unsigned int *ldb,
+void compact_sgetrf_ ( unsigned int *layout, unsigned int *m,
+                      unsigned int *n, float *A, unsigned int *lda,
                       unsigned int *nmat, unsigned int *VLEN )
 {
-    int i, j, num, asize;
-    float *Ap, *Bp, Atemp[BUFSIZE], Btemp[BUFSIZE];
+    int i, j, num, info, nfact=LIBXSMM_MIN(*m,*n);
+    float *Ap, Atemp[BUFSIZE];
+    static int ntimes = 0;
+    extern void mkl_sgetrfnpi();
 
-    if ( (*side == 'L') || (*side == 'l') ) asize = *m;
-    else asize = *n;
-    for ( i = 0, num = 0 ; i < (int)(*nmat) ; i+= *VLEN, num++ )
+    if ( ++ntimes < 3 ) printf("Inside reference compact_sgetrf_()\n");
+    if ( ++ntimes < 3 ) printf("layout=%d VLEN=%d nmat=%d\n",*layout, *VLEN, *nmat );
+    for ( i = 0, num = 0 ; i < (*nmat) ; i+= *VLEN, num++ )
     {
-       for ( j = 0 ; j < (int)*VLEN ; j++ )
+       for ( j = 0 ; j < *VLEN ; j++ )
        {
-           /* Unpack the data, call a reference DTRMM, repack the data */
-           Ap = &A[j+num*(*lda)*asize*(*VLEN)];
-           Bp = &B[j+num*(*ldb)*(*n)*(*VLEN)];
-           scopy_to_temp ( *layout, Ap, *lda, asize, asize, Atemp, *VLEN );
-           scopy_to_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
-           strmm_ ( side, uplo, transa, diag, m, n, alpha, Atemp, &asize, Btemp, m);
-           scopy_from_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
+           /* Unpack the data, call a reference SGETRF, repack the data */
+           Ap = &A[j+num*(*lda)*(*n)*(*VLEN)];
+if (++ntimes < 3 ) printf("Doing a sgetrf at place i=%d j=%d num=%d Ap[%d]=%g\n",i,j,num,j+num*(*lda)*(*n)*(*VLEN),Ap[0]);
+           scopy_to_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
+           mkl_sgetrfnpi_ ( m, n, n, Atemp, m, &info );
+           if ( info != 0 ) printf("Bad news! Serial reference got info=%d\n",info);
+           scopy_from_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
        }
     }
 }
@@ -381,8 +347,7 @@ double residual_d ( double *A, unsigned int lda, unsigned int m, unsigned int n,
                 printf("Denormal bug: A(%u,%u) is %g B(%u,%u) is %g\n",i,j,atmp,i,j,btmp);
              }
          }
-         if ( dtmp / ref > 1.0e-12 )
-         {
+         if ( (dtmp / ref > 1.0e-12) && (dtmp > 1.0e-15) ) {
              *nerrs = *nerrs + 1;
              if ( ++ntimes < 15 )
              {
@@ -398,7 +363,7 @@ double residual_d ( double *A, unsigned int lda, unsigned int m, unsigned int n,
          derror += dtmp;
       }
    }
-   return derror;
+   return ( derror );
 }
 
 LIBXSMM_INLINE
@@ -432,7 +397,7 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
                 printf("Denormal bug: A(%u,%u) is %g B(%u,%u) is %g\n",i,j,atmp,i,j,btmp);
              }
          }
-         if ( dtmp / ref > 1.0e-4 )
+         if ( (dtmp / ref > 1.0e-4) && (dtmp > 1.0e-7) )
          {
              *nerrs = *nerrs + 1;
              if ( ++ntimes < 15 )
@@ -449,11 +414,22 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
          derror += dtmp;
       }
    }
-   return derror;
+   return ( derror );
 }
 
+#if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(TIME_MKL)
+  #define USE_KERNEL_GENERATION_DIRECTLY
+#endif
+
+#if 0
+  #define USE_PREDEFINED_ASSEMBLY
+  #define USE_XSMM_GENERATED
+  #define USE_KERNEL_GENERATION_DIRECTLY
+  #define TIME_MKL
+#endif
+
 #ifdef USE_PREDEFINED_ASSEMBLY
-extern void trmm_();
+extern void getrf_();
 #endif
 #ifdef MKL_TIMER
 extern double dsecnd_();
@@ -465,13 +441,13 @@ int main(int argc, char* argv[])
   unsigned int layout, asize, VLEND=4, VLENS=8, bsize;
   unsigned int ncorr;
   int i, j;
-  char side, uplo, trans, diag;
+  char side='L', uplo='L', trans='N', diag='N';
   float  *sa, *sb, *sc, *sd;
   double *da, *db, *dc, *dd, *tmpbuf;
   double dalpha = 1.0;
   float  salpha;
   double dtmp;
-  const unsigned char *cptr = NULL;
+  const unsigned char *cptr;
   unsigned long op_count;
   unsigned int typesize8 = 8;
   const libxsmm_trsm_descriptor* desc8 = NULL;
@@ -485,8 +461,15 @@ int main(int argc, char* argv[])
     libxsmm_xtrsmfunction sp;
     const void* pv;
   } mykernel = { 0 };
-#if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
+#ifdef USE_KERNEL_GENERATION_DIRECTLY
   void (*opcode_routine)();
+#endif
+#ifdef USE_KERNEL_GENERATION_DIRECTLY
+  #include <unistd.h>
+  #include <signal.h>
+  #include <malloc.h>
+  #include <sys/mman.h>
+  /* #include "../../src/generator_packed_trsm_avx_avx512.h" */
   unsigned char *routine_output;
   libxsmm_generated_code io_generated_code;
   int pagesize = sysconf(_SC_PAGE_SIZE);
@@ -505,57 +488,47 @@ int main(int argc, char* argv[])
   io_generated_code.last_error = 0;
 #endif
 
+  printf("\nUSAGE: %s m n lda nmat layout ntest\n",argv[0]);
   if ( argc <= 3 )
   {
-     printf("\nUSAGE: %s m n lda ldb nmat side uplo trans diag layout ntest alpha\n",argv[0]);
-     printf("Compact TRMM a mxn matrix of leading dimension ldb\n");
+     printf("Compact LU (GETRF, no pivots) a mxn matrix of leading dim lda\n");
      printf("This will test the jit of 1 VLEN work of nmat at a time\n");
-     printf("Defaults: m=n=lda=ldb=nmat=8, alpha=1.0, side=uplo='L',trans=diag='N',layout=102,ntest=1\n");
+     printf("Defaults: m=n=lda=nmat=8, layout=102 (col major), ntest=1\n");
   }
   if ( argc > 1 ) m = atoi(argv[1]); else m = 8;
   if ( argc > 2 ) n = atoi(argv[2]); else n = 8;
   if ( argc > 3 ) lda= atoi(argv[3]); else lda = 8;
-  if ( argc > 4 ) ldb = atoi(argv[4]); else ldb = 8;
-  if ( argc > 5 ) nmat = atoi(argv[5]); else nmat = 8;
-  if ( argc > 6 ) side = argv[6][0]; else side = 'L';
-  if ( argc > 7 ) uplo = argv[7][0]; else uplo = 'L';
-  if ( argc > 8 ) trans = argv[8][0]; else trans = 'N';
-  if ( argc > 9 ) diag = argv[9][0]; else diag = 'N';
-  if ( argc > 10 ) layout = atoi(argv[10]); else layout=102;
-  if ( argc > 11 ) ntest = atoi(argv[11]); else ntest = 1;
-  if ( argc > 12 ) dalpha = atof(argv[12]); else dalpha = 1.0;
+  if ( argc > 4 ) nmat = atoi(argv[4]); else nmat = 8;
+  if ( argc > 5 ) layout = atoi(argv[5]); else layout=102;
+  if ( argc > 6 ) ntest = atoi(argv[6]); else ntest = 1;
   salpha = (float)dalpha;
 
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
-  /* A is either mxm or nxn depending on side */
-  if ( (side == 'L') || (side=='l') ) asize = m; else asize = n;
+  ntest = LIBXSMM_MAX(ntest,1);
+  nmat = LIBXSMM_MAX(VLEND,nmat - (nmat%VLEND));
+  layout = LIBXSMM_MAX(LIBXSMM_MIN(layout,102),101);
 
-  lda = LIBXSMM_MAX(lda,asize);
-  if ( layout == 102 )
-  {
-      /* Column major: B is mxn, and stored in B format */
-      ldb = LIBXSMM_MAX(ldb,m);
-      bsize = ldb*n;
+  lda = LIBXSMM_MAX(lda,m);
+
+  if ( m >= n ) {
+     op_count = nmat * (double)n * (double)n * (3.0*(double)m-(double)n) / 3.0;
   } else {
-      /* Row major: B is mxn, and stored in B^T format */
-      ldb = LIBXSMM_MAX(ldb,n);
-      bsize = ldb*m;
+     op_count = nmat * (double)m * (double)m * (3.0*(double)n-(double)m) / 3.0;
   }
+
   nmats = LIBXSMM_MAX(VLENS,nmat - (nmat%VLENS));
   nmatd = LIBXSMM_MAX(VLEND,nmat - (nmat%VLEND));
   nmat = LIBXSMM_MAX(nmats,nmatd);
 
-  op_count = n * m * asize;
-
-  printf("This is a real*%u tester for JIT compact TRMM kernels! (%c%c%c%c m=%u n=%u lda=%u ldb=%u layout=%u nmat=%u)\n",typesize8,side,uplo,trans,diag,m,n,lda,ldb,layout,nmat);
+  printf("This is a real*%d tester for JIT compact DGETRF kernels! (m=%u n=%u lda=%u layout=%d nmat=%d)\n",typesize8,m,n,lda,layout,nmat);
 #ifdef USE_XSMM_GENERATED
   printf("This code tests the LIBXSMM generated kernels\n");
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
   printf("This code tests some predefined assembly kenrel\n");
 #endif
-#if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
+#ifdef USE_KERNEL_GENERATION_DIRECTLY
   printf("This code tests kernel generation directly\n");
 #endif
 #ifdef TIME_MKL
@@ -568,50 +541,45 @@ int main(int argc, char* argv[])
 #endif
 #ifdef USE_XSMM_GENERATED
   printf("calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
-  mykernel.dp = libxsmm_dispatch_trmm(desc8);
+  mykernel.dp = libxsmm_dispatch_getrf(desc8);
   printf("done calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
   if ( mykernel.dp == NULL ) printf("R8 Kernel after the create call is null\n");
 #ifdef TEST_SINGLE
-  mykernel.sp = libxsmm_dispatch_trsm(desc4);
+  mykernel.sp = libxsmm_dispatch_getrf(desc4);
   if ( mykernel.sp == NULL ) printf("R4 kernel after the create call is null\n");
 #endif
 #endif
 
-#if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
-  libxsmm_generator_packed_trmm_avx_avx512_kernel ( &io_generated_code, desc8, "hsw" );
+#ifdef USE_KERNEL_GENERATION_DIRECTLY
+  libxsmm_generator_packed_getrf_avx_avx512_kernel ( &io_generated_code, desc8, "hsw" );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
   printf("mallocing matrices\n");
 #endif
-  sa  = (float  *) malloc ( lda*asize*nmats*sizeof(float) );
-  da  = (double *) malloc ( lda*asize*nmatd*sizeof(double) );
-  sb  = (float  *) malloc ( bsize*nmats*sizeof(float) );
-  db  = (double *) malloc ( bsize*nmatd*sizeof(double) );
-  sc  = (float  *) malloc ( bsize*nmats*sizeof(float) );
-  dc  = (double *) malloc ( bsize*nmatd*sizeof(double) );
-  sd  = (float  *) malloc ( bsize*nmats*sizeof(float) );
-  dd  = (double *) malloc ( bsize*nmatd*sizeof(double) );
-  tmpbuf = (double *) malloc ( asize*VLEND*sizeof(double) );
+  sa  = (float  *) malloc ( lda*n*nmat*sizeof(float) );
+  da  = (double *) malloc ( lda*n*nmat*sizeof(double) );
+  sc  = (float  *) malloc ( lda*n*nmat*sizeof(float) );
+  dc  = (double *) malloc ( lda*n*nmat*sizeof(double) );
+  sd  = (float  *) malloc ( lda*n*nmat*sizeof(float) );
+  dd  = (double *) malloc ( lda*n*nmat*sizeof(double) );
 
 #ifndef NO_ACCURACY_CHECK
   printf("filling matrices\n");
 #endif
-  sfill_matrix ( sa, lda, asize, asize*nmats );
+  sfill_matrix ( sa, lda, m, n*nmat );
 #ifdef TRIANGLE_IS_IDENTITY
   printf("Warning: setting triangular matrix to identity. Not good for accuracy testing\n");
-  dfill_identity ( da, lda, asize, asize, VLEND, nmatd/VLEND );
+  dfill_identity ( da, lda, m, m, VLEND, nmatd/VLEND );
 #else
-  dfill_matrix ( da, lda, asize, asize*nmatd );
+  dfill_matrix ( da, lda, m, n*nmatd );
 #endif
-  sfill_matrix ( sb, bsize, bsize, nmats );
-  dfill_matrix ( db, bsize, bsize, nmatd );
 
 #ifndef NO_ACCURACY_CHECK
-  for ( i = 0 ; i < (int)(bsize*nmats) ; i++ ) sc[i]=sb[i];
-  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) dc[i]=db[i];
-  for ( i = 0 ; i < (int)(bsize*nmats) ; i++ ) sd[i]=sb[i];
-  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) dd[i]=db[i];
+  for ( i = 0 ; i < lda*n*nmat ; i++ ) sc[i]=sa[i];
+  for ( i = 0 ; i < lda*n*nmat ; i++ ) dc[i]=da[i];
+  for ( i = 0 ; i < lda*n*nmat ; i++ ) sd[i]=sa[i];
+  for ( i = 0 ; i < lda*n*nmat ; i++ ) dd[i]=da[i];
   printf("Pointing at the kernel now\n");
 #endif
 
@@ -619,15 +587,15 @@ int main(int argc, char* argv[])
   cptr = (const unsigned char*) mykernel.pv;
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
-  cptr = (const unsigned char*) trmm_;
+  cptr = (const unsigned char*) getrf_;
 #endif
-#if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
+#ifdef USE_KERNEL_GENERATION_DIRECTLY
   cptr = (const unsigned char*) &routine_output[0];
   opcode_routine = (void *) &cptr[0];
 #endif
 
 #ifndef TIME_MKL
-# define DUMP_ASSEMBLY_FILE
+  #define DUMP_ASSEMBLY_FILE
 #endif
 
 #ifdef DUMP_ASSEMBLY_FILE
@@ -636,21 +604,21 @@ int main(int argc, char* argv[])
   char buffer[80];
   fputs("\t.text\n",fp);
   fputs("\t.align 256\n",fp);
-  fputs("\t.globl trmm_\n",fp);
-  fputs("trmm_:\n",fp);
+  fputs("\t.globl getrf_\n",fp);
+  fputs("getrf_:\n",fp);
   for (i = 0 ; i < 4000; i+=4 )
   {
      sprintf(buffer,".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",cptr[i],cptr[i+1],cptr[i+2],cptr[i+3]);
      fputs(buffer,fp);
   }
   fputs("\tretq\n",fp);
-  fputs("\t.type trmm_,@function\n",fp);
-  fputs("\t.size trmm_,.-trmm_\n",fp);
+  fputs("\t.type getrf_,@function\n",fp);
+  fputs("\t.size getrf_,.-getrf_\n",fp);
   fclose(fp);
 #endif
 
 #if defined(USE_MKL_FOR_REFERENCE) || defined(TIME_MKL)
-# include <mkl.h>
+  #include "mkl.h"
   MKL_LAYOUT CLAYOUT = (layout == 101) ? MKL_ROW_MAJOR : MKL_COL_MAJOR;
   MKL_SIDE SIDE = (side == 'R' || side == 'r') ? MKL_RIGHT : MKL_LEFT;
   MKL_UPLO UPLO = (uplo == 'U' || uplo == 'u') ? MKL_UPPER : MKL_LOWER;
@@ -663,12 +631,12 @@ int main(int argc, char* argv[])
 #endif
 
 #ifndef NO_ACCURACY_CHECK
-  printf("Before routine, initial B(1,1)=%g B[256]=%g\n",db[0],db[256]);
+  printf("Before routine, initial A(1,1)=%g A[256]=%g\n",da[0],da[256]);
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
   double one = 1.0;
 #endif
-  double timer, firsttime = 0;
+  double timer, firsttime;
 #ifdef MKL_TIMER
   double tmptimer;
   tmptimer = dsecnd_();
@@ -680,30 +648,35 @@ int main(int argc, char* argv[])
   for ( j = 0 ; j < (int)ntest ; j++ )
   {
 #ifndef TRIANGLE_IS_IDENTITY
-  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) db[i]=dd[i];
+  for ( i = 0 ; i < (int)(lda*n*nmat); i++ ) dc[i]=da[i];
 #endif
-  for ( i = 0 , num = 0; i < (int)nmatd ; i+= (int)VLEND, num++ )
+  for ( i = 0 , num = 0; i < (int)nmat ; i+= (int)VLEND, num++ )
   {
-     double *Ap = &da[num*lda*asize*VLEND];
-     double *Bp = &db[num*bsize*VLEND];
+     double *Ap = &dc[num*lda*n*VLEND];
 #ifdef MKL_TIMER
      tmptimer = dsecnd_();
 #else
      l_start = libxsmm_timer_tick();
 #endif
 
+#if !defined(USE_XSMM_GENERATED) && !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(TIME_MKL) && !defined(USE_PREDEFINED_ASSEMBLY_XCT)
+     gen_compact_dgetrf_ ( &layout, &m, &n, Ap, &lda, &VLEND );
+#endif
 #ifdef USE_XSMM_GENERATED
-     mykernel.dp ( Ap, Bp, tmpbuf );
+     mykernel.dp ( Ap, Ap, NULL );
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
-     trmm_ ( Ap, Bp, &one );
+     getrf_ ( Ap, Ap, &one );
 #endif
-#if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
-     (*opcode_routine)( Ap, Bp );
+#ifdef USE_KERNEL_GENERATION_DIRECTLY
+     (*opcode_routine)( Ap );
 #endif
 #ifdef TIME_MKL
-     mkl_dtrmm_compact ( CLAYOUT, SIDE, UPLO, TRANSA, DIAG, m, n, dalpha, da, lda, db, ldb, CMP_FORMAT, nmatd );
+     mkl_dgetrfnp_compact ( CLAYOUT, m, n, dc, lda, info, CMP_FORMAT, nmat );
      i+=nmatd; /* Because MKL will do everything */
+#endif
+#ifdef USE_PREDEFINED_ASSEMBLY_XCT
+     getrf_xct_ ( Ap, &one );
 #endif
 #ifdef MKL_TIMER
      dtmp = dsecnd_() - tmptimer;
@@ -712,7 +685,7 @@ int main(int argc, char* argv[])
      dtmp = libxsmm_timer_duration(l_start,l_end);
 #endif
      if ( j == 0 ) firsttime=dtmp;
-     timer += dtmp;
+     timer += dtmp; 
   }
   }
   if ( ntest >= 100 ) {
@@ -723,22 +696,22 @@ int main(int argc, char* argv[])
   }
 
 #ifndef NO_ACCURACY_CHECK
-  printf("Average time to get through %u matrices: %g\n",nmatd,timer);
-  printf("Gflops: %g\n",(double)(op_count*nmatd)/(timer*1.0e9));
-  printf("after routine, new      B(1,1)=%g B[256]=%g\n",db[0],db[256]);
+  printf("Average time to get through %u matrices: %g\n",nmat,timer);
+  printf("Gflops: %g\n",(double)op_count/(timer*1.0e9));
+  printf("after routine, new      C(1,1)=%g C[256]=%g\n",dc[0],dc[256]);
 #endif
 
 #ifdef TEST_SINGLE
-  printf("Before r4 routine, initial B(1,1)=%g B[256]=%g\n",sb[0],sb[256]);
+  printf("Before r4 routine, initial C(1,1)=%g C[256]=%g\n",sc[0],sc[256]);
+
   for ( i = 0 , num = 0; i < nmats ; i+= VLENS, num++ )
   {
-     float *Ap = &sa[num*lda*asize*VLENS];
-     float *Bp = &sb[num*bsize*VLENS];
+     float *Ap = &sc[num*lda*n*VLENS];
 #ifdef USE_XSMM_GENERATED
-     mykernel.sp ( Ap, Bp, NULL );
+     mykernel.sp ( Ap );
 #endif
   }
-  printf("after r4 routine, new      B(1,1)=%g B]256]=%g\n",db[0],db[256]);
+  printf("after r4 routine, new      C(1,1)=%g C]256]=%g\n",dc[0],dc[256]);
 #endif
 
 #ifndef NO_ACCURACY_CHECK
@@ -747,7 +720,7 @@ int main(int argc, char* argv[])
   for ( j = 0 ; j < (int)ntest ; j++ )
   {
 #ifndef TRIANGLE_IS_IDENTITY
-  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) dc[i]=dd[i];
+  for ( i = 0 ; i < (int)(lda*n*nmat) ; i++ ) dd[i]=da[i];
 #endif
 
 #ifdef MKL_TIMER
@@ -756,19 +729,10 @@ int main(int argc, char* argv[])
   l_start = libxsmm_timer_tick();
 #endif
 
-#ifdef USE_MKL_FOR_REFERENCE
-  mkl_dtrmm_compact ( CLAYOUT, SIDE, UPLO, TRANSA, DIAG, m, n, dalpha, da, lda, dc, ldb, CMP_FORMAT, nmatd );
-#elif !defined(LIBXSMM_NOFORTRAN) && (!defined(__BLAS) || (0 != __BLAS))
-  if ( (layout == 101) && (nmatd!=VLEND) )
-  {
-     unsigned int lay = 102, m1 = n, n1 = m;
-     char side1='L', uplo1='L';
-     if ( side == 'L' || side == 'l' ) side1 = 'R';
-     if ( uplo == 'L' || uplo == 'l' ) uplo1 = 'U';
-     compact_dtrmm_ ( &lay, &side1, &uplo1, &trans, &diag, &m1, &n1, &dalpha, da, &lda, dc, &ldb, &nmatd, &VLEND );
-  } else {
-     compact_dtrmm_ ( &layout, &side, &uplo, &trans, &diag, &m, &n, &dalpha, da, &lda, dc, &ldb, &nmatd, &VLEND );
-  }
+#ifndef USE_MKL_FOR_REFERENCE
+  compact_dgetrf_ ( &layout, &m, &n, dd, &lda, &nmat, &VLEND );
+#else
+  mkl_dgetrfnp_compact ( CLAYOUT, m, n, dd, lda, info, CMP_FORMAT, nmat );
 #endif
 
 #ifdef MKL_TIMER
@@ -780,36 +744,37 @@ int main(int argc, char* argv[])
 
   }
   timer2 /= ((double)ntest);
-  printf("Reference time=%g Reference Gflops=%g\n",timer2,(op_count*nmatd)/(timer2*1.0e9));
+  printf("Reference time=%g Reference Gflops=%g\n",timer2,op_count/(timer2*1.0e9));
 
   /* Compute the residual between B and C */
-  dtmp = residual_d ( dc, bsize, bsize, nmatd, db, bsize, &nerrs, &ncorr );
-  printf("R8 %c%c%c%c m=%u n=%u lda=%u ldb=%u error: %g number of errors: %u corrects: %u",side,uplo,trans,diag,m,n,lda,ldb,dtmp,nerrs,ncorr);
+  dtmp = residual_d ( dc, lda, m, n*nmat, dd, lda, &nerrs, &ncorr );
+  printf("R8 m=%u n=%u lda=%u error: %g number of errors: %u corrects: %u",m,n,lda,dtmp,nerrs,ncorr);
   if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*8 %u case",m,n,layout);
   printf("\n");
 
 #ifdef TEST_SINGLE
   /* Call some reference code now on a copy of the B matrix (C) */
-  compact_strmm_ ( &layout, &side, &uplo, &trans, &diag, &m, &n, &salpha, sa, &lda, sc, &ldb, &nmats, &VLENS );
-  /* Compute the residual between B and C */
-  dtmp = residual_s ( sc, bsize, bsize, nmats, sb, bsize, &nerrs, &ncorr );
-  printf("R4 %c%c%c%c m=%u n=%u lda=%u ldb=%u error: %g number of errors: %u corrects: %u\n",side,uplo,trans,diag,m,n,lda,ldb,dtmp,nerrs,ncorr);
+  for ( i = 0 ; i < lda*n*nmat ; i++ ) sd[i]=sa[i];
+  compact_sgetrf_ ( &layout, &m, &n, sd, &lda, &nmat, &VLENS );
+  /* Compute the residual between C and D */
+  dtmp = residual_s ( sc, lda, m, n*nmat, sd, lda, &nerrs, &ncorr );
+  printf("float m=%u n=%u lda=%u error: %g number of errors: %u corrects: %u\n",m,n,lda,dtmp,nerrs,ncorr);
   if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*4 case",m,n);
   printf("\n");
 #endif
 
 #else
-  for ( j = 0, nerrs = 0 ; j < bsize*nmatd ; j++ )
+  for ( j = 0, nerrs = 0 ; j < lda*n*nmat; j++ )
   {
-     if ( isnan(db[j]) || isinf(db[j]) )
+     if ( isnan(dc[j]) || isinf(dc[j]) )
      {
         if ( ++nerrs < 10 )
         {
-           printf("WARNING: db[%d]=%g\n",j,db[j]);
+           printf("WARNING: dc[%d]=%g\n",j,dc[j]);
         }
      }
   }
-  printf("%g,real*8 %c%c%c%c m=%u n=%u lda=%u ldb=%u Denormals=%u Time=%g Gflops=%g",(op_count*nmatd)/(timer*1.0e9),side,uplo,trans,diag,m,n,lda,ldb,nerrs,timer,(op_count*nmatd)/(timer*1.0e9));
+  printf("%g,real*8 m=%u n=%u lda=%u Denormals=%u Time=%g Gflops=%g",op_count/(timer*1.0e9),m,n,lda,nerrs,timer,op_count/(timer*1.0e9));
   if ( nerrs > 0 ) printf(" -> FAILED at %ux%u real*8 case",m,n);
   printf("\n");
 #endif
@@ -818,8 +783,6 @@ int main(int argc, char* argv[])
   free(sd);
   free(dc);
   free(sc);
-  free(db);
-  free(sb);
   free(da);
   free(sa);
 
