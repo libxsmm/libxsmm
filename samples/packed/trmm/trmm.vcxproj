@@ -35,7 +35,7 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>trmm</ProjectName>
-    <ProjectGuid>{3D150C8C-0FF4-47D5-A466-C3D76A5FB183}</ProjectGuid>
+    <ProjectGuid>{0AAD9667-E74F-4898-8CC0-68E31607BB41}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

@@ -28,7 +28,9 @@
 ******************************************************************************/
 /* Alexander Heinecke, Greg Henry (Intel Corp.)
 ******************************************************************************/
-#include "generator_packed_trsm_avx_avx512.h"
+#ifndef GENERATOR_PACKED_AUX_H
+#define GENERATOR_PACKED_AUX_H
+
 #include "generator_x86_instructions.h"
 #include "generator_common.h"
 
@@ -628,4 +630,6 @@ LIBXSMM_API_INLINE void compact_divide_two_nums_ (
 
      libxsmm_x86_instruction_vec_compute_reg ( io_code, i_instruction_set, i_vmove_instr, regset, reg1, reg0, reg2 );
 }
+
+#endif /*GENERATOR_PACKED_AUX_H*/
 

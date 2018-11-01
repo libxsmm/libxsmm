@@ -377,7 +377,7 @@ double residual_d ( double *A, unsigned int lda, unsigned int m, unsigned int n,
          derror += dtmp;
       }
    }
-   return ( derror );
+   return derror;
 }
 
 LIBXSMM_INLINE
@@ -428,18 +428,21 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
          derror += dtmp;
       }
    }
-   return ( derror );
+   return derror;
 }
 
-#if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(TIME_MKL)
-  #define USE_KERNEL_GENERATION_DIRECTLY
+#if 1
+#define USE_KERNEL_GENERATION_DIRECTLY
+#endif
+#if 0
+#define USE_PREDEFINED_ASSEMBLY
+#define USE_XSMM_GENERATED
+#define TIME_MKL
 #endif
 
-#if 0
-  #define USE_PREDEFINED_ASSEMBLY
-  #define USE_XSMM_GENERATED
-  #define USE_KERNEL_GENERATION_DIRECTLY
-  #define TIME_MKL
+#if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(TIME_MKL) \
+ && (defined(_WIN32) || !defined(USE_KERNEL_GENERATION_DIRECTLY))
+# define USE_XSMM_GENERATED
 #endif
 
 #ifdef USE_PREDEFINED_ASSEMBLY
@@ -461,7 +464,7 @@ int main(int argc, char* argv[])
   double dalpha = 1.0;
   float  salpha;
   double dtmp;
-  const unsigned char *cptr;
+  const unsigned char *cptr = NULL;
   unsigned long op_count;
   unsigned int typesize8 = 8;
   const libxsmm_trsm_descriptor* desc8 = NULL;
@@ -475,14 +478,14 @@ int main(int argc, char* argv[])
     libxsmm_xtrsmfunction sp;
     const void* pv;
   } mykernel = { 0 };
-#ifdef USE_KERNEL_GENERATION_DIRECTLY
+#if defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(_WIN32)
   void (*opcode_routine)();
 #endif
-#ifdef USE_KERNEL_GENERATION_DIRECTLY
-  #include <unistd.h>
-  #include <signal.h>
-  #include <malloc.h>
-  #include <sys/mman.h>
+#if defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(_WIN32)
+# include <unistd.h>
+# include <signal.h>
+# include <malloc.h>
+# include <sys/mman.h>
   /* #include "../../src/generator_packed_trsm_avx_avx512.h" */
   unsigned char *routine_output;
   libxsmm_generated_code io_generated_code;
@@ -552,7 +555,7 @@ int main(int argc, char* argv[])
 #ifdef USE_PREDEFINED_ASSEMBLY
   printf("This code tests some predefined assembly kenrel\n");
 #endif
-#ifdef USE_KERNEL_GENERATION_DIRECTLY
+#if defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(_WIN32)
   printf("This code tests kernel generation directly\n");
 #endif
 #ifdef TIME_MKL
@@ -574,7 +577,7 @@ int main(int argc, char* argv[])
 #endif
 #endif
 
-#ifdef USE_KERNEL_GENERATION_DIRECTLY
+#if defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(_WIN32)
   libxsmm_generator_packed_trmm_avx_avx512_kernel ( &io_generated_code, desc8, "hsw" );
 #endif
 
@@ -618,13 +621,13 @@ int main(int argc, char* argv[])
 #ifdef USE_PREDEFINED_ASSEMBLY
   cptr = (const unsigned char*) trmm_;
 #endif
-#ifdef USE_KERNEL_GENERATION_DIRECTLY
+#if defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(_WIN32)
   cptr = (const unsigned char*) &routine_output[0];
   opcode_routine = (void *) &cptr[0];
 #endif
 
 #ifndef TIME_MKL
-  #define DUMP_ASSEMBLY_FILE
+# define DUMP_ASSEMBLY_FILE
 #endif
 
 #ifdef DUMP_ASSEMBLY_FILE
@@ -647,7 +650,7 @@ int main(int argc, char* argv[])
 #endif
 
 #if defined(USE_MKL_FOR_REFERENCE) || defined(TIME_MKL)
-  #include "mkl.h"
+# include <mkl.h>
   MKL_LAYOUT CLAYOUT = (layout == 101) ? MKL_ROW_MAJOR : MKL_COL_MAJOR;
   MKL_SIDE SIDE = (side == 'R' || side == 'r') ? MKL_RIGHT : MKL_LEFT;
   MKL_UPLO UPLO = (uplo == 'U' || uplo == 'u') ? MKL_UPPER : MKL_LOWER;
@@ -665,7 +668,7 @@ int main(int argc, char* argv[])
 #ifdef USE_PREDEFINED_ASSEMBLY
   double one = 1.0;
 #endif
-  double timer, firsttime;
+  double timer, firsttime = 0;
 #ifdef MKL_TIMER
   double tmptimer;
   tmptimer = dsecnd_();
@@ -695,7 +698,7 @@ int main(int argc, char* argv[])
 #ifdef USE_PREDEFINED_ASSEMBLY
      trmm_ ( Ap, Bp, &one );
 #endif
-#ifdef USE_KERNEL_GENERATION_DIRECTLY
+#if defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(_WIN32)
      (*opcode_routine)( Ap, Bp );
 #endif
 #ifdef TIME_MKL
