@@ -181,15 +181,15 @@ void scopy_from_temp ( int layout, float *A, int lda, int m, int n, float *Atemp
 }
 
 #if !defined(USE_MKL_FOR_REFERENCE) && !defined(LIBXSMM_NOFORTRAN) && (!defined(__BLAS) || (0 != __BLAS))
-extern void dtrsm_();
+extern void dtrmm_();
 
-/* Reference code for compact dtrsm. Note that this just copies data into
-   a buffer from the compact storage and calls the regular dtrsm code. This
+/* Reference code for compact dtrmm. Note that this just copies data into
+   a buffer from the compact storage and calls the regular dtrmm code. This
    is very naive reference code just used for testing purposes */
 /* Note: if layout==101 (row major), then this code is known to only work when
  *        nmat == VLEN. To check for accuracy otherwise, transpose everything */
 LIBXSMM_INLINE
-void compact_dtrsm_ ( unsigned int *layout, char *side, char *uplo,
+void compact_dtrmm_ ( unsigned int *layout, char *side, char *uplo,
                       char *transa, char *diag, unsigned int *m,
                       unsigned int *n, double *alpha, double *A,
                       unsigned int *lda, double *B, unsigned int *ldb,
@@ -199,7 +199,7 @@ void compact_dtrsm_ ( unsigned int *layout, char *side, char *uplo,
     double *Ap, *Bp, Atemp[BUFSIZE], Btemp[BUFSIZE];
     static int ntimes = 0;
 
-    if ( ++ntimes < 3 ) printf("Inside reference compact_dtrsm_()\n");
+    if ( ++ntimes < 3 ) printf("Inside reference compact_dtrmm_()\n");
     if ( *layout == 102 )
     {
        if ( (*side == 'L') || (*side == 'l') ) asize = *m;
@@ -216,27 +216,27 @@ void compact_dtrsm_ ( unsigned int *layout, char *side, char *uplo,
     {
        for ( j = 0 ; j < (int)*VLEN ; j++ )
        {
-           /* Unpack the data, call a reference DTRSM, repack the data */
+           /* Unpack the data, call a reference DTRMM, repack the data */
            Ap = &A[j+num*offseta];
            Bp = &B[j+num*offsetb];
-if (++ntimes < 15 ) printf("Doing a dtrsm at place i=%d j=%d num=%d Ap[%d]=%g Bp[%d]=%g\n",i,j,num,j+num*offseta,Ap[0],j+num*offsetb,Bp[0]);
+if (++ntimes < 15 ) printf("Doing a dtrmm at place i=%d j=%d num=%d Ap[%d]=%g Bp[%d]=%g\n",i,j,num,j+num*offseta,Ap[0],j+num*offsetb,Bp[0]);
            dcopy_to_temp ( *layout, Ap, *lda, asize, asize, Atemp, *VLEN );
            dcopy_to_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
-           dtrsm_ ( side, uplo, transa, diag, m, n, alpha, Atemp, &asize, Btemp, m);
+           dtrmm_ ( side, uplo, transa, diag, m, n, alpha, Atemp, &asize, Btemp, m);
            dcopy_from_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
        }
     }
 }
 
-extern void strsm_();
+extern void strmm_();
 
-/* Reference code for compact strsm. Note that this just copies data into
-   a buffer from the compact storage and calls the regular strsm code. This
+/* Reference code for compact strmm. Note that this just copies data into
+   a buffer from the compact storage and calls the regular strmm code. This
    is very naive reference code just used for testing purposes */
 /* Note: if layout==101 (row major), then this code is known to only work when
  *        nmat == VLEN. To check for accuracy otherwise, transpose everything */
 LIBXSMM_INLINE
-void compact_strsm_ ( unsigned int *layout, char *side, char *uplo,
+void compact_strmm_ ( unsigned int *layout, char *side, char *uplo,
                       char *transa, char *diag, unsigned int *m,
                       unsigned int *n, float *alpha, float *A,
                       unsigned int *lda, float *B, unsigned int *ldb,
@@ -251,12 +251,12 @@ void compact_strsm_ ( unsigned int *layout, char *side, char *uplo,
     {
        for ( j = 0 ; j < (int)*VLEN ; j++ )
        {
-           /* Unpack the data, call a reference DTRSM, repack the data */
+           /* Unpack the data, call a reference DTRMM, repack the data */
            Ap = &A[j+num*(*lda)*asize*(*VLEN)];
            Bp = &B[j+num*(*ldb)*(*n)*(*VLEN)];
            scopy_to_temp ( *layout, Ap, *lda, asize, asize, Atemp, *VLEN );
            scopy_to_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
-           strsm_ ( side, uplo, transa, diag, m, n, alpha, Atemp, &asize, Btemp, m);
+           strmm_ ( side, uplo, transa, diag, m, n, alpha, Atemp, &asize, Btemp, m);
            scopy_from_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
        }
     }
@@ -272,7 +272,7 @@ void dfill_matrix ( double *matrix, unsigned int ld, unsigned int m, unsigned in
 
   if ( ld < m )
   {
-     fprintf(stderr,"Error in dfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
+     fprintf(stderr,"Error is dfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
   for ( j = 1 ; j <= n ; j++ )
@@ -293,7 +293,7 @@ void dfill_identity ( double *matrix, unsigned int ld, unsigned int m, unsigned 
   double dtmp;
 
   if ( ld < m ) {
-     fprintf(stderr,"Error is dfill_identity: ld=%u m=%u mismatched!\n",ld,m);
+     fprintf(stderr,"Error in dfill_identity: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
   for ( h = 0; h < (unsigned int)number_of_cases ; h++ ) {
@@ -432,7 +432,7 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
 }
 
 #if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(TIME_MKL)
-  #define USE_XSMM_GENERATED
+  #define USE_KERNEL_GENERATION_DIRECTLY
 #endif
 
 #if 0
@@ -443,7 +443,7 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
 #endif
 
 #ifdef USE_PREDEFINED_ASSEMBLY
-extern void trsm_xct_();
+extern void trmm_();
 #endif
 #ifdef MKL_TIMER
 extern double dsecnd_();
@@ -505,7 +505,7 @@ int main(int argc, char* argv[])
   if ( argc <= 3 )
   {
      printf("\nUSAGE: %s m n lda ldb nmat side uplo trans diag layout ntest alpha\n",argv[0]);
-     printf("Compact TRSM a mxn matrix of leading dimension ldb\n");
+     printf("Compact TRMM a mxn matrix of leading dimension ldb\n");
      printf("This will test the jit of 1 VLEN work of nmat at a time\n");
      printf("Defaults: m=n=lda=ldb=nmat=8, alpha=1.0, side=uplo='L',trans=diag='N',layout=102,ntest=1\n");
   }
@@ -545,7 +545,7 @@ int main(int argc, char* argv[])
 
   op_count = n * m * asize;
 
-  printf("This is a real*%u tester for JIT compact TRSM kernels! (%c%c%c%c m=%u n=%u lda=%u ldb=%u layout=%u nmat=%u)\n",typesize8,side,uplo,trans,diag,m,n,lda,ldb,layout,nmat);
+  printf("This is a real*%u tester for JIT compact TRMM kernels! (%c%c%c%c m=%u n=%u lda=%u ldb=%u layout=%u nmat=%u)\n",typesize8,side,uplo,trans,diag,m,n,lda,ldb,layout,nmat);
 #ifdef USE_XSMM_GENERATED
   printf("This code tests the LIBXSMM generated kernels\n");
 #endif
@@ -564,9 +564,9 @@ int main(int argc, char* argv[])
   desc4 = libxsmm_trsm_descriptor_init(&blob, typesize4, m, n, lda, ldb, &salpha, trans, diag, side, uplo, layout);
 #endif
 #ifdef USE_XSMM_GENERATED
-  printf("calling libxsmm_dispatch_trsm: typesize8=%u\n",typesize8);
-  mykernel.dp = libxsmm_dispatch_trsm(desc8);
-  printf("done calling libxsmm_dispatch_trsm: typesize8=%u\n",typesize8);
+  printf("calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
+  mykernel.dp = libxsmm_dispatch_trmm(desc8);
+  printf("done calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
   if ( mykernel.dp == NULL ) printf("R8 Kernel after the create call is null\n");
 #ifdef TEST_SINGLE
   mykernel.sp = libxsmm_dispatch_trsm(desc4);
@@ -575,7 +575,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
-  libxsmm_generator_trsm_kernel ( &io_generated_code, &desc8, "hsw" );
+  libxsmm_generator_packed_trmm_avx_avx512_kernel ( &io_generated_code, desc8, "hsw" );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
@@ -616,7 +616,7 @@ int main(int argc, char* argv[])
   cptr = (const unsigned char*) mykernel.pv;
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
-  cptr = (const unsigned char*) trsm_xct_;
+  cptr = (const unsigned char*) trmm_;
 #endif
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
   cptr = (const unsigned char*) &routine_output[0];
@@ -633,16 +633,16 @@ int main(int argc, char* argv[])
   char buffer[80];
   fputs("\t.text\n",fp);
   fputs("\t.align 256\n",fp);
-  fputs("\t.globl trsm_xct_\n",fp);
-  fputs("trsm_xct_:\n",fp);
+  fputs("\t.globl trmm_\n",fp);
+  fputs("trmm_:\n",fp);
   for (i = 0 ; i < 4000; i+=4 )
   {
      sprintf(buffer,".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",cptr[i],cptr[i+1],cptr[i+2],cptr[i+3]);
      fputs(buffer,fp);
   }
   fputs("\tretq\n",fp);
-  fputs("\t.type trsm_xct_,@function\n",fp);
-  fputs("\t.size trsm_xct_,.-trsm_xct_\n",fp);
+  fputs("\t.type trmm_,@function\n",fp);
+  fputs("\t.size trmm_,.-trmm_\n",fp);
   fclose(fp);
 #endif
 
@@ -665,7 +665,7 @@ int main(int argc, char* argv[])
 #ifdef USE_PREDEFINED_ASSEMBLY
   double one = 1.0;
 #endif
-  double timer;
+  double timer, firsttime;
 #ifdef MKL_TIMER
   double tmptimer;
   tmptimer = dsecnd_();
@@ -693,24 +693,31 @@ int main(int argc, char* argv[])
      mykernel.dp ( Ap, Bp, tmpbuf );
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
-     trsm_xct_ ( Ap, Bp, &one );
+     trmm_ ( Ap, Bp, &one );
 #endif
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
      (*opcode_routine)( Ap, Bp );
 #endif
 #ifdef TIME_MKL
-     mkl_dtrsm_compact ( CLAYOUT, SIDE, UPLO, TRANSA, DIAG, m, n, dalpha, da, lda, db, ldb, CMP_FORMAT, nmatd );
+     mkl_dtrmm_compact ( CLAYOUT, SIDE, UPLO, TRANSA, DIAG, m, n, dalpha, da, lda, db, ldb, CMP_FORMAT, nmatd );
      i+=nmatd; /* Because MKL will do everything */
 #endif
 #ifdef MKL_TIMER
-     timer += dsecnd_() - tmptimer;
+     dtmp = dsecnd_() - tmptimer;
 #else
      l_end = libxsmm_timer_tick();
-     timer += libxsmm_timer_duration(l_start,l_end);
+     dtmp = libxsmm_timer_duration(l_start,l_end);
 #endif
+     if ( j == 0 ) firsttime=dtmp;
+     timer += dtmp;
   }
   }
-  timer /= ((double)ntest);
+  if ( ntest >= 100 ) {
+      /* Skip the first timing: super necessary if using MKL */
+      timer = (timer-firsttime)/((double)(ntest-1));
+  } else {
+      timer /= ((double)ntest);
+  }
 
 #ifndef NO_ACCURACY_CHECK
   printf("Average time to get through %u matrices: %g\n",nmatd,timer);
@@ -747,7 +754,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef USE_MKL_FOR_REFERENCE
-  mkl_dtrsm_compact ( CLAYOUT, SIDE, UPLO, TRANSA, DIAG, m, n, dalpha, da, lda, dc, ldb, CMP_FORMAT, nmatd );
+  mkl_dtrmm_compact ( CLAYOUT, SIDE, UPLO, TRANSA, DIAG, m, n, dalpha, da, lda, dc, ldb, CMP_FORMAT, nmatd );
 #elif !defined(LIBXSMM_NOFORTRAN) && (!defined(__BLAS) || (0 != __BLAS))
   if ( (layout == 101) && (nmatd!=VLEND) )
   {
@@ -755,9 +762,9 @@ int main(int argc, char* argv[])
      char side1='L', uplo1='L';
      if ( side == 'L' || side == 'l' ) side1 = 'R';
      if ( uplo == 'L' || uplo == 'l' ) uplo1 = 'U';
-     compact_dtrsm_ ( &lay, &side1, &uplo1, &trans, &diag, &m1, &n1, &dalpha, da, &lda, dc, &ldb, &nmatd, &VLEND );
+     compact_dtrmm_ ( &lay, &side1, &uplo1, &trans, &diag, &m1, &n1, &dalpha, da, &lda, dc, &ldb, &nmatd, &VLEND );
   } else {
-     compact_dtrsm_ ( &layout, &side, &uplo, &trans, &diag, &m, &n, &dalpha, da, &lda, dc, &ldb, &nmatd, &VLEND );
+     compact_dtrmm_ ( &layout, &side, &uplo, &trans, &diag, &m, &n, &dalpha, da, &lda, dc, &ldb, &nmatd, &VLEND );
   }
 #endif
 
@@ -780,7 +787,7 @@ int main(int argc, char* argv[])
 
 #ifdef TEST_SINGLE
   /* Call some reference code now on a copy of the B matrix (C) */
-  compact_strsm_ ( &layout, &side, &uplo, &trans, &diag, &m, &n, &salpha, sa, &lda, sc, &ldb, &nmats, &VLENS );
+  compact_strmm_ ( &layout, &side, &uplo, &trans, &diag, &m, &n, &salpha, sa, &lda, sc, &ldb, &nmats, &VLENS );
   /* Compute the residual between B and C */
   dtmp = residual_s ( sc, bsize, bsize, nmats, sb, bsize, &nerrs, &ncorr );
   printf("R4 %c%c%c%c m=%u n=%u lda=%u ldb=%u error: %g number of errors: %u corrects: %u\n",side,uplo,trans,diag,m,n,lda,ldb,dtmp,nerrs,ncorr);
@@ -815,4 +822,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-

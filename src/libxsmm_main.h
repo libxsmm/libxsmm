@@ -188,6 +188,16 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor { /* 30 Byt
   char transa;
 };
 
+/** Structure storing arguments of packed TRSM. */
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor { /* 30 Byte */
+  union { double d; float s; } alpha;
+  unsigned int m, n, lda, ldb;
+  unsigned char typesize;
+  unsigned char layout;
+  char diag, side, uplo;
+  char transa;
+};
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;

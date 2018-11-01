@@ -151,7 +151,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 #endif
      if ( ( datasz !=4 ) && (datasz != 8) )
      {
-        fprintf(stderr,"Expecting a datasize of 4 or 8, but got %u\n",datasz);
+        fprintf(stderr,"Expecting a datasize of 4 or 8 but got %u\n",datasz);
         exit(-1);
      }
      if ( avx512 < 0 )
