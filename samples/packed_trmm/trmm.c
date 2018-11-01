@@ -709,7 +709,7 @@ int main(int argc, char* argv[])
      dtmp = libxsmm_timer_duration(l_start,l_end);
 #endif
      if ( j == 0 ) firsttime=dtmp;
-     timer += dtmp; 
+     timer += dtmp;
   }
   }
   if ( ntest >= 100 ) {

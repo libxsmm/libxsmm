@@ -134,7 +134,7 @@ void libxsmm_generator_packed_trmm_avx_avx512_kernel( libxsmm_generated_code*   
      unsigned int j, k;
      /*int REGSIZE;*/
      int numb = 0;
-     int scalealpha = 0;
+     /*int scalealpha = 0;*/
      int nounit=0;
      char regset;
 

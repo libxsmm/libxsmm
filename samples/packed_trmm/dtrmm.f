@@ -54,7 +54,7 @@
           INFO = 2
       ELSE IF ((.NOT.LSAME(TRANSA,'N')) .AND. &
                (.NOT.LSAME(TRANSA,'T')) .AND. &
-               (.NOT.LSAME(TRANSA,'C'))) THEN 
+               (.NOT.LSAME(TRANSA,'C'))) THEN
           INFO = 3
       ELSE IF ((.NOT.LSAME(DIAG,'U')) .AND. (.NOT.LSAME(DIAG,'N'))) THEN
           INFO = 4

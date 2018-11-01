@@ -73,7 +73,7 @@ LIBXSMM_API_INLINE void compact_set_zero_ (
      unsigned int datasize,
      char regset )
 {
-     
+
      LIBXSMM_UNUSED(datasize);
 
      if ( (number == 8) && (regset=='z') )
