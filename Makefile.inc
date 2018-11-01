@@ -888,14 +888,12 @@ ifneq (0,$(INTEL))
     ifeq (0,$(COMPATIBLE))
     ifneq (,$(filter environment% override command%,$(origin COMPATIBLE)))
       ifeq (3,$(AVX))
-        ifeq (0,$(MIC))
-          ifneq (file,$(origin MIC))
-            CTARGET = -xCORE-AVX512
-          else
-            CTARGET = -xCOMMON-AVX512
-          endif
-        else
+        ifeq (,$(MIC))
+          CTARGET = -xCOMMON-AVX512
+        else ifneq (0,$(MIC))
           CTARGET = -xMIC-AVX512
+        else
+          CTARGET = -xCORE-AVX512
         endif
       else ifeq (2,$(AVX))
         CTARGET = -xCORE-AVX2
@@ -921,14 +919,12 @@ ifneq (0,$(INTEL))
     endif
     endif
     ifeq (3,$(AVX))
-      ifneq (,$(MIC)) # specified
-        ifneq (0,$(MIC)) # MIC
-          CTARGET = -xMIC-AVX512
-        else # SKX
-          CTARGET = -xCORE-AVX512
-        endif
-      else
+      ifeq (,$(MIC))
         CTARGET = -xCOMMON-AVX512
+      else ifneq (0,$(MIC))
+        CTARGET = -xMIC-AVX512
+      else
+        CTARGET = -xCORE-AVX512
       endif
     else ifeq (2,$(AVX))
       CTARGET = -march=core-avx2
@@ -1225,17 +1221,15 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
       ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
         CTARGET += -mavx512pf -mavx512er
       endif
-    else ifneq (file,$(origin MIC))
-      ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
-        ifneq (Darwin,$(UNAME))
-          CTARGET += -mavx512dq -mavx512bw -mavx512vl
-          #CTARGET += -mavx512ifma -mavx512vbmi
-        else ifneq (,$(filter 1 2 3,$(INTEL) $(GCC)))
-          CTARGET += -mavx512dq -mavx512bw -mavx512vl
-          #CTARGET += -mavx512ifma -mavx512vbmi
-        else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION)))"))
-          CTARGET += -mavx512dq -mavx512bw -mavx512vl
-        endif
+    else ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+      ifneq (Darwin,$(UNAME))
+        CTARGET += -mavx512dq -mavx512bw -mavx512vl
+        #CTARGET += -mavx512ifma -mavx512vbmi
+      else ifneq (,$(filter 1 2 3,$(INTEL) $(GCC)))
+        CTARGET += -mavx512dq -mavx512bw -mavx512vl
+        #CTARGET += -mavx512ifma -mavx512vbmi
+      else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION)))"))
+        CTARGET += -mavx512dq -mavx512bw -mavx512vl
       endif
     endif
   endif
