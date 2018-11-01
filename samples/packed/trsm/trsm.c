@@ -28,7 +28,26 @@
 ******************************************************************************/
 /* Alexander Heinecke, Greg Henry (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
+#if 0
+#define USE_KERNEL_GENERATION_DIRECTLY
+#endif
+#if 0
+#define USE_PREDEFINED_ASSEMBLY
+#define USE_XSMM_GENERATED
+#define TIME_MKL
+#endif
+
+#if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(TIME_MKL) \
+ && (defined(_WIN32) || !defined(USE_KERNEL_GENERATION_DIRECTLY))
+# define USE_XSMM_GENERATED
+# include <libxsmm.h>
+#else
+# include <libxsmm_source.h>
+# include <unistd.h>
+# include <signal.h>
+# include <malloc.h>
+# include <sys/mman.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -431,24 +450,6 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
    return derror;
 }
 
-#if 0
-#define USE_PREDEFINED_ASSEMBLY
-#define USE_XSMM_GENERATED
-#define USE_KERNEL_GENERATION_DIRECTLY
-#define TIME_MKL
-#endif
-
-#if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(TIME_MKL) \
- && (defined(_WIN32) || !defined(USE_KERNEL_GENERATION_DIRECTLY))
-# define USE_XSMM_GENERATED
-#else
-# include "../../../src/generator_packed_trsm_avx_avx512.h"
-# include <unistd.h>
-# include <signal.h>
-# include <malloc.h>
-# include <sys/mman.h>
-#endif
-
 #ifdef USE_PREDEFINED_ASSEMBLY
 extern void trsm_xct_();
 #endif
@@ -575,7 +576,7 @@ int main(int argc, char* argv[])
 #endif
 
 #if defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(_WIN32)
-  libxsmm_generator_trsm_kernel ( &io_generated_code, &desc8, "hsw" );
+  libxsmm_generator_trsm_kernel ( &io_generated_code, desc8, "hsw" );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
