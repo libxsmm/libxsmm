@@ -28,11 +28,6 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-
-/* must be defined *before* other files are included */
-#if !defined(_GNU_SOURCE)
-# define _GNU_SOURCE
-#endif
 #include "libxsmm_trace.h"
 #include "libxsmm_main.h"
 #include "libxsmm_hash.h"

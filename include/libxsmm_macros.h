@@ -590,10 +590,8 @@
 #   endif
 # endif
 #endif
-#if defined(__GNUC__)
-# if !defined(_GNU_SOURCE)
-#   define _GNU_SOURCE
-# endif
+#if defined(__GNUC__) && !defined(_GNU_SOURCE)
+# define _GNU_SOURCE
 #endif
 #if !defined(__STDC_FORMAT_MACROS)
 # define __STDC_FORMAT_MACROS
