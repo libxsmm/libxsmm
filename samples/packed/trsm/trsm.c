@@ -441,6 +441,12 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
 #if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(TIME_MKL) \
  && (defined(_WIN32) || !defined(USE_KERNEL_GENERATION_DIRECTLY))
 # define USE_XSMM_GENERATED
+#else
+# include "../../../src/generator_packed_trsm_avx_avx512.h"
+# include <unistd.h>
+# include <signal.h>
+# include <malloc.h>
+# include <sys/mman.h>
 #endif
 
 #ifdef USE_PREDEFINED_ASSEMBLY
@@ -478,13 +484,6 @@ int main(int argc, char* argv[])
   } mykernel = { 0 };
 #if defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(_WIN32)
   void (*opcode_routine)();
-#endif
-#if defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(_WIN32)
-# include <unistd.h>
-# include <signal.h>
-# include <malloc.h>
-# include <sys/mman.h>
-  /* #include "../../src/generator_packed_trsm_avx_avx512.h" */
   unsigned char *routine_output;
   libxsmm_generated_code io_generated_code;
   int pagesize = sysconf(_SC_PAGE_SIZE);
