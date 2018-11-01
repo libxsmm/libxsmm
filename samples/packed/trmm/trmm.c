@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Alexander Heinecke, Greg Henry (Intel Corp.)
 ******************************************************************************/
-#if 1
+#if 0
 #define USE_KERNEL_GENERATION_DIRECTLY
 #endif
 #if 0
@@ -39,7 +39,9 @@
 
 #if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(TIME_MKL) && \
    (!defined(__linux__) || !defined(USE_KERNEL_GENERATION_DIRECTLY))
+# if 0 /* TODO: provide TRMM API */
 # define USE_XSMM_GENERATED
+# endif
 # include <libxsmm.h>
 #else
 # include <libxsmm_source.h>
