@@ -39,5 +39,5 @@ void libxsmm_generator_packed_trsm_avx_avx512_kernel( libxsmm_generated_code*   
                                                        const libxsmm_trsm_descriptor*  i_packed_trsm_desc,
                                                        const char*                             i_arch );
 
-#endif /* GENERATOR_PACKED_TRSM_AVX_AVX512_H */
+#endif /*GENERATOR_PACKED_TRSM_AVX_AVX512_H*/
 
