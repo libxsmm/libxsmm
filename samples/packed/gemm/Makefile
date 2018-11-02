@@ -27,7 +27,7 @@ IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
 # Fortran code here does not allow for PEDANTIC=2
 override PEDANTIC = 1
-BLAS = 1
+BLAS = 0
 OMP = 0
 SYM = 1
 
@@ -59,7 +59,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)_gemm
+XFILES := $(OUTDIR)/$(OUTNAME)
 
 .PHONY: all
 all: $(XFILES)
@@ -81,7 +81,7 @@ $(BLDDIR)/%-f77.o: $(SRCDIR)/%.F .state $(BLDDIR)/.make $(ROOTDIR)/Makefile $(DE
 	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $< -o $@
 endif
 
-$(OUTDIR)/$(OUTNAME)_gemm: $(OUTDIR)/.make $(OBJECTS) $(FTNOBJS) $(LIBDEP)
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(FTNOBJS) $(LIBDEP)
 	$(LD) -o $@ $(OBJECTS) $(FTNOBJS) $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc

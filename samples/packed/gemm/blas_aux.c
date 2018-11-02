@@ -1,5 +1,5 @@
 /* Optionally link-in the BLAS routines lsame_() and xerbla_() */
-#if defined(__MKL) || defined(__OPENBLAS)
+#if !defined(__BLAS) || (0 != __BLAS)
 
 #include <stdio.h>
 
@@ -25,5 +25,5 @@ int ilaenv_ ( int *ispec, char *name, char *opts, int *n1, int *n2, int *n3, int
    return ( 1 );
 }
 
-#endif /*defined(__MKL) || defined(__OPENBLAS)*/
+#endif
 
