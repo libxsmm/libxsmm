@@ -309,8 +309,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "spmdm", "..\samples\spmdm\s
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "trmm", "..\samples\packed\trmm\trmm.vcxproj", "{0AAD9667-E74F-4898-8CC0-68E31607BB41}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "trsm", "..\samples\packed\trsm\trsm.vcxproj", "{3D150C8C-0FF4-47D5-A466-C3D76A5FB183}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
