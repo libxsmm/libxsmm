@@ -386,7 +386,7 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            if (i2 && j5) compact_mult_two_nums_ ( io_code, a2, b5, c25, numb, regset );
            if (i2 && j6) compact_mult_two_nums_ ( io_code, a2, b6, c26, numb, regset );
            if (i2 && j7) compact_mult_two_nums_ ( io_code, a2, b7, c27, numb, regset );
-           if (i3 && j1) compact_mult_two_nums_ ( io_code, a2, b1, c31, numb, regset );
+           if (i3 && j1) compact_mult_two_nums_ ( io_code, a3, b1, c31, numb, regset );
            if (i3 && j2) compact_mult_two_nums_ ( io_code, a3, b2, c32, numb, regset );
            if (i3 && j3) compact_mult_two_nums_ ( io_code, a3, b3, c33, numb, regset );
            if (i3 && j4) compact_mult_two_nums_ ( io_code, a3, b4, c34, numb, regset );
@@ -406,7 +406,7 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            if (i5 && j4) compact_mult_two_nums_ ( io_code, a5, b4, c54, numb, regset );
            if (i5 && j5) compact_mult_two_nums_ ( io_code, a5, b5, c55, numb, regset );
            if (i5 && j6) compact_mult_two_nums_ ( io_code, a5, b6, c56, numb, regset );
-           if (i6 && j7) compact_mult_two_nums_ ( io_code, a5, b7, c57, numb, regset );
+           if (i5 && j7) compact_mult_two_nums_ ( io_code, a5, b7, c57, numb, regset );
            if (i6 && j1) compact_mult_two_nums_ ( io_code, a6, b1, c61, numb, regset );
            if (i6 && j2) compact_mult_two_nums_ ( io_code, a6, b2, c62, numb, regset );
            if (i6 && j3) compact_mult_two_nums_ ( io_code, a6, b3, c63, numb, regset );

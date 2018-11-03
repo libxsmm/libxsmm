@@ -335,7 +335,7 @@ double residual_d ( double *A, unsigned int lda, unsigned int m, unsigned int n,
                     double *B, unsigned int ldb, unsigned int *nerrs,
                     unsigned int *ncorr )
 {
-   unsigned int i, j;
+   unsigned int i, j, address, i4, j4, k4, i8, j8, k8;
    double atmp, btmp, dtmp, ref, derror;
    static int ntimes = 0;
 
@@ -365,7 +365,14 @@ double residual_d ( double *A, unsigned int lda, unsigned int m, unsigned int n,
              *nerrs = *nerrs + 1;
              if ( ++ntimes < 15 )
              {
-                printf("Bug #%i: A[%u]=A(%u,%u) expected=%g instead=%g err=%g\n",ntimes,(j-1)*lda+(i-1),i,j,atmp,btmp,dtmp);
+                address = (j-1)*lda + (i-1);
+                j4 = (int)(address/(lda*4)) + 1;
+                i4 = (int)((address-(j4-1)*lda*4) / 4) + 1;
+                k4 = (address-(j4-1)*lda*4 - (i4-1)*4) + 1;
+                j8 = (int)(address/(lda*8)) + 1;
+                i8 = (int)((address-(j8-1)*lda*8) / 8) + 1;
+                k8 = (address-(j8-1)*lda*8 - (i8-1)*8) + 1;
+                printf("Bug #%i: A[%u]=A(%u,%u)=A4(%u,%u,%u)=A8(%u,%u,%u) expected=%g instead=%g err=%g\n",ntimes,address,i,j,i4,j4,k4,i8,j8,k8,atmp,btmp,dtmp);
              }
          } else {
              if ( (*nerrs > 0) && (ntimes < 10) && (*ncorr < 40) )
@@ -505,8 +512,19 @@ int main(int argc, char* argv[])
   printf("\nUSAGE: %s m n k lda ldb ldc nmat layout ntest iunroll junroll loopj loopi\n",argv[0]);
   if ( argc <= 3 )
   {
-     printf("Compact NN_GEMM a C_mxn<-C_mxn+A_mxk*B_kxn matrix of leading dims lda/b/c\n");
-     printf("This will test the jit of 1 VLEN work of nmat at a time\n");
+#ifdef TEST_SINGLE
+     printf("Compact NN_SGEMM a C_mxn<-C_mxn+A_mxk*B_kxn matrix of leading dims lda/b/c\n");
+     printf("This will test the jit of 1 VLEN=%d ",VLENS);
+     if ( VLENS==8 ) printf("(AVX2)");
+     else            printf("(AVX512)");
+     printf(" work of nmat at a time\n");
+#else
+     printf("Compact NN_DGEMM a C_mxn<-C_mxn+A_mxk*B_kxn matrix of leading dims lda/b/c\n");
+     printf("This will test the jit of 1 VLEN=%d ",VLEND);
+     if ( VLEND==4 ) printf("(AVX2)");
+     else            printf("(AVX512)");
+     printf(" work of nmat at a time\n");
+#endif
      printf("Configurable: M-loop controlled by iunroll & loopi. N-loop by junroll & loopj\n");
      printf("Defaults: m=n=k=lda=ldb=ldc=nmat=8, layout=102 (col major), ntest=1\n");
   }
@@ -536,13 +554,22 @@ int main(int argc, char* argv[])
   ldb = LIBXSMM_MAX(ldb,k);
   ldc = LIBXSMM_MAX(ldc,m);
 
-  op_count = nmat * 2.0 * (double)m * (double)n * (double)k;
-
   nmats = LIBXSMM_MAX(VLENS,nmat - (nmat%VLENS));
   nmatd = LIBXSMM_MAX(VLEND,nmat - (nmat%VLEND));
-  nmat = LIBXSMM_MAX(nmats,nmatd);
+#ifdef TEST_SINGLE
+  nmat = nmats;
+#else
+  nmat = nmatd;
+#endif
 
-printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u lda=%u ldb=%u ldc=%u layout=%d nmat=%d alpha=%g beta=%g iun=%d jun=%d loopi=%d loopj=%d)\n",typesize8,m,n,k,lda,ldb,ldc,layout,nmat,dalpha,dbeta,iunroll,junroll,loopi,loopj);
+  op_count = nmat * 2.0 * (double)m * (double)n * (double)k;
+
+#ifdef TEST_SINGLE
+printf("This is a real*%d tester for JIT compact SGEMM kernels! (m=%u n=%u k=%u lda=%u ldb=%u ldc=%u layout=%d nmat=%d alpha=%g beta=%g iun=%d jun=%d loopi=%d loopj=%d VLEN=%d)\n",typesize4,m,n,k,lda,ldb,ldc,layout,nmat,dalpha,dbeta,iunroll,junroll,loopi,loopj,VLENS);
+#else
+printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u lda=%u ldb=%u ldc=%u layout=%d nmat=%d alpha=%g beta=%g iun=%d jun=%d loopi=%d loopj=%d VLEN=%d)\n",typesize8,m,n,k,lda,ldb,ldc,layout,nmat,dalpha,dbeta,iunroll,junroll,loopi,loopj,VLEND);
+#endif
+
 #ifdef USE_XSMM_GENERATED
   printf("This code tests the LIBXSMM generated kernels\n");
 #endif
@@ -768,7 +795,7 @@ printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u 
 
   /* Compute the residual between B and C */
   dtmp = residual_d ( dc, ldc, m, n*nmat, dd, ldc, &nerrs, &ncorr );
-  printf("R8 m=%u n=%u lda=%u error: %g number of errors: %u corrects: %u",m,n,lda,dtmp,nerrs,ncorr);
+  printf("R8 mnk=%u %u %u ldabc=%u %u %u error: %g number of errors: %u corrects: %u",m,n,k,lda,ldb,ldc,dtmp,nerrs,ncorr);
   if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*8 %u case",m,n,layout);
   printf("\n");
 
@@ -777,7 +804,7 @@ printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u 
   compact_dgemm_ ( &layout, &m, &n, &k, &salpha, sa, &lda, sb, &ldb, &sbeta, sd, &ldc, &nmat, &VLENS );
   /* Compute the residual between C and D */
   dtmp = residual_s ( sc, ldc, m, n*nmat, sd, ldc, &nerrs, &ncorr );
-  printf("float m=%u n=%u lda=%u error: %g number of errors: %u corrects: %u\n",m,n,lda,dtmp,nerrs,ncorr);
+  printf("R4 mnk=%u %u %u ldabc=%u %u %u error: %g number of errors: %u corrects: %u",m,n,k,lda,ldb,ldc,dtmp,nerrs,ncorr);
   if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*4 case",m,n);
   printf("\n");
 #endif
