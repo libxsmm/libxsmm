@@ -41,6 +41,19 @@
 #define TRIANGLE_IS_IDENTITY
 #endif
 
+#if 1
+#define AVX2_TESTING
+#endif
+#if 0
+#define AVX512_TESTING
+#endif
+#if !defined(AVX2_TESTING) && !defined(AVX512_TESTING)
+  #define AVX2_TESTING
+#endif
+#if defined(AVX2_TESTING) && defined(AVX512_TESTING)
+  #error Compile with either AVX2_TESTING or AVX512_TESTING never both
+#endif
+
 LIBXSMM_INLINE
 void dcopy_to_temp ( int layout, double *A, int lda, int m, int n, double *Atemp,
                      unsigned int VLEN )
@@ -392,7 +405,7 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
                     float *B, unsigned int ldb, unsigned int *nerrs,
                     unsigned int *ncorr )
 {
-   unsigned int i, j;
+   unsigned int i, j, address, i4, j4, k4, i8, j8, k8;
    double atmp, btmp, dtmp, ref, derror;
    static int ntimes = 0;
 
@@ -423,7 +436,14 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
              *nerrs = *nerrs + 1;
              if ( ++ntimes < 15 )
              {
-                printf("Bug #%d: A(%u,%u) expected=%g instead=%g err=%g\n",ntimes,i,j,atmp,btmp,dtmp);
+                address = (j-1)*lda + (i-1);
+                j4 = (int)(address/(lda*4)) + 1;
+                i4 = (int)((address-(j4-1)*lda*4) / 4) + 1;
+                k4 = (address-(j4-1)*lda*4 - (i4-1)*4) + 1;
+                j8 = (int)(address/(lda*8)) + 1;
+                i8 = (int)((address-(j8-1)*lda*8) / 8) + 1;
+                k8 = (address-(j8-1)*lda*8 - (i8-1)*8) + 1;
+                printf("Bug #%i: A[%u]=A(%u,%u)=A4(%u,%u,%u)=A8(%u,%u,%u) expected=%g instead=%g err=%g\n",ntimes,address,i,j,i4,j4,k4,i8,j8,k8,atmp,btmp,dtmp);
              }
          } else {
              if ( (*nerrs > 0) && (ntimes < 10) && (*ncorr < 40) )
@@ -459,7 +479,14 @@ extern double dsecnd_();
 int main(int argc, char* argv[])
 {
   unsigned int m=8, n=8, k=8, lda=8, ldb=8, ldc=8, nerrs, num, nmat;
-  unsigned int layout, asize, VLEND=4, VLENS=8, bsize, ntest, ncorr;
+  unsigned int layout, asize, bsize, ntest, ncorr;
+#ifdef AVX512_TESTING
+  unsigned int VLEND=8, VLENS=16;
+  char arch[4]="skx";
+#else
+  unsigned int VLEND=4, VLENS=8;
+  char arch[4]="hsw";
+#endif
   int nmats, nmatd;
   int i, j, l, iunroll, junroll, loopi, loopj;
   char side='L', uplo='U', trans='N', diag='N';
@@ -517,14 +544,13 @@ int main(int argc, char* argv[])
      printf("This will test the jit of 1 VLEN=%d ",VLENS);
      if ( VLENS==8 ) printf("(AVX2)");
      else            printf("(AVX512)");
-     printf(" work of nmat at a time\n");
 #else
      printf("Compact NN_DGEMM a C_mxn<-C_mxn+A_mxk*B_kxn matrix of leading dims lda/b/c\n");
      printf("This will test the jit of 1 VLEN=%d ",VLEND);
      if ( VLEND==4 ) printf("(AVX2)");
      else            printf("(AVX512)");
-     printf(" work of nmat at a time\n");
 #endif
+     printf(" work of nmat at a time\n");
      printf("Configurable: M-loop controlled by iunroll & loopi. N-loop by junroll & loopj\n");
      printf("Defaults: m=n=k=lda=ldb=ldc=nmat=8, layout=102 (col major), ntest=1\n");
   }
@@ -599,7 +625,7 @@ printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u 
 #endif
 
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
-  libxsmm_generator_packed_gemm_avx_avx512_kernel ( &io_generated_code, desc8, "hsw", iunroll, junroll, loopi, loopj );
+  libxsmm_generator_packed_gemm_avx_avx512_kernel ( &io_generated_code, desc8, arch, iunroll, junroll, loopi, loopj );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
