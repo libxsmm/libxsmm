@@ -43,7 +43,7 @@
         INTEGER, PARAMETER :: S = 8
 
         REAL(T), ALLOCATABLE, TARGET :: a1(:), b1(:)
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a1, b1
+        !DIR$ ATTRIBUTES ALIGN:64 :: a1, b1
         INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, lda, ldb, i, j, k
         REAL(T), POINTER :: an(:,:), bn(:,:), bt(:,:)
         DOUBLE PRECISION :: duration

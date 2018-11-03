@@ -39,7 +39,7 @@
         REAL(T), ALLOCATABLE, TARGET :: a(:,:,:), b(:,:,:)
         REAL(T), ALLOCATABLE, TARGET :: c(:,:), d(:,:)
         REAL(T), ALLOCATABLE, TARGET, SAVE :: tmp(:,:)
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b, c, tmp
+        !DIR$ ATTRIBUTES ALIGN:64 :: a, b, c, tmp
         !$OMP THREADPRIVATE(tmp)
         TYPE(LIBXSMM_DMMFUNCTION) :: xmm
         DOUBLE PRECISION :: duration, scale, max_diff, diff
