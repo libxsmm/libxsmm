@@ -260,7 +260,7 @@ printf("Inside libxsmm_generator_packed_getrf_avx_avx512_kernel: m=%d n=%d lay=%
  *       Solve bottom right A22 part with a DGEMM("Notrans","Notrans",m-bot,n-bot,dis,-1.0,A(bot+1,ii),lda,A(ii,bot+1),lda,1.0,A(bot+1,bot+1),lda)
  *       A(bot+1:m,bot+1:n) = A(bot+1:m,bot+1:n) - A(bot+1:m,ii:bot)*A(ii:bot,bot+1:n);
  *       */
-           compact_gemmnn_(bot+1,m1,ii,bot,ii,bot,bot+1,n1,bot+1,m1,bot+1,n1,none,LIBXSMM_X86_GP_REG_RDI,lda,LIBXSMM_X86_GP_REG_RDI,lda,one,LIBXSMM_X86_GP_REG_RDI,lda,io_code,numb,regset);
+           compact_gemmnn_(bot+1,m1,ii,bot,ii,bot,bot+1,n1,bot+1,m1,bot+1,n1,none,LIBXSMM_X86_GP_REG_RDI,lda,LIBXSMM_X86_GP_REG_RDI,lda,one,LIBXSMM_X86_GP_REG_RDI,lda,io_code,numb,regset,3,3,0,0);
         }      /* Nonempty DGEMM conditional */
      }        /* Main loop for LU */
 

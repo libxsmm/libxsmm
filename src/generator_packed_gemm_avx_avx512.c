@@ -51,10 +51,20 @@
 /* #define GENERATOR_PACKED_TRSM_DEBUG */
 
 
+/* TODO: Remove the extra garbage parameters from this calling sequence: */
+#define GARBAGE_PARAMETERS
+
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*        io_code,
-                                                       const libxsmm_trsm_descriptor* i_packed_trsm_desc,
-                                                       const char*                    i_arch )
+                                                      const libxsmm_trsm_descriptor* i_packed_trsm_desc,
+                                                      const char*                    i_arch
+#ifdef GARBAGE_PARAMETERS
+                                                    , unsigned int                   iunroll, 
+                                                      unsigned int                   junroll, 
+                                                      unsigned int                   loopi, 
+                                                      unsigned int                   loopj 
+#endif
+                                                      )
 {
   unsigned char *const buf = (unsigned char *) io_code->generated_code;
   libxsmm_loop_label_tracker l_loop_label_tracker /*= { 0 }*/;
@@ -149,6 +159,7 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
 
 #if 1
 printf("Inside libxsmm_generator_packed_gemm_avx_avx512_kernel: m=%d n=%d k=%d lda=%d ldb=%d ldc=%d alpha=%g beta=%g datasz=%d avx512=%d\n",m,n,k,lda,ldb,ldc,alpha,beta,datasz,avx512);
+printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,junroll,loopi,loopj);
 #endif
      if ( ( datasz !=4 ) && (datasz != 8) )
      {
@@ -202,17 +213,8 @@ printf("Inside libxsmm_generator_packed_gemm_avx_avx512_kernel: m=%d n=%d k=%d l
      nounit = ( (diag=='N') || (diag=='n') );
 #endif
 
-     /* Determine ideal blocksizes: */
-     nb = 2;
-     if ( m1 <= 3 ) nb = 1;
-     if ( n1 <= 2 ) nb = 1;
-     mn = LIBXSMM_MIN(m1,n1);
-     if ( mn >= 6 ) nb = 3;
-     iun = 3;
-     jun = 3;
-
      /* Change which registers to use for windows builds */
-     compact_gemmnn_ ( 1, m1, 1, k1, 1, k1, 1, n1, 1, m1, 1, n1, alpha, LIBXSMM_X86_GP_REG_RDI, lda, LIBXSMM_X86_GP_REG_RSI, ldb, beta, LIBXSMM_X86_GP_REG_RDX, ldc, io_code, numb, regset );
+     compact_gemmnn_ ( 1, m1, 1, k1, 1, k1, 1, n1, 1, m1, 1, n1, alpha, LIBXSMM_X86_GP_REG_RDI, lda, LIBXSMM_X86_GP_REG_RSI, ldb, beta, LIBXSMM_X86_GP_REG_RDX, ldc, io_code, numb, regset, iunroll, junroll, loopi, loopj );
 
   }
 

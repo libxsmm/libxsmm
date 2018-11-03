@@ -519,9 +519,9 @@ int main(int argc, char* argv[])
   if ( argc > 7 ) nmat = atoi(argv[7]); else nmat = 8;
   if ( argc > 8 ) layout = atoi(argv[8]); else layout=102;
   if ( argc > 9 ) ntest = atoi(argv[9]); else ntest = 1;
-  if ( argc > 10 ) iunroll=atoi(argv[10]); else iunroll=-1;
-  if ( argc > 11 ) junroll=atoi(argv[11]); else junroll=-1;
-  if ( argc > 12 ) loopj=atoi(argv[12]); else loopj=1;
+  if ( argc > 10 ) iunroll=atoi(argv[10]); else iunroll=0;
+  if ( argc > 11 ) junroll=atoi(argv[11]); else junroll=0;
+  if ( argc > 12 ) loopj=atoi(argv[12]); else loopj=0;
   if ( argc > 13 ) loopi=atoi(argv[13]); else loopi=0;
 
   salpha = (float)dalpha;
@@ -542,7 +542,7 @@ int main(int argc, char* argv[])
   nmatd = LIBXSMM_MAX(VLEND,nmat - (nmat%VLEND));
   nmat = LIBXSMM_MAX(nmats,nmatd);
 
-  printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u lda=%u ldb=%u ldc=%u layout=%d nmat=%d alpha=%g beta=%g iun=%d jun=%d loop=%d)\n",typesize8,m,n,k,lda,ldb,ldc,layout,nmat,dalpha,dbeta,iunroll,junroll,loopj);
+printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u lda=%u ldb=%u ldc=%u layout=%d nmat=%d alpha=%g beta=%g iun=%d jun=%d loopi=%d loopj=%d)\n",typesize8,m,n,k,lda,ldb,ldc,layout,nmat,dalpha,dbeta,iunroll,junroll,loopi,loopj);
 #ifdef USE_XSMM_GENERATED
   printf("This code tests the LIBXSMM generated kernels\n");
 #endif
@@ -572,7 +572,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
-  libxsmm_generator_packed_gemm_avx_avx512_kernel ( &io_generated_code, desc8, "hsw" );
+  libxsmm_generator_packed_gemm_avx_avx512_kernel ( &io_generated_code, desc8, "hsw", iunroll, junroll, loopi, loopj );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
@@ -630,7 +630,7 @@ int main(int argc, char* argv[])
   fputs("\t.align 256\n",fp);
   fputs("\t.globl gemm_\n",fp);
   fputs("gemm_:\n",fp);
-  for (i = 0 ; i < 4000; i+=4 )
+  for (i = 0 ; i < 7000; i+=4 )
   {
      sprintf(buffer,".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",cptr[i],cptr[i+1],cptr[i+2],cptr[i+3]);
      fputs(buffer,fp);
