@@ -35,8 +35,6 @@
      &    C_INTPTR_T, C_F_POINTER, C_LOC, C_PTR
         IMPLICIT NONE
 
-        PRIVATE :: drealptr, srealptr, irealptr, wrealptr
-
         ! Name of the version (stringized set of version numbers).
         CHARACTER(*), PARAMETER :: LIBXSMM_VERSION = "$VERSION"
         ! Name of the branch of which the version is derived from.
@@ -172,6 +170,18 @@
           PRIVATE
             INTEGER(C_INTPTR_T) :: handle
         END TYPE
+
+        INTERFACE libxsmm_ptr1
+          MODULE PROCEDURE libxsmm_ptr_z1, libxsmm_ptr_c1
+          MODULE PROCEDURE libxsmm_ptr_d1, libxsmm_ptr_s1
+          MODULE PROCEDURE libxsmm_ptr_i1, libxsmm_ptr_w1
+        END INTERFACE
+
+        INTERFACE libxsmm_ptr2
+          MODULE PROCEDURE libxsmm_ptr_z2, libxsmm_ptr_c2
+          MODULE PROCEDURE libxsmm_ptr_d2, libxsmm_ptr_s2
+          MODULE PROCEDURE libxsmm_ptr_i2, libxsmm_ptr_w2
+        END INTERFACE
 
         ! Deallocates JIT'ted code, or unregisters/releases code from registry.
         INTERFACE libxsmm_release_mmkernel
@@ -622,40 +632,112 @@
           CALL C_F_POINTER(arch, libxsmm_get_target_arch, length)
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: drealptr
-        FUNCTION drealptr(a)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z1
+        FUNCTION libxsmm_ptr_z1(a)
+          COMPLEX(C_DOUBLE), INTENT(IN), TARGET :: a(:)
+          COMPLEX(C_DOUBLE), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_z1
+          fptr => a(LBOUND(a,1))
+          libxsmm_ptr_z1 = C_LOC(fptr)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z2
+        FUNCTION libxsmm_ptr_z2(a)
+          COMPLEX(C_DOUBLE), INTENT(IN), TARGET :: a(:,:)
+          COMPLEX(C_DOUBLE), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_z2
+          fptr => a(LBOUND(a,1),LBOUND(a,2))
+          libxsmm_ptr_z2 = C_LOC(fptr)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c1
+        FUNCTION libxsmm_ptr_c1(a)
+          COMPLEX(C_FLOAT), INTENT(IN), TARGET :: a(:)
+          COMPLEX(C_FLOAT), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_c1
+          fptr => a(LBOUND(a,1))
+          libxsmm_ptr_c1 = C_LOC(fptr)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c2
+        FUNCTION libxsmm_ptr_c2(a)
+          COMPLEX(C_FLOAT), INTENT(IN), TARGET :: a(:,:)
+          COMPLEX(C_FLOAT), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_c2
+          fptr => a(LBOUND(a,1),LBOUND(a,2))
+          libxsmm_ptr_c2 = C_LOC(fptr)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d1
+        FUNCTION libxsmm_ptr_d1(a)
+          REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:)
+          REAL(C_DOUBLE), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_d1
+          fptr => a(LBOUND(a,1))
+          libxsmm_ptr_d1 = C_LOC(fptr)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d2
+        FUNCTION libxsmm_ptr_d2(a)
           REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:)
           REAL(C_DOUBLE), POINTER :: fptr
-          TYPE(C_PTR) :: drealptr
+          TYPE(C_PTR) :: libxsmm_ptr_d2
           fptr => a(LBOUND(a,1),LBOUND(a,2))
-          drealptr = C_LOC(fptr)
+          libxsmm_ptr_d2 = C_LOC(fptr)
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: srealptr
-        FUNCTION srealptr(a)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s1
+        FUNCTION libxsmm_ptr_s1(a)
+          REAL(C_FLOAT), INTENT(IN), TARGET :: a(:)
+          REAL(C_FLOAT), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_s1
+          fptr => a(LBOUND(a,1))
+          libxsmm_ptr_s1 = C_LOC(fptr)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s2
+        FUNCTION libxsmm_ptr_s2(a)
           REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:)
           REAL(C_FLOAT), POINTER :: fptr
-          TYPE(C_PTR) :: srealptr
+          TYPE(C_PTR) :: libxsmm_ptr_s2
           fptr => a(LBOUND(a,1),LBOUND(a,2))
-          srealptr = C_LOC(fptr)
+          libxsmm_ptr_s2 = C_LOC(fptr)
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: irealptr
-        FUNCTION irealptr(a)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i1
+        FUNCTION libxsmm_ptr_i1(a)
+          INTEGER(C_INT), INTENT(IN), TARGET :: a(:)
+          INTEGER(C_INT), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_i1
+          fptr => a(LBOUND(a,1))
+          libxsmm_ptr_i1 = C_LOC(fptr)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i2
+        FUNCTION libxsmm_ptr_i2(a)
           INTEGER(C_INT), INTENT(IN), TARGET :: a(:,:)
           INTEGER(C_INT), POINTER :: fptr
-          TYPE(C_PTR) :: irealptr
+          TYPE(C_PTR) :: libxsmm_ptr_i2
           fptr => a(LBOUND(a,1),LBOUND(a,2))
-          irealptr = C_LOC(fptr)
+          libxsmm_ptr_i2 = C_LOC(fptr)
         END FUNCTION
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: wrealptr
-        FUNCTION wrealptr(a)
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w1
+        FUNCTION libxsmm_ptr_w1(a)
+          INTEGER(C_SHORT), INTENT(IN), TARGET :: a(:)
+          INTEGER(C_SHORT), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_w1
+          fptr => a(LBOUND(a,1))
+          libxsmm_ptr_w1 = C_LOC(fptr)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w2
+        FUNCTION libxsmm_ptr_w2(a)
           INTEGER(C_SHORT), INTENT(IN), TARGET :: a(:,:)
           INTEGER(C_SHORT), POINTER :: fptr
-          TYPE(C_PTR) :: wrealptr
+          TYPE(C_PTR) :: libxsmm_ptr_w2
           fptr => a(LBOUND(a,1),LBOUND(a,2))
-          wrealptr = C_LOC(fptr)
+          libxsmm_ptr_w2 = C_LOC(fptr)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_dmmkernel
@@ -922,9 +1004,9 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
-     &      C_LOC(alpha), drealptr(a), C_LOC(lda),                      &
-     &                    drealptr(b), C_LOC(ldb),                      &
-     &       C_LOC(beta), drealptr(c), C_LOC(ldc))
+     &      C_LOC(alpha), libxsmm_ptr2(a), C_LOC(lda),                  &
+     &                    libxsmm_ptr2(b), C_LOC(ldb),                  &
+     &       C_LOC(beta), libxsmm_ptr2(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm
@@ -951,9 +1033,9 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
-     &      C_LOC(alpha), srealptr(a), C_LOC(lda),                      &
-     &                    srealptr(b), C_LOC(ldb),                      &
-     &       C_LOC(beta), srealptr(c), C_LOC(ldc))
+     &      C_LOC(alpha), libxsmm_ptr2(a), C_LOC(lda),                  &
+     &                    libxsmm_ptr2(b), C_LOC(ldb),                  &
+     &       C_LOC(beta), libxsmm_ptr2(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm
@@ -980,9 +1062,9 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
-     &      C_LOC(alpha), wrealptr(a), C_LOC(lda),                      &
-     &                    wrealptr(b), C_LOC(ldb),                      &
-     &       C_LOC(beta), irealptr(c), C_LOC(ldc))
+     &      C_LOC(alpha), libxsmm_ptr2(a), C_LOC(lda),                  &
+     &                    libxsmm_ptr2(b), C_LOC(ldb),                  &
+     &       C_LOC(beta), libxsmm_ptr2(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsgemm
@@ -1009,9 +1091,9 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
-     &      C_LOC(alpha), wrealptr(a), C_LOC(lda),                      &
-     &                    wrealptr(b), C_LOC(ldb),                      &
-     &       C_LOC(beta), srealptr(c), C_LOC(ldc))
+     &      C_LOC(alpha), libxsmm_ptr2(a), C_LOC(lda),                  &
+     &                    libxsmm_ptr2(b), C_LOC(ldb),                  &
+     &       C_LOC(beta), libxsmm_ptr2(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm
@@ -1038,9 +1120,9 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
-     &      C_LOC(alpha), drealptr(a), C_LOC(lda),                      &
-     &                    drealptr(b), C_LOC(ldb),                      &
-     &       C_LOC(beta), drealptr(c), C_LOC(ldc))
+     &      C_LOC(alpha), libxsmm_ptr2(a), C_LOC(lda),                  &
+     &                    libxsmm_ptr2(b), C_LOC(ldb),                  &
+     &       C_LOC(beta), libxsmm_ptr2(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm
@@ -1067,9 +1149,9 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
-     &      C_LOC(alpha), srealptr(a), C_LOC(lda),                      &
-     &                    srealptr(b), C_LOC(ldb),                      &
-     &       C_LOC(beta), srealptr(c), C_LOC(ldc))
+     &      C_LOC(alpha), libxsmm_ptr2(a), C_LOC(lda),                  &
+     &                    libxsmm_ptr2(b), C_LOC(ldb),                  &
+     &       C_LOC(beta), libxsmm_ptr2(c), C_LOC(ldc))
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmatmul
