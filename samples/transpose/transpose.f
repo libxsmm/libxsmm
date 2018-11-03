@@ -30,10 +30,17 @@
 !*****************************************************************************!
 
       PROGRAM transpose
-        USE :: LIBXSMM
+        USE :: LIBXSMM, ONLY: LIBXSMM_BLASINT_KIND,                     &
+     &                        libxsmm_timer_duration,                   &
+     &                        libxsmm_timer_tick,                       &
+     &                        libxsmm_otrans_omp,                       &
+     &                        libxsmm_otrans,                           &
+     &                        libxsmm_itrans,                           &
+     &                        libxsmm_ptr1
         IMPLICIT NONE
 
         INTEGER, PARAMETER :: T = KIND(0D0)
+        INTEGER, PARAMETER :: S = 8
 
         REAL(T), ALLOCATABLE, TARGET :: a1(:), b1(:)
         !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a1, b1
@@ -108,8 +115,8 @@
           END DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
-            CALL libxsmm_otrans_omp(C_LOC(b1), C_LOC(a1),               &
-     &              T, m, n, lda, ldb)
+            CALL libxsmm_otrans_omp(libxsmm_ptr1(b1), libxsmm_ptr1(a1), &
+     &              S, m, n, lda, ldb)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
           DEALLOCATE(a1)
@@ -122,7 +129,7 @@
           END DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
-            CALL libxsmm_itrans(C_LOC(b1), T, m, n, ldb)
+            CALL libxsmm_itrans(libxsmm_ptr1(b1), S, m, n, ldb)
           END DO
           duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
         END IF
@@ -136,14 +143,17 @@
         END DO
         DEALLOCATE(b1)
 
-        IF (0.EQ.diff) THEN
+        IF (0.GE.diff) THEN
           IF ((0.LT.duration).AND.(0.LT.nrepeat)) THEN
             ! out-of-place transpose bandwidth assumes RFO
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ",         &
-     &        MERGE(3_8, 2_8, ('o'.EQ.trans).OR.('O'.EQ.trans))         &
-     &          * size * nrepeat / (duration * ISHFT(1_8, 30)), " GB/s"
+     &        REAL(size, T)                                             &
+     &        * MERGE(3D0, 2D0, ('o'.EQ.trans).OR.('O'.EQ.trans))       &
+     &        * REAL(nrepeat, T) / (duration * ISHFT(1_8, 30)),         &
+     &        " GB/s"
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ",         &
-     &        1D3 * duration / nrepeat, " ms"
+     &        1D3 * duration / REAL(nrepeat, T),                        &
+     &        " ms"
           END IF
         ELSE
           WRITE(*,*) "Validation failed!"
