@@ -957,7 +957,7 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm
-        SUBROUTINE libxsmm_wigemm(transa, transb, m, n, k,               &
+        SUBROUTINE libxsmm_wigemm(transa, transb, m, n, k,              &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
@@ -986,7 +986,7 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsgemm
-        SUBROUTINE libxsmm_wsgemm(transa, transb, m, n, k,               &
+        SUBROUTINE libxsmm_wsgemm(transa, transb, m, n, k,              &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
