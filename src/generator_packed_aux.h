@@ -131,6 +131,10 @@ LIBXSMM_API_INLINE void compact_store_matrix_gen_ (
      unsigned int i_vmove_instr;
      int i_instruction_set;
 
+     if ( (reg < 0) || (reg >=32) ) {
+        printf("compact_store_matrix_gen trying to store from an invalid register: %d\n",reg);
+        exit(-1);
+     }
      if ( datasize == 8 )
      {
         i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPD;
@@ -138,7 +142,7 @@ LIBXSMM_API_INLINE void compact_store_matrix_gen_ (
      {
         i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPS;
      } else {
-        fprintf(stderr,"compact_store_matrix1 has strange datasize=%u\n",datasize);
+        fprintf(stderr,"compact_store_matrix_gen has strange datasize=%u\n",datasize);
         exit(-1);
      }
      if ( regset == 'z' )
@@ -322,6 +326,11 @@ LIBXSMM_API_INLINE void compact_load_matrix_gen_ (
      unsigned int i_vmove_instr;
      int i_instruction_set;
 
+     if ( (reg < 0) || (reg >=32) ) {
+        printf("compact_load_matrix_gen trying to load to an invalid register: %d\n",reg);
+        printf("lda=%d i=%d j=%d reg=%d number=%d datasize=%d regset=%c matrix_gpreg=%d\n",lda,i,j,reg,number,datasize,regset,matrix_gpreg);
+        exit(-1);
+     }
      if ( datasize == 8 )
      {
         i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPD;

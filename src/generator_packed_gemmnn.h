@@ -83,7 +83,8 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
      unsigned int loopi,
      unsigned int loopj )
 {
-     int i, j, l, datasz, nloopcnt=0, mloopcnt=0;
+     int i, j, l, datasz, nloopcnt=0, mloopcnt=0, nborder, mborder, mloopadj;
+     int aoffset, boffset, coffset; /* Address calcs for the loops */
      int iun=3, jun=3; /* Register blocking sizes */
 
      /* Test that the dimensions conform */
@@ -181,7 +182,12 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
      nloopcnt = (int)((bn2-bn1+1)/jun);
      if ( mloopcnt < 2 ) loopi = 0;
      if ( nloopcnt < 2 ) loopj = 0;
+     mborder = (am2-am1+1)-mloopcnt*iun;
+     nborder = (bn2-bn1+1)-nloopcnt*jun;
      libxsmm_loop_label_tracker l_loop_label_tracker;
+     if ( loopj || loopi ) {
+        libxsmm_reset_loop_label_tracker ( &l_loop_label_tracker );
+     }
  
      /* DO register blocking */
      a0 = 0;
@@ -265,8 +271,13 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
      if ( (iun > 7) && (jun > 6) ) c76 = c70 + 6;
      if ( (iun > 7) && (jun > 7) ) c77 = c70 + 7;
 
+#if 0
+#define COMPACT_GEMMNN_DEBUG
+#endif
+
 #ifdef COMPACT_GEMMNN_DEBUG
 printf("iun=%d jun=%d loopi=%d loopj=%d\n",iun,jun,loopi,loopj);
+printf("areg=%d breg=%d creg=%d mborder=%d nborder=%d\n",areg,breg,creg,mborder,nborder);
 printf("a0:7=%d %d %d %d %d %d %d %d\n",a0,a1,a2,a3,a4,a5,a6,a7);
 printf("b0:7=%d %d %d %d %d %d %d %d\n",b0,b1,b2,b3,b4,b5,b6,b7);
 printf("c0,0:7=%d %d %d %d %d %d %d %d\n",c00,c01,c02,c03,c04,c05,c06,c07);
@@ -281,9 +292,8 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
 
      if ( loopj && (nloopcnt >=2) ) {
 #ifdef COMPACT_GEMMNN_DEBUG
-        printf("Setting up loop: loopj=%d nloopcnt=%d\n",loopj,nloopcnt);
+        printf("Setting up n-loop: loopj=%d nloopcnt=%d\n",loopj,nloopcnt);
 #endif
-        libxsmm_reset_loop_label_tracker ( &l_loop_label_tracker );
         libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RAX, nloopcnt );
 
         libxsmm_x86_instruction_register_jump_back_label( io_code, &l_loop_label_tracker );
@@ -302,10 +312,20 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            /* Turn everything off, we're really supposed to be in a loop */
            j0=0; j1=0; j2=0; j3=0; j4=0; j5=0; j6=0; j7=0; 
 #ifdef COMPACT_GEMMNN_DEBUG
-           printf("Emptying loop for j=%d\n",j);
+           printf("Emptying n-loop for j=%d\n",j);
 #endif
         }
+        if ( loopi && (mloopcnt >=2) && j0 ) {
+#ifdef COMPACT_GEMMNN_DEBUG
+           printf("Setting up m-loop: loopi=%d mloopcnt=%d\n",loopi,mloopcnt);
+#endif
+           libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RCX, mloopcnt );
+
+           libxsmm_x86_instruction_register_jump_back_label( io_code, &l_loop_label_tracker );
+           mloopadj = 1;
+        }
         for ( i = am1; i <= am2 ; i+=iun ) {
+           if ( (  i  <= am2 ) && ( iun >= 1 ) ) i0 = 1; else i0 = 0;
            if ( ( i+1 <= am2 ) && ( iun >= 2 ) ) i1 = 1; else i1 = 0;
            if ( ( i+2 <= am2 ) && ( iun >= 3 ) ) i2 = 1; else i2 = 0;
            if ( ( i+3 <= am2 ) && ( iun >= 4 ) ) i3 = 1; else i3 = 0;
@@ -313,6 +333,13 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            if ( ( i+5 <= am2 ) && ( iun >= 6 ) ) i5 = 1; else i5 = 0;
            if ( ( i+6 <= am2 ) && ( iun >= 7 ) ) i6 = 1; else i6 = 0;
            if ( ( i+7 <= am2 ) && ( iun >= 8 ) ) i7 = 1; else i7 = 0;
+           if ( loopi && (i > am1) && (i + iun -1 <= am2) ) { 
+              /* Turn everything off, we're really supposed to be in a loop */
+              i0=0; i1=0; i2=0; i3=0; i4=0; i5=0; i6=0; i7=0; 
+#ifdef COMPACT_GEMMNN_DEBUG
+              printf("Emptying m-loop for i=%d j=%d i0=%d j0=%d\n",i,j,i0,j0);
+#endif
+           }
            if (i0 && j0) compact_load_matrix_gen_ ( io_code, lda, i, ak1, a0, numb, datasz, regset, areg );
            if (i0 && j0) compact_load_matrix_gen_ ( io_code, ldb, bk1, j, b0, numb, datasz, regset, breg );
            if (i0 && j0) compact_mult_two_nums_ ( io_code, a0, b0, c00, numb, regset );
@@ -330,7 +357,7 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            if (i6 && j0) compact_mult_two_nums_ ( io_code, a6, b0, c60, numb, regset );
            if (i7 && j0) compact_load_matrix_gen_ ( io_code, lda, i+7, ak1, a7, numb, datasz, regset, areg );
            if (i7 && j0) compact_mult_two_nums_ ( io_code, a7, b0, c70, numb, regset );
-           if (j1 && j0) compact_load_matrix_gen_ ( io_code, ldb, bk1, j+1, b1, numb, datasz, regset, breg );
+           if (i0 && j1) compact_load_matrix_gen_ ( io_code, ldb, bk1, j+1, b1, numb, datasz, regset, breg );
            if (i0 && j1) compact_mult_two_nums_ ( io_code, a0, b1, c01, numb, regset );
            if (i0 && j2) compact_load_matrix_gen_ ( io_code, ldb, bk1, j+2, b2, numb, datasz, regset, breg );
            if (i0 && j2) compact_mult_two_nums_ ( io_code, a0, b2, c02, numb, regset );
@@ -479,6 +506,7 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
               if (i7 && j7) compact_fma_cplusab_ ( io_code, c77, a7, b7, numb, regset );
 
            } /* Inner loop */
+           /* Storing into C, do it one column at a time and reuse some regs */
            for ( l = j ; l <= LIBXSMM_MIN(j+jun-1,bn2); l++ ) {
               if (l== j ) { c0=c00 ; c1=c10; c2=c20; c3=c30; c4=c40; c5=c50; c6=c60; c7=c70; }
               if (l==j+1) { c0=c01 ; c1=c11; c2=c21; c3=c31; c4=c41; c5=c51; c6=c61; c7=c71; }
@@ -534,15 +562,39 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
               if (i5 && j0) compact_store_matrix_gen_ ( io_code, ldc, i-am1+cm1+5, l-bn1+cn1, c5, numb, datasz, regset, creg );
               if (i6 && j0) compact_store_matrix_gen_ ( io_code, ldc, i-am1+cm1+6, l-bn1+cn1, c6, numb, datasz, regset, creg );
               if (i7 && j0) compact_store_matrix_gen_ ( io_code, ldc, i-am1+cm1+7, l-bn1+cn1, c7, numb, datasz, regset, creg );
-           } /* Sotre the results */
+           } /* Store the results */
+           if ( loopi && j0 ) {
+              aoffset = datasz*iun*numb;
+              coffset = datasz*iun*numb;
+              if ( i == am1 ) { 
+#ifdef COMPACT_GEMMNN_DEBUG
+                 printf("Should be putting in a m-jump soon: i=%d j=%d i0=%d j0=%d am1=%d am2=%d\n",i,j,i0,j0,am1,am2);
+#endif
+                 libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_ADDQ, areg, aoffset );
+                 libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_ADDQ, creg, coffset );
+                 libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RCX, 1 );
+                 libxsmm_x86_instruction_jump_back_to_label( io_code, LIBXSMM_X86_INSTR_JG, &l_loop_label_tracker );
+              }
+              int morework = (mborder > 0) || (j+jun-1<bn2);
+              if ( (am2-i+1 < 2*iun) && morework && (mloopadj==1) ) {
+#ifdef COMPACT_GEMMNN_DEBUG
+                 printf("Finished with m-loop, doing clean-up: i=%d i0=%d j0=%d mborder=%d j=%d jun=%d bn2=%d\n",i,i0,j0,mborder,j,jun,bn2);
+#endif
+                 aoffset = datasz*iun*numb*mloopcnt;
+                 coffset = datasz*iun*numb*mloopcnt;
+                 libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_SUBQ, areg, aoffset );
+                 libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_SUBQ, creg, coffset );
+                 mloopadj = 0;
+              }
+              i0 = 1; /* Turn everything back on again */
+           }
         } /* M-loop */
         if ( loopj ) {
-           int coffset = ldc*datasz*jun*numb;
-           int boffset = ldb*datasz*jun*numb;
-           int nborder = (bn2-bn1+1)-nloopcnt*jun;
+           coffset = ldc*datasz*jun*numb;
+           boffset = ldb*datasz*jun*numb;
            if ( j == bn1 ) { 
 #ifdef COMPACT_GEMMNN_DEBUG
-              printf("Should be putting in a jump soon: j=%d bn1=%d bn2=%d\n",j,bn1,bn2);
+              printf("Should be putting in a n-jump soon: j=%d bn1=%d bn2=%d\n",j,bn1,bn2);
 #endif
               libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_ADDQ, creg, coffset );
               libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_ADDQ, breg, boffset );
@@ -551,13 +603,14 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            }
            if ( (bn2-j+1 < 2*jun) && (nborder > 0) ) {
 #ifdef COMPACT_GEMMNN_DEBUG
-              printf("Finished with loop, doing clean-up, j=%d\n",j);
+              printf("Finished with n-loop, doing clean-up, j=%d\n",j);
 #endif
               coffset = ldc*datasz*jun*numb*nloopcnt;
               boffset = ldb*datasz*jun*numb*nloopcnt;
               libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_SUBQ, creg, coffset );
               libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_SUBQ, breg, boffset );
            }
+           j0 = 1; /* Turn everything back on again */
         }
      } /* N-loop */
 #if 1 
