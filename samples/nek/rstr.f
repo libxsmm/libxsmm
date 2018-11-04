@@ -41,7 +41,7 @@
         REAL(T), PARAMETER :: alpha = 1, beta = 0
 
         REAL(T), ALLOCATABLE, DIMENSION(:,:,:,:), TARGET :: a, c, d
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, c, d
+        !DIR$ ATTRIBUTES ALIGN:64 :: a, c, d
         REAL(T), ALLOCATABLE, TARGET :: dx(:,:), dy(:,:), dz(:,:)
         REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:)
         REAL(T), ALLOCATABLE, TARGET, SAVE :: tm2(:,:,:)

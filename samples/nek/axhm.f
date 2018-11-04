@@ -41,16 +41,16 @@
         REAL(T), PARAMETER :: alpha = 1, beta = 0
 
         REAL(T), ALLOCATABLE, DIMENSION(:,:,:,:), TARGET :: a, b, c, d
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a, b, c, d
+        !DIR$ ATTRIBUTES ALIGN:64 :: a, b, c, d
         REAL(T), ALLOCATABLE, DIMENSION(:,:,:,:), TARGET :: g1, g2, g3
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: g1, g2, g3
+        !DIR$ ATTRIBUTES ALIGN:64 :: g1, g2, g3
         REAL(T), ALLOCATABLE, TARGET :: dx(:,:), dy(:,:), dz(:,:)
         REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:)
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1
+        !DIR$ ATTRIBUTES ALIGN:64 :: tm1
         REAL(T), ALLOCATABLE, TARGET, SAVE :: tm2(:,:,:)
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm2
+        !DIR$ ATTRIBUTES ALIGN:64 :: tm2
         REAL(T), ALLOCATABLE, TARGET, SAVE :: tm3(:,:,:)
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm3
+        !DIR$ ATTRIBUTES ALIGN:64 :: tm3
         !$OMP THREADPRIVATE(tm1, tm2, tm3)
         TYPE(LIBXSMM_DMMFUNCTION) :: xmm1, xmm2, xmm3
         DOUBLE PRECISION :: duration, max_diff, h1, h2
