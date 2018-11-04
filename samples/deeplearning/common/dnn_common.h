@@ -83,6 +83,20 @@ typedef struct {
   int fuse_type;  /* 0: nothing fused */
 } naive_fullyconnected_t;
 
+typedef struct {
+  int N;
+  int C;
+  int H;
+  int W;
+  int R;
+  int S;
+  int pad_h;
+  int pad_w;
+  int stride_h;
+  int stride_w;
+  int type;
+} naive_pooling_t;
+
 /* it's fine to alias in and out */
 LIBXSMM_INLINE void truncate_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
   unsigned int i = 0;
@@ -986,6 +1000,163 @@ LIBXSMM_INLINE void naive_fullyconnected_wu(naive_fullyconnected_t* param, const
         LIBXSMM_VLA_ACCESS(2, dfilter, ofm, ifm, nIFm) +=
           LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) * LIBXSMM_VLA_ACCESS(2, input, img, ifm, nIFm);
       }
+    }
+  }
+}
+
+LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_ptr, float* output_ptr, int* mask_ptr)
+{
+  const int nImg = param->N;
+  const int nFm = param->C;
+  const int ifh = param->H;
+  const int ifw = param->W;
+  const int sh = param->stride_h;
+  const int sw = param->stride_w;
+  const int r = param->R;
+  const int s = param->S;
+  const int pad_h = param->pad_h;
+  const int pad_w = param->pad_w;
+  const int ofh = (ifh + 2*pad_h - r)/sh + 1;
+  const int ofw = (ifw + 2*pad_w - s)/sw + 1;
+
+
+  int img, fm;
+
+  LIBXSMM_VLA_DECL(4, const float, input,   input_ptr, nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4,       int,   mask,     mask_ptr, nFm, ofh, ofw);
+  LIBXSMM_VLA_DECL(4,       float, output, output_ptr, nFm, ofh, ofw);
+
+#if defined(_OPENMP)
+#pragma omp parallel for private(img, fm)
+#endif
+  for (img = 0; img < nImg; img++) {
+    for (fm = 0; fm < nFm; fm++) {
+      float* lcl_buffer_ptr = (float*)malloc(sizeof(float)*ofh*ofw);
+      LIBXSMM_VLA_DECL(2, float, lcl_buffer, lcl_buffer_ptr, ofw);
+      int i, ho, wo, hi, wi, kh, kw;
+
+      if (param->type == 0 ) {
+        for ( i = 0; i < ofh*ofw; i++ ) {
+          lcl_buffer_ptr[i] = -FLT_MAX;
+        }
+      } else if (param->type == 1) {
+        for ( i = 0; i < ofh*ofw; i++ ) {
+          lcl_buffer_ptr[i] = 0.0;
+        }
+      } else {
+        /* shouldn't happen */
+      }
+
+      for( ho = 0; ho < ofh; ho++ ) {
+        hi = (ho * sh) - pad_h;
+        for( wo = 0; wo < ofw; wo++ ) {
+          wi = (wo * sw) - pad_w;
+          for( kh = 0; kh < r; kh++ ) {
+            if(hi+kh < 0 || hi+kh >= ifh) continue;
+            for( kw = 0; kw < s; kw++ ) {
+              if(wi+kw < 0 || wi+kw >= ifw) continue;
+              if ( param->type == 0 ) {
+                const int index = (hi+kh)*ifw + wi+kw;
+                if ( LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw) > LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) ) {
+                  LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) = LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw);
+                  LIBXSMM_VLA_ACCESS(4, mask, img, fm, ho, wo, nFm, ofh, ofw) = index;
+                }
+              } else if ( param->type == 1 ) {
+                LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) += LIBXSMM_VLA_ACCESS(4, input, img, fm, hi+kh, wi+kw, nFm, ifh, ifw);
+              } else {
+                /* shouldn't happen */
+              }
+            }
+          }
+        }
+      }
+
+      if (param->type == 0 ) {
+        for( ho = 0; ho < ofh; ho++ ) {
+          for( wo = 0; wo < ofw; wo++ ) {
+            LIBXSMM_VLA_ACCESS(4, output, img, fm, ho, wo, nFm, ofh, ofw) = LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw);
+          }
+        }
+      } else if (param->type == 1) {
+        for( ho = 0; ho < ofh; ho++ ) {
+          for( wo = 0; wo < ofw; wo++ ) {
+            LIBXSMM_VLA_ACCESS(4, output, img, fm, ho, wo, nFm, ofh, ofw) = LIBXSMM_VLA_ACCESS(2, lcl_buffer, ho, wo, ofw) * (1.0f/(((float)r) * ((float)s)));
+          }
+        }
+      } else {
+        /* shouldn't happen */
+      }
+
+      free( lcl_buffer_ptr );
+    }
+  }
+}
+
+LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, const float* doutput_ptr, const int* mask_ptr)
+{
+  const int nImg = param->N;
+  const int nFm = param->C;
+  const int ifh = param->H;
+  const int ifw = param->W;
+  const int sh = param->stride_h;
+  const int sw = param->stride_w;
+  const int r = param->R;
+  const int s = param->S;
+  const int pad_h = param->pad_h;
+  const int pad_w = param->pad_w;
+  const int ofh = (ifh + 2*pad_h - r)/sh + 1;
+  const int ofw = (ifw + 2*pad_w - s)/sw + 1;
+
+  int img, fm;
+
+  LIBXSMM_VLA_DECL(4,       float, dinput,   dinput_ptr, nFm, ifh, ifw);
+  LIBXSMM_VLA_DECL(4, const int  ,  mask,      mask_ptr, nFm, ofh, ofw);
+  LIBXSMM_VLA_DECL(4, const float, doutput, doutput_ptr, nFm, ofh, ofw);
+
+#if defined(_OPENMP)
+#pragma omp parallel for private(img, fm)
+#endif
+  for (img = 0; img < nImg; img++) {
+    for (fm = 0; fm < nFm; fm++) {
+      float* lcl_buffer_ptr = (float*)malloc(sizeof(float)*ifh*ifw);
+      LIBXSMM_VLA_DECL(2, float, lcl_buffer, lcl_buffer_ptr, ifw);
+      int i, ho, wo, hi, wi, kh, kw;
+
+      for ( i = 0; i < ifh*ifw; i++ ) {
+        lcl_buffer_ptr[i] = 0.0;
+      }
+
+      if (param->type == 0 ) {
+        for( ho = 0; ho < ofh; ho++ ) {
+          for( wo = 0; wo < ofw; wo++ ) {
+            lcl_buffer_ptr[LIBXSMM_VLA_ACCESS(4, mask, img, fm, ho, wo, nFm, ofh, ofw)] += LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, nFm, ofh, ofw);
+          }
+        }
+      } else if ( param->type == 1 ) {
+        for( ho = 0; ho < ofh; ho++ ) {
+          hi = (ho * sh) - pad_h;
+          for( wo = 0; wo < ofw; wo++ ) {
+            wi = (wo * sw) - pad_w;
+            for( kh = 0; kh < r; kh++ ) {
+              if(hi+kh < 0 || hi+kh >= ifh) continue;
+              for( kw = 0; kw < s; kw++ ) {
+                if(wi+kw < 0 || wi+kw >= ifw) continue;
+                LIBXSMM_VLA_ACCESS(2, lcl_buffer, hi+kh, wi+kw, ifw) += ( LIBXSMM_VLA_ACCESS(4, doutput, img, fm, ho, wo, nFm, ofh, ofw) * (1.0f/(((float)r) * ((float)s))) );
+              }
+            }
+          }
+        }
+      } else {
+        /* shouldn't happen */
+      }
+
+      for( hi = 0; hi < ifh; hi++ ) {
+        for( wi = 0; wi < ifw; wi++ ) {
+          LIBXSMM_VLA_ACCESS(4, dinput, img, fm, hi, wi, nFm, ifh, ifw) = LIBXSMM_VLA_ACCESS(2, lcl_buffer, hi, wi, ifw);
+        }
+      }
+
+      free( lcl_buffer_ptr );
     }
   }
 }
