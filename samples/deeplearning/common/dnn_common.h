@@ -76,6 +76,13 @@ typedef struct {
   int fuse_type;  /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
 } naive_fusedbatchnorm_t;
 
+typedef struct {
+  int N;
+  int C;
+  int K;
+  int fuse_type;  /* 0: nothing fused */
+} naive_fullyconnected_t;
+
 /* it's fine to alias in and out */
 LIBXSMM_INLINE void truncate_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
   unsigned int i = 0;
@@ -900,6 +907,84 @@ LIBXSMM_INLINE void naive_conv_fp_int8int32(naive_conv_t* param, const unsigned 
             }
           }
         }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void naive_fullyconnected_fp(naive_fullyconnected_t* param, const float* input_ptr, float* output_ptr, const float* filter_ptr)
+{
+  const int nImg = param->N;
+  const int nIFm = param->C;
+  const int nOFm = param->K;
+
+  int img, ifm, ofm;
+
+  LIBXSMM_VLA_DECL(2, const float, input,  input_ptr,  nIFm);
+  LIBXSMM_VLA_DECL(2, const float, filter, filter_ptr, nIFm);
+  LIBXSMM_VLA_DECL(2,       float, output, output_ptr, nOFm);
+
+#if defined(_OPENMP)
+#pragma omp parallel for private(img, ofm, ifm)
+#endif
+  for (ofm = 0; ofm < nOFm; ++ofm) {
+    for(img = 0; img < nImg; ++img) {
+      LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = (float)0;
+      for (ifm = 0; ifm < nIFm; ++ifm) {
+        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) +=
+          LIBXSMM_VLA_ACCESS(2, filter, ofm, ifm, nIFm) * LIBXSMM_VLA_ACCESS(2, input, img, ifm, nIFm);
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void naive_fullyconnected_bp(naive_fullyconnected_t* param, float* delinput_ptr, const float* deloutput_ptr, const float* filter_ptr)
+{
+  const int nImg = param->N;
+  const int nIFm = param->C;
+  const int nOFm = param->K;
+
+  int img, ifm, ofm;
+
+  LIBXSMM_VLA_DECL(2,       float,  dinput,  delinput_ptr, nIFm);
+  LIBXSMM_VLA_DECL(2, const float,  filter,    filter_ptr, nIFm);
+  LIBXSMM_VLA_DECL(2, const float, doutput, deloutput_ptr, nOFm);
+
+#if defined(_OPENMP)
+#pragma omp parallel for private(img, ofm, ifm)
+#endif
+  for (ifm = 0; ifm < nIFm; ++ifm) {
+    for(img = 0; img < nImg; ++img) {
+      LIBXSMM_VLA_ACCESS(2, dinput, img, ifm, nIFm) = (float)0;
+      for (ofm = 0; ofm < nOFm; ++ofm) {
+        LIBXSMM_VLA_ACCESS(2, dinput, img, ifm, nIFm) +=
+          LIBXSMM_VLA_ACCESS(2, filter, ofm, ifm, nIFm) * LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm);
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void naive_fullyconnected_wu(naive_fullyconnected_t* param, const float* input_ptr, const float* deloutput_ptr, float* delfilter_ptr)
+{
+  const int nImg = param->N;
+  const int nIFm = param->C;
+  const int nOFm = param->K;
+
+  int img, ifm, ofm;
+
+  LIBXSMM_VLA_DECL(2, const float,   input,     input_ptr, nIFm);
+  LIBXSMM_VLA_DECL(2,       float, dfilter, delfilter_ptr, nIFm);
+  LIBXSMM_VLA_DECL(2, const float, doutput, deloutput_ptr, nOFm);
+
+#if defined(_OPENMP)
+#pragma omp parallel for private(img, ofm, ifm)
+#endif
+  for (ofm = 0; ofm < nOFm; ++ofm) {
+    for (ifm = 0; ifm < nIFm; ++ifm) {
+      LIBXSMM_VLA_ACCESS(2, dfilter, ofm, ifm, nIFm) = (float)0;
+      for(img = 0; img < nImg; ++img) {
+        LIBXSMM_VLA_ACCESS(2, dfilter, ofm, ifm, nIFm) +=
+          LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) * LIBXSMM_VLA_ACCESS(2, input, img, ifm, nIFm);
       }
     }
   }
