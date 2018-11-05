@@ -30,7 +30,7 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-WGET=$(command -v wget)
+WGET=$(which wget)
 
 DATASET="LOH1_small merapi_15e5"
 KINDS="bound neigh orient sides size"

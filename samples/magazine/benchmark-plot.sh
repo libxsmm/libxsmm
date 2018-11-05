@@ -30,14 +30,14 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
-FIND=$(command -v find)
-SORT=$(command -v sort)
-JOIN=$(command -v join)
-CUT=$(command -v cut)
-SED=$(command -v sed)
-AWK=$(command -v awk)
-RM=$(command -v rm)
+HERE=$(cd $(dirname $0); pwd -P)
+FIND=$(which find)
+SORT=$(which sort)
+JOIN=$(which join)
+CUT=$(which cut)
+SED=$(which sed)
+AWK=$(which awk)
+RM=$(which rm)
 
 
 if [ "" = "$1" ]; then
@@ -66,7 +66,7 @@ elif [ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]; then
   WGNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot
   GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot
 else
-  GNUPLOT=$(command -v gnuplot 2>/dev/null)
+  GNUPLOT=$(which gnuplot 2>/dev/null)
   WGNUPLOT=${GNUPLOT}
 fi
 
@@ -92,7 +92,7 @@ if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
   env GDFONTPATH=/cygdrive/c/Windows/Fonts \
     FILEEXT=${FILEEXT} KIND=${KIND} MULTI=${MULTI} \
     "${WGNUPLOT}" ${HERE}/benchmark.plt
-  if [ "1" != "${MULTI}" ] && [ "pdf" != "${FILEEXT}" ] && [ "" != "$(command -v mogrify 2>/dev/null)" ]; then
+  if [ "1" != "${MULTI}" ] && [ "pdf" != "${FILEEXT}" ] && [ "" != "$(which mogrify 2>/dev/null)" ]; then
     ${FIND} . -name "benchmark*.${FILEEXT}" -type f -exec mogrify -trim -transparent-color white {} \;
   fi
 fi

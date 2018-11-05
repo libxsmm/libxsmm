@@ -30,10 +30,10 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
-ECHO=$(command -v echo 2>/dev/null)
-CAT=$(command -v cat 2>/dev/null)
-TR=$(command -v tr 2>/dev/null)
+HERE=$(cd $(dirname $0); pwd -P)
+ECHO=$(which echo 2>/dev/null)
+CAT=$(which cat 2>/dev/null)
+TR=$(which tr 2>/dev/null)
 
 # setup thread affinity
 export OMP_SCHEDULE=static OMP_PROC_BIND=TRUE

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #############################################################################
 # Copyright (c) 2017-2018, Intel Corporation                                #
 # All rights reserved.                                                      #
@@ -30,9 +30,9 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
+HERE=$(cd $(dirname $0); pwd -P)
 
-cd "${HERE}/.." || exit
+cd ${HERE}/..
 ARG=$*
 if [ "" = "${ARG}" ]; then
   ARG=lib

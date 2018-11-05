@@ -30,9 +30,9 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
-MKDIR=$(command -v mkdir)
-WGET=$(command -v wget)
+HERE=$(cd $(dirname $0); pwd -P)
+MKDIR=$(which mkdir)
+WGET=$(which wget)
 
 DATASET="p1 p2 p3 p4 p5 p6"
 KINDS="hex pri quad tet tri"

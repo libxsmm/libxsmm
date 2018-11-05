@@ -30,12 +30,12 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
-ECHO=$(command -v echo)
-GREP=$(command -v grep)
-ENV=$(command -v env)
+HERE=$(cd $(dirname $0); pwd -P)
+ECHO=$(which echo)
+GREP=$(which grep)
+ENV=$(which env)
 
-# TESTS_NOBLAS (command -v are header-only based) need additional adjustment on the link-line.
+# TESTS_NOBLAS (which are header-only based) need additional adjustment on the link-line.
 # Currently header-only cases are not tested for not requiring BLAS (e.g., descriptor).
 # Test increases compilation time!
 #
@@ -46,12 +46,12 @@ if [ "Windows_NT" = "${OS}" ]; then
   # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
   export PATH=${PATH}:${HERE}/../lib:/usr/x86_64-w64-mingw32/sys-root/mingw/bin
   # Cygwin's ldd hangs with dyn. linked executables or certain shared libraries
-  LDD=$(command -v cygcheck)
+  LDD=$(which cygcheck)
   EXE=.exe
 else
-  if [ "" != "$(command -v ldd)" ]; then
+  if [ "" != "$(which ldd)" ]; then
     LDD=ldd
-  elif [ "" != "$(command -v otool)" ]; then
+  elif [ "" != "$(which otool)" ]; then
     LDD="otool -L"
   else
     LDD=${ECHO}

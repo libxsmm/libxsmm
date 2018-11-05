@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 #############################################################################
 # Copyright (c) 2017-2018, Intel Corporation                                #
 # All rights reserved.                                                      #
@@ -33,26 +33,26 @@
 PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.sh *.py *.yml *.txt"
 BANNED_CHARS="\t"
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
+HERE=$(cd $(dirname $0); pwd -P)
 REPO=${HERE}/..
 CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
 
-FLAKE8=$(command -v flake8 2>/dev/null)
-ICONV=$(command -v iconv 2>/dev/null)
-ECHO=$(command -v echo 2>/dev/null)
-GIT=$(command -v git 2>/dev/null)
-SED=$(command -v sed 2>/dev/null)
-TR=$(command -v tr 2>/dev/null)
-CP=$(command -v cp 2>/dev/null)
-RM=$(command -v rm 2>/dev/null)
+FLAKE8=$(which flake8 2>/dev/null)
+ICONV=$(which iconv 2>/dev/null)
+ECHO=$(which echo 2>/dev/null)
+GIT=$(which git 2>/dev/null)
+SED=$(which sed 2>/dev/null)
+TR=$(which tr 2>/dev/null)
+CP=$(which cp 2>/dev/null)
+RM=$(which rm 2>/dev/null)
 
-if [ -e "${CODEFILE}" ]; then
-  PATTERNS=$(cat "${CODEFILE}")
+if [ -e ${CODEFILE} ]; then
+  PATTERNS="$(cat ${CODEFILE})"
 fi
 
 if [ "" != "${FLAKE8}" ] && [ "0" = "$(${FLAKE8} 2>&1 >/dev/null; ${ECHO} $?)" ] && \
-   [ "0" != "$(${FLAKE8} "${HERE}/*.py" 2>&1 >/dev/null; ${ECHO} "$?")" ];
+   [ "0" != "$(${FLAKE8} ${HERE}/*.py 2>&1 >/dev/null; ${ECHO} $?)" ];
 then
   ${ECHO} "Warning: some Python scripts do not pass flake8 check (${HERE})!"
 fi
@@ -67,10 +67,10 @@ then
   set -f
   # Search the content of the diffs matching the given file types
   for PATTERN in ${PATTERNS}; do
-    for FILE in $("${GIT}" ls-files "${PATTERN}"); do
-      BANNED=$(${SED} -n "/[${BANNED_CHARS}]/p" "${FILE}" 2>/dev/null)
-      DOSEOL=$(${SED} -n "/\r$/p" "${FILE}" 2>/dev/null | ${TR} -d "\n")
-      TRAILS=$(${SED} -n "/\s\s*$/p" "${FILE}" 2>/dev/null)
+    for FILE in $("${GIT}" ls-files ${PATTERN}); do
+      BANNED=$(${SED} -n "/[${BANNED_CHARS}]/p" ${FILE} 2>/dev/null)
+      DOSEOL=$(${SED} -n "/\r$/p" ${FILE} 2>/dev/null | ${TR} -d "\n")
+      TRAILS=$(${SED} -n "/\s\s*$/p" ${FILE} 2>/dev/null)
       if [ "" != "${BANNED}" ]; then
         ${ECHO} "Warning: ${FILE} contains banned characters!"
       fi
@@ -79,17 +79,17 @@ then
       fi
       if [ "" != "${TRAILS}" ]; then
         if [ "" != "${ICONV}" ]; then
-          ${ICONV} -t ASCII "${FILE}" | ${SED} -e "s/\s\s*$//" > "${TMPF}"
+          ${ICONV} -t ASCII ${FILE} | ${SED} -e "s/\s\s*$//" > ${TMPF}
         else
-          ${SED} "${FILE}" -e "s/\s\s*$//" > "${TMPF}"
+          ${SED} ${FILE} -e "s/\s\s*$//" > ${TMPF}
         fi
-        ${CP} "${TMPF}" "${FILE}"
+        ${CP} ${TMPF} ${FILE}
         ${ECHO} "${FILE}: removed trailing white spaces."
       fi
     done
   done
 
-  ${RM} "${TMPF}"
+  ${RM} ${TMPF}
   ${ECHO} "Successfully Completed."
 else
   ${ECHO} "Error: missing prerequisites!"

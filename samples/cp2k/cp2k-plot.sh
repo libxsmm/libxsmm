@@ -30,9 +30,9 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-SORT=$(command -v sort)
-SED=$(command -v sed)
-CUT=$(command -v cut)
+SORT=$(which sort)
+SED=$(which sed)
+CUT=$(which cut)
 
 VARIANT=Specialized
 
@@ -41,16 +41,16 @@ if [ "" != "$1" ]; then
   shift
 fi
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
+HERE=$(cd $(dirname $0); pwd -P)
 FILE=${HERE}/cp2k-perf.txt
 
-GREP=$(command -v grep)
+GREP=$(which grep)
 PERF=$(${GREP} -A1 -i "${VARIANT}" ${FILE} | \
   ${GREP} -e "performance" | \
   ${CUT} -d" " -f2 | \
   ${SORT} -n)
 
-ECHO=$(command -v echo)
+ECHO=$(which echo)
 NUM=$(${ECHO} "${PERF}" | wc -l)
 MIN=$(${ECHO} ${PERF} | ${CUT} -d" " -f1)
 MAX=$(${ECHO} ${PERF} | ${CUT} -d" " -f${NUM})
@@ -59,7 +59,7 @@ ${ECHO} "num=${NUM}"
 ${ECHO} "min=${MIN}"
 ${ECHO} "max=${MAX}"
 
-BC=$(command -v bc 2>/dev/null)
+BC=$(which bc 2>/dev/null)
 if [ "" != "${BC}" ]; then
   AVG=$(${ECHO} "$(${ECHO} -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
   NUM2=$((NUM / 2))
@@ -83,7 +83,7 @@ elif [ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]; then
   WGNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot
   GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot
 else
-  GNUPLOT=$(command -v gnuplot 2>/dev/null)
+  GNUPLOT=$(which gnuplot 2>/dev/null)
   WGNUPLOT=${GNUPLOT}
 fi
 

@@ -30,7 +30,7 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd "$(dirname "$0")" && pwd -P)
+HERE=$(cd $(dirname $0); pwd -P)
 VARIANT=Cached
 LIMIT=31
 
@@ -46,7 +46,7 @@ elif [ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]; then
   WGNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot
   GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot
 else
-  GNUPLOT=$(command -v gnuplot 2>/dev/null)
+  GNUPLOT=$(which gnuplot 2>/dev/null)
   WGNUPLOT=${GNUPLOT}
 fi
 
@@ -58,7 +58,7 @@ if [ -f "${GNUPLOT}" ]; then
 fi
 GNUPLOT_VERSION=$((GNUPLOT_MAJOR * 10000 + GNUPLOT_MINOR * 100))
 
-SED=$(command -v sed)
+SED=$(which sed)
 function capturedTxtToDataFile {
   ${SED} \
     -e "/^m=/,/${VARIANT}/{//!d}" \
@@ -81,7 +81,7 @@ function capturedTxtToDataFile {
 }
 
 if [ "40600" -le "${GNUPLOT_VERSION}" ]; then
-  RM=$(command -v rm)
+  RM=$(which rm)
   if [ "" = "$1" ]; then
     FILENAME=smm-$(echo ${VARIANT} | tr ' ,' '-' | tr -d '()' | tr '[:upper:]' '[:lower:]').pdf
   else
