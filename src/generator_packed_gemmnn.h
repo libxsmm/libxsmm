@@ -188,7 +188,7 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
      if ( loopj || loopi ) {
         libxsmm_reset_loop_label_tracker ( &l_loop_label_tracker );
      }
- 
+
      /* DO register blocking */
      a0 = 0;
      if ( iun > 1 ) a1 = 1;
@@ -308,9 +308,9 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
         if ( ( j+5 <= bn2 ) && ( jun >= 6 ) ) j5 = 1; else j5 = 0;
         if ( ( j+6 <= bn2 ) && ( jun >= 7 ) ) j6 = 1; else j6 = 0;
         if ( ( j+7 <= bn2 ) && ( jun >= 8 ) ) j7 = 1; else j7 = 0;
-        if ( loopj && (j > bn1) && (j + jun -1 <= bn2) ) { 
+        if ( loopj && (j > bn1) && (j + jun -1 <= bn2) ) {
            /* Turn everything off, we're really supposed to be in a loop */
-           j0=0; j1=0; j2=0; j3=0; j4=0; j5=0; j6=0; j7=0; 
+           j0=0; j1=0; j2=0; j3=0; j4=0; j5=0; j6=0; j7=0;
 #ifdef COMPACT_GEMMNN_DEBUG
            printf("Emptying n-loop for j=%d\n",j);
 #endif
@@ -333,9 +333,9 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            if ( ( i+5 <= am2 ) && ( iun >= 6 ) ) i5 = 1; else i5 = 0;
            if ( ( i+6 <= am2 ) && ( iun >= 7 ) ) i6 = 1; else i6 = 0;
            if ( ( i+7 <= am2 ) && ( iun >= 8 ) ) i7 = 1; else i7 = 0;
-           if ( loopi && (i > am1) && (i + iun -1 <= am2) ) { 
+           if ( loopi && (i > am1) && (i + iun -1 <= am2) ) {
               /* Turn everything off, we're really supposed to be in a loop */
-              i0=0; i1=0; i2=0; i3=0; i4=0; i5=0; i6=0; i7=0; 
+              i0=0; i1=0; i2=0; i3=0; i4=0; i5=0; i6=0; i7=0;
 #ifdef COMPACT_GEMMNN_DEBUG
               printf("Emptying m-loop for i=%d j=%d i0=%d j0=%d\n",i,j,i0,j0);
 #endif
@@ -566,7 +566,7 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            if ( loopi && j0 ) {
               aoffset = datasz*iun*numb;
               coffset = datasz*iun*numb;
-              if ( i == am1 ) { 
+              if ( i == am1 ) {
 #ifdef COMPACT_GEMMNN_DEBUG
                  printf("Should be putting in a m-jump soon: i=%d j=%d i0=%d j0=%d am1=%d am2=%d\n",i,j,i0,j0,am1,am2);
 #endif
@@ -592,7 +592,7 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
         if ( loopj ) {
            coffset = ldc*datasz*jun*numb;
            boffset = ldb*datasz*jun*numb;
-           if ( j == bn1 ) { 
+           if ( j == bn1 ) {
 #ifdef COMPACT_GEMMNN_DEBUG
               printf("Should be putting in a n-jump soon: j=%d bn1=%d bn2=%d\n",j,bn1,bn2);
 #endif
@@ -613,7 +613,7 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            j0 = 1; /* Turn everything back on again */
         }
      } /* N-loop */
-#if 1 
+#if 1
      printf("Inlined Compact GEMM code pointer ends at: %d\n",io_code->code_size);
 #endif
 }

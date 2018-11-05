@@ -43,7 +43,7 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
                                                    ,   unsigned int                            iunroll,
                                                        unsigned int                            junroll,
                                                        unsigned int                            loopi,
-                                                       unsigned int                            loopj 
+                                                       unsigned int                            loopj
 #endif
  );
 

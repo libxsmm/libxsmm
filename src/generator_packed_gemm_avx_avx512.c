@@ -59,10 +59,10 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
                                                       const libxsmm_trsm_descriptor* i_packed_trsm_desc,
                                                       const char*                    i_arch
 #ifdef GARBAGE_PARAMETERS
-                                                    , unsigned int                   iunroll, 
-                                                      unsigned int                   junroll, 
-                                                      unsigned int                   loopi, 
-                                                      unsigned int                   loopj 
+                                                    , unsigned int                   iunroll,
+                                                      unsigned int                   junroll,
+                                                      unsigned int                   loopi,
+                                                      unsigned int                   loopj
 #endif
                                                       )
 {
