@@ -87,7 +87,7 @@ cat << EOM
 #endif
 EOM
 
-HERE=$(cd $(dirname $0); pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 SRCDIR=../src
 
 if [ "" = "$1" ]; then

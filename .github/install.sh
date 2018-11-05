@@ -30,13 +30,13 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 GIT_DIR=${HERE}/../.git
 LOCKFILE=${GIT_DIR}/.commit
 
-GIT=$(which git 2>/dev/null)
-CP=$(which cp 2>/dev/null)
-RM=$(which rm 2>/dev/null)
+GIT=$(command -v git 2>/dev/null)
+CP=$(command -v cp 2>/dev/null)
+RM=$(command -v rm 2>/dev/null)
 
 if [ -e ${GIT_DIR}/hooks ] && \
    [ "" != "${GIT}" ] && [ "" != "${CP}" ] && [ "" != "${RM}" ]; \

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
 # Copyright (c) 2016-2018, Intel Corporation                                #
 # All rights reserved.                                                      #
@@ -33,20 +33,20 @@
 RPT=inspector
 KIND=mi1
 
-BASENAME=$(which basename 2>/dev/null)
-TOOL=$(which inspxe-cl 2>/dev/null)
-ECHO=$(which echo 2>/dev/null)
-GREP=$(which grep 2>/dev/null)
-SED=$(which sed 2>/dev/null)
-TR=$(which tr 2>/dev/null)
-RM=$(which rm 2>/dev/null)
+BASENAME=$(command -v basename 2>/dev/null)
+TOOL=$(command -v inspxe-cl 2>/dev/null)
+ECHO=$(command -v echo 2>/dev/null)
+GREP=$(command -v grep 2>/dev/null)
+SED=$(command -v sed 2>/dev/null)
+TR=$(command -v tr 2>/dev/null)
+RM=$(command -v rm 2>/dev/null)
 
 if [ "${TOOL_ENABLED}" = "" ] || [ "${TOOL_ENABLED}" != "0" ]; then
   if [ "" != "$1" ]    && [ "" != "${BASENAME}" ] && [ "" != "${TOOL}" ] && \
      [ "" != "${TR}" ] && [ "" != "${GREP}" ]     && [ "" != "${SED}" ]  && \
                           [ "" != "${ECHO}" ]     && [ "" != "${RM}" ];
   then
-    HERE=$(cd $(dirname $0); pwd -P)
+    HERE=$(cd "$(dirname "$0")" && pwd -P)
     if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
       export TRAVIS_BUILD_DIR=${HERE}/..
     fi
@@ -57,39 +57,39 @@ if [ "${TOOL_ENABLED}" = "" ] || [ "${TOOL_ENABLED}" != "0" ]; then
       ID=${COVID}
     fi
     if [ "" != "${ID}" ]; then
-      RPTNAME=$(${BASENAME} $1)-${KIND}-${ID}
+      RPTNAME=$(${BASENAME} "$1")-${KIND}-${ID}
     else
-      RPTNAME=$(${BASENAME} $1)-${KIND}
+      RPTNAME=$(${BASENAME} "$1")-${KIND}
     fi
 
     DIR=${TRAVIS_BUILD_DIR}/${RPT}
-    ${RM} -rf ${DIR}/${ID}
+    ${RM} -rf "${DIR}/${ID}"
 
-    ${TOOL} -collect ${KIND} -r ${DIR}/${ID} -no-auto-finalize -return-app-exitcode -- $*
+    ${TOOL} -collect ${KIND} -r "${DIR}/${ID}" -no-auto-finalize -return-app-exitcode -- "$@"
     RESULT=$?
 
     if [ "0" = "${RESULT}" ]; then
-      ${TOOL} -report problems -r ${DIR}/${ID} > ${DIR}/${RPTNAME}.txt
+      ${TOOL} -report problems -r "${DIR}/${ID}" > "${DIR}/${RPTNAME}.txt"
       RESULT2=$?
 
       if [ "" = "${TOOL_REPORT_ONLY}" ] && [ "0" != "$((2<RESULT2))" ]; then
-        FN=$(${GREP} 'Function' ${DIR}/${RPTNAME}.txt | \
+        FN=$(${GREP} 'Function' "${DIR}/${RPTNAME}.txt" | \
              ${SED} -e 's/..* Function \(..*\):..*/\1/')
-        XFLT=$(echo ${TOOL_XFILTER} | ${TR} -s " " | ${TR} " " "|")
-        YFLT=$(echo ${TOOL_FILTER} | ${TR} -s " " | ${TR} " " "|")
+        XFLT=$(echo "${TOOL_XFILTER}" | ${TR} -s " " | ${TR} " " "|")
+        YFLT=$(echo "${TOOL_FILTER}" | ${TR} -s " " | ${TR} " " "|")
         MATCH=${FN}
 
-        if [ "" != "${XFLT}" ]; then MATCH=$(${ECHO} "${MATCH}" | ${GREP} -Ev ${XFLT}); fi
-        if [ "" = "${YFLT}" ] || [ "" != "$(${ECHO} "${MATCH}" | ${GREP} -E ${YFLT})" ]; then
+        if [ "" != "${XFLT}" ]; then MATCH=$(${ECHO} "${MATCH}" | ${GREP} -Ev "${XFLT}"); fi
+        if [ "" = "${YFLT}" ] || [ "" != "$(${ECHO} "${MATCH}" | ${GREP} -E "${YFLT}")" ]; then
           RESULT=${RESULT2}
         fi
       fi
     fi
     exit ${RESULT}
   else
-    $*
+    "$@"
   fi
 else
-  $*
+  "$@"
 fi
 

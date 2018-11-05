@@ -30,8 +30,8 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
-ECHO=$(which echo)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
+ECHO=$(command -v echo)
 SCRT=${HERE}/../../scripts/libxsmm_utilities.py
 FILE=eigen_smm-cp2k.txt
 

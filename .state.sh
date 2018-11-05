@@ -30,13 +30,13 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
+HERE=$(cd "$(dirname "$0")" && pwd -P)
 NAME=$(basename $0)
 
-TOUCH=$(which touch)
-ECHO=$(which echo)
-SED=$(which sed)
-TR=$(which tr)
+TOUCH=$(command -v touch)
+ECHO=$(command -v echo)
+SED=$(command -v sed)
+TR=$(command -v tr)
 
 DEST=$1
 if [ "$1" = "" ]; then
