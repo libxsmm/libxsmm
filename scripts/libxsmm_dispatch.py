@@ -36,12 +36,6 @@ import os
 
 if __name__ == "__main__":
     argc = len(sys.argv)
-    if (2 < argc and os.path.isfile(sys.argv[1])):
-        print("{ static const char *const build_state =")
-        print("#   include \"" + sys.argv[1] + "\"")
-        print("  ;")
-        print("  internal_build_state = build_state;")
-        print("}")
     if (4 < argc):
         precision = int(sys.argv[2])
         threshold = int(sys.argv[3])
@@ -121,6 +115,12 @@ if __name__ == "__main__":
         print("# if defined(_MSC_VER)")
         print("#   pragma warning(pop)")
         print("# endif")
+        print("}")
+    elif (1 < argc and os.path.isfile(sys.argv[1])):
+        print("{ static const char *const build_state =")
+        print("#   include \"" + sys.argv[1] + "\"")
+        print("  ;")
+        print("  internal_build_state = build_state;")
         print("}")
     else:
         sys.tracebacklimit = 0
