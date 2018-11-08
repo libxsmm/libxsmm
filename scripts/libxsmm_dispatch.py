@@ -31,73 +31,97 @@
 ###############################################################################
 import libxsmm_utilities
 import sys
+import os
 
 
 if __name__ == "__main__":
     argc = len(sys.argv)
-    if (3 < argc):
-        precision = int(sys.argv[1])
-        threshold = int(sys.argv[2])
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[3:], 0)
-
-        print("libxsmm_gemm_descriptor desc;")
-        print("libxsmm_xmmfunction func;")
-        print("unsigned int hash, indx;")
-        print("#if defined(_MSC_VER)")
-        print("# pragma warning(push)")
-        print("# pragma warning(disable: 4127)")
+    if (2 < argc and os.path.isfile(sys.argv[1])):
+        print("{ static const char *const build_state =")
+        print("#   include \"" + sys.argv[1] + "\"")
+        print("  ;")
+        print("  internal_build_state = build_state;")
+        print("}")
+    if (4 < argc):
+        precision = int(sys.argv[2])
+        threshold = int(sys.argv[3])
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[4:], 0)
+        print("/* omit registering code if JIT is enabled"
+              " and if an ISA extension is found")
+        print(" * which is beyond the static code"
+              " path used to compile the library")
+        print(" */")
+        print("#if (0 != LIBXSMM_JIT) && !defined(__MIC__)")
+        print("/* check if target arch. permits execution"
+              " (arch. may be overridden) */")
+        print("if (LIBXSMM_STATIC_TARGET_ARCH"
+              " <= libxsmm_target_archid &&")
+        print("   (LIBXSMM_X86_SSE3 > libxsmm_target_archid "
+              "/* JIT code gen. is not available */")
+        print("    /* condition allows to avoid JIT "
+              "(if static code is good enough) */")
+        print("    || LIBXSMM_STATIC_TARGET_ARCH == libxsmm_target_archid))")
         print("#endif")
+        print("{")
+        print("  libxsmm_gemm_descriptor desc;")
+        print("  libxsmm_xmmfunction func;")
+        print("  unsigned int hash, indx;")
+        print("# if defined(_MSC_VER)")
+        print("#   pragma warning(push)")
+        print("#   pragma warning(disable: 4127)")
+        print("# endif")
         for mnk in mnklist:
             mstr, nstr, kstr, mnkstr = \
-                str(mnk[0]), str(mnk[1]), str(mnk[2]), "_".join(map(str, mnk))
+                str(mnk[0]), str(mnk[1]), str(mnk[2]), \
+                "_".join(map(str, mnk))
             mnksig = mstr + ", " + nstr + ", " + kstr
             ldxsig = mstr + ", " + kstr + ", " + mstr
             # prefer registering double-precision kernels
             # when approaching an exhausted registry
             if (1 != precision):  # only double-precision
-                print("if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ")" +
+                print("  if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ")" +
                       " && LIBXSMM_GEMM_NO_BYPASS_DIMS(" + ldxsig + ")) {")
-                print("  LIBXSMM_GEMM_DESCRIPTOR(desc, " +
+                print("    LIBXSMM_GEMM_DESCRIPTOR(desc, " +
                       "LIBXSMM_GEMM_PRECISION_F64, LIBXSMM_FLAGS,")
-                print("    " + mnksig + ", " + ldxsig + ", " +
+                print("      " + mnksig + ", " + ldxsig + ", " +
                       "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                print("  hash = libxsmm_crc32(&desc, " +
+                print("    hash = libxsmm_crc32(&desc, " +
                       "LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED);")
-                print("  indx = LIBXSMM_HASH_MOD(hash, " +
+                print("    indx = LIBXSMM_HASH_MOD(hash, " +
                       "LIBXSMM_CAPACITY_REGISTRY);")
-                print("  func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" +
+                print("    func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" +
                       mnkstr + ";")
-                print("  internal_register_static_code(" +
+                print("    internal_register_static_code(" +
                       "&desc, indx, hash, func, new_registry);")
-                print("}")
+                print("  }")
         for mnk in mnklist:
             mstr, nstr, kstr, mnkstr = \
-                str(mnk[0]), str(mnk[1]), str(mnk[2]), "_".join(map(str, mnk))
+                str(mnk[0]), str(mnk[1]), str(mnk[2]), \
+                "_".join(map(str, mnk))
             mnksig = mstr + ", " + nstr + ", " + kstr
             ldxsig = mstr + ", " + kstr + ", " + mstr
             # prefer registering double-precision kernels
             # when approaching an exhausted registry
             if (2 != precision):  # only single-precision
-                print("if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ")" +
+                print("  if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ")" +
                       " && LIBXSMM_GEMM_NO_BYPASS_DIMS(" + ldxsig + ")) {")
-                print("  LIBXSMM_GEMM_DESCRIPTOR(desc, " +
+                print("    LIBXSMM_GEMM_DESCRIPTOR(desc, " +
                       "LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_FLAGS,")
-                print("    " + mnksig + ", " + ldxsig + ", " +
+                print("      " + mnksig + ", " + ldxsig + ", " +
                       "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                print("  hash = libxsmm_crc32(&desc, " +
+                print("    hash = libxsmm_crc32(&desc, " +
                       "LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED);")
-                print("  indx = LIBXSMM_HASH_MOD(hash, " +
+                print("    indx = LIBXSMM_HASH_MOD(hash, " +
                       "LIBXSMM_CAPACITY_REGISTRY);")
-                print("  func.smm = (libxsmm_smmfunction)libxsmm_smm_" +
+                print("    func.smm = (libxsmm_smmfunction)libxsmm_smm_" +
                       mnkstr + ";")
-                print("  internal_register_static_code(" +
+                print("    internal_register_static_code(" +
                       "&desc, indx, hash, func, new_registry);")
-                print("}")
-        print("#if defined(_MSC_VER)")
-        print("# pragma warning(pop)")
-        print("#endif")
-    elif (1 < argc):
-        print("/* no static code */")
+                print("  }")
+        print("# if defined(_MSC_VER)")
+        print("#   pragma warning(pop)")
+        print("# endif")
+        print("}")
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")

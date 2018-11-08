@@ -198,7 +198,10 @@ endif
 DOCEXT = pdf
 
 # state to be excluded from tracking the (re-)build state
-EXCLUDE_STATE = PREFIX DESTDIR INSTALL_ROOT
+EXCLUDE_STATE = \
+  DESTDIR INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR \
+  OUTDIR PBINDIR PINCDIR PREFIX POUTDIR PSRCDIR PTSTDIR \
+  SCRDIR SPLDIR SRCDIR TEST TSTDIR
 
 # avoid to link with C++ standard library
 FORCE_CXX = 0
@@ -635,9 +638,8 @@ $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
 
 .PHONY: sources
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
-$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(SRCFILES_KERNELS) \
-                              $(INCDIR)/libxsmm.h
-	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
+$(BLDDIR)/libxsmm_dispatch.h: $(INCDIR)/libxsmm.h $(SRCFILES_KERNELS) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(abspath .state) $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py $(ROOTDIR)/$(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES_KERNELS)))
