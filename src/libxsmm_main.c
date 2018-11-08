@@ -521,7 +521,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
             fputc('\n', stdout);
             fclose(file);
           }
-        }        
+        }
       }
       if ( NULL != env_dump_build && 0 != *env_dump_build && '0' != *env_dump_build
         && NULL != internal_build_state)
