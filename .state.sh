@@ -44,13 +44,13 @@ if [ "$1" = "" ]; then
 fi
 
 STATEFILE=${DEST}/.state
-STATE=$(${TR} '?' '\n' | ${SED} -e 's/^  *//' -e 's/^\(..*[^ ]\) *$/"\1\\\\n"/')
+STATE=$(${TR} '?' '\n' | ${SED} -e 's/^ */\"/' -e 's/$/\\n\"/')
 
-if [ ! -e ${STATEFILE} ] || [ 0 != $(${ECHO} "${STATE}" | diff -q ${STATEFILE} - >/dev/null; ${ECHO} $?) ]; then
+if [ ! -e ${STATEFILE} ] || [ "0" != "$(${ECHO} "${STATE}" | diff -q ${STATEFILE} - >/dev/null; ${ECHO} "$?")" ]; then
   if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
-    ${ECHO} "${STATE}" > ${STATEFILE}
+    printf "%s\n" "${STATE}" > ${STATEFILE}
   fi
-  ${ECHO} $0
+  ${ECHO} "$0"
   ${TOUCH} $0
 fi
 
