@@ -36,10 +36,12 @@ import os
 
 if __name__ == "__main__":
     argc = len(sys.argv)
-    if (4 < argc):
-        precision = int(sys.argv[2])
-        threshold = int(sys.argv[3])
-        mnklist = libxsmm_utilities.load_mnklist(sys.argv[4:], 0)
+    arg1_isfile = os.path.isfile(sys.argv[1] if 1 < argc else "")
+    base = 2 if arg1_isfile else 1
+    if ((base + 2) < argc):
+        precision = int(sys.argv[base+0])
+        threshold = int(sys.argv[base+1])
+        mnklist = libxsmm_utilities.load_mnklist(sys.argv[base+2:], 0)
         print("/* omit registering code if JIT is enabled"
               " and if an ISA extension is found")
         print(" * which is beyond the static code"
@@ -116,7 +118,7 @@ if __name__ == "__main__":
         print("#   pragma warning(pop)")
         print("# endif")
         print("}")
-    if (1 < argc and os.path.isfile(sys.argv[1])):
+    if (1 < argc and arg1_isfile):
         print("#if !defined(_WIN32)")
         print("{ static const char *const build_state =")
         print("#   include \"" + sys.argv[1] + "\"")
