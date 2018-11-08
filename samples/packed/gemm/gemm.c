@@ -200,7 +200,8 @@ extern void dgemm_();
    a buffer from the compact storage and calls the regular dgemm code. This
    is very naive reference code just used for testing purposes */
 LIBXSMM_INLINE
-void compact_dgemm_ ( unsigned int *layout, unsigned int *m, unsigned int *n,
+void compact_dgemm_ ( unsigned int *layout, char *transa, char *transb,
+                      unsigned int *m, unsigned int *n,
                       unsigned int *k, double *alpha, double *A,
                       unsigned int *lda, double *B, unsigned int *ldb,
                       double *beta, double *C, unsigned int *ldc,
@@ -228,7 +229,7 @@ if (++ntimes < 3 ) printf("Doing a dgemm at place i=%d j=%d num=%d Ap[%d]=%g\n",
            dcopy_to_temp ( *layout, Ap, *lda, *m, *k, Atemp, *VLEN );
            dcopy_to_temp ( *layout, Bp, *ldb, *k, *n, Btemp, *VLEN );
            dcopy_to_temp ( *layout, Cp, *ldc, *m, *n, Ctemp, *VLEN );
-           dgemm_ ( &ntrans, &ntrans, m, n, k, alpha, Atemp, m, Btemp, k, beta, Ctemp, m );
+           dgemm_ ( transa, transb, m, n, k, alpha, Atemp, m, Btemp, k, beta, Ctemp, m );
            dcopy_from_temp ( *layout, Cp, *ldc, *m, *n, Ctemp, *VLEN );
        }
     }
@@ -242,7 +243,8 @@ extern void sgemm_();
 /* Note: if layout==101 (row major), then this code is known to only work when
  *        nmat == VLEN. To check for accuracy otherwise, transpose everything */
 LIBXSMM_INLINE
-void compact_sgemm_ ( unsigned int *layout, unsigned int *m, unsigned int *n,
+void compact_sgemm_ ( char *transa, char *transb,
+                      unsigned int *layout, unsigned int *m, unsigned int *n,
                       unsigned int *k, float *alpha, float *A,
                       unsigned int *lda, float *B, unsigned int *ldb,
                       float *beta, float *C, unsigned int *ldc,
@@ -270,7 +272,7 @@ if (++ntimes < 3 ) printf("Doing a sgemm at place i=%d j=%d num=%d Ap[%d]=%g\n",
            scopy_to_temp ( *layout, Ap, *lda, *m, *k, Atemp, *VLEN );
            scopy_to_temp ( *layout, Bp, *ldb, *k, *n, Btemp, *VLEN );
            scopy_to_temp ( *layout, Cp, *ldc, *m, *n, Ctemp, *VLEN );
-           sgemm_ ( &ntrans, &ntrans, m, n, k, alpha, Atemp, m, Btemp, k, beta, Ctemp, m );
+           sgemm_ ( transa, transb, m, n, k, alpha, Atemp, m, Btemp, k, beta, Ctemp, m );
            scopy_from_temp ( *layout, Cp, *ldc, *m, *n, Ctemp, *VLEN );
        }
     }
@@ -489,7 +491,7 @@ int main(int argc, char* argv[])
 #endif
   int nmats, nmatd;
   int i, j, l, iunroll, junroll, loopi, loopj;
-  char side='L', uplo='U', trans='N', diag='N';
+  char side='L', uplo='U', transa='N', transb='N', diag='N';
   unsigned int typesize8 = 8;
   unsigned int typesize4 = 4;
   float  *sa, *sb, *sc, *sd, *sc1;
@@ -536,23 +538,23 @@ int main(int argc, char* argv[])
   io_generated_code.last_error = 0;
 #endif
 
-  printf("\nUSAGE: %s m n k lda ldb ldc nmat layout ntest iunroll junroll loopj loopi\n",argv[0]);
+  printf("\nUSAGE: %s m n k lda ldb ldc nmat layout ntest transa transb iunroll junroll loopj loopi\n",argv[0]);
   if ( argc <= 3 )
   {
 #ifdef TEST_SINGLE
-     printf("Compact NN_SGEMM a C_mxn<-C_mxn+A_mxk*B_kxn matrix of leading dims lda/b/c\n");
+     printf("Compact SGEMM a C_mxn<-C_mxn+A_mxk*B_kxn matrix of leading dims lda/b/c\n");
      printf("This will test the jit of 1 VLEN=%d ",VLENS);
      if ( VLENS==8 ) printf("(AVX2)");
      else            printf("(AVX512)");
 #else
-     printf("Compact NN_DGEMM a C_mxn<-C_mxn+A_mxk*B_kxn matrix of leading dims lda/b/c\n");
+     printf("Compact DGEMM a C_mxn<-C_mxn+A_mxk*B_kxn matrix of leading dims lda/b/c\n");
      printf("This will test the jit of 1 VLEN=%d ",VLEND);
      if ( VLEND==4 ) printf("(AVX2)");
      else            printf("(AVX512)");
 #endif
      printf(" work of nmat at a time\n");
      printf("Configurable: M-loop controlled by iunroll & loopi. N-loop by junroll & loopj\n");
-     printf("Defaults: m=n=k=lda=ldb=ldc=nmat=8, layout=102 (col major), ntest=1\n");
+     printf("Defaults: m=n=k=lda=ldb=ldc=nmat=8, layout=102 (col major), transa=/b='N', ntest=1\n");
   }
   if ( argc > 1 ) m = atoi(argv[1]); else m = 8;
   if ( argc > 2 ) n = atoi(argv[2]); else n = 8;
@@ -563,10 +565,12 @@ int main(int argc, char* argv[])
   if ( argc > 7 ) nmat = atoi(argv[7]); else nmat = 8;
   if ( argc > 8 ) layout = atoi(argv[8]); else layout=102;
   if ( argc > 9 ) ntest = atoi(argv[9]); else ntest = 1;
-  if ( argc > 10 ) iunroll=atoi(argv[10]); else iunroll=0;
-  if ( argc > 11 ) junroll=atoi(argv[11]); else junroll=0;
-  if ( argc > 12 ) loopj=atoi(argv[12]); else loopj=0;
-  if ( argc > 13 ) loopi=atoi(argv[13]); else loopi=0;
+  if ( argc > 10 ) transa = argv[10][0]; else transa = 'N';
+  if ( argc > 11 ) transb = argv[11][0]; else transb = 'N';
+  if ( argc > 12 ) iunroll=atoi(argv[12]); else iunroll=0;
+  if ( argc > 13 ) junroll=atoi(argv[13]); else junroll=0;
+  if ( argc > 14 ) loopj=atoi(argv[14]); else loopj=0;
+  if ( argc > 15 ) loopi=atoi(argv[15]); else loopi=0;
 
   salpha = (float)dalpha;
   m = LIBXSMM_MAX(m,1);
@@ -575,6 +579,9 @@ int main(int argc, char* argv[])
   ntest = LIBXSMM_MAX(ntest,1);
   nmat = LIBXSMM_MAX(nmat,VLEND);
   layout = LIBXSMM_MAX(LIBXSMM_MIN(layout,102),101);
+
+  if ( transa!='N' && transa!='n' && transa!='T' && transa!='t' ) transa='N';
+  if ( transb!='N' && transb!='n' && transb!='T' && transb!='t' ) transb='N';
 
   lda = LIBXSMM_MAX(lda,m);
   ldb = LIBXSMM_MAX(ldb,k);
@@ -591,9 +598,9 @@ int main(int argc, char* argv[])
   op_count = nmat * 2.0 * (double)m * (double)n * (double)k;
 
 #ifdef TEST_SINGLE
-printf("This is a real*%d tester for JIT compact SGEMM kernels! (m=%u n=%u k=%u lda=%u ldb=%u ldc=%u layout=%d nmat=%d alpha=%g beta=%g iun=%d jun=%d loopi=%d loopj=%d VLEN=%d)\n",typesize4,m,n,k,lda,ldb,ldc,layout,nmat,dalpha,dbeta,iunroll,junroll,loopi,loopj,VLENS);
+printf("This is a real*%d tester for JIT compact SGEMM %c%c kernels! (m=%u n=%u k=%u lda=%u ldb=%u ldc=%u layout=%d nmat=%d alpha=%g beta=%g iun=%d jun=%d loopi=%d loopj=%d VLEN=%d)\n",typesize4,transa,transb,m,n,k,lda,ldb,ldc,layout,nmat,dalpha,dbeta,iunroll,junroll,loopi,loopj,VLENS);
 #else
-printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u lda=%u ldb=%u ldc=%u layout=%d nmat=%d alpha=%g beta=%g iun=%d jun=%d loopi=%d loopj=%d VLEN=%d)\n",typesize8,m,n,k,lda,ldb,ldc,layout,nmat,dalpha,dbeta,iunroll,junroll,loopi,loopj,VLEND);
+printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u k=%u lda=%u ldb=%u ldc=%u layout=%d nmat=%d alpha=%g beta=%g iun=%d jun=%d loopi=%d loopj=%d VLEN=%d)\n",typesize8,transa,transb,m,n,k,lda,ldb,ldc,layout,nmat,dalpha,dbeta,iunroll,junroll,loopi,loopj,VLEND);
 #endif
 
 #ifdef USE_XSMM_GENERATED
@@ -609,9 +616,9 @@ printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u 
   printf("This code tests MKL compact batch directly\n");
 #endif
 
-  desc8 = libxsmm_trsm_descriptor_init(&blob, typesize8, m, n, lda, ldb, &dalpha, trans, diag, side, uplo, k); /* Hack: replacing layout with k */
+  desc8 = libxsmm_trsm_descriptor_init(&blob, typesize8, m, n, lda, ldb, &dalpha, transa, transb, side, uplo, k); /* Hack: replacing layout with k */
 #ifdef TEST_SINGLE
-  desc4 = libxsmm_trsm_descriptor_init(&blob, typesize4, m, n, lda, ldb, &salpha, trans, diag, side, uplo, k); /* Hack: replacing layout with k */
+  desc4 = libxsmm_trsm_descriptor_init(&blob, typesize4, m, n, lda, ldb, &salpha, transa, transb, side, uplo, k); /* Hack: replacing layout with k */
 #endif
 #ifdef USE_XSMM_GENERATED
   printf("calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
@@ -699,7 +706,8 @@ printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u 
   MKL_LAYOUT CLAYOUT = (layout == 101) ? MKL_ROW_MAJOR : MKL_COL_MAJOR;
   MKL_SIDE SIDE = (side == 'R' || side == 'r') ? MKL_RIGHT : MKL_LEFT;
   MKL_UPLO UPLO = (uplo == 'U' || uplo == 'u') ? MKL_UPPER : MKL_LOWER;
-  MKL_TRANSPOSE TRANSA = (trans == 'N' || trans == 'n') ? MKL_NOTRANS : MKL_TRANS;
+  MKL_TRANSPOSE TRANSA = (transa == 'N' || transa == 'n') ? MKL_NOTRANS : MKL_TRANS;
+  MKL_TRANSPOSE TRANSB = (transb == 'N' || transb == 'n') ? MKL_NOTRANS : MKL_TRANS;
   MKL_DIAG DIAG = (diag == 'N' || diag == 'n') ? MKL_NONUNIT : MKL_UNIT;
   MKL_COMPACT_PACK CMP_FORMAT = mkl_get_format_compact();
 #if 0
@@ -749,7 +757,7 @@ printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u 
      (*opcode_routine)( Ap, Bp, Cp );
 #endif
 #ifdef TIME_MKL
-     mkl_dgemm_compact ( CLAYOUT, TRANSA, TRANSA, m, n, k, dalpha, da, lda, db, ldb, dbeta, dc, ldc, CMP_FORMAT, nmat );
+     mkl_dgemm_compact ( CLAYOUT, TRANSA, TRANSB, m, n, k, dalpha, da, lda, db, ldb, dbeta, dc, ldc, CMP_FORMAT, nmat );
      i+=nmatd; /* Because MKL will do everything */
 #endif
 #ifdef MKL_TIMER
@@ -803,9 +811,9 @@ printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u 
 #endif
 
 #ifndef USE_MKL_FOR_REFERENCE
-  compact_dgemm_ ( &layout, &m, &n, &k, &dalpha, da, &lda, db, &ldb, &dbeta, dd, &ldc, &nmat, &VLEND );
+  compact_dgemm_ ( &layout, &transa, &transb, &m, &n, &k, &dalpha, da, &lda, db, &ldb, &dbeta, dd, &ldc, &nmat, &VLEND );
 #else
-  mkl_dgemm_compact ( CLAYOUT, TRANSA, TRANSA, m, n, k, dalpha, da, lda, db, ldb, dbeta, dd, ldc, CMP_FORMAT, nmat );
+  mkl_dgemm_compact ( CLAYOUT, TRANSA, TRANSB, m, n, k, dalpha, da, lda, db, ldb, dbeta, dd, ldc, CMP_FORMAT, nmat );
 #endif
 
 #ifdef MKL_TIMER
@@ -827,7 +835,7 @@ printf("This is a real*%d tester for JIT compact DGEMM kernels! (m=%u n=%u k=%u 
 
 #ifdef TEST_SINGLE
   /* Call some reference code now on a copy of the B matrix (C) */
-  compact_dgemm_ ( &layout, &m, &n, &k, &salpha, sa, &lda, sb, &ldb, &sbeta, sd, &ldc, &nmat, &VLENS );
+  compact_dgemm_ ( &layout, &transa, &transb, &m, &n, &k, &salpha, sa, &lda, sb, &ldb, &sbeta, sd, &ldc, &nmat, &VLENS );
   /* Compute the residual between C and D */
   dtmp = residual_s ( sc, ldc, m, n*nmat, sd, ldc, &nerrs, &ncorr );
   printf("R4 mnk=%u %u %u ldabc=%u %u %u error: %g number of errors: %u corrects: %u",m,n,k,lda,ldb,ldc,dtmp,nerrs,ncorr);

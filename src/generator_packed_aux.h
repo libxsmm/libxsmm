@@ -312,6 +312,7 @@ LIBXSMM_API_INLINE void compact_load_matrix1_ (
 
 LIBXSMM_API_INLINE void compact_load_matrix_gen_ (
      libxsmm_generated_code* io_code,
+     unsigned int trans,
      unsigned int lda,
      unsigned int i,
      unsigned int j,
@@ -321,8 +322,8 @@ LIBXSMM_API_INLINE void compact_load_matrix_gen_ (
      char regset,
      unsigned int matrix_gpreg )
 {
-     int element = number*(j-1)*lda + number*(i-1);
-     int offset = element * datasize;
+     int element;
+     int offset;
      unsigned int i_vmove_instr;
      int i_instruction_set;
 
@@ -331,6 +332,9 @@ LIBXSMM_API_INLINE void compact_load_matrix_gen_ (
         printf("lda=%d i=%d j=%d reg=%d number=%d datasize=%d regset=%c matrix_gpreg=%d\n",lda,i,j,reg,number,datasize,regset,matrix_gpreg);
         exit(-1);
      }
+     if ( !trans ) element = number*(j-1)*lda + number*(i-1);
+     else          element = number*(i-1)*lda + number*(j-1);
+     offset = element * datasize;
      if ( datasize == 8 )
      {
         i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPD;

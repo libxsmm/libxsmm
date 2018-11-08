@@ -136,10 +136,10 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
      unsigned int ldb = i_packed_trsm_desc->ldb;
      /* HACK! */
      unsigned int ldc = m ;
-     char trans = i_packed_trsm_desc->transa;
+     char transa = i_packed_trsm_desc->transa;
      char side = i_packed_trsm_desc->side;
      char uplo = i_packed_trsm_desc->uplo;
-     char diag = i_packed_trsm_desc->diag;
+     char transb = i_packed_trsm_desc->diag;
      /* HACK ! */
      const unsigned int k = (unsigned int)i_packed_trsm_desc->layout;
      unsigned int datasz = (unsigned int)i_packed_trsm_desc->typesize;
@@ -153,12 +153,12 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
      int bot, dis, ii, fincol;
      int scalealpha = 0;
      int nounit=0;
-     int mb, nb;
+     int mb, nb, tra, trb;
      int iun, jun;
      char regset;
 
 #if 1
-printf("Inside libxsmm_generator_packed_gemm_avx_avx512_kernel: m=%d n=%d k=%d lda=%d ldb=%d ldc=%d alpha=%g beta=%g datasz=%d avx512=%d\n",m,n,k,lda,ldb,ldc,alpha,beta,datasz,avx512);
+printf("Inside libxsmm_generator_packed_gemm_avx_avx512_kernel: transa=%c transb=%c m=%d n=%d k=%d lda=%d ldb=%d ldc=%d alpha=%g beta=%g datasz=%d avx512=%d\n",transa,transb,m,n,k,lda,ldb,ldc,alpha,beta,datasz,avx512);
 printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,junroll,loopi,loopj);
 #endif
      if ( ( datasz !=4 ) && (datasz != 8) )
@@ -213,8 +213,10 @@ printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,jun
      nounit = ( (diag=='N') || (diag=='n') );
 #endif
 
+     if ( transa == 'T' || transa == 't' ) tra = 1; else tra = 0;
+     if ( transb == 'T' || transb == 't' ) trb = 1; else trb = 0;
      /* Change which registers to use for windows builds */
-     compact_gemmnn_ ( 1, m1, 1, k1, 1, k1, 1, n1, 1, m1, 1, n1, alpha, LIBXSMM_X86_GP_REG_RDI, lda, LIBXSMM_X86_GP_REG_RSI, ldb, beta, LIBXSMM_X86_GP_REG_RDX, ldc, io_code, numb, regset, iunroll, junroll, loopi, loopj );
+     compact_gemmnn_ ( tra, trb, 1, m1, 1, k1, 1, k1, 1, n1, 1, m1, 1, n1, alpha, LIBXSMM_X86_GP_REG_RDI, lda, LIBXSMM_X86_GP_REG_RSI, ldb, beta, LIBXSMM_X86_GP_REG_RDX, ldc, io_code, numb, regset, iunroll, junroll, loopi, loopj );
 
   }
 
