@@ -31,7 +31,7 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-ECHO=$(which echo)
+ECHO=$(command -v echo)
 SCRT=${HERE}/../../scripts/libxsmm_utilities.py
 FILE=cp2k-perf.txt
 

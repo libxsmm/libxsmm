@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
 # Copyright (c) 2017-2018, Intel Corporation                                #
 # All rights reserved.                                                      #
@@ -38,14 +38,14 @@ REPO=${HERE}/..
 CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
 
-FLAKE8=$(which flake8 2>/dev/null)
-ICONV=$(which iconv 2>/dev/null)
-ECHO=$(which echo 2>/dev/null)
-GIT=$(which git 2>/dev/null)
-SED=$(which sed 2>/dev/null)
-TR=$(which tr 2>/dev/null)
-CP=$(which cp 2>/dev/null)
-RM=$(which rm 2>/dev/null)
+FLAKE8=$(command -v flake8 2>/dev/null)
+ICONV=$(command -v iconv 2>/dev/null)
+ECHO=$(command -v echo 2>/dev/null)
+GIT=$(command -v git 2>/dev/null)
+SED=$(command -v sed 2>/dev/null)
+TR=$(command -v tr 2>/dev/null)
+CP=$(command -v cp 2>/dev/null)
+RM=$(command -v rm 2>/dev/null)
 
 if [ -e ${CODEFILE} ]; then
   PATTERNS="$(cat ${CODEFILE})"
@@ -81,7 +81,7 @@ then
         if [ "" != "${ICONV}" ]; then
           ${ICONV} -t ASCII ${FILE} | ${SED} -e "s/\s\s*$//" > ${TMPF}
         else
-          ${SED} ${FILE} -e "s/\s\s*$//" > ${TMPF}
+          ${SED} -e "s/\s\s*$//" ${FILE} > ${TMPF}
         fi
         ${CP} ${TMPF} ${FILE}
         ${ECHO} "${FILE}: removed trailing white spaces."

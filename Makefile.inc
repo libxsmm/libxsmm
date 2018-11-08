@@ -1808,13 +1808,14 @@ extname = $(subst .,,$(suffix $(1)))
 # derives the name of an object files from a given source file
 objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG)),%-$(call extname,$(ARG)).o,$(notdir $(ARG)))))
 
-STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
+STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL \
-    $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED \
-    abslibfile abslibpath absliblpath abslibrpath \
-    libpath abslib solink extname objname,$V), \
-    $V=$($V)?)))
+  $(if $(filter-out $(EXCLUDE_STATE) .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR \
+    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CPUFLAGS CP CXX_VERSION_FLAG CXX_VERSION_STRING \
+    DEPDIR DLIBEXT ENV EXTDEP FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING \
+    GINFO IMPEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION_INT MKL_INCFILE MV ROOTDIR SLIBEXT SUITE XLNKOPT \
+    TESTSIZE BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED cleanup linkopt abslibfile abslibpath absliblpath abslibrpath \
+    libpath abslib solink extname objname,$V),$V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
 %/.make:
