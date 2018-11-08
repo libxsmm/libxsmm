@@ -116,12 +116,14 @@ if __name__ == "__main__":
         print("#   pragma warning(pop)")
         print("# endif")
         print("}")
-    elif (1 < argc and os.path.isfile(sys.argv[1])):
+    if (1 < argc and os.path.isfile(sys.argv[1])):
+        print("#if !defined(_WIN32)")
         print("{ static const char *const build_state =")
         print("#   include \"" + sys.argv[1] + "\"")
         print("  ;")
         print("  internal_build_state = build_state;")
         print("}")
+        print("#endif")
     else:
         sys.tracebacklimit = 0
         raise ValueError(sys.argv[0] + ": wrong number of arguments!")
