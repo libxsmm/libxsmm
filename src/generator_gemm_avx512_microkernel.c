@@ -371,6 +371,8 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
         } else {
           /* shouldn't happen */
         }
+      } else if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+        /* need to implement this */
       } else {
         /* shoudn't happen */
       }
@@ -712,7 +714,9 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
   /* add additional accumulators, if needed */
   for ( l_k = 1; l_k < l_n_accs; l_k++) {
     for ( l_n = 0; l_n < i_n_blocking; l_n++) {
-      if ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) || LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      if ( LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ||
+           LIBXSMM_GEMM_PRECISION_F64  == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ||
+           LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )    ) {
         libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                              i_micro_kernel_config->instruction_set,
                                              i_micro_kernel_config->vadd_instruction,
@@ -1877,7 +1881,7 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                                       i_xgemm_desc->n,
                                                       i_xgemm_desc->k);
     } else {
-      if ( LIBXSMM_GEMM_PRECISION_I16 != i_xgemm_desc->datatype ) {
+      if ( LIBXSMM_GEMM_PRECISION_I16 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
         libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( io_generated_code,
                                                                    i_gp_reg_mapping,
                                                                    i_micro_kernel_config,

@@ -37,7 +37,8 @@ import os
 if __name__ == "__main__":
     argc = len(sys.argv)
     if (1 < argc):
-        arg1_isfile = os.path.isfile(sys.argv[1])
+        arg1_filename = [sys.argv[1], ""]["0" == sys.argv[1]]
+        arg1_isfile = os.path.isfile(arg1_filename)
         base = 1
         if (arg1_isfile):
             print("#if !defined(_WIN32)")
