@@ -61,20 +61,17 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_CAPACITY_CACHE)
-# define LIBXSMM_CAPACITY_CACHE 4
-#endif
-
-#if !defined(LIBXSMM_DENY_DEREG)
-# define LIBXSMM_DENY_DEREG
-#endif
-
 #if !defined(LIBXSMM_CODE_MAXSIZE)
 # define LIBXSMM_CODE_MAXSIZE 131072
 #endif
-
 #if !defined(LIBXSMM_HASH_SEED)
 # define LIBXSMM_HASH_SEED 25071975
+#endif
+#if !defined(LIBXSMM_CAPACITY_CACHE)
+# define LIBXSMM_CAPACITY_CACHE 4
+#endif
+#if !defined(LIBXSMM_DENY_DEREG)
+# define LIBXSMM_DENY_DEREG
 #endif
 
 #if 0
@@ -1208,7 +1205,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 {
   int result = EXIT_SUCCESS;
 #if !defined(__MIC__)
-  const char *const target_arch = internal_get_target_arch(libxsmm_target_archid);
+  const char* target_arch = internal_get_target_arch(libxsmm_target_archid);
   libxsmm_generated_code generated_code;
   char jit_name[256] = { 0 };
 
@@ -1235,6 +1232,15 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       if (0 < request->descriptor.gemm->m   && 0 < request->descriptor.gemm->n   && 0 < request->descriptor.gemm->k &&
           0 < request->descriptor.gemm->lda && 0 < request->descriptor.gemm->ldb && 0 < request->descriptor.gemm->ldc)
       {
+        const unsigned int m = request->descriptor.gemm->m, n = request->descriptor.gemm->n, k = request->descriptor.gemm->k;
+# if !defined(LIBXSMM_DENY_RETARGET) /* disable: ECFLAGS=-DLIBXSMM_DENY_RETARGET */
+        if (LIBXSMM_X86_AVX2 < libxsmm_target_archid &&
+           (LIBXSMM_DATATYPE_F64 == request->descriptor.gemm->datatype || LIBXSMM_DATATYPE_F32 == request->descriptor.gemm->datatype) &&
+           (LIBXSMM_MNK_SIZE(4, 4, 4) >= LIBXSMM_MNK_SIZE(m, n, k)))
+        {
+          target_arch = "hsw";
+        }
+# endif
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_gemm_kernel, &generated_code, request->descriptor.gemm, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1245,9 +1251,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.mxm", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.gemm->flags) ? 'n' : 't',
-            0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.gemm->flags) ? 'n' : 't',
-            (unsigned int)request->descriptor.gemm->m,   (unsigned int)request->descriptor.gemm->n,   (unsigned int)request->descriptor.gemm->k,
-            (unsigned int)request->descriptor.gemm->lda, (unsigned int)request->descriptor.gemm->ldb, (unsigned int)request->descriptor.gemm->ldc,
+            0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.gemm->flags) ? 'n' : 't', m, n, k,
+            request->descriptor.gemm->lda, request->descriptor.gemm->ldb, request->descriptor.gemm->ldc,
             /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & request->descriptor.gemm->flags) ? 0 : */1,
             0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.gemm->flags) ? 0 : 1,
             uid);
@@ -1267,14 +1272,14 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.srsoa->gemm->prefetch);
           const char *const tname = internal_get_typename(request->descriptor.srsoa->gemm->datatype);
-          const unsigned int nnz = ((unsigned int)request->descriptor.srsoa->gemm->lda == 0) ?
+          const unsigned int nnz = (request->descriptor.srsoa->gemm->lda == 0) ?
             request->descriptor.srsoa->row_ptr[request->descriptor.srsoa->gemm->m] : request->descriptor.srsoa->row_ptr[request->descriptor.srsoa->gemm->k];
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_nnz%u.srsoa", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.srsoa->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.srsoa->gemm->flags) ? 'n' : 't',
-            (unsigned int)request->descriptor.srsoa->gemm->m,   (unsigned int)request->descriptor.srsoa->gemm->n,   (unsigned int)request->descriptor.srsoa->gemm->k,
-            (unsigned int)request->descriptor.srsoa->gemm->lda, (unsigned int)request->descriptor.srsoa->gemm->ldb, (unsigned int)request->descriptor.srsoa->gemm->ldc,
+            request->descriptor.srsoa->gemm->m,   request->descriptor.srsoa->gemm->n,   request->descriptor.srsoa->gemm->k,
+            request->descriptor.srsoa->gemm->lda, request->descriptor.srsoa->gemm->ldb, request->descriptor.srsoa->gemm->ldc,
             /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & request->descriptor.srsoa->gemm->flags) ? 0 : */1,
             0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.srsoa->gemm->flags) ? 0 : 1,
             uid, nnz);
@@ -1294,14 +1299,14 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.scsoa->gemm->prefetch);
           const char *const tname = internal_get_typename(request->descriptor.scsoa->gemm->datatype);
-          const unsigned int nnz = ((unsigned int)request->descriptor.scsoa->gemm->lda == 0) ?
+          const unsigned int nnz = (request->descriptor.scsoa->gemm->lda == 0) ?
             request->descriptor.scsoa->column_ptr[request->descriptor.scsoa->gemm->k] : request->descriptor.scsoa->column_ptr[request->descriptor.scsoa->gemm->n];
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_nnz%u.scsoa", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.scsoa->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.scsoa->gemm->flags) ? 'n' : 't',
-            (unsigned int)request->descriptor.scsoa->gemm->m,   (unsigned int)request->descriptor.scsoa->gemm->n,   (unsigned int)request->descriptor.scsoa->gemm->k,
-            (unsigned int)request->descriptor.scsoa->gemm->lda, (unsigned int)request->descriptor.scsoa->gemm->ldb, (unsigned int)request->descriptor.scsoa->gemm->ldc,
+            request->descriptor.scsoa->gemm->m,   request->descriptor.scsoa->gemm->n,   request->descriptor.scsoa->gemm->k,
+            request->descriptor.scsoa->gemm->lda, request->descriptor.scsoa->gemm->ldb, request->descriptor.scsoa->gemm->ldc,
             /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & request->descriptor.scsoa->gemm->flags) ? 0 : */1,
             0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.scsoa->gemm->flags) ? 0 : 1,
             uid, nnz);
@@ -1323,8 +1328,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.rmacsoa", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.rmacsoa->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.rmacsoa->gemm->flags) ? 'n' : 't',
-            (unsigned int)request->descriptor.rmacsoa->gemm->m,   (unsigned int)request->descriptor.rmacsoa->gemm->n,   (unsigned int)request->descriptor.rmacsoa->gemm->k,
-            (unsigned int)request->descriptor.rmacsoa->gemm->lda, (unsigned int)request->descriptor.rmacsoa->gemm->ldb, (unsigned int)request->descriptor.rmacsoa->gemm->ldc,
+            request->descriptor.rmacsoa->gemm->m,   request->descriptor.rmacsoa->gemm->n,   request->descriptor.rmacsoa->gemm->k,
+            request->descriptor.rmacsoa->gemm->lda, request->descriptor.rmacsoa->gemm->ldb, request->descriptor.rmacsoa->gemm->ldc,
             /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & request->descriptor.rmacsoa->gemm->flags) ? 0 : */1,
             0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.rmacsoa->gemm->flags) ? 0 : 1,
             uid);
@@ -1346,8 +1351,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.rmbcsoa", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.rmbcsoa->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.rmbcsoa->gemm->flags) ? 'n' : 't',
-            (unsigned int)request->descriptor.rmbcsoa->gemm->m,   (unsigned int)request->descriptor.rmbcsoa->gemm->n,   (unsigned int)request->descriptor.rmbcsoa->gemm->k,
-            (unsigned int)request->descriptor.rmbcsoa->gemm->lda, (unsigned int)request->descriptor.rmbcsoa->gemm->ldb, (unsigned int)request->descriptor.rmbcsoa->gemm->ldc,
+            request->descriptor.rmbcsoa->gemm->m,   request->descriptor.rmbcsoa->gemm->n,   request->descriptor.rmbcsoa->gemm->k,
+            request->descriptor.rmbcsoa->gemm->lda, request->descriptor.rmbcsoa->gemm->ldb, request->descriptor.rmbcsoa->gemm->ldc,
             /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & request->descriptor.rmbcsoa->gemm->flags) ? 0 : */1,
             0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.rmbcsoa->gemm->flags) ? 0 : 1,
             uid);
@@ -1373,8 +1378,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.sreg", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.sreg->gemm->flags) ? 'n' : 't',
             0 == (LIBXSMM_GEMM_FLAG_TRANS_B & request->descriptor.sreg->gemm->flags) ? 'n' : 't',
-            (unsigned int)request->descriptor.sreg->gemm->m,   (unsigned int)request->descriptor.sreg->gemm->n,   (unsigned int)request->descriptor.sreg->gemm->k,
-            (unsigned int)request->descriptor.sreg->gemm->lda, (unsigned int)request->descriptor.sreg->gemm->ldb, (unsigned int)request->descriptor.sreg->gemm->ldc,
+            request->descriptor.sreg->gemm->m,   request->descriptor.sreg->gemm->n,   request->descriptor.sreg->gemm->k,
+            request->descriptor.sreg->gemm->lda, request->descriptor.sreg->gemm->ldb, request->descriptor.sreg->gemm->ldc,
             /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & request->descriptor.sreg->gemm->flags) ? 0 : */1,
             0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.sreg->gemm->flags) ? 0 : 1,
             uid);
