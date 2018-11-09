@@ -55,6 +55,9 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
 # define CONCATENATE(A, B) CONCATENATE_AUX(A, B)
 # define GEMM CONCATENATE(GEMM_, TYPE)
 #endif
+#if !defined(NOFALLBACK)
+# define NOFALLBACK
+#endif
 
 
 int main(int argc, char* argv[])
@@ -116,25 +119,31 @@ int main(int argc, char* argv[])
 
 #if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   if (NULL != jitter) {
-#if !defined(_OPENMP)
-# if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+# if !defined(_OPENMP)
+#   if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     duration = dsecnd();
-# endif
-#else
+#   endif
+# else
 #   pragma omp parallel
     { /* OpenMP thread pool is already populated (parallel region) */
 #     pragma omp single
       duration = omp_get_wtime();
 #     pragma omp for private(i)
-#endif
+# endif
       for (i = 0; i < size; ++i) {
         kernel(jitter, a + STREAM_A(i * na), b + STREAM_B(i * nb), c + STREAM_C(i * nc));
       }
-#if defined(_OPENMP)
+# if defined(_OPENMP)
     }
-#endif
-  }
+    duration = omp_get_wtime() - duration;
+# elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+    duration = dsecnd() - duration;
+# endif
+}
   else
+# if defined(NOFALLBACK)
+  if (0/*false*/)
+# endif
 #endif
   {
 #if !defined(_OPENMP)
@@ -155,13 +164,11 @@ int main(int argc, char* argv[])
       }
 #if defined(_OPENMP)
     }
+    duration = omp_get_wtime() - duration;
+#elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+    duration = dsecnd() - duration;
 #endif
   }
-#if defined(_OPENMP)
-  duration = omp_get_wtime() - duration;
-#elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
-  duration = dsecnd() - duration;
-#endif
 
   if (0 < duration) {
     const double gflops = 2.0 * m * n * k * 1E-9;

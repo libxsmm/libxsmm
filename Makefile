@@ -1,18 +1,6 @@
 # Export all variables to sub-make processes.
 #.EXPORT_ALL_VARIABLES: #export
 
-# Automatically disable parallel builds
-# depending on the version of GNU Make.
-# MAKE_PARALLEL=0: disable explicitly
-# MAKE_PARALLEL=1: enable explicitly
-ifeq (0,$(MAKE_PARALLEL))
-.NOTPARALLEL:
-else ifeq (,$(strip $(MAKE_PARALLEL)))
-ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
-.NOTPARALLEL:
-endif
-endif
-
 # ROOTDIR avoid abspath to match Makefile targets
 ROOTDIR = $(subst //,$(NULL),$(dir $(firstword $(MAKEFILE_LIST)))/)
 INCDIR = include
@@ -210,7 +198,10 @@ endif
 DOCEXT = pdf
 
 # state to be excluded from tracking the (re-)build state
-EXCLUDE_STATE = PREFIX DESTDIR INSTALL_ROOT
+EXCLUDE_STATE = \
+  DESTDIR INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR \
+  OUTDIR PBINDIR PINCDIR PREFIX POUTDIR PSRCDIR PTSTDIR \
+  SCRDIR SPLDIR SRCDIR TEST TSTDIR
 
 # avoid to link with C++ standard library
 FORCE_CXX = 0
@@ -647,9 +638,8 @@ $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
 
 .PHONY: sources
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
-$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(SRCFILES_KERNELS) \
-                              $(INCDIR)/libxsmm.h
-	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(PRECISION) $(THRESHOLD) $(INDICES) > $@
+$(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(SRCFILES_KERNELS) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py
+	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(abspath .state) $(PRECISION) $(THRESHOLD) $(INDICES) > $@
 
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py $(ROOTDIR)/$(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES_KERNELS)))
@@ -739,7 +729,15 @@ endif
 
 define DEFINE_COMPILE_RULE
 $(1): $(2) $(3) $(dir $(1))/.make
-	$(CC) $(4) -c $(2) -o $(1)
+	@rm -f $(1)
+	-$(CC) $(4) -c $(2) -o $(1)
+	@if ! [ -e $(1) ]; then \
+		echo "--------------------------------------------------------------"; \
+		echo "In case of assembler error, perhaps the Binutils are outdated."; \
+		echo "See https://github.com/hfp/libxsmm#outdated-binutils"; \
+		echo "--------------------------------------------------------------"; \
+		false; \
+	fi
 endef
 
 EXTCFLAGS = -DLIBXSMM_BUILD_EXT

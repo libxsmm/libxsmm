@@ -163,7 +163,7 @@
       CONTAINS
         PURE REAL(T) FUNCTION initial_value(i, j, m)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: i, j, m
-          initial_value = j * m + i
+          initial_value = REAL(j * m + i, T)
         END FUNCTION
       END PROGRAM
 

@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
 # Copyright (c) 2015-2018, Intel Corporation                                #
 # All rights reserved.                                                      #
@@ -30,12 +30,10 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-ECHO=$(command -v echo 2>/dev/null)
-CUT=$(command -v cut 2>/dev/null)
-GIT=$(command -v git 2>/dev/null)
+HERE=$(cd $(dirname $0); pwd -P)
 
-NAME=$(${GIT} name-rev --name-only HEAD)
-MAIN=$(${GIT} describe --tags --abbrev=0)
-REVC=$(${GIT} describe --tags | ${CUT} -d- -f2)
+${HERE}/benchmark-plot.sh eigen
+${HERE}/benchmark-plot.sh blaze
+${HERE}/benchmark-plot.sh blas
+${HERE}/benchmark-plot.sh xsmm
 
-${ECHO} ${NAME}-${MAIN}-${REVC}

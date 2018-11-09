@@ -29,6 +29,36 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
+MAKE_VERSION_MAJOR = $(shell echo "$(MAKE_VERSION)" | cut -d"." -f1)
+MAKE_VERSION_MINOR = $(shell echo "$(MAKE_VERSION)" | cut -d"." -f2)
+MAKE_VERSION_PATCH = $(shell echo "$(MAKE_VERSION)" | cut -d"." -f3)
+ifeq (,$(MAKE_VERSION_MAJOR))
+MAKE_VERSION_MAJOR = 0
+endif
+ifeq (,$(MAKE_VERSION_MINOR))
+MAKE_VERSION_MINOR = 0
+endif
+ifeq (,$(MAKE_VERSION_PATCH))
+MAKE_VERSION_PATCH = 0
+endif
+MAKE_VERSION_INT = $(shell echo "$$(($(MAKE_VERSION_MAJOR)*10000+$(MAKE_VERSION_MINOR)*100+$(MAKE_VERSION_PATCH)))")
+
+# Automatically disable parallel builds
+# depending on the version of GNU Make.
+# MAKE_PARALLEL=0: disable explicitly
+# MAKE_PARALLEL=1: enable explicitly
+ifeq (0,$(MAKE_PARALLEL))
+.NOTPARALLEL:
+else ifeq (,$(strip $(MAKE_PARALLEL)))
+ifneq (0,$(shell echo "$$((38200>$(MAKE_VERSION_INT)))"))
+.NOTPARALLEL:
+else ifneq (0,$(shell echo "$$((40000<=$(MAKE_VERSION_INT)))"))
+MAKEFLAGS += -O
+endif
+else ifneq (0,$(shell echo "$$((40000<=$(MAKE_VERSION_INT)))"))
+MAKEFLAGS += -O
+endif
+
 MAKEINC = $(abspath $(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
 
 ifeq (d,$(filter d,$(MAKEFLAGS)))
@@ -1196,69 +1226,101 @@ else # GCC assumed
   endif
 endif
 
-ifeq (,$(CTARGET))
-ifneq (0,$(shell echo "$$((3>$(DBG)))"))
-  # prevents Clang BE error (CRC32 and others)
-  ifneq (Windows_NT,$(UNAME))
-  ifneq (Darwin,$(UNAME))
-  ifeq (3,$(GCC))
-  ifeq (0,$(DEPSTATIC))
-    CTARGET = -msse3
-  else ifneq (0,$(SHARED))
-    ifneq (,$(SHARED))
-      CTARGET = -msse3
-    endif
-  endif
-  endif
-  endif
-  endif
+ifeq (undefined,$(origin TARGET))
   ifeq (,$(CTARGET))
-  ifeq (3,$(AVX))
-  ifneq (0,$(shell echo "$$(((0!=$(GCC) && 50000<=$(GCC_VERSION)) || (0!=$(CLANG) && (40000<=$(CC_VERSION) || 0==$(CC_VERSION)))))"))
-  ifeq (0,$(shell $(CC) -E -mfma -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
-    CTARGET = -mfma -mavx512f -mavx512cd
-    ifneq (0,$(lastword $(sort 0 $(MIC)))) # MIC
-      ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
-        CTARGET += -mavx512pf -mavx512er
-      endif
-    else ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
-      ifneq (Darwin,$(UNAME))
-        CTARGET += -mavx512dq -mavx512bw -mavx512vl
-        #CTARGET += -mavx512ifma -mavx512vbmi
-      else ifneq (,$(filter 1 2 3,$(INTEL) $(GCC)))
-        CTARGET += -mavx512dq -mavx512bw -mavx512vl
-        #CTARGET += -mavx512ifma -mavx512vbmi
-      else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION)))"))
-        CTARGET += -mavx512dq -mavx512bw -mavx512vl
+  ifneq (0,$(shell echo "$$((3>$(DBG)))"))
+    # prevents Clang BE error (CRC32 and others)
+    ifneq (Windows_NT,$(UNAME))
+    ifneq (Darwin,$(UNAME))
+    ifeq (3,$(GCC))
+    ifeq (0,$(DEPSTATIC))
+      CTARGET = -msse3
+    else ifneq (0,$(SHARED))
+      ifneq (,$(SHARED))
+        CTARGET = -msse3
       endif
     endif
-  endif
-  endif
-  endif
-  endif
-  ifeq (,$(CTARGET)) # fall-back to AVX2
-  ifneq (,$(filter 2 3,$(AVX)))
-    ifneq (0,$(PGI))
-      #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-      CTARGET = -tp=haswell
-    else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40800<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
-      CTARGET ?= -march=core-avx2
     endif
-  endif
-  endif
-  ifeq (,$(CTARGET)) # fall-back to AVX
-  ifneq (,$(filter 1 2 3,$(AVX)))
-    ifneq (0,$(PGI))
-      #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-      CTARGET = -tp=sandybridge
-    else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40400<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
-      CTARGET ?= -mavx
     endif
-  endif
-  endif
-  ifneq (,$(filter 1 2 3 4,$(SSE) $(AVX)))
-    ifeq (,$(CTARGET)) # SSE-4.2
-      ifneq (,$(filter 40 41 42 43,$(SSE)$(AVX)))
+    endif
+    ifeq (,$(CTARGET))
+    ifeq (3,$(AVX))
+    ifneq (0,$(shell echo "$$(((0!=$(GCC) && 50000<=$(GCC_VERSION)) || (0!=$(CLANG) && (40000<=$(CC_VERSION) || 0==$(CC_VERSION)))))"))
+    ifeq (0,$(shell $(CC) -E -mfma -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+      CTARGET = -mfma -mavx512f -mavx512cd
+      ifneq (0,$(lastword $(sort 0 $(MIC)))) # MIC
+        ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+          CTARGET += -mavx512pf -mavx512er
+        endif
+      else ifeq (0,$(shell $(CC) -E -mavx512dq -mavx512bw -mavx512vl /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+        ifneq (Darwin,$(UNAME))
+          CTARGET += -mavx512dq -mavx512bw -mavx512vl
+          #CTARGET += -mavx512ifma -mavx512vbmi
+        else ifneq (,$(filter 1 2 3,$(INTEL) $(GCC)))
+          CTARGET += -mavx512dq -mavx512bw -mavx512vl
+          #CTARGET += -mavx512ifma -mavx512vbmi
+        else ifneq (0,$(shell echo "$$((0!=$(CLANG) && 80100<=$(CC_VERSION)))"))
+          CTARGET += -mavx512dq -mavx512bw -mavx512vl
+        endif
+      endif
+    endif
+    endif
+    endif
+    endif
+    ifeq (,$(CTARGET)) # fall-back to AVX2
+    ifneq (,$(filter 2 3,$(AVX)))
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
+        CTARGET = -tp=haswell
+      else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40800<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
+        CTARGET ?= -march=core-avx2
+      endif
+    endif
+    endif
+    ifeq (,$(CTARGET)) # fall-back to AVX
+    ifneq (,$(filter 1 2 3,$(AVX)))
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
+        CTARGET = -tp=sandybridge
+      else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40400<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
+        CTARGET ?= -mavx
+      endif
+    endif
+    endif
+    ifneq (,$(filter 1 2 3 4,$(SSE) $(AVX)))
+      ifeq (,$(CTARGET)) # SSE-4.2
+        ifneq (,$(filter 40 41 42 43,$(SSE)$(AVX)))
+          ifneq (0,$(PGI))
+            #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
+            CTARGET = -tp=nehalem
+          else ifneq (0,$(GCC))
+            ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
+              CTARGET = -msse4.2
+            else
+              CTARGET = -msse3
+            endif
+          endif
+          CTARGET ?= -msse4.2
+        else ifneq (,$(filter-out 0 1,$(SSE))) # better to use TARGET flag directly
+          CTARGET = -msse$(SSE)
+        endif
+      endif
+      ifeq (,$(CTARGET)) # SSE3
+      ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
+        ifneq (0,$(PGI))
+          #DFLAGS += -D__SSSE3__ -D__SSE3__
+          CTARGET = -tp=penryn
+        endif
+        ifneq (Darwin,$(UNAME))
+          CTARGET ?= -msse3
+        else # prevents Clang BE error (CRC32 and others)
+          CTARGET ?= -msse4.2
+        endif
+      endif
+      endif
+      # SSE=2 is implicitly present (64-bit ABI)
+      ifeq (,$(CTARGET)) # default SSE
+      ifneq (,$(filter 01 02 03 10 11 12 13,$(SSE)$(AVX)))
         ifneq (0,$(PGI))
           #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
           CTARGET = -tp=nehalem
@@ -1270,70 +1332,40 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
           endif
         endif
         CTARGET ?= -msse4.2
-      else ifneq (,$(filter-out 0 1,$(SSE))) # better to use TARGET flag directly
-        CTARGET = -msse$(SSE)
       endif
-    endif
-    ifeq (,$(CTARGET)) # SSE3
-    ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__SSSE3__ -D__SSE3__
-        CTARGET = -tp=penryn
       endif
-      ifneq (Darwin,$(UNAME))
-        CTARGET ?= -msse3
-      else # prevents Clang BE error (CRC32 and others)
-        CTARGET ?= -msse4.2
-      endif
+    else ifneq (0,$(AVX))
+      CTARGET = -march=native
     endif
-    endif
-    # SSE=2 is implicitly present (64-bit ABI)
-    ifeq (,$(CTARGET)) # default SSE
-    ifneq (,$(filter 01 02 03 10 11 12 13,$(SSE)$(AVX)))
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-        CTARGET = -tp=nehalem
-      else ifneq (0,$(GCC))
-        ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
-          CTARGET = -msse4.2
-        else
-          CTARGET = -msse3
-        endif
-      endif
-      CTARGET ?= -msse4.2
-    endif
-    endif
-  else ifneq (0,$(AVX))
-    CTARGET = -march=native
   endif
-endif
-endif
-
-# take user's TARGET into account
-ifneq (undefined,$(origin TARGET))
+  endif
+else # take user's TARGET into account
   CTARGET = $(TARGET)
 endif
 
-# check target flags by feeding an ad-hoc C program into the compiler
-ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
-  echo "int main(void) { return 0; }" > $${CINFILE}; \
-  CTEST=$$($(CC) $(CTARGET) -c $${CINFILE} 2>&1); \
-  if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-  rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
-# revoke target flags
+ifeq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+  # check target flags by feeding an ad-hoc C program into the compiler
+  ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
+    echo "int main(void) { return 0; }" > $${CINFILE}; \
+    CTEST=$$($(CC) $(CTARGET) -c $${CINFILE} 2>&1); \
+    if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
+      CTARGET = $(NULL)
+  endif
+  ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
+  ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/libxsmm_XXXXXX-f.f); \
+    echo "      PROGRAM test" > $${FINFILE}; \
+    echo "      END PROGRAM" >> $${FINFILE}; \
+    FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
+    if [ "" = "$${FTEST}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/libxsmm_??????-f.f libxsmm_??????-f.o* 2>/dev/null))
+      # inherit CTARGET flags
+      FTARGET = $(CTARGET)
+  endif
+  endif
+else # revoke target flags
   CTARGET = $(NULL)
-endif
-
-ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
-ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/libxsmm_XXXXXX-f.f); \
-  echo "      PROGRAM test" > $${FINFILE}; \
-  echo "      END PROGRAM" >> $${FINFILE}; \
-  FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
-  if [ "" = "$${FTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-  rm -f /tmp/libxsmm_??????-f.f libxsmm_??????-f.o* 2>/dev/null))
-# inherit CTARGET flags
-  FTARGET = $(CTARGET)
-endif
+  FTARGET = $(NULL)
 endif
 
 ifeq (0,$(COMPATIBLE))
@@ -1776,13 +1808,14 @@ extname = $(subst .,,$(suffix $(1)))
 # derives the name of an object files from a given source file
 objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG)),%-$(call extname,$(ARG)).o,$(notdir $(ARG)))))
 
-STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
+STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL \
-    $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED \
-    abslibfile abslibpath absliblpath abslibrpath \
-    libpath abslib solink extname objname,$V), \
-    $V=$($V)?)))
+  $(if $(filter-out $(EXCLUDE_STATE) .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR \
+    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CPUFLAGS CP CXX_VERSION_FLAG CXX_VERSION_STRING \
+    DEPDIR DLIBEXT ENV EXTDEP FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING \
+    GINFO IMPEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION_INT MKL_INCFILE MV ROOTDIR SLIBEXT SUITE XLNKOPT \
+    TESTSIZE BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED cleanup linkopt abslibfile abslibpath absliblpath abslibrpath \
+    libpath abslib solink extname objname,$V),$V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
 %/.make:
