@@ -260,15 +260,16 @@ int main(int argc, char *argv[])
   /* Currently ignores alpha */
   /* TODO: fix alpha input */
 # ifdef USE_BFLOAT
-  spmdm_exec_bfloat16( &handle, transA, transB, &alpha, A_gold, B_gold, transC, &beta, C, A_sparse);
+  spmdm_exec_bfloat16(&handle, transA, transB, &alpha, A_gold, B_gold, transC, &beta, C, A_sparse);
 # else
-  spmdm_exec_fp32( &handle, transA, transB, &alpha, A_gold, B_gold, transC, &beta, C, A_sparse);
+  spmdm_exec_fp32(&handle, transA, transB, &alpha, A_gold, B_gold, transC, &beta, C, A_sparse);
 # endif
 
   /* Checks */
 
   /* Compute a "gold" answer sequentially - we can also use MKL; not using MKL now due to difficulty for bfloat16 */
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(k);
 # pragma omp parallel for private(i, j, k) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (i = 0; i < M; i++) {

@@ -69,7 +69,7 @@ int main(int argc, char* argv[])
   float *naive_input, *naive_output, *naive_output_save, *naive_filter, *naive_filter_wu, *naive_output_bp, *naive_output_wu, *naive_libxsmm_output;
   float *naive_libxsmm_input, *naive_libxsmm_filter, *naive_input_save, *naive_filter_save, *naive_filter_kcrs;
   float *input_nhwc, *output_nhwc, *filter_rsck, *dinput_nhwc, *doutput_nhwc, *dfilter_rsck, *naive_output_nhwc, *naive_input_nhwc;
-  float *naive_bias, *bias_libxsmm, *naive_dbias, *dbias_libxsmm, *bias_nhwc, *dbias_nhwc, *naive_libxsmm_del_input_add, *naive_bn_input, *naive_dbeta, *naive_dgamma, *naive_bmean, *naive_rcpstddev, *naive_del_input_add;
+  float *naive_bias, *bias_libxsmm, *naive_dbias, *dbias_libxsmm, *bias_nhwc, *dbias_nhwc;
   float *input_libxsmm, *filter_libxsmm, *output_libxsmm, *dinput_libxsmm, *dfilter_libxsmm, *doutput_libxsmm, *filtertr_libxsmm;
 #if defined(USE_FUSED_BATCH_STATS_FWD)
   float *expectval_libxsmm, *rcpstddev_libxsmm, *variance_libxsmm;
@@ -77,7 +77,8 @@ int main(int argc, char* argv[])
   libxsmm_dnn_fusedbatchnorm *libxsmm_bn_handle_post;
 #endif
 #if defined(USE_FUSED_BATCH_STATS_BWD)
-  float *dbeta_libxsmm, *dgamma_libxsmm, *bmean_libxsmm, *brcpstddev_libxsmm, *del_input_add_libxsmm, *bn_input_libxsmm;
+  float *naive_dbeta, *naive_dgamma, *naive_bmean, *dbeta_libxsmm, *dgamma_libxsmm, *bmean_libxsmm, *brcpstddev_libxsmm;
+  float *del_input_add_libxsmm, *naive_libxsmm_del_input_add, *bn_input_libxsmm, *naive_rcpstddev, *naive_del_input_add, *naive_bn_input;
   libxsmm_dnn_fusedbatchnorm_desc  fusedbatchnorm_desc_pre;
   libxsmm_dnn_fusedbatchnorm *libxsmm_bn_handle_pre;
 #endif

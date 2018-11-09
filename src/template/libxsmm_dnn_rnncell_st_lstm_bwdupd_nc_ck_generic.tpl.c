@@ -219,10 +219,10 @@ const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads =
 const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
 const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
 
-int ikic, inic, inik, icin, ikin;
+libxsmm_blasint ikic, inic, inik, icin, ikin;
 
 /* lazy barrier init */
-libxsmm_barrier_init(handle->barrier, ltid);
+libxsmm_barrier_init(handle->barrier, (int)ltid);
 
 /* initialization is done at the beginning */
 if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
@@ -280,7 +280,7 @@ for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
   }
 }
 
-libxsmm_barrier_wait(handle->barrier, ltid);
+libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
 for (j = t-1; j >= 0; --j) {
   /* transpose xt for current timestep */
@@ -313,7 +313,7 @@ for (j = t-1; j >= 0; --j) {
     }
   }
 
-  libxsmm_barrier_wait(handle->barrier, ltid);
+  libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
   /* let's run the cell in blocks for good locality */
   for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
@@ -369,7 +369,7 @@ for (j = t-1; j >= 0; --j) {
     }
   }
 
-  libxsmm_barrier_wait(handle->barrier, ltid);
+  libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* dx = W^T * difoc */
@@ -426,5 +426,5 @@ for (j = t-1; j >= 0; --j) {
     }
   }
 
-  libxsmm_barrier_wait(handle->barrier, ltid);
+  libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }

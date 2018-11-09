@@ -113,7 +113,7 @@ const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize)
 const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* lazy barrier init */
-libxsmm_barrier_init(handle->barrier, ltid);
+libxsmm_barrier_init(handle->barrier, (int)ltid);
 
 /* All data is in column-major format */
 for (j = 0; j < t; ++j) {
@@ -211,5 +211,5 @@ for (j = 0; j < t; ++j) {
     libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K),  &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, j, in, ik, N, K) );
   }
 
-  libxsmm_barrier_wait(handle->barrier, ltid);
+  libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }
