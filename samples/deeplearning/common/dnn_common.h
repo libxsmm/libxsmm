@@ -543,6 +543,8 @@ LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float
 #endif
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(ofm); LIBXSMM_OMP_VAR(oj);  LIBXSMM_OMP_VAR(oi);
+  LIBXSMM_OMP_VAR(ifm); LIBXSMM_OMP_VAR(ij);  LIBXSMM_OMP_VAR(ii);  LIBXSMM_OMP_VAR(kj);  LIBXSMM_OMP_VAR(ki);
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
 #endif
   for (img = 0; img < nImg; ++img) {
@@ -612,6 +614,8 @@ LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float
 #endif
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(ofm); LIBXSMM_OMP_VAR(oj);  LIBXSMM_OMP_VAR(oi);
+  LIBXSMM_OMP_VAR(ifm); LIBXSMM_OMP_VAR(ij);  LIBXSMM_OMP_VAR(ii);  LIBXSMM_OMP_VAR(kj);  LIBXSMM_OMP_VAR(ki);
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
 #endif
   for (img = 0; img < nImg; ++img) {
@@ -677,6 +681,8 @@ LIBXSMM_INLINE void naive_conv_wu(naive_conv_t* param, const float* input, const
   LIBXSMM_VLA_DECL(4,       float, filter_t, filter, nIfm, kh, kw);
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(ofm); LIBXSMM_OMP_VAR(oj);  LIBXSMM_OMP_VAR(oi);
+  LIBXSMM_OMP_VAR(ifm); LIBXSMM_OMP_VAR(ij);  LIBXSMM_OMP_VAR(ii);  LIBXSMM_OMP_VAR(kj);  LIBXSMM_OMP_VAR(ki);
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
 #endif
   for (ofm = 0; ofm < nOfm; ++ofm) {
@@ -734,6 +740,8 @@ LIBXSMM_INLINE void naive_conv_fp_int16fp32(naive_conv_t* param, const short* in
 
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(ofm); LIBXSMM_OMP_VAR(oj);  LIBXSMM_OMP_VAR(oi);
+  LIBXSMM_OMP_VAR(ifm); LIBXSMM_OMP_VAR(ij);  LIBXSMM_OMP_VAR(ii);  LIBXSMM_OMP_VAR(kj);  LIBXSMM_OMP_VAR(ki);
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
 #endif
   for (img = 0; img < nImg; ++img) {
@@ -791,6 +799,8 @@ LIBXSMM_INLINE void naive_conv_fp_int16int32(naive_conv_t* param, const short* i
 
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(ofm); LIBXSMM_OMP_VAR(oj);  LIBXSMM_OMP_VAR(oi);
+  LIBXSMM_OMP_VAR(ifm); LIBXSMM_OMP_VAR(ij);  LIBXSMM_OMP_VAR(ii);  LIBXSMM_OMP_VAR(kj);  LIBXSMM_OMP_VAR(ki);
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
 #endif
   for (img = 0; img < nImg; ++img) {
@@ -848,6 +858,8 @@ LIBXSMM_INLINE void naive_conv_fp_int8int32(naive_conv_t* param, const unsigned 
 
 
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(ofm); LIBXSMM_OMP_VAR(oj);  LIBXSMM_OMP_VAR(oi);
+  LIBXSMM_OMP_VAR(ifm); LIBXSMM_OMP_VAR(ij);  LIBXSMM_OMP_VAR(ii);  LIBXSMM_OMP_VAR(kj);  LIBXSMM_OMP_VAR(ki);
 # pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
 #endif
   for (img = 0; img < nImg; ++img) {
@@ -886,7 +898,8 @@ LIBXSMM_INLINE void naive_fullyconnected_fp(naive_fullyconnected_t* param, const
   LIBXSMM_VLA_DECL(2,       float, output, output_ptr, nOFm);
 
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, ofm, ifm)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(ifm); LIBXSMM_OMP_VAR(ofm);
+# pragma omp parallel for private(img, ofm, ifm)
 #endif
   for (ofm = 0; ofm < nOFm; ++ofm) {
     for(img = 0; img < nImg; ++img) {
@@ -912,7 +925,8 @@ LIBXSMM_INLINE void naive_fullyconnected_bp(naive_fullyconnected_t* param, float
   LIBXSMM_VLA_DECL(2, const float, doutput, deloutput_ptr, nOFm);
 
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, ofm, ifm)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(ofm); LIBXSMM_OMP_VAR(ifm);
+# pragma omp parallel for private(img, ofm, ifm)
 #endif
   for (ifm = 0; ifm < nIFm; ++ifm) {
     for(img = 0; img < nImg; ++img) {
@@ -938,7 +952,8 @@ LIBXSMM_INLINE void naive_fullyconnected_wu(naive_fullyconnected_t* param, const
   LIBXSMM_VLA_DECL(2, const float, doutput, deloutput_ptr, nOFm);
 
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, ofm, ifm)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(ofm); LIBXSMM_OMP_VAR(ifm);
+# pragma omp parallel for private(img, ofm, ifm)
 #endif
   for (ofm = 0; ofm < nOFm; ++ofm) {
     for (ifm = 0; ifm < nIFm; ++ifm) {
@@ -974,7 +989,8 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
   LIBXSMM_VLA_DECL(4,       float, output, output_ptr, nFm, ofh, ofw);
 
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, fm)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(fm);
+# pragma omp parallel for private(img, fm)
 #endif
   for (img = 0; img < nImg; img++) {
     for (fm = 0; fm < nFm; fm++) {
@@ -1061,7 +1077,8 @@ LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, 
   LIBXSMM_VLA_DECL(4, const float, doutput, doutput_ptr, nFm, ofh, ofw);
 
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, fm)
+  LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(fm);
+# pragma omp parallel for private(img, fm)
 #endif
   for (img = 0; img < nImg; img++) {
     for (fm = 0; fm < nFm; fm++) {
@@ -1131,7 +1148,8 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
 
   if ( param->norm_type == 0 ) {
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, fm, hi, wi)
+    LIBXSMM_OMP_VAR(wi); LIBXSMM_OMP_VAR(hi);
+#   pragma omp parallel for private(img, fm, hi, wi)
 #endif
     for (fm = 0; fm < nFm; fm++) {
       float ch_sum = 0.0f;
@@ -1164,7 +1182,8 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
   }
 
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, fm, hi, wi, ho, wo)
+  LIBXSMM_OMP_VAR(ho); LIBXSMM_OMP_VAR(wo);
+# pragma omp parallel for private(img, fm, hi, wi, ho, wo)
 #endif
   for ( img = 0; img < nImg; img++ ) {
     for ( fm = 0; fm < nFm; fm++ ) {
@@ -1217,7 +1236,8 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
 
   if ( param->norm_type == 0 ) {
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, fm, hi, wi, ho, wo)
+    LIBXSMM_OMP_VAR(hi); LIBXSMM_OMP_VAR(wi); LIBXSMM_OMP_VAR(ho); LIBXSMM_OMP_VAR(wo);
+#   pragma omp parallel for private(img, fm, hi, wi, ho, wo)
 #endif
     for ( fm = 0; fm < nFm; fm++ ) {
       del_gamma_ptr[fm] = 0.0f;
@@ -1248,7 +1268,7 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
   }
 
 #if defined(_OPENMP)
-#pragma omp parallel for private(img, fm, hi, wi, ho, wo)
+# pragma omp parallel for private(img, fm, hi, wi, ho, wo)
 #endif
   for ( img = 0; img < nImg; img++ ) {
     for ( fm = 0; fm < nFm; fm++ ) {

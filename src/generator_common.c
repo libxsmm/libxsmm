@@ -1215,12 +1215,11 @@ void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_ge
 }
 
 
-LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking( unsigned int  i_size,
-                                                                    unsigned int  i_max_block,
-                                                                    unsigned int* o_range_1,
-                                                                    unsigned int* o_block_1,
-                                                                    unsigned int* o_range_2,
-                                                                    unsigned int* o_block_2 ) {
+LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
+  unsigned int i_size, unsigned int i_max_block,
+  unsigned int* o_range_1, unsigned int* o_block_1,
+  unsigned int* o_range_2, unsigned int* o_block_2 )
+{
   unsigned int l_number_of_chunks = 1+((i_size-1)/i_max_block);
   unsigned int l_modulo = i_size%l_number_of_chunks;
   unsigned int l_n2 = i_size/l_number_of_chunks;

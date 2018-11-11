@@ -1,10 +1,16 @@
+#if 0
+# define GENERATOR_PACKED_XCT_DEBUG
+#endif
+#ifdef GENERATOR_PACKED_XCT_DEBUG
 printf("******* HI *********\n");
+#endif
 #include "packed_trsm_dmacros.h"
     auto int a_ptr = LIBXSMM_X86_GP_REG_RDI;
     auto int b_ptr = LIBXSMM_X86_GP_REG_RSI;
     char i_vector_name = 'y';
-
+#ifdef GENERATOR_PACKED_XCT_DEBUG
 printf("Inside %c%c%c%c trsm generator\n",*side_ptr,*uplo_ptr,*transa_ptr,*diag_ptr);
+#endif
     int n_in, m_in;
     int _is_row_;
     int ii;

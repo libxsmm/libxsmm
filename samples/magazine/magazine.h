@@ -77,7 +77,7 @@ double norm(const TYPE* src, int nrows, int ncols, int ld) {
   for (i = 0; i < ncols; ++i) {
     for (j = 0; j < nrows; ++j) {
       const int k = i * ld + j;
-      const TYPE v = src[k], a = (0 <= v ? v : -v) - comp, b = result + a;
+      const double v = src[k], a = (0 <= v ? v : -v) - comp, b = result + a;
       comp = (b - result) - a;
       result = b;
     }

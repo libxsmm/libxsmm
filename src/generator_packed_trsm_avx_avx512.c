@@ -47,7 +47,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* #define GENERATOR_PACKED_TRSM_DEBUG */
+#if 0
+# define GENERATOR_PACKED_TRSM_DEBUG
+#endif
 
 
 LIBXSMM_API_INTERN
@@ -146,7 +148,7 @@ void libxsmm_generator_packed_trsm_avx_avx512_kernel( libxsmm_generated_code*   
         else uplo = 'L';
         m1 = n; n1 = m;
      }
-#if 0
+#ifdef GENERATOR_PACKED_TRSM_DEBUG
 printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=%d lay=102 alpha=%g datasz=%d\n",side,uplo,trans,diag,m1,n1,alpha,datasz);
 #endif
      if ( ( datasz !=4 ) && (datasz != 8) )
@@ -906,7 +908,7 @@ printf("Inside libxsmm_generator_packed_trsm_avx_avx512_kernel: %c%c%c%c m=%d n=
 /*
   libxsmm_x86_instruction_close_stream_transpose( io_code, i_arch );
 */
-#ifdef GENERATOR_TRANSPOSE_DEBUG
+#ifdef GENERATOR_PACKED_TRSM_DEBUG
   printf("done with m=%d n=%d i=%d\n",i_trans_desc->m,i_trans_desc->n,io_code->code_size);
 #endif
 

@@ -68,7 +68,7 @@ const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize)
 const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* lazy barrier init */
-libxsmm_barrier_init(handle->barrier, ltid);
+libxsmm_barrier_init(handle->barrier, (int)ltid);
 
 /* All data is in column-major format */
 for (i = 0; i < t; ++i) {
@@ -108,5 +108,5 @@ for (i = 0; i < t; ++i) {
 #endif
   }
 
-  libxsmm_barrier_wait(handle->barrier, ltid);
+  libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }

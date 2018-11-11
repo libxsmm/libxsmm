@@ -47,7 +47,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* #define GENERATOR_PACKED_TRSM_DEBUG */
+#if 0
+# define GENERATOR_PACKED_TRMM_DEBUG
+#endif
 
 
 LIBXSMM_API_INTERN
@@ -146,7 +148,7 @@ void libxsmm_generator_packed_trmm_avx_avx512_kernel( libxsmm_generated_code*   
         else uplo = 'L';
         m1 = n; n1 = m;
      }
-#if 1
+#ifdef GENERATOR_PACKED_TRMM_DEBUG
 printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=%d lay=%d alpha=%g datasz=%d\n",side,uplo,trans,diag,m1,n1,lay,alpha,datasz);
 #endif
      if ( ( datasz !=4 ) && (datasz != 8) )
@@ -397,9 +399,12 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
                  if ( LIBXSMM_NEQ(1, alpha) ) {
                     if ( nounit ) {
                        compact_mult_two_nums_ ( io_code, 1, 2, 1, numb, regset );
-                    } else {
+                    }
+#ifdef GENERATOR_PACKED_TRMM_DEBUG
+                    else {
                        printf("wrong temp values for TRMM's RUN\n");
                     }
+#endif
                  }
                  if ( LIBXSMM_NEQ(1, alpha) || nounit ) {
                     for ( i = 1 ; i <= m1 ; i++ ) {
@@ -431,9 +436,12 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
                  if ( LIBXSMM_NEQ(1, alpha) ) {
                     if ( nounit ) {
                        compact_mult_two_nums_ ( io_code, 1, 2, 1, numb, regset );
-                    } else {
+                    }
+#ifdef GENERATOR_PACKED_TRMM_DEBUG
+                    else {
                        printf("wrong temp values for TRMM's RLN\n");
                     }
+#endif
                  }
                  if ( LIBXSMM_NEQ(1, alpha) || nounit ) {
                     for ( i = 1 ; i <= m1 ; i++ ) {
@@ -481,9 +489,12 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
                  if ( LIBXSMM_NEQ(1, alpha) ) {
                     if ( nounit ) {
                        compact_mult_two_nums_ ( io_code, 1, 2, 1, numb, regset );
-                    } else {
+                    }
+#ifdef GENERATOR_PACKED_TRMM_DEBUG
+                    else {
                        printf("wrong temp values for TRMM's RUT\n");
                     }
+#endif
                  }
                  if ( LIBXSMM_NEQ(1, alpha) || nounit ) {
                     for ( i = 1 ; i <= m1 ; i++ ) {
@@ -516,9 +527,12 @@ printf("Inside libxsmm_generator_packed_trmm_avx_avx512_kernel: %c%c%c%c m=%d n=
                  if ( LIBXSMM_NEQ(1, alpha) ) {
                     if ( nounit ) {
                        compact_mult_two_nums_ ( io_code, 1, 2, 1, numb, regset );
-                    } else {
+                    }
+#ifdef GENERATOR_PACKED_TRMM_DEBUG
+                    else {
                        printf("wrong temp values for TRMM's RLT\n");
                     }
+#endif
                  }
                  if ( LIBXSMM_NEQ(1, alpha) || nounit ) {
                     for ( i = 1 ; i <= m1 ; i++ ) {
