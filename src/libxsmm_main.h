@@ -773,10 +773,6 @@ LIBXSMM_API unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision preci
 /** Returns the current tick of a (monotonic) platform-specific counter; not necessarily CPU cycles. */
 LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
 
-LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(unsigned int i_size, unsigned int i_max_block,
-  unsigned int* o_range_1, unsigned int* o_block_1,
-  unsigned int* o_range_2, unsigned int* o_block_2);
-
 LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
 

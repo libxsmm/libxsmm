@@ -290,22 +290,14 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
 SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c libxsmm_math.c libxsmm_sync.c \
           libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
-          libxsmm_gemm.c libxsmm_trans.c libxsmm_bgemm.c \
-          libxsmm_spmdm.c libxsmm_fsspmdm.c \
-          libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c \
-          libxsmm_dnn_elementwise.c libxsmm_dnn_rnncell.c libxsmm_dnn_grucell.c \
-          libxsmm_dnn_rnncell_forward.c libxsmm_dnn_rnncell_backward_weight_update.c \
-          libxsmm_dnn_fusedbatchnorm.c libxsmm_dnn_fusedbatchnorm_forward.c \
-          libxsmm_dnn_fusedbatchnorm_backward.c \
-          libxsmm_dnn_pooling.c libxsmm_dnn_pooling_forward.c \
-          libxsmm_dnn_pooling_backward.c libxsmm_dnn_convolution_forward.c \
-          libxsmm_dnn_fullyconnected.c libxsmm_dnn_fullyconnected_forward.c \
-          libxsmm_dnn_fullyconnected_backward.c libxsmm_dnn_fullyconnected_weight_update.c \
-          libxsmm_dnn_convolution_backward.c \
-          libxsmm_dnn_convolution_weight_update.c \
-          libxsmm_dnn_convolution_winograd_forward.c \
-          libxsmm_dnn_convolution_winograd_backward.c \
-          libxsmm_dnn_convolution_winograd_weight_update.o )
+          libxsmm_gemm.c libxsmm_trans.c libxsmm_bgemm.c libxsmm_spmdm.c libxsmm_fsspmdm.c \
+          libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c libxsmm_dnn_elementwise.c \
+          libxsmm_dnn_rnncell.c libxsmm_dnn_rnncell_forward.c libxsmm_dnn_rnncell_backward_weight_update.c libxsmm_dnn_grucell.c \
+          libxsmm_dnn_fusedbatchnorm.c libxsmm_dnn_fusedbatchnorm_forward.c libxsmm_dnn_fusedbatchnorm_backward.c \
+          libxsmm_dnn_pooling.c libxsmm_dnn_pooling_forward.c libxsmm_dnn_pooling_backward.c libxsmm_dnn_convolution_forward.c \
+          libxsmm_dnn_fullyconnected.c libxsmm_dnn_fullyconnected_forward.c libxsmm_dnn_fullyconnected_backward.c \
+          libxsmm_dnn_fullyconnected_weight_update.c libxsmm_dnn_convolution_backward.c libxsmm_dnn_convolution_weight_update.c \
+          libxsmm_dnn_convolution_winograd_forward.c libxsmm_dnn_convolution_winograd_backward.c libxsmm_dnn_convolution_winograd_weight_update.c)
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
 SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c) libxsmm_generator.c libxsmm_trace.c)
@@ -317,7 +309,7 @@ OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $
 OBJFILES_GEN_CONVWINO_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_CONVWINO_BIN))))
 OBJFILES_GEN_CONV_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_CONV_BIN))))
 OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
-OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB))))
+OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB)))) $(BLDDIR)/mic/generator_common.o
 KRNOBJS_HST  = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 KRNOBJS_MIC  = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 EXTOBJS_HST  = $(BLDDIR)/intel64/libxsmm_ext.o \
