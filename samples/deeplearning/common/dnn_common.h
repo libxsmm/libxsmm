@@ -1182,7 +1182,7 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
   }
 
 #if defined(_OPENMP)
-  LIBXSMM_OMP_VAR(ho); LIBXSMM_OMP_VAR(wo); 
+  LIBXSMM_OMP_VAR(ho); LIBXSMM_OMP_VAR(wo);
 # pragma omp parallel for private(img, fm, hi, wi, ho, wo)
 #endif
   for ( img = 0; img < nImg; img++ ) {
