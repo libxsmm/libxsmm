@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 /* helper variables */
-libxsmm_blasint j, ik, in, ic, jk, jn, jc, ek, en, ec;
+libxsmm_blasint j, ik, in, ic, jk, jb/*jn shadows global variable*/, jc, ek, en, ec;
 /* tensor dimensions */
 libxsmm_blasint K = handle->desc.K;
 libxsmm_blasint N = handle->desc.N;
@@ -289,8 +289,8 @@ for (j = t-1; j >= 0; --j) {
     in = (icin % (N/bn))*bn;
 
     for (jc = 0; jc < bc; ++jc) {
-      for (jn = 0; jn < bn; ++jn) {
-        en = in + jn;
+      for (jb = 0; jb < bn; ++jb) {
+        en = in + jb;
         ec = ic + jc;
         LIBXSMM_VLA_ACCESS(2, xT, ec, en, N) =  LIBXSMM_VLA_ACCESS(3, x, j, en, ec, N, C);
       }
@@ -304,8 +304,8 @@ for (j = t-1; j >= 0; --j) {
       in = (ikin % (N/bn))*bn;
 
       for (jk = 0; jk < bk; ++jk) {
-        for (jn = 0; jn < bn; ++jn) {
-          en = in + jn;
+        for (jb = 0; jb < bn; ++jb) {
+          en = in + jb;
           ek = ik + jk;
           LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(3, h, j-1, en, ek, N, K);
         }
@@ -428,3 +428,4 @@ for (j = t-1; j >= 0; --j) {
 
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }
+
