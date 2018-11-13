@@ -171,6 +171,12 @@
             INTEGER(C_INTPTR_T) :: handle
         END TYPE
 
+        INTERFACE libxsmm_ptr0
+          MODULE PROCEDURE libxsmm_ptr_z0, libxsmm_ptr_c0
+          MODULE PROCEDURE libxsmm_ptr_d0, libxsmm_ptr_s0
+          MODULE PROCEDURE libxsmm_ptr_i0, libxsmm_ptr_w0
+        END INTERFACE
+
         INTERFACE libxsmm_ptr1
           MODULE PROCEDURE libxsmm_ptr_z1, libxsmm_ptr_c1
           MODULE PROCEDURE libxsmm_ptr_d1, libxsmm_ptr_s1
@@ -632,112 +638,136 @@
           CALL C_F_POINTER(arch, libxsmm_get_target_arch, length)
         END FUNCTION
 
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z0
+        FUNCTION libxsmm_ptr_z0(a)
+          COMPLEX(C_DOUBLE), INTENT(IN), TARGET :: a
+          COMPLEX(C_DOUBLE), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_z0
+          fptr => a; libxsmm_ptr_z0 = C_LOC(fptr)
+        END FUNCTION
+
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z1
         FUNCTION libxsmm_ptr_z1(a)
-          COMPLEX(C_DOUBLE), INTENT(IN), TARGET :: a(:)
-          COMPLEX(C_DOUBLE), POINTER :: fptr
+          COMPLEX(C_DOUBLE), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_z1
-          fptr => a(LBOUND(a,1))
-          libxsmm_ptr_z1 = C_LOC(fptr)
+          libxsmm_ptr_z1 = libxsmm_ptr_z0(a(LBOUND(a,1)))
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z2
         FUNCTION libxsmm_ptr_z2(a)
-          COMPLEX(C_DOUBLE), INTENT(IN), TARGET :: a(:,:)
-          COMPLEX(C_DOUBLE), POINTER :: fptr
+          COMPLEX(C_DOUBLE), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_z2
-          fptr => a(LBOUND(a,1),LBOUND(a,2))
-          libxsmm_ptr_z2 = C_LOC(fptr)
+          libxsmm_ptr_z2 = libxsmm_ptr_z0(a(LBOUND(a,1),LBOUND(a,2)))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c0
+        FUNCTION libxsmm_ptr_c0(a)
+          COMPLEX(C_FLOAT), INTENT(IN), TARGET :: a
+          COMPLEX(C_FLOAT), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_c0
+          fptr => a; libxsmm_ptr_c0 = C_LOC(fptr)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c1
         FUNCTION libxsmm_ptr_c1(a)
-          COMPLEX(C_FLOAT), INTENT(IN), TARGET :: a(:)
-          COMPLEX(C_FLOAT), POINTER :: fptr
+          COMPLEX(C_FLOAT), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_c1
-          fptr => a(LBOUND(a,1))
-          libxsmm_ptr_c1 = C_LOC(fptr)
+          libxsmm_ptr_c1 = libxsmm_ptr_c0(a(LBOUND(a,1)))
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c2
         FUNCTION libxsmm_ptr_c2(a)
-          COMPLEX(C_FLOAT), INTENT(IN), TARGET :: a(:,:)
-          COMPLEX(C_FLOAT), POINTER :: fptr
+          COMPLEX(C_FLOAT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_c2
-          fptr => a(LBOUND(a,1),LBOUND(a,2))
-          libxsmm_ptr_c2 = C_LOC(fptr)
+          libxsmm_ptr_c2 = libxsmm_ptr_c0(a(LBOUND(a,1),LBOUND(a,2)))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d0
+        FUNCTION libxsmm_ptr_d0(a)
+          REAL(C_DOUBLE), INTENT(IN), TARGET :: a
+          REAL(C_DOUBLE), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_d0
+          fptr => a; libxsmm_ptr_d0 = C_LOC(fptr)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d1
         FUNCTION libxsmm_ptr_d1(a)
-          REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:)
-          REAL(C_DOUBLE), POINTER :: fptr
+          REAL(C_DOUBLE), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_d1
-          fptr => a(LBOUND(a,1))
-          libxsmm_ptr_d1 = C_LOC(fptr)
+          libxsmm_ptr_d1 = libxsmm_ptr_d0(a(LBOUND(a,1)))
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d2
         FUNCTION libxsmm_ptr_d2(a)
-          REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:)
-          REAL(C_DOUBLE), POINTER :: fptr
+          REAL(C_DOUBLE), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_d2
-          fptr => a(LBOUND(a,1),LBOUND(a,2))
-          libxsmm_ptr_d2 = C_LOC(fptr)
+          libxsmm_ptr_d2 = libxsmm_ptr_d0(a(LBOUND(a,1),LBOUND(a,2)))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s0
+        FUNCTION libxsmm_ptr_s0(a)
+          REAL(C_FLOAT), INTENT(IN), TARGET :: a
+          REAL(C_FLOAT), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_s0
+          fptr => a; libxsmm_ptr_s0 = C_LOC(fptr)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s1
         FUNCTION libxsmm_ptr_s1(a)
-          REAL(C_FLOAT), INTENT(IN), TARGET :: a(:)
-          REAL(C_FLOAT), POINTER :: fptr
+          REAL(C_FLOAT), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_s1
-          fptr => a(LBOUND(a,1))
-          libxsmm_ptr_s1 = C_LOC(fptr)
+          libxsmm_ptr_s1 = libxsmm_ptr_s0(a(LBOUND(a,1)))
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s2
         FUNCTION libxsmm_ptr_s2(a)
-          REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:)
-          REAL(C_FLOAT), POINTER :: fptr
+          REAL(C_FLOAT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_s2
-          fptr => a(LBOUND(a,1),LBOUND(a,2))
-          libxsmm_ptr_s2 = C_LOC(fptr)
+          libxsmm_ptr_s2 = libxsmm_ptr_s0(a(LBOUND(a,1),LBOUND(a,2)))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i0
+        FUNCTION libxsmm_ptr_i0(a)
+          INTEGER(C_INT), INTENT(IN), TARGET :: a
+          INTEGER(C_INT), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_i0
+          fptr => a; libxsmm_ptr_i0 = C_LOC(fptr)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i1
         FUNCTION libxsmm_ptr_i1(a)
-          INTEGER(C_INT), INTENT(IN), TARGET :: a(:)
-          INTEGER(C_INT), POINTER :: fptr
+          INTEGER(C_INT), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_i1
-          fptr => a(LBOUND(a,1))
-          libxsmm_ptr_i1 = C_LOC(fptr)
+          libxsmm_ptr_i1 = libxsmm_ptr_i0(a(LBOUND(a,1)))
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i2
         FUNCTION libxsmm_ptr_i2(a)
-          INTEGER(C_INT), INTENT(IN), TARGET :: a(:,:)
-          INTEGER(C_INT), POINTER :: fptr
+          INTEGER(C_INT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_i2
-          fptr => a(LBOUND(a,1),LBOUND(a,2))
-          libxsmm_ptr_i2 = C_LOC(fptr)
+          libxsmm_ptr_i2 = libxsmm_ptr_i0(a(LBOUND(a,1),LBOUND(a,2)))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w0
+        FUNCTION libxsmm_ptr_w0(a)
+          INTEGER(C_SHORT), INTENT(IN), TARGET :: a
+          INTEGER(C_SHORT), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_w0
+          fptr => a; libxsmm_ptr_w0 = C_LOC(fptr)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w1
         FUNCTION libxsmm_ptr_w1(a)
-          INTEGER(C_SHORT), INTENT(IN), TARGET :: a(:)
-          INTEGER(C_SHORT), POINTER :: fptr
+          INTEGER(C_SHORT), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_w1
-          fptr => a(LBOUND(a,1))
-          libxsmm_ptr_w1 = C_LOC(fptr)
+          libxsmm_ptr_w1 = libxsmm_ptr_w0(a(LBOUND(a,1)))
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w2
         FUNCTION libxsmm_ptr_w2(a)
-          INTEGER(C_SHORT), INTENT(IN), TARGET :: a(:,:)
-          INTEGER(C_SHORT), POINTER :: fptr
+          INTEGER(C_SHORT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_w2
-          fptr => a(LBOUND(a,1),LBOUND(a,2))
-          libxsmm_ptr_w2 = C_LOC(fptr)
+          libxsmm_ptr_w2 = libxsmm_ptr_w0(a(LBOUND(a,1),LBOUND(a,2)))
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_dmmkernel
