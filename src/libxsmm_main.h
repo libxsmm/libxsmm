@@ -617,6 +617,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_tensor* ot;
   libxsmm_dnn_tensor* cit;
   libxsmm_dnn_tensor* cot;
+  float forget_bias;
   /* internal  state */
   void* internal_z;
   /* scratch pointers */

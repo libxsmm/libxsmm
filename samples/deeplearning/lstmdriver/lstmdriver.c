@@ -245,6 +245,7 @@ int main(int argc, char* argv[])
   float *djdwigold, *djdwfgold, *djdwogold, *djdwcgold, *djdrigold, *djdrfgold, *djdrogold, *djdrcgold;
   float *djdbigold, *djdbfgold, *djdbogold, *djdbcgold, *wgoldTp, *rgoldTp, *xgoldTp, *hgoldTp;
   float *htest, *djdxtestt, *djdwtest, *djdrtest, *djdbtest, *djdwgold4, *djdrgold4, *djdbgold4;
+  float forget_bias = 1.0f;
 
   const char transa = 'N', transb = 'N'; /* no transposes */
   const float alpha = 1, beta = 1, beta0 = 0;
@@ -485,6 +486,9 @@ int main(int argc, char* argv[])
   LIBXSMM_MATINIT_OMP(float, 24, bfgold, 1, K, 1, 1.0);
   LIBXSMM_MATINIT_OMP(float, 24, bogold, 1, K, 1, 1.0);
   LIBXSMM_MATINIT_OMP(float, 24, bcgold, 1, K, 1, 1.0);
+  for (j = 0; j < K; j++) {
+    bfgold[j] += forget_bias;
+  }
   for (j = 0; j < N; j++) {
     matrix_copy(K, bigold, &(bimgold[j*K]));
     matrix_copy(K, bfgold, &(bfmgold[j*K]));
@@ -727,6 +731,7 @@ int main(int argc, char* argv[])
 
     libxsmm_handle = libxsmm_dnn_create_rnncell( lstmcell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_allocate_forget_bias(libxsmm_handle, forget_bias) );
 
     /* setup LIBXSMM buffers and filter */
     libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
