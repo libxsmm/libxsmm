@@ -137,25 +137,22 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
      /* HACK! */
      unsigned int ldc = m ;
      char transa = i_packed_trsm_desc->transa;
-     char side = i_packed_trsm_desc->side;
-     char uplo = i_packed_trsm_desc->uplo;
+     /*char side = i_packed_trsm_desc->side;*/
+     /*char uplo = i_packed_trsm_desc->uplo;*/
      char transb = i_packed_trsm_desc->diag;
      /* HACK ! */
      const unsigned int k = (unsigned int)i_packed_trsm_desc->layout;
      unsigned int datasz = (unsigned int)i_packed_trsm_desc->typesize;
      const double alpha = (8 == datasz ? i_packed_trsm_desc->alpha.d : ((double)i_packed_trsm_desc->alpha.s));
      const double beta = 1.0 ;
-     unsigned int m1=m, n1=n, mn, k1=k;
-     unsigned int j, l;
-     int i1, i2, i3, i4, j1, j2, j3;
+     unsigned int m1=m, n1=n, k1=k;
+     unsigned int j;
      /*int REGSIZE;*/
      int numb = 0;
-     int bot, dis, ii, fincol;
-     int scalealpha = 0;
-     int nounit=0;
-     int mb, nb, tra, trb;
-     int iun, jun;
-     char regset;
+     /*int scalealpha = 0;*/
+     /*int nounit=0;*/
+     int tra, trb;
+     char regset = 0;
 
 #if 1
 printf("Inside libxsmm_generator_packed_gemm_avx_avx512_kernel: transa=%c transb=%c m=%d n=%d k=%d lda=%d ldb=%d ldc=%d alpha=%g beta=%g datasz=%d avx512=%d\n",transa,transb,m,n,k,lda,ldb,ldc,alpha,beta,datasz,avx512);

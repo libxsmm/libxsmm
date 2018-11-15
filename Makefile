@@ -1009,7 +1009,7 @@ endif
 
 .PHONY: samples
 samples: lib_hst
-	@find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile | grep -v /gxm/ | grep -v /pyfr/ \
+	@find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile | grep -v /deeplearning/gxm/ | grep -v /pyfr/ | grep -v /packed/gemm/ | grep -v /packed/getrf/ \
 		$(patsubst %, | grep -v /%/,$^) | xargs -I {} $(FLOCK) {} "$(MAKE) DEPSTATIC=$(STATIC)"
 
 .PHONY: cp2k

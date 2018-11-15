@@ -123,26 +123,25 @@ void libxsmm_generator_packed_getrf_avx_avx512_kernel( libxsmm_generated_code*  
      unsigned int m = i_packed_trsm_desc->m;
      unsigned int n = i_packed_trsm_desc->n;
      unsigned int lda = i_packed_trsm_desc->lda;
-     unsigned int ldb = i_packed_trsm_desc->ldb;
-     char trans = i_packed_trsm_desc->transa;
+     /*unsigned int ldb = i_packed_trsm_desc->ldb;*/
+     /*char trans = i_packed_trsm_desc->transa;*/
      char side = i_packed_trsm_desc->side;
      char uplo = i_packed_trsm_desc->uplo;
-     char diag = i_packed_trsm_desc->diag;
+     /*char diag = i_packed_trsm_desc->diag;*/
      const unsigned int lay = (unsigned int)i_packed_trsm_desc->layout;
      unsigned int datasz = (unsigned int)i_packed_trsm_desc->typesize;
      const double alpha = (8 == datasz ? i_packed_trsm_desc->alpha.d : ((double)i_packed_trsm_desc->alpha.s));
-     const double beta = 1.0 ;
+     /*const double beta = 1.0;*/
      unsigned int m1=m, n1=n, mn;
-     unsigned int j, k, l;
-     int i1, i2, i3, i4, j1, j2, j3;
+     unsigned int j, k, ii;
      /*int REGSIZE;*/
      int numb = 0;
-     int bot, dis, ii, fincol;
-     int scalealpha = 0;
-     int nounit=0;
-     int mb, nb;
+     unsigned int bot, dis, fincol;
+     /*int scalealpha = 0;*/
+     /*int nounit=0;*/
+     unsigned int /*mb,*/ nb;
      int iun, jun;
-     char regset;
+     char regset = 'y';
      double one = 1.0;
      double none = -1.0;
 
@@ -219,14 +218,14 @@ printf("Inside libxsmm_generator_packed_getrf_avx_avx512_kernel: m=%d n=%d lay=%
      jun = 3;
 
      /* Register mapping: */
-     int a0 = 0, a1 = 1, a2 = 2, a3, a4;
-     int b0 = 3, b1 = 4, b2 = 5, b3;
-     int c00 = 6, c01 = 7, c02 = 8, c03;
-     int c10 = 9, c11 = 10, c12 = 11, c13;
-     int c20 = 12, c21 = 13, c22 = 14, c23;
-     int c30, c31, c32, c33;
-     int c40, c41, c42, c43;
-     int c0, c1, c2, c3, c4;
+     int a0 = 0, a1 = 1, a2 = 2;
+     int b0 = 3/*, b1 = 4, b2 = 5, b3*/;
+     /*int c00 = 6, c01 = 7, c02 = 8, c03;*/
+     /*int c10 = 9, c11 = 10, c12 = 11, c13;*/
+     /*int c20 = 12, c21 = 13, c22 = 14, c23;*/
+     /*int c30, c31, c32, c33;*/
+     /*int c40, c41, c42, c43;*/
+     /*int c0, c2, c3, c4;*/
 
      int onereg = 15;
 

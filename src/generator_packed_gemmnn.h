@@ -85,9 +85,9 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
      unsigned int loopi,
      unsigned int loopj )
 {
-     int i, j, l, datasz, nloopcnt=0, mloopcnt=0, nborder, mborder, mloopadj;
+     unsigned int i, j, l, datasz, nloopcnt=0, mloopcnt=0, nborder, mborder, mloopadj = 0;
      int aoffset, boffset, coffset; /* Address calcs for the loops */
-     int iun=3, jun=3; /* Register blocking sizes */
+     unsigned int iun=3, jun=3; /* Register blocking sizes */
 
      /* Test that the dimensions conform */
      if ( (am2-am1) != (cm2-cm1) ) {
@@ -150,10 +150,10 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
      int c50=-1, c51=-1, c52=-1, c53=-1, c54=-1, c55=-1, c56=-1, c57=-1;
      int c60=-1, c61=-1, c62=-1, c63=-1, c64=-1, c65=-1, c66=-1, c67=-1;
      int c70=-1, c71=-1, c72=-1, c73=-1, c74=-1, c75=-1, c76=-1, c77=-1;
-     int c0, c1, c2, c3, c4, c5, c6, c7;
+     int c0 = 0, c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0, c6 = 0, c7 = 0;
      int j0=1, j1, j2, j3, j4, j5, j6, j7;
      int i0=1, i1, i2, i3, i4, i5, i6, i7;
-     int maxregblocking = 8, maxreg=16;
+     unsigned int maxregblocking = 8, maxreg=16;
 
      if ( regset == 'y' ) { iun = 3; jun = 3; maxreg=16; maxregblocking= 7; }
      if ( regset == 'z' ) { iun = 5; jun = 4; maxreg=32; maxregblocking= 8; }
