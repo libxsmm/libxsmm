@@ -89,6 +89,23 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
      int aoffset, boffset, coffset; /* Address calcs for the loops */
      unsigned int iun=3, jun=3; /* Register blocking sizes */
 
+     int a0 = -1, a1 = -1, a2 = -1, a3 = -1, a4 = -1, a5 = -1, a6 = -1, a7 = -1;
+     int b0 = -1, b1 = -1, b2 = -1, b3 = -1, b4 = -1, b5 = -1, b6 = -1, b7 = -1;
+     int c00 = -1, c01 = -1, c02 = -1, c03 = -1, c04 = -1, c05 = -1, c06 = -1, c07 = -1;
+     int c10 = -1, c11 = -1, c12 = -1, c13 = -1, c14 = -1, c15 = -1, c16 = -1, c17 = -1;
+     int c20 = -1, c21 = -1, c22 = -1, c23 = -1, c24 = -1, c25 = -1, c26 = -1, c27 = -1;
+     int c30 = -1, c31 = -1, c32 = -1, c33 = -1, c34 = -1, c35 = -1, c36 = -1, c37 = -1;
+     int c40 = -1, c41 = -1, c42 = -1, c43 = -1, c44 = -1, c45 = -1, c46 = -1, c47 = -1;
+     int c50 = -1, c51 = -1, c52 = -1, c53 = -1, c54 = -1, c55 = -1, c56 = -1, c57 = -1;
+     int c60 = -1, c61 = -1, c62 = -1, c63 = -1, c64 = -1, c65 = -1, c66 = -1, c67 = -1;
+     int c70 = -1, c71 = -1, c72 = -1, c73 = -1, c74 = -1, c75 = -1, c76 = -1, c77 = -1;
+     int c0 = 0, c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0, c6 = 0, c7 = 0;
+     int j0 = 1, j1, j2, j3, j4, j5, j6, j7;
+     int i0 = 1, i1, i2, i3, i4, i5, i6, i7;
+     unsigned int maxregblocking = 8, maxreg = 16;
+
+     libxsmm_loop_label_tracker l_loop_label_tracker;
+
      /* Test that the dimensions conform */
      if ( (am2-am1) != (cm2-cm1) ) {
         printf("compact_gemmnn m-dimensions don't conform: %d != %d\n",am2-am1+1,cm2-cm1+1);
@@ -104,29 +121,29 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
      }
 
      /* See that all dimensions are at least 1 */
-     if ( am2-am1 < 0 ) {
+     if ( am2 < am1) {
         printf("compact_gemmnn m-dimension too small: %d\n",am2-am1+1);
         exit(-1);
      }
-     if ( ak2-ak1 < 0 ) {
+     if ( ak2 < ak1) {
         printf("compact_gemmnn k-dimension too small: %d\n",ak2-ak1+1);
         exit(-1);
      }
-     if ( bn2-bn1 < 0 ) {
+     if ( bn2 < bn1) {
         printf("compact_gemmnn n-dimension too small: %d\n",bn2-bn1+1);
         exit(-1);
      }
 
      /* Check that areg, breg, creg is valid */
-     if ( (areg < 0) || (areg > 15) ) {
+     if ( /*(areg < 0) ||*/ (areg > 15) ) {
         printf("compact_gemmnn A gp register invalid: %d\n",areg);
         exit(-1);
      }
-     if ( (breg < 0) || (breg > 15) ) {
+     if ( /*(breg < 0) ||*/ (breg > 15) ) {
         printf("compact_gemmnn B gp register invalid: %d\n",breg);
         exit(-1);
      }
-     if ( (creg < 0) || (creg > 15) ) {
+     if ( /*(creg < 0) ||*/ (creg > 15) ) {
         printf("compact_gemmnn C gp register invalid: %d\n",creg);
         exit(-1);
      }
@@ -139,21 +156,6 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
         printf("compact_gemmnn Unknown number=%d or regset=%c\n",numb,regset);
         exit(-1);
      }
-
-     int a0=-1, a1=-1, a2=-1, a3=-1, a4=-1, a5=-1, a6=-1, a7=-1;
-     int b0=-1, b1=-1, b2=-1, b3=-1, b4=-1, b5=-1, b6=-1, b7=-1;
-     int c00=-1, c01=-1, c02=-1, c03=-1, c04=-1, c05=-1, c06=-1, c07=-1;
-     int c10=-1, c11=-1, c12=-1, c13=-1, c14=-1, c15=-1, c16=-1, c17=-1;
-     int c20=-1, c21=-1, c22=-1, c23=-1, c24=-1, c25=-1, c26=-1, c27=-1;
-     int c30=-1, c31=-1, c32=-1, c33=-1, c34=-1, c35=-1, c36=-1, c37=-1;
-     int c40=-1, c41=-1, c42=-1, c43=-1, c44=-1, c45=-1, c46=-1, c47=-1;
-     int c50=-1, c51=-1, c52=-1, c53=-1, c54=-1, c55=-1, c56=-1, c57=-1;
-     int c60=-1, c61=-1, c62=-1, c63=-1, c64=-1, c65=-1, c66=-1, c67=-1;
-     int c70=-1, c71=-1, c72=-1, c73=-1, c74=-1, c75=-1, c76=-1, c77=-1;
-     int c0 = 0, c1 = 0, c2 = 0, c3 = 0, c4 = 0, c5 = 0, c6 = 0, c7 = 0;
-     int j0=1, j1, j2, j3, j4, j5, j6, j7;
-     int i0=1, i1, i2, i3, i4, i5, i6, i7;
-     unsigned int maxregblocking = 8, maxreg=16;
 
      if ( regset == 'y' ) { iun = 3; jun = 3; maxreg=16; maxregblocking= 7; }
      if ( regset == 'z' ) { iun = 5; jun = 4; maxreg=32; maxregblocking= 8; }
@@ -186,7 +188,6 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
      if ( nloopcnt < 2 ) loopj = 0;
      mborder = (am2-am1+1)-mloopcnt*iun;
      nborder = (bn2-bn1+1)-nloopcnt*jun;
-     libxsmm_loop_label_tracker l_loop_label_tracker;
      if ( loopj || loopi ) {
         libxsmm_reset_loop_label_tracker ( &l_loop_label_tracker );
      }
@@ -577,8 +578,7 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
                  libxsmm_x86_instruction_alu_imm( io_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_RCX, 1 );
                  libxsmm_x86_instruction_jump_back_to_label( io_code, LIBXSMM_X86_INSTR_JG, &l_loop_label_tracker );
               }
-              int morework = (mborder > 0) || (j+jun-1<bn2);
-              if ( (am2-i+1 < 2*iun) && morework && (mloopadj==1) ) {
+              if ( (am2-i+1 < 2*iun) && ((mborder > 0) || (j + jun - 1 < bn2)) && (mloopadj==1) ) {
 #ifdef COMPACT_GEMMNN_DEBUG
                  printf("Finished with m-loop, doing clean-up: i=%d i0=%d j0=%d mborder=%d j=%d jun=%d bn2=%d\n",i,i0,j0,mborder,j,jun,bn2);
 #endif

@@ -48,7 +48,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* #define GENERATOR_PACKED_TRSM_DEBUG */
+#if 0
+#define GENERATOR_PACKED_GEMM_DEBUG
+#endif
 
 
 /* TODO: Remove the extra garbage parameters from this calling sequence: */
@@ -154,7 +156,7 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
      int tra, trb;
      char regset = 0;
 
-#if 1
+#if defined(GENERATOR_PACKED_GEMM_DEBUG)
 printf("Inside libxsmm_generator_packed_gemm_avx_avx512_kernel: transa=%c transb=%c m=%d n=%d k=%d lda=%d ldb=%d ldc=%d alpha=%g beta=%g datasz=%d avx512=%d\n",transa,transb,m,n,k,lda,ldb,ldc,alpha,beta,datasz,avx512);
 printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,junroll,loopi,loopj);
 #endif

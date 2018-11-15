@@ -131,7 +131,7 @@ LIBXSMM_API_INLINE void compact_store_matrix_gen_ (
      unsigned int i_vmove_instr;
      int i_instruction_set;
 
-     if ( (reg < 0) || (reg >=32) ) {
+     if ( /*(reg < 0) ||*/ (reg >=32) ) {
         printf("compact_store_matrix_gen trying to store from an invalid register: %d\n",reg);
         exit(-1);
      }
@@ -327,7 +327,7 @@ LIBXSMM_API_INLINE void compact_load_matrix_gen_ (
      unsigned int i_vmove_instr;
      int i_instruction_set;
 
-     if ( (reg < 0) || (reg >=32) ) {
+     if ( /*(reg < 0) ||*/ (reg >=32) ) {
         printf("compact_load_matrix_gen trying to load to an invalid register: %d\n",reg);
         printf("lda=%d i=%d j=%d reg=%d number=%d datasize=%d regset=%c matrix_gpreg=%d\n",lda,i,j,reg,number,datasize,regset,matrix_gpreg);
         exit(-1);

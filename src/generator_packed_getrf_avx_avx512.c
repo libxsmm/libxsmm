@@ -48,7 +48,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* #define GENERATOR_PACKED_TRSM_DEBUG */
+#if 0
+# define GENERATOR_PACKED_GETRF_DEBUG
+#endif
 
 
 LIBXSMM_API_INTERN
@@ -125,8 +127,10 @@ void libxsmm_generator_packed_getrf_avx_avx512_kernel( libxsmm_generated_code*  
      unsigned int lda = i_packed_trsm_desc->lda;
      /*unsigned int ldb = i_packed_trsm_desc->ldb;*/
      /*char trans = i_packed_trsm_desc->transa;*/
+#if 0
      char side = i_packed_trsm_desc->side;
      char uplo = i_packed_trsm_desc->uplo;
+#endif
      /*char diag = i_packed_trsm_desc->diag;*/
      const unsigned int lay = (unsigned int)i_packed_trsm_desc->layout;
      unsigned int datasz = (unsigned int)i_packed_trsm_desc->typesize;
@@ -136,24 +140,38 @@ void libxsmm_generator_packed_getrf_avx_avx512_kernel( libxsmm_generated_code*  
      unsigned int j, k, ii;
      /*int REGSIZE;*/
      int numb = 0;
-     unsigned int bot, dis, fincol;
+     unsigned int bot, /*dis,*/ fincol;
      /*int scalealpha = 0;*/
      /*int nounit=0;*/
      unsigned int /*mb,*/ nb;
-     int iun, jun;
+     /*int iun, jun;*/
      char regset = 'y';
      double one = 1.0;
      double none = -1.0;
 
+     /* Register mapping: */
+     int a0 = 0, a1 = 1, a2 = 2;
+     int b0 = 3/*, b1 = 4, b2 = 5, b3*/;
+     /*int c00 = 6, c01 = 7, c02 = 8, c03;*/
+     /*int c10 = 9, c11 = 10, c12 = 11, c13;*/
+     /*int c20 = 12, c21 = 13, c22 = 14, c23;*/
+     /*int c30, c31, c32, c33;*/
+     /*int c40, c41, c42, c43;*/
+     /*int c0, c2, c3, c4;*/
+
+     int onereg = 15;
+
      if ( lay == 101 )
      {
+#if 0
         if (i_packed_trsm_desc->side == 'L' || i_packed_trsm_desc->side == 'l' ) side = 'R';
         else side = 'L';
         if (i_packed_trsm_desc->uplo == 'L' || i_packed_trsm_desc->uplo == 'l' ) uplo = 'U';
         else uplo = 'L';
+#endif
         m1 = n; n1 = m;
      }
-#if 1
+#if defined(GENERATOR_PACKED_GETRF_DEBUG)
 printf("Inside libxsmm_generator_packed_getrf_avx_avx512_kernel: m=%d n=%d lay=%d lda=%d datasz=%d\n",m,n,lay,lda,datasz);
 #endif
      if ( ( datasz !=4 ) && (datasz != 8) )
@@ -214,26 +232,14 @@ printf("Inside libxsmm_generator_packed_getrf_avx_avx512_kernel: m=%d n=%d lay=%
      if ( n1 <= 2 ) nb = 1;
      mn = LIBXSMM_MIN(m1,n1);
      if ( mn >= 6 ) nb = 3;
-     iun = 3;
-     jun = 3;
-
-     /* Register mapping: */
-     int a0 = 0, a1 = 1, a2 = 2;
-     int b0 = 3/*, b1 = 4, b2 = 5, b3*/;
-     /*int c00 = 6, c01 = 7, c02 = 8, c03;*/
-     /*int c10 = 9, c11 = 10, c12 = 11, c13;*/
-     /*int c20 = 12, c21 = 13, c22 = 14, c23;*/
-     /*int c30, c31, c32, c33;*/
-     /*int c40, c41, c42, c43;*/
-     /*int c0, c2, c3, c4;*/
-
-     int onereg = 15;
+     /*iun = 3;*/
+     /*jun = 3;*/
 
 /* Insert code here */
      compact_set_one_ ( io_code, onereg, numb, datasz, regset );
      for ( ii = 1 ; ii <= mn ; ii += nb ) {
         bot = LIBXSMM_MIN(ii+nb-1,mn);
-        dis = bot - ii + 1;
+        /*dis = bot - ii + 1;*/
 
         for ( j = ii ; j <= bot ; j++ ) {
            for ( i = j+1 ; i <= m1 ; i++ ) {
