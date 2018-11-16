@@ -44,7 +44,7 @@ if [ "$1" = "" ]; then
 fi
 
 STATEFILE=${DEST}/.state
-STATE=$(${TR} '?' '\n' | ${SED} -e 's/^ */\"/' -e 's/$/\\n\"/')
+STATE=$(${TR} '?' '\n' | ${SED} -e 's/^ */\"/' -e 's/   */ /g' -e 's/ *$/\\n\"/')
 
 if [ ! -e ${STATEFILE} ] || [ "0" != "$(${ECHO} "${STATE}" | diff -q ${STATEFILE} - >/dev/null; ${ECHO} "$?")" ]; then
   if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
