@@ -112,13 +112,11 @@ const libxsmm_blasint chunksize = (work % (libxsmm_blasint)handle->desc.threads 
 const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
-/* number of tasks that could be run in parallel for K */
-const libxsmm_blasint work_k = (K/bk);
 /* compute chunk size */
-const libxsmm_blasint chunksize_k = (work_k % (libxsmm_blasint)handle->desc.threads == 0) ? (work_k / (libxsmm_blasint)handle->desc.threads) : ((work_k / (libxsmm_blasint)handle->desc.threads) + 1);
+const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads == 0) ? (K / (libxsmm_blasint)handle->desc.threads) : ((K / (libxsmm_blasint)handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
-const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < work_k) ? (ltid * chunksize_k) : work_k;
-const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < work_k) ? ((ltid + 1) * chunksize_k) : work_k;
+const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
+const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, (int)ltid);
@@ -126,8 +124,10 @@ libxsmm_barrier_init(handle->barrier, (int)ltid);
 /* All data is in column-major format */
 /* Add forget_bias to bf */
 for (ik = thr_begin_k; ik < thr_end_k; ++ik) {
-  bi[ik] += handle->forget_bias;
+  bf[ik] += handle->forget_bias;
 }
+
+libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
 for (j = 0; j < t; ++j) {
   /* let's run the cell in blocks for good locality */

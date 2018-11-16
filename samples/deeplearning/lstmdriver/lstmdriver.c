@@ -233,7 +233,7 @@ LIBXSMM_INLINE void convert_c4k_4ck(int C, int K, float *src, float *dst)
 
 int main(int argc, char* argv[])
 {
-  float *wigold, *wfgold, *wogold, *wcgold, *xgoldt, *rigold, *rfgold, *rogold, *rcgold, *hgoldt, *bigold, *bfgold, *bogold, *bcgold;
+  float *wigold, *wfgold, *wogold, *wcgold, *xgoldt, *rigold, *rfgold, *rogold, *rcgold, *hgoldt, *bigold, *bfgold, *bogold, *bcgold, *bfgold_fb;
   float *cspgold, *hpgold/*, *dcspgold, *dhpgold*/;
   float *igoldt, *fgoldt, *ogoldt, *cgoldt, *dgoldt, *bimgold, *bfmgold, *bomgold, *bcmgold, *doutgoldt;
   float *i1gold, *i2gold, *f1gold, *f2gold, *o1gold, *o2gold, *c1gold, *c2gold, *d1gold, *d2gold, *dhgold;
@@ -367,6 +367,7 @@ int main(int argc, char* argv[])
   bogold = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
   bcgold = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
   hgoldt = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  bfgold_fb = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
   bimgold= (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   bfmgold= (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   bomgold= (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
@@ -487,11 +488,11 @@ int main(int argc, char* argv[])
   LIBXSMM_MATINIT_OMP(float, 24, bogold, 1, K, 1, 1.0);
   LIBXSMM_MATINIT_OMP(float, 24, bcgold, 1, K, 1, 1.0);
   for (j = 0; j < K; j++) {
-    bfgold[j] += forget_bias;
+    bfgold_fb[j] = bfgold[j] + forget_bias;
   }
   for (j = 0; j < N; j++) {
     matrix_copy(K, bigold, &(bimgold[j*K]));
-    matrix_copy(K, bfgold, &(bfmgold[j*K]));
+    matrix_copy(K, bfgold_fb, &(bfmgold[j*K]));
     matrix_copy(K, bogold, &(bomgold[j*K]));
     matrix_copy(K, bcgold, &(bcmgold[j*K]));
   }
