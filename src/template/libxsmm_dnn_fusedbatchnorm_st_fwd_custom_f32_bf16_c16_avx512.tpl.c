@@ -163,7 +163,22 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     lcl_vbmeansq = _mm512_mul_ps( lcl_vbmean,   lcl_vbmean );   /* E(X)^2 */
     lcl_vsqbmean = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsumsq );   /* E(X^2) */
     lcl_vvar     = _mm512_sub_ps( lcl_vsqbmean, lcl_vbmeansq ); /* variance */
+#if 0
+    {
+      __m512d lcl_voned = _mm512_set1_pd(1.0);
+      __m512d lcl_vepsd = _mm512_set1_pd(1e-7);
+      __m512d lcl_vlo   = _mm512_cvtps_pd( _mm256_castpd_ps( _mm512_extractf64x4_pd( _mm512_castps_pd( lcl_vvar ), 0 ) ) );
+      __m512d lcl_vhi   = _mm512_cvtps_pd( _mm256_castpd_ps( _mm512_extractf64x4_pd( _mm512_castps_pd( lcl_vvar ), 1 ) ) );
+      lcl_vlo = _mm512_sqrt_pd( _mm512_add_pd( lcl_vlo, lcl_vepsd ) );
+      lcl_vhi = _mm512_sqrt_pd( _mm512_add_pd( lcl_vhi, lcl_vepsd ) );
+      lcl_vlo = _mm512_div_pd( lcl_voned, lcl_vlo );
+      lcl_vhi = _mm512_div_pd( lcl_voned, lcl_vhi );
+      lcl_vbrstd = _mm512_castpd_ps( _mm512_insertf64x4( _mm512_setzero_pd(),            _mm256_castps_pd( _mm512_cvtpd_ps( lcl_vlo ) ), 0 ) );
+      lcl_vbrstd = _mm512_castpd_ps( _mm512_insertf64x4( _mm512_castps_pd( lcl_vbrstd ), _mm256_castps_pd( _mm512_cvtpd_ps( lcl_vhi ) ), 1 ) );
+    }
+#else
     lcl_vbrstd   = _mm512_div_ps( lcl_vone, _mm512_sqrt_ps( _mm512_add_ps( lcl_vvar, lcl_vsqrt_eps ) ) );
+#endif
 
     _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, bmean,    fm, 0, 16), lcl_vbmean );
     _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,    fm, 0, 16), lcl_vbrstd );
