@@ -419,7 +419,7 @@ void edge::reproducers::setupKernel ( edge::data::MmXsmmFused< real_base >  & io
                   N_QUANTITIES, l_nzCols, l_nzRows,
                   N_ELEMENT_MODES, 0, l_nzCols,
                   real_base(1.0), real_base(0.0),
-                  LIBXSMM_PREFETCH_NONE );
+                  LIBXSMM_GEMM_PREFETCH_NONE );
     }
     // generate libxsmm kernel for star matrix
     io_mm.add(  true,
@@ -427,7 +427,7 @@ void edge::reproducers::setupKernel ( edge::data::MmXsmmFused< real_base >  & io
                 N_QUANTITIES, l_nzCols, N_QUANTITIES,
                 0, l_nzCols, N_ELEMENT_MODES,
                 real_base(1.0), real_base(1.0),
-                LIBXSMM_PREFETCH_NONE );
+                LIBXSMM_GEMM_PREFETCH_NONE );
 
     // reduce relevant rows due to generated zero block
     l_nzRows = l_nzCols;
@@ -451,7 +451,7 @@ void edge::reproducers::setupKernel ( edge::data::MmXsmmFused< real_base >  & io
                 N_QUANTITIES, N_ELEMENT_MODES, l_nzBl,
                 l_nzBl, 0, N_ELEMENT_MODES,
                 real_base(1.0), real_base(1.0),
-                LIBXSMM_PREFETCH_NONE ); // Remark: Star matrix is multiplied first
+                LIBXSMM_GEMM_PREFETCH_NONE ); // Remark: Star matrix is multiplied first
   }
 
   // star matrix
@@ -460,7 +460,7 @@ void edge::reproducers::setupKernel ( edge::data::MmXsmmFused< real_base >  & io
               N_QUANTITIES, l_nzBl, N_QUANTITIES,
               0, N_ELEMENT_MODES, l_nzBl,
               real_base(1.0), real_base(0.0),
-              LIBXSMM_PREFETCH_NONE );
+              LIBXSMM_GEMM_PREFETCH_NONE );
 
   /*
    * 3) surface kernels
@@ -477,7 +477,7 @@ void edge::reproducers::setupKernel ( edge::data::MmXsmmFused< real_base >  & io
                 N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
                 N_ELEMENT_MODES, 0, N_FACE_MODES,
                 real_base(1.0), real_base(0.0),
-                LIBXSMM_PREFETCH_NONE );
+                LIBXSMM_GEMM_PREFETCH_NONE );
   }
 
   // neighboring contribution flux matrices
@@ -492,7 +492,7 @@ void edge::reproducers::setupKernel ( edge::data::MmXsmmFused< real_base >  & io
                 N_QUANTITIES, N_FACE_MODES, N_ELEMENT_MODES,
                 N_ELEMENT_MODES, 0, N_FACE_MODES,
                 real_base(1.0), real_base(0.0),
-                LIBXSMM_PREFETCH_NONE );
+                LIBXSMM_GEMM_PREFETCH_NONE );
   }
 
   // transposed flux matrices
@@ -507,7 +507,7 @@ void edge::reproducers::setupKernel ( edge::data::MmXsmmFused< real_base >  & io
                 N_QUANTITIES, N_ELEMENT_MODES, N_FACE_MODES,
                 N_FACE_MODES, 0, N_ELEMENT_MODES,
                 real_base(1.0), real_base(1.0),
-                LIBXSMM_PREFETCH_NONE );
+                LIBXSMM_GEMM_PREFETCH_NONE );
   }
 
   // flux solver
@@ -522,7 +522,7 @@ void edge::reproducers::setupKernel ( edge::data::MmXsmmFused< real_base >  & io
               N_QUANTITIES, N_FACE_MODES, N_QUANTITIES,
               0, N_FACE_MODES, N_FACE_MODES,
               real_base(1.0), real_base(0.0),
-              LIBXSMM_PREFETCH_BL2_VIA_C );
+              LIBXSMM_GEMM_PREFETCH_BL2_VIA_C );
 
   return;
 }

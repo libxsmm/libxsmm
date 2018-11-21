@@ -47,6 +47,8 @@ ifeq ($(EDGE_VALID), 1)
 EDGE_FLAGS += -DPP_REPRODUCER_VALIDATE
 endif
 
+EDGE_FLAGS += -std=c++11
+
 # settings for compiler
 CXXFLAGS = $(EDGE_CXXFLAGS) $(EDGE_FLAGS)
 CFLAGS = $(NULL)
