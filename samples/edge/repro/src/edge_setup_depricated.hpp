@@ -31,7 +31,7 @@ const std::string C_MSTAR_NAME = "../mats/tet4_starMatrix_csr.mtx";
 const std::string C_FLUXSOLV_NAME = "../mats/tet4_fluxMatrix_csr_de.mtx";
 
 
-/* setup functions 
+/* setup functions
  * ANY memory associated to the structures/pointers is allocated within the setup function
  */
 void setupDg       ( t_dg                   & io_dg );
@@ -54,7 +54,7 @@ void setupDg( t_dg & i_dg ) {
    * Implementation based on https://github.com/3343/edge/blob/develop/src/dg/setup_ader.inc#L55-L231
    */
 
-#if defined PP_T_KERNELS_XSMM 
+#if defined PP_T_KERNELS_XSMM
   std::vector< real_base >    l_matVal;
   std::vector< unsigned int > l_matColPtr;
   std::vector< unsigned int > l_matRowIdx;
@@ -70,7 +70,7 @@ void setupDg( t_dg & i_dg ) {
   }
 
   // hierarchical setup
-  unsigned int l_nzCols = N_ELEMENT_MODES; 
+  unsigned int l_nzCols = N_ELEMENT_MODES;
   unsigned int l_nzRows = N_ELEMENT_MODES;
   for ( unsigned int l_de = 1; l_de < ORDER; l_de++ ) {
     // determine non-zero block for the next iteration
@@ -198,11 +198,11 @@ void setupTensor ( unsigned int  const      i_nEl,
                    real_base           (* & io_dofs)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS],
                    real_base           (* & io_tInt)[N_QUANTITIES][N_ELEMENT_MODES][N_CRUNS] ) {
 
-  posix_memalign( (void **)&io_dofs, 
-                  ALIGNMENT.ELEMENT_MODES.PRIVATE, 
+  posix_memalign( (void **)&io_dofs,
+                  ALIGNMENT.ELEMENT_MODES.PRIVATE,
                   (size_t)(i_nEl*N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS*sizeof(real_base)) );
-  posix_memalign( (void **)&io_tInt, 
-                  ALIGNMENT.ELEMENT_MODES.PRIVATE, 
+  posix_memalign( (void **)&io_tInt,
+                  ALIGNMENT.ELEMENT_MODES.PRIVATE,
                   (size_t)(i_nEl*N_QUANTITIES*N_ELEMENT_MODES*N_CRUNS*sizeof(real_base)) );
 
 #ifdef PP_REPRODUCER_VALIDATE // generate identical input for valication
@@ -265,7 +265,7 @@ void setupKernel ( edge::data::MmXsmmFused< real_base >  & io_mm ) {
   // exploit potential zero-block generation in recursive CK
 
   // nz-blocks
-  unsigned int l_nzCols = N_ELEMENT_MODES; 
+  unsigned int l_nzCols = N_ELEMENT_MODES;
   unsigned int l_nzRows = N_ELEMENT_MODES;
 
   // iterate over derivatives (recursive calls)
@@ -279,7 +279,7 @@ void setupKernel ( edge::data::MmXsmmFused< real_base >  & io_mm ) {
       std::vector< unsigned int > l_matColPtr;
       std::vector< unsigned int > l_matRowIdx;
       selectSubSparseMatrixCsc( l_stiffTVal[l_di], l_stiffTColPtr[l_di], l_stiffTRowIdx[l_di],
-                                l_nzRows, l_nzCols, 
+                                l_nzRows, l_nzCols,
                                 l_matVal, l_matColPtr, l_matRowIdx );
 
       io_mm.add(  false,
@@ -313,7 +313,7 @@ void setupKernel ( edge::data::MmXsmmFused< real_base >  & io_mm ) {
     std::vector< unsigned int > l_stiffColPtr;
     std::vector< unsigned int > l_stiffRowIdx;
     readSparseMatrixCsc(C_STIFF_NAME(l_di), l_stiffVal, l_stiffColPtr, l_stiffRowIdx);
-    
+
     io_mm.add(  false,
                &l_stiffColPtr[0], &l_stiffRowIdx[0], &l_stiffVal[0],
                 N_QUANTITIES, N_ELEMENT_MODES, l_nzBl,
@@ -382,7 +382,7 @@ void setupKernel ( edge::data::MmXsmmFused< real_base >  & io_mm ) {
   std::vector< real_base >    l_fSolvVal;
   std::vector< unsigned int > l_fSolvRowPtr;
   std::vector< unsigned int > l_fSolvColIdx;
-  readSparseMatrixCsr(C_FLUXSOLV_NAME, l_fSolvVal, l_fSolvRowPtr, l_fSolvColIdx);                                               
+  readSparseMatrixCsr(C_FLUXSOLV_NAME, l_fSolvVal, l_fSolvRowPtr, l_fSolvColIdx);
   assert( l_fSolvVal.size() == N_QUANTITIES*N_QUANTITIES );
 
   io_mm.add(  true,

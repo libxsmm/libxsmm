@@ -7,15 +7,15 @@
 int main( int i_argc, char *i_argv[] ) {
   std::cout << "Testing *readSparseMatrixCsc*" << std::endl;
   {
-    std::string l_cscFileName[] = 
-    { 
+    std::string l_cscFileName[] =
+    {
       "../mats/tet4_4_stiffT_2_csc.mtx",
       "../mats/tet4_4_fluxL_2_csc.mtx",
       "../mats/tet4_4_fluxT_2_csc.mtx"
     };
 
-    unsigned int l_cscMatSize[][3] = 
-    { 
+    unsigned int l_cscMatSize[][3] =
+    {
       {35, 35, 287},
       {35, 15, 363},
       {15, 35, 363}
@@ -39,15 +39,15 @@ int main( int i_argc, char *i_argv[] ) {
 
   std::cout << "Testing *readSparseMatrixCsr*" << std::endl;
   {
-    std::string l_csrFileName[] = 
-    { 
+    std::string l_csrFileName[] =
+    {
       "../mats/tet4_4_stiffT_2_csr.mtx",
       "../mats/tet4_4_fluxL_2_csr.mtx",
       "../mats/tet4_4_fluxT_2_csr.mtx"
     };
 
-    unsigned int l_csrMatSize[][3] = 
-    { 
+    unsigned int l_csrMatSize[][3] =
+    {
       {35, 35, 287},
       {35, 15, 363},
       {15, 35, 363}
@@ -71,16 +71,16 @@ int main( int i_argc, char *i_argv[] ) {
 
   std::cout << "Testing *selectSubSparseMatrixCsc*" << std::endl;
   {
-    std::string l_cscFileName[] = 
-    { 
+    std::string l_cscFileName[] =
+    {
       "../mats/tet4_4_stiffT_2_csc.mtx",
-      "../mats/tet4_4_stiffT_2_csc.mtx",      
+      "../mats/tet4_4_stiffT_2_csc.mtx",
       "../mats/tet4_4_stiffV_2_csc.mtx",
       "../mats/tet4_4_stiffV_2_csc.mtx",
       "../mats/tet4_4_stiffV_2_csc.mtx"
     };
 
-    unsigned int l_subMat[][2] = 
+    unsigned int l_subMat[][2] =
     {
       {35, 20},
       {20, 35},
@@ -89,8 +89,8 @@ int main( int i_argc, char *i_argv[] ) {
       {35, 35}
     };
 
-    unsigned int l_cscSubMatSize[][3] = 
-    { 
+    unsigned int l_cscSubMatSize[][3] =
+    {
       {35, 20, 287},
       {20, 35, 92},
       {35, 20, 92},
@@ -109,10 +109,10 @@ int main( int i_argc, char *i_argv[] ) {
                            l_matColPtr[0],
                            l_matRowIdx[0] );
       edge::reproducers::
-      selectSubSparseMatrixCsc( l_matVal[0], l_matColPtr[0], l_matRowIdx[0], 
-                                l_subMat[l_i][0], l_subMat[l_i][1], 
+      selectSubSparseMatrixCsc( l_matVal[0], l_matColPtr[0], l_matRowIdx[0],
+                                l_subMat[l_i][0], l_subMat[l_i][1],
                                 l_matVal[1], l_matColPtr[1], l_matRowIdx[1] );
-      
+
       assert( l_matVal[1].size() == l_cscSubMatSize[l_i][2] );
       assert( l_matColPtr[1].size() == l_cscSubMatSize[l_i][1]+1 );
     }

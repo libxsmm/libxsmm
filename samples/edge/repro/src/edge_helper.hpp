@@ -7,7 +7,7 @@
 #include <vector>
 
 namespace edge {
-  namespace reproducers { 
+  namespace reproducers {
     template<typename T_REAL>
     int readSparseMatrixCsc( std::string            const   i_fileName,
                              std::vector< T_REAL >        & io_matVal,
@@ -45,16 +45,16 @@ int edge::reproducers::readSparseMatrixCsc( std::string            const   i_fil
   std::string l_lineBuf;
 
   unsigned int l_header = 0;
-  unsigned int l_nEntries;  
-  unsigned int l_nCols;  
-  unsigned int l_nRows;  
+  unsigned int l_nEntries;
+  unsigned int l_nCols;
+  unsigned int l_nRows;
   unsigned int l_row;
-  unsigned int l_col; 
+  unsigned int l_col;
   double       l_entry;
   unsigned int l_nzCounter;
   unsigned int l_colCounter;
   int          l_errCheck;
-  
+
   while (l_fp) {
     std::getline(l_fp, l_lineBuf);
     if ( l_lineBuf.length() == 0 || l_lineBuf[0] == '%' ) continue;
@@ -103,16 +103,16 @@ int edge::reproducers::readSparseMatrixCsr( std::string            const   i_fil
   std::string l_lineBuf;
 
   unsigned int l_header = 0;
-  unsigned int l_nEntries;  
-  unsigned int l_nCols;  
-  unsigned int l_nRows;  
+  unsigned int l_nEntries;
+  unsigned int l_nCols;
+  unsigned int l_nRows;
   unsigned int l_row;
-  unsigned int l_col; 
+  unsigned int l_col;
   double       l_entry;
   unsigned int l_nzCounter;
   unsigned int l_rowCounter;
   int          l_errCheck;
-  
+
   while (l_fp) {
     getline(l_fp, l_lineBuf);
     if ( l_lineBuf.length() == 0 || l_lineBuf[0] == '%' ) continue;
@@ -158,15 +158,15 @@ int edge::reproducers::readSparseMatrixDense( std::string            const   i_f
   std::string l_lineBuf;
 
   unsigned int l_header = 0;
-  unsigned int l_nEntries;  
-  unsigned int l_nCols;  
-  unsigned int l_nRows;  
+  unsigned int l_nEntries;
+  unsigned int l_nCols;
+  unsigned int l_nRows;
   unsigned int l_row;
-  unsigned int l_col; 
+  unsigned int l_col;
   double       l_entry;
   unsigned int l_nzCounter;
   int          l_errCheck;
-  
+
   while (l_fp) {
     std::getline(l_fp, l_lineBuf);
     if ( l_lineBuf.length() == 0 || l_lineBuf[0] == '%' ) continue;
@@ -211,7 +211,7 @@ int edge::reproducers::selectSubSparseMatrixCsc( std::vector< T_REAL >       con
   std::vector< unsigned int > l_tmpMatColPtr;
   std::vector< unsigned int > l_tmpMatRowIdx;
 
-  l_tmpMatVal.resize(l_nEntries); 
+  l_tmpMatVal.resize(l_nEntries);
   l_tmpMatColPtr.resize(i_nSubCols+1);
   l_tmpMatRowIdx.resize(l_nEntries);
 
@@ -238,7 +238,7 @@ int edge::reproducers::selectSubSparseMatrixCsc( std::vector< T_REAL >       con
   o_subMatVal = l_tmpMatVal;
   o_subMatColPtr = l_tmpMatColPtr;
   o_subMatRowIdx = l_tmpMatRowIdx;
-                          
+
   return 0;
 };
 

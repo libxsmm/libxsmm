@@ -25,15 +25,15 @@
 
 #ifndef EDGE_DATA_MM_XSMM_FUSED_HPP
 #define EDGE_DATA_MM_XSMM_FUSED_HPP
- 
+
 #include <vector>
 #include "constants.hpp"
 #ifdef PP_USE_EDGE_IO
 #include "io/logging.h"
 #endif
- 
+
 #include <libxsmm.h>
- 
+
 namespace edge {
   namespace data {
     template< typename TL_T_REAL >
@@ -55,11 +55,11 @@ class edge::data::MmXsmmFused< float > {
   private:
     //! gemm descriptors of libxsmm
     std::vector< libxsmm_gemm_descriptor > m_descs;
- 
+
   public:
     //! generated kernels of libxsmm
     std::vector< libxsmm_smmfunction > m_kernels;
- 
+
     /**
      * Adds a sparse libxsmm-kernel for the given matrix in CSR- or CSC-format.
      *
@@ -100,7 +100,7 @@ class edge::data::MmXsmmFused< float > {
                 << " ldA=" << i_ldA << " ldB=" << i_ldB << " ldC=" << i_ldC
                 << " alpha=" << i_alpha << " beta=" << i_beta << std::endl;
 #endif
- 
+
 #ifdef PP_USE_EDGE_IO
 #if defined(__AVX512F__)
       EDGE_CHECK( PP_N_CRUNS == 16 );
@@ -114,9 +114,9 @@ class edge::data::MmXsmmFused< float > {
       LIBXSMM_GEMM_DESCRIPTOR( l_desc, LIBXSMM_GEMM_PRECISION_F32, 0,
                                i_m, i_n, i_k, i_ldA, i_ldB, i_ldC,
                                i_alpha, i_beta, i_prefetch );
- 
+
       m_descs.push_back( l_desc );
- 
+
       // generate and store function for this kernels
       if( i_csr )
         m_kernels.push_back( libxsmm_create_xcsr_soa( &m_descs.back(), i_ptr, i_idx, i_val ).smm );
@@ -138,11 +138,11 @@ class edge::data::MmXsmmFused< double > {
   private:
     //! gemm descriptors of libxsmm
     std::vector< libxsmm_gemm_descriptor > m_descs;
- 
+
   public:
     //! generated kernels of libxsmm
     std::vector< libxsmm_dmmfunction > m_kernels;
- 
+
     /**
      * Adds a sparse libxsmm-kernel for the given matrix in CSR- or CSC-format.
      *
@@ -199,9 +199,9 @@ class edge::data::MmXsmmFused< double > {
       LIBXSMM_GEMM_DESCRIPTOR( l_desc, LIBXSMM_GEMM_PRECISION_F64, 0,
                                i_m, i_n, i_k, i_ldA, i_ldB, i_ldC,
                                i_alpha, i_beta, i_prefetch );
- 
+
       m_descs.push_back( l_desc );
- 
+
       // generate and store function for this kernels
       if( i_csr )
         m_kernels.push_back( libxsmm_create_xcsr_soa( &m_descs.back(), i_ptr, i_idx, i_val ).dmm );
@@ -215,4 +215,4 @@ class edge::data::MmXsmmFused< double > {
     }
 };
 #endif
- 
+

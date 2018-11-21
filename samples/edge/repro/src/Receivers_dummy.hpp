@@ -3,7 +3,7 @@
 
 namespace edge {
   namespace io {
-    class Receivers; 
+    class Receivers;
   }
 }
 

@@ -35,12 +35,12 @@ int main(int i_argc, char *i_argv[]) {
   real_base          l_scratch3[N_QUANTITIES][N_FACE_MODES][N_CRUNS];
   unsigned int    (* l_elFaEl)[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
   unsigned short  (* l_fIdElFaEl)[ C_ENT[T_SDISC.ELEMENT].N_FACES ];
-  
+
 
   // 1. Parse cmd arguments for hyper-parameters
   if ( i_argc == 3 ) {
     l_nSteps    = (unsigned int)atoi(i_argv[1]);
-    l_nElements = (unsigned int)atoi(i_argv[2]);    
+    l_nElements = (unsigned int)atoi(i_argv[2]);
   } else {
     std::cout << "Usage: ./local_test {NUM_STEPS} {NUM_ELEMENTS} [-h|--help]\n" << std::endl;
     std::exit(1);
@@ -102,7 +102,7 @@ int main(int i_argc, char *i_argv[]) {
               for ( unsigned short l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ )
                 l_scratch2[l_qt][l_md][l_cfr] += l_tInt[l_neEl][l_qt][l_k_md][l_cfr]*l_fluxN[l_neFa][l_k_md][l_md];
           }
-        
+
         for ( unsigned short l_qt = 0; l_qt < N_QUANTITIES; l_qt++ )
           for ( unsigned short l_md = 0; l_md < N_FACE_MODES; l_md++ ) {
             for ( unsigned short l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ ) l_scratch3[l_qt][l_md][l_cfr] = 0;
@@ -110,7 +110,7 @@ int main(int i_argc, char *i_argv[]) {
               for ( unsigned short l_cfr = 0; l_cfr < N_CRUNS; l_cfr++ )
                 l_scratch3[l_qt][l_md][l_cfr] += l_fluxSolver[l_qt][l_k_qt] * l_scratch2[l_k_qt][l_md][l_cfr];
           }
-        
+
         for ( unsigned short l_qt = 0; l_qt < N_QUANTITIES; l_qt++ )
           for ( unsigned short l_md = 0; l_md < N_ELEMENT_MODES; l_md++ )
             for ( unsigned short l_k_md = 0; l_k_md < N_FACE_MODES; l_k_md++ )

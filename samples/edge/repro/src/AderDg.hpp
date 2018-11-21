@@ -48,7 +48,7 @@
 
 namespace edge {
   namespace elastic {
-    namespace solvers { 
+    namespace solvers {
       class AderDg;
     }
   }

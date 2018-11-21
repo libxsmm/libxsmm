@@ -34,7 +34,7 @@ int main(int i_argc, char *i_argv[]) {
   unsigned int l_nElements;
   if ( i_argc == 3 ) {
     l_nSteps    = (unsigned int)atoi(i_argv[1]);
-    l_nElements = (unsigned int)atoi(i_argv[2]);    
+    l_nElements = (unsigned int)atoi(i_argv[2]);
   } else {
     std::cout << "Usage: ./local {NUM_STEPS} {NUM_ELEMENTS} [-h|--help]\n" << std::endl;
     std::exit(1);
@@ -107,7 +107,7 @@ int edge::reproducers::local( unsigned int const i_nSteps, unsigned int const i_
     for ( unsigned int l_step = 0; l_step < l_nSteps; l_step++ ) {
       edge::elastic::solvers::AderDg::local< unsigned int,
                                              real_base,
-                                             edge::data::MmXsmmFused< real_base > > 
+                                             edge::data::MmXsmmFused< real_base > >
                                            ( l_firstEl,
                                              l_numEl,
                                              l_dummyDouble,

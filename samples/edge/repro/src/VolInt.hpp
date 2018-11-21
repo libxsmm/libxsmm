@@ -28,7 +28,7 @@
 
 namespace edge {
   namespace elastic {
-    namespace solvers { 
+    namespace solvers {
       template< t_entityType   TL_T_EL,
                 unsigned short TL_N_QTS,
                 unsigned short TL_O_SP,
@@ -62,7 +62,7 @@ class edge::elastic::solvers::VolInt {
     static unsigned short const TL_N_NZJ = (N_DIM==2) ? 10 : 24;
 
   public:
-#ifdef PP_T_KERNELS_VANILLA    
+#ifdef PP_T_KERNELS_VANILLA
     /**
      * Volume contribution using vanilla matrix-matrix multiplication kernels.
      *
@@ -155,7 +155,7 @@ class edge::elastic::solvers::VolInt {
 
         // multiply with stiffness and inverse mass matrix
         i_mm.m_kernels[(TL_O_SP-1)*(TL_N_DIS+1)+l_di]( o_scratch[0][0],
-                                                       i_stiff[l_di],                                  
+                                                       i_stiff[l_di],
                                                        io_dofs[0][0] );
       }
     }

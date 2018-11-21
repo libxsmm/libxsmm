@@ -1133,13 +1133,13 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_set_tensor_data_ptr(libxsmm_dnn_tensor
 
   if ((0 != tensor) && (0 != data)) {
     if (0 != tensor->layout) {
-      if (0 < tensor->layout->num_dims) { 
+      if (0 < tensor->layout->num_dims) {
         tensor->data = (void*)data;
       } else {
         status = LIBXSMM_DNN_ERR_INVALID_LAYOUT;
       }
     } else {
-      status = LIBXSMM_DNN_ERR_INVALID_LAYOUT;  
+      status = LIBXSMM_DNN_ERR_INVALID_LAYOUT;
     }
   }
   else {

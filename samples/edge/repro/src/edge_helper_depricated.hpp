@@ -15,16 +15,16 @@ int readSparseMatrixCsc ( std::string            const   i_fileName,
   std::string l_lineBuf;
 
   unsigned int l_header = 0;
-  unsigned int l_nEntries;  
-  unsigned int l_nCols;  
-  unsigned int l_nRows;  
+  unsigned int l_nEntries;
+  unsigned int l_nCols;
+  unsigned int l_nRows;
   unsigned int l_row;
-  unsigned int l_col; 
+  unsigned int l_col;
   real_base    l_entry;
   unsigned int l_nzCounter;
   unsigned int l_colCounter;
   int          l_errCheck;
-  
+
   while (l_fp) {
     std::getline(l_fp, l_lineBuf);
     if ( l_lineBuf.length() == 0 || l_lineBuf[0] == '%' ) continue;
@@ -77,16 +77,16 @@ int readSparseMatrixCsr ( std::string            const   i_fileName,
   std::string l_lineBuf;
 
   unsigned int l_header = 0;
-  unsigned int l_nEntries;  
-  unsigned int l_nCols;  
-  unsigned int l_nRows;  
+  unsigned int l_nEntries;
+  unsigned int l_nCols;
+  unsigned int l_nRows;
   unsigned int l_row;
-  unsigned int l_col; 
+  unsigned int l_col;
   real_base    l_entry;
   unsigned int l_nzCounter;
   unsigned int l_rowCounter;
   int          l_errCheck;
-  
+
   while (l_fp) {
     getline(l_fp, l_lineBuf);
     if ( l_lineBuf.length() == 0 || l_lineBuf[0] == '%' ) continue;
@@ -136,15 +136,15 @@ int readSparseMatrixDense ( std::string            const   i_fileName,
   std::string l_lineBuf;
 
   unsigned int l_header = 0;
-  unsigned int l_nEntries;  
-  unsigned int l_nCols;  
-  unsigned int l_nRows;  
+  unsigned int l_nEntries;
+  unsigned int l_nCols;
+  unsigned int l_nRows;
   unsigned int l_row;
-  unsigned int l_col; 
+  unsigned int l_col;
   real_base    l_entry;
   unsigned int l_nzCounter;
   int          l_errCheck;
-  
+
   while (l_fp) {
     std::getline(l_fp, l_lineBuf);
     if ( l_lineBuf.length() == 0 || l_lineBuf[0] == '%' ) continue;
@@ -193,7 +193,7 @@ int selectSubSparseMatrixCsc ( std::vector< real_base >    const & i_matVal,
   std::vector< unsigned int > l_tmpMatColPtr;
   std::vector< unsigned int > l_tmpMatRowIdx;
 
-  l_tmpMatVal.resize(l_nEntries); 
+  l_tmpMatVal.resize(l_nEntries);
   l_tmpMatColPtr.resize(i_nSubCols+1);
   l_tmpMatRowIdx.resize(l_nEntries);
 
@@ -220,7 +220,7 @@ int selectSubSparseMatrixCsc ( std::vector< real_base >    const & i_matVal,
   o_subMatVal = l_tmpMatVal;
   o_subMatColPtr = l_tmpMatColPtr;
   o_subMatRowIdx = l_tmpMatRowIdx;
-                          
+
   return 0;
 };
 
