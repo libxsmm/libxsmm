@@ -366,7 +366,7 @@ int main(int argc, char* argv[])
   bfgold = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
   bogold = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
   bcgold = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
-  hgoldt = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  hgoldt = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
   bfgold_fb = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
   bimgold= (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   bfmgold= (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
@@ -642,14 +642,16 @@ int main(int argc, char* argv[])
       matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, igold, j, 0, K * N), i2gold, i3gold);
       matrix_eltwise_mult(K * N, i1gold, i3gold, &LIBXSMM_VLA_ACCESS(2, djdigold, j, 0, K * N));
       /* compute djdfgold */
-      if (j >= 1) {
-        matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, djddgold, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, dgold, j-1, 0, K * N), f1gold);
+      if (j == 0) {
+        matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, djddgold, j, 0, K * N), cspgold, f1gold);
         matrix_complement(K * N, &LIBXSMM_VLA_ACCESS(2, fgold, j, 0, K * N), f2gold);
         matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, fgold, j, 0, K * N), f2gold, f3gold);
         matrix_eltwise_mult(K * N, f1gold, f3gold, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, K * N));
       } else {
-        /* djdf is zero for j == 0 */
-        zero_buf(&LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, K * N), K*N);
+        matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, djddgold, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, dgold, j-1, 0, K * N), f1gold);
+        matrix_complement(K * N, &LIBXSMM_VLA_ACCESS(2, fgold, j, 0, K * N), f2gold);
+        matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, fgold, j, 0, K * N), f2gold, f3gold);
+        matrix_eltwise_mult(K * N, f1gold, f3gold, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, K * N));
       }
       /* compute djdogold */
       matrix_tanh(K * N, &LIBXSMM_VLA_ACCESS(2, dgold, j, 0, K * N), o1gold);
@@ -690,20 +692,24 @@ int main(int argc, char* argv[])
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &C, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, K * N), &K, xgoldTp, &N, &beta, djdwcgold, &K);
       }
       /* compute djdrgold */
-      for (j = 0; j < t-1; ++j) {
-        matrix_transpose(N, K, &LIBXSMM_VLA_ACCESS(2, hgold, j, 0, K * N), hgoldTp);
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdigold, j+1, 0, K * N), &K, hgoldTp, &N, &beta, djdrigold, &K);
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdfgold, j+1, 0, K * N), &K, hgoldTp, &N, &beta, djdrfgold, &K);
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdogold, j+1, 0, K * N), &K, hgoldTp, &N, &beta, djdrogold, &K);
-        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdcgold, j+1, 0, K * N), &K, hgoldTp, &N, &beta, djdrcgold, &K);
+      for (j = 0; j < t; ++j) {
+        if (j == 0) { 
+          matrix_transpose(N, K, hpgold, hgoldTp);
+        } else {
+          matrix_transpose(N, K, &LIBXSMM_VLA_ACCESS(2, hgold, j-1, 0, K * N), hgoldTp);
+        }
+        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdigold, j, 0, K * N), &K, hgoldTp, &N, &beta, djdrigold, &K);
+        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, K * N), &K, hgoldTp, &N, &beta, djdrfgold, &K);
+        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, K * N), &K, hgoldTp, &N, &beta, djdrogold, &K);
+        LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, K * N), &K, hgoldTp, &N, &beta, djdrcgold, &K);
       }
       /* compute djdbgold */
-      for (j = 0; j < t-1; j++) {
+      for (j = 0; j < t; j++) {
         for (l = 0; l < K*N; l++) {
-          djdbigold[l%K] += LIBXSMM_VLA_ACCESS(2, djdigold, j+1, l, K * N);
-          djdbfgold[l%K] += LIBXSMM_VLA_ACCESS(2, djdfgold, j+1, l, K * N);
-          djdbogold[l%K] += LIBXSMM_VLA_ACCESS(2, djdogold, j+1, l, K * N);
-          djdbcgold[l%K] += LIBXSMM_VLA_ACCESS(2, djdcgold, j+1, l, K * N);
+          djdbigold[l%K] += LIBXSMM_VLA_ACCESS(2, djdigold, j, l, K * N);
+          djdbfgold[l%K] += LIBXSMM_VLA_ACCESS(2, djdfgold, j, l, K * N);
+          djdbogold[l%K] += LIBXSMM_VLA_ACCESS(2, djdogold, j, l, K * N);
+          djdbcgold[l%K] += LIBXSMM_VLA_ACCESS(2, djdcgold, j, l, K * N);
         }
       }
     }
