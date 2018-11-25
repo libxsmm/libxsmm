@@ -693,7 +693,7 @@ int main(int argc, char* argv[])
       }
       /* compute djdrgold */
       for (j = 0; j < t-1; ++j) {
-        if (j == 0) { 
+        if (j == 0) {
           matrix_transpose(N, K, hpgold, hgoldTp);
         } else {
           matrix_transpose(N, K, &LIBXSMM_VLA_ACCESS(2, hgold, j-1, 0, K * N), hgoldTp);
