@@ -325,7 +325,7 @@ class FusedBNormNode : public NNNode
     bool first_fp=true, first_bp=true;
 
     int count_, in_dtype, out_dtype;
-    float scf=0;
+    float scf_=0;
 
     vector<int> bot_cengine_;
     Shape ts_;

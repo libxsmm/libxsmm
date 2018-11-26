@@ -400,7 +400,7 @@ void MLEngine::run(int mode)
       FILE *f = fopen("checkpoint", "r");
       if(f != NULL)
       {
-        fscanf(f, "%d %f\n",&current_epoch_, &lr_);
+        fscanf(f, "%d %f %f\n",&current_epoch_, &lr_, &scf_);
         fclose(f);
       }
       else
@@ -515,7 +515,7 @@ void MLEngine::run(int mode)
         FILE* f = fopen("checkpoint", "w");
         if(f != NULL)
         {
-          fprintf(f, "%d %10g\n",current_epoch_, lr_);
+          fprintf(f, "%d %10g %10g\n",current_epoch_, lr_, scf_);
           fclose(f);
         }
       }
@@ -528,12 +528,12 @@ void MLEngine::run(int mode)
 
       // Tell data node that it should use test data
 
-      exec_mode_ = TEST;
+      exec_mode_ = VAL;
 
       if(global_node_id_ == 0)
       {
         printf("===========================================\n");
-        printf("TEST mode, testing batches %d\n", num_test_batches_);
+        printf("VAL mode, testing batches %d\n", num_test_batches_);
         printf("===========================================\n");
       }
 
@@ -541,7 +541,7 @@ void MLEngine::run(int mode)
       for(; current_batch_<num_test_batches_; current_batch_++)
       {
         for(int v=0; v<num_test_views_; v++)
-          for(auto it = etg_[TEST].begin(); it != etg_[TEST].end(); it++)
+          for(auto it = etg_[VAL].begin(); it != etg_[VAL].end(); it++)
             (*it)->invoke();
       }
 
@@ -557,6 +557,17 @@ void MLEngine::run(int mode)
   }
   else if(mode == TEST)
   {
+    exec_mode_ = TEST;
+    FILE *f = fopen("checkpoint", "r");
+    fscanf(f, "%d %f %f\n",&current_epoch_, &lr_, &scf_);
+    fclose(f);
+
+    printf("scaling factor = %.10f\n", scf_);
+
+    load_checkpoint(wTList_, checkpoint_format_);
+    load_checkpoint(biasTList_, checkpoint_format_);
+    load_checkpoint(statsTList_, checkpoint_format_);
+
     // Run validation or test network when command-line mode is set to "test"
     for(int b=0; b<num_test_batches_; b++)
     {
@@ -682,7 +693,7 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
   // Allocate memory
   bool lp = (data_type_ == BF16) && (tenType=="WEIGHT") && (buftype == DATA);
 #ifdef USE_MLSL
-#if 0
+#if 1
   void* buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
   if(lp)
       lpweight_buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s/sizeof(libxsmm_bfloat16), 2097152);
@@ -1110,7 +1121,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
   global_node_id_ = MLSL::Environment::GetEnv().GetProcessIdx();
   num_machines_ = MLSL::Environment::GetEnv().GetProcessCount();
   data_parallelism = NULL;
-  if(mode == TRAIN)
+  if(mode == TRAIN || mode == VAL)
     session_ = MLSL::Environment::GetEnv().CreateSession(MLSL::PT_TRAIN);
   else
     session_ = MLSL::Environment::GetEnv().CreateSession(MLSL::PT_TEST);
@@ -1177,7 +1188,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
   dnode->createNNGraph(mode);
 
   // Forward Pass Binning.
-  // Look for tasks attached to nodes with no successors. Add them to the Executing Task Graph (etg) first.
+  // Look for tasks attached to nodes with no successors. Add them to the Execution Task Graph (etg) first.
   for(int i=numNodes-1; i>0; i--)
   {
     NNNode *nn = dynamic_cast<NNNode*>(ntg_[i]);
@@ -1186,7 +1197,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
     if(nn->getNumNextNodes() == 0)
     {
       etg_[mode].push_back(t);
-#ifdef DEBUG
+#ifndef NDEBUG
       printf("FP task %p (node %s), bin %d pushed to etg_\n",t, nn->getNodeName().c_str(), t->getMaxBin());
 #endif
     }
@@ -1204,7 +1215,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
     {
       Task *t = *it;
       if(t->getBasicTaskId() == BASIC_TASK_FORW)
-        etg_[TEST].push_back(t);
+        etg_[VAL].push_back(t);
       else
         break;
     }
