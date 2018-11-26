@@ -35,7 +35,8 @@ package gxm;
 
 enum Mode {
    TRAIN = 0;
-   TEST = 1;
+   VAL = 1;
+   TEST = 2;
 }
 
 enum DataType {
@@ -510,7 +511,7 @@ message FusedBNormParameter {
   // How much does the moving average decay each iteration?
   optional float mmf = 2 [default = .999];
   // Small value to add to the variance estimate so that we don't divide by zero.
-  optional float eps = 3 [default = 1e-5];
+  optional float eps = 3 [default = 1e-7];
   optional bool relu = 4 [default = true];
   optional bool bwd_relu = 20 [default = true];
   optional bool eltwise = 5 [default = false];

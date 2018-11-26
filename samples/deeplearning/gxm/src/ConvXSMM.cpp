@@ -78,10 +78,7 @@ ConvXSMM::ConvXSMM(ConvImplParams* gp, int engine) : ConvImpl(gp, engine)
   if(gp->out_data_type == DT_FLOAT)
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
   else if(gp->out_data_type == DT_BF16)
-  {
-    conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE_OVERWRITE;
-  }
 
   if(gp->bias_term)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS;
@@ -121,7 +118,7 @@ ConvXSMM::ConvXSMM(ConvImplParams* gp, int engine) : ConvImpl(gp, engine)
 
 void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *biasp, TensorBuf *outp, int tid)
 {
-  // Conv input
+  // Conv input. LPBuffer is non-NULL if data layer output is BF16
   if(inp->getLPBuffer() != NULL)
     in_ptr = inp->getLPBuffer();
   else

@@ -4,20 +4,20 @@ node {
   top: "data"
   top: "label"
   propagate_down: false
-  mode: TRAIN
+  mode: TEST
   data_param {
-    train_source: "/home/local_scratch/jpegs_256resized"
-    train_list: "/home/local_scratch/train_images_labels.list"
-    test_source: "/home/local_scratch/jpegs_256resized"
-    test_list: "/home/local_scratch/val_images_labels.list"
-    batch_size: 56    #number of cores(56) - number of EP servers (0)
-    num_train_files: 80073  # per node when numsplits=16
-    num_test_files: 3125    # per node when numsplits=16
-    numsplits: 16
-    lookahead: 2
+    train_source: "/scratch/savancha/jpegs_256resized"
+    train_list: "/scratch/savancha/jpegs_256resized/train_images_labels.list"
+    test_source: "/scratch/savancha/jpegs_256resized"
+    test_list: "/scratch/savancha/jpegs_256resized/val_images_labels.list"
+    batch_size: 54
+    num_train_files: 1281167
+    num_test_files: 50000
+    numsplits: 1
+    lookahead: 2 
     shuffle: true
     engine: XSMM
-    data_type: BF16
+    data_type: FLOAT
 
     image_xform_param {
       orig_size: 256
@@ -48,7 +48,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 64
     pad: 3
@@ -71,7 +71,7 @@ node {
   name: "bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 3
     pad: 0
@@ -87,7 +87,7 @@ node {
   bottom: "bn1"
   top: "conv1_pool"
   pooling_param {
-    data_type: BF16
+    data_type: FLOAT
     pool: MAX
     engine: XSMM
     kernel_size: 3
@@ -105,7 +105,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 0
@@ -122,7 +122,7 @@ node {
   name: "node_64_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     relu: false
     pad: 0
@@ -142,7 +142,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 64
     pad: 0
@@ -159,7 +159,7 @@ node {
   name: "node_64_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -178,7 +178,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 64
     pad: 1
@@ -197,7 +197,7 @@ node {
   name: "node_64_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -217,7 +217,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 0
@@ -234,7 +234,7 @@ node {
   name: "node_64_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -255,7 +255,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 64
     pad: 0
@@ -272,7 +272,7 @@ node {
   name: "node_64_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -291,7 +291,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 64
     pad: 1
@@ -310,7 +310,7 @@ node {
   name: "node_64_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -330,7 +330,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 0
@@ -347,7 +347,7 @@ node {
   name: "node_64_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -368,7 +368,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 64
     pad: 0
@@ -385,7 +385,7 @@ node {
   name: "node_64_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -404,7 +404,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 64
     pad: 1
@@ -423,7 +423,7 @@ node {
   name: "node_64_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -443,7 +443,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 0
@@ -460,7 +460,7 @@ node {
   name: "node_64_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -481,7 +481,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 512
     pad: 0
@@ -498,7 +498,7 @@ node {
   name: "node_128_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     relu: false
     pad: 0
@@ -518,7 +518,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 128
     pad: 0
@@ -535,7 +535,7 @@ node {
   name: "node_128_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -554,7 +554,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 128
     pad: 1
@@ -573,7 +573,7 @@ node {
   name: "node_128_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -593,7 +593,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 512
     pad: 0
@@ -610,7 +610,7 @@ node {
   name: "node_128_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -631,7 +631,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 128
     pad: 0
@@ -648,7 +648,7 @@ node {
   name: "node_128_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -667,7 +667,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 128
     pad: 1
@@ -686,7 +686,7 @@ node {
   name: "node_128_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -706,7 +706,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 512
     pad: 0
@@ -723,7 +723,7 @@ node {
   name: "node_128_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -744,7 +744,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 128
     pad: 0
@@ -761,7 +761,7 @@ node {
   name: "node_128_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -780,7 +780,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 128
     pad: 1
@@ -799,7 +799,7 @@ node {
   name: "node_128_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -819,7 +819,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 512
     pad: 0
@@ -836,7 +836,7 @@ node {
   name: "node_128_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -857,7 +857,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 128
     pad: 0
@@ -874,7 +874,7 @@ node {
   name: "node_128_4_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -893,7 +893,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 128
     pad: 1
@@ -912,7 +912,7 @@ node {
   name: "node_128_4_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -932,7 +932,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 512
     pad: 0
@@ -949,7 +949,7 @@ node {
   name: "node_128_4_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -970,7 +970,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 1024
     pad: 0
@@ -987,7 +987,7 @@ node {
   name: "node_256_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     relu: false
     pad: 0
@@ -1007,7 +1007,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 0
@@ -1024,7 +1024,7 @@ node {
   name: "node_256_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1043,7 +1043,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 1
@@ -1062,7 +1062,7 @@ node {
   name: "node_256_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1082,7 +1082,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 1024
     pad: 0
@@ -1099,7 +1099,7 @@ node {
   name: "node_256_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1120,7 +1120,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 0
@@ -1137,7 +1137,7 @@ node {
   name: "node_256_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1156,7 +1156,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 1
@@ -1175,7 +1175,7 @@ node {
   name: "node_256_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1195,7 +1195,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 1024
     pad: 0
@@ -1212,7 +1212,7 @@ node {
   name: "node_256_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1233,7 +1233,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 0
@@ -1250,7 +1250,7 @@ node {
   name: "node_256_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1269,7 +1269,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 1
@@ -1288,7 +1288,7 @@ node {
   name: "node_256_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1308,7 +1308,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 1024
     pad: 0
@@ -1325,7 +1325,7 @@ node {
   name: "node_256_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1346,7 +1346,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 0
@@ -1363,7 +1363,7 @@ node {
   name: "node_256_4_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1382,7 +1382,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 1
@@ -1401,7 +1401,7 @@ node {
   name: "node_256_4_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1421,7 +1421,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 1024
     pad: 0
@@ -1438,7 +1438,7 @@ node {
   name: "node_256_4_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1459,7 +1459,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 0
@@ -1476,7 +1476,7 @@ node {
   name: "node_256_5_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1495,7 +1495,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 1
@@ -1514,7 +1514,7 @@ node {
   name: "node_256_5_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1534,7 +1534,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 1024
     pad: 0
@@ -1551,7 +1551,7 @@ node {
   name: "node_256_5_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1572,7 +1572,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 0
@@ -1589,7 +1589,7 @@ node {
   name: "node_256_6_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1608,7 +1608,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 256
     pad: 1
@@ -1627,7 +1627,7 @@ node {
   name: "node_256_6_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1647,7 +1647,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 1024
     pad: 0
@@ -1664,7 +1664,7 @@ node {
   name: "node_256_6_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1685,7 +1685,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 2048
     pad: 0
@@ -1702,7 +1702,7 @@ node {
   name: "node_512_1_bn4"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     relu: false
     pad: 0
@@ -1722,7 +1722,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 512
     pad: 0
@@ -1739,7 +1739,7 @@ node {
   name: "node_512_1_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1758,7 +1758,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 512
     pad: 1
@@ -1777,7 +1777,7 @@ node {
   name: "node_512_1_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1797,7 +1797,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 2048
     pad: 0
@@ -1814,7 +1814,7 @@ node {
   name: "node_512_1_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1835,7 +1835,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 512
     pad: 0
@@ -1852,7 +1852,7 @@ node {
   name: "node_512_2_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1871,7 +1871,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 512
     pad: 1
@@ -1890,7 +1890,7 @@ node {
   name: "node_512_2_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -1910,7 +1910,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 2048
     pad: 0
@@ -1927,7 +1927,7 @@ node {
   name: "node_512_2_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -1948,7 +1948,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 512
     pad: 0
@@ -1965,7 +1965,7 @@ node {
   name: "node_512_3_bn1"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     pad: 1
     stride: 1
@@ -1984,7 +1984,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 512
     pad: 1
@@ -2003,7 +2003,7 @@ node {
   name: "node_512_3_bn2"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     ipad: 1
     pad: 0
@@ -2023,7 +2023,7 @@ node {
     decay_mult: 1.0
   }
   convolution_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     num_output: 2048
     pad: 0
@@ -2040,7 +2040,7 @@ node {
   name: "node_512_3_bn3"
   type: "FusedBatchNorm"
   fused_bnorm_param {
-    data_type: BF16
+    data_type: FLOAT
     use_global_stats: false
     eltwise: true
     pad: 0
@@ -2057,7 +2057,7 @@ node {
   bottom: "node_512_3_bn3"
   top: "pool5"
   pooling_param {
-    data_type: BF16
+    data_type: FLOAT
     engine: XSMM
     pool: AVE
     kernel_size: 7
