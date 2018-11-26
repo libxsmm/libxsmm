@@ -100,20 +100,16 @@ void AccuracyNode::forwardPropagate()
   int count = 0;
   for(int img=0; img<ts_.dims[0]; img++)
   {
-    if(!bot_data_vec.empty()) bot_data_vec.clear();
-    for(int k=0; k<ts_.dims[1]; k++)
-      bot_data_vec.push_back(std::make_pair(bot[img*ts_.dims[1] + k], k));
+    int label_value = label[img];
+    float prob_true_class = bot[img*ts_.dims[1] + label_value];
+    int num_better_predictions = -1;
 
-    std::partial_sort(bot_data_vec.begin(), bot_data_vec.begin() + top_k_, bot_data_vec.end(), std::greater<std::pair<float, int> >());
+    for(int k=0; k < ts_.dims[1] && num_better_predictions < top_k_; k++)
+      num_better_predictions += bot[img*ts_.dims[1]+k] >= prob_true_class;
 
-    for(int k=0; k<top_k_; k++)
-    {
-      if(bot_data_vec[k].second == label[img])
-      {
-        accuracy++;
-        break;
-      }
-    }
+    if(num_better_predictions < top_k_)
+      accuracy++;
+
     count++;
   }
 
@@ -144,7 +140,7 @@ void AccuracyNode::forwardPropagate()
       avg_train_acc_ = 0;
     }
   }
-  else if(eptr_->get_execution_mode() == TEST)
+  else if(eptr_->get_execution_mode() == TEST || eptr_->get_execution_mode() == VAL)
   {
     avg_test_acc_ += (double)accuracy/(double)count;
     test_batch_count_++;

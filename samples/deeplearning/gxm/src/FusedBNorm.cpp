@@ -183,7 +183,7 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
       if(bp_flag_)
       {
         tenBotDiff_[i] = tenBot_[i]->addBuf(); // DIFF type and index
-        tenBotDiff_[i]->setDataType(out_dtype); // this is a hack; actually, it should be in_dtype..
+        tenBotDiff_[i]->setDataType(in_dtype); 
         tenBotDiff_[i]->setBufferType(DIFF);
 
         int belem = bs->dims[0] * bs->dims[1] * (bs->dims[2] + 2*ivp[0]) * (bs->dims[3] + 2*ivp[1]);
@@ -302,7 +302,6 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
   myRegInfo->AddParameterSet(gparams_.nOutput, 1, dt, false);
   myRegInfo->AddParameterSet(gparams_.nOutput, 1, dt, false);
   myRegInfo->AddParameterSet(gparams_.nOutput, 1, dt, false);
-
   myRegInfo->Validate();
   size_t opIdx = s->AddOperation(myRegInfo, e->get_distribution());
   this->op_ = s->GetOperation(opIdx);
@@ -391,8 +390,10 @@ void FusedBNormNode::Checkpoint(TensorBuf *tBuf, string name, string format)
       f = fopen(name.c_str(), "wb");
       if(f != NULL)
       {
-        ptr = tBuf->getBuffer();
-
+        if(name.find("mean") != name.npos || name.find("var") != name.npos)
+          ptr = tBuf->getPrivBuffer();
+        else
+          ptr = tBuf->getBuffer();
         size_t b = fwrite(ptr, 1, bytes, f);
         assert((long long int)b == bytes);
       }
@@ -453,13 +454,13 @@ void FusedBNormNode::forwardPropagate()
   impl->set_top_compute_engine(top_compute_engine_);
   impl->set_node_name(nname_);
   impl->set_scratch_buffer(tenScratchData_);
-  if(eptr_->get_execution_mode() == TRAIN)
+  if(eptr_->get_execution_mode() == TRAIN || eptr_->get_execution_mode() == VAL)
+  {
     impl->set_global_stats(false);
+    gparams_.exec_mode = "TRAIN";
+  }
   else if(eptr_->get_execution_mode() == TEST)
     impl->set_global_stats(true);
-
-  gmean_ = (float*)tenMeanData_->getBuffer();
-  gvar_ = (float*)tenVarData_->getBuffer();
 
   if(first_fp)
   {
@@ -477,9 +478,6 @@ void FusedBNormNode::forwardPropagate()
 #endif
       for(int i=0; i<size; i++)
         ptr[i] = 0;
-
-      if(gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_BF16)
-        tenTopData_->setLPBuffer(ptr + size);
     }
     else if(gparams_.in_data_type == DT_BF16 && gparams_.out_data_type == DT_BF16)
     {
@@ -488,13 +486,25 @@ void FusedBNormNode::forwardPropagate()
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-      for(int i=0; i<size+1; i++)
+      for(int i=0; i<size; i++)
         ptr[i] = 0;
     }
+
+    scf_ = eptr_->get_scaling_factor();
+    impl->set_scaling_factor(scf_);
+
     first_fp = false;
   }
 
-  impl->forwardPropagate(tenBotData_, tenScaleData_, tenShiftData_, gmean_, gvar_, tenTopData_, 0);
+  impl->forwardPropagate(tenBotData_, tenScaleData_, tenShiftData_, tenMeanData_, tenVarData_, tenTopData_, 0);
+
+  if(eptr_->get_execution_mode() != TEST && eptr_->get_execution_mode() != VAL)
+  {
+    scf_ *= gparams_.mmf;
+    scf_ += 1.;
+
+    eptr_->set_scaling_factor(scf_);
+  }
 
 #ifdef CHECK_BLOWUP_FP32
   if(out_dtype == DT_FLOAT)
@@ -764,6 +774,11 @@ void FusedBNormNode::backPropagate()
 
 void FusedBNormNode::weightUpdate()
 {
+  void* gexp = tenMeanData_->getBuffer();
+  void* gvar = tenVarData_->getBuffer();
+  void* gexp_test = tenMeanData_->getPrivBuffer();
+  void* gvar_test = tenVarData_->getPrivBuffer();
+
 #ifdef USE_MLSL
   this->op_->GetParameterSet(0)->StartGradientComm(tenScaleDiff_->getBuffer());
   this->op_->GetParameterSet(1)->StartGradientComm(tenShiftDiff_->getBuffer());
@@ -773,11 +788,11 @@ void FusedBNormNode::weightUpdate()
 #endif
   for(int i=0; i<gparams_.nOutput; i++)
   {
-    gmean_[i] = gmean_[i]/eptr_->get_num_machines();
-    gvar_[i] = gvar_[i]/eptr_->get_num_machines();
+    ((float*)gexp_test)[i] = ((float*)gexp)[i]/eptr_->get_num_machines();
+    ((float*)gvar_test)[i] = ((float*)gvar)[i]/eptr_->get_num_machines();
   }
-  this->op_->GetParameterSet(2)->StartGradientComm(gmean_);
-  this->op_->GetParameterSet(3)->StartGradientComm(gvar_);
+  this->op_->GetParameterSet(2)->StartGradientComm(gexp_test);
+  this->op_->GetParameterSet(3)->StartGradientComm(gvar_test);
 #endif
 }
 
@@ -785,6 +800,8 @@ void FusedBNormNode::solverStep()
 {
   float *delgamma = (float*)tenScaleDiff_->getBuffer();
   float *delbeta = (float*)tenShiftDiff_->getBuffer();
+  void* gexp_test = tenMeanData_->getPrivBuffer();
+  void* gvar_test = tenVarData_->getPrivBuffer();
 
 #ifdef USE_MLSL
   void *mptr = op_->GetParameterSet(0)->WaitGradientComm();
@@ -796,12 +813,12 @@ void FusedBNormNode::solverStep()
     memcpy((void*)delbeta, mptr, gparams_.nOutput*sizeof(float));
 
   mptr = op_->GetParameterSet(2)->WaitGradientComm();
-  if(mptr != NULL && mptr != gmean_)
-    memcpy((void*)gmean_, mptr, gparams_.nOutput*sizeof(float));
+  if(mptr != NULL && mptr != gexp_test)
+    memcpy((void*)gexp_test, mptr, gparams_.nOutput*sizeof(float));
 
   mptr = op_->GetParameterSet(3)->WaitGradientComm();
-  if(mptr != NULL && mptr != gvar_)
-    memcpy((void*)gvar_, mptr, gparams_.nOutput*sizeof(float));
+  if(mptr != NULL && mptr != gvar_test)
+    memcpy((void*)gvar_test, mptr, gparams_.nOutput*sizeof(float));
 #endif
 
 #ifdef CHECK_BLOWUP_FP32

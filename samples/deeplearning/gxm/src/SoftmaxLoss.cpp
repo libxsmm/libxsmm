@@ -171,9 +171,12 @@ void SoftmaxLossNode::forwardPropagate()
   impl->forwardPropagate(bot, label, top);
 
 #ifdef GETSTATS
-  MeanOfLayer("SMFPIn", bot, gparams_.batch_size*gparams_.nInput);
-  MeanOfLayer("SMFPOut", top, gparams_.batch_size*gparams_.nOutput);
-  MeanOfLayer("SMFPLabel", label, gparams_.batch_size);
+  if(node_id_ == 0)
+  {
+    MeanOfLayer("SMFPIn", bot, gparams_.batch_size*gparams_.nInput);
+    MeanOfLayer("SMFPOut", top, gparams_.batch_size*gparams_.nOutput);
+    MeanOfLayer("SMFPLabel", label, gparams_.batch_size);
+  }
 #endif
 
 #ifdef USE_MLSL
@@ -200,22 +203,15 @@ void SoftmaxLossNode::backPropagate()
 
 #ifdef GETSTATS
   printf("Executing BP %s: Grad output %p, label %p Grad input %p\n",NNNode::nname_.c_str(), top, label, gbot);
-  MeanOfLayer("BPIn", top, gparams_.batch_size*gparams_.nOutput);
+  if(node_id_ == 0)
+    MeanOfLayer("BPIn", top, gparams_.batch_size*gparams_.nOutput);
 #endif
 
   impl->set_num_nodes(num_nodes_);
   impl->backPropagate(top, label, gbot);
 
-#ifdef DUMP_ACT_DATA
-  int iter = eptr_->get_current_batch();
-  string fname = gparams_.node_name + "_bp_delin_" + to_string(iter);
-  FILE* f = fopen(fname.c_str(), "w");
-  for(int i=0; i<gparams_.batch_size*gparams_.nOutput; i++)
-    fprintf(f, "%g\n", gbot[i]);
-  fclose(f);
-#endif
-
 #ifdef GETSTATS
-  MeanOfLayer("BPOut", gbot, gparams_.batch_size*gparams_.nInput);
+  if(node_id_ == 0)
+    MeanOfLayer("BPOut", gbot, gparams_.batch_size*gparams_.nInput);
 #endif
 }
