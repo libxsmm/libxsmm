@@ -59,7 +59,8 @@ element_input_type  *dhpt  = (element_input_type* )handle->dhpt->data;
 element_filter_type *dw    = (element_filter_type*)handle->dw->data;
 element_filter_type *dr    = (element_filter_type*)handle->dr->data;
 element_output_type *db    = (element_output_type*)handle->db->data;
-element_output_type *dcsD  = handle->dcs ? (element_output_type*)handle->dcs->data : (element_output_type*)NULL;
+/*element_output_type *dcsD  = handle->dcs ? (element_output_type*)handle->dcs->data : (element_output_type*)NULL;*/
+element_output_type *dcsD  = (element_output_type*)handle->dcs->data;
 element_output_type *dht   = (element_output_type*)handle->dht->data;
 element_output_type *dit   = (element_output_type*)handle->scratch_dit;
 element_output_type *dft   = (element_output_type*)handle->scratch_dft;
@@ -344,8 +345,9 @@ for (j = t-1; j >= 0; --j) {
     libxsmm_internal_matrix_complement_square_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
     if (j == t-1) {
       libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K) );
+      libxsmm_internal_matrix_add_ld(          bk, bn, K, &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K) );
       if (dcsD) {
-        libxsmm_internal_matrix_add_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K) );
+        /*libxsmm_internal_matrix_add_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K) );*/
       }
     } else {
       libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K) );
@@ -385,6 +387,8 @@ for (j = t-1; j >= 0; --j) {
       gemmkerneld( &LIBXSMM_VLA_ACCESS(2, roT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dp,  j, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dout, j-1, in, ik, N, K) );
       gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rcT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dci, j, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dout, j-1, in, ik, N, K) );
     }
+
+    libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K) );
   }
 
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
