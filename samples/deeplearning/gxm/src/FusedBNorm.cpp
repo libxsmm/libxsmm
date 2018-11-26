@@ -183,7 +183,7 @@ FusedBNormNode::FusedBNormNode(FusedBNormParams* p, MLEngine* e): NNNode(p, e)
       if(bp_flag_)
       {
         tenBotDiff_[i] = tenBot_[i]->addBuf(); // DIFF type and index
-        tenBotDiff_[i]->setDataType(in_dtype); 
+        tenBotDiff_[i]->setDataType(in_dtype);
         tenBotDiff_[i]->setBufferType(DIFF);
 
         int belem = bs->dims[0] * bs->dims[1] * (bs->dims[2] + 2*ivp[0]) * (bs->dims[3] + 2*ivp[1]);
