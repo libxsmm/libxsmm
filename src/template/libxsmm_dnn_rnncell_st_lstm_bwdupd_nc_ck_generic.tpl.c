@@ -393,19 +393,6 @@ for (j = t-1; j >= 0; --j) {
     libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, dcp, j, in, ik, N, K) );
   }
 
-  for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
-    in = (inik / (K/bk))*bn;
-    ik = (inik % (K/bk))*bk;
-
-    libxsmm_internal_matrix_zero_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
-    for (ic = 0; ic < K; ic += bk) {
-      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, riT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, di,  0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
-      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rfT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, df,  0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
-      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, roT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dp,  0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
-      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rcT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dci, 0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
-    }
-  }
-
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
@@ -465,4 +452,18 @@ for (j = t-1; j >= 0; --j) {
 
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }
+  for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
+    in = (inik / (K/bk))*bn;
+    ik = (inik % (K/bk))*bk;
+
+    libxsmm_internal_matrix_zero_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
+    for (ic = 0; ic < K; ic += bk) {
+      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, riT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, di,  0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
+      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rfT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, df,  0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
+      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, roT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dp,  0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
+      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rcT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dci, 0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
+    }
+  }
+
+  libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
