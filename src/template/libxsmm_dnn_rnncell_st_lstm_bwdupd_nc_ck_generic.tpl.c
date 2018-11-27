@@ -397,12 +397,12 @@ for (j = t-1; j >= 0; --j) {
     in = (inik / (K/bk))*bn;
     ik = (inik % (K/bk))*bk;
 
-    libxsmm_internal_matrix_zero_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dhp, j, in, ik, N, K) );
+    libxsmm_internal_matrix_zero_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
     for (ic = 0; ic < K; ic += bk) {
-      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, riT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, di,  j, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, j, in, ik, N, K) );
-      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rfT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, df,  j, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, j, in, ik, N, K) );
-      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, roT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dp,  j, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, j, in, ik, N, K) );
-      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rcT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dci, j, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, j, in, ik, N, K) );
+      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, riT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, di,  0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
+      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rfT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, df,  0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
+      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, roT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dp,  0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
+      gemmkerneld( &LIBXSMM_VLA_ACCESS(2, rcT, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, dci, 0, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, dhp, 0, in, ik, N, K) );
     }
   }
 
