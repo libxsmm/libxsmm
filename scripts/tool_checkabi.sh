@@ -1,6 +1,6 @@
 #!/bin/bash
 #############################################################################
-# Copyright (c) 2017-2018, Intel Corporation                                #
+# Copyright (c) 2018, Intel Corporation                                     #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -30,75 +30,53 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.sh *.py *.yml *.txt"
-BANNED_CHARS="\t"
-
-PATBAN="s/[${BANNED_CHARS}]//"
-PATEOL="s/\r$//"
-PATSPC="s/\s\s*$//"
-
 HERE=$(cd $(dirname $0); pwd -P)
-REPO=${HERE}/..
-CODEFILE=${REPO}/.codefile
-MKTEMP=${REPO}/.mktmp.sh
+LIBS=${HERE}/../lib
 
-FLAKE8=$(command -v flake8 2>/dev/null)
-ICONV=$(command -v iconv 2>/dev/null)
+BASENAME=$(command -v basename 2>/dev/null)
 ECHO=$(command -v echo 2>/dev/null)
-GIT=$(command -v git 2>/dev/null)
 SED=$(command -v sed 2>/dev/null)
-TR=$(command -v tr 2>/dev/null)
-CP=$(command -v cp 2>/dev/null)
+CAT=$(command -v cat 2>/dev/null)
+CUT=$(command -v cut 2>/dev/null)
+LS=$(command -v ls 2>/dev/null)
 RM=$(command -v rm 2>/dev/null)
+NM=$(command -v nm 2>/dev/null)
 
-if [ -e ${CODEFILE} ]; then
-  PATTERNS="$(cat ${CODEFILE})"
-fi
-
-if [ "" != "${FLAKE8}" ] && [ "0" = "$(${FLAKE8} 2>&1 >/dev/null; ${ECHO} $?)" ] && \
-   [ "0" != "$(${FLAKE8} ${HERE}/*.py 2>&1 >/dev/null; ${ECHO} $?)" ];
+if [ "" != "${ECHO}" ] && [ "" != "${SED}" ] && [ "" != "${CAT}" ] && [ "" != "${CUT}" ] && \
+   [ "" != "${LS}" ] && [ "" != "${RM}" ] && [ "" != "${NM}" ];
 then
-  ${ECHO} "Warning: some Python scripts do not pass flake8 check (${HERE})!"
-fi
-
-if [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && \
-   [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
-   [ "" != "${CP}" ] && [ "" != "${RM}" ];
-then
-  if [ "" != "${ICONV}" ]; then
-    CAT="${ICONV} -t ASCII"
-  else
-    CAT=$(command -v cat 2>/dev/null)
-  fi
-  if [ "" != "${CAT}" ]; then
-    TMPF=$(${MKTEMP} .libxsmm_XXXXXX.txt)
-    # disable glob in Shell
-    set -f
-    # Search the content of the diffs matching the given file types
-    for PATTERN in ${PATTERNS}; do
-      for FILE in $("${GIT}" ls-files ${PATTERN}); do
-        BANNED=$(${SED} -n "${PATBAN}p" ${FILE} 2>/dev/null)
-        DOSEOL=$(${SED} -n "${PATEOL}p" ${FILE} 2>/dev/null | ${TR} -d "\n")
-        TRAILS=$(${SED} -n "${PATSPC}p" ${FILE} 2>/dev/null)
-        if [ "" != "${BANNED}" ]; then
-          ${ECHO} "Warning: ${FILE} contains banned characters!"
-        fi
-        if [ "" != "${DOSEOL}" ]; then
-          ${ECHO} "Warning: ${FILE} uses non-UNIX line endings!"
-        fi
-        if [ "" != "${TRAILS}" ]; then
-          ${CAT} ${FILE} | ${SED} -e "${PATSPC}" > ${TMPF}
-          ${CP} ${TMPF} ${FILE}
-          ${ECHO} "${FILE}: removed trailing white spaces."
+  ${RM} -f .checkabi.log
+  for LIBTYPE in a so; do
+    for LIBFILE in $(ls -1 ${LIBS}/*.${LIBTYPE} 2>/dev/null); do
+      LIB=$(${BASENAME} ${LIBFILE} .${LIBTYPE})
+      ${ECHO} "Checking ${LIB}..."
+      ${NM} ${LIBFILE} | while read LINE;
+      do
+        SYMBOL=$(${ECHO} "${LINE}" | ${SED} -n "/ T /p" | ${CUT} -d" " -f3)
+        if [ "" != "${SYMBOL}" ]; then
+          if [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^libxsmm/p)" ] && \
+             [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^__/p)" ] && \
+             [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /_$/p)" ];
+          then
+            ${ECHO} "  ${LIB}.${LIBTYPE} -> ${OBJECT} -> ${SYMBOL}" >> .checkabi.log
+          fi
+        else
+          LOCATION=$(${ECHO} "${LINE}" | ${SED} -n "/..*\.o:$/p")
+          if [ "" != "${LOCATION}" ]; then
+            OBJECT=$(${ECHO} "${LOCATION}" | ${SED} -e "s/:$//")
+          fi
         fi
       done
     done
-    ${RM} ${TMPF}
+  done
+  if [ -e .checkabi.log ]; then
+    ${ECHO} "There are non-conforming function names:"
+    ${CAT} .checkabi.log
+  else
     ${ECHO} "Successfully Completed."
-    exit 0
   fi
+else
+  ${ECHO} "Error: missing prerequisites!"
+  exit 1
 fi
-
-${ECHO} "Error: missing prerequisites!"
-exit 1
 

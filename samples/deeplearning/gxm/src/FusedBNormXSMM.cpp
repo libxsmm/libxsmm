@@ -115,19 +115,33 @@ FusedBNormXSMM::FusedBNormXSMM(FusedBNormImplParams* gp, int engine) : FusedBNor
   CHKERR_LIBXSMM_DNN( status );
 }
 
-void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gammapb, TensorBuf *betapb, float *gexpect, float *gvariance, TensorBuf *outpb, int tid)
+void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gammapb, TensorBuf *betapb, TensorBuf *meanpb, TensorBuf *varpb, TensorBuf *outpb, int tid)
 {
   void *inp_r = inpb[0]->getBuffer();
   void *inp_l = gp->eltwise ? inpb[1]->getBuffer() : NULL;
   void *output = outpb->getBuffer();
   void *gamma = gammapb->getBuffer();
   void *beta = betapb->getBuffer();
+  float *gexpect = (float*)meanpb->getBuffer();
+  float *gvar = (float*)varpb->getBuffer();
+  float *gexp_test = (float*)meanpb->getPrivBuffer();
+  float *gvar_test = (float*)varpb->getPrivBuffer();
 
   int nImg = gp->batch_size;
   int nFM = gp->nInput[0];
   int nBfm = nFM/VLEN;
   int fh = gp->iHeight;
   int fw = gp->iWidth;
+  int ph = gp->pad_h;
+  int pw = gp->pad_w;
+  int sh = gp->stride_h;
+  int sw = gp->stride_w;
+  int iph = gp->ipad_h;
+  int ipw = gp->ipad_w;
+  int fhs = fh/sh;
+  int fws = fw/sw;
+  int fhi = fh + 2*iph;
+  int fwi = fw + 2*ipw;
 
   if(bexpect == NULL)
   {
@@ -156,6 +170,26 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
 #endif
   }
 
+  if(gexp_test == NULL)
+  {
+    gexp_test = (float*)_mm_malloc(nFM*sizeof(float), 64);
+    meanpb->setPrivBuffer((void*)gexp_test);
+
+#ifndef NDEBUG
+    printf("%s allocated %lu bytes for mean test\n",nname.c_str(), nFM*sizeof(float));
+#endif
+  }
+
+  if(gvar_test == NULL)
+  {
+    gvar_test = (float*)_mm_malloc(nFM*sizeof(float), 64);
+    varpb->setPrivBuffer((void*)gvar_test);
+
+#ifndef NDEBUG
+    printf("%s allocated %lu bytes for mean test\n",nname.c_str(), nFM*sizeof(float));
+#endif
+  }
+
   __assume_aligned(inp_r,64);
   if(inp_l)
     __assume_aligned(inp_l,64);
@@ -165,7 +199,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
   __assume_aligned(bexpect, 64);
   __assume_aligned(bstddev, 64);
   __assume_aligned(gexpect, 64);
-  __assume_aligned(gvariance, 64);
+  __assume_aligned(gvar, 64);
   __assume_aligned(output,64);
 
   void *scratch = scratchp->getBuffer();
@@ -261,8 +295,8 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
   }
 
   if(libxsmm_input_test == NULL && libxsmm_input_add_test == NULL && libxsmm_expectval_test == NULL &&
-      libxsmm_stddev_test == NULL && libxsmm_gamma_test == NULL && libxsmm_beta_test == NULL &&
-      libxsmm_output_test == NULL)
+      libxsmm_stddev_test == NULL && libxsmm_variance_test == NULL && libxsmm_gamma_test == NULL &&
+      libxsmm_beta_test == NULL && libxsmm_output_test == NULL)
   {
     libxsmm_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout( libxsmm_handle_test, LIBXSMM_DNN_REGULAR_INPUT, &status );
     CHKERR_LIBXSMM_DNN( status );
@@ -323,6 +357,24 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     updated_scratch = true;
   }
 
+#ifndef NDEBUG
+  if ( (ph > 0 || pw > 0) && (iph > 0 || ipw > 0) ) {
+    printf("node %s: batchnorm forward input and output is padded which cannot be :-(\n", nname.c_str());
+  }
+
+  /* check rims */
+  if(gp->in_data_type == DT_FLOAT && gp->out_data_type == DT_FLOAT)
+  {
+    check_physical_pad( nname.c_str(),    (float*)inp_r, nImg, nBfm, fh,  fw,  VLEN, iph, ipw );
+    check_physical_pad( nname.c_str(),     (float*)output, nImg, nBfm, fhs, fws, VLEN, ph,  pw );
+  }
+  else if(gp->in_data_type == DT_BF16 && gp->out_data_type == DT_BF16)
+  {
+    check_physical_pad( nname.c_str(),    (libxsmm_bfloat16*)inp_r, nImg, nBfm, fh,  fw,  VLEN, iph, ipw );
+    check_physical_pad( nname.c_str(),     (libxsmm_bfloat16*)output, nImg, nBfm, fhs, fws, VLEN, ph,  pw );
+  }
+#endif
+
   if(!use_global_stats)
   {
 #if defined(_OPENMP)
@@ -337,54 +389,77 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_execute_st( libxsmm_handle_train, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
     }
 
-    float (* __restrict bmean)[VLEN] = (float (*)[VLEN])bexpect;
-    float (* __restrict bvar)[VLEN] = (float (*)[VLEN])bvariance;
-    float nhw_ratio = float(nImg*fh*fw)/float(nImg*fh*fw - 1);
+#ifndef NDEBUG
+    if ( (ph > 0 || pw > 0) && (iph > 0 || ipw > 0) ) {
+      printf("node %s: batchnorm forward input and output is padded which cannot be :-(\n", nname.c_str());
+    }
+
+    /* check rims */
+    if(gp->in_data_type == DT_FLOAT && gp->out_data_type == DT_FLOAT)
+    {
+      check_physical_pad( nname.c_str(),    (float*)inp_r, nImg, nBfm, fh,  fw,  VLEN, iph, ipw );
+      check_physical_pad( nname.c_str(),     (float*)output, nImg, nBfm, fhs, fws, VLEN, ph,  pw );
+    }
+    else if(gp->in_data_type == DT_BF16 && gp->out_data_type == DT_BF16)
+    {
+      check_physical_pad( nname.c_str(),    (libxsmm_bfloat16*)inp_r, nImg, nBfm, fh,  fw,  VLEN, iph, ipw );
+      check_physical_pad( nname.c_str(),     (libxsmm_bfloat16*)output, nImg, nBfm, fhs, fws, VLEN, ph,  pw );
+    }
+#endif
+
+    if(gp->exec_mode == "TRAIN")
+    {
+      float (* __restrict bmean)[VLEN] = (float (*)[VLEN])bexpect;
+      float (* __restrict bvar)[VLEN] = (float (*)[VLEN])bvariance;
+      float nhw_ratio = float(nImg*fh*fw)/float(nImg*fh*fw - 1);
 
 #ifdef __AVX512F__
-    __m512  vmmf       = _mm512_set1_ps(gp->mmf);
-    __m512  vnhw_ratio = _mm512_set1_ps(nhw_ratio);
+      __m512  vmmf       = _mm512_set1_ps(gp->mmf);
+      __m512  vnhw_ratio = _mm512_set1_ps(nhw_ratio);
 
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for (int b = 0; b < nBfm; ++b) {
-      __m512 vbm = _mm512_load_ps(&bmean[b][0]);
-      __m512 vbvar = _mm512_load_ps(&bvar[b][0]);
+      for (int b = 0; b < nBfm; ++b) {
+        __m512 vbm = _mm512_load_ps(&bmean[b][0]);
+        __m512 vbvar = _mm512_load_ps(&bvar[b][0]);
 
-      _mm512_store_ps( &(gexpect[b*VLEN]), _mm512_add_ps(_mm512_mul_ps(_mm512_load_ps( &(gexpect[b*VLEN]) ), vmmf), vbm));
-      _mm512_store_ps( &(gvariance[b*VLEN]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(gvariance[b*VLEN]) ), vmmf), _mm512_mul_ps(vnhw_ratio, vbvar)));
-    }
+        _mm512_store_ps( &(gexpect[b*VLEN]), _mm512_add_ps(_mm512_mul_ps(_mm512_load_ps( &(gexpect[b*VLEN]) ), vmmf), vbm));
+        _mm512_store_ps( &(gvar[b*VLEN]), _mm512_add_ps( _mm512_mul_ps( _mm512_load_ps( &(gvar[b*VLEN]) ), vmmf), _mm512_mul_ps(vnhw_ratio, vbvar)));
+      }
 #else
 
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-    for (int b = 0; b < nBfm; ++b) {
+      for (int b = 0; b < nBfm; ++b) {
 #pragma omp simd
-      for (int v = 0; v < 16; ++v) {
-        gexpect[(b*16)+v] = gexpect[(b*16)+v] * gp->mmf + bmean[b][v];
-        gvariance[(b*16)+v] = gvariance[(b*16)+v] * gp->mmf + nhw_ratio*bvar[b][v];
+        for (int v = 0; v < 16; ++v) {
+          gexpect[(b*16)+v] = gexpect[(b*16)+v] * gp->mmf + bmean[b][v];
+          gvar[(b*16)+v] = gvar[(b*16)+v] * gp->mmf + nhw_ratio*bvar[b][v];
+        }
       }
-    }
 #endif
 
-    scaling_factor_ *= gp->mmf;
-    scaling_factor_ += 1.;
+      scaling_factor_ *= gp->mmf;
+      scaling_factor_ += 1.;
+    }
   }
   else
   {
 #if defined(_OPENMP)
+#pragma omp parallel for
+#endif
+    for(int i=0; i < nFM; i++)
+    {
+      ((float*)bexpect)[i] = gexpect[i]/scaling_factor_;
+      float tmp = (float)gvar[i]/scaling_factor_;
+      ((float*)bstddev)[i] = 1./sqrt(tmp + gp->eps);
+    }
+#if defined(_OPENMP)
 #pragma omp parallel
 #endif
     {
-#pragma omp for
-      for(int i=0; i < nFM; i++)
-      {
-        ((float*)bexpect)[i] = gexpect[i]/scaling_factor_;
-        ((float*)bstddev)[i] = 1./sqrt(gvariance[i]/scaling_factor_ + gp->eps);
-      }
-
 #if defined(_OPENMP)
       const int tid = omp_get_thread_num();
 #else
@@ -544,7 +619,6 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
   {
     scratch = scratchp->getBuffer();
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_train, scratch ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_test, scratch ) );
   }
 
   if(libxsmm_deloutput == NULL && libxsmm_delinput == NULL && libxsmm_delinput_add == NULL &&
