@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 /* helper variables */
-libxsmm_blasint i, ik, in, ic, inik;
+libxsmm_blasint i, ik, in, ic, inik, j;
 /* input sizes */
 const libxsmm_blasint K =  handle->desc.K;
 const libxsmm_blasint N =  handle->desc.N;
@@ -54,8 +54,9 @@ LIBXSMM_VLA_DECL(2, element_filter_type, r, rD, K);
 LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, z, zt, N, K);
 /* define gemm kernels */
-libxsmm_smmfunction gemmkernela = libxsmm_smmdispatch( bk, bn, bc, &K, &C, &K, NULL, NULL, NULL, NULL );
-libxsmm_smmfunction gemmkernelb = libxsmm_smmdispatch( bk, bn, bk, &K, &K, &K, NULL, NULL, NULL, NULL );
+libxsmm_smmfunction_reducebatch batchreduce_kernela =  libxsmm_smmdispatch_reducebatch( bk, bn, bc, &K, &C, &K, NULL, NULL );
+libxsmm_smmfunction_reducebatch batchreduce_kernelb =  libxsmm_smmdispatch_reducebatch( bk, bn, bk, &K, &K, &K, NULL, NULL );
+
 /* parallelize over C-blocks */
 /* computing first logical thread */
 const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_thread;
@@ -70,6 +71,14 @@ const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, (int)ltid);
 
+unsigned long long c_blocks = C/bc;
+const element_input_type **A_array =  (const element_input_type**) malloc(c_blocks * sizeof(element_input_type*));
+const element_input_type **B_array =  (const element_input_type**) malloc(c_blocks * sizeof(element_input_type*));
+
+unsigned long long k_blocks = K/bk;
+const element_input_type **A_array2 =  (const element_input_type**) malloc(k_blocks * sizeof(element_input_type*));
+const element_input_type **B_array2 =  (const element_input_type**) malloc(k_blocks * sizeof(element_input_type*));
+
 /* All data is in column-major format */
 for (i = 0; i < t; ++i) {
   /* let's run the cell in blocks for good locality */
@@ -81,21 +90,32 @@ for (i = 0; i < t; ++i) {
     libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &b[ik] );
 
     /* z += W.x */
-    for (ic = 0; ic < C; ic += bc) {
+    /* Prepare arrays for the call */
+    for (ic = 0, j = 0 ; ic < C; ic += bc, j++) {
       /* this is a small matmul */
-      gemmkernela( &LIBXSMM_VLA_ACCESS(2, w, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, x, i, in, ic, N, C), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
+      A_array[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(2, w, ic, ik, K);
+      B_array[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, x, i, in, ic, N, C);
     }
+    /* Reduce batch gemm call  */
+    batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &c_blocks);
+
     /* z += U.h */
     if (0 == i) {
-      for (ic = 0; ic < K; ic += bk) {
-        /* this is a small matmul */
-        gemmkernelb( &LIBXSMM_VLA_ACCESS(2, r, ic, ik, K), &LIBXSMM_VLA_ACCESS(2, hp, in, ic, K), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
+      /* Prepare arrays for the call */
+      for (ic = 0, j=0; ic < K; ic += bk, j++) {
+        A_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(2, r, ic, ik, K);
+        B_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(2, hp, in, ic, K);
       }
+      /* Reduce batch gemm call  */
+      batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &k_blocks);
     } else {
-      for (ic = 0; ic < K; ic += bk) {
-        /* this is a small matmul */
-        gemmkernelb( &LIBXSMM_VLA_ACCESS(2, r, ic, ik, K), &LIBXSMM_VLA_ACCESS(3, h, i-1, in, ic, N, K), &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K) );
+      /* Prepare arrays for the call */
+      for (ic = 0, j= 0; ic < K; ic += bk, j++) {
+        A_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(2, r, ic, ik, K);
+        B_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, h, i-1, in, ic, N, K);
       }
+      /* Reduce batch gemm call  */
+      batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &k_blocks);
     }
 #if defined(LIBXSMM_DNN_RNN_RELU_FWD)
     libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ik, N, K) );
@@ -110,3 +130,8 @@ for (i = 0; i < t; ++i) {
 
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }
+
+free(A_array);
+free(B_array);
+free(A_array2);
+free(B_array2);
