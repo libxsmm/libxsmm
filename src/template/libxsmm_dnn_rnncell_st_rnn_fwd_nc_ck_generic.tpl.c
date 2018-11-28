@@ -72,12 +72,18 @@ const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * 
 libxsmm_barrier_init(handle->barrier, (int)ltid);
 
 unsigned long long c_blocks = C/bc;
-const element_input_type **A_array =  (const element_input_type**) malloc(c_blocks * sizeof(element_input_type*));
-const element_input_type **B_array =  (const element_input_type**) malloc(c_blocks * sizeof(element_input_type*));
+/*const element_input_type **A_array =  (const element_input_type**) malloc(c_blocks * sizeof(element_input_type*));
+const element_input_type **B_array =  (const element_input_type**) malloc(c_blocks * sizeof(element_input_type*)); */
+
+const element_input_type *A_array[c_blocks];
+const element_input_type *B_array[c_blocks];
 
 unsigned long long k_blocks = K/bk;
-const element_input_type **A_array2 =  (const element_input_type**) malloc(k_blocks * sizeof(element_input_type*));
-const element_input_type **B_array2 =  (const element_input_type**) malloc(k_blocks * sizeof(element_input_type*));
+/*const element_input_type **A_array2 =  (const element_input_type**) malloc(k_blocks * sizeof(element_input_type*));
+const element_input_type **B_array2 =  (const element_input_type**) malloc(k_blocks * sizeof(element_input_type*));*/
+
+const element_input_type *A_array2[k_blocks];
+const element_input_type *B_array2[k_blocks];
 
 /* All data is in column-major format */
 for (i = 0; i < t; ++i) {
@@ -131,7 +137,9 @@ for (i = 0; i < t; ++i) {
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }
 
+/*
 free(A_array);
 free(B_array);
 free(A_array2);
 free(B_array2);
+*/

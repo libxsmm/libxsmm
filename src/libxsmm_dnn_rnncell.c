@@ -63,9 +63,9 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     if (rnncell_desc.t < 1) {
       *status = LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL;
     }
-    handle->bk = 64;
-    handle->bn = 64;
-    handle->bc = 64;
+    handle->bk = 32;
+    handle->bn = 32;
+    handle->bc = 32;
     if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
       handle->fwd_generic = 0;
       handle->bwdupd_generic = 0;
