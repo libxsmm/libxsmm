@@ -80,7 +80,6 @@ DummyDataNode::DummyDataNode(DummyDataParams* p, MLEngine* e) : NNNode(p, e)
 
       num_machines_ = e->get_num_machines();
       global_batch_size_ = num_machines_ * ts_->dims[0];
-printf("gbs = %d\n", global_batch_size_);
 #ifdef USE_MLSL
       MLSL::Session *s = e->get_session();
       s->SetGlobalMinibatchSize(global_batch_size_);

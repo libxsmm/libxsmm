@@ -1128,6 +1128,28 @@ LIBXSMM_API unsigned int libxsmm_dnn_get_tensor_elements(const libxsmm_dnn_tenso
 }
 
 
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_set_tensor_data_ptr(libxsmm_dnn_tensor* tensor, const void* data) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  if ((0 != tensor) && (0 != data)) {
+    if (0 != tensor->layout) {
+      if (0 < tensor->layout->num_dims) {
+        tensor->data = (void*)data;
+      } else {
+        status = LIBXSMM_DNN_ERR_INVALID_LAYOUT;
+      }
+    } else {
+      status = LIBXSMM_DNN_ERR_INVALID_LAYOUT;
+    }
+  }
+  else {
+    status = LIBXSMM_DNN_ERR_INVALID_TENSOR;
+  }
+
+  return status;
+}
+
+
 LIBXSMM_API void* libxsmm_dnn_get_tensor_data_ptr(const libxsmm_dnn_tensor* tensor, libxsmm_dnn_err_t* status)
 {
   *status = LIBXSMM_DNN_SUCCESS;

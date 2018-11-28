@@ -9,11 +9,11 @@ learning_rate: 0.4
 warmup_lr: 0.1
 momentum: 0.9
 weight_decay: 0.0001
-warmup: true
 warmup_epochs: 5
 max_iter: 128700
 type: "NESTEROV"
 global: true
+data_type: FLOAT
 load_checkpoint: false
 checkpoint_dir: "./weights"
 checkpoint_format: "binary"

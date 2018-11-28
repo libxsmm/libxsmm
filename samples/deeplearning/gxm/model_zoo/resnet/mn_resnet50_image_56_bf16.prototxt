@@ -52,6 +52,7 @@ node {
     engine: XSMM
     num_output: 64
     pad: 3
+    opad: 3
     bias_term: false
     physical_padding: true
     kernel_size: 7
