@@ -357,7 +357,7 @@ LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b)
     const size_t r = a % b;
     a = b; b = r;
   }
-  return a;
+  return 0 != a ? a : 1;
 }
 
 

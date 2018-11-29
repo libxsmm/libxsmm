@@ -77,7 +77,7 @@ LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsign
 /** Calculate a hash value for a given buffer. */
 LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed);
 
-/** Greatest common divisor. */
+/** Greatest common divisor (corner case: the GCD of 0 and 0 is 1). */
 LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b);
 /** Least common multiple. */
 LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b);
