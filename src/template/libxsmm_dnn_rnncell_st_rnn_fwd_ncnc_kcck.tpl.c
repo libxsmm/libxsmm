@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Kunal Banerjee, Evangelos Georganas (Intel Corp.)
+/* Evangelos Georganas, Alexander Heinecke, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
 /* helper variables */
@@ -47,15 +47,21 @@ element_filter_type *rD = (element_filter_type*)handle->r->data;
 element_output_type *b  = (element_output_type*)handle->b->data;
 element_output_type *ht = (element_output_type*)handle->ht->data;
 element_output_type *zt = (element_output_type*)handle->internal_z;
-LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
-LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, w, wD, K);
-LIBXSMM_VLA_DECL(2, element_filter_type, r, rD, K);
-LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
-LIBXSMM_VLA_DECL(3, element_output_type, z, zt, N, K);
+
+int nBlocks = N/bn;
+int cBlocks = C/bc;
+int kBlocks = K/bk;
+
+LIBXSMM_VLA_DECL(5, element_input_type,  x, xt, nBlocks, cBlocks, bn, bc);
+LIBXSMM_VLA_DECL(4, element_input_type,  hp, hpD, kBlocks, bn, bk);
+LIBXSMM_VLA_DECL(4, element_filter_type, w, wD, cBlocks, bc, bk);
+LIBXSMM_VLA_DECL(4, element_filter_type, r, rD, kBlocks, bk, bk);
+LIBXSMM_VLA_DECL(5, element_output_type, h, ht, nBlocks, kBlocks, bn, bk);
+LIBXSMM_VLA_DECL(5, element_output_type, z, zt, nBlocks, kBlocks, bn, bk);
 /* define gemm kernels */
-libxsmm_smmfunction_reducebatch batchreduce_kernela =  libxsmm_smmdispatch_reducebatch( bk, bn, bc, &K, &C, &K, NULL, NULL );
-libxsmm_smmfunction_reducebatch batchreduce_kernelb =  libxsmm_smmdispatch_reducebatch( bk, bn, bk, &K, &K, &K, NULL, NULL );
+
+libxsmm_smmfunction_reducebatch batchreduce_kernela =  libxsmm_smmdispatch_reducebatch( bk, bn, bc, &bk, &bk, &bk, NULL, NULL );
+libxsmm_smmfunction_reducebatch batchreduce_kernelb =  libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &bk, &bk, NULL, NULL );
 
 /* parallelize over C-blocks */
 /* computing first logical thread */
@@ -87,44 +93,45 @@ for (i = 0; i < t; ++i) {
     ik = (inik % (K/bk))*bk;
 
     /* z = per_col(b) */
-    libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &b[ik] );
+    libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in/bn, ik/bk, 0, 0, nBlocks, kBlocks, bn, bk), &b[ik]);
 
     /* z += W.x */
     /* Prepare arrays for the call */
     for (ic = 0, j = 0 ; ic < C; ic += bc, j++) {
       /* this is a small matmul */
-      A_array[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(2, w, ic, ik, K);
-      B_array[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, x, i, in, ic, N, C);
+      A_array[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, w, ik/bk, ic/bc, 0, 0, cBlocks, bc, bk);
+      B_array[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, x, i, in/bn, ic/bc, 0, 0, nBlocks, cBlocks, bn, bc);
     }
     /* Reduce batch gemm call  */
-    batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &c_blocks);
+    batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(5, z, i, in/bn, ik/bk, 0, 0, nBlocks, kBlocks, bn, bk), &c_blocks);
 
     /* z += U.h */
     if (0 == i) {
       /* Prepare arrays for the call */
       for (ic = 0, j=0; ic < K; ic += bk, j++) {
-        A_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(2, r, ic, ik, K);
-        B_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(2, hp, in, ic, K);
+        A_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik/bk, ic/bk, 0, 0, kBlocks, bk, bk);
+        B_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, hp, in/bn, ic/bk, 0, 0, kBlocks, bn, bk);
       }
       /* Reduce batch gemm call  */
-      batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &k_blocks);
+      batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(5, z, i, in/bn, ik/bk, 0, 0, nBlocks, kBlocks, bn, bk), &k_blocks);
     } else {
       /* Prepare arrays for the call */
       for (ic = 0, j= 0; ic < K; ic += bk, j++) {
-        A_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(2, r, ic, ik, K);
-        B_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, h, i-1, in, ic, N, K);
+        A_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik/bk, ic/bk, 0, 0, kBlocks, bk, bk);
+        B_array2[j] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, h, i-1, in/bn, ic/bk, 0, 0, nBlocks, kBlocks, bn, bk);
       }
       /* Reduce batch gemm call  */
-      batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &k_blocks);
+      batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(5, z, i, in/bn, ik/bk, 0, 0, nBlocks, kBlocks, bn, bk), &k_blocks);
     }
+
 #if defined(LIBXSMM_DNN_RNN_RELU_FWD)
-    libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ik, N, K) );
+    libxsmm_internal_matrix_relu_ld(    bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in/bn, ik/bk, 0, 0, nBlocks, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(5, h, i, in/bn, ik/bk, 0, 0, nBlocks, kBlocks, bn, bk));
 #endif
 #if defined(LIBXSMM_DNN_RNN_SIGMOID_FWD)
-    libxsmm_internal_matrix_sigmoid_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ik, N, K) );
+    libxsmm_internal_matrix_sigmoid_ld( bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in/bn, ik/bk, 0, 0, nBlocks, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(5, h, i, in/bn, ik/bk, 0, 0, nBlocks, kBlocks, bn, bk));
 #endif
 #if defined(LIBXSMM_DNN_RNN_TANH_FWD)
-    libxsmm_internal_matrix_tanh_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in, ik, N, K) );
+    libxsmm_internal_matrix_tanh_ld(    bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in/bn, ik/bk, 0, 0, nBlocks, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(5, h, i, in/bn, ik/bk, 0, 0, nBlocks, kBlocks, bn, bk));
 #endif
   }
 
