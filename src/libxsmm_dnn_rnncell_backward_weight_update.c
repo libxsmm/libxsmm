@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_rnncell_backward_weight_update.h"
 #include "libxsmm_dnn_elementwise.h"
