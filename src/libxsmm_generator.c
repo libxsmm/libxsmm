@@ -410,7 +410,7 @@ LIBXSMM_API_INLINE unsigned int internal_product_limit(unsigned int product, uns
       for (i = 0; i < n; ++i) {
         if (minfct < fact[i]) {
           result = fact[i];
-          i = n; /* break */
+          break;
         }
       }
     }
@@ -444,7 +444,7 @@ LIBXSMM_API_INLINE unsigned int internal_product_limit(unsigned int product, uns
       if (f <= limit) {
         result = f;
       }
-      else i = n; /* break */
+      else break;
     }
   }
   return result;
