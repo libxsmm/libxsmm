@@ -121,6 +121,16 @@ int main(int argc, char* argv[])
     fprintf(stderr, "missed bitwise exact result in %i of %i cases!\n", LIBXSMM_MAX(warn_ssqrt, warn_dsqrt), N);
   }
 
+  { /* check GCD */
+    const size_t a[] = { 0, 1, 0, 100, 10 };
+    const size_t b[] = { 0, 0, 1, 10, 100 };
+    const size_t c[] = { 1, 1, 1, 10,  10 };
+    const int n = sizeof(a) / sizeof(*a);
+    for (i = 0; i < n; ++i) {
+      if (libxsmm_gcd(a[i], b[i]) != c[i]) exit(EXIT_FAILURE);
+    }
+  }
+
   { /* check prime factorization */
     const unsigned int test[] = { 0, 1, 2, 3, 5, 7, 12, 13, 24, 32, 2057, 120, 14, 997 };
     const int n = sizeof(test) / sizeof(*test);

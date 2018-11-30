@@ -355,16 +355,16 @@ LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b)
 {
   while (0 != b) {
     const size_t r = a % b;
-    a = b;
-    b = r;
+    a = b; b = r;
   }
-  return a;
+  return 0 != a ? a : 1;
 }
 
 
 LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b)
 {
-  return (a * b) / libxsmm_gcd(a, b);
+  const size_t gcd = libxsmm_gcd(a, b);
+  return 0 != gcd ? ((a / gcd) * b) : 0;
 }
 
 
