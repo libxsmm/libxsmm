@@ -168,4 +168,3 @@ void libxsmm_sparse_csr_reader( libxsmm_generated_code* io_generated_code,
   }
 }
 
-
