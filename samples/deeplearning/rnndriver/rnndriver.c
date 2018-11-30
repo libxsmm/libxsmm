@@ -324,7 +324,9 @@ int main(int argc, char* argv[])
   int C = 512;    /* number of inputs */
   int K = 256;    /* number of outputs */
   int t = 4;      /* number of time steps (> 1) */
-  int bk = 64, bn = 64, bc = 64;
+  int bk = 64;
+  int bn = 64;
+  int bc = 64;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1/*enable by default*/ : atof(env_check));
@@ -382,6 +384,9 @@ int main(int argc, char* argv[])
   if (argc > i) C     = atoi(argv[i++]);
   if (argc > i) K     = atoi(argv[i++]);
   if (argc > i) t     = atoi(argv[i++]);
+  if (argc > i) bn     = atoi(argv[i++]);
+  if (argc > i) bk     = atoi(argv[i++]);
+  if (argc > i) bc     = atoi(argv[i++]);
 
   if (t <= 0) {
     printf("time_steps %d should be greater than 0\n\n", t);
@@ -591,6 +596,9 @@ int main(int argc, char* argv[])
     rnncell_desc.N = N;
     rnncell_desc.C = C;
     rnncell_desc.K = K;
+    rnncell_desc.bn = bn;
+    rnncell_desc.bk = bk;
+    rnncell_desc.bc = bc;
     rnncell_desc.t = t;
     if ( nonlin == 1 ) {
       rnncell_desc.cell_type = LIBXSMM_DNN_RNNCELL_RNN_RELU;
