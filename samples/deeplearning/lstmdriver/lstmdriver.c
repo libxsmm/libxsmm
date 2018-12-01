@@ -368,10 +368,10 @@ int main(int argc, char* argv[])
   bcgold = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
   hgoldt = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
   bfgold_fb = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
-  bimgold= (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  bfmgold= (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  bomgold= (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  bcmgold= (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  bimgold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  bfmgold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  bomgold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  bcmgold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   igoldt = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
   fgoldt = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
   ogoldt = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
@@ -1465,6 +1465,10 @@ int main(int argc, char* argv[])
   libxsmm_free(djdbtest);
   libxsmm_free(djdrgold4);
   libxsmm_free(djdbgold4);
+  libxsmm_free(bfgold_fb);
+  libxsmm_free(djdcsgold);
+  libxsmm_free(djdwgold4);
+  libxsmm_free(djdwtest);
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
