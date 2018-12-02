@@ -218,6 +218,7 @@ PEDANTIC ?= 0
 
 # Embed InterProcedural Optimization information into libraries
 IPO ?= 0
+FAT ?= 0
 
 # ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
 ILP64 ?= 0
@@ -1108,11 +1109,16 @@ else # GCC assumed
       FCFLAGS += -funroll-loops
     endif
     ifneq (0,$(IPO))
-      CXXFLAGS += -flto -ffat-lto-objects
-      CFLAGS += -flto -ffat-lto-objects
-      FCFLAGS += -flto -ffat-lto-objects
-      FLDFLAGS += -fno-lto
-      LDFLAGS += -flto
+      CXXFLAGS += -flto
+      CFLAGS += -flto
+      FCFLAGS += -flto
+      #FLDFLAGS += -fno-lto
+      LDFLAGS += $(XLNKOPT)-flto
+      ifneq (0,$(FAT))
+        CXXFLAGS += -ffat-lto-objects
+        CFLAGS += -ffat-lto-objects
+        FCFLAGS += -ffat-lto-objects
+      endif
     endif
   endif
   ifneq (0,$(INSTRUMENT))
