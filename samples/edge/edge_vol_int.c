@@ -39,6 +39,75 @@
 # include <omp.h>
 #endif
 
+#include <sys/time.h>
+
+#define EDGE_HP_1G
+
+#if defined(EDGE_HP_1G) || defined(EDGE_HP_2M)
+#include <sys/mman.h>
+#include <linux/mman.h>
+#endif
+
+void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
+  void* ret_ptr = NULL;
+#if defined(EDGE_HP_1G)
+  size_t num_large_pages = nbytes / (1073741824L);
+  if ( nbytes > num_large_pages*1073741824L ) {
+    num_large_pages++;
+  }
+  nbytes = (size_t) num_large_pages * 1073741824L;
+  printf("trying to allocate %ld 1G pages\n", num_large_pages); 
+  ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | MAP_HUGE_1GB, -1, 0 );
+  if ( (ret_ptr == (void *)(-1)) ) {
+    fprintf(stderr,"1G mmap call failed\n");
+    exit(1);
+  }
+#elif defined(EDGE_HP_2M)
+  size_t num_large_pages = nbytes / (2097152UL);
+  if ( nbytes > num_large_pages*2097152UL ) {
+    num_large_pages++;
+  }
+  nbytes = (size_t) num_large_pages * 2097152UL;
+  printf("trying to allocate %ld 2M pages\n", num_large_pages); 
+  ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB, -1, 0 );
+  if ( (ret_ptr == (void *)(-1)) ) {
+    fprintf(stderr,"2M mmap call failed\n");
+    exit(1);
+  } 
+#else
+  ret_ptr = libxsmm_aligned_malloc( nbytes, alignment );
+#endif
+  return ret_ptr;
+}
+
+void edge_hp_free( void* ptr,  size_t nbytes ) {
+  /* to be implemented */
+} 
+
+static double sec(struct timeval start, struct timeval end) {
+  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
+}
+
+void amok_detect( double* timearray, size_t* amoks, size_t workers ) {
+  double time_avg;
+  size_t i;
+  time_avg = 0.0;
+  for (i = 0; i < workers; i++) {
+    if ( amoks[i] == 0 ) {
+      time_avg += timearray[i];
+    }
+  }
+  time_avg = time_avg/((double)(workers-amoks[workers]));
+  /* let detect amoks */
+  for (i = 0; i < workers; i++) {
+    if ( amoks[i] == 0 ) {
+      if ( timearray[i] > time_avg*1.07 ) { /* this is the amok condition */
+        amoks[workers]++;
+        amoks[i] = 1;
+      }
+    }
+  }
+}
 
 int main(int argc, char* argv[])
 {
@@ -80,12 +149,25 @@ int main(int argc, char* argv[])
   const libxsmm_gemm_prefetch_type prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   const double alpha = 1, beta = 1;
+  double flops_vol;
 
   double* q;
   double* qt;
+  double* qs;
+  double* star;
+  double* global;
 
   unsigned long long l_start, l_end;
   double l_total;
+  unsigned int l_num_threads;
+  void* onegcode;
+  unsigned int l_star_ent = num_quants*num_quants;
+  double* l_total_thread;
+  double* l_cur_thread_time;
+  double time_max;
+  double time_min;
+  double time_avg;
+  size_t* amoks;
 
   /* read cmd */
   if ((argc > 1 && !strncmp(argv[1], "-h", 3)) || (argc != 8)) {
@@ -106,6 +188,23 @@ int main(int argc, char* argv[])
   if (argc > (int)i) num_reps = atoi(argv[i++]);
   elem_size = num_modes*num_quants*num_cfr;
 
+#if defined( _OPENMP)
+  #pragma omp parallel
+  {
+    #pragma omp master
+    {
+      l_num_threads = omp_get_num_threads();
+    }
+  }
+#else
+  l_num_threads = 1;
+#endif
+  l_total_thread = (double*)malloc(l_num_threads*sizeof(double));
+  l_cur_thread_time = (double*)malloc(l_num_threads*sizeof(double));
+  amoks = (size_t*)malloc((l_num_threads+1)*sizeof(size_t));
+  for ( i = 0; i < l_num_threads+1; i++ ) {
+    amoks[i] = 0;
+  }
   /* read matrices */
   printf("reading sparse matrices... ");
   edge_sparse_csr_reader_double( mat_a, &mat_a_rowptr, &mat_a_colidx, &mat_a_values, &mat_a_rowcount, &mat_a_colcount, &mat_a_nnz );
@@ -124,127 +223,184 @@ int main(int argc, char* argv[])
   b_kernel =  libxsmm_create_xcsr_soa( l_xgemm_desc_stiff, mat_b_rowptr,  mat_b_colidx,  (const void*)mat_b_values ).dmm;
   c_kernel =  libxsmm_create_xcsr_soa( l_xgemm_desc_stiff, mat_c_rowptr,  mat_c_colidx,  (const void*)mat_c_values ).dmm;
   st_kernel = libxsmm_create_xcsr_soa( l_xgemm_desc_star, mat_st_rowptr, mat_st_colidx, (const void*)mat_st_values ).dmm;
-  if ( a_kernel == 0 || b_kernel == 0 || c_kernel == 0 || st_kernel == 0 ) {
-    printf("one of the kernels could not be built -> exit!");
+  if ( a_kernel == 0 ) {
+    printf("a kernel could not be built -> exit!");
+    exit(-1);
+  }
+  if ( b_kernel == 0 ) {
+    printf("b kernel could not be built -> exit!");
+    exit(-1);
+  }
+  if ( b_kernel == 0 ) {
+    printf("c kernel could not be built -> exit!");
+    exit(-1);
+  }
+  if ( st_kernel == 0 ) {
+    printf("st kernel could not be built -> exit!");
     exit(-1);
   }
   printf("done!\n\n");
 
+  /* copying code to 1 GB page */
+#if defined(EDGE_HP_1G) || defined(EDGE_HP_2M)
+  printf("copying code to 1GB page...\n");
+  onegcode = (void*)edge_hp_malloc( 5*1024*1024, 2097152 );
+  memcpy( onegcode,               (void*) a_kernel,  1505 );
+  memcpy( onegcode+(1*1024*1024)+64, (void*) b_kernel,  2892 );
+  memcpy( onegcode+(2*1024*1024)+128, (void*) c_kernel,  3249 );
+  memcpy( onegcode+(3*1024*1024)+196, (void*)st_kernel, 11010 );
+  a_kernel  = (libxsmm_dmmfunction)onegcode;
+  b_kernel  = (libxsmm_dmmfunction)(onegcode+(1*1024*1024)+64);
+  c_kernel  = (libxsmm_dmmfunction)(onegcode+(2*1024*1024)+128);
+  st_kernel = (libxsmm_dmmfunction)(onegcode+(3*1024*1024)+196);
+  printf("...done\n\n");
+#endif
+
   /* create unknowns and t-unknowns */
   printf("allocating and initializing fake data... \n");
-  printf("   q: %f MiB\n", ((double)(num_elems*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
-  printf("  qt: %f MiB\n", ((double)(num_elems*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
+  /* DoFs */
+  printf("     q: %f MiB\n", ((double)(num_elems*num_modes*num_quants*num_cfr*sizeof(double))) / ( 1024.0*1024.0) );
+  q = (double*)edge_hp_malloc( num_elems*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
+  /* tDofs */
+  printf("    qt: %f MiB\n", ((double)(num_elems*num_modes*num_quants*num_cfr*sizeof(double))) / ( 1024.0*1024.0) );
+  qt = (double*)edge_hp_malloc( num_elems*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
+  /* star matrices */
+  printf("  star: %f MiB\n", ((double)(num_elems*3*l_star_ent*sizeof(double))) / ( 1024.0*1024.0 ) );
+  star = (double*)edge_hp_malloc( num_elems*3*l_star_ent*sizeof(double), 2097152);
+  /* stiffness matrices */
+  printf("global: %f MiB\n", ((double)(3*l_num_threads*num_modes*num_modes*sizeof(double))) / ( 1024.0*1024 ) );
+  global = (double*)edge_hp_malloc( 3*l_num_threads*num_modes*num_modes*sizeof(double), 2097152);
+  /* per thread scratch */
+  printf("     t: %f MiB\n", ((double)(l_num_threads*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
+  qs = (double*)edge_hp_malloc( l_num_threads*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
+
+  for (i = 0; i < (int)num_elems; i++) {
+    for (j = 0; j < (int)elem_size; j++) {
+      q[i*elem_size + j] = libxsmm_rand_f64();
+    }
+  }
+  
+  for (i = 0; i < (int)num_elems; i++) {
+    for (j = 0; j < (int)elem_size; j++) {
+      qt[i*elem_size + j] = libxsmm_rand_f64();
+    }
+  }
+  
+  for (i = 0; i < (int)l_num_threads; i++) {
+    for (j = 0; j < (int)elem_size; j++) {
+      qs[i*elem_size + j] = libxsmm_rand_f64();
+    }
+  }
+
+  for (i = 0; i < (int)num_elems; i++) {
+    for (j = 0; j < (int)3*mat_st_nnz; j++) {
+      star[(i*3*mat_st_nnz)+j] = libxsmm_rand_f64();
+    }
+  }
+
+  for (i = 0; i < 3*l_num_threads; i++) {
+    for (j = 0; j < num_modes*num_modes; j++) {
+      global[(i*num_modes*num_modes)+j] = libxsmm_rand_f64();
+    }
+  }
+  printf("allocation done!\n\n");
+
+  printf("running benchmark...\n");
+  l_start = libxsmm_timer_tick();
 #if defined(_OPENMP)
-  printf("   t: %f MiB\n", ((double)(omp_get_max_threads()*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
+# pragma omp parallel private(i, j)
+#endif
+  {
+#if defined(_OPENMP)
+    int mytid = omp_get_thread_num();
 #else
-  printf("   t: %f MiB\n", ((double)(num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
+    int mytid = 0;
 #endif
-  q = (double*)libxsmm_aligned_malloc( num_elems*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
-  qt = (double*)libxsmm_aligned_malloc( num_elems*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
-
-#if defined(_OPENMP)
-# pragma omp parallel for private(i,j)
-#endif
-  for (i = 0; i < (int)num_elems; i++) {
-    for (j = 0; j < (int)elem_size; j++) {
-      q[i*elem_size + j] = libxsmm_rand_f64();
-    }
-  }
-#if defined(_OPENMP)
-# pragma omp parallel for private(i,j)
-#endif
-  for (i = 0; i < (int)num_elems; i++) {
-    for (j = 0; j < (int)elem_size; j++) {
-      qt[i*elem_size + j] = libxsmm_rand_f64();
-    }
-  }
-
-  printf("done!\n\n");
-
-  /* benchmark single core all kernels */
-  printf("benchmarking kernels... \n");
-  l_start = libxsmm_timer_tick();
-  for (i = 0; i < (int)num_reps; i++) {
-    a_kernel( qt, mat_a_values, q );
-  }
-  l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("%fs for stiff1 (asm)\n", l_total);
-  printf("%f GFLOPS for stiff1 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_a_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
-
-  l_start = libxsmm_timer_tick();
-  for (i = 0; i < (int)num_reps; i++) {
-    b_kernel( qt, mat_b_values, q );
-  }
-  l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("%fs for stiff2 (asm)\n", l_total);
-  printf("%f GFLOPS for stiff2 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_b_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
-
-  l_start = libxsmm_timer_tick();
-  for (i = 0; i < (int)num_reps; i++) {
-    c_kernel( qt, mat_c_values, q );
-  }
-  l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("%fs for stiff3 (asm)\n", l_total);
-  printf("%f GFLOPS for stiff3 (asm)\n", ((double)((double)num_reps * (double)num_quants * (double)mat_c_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
-
-  l_start = libxsmm_timer_tick();
-  for (i = 0; i < (int)num_reps; i++) {
-    st_kernel( mat_st_values, qt, q );
-  }
-  l_end = libxsmm_timer_tick();
-  l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("%fs for star (asm)\n", l_total);
-  printf("%f GFLOPS for star (asm)\n", ((double)((double)num_reps * (double)num_modes * (double)mat_st_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
-  printf("done!\n\n");
-
-  /* benchmark volumne integration */
-#if defined(_OPENMP)
-# pragma omp parallel for private(i,j)
-#endif
-  for (i = 0; i < (int)num_elems; i++) {
-    for (j = 0; j < (int)elem_size; j++) {
-      q[i*elem_size + j] = libxsmm_rand_f64();
-    }
-  }
-#if defined(_OPENMP)
-# pragma omp parallel for private(i,j)
-#endif
-  for (i = 0; i < (int)num_elems; i++) {
-    for (j = 0; j < (int)elem_size; j++) {
-      qt[i*elem_size + j] = libxsmm_rand_f64();
-    }
-  }
-
-  l_start = libxsmm_timer_tick();
-  for (i = 0; i < (int)num_reps; i++) {
-#if defined(_OPENMP)
-#   pragma omp parallel private(i, j)
-#endif
-    {
-      LIBXSMM_ALIGNED(double tp[20*8*9], LIBXSMM_ALIGNMENT);
-
-#if defined(_OPENMP)
-#     pragma omp for private(j)
-#endif
-      for (j = 0; j < (int)num_elems; j++) {
-        st_kernel( mat_st_values, qt+(j*elem_size), tp );
-        a_kernel( tp, mat_a_values, q+(j*elem_size) );
-
-        st_kernel( mat_st_values, qt+(j*elem_size), tp );
-        b_kernel( tp, mat_b_values, q+(j*elem_size) );
-
-        st_kernel( mat_st_values, qt+(j*elem_size), tp );
-        c_kernel( tp, mat_c_values, q+(j*elem_size) );
+    int mytid_gl = 0; /* for global matrices */
+    struct timeval mystart, myend;
+    size_t cur_amoks = 0;
+    size_t non_amoks = l_num_threads;
+    size_t l_el_chunk =  (num_elems % non_amoks == 0) ? (num_elems / non_amoks) : ((num_elems / non_amoks) + 1);
+    size_t l_el_start = (mytid * l_el_chunk < num_elems) ? (mytid * l_el_chunk) : num_elems;
+    size_t l_el_end   = ((mytid+1) * l_el_chunk < num_elems) ? ((mytid+1) * l_el_chunk) : num_elems;
+    for (i = 0; i < (int)num_reps; i++) {
+      if (cur_amoks != amoks[l_num_threads]) {
+        cur_amoks = amoks[l_num_threads];
+        non_amoks = l_num_threads - cur_amoks;
+        if (amoks[mytid] != 0) {
+          l_el_start = 0;
+          l_el_end = 0;
+        } else {
+          int tid_offset = 0;
+          int z;
+          for (z = 0; z < mytid; z++) {
+            if ( amoks[z] != 0 ) {
+              tid_offset++;
+            }
+          }
+          tid_offset = mytid-tid_offset;
+          l_el_chunk =  (num_elems % non_amoks == 0) ? (num_elems / non_amoks) : ((num_elems / non_amoks) + 1);
+          l_el_start = (tid_offset * l_el_chunk < num_elems) ? (tid_offset * l_el_chunk) : num_elems;
+          l_el_end   = ((tid_offset+1) * l_el_chunk < num_elems) ? ((tid_offset+1) * l_el_chunk) : num_elems;
+        }
       }
+      gettimeofday(&mystart, NULL);
+      for (j = l_el_start; j < l_el_end; j++) {
+#if 1
+        st_kernel( star+(j*3*mat_st_nnz), qt+(j*elem_size), qs+(mytid*elem_size) );
+        a_kernel( qs+(mytid*elem_size), global+(mytid_gl*3*num_modes*num_modes), q+(j*elem_size) );
+
+        st_kernel( star+(j*3*mat_st_nnz)+mat_st_nnz, qt+(j*elem_size), qs+(mytid*elem_size) );
+        b_kernel( qs+(mytid*elem_size), global+(mytid_gl*3*num_modes*num_modes)+(num_modes*num_modes), q+(j*elem_size) );
+
+        st_kernel( star+(j*3*mat_st_nnz)+(2*mat_st_nnz), qt+(j*elem_size), qs+(mytid*elem_size) );
+        c_kernel( qs+(mytid*elem_size), global+(mytid_gl*3*num_modes*num_modes)+(2*num_modes*num_modes), q+(j*elem_size) );
+#endif
+      }
+      gettimeofday(&myend, NULL);
+      l_cur_thread_time[mytid] = sec(mystart, myend);
+      l_total_thread[mytid] += sec(mystart, myend);
+#if defined(_OPENMP)
+      #pragma omp barrier
+#endif
+      if (mytid == 0) {
+        amok_detect(l_cur_thread_time, amoks, l_num_threads); 
+      }
+#if defined(_OPENMP)
+      #pragma omp barrier
+#endif
     }
+#if defined(_OPENMP)
   }
+#endif
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
-  printf("%fs for vol (asm)\n", l_total);
-  printf("%f GFLOPS for vol (asm)\n", ((double)((double)num_elems * (double)num_reps * 3.0 * ((double)num_quants + (double)num_modes) * (double)mat_st_nnz * (double)num_cfr) * 2.0) / (l_total * 1.0e9));
+  printf("...done!\n\n");
+  /* some timing stats */
+  time_max = 0.0;
+  time_min = 80000000;
+  time_avg = 0.0;
+  for (i = 0; i < l_num_threads; i++) {
+    if( amoks[i] == 0 ) { 
+      if( l_total_thread[i] > time_max) time_max = l_total_thread[i];
+      if( l_total_thread[i] < time_min) time_min = l_total_thread[i];
+      time_avg += l_total_thread[i];
+    }
+  }
+  time_avg = time_avg/((double)(l_num_threads-amoks[l_num_threads])); 
+
+  flops_vol  = (double)num_quants * (double)mat_a_nnz * (double)num_cfr * 2.0;
+  flops_vol += (double)num_quants * (double)mat_b_nnz * (double)num_cfr * 2.0;
+  flops_vol += (double)num_quants * (double)mat_c_nnz * (double)num_cfr * 2.0;
+  flops_vol += (double)num_modes * (double)mat_st_nnz * (double)num_cfr * 6.0; /* 3 star matrix mul */
+  printf("%fs time for vol (asm), min %f, max %f, avg %f, #amoks %ld, amok-threads ", l_total, time_min, time_max, time_avg, amoks[l_num_threads]);
+  for ( i = 0; i < l_num_threads; i++ ) {
+    if ( amoks[i] != 0 ) {
+      printf("%i,", i);
+    }
+  }
+  printf("\n");
+  printf("%f GFLOPS for vol (asm)\n", ((double)num_elems * (double)num_reps * flops_vol) / (l_total * 1.0e9));
   printf("%f GiB/s for vol (asm)\n", (double)((double)num_elems * (double)elem_size * 8.0 * 3.0 * (double)num_reps) / (l_total * 1024.0*1024.0*1024.0) );
   printf("done!\n\n");
 
@@ -253,4 +409,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-
