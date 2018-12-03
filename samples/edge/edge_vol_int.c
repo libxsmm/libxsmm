@@ -223,7 +223,7 @@ int main(int argc, char* argv[])
   if (argc > (int)i) num_reps = atoi(argv[i++]);
   elem_size = num_modes*num_quants*num_cfr;
 
-#if defined( _OPENMP)
+#if defined(_OPENMP)
   #pragma omp parallel
   {
     #pragma omp master
@@ -392,9 +392,7 @@ int main(int argc, char* argv[])
       #pragma omp barrier
 #endif
     }
-#if defined(_OPENMP)
   }
-#endif
   l_end = libxsmm_timer_tick();
   l_total = libxsmm_timer_duration(l_start, l_end);
   printf("...done!\n\n");
@@ -402,7 +400,7 @@ int main(int argc, char* argv[])
   time_max = 0.0;
   time_min = 80000000;
   time_avg = 0.0;
-  for (i = 0; i < l_num_threads; i++) {
+  for (i = 0; i < (int)l_num_threads; i++) {
     if( amoks[i] == 0 ) { 
       if( l_total_thread[i] > time_max) time_max = l_total_thread[i];
       if( l_total_thread[i] < time_min) time_min = l_total_thread[i];
