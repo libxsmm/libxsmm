@@ -41,7 +41,7 @@
 
 #include <sys/time.h>
 
-#define EDGE_HP_1G
+/*#define EDGE_HP_1G*/
 
 #if defined(EDGE_HP_1G) || defined(EDGE_HP_2M)
 #include <sys/mman.h>
