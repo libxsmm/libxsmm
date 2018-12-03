@@ -57,7 +57,8 @@ void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
   }
   nbytes = (size_t) num_large_pages * 1073741824L;
   printf("trying to allocate %ld 1G pages\n", num_large_pages); 
-  ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | MAP_HUGE_1GB, -1, 0 );
+  /*ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | MAP_HUGE_1GB, -1, 0 );*/
+  ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | MAP_HUGE_1GB, -1, 0 );
   if ( (ret_ptr == (void *)(-1)) ) {
     fprintf(stderr,"1G mmap call failed\n");
     exit(1);
@@ -69,7 +70,8 @@ void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
   }
   nbytes = (size_t) num_large_pages * 2097152UL;
   printf("trying to allocate %ld 2M pages\n", num_large_pages); 
-  ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB, -1, 0 );
+  /*ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB, -1, 0 );*/
+  ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB, -1, 0 );
   if ( (ret_ptr == (void *)(-1)) ) {
     fprintf(stderr,"2M mmap call failed\n");
     exit(1);
@@ -81,33 +83,66 @@ void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
 }
 
 void edge_hp_free( void* ptr,  size_t nbytes ) {
+#if defined(EDGE_HP_1G)
   /* to be implemented */
+#elif defined(EDGE_HP_2M)
+  /* to be implemented */
+#else
+  libxsmm_free( ptr );
+#endif
 } 
 
 static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
 }
 
-void amok_detect( double* timearray, size_t* amoks, size_t workers ) {
+void amok_detect( const double* i_runtimes, size_t* io_amoks, const size_t i_workers ) {
   double time_avg;
   size_t i;
   time_avg = 0.0;
-  for (i = 0; i < workers; i++) {
-    if ( amoks[i] == 0 ) {
-      time_avg += timearray[i];
+  for (i = 0; i < i_workers; i++) {
+    if ( io_amoks[i] == 0 ) {
+      time_avg += i_runtimes[i];
     }
   }
-  time_avg = time_avg/((double)(workers-amoks[workers]));
+  time_avg = time_avg/((double)(i_workers-io_amoks[i_workers]));
   /* let detect amoks */
-  for (i = 0; i < workers; i++) {
-    if ( amoks[i] == 0 ) {
-      if ( timearray[i] > time_avg*1.07 ) { /* this is the amok condition */
-        amoks[workers]++;
-        amoks[i] = 1;
+  for (i = 0; i < i_workers; i++) {
+    if ( io_amoks[i] == 0 ) {
+      if ( i_runtimes[i] > time_avg*1.07 ) { /* this is the amok condition */
+        io_amoks[i_workers]++;
+        io_amoks[i] = 1;
       }
     }
   }
 }
+
+void amok_balance( const size_t* i_amoks, const size_t i_workers, const size_t i_worksize, const size_t i_mytid, size_t* io_chunk, size_t* io_mystart, size_t* io_myend ) {
+  size_t l_chunk, l_start, l_end;
+  size_t l_cur_amoks = i_amoks[i_workers];
+  size_t l_non_amoks = i_workers - l_cur_amoks;
+
+  l_chunk = (i_worksize % l_non_amoks == 0) ? (i_worksize / l_non_amoks) : ((i_worksize / l_non_amoks) + 1);
+  if (i_amoks[i_mytid] != 0) {
+    l_start = 0;
+    l_end = 0;
+  } else {
+    size_t l_tid_offset = 0;
+    size_t l_z;
+    for ( l_z = 0; l_z < i_mytid; l_z++) {
+      if ( i_amoks[l_z] != 0 ) {
+        l_tid_offset++;
+      }
+    }
+    l_tid_offset = i_mytid - l_tid_offset;
+    l_start = (l_tid_offset * l_chunk < i_worksize) ? (l_tid_offset * l_chunk) : i_worksize;
+    l_end   = ((l_tid_offset+1) * l_chunk < i_worksize) ? ((l_tid_offset+1) * l_chunk) : i_worksize;
+  }
+
+  *io_chunk   = l_chunk;
+  *io_mystart = l_start;
+  *io_myend   = l_end; 
+} 
 
 int main(int argc, char* argv[])
 {
@@ -205,6 +240,7 @@ int main(int argc, char* argv[])
   for ( i = 0; i < l_num_threads+1; i++ ) {
     amoks[i] = 0;
   }
+
   /* read matrices */
   printf("reading sparse matrices... ");
   edge_sparse_csr_reader_double( mat_a, &mat_a_rowptr, &mat_a_colidx, &mat_a_values, &mat_a_rowcount, &mat_a_colcount, &mat_a_nnz );
@@ -242,6 +278,7 @@ int main(int argc, char* argv[])
   printf("done!\n\n");
 
   /* copying code to 1 GB page */
+#if 0
 #if defined(EDGE_HP_1G) || defined(EDGE_HP_2M)
   printf("copying code to 1GB page...\n");
   onegcode = (void*)edge_hp_malloc( 5*1024*1024, 2097152 );
@@ -254,6 +291,7 @@ int main(int argc, char* argv[])
   c_kernel  = (libxsmm_dmmfunction)(onegcode+(2*1024*1024)+128);
   st_kernel = (libxsmm_dmmfunction)(onegcode+(3*1024*1024)+196);
   printf("...done\n\n");
+#endif
 #endif
 
   /* create unknowns and t-unknowns */
@@ -268,8 +306,8 @@ int main(int argc, char* argv[])
   printf("  star: %f MiB\n", ((double)(num_elems*3*l_star_ent*sizeof(double))) / ( 1024.0*1024.0 ) );
   star = (double*)edge_hp_malloc( num_elems*3*l_star_ent*sizeof(double), 2097152);
   /* stiffness matrices */
-  printf("global: %f MiB\n", ((double)(3*l_num_threads*num_modes*num_modes*sizeof(double))) / ( 1024.0*1024 ) );
-  global = (double*)edge_hp_malloc( 3*l_num_threads*num_modes*num_modes*sizeof(double), 2097152);
+  printf("global: %f MiB\n", ((double)(3*num_modes*num_modes*sizeof(double))) / ( 1024.0*1024 ) );
+  global = (double*)edge_hp_malloc( 3*num_modes*num_modes*sizeof(double), 2097152);
   /* per thread scratch */
   printf("     t: %f MiB\n", ((double)(l_num_threads*num_modes*num_quants*num_cfr*sizeof(double)))/ ( 1024.0*1024.0) );
   qs = (double*)edge_hp_malloc( l_num_threads*num_modes*num_quants*num_cfr*sizeof(double), 2097152);
@@ -279,26 +317,22 @@ int main(int argc, char* argv[])
       q[i*elem_size + j] = libxsmm_rand_f64();
     }
   }
-  
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)elem_size; j++) {
       qt[i*elem_size + j] = libxsmm_rand_f64();
     }
   }
-  
   for (i = 0; i < (int)l_num_threads; i++) {
     for (j = 0; j < (int)elem_size; j++) {
       qs[i*elem_size + j] = libxsmm_rand_f64();
     }
   }
-
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)3*mat_st_nnz; j++) {
       star[(i*3*mat_st_nnz)+j] = libxsmm_rand_f64();
     }
   }
-
-  for (i = 0; i < 3*l_num_threads; i++) {
+  for (i = 0; i < 3; i++) {
     for (j = 0; j < num_modes*num_modes; j++) {
       global[(i*num_modes*num_modes)+j] = libxsmm_rand_f64();
     }
@@ -316,55 +350,43 @@ int main(int argc, char* argv[])
 #else
     int mytid = 0;
 #endif
-    int mytid_gl = 0; /* for global matrices */
     struct timeval mystart, myend;
     size_t cur_amoks = 0;
     size_t non_amoks = l_num_threads;
-    size_t l_el_chunk =  (num_elems % non_amoks == 0) ? (num_elems / non_amoks) : ((num_elems / non_amoks) + 1);
-    size_t l_el_start = (mytid * l_el_chunk < num_elems) ? (mytid * l_el_chunk) : num_elems;
-    size_t l_el_end   = ((mytid+1) * l_el_chunk < num_elems) ? ((mytid+1) * l_el_chunk) : num_elems;
+    size_t l_el_chunk = 0;
+    size_t l_el_start = 0;
+    size_t l_el_end   = 0;
+    /* inital work distribution */
+    amok_balance( amoks, l_num_threads, num_elems, mytid, &l_el_chunk, &l_el_start, &l_el_end );
     for (i = 0; i < (int)num_reps; i++) {
+      /* did we had an amok? */
       if (cur_amoks != amoks[l_num_threads]) {
         cur_amoks = amoks[l_num_threads];
         non_amoks = l_num_threads - cur_amoks;
-        if (amoks[mytid] != 0) {
-          l_el_start = 0;
-          l_el_end = 0;
-        } else {
-          int tid_offset = 0;
-          int z;
-          for (z = 0; z < mytid; z++) {
-            if ( amoks[z] != 0 ) {
-              tid_offset++;
-            }
-          }
-          tid_offset = mytid-tid_offset;
-          l_el_chunk =  (num_elems % non_amoks == 0) ? (num_elems / non_amoks) : ((num_elems / non_amoks) + 1);
-          l_el_start = (tid_offset * l_el_chunk < num_elems) ? (tid_offset * l_el_chunk) : num_elems;
-          l_el_end   = ((tid_offset+1) * l_el_chunk < num_elems) ? ((tid_offset+1) * l_el_chunk) : num_elems;
-        }
+        /* re-balance work */
+        amok_balance( amoks, l_num_threads, num_elems, mytid, &l_el_chunk, &l_el_start, &l_el_end );
       }
       gettimeofday(&mystart, NULL);
       for (j = l_el_start; j < l_el_end; j++) {
-#if 1
-        st_kernel( star+(j*3*mat_st_nnz), qt+(j*elem_size), qs+(mytid*elem_size) );
-        a_kernel( qs+(mytid*elem_size), global+(mytid_gl*3*num_modes*num_modes), q+(j*elem_size) );
+        st_kernel( star+(j*3*mat_st_nnz)               , qt+(j*elem_size), qs+(mytid*elem_size) );
+        a_kernel( qs+(mytid*elem_size), global                        , q+(j*elem_size) );
 
-        st_kernel( star+(j*3*mat_st_nnz)+mat_st_nnz, qt+(j*elem_size), qs+(mytid*elem_size) );
-        b_kernel( qs+(mytid*elem_size), global+(mytid_gl*3*num_modes*num_modes)+(num_modes*num_modes), q+(j*elem_size) );
+        st_kernel( star+(j*3*mat_st_nnz)+mat_st_nnz    , qt+(j*elem_size), qs+(mytid*elem_size) );
+        b_kernel( qs+(mytid*elem_size), global+(num_modes*num_modes)  , q+(j*elem_size) );
 
         st_kernel( star+(j*3*mat_st_nnz)+(2*mat_st_nnz), qt+(j*elem_size), qs+(mytid*elem_size) );
-        c_kernel( qs+(mytid*elem_size), global+(mytid_gl*3*num_modes*num_modes)+(2*num_modes*num_modes), q+(j*elem_size) );
-#endif
+        c_kernel( qs+(mytid*elem_size), global+(2*num_modes*num_modes), q+(j*elem_size) );
       }
       gettimeofday(&myend, NULL);
-      l_cur_thread_time[mytid] = sec(mystart, myend);
-      l_total_thread[mytid] += sec(mystart, myend);
+      l_cur_thread_time[mytid] = sec( mystart, myend );
+      l_total_thread[mytid] += sec( mystart, myend );
 #if defined(_OPENMP)
       #pragma omp barrier
 #endif
+      /* checking for amoks is centralized business */
       if (mytid == 0) {
-        amok_detect(l_cur_thread_time, amoks, l_num_threads); 
+        /* amok check */
+        amok_detect( l_cur_thread_time, amoks, l_num_threads ); 
       }
 #if defined(_OPENMP)
       #pragma omp barrier
