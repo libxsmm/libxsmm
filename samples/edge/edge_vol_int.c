@@ -56,7 +56,7 @@ void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
     num_large_pages++;
   }
   nbytes = (size_t) num_large_pages * 1073741824L;
-  printf("trying to allocate %ld 1G pages\n", num_large_pages); 
+  printf("trying to allocate %ld 1G pages\n", num_large_pages);
   /*ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | MAP_HUGE_1GB, -1, 0 );*/
   ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB | MAP_HUGE_1GB, -1, 0 );
   if ( (ret_ptr == (void *)(-1)) ) {
@@ -69,13 +69,13 @@ void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
     num_large_pages++;
   }
   nbytes = (size_t) num_large_pages * 2097152UL;
-  printf("trying to allocate %ld 2M pages\n", num_large_pages); 
+  printf("trying to allocate %ld 2M pages\n", num_large_pages);
   /*ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB, -1, 0 );*/
   ret_ptr = mmap( NULL, nbytes, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_PRIVATE | MAP_HUGETLB, -1, 0 );
   if ( (ret_ptr == (void *)(-1)) ) {
     fprintf(stderr,"2M mmap call failed\n");
     exit(1);
-  } 
+  }
 #else
   ret_ptr = libxsmm_aligned_malloc( nbytes, alignment );
 #endif
@@ -90,7 +90,7 @@ void edge_hp_free( void* ptr,  size_t nbytes ) {
 #else
   libxsmm_free( ptr );
 #endif
-} 
+}
 
 static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
@@ -141,8 +141,8 @@ void amok_balance( const size_t* i_amoks, const size_t i_workers, const size_t i
 
   *io_chunk   = l_chunk;
   *io_mystart = l_start;
-  *io_myend   = l_end; 
-} 
+  *io_myend   = l_end;
+}
 
 int main(int argc, char* argv[])
 {
@@ -386,7 +386,7 @@ int main(int argc, char* argv[])
       /* checking for amoks is centralized business */
       if (mytid == 0) {
         /* amok check */
-        amok_detect( l_cur_thread_time, amoks, l_num_threads ); 
+        amok_detect( l_cur_thread_time, amoks, l_num_threads );
       }
 #if defined(_OPENMP)
       #pragma omp barrier
@@ -401,13 +401,13 @@ int main(int argc, char* argv[])
   time_min = 80000000;
   time_avg = 0.0;
   for (i = 0; i < (int)l_num_threads; i++) {
-    if( amoks[i] == 0 ) { 
+    if( amoks[i] == 0 ) {
       if( l_total_thread[i] > time_max) time_max = l_total_thread[i];
       if( l_total_thread[i] < time_min) time_min = l_total_thread[i];
       time_avg += l_total_thread[i];
     }
   }
-  time_avg = time_avg/((double)(l_num_threads-amoks[l_num_threads])); 
+  time_avg = time_avg/((double)(l_num_threads-amoks[l_num_threads]));
 
   flops_vol  = (double)num_quants * (double)mat_a_nnz * (double)num_cfr * 2.0;
   flops_vol += (double)num_quants * (double)mat_b_nnz * (double)num_cfr * 2.0;
