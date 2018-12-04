@@ -108,18 +108,19 @@ static void matMulFusedAC(       unsigned short  i_r,
                            const double      *i_a,
                            const double      *i_b,
                                  double      *o_c ) {
+  unsigned int l_m, l_n, l_k;
   // init result matrix
-  for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
-    for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+  for( l_m = 0; l_m < i_m; l_m++ ) {
+    for( l_n = 0; l_n < i_n; l_n++ ) {
       __m512d vc = (i_beta != 0.0) ? _mm512_mul_pd( _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) ), _mm512_set1_pd( i_beta ) ) : _mm512_setzero_pd();
       _mm512_storeu_pd(&(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc); 
     }
   }
 
-  for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
-    for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+  for( l_m = 0; l_m < i_m; l_m++ ) {
+    for( l_n = 0; l_n < i_n; l_n++ ) {
       __m512d vc = _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) );
-      for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
+      for( l_k = 0; l_k < i_k; l_k++ ) {
         vc = _mm512_fmadd_pd( _mm512_set1_pd( i_b[l_k*i_ldB + l_n] ), _mm512_loadu_pd( &(i_a[l_m*i_ldA*8 + l_k*8 + 0]) ), vc); 
       }
       _mm512_storeu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc ); 
@@ -139,18 +140,19 @@ static void matMulFusedBC(        unsigned short  i_r,
                             const double      *i_a,
                             const double      *i_b,
                                   double      *o_c ) {
+  unsigned int l_m, l_n, l_k;
   // init result matrix
-  for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
-    for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+  for( l_m = 0; l_m < i_m; l_m++ ) {
+    for( l_n = 0; l_n < i_n; l_n++ ) {
       __m512d vc = (i_beta != 0.0) ? _mm512_mul_pd( _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) ), _mm512_set1_pd( i_beta ) ) : _mm512_setzero_pd();
       _mm512_storeu_pd(&(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc); 
     }
   }
 
-  for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
-    for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+  for( l_m = 0; l_m < i_m; l_m++ ) {
+    for( l_n = 0; l_n < i_n; l_n++ ) {
       __m512d vc = _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) );
-      for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
+      for( l_k = 0; l_k < i_k; l_k++ ) {
         vc = _mm512_fmadd_pd( _mm512_set1_pd( i_a[l_m*i_ldA + l_k] ), _mm512_loadu_pd( &(i_b[l_k*i_ldB*8 + l_n*8 + 0]) ), vc); 
       }
       _mm512_storeu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc ); 
