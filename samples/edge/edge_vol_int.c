@@ -42,6 +42,7 @@
 #include <sys/time.h>
 
 /*#define EDGE_HP_1G*/
+/*#define HANDLE_AMOK*/
 
 #if defined(EDGE_HP_1G) || defined(EDGE_HP_2M)
 #include <sys/mman.h>
@@ -359,6 +360,7 @@ int main(int argc, char* argv[])
     /* inital work distribution */
     amok_balance( amoks, l_num_threads, num_elems, mytid, &l_el_chunk, &l_el_start, &l_el_end );
     for (i = 0; i < (int)num_reps; i++) {
+#if defined(HANDLE_AMOK)
       /* did we had an amok? */
       if (cur_amoks != amoks[l_num_threads]) {
         cur_amoks = amoks[l_num_threads];
@@ -366,6 +368,7 @@ int main(int argc, char* argv[])
         /* re-balance work */
         amok_balance( amoks, l_num_threads, num_elems, mytid, &l_el_chunk, &l_el_start, &l_el_end );
       }
+#endif
       gettimeofday(&mystart, NULL);
       for (j = l_el_start; j < l_el_end; j++) {
         st_kernel( star+(j*3*mat_st_nnz)               , qt+(j*elem_size), qs+(mytid*elem_size) );
@@ -383,6 +386,7 @@ int main(int argc, char* argv[])
 #if defined(_OPENMP)
       #pragma omp barrier
 #endif
+#if defined(HANDLE_AMOK)
       /* checking for amoks is centralized business */
       if (mytid == 0) {
         /* amok check */
@@ -390,6 +394,7 @@ int main(int argc, char* argv[])
       }
 #if defined(_OPENMP)
       #pragma omp barrier
+#endif
 #endif
     }
   }
