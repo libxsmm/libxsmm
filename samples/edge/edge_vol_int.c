@@ -97,6 +97,68 @@ static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
 }
 
+static void matMulFusedAC(       unsigned short  i_r,
+                                 unsigned int    i_m,
+                                 unsigned int    i_n,
+                                 unsigned int    i_k,
+                                 unsigned int    i_ldA,
+                                 unsigned int    i_ldB,
+                                 unsigned int    i_ldC,
+                                 double       i_beta,
+                           const double      *i_a,
+                           const double      *i_b,
+                                 double      *o_c ) {
+  // init result matrix
+  for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
+    for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+      __m512d vc = (i_beta != 0.0) ? _mm512_mul_pd( _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) ), _mm512_set1_pd( i_beta ) ) : _mm512_setzero_pd();
+      _mm512_storeu_pd(&(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc); 
+    }
+  }
+
+  for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
+    for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+      __m512d vc = _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) );
+      for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
+        vc = _mm512_fmadd_pd( _mm512_set1_pd( i_b[l_k*i_ldB + l_n] ), _mm512_loadu_pd( &(i_a[l_m*i_ldA*8 + l_k*8 + 0]) ), vc); 
+      }
+      _mm512_storeu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc ); 
+    }
+  }
+}
+
+
+static void matMulFusedBC(        unsigned short  i_r,
+                                  unsigned int    i_m,
+                                  unsigned int    i_n,
+                                  unsigned int    i_k,
+                                  unsigned int    i_ldA,
+                                  unsigned int    i_ldB,
+                                  unsigned int    i_ldC,
+                                  double       i_beta,
+                            const double      *i_a,
+                            const double      *i_b,
+                                  double      *o_c ) {
+  // init result matrix
+  for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
+    for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+      __m512d vc = (i_beta != 0.0) ? _mm512_mul_pd( _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) ), _mm512_set1_pd( i_beta ) ) : _mm512_setzero_pd();
+      _mm512_storeu_pd(&(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc); 
+    }
+  }
+
+  for( unsigned int l_m = 0; l_m < i_m; l_m++ ) {
+    for( unsigned int l_n = 0; l_n < i_n; l_n++ ) {
+      __m512d vc = _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) );
+      for( unsigned int l_k = 0; l_k < i_k; l_k++ ) {
+        vc = _mm512_fmadd_pd( _mm512_set1_pd( i_a[l_m*i_ldA + l_k] ), _mm512_loadu_pd( &(i_b[l_k*i_ldB*8 + l_n*8 + 0]) ), vc); 
+      }
+      _mm512_storeu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc ); 
+    }
+  }
+}
+
+
 void amok_detect( const double* i_runtimes, size_t* io_amoks, const size_t i_workers ) {
   double time_avg;
   size_t i;
@@ -371,6 +433,7 @@ int main(int argc, char* argv[])
 #endif
       gettimeofday(&mystart, NULL);
       for (j = l_el_start; j < l_el_end; j++) {
+#if 1
         st_kernel( star+(j*3*mat_st_nnz)               , qt+(j*elem_size), qs+(mytid*elem_size) );
         a_kernel( qs+(mytid*elem_size), global                        , q+(j*elem_size) );
 
@@ -379,6 +442,17 @@ int main(int argc, char* argv[])
 
         st_kernel( star+(j*3*mat_st_nnz)+(2*mat_st_nnz), qt+(j*elem_size), qs+(mytid*elem_size) );
         c_kernel( qs+(mytid*elem_size), global+(2*num_modes*num_modes), q+(j*elem_size) );
+#else
+        matMulFusedBC( 8, num_quants, num_modes, num_quants, num_quants, num_modes, num_modes, 1.0, star+(j*3*mat_st_nnz), qt+(j*elem_size), qs+(mytid*elem_size) );
+        matMulFusedAC( 8, num_quants, num_modes, num_modes,  num_modes,  num_modes, num_modes, 1.0, qs+(mytid*elem_size), global, q+(j*elem_size) );
+
+        matMulFusedBC( 8, num_quants, num_modes, num_quants, num_quants, num_modes, num_modes, 1.0, star+(j*3*mat_st_nnz)+mat_st_nnz, qt+(j*elem_size), qs+(mytid*elem_size) );
+        matMulFusedAC( 8, num_quants, num_modes, num_modes,  num_modes,  num_modes, num_modes, 1.0, qs+(mytid*elem_size), global+(num_modes*num_modes)  , q+(j*elem_size) );
+
+        matMulFusedBC( 8, num_quants, num_modes, num_quants, num_quants, num_modes, num_modes, 1.0, star+(j*3*mat_st_nnz)+(2*mat_st_nnz), qt+(j*elem_size), qs+(mytid*elem_size) );
+        matMulFusedAC( 8, num_quants, num_modes, num_modes,  num_modes,  num_modes, num_modes, 1.0, qs+(mytid*elem_size), global+(2*num_modes*num_modes), q+(j*elem_size) );
+
+#endif
       }
       gettimeofday(&myend, NULL);
       l_cur_thread_time[mytid] = sec( mystart, myend );
