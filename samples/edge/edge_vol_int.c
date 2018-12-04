@@ -109,7 +109,6 @@ static void matMulFusedAC(       unsigned short  i_r,
                            const double      *i_b,
                                  double      *o_c ) {
   unsigned int l_m, l_n, l_k;
-  // init result matrix
   for( l_m = 0; l_m < i_m; l_m++ ) {
     for( l_n = 0; l_n < i_n; l_n++ ) {
       __m512d vc = (i_beta != 0.0) ? _mm512_mul_pd( _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) ), _mm512_set1_pd( i_beta ) ) : _mm512_setzero_pd();
@@ -141,7 +140,6 @@ static void matMulFusedBC(        unsigned short  i_r,
                             const double      *i_b,
                                   double      *o_c ) {
   unsigned int l_m, l_n, l_k;
-  // init result matrix
   for( l_m = 0; l_m < i_m; l_m++ ) {
     for( l_n = 0; l_n < i_n; l_n++ ) {
       __m512d vc = (i_beta != 0.0) ? _mm512_mul_pd( _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) ), _mm512_set1_pd( i_beta ) ) : _mm512_setzero_pd();
