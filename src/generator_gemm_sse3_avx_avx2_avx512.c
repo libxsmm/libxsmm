@@ -90,17 +90,14 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R8;
   /* If we are generating the batchreduce kernel, then we rename the registers  */
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
-    l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_R10;
-    l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_R11;
-    l_gp_reg_mapping.gp_reg_a_array = LIBXSMM_X86_GP_REG_RDI;
-    l_gp_reg_mapping.gp_reg_b_array = LIBXSMM_X86_GP_REG_RSI;
+    l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RDI;
+    l_gp_reg_mapping.gp_reg_b = LIBXSMM_X86_GP_REG_RSI;
     l_gp_reg_mapping.gp_reg_c = LIBXSMM_X86_GP_REG_RDX;
     l_gp_reg_mapping.gp_reg_reduce_count = LIBXSMM_X86_GP_REG_RCX;
     l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R8;
     l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R9;
-    l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_R15;
-    l_gp_reg_mapping.gp_reg_current_a = LIBXSMM_X86_GP_REG_R12;
-    l_gp_reg_mapping.gp_reg_current_b = LIBXSMM_X86_GP_REG_R13;
+    l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_R10;
+    l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_R12;
   }
 #endif
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
@@ -132,10 +129,8 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   /* open asm */
   libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
 
-  /* Zero out offstes for reg_a and reg_b  */
+  /* Load the actual batch-reduce trip count */
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_a, 0);
-    libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_b, 0);
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         l_micro_kernel_config.alu_mov_instruction,
         l_gp_reg_mapping.gp_reg_reduce_count,
@@ -188,38 +183,26 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
 
           if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_mloop);
-            libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_nloop);
-            libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a);
-            libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_b);
-
             /* This is the reduce loop  */
             libxsmm_generator_gemm_header_reduceloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config );
-
-            libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_b );
-            libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a );
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a);
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_b);
-
             /* load to reg_a the proper array based on the reduce loop index  */
             libxsmm_x86_instruction_alu_mem( io_generated_code,
                 l_micro_kernel_config.alu_mov_instruction,
-                l_gp_reg_mapping.gp_reg_a_array,
+                l_gp_reg_mapping.gp_reg_a,
                 l_gp_reg_mapping.gp_reg_reduce_loop, 8,
                 0,
-                l_gp_reg_mapping.gp_reg_current_a,
+                l_gp_reg_mapping.gp_reg_a,
                 0 );
-
             /* load to reg_b the proper array based on the reduce loop index  */
             libxsmm_x86_instruction_alu_mem( io_generated_code,
                 l_micro_kernel_config.alu_mov_instruction,
-                l_gp_reg_mapping.gp_reg_b_array,
+                l_gp_reg_mapping.gp_reg_b,
                 l_gp_reg_mapping.gp_reg_reduce_loop, 8,
                 0,
-                l_gp_reg_mapping.gp_reg_current_b,
+                l_gp_reg_mapping.gp_reg_b,
                 0 );
-
-            libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_current_a, l_gp_reg_mapping.gp_reg_a);
-            libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_current_b, l_gp_reg_mapping.gp_reg_b);
           }
 
           /* apply multiple k_blocking strategies */
@@ -271,18 +254,26 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
 
           /* If we are generating the batchreduce kernel, then we rename the registers  */
           if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
+            /* Pop address of B_array to help_0 and store proper address of B   */
+            libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
+            libxsmm_x86_instruction_alu_mem( io_generated_code,
+                l_micro_kernel_config.alu_mov_instruction,
+                l_gp_reg_mapping.gp_reg_help_0,
+                l_gp_reg_mapping.gp_reg_reduce_loop, 8,
+                0,
+                l_gp_reg_mapping.gp_reg_b,
+                1 );
+            libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_b);
+            libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
+            libxsmm_x86_instruction_alu_mem( io_generated_code,
+                l_micro_kernel_config.alu_mov_instruction,
+                l_gp_reg_mapping.gp_reg_help_0,
+                l_gp_reg_mapping.gp_reg_reduce_loop, 8,
+                0,
+                l_gp_reg_mapping.gp_reg_a,
+                1 );
+            libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a);
             libxsmm_generator_gemm_footer_reduceloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc);
-
-            /* drain two top entries from the stack  */
-            libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_reduce_loop );
-            libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_reduce_loop );
-
-            /* Update with the proper offsets after the k loop */
-            libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_sub_instruction, l_gp_reg_mapping.gp_reg_current_a, l_gp_reg_mapping.gp_reg_a);
-            libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_sub_instruction, l_gp_reg_mapping.gp_reg_current_b, l_gp_reg_mapping.gp_reg_b);
-
-            /* Recover proper values for n/m loops  */
-            libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_nloop );
             libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_mloop );
           }
 
