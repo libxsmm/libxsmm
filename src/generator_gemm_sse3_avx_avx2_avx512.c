@@ -252,7 +252,6 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
             }
           }
 
-          /* If we are generating the batchreduce kernel, then we rename the registers  */
           if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
             /* Pop address of B_array to help_0 and store proper address of B   */
             libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
