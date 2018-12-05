@@ -54,7 +54,7 @@
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_trmm_avx_avx512_kernel( libxsmm_generated_code*        io_code,
-                                                       const libxsmm_trsm_descriptor* i_packed_trsm_desc,
+                                                       const libxsmm_trmm_descriptor* i_packed_trmm_desc,
                                                        const char*                    i_arch )
 {
   unsigned char *const buf = (unsigned char *) io_code->generated_code;
@@ -121,17 +121,17 @@ void libxsmm_generator_packed_trmm_avx_avx512_kernel( libxsmm_generated_code*   
   if ( io_code->code_type > 1 )
   {
      unsigned int i = io_code->code_size;
-     unsigned int m = i_packed_trsm_desc->m;
-     unsigned int n = i_packed_trsm_desc->n;
-     unsigned int lda = i_packed_trsm_desc->lda;
-     unsigned int ldb = i_packed_trsm_desc->ldb;
-     char trans = i_packed_trsm_desc->transa;
-     char side = i_packed_trsm_desc->side;
-     char uplo = i_packed_trsm_desc->uplo;
-     char diag = i_packed_trsm_desc->diag;
-     const unsigned int lay = (unsigned int)i_packed_trsm_desc->layout;
-     unsigned int datasz = (unsigned int)i_packed_trsm_desc->typesize;
-     const double alpha = (8 == datasz ? i_packed_trsm_desc->alpha.d : ((double)i_packed_trsm_desc->alpha.s));
+     unsigned int m = i_packed_trmm_desc->m;
+     unsigned int n = i_packed_trmm_desc->n;
+     unsigned int lda = i_packed_trmm_desc->lda;
+     unsigned int ldb = i_packed_trmm_desc->ldb;
+     char trans = i_packed_trmm_desc->transa;
+     char side = i_packed_trmm_desc->side;
+     char uplo = i_packed_trmm_desc->uplo;
+     char diag = i_packed_trmm_desc->diag;
+     const unsigned int lay = (unsigned int)i_packed_trmm_desc->layout;
+     unsigned int datasz = (unsigned int)i_packed_trmm_desc->typesize;
+     const double alpha = (8 == datasz ? i_packed_trmm_desc->alpha.d : ((double)i_packed_trmm_desc->alpha.s));
      unsigned int m1=m, n1=n;
      unsigned int j, k;
      /*int REGSIZE;*/
@@ -142,9 +142,9 @@ void libxsmm_generator_packed_trmm_avx_avx512_kernel( libxsmm_generated_code*   
 
      if ( lay == 101 )
      {
-        if (i_packed_trsm_desc->side == 'L' || i_packed_trsm_desc->side == 'l' ) side = 'R';
+        if (i_packed_trmm_desc->side == 'L' || i_packed_trmm_desc->side == 'l' ) side = 'R';
         else side = 'L';
-        if (i_packed_trsm_desc->uplo == 'L' || i_packed_trsm_desc->uplo == 'l' ) uplo = 'U';
+        if (i_packed_trmm_desc->uplo == 'L' || i_packed_trmm_desc->uplo == 'l' ) uplo = 'U';
         else uplo = 'L';
         m1 = n; n1 = m;
      }
