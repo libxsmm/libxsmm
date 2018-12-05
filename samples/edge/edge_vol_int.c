@@ -42,6 +42,7 @@
 #include <sys/time.h>
 
 /*#define EDGE_HP_1G*/
+/*#define HANDLE_AMOK*/
 
 #if defined(EDGE_HP_1G) || defined(EDGE_HP_2M)
 #include <sys/mman.h>
@@ -96,22 +97,85 @@ static double sec(struct timeval start, struct timeval end) {
   return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
 }
 
+#if defined(__AVX512F__)
+static void matMulFusedAC(       unsigned short  i_r,
+                                 unsigned int    i_m,
+                                 unsigned int    i_n,
+                                 unsigned int    i_k,
+                                 unsigned int    i_ldA,
+                                 unsigned int    i_ldB,
+                                 unsigned int    i_ldC,
+                                 double       i_beta,
+                           const double      *i_a,
+                           const double      *i_b,
+                                 double      *o_c ) {
+  unsigned int l_m, l_n, l_k;
+  for( l_m = 0; l_m < i_m; l_m++ ) {
+    for( l_n = 0; l_n < i_n; l_n++ ) {
+      __m512d vc = (i_beta != 0.0) ? _mm512_mul_pd( _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) ), _mm512_set1_pd( i_beta ) ) : _mm512_setzero_pd();
+      _mm512_storeu_pd(&(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc); 
+    }
+  }
+
+  for( l_m = 0; l_m < i_m; l_m++ ) {
+    for( l_n = 0; l_n < i_n; l_n++ ) {
+      __m512d vc = _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) );
+      for( l_k = 0; l_k < i_k; l_k++ ) {
+        vc = _mm512_fmadd_pd( _mm512_set1_pd( i_b[l_k*i_ldB + l_n] ), _mm512_loadu_pd( &(i_a[l_m*i_ldA*8 + l_k*8 + 0]) ), vc); 
+      }
+      _mm512_storeu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc ); 
+    }
+  }
+}
+
+
+static void matMulFusedBC(        unsigned short  i_r,
+                                  unsigned int    i_m,
+                                  unsigned int    i_n,
+                                  unsigned int    i_k,
+                                  unsigned int    i_ldA,
+                                  unsigned int    i_ldB,
+                                  unsigned int    i_ldC,
+                                  double       i_beta,
+                            const double      *i_a,
+                            const double      *i_b,
+                                  double      *o_c ) {
+  unsigned int l_m, l_n, l_k;
+  for( l_m = 0; l_m < i_m; l_m++ ) {
+    for( l_n = 0; l_n < i_n; l_n++ ) {
+      __m512d vc = (i_beta != 0.0) ? _mm512_mul_pd( _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) ), _mm512_set1_pd( i_beta ) ) : _mm512_setzero_pd();
+      _mm512_storeu_pd(&(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc); 
+    }
+  }
+
+  for( l_m = 0; l_m < i_m; l_m++ ) {
+    for( l_n = 0; l_n < i_n; l_n++ ) {
+      __m512d vc = _mm512_loadu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]) );
+      for( l_k = 0; l_k < i_k; l_k++ ) {
+        vc = _mm512_fmadd_pd( _mm512_set1_pd( i_a[l_m*i_ldA + l_k] ), _mm512_loadu_pd( &(i_b[l_k*i_ldB*8 + l_n*8 + 0]) ), vc); 
+      }
+      _mm512_storeu_pd( &(o_c[l_m*i_ldC*8 + l_n*8 + 0]), vc ); 
+    }
+  }
+}
+#endif
+
 void amok_detect( const double* i_runtimes, size_t* io_amoks, const size_t i_workers ) {
   double time_avg;
   size_t i;
   time_avg = 0.0;
   for (i = 0; i < i_workers; i++) {
-    if ( io_amoks[i] == 0 ) {
-      time_avg += i_runtimes[i];
+    if ( io_amoks[8*i] == 0 ) {
+      time_avg += i_runtimes[8*i];
     }
   }
-  time_avg = time_avg/((double)(i_workers-io_amoks[i_workers]));
+  time_avg = time_avg/((double)(i_workers-io_amoks[8*i_workers]));
   /* let detect amoks */
   for (i = 0; i < i_workers; i++) {
-    if ( io_amoks[i] == 0 ) {
-      if ( i_runtimes[i] > time_avg*1.07 ) { /* this is the amok condition */
-        io_amoks[i_workers]++;
-        io_amoks[i] = 1;
+    if ( io_amoks[8*i] == 0 ) {
+      if ( i_runtimes[8*i] > time_avg*1.07 ) { /* this is the amok condition */
+        io_amoks[8*i_workers]++;
+        io_amoks[8*i] = 1;
       }
     }
   }
@@ -119,18 +183,18 @@ void amok_detect( const double* i_runtimes, size_t* io_amoks, const size_t i_wor
 
 void amok_balance( const size_t* i_amoks, const size_t i_workers, const size_t i_worksize, const size_t i_mytid, size_t* io_chunk, size_t* io_mystart, size_t* io_myend ) {
   size_t l_chunk, l_start, l_end;
-  size_t l_cur_amoks = i_amoks[i_workers];
+  size_t l_cur_amoks = i_amoks[8*i_workers];
   size_t l_non_amoks = i_workers - l_cur_amoks;
 
   l_chunk = (i_worksize % l_non_amoks == 0) ? (i_worksize / l_non_amoks) : ((i_worksize / l_non_amoks) + 1);
-  if (i_amoks[i_mytid] != 0) {
+  if (i_amoks[8*i_mytid] != 0) {
     l_start = 0;
     l_end = 0;
   } else {
     size_t l_tid_offset = 0;
     size_t l_z;
     for ( l_z = 0; l_z < i_mytid; l_z++) {
-      if ( i_amoks[l_z] != 0 ) {
+      if ( i_amoks[8*l_z] != 0 ) {
         l_tid_offset++;
       }
     }
@@ -234,10 +298,10 @@ int main(int argc, char* argv[])
 #else
   l_num_threads = 1;
 #endif
-  l_total_thread = (double*)malloc(l_num_threads*sizeof(double));
-  l_cur_thread_time = (double*)malloc(l_num_threads*sizeof(double));
-  amoks = (size_t*)malloc((l_num_threads+1)*sizeof(size_t));
-  for ( i = 0; i < l_num_threads+1; i++ ) {
+  l_total_thread = (double*)malloc(8*l_num_threads*sizeof(double));
+  l_cur_thread_time = (double*)malloc(8*l_num_threads*sizeof(double));
+  amoks = (size_t*)malloc(8*(l_num_threads+1)*sizeof(size_t));
+  for ( i = 0; i < 8*(l_num_threads+1); i++ ) {
     amoks[i] = 0;
   }
 
@@ -359,15 +423,18 @@ int main(int argc, char* argv[])
     /* inital work distribution */
     amok_balance( amoks, l_num_threads, num_elems, mytid, &l_el_chunk, &l_el_start, &l_el_end );
     for (i = 0; i < (int)num_reps; i++) {
+#if defined(HANDLE_AMOK)
       /* did we had an amok? */
-      if (cur_amoks != amoks[l_num_threads]) {
-        cur_amoks = amoks[l_num_threads];
+      if (cur_amoks != amoks[8*l_num_threads]) {
+        cur_amoks = amoks[8*l_num_threads];
         non_amoks = l_num_threads - cur_amoks;
         /* re-balance work */
         amok_balance( amoks, l_num_threads, num_elems, mytid, &l_el_chunk, &l_el_start, &l_el_end );
       }
+#endif
       gettimeofday(&mystart, NULL);
       for (j = l_el_start; j < l_el_end; j++) {
+#if 1
         st_kernel( star+(j*3*mat_st_nnz)               , qt+(j*elem_size), qs+(mytid*elem_size) );
         a_kernel( qs+(mytid*elem_size), global                        , q+(j*elem_size) );
 
@@ -376,13 +443,25 @@ int main(int argc, char* argv[])
 
         st_kernel( star+(j*3*mat_st_nnz)+(2*mat_st_nnz), qt+(j*elem_size), qs+(mytid*elem_size) );
         c_kernel( qs+(mytid*elem_size), global+(2*num_modes*num_modes), q+(j*elem_size) );
+#else
+        matMulFusedBC( 8, num_quants, num_modes, num_quants, num_quants, num_modes, num_modes, 1.0, star+(j*3*mat_st_nnz), qt+(j*elem_size), qs+(mytid*elem_size) );
+        matMulFusedAC( 8, num_quants, num_modes, num_modes,  num_modes,  num_modes, num_modes, 1.0, qs+(mytid*elem_size), global, q+(j*elem_size) );
+
+        matMulFusedBC( 8, num_quants, num_modes, num_quants, num_quants, num_modes, num_modes, 1.0, star+(j*3*mat_st_nnz)+mat_st_nnz, qt+(j*elem_size), qs+(mytid*elem_size) );
+        matMulFusedAC( 8, num_quants, num_modes, num_modes,  num_modes,  num_modes, num_modes, 1.0, qs+(mytid*elem_size), global+(num_modes*num_modes)  , q+(j*elem_size) );
+
+        matMulFusedBC( 8, num_quants, num_modes, num_quants, num_quants, num_modes, num_modes, 1.0, star+(j*3*mat_st_nnz)+(2*mat_st_nnz), qt+(j*elem_size), qs+(mytid*elem_size) );
+        matMulFusedAC( 8, num_quants, num_modes, num_modes,  num_modes,  num_modes, num_modes, 1.0, qs+(mytid*elem_size), global+(2*num_modes*num_modes), q+(j*elem_size) );
+
+#endif
       }
       gettimeofday(&myend, NULL);
-      l_cur_thread_time[mytid] = sec( mystart, myend );
-      l_total_thread[mytid] += sec( mystart, myend );
+      l_cur_thread_time[8*mytid] = sec( mystart, myend );
+      l_total_thread[8*mytid] += sec( mystart, myend );
 #if defined(_OPENMP)
       #pragma omp barrier
 #endif
+#if defined(HANDLE_AMOK)
       /* checking for amoks is centralized business */
       if (mytid == 0) {
         /* amok check */
@@ -390,6 +469,7 @@ int main(int argc, char* argv[])
       }
 #if defined(_OPENMP)
       #pragma omp barrier
+#endif
 #endif
     }
   }
@@ -401,21 +481,21 @@ int main(int argc, char* argv[])
   time_min = 80000000;
   time_avg = 0.0;
   for (i = 0; i < (int)l_num_threads; i++) {
-    if( amoks[i] == 0 ) { 
-      if( l_total_thread[i] > time_max) time_max = l_total_thread[i];
-      if( l_total_thread[i] < time_min) time_min = l_total_thread[i];
-      time_avg += l_total_thread[i];
+    if( amoks[8*i] == 0 ) { 
+      if( l_total_thread[8*i] > time_max) time_max = l_total_thread[8*i];
+      if( l_total_thread[8*i] < time_min) time_min = l_total_thread[8*i];
+      time_avg += l_total_thread[8*i];
     }
   }
-  time_avg = time_avg/((double)(l_num_threads-amoks[l_num_threads])); 
+  time_avg = time_avg/((double)(l_num_threads-amoks[8*l_num_threads])); 
 
   flops_vol  = (double)num_quants * (double)mat_a_nnz * (double)num_cfr * 2.0;
   flops_vol += (double)num_quants * (double)mat_b_nnz * (double)num_cfr * 2.0;
   flops_vol += (double)num_quants * (double)mat_c_nnz * (double)num_cfr * 2.0;
   flops_vol += (double)num_modes * (double)mat_st_nnz * (double)num_cfr * 6.0; /* 3 star matrix mul */
-  printf("%fs time for vol (asm), min %f, max %f, avg %f, #amoks %ld, amok-threads ", l_total, time_min, time_max, time_avg, amoks[l_num_threads]);
+  printf("%fs time for vol (asm), min %f, max %f, avg %f, #amoks %ld, amok-threads ", l_total, time_min, time_max, time_avg, amoks[8*l_num_threads]);
   for ( i = 0; i < l_num_threads; i++ ) {
-    if ( amoks[i] != 0 ) {
+    if ( amoks[8*i] != 0 ) {
       printf("%i,", i);
     }
   }
