@@ -2097,7 +2097,7 @@ LIBXSMM_API libxsmm_wsmmfunction libxsmm_wsmmdispatch(libxsmm_blasint m, libxsmm
 
 
 LIBXSMM_API libxsmm_dmmfunction_reducebatch libxsmm_dmmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta)
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta, const int* prefetch)
 {
   libxsmm_descriptor_blob blob;
   const libxsmm_gemm_descriptor *const desc = libxsmm_dgemm_descriptor_init(&blob,
@@ -2109,13 +2109,13 @@ LIBXSMM_API libxsmm_dmmfunction_reducebatch libxsmm_dmmdispatch_reducebatch(libx
 
 
 LIBXSMM_API libxsmm_smmfunction_reducebatch libxsmm_smmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta)
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* prefetch)
 {
   libxsmm_descriptor_blob blob;
   const libxsmm_gemm_descriptor *const desc = libxsmm_sgemm_descriptor_init(&blob,
     m, n, k, 0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
     0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
-    LIBXSMM_GEMM_FLAG_BATCH_REDUCE, LIBXSMM_GEMM_PREFETCH_NONE/*todo*/);
+    LIBXSMM_GEMM_FLAG_BATCH_REDUCE,  libxsmm_get_gemm_xprefetch(prefetch));
   return libxsmm_xmmdispatch(desc).smr;
 }
 
