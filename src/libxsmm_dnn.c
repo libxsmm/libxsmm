@@ -141,6 +141,12 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: Unsupported pooling operations was requested!";
     case LIBXSMM_DNN_ERR_INVALID_FORMAT_FC:
       return "LIBXSMM DNN Error: Unsupported format when requesting a fullyconnected layer!";
+    case LIBXSMM_DNN_ERR_RNN_N_BLOCKING:
+      return "LIBXSMM DNN Error: RNN cell invalid minibatch blocking!";
+    case LIBXSMM_DNN_ERR_RNN_C_BLOCKING:
+      return "LIBXSMM DNN Error: RNN cell invalid input feature blocking!";
+    case LIBXSMM_DNN_ERR_RNN_K_BLOCKING:
+      return "LIBXSMM DNN Error: RNN cell invalid output feature blocking!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occurred!";
   }
