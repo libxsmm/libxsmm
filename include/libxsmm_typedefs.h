@@ -139,6 +139,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor li
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor libxsmm_trsm_descriptor;
 /** Structure storing arguments of packed TRMM. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor libxsmm_trmm_descriptor;
+/** Structure storing arguments of packed GETRF. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_getrf_descriptor libxsmm_getrf_descriptor;
 /** Structure storing arguments of packed GEMM. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_pgemm_descriptor libxsmm_pgemm_descriptor;
 /** Structure storing arguments of packed GETRF. */

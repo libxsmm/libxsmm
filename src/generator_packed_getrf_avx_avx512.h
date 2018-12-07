@@ -36,7 +36,7 @@
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_getrf_avx_avx512_kernel( libxsmm_generated_code*                 io_generated_code,
-                                                       const libxsmm_trsm_descriptor*  i_packed_trsm_desc,
+                                                       const libxsmm_getrf_descriptor*  i_packed_getrf_desc,
                                                        const char*                             i_arch );
 
 #endif /*GENERATOR_PACKED_GETRF_AVX_AVX512_H*/
