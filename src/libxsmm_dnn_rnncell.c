@@ -67,19 +67,16 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->bn = 64;
     handle->bc = 64;
     if ( handle->desc.N % handle->bn != 0 ) {
-      *status = LIBXSMM_DNN_ERR_RNN_N_BLOCKING;
-      free(handle);
-      return 0;
+      handle->bn = handle->desc.N; 
+      *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING;
     }
     if ( handle->desc.C % handle->bc != 0 ) {
-      *status = LIBXSMM_DNN_ERR_RNN_C_BLOCKING;
-      free(handle);
-      return 0;
+      handle->bc = handle->desc.C;
+      *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_C_BLOCKING;
     }
     if ( handle->desc.K % handle->bk != 0 ) {
-      *status = LIBXSMM_DNN_ERR_RNN_K_BLOCKING;
-      free(handle);
-      return 0;
+      handle->bk = handle->desc.K;
+      *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_K_BLOCKING;
     }
      if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
       handle->fwd_generic = 0;
