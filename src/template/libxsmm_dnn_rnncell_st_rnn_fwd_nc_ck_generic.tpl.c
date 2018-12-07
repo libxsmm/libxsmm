@@ -54,8 +54,8 @@ LIBXSMM_VLA_DECL(2, element_filter_type, r, rD, K);
 LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, z, zt, N, K);
 /* define gemm kernels */
-libxsmm_smmfunction_reducebatch batchreduce_kernela =  libxsmm_smmdispatch_reducebatch( bk, bn, bc, &K, &C, &K, NULL, NULL );
-libxsmm_smmfunction_reducebatch batchreduce_kernelb =  libxsmm_smmdispatch_reducebatch( bk, bn, bk, &K, &K, &K, NULL, NULL );
+libxsmm_smmfunction_reducebatch batchreduce_kernela =  libxsmm_smmdispatch_reducebatch( bk, bn, bc, &K, &C, &K, NULL, NULL, NULL );
+libxsmm_smmfunction_reducebatch batchreduce_kernelb =  libxsmm_smmdispatch_reducebatch( bk, bn, bk, &K, &K, &K, NULL, NULL, NULL );
 
 /* parallelize over C-blocks */
 /* computing first logical thread */

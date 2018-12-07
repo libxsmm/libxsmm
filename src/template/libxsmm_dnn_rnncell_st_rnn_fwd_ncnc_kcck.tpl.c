@@ -1,33 +1,33 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
-** All rights reserved.                                                      **
-**                                                                           **
-** Redistribution and use in source and binary forms, with or without        **
-** modification, are permitted provided that the following conditions        **
-** are met:                                                                  **
-** 1. Redistributions of source code must retain the above copyright         **
-**    notice, this list of conditions and the following disclaimer.          **
-** 2. Redistributions in binary form must reproduce the above copyright      **
-**    notice, this list of conditions and the following disclaimer in the    **
-**    documentation and/or other materials provided with the distribution.   **
-** 3. Neither the name of the copyright holder nor the names of its          **
-**    contributors may be used to endorse or promote products derived        **
-**    from this software without specific prior written permission.          **
-**                                                                           **
-** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
-** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
-** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
-** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
-** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
-** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
-** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
-** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
-** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
-** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
-** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
-******************************************************************************/
+ ** Copyright (c) 2017-2018, Intel Corporation                                **
+ ** All rights reserved.                                                      **
+ **                                                                           **
+ ** Redistribution and use in source and binary forms, with or without        **
+ ** modification, are permitted provided that the following conditions        **
+ ** are met:                                                                  **
+ ** 1. Redistributions of source code must retain the above copyright         **
+ **    notice, this list of conditions and the following disclaimer.          **
+ ** 2. Redistributions in binary form must reproduce the above copyright      **
+ **    notice, this list of conditions and the following disclaimer in the    **
+ **    documentation and/or other materials provided with the distribution.   **
+ ** 3. Neither the name of the copyright holder nor the names of its          **
+ **    contributors may be used to endorse or promote products derived        **
+ **    from this software without specific prior written permission.          **
+ **                                                                           **
+ ** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
+ ** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
+ ** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
+ ** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
+ ** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
+ ** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
+ ** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
+ ** PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF    **
+ ** LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING      **
+ ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
+ ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
+ ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke, Kunal Banerjee (Intel Corp.)
-******************************************************************************/
+ ******************************************************************************/
 
 /* helper variables */
 libxsmm_blasint i, ik, in, ic, inik;
@@ -56,9 +56,16 @@ LIBXSMM_VLA_DECL(4, element_filter_type, w, wD, cBlocks, bc, bk);
 LIBXSMM_VLA_DECL(4, element_filter_type, r, rD, kBlocks, bk, bk);
 LIBXSMM_VLA_DECL(5, element_output_type, h, ht, nBlocks, kBlocks, bn, bk);
 LIBXSMM_VLA_DECL(5, element_output_type, z, zt, nBlocks, kBlocks, bn, bk);
+int prefetch_mode = atoi(getenv("PF")); //LIBXSMM_GEMM_PREFETCH_AL1_BL1;
+if (prefetch_mode) {
+  prefetch_mode = LIBXSMM_GEMM_PREFETCH_AL1_BL1;
+} else {
+  prefetch_mode = 0;
+}
+
 /* define gemm kernels */
-libxsmm_smmfunction_reducebatch batchreduce_kernela =  libxsmm_smmdispatch_reducebatch( bk, bn, bc, &bk, &bk, &bk, NULL, NULL, NULL );
-libxsmm_smmfunction_reducebatch batchreduce_kernelb =  libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &bk, &bk, NULL, NULL, NULL );
+libxsmm_smmfunction_reducebatch batchreduce_kernela =  libxsmm_smmdispatch_reducebatch( bk, bn, bc, &bk, &bk, &bk, NULL, NULL, &prefetch_mode );
+libxsmm_smmfunction_reducebatch batchreduce_kernelb =  libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &bk, &bk, NULL, NULL, &prefetch_mode );
 
 /* computing first logical thread */
 const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_thread;
@@ -70,14 +77,8 @@ const libxsmm_blasint chunksize = (work % (libxsmm_blasint)handle->desc.threads 
 const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
-/* Auxuliary arrays for batch-reduce gemms  */
-const element_input_type *A_array[cBlocks];
-const element_input_type *B_array[cBlocks];
-const element_input_type *A_array2[kBlocks];
-const element_input_type *B_array2[kBlocks];
-
-const int row_teams = 7;
-const int column_teams = 4;
+const int row_teams = atoi(getenv("R"));
+const int column_teams = atoi(getenv("C"));
 const int my_col_id = ltid % column_teams;
 const int my_row_id = ltid / column_teams;
 const int in_tasks = N/bn;
@@ -90,14 +91,90 @@ int my_in_end = (my_row_id+1) * in_tasks_per_thread;
 int my_ik_start = my_col_id * ik_tasks_per_thread;
 int my_ik_end = (my_col_id+1) * ik_tasks_per_thread;
 
-/* lazy barrier init */
-libxsmm_barrier_init(handle->barrier, (int)ltid);
+if (in_tasks % row_teams == 0) {
+  /* Auxuliary arrays for batch-reduce gemms  */
+  const element_input_type *A_array[ik_tasks_per_thread][in_tasks_per_thread][cBlocks];
+  const element_input_type *B_array[ik_tasks_per_thread][in_tasks_per_thread][cBlocks];
+  const element_input_type *A_array2[ik_tasks_per_thread][in_tasks_per_thread][kBlocks];
+  const element_input_type *B_array2[ik_tasks_per_thread][in_tasks_per_thread][kBlocks];
 
-/* All data is in column-major format */
-for (i = 0; i < t; ++i) {
-  /* let's run the cell in blocks for good locality */
-    for (ik = my_ik_start; ik < my_ik_end; ++ik ) {
-      for (in = my_in_start; in < my_in_end; ++in ) {
+  const int pfa =  atoi(getenv("PFA"));
+  const int pfb =  atoi(getenv("PFB"));
+  int ii, jj;
+
+  /* lazy barrier init */
+  libxsmm_barrier_init(handle->barrier, (int)ltid);
+
+  /* All data is in column-major format */
+  for (i = 0; i < t; ++i) {
+    /* Prepare arrays for the calls */
+    for (ik = my_ik_start, ii = 0; ik < my_ik_end; ++ik, ii++ ) {
+      for (in = my_in_start, jj = 0; in < my_in_end; ++in, jj++ ) {
+        /* Prepare arrays for the call */
+        for (ic = 0; ic < cBlocks; ic++) {
+          /* this is a small matmul */
+          A_array[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, w, ik, ic, 0, 0, cBlocks, bc, bk);
+          B_array[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, x, i, in, ic, 0, 0, nBlocks, cBlocks, bn, bc);
+        }
+        /* z += U.h */
+        if (0 == i) {
+          /* Prepare arrays for the call */
+          for (ic = 0; ic < kBlocks; ic++) {
+            A_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
+            B_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, hp, in, ic, 0, 0, kBlocks, bn, bk);
+          }
+        } else {
+          /* Prepare arrays for the call */
+          for (ic = 0; ic < kBlocks; ic++) {
+            A_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
+            B_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, h, i-1, in, ic, 0, 0, nBlocks, kBlocks, bn, bk);
+          }
+        }
+      }
+    }
+
+    /* let's run the cell in blocks for good locality */
+    for (ik = my_ik_start, ii = 0; ik < my_ik_end; ++ik, ii++ ) {
+      for (in = my_in_start, jj = 0; in < my_in_end; ++in, jj++ ) {
+        /* z = per_col(b) */
+        libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &b[ik*bk]);
+        /* z += W.x */
+        /* Reduce batch gemm call  */
+        batchreduce_kernela(&A_array[ii][jj][0], &B_array[ii][jj][0], &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &cBlocks, &A_array[ii][jj][pfa], &B_array[ii][jj][pfb]);
+        /* z += U.h */
+        /* Reduce batch gemm call  */
+        batchreduce_kernelb(&A_array2[ii][jj][0], &B_array2[ii][jj][0], &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &kBlocks, &A_array2[ii][jj][pfa], &B_array2[ii][jj][pfb]);
+
+#if defined(LIBXSMM_DNN_RNN_RELU_FWD)
+        libxsmm_internal_matrix_relu_ld(    bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(5, h, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk));
+#endif
+#if defined(LIBXSMM_DNN_RNN_SIGMOID_FWD)
+        libxsmm_internal_matrix_sigmoid_ld( bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(5, h, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk));
+#endif
+#if defined(LIBXSMM_DNN_RNN_TANH_FWD)
+        libxsmm_internal_matrix_tanh_ld(    bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(5, h, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk));
+#endif
+      }
+    }
+    libxsmm_barrier_wait(handle->barrier, (int)ltid);
+  }
+} else {
+
+  /* Auxuliary arrays for batch-reduce gemms  */
+  const element_input_type *A_array[cBlocks];
+  const element_input_type *B_array[cBlocks];
+  const element_input_type *A_array2[kBlocks];
+  const element_input_type *B_array2[kBlocks];
+
+  /* lazy barrier init */
+  libxsmm_barrier_init(handle->barrier, (int)ltid);
+
+  /* All data is in column-major format */
+  for (i = 0; i < t; ++i) {
+    /* let's run the cell in blocks for good locality */
+    for (inik = thr_begin; inik < thr_end; ++inik ) {
+      in = inik / (K/bk);
+      ik = inik % (K/bk);
 
       /* z = per_col(b) */
       libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &b[ik*bk]);
@@ -141,8 +218,8 @@ for (i = 0; i < t; ++i) {
       libxsmm_internal_matrix_tanh_ld(    bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(5, h, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk));
 #endif
     }
-  }
 
-  libxsmm_barrier_wait(handle->barrier, (int)ltid);
+    libxsmm_barrier_wait(handle->barrier, (int)ltid);
+  }
 }
 

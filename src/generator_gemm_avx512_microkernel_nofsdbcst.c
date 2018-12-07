@@ -167,14 +167,14 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
                                       i_micro_kernel_config->vector_name,
                                       i_n_blocking, i_micro_kernel_config->use_masking_a_c, 1, 0 );
 
-        unsigned int pf_a_cols_ahead = 2;
+        unsigned int pf_a_cols_ahead = atoi(getenv("PFA"));
         libxsmm_x86_instruction_prefetch( io_generated_code,
                                             LIBXSMM_X86_INSTR_PREFETCHT0,
                                             i_gp_reg_mapping->gp_reg_a,
                                             LIBXSMM_X86_GP_REG_UNDEF, 0,
                                             (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m + pf_a_cols_ahead * i_xgemm_desc->lda * i_micro_kernel_config->datatype_size);
 
-           
+
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
           /* post increment early */
           if ( (l_m == (l_m_blocking-1)) && (l_n == 0) ) {
@@ -183,6 +183,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
                                          i_gp_reg_mapping->gp_reg_a,
                                          (i_xgemm_desc->lda)*(i_micro_kernel_config->datatype_size) );
           }
+
           /* issue fma */
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
