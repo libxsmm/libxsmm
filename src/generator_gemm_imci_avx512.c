@@ -141,28 +141,11 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
 
     if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
       libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_mloop);
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_nloop);
       /* This is the reduce loop  */
       libxsmm_generator_gemm_header_reduceloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config );
-      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_a_prefetch);
-      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_b_prefetch);
       libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_a);
       libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_b);
-      /* load to reg_a the proper array based on the reduce loop index  */
-      libxsmm_x86_instruction_alu_mem( io_generated_code,
-          i_micro_kernel_config->alu_mov_instruction,
-          i_gp_reg_mapping->gp_reg_a_prefetch,
-          i_gp_reg_mapping->gp_reg_reduce_loop, 8,
-          0,
-          i_gp_reg_mapping->gp_reg_a_prefetch,
-          0 );
-      /* load to reg_a the proper array based on the reduce loop index  */
-      libxsmm_x86_instruction_alu_mem( io_generated_code,
-          i_micro_kernel_config->alu_mov_instruction,
-          i_gp_reg_mapping->gp_reg_b_prefetch,
-          i_gp_reg_mapping->gp_reg_reduce_loop, 8,
-          0,
-          i_gp_reg_mapping->gp_reg_b_prefetch,
-          0 );
       /* load to reg_a the proper array based on the reduce loop index  */
       libxsmm_x86_instruction_alu_mem( io_generated_code,
           i_micro_kernel_config->alu_mov_instruction,
@@ -225,26 +208,9 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
           i_gp_reg_mapping->gp_reg_a,
           1 );
       libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a);
-      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0);
-      libxsmm_x86_instruction_alu_mem( io_generated_code,
-          i_micro_kernel_config->alu_mov_instruction,
-          i_gp_reg_mapping->gp_reg_help_0,
-          i_gp_reg_mapping->gp_reg_reduce_loop, 8,
-          0,
-          i_gp_reg_mapping->gp_reg_b_prefetch,
-          1 );
-      libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_b_prefetch);
-      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0);
-      libxsmm_x86_instruction_alu_mem( io_generated_code,
-          i_micro_kernel_config->alu_mov_instruction,
-          i_gp_reg_mapping->gp_reg_help_0,
-          i_gp_reg_mapping->gp_reg_reduce_loop, 8,
-          0,
-          i_gp_reg_mapping->gp_reg_a_prefetch,
-          1 );
-      libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a_prefetch);
       libxsmm_generator_gemm_footer_reduceloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc);
-      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_mloop );
+      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_nloop);
+      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_mloop);
     }
 
     l_generator_store( io_generated_code, i_gp_reg_mapping, i_micro_kernel_config,
@@ -272,6 +238,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
 
     if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
       libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_mloop);
+      libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_nloop);
       /* This is the reduce loop  */
       libxsmm_generator_gemm_header_reduceloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config );
       libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_a);
@@ -293,7 +260,6 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
           i_gp_reg_mapping->gp_reg_b,
           0 );
     }
-
 
     /* if we are generating for KNL && i_n_blocking is greater 18  -> push prefetch gpr */
     if ( (i_n_blocking > 18)          &&
@@ -336,6 +302,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
           1 );
       libxsmm_x86_instruction_alu_reg( io_generated_code, i_micro_kernel_config->alu_mov_instruction, i_gp_reg_mapping->gp_reg_help_0, i_gp_reg_mapping->gp_reg_a);
       libxsmm_generator_gemm_footer_reduceloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc);
+      libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_nloop );
       libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_mloop );
     }
 
@@ -350,15 +317,75 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
         (i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size );
     /* A */
     if (l_k_unrolled == 0) {
-      libxsmm_x86_instruction_alu_imm( io_generated_code,
-          l_micro_kernel_config_mask.alu_sub_instruction,
-          i_gp_reg_mapping->gp_reg_a,
-          (i_xgemm_desc->k * l_micro_kernel_config_mask.datatype_size * i_xgemm_desc->lda) - ((i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size) );
+      if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
+        /* Adjust all A ptrs... */
+        libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+        libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_reduce_loop );
+        libxsmm_generator_gemm_header_reduceloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config );
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            i_gp_reg_mapping->gp_reg_a,
+            i_gp_reg_mapping->gp_reg_reduce_loop, 8,
+            0,
+            i_gp_reg_mapping->gp_reg_help_0,
+            0 );
+
+        libxsmm_x86_instruction_alu_imm( io_generated_code,
+            l_micro_kernel_config_mask.alu_sub_instruction,
+            i_gp_reg_mapping->gp_reg_help_0,
+            (i_xgemm_desc->k * l_micro_kernel_config_mask.datatype_size * i_xgemm_desc->lda) - ((i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size) );
+
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            i_gp_reg_mapping->gp_reg_a,
+            i_gp_reg_mapping->gp_reg_reduce_loop, 8,
+            0,
+            i_gp_reg_mapping->gp_reg_help_0,
+            1 );
+        libxsmm_generator_gemm_footer_reduceloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc);
+        libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_reduce_loop );
+        libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+      } else {
+        libxsmm_x86_instruction_alu_imm( io_generated_code,
+            l_micro_kernel_config_mask.alu_sub_instruction,
+            i_gp_reg_mapping->gp_reg_a,
+            (i_xgemm_desc->k * l_micro_kernel_config_mask.datatype_size * i_xgemm_desc->lda) - ((i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size) );
+      }
     } else {
-      libxsmm_x86_instruction_alu_imm( io_generated_code,
-          l_micro_kernel_config_mask.alu_add_instruction,
-          i_gp_reg_mapping->gp_reg_a,
-          ((i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size) );
+      if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
+        /* Adjust all A ptrs... */
+        libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+        libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_reduce_loop );
+        libxsmm_generator_gemm_header_reduceloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config );
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            i_gp_reg_mapping->gp_reg_a,
+            i_gp_reg_mapping->gp_reg_reduce_loop, 8,
+            0,
+            i_gp_reg_mapping->gp_reg_help_0,
+            0 );
+
+        libxsmm_x86_instruction_alu_imm( io_generated_code,
+            l_micro_kernel_config_mask.alu_add_instruction,
+            i_gp_reg_mapping->gp_reg_help_0,
+            ((i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size) );   
+
+        libxsmm_x86_instruction_alu_mem( io_generated_code,
+            i_micro_kernel_config->alu_mov_instruction,
+            i_gp_reg_mapping->gp_reg_a,
+            i_gp_reg_mapping->gp_reg_reduce_loop, 8,
+            0,
+            i_gp_reg_mapping->gp_reg_help_0,
+            1 );
+        libxsmm_generator_gemm_footer_reduceloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc);
+        libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_reduce_loop );
+        libxsmm_x86_instruction_pop_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_0 );
+      } else {
+        libxsmm_x86_instruction_alu_imm( io_generated_code,
+            l_micro_kernel_config_mask.alu_add_instruction,
+            i_gp_reg_mapping->gp_reg_a,
+            ((i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size) );
+      }
     }
   }
 }

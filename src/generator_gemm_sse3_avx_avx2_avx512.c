@@ -185,17 +185,8 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_mloop);
             /* This is the reduce loop  */
             libxsmm_generator_gemm_header_reduceloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config );
-            /*libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a_prefetch);*/
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a);
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_b);
-            /* load to reg_a the proper array based on the reduce loop index  */
-            /*libxsmm_x86_instruction_alu_mem( io_generated_code,
-                l_micro_kernel_config.alu_mov_instruction,
-                l_gp_reg_mapping.gp_reg_a_prefetch,
-                l_gp_reg_mapping.gp_reg_reduce_loop, 8,
-                0,
-                l_gp_reg_mapping.gp_reg_a_prefetch,
-                0 );*/
             /* load to reg_a the proper array based on the reduce loop index  */
             libxsmm_x86_instruction_alu_mem( io_generated_code,
                 l_micro_kernel_config.alu_mov_instruction,
@@ -271,7 +262,9 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
                 0,
                 l_gp_reg_mapping.gp_reg_b,
                 1 );
+            /* Move to reg_b the address of B_array  */
             libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_b);
+            /* Pop address of A_array to help_0 and store proper address of A   */
             libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
             libxsmm_x86_instruction_alu_mem( io_generated_code,
                 l_micro_kernel_config.alu_mov_instruction,
@@ -280,16 +273,8 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
                 0,
                 l_gp_reg_mapping.gp_reg_a,
                 1 );
+            /* Move to reg_a the address of A_array  */
             libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a);
-            /*libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
-            libxsmm_x86_instruction_alu_mem( io_generated_code,
-                l_micro_kernel_config.alu_mov_instruction,
-                l_gp_reg_mapping.gp_reg_help_0,
-                l_gp_reg_mapping.gp_reg_reduce_loop, 8,
-                0,
-                l_gp_reg_mapping.gp_reg_a_prefetch,
-                1 );
-            libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a_prefetch);*/
             libxsmm_generator_gemm_footer_reduceloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc);
             libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_mloop );
           }
