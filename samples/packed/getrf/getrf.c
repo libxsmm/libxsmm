@@ -182,7 +182,7 @@ void scopy_from_temp ( int layout, float *A, int lda, int m, int n, float *Atemp
 
 #if !defined(USE_MKL_FOR_REFERENCE) && !defined(LIBXSMM_NOFORTRAN) && (!defined(__BLAS) || (0 != __BLAS))
 extern void dgetrf_();
-extern void mkl_dgetrfnpi_();
+extern void dgetrfnpi_();
 
 /* Reference code for compact dgetrf. Note that this just copies data into
    a buffer from the compact storage and calls the regular dgetrf code. This
@@ -195,7 +195,6 @@ void compact_dgetrf_ ( unsigned int *layout, unsigned int *m,
     int i, j, num, info, nfact=LIBXSMM_MIN(*m,*n);
     double *Ap, Atemp[BUFSIZE];
     static int ntimes = 0;
-    extern void mkl_dgetrfnpi();
 
     if ( ++ntimes < 3 ) printf("Inside reference compact_dgetrf_()\n");
     if ( ++ntimes < 3 ) printf("layout=%d m=%d n=%d lda=%d nmat=%d VLEN=%d\n",*layout,*m,*n,*lda,*nmat,*VLEN);
@@ -207,7 +206,7 @@ void compact_dgetrf_ ( unsigned int *layout, unsigned int *m,
            Ap = &A[j+num*(*lda)*(*n)*(*VLEN)];
 if (++ntimes < 3 ) printf("Doing a dgetrf at place i=%d j=%d num=%d Ap[%d]=%g\n",i,j,num,j+num*(*lda)*(*n)*(*VLEN),Ap[0]);
            dcopy_to_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
-           mkl_dgetrfnpi_ ( m, n, &nfact, Atemp, m, &info );
+           dgetrfnpi_ ( m, n, &nfact, Atemp, m, &info );
            if ( info != 0 ) printf("Bad news reference code got info=%d\n",info);
            dcopy_from_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
        }
@@ -215,7 +214,7 @@ if (++ntimes < 3 ) printf("Doing a dgetrf at place i=%d j=%d num=%d Ap[%d]=%g\n"
 }
 
 extern void sgetrf_();
-extern void mkl_sgetrfnpi_();
+extern void sgetrfnpi_();
 
 /* Reference code for compact sgetrf. Note that this just copies data into
    a buffer from the compact storage and calls the regular sgetrf code. This
@@ -230,7 +229,6 @@ void compact_sgetrf_ ( unsigned int *layout, unsigned int *m,
     int i, j, num, info, nfact=LIBXSMM_MIN(*m,*n);
     float *Ap, Atemp[BUFSIZE];
     static int ntimes = 0;
-    extern void mkl_sgetrfnpi();
 
     if ( ++ntimes < 3 ) printf("Inside reference compact_sgetrf_()\n");
     if ( ++ntimes < 3 ) printf("layout=%d VLEN=%d nmat=%d\n",*layout, *VLEN, *nmat );
@@ -242,7 +240,7 @@ void compact_sgetrf_ ( unsigned int *layout, unsigned int *m,
            Ap = &A[j+num*(*lda)*(*n)*(*VLEN)];
 if (++ntimes < 3 ) printf("Doing a sgetrf at place i=%d j=%d num=%d Ap[%d]=%g\n",i,j,num,j+num*(*lda)*(*n)*(*VLEN),Ap[0]);
            scopy_to_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
-           mkl_sgetrfnpi_ ( m, n, n, Atemp, m, &info );
+           sgetrfnpi_ ( m, n, n, Atemp, m, &info );
            if ( info != 0 ) printf("Bad news! Serial reference got info=%d\n",info);
            scopy_from_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
        }
@@ -435,10 +433,34 @@ extern void getrf_();
 extern double dsecnd_();
 #endif
 
+#if 1
+  #ifndef AVX2_TESTING
+  #define AVX2_TESTING
+  #endif
+#else
+  #ifndef AVX512_TESTING
+  #define AVX512_TESTING
+  #endif
+#endif
+#if !defined(AVX2_TESTING) && !defined(AVX512_TESTING)
+  #define AVX2_TESTING
+#endif
+#if defined(AVX2_TESTING) && defined(AVX512_TESTING)
+  #error Compile with either AVX2_TESTING or AVX512_TESTING never both
+#endif
+
+
 int main(int argc, char* argv[])
 {
   unsigned int m=8, n=8, lda=8, ldb=8, nerrs, num, nmat, nmats, nmatd, ntest;
-  unsigned int layout, asize, VLEND=4, VLENS=8, bsize;
+  unsigned int layout, asize, bsize;
+#ifdef AVX512_TESTING
+  unsigned int VLEND=8, VLENS=16;
+  char arch[4]="skx";
+#else
+  unsigned int VLEND=4, VLENS=8;
+  char arch[4]="hsw";
+#endif
   unsigned int ncorr;
   int i, j;
   char side='L', uplo='L', trans='N', diag='N';
@@ -450,10 +472,10 @@ int main(int argc, char* argv[])
   const unsigned char *cptr;
   unsigned long op_count;
   unsigned int typesize8 = 8;
-  const libxsmm_trsm_descriptor* desc8 = NULL;
+  const libxsmm_getrf_descriptor* desc8 = NULL;
 #ifdef TEST_SINGLE
   unsigned int typesize4 = 4;
-  const libxsmm_trsm_descriptor* desc4 = NULL;
+  const libxsmm_getrf_descriptor* desc4 = NULL;
 #endif
   libxsmm_descriptor_blob blob;
   union {
@@ -534,10 +556,16 @@ int main(int argc, char* argv[])
 #ifdef TIME_MKL
   printf("This code tests MKL compact batch directly\n");
 #endif
+#ifdef AVX512_TESTING
+  printf("This binary tests only AVX512 codes\n");
+#endif
+#ifdef AVX2_TESTING
+  printf("This binary tests only AVX2 codes\n");
+#endif
 
-  desc8 = libxsmm_trsm_descriptor_init(&blob, typesize8, m, n, lda, ldb, &dalpha, trans, diag, side, uplo, layout);
+  desc8 = libxsmm_getrf_descriptor_init(&blob, typesize8, m, n, lda, layout);
 #ifdef TEST_SINGLE
-  desc4 = libxsmm_trsm_descriptor_init(&blob, typesize4, m, n, lda, ldb, &salpha, trans, diag, side, uplo, layout);
+  desc4 = libxsmm_getrf_descriptor_init(&blob, typesize4, m, n, lda, layout);
 #endif
 #ifdef USE_XSMM_GENERATED
   printf("calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
@@ -551,7 +579,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
-  libxsmm_generator_packed_getrf_avx_avx512_kernel ( &io_generated_code, desc8, "hsw" );
+  libxsmm_generator_packed_getrf_avx_avx512_kernel ( &io_generated_code, desc8, arch );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
@@ -599,14 +627,15 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef DUMP_ASSEMBLY_FILE
-  printf("Dumping assembly file\n");
+  #define ASSEMBLY_DUMP_SIZE 4000
+  printf("Dumping assembly file (first %d bytes)\n",ASSEMBLY_DUMP_SIZE);
   FILE *fp = fopen("foo.s","w");
   char buffer[80];
   fputs("\t.text\n",fp);
   fputs("\t.align 256\n",fp);
   fputs("\t.globl getrf_\n",fp);
   fputs("getrf_:\n",fp);
-  for (i = 0 ; i < 4000; i+=4 )
+  for (i = 0 ; i < ASSEMBLY_DUMP_SIZE; i+=4 )
   {
      sprintf(buffer,".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",cptr[i],cptr[i+1],cptr[i+2],cptr[i+3]);
      fputs(buffer,fp);

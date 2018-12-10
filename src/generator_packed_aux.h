@@ -342,7 +342,7 @@ LIBXSMM_API_INLINE void compact_load_matrix_gen_ (
      {
         i_vmove_instr = LIBXSMM_X86_INSTR_VMOVUPS;
      } else {
-        fprintf(stderr,"compact_load_matrix1 has strange datasize=%u\n",datasize);
+        fprintf(stderr,"compact_load_matrix_gen has strange datasize=%u\n",datasize);
         exit(-1);
      }
      if ( regset == 'z' )
@@ -351,7 +351,7 @@ LIBXSMM_API_INLINE void compact_load_matrix_gen_ (
      } else if ( regset == 'y' ) {
         i_instruction_set = LIBXSMM_X86_AVX2;
      } else {
-        fprintf(stderr,"Unsupported instruction set in compact_load_matrix1\n");
+        fprintf(stderr,"Unsupported instruction set in compact_load_matrix_gen\n");
         exit(-1);
      }
 
