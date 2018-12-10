@@ -165,28 +165,38 @@ def align_value(n, typesize, alignment):
         raise ValueError("align_value: invalid input!")
 
 
-def version_branch():
-    here = os.path.dirname(inspect.getfile(inspect.currentframe()))
-    versionfilename = os.path.realpath(
-        os.path.join(here, "..", "version.txt"))
-    versionfile = open(versionfilename, "r")
+def version_branch_from_file(version_filepath):
+    version_file = open(version_filepath, "r")
     version = "1.0"
     try:
-        versionlist = versionfile.read().replace("\n", "").split("-")
+        versionlist = version_file.read().replace("\n", "").split("-")
         n = len(versionlist)
         if (1 < n):
-            version = versionlist[n-1]
-            if (1 == len(version.split("."))):
+            if (2 < len(versionlist)):
                 version = "-".join(map(str, versionlist[n-2:]))
                 branch = "-".join(map(str, versionlist[0:n-2]))
             else:
+                version = versionlist[n-1]
                 branch = "-".join(map(str, versionlist[0:n-1]))
             result = (version, branch)
         else:
             result = (version, "")
     finally:
-        versionfile.close()
+        version_file.close()
     return result
+
+
+def version_branch():
+    version_filename = "version.txt"
+    filepath_default = os.path.realpath(os.path.join(os.path.dirname(
+        inspect.getfile(inspect.currentframe())), "..", version_filename))
+    filepath_local = os.path.realpath(version_filename)  # local version file
+    version, branch = version_branch_from_file(filepath_default)
+    if (filepath_default != filepath_local and os.path.isfile(version_filename)):
+        local, ignored = version_branch_from_file(filepath_local)
+        if (version_numbers(version) < version_numbers(local)):
+            version = local
+    return (version, branch)
 
 
 def version_numbers(version):
