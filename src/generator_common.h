@@ -359,10 +359,6 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_micro_kernel_config {
 LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_a;
   unsigned int gp_reg_b;
-  unsigned int gp_reg_a_array;
-  unsigned int gp_reg_b_array; 
-  unsigned int gp_reg_current_a;
-  unsigned int gp_reg_current_b;  
   unsigned int gp_reg_c;
   unsigned int gp_reg_a_prefetch;
   unsigned int gp_reg_b_prefetch;

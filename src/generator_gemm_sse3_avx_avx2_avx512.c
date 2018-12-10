@@ -73,6 +73,22 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
     l_n_blocking = 6;
   }
 
+  /* Make sure we properly adjust A,B prefetch pointers in case of batch-reduce gemm kernel  */
+  unsigned int adjust_A_pf_ptrs = 0;
+  unsigned int adjust_B_pf_ptrs = 0;
+  if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
+    if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_AL1 ||
+        i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_JPST ||
+        i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST ||
+        i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2 ||
+        i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) {
+      adjust_A_pf_ptrs = 1;
+    }
+    if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
+      adjust_B_pf_ptrs = 1;
+    }
+  }
+
   /* define gp register mapping */
   libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
 #if defined(_WIN32) || defined(__CYGWIN__)
@@ -187,6 +203,12 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
             libxsmm_generator_gemm_header_reduceloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config );
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a);
             libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_b);
+            if (adjust_A_pf_ptrs) {
+              libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_a_prefetch );
+            }
+            if (adjust_B_pf_ptrs) {
+              libxsmm_x86_instruction_push_reg( io_generated_code, l_gp_reg_mapping.gp_reg_b_prefetch );
+            }
             /* load to reg_a the proper array based on the reduce loop index  */
             libxsmm_x86_instruction_alu_mem( io_generated_code,
                 l_micro_kernel_config.alu_mov_instruction,
@@ -203,6 +225,24 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
                 0,
                 l_gp_reg_mapping.gp_reg_b,
                 0 );
+            if (adjust_A_pf_ptrs) {
+              libxsmm_x86_instruction_alu_mem( io_generated_code,
+                  l_micro_kernel_config.alu_mov_instruction,
+                  l_gp_reg_mapping.gp_reg_a_prefetch,
+                  l_gp_reg_mapping.gp_reg_reduce_loop, 8,
+                  0,
+                  l_gp_reg_mapping.gp_reg_a_prefetch,
+                  0 );
+            }
+            if (adjust_B_pf_ptrs) {
+              libxsmm_x86_instruction_alu_mem( io_generated_code,
+                  l_micro_kernel_config.alu_mov_instruction,
+                  l_gp_reg_mapping.gp_reg_b_prefetch,
+                  l_gp_reg_mapping.gp_reg_reduce_loop, 8,
+                  0,
+                  l_gp_reg_mapping.gp_reg_b_prefetch,
+                  0 );
+            }
           }
 
           /* apply multiple k_blocking strategies */
@@ -253,6 +293,28 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
           }
 
           if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
+            if (adjust_B_pf_ptrs) {
+              libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
+              libxsmm_x86_instruction_alu_mem( io_generated_code,
+                  l_micro_kernel_config.alu_mov_instruction,
+                  l_gp_reg_mapping.gp_reg_help_0,
+                  l_gp_reg_mapping.gp_reg_reduce_loop, 8,
+                  0,
+                  l_gp_reg_mapping.gp_reg_b_prefetch,
+                  1 );
+              libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_b_prefetch);
+            }
+            if (adjust_A_pf_ptrs) {
+              libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
+              libxsmm_x86_instruction_alu_mem( io_generated_code,
+                  l_micro_kernel_config.alu_mov_instruction,
+                  l_gp_reg_mapping.gp_reg_help_0,
+                  l_gp_reg_mapping.gp_reg_reduce_loop, 8,
+                  0,
+                  l_gp_reg_mapping.gp_reg_a_prefetch,
+                  1 );
+              libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a_prefetch);          
+            }
             /* Pop address of B_array to help_0 and store proper address of B   */
             libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
             libxsmm_x86_instruction_alu_mem( io_generated_code,
