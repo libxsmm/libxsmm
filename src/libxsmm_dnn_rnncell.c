@@ -67,7 +67,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->bn = 64;
     handle->bc = 64;
     if ( handle->desc.N % handle->bn != 0 ) {
-      handle->bn = handle->desc.N; 
+      handle->bn = handle->desc.N;
       *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING;
     }
     if ( handle->desc.C % handle->bc != 0 ) {
