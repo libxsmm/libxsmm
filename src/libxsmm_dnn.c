@@ -77,6 +77,12 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Success!";
     case LIBXSMM_DNN_WARN_FALLBACK:
       return "LIBXSMM DNN Warning: Falling back to naive code as target is currently not supported by LIBXSMM!";
+    case LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING:
+      return "LIBXSMM DNN Warning: RNN cell suboptimal minibatch blocking!";
+    case LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_C_BLOCKING:
+      return "LIBXSMM DNN Warning: RNN cell suboptimal input feature blocking!";
+    case LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_K_BLOCKING:
+      return "LIBXSMM DNN Warning: RNN cell suboptimal output feature blocking!";
     case LIBXSMM_DNN_ERR_GENERAL:
       return "LIBXSMM DNN Error: General error occurred!";
     case LIBXSMM_DNN_ERR_CREATE_HANDLE:
@@ -1200,6 +1206,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_tensor(const libxsmm_dnn_tenso
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != tensor) { /* it is not an error attempting to destroy a NULL-handle */
+    /* free layout information stored in tensor */
+    if (0 != tensor->layout) {
+      libxsmm_dnn_destroy_tensor_datalayout( (libxsmm_dnn_tensor_datalayout*)tensor->layout );
+    }
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_tensor*)tensor);
   }

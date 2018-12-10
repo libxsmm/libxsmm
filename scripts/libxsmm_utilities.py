@@ -165,51 +165,58 @@ def align_value(n, typesize, alignment):
         raise ValueError("align_value: invalid input!")
 
 
-def version_branch():
-    here = os.path.dirname(inspect.getfile(inspect.currentframe()))
-    versionfilename = os.path.realpath(
-        os.path.join(here, "..", "version.txt"))
-    versionfile = open(versionfilename, "r")
-    version = "1.0"
+def version_branch_from_file(version_filepath):
+    version_file = open(version_filepath, "r")
+    version, branch, sep = "1.0", "", "-"
     try:
-        versionlist = versionfile.read().replace("\n", "").split("-")
-        n = len(versionlist)
-        if (1 < n):
-            version = versionlist[n-1]
-            if (1 == len(version.split("."))):
-                version = "-".join(map(str, versionlist[n-2:]))
-                branch = "-".join(map(str, versionlist[0:n-2]))
+        version_list, n = version_file.read().replace("\n", "").split(sep), 0
+        for word in version_list:
+            if not all(subword.isdigit() for subword in word.split(".")):
+                branch += (word if 0 == n else (sep + word))
+                n += 1
             else:
-                branch = "-".join(map(str, versionlist[0:n-1]))
-            result = (version, branch)
-        else:
-            result = (version, "")
+                break
+        version = sep.join(version_list[n:])
     finally:
-        versionfile.close()
-    return result
+        version_file.close()
+    return (version, branch)
+
+
+def version_branch():
+    version_filename = "version.txt"
+    filepath_default = os.path.realpath(os.path.join(os.path.dirname(
+        inspect.getfile(inspect.currentframe())), "..", version_filename))
+    filepath_local = os.path.realpath(version_filename)  # local version file
+    version, branch = version_branch_from_file(filepath_default)
+    out_of_tree = (filepath_default != filepath_local)
+    if (out_of_tree and os.path.isfile(filepath_local)):
+        local, ignored = version_branch_from_file(filepath_local)
+        if (version_numbers(version) < version_numbers(local)):
+            version = local
+    return (version, branch)
 
 
 def version_numbers(version):
-    versionlist = version.split("-")
+    version_list = version.split("-")
     minor = update = patch = 0
     major = 1
-    n = len(versionlist)
+    n = len(version_list)
     if (1 < n):
-        patchlist = versionlist[n-1]
-        if (1 == len(patchlist.split("."))):
-            versionlist = versionlist[n-2].split(".")
-            patch = int(patchlist)
+        patch_list = version_list[n-1]
+        if (1 == len(patch_list.split("."))):
+            version_list = version_list[n-2].split(".")
+            patch = int(patch_list)
         else:
-            versionlist = patchlist.split(".")
+            version_list = patch_list.split(".")
     else:
-        versionlist = version.split(".")
-    n = len(versionlist)
+        version_list = version.split(".")
+    n = len(version_list)
     if (0 < n):
-        major = int(versionlist[0])
+        major = int(version_list[0])
     if (1 < n):
-        minor = int(versionlist[1])
+        minor = int(version_list[1])
     if (2 < n):
-        update = int(versionlist[2])
+        update = int(version_list[2])
     return major, minor, update, patch
 
 

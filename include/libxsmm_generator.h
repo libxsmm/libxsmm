@@ -95,8 +95,13 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
   unsigned int typesize, unsigned int m, unsigned int n, unsigned int ldo,
   unsigned int ldi, int flags, int prefetch, const int* unroll);
 
-/** Initialize transpose descriptor as used by low-level routines. */
+/** Initialize packed trsm descriptor as used by low-level routines. */
 LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descriptor_blob* blob,
+  unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,
+  const void* alpha, char transa, char diag, char side, char uplo, int layout);
+
+/** Initialize packed trmm descriptor as used by low-level routines. */
+LIBXSMM_API libxsmm_trmm_descriptor* libxsmm_trmm_descriptor_init(libxsmm_descriptor_blob* blob,
   unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,
   const void* alpha, char transa, char diag, char side, char uplo, int layout);
 

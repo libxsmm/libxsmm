@@ -54,7 +54,12 @@ typedef unsigned int libxsmm_dnn_err_t;
 
 /** Define error and warning codes */
 #define LIBXSMM_DNN_SUCCESS                             0
+
 #define LIBXSMM_DNN_WARN_FALLBACK                   90000
+#define LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING  90001
+#define LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_C_BLOCKING  90002
+#define LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_K_BLOCKING  90003
+
 #define LIBXSMM_DNN_ERR_GENERAL                    100000
 #define LIBXSMM_DNN_ERR_CREATE_HANDLE              100001
 #define LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE       100002

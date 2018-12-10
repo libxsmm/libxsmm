@@ -440,7 +440,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* out, const void* in, con
   libxsmm_blasint ldx;
   LIBXSMM_ASSERT(0 != typesize && 0 != m);
   ldx = *(0 != ldi ? ldi : m);
-  libxsmm_matcopy(out, in, *typesize, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx, prefetch);
+  libxsmm_matcopy(out, in, *typesize, *m, *(0 != n ? n : m), ldx, 0 != ldo ? *ldo : ldx, prefetch);
 }
 
 
@@ -453,7 +453,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* out, const void* in, cons
   libxsmm_blasint ldx;
   LIBXSMM_ASSERT(0 != typesize && 0 != m);
   ldx = *(0 != ldi ? ldi : m);
-  libxsmm_otrans(out, in, *typesize, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx);
+  libxsmm_otrans(out, in, *typesize, *m, *(0 != n ? n : m), ldx, 0 != ldo ? *ldo : ldx);
 }
 
 
@@ -464,7 +464,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* inout, const unsigned int
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ld)
 {
   LIBXSMM_ASSERT(0 != typesize && 0 != m);
-  libxsmm_itrans(inout, *typesize, *m, *(n ? n : m), *(0 != ld ? ld : m));
+  libxsmm_itrans(inout, *typesize, *m, *(0 != n ? n : m), *(0 != ld ? ld : m));
 }
 
 #endif /*defined(LIBXSMM_BUILD)*/

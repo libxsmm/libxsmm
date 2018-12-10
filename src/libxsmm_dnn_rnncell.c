@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Kunal Banerjee (Intel Corp.)
+/* Alexander Heinecke, Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
 #include <libxsmm.h>
@@ -68,7 +68,19 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->bn = (handle->desc.bn == 0) ? 64 : handle->desc.bn;
     handle->bc = (handle->desc.bc == 0) ? 64 : handle->desc.bc;
 
-    if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
+    if ( handle->desc.N % handle->bn != 0 ) {
+      handle->bn = handle->desc.N;
+      *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING;
+    }
+    if ( handle->desc.C % handle->bc != 0 ) {
+      handle->bc = handle->desc.C;
+      *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_C_BLOCKING;
+    }
+    if ( handle->desc.K % handle->bk != 0 ) {
+      handle->bk = handle->desc.K;
+      *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_K_BLOCKING;
+    }
+     if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
       handle->fwd_generic = 0;
       handle->bwdupd_generic = 0;
     } else {
@@ -82,14 +94,16 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->scratch_xT = 0;
     handle->scratch_hT = 0;
     handle->scratch_deltat = 0;
-    handle->scratch_dit = 0;
-    handle->scratch_dft = 0;
-    handle->scratch_dot = 0;
-    handle->scratch_dcit = 0;
+    handle->scratch_di = 0;
+    handle->scratch_df = 0;
+    handle->scratch_do = 0;
+    handle->scratch_dci = 0;
     handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
     if (NULL == handle->barrier)
     {
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
+      free(handle);
+      return 0;
     }
   } else {
     *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
@@ -464,11 +478,11 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
             size += (size_t)handle->desc.K * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in) * 4 + 64; /* rT */
             size += (size_t)handle->desc.C * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_in)  + 64; /* xT */
             size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* hT */
-            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t + 64; /* deltat */
-            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t + 64; /* dit */
-            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t + 64; /* dft */
-            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t + 64; /* dot */
-            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t + 64; /* dcit */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* deltat */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* di */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* df */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* do */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* dci */
             size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* t1 */
             size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* t2 */
           } break;
@@ -594,7 +608,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
               offset = (64 - address % 64);
               handle->scratch_xT = (void*)(address+offset);
             }
-            address += ((size_t)handle->desc.C * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_in))  + 64;
+            address += (size_t)handle->desc.C * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_in) + 64;
             /* hT */
             if (address % 64 == 0) {
               handle->scratch_hT = (void*)address;
@@ -602,7 +616,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
               offset = (64 - address % 64);
               handle->scratch_hT = (void*)(address+offset);
             }
-            address += ((size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out)) + 64;
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
             /* deltat */
             if (address % 64 == 0) {
               handle->scratch_deltat = (void*)address;
@@ -610,39 +624,39 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
               offset = (64 - address % 64);
               handle->scratch_deltat = (void*)(address+offset);
             }
-            address += ((size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t) + 64;
-            /* dit */
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* di */
             if (address % 64 == 0) {
-              handle->scratch_dit = (void*)address;
+              handle->scratch_di = (void*)address;
             } else {
               offset = (64 - address % 64);
-              handle->scratch_dit = (void*)(address+offset);
+              handle->scratch_di = (void*)(address+offset);
             }
-            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t + 64;
-            /* dft */
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* df */
             if (address % 64 == 0) {
-              handle->scratch_dft = (void*)address;
+              handle->scratch_df = (void*)address;
             } else {
               offset = (64 - address % 64);
-              handle->scratch_dft = (void*)(address+offset);
+              handle->scratch_df = (void*)(address+offset);
             }
-            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t + 64;
-            /* dot */
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* do */
             if (address % 64 == 0) {
-              handle->scratch_dot = (void*)address;
+              handle->scratch_do = (void*)address;
             } else {
               offset = (64 - address % 64);
-              handle->scratch_dot = (void*)(address+offset);
+              handle->scratch_do = (void*)(address+offset);
             }
-            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t + 64;
-            /* dcit */
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* dci */
             if (address % 64 == 0) {
-              handle->scratch_dcit = (void*)address;
+              handle->scratch_dci = (void*)address;
             } else {
               offset = (64 - address % 64);
-              handle->scratch_dcit = (void*)(address+offset);
+              handle->scratch_dci = (void*)(address+offset);
             }
-            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t + 64;
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
             /* t1 */
             if (address % 64 == 0) {
               handle->scratch_t1 = (void*)address;
@@ -719,10 +733,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rn
             handle->scratch_xT = 0;
             handle->scratch_hT = 0;
             handle->scratch_deltat = 0;
-            handle->scratch_dit = 0;
-            handle->scratch_dft = 0;
-            handle->scratch_dot = 0;
-            handle->scratch_dcit = 0;
+            handle->scratch_di = 0;
+            handle->scratch_df = 0;
+            handle->scratch_do = 0;
+            handle->scratch_dci = 0;
             handle->scratch_t1 = 0;
             handle->scratch_t2 = 0;
           } break;
@@ -957,11 +971,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_tensor(libxsmm_dnn_rnncel
       } else if ( type == LIBXSMM_DNN_RNN_REGULAR_CS_PREV ) {
         handle->csp = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_CS_PREV ) {
-        handle->dcspt = (libxsmm_dnn_tensor*)tensor;
+        handle->dcsp = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV ) {
         handle->hp = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV ) {
-        handle->dhpt = (libxsmm_dnn_tensor*)tensor;
+        handle->dhp = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_REGULAR_WEIGHT ) {
         handle->w = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_WEIGHT ) {
@@ -1037,11 +1051,11 @@ LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_rnncell_get_tensor(libxsmm_dnn_rnnce
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_CS_PREV ) {
       tensor = handle->csp;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_CS_PREV ) {
-      tensor = handle->dcspt;
+      tensor = handle->dcsp;
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV ) {
       tensor = handle->hp;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV ) {
-      tensor = handle->dhpt;
+      tensor = handle->dhp;
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_WEIGHT ) {
       tensor = handle->w;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_WEIGHT ) {
@@ -1109,11 +1123,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_tensor(libxsmm_dnn_rnn
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_CS_PREV ) {
       handle->csp = 0;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_CS_PREV ) {
-      handle->dcspt = 0;
+      handle->dcsp = 0;
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV ) {
       handle->hp = 0;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV ) {
-      handle->dhpt = 0;
+      handle->dhp = 0;
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_WEIGHT ) {
       handle->w = 0;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_WEIGHT ) {
