@@ -86,18 +86,18 @@ int my_in_start = my_row_id * in_tasks_per_thread;
 int my_in_end = (my_row_id+1) * in_tasks_per_thread;
 int my_ik_start = my_col_id * ik_tasks_per_thread;
 int my_ik_end = (my_col_id+1) * ik_tasks_per_thread;
-int perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads) ? 1 : 0;
+int perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads && cBlocks <= 256 && kBlocks <= 256 && ik_tasks_per_thread <= 64 && in_tasks_per_thread <= 2 ) ? 1 : 0;
 
 if (perform_2d_decomp) {
   /* Auxiliary arrays for batch-reduce gemms and potential prefetch */
-  const element_input_type *A_array[ik_tasks_per_thread][in_tasks_per_thread][cBlocks];
-  const element_input_type *B_array[ik_tasks_per_thread][in_tasks_per_thread][cBlocks];
-  const element_input_type *A_array2[ik_tasks_per_thread][in_tasks_per_thread][kBlocks];
-  const element_input_type *B_array2[ik_tasks_per_thread][in_tasks_per_thread][kBlocks];
-  const element_input_type *A_array_pf[ik_tasks_per_thread][in_tasks_per_thread][cBlocks];
-  const element_input_type *B_array_pf[ik_tasks_per_thread][in_tasks_per_thread][cBlocks];
-  const element_input_type *A_array2_pf[ik_tasks_per_thread][in_tasks_per_thread][kBlocks];
-  const element_input_type *B_array2_pf[ik_tasks_per_thread][in_tasks_per_thread][kBlocks];
+  const element_input_type *A_array[64][2][256];
+  const element_input_type *B_array[64][2][256];
+  const element_input_type *A_array2[64][2][256];
+  const element_input_type *B_array2[64][2][256];
+  const element_input_type *A_array_pf[64][2][256];
+  const element_input_type *B_array_pf[64][2][256];
+  const element_input_type *A_array2_pf[64][2][256];
+  const element_input_type *B_array2_pf[64][2][256];
   int ii, jj;
 
   /* lazy barrier init */
@@ -186,10 +186,12 @@ if (perform_2d_decomp) {
   }
 } else {
   /* Auxiliary arrays for batch-reduce gemms  */
-  const element_input_type *A_array[cBlocks];
-  const element_input_type *B_array[cBlocks];
-  const element_input_type *A_array2[kBlocks];
-  const element_input_type *B_array2[kBlocks];
+  const element_input_type *A_array[1024];
+  const element_input_type *B_array[1024];
+  const element_input_type *A_array2[1024];
+  const element_input_type *B_array2[1024];
+  assert(kBlocks <= 1024);
+  assert(cBlocks <= 1024);
 
   /* lazy barrier init */
   libxsmm_barrier_init(handle->barrier, (int)ltid);
