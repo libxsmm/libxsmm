@@ -622,9 +622,9 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
   printf("This tests AVX2 binaries\n");
 #endif
 
-  desc8 = libxsmm_pgemm_descriptor_init(&blob, typesize8, m, n, k, lda, ldb, ldc, &dalpha, transa, transb, layout ); 
+  desc8 = libxsmm_pgemm_descriptor_init(&blob, typesize8, m, n, k, lda, ldb, ldc, &dalpha, transa, transb, layout );
 #ifdef TEST_SINGLE
-  desc4 = libxsmm_pgemm_descriptor_init(&blob, typesize4, m, n, k, lda, ldb, ldc, &dalpha, transa, transb, layout ); 
+  desc4 = libxsmm_pgemm_descriptor_init(&blob, typesize4, m, n, k, lda, ldb, ldc, &dalpha, transa, transb, layout );
 #endif
 
   printf("Descriptor set\n");

@@ -63,7 +63,7 @@
       SFMIN = SLAMCH('S')
 !
       DO 10 J = 1, NFACT
-         JP = J 
+         JP = J
          IF( A( JP, J ).NE.ZERO ) THEN
 !
 !           Compute elements J+1:M of J-th column.
