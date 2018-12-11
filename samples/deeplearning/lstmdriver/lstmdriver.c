@@ -888,12 +888,12 @@ int main(int argc, char* argv[])
     if (pass == 0) {
       internalstate_size = libxsmm_dnn_rnncell_get_internalstate_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, &status );
       CHKERR_LIBXSMM_DNN( status );
-      internalstate = libxsmm_aligned_malloc( internalstate_size, 2097152 );
+      internalstate = (0 != internalstate_size ? libxsmm_aligned_malloc( internalstate_size, 2097152 ) : NULL);
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_internalstate( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, internalstate ) );
     } else {
       internalstate_size = libxsmm_dnn_rnncell_get_internalstate_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
       CHKERR_LIBXSMM_DNN( status );
-      internalstate = libxsmm_aligned_malloc( internalstate_size, 2097152 );
+      internalstate = (0 != internalstate_size ? libxsmm_aligned_malloc( internalstate_size, 2097152 ) : NULL);
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_internalstate( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, internalstate ) );
     }
     zero_buf( (float*)internalstate, internalstate_size/4 );
