@@ -1181,8 +1181,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_st(libxsmm_dnn_rnncell
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CK) ) {
           status = libxsmm_dnn_rnncell_st_fwd_nc_ck( handle, start_thread, tid );
         } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK)  ) {
-          /*status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;*/
           status = libxsmm_dnn_rnncell_st_fwd_ncnc_kcck( handle, start_thread, tid );
+        } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK)  ) {
+          status = libxsmm_dnn_rnncell_st_fwd_nc_kcck( handle, start_thread, tid );
         } else {
           status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
         }
