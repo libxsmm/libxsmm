@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Kunal Banerjee (Intel Corp.)
+/* Alexander Heinecke, Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
 #include <libxsmm.h>
@@ -63,9 +63,11 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     if (rnncell_desc.t < 1) {
       *status = LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL;
     }
-    handle->bk = 64;
-    handle->bn = 64;
-    handle->bc = 64;
+
+    handle->bk = (handle->desc.bk == 0) ? 64 : handle->desc.bk;
+    handle->bn = (handle->desc.bn == 0) ? 64 : handle->desc.bn;
+    handle->bc = (handle->desc.bc == 0) ? 64 : handle->desc.bc;
+
     if ( handle->desc.N % handle->bn != 0 ) {
       handle->bn = handle->desc.N;
       *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING;
@@ -1179,8 +1181,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_st(libxsmm_dnn_rnncell
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CK) ) {
           status = libxsmm_dnn_rnncell_st_fwd_nc_ck( handle, start_thread, tid );
         } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK)  ) {
-          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
-          /*status = libxsmm_dnn_rnncell_st_fwd_ncnc_kcck( handle, start_thread, tid );*/
+          /*status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;*/
+          status = libxsmm_dnn_rnncell_st_fwd_ncnc_kcck( handle, start_thread, tid );
         } else {
           status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
         }

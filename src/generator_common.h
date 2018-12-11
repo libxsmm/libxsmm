@@ -366,6 +366,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_mloop;
   unsigned int gp_reg_nloop;
   unsigned int gp_reg_kloop;
+  unsigned int gp_reg_reduce_count;
+  unsigned int gp_reg_reduce_loop;
   unsigned int gp_reg_help_0;
   unsigned int gp_reg_help_1;
   unsigned int gp_reg_help_2;

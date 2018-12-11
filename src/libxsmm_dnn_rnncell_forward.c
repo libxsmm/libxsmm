@@ -85,15 +85,26 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_ncnc_kcck_f32_f32(libxsmm_dnn_rnnce
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
-  status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
-#if 0
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
-# include "template/libxsmm_dnn_rnncell_st_rnn_fwd_ncnc_kcck_generic.tpl.c"
-#endif
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_RELU ) {
+# define LIBXSMM_DNN_RNN_RELU_FWD
+# include "template/libxsmm_dnn_rnncell_st_rnn_fwd_ncnc_kcck.tpl.c"
+# undef LIBXSMM_DNN_RNN_RELU_FWD
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_SIGMOID ) {
+# define LIBXSMM_DNN_RNN_SIGMOID_FWD
+# include "template/libxsmm_dnn_rnncell_st_rnn_fwd_ncnc_kcck.tpl.c"
+# undef LIBXSMM_DNN_RNN_SIGMOID_FWD
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_TANH ) {
+# define LIBXSMM_DNN_RNN_TANH_FWD
+# include "template/libxsmm_dnn_rnncell_st_rnn_fwd_ncnc_kcck.tpl.c"
+# undef LIBXSMM_DNN_RNN_TANH_FWD
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
+# include "template/libxsmm_dnn_rnncell_st_rnn_fwd_ncnc_kcck.tpl.c"
+  } else {
+    /* should not happen */
+  }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;

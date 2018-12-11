@@ -56,6 +56,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
   int N;     /* size of the minibatch */
   int C;     /* number of inputs */
   int t;     /* number of time steps */
+  int bk;
+  int bn;
+  int bc;
   libxsmm_dnn_rnncell_type cell_type;       /* cell type RNN ReLU, RNN Sigmoid, RNN Tanh, LSTM */
   libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
   libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
