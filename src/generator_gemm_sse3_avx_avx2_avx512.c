@@ -130,7 +130,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
 
       libxsmm_generator_gemm_header_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_n_blocking );
       /* define the micro kernel code gen properties, especially m-blocking affects the vector instruction length */
-      l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_inital_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch );
+      l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch );
 
       /* apply m_blocking */
       while (l_m_done != (unsigned int)i_xgemm_desc->m) {
@@ -237,9 +237,9 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
 }
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
-                                                                                const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                                const char*                    i_arch ) {
+unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( libxsmm_micro_kernel_config*   io_micro_kernel_config,
+                                                                                 const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                                                 const char*                    i_arch ) {
   unsigned int l_m_blocking = 0;
 
   if ( (strcmp( i_arch, "wsm" ) == 0) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
