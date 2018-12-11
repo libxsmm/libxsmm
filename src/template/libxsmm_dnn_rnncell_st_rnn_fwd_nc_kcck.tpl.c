@@ -185,7 +185,6 @@ if (perform_2d_decomp) {
   }
 } else {
   /* Auxiliary arrays for batch-reduce gemms  */
-#if 0
   const element_input_type *A_array[1024];
   const element_input_type *B_array[1024];
   const element_input_type *A_array2[1024];
@@ -204,52 +203,50 @@ if (perform_2d_decomp) {
       ik = inik % (K/bk);
 
       /* z = per_col(b) */
-      libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &b[ik*bk]);
+      libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &b[ik*bk] );
 
       /* z += W.x */
       /* Prepare arrays for the call */
       for (ic = 0; ic < cBlocks; ic++) {
         /* this is a small matmul */
         A_array[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, w, ik, ic, 0, 0, cBlocks, bc, bk);
-        B_array[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, x, i, in, ic, 0, 0, nBlocks, cBlocks, bn, bc);
+        B_array[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, x, i, in*bn, ic*bc, N, C);
       }
       /* Reduce batch gemm call  */
       blocks = cBlocks;
-      batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &blocks);
+      batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &blocks);
 
       /* z += U.h */
       if (0 == i) {
         /* Prepare arrays for the call */
         for (ic = 0; ic < kBlocks; ic++) {
           A_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
-          B_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, hp, in, ic, 0, 0, kBlocks, bn, bk);
+          B_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(2, hp, in*bn, ic*bk, K);
         }
         /* Reduce batch gemm call  */
         blocks = kBlocks;
-        batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &blocks);
+        batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &blocks);
       } else {
         /* Prepare arrays for the call */
         for (ic = 0; ic < kBlocks; ic++) {
           A_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
-          B_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, h, i-1, in, ic, 0, 0, nBlocks, kBlocks, bn, bk);
+          B_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, h, i-1, in*bn, ic*bk, N, K);
         }
         /* Reduce batch gemm call  */
         blocks = kBlocks;
-        batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &blocks);
+        batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &blocks);
       }
-
 #if defined(LIBXSMM_DNN_RNN_RELU_FWD)
-      libxsmm_internal_matrix_relu_ld(    bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(5, h, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk));
+        libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, ik*bk, N, K) );
 #endif
 #if defined(LIBXSMM_DNN_RNN_SIGMOID_FWD)
-      libxsmm_internal_matrix_sigmoid_ld( bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(5, h, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk));
+        libxsmm_internal_matrix_sigmoid_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, ik*bk, N, K) );
 #endif
 #if defined(LIBXSMM_DNN_RNN_TANH_FWD)
-      libxsmm_internal_matrix_tanh_ld(    bk, bn, bk, &LIBXSMM_VLA_ACCESS(5, z, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(5, h, i, in, ik, 0, 0, nBlocks, kBlocks, bn, bk));
+        libxsmm_internal_matrix_tanh_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, ik*bk, N, K) );
 #endif
     }
     libxsmm_barrier_wait(handle->barrier, (int)ltid);
   }
-#endif
 }
 
