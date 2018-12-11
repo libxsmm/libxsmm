@@ -39,8 +39,6 @@
 # include <omp.h>
 #endif
 
-#include <sys/time.h>
-
 /*#define EDGE_HP_1G*/
 /*#define HANDLE_AMOK*/
 
@@ -91,10 +89,6 @@ void edge_hp_free( void* ptr,  size_t nbytes ) {
 #else
   libxsmm_free( ptr );
 #endif
-}
-
-static double sec(struct timeval start, struct timeval end) {
-  return ((double)(((end.tv_sec * 1000000 + end.tv_usec) - (start.tv_sec * 1000000 + start.tv_usec)))) / 1.0e6;
 }
 
 #if defined(__AVX512F__)
@@ -414,13 +408,13 @@ int main(int argc, char* argv[])
 #else
     int mytid = 0;
 #endif
-    struct timeval mystart, myend;
+    libxsmm_timer_tickint mystart, myend;
     size_t cur_amoks = 0;
     size_t non_amoks = l_num_threads;
     size_t l_el_chunk = 0;
     size_t l_el_start = 0;
     size_t l_el_end   = 0;
-    /* inital work distribution */
+    /* initial work distribution */
     amok_balance( amoks, l_num_threads, num_elems, mytid, &l_el_chunk, &l_el_start, &l_el_end );
     for (i = 0; i < (int)num_reps; i++) {
 #if defined(HANDLE_AMOK)
@@ -432,7 +426,7 @@ int main(int argc, char* argv[])
         amok_balance( amoks, l_num_threads, num_elems, mytid, &l_el_chunk, &l_el_start, &l_el_end );
       }
 #endif
-      gettimeofday(&mystart, NULL);
+      mystart = libxsmm_timer_tick();
       for (j = l_el_start; j < l_el_end; j++) {
 #if 1
         st_kernel( star+(j*3*mat_st_nnz)               , qt+(j*elem_size), qs+(mytid*elem_size) );
@@ -455,9 +449,9 @@ int main(int argc, char* argv[])
 
 #endif
       }
-      gettimeofday(&myend, NULL);
-      l_cur_thread_time[8*mytid] = sec( mystart, myend );
-      l_total_thread[8*mytid] += sec( mystart, myend );
+      myend = libxsmm_timer_tick();
+      l_cur_thread_time[8*mytid] = libxsmm_timer_duration( mystart, myend );
+      l_total_thread[8*mytid] += libxsmm_timer_duration( mystart, myend );
 #if defined(_OPENMP)
       #pragma omp barrier
 #endif
@@ -493,7 +487,7 @@ int main(int argc, char* argv[])
   flops_vol += (double)num_quants * (double)mat_b_nnz * (double)num_cfr * 2.0;
   flops_vol += (double)num_quants * (double)mat_c_nnz * (double)num_cfr * 2.0;
   flops_vol += (double)num_modes * (double)mat_st_nnz * (double)num_cfr * 6.0; /* 3 star matrix mul */
-  printf("%fs time for vol (asm), min %f, max %f, avg %f, #amoks %ld, amok-threads ", l_total, time_min, time_max, time_avg, amoks[8*l_num_threads]);
+  printf("%fs time for vol (asm), min %f, max %f, avg %f, #amoks %llu, amok-threads ", l_total, time_min, time_max, time_avg, (unsigned long long)amoks[8*l_num_threads]);
   for ( i = 0; i < l_num_threads; i++ ) {
     if ( amoks[8*i] != 0 ) {
       printf("%i,", i);

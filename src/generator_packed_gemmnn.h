@@ -303,6 +303,9 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
      }
 
      for ( j = bn1 ; j <= bn2 ; j+=jun ) {
+#ifdef COMPACT_GEMMNN_DEBUG
+        printf("Doing j loop from %d to %d with blocksize %d\n",bn1,bn2,jun);
+#endif
         if ( (  j  <= bn2 ) && ( jun >= 1 ) ) j0 = 1; else j0 = 0;
         if ( ( j+1 <= bn2 ) && ( jun >= 2 ) ) j1 = 1; else j1 = 0;
         if ( ( j+2 <= bn2 ) && ( jun >= 3 ) ) j2 = 1; else j2 = 0;
@@ -336,6 +339,9 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            if ( ( i+5 <= am2 ) && ( iun >= 6 ) ) i5 = 1; else i5 = 0;
            if ( ( i+6 <= am2 ) && ( iun >= 7 ) ) i6 = 1; else i6 = 0;
            if ( ( i+7 <= am2 ) && ( iun >= 8 ) ) i7 = 1; else i7 = 0;
+#ifdef COMPACT_GEMMNN_DEBUG
+           printf("Doing i loop from %d to %d with blocksize %d (%d,%d,%d,%d,%d,%d,%d,%d)\n",am1,am2,iun,i0,i1,i2,i3,i4,i5,i6,i7);
+#endif
            if ( loopi && (i > am1) && (i + iun -1 <= am2) ) {
               /* Turn everything off, we're really supposed to be in a loop */
               i0=0; i1=0; i2=0; i3=0; i4=0; i5=0; i6=0; i7=0;
@@ -343,7 +349,13 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
               printf("Emptying m-loop for i=%d j=%d i0=%d j0=%d\n",i,j,i0,j0);
 #endif
            }
+#ifdef COMPACT_GEMMNN_DEBUG
+           if (i0 && j0 ) printf("Loading A into %d with tra=%d lda=%d i=%d j=%d numb=%d datasz=%d regset=%c areg=%d\n",a0,tra,lda,i,ak1,numb,datasz, regset,areg);
+#endif
            if (i0 && j0) compact_load_matrix_gen_ ( io_code, tra, lda, i, ak1, a0, numb, datasz, regset, areg );
+#ifdef COMPACT_GEMMNN_DEBUG
+           if (i0 && j0 ) printf("Loaded A into %d with tra=%d lda=%d i=%d j=%d numb=%d datasz=%d regset=%c areg=%d\n",a0,tra,lda,i,ak1,numb,datasz, regset,areg);
+#endif
            if (i0 && j0) compact_load_matrix_gen_ ( io_code, trb, ldb, bk1, j, b0, numb, datasz, regset, breg );
            if (i0 && j0) compact_mult_two_nums_ ( io_code, a0, b0, c00, numb, regset );
            if (i1 && j0) compact_load_matrix_gen_ ( io_code, tra, lda, i+1, ak1, a1, numb, datasz, regset, areg );
@@ -426,6 +438,9 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            if (i7 && j7) compact_mult_two_nums_ ( io_code, a7, b7, c77, numb, regset );
 
            for ( l = ak1+1 ; l <= ak2; l++ ) {
+#ifdef COMPACT_GEMMNN_DEBUG
+              printf("Doing l loop from %d to %d\n",ak1+1,ak2);
+#endif
               if (i0 && j0) compact_load_matrix_gen_ ( io_code, tra, lda, i, l, a0, numb, datasz, regset, areg );
               if (i0 && j0) compact_load_matrix_gen_ ( io_code, trb, ldb, l-ak1+bk1, j, b0, numb, datasz, regset, breg);
               if (i0 && j0) compact_fma_cplusab_ ( io_code, c00, a0, b0, numb, regset );
@@ -511,6 +526,9 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            } /* Inner loop */
            /* Storing into C, do it one column at a time and reuse some regs */
            for ( l = j ; l <= LIBXSMM_MIN(j+jun-1,bn2); l++ ) {
+#ifdef COMPACT_GEMMNN_DEBUG
+              printf("Doing j wrap-up storage from %d to %d\n",j,LIBXSMM_MIN(j+jun-1,bn2));
+#endif
               if (l== j ) { c0=c00 ; c1=c10; c2=c20; c3=c30; c4=c40; c5=c50; c6=c60; c7=c70; }
               if (l==j+1) { c0=c01 ; c1=c11; c2=c21; c3=c31; c4=c41; c5=c51; c6=c61; c7=c71; }
               if (l==j+2) { c0=c02 ; c1=c12; c2=c22; c3=c32; c4=c42; c5=c52; c6=c62; c7=c72; }

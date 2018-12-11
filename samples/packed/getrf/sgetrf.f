@@ -1,3 +1,102 @@
+      SUBROUTINE SGETRFNPI( M, N, NFACT, A, LDA, INFO )
+!
+!  -- LAPACK computational routine (version 3.4.0) --
+!  -- LAPACK is a software package provided by Univ. of Tennessee,    --
+!  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
+!     November 2011
+!
+!     .. Scalar Arguments ..
+      INTEGER            INFO, LDA, M, N, NFACT
+!     ..
+!     .. Array Arguments ..
+      REAL*4             A( LDA, * )
+!     ..
+!
+!  =====================================================================
+!
+!     .. Parameters ..
+      REAL*4             ONE, ZERO
+      PARAMETER          ( ONE = 1.0+0, ZERO = 0.0+0 )
+!     ..
+!     .. Local Scalars ..
+      REAL*4             SFMIN
+      INTEGER            I, J, JP
+!     ..
+!     .. External Functions ..
+      REAL*4             SLAMCH
+      INTEGER            IDAMAX
+      EXTERNAL           SLAMCH, IDAMAX
+!     ..
+!     .. External Subroutines ..
+      EXTERNAL           SGER, SSCAL, SSWAP, XERBLA
+!     ..
+!     .. Intrinsic Functions ..
+      INTRINSIC          MAX, MIN
+!     ..
+!     .. Executable Statements ..
+!
+!     Test the input parameters.
+!
+      INFO = 0
+      IF( M.LT.0 ) THEN
+         INFO = -1
+      ELSE IF( N.LT.0 ) THEN
+         INFO = -2
+      ELSE IF ( NFACT .LT. 0 ) THEN
+         INFO = -3
+      ELSE IF ( NFACT .GT. MIN(M,N) ) THEN
+         INFO = -3
+      ELSE IF( LDA.LT.MAX( 1, M ) ) THEN
+         INFO = -5
+      END IF
+      IF( INFO.NE.0 ) THEN
+         CALL XERBLA( 'SGETRFNPI', -INFO )
+         RETURN
+      END IF
+!
+!     Quick return if possible
+!
+      IF( M.EQ.0 .OR. N.EQ.0 ) RETURN
+!
+!     Compute machine safe minimum
+!
+      SFMIN = SLAMCH('S')
+!
+      DO 10 J = 1, NFACT
+         JP = J
+         IF( A( JP, J ).NE.ZERO ) THEN
+!
+!           Compute elements J+1:M of J-th column.
+!
+            IF( J.LT.M ) THEN
+               IF( ABS(A( J, J )) .GE. SFMIN ) THEN
+                  CALL SSCAL( M-J, ONE / A( J, J ), A( J+1, J ), 1 )
+               ELSE
+                 DO 20 I = 1, M-J
+                    A( J+I, J ) = A( J+I, J ) / A( J, J )
+   20            CONTINUE
+               END IF
+            END IF
+!
+         ELSE IF( INFO.EQ.0 ) THEN
+!
+            INFO = J
+         END IF
+!
+         IF( J.LT.NFACT ) THEN
+!
+!           Update trailing submatrix.
+!
+            CALL SGER( NFACT-J, NFACT-J, -ONE, A( J+1, J ), 1,&
+                       A( J, J+1 ),LDA,A( J+1, J+1 ), LDA )
+         END IF
+   10 CONTINUE
+      RETURN
+!
+!     End of SGETRFNPI
+!
+      END
+
       SUBROUTINE SGETRF( M, N, A, LDA, IPIV, INFO )
 !
 !  -- LAPACK computational routine (version 3.4.0) --
@@ -139,12 +238,12 @@
       INTEGER            I, J, JP
 !     ..
 !     .. External Functions ..
-      REAL*4             DLAMCH
+      REAL*4             SLAMCH
       INTEGER            IDAMAX
-      EXTERNAL           DLAMCH, IDAMAX
+      EXTERNAL           SLAMCH, IDAMAX
 !     ..
 !     .. External Subroutines ..
-      EXTERNAL           DGER, DSCAL, DSWAP, XERBLA
+      EXTERNAL           SGER, SSCAL, SSWAP, XERBLA
 !     ..
 !     .. Intrinsic Functions ..
       INTRINSIC          MAX, MIN
@@ -172,7 +271,7 @@
 !
 !     Compute machine safe minimum
 !
-      SFMIN = DLAMCH('S')
+      SFMIN = SLAMCH('S')
 !
       DO 10 J = 1, MIN( M, N )
 !
@@ -184,13 +283,13 @@
 !
 !           Apply the interchange to columns 1:N.
 !
-            IF(JP.NE.J) CALL DSWAP( N, A( J, 1 ), LDA, A( JP, 1 ), LDA )
+            IF(JP.NE.J) CALL SSWAP( N, A( J, 1 ), LDA, A( JP, 1 ), LDA )
 !
 !           Compute elements J+1:M of J-th column.
 !
             IF( J.LT.M ) THEN
                IF( ABS(A( J, J )) .GE. SFMIN ) THEN
-                  CALL DSCAL( M-J, ONE / A( J, J ), A( J+1, J ), 1 )
+                  CALL SSCAL( M-J, ONE / A( J, J ), A( J+1, J ), 1 )
                ELSE
                  DO 20 I = 1, M-J
                     A( J+I, J ) = A( J+I, J ) / A( J, J )
@@ -207,7 +306,7 @@
 !
 !           Update trailing submatrix.
 !
-            CALL DGER( M-J, N-J, -ONE, A( J+1, J ), 1, A( J, J+1 ), &
+            CALL SGER( M-J, N-J, -ONE, A( J+1, J ), 1, A( J, J+1 ), &
                        LDA, A( J+1, J+1 ), LDA )
          END IF
    10 CONTINUE

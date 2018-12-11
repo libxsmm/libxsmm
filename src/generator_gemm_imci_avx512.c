@@ -368,7 +368,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
         libxsmm_x86_instruction_alu_imm( io_generated_code,
             l_micro_kernel_config_mask.alu_add_instruction,
             i_gp_reg_mapping->gp_reg_help_0,
-            ((i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size) );   
+            ((i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size) );
 
         libxsmm_x86_instruction_alu_mem( io_generated_code,
             i_micro_kernel_config->alu_mov_instruction,
@@ -433,7 +433,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         
     l_gp_reg_mapping.gp_reg_a_prefetch = LIBXSMM_X86_GP_REG_R8;
     l_gp_reg_mapping.gp_reg_b_prefetch = LIBXSMM_X86_GP_REG_R9;
     l_gp_reg_mapping.gp_reg_reduce_loop = LIBXSMM_X86_GP_REG_R12;
-    l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_R13;  
+    l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_R13;
   }
 #endif
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
@@ -474,7 +474,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         
         LIBXSMM_X86_GP_REG_UNDEF, 0,
         0,
         l_gp_reg_mapping.gp_reg_reduce_count,
-        0 );  
+        0 );
   }
 
   if (l_number_of_chunks == 1) {

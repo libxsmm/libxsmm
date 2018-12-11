@@ -55,7 +55,7 @@
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_getrf_avx_avx512_kernel( libxsmm_generated_code*        io_code,
-                                                       const libxsmm_trsm_descriptor* i_packed_trsm_desc,
+                                                       const libxsmm_getrf_descriptor* i_packed_getrf_desc,
                                                        const char*                    i_arch )
 {
   unsigned char *const buf = (unsigned char *) io_code->generated_code;
@@ -122,26 +122,17 @@ void libxsmm_generator_packed_getrf_avx_avx512_kernel( libxsmm_generated_code*  
   if ( io_code->code_type > 1 )
   {
      unsigned int i = io_code->code_size;
-     unsigned int m = i_packed_trsm_desc->m;
-     unsigned int n = i_packed_trsm_desc->n;
-     unsigned int lda = i_packed_trsm_desc->lda;
-     /*unsigned int ldb = i_packed_trsm_desc->ldb;*/
-     /*char trans = i_packed_trsm_desc->transa;*/
-#if 0
-     char side = i_packed_trsm_desc->side;
-     char uplo = i_packed_trsm_desc->uplo;
-#endif
-     /*char diag = i_packed_trsm_desc->diag;*/
-     const unsigned int lay = (unsigned int)i_packed_trsm_desc->layout;
-     unsigned int datasz = (unsigned int)i_packed_trsm_desc->typesize;
-     const double alpha = (8 == datasz ? i_packed_trsm_desc->alpha.d : ((double)i_packed_trsm_desc->alpha.s));
+     unsigned int m = i_packed_getrf_desc->m;
+     unsigned int n = i_packed_getrf_desc->n;
+     unsigned int lda = i_packed_getrf_desc->lda;
+     const unsigned int lay = (unsigned int)i_packed_getrf_desc->layout;
+     unsigned int datasz = (unsigned int)i_packed_getrf_desc->typesize;
      /*const double beta = 1.0;*/
      unsigned int m1=m, n1=n, mn;
      unsigned int j, k, ii;
      /*int REGSIZE;*/
      int numb = 0;
      unsigned int bot, /*dis,*/ fincol;
-     /*int scalealpha = 0;*/
      /*int nounit=0;*/
      unsigned int /*mb,*/ nb;
      /*int iun, jun;*/
@@ -201,30 +192,6 @@ printf("Inside libxsmm_generator_packed_getrf_avx_avx512_kernel: m=%d n=%d lay=%
         numb = 8;
         regset = 'z';
      }
-
-     if ( LIBXSMM_FEQ(0, alpha) )
-     {
-        compact_set_zero_ ( io_code, 0, numb, datasz, regset );
-        for ( j = 1; j <= n1; j++ )
-        {
-           for ( i = 1; i <= m1; i++ )
-           {
-              compact_store_matrix1_ ( io_code, lda, i, j, 0, numb, datasz, regset );
-           }
-        }
-        i = io_code->code_size;
-        buf[i++] = 0xc3; /* retq */
-        io_code->code_size = i;
-        return ;
-     }
-
-#if 0
-     if ( LIBXSMM_NEQ(1, alpha) )
-     {
-        compact_load_parameter_ ( io_code, alpha, 2, numb, regset );
-     }
-     nounit = ( (diag=='N') || (diag=='n') );
-#endif
 
      /* Determine ideal blocksizes: */
      nb = 2;

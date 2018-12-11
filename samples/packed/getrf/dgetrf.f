@@ -1,3 +1,102 @@
+      SUBROUTINE DGETRFNPI( M, N, NFACT, A, LDA, INFO )
+!
+!  -- LAPACK computational routine (version 3.4.0) --
+!  -- LAPACK is a software package provided by Univ. of Tennessee,    --
+!  -- Univ. of California Berkeley, Univ. of Colorado Denver and NAG Ltd..--
+!     November 2011
+!
+!     .. Scalar Arguments ..
+      INTEGER            INFO, LDA, M, N, NFACT
+!     ..
+!     .. Array Arguments ..
+      DOUBLE PRECISION   A( LDA, * )
+!     ..
+!
+!  =====================================================================
+!
+!     .. Parameters ..
+      DOUBLE PRECISION   ONE, ZERO
+      PARAMETER          ( ONE = 1.0D+0, ZERO = 0.0D+0 )
+!     ..
+!     .. Local Scalars ..
+      DOUBLE PRECISION   SFMIN
+      INTEGER            I, J, JP
+!     ..
+!     .. External Functions ..
+      DOUBLE PRECISION   DLAMCH
+      INTEGER            IDAMAX
+      EXTERNAL           DLAMCH, IDAMAX
+!     ..
+!     .. External Subroutines ..
+      EXTERNAL           DGER, DSCAL, DSWAP, XERBLA
+!     ..
+!     .. Intrinsic Functions ..
+      INTRINSIC          MAX, MIN
+!     ..
+!     .. Executable Statements ..
+!
+!     Test the input parameters.
+!
+      INFO = 0
+      IF( M.LT.0 ) THEN
+         INFO = -1
+      ELSE IF( N.LT.0 ) THEN
+         INFO = -2
+      ELSE IF ( NFACT .LT. 0 ) THEN
+         INFO = -3
+      ELSE IF ( NFACT .GT. MIN(M,N) ) THEN
+         INFO = -3
+      ELSE IF( LDA.LT.MAX( 1, M ) ) THEN
+         INFO = -5
+      END IF
+      IF( INFO.NE.0 ) THEN
+         CALL XERBLA( 'DGETRFNPI', -INFO )
+         RETURN
+      END IF
+!
+!     Quick return if possible
+!
+      IF( M.EQ.0 .OR. N.EQ.0 ) RETURN
+!
+!     Compute machine safe minimum
+!
+      SFMIN = DLAMCH('S')
+!
+      DO 10 J = 1, NFACT
+         JP = J
+         IF( A( JP, J ).NE.ZERO ) THEN
+!
+!           Compute elements J+1:M of J-th column.
+!
+            IF( J.LT.M ) THEN
+               IF( ABS(A( J, J )) .GE. SFMIN ) THEN
+                  CALL DSCAL( M-J, ONE / A( J, J ), A( J+1, J ), 1 )
+               ELSE
+                 DO 20 I = 1, M-J
+                    A( J+I, J ) = A( J+I, J ) / A( J, J )
+   20            CONTINUE
+               END IF
+            END IF
+!
+         ELSE IF( INFO.EQ.0 ) THEN
+!
+            INFO = J
+         END IF
+!
+         IF( J.LT.NFACT ) THEN
+!
+!           Update trailing submatrix.
+!
+            CALL DGER( NFACT-J, NFACT-J, -ONE, A( J+1, J ), 1,&
+                       A( J, J+1 ),LDA,A( J+1, J+1 ), LDA )
+         END IF
+   10 CONTINUE
+      RETURN
+!
+!     End of DGETRFNPI
+!
+      END
+
       SUBROUTINE DGETRF( M, N, A, LDA, IPIV, INFO )
 !
 !  -- LAPACK computational routine (version 3.4.0) --

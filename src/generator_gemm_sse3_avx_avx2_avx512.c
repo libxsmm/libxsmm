@@ -68,14 +68,15 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   unsigned int l_n_done_old = 0;
   unsigned int l_n_blocking = 3;
 
+  unsigned int adjust_A_pf_ptrs = 0;
+  unsigned int adjust_B_pf_ptrs = 0;
+
   /* as we have 32 registers, we can block more aggressively */
   if ( (strcmp(i_arch, "skx") == 0) ) {
     l_n_blocking = 6;
   }
 
   /* Make sure we properly adjust A,B prefetch pointers in case of batch-reduce gemm kernel  */
-  unsigned int adjust_A_pf_ptrs = 0;
-  unsigned int adjust_B_pf_ptrs = 0;
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
     if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_AL1 ||
         i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2_JPST ||
@@ -153,7 +154,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
         LIBXSMM_X86_GP_REG_UNDEF, 0,
         0,
         l_gp_reg_mapping.gp_reg_reduce_count,
-        0 );  
+        0 );
   }
 
   /* apply n_blocking */
@@ -168,7 +169,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
 
       libxsmm_generator_gemm_header_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_n_blocking );
       /* define the micro kernel code gen properties, especially m-blocking affects the vector instruction length */
-      l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_inital_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch );
+      l_m_blocking = libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( &l_micro_kernel_config, i_xgemm_desc, i_arch );
 
       /* apply m_blocking */
       while (l_m_done != (unsigned int)i_xgemm_desc->m) {
@@ -313,7 +314,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
                   0,
                   l_gp_reg_mapping.gp_reg_a_prefetch,
                   1 );
-              libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a_prefetch);          
+              libxsmm_x86_instruction_alu_reg( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_help_0, l_gp_reg_mapping.gp_reg_a_prefetch);
             }
             /* Pop address of B_array to help_0 and store proper address of B   */
             libxsmm_x86_instruction_pop_reg( io_generated_code, l_gp_reg_mapping.gp_reg_help_0);
@@ -372,7 +373,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
 }
 
 LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_inital_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
+unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking( libxsmm_micro_kernel_config*    io_micro_kernel_config,
     const libxsmm_gemm_descriptor* i_xgemm_desc,
     const char*                    i_arch ) {
   unsigned int l_m_blocking = 0;

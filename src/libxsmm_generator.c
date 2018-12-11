@@ -351,6 +351,45 @@ LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descri
 }
 
 
+LIBXSMM_API libxsmm_pgemm_descriptor* libxsmm_pgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+  unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+  const void* alpha, char transa, char transb, int layout)
+{
+  union {
+    libxsmm_pgemm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  result.blob = blob;
+  result.ptr->typesize = (unsigned char)typesize;
+  result.ptr->lda = (unsigned char)lda;
+  result.ptr->ldb = (unsigned char)ldb;
+  result.ptr->ldc = (unsigned char)ldc;
+  result.ptr->m = (unsigned char)m;
+  result.ptr->n = (unsigned char)n;
+  result.ptr->k = (unsigned char)k;
+  result.ptr->transa = transa;
+  result.ptr->transb = transb;
+  result.ptr->layout = (unsigned char)layout;
+  if ( typesize == 4 ) {
+    float *alpha_val = (float *)alpha;
+    if ( *alpha_val == 1.0 ) result.ptr->alpha_val = 0;
+    else if ( *alpha_val == -1.0 ) result.ptr->alpha_val = 1;
+    else {
+       printf("Warning: real*4 alpha value should be 1.0 or -1.0\n");
+       exit(-1);
+    }
+  } else {
+    double *alpha_val = (double *)alpha;
+    if ( *alpha_val == 1.0 ) result.ptr->alpha_val = 0;
+    else if ( *alpha_val == -1.0 ) result.ptr->alpha_val = 1;
+    else {
+       printf("Warning: real*8 alpha value should be 1.0 or -1.0\n");
+       exit(-1);
+    }
+  }
+  return result.ptr;
+}
+
 LIBXSMM_API libxsmm_trmm_descriptor* libxsmm_trmm_descriptor_init(libxsmm_descriptor_blob* blob,
   unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,
   const void* alpha, char transa, char diag, char side, char uplo, int layout)
@@ -383,6 +422,22 @@ LIBXSMM_API libxsmm_trmm_descriptor* libxsmm_trmm_descriptor_init(libxsmm_descri
   return result.ptr;
 }
 
+
+LIBXSMM_API libxsmm_getrf_descriptor* libxsmm_getrf_descriptor_init(libxsmm_descriptor_blob* blob,
+  unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, int layout)
+{
+  union {
+    libxsmm_getrf_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  result.blob = blob;
+  result.ptr->typesize = (unsigned char)typesize;
+  result.ptr->lda = (unsigned char)lda;
+  result.ptr->m = (unsigned char)m;
+  result.ptr->n = (unsigned char)n;
+  result.ptr->layout = (unsigned char)layout;
+  return result.ptr;
+}
 
 LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b)
 {
