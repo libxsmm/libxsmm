@@ -1794,7 +1794,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
     refdesc = &internal_registry_keys[i].xgemm;
 #endif
   }
-  LIBXSMM_ASSERT(0 == flux_entry.ptr_const || 0 == refdesc || 0 == memcmp(refdesc, descriptor, LIBXSMM_DESCRIPTOR_MAXSIZE));
+  assert(0 == flux_entry.ptr_const || 0 == refdesc || 0 == memcmp(refdesc, descriptor, LIBXSMM_DESCRIPTOR_MAXSIZE)); /* !LIBXSMM_ASSERT */
 #if defined(LIBXSMM_HASH_COLLISION)
   flux_entry.uval &= ~(LIBXSMM_CODE_STATIC | LIBXSMM_HASH_COLLISION); /* clear non-JIT and collision flag */
 #else
