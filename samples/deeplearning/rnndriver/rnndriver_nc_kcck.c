@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee (Intel Corp.)
+/* Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <libxsmm_intrinsics_x86.h>
@@ -620,7 +620,7 @@ int main(int argc, char* argv[])
     }
     rnncell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
-    rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NCNC;
+    rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NC;
     rnncell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_KCCK;
 
     libxsmm_handle = libxsmm_dnn_create_rnncell( rnncell_desc, &status );
@@ -672,13 +672,13 @@ int main(int argc, char* argv[])
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
     /* copy in data to LIBXSMM format */
-    /*matrix_copy( t*N*C, xgoldt, xt );
-      matrix_copy( K*N, hpgold, hp );
-      matrix_copy( C*K, wgold, w );
+    matrix_copy( t*N*C, xgoldt, xt );
+    matrix_copy( K*N, hpgold, hp );
+    /*matrix_copy( C*K, wgold, w );
       matrix_copy( K*K, ugold, u );*/
     matrix_copy( K, bgold, b );
-    matrix_copy_NC_to_NCNC(xgoldt, xt, t, N, C, bn, bc);
-    matrix_copy_NC_to_NCNC(hpgold, hp, 1, N, K, bn, bk);
+    /*matrix_copy_NC_to_NCNC(xgoldt, xt, t, N, C, bn, bc);*/
+    /*matrix_copy_NC_to_NCNC(hpgold, hp, 1, N, K, bn, bk);*/
     matrix_copy_CK_to_KCCK(wgold, w, C, K, bc, bk);
     matrix_copy_CK_to_KCCK(ugold, u, K, K, bk, bk);
 
@@ -743,10 +743,7 @@ int main(int argc, char* argv[])
 #endif
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
       }
-
-      /* Copy out LIBXSMM result to NC format for correctness checking */
-      matrix_copy_NCNC_to_NC(ht, h_nc_buf, t, N, K, bn, bk);
-      matrix_copy( N*K, &LIBXSMM_VLA_ACCESS(2, h_nc, t-1, 0, K*N), htest );
+      matrix_copy( N*K, &LIBXSMM_VLA_ACCESS(2, h, t-1, 0, K*N), htest );
 
       /* compare */
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, K*N, 1, &LIBXSMM_VLA_ACCESS(2, hgold, t-1, 0, K*N), htest, 0, 0, &norms_fwd);
