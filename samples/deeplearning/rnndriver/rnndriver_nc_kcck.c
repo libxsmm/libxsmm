@@ -249,6 +249,29 @@ LIBXSMM_INLINE void matrix_copy_CK_to_KCCK(float *src, float *dst, int C, int K,
   }
 }
 
+LIBXSMM_INLINE void matrix_copy_KCCK_to_CK(float *src, float *dst, int C, int K, int bc, int bk)
+{
+  int k1, k2, c1, c2;
+  int kBlocks = K/bk;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(2, float, real_dst, dst, K);
+  LIBXSMM_VLA_DECL(4, float, real_src, src, cBlocks, bc, bk);
+
+#if defined(_OPENMP)
+# pragma omp parallel for private(k1)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (c2 = 0; c2 < bc; c2++) {
+        for (k2 = 0; k2 < bk; k2++) {
+          LIBXSMM_VLA_ACCESS(2, real_dst, c1*bc+c2, k1*bk+k2, K) =
+            LIBXSMM_VLA_ACCESS(4, real_src, k1, c1, c2, k2, cBlocks, bc, bk);
+        }
+      }
+    }
+  }
+}
+
 LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
 {
   int i;
@@ -315,7 +338,7 @@ int main(int argc, char* argv[])
 {
   /* Arrays related to FWD pass */
   float *wgold, *xgoldt, *ugold, *hpgold, *hgoldt, *z1gold, *z2gold, *zgoldt, *bgold, *bmgold;
-  float *w, *xt, *u, *hp, *ht, *htest, *h_nc_buf, *b;
+  float *w, *xt, *u, *hp, *ht, *htest, *b;
   /* Arrays related to BWD and UPD pass */
   float *djdhgoldt, *deltagoldt, *djdugold, *djdwgold, *djdxgoldt, *djdbgold;
   float *zigold, *di1gold, *di2gold, *ugoldTp, *wgoldTp, *hgoldTp, *xgoldTp;
@@ -433,7 +456,6 @@ int main(int argc, char* argv[])
   ugold  = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
   bgold  = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
   hgoldt = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  h_nc_buf = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
   zgoldt = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
   bmgold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   z1gold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
@@ -468,7 +490,6 @@ int main(int argc, char* argv[])
   djdutest  = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N*C);
   LIBXSMM_VLA_DECL(2, float, hgold, hgoldt, K*N);
-  LIBXSMM_VLA_DECL(2, float, h_nc, h_nc_buf, K*N);
   LIBXSMM_VLA_DECL(2, float, zgold, zgoldt, K*N);
   LIBXSMM_VLA_DECL(2, float, djdxgold, djdxgoldt, N*C);
   LIBXSMM_VLA_DECL(2, float, djdhgold, djdhgoldt, K*N);
@@ -830,8 +851,8 @@ int main(int argc, char* argv[])
          rnn_copyout(k, m, bk, bm, djdw, djdwtest);
          rnn_copyout(m, m, bm, bm, djdu, djdutest);
          */
-      matrix_copy(C*K, djdw, djdwtest);
-      matrix_copy(K*K, djdu, djdutest);
+      matrix_copy_KCCK_to_CK(djdw, djdwtest, C, K, bc, bk);
+      matrix_copy_KCCK_to_CK(djdu, djdutest, K, K, bk, bk);
 
       /* compare */
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, C*K, 1, djdwgold, djdwtest, 0, 0, &norms_upd_w);
@@ -895,8 +916,8 @@ int main(int argc, char* argv[])
          rnn_copyout(K, K, bK, bK, djdu, djdutest);
          */
       matrix_copy(N*C*t, djdxt, djdxtestt);
-      matrix_copy(C*K, djdw, djdwtest);
-      matrix_copy(K*K, djdu, djdutest);
+      matrix_copy_KCCK_to_CK(djdw, djdwtest, C, K, bc, bk);
+      matrix_copy_KCCK_to_CK(djdu, djdutest, K, K, bk, bk);
 
       /* compare */
       libxsmm_matdiff(LIBXSMM_DATATYPE_F32, N*C*t, 1, djdxgoldt, djdxtestt, 0, 0, &norms_bwd);
