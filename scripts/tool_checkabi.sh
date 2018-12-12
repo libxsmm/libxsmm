@@ -83,7 +83,7 @@ then
         fi
       done
     done
-    REMOVED=$(${DIFF} --new-line-format="" --unchanged-line-format="" .abi.txt .abi.log)
+    REMOVED=$(${DIFF} --new-line-format="" --unchanged-line-format="" <(${SORT} .abi.txt) <(${SORT} .abi.log))
     if [ "" = "${REMOVED}" ]; then
       ${CP} ${ABINEW} ${ABICUR}
       ${ECHO} "Successfully Completed."
