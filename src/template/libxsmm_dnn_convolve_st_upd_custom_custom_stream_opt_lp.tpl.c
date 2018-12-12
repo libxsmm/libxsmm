@@ -156,9 +156,9 @@ if (pixels_lp != 4) {
 #   include "transpose_lp_output.tpl.c"
   } else {
     if (handle->resize_input == 0) {
-      lp_transpose_input_and_output(ltid, handle);
+      libxsmm_dnn_inout_transpose_lp(ltid, handle);
     } else {
-      lp_transpose_and_resize_input_and_output(ltid, handle);
+      libxsmm_dnn_inout_transpose_resize_lp(ltid, handle);
     }
   }
 } else {
