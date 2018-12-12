@@ -47,7 +47,7 @@ element_filter_type *rD = (element_filter_type*)handle->r->data;
 element_output_type *b  = (element_output_type*)handle->b->data;
 element_output_type *ht = (element_output_type*)handle->ht->data;
 element_output_type *zt = (element_output_type*)handle->internal_z;
-int nBlocks = N/bn;
+/*int nBlocks = N/bn;*/
 int cBlocks = C/bc;
 int kBlocks = K/bk;
 unsigned long long blocks;
