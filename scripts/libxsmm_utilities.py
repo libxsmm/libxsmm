@@ -182,7 +182,7 @@ def version_branch_from_file(version_filepath):
     return (version, branch)
 
 
-def version_branch():
+def version_branch(max_strlen=-1):
     version_filename = "version.txt"
     filepath_default = os.path.realpath(os.path.join(os.path.dirname(
         inspect.getfile(inspect.currentframe())), "..", version_filename))
@@ -193,6 +193,12 @@ def version_branch():
         local, ignored = version_branch_from_file(filepath_local)
         if (version_numbers(version) < version_numbers(local)):
             version = local
+    if (0 < max_strlen):
+        cut = max(branch.rfind("-", 0, max_strlen),
+                  branch.rfind("_", 0, max_strlen),
+                  branch.rfind(".", 0, max_strlen))
+        if (0 < cut):
+            branch = branch[0:cut]
     return (version, branch)
 
 
