@@ -55,6 +55,8 @@ then
         SYMBOL=$(${ECHO} "${LINE}" | ${SED} -n "/ T /p" | ${CUT} -d" " -f3)
         if [ "" != "${SYMBOL}" ]; then
           if [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^libxsmm/p)" ] && \
+             [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^_init/p)" ] && \
+             [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^_fini/p)" ] && \
              [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^__/p)" ] && \
              [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /_$/p)" ];
           then
