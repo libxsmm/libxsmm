@@ -178,6 +178,12 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 }
 
 
+LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
+{
+  if (NULL != info) memset(info, 0, sizeof(*info)); /* nullify */
+}
+
+
 LIBXSMM_API_INTERN unsigned int libxsmm_diff_sw(const void* a, const void* b, unsigned char size);
 LIBXSMM_API_INTERN unsigned int libxsmm_diff_sw(const void* a, const void* b, unsigned char size)
 {
@@ -590,6 +596,39 @@ LIBXSMM_API double libxsmm_rand_f64(void)
 
 
 #if defined(LIBXSMM_BUILD)
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff)(const libxsmm_datatype* /*datatype*/, const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/,
+  const void* /*ref*/, const void* /*tst*/, const libxsmm_blasint* /*ldref*/, const libxsmm_blasint* /*ldtst*/,
+  libxsmm_matdiff_info* /*info*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff)(const libxsmm_datatype* datatype, const libxsmm_blasint* m, const libxsmm_blasint* n,
+  const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
+  libxsmm_matdiff_info* info)
+{
+  static int error_once = 0;
+  if ((NULL == datatype || NULL == m || EXIT_SUCCESS != libxsmm_matdiff(datatype, *m, *(NULL != n ? n : m), ref, tst, ldref, ldtst, info))
+    && 0 != libxsmm_verbosity && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_matdiff specified!\n");
+  }
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff_reduce)(libxsmm_matdiff_info* /*output*/, const libxsmm_matdiff_info* /*input*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff_reduce)(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input)
+{
+  libxsmm_matdiff_reduce(output, input);
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff_clear)(libxsmm_matdiff_info* /*info*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff_clear)(libxsmm_matdiff_info* info)
+{
+  libxsmm_matdiff_clear(info);
+}
+
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* /*data*/, const int* /*size*/, const int* /*seed*/);

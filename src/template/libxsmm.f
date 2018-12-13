@@ -70,29 +70,43 @@
 
         ! Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_GEMM_FLAG_NONE    = 0,                                &
-     &    LIBXSMM_GEMM_FLAG_TRANS_A = 1,                                &
-     &    LIBXSMM_GEMM_FLAG_TRANS_B = 2
+     &    LIBXSMM_GEMM_FLAG_NONE     = 0,                               &
+     &    LIBXSMM_GEMM_FLAG_TRANS_A  = 1,                               &
+     &    LIBXSMM_GEMM_FLAG_TRANS_B  = 2,                               &
+     &    LIBXSMM_GEMM_FLAG_TRANS_AB = IOR(                             &
+     &        LIBXSMM_GEMM_FLAG_TRANS_A, LIBXSMM_GEMM_FLAG_TRANS_B),    &
+     &    LIBXSMM_GEMM_FLAG_BETA_0   = 16
 
         ! Flag enumeration which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
           ! Handle recorded batch unsynchronized-parallel.
      &    LIBXSMM_MMBATCH_FLAG_DEFAULT      = 0,                        &
           ! Synchronize among C matrices.
-     &    LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = 256,                      &
+     &    LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED = 512,                      &
           ! Handle recorded batch sequentially.
-     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = 512,                      &
+     &    LIBXSMM_MMBATCH_FLAG_SEQUENTIAL   = 1024,                     &
           ! Only record a statistic of potential SMMs.
-     &    LIBXSMM_MMBATCH_FLAG_STATISTIC    = 1024
+     &    LIBXSMM_MMBATCH_FLAG_STATISTIC    = 2048
 
-        ! Flag which denotes the value type (for weak-typed interface
-        ! functions such as libxsmm_xmmdispatch).
+        ! Enumerates element/data types.
         INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_GEMM_PRECISION_F64 = 0,                               &
-     &    LIBXSMM_GEMM_PRECISION_F32 = 1,                               &
-     &    LIBXSMM_GEMM_PRECISION_I32 = 2,                               &
-     &    LIBXSMM_GEMM_PRECISION_I16 = 3,                               &
-     &    LIBXSMM_GEMM_PRECISION_I8  = 4
+     &    LIBXSMM_DATATYPE_UNSUPPORTED = -1,                            &
+     &    LIBXSMM_DATATYPE_F64  = 0,                                    &
+     &    LIBXSMM_DATATYPE_F32  = 1,                                    &
+     &    LIBXSMM_DATATYPE_BF16 = 2,                                    &
+     &    LIBXSMM_DATATYPE_I32  = 3,                                    &
+     &    LIBXSMM_DATATYPE_I16  = 4,                                    &
+     &    LIBXSMM_DATATYPE_I8   = 5
+
+        ! Denotes the precision/data type of GEMM (for weak-typed
+        ! interface functions such as libxsmm_xmmdispatch).
+        INTEGER(C_INT), PARAMETER ::                                    &
+     &    LIBXSMM_GEMM_PRECISION_F64  = LIBXSMM_DATATYPE_F64,           &
+     &    LIBXSMM_GEMM_PRECISION_F32  = LIBXSMM_DATATYPE_F32,           &
+     &    LIBXSMM_GEMM_PRECISION_BF16 = LIBXSMM_DATATYPE_BF16,          &
+     &    LIBXSMM_GEMM_PRECISION_I32  = LIBXSMM_DATATYPE_I32,           &
+     &    LIBXSMM_GEMM_PRECISION_I16  = LIBXSMM_DATATYPE_I16,           &
+     &    LIBXSMM_GEMM_PRECISION_I8   = LIBXSMM_DATATYPE_I8
 
         ! Enumeration of the available prefetch strategies which can be IORed.
         INTEGER(C_INT), PARAMETER ::                                    &
@@ -169,6 +183,21 @@
         TYPE :: LIBXSMM_WSMMFUNCTION
           PRIVATE
             INTEGER(C_INTPTR_T) :: handle
+        END TYPE
+
+        ! Structure of differences with matrix norms according
+        ! to http://www.netlib.org/lapack/lug/node75.html).
+        TYPE, BIND(C) :: LIBXSMM_MATDIFF_INFO
+          REAL(C_DOUBLE) norm1_abs, norm1_rel ! One-norm
+          REAL(C_DOUBLE) normi_abs, normi_rel ! Infinity-norm
+          REAL(C_DOUBLE) normf_rel            ! Froebenius-norm
+          ! L1-norm and L2-norm of differences.
+          REAL(C_DOUBLE) l2_abs, l2_rel, l1_ref, l1_tst
+          ! Maximum absolute and relative error.
+          REAL(C_DOUBLE) linf_abs, linf_rel
+          ! Location of maximum error (m, n).
+          INTEGER(LIBXSMM_BLASINT_KIND) linf_abs_m
+          INTEGER(LIBXSMM_BLASINT_KIND) linf_abs_n
         END TYPE
 
         INTERFACE libxsmm_ptr0
@@ -254,6 +283,8 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_verbosity
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_verbosity
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_kernel
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matdiff_reduce
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matdiff_clear
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch2
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_abc
@@ -613,6 +644,24 @@
           ! (libxsmm_mmbatch_begin); libxsmmext required.
           ! Implicit FORTRAN 77 interface: available.
           SUBROUTINE libxsmm_mmbatch_end() BIND(C)
+          END SUBROUTINE
+
+          ! Reduces input into output such that the difference is maintained
+          ! or increased (max function). The very first (initial) output
+          ! should be zeroed (libxsmm_matdiff_clear).
+          ! Implicit FORTRAN 77 interface: available.
+          PURE SUBROUTINE libxsmm_matdiff_reduce(output, input) BIND(C)
+            IMPORT LIBXSMM_MATDIFF_INFO
+            TYPE(LIBXSMM_MATDIFF_INFO), INTENT(INOUT) :: output
+            TYPE(LIBXSMM_MATDIFF_INFO), INTENT(IN)    :: input
+          END SUBROUTINE
+
+          ! Clears the given info-structure e.g., for the initial
+          ! reduction-value (libxsmm_matdiff_reduce).
+          ! Implicit FORTRAN 77 interface: available.
+          PURE SUBROUTINE libxsmm_matdiff_clear(info) BIND(C)
+            IMPORT LIBXSMM_MATDIFF_INFO
+            TYPE(LIBXSMM_MATDIFF_INFO), INTENT(OUT) :: info
           END SUBROUTINE
         END INTERFACE$MNK_INTERFACE_LIST
 
@@ -1387,6 +1436,38 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_itrans(matrix, typesize, m, n, ld)
+        END SUBROUTINE
+
+        ! Utility function to calculate the difference between two matrices.
+        ! Implicit FORTRAN 77 interface:
+        ! INTEGER(4)   :: datatype
+        ! INTEGER(4|8) :: m, n, ldref, ldtst
+        ! ARRAY        :: ref, tst
+        ! TYPE         :: info
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matdiff
+        PURE SUBROUTINE libxsmm_matdiff(datatype, m, n, ref, tst,       &
+     &  ldref, ldtst, info)
+          INTEGER(C_INT),                INTENT(IN) :: datatype
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
+     &                                     OPTIONAL :: n, ldref, ldtst
+          TYPE(C_PTR), INTENT(IN),         OPTIONAL :: ref, tst
+          TYPE(LIBXSMM_MATDIFF_INFO),   INTENT(OUT) :: info
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_matdiff
+          INTERFACE
+            PURE SUBROUTINE internal_matdiff(datatype, m, n, ref, tst,  &
+     &      ldref, ldtst, info) BIND(C, NAME="libxsmm_matdiff_")
+              IMPORT LIBXSMM_MATDIFF_INFO, LIBXSMM_BLASINT_KIND
+              IMPORT C_PTR, C_INT
+              INTEGER(C_INT), INTENT(IN)                :: datatype
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldref, ldtst
+              TYPE(C_PTR), INTENT(IN), VALUE            :: ref, tst
+              TYPE(LIBXSMM_MATDIFF_INFO),   INTENT(OUT) :: info
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_matdiff(datatype, m, n, ref, tst,               &
+     &      ldref, ldtst, info)
         END SUBROUTINE
 
         ! Calculate a hash value for a given key value (array).

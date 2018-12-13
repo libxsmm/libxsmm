@@ -55,7 +55,13 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, li
   const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
   libxsmm_matdiff_info* info);
 
+/**
+ * Reduces input into output such that the difference is maintained or increased (max function).
+ * The very first (initial) output should be zeroed (libxsmm_matdiff_clear).
+ */
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input);
+/** Clears the given info-structure e.g., for the initial reduction-value (libxsmm_matdiff_reduce). */
+LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info);
 
 /**
  * Calculate whether there is a difference between two (short) buffers.
