@@ -30,6 +30,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 import itertools
+import operator
 import inspect
 import sys
 import os
@@ -171,8 +172,10 @@ def version_branch_from_file(version_filepath):
     try:
         version_list, n = version_file.read().replace("\n", "").split(sep), 0
         for word in version_list:
-            if not all(subword.isdigit() for subword in word.split(".")):
-                branch += (word if 0 == n else (sep + word))
+            if not reduce(operator.and_,
+                          (subword.isdigit() for subword in word.split(".")),
+                          True):
+                branch += [sep + word, word][0 == n]
                 n += 1
             else:
                 break
@@ -194,7 +197,7 @@ def version_branch(max_strlen=-1):
         if (version_numbers(version) < version_numbers(local)):
             version = local
     if (0 < max_strlen):
-        start = max_strlen / 3
+        start = int(max_strlen / 3)
         cut = max(branch.rfind("-", start, max_strlen),
                   branch.rfind("_", start, max_strlen),
                   branch.rfind(".", start, max_strlen))
