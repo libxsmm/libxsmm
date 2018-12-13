@@ -222,7 +222,11 @@ libxsmm -> libxsmm_matcopy_
 libxsmm -> libxsmm_matcopy_thread
 libxsmm -> libxsmm_matcopy_thread_internal
 libxsmm -> libxsmm_matdiff
+libxsmm -> libxsmm_matdiff_
+libxsmm -> libxsmm_matdiff_clear
+libxsmm -> libxsmm_matdiff_clear_
 libxsmm -> libxsmm_matdiff_reduce
+libxsmm -> libxsmm_matdiff_reduce_
 libxsmm -> libxsmm_mcopy_descriptor_init
 libxsmm -> libxsmm_mhd_element_comparison
 libxsmm -> libxsmm_mhd_read
