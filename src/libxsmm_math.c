@@ -606,7 +606,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff)(const libxsmm_datatype* dataty
   libxsmm_matdiff_info* info)
 {
   static int error_once = 0;
-  if ((NULL == datatype || NULL == m || EXIT_SUCCESS != libxsmm_matdiff(datatype, *m, *(NULL != n ? n : m), ref, tst, ldref, ldtst, info))
+  if ((NULL == datatype || NULL == m || EXIT_SUCCESS != libxsmm_matdiff(*datatype, *m, *(NULL != n ? n : m), ref, tst, ldref, ldtst, info))
     && 0 != libxsmm_verbosity && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_matdiff specified!\n");
