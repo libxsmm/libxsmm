@@ -158,7 +158,7 @@ int main(void)
         GEMM_GOLD(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 
-        result = libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m[test], n[test], d, c, ldc + test, ldc + test, &diff_test);
+        result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(OTYPE), m[test], n[test], d, c, ldc + test, ldc + test);
         if (EXIT_SUCCESS == result) {
           if (1.0 >= (1000.0 * diff_test.normf_rel)) {
             libxsmm_matdiff_reduce(&diff, &diff_test);

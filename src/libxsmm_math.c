@@ -64,9 +64,9 @@
 }
 
 
-LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n,
-  const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
-  libxsmm_matdiff_info* info)
+LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
+  libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n, const void* ref, const void* tst,
+  const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst)
 {
   int result = EXIT_SUCCESS, result_swap = 0;
   if (0 == ref && 0 != tst) { ref = tst; tst = NULL; result_swap = 1; }
@@ -598,15 +598,15 @@ LIBXSMM_API double libxsmm_rand_f64(void)
 #if defined(LIBXSMM_BUILD)
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff)(const libxsmm_datatype* /*datatype*/, const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/,
-  const void* /*ref*/, const void* /*tst*/, const libxsmm_blasint* /*ldref*/, const libxsmm_blasint* /*ldtst*/,
-  libxsmm_matdiff_info* /*info*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff)(const libxsmm_datatype* datatype, const libxsmm_blasint* m, const libxsmm_blasint* n,
-  const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
-  libxsmm_matdiff_info* info)
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff)(libxsmm_matdiff_info* /*info*/,
+  const libxsmm_datatype* /*datatype*/, const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const void* /*ref*/, const void* /*tst*/,
+  const libxsmm_blasint* /*ldref*/, const libxsmm_blasint* /*ldtst*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff)(libxsmm_matdiff_info* info,
+  const libxsmm_datatype* datatype, const libxsmm_blasint* m, const libxsmm_blasint* n, const void* ref, const void* tst,
+  const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst)
 {
   static int error_once = 0;
-  if ((NULL == datatype || NULL == m || EXIT_SUCCESS != libxsmm_matdiff(*datatype, *m, *(NULL != n ? n : m), ref, tst, ldref, ldtst, info))
+  if ((NULL == datatype || NULL == m || EXIT_SUCCESS != libxsmm_matdiff(info, *datatype, *m, *(NULL != n ? n : m), ref, tst, ldref, ldtst))
     && 0 != libxsmm_verbosity && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_matdiff specified!\n");

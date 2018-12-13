@@ -1440,13 +1440,13 @@
 
         ! Utility function to calculate the difference between two matrices.
         ! Implicit FORTRAN 77 interface:
+        ! TYPE         :: info
         ! INTEGER(4)   :: datatype
         ! INTEGER(4|8) :: m, n, ldref, ldtst
         ! ARRAY        :: ref, tst
-        ! TYPE         :: info
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matdiff
-        PURE SUBROUTINE libxsmm_matdiff(datatype, m, n, ref, tst,       &
-     &  ldref, ldtst, info)
+        PURE SUBROUTINE libxsmm_matdiff(info, datatype, m, n,           &
+     &  ref, tst, ldref, ldtst)
           INTEGER(C_INT),                INTENT(IN) :: datatype
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
@@ -1455,8 +1455,8 @@
           TYPE(LIBXSMM_MATDIFF_INFO),   INTENT(OUT) :: info
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_matdiff
           INTERFACE
-            PURE SUBROUTINE internal_matdiff(datatype, m, n, ref, tst,  &
-     &      ldref, ldtst, info) BIND(C, NAME="libxsmm_matdiff_")
+            PURE SUBROUTINE internal_matdiff(info, datatype, m, n,      &
+     &      ref, tst, ldref, ldtst) BIND(C, NAME="libxsmm_matdiff_")
               IMPORT LIBXSMM_MATDIFF_INFO, LIBXSMM_BLASINT_KIND
               IMPORT C_PTR, C_INT
               INTEGER(C_INT), INTENT(IN)                :: datatype
@@ -1466,8 +1466,8 @@
               TYPE(LIBXSMM_MATDIFF_INFO),   INTENT(OUT) :: info
             END SUBROUTINE
           END INTERFACE
-          CALL internal_matdiff(datatype, m, n, ref, tst,               &
-     &      ldref, ldtst, info)
+          CALL internal_matdiff(info, datatype, m, n,                   &
+     &      ref, tst, ldref, ldtst)
         END SUBROUTINE
 
         ! Calculate a hash value for a given key value (array).

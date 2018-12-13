@@ -42,9 +42,10 @@
         !DIR$ ATTRIBUTES ALIGN:64 :: a, b, c, tmp
         !$OMP THREADPRIVATE(tmp)
         TYPE(LIBXSMM_DMMFUNCTION) :: xmm
-        DOUBLE PRECISION :: duration, scale, max_diff, diff
         INTEGER(8) :: i, r, s, size0, size1, size, repetitions, start
+        TYPE(LIBXSMM_MATDIFF_INFO) :: diff, max_diff
         INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, k
+        DOUBLE PRECISION :: duration, scale
         CHARACTER(32) :: argv
         INTEGER :: argc
 
@@ -96,8 +97,8 @@
         repetitions = size / s
         scale = 1D0 / s
         duration = 0
-        max_diff = 0
 
+        CALL libxsmm_matdiff_clear(max_diff)
         ALLOCATE(c(m,n))
         ALLOCATE(a(m,k,s))
         ALLOCATE(b(k,n,s))
@@ -190,9 +191,10 @@
         DEALLOCATE(tmp)
         !$OMP END PARALLEL
         CALL performance(duration, m, n, k, size)
-        diff = MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
-        WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
-        max_diff = MAX(diff, max_diff)
+        CALL libxsmm_matdiff(diff, LIBXSMM_DATATYPE_F64, m, n,          &
+     &    libxsmm_ptr2(d), libxsmm_ptr2(c))
+        WRITE(*, "(1A,A,F10.1)") CHAR(9), "diff:      ", diff%l2_abs
+        CALL libxsmm_matdiff_reduce(max_diff, diff)
 
         IF (libxsmm_available(xmm)) THEN
           c(:,:) = 0
@@ -220,9 +222,10 @@
           DEALLOCATE(tmp)
           !$OMP END PARALLEL
           CALL performance(duration, m, n, k, size)
-          diff = MAXVAL((c(:,:) - d(:,:)) * (c(:,:) - d(:,:)))
-          WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "diff:       ", diff
-          max_diff = MAX(diff, max_diff)
+          CALL libxsmm_matdiff(diff, LIBXSMM_DATATYPE_F64, m, n,        &
+     &      libxsmm_ptr2(d), libxsmm_ptr2(c))
+          WRITE(*, "(1A,A,F10.1)") CHAR(9), "diff:      ", diff%l2_abs
+          CALL libxsmm_matdiff_reduce(max_diff, diff)          
         END IF
 
         ! Deallocate global arrays
@@ -234,7 +237,7 @@
         ! finalize LIBXSMM
         CALL libxsmm_finalize()
 
-        IF (1.LT.max_diff) STOP 1
+        IF (1.LT.(max_diff%l2_rel)) STOP 1
 
       CONTAINS
         SUBROUTINE init(seed, matrix, scale, n)

@@ -509,7 +509,7 @@ int main(int argc, char* argv []) {
     printf("%fs for C\n", l_runtime);
     printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime * 1.0e9));
     run_jit_double( l_xgemm_desc, l_a_d, l_b_d, l_c_d );
-    libxsmm_matdiff(LIBXSMM_DATATYPE_F64, l_m, l_n, l_c_gold_d, l_c_d, &l_ldc, &l_ldc, &l_diff);
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F64, l_m, l_n, l_c_gold_d, l_c_d, &l_ldc, &l_ldc);
     printf("max. error: %f\n", l_diff.linf_abs);
 
     libxsmm_free(l_a_d);
@@ -532,7 +532,7 @@ int main(int argc, char* argv []) {
     printf("%fs for C\n", l_runtime);
     printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime * 1.0e9));
     run_jit_float( l_xgemm_desc, l_a_f, l_b_f, l_c_f );
-    libxsmm_matdiff(LIBXSMM_DATATYPE_F32, l_m, l_n, l_c_gold_f, l_c_f, &l_ldc, &l_ldc, &l_diff);
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, l_m, l_n, l_c_gold_f, l_c_f, &l_ldc, &l_ldc);
     printf("max. error: %f\n", l_diff.linf_abs);
 
     libxsmm_free(l_a_f);
