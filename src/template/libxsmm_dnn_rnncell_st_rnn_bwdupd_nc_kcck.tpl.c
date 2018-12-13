@@ -147,13 +147,15 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   libxsmm_internal_matrix_zero(K,     db,  start_thread, tid, handle->desc.threads);
 }
 
-/* transpose W */
-for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
-  ik = (ikic / (C/bc));
-  ic = (ikic % (C/bc));
-  for (jk = 0; jk < bk; ++jk) {
-    for (jc = 0; jc < bc; ++jc) {
-      LIBXSMM_VLA_ACCESS(4, wT, ic, ik, jk, jc, kBlocks, bk, bc) =  LIBXSMM_VLA_ACCESS(4, w, ik, ic, jc, jk, cBlocks, bc, bk);
+if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+  /* transpose W */
+  for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
+    ik = (ikic / (C/bc));
+    ic = (ikic % (C/bc));
+    for (jk = 0; jk < bk; ++jk) {
+      for (jc = 0; jc < bc; ++jc) {
+        LIBXSMM_VLA_ACCESS(4, wT, ic, ik, jk, jc, kBlocks, bk, bc) =  LIBXSMM_VLA_ACCESS(4, w, ik, ic, jc, jk, cBlocks, bc, bk);
+      }
     }
   }
 }
