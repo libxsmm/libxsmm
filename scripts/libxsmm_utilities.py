@@ -194,11 +194,14 @@ def version_branch(max_strlen=-1):
         if (version_numbers(version) < version_numbers(local)):
             version = local
     if (0 < max_strlen):
-        cut = max(branch.rfind("-", 0, max_strlen),
-                  branch.rfind("_", 0, max_strlen),
-                  branch.rfind(".", 0, max_strlen))
-        if (0 < cut):
+        start = max_strlen / 3
+        cut = max(branch.rfind("-", start, max_strlen),
+                  branch.rfind("_", start, max_strlen),
+                  branch.rfind(".", start, max_strlen))
+        if (start < cut):
             branch = branch[0:cut]
+        else:
+            branch = branch[0:max_strlen]
     return (version, branch)
 
 
