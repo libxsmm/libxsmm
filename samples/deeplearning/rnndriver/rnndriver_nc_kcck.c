@@ -1018,14 +1018,12 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = K*K; /* U^T */
-      flops += (2.0 * K*N*K); /* U^T * delta */
+      flops = (2.0 * K*N*K); /* U^T * delta */
       flops += (K*N); /* dJdh + (U^T * delta) */
       flops += (tflops * K*N); /* sigma'(Z) */
       flops += (K*N); /* sigma'(Z) * (dJdh + (U^T * delta)) */
       flops *= t; /* for t time steps */
-      tempflops = C*K; /* W^T */
-      tempflops += (2.0 * K*N*C); /* W^T * delta */
+      tempflops = (2.0 * K*N*C); /* W^T * delta */
       tempflops *= t; /* for t time steps of input */
       flops += tempflops;
       flops *= iters;
@@ -1106,24 +1104,20 @@ int main(int argc, char* argv[])
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
-      flops = K*K; /* U^T */
-      flops += (2.0 * K*N*K); /* U^T * delta */
+      flops = (2.0 * K*N*K); /* U^T * delta */
       flops += (K*N); /* dJdh + (U^T * delta) */
       flops += (tflops * K*N); /* sigma'(Z) */
       flops += (K*N); /* sigma'(Z) * (dJdh + (U^T * delta)) */
       flops *= t; /* for t time steps */
-      tempflops = K*N; /* h^T */
-      tempflops += (2.0 * K*N*K); /* delta * h^T */
+      tempflops = (2.0 * K*N*K); /* delta * h^T */
       tempflops *= t; /* for t time steps */
       tempflops += (K*K * (t-1)); /* for summation of dJdU */
       flops += tempflops;
-      tempflops = N*C; /* x^T */
-      tempflops += (2.0 * K*N*C); /* delta * x^T */
+      tempflops = (2.0 * K*N*C); /* delta * x^T */
       tempflops *= t; /* for t time steps */
       tempflops += (C*K * (t-1)); /* for summation of dJdW */
       flops += tempflops;
-      tempflops = C*K; /* W^T */
-      tempflops += (2.0 * K*N*C); /* W^T * delta */
+      tempflops = (2.0 * K*N*C); /* W^T * delta */
       tempflops *= t; /* for t time steps of input */
       flops += tempflops;
       flops *= iters;
