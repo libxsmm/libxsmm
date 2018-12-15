@@ -51,11 +51,17 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
 } libxsmm_matdiff_info;
 
 /** Utility function to calculate the difference between two matrices. */
-LIBXSMM_API int libxsmm_matdiff(libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n,
-  const void* ref, const void* tst, const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst,
-  libxsmm_matdiff_info* info);
+LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
+  libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n, const void* ref, const void* tst,
+  const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst);
 
+/**
+ * Reduces input into output such that the difference is maintained or increased (max function).
+ * The very first (initial) output should be zeroed (libxsmm_matdiff_clear).
+ */
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input);
+/** Clears the given info-structure e.g., for the initial reduction-value (libxsmm_matdiff_reduce). */
+LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info);
 
 /**
  * Calculate whether there is a difference between two (short) buffers.

@@ -30,6 +30,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 import itertools
+import operator
 import inspect
 import sys
 import os
@@ -171,8 +172,10 @@ def version_branch_from_file(version_filepath):
     try:
         version_list, n = version_file.read().replace("\n", "").split(sep), 0
         for word in version_list:
-            if not all(subword.isdigit() for subword in word.split(".")):
-                branch += (word if 0 == n else (sep + word))
+            if not reduce(operator.and_,
+                          (subword.isdigit() for subword in word.split(".")),
+                          True):
+                branch += [sep + word, word][0 == n]
                 n += 1
             else:
                 break
@@ -182,7 +185,7 @@ def version_branch_from_file(version_filepath):
     return (version, branch)
 
 
-def version_branch():
+def version_branch(max_strlen=-1):
     version_filename = "version.txt"
     filepath_default = os.path.realpath(os.path.join(os.path.dirname(
         inspect.getfile(inspect.currentframe())), "..", version_filename))
@@ -193,6 +196,15 @@ def version_branch():
         local, ignored = version_branch_from_file(filepath_local)
         if (version_numbers(version) < version_numbers(local)):
             version = local
+    if (0 < max_strlen):
+        start = int(max_strlen / 3)
+        cut = max(branch.rfind("-", start, max_strlen),
+                  branch.rfind("_", start, max_strlen),
+                  branch.rfind(".", start, max_strlen))
+        if (start < cut):
+            branch = branch[0:cut]
+        else:
+            branch = branch[0:max_strlen]
     return (version, branch)
 
 

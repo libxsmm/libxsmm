@@ -1,7 +1,8 @@
 .env export-ignore
-.github export-ignore
 .theme export-ignore
+.github export-ignore
 .fullci export-ignore
+.abi.txt export-ignore
 .codefile export-ignore
 .gitconfig export-ignore
 .gitignore export-ignore
@@ -10,14 +11,14 @@ _config.yml export-ignore
 .gitattributes export-ignore
 .markdownlint.json export-ignore
 CODE_OF_CONDUCT.md export-ignore
-PULL_REQUEST_TEMPLATE.md export-ignore
 documentation/*.pptx export-ignore
 documentation/*.pptm export-ignore
 scripts/tool_scan.sh export-ignore
 scripts/tool_normalize.sh export-ignore
+PULL_REQUEST_TEMPLATE.md export-ignore
+samples/seissol/*.orient export-ignore
 samples/seissol/*.bound export-ignore
 samples/seissol/*.neigh export-ignore
-samples/seissol/*.orient export-ignore
 samples/seissol/*.sides export-ignore
 samples/seissol/*.size export-ignore
 samples/edge/mats export-ignore

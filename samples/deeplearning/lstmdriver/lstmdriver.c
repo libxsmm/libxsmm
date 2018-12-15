@@ -918,7 +918,7 @@ int main(int argc, char* argv[])
       matrix_copy(K*N, &LIBXSMM_VLA_ACCESS(2, h, t-1, 0, K * N), htest);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, K*N, 1, &LIBXSMM_VLA_ACCESS(2, hgold, t-1, 0, K * N), htest, 0, 0, &norms_fwd);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, K*N, 1, &LIBXSMM_VLA_ACCESS(2, hgold, t-1, 0, K * N), htest, 0, 0);
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -963,7 +963,7 @@ int main(int argc, char* argv[])
       matrix_copy(N*C*t, dxt, djdxtestt);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, N*C*t, 1, djdxgoldt, djdxtestt, 0, 0, &norms_bwd);
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, N*C*t, 1, djdxgoldt, djdxtestt, 0, 0);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -1016,7 +1016,7 @@ int main(int argc, char* argv[])
       matrix_copy(K, djdbogold, &LIBXSMM_VLA_ACCESS(2, djdb4, 3, 0, K));
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, C*K*4, 1, djdwgold4, djdwtest, 0, 0, &norms_upd_w);
+      libxsmm_matdiff(&norms_upd_w, LIBXSMM_DATATYPE_F32, C*K*4, 1, djdwgold4, djdwtest, 0, 0);
       printf("Delta weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_w.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_w.l1_tst);
@@ -1027,7 +1027,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_w.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_w);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, K*K*4, 1, djdrgold4, djdrtest, 0, 0, &norms_upd_r);
+      libxsmm_matdiff(&norms_upd_r, LIBXSMM_DATATYPE_F32, K*K*4, 1, djdrgold4, djdrtest, 0, 0);
       printf("Delta recurrent weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_r.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_r.l1_tst);
@@ -1038,7 +1038,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_r.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_r);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, K*4, 1, djdbgold4, djdbtest, 0, 0, &norms_upd_b);
+      libxsmm_matdiff(&norms_upd_b, LIBXSMM_DATATYPE_F32, K*4, 1, djdbgold4, djdbtest, 0, 0);
       printf("Delta bias\n");
       printf("L1 reference  : %.25g\n", norms_upd_b.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_b.l1_tst);
@@ -1095,7 +1095,7 @@ int main(int argc, char* argv[])
       matrix_copy(K, djdbogold, &LIBXSMM_VLA_ACCESS(2, djdb4, 3, 0, K));
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, N*C*t, 1, djdxgoldt, djdxtestt, 0, 0, &norms_bwd);
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, N*C*t, 1, djdxgoldt, djdxtestt, 0, 0);
       printf("Delta input\n");
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
@@ -1106,7 +1106,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_bwd);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, C*K*4, 1, djdwgold4, djdwtest, 0, 0, &norms_upd_w);
+      libxsmm_matdiff(&norms_upd_w, LIBXSMM_DATATYPE_F32, C*K*4, 1, djdwgold4, djdwtest, 0, 0);
       printf("Delta weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_w.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_w.l1_tst);
@@ -1117,7 +1117,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_w.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_w);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, K*K*4, 1, djdrgold4, djdrtest, 0, 0, &norms_upd_r);
+      libxsmm_matdiff(&norms_upd_r, LIBXSMM_DATATYPE_F32, K*K*4, 1, djdrgold4, djdrtest, 0, 0);
       printf("Delta recurrent weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_r.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_r.l1_tst);
@@ -1128,7 +1128,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_r.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_r);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, K*4, 1, djdbgold4, djdbtest, 0, 0, &norms_upd_b);
+      libxsmm_matdiff(&norms_upd_b, LIBXSMM_DATATYPE_F32, K*4, 1, djdbgold4, djdbtest, 0, 0);
       printf("Delta bias\n");
       printf("L1 reference  : %.25g\n", norms_upd_b.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_b.l1_tst);

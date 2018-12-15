@@ -351,7 +351,7 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
     /* compare */
-    libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output_fp, naive_libxsmm_output, 0, 0, &norms_fwd);
+    libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output_fp, naive_libxsmm_output, 0, 0);
     printf("L1 reference  : %.25f\n", norms_fwd.l1_ref);
     printf("L1 test       : %.25f\n", norms_fwd.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -432,7 +432,7 @@ int main(int argc, char* argv[])
         ch_sum2[ch_i] = (float) dsum2;
       }
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum, ch_sum_fuse, 0, 0, &norms_batchstats);
+      libxsmm_matdiff(&norms_batchstats, LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum, ch_sum_fuse, 0, 0);
       printf("Channel Sum:\n");
       printf("L1 reference  : %.25f\n", norms_batchstats.l1_ref);
       printf("L1 test       : %.25f\n", norms_batchstats.l1_tst);
@@ -442,7 +442,7 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_batchstats.linf_rel);
       printf("Check-norm    : %.24f\n", norms_batchstats.normf_rel);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum2, ch_sum2_fuse, 0, 0, &norms_batchstats);
+      libxsmm_matdiff(&norms_batchstats, LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum2, ch_sum2_fuse, 0, 0);
       printf("\nChannel Sum2:\n");
       printf("L1 reference  : %.25f\n", norms_batchstats.l1_ref);
       printf("L1 test       : %.25f\n", norms_batchstats.l1_tst);

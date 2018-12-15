@@ -33,32 +33,47 @@
 HERE=$(cd $(dirname $0); pwd -P)
 LIBS=${HERE}/../lib
 
+ABINEW=.abi.log
+ABICUR=.abi.txt
+LIBTYPE=so
+
 BASENAME=$(command -v basename 2>/dev/null)
 ECHO=$(command -v echo 2>/dev/null)
+SORT=$(command -v sort 2>/dev/null)
+DIFF=$(command -v diff 2>/dev/null)
 SED=$(command -v sed 2>/dev/null)
-CAT=$(command -v cat 2>/dev/null)
 CUT=$(command -v cut 2>/dev/null)
 LS=$(command -v ls 2>/dev/null)
 RM=$(command -v rm 2>/dev/null)
+CP=$(command -v cp 2>/dev/null)
 NM=$(command -v nm 2>/dev/null)
 
-if [ "" != "${ECHO}" ] && [ "" != "${SED}" ] && [ "" != "${CAT}" ] && [ "" != "${CUT}" ] && \
-   [ "" != "${LS}" ] && [ "" != "${RM}" ] && [ "" != "${NM}" ];
+if [ "" != "${ECHO}" ] && [ "" != "${SORT}" ] && [ "" != "${DIFF}" ] && \
+   [ "" != "${NM}"   ] && [ "" != "${SED}"  ] && [ "" != "${CUT}"  ] && \
+   [ "" != "${LS}"   ] && [ "" != "${RM}"   ] && [ "" != "${CP}"   ];
 then
-  ${RM} -f .checkabi.log
-  for LIBTYPE in a so; do
-    for LIBFILE in $(ls -1 ${LIBS}/*.${LIBTYPE} 2>/dev/null); do
+  for LIBFILE in $(${LS} -1 ${LIBS}/*.${LIBTYPE} 2>/dev/null); do
+    LIBFILES="${LIBFILES} ${LIBFILE}"
+  done
+  if [ "" != "${LIBFILES}" ]; then
+    ${RM} -f ${ABINEW}
+    for LIBFILE in ${LIBFILES}; do
       LIB=$(${BASENAME} ${LIBFILE} .${LIBTYPE})
       ${ECHO} "Checking ${LIB}..."
       ${NM} ${LIBFILE} | while read LINE;
       do
         SYMBOL=$(${ECHO} "${LINE}" | ${SED} -n "/ T /p" | ${CUT} -d" " -f3)
         if [ "" != "${SYMBOL}" ]; then
-          if [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^libxsmm/p)" ] && \
-             [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^__/p)" ] && \
-             [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /_$/p)" ];
+          if [ "" != "$(${ECHO} ${SYMBOL} | ${SED} -n /^libxsmm/p)" ]; then
+            ${ECHO} "${LIB} -> ${SYMBOL}" >> ${ABINEW}
+          elif [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^__libxsmm/p)" ] && \
+               [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^__..*_/p)" ] && \
+               [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^.gem._/p)" ] && \
+               [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^_init/p)" ] && \
+               [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^_fini/p)" ];
           then
-            ${ECHO} "  ${LIB}.${LIBTYPE} -> ${OBJECT} -> ${SYMBOL}" >> .checkabi.log
+            ${ECHO} "Error: ${LIB} -> ${SYMBOL} (non-conforming name)"
+            exit 1
           fi
         else
           LOCATION=$(${ECHO} "${LINE}" | ${SED} -n "/..*\.o:$/p")
@@ -68,12 +83,15 @@ then
         fi
       done
     done
-  done
-  if [ -e .checkabi.log ]; then
-    ${ECHO} "There are non-conforming function names:"
-    ${CAT} .checkabi.log
+    REMOVED=$(${DIFF} --new-line-format="" --unchanged-line-format="" <(${SORT} .abi.txt) <(${SORT} .abi.log))
+    if [ "" = "${REMOVED}" ]; then
+      ${CP} ${ABINEW} ${ABICUR}
+      ${ECHO} "Successfully Completed."
+    else
+      ${ECHO} "Error: ${REMOVED} (removed or renamed)"
+    fi
   else
-    ${ECHO} "Successfully Completed."
+    ${ECHO} "Warning: ABI checker requires shared libraries (${LIBTYPE})."
   fi
 else
   ${ECHO} "Error: missing prerequisites!"

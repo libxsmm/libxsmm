@@ -151,7 +151,7 @@ int main(int argc, char* argv[])
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / d2);
       }
       libxsmm_matdiff_info diff;
-      result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, td.data(), tc.data(), &m, &m, &diff);
+      result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(ITYPE), m, n, td.data(), tc.data(), &m, &m);
       if (EXIT_SUCCESS == result) {
         fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
         if (check < diff.l2_rel) {
