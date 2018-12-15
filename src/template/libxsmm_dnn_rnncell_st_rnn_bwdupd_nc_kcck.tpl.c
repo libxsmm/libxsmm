@@ -60,6 +60,7 @@ int nBlocks = N/bn;
 int cBlocks = C/bc;
 int kBlocks = K/bk;
 unsigned long long blocks;
+const float beta = 0.0;
 /* multidimensional arrays */
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
@@ -80,7 +81,9 @@ element_output_type *zt = (element_output_type*)handle->internal_z;
 LIBXSMM_VLA_DECL(3, element_output_type, z, zt, N, K);
 #endif
 /* define batch-reduce gemm kernels */
-const libxsmm_smmfunction_reducebatch batchreduce_kernela = libxsmm_smmdispatch_reducebatch( bc, bn, bk, &bc, &K, &C, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernelaz = libxsmm_smmdispatch_reducebatch( bc, bn, bk, &bc, &K, &C, NULL, &beta, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernelbz = libxsmm_smmdispatch_reducebatch( bk, bk, bn, &K, &N, &bk, NULL, &beta, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernelcz = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &K, &N, &bk, NULL, &beta, NULL);
 const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_reducebatch( bk, bk, bn, &K, &N, &bk, NULL, NULL, NULL);
 const libxsmm_smmfunction_reducebatch batchreduce_kernelc = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &K, &N, &bk, NULL, NULL, NULL);
 const libxsmm_smmfunction_reducebatch batchreduce_kerneld = libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL);
@@ -127,6 +130,13 @@ const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads =
 const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
 const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
 
+int k_tasks = K/16;
+int k_chunksize = (k_tasks % (libxsmm_blasint)handle->desc.threads == 0) ? (k_tasks / (libxsmm_blasint)handle->desc.threads) : ((k_tasks / (libxsmm_blasint)handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const libxsmm_blasint k_thr_begin = (ltid * k_chunksize * 16 < K) ? (ltid * k_chunksize * 16) : K;
+const libxsmm_blasint k_thr_end = ((ltid + 1) * k_chunksize * 16 < K) ? ((ltid + 1) * k_chunksize * 16) : K;
+__m512 db_sum;
+
 libxsmm_blasint ikic, inic, inik, icin, ikin;
 
 /* Auxiliary arrays for batch-reduce gemm calls  */
@@ -135,17 +145,6 @@ const element_output_type *B_array[1024];
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, (int)ltid);
-
-/* initialization is done at the beginning */
-if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-  libxsmm_internal_matrix_zero(N*C*t, dxt, start_thread, tid, handle->desc.threads);
-}
-
-if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-  libxsmm_internal_matrix_zero(C*K,   dwD, start_thread, tid, handle->desc.threads);
-  libxsmm_internal_matrix_zero(K*K,   drD, start_thread, tid, handle->desc.threads);
-  libxsmm_internal_matrix_zero(K,     db,  start_thread, tid, handle->desc.threads);
-}
 
 if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
   /* transpose W */
@@ -237,18 +236,11 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
     }
     /* Reduce batch gemm call  */
     blocks = kBlocks;
-    batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, t-1, in, ic, N, C), &blocks);
+    batchreduce_kernelaz(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, t-1, in, ic, N, C), &blocks);
   }
 }
 
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-  /* gradient bias */
-  for (ik = thr_begin_k; ik < thr_end_k; ik++) {
-    for (in = 0; in < N; in++) {
-      db[ik] += LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K);
-    }
-  }
-
   /* dr = delta * h^T */
   for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
     icb = ikic / (K/bk);
@@ -261,7 +253,7 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
       B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
     }
     blocks = nBlocks;
-    batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dr, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
+    batchreduce_kernelbz(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dr, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
   }
 
   /* dw = delta * x^T */
@@ -276,14 +268,13 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
       B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
     }
     blocks = nBlocks;
-    batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dw, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
+    batchreduce_kernelcz(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dw, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
   }
 }
 
 libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
 for (i = t-2; i >= 0; --i) {
-
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* transpose xt for current timestep */
     for (icin = thr_begin_nc; icin < thr_end_nc; ++icin ) {
@@ -336,7 +327,6 @@ for (i = t-2; i >= 0; --i) {
     in = (inik / (K/bk))*bn;
     ikb = (inik % (K/bk));
     ik = ikb*bk;
-
     /* delta = dh */
     libxsmm_internal_matrix_copy_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dh, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) );
 
@@ -376,18 +366,11 @@ for (i = t-2; i >= 0; --i) {
       }
       /* Reduce batch gemm call  */
       blocks = kBlocks;
-      batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, i, in, ic, N, C), &blocks);
+      batchreduce_kernelaz(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, i, in, ic, N, C), &blocks);
     }
   }
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-    /* gradient bias */
-    for (ik = thr_begin_k; ik < thr_end_k; ik++) {
-      for (in = 0; in < N; in++) {
-        db[ik] += LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K);
-      }
-    }
-
     /* dr = delta * h^T */
     for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
       icb = ikic / (K/bk);
@@ -422,3 +405,17 @@ for (i = t-2; i >= 0; --i) {
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }
 
+/* gradient bias */
+if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+  for (ik = k_thr_begin; ik < k_thr_end; ik += 16) {
+    db_sum = _mm512_setzero_ps();
+    for (i = 0; i < t; i++) {
+      for (in = 0; in < N; in++) {
+        db_sum = _mm512_add_ps(db_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K)));
+      }
+    }
+    LIBXSMM_INTRINSICS_MM512_STREAM_PS(&db[ik], db_sum);
+  } 
+}
+
+libxsmm_barrier_wait(handle->barrier, (int)ltid);
