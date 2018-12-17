@@ -200,8 +200,6 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   }
 }
 
-libxsmm_barrier_wait(handle->barrier, (int)ltid);
-
 /* The following code is for time step t-1 */
 for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
   in = (inik / (K/bk))*bn;
@@ -216,9 +214,7 @@ for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
 #if defined(LIBXSMM_DNN_RNN_TANH_BWDUPD)
   libxsmm_internal_matrix_tanh_inverse_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K) );
 #endif
-
-  libxsmm_internal_matrix_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dh,    t-1, in, ik, N, K),
-      &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K) );
+  libxsmm_internal_matrix_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dh,    t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik, N, K) );
 }
 
 libxsmm_barrier_wait(handle->barrier, (int)ltid);
@@ -272,9 +268,37 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   }
 }
 
-libxsmm_barrier_wait(handle->barrier, (int)ltid);
-
 for (i = t-2; i >= 0; --i) {
+  /* let's run the cell in blocks for good locality */
+  for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
+    in = (inik / (K/bk))*bn;
+    ikb = (inik % (K/bk));
+    ik = ikb*bk;
+    /* delta = dh */
+    libxsmm_internal_matrix_copy_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dh, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) );
+
+    /* delta += R^T * delta+1 */
+    for (ic = 0; ic < kBlocks; ic++) {
+      A_array[ic] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rT, ikb, ic, 0, 0, kBlocks, bk, bk);
+      B_array[ic] = (element_output_type*) &LIBXSMM_VLA_ACCESS(3, delta, i+1, in, ic*bk, N, K);
+    }
+    /* Reduce batch gemm call  */
+    blocks = kBlocks;
+    batchreduce_kerneld(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) , &blocks);
+
+    /* run inverse non-linear op */
+#if defined(LIBXSMM_DNN_RNN_RELU_BWDUPD)
+    libxsmm_internal_matrix_relu_inverse_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) );
+#endif
+#if defined(LIBXSMM_DNN_RNN_SIGMOID_BWDUPD)
+    libxsmm_internal_matrix_sigmoid_inverse_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) );
+#endif
+#if defined(LIBXSMM_DNN_RNN_TANH_BWDUPD)
+    libxsmm_internal_matrix_tanh_inverse_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) );
+#endif
+  }
+  libxsmm_barrier_wait(handle->barrier, (int)ltid);
+
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* transpose xt for current timestep */
     for (icin = thr_begin_nc; icin < thr_end_nc; ++icin ) {
@@ -320,39 +344,6 @@ for (i = t-2; i >= 0; --i) {
     }
   }
 
-  libxsmm_barrier_wait(handle->barrier, (int)ltid);
-
-  /* let's run the cell in blocks for good locality */
-  for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
-    in = (inik / (K/bk))*bn;
-    ikb = (inik % (K/bk));
-    ik = ikb*bk;
-    /* delta = dh */
-    libxsmm_internal_matrix_copy_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dh, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) );
-
-    /* delta += R^T * delta+1 */
-    for (ic = 0; ic < kBlocks; ic++) {
-      A_array[ic] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rT, ikb, ic, 0, 0, kBlocks, bk, bk);
-      B_array[ic] = (element_output_type*) &LIBXSMM_VLA_ACCESS(3, delta, i+1, in, ic*bk, N, K);
-    }
-    /* Reduce batch gemm call  */
-    blocks = kBlocks;
-    batchreduce_kerneld(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) , &blocks);
-
-    /* run inverse non-linear op */
-#if defined(LIBXSMM_DNN_RNN_RELU_BWDUPD)
-    libxsmm_internal_matrix_relu_inverse_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) );
-#endif
-#if defined(LIBXSMM_DNN_RNN_SIGMOID_BWDUPD)
-    libxsmm_internal_matrix_sigmoid_inverse_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) );
-#endif
-#if defined(LIBXSMM_DNN_RNN_TANH_BWDUPD)
-    libxsmm_internal_matrix_tanh_inverse_inplace_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K) );
-#endif
-  }
-
-  libxsmm_barrier_wait(handle->barrier, (int)ltid);
-
   if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* dx = W^T * delta */
     for (inic = thr_begin_nc; inic < thr_end_nc; ++inic ) {
@@ -369,6 +360,8 @@ for (i = t-2; i >= 0; --i) {
       batchreduce_kernelaz(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, i, in, ic, N, C), &blocks);
     }
   }
+
+  libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* dr = delta * h^T */
@@ -401,12 +394,11 @@ for (i = t-2; i >= 0; --i) {
       batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dw, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
     }
   }
-
-  libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }
 
 /* gradient bias */
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+  libxsmm_barrier_wait(handle->barrier, (int)ltid);
   for (ik = k_thr_begin; ik < k_thr_end; ik += 16) {
     db_sum = _mm512_setzero_ps();
     for (i = 0; i < t; i++) {
@@ -417,5 +409,4 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
     LIBXSMM_INTRINSICS_MM512_STREAM_PS(&db[ik], db_sum);
   } 
 }
-
 libxsmm_barrier_wait(handle->barrier, (int)ltid);
