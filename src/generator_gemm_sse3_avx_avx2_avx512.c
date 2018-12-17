@@ -61,7 +61,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
 
   /* some hard coded parameters for k-blocking */
   unsigned int l_k_blocking = 4;
-  unsigned int l_k_threshold = 30;
+  unsigned int l_k_threshold = 23;
 
   /* initialize n-blocking */
   unsigned int l_n_done = 0;
