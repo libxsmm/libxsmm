@@ -1474,7 +1474,7 @@ ifeq (0,$(COMPATIBLE))
     LDFLAGS += $(XLNKOPT)--gc-sections
     ifeq (0,$(VISIBILITY)) # -fvisibility=hidden may cause crashes
       CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
-      FCFLAGS += -fvisibility=hidden
+      #FCFLAGS += -fvisibility=hidden
       CFLAGS += -fvisibility=hidden
     endif
   endif
