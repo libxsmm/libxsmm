@@ -94,7 +94,7 @@ then
     done
     ${SORT} -u ${ABINEW} > ${ABITMP}
     ${MV} ${ABITMP} ${ABINEW}
-    REMOVED=$(${DIFF} --new-line-format="" --unchanged-line-format="" ${ABICUR} ${ABINEW})
+    REMOVED=$(${DIFF} --new-line-format="" --unchanged-line-format="" <(${SORT} ${ABICUR}) ${ABINEW})
     if [ "" = "${REMOVED}" ]; then
       ${CP} ${ABINEW} ${ABICUR}
       ${ECHO} "Successfully completed."
