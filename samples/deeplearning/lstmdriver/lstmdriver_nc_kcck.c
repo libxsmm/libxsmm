@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee (Intel Corp.)
+/* Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
 #include <libxsmm_intrinsics_x86.h>
@@ -230,6 +230,52 @@ LIBXSMM_INLINE void convert_c4k_4ck(int C, int K, float *src, float *dst)
   }
 }
 
+LIBXSMM_INLINE void matrix_copy_CK_to_KCCK(float *src, float *dst, int C, int K, int bc, int bk)
+{
+  int k1, k2, c1, c2;
+  int kBlocks = K/bk;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(2, float, real_src, src, K);
+  LIBXSMM_VLA_DECL(4, float, real_dst, dst, cBlocks, bc, bk);
+
+#if defined(_OPENMP)
+# pragma omp parallel for private(k1)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (c2 = 0; c2 < bc; c2++) {
+        for (k2 = 0; k2 < bk; k2++) {
+          LIBXSMM_VLA_ACCESS(4, real_dst, k1, c1, c2, k2, cBlocks, bc, bk) =
+            LIBXSMM_VLA_ACCESS(2, real_src, c1*bc+c2, k1*bk+k2, K);
+        }
+      }
+    }
+  }
+}
+
+LIBXSMM_INLINE void matrix_copy_KCCK_to_CK(float *src, float *dst, int C, int K, int bc, int bk)
+{
+  int k1, k2, c1, c2;
+  int kBlocks = K/bk;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(2, float, real_dst, dst, K);
+  LIBXSMM_VLA_DECL(4, float, real_src, src, cBlocks, bc, bk);
+
+#if defined(_OPENMP)
+# pragma omp parallel for private(k1)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (c2 = 0; c2 < bc; c2++) {
+        for (k2 = 0; k2 < bk; k2++) {
+          LIBXSMM_VLA_ACCESS(2, real_dst, c1*bc+c2, k1*bk+k2, K) =
+            LIBXSMM_VLA_ACCESS(4, real_src, k1, c1, c2, k2, cBlocks, bc, bk);
+        }
+      }
+    }
+  }
+}
+
 
 int main(int argc, char* argv[])
 {
@@ -237,7 +283,7 @@ int main(int argc, char* argv[])
   float *cspgold, *hpgold, *djdcspgold, *djdhpgold;
   float *igoldt, *fgoldt, *ogoldt, *cgoldt, *dgoldt, *bimgold, *bfmgold, *bomgold, *bcmgold, *doutgoldt;
   float *i1gold, *i2gold, *f1gold, *f2gold, *o1gold, *o2gold, *c1gold, *c2gold, *d1gold, *d2gold, *dhgold;
-  float *xt, *csp, *hp, *w, *r, *b, *cst, *ht;
+  float *xt, *csp, *hp, *w, *w_tmp, *r, *r_tmp, *b, *cst, *ht;
   float *it, *ft, *ot, *cit, *cot;
   float *dxt, *dcsp, *dhp, *dw, *dr, *db, *dcs, *dht;
   float *i3gold, *f3gold, *d3gold, *d4gold, *deltagoldt;
@@ -258,9 +304,12 @@ int main(int argc, char* argv[])
   int C = 512;      /* number of inputs */
   int K = 64;       /* number of outputs */
   int t = 5;        /* number of time steps (> 1) */
+  int bk = 64;
+  int bn = 64;
+  int bc = 64;
 
   const char *const env_check = getenv("CHECK");
-  const double check = LIBXSMM_ABS(0 == env_check ? 0/*disabled by default*/ : atof(env_check));
+  const double check = LIBXSMM_ABS(0 == env_check ? 1/*disabled by default*/ : atof(env_check));
 
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads(); /* number of threads */
@@ -324,6 +373,9 @@ int main(int argc, char* argv[])
   if (argc > j) C     = atoi(argv[j++]);
   if (argc > j) K     = atoi(argv[j++]);
   if (argc > j) t     = atoi(argv[j++]);
+  if (argc > j) bn     = atoi(argv[j++]);
+  if (argc > j) bk     = atoi(argv[j++]);
+  if (argc > j) bc     = atoi(argv[j++]);
 
   if (t <= 0) {
     printf("time_steps %d should be greater than 1\n\n", t);
@@ -424,6 +476,8 @@ int main(int argc, char* argv[])
   hp    = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   w     = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
   r     = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
+  w_tmp     = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
+  r_tmp     = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
   b     = (float*)libxsmm_aligned_malloc(K*4*sizeof(float), 2097152);
   cst   = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
   ht    = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
@@ -733,11 +787,14 @@ int main(int argc, char* argv[])
     lstmcell_desc.C = C;
     lstmcell_desc.K = K;
     lstmcell_desc.t = t;
+    lstmcell_desc.bn = bn;
+    lstmcell_desc.bk = bk;
+    lstmcell_desc.bc = bc;    
     lstmcell_desc.cell_type = LIBXSMM_DNN_RNNCELL_LSTM;
     lstmcell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     lstmcell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     lstmcell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NC;
-    lstmcell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_CK;
+    lstmcell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_KCCK;
 
     libxsmm_handle = libxsmm_dnn_create_rnncell( lstmcell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
@@ -832,14 +889,16 @@ int main(int argc, char* argv[])
     matrix_copy(N*C*t, xgoldt, xt);
     matrix_copy(K*N, cspgold, csp);
     matrix_copy(K*N, hpgold, hp);
-    convert_ck_c4k(C, K, 0, wigold, w);
-    convert_ck_c4k(C, K, 1, wcgold, w);
-    convert_ck_c4k(C, K, 2, wfgold, w);
-    convert_ck_c4k(C, K, 3, wogold, w);
-    convert_ck_c4k(K, K, 0, rigold, r);
-    convert_ck_c4k(K, K, 1, rcgold, r);
-    convert_ck_c4k(K, K, 2, rfgold, r);
-    convert_ck_c4k(K, K, 3, rogold, r);
+    convert_ck_c4k(C, K, 0, wigold, w_tmp);
+    convert_ck_c4k(C, K, 1, wcgold, w_tmp);
+    convert_ck_c4k(C, K, 2, wfgold, w_tmp);
+    convert_ck_c4k(C, K, 3, wogold, w_tmp);
+    convert_ck_c4k(K, K, 0, rigold, r_tmp);
+    convert_ck_c4k(K, K, 1, rcgold, r_tmp);
+    convert_ck_c4k(K, K, 2, rfgold, r_tmp);
+    convert_ck_c4k(K, K, 3, rogold, r_tmp);
+    matrix_copy_CK_to_KCCK(w_tmp, w, C, 4*K, bc, bk);
+    matrix_copy_CK_to_KCCK(r_tmp, r, K, 4*K, bk, bk);   
     matrix_copy(K, bigold, &(b[0]));
     matrix_copy(K, bcgold, &(b[K]));
     matrix_copy(K, bfgold, &(b[2*K]));
@@ -1452,6 +1511,8 @@ int main(int argc, char* argv[])
   libxsmm_free(hp);
   libxsmm_free(w);
   libxsmm_free(r);
+  libxsmm_free(w_tmp);
+  libxsmm_free(r_tmp);
   libxsmm_free(b);
   libxsmm_free(cst);
   libxsmm_free(ht);
