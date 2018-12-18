@@ -638,7 +638,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* coprime, const int*
   if (NULL != coprime && NULL != n)
 #endif
   {
-    *coprime = (long long)(libxsmm_shuffle(*n) & 0x7FFFFFFF);
+    *coprime = (long long)(libxsmm_shuffle((unsigned int)(*n)) & 0x7FFFFFFF);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -659,7 +659,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* data, cons
   if (NULL != hash && NULL != data && NULL != size && NULL != seed)
 #endif
   {
-    *hash = (int)(libxsmm_hash(data, *size, *seed) & 0x7FFFFFFF);
+    *hash = (int)(libxsmm_hash(data, (unsigned int)(*size), (unsigned int)(*seed)) & 0x7FFFFFFF);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -680,7 +680,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash2)(long long* hash, const void* dat
   if (NULL != hash && NULL != data && NULL != size && NULL != seed)
 #endif
   {
-    *hash = (long long)(libxsmm_hash(data, *size, *seed) & 0x7FFFFFFFFFFFFFFF);
+    *hash = (long long)(libxsmm_hash(data, (unsigned int)(*size), (unsigned int)(*seed)) & 0x7FFFFFFFFFFFFFFF);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
