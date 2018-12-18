@@ -158,7 +158,7 @@ COMPATIBLE ?= 0
 # Control visibility of symbols
 # 0: hidden unless explicitly marked visible
 # 1: default visibility
-VISIBILITY ?= 0
+#VISIBILITY ?= 0
 
 # Number of repeated calls (tests),
 # or used to scale the problem size
