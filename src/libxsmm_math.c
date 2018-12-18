@@ -630,8 +630,28 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff_clear)(libxsmm_matdiff_info* in
 }
 
 
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(int* /*coprime*/, const int* /*n*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(int* coprime, const int* n)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != coprime && NULL != n)
+#endif
+  {
+    *coprime = (libxsmm_shuffle(*n) & 0x7FFFFFFF);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_shuffle specified!\n");
+  }
+#endif
+}
+
+
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* /*data*/, const int* /*size*/, const int* /*seed*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* /*hash*/, const void* /*data*/, const int* /*size*/, const int* /*seed*/);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* data, const int* size, const int* seed)
 {
 #if !defined(NDEBUG)
@@ -646,6 +666,27 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(int* hash, const void* data, cons
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_hash specified!\n");
+  }
+#endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash2)(long long* /*hash*/, const void* /*data*/, const long long* /*size*/, const long long* /*seed*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash2)(long long* hash, const void* data, const long long* size, const long long* seed)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != hash && NULL != data && NULL != size && NULL != seed)
+#endif
+  {
+    *hash = (libxsmm_hash(data, *size, *seed) & 0x7FFFFFFFFFFFFFFF);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_hash2 specified!\n");
   }
 #endif
 }
