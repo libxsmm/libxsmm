@@ -155,6 +155,11 @@ endif
 # compatible with the GCC tool chain
 COMPATIBLE ?= 0
 
+# Control visibility of symbols
+# 0: hidden unless explicitly marked visible
+# 1: default visibility
+VISIBILITY ?= 0
+
 # Number of repeated calls (tests),
 # or used to scale the problem size
 TESTSIZE ?= 1
@@ -1462,12 +1467,16 @@ ifeq (0,$(COMPATIBLE))
       endif
     endif
     endif
-    # flag -fvisibility=hidden is causing crashes (assertions during validation)
-    CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
-    CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
-    FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+    CXXFLAGS += -fdata-sections -ffunction-sections
+    FCFLAGS += -fdata-sections -ffunction-sections
+    CFLAGS += -fdata-sections -ffunction-sections
     # --gc-sections: relies on section-flags present at compile-stage
     LDFLAGS += $(XLNKOPT)--gc-sections
+    ifeq (0,$(VISIBILITY)) # -fvisibility=hidden may cause crashes
+      CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
+      FCFLAGS += -fvisibility=hidden
+      CFLAGS += -fvisibility=hidden
+    endif
   endif
   ifeq (0,$(EXP))
     CXXFLAGS += -fno-exceptions
