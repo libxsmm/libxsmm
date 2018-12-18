@@ -1349,15 +1349,15 @@
         ! INTEGER(4) :: n
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_shuffle
         ELEMENTAL FUNCTION libxsmm_shuffle(n)
+          INTEGER(C_LONG_LONG) :: libxsmm_shuffle
           INTEGER(C_INT), INTENT(IN) :: n
-          INTEGER(C_INT) :: libxsmm_shuffle
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_shuffle
           INTERFACE
             PURE SUBROUTINE internal_shuffle(coprime, n)                &
      &      BIND(C, NAME="libxsmm_shuffle_")
-              IMPORT C_INT
-              INTEGER(C_INT), INTENT(OUT) :: coprime
-              INTEGER(C_INT), INTENT(IN)  :: n
+              IMPORT C_LONG_LONG, C_INT
+              INTEGER(C_LONG_LONG), INTENT(OUT) :: coprime
+              INTEGER(C_INT), INTENT(IN) :: n
             END SUBROUTINE
           END INTERFACE
           CALL internal_shuffle(libxsmm_shuffle, n)
