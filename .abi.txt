@@ -206,6 +206,7 @@ libxsmm -> libxsmm_get_transkernel_info
 libxsmm -> libxsmm_get_verbosity
 libxsmm -> libxsmm_getrf_descriptor_init
 libxsmm -> libxsmm_hash
+libxsmm -> libxsmm_hash2_
 libxsmm -> libxsmm_hash_
 libxsmm -> libxsmm_icbrt_u32
 libxsmm -> libxsmm_icbrt_u64
@@ -286,6 +287,7 @@ libxsmm -> libxsmm_sgemm
 libxsmm -> libxsmm_sgemm_
 libxsmm -> libxsmm_sgemm_descriptor_init
 libxsmm -> libxsmm_shuffle
+libxsmm -> libxsmm_shuffle_
 libxsmm -> libxsmm_smmbatch_blas
 libxsmm -> libxsmm_smmdispatch
 libxsmm -> libxsmm_smmdispatch_reducebatch
