@@ -398,7 +398,6 @@ for (i = t-2; i >= 0; --i) {
 
 /* gradient bias */
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-  libxsmm_barrier_wait(handle->barrier, (int)ltid);
   for (ik = k_thr_begin; ik < k_thr_end; ik += 16) {
     db_sum = _mm512_setzero_ps();
     for (i = 0; i < t; i++) {
