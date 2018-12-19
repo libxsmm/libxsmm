@@ -457,24 +457,6 @@ for (j = t-1; j >= 0; --j) {
   }
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-    /* gradient bias */
-    for (ik = k_thr_begin; ik < k_thr_end; ik += 16) {
-      dbi_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbi[ik]);
-      dbf_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbf[ik]);
-      dbo_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbo[ik]);
-      dbc_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbc[ik]);
-      for (in = 0; in < N; in++) {
-        dbi_sum = _mm512_add_ps(dbi_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, di,  in, ik, K)));
-        dbf_sum = _mm512_add_ps(dbf_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, df,  in, ik, K)));
-        dbo_sum = _mm512_add_ps(dbo_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, dp,  in, ik, K)));
-        dbc_sum = _mm512_add_ps(dbc_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K)));
-      }
-      _mm512_store_ps(&dbi[ik], dbi_sum);
-      _mm512_store_ps(&dbf[ik], dbf_sum);
-      _mm512_store_ps(&dbo[ik], dbo_sum);
-      _mm512_store_ps(&dbc[ik], dbc_sum);
-    }
-
     /* dr = difoc * h^T */
     for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
       icb = ikic / (K/bk);
@@ -540,6 +522,24 @@ for (j = t-1; j >= 0; --j) {
       }
       batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwc, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
     }
+
+    /* gradient bias */
+    for (ik = k_thr_begin; ik < k_thr_end; ik += 16) {
+      dbi_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbi[ik]);
+      dbf_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbf[ik]);
+      dbo_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbo[ik]);
+      dbc_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbc[ik]);
+      for (in = 0; in < N; in++) {
+        dbi_sum = _mm512_add_ps(dbi_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, di,  in, ik, K)));
+        dbf_sum = _mm512_add_ps(dbf_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, df,  in, ik, K)));
+        dbo_sum = _mm512_add_ps(dbo_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, dp,  in, ik, K)));
+        dbc_sum = _mm512_add_ps(dbc_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K)));
+      }
+      _mm512_store_ps(&dbi[ik], dbi_sum);
+      _mm512_store_ps(&dbf[ik], dbf_sum);
+      _mm512_store_ps(&dbo[ik], dbo_sum);
+      _mm512_store_ps(&dbc[ik], dbc_sum);
+    }  
   }
 
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
