@@ -302,6 +302,51 @@ for (j = t-1; j >= 0; --j) {
     libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K) );
   }
 
+  if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+    /* transpose xt for current timestep */
+    for (icin = thr_begin_nc; icin < thr_end_nc; ++icin ) {
+      in = (icin / (C/bc))*bn;
+      ic = (icin % (C/bc))*bc;
+
+      for (jc = 0; jc < bc; ++jc) {
+        for (jb = 0; jb < bn; ++jb) {
+          en = in + jb;
+          ec = ic + jc;
+          LIBXSMM_VLA_ACCESS(2, xT, ec, en, N) =  LIBXSMM_VLA_ACCESS(3, x, j, en, ec, N, C);
+        }
+      }
+    }
+
+    /* transpose ht for current timestep */
+    if (j == 0) {
+      for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
+        in = (ikin / (K/bk))*bn;
+        ik = (ikin % (K/bk))*bk;
+
+        for (jk = 0; jk < bk; ++jk) {
+          for (jb = 0; jb < bn; ++jb) {
+            en = in + jb;
+            ek = ik + jk;
+            LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(2, hp, en, ek, K);
+          }
+        }
+      }
+    } else {
+      for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
+        in = (ikin / (K/bk))*bn;
+        ik = (ikin % (K/bk))*bk;
+
+        for (jk = 0; jk < bk; ++jk) {
+          for (jb = 0; jb < bn; ++jb) {
+            en = in + jb;
+            ek = ik + jk;
+            LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(3, h, j-1, en, ek, N, K);
+          }
+        }
+      }
+    }
+  }
+
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
   for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
@@ -372,53 +417,6 @@ for (j = t-1; j >= 0; --j) {
       batchreduce_kerneld(A_array, B_array, &LIBXSMM_VLA_ACCESS(2, dhp, in, ik, K) , &blocks);
     }
   }
-
-  if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-    /* transpose xt for current timestep */
-    for (icin = thr_begin_nc; icin < thr_end_nc; ++icin ) {
-      in = (icin / (C/bc))*bn;
-      ic = (icin % (C/bc))*bc;
-
-      for (jc = 0; jc < bc; ++jc) {
-        for (jb = 0; jb < bn; ++jb) {
-          en = in + jb;
-          ec = ic + jc;
-          LIBXSMM_VLA_ACCESS(2, xT, ec, en, N) =  LIBXSMM_VLA_ACCESS(3, x, j, en, ec, N, C);
-        }
-      }
-    }
-
-    /* transpose ht for current timestep */
-    if (j == 0) {
-      for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
-        in = (ikin / (K/bk))*bn;
-        ik = (ikin % (K/bk))*bk;
-
-        for (jk = 0; jk < bk; ++jk) {
-          for (jb = 0; jb < bn; ++jb) {
-            en = in + jb;
-            ek = ik + jk;
-            LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(2, hp, en, ek, K);
-          }
-        }
-      }
-    } else {
-      for (ikin = thr_begin_nk; ikin < thr_end_nk; ++ikin ) {
-        in = (ikin / (K/bk))*bn;
-        ik = (ikin % (K/bk))*bk;
-
-        for (jk = 0; jk < bk; ++jk) {
-          for (jb = 0; jb < bn; ++jb) {
-            en = in + jb;
-            ek = ik + jk;
-            LIBXSMM_VLA_ACCESS(2, hT, ek, en, N) =  LIBXSMM_VLA_ACCESS(3, h, j-1, en, ek, N, K);
-          }
-        }
-      }
-    }
-  }
-
-  libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* dx = W^T * difoc */
