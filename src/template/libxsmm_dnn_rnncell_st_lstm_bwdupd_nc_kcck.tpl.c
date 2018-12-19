@@ -366,6 +366,13 @@ for (j = t-1; j >= 0; --j) {
       batchreduce_kerneld(A_array, B_array, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K) , &blocks);
 
       for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
+        A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rcT, ikb, icb, 0, 0, kBlocks, bk, bk);
+        B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dci,  in, ic, K);
+      }
+      /* Reduce batch gemm call  */
+      batchreduce_kerneld(A_array, B_array, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K) , &blocks);
+
+      for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
         A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rfT, ikb, icb, 0, 0, kBlocks, bk, bk);
         B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, df,  in, ic, K);
       }
@@ -375,13 +382,6 @@ for (j = t-1; j >= 0; --j) {
       for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
         A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, roT, ikb, icb, 0, 0, kBlocks, bk, bk);
         B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dp,  in, ic, K);
-      }
-      /* Reduce batch gemm call  */
-      batchreduce_kerneld(A_array, B_array, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K) , &blocks);
-
-      for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
-        A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rcT, ikb, icb, 0, 0, kBlocks, bk, bk);
-        B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dci,  in, ic, K);
       }
       /* Reduce batch gemm call  */
       batchreduce_kerneld(A_array, B_array, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K) , &blocks);
@@ -396,6 +396,13 @@ for (j = t-1; j >= 0; --j) {
       batchreduce_kerneld(A_array, B_array, &LIBXSMM_VLA_ACCESS(2, dhp, in, ik, K) , &blocks);
 
       for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
+        A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rcT, ikb, icb, 0, 0, kBlocks, bk, bk);
+        B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dci,  in, ic, K);
+      }
+      /* Reduce batch gemm call  */
+      batchreduce_kerneld(A_array, B_array, &LIBXSMM_VLA_ACCESS(2, dhp, in, ik, K) , &blocks);
+
+      for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
         A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rfT, ikb, icb, 0, 0, kBlocks, bk, bk);
         B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, df,  in, ic, K);
       }
@@ -405,13 +412,6 @@ for (j = t-1; j >= 0; --j) {
       for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
         A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, roT, ikb, icb, 0, 0, kBlocks, bk, bk);
         B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dp,  in, ic, K);
-      }
-      /* Reduce batch gemm call  */
-      batchreduce_kerneld(A_array, B_array, &LIBXSMM_VLA_ACCESS(2, dhp, in, ik, K) , &blocks);
-
-      for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
-        A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rcT, ikb, icb, 0, 0, kBlocks, bk, bk);
-        B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dci,  in, ic, K);
       }
       /* Reduce batch gemm call  */
       batchreduce_kerneld(A_array, B_array, &LIBXSMM_VLA_ACCESS(2, dhp, in, ik, K) , &blocks);
@@ -434,6 +434,13 @@ for (j = t-1; j >= 0; --j) {
       batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, j, in, ic, N, C)  , &blocks);
 
       for (ik = 0, ikb = 0; ik < K; ik += bk, ikb++) {
+        A_array[ikb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, wcT, icb, ikb, 0, 0, kBlocks, bk, bc);
+        B_array[ikb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K);
+      }
+      /* Reduce batch gemm call  */
+      batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, j, in, ic, N, C)  , &blocks);
+
+      for (ik = 0, ikb = 0; ik < K; ik += bk, ikb++) {
         A_array[ikb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, wfT, icb, ikb, 0, 0, kBlocks, bk, bc);
         B_array[ikb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, df,  in, ik, K);
       }
@@ -443,13 +450,6 @@ for (j = t-1; j >= 0; --j) {
       for (ik = 0, ikb = 0; ik < K; ik += bk, ikb++) {
         A_array[ikb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, woT, icb, ikb, 0, 0, kBlocks, bk, bc);
         B_array[ikb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dp,  in, ik, K);
-      }
-      /* Reduce batch gemm call  */
-      batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, j, in, ic, N, C)  , &blocks);
-
-      for (ik = 0, ikb = 0; ik < K; ik += bk, ikb++) {
-        A_array[ikb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, wcT, icb, ikb, 0, 0, kBlocks, bk, bc);
-        B_array[ikb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K);
       }
       /* Reduce batch gemm call  */
       batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, j, in, ic, N, C)  , &blocks);
@@ -472,6 +472,12 @@ for (j = t-1; j >= 0; --j) {
       batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dri, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
 
       for (in = 0, inb = 0; in < N; in += bn, inb++) {
+        A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K);
+        B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
+      }
+      batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, drc, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
+
+      for (in = 0, inb = 0; in < N; in += bn, inb++) {
         A_array[inb] = &LIBXSMM_VLA_ACCESS(2, df,  in, ik, K);
         B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
       }
@@ -482,12 +488,6 @@ for (j = t-1; j >= 0; --j) {
         B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
       }
       batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dro, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
-
-      for (in = 0, inb = 0; in < N; in += bn, inb++) {
-        A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K);
-        B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
-      }
-      batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, drc, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
     }
 
     /* dw = difoc * x^T */
@@ -505,6 +505,12 @@ for (j = t-1; j >= 0; --j) {
       batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwi, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
 
       for (in = 0, inb = 0; in < N; in += bn, inb++) {
+        A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K);
+        B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
+      }
+      batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwc, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
+
+      for (in = 0, inb = 0; in < N; in += bn, inb++) {
         A_array[inb] = &LIBXSMM_VLA_ACCESS(2, df,  in, ik, K);
         B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
       }
@@ -515,12 +521,6 @@ for (j = t-1; j >= 0; --j) {
         B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
       }
       batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwo, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
-
-      for (in = 0, inb = 0; in < N; in += bn, inb++) {
-        A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K);
-        B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
-      }
-      batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwc, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
     }
 
     /* gradient bias */
