@@ -1332,7 +1332,7 @@ int main(int argc, char* argv[])
 
  if ( pass == 4 ) {
       printf("##############################################\n");
-      printf("# Performance - FD+BWD+UPD (nc-ck Storage) #\n");
+      printf("# Performance - FWD+BWD+UPD (nc-ck Storage) #\n");
       printf("##############################################\n");
       /* run LIBXSMM LSTM for performance */
       l_start = libxsmm_timer_tick();

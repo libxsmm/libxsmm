@@ -309,7 +309,7 @@ int main(int argc, char* argv[])
   int bc = 64;
 
   const char *const env_check = getenv("CHECK");
-  const double check = LIBXSMM_ABS(0 == env_check ? 1/*disabled by default*/ : atof(env_check));
+  const double check = LIBXSMM_ABS(0 == env_check ? 0/*disabled by default*/ : atof(env_check));
 
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads(); /* number of threads */
@@ -1379,9 +1379,9 @@ int main(int argc, char* argv[])
     }
 
   if ( pass == 4 ) {
-      printf("##############################################\n");
-      printf("# Performance - FD+BWD+UPD (nc-kcck Storage) #\n");
-      printf("##############################################\n");
+      printf("###############################################\n");
+      printf("# Performance - FWD+BWD+UPD (nc-kcck Storage) #\n");
+      printf("###############################################\n");
       /* run LIBXSMM LSTM for performance */
       l_start = libxsmm_timer_tick();
 
