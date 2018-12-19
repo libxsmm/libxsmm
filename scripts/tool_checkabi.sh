@@ -63,16 +63,15 @@ then
       LIB=$(${BASENAME} ${LIBFILE} .${LIBTYPE})
       if [ "" = "${EXCLUDE}" ] || [ "" != "$(${ECHO} "${EXCLUDE}" | ${SED} "/\b${LIB}\b/d")" ]; then
         ${ECHO} "Checking ${LIB}..."
-        ${NM} ${LIBFILE} | while read LINE;
-        do
+        while read LINE; do
           SYMBOL=$(${ECHO} "${LINE}" | ${SED} -n "/ T /p" | ${CUT} -d" " -f3)
           if [ "" != "${SYMBOL}" ]; then
-            if [ "" != "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__libxsmm/p")" ] || \
+            if [ "" != "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__libxsmm_MOD_libxsmm/p")" ] || \
                [ "" != "$(${ECHO} ${SYMBOL} | ${SED} -n "/^libxsmm/p")" ];
             then
               ${ECHO} "${SYMBOL}" >> ${ABINEW}
-            elif [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__libxsmm/p")" ] && \
-                 [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__..*_/p")" ] && \
+            elif [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__libxsmm_MOD___/p")" ] && \
+                 [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__wrap_..*_/p")" ] && \
                  [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^.gem._/p")" ] && \
                  [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^_init/p")" ] && \
                  [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^_fini/p")" ];
@@ -87,7 +86,7 @@ then
               OBJECT=$(${ECHO} "${LOCATION}" | ${SED} -e "s/:$//")
             fi
           fi
-        done
+        done < <(${NM} ${LIBFILE})
       else
         ${ECHO} "Excluded ${LIB}"
       fi
@@ -99,7 +98,7 @@ then
       ${CP} ${ABINEW} ${ABICUR}
       ${ECHO} "Successfully completed."
     else
-      ${ECHO} "Error: removed or renamed function"
+      ${ECHO} "Error: removed or renamed function(s)"
       ${ECHO} "${REMOVED}"
     fi
   else
