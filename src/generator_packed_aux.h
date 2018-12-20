@@ -100,23 +100,28 @@ LIBXSMM_API_INLINE void compact_set_one_ (
      unsigned int datasize,
      char regset )
 {
-     double vector[16];
+     double dvector[16];
+     float  svector[16];
      int i;
-
-     LIBXSMM_UNUSED(datasize);
 
      if ( number > 16 )
      {
         fprintf(stderr,"loading too large a parameter for compact_set_one_\n");
         exit(-1);
      }
-     for ( i = 0 ; i < (int)number ; i++ ) vector[i]=1.0;
+     for ( i = 0 ; i < (int)number ; i++ ) { dvector[i]=1.0; svector[i]=1.0; }
 
-     libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) vector, "loadone", regset, reg );
+     if ( datasize == 4 ) 
+        libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) svector, "loadone", regset, reg );
+     else if ( datasize == 8 ) 
+        libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) dvector, "loadone", regset, reg );
+     else
+        printf("Unknown datasize in compact_set_one_ error\n");
 }
 
 LIBXSMM_API_INLINE void compact_store_matrix_gen_ (
      libxsmm_generated_code* io_code,
+     unsigned int trans,
      unsigned int lda,
      unsigned int i,
      unsigned int j,
@@ -126,11 +131,14 @@ LIBXSMM_API_INLINE void compact_store_matrix_gen_ (
      char regset,
      unsigned int matrix_gpreg )
 {
-     int element = number*(j-1)*lda + number*(i-1);
-     int offset = element * datasize;
+     int element;
+     int offset;
      unsigned int i_vmove_instr;
      int i_instruction_set;
 
+     if ( !trans ) element = number*(j-1)*lda + number*(i-1);
+     else          element = number*(i-1)*lda + number*(j-1);
+     offset = element * datasize;
      if ( /*(reg < 0) ||*/ (reg >=32) ) {
         printf("compact_store_matrix_gen trying to store from an invalid register: %d\n",reg);
         exit(-1);

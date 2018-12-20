@@ -180,9 +180,24 @@ void scopy_from_temp ( int layout, float *A, int lda, int m, int n, float *Atemp
     }
 }
 
+void
+show_real_matrix ( unsigned int m, unsigned int n, double *A, unsigned int lda )
+{
+    int i, j;
+
+    for ( i = 1 ; i <= m; i++ )
+    {
+       for ( j = 1 ; j <= n ; j++ )
+       {
+          printf("%g ",A[(j-1)*lda+(i-1)]);
+       }
+       printf("\n");
+    }
+}
+
 #if !defined(USE_MKL_FOR_REFERENCE) && !defined(LIBXSMM_NOFORTRAN) && (!defined(__BLAS) || (0 != __BLAS))
 extern void dgetrf_();
-extern void dgetrfnpi_();
+extern void dgetrfnp_();
 
 /* Reference code for compact dgetrf. Note that this just copies data into
    a buffer from the compact storage and calls the regular dgetrf code. This
@@ -192,29 +207,48 @@ void compact_dgetrf_ ( unsigned int *layout, unsigned int *m,
                       unsigned int *n, double *A, unsigned int *lda,
                       unsigned int *nmat, unsigned int *VLEN )
 {
-    int i, j, num, info, nfact=LIBXSMM_MIN(*m,*n);
+    int i, j, num, info, col;
     double *Ap, Atemp[BUFSIZE];
     static int ntimes = 0;
 
     if ( ++ntimes < 3 ) printf("Inside reference compact_dgetrf_()\n");
     if ( ++ntimes < 3 ) printf("layout=%d m=%d n=%d lda=%d nmat=%d VLEN=%d\n",*layout,*m,*n,*lda,*nmat,*VLEN);
+
+    if ( *layout == 102 ) col = *n; else col = *m;
+
     for ( i = 0, num = 0 ; i < (*nmat) ; i+= *VLEN, num++ )
     {
        for ( j = 0 ; j < *VLEN ; j++ )
        {
            /* Unpack the data, call a reference DGETRF, repack the data */
-           Ap = &A[j+num*(*lda)*(*n)*(*VLEN)];
-if (++ntimes < 3 ) printf("Doing a dgetrf at place i=%d j=%d num=%d Ap[%d]=%g\n",i,j,num,j+num*(*lda)*(*n)*(*VLEN),Ap[0]);
+           Ap = &A[j+num*(*lda)*col*(*VLEN)];
+if (++ntimes < 6 ) printf("Doing a dgetrf at place i=%d j=%d num=%d Ap[%d]=%g\n",i,j,num,j+num*(*lda)*col*(*VLEN),Ap[0]);
            dcopy_to_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
-           dgetrfnpi_ ( m, n, &nfact, Atemp, m, &info );
-           if ( info != 0 ) printf("Bad news reference code got info=%d\n",info);
+#if 0
+           if ( *m <= 4 && *n <= 4 ) {
+              printf("Matrix with i=%d j=%d num=%d loc=%ld lda=%d\n",i,j,num,j+num*(*lda)*col*(*VLEN),*lda);
+              show_real_matrix ( *m, *n, Atemp, *m );
+           }
+#endif
+           info = 0;
+           dgetrfnp_ ( m, n, Atemp, m, &info );
+#if 0
+           if ( *m <= 4 && *n <= 4 ) {
+              printf("Result with i=%d j=%d num=%d loc=%ld\n",i,j,num,j+num*(*lda)*col*(*VLEN));
+              show_real_matrix ( *m, *n, Atemp, *m );
+           }
+#endif
+           if ( info != 0 ) printf("*** BAD news reference code got info=%d in case i=%d num=%d j=%d\n",info,i,num,j);
            dcopy_from_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
+#if 0
+           printf("i=%d num=%d j=%d Ap[20]=%g\n",i,num,j,Ap[20]);
+#endif
        }
     }
 }
 
 extern void sgetrf_();
-extern void sgetrfnpi_();
+extern void sgetrfnp_();
 
 /* Reference code for compact sgetrf. Note that this just copies data into
    a buffer from the compact storage and calls the regular sgetrf code. This
@@ -226,7 +260,7 @@ void compact_sgetrf_ ( unsigned int *layout, unsigned int *m,
                       unsigned int *n, float *A, unsigned int *lda,
                       unsigned int *nmat, unsigned int *VLEN )
 {
-    int i, j, num, info, nfact=LIBXSMM_MIN(*m,*n);
+    int i, j, num, info;
     float *Ap, Atemp[BUFSIZE];
     static int ntimes = 0;
 
@@ -240,7 +274,7 @@ void compact_sgetrf_ ( unsigned int *layout, unsigned int *m,
            Ap = &A[j+num*(*lda)*(*n)*(*VLEN)];
 if (++ntimes < 3 ) printf("Doing a sgetrf at place i=%d j=%d num=%d Ap[%d]=%g\n",i,j,num,j+num*(*lda)*(*n)*(*VLEN),Ap[0]);
            scopy_to_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
-           sgetrfnpi_ ( m, n, n, Atemp, m, &info );
+           sgetrfnp_ ( m, n, Atemp, m, &info );
            if ( info != 0 ) printf("Bad news! Serial reference got info=%d\n",info);
            scopy_from_temp ( *layout, Ap, *lda, *m, *n, Atemp, *VLEN );
        }
@@ -249,24 +283,35 @@ if (++ntimes < 3 ) printf("Doing a sgetrf at place i=%d j=%d num=%d Ap[%d]=%g\n"
 
 #endif
 
+#define DUPLICATE_ELEMENTS_ACROSS
+
 LIBXSMM_INLINE
-void dfill_matrix ( double *matrix, unsigned int ld, unsigned int m, unsigned int n )
+void dfill_matrix ( int layout, double *matrix, unsigned int nmat, unsigned int ld, unsigned int m, unsigned int n, unsigned int VLEN )
 {
-  unsigned int i, j;
+  unsigned int i, j, k, k1, row, col;
+  size_t address;
   double dtmp;
 
-  if ( ld < m )
+  if ( layout == 102 ) { row = m; col = n; } else { row = n; col = m; }
+  if ( ld < row )
   {
-     fprintf(stderr,"Error is dfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
+     fprintf(stderr,"Error is dfill_matrix: ld=%u row=%u (m=%u n=%u) mismatched!\n",ld,row, m, n);
      exit(-1);
   }
-  for ( j = 1 ; j <= n ; j++ )
-  {
-     /* Fill through the leading dimension */
-     for ( i = 1; i <= ld; i++ )
-     {
-        dtmp = 1.0 - 2.0*libxsmm_rand_f64();
-        matrix [ (j-1)*ld + (i-1) ] = dtmp;
+
+  for ( k1 = 1 ; k1 <= nmat/VLEN ; k1++ ) {
+     for ( j = 1 ; j <= col; j++ ) {
+        for ( i = 1 ; i <= ld; i++ ) {
+           for ( k = 1 ; k <= VLEN ; k++ ) {
+              address = (k1-1)*col*ld*VLEN + (j-1)*ld*VLEN + (i-1)*VLEN + (k-1);
+#ifdef DUPLICATE_ELEMENTS_ACROSS
+              if ( k == 1 )
+#endif
+              if ( i <= row ) dtmp = 1.0 - 2.0*libxsmm_rand_f64();
+              else            dtmp = -99.9;
+              matrix [ address ] = dtmp;
+           }
+        }
      }
   }
 }
@@ -291,82 +336,98 @@ void dfill_identity ( double *matrix, unsigned int ld, unsigned int m, unsigned 
      }
   }
 }
-
 LIBXSMM_INLINE
-void sfill_matrix ( float *matrix, unsigned int ld, unsigned int m, unsigned int n )
+void sfill_matrix ( int layout, float *matrix, unsigned int nmat, unsigned int ld, unsigned int m, unsigned int n, unsigned int VLEN )
 {
-  unsigned int i, j;
+  unsigned int i, j, k, k1, row, col;
+  size_t address;
   double dtmp;
 
-  if ( ld < m )
+  if ( layout == 102 ) { row = m; col = n; } else { row = n; col = m; }
+  if ( ld < row )
   {
-     fprintf(stderr,"Error is sfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
+     fprintf(stderr,"Error is sfill_matrix: ld=%u row=%u (m=%u n=%u) mismatched!\n",ld,row, m, n);
      exit(-1);
   }
-  for ( j = 1 ; j <= n ; j++ )
-  {
-     /* Fill through the leading dimension */
-     for ( i = 1; i <= ld; i++ )
-     {
-        dtmp = 1.0 - 2.0*libxsmm_rand_f64();
-        matrix [ (j-1)*ld + (i-1) ] = (float) dtmp;
+
+  for ( k1 = 1 ; k1 <= nmat/VLEN ; k1++ ) {
+     for ( j = 1 ; j <= col; j++ ) {
+        for ( i = 1 ; i <= ld; i++ ) {
+           for ( k = 1 ; k <= VLEN ; k++ ) {
+              address = (k1-1)*col*ld*VLEN + (j-1)*ld*VLEN + (i-1)*VLEN + (k-1);
+#ifdef DUPLICATE_ELEMENTS_ACROSS
+              if ( k == 1 )
+#endif
+              if ( i <= row ) dtmp = 1.0 - 2.0*libxsmm_rand_f64();
+              else            dtmp = -99.9;
+              matrix [ address ] = (float) dtmp;
+           }
+        }
      }
   }
 }
 
 LIBXSMM_INLINE
-double residual_d ( double *A, unsigned int lda, unsigned int m, unsigned int n,
-                    double *B, unsigned int ldb, unsigned int *nerrs,
+double residual_s ( unsigned int layout, float *A, 
+                    unsigned int nmat, unsigned int VLEN,
+                    unsigned int lda, unsigned int m, unsigned int n, 
+                    float *B, unsigned int ldb, unsigned int *nerrs,
                     unsigned int *ncorr )
 {
-   unsigned int i, j;
+   unsigned int i, j, k, k1, row, col;
    double atmp, btmp, dtmp, ref, derror;
    static int ntimes = 0;
+   size_t address;
 
    *nerrs = 0;
    *ncorr = 0;
    derror = 0.0;
-   for ( j = 1 ; j<= n; j++ )
-   {
-      for ( i = 1; i <= m; i++ )
-      {
-         atmp = A[ (j-1)*lda + (i-1)];
-         btmp = B[ (j-1)*ldb + (i-1)];
-         ref  = LIBXSMM_MAX(atmp,-atmp);
-         if ( atmp >= btmp ) {
-             dtmp = atmp - btmp;
-         } else {
-             dtmp = btmp - atmp;
+
+   if ( layout == 102 ) { row = m ; col = n; } else { row = n ; col = m; }
+   
+   for ( k1 = 1 ; k1 <= nmat/VLEN ; k1++ ) {
+      for ( j = 1 ; j <= col; j++ ) {
+         for ( i = 1 ; i <= row; i++ ) {
+            for ( k = 1 ; k <= VLEN ; k++ ) {
+               address= (k1-1)*col*lda*VLEN + (j-1)*lda*VLEN + (i-1)*VLEN + (k-1);
+               atmp = (double) A[ address ];
+               address= (k1-1)*col*ldb*VLEN + (j-1)*ldb*VLEN + (i-1)*VLEN + (k-1);
+               btmp = (double) B[ address ];
+               ref = LIBXSMM_MAX(atmp,-atmp);
+               if ( atmp > btmp ) {
+                  dtmp = atmp - btmp;
+               } else {
+                  dtmp = btmp - atmp;
+               }
+               if ( isnan(dtmp) || isinf(dtmp) ) {
+                  if ( ++ntimes < 15 ) {
+                     printf("Denormal bug: A[%ld]=A(%u,%u,%u,%u) is %g B(%u,%u,%u,%u) is %g\n",address,k,i,j,k1,atmp,k,i,j,k1,btmp);
+                  }
+               } 
+               if ( (dtmp / ref > 1.0e-4) && (dtmp > 1.0e-7) ) {
+                  *nerrs = *nerrs + 1;
+                  if ( ++ntimes < 15 ) {
+                     printf("Bug #%i: A[%ld]=A(%u,%u,%u,%u) expected=%g instead=%g err=%g\n",ntimes,address,k,i,j,k1,atmp,btmp,dtmp);
+                  }   
+               } else {
+                  if ( (*nerrs > 0) && (ntimes < 10) && (*ncorr < 40) ) {
+                     printf("Cor #%u: A[%ld]=A(%u,%u,%u,%u) expected=%g\n",*ncorr+1,address,k,i,j,k1,atmp);
+                  }
+                  *ncorr = *ncorr + 1;
+               }
+               derror += dtmp;
+            }
          }
-         if ( isnan(dtmp) || isinf(dtmp) )
-         {
-             if ( ++ntimes < 15 )
-             {
-                printf("Denormal bug: A(%u,%u) is %g B(%u,%u) is %g\n",i,j,atmp,i,j,btmp);
-             }
-         }
-         if ( (dtmp / ref > 1.0e-12) && (dtmp > 1.0e-15) ) {
-             *nerrs = *nerrs + 1;
-             if ( ++ntimes < 15 )
-             {
-                printf("Bug #%i: A[%u]=A(%u,%u) expected=%g instead=%g err=%g\n",ntimes,(j-1)*lda+(i-1),i,j,atmp,btmp,dtmp);
-             }
-         } else {
-             if ( (*nerrs > 0) && (ntimes < 10) && (*ncorr < 40) )
-             {
-                printf("Cor #%u: A[%u]=A(%u,%u) expected=%g\n",*ncorr+1,(j-1)*lda+(i-1),i,j,atmp);
-             }
-             *ncorr = *ncorr + 1;
-         }
-         derror += dtmp;
       }
    }
    return ( derror );
 }
 
 LIBXSMM_INLINE
-double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
-                    float *B, unsigned int ldb, unsigned int *nerrs,
+double residual_d ( unsigned int layout, double *A,
+                    unsigned int nmat, unsigned int VLEN,
+                    unsigned int lda, unsigned int m, unsigned int n,
+                    double *B, unsigned int ldb, unsigned int *nerrs,
                     unsigned int *ncorr )
 {
    unsigned int i, j;
@@ -395,7 +456,7 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
                 printf("Denormal bug: A(%u,%u) is %g B(%u,%u) is %g\n",i,j,atmp,i,j,btmp);
              }
          }
-         if ( (dtmp / ref > 1.0e-4) && (dtmp > 1.0e-7) )
+         if ( (dtmp / ref > 1.0e-12) && (dtmp > 1.0e-15) )
          {
              *nerrs = *nerrs + 1;
              if ( ++ntimes < 15 )
@@ -417,6 +478,8 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
 
 #if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(TIME_MKL) && defined(__linux__)
   #define USE_KERNEL_GENERATION_DIRECTLY
+//#define USE_XSMM_GENERATED
+//#define TIME_MKL
 #endif
 
 #if 0
@@ -452,7 +515,7 @@ extern double dsecnd_();
 
 int main(int argc, char* argv[])
 {
-  unsigned int m=8, n=8, lda=8, ldb=8, nerrs, num, nmat, nmats, nmatd, ntest;
+  unsigned int m=8, n=8, lda=8, ldb=8, nerrs, num, nmat, ntest;
   unsigned int layout, asize, bsize;
 #ifdef AVX512_TESTING
   unsigned int VLEND=8, VLENS=16;
@@ -461,14 +524,15 @@ int main(int argc, char* argv[])
   unsigned int VLEND=4, VLENS=8;
   char arch[4]="hsw";
 #endif
-  unsigned int ncorr;
-  int i, j;
+  unsigned int ncorr; 
+  int i, j, large_entry;
   char side='L', uplo='L', trans='N', diag='N';
   float  *sa, *sb, *sc, *sd;
   double *da, *db, *dc, *dd, *tmpbuf;
   double dalpha = 1.0;
   float  salpha;
   double dtmp;
+  size_t sizea;
   const unsigned char *cptr;
   unsigned long op_count;
   unsigned int typesize8 = 8;
@@ -528,20 +592,21 @@ int main(int argc, char* argv[])
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
   ntest = LIBXSMM_MAX(ntest,1);
+#ifdef TEST_SINGLE
+  nmat = LIBXSMM_MAX(VLENS,nmat - (nmat%VLENS));
+#else
   nmat = LIBXSMM_MAX(VLEND,nmat - (nmat%VLEND));
+#endif
   layout = LIBXSMM_MAX(LIBXSMM_MIN(layout,102),101);
 
-  lda = LIBXSMM_MAX(lda,m);
+  if ( layout == 102 ) lda = LIBXSMM_MAX(lda,m);
+  else                 lda = LIBXSMM_MAX(lda,n);
 
   if ( m >= n ) {
      op_count = nmat * (double)n * (double)n * (3.0*(double)m-(double)n) / 3.0;
   } else {
      op_count = nmat * (double)m * (double)m * (3.0*(double)n-(double)m) / 3.0;
   }
-
-  nmats = LIBXSMM_MAX(VLENS,nmat - (nmat%VLENS));
-  nmatd = LIBXSMM_MAX(VLEND,nmat - (nmat%VLEND));
-  nmat = LIBXSMM_MAX(nmats,nmatd);
 
   printf("This is a real*%d tester for JIT compact DGETRF kernels! (m=%u n=%u lda=%u layout=%d nmat=%d)\n",typesize8,m,n,lda,layout,nmat);
 #ifdef USE_XSMM_GENERATED
@@ -585,29 +650,39 @@ int main(int argc, char* argv[])
 #ifndef NO_ACCURACY_CHECK
   printf("mallocing matrices\n");
 #endif
-  sa  = (float  *) malloc ( lda*n*nmat*sizeof(float) );
-  da  = (double *) malloc ( lda*n*nmat*sizeof(double) );
-  sc  = (float  *) malloc ( lda*n*nmat*sizeof(float) );
-  dc  = (double *) malloc ( lda*n*nmat*sizeof(double) );
-  sd  = (float  *) malloc ( lda*n*nmat*sizeof(float) );
-  dd  = (double *) malloc ( lda*n*nmat*sizeof(double) );
+  if ( layout == 102 ) sizea = lda*n*nmat;
+  else                 sizea = lda*m*nmat;
 
+  sa  = (float  *) malloc ( sizea*sizeof(float) );
+  da  = (double *) malloc ( sizea*sizeof(double) );
+  sc  = (float  *) malloc ( sizea*sizeof(float) );
+  dc  = (double *) malloc ( sizea*sizeof(double) );
+  sd  = (float  *) malloc ( sizea*sizeof(float) );
+  dd  = (double *) malloc ( sizea*sizeof(double) );
+
+  large_entry = LIBXSMM_MIN(256,sizea);
+  large_entry = large_entry - (large_entry%16);
+  while ( large_entry > m*n*nmat ) {
+     large_entry /= 2;
+  }
+  large_entry = LIBXSMM_MAX(large_entry,4);
+  
 #ifndef NO_ACCURACY_CHECK
   printf("filling matrices\n");
 #endif
-  sfill_matrix ( sa, lda, m, n*nmat );
+  sfill_matrix ( layout, sa, nmat, lda, m, n, VLEND );
 #ifdef TRIANGLE_IS_IDENTITY
   printf("Warning: setting triangular matrix to identity. Not good for accuracy testing\n");
-  dfill_identity ( da, lda, m, m, VLEND, nmatd/VLEND );
+  dfill_identity ( da, lda, m, m, VLEND, nmat/VLEND );
 #else
-  dfill_matrix ( da, lda, m, n*nmatd );
+  dfill_matrix ( layout, da, nmat, lda, m, n, VLEND );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
-  for ( i = 0 ; i < lda*n*nmat ; i++ ) sc[i]=sa[i];
-  for ( i = 0 ; i < lda*n*nmat ; i++ ) dc[i]=da[i];
-  for ( i = 0 ; i < lda*n*nmat ; i++ ) sd[i]=sa[i];
-  for ( i = 0 ; i < lda*n*nmat ; i++ ) dd[i]=da[i];
+  for ( i = 0 ; i < sizea ; i++ ) sc[i]=sa[i];
+  for ( i = 0 ; i < sizea ; i++ ) dc[i]=da[i];
+  for ( i = 0 ; i < sizea ; i++ ) sd[i]=sa[i];
+  for ( i = 0 ; i < sizea ; i++ ) dd[i]=da[i];
   printf("Pointing at the kernel now\n");
 #endif
 
@@ -648,6 +723,7 @@ int main(int argc, char* argv[])
 
 #if defined(USE_MKL_FOR_REFERENCE) || defined(TIME_MKL)
   #include "mkl.h"
+  int info;
   MKL_LAYOUT CLAYOUT = (layout == 101) ? MKL_ROW_MAJOR : MKL_COL_MAJOR;
   MKL_SIDE SIDE = (side == 'R' || side == 'r') ? MKL_RIGHT : MKL_LEFT;
   MKL_UPLO UPLO = (uplo == 'U' || uplo == 'u') ? MKL_UPPER : MKL_LOWER;
@@ -660,7 +736,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifndef NO_ACCURACY_CHECK
-  printf("Before routine, initial A(1,1)=%g A[256]=%g\n",da[0],da[256]);
+  printf("Before routine, initial A(1,1)=%g A[%d]=%g\n",da[0],large_entry,da[large_entry]);
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
   double one = 1.0;
@@ -677,11 +753,14 @@ int main(int argc, char* argv[])
   for ( j = 0 ; j < (int)ntest ; j++ )
   {
 #ifndef TRIANGLE_IS_IDENTITY
-  for ( i = 0 ; i < (int)(lda*n*nmat); i++ ) dc[i]=da[i];
+  for ( i = 0 ; i < (int)sizea; i++ ) dc[i]=da[i];
 #endif
   for ( i = 0 , num = 0; i < (int)nmat ; i+= (int)VLEND, num++ )
   {
-     double *Ap = &dc[num*lda*n*VLEND];
+     double *Ap;
+
+     if ( layout == 102 ) Ap = &dc[num*lda*n*VLEND];
+     else                 Ap = &dc[num*lda*m*VLEND];
 #ifdef MKL_TIMER
      tmptimer = dsecnd_();
 #else
@@ -701,8 +780,13 @@ int main(int argc, char* argv[])
      (*opcode_routine)( Ap );
 #endif
 #ifdef TIME_MKL
-     mkl_dgetrfnp_compact ( CLAYOUT, m, n, dc, lda, info, CMP_FORMAT, nmat );
-     i+=nmatd; /* Because MKL will do everything */
+  #if 1 
+     info = 0;
+     mkl_dgetrfnp_compact ( CLAYOUT, m, n, dc, lda, &info, CMP_FORMAT, nmat );
+     i+=nmat; /* Because MKL will do everything */
+  #else
+     mkl_dgetrfnp_compact ( CLAYOUT, m, n, Ap, lda, &info, CMP_FORMAT, VLEND );
+  #endif
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY_XCT
      getrf_xct_ ( Ap, &one );
@@ -727,20 +811,30 @@ int main(int argc, char* argv[])
 #ifndef NO_ACCURACY_CHECK
   printf("Average time to get through %u matrices: %g\n",nmat,timer);
   printf("Gflops: %g\n",(double)op_count/(timer*1.0e9));
-  printf("after routine, new      C(1,1)=%g C[256]=%g\n",dc[0],dc[256]);
+  printf("after routine, new      C(1,1)=%g C[%d]=%g\n",dc[0],large_entry,dc[large_entry]);
 #endif
 
 #ifdef TEST_SINGLE
-  printf("Before r4 routine, initial C(1,1)=%g C[256]=%g\n",sc[0],sc[256]);
+  printf("Before r4 routine, initial C(1,1)=%g C[%d]=%g\n",sc[0],large_entry,sc[large_entry]);
 
-  for ( i = 0 , num = 0; i < nmats ; i+= VLENS, num++ )
+  for ( i = 0 , num = 0; i < nmat ; i+= VLENS, num++ )
   {
-     float *Ap = &sc[num*lda*n*VLENS];
+     float *Ap;
+     if ( layout == 102 ) Ap = &sc[num*lda*n*VLENS];
+     else                 Ap = &sc[num*lda*m*VLENS];
 #ifdef USE_XSMM_GENERATED
      mykernel.sp ( Ap );
 #endif
+#ifdef USE_KERNEL_GENERATION_DIRECTLY
+     (*opcode_routine)( Ap );
+#endif
+#ifdef TIME_MKL
+     info = 0;
+     mkl_sgetrfnp_compact ( CLAYOUT, m, n, sc, lda, &info, CMP_FORMAT, nmat );
+     i+=nmat; /* Because MKL will do everything */
+#endif
   }
-  printf("after r4 routine, new      C(1,1)=%g C]256]=%g\n",dc[0],dc[256]);
+  printf("after r4 routine, new      C(1,1)=%g C[%d]=%g\n",dc[0],large_entry,dc[large_entry]);
 #endif
 
 #ifndef NO_ACCURACY_CHECK
@@ -749,7 +843,7 @@ int main(int argc, char* argv[])
   for ( j = 0 ; j < (int)ntest ; j++ )
   {
 #ifndef TRIANGLE_IS_IDENTITY
-  for ( i = 0 ; i < (int)(lda*n*nmat) ; i++ ) dd[i]=da[i];
+  for ( i = 0 ; i < (int)sizea ; i++ ) dd[i]=da[i];
 #endif
 
 #ifdef MKL_TIMER
@@ -775,18 +869,20 @@ int main(int argc, char* argv[])
   timer2 /= ((double)ntest);
   printf("Reference time=%g Reference Gflops=%g\n",timer2,op_count/(timer2*1.0e9));
 
+#ifndef TEST_SINGLE
   /* Compute the residual between B and C */
-  dtmp = residual_d ( dc, lda, m, n*nmat, dd, lda, &nerrs, &ncorr );
+  dtmp = residual_d ( layout, dc, nmat, VLEND, lda, m, n, dd, lda, &nerrs, &ncorr );
   printf("R8 m=%u n=%u lda=%u error: %g number of errors: %u corrects: %u",m,n,lda,dtmp,nerrs,ncorr);
   if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*8 %u case",m,n,layout);
   printf("\n");
+#endif
 
 #ifdef TEST_SINGLE
   /* Call some reference code now on a copy of the B matrix (C) */
   for ( i = 0 ; i < lda*n*nmat ; i++ ) sd[i]=sa[i];
   compact_sgetrf_ ( &layout, &m, &n, sd, &lda, &nmat, &VLENS );
   /* Compute the residual between C and D */
-  dtmp = residual_s ( sc, lda, m, n*nmat, sd, lda, &nerrs, &ncorr );
+  dtmp = residual_s ( layout, sc, nmat, VLENS, lda, m, n, sd, lda, &nerrs, &ncorr );
   printf("float m=%u n=%u lda=%u error: %g number of errors: %u corrects: %u\n",m,n,lda,dtmp,nerrs,ncorr);
   if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*4 case",m,n);
   printf("\n");
