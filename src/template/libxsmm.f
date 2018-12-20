@@ -163,26 +163,22 @@
 
         ! Generic function type (double-precision).
         TYPE :: LIBXSMM_DMMFUNCTION
-          PRIVATE
-            INTEGER(C_INTPTR_T) :: handle
+          INTEGER(C_INTPTR_T) :: handle
         END TYPE
 
         ! Generic function type (single-precision).
         TYPE :: LIBXSMM_SMMFUNCTION
-          PRIVATE
-            INTEGER(C_INTPTR_T) :: handle
+          INTEGER(C_INTPTR_T) :: handle
         END TYPE
 
         ! Generic function type (single-precision).
         TYPE :: LIBXSMM_WIMMFUNCTION
-          PRIVATE
-            INTEGER(C_INTPTR_T) :: handle
+          INTEGER(C_INTPTR_T) :: handle
         END TYPE
 
         ! Generic function type (single-precision).
         TYPE :: LIBXSMM_WSMMFUNCTION
-          PRIVATE
-            INTEGER(C_INTPTR_T) :: handle
+          INTEGER(C_INTPTR_T) :: handle
         END TYPE
 
         ! Structure of differences with matrix norms according

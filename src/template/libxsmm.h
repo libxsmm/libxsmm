@@ -187,12 +187,12 @@ LIBXSMM_API int libxsmm_mmbatch(
   /** Thread-ID (TID), and number of threads. */
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 
-/** Process a series of matrix multiplications (batch) similar to libxsmm_mmbatch; MT via libxsmmext. */
+/** Process a series of matrix multiplications (batch) with OpenMP (libxsmmext). See also libxsmm_mmbatch. */
 LIBXSMM_APIEXT int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize);
 
-/** Process a series of matrix multiplications (batch); sequential. See also libxsmm_mmbatch. */
+/** Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch2_omp, and libxsmm_mmbatch. */
 LIBXSMM_API void libxsmm_gemm_batch2(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
@@ -201,6 +201,7 @@ LIBXSMM_API void libxsmm_gemm_batch2(libxsmm_gemm_precision iprec, libxsmm_gemm_
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
+/** Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch_omp, and libxsmm_mmbatch. */
 LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
@@ -210,7 +211,7 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-/** Process a series of matrix multiplications (batch); MT via libxsmmext. See also libxsmm_mmbatch. */
+/** Process a series of matrix multiplications (batch) with OpenMP (libxsmmext) See also libxsmm_mmbatch. */
 LIBXSMM_APIEXT void libxsmm_gemm_batch2_omp(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
@@ -219,6 +220,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch2_omp(libxsmm_gemm_precision iprec, libxsm
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
+/** Process a series of matrix multiplications (batch) with OpenMP (libxsmmext). See also libxsmm_mmbatch. */
 LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
