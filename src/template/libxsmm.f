@@ -1183,61 +1183,69 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm
-        SUBROUTINE libxsmm_blas_dgemm(transa, transb, m, n, k,          &
+        PURE SUBROUTINE libxsmm_blas_dgemm(transa, transb, m, n, k,     &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
-     &                                OPTIONAL, TARGET :: lda, ldb, ldc
-          REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
-          REAL(C_DOUBLE), INTENT(IN), TARGET :: a(:,:), b(:,:)
-          REAL(C_DOUBLE), INTENT(INOUT), TARGET :: c(:,:)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
+          REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
-            SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
+            PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_dgemm_")
-              IMPORT C_PTR, LIBXSMM_BLASINT_KIND
-              TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
+              IMPORT C_CHAR, C_DOUBLE, LIBXSMM_BLASINT_KIND
+              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-              TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
-              TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
-              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldb
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldc
+              REAL(C_DOUBLE), INTENT(IN) :: alpha, beta
+              REAL(C_DOUBLE), INTENT(IN) :: a, b
+              REAL(C_DOUBLE), INTENT(INOUT) :: c
             END SUBROUTINE
           END INTERFACE
-          CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
-     &      C_LOC(alpha), libxsmm_ptr2(a), C_LOC(lda),                  &
-     &                    libxsmm_ptr2(b), C_LOC(ldb),                  &
-     &       C_LOC(beta), libxsmm_ptr2(c), C_LOC(ldc))
+          CALL internal_gemm(transa, transb, m, n, k,                   &
+     &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
+     &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
+     &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm
-        SUBROUTINE libxsmm_blas_sgemm(transa, transb, m, n, k,          &
+        PURE SUBROUTINE libxsmm_blas_sgemm(transa, transb, m, n, k,     &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
-          CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
-     &                               OPTIONAL, TARGET :: lda, ldb, ldc
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
-          REAL(C_FLOAT), INTENT(IN), TARGET :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT), TARGET :: c(:,:)
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
+          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
-            SUBROUTINE internal_gemm(transa, transb, m, n, k,           &
+            PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
      &      alpha, a, lda, b, ldb, beta, c, ldc)                        &
      &      BIND(C, NAME="libxsmm_blas_sgemm_")
-              IMPORT C_PTR, LIBXSMM_BLASINT_KIND
-              TYPE(C_PTR), INTENT(IN), VALUE :: transa, transb
+              IMPORT C_CHAR, C_FLOAT, LIBXSMM_BLASINT_KIND
+              CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
               INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-              TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
-              TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
-              TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldb
+              INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: ldc
+              REAL(C_FLOAT), INTENT(IN) :: alpha, beta
+              REAL(C_FLOAT), INTENT(IN) :: a, b
+              REAL(C_FLOAT), INTENT(INOUT) :: c
             END SUBROUTINE
           END INTERFACE
-          CALL internal_gemm(C_LOC(transa), C_LOC(transb), m, n, k,     &
-     &      C_LOC(alpha), libxsmm_ptr2(a), C_LOC(lda),                  &
-     &                    libxsmm_ptr2(b), C_LOC(ldb),                  &
-     &       C_LOC(beta), libxsmm_ptr2(c), C_LOC(ldc))
+          CALL internal_gemm(transa, transb, m, n, k,                   &
+     &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
+     &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
+     &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
         END SUBROUTINE
 
         ! Matrix-copy (2-dimensional copy) routine. If the input (optional)
