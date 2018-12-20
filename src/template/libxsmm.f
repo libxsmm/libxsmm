@@ -267,11 +267,6 @@
           MODULE PROCEDURE libxsmm_blas_sgemm, libxsmm_blas_dgemm
         END INTERFACE
 
-        ! Overloaded MATMUL-style routines (single/double precision).
-        INTERFACE libxsmm_matmul
-          MODULE PROCEDURE libxsmm_dmatmul, libxsmm_smatmul
-        END INTERFACE
-
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_gemm_auto_prefetch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_gemm_auto_prefetch
@@ -847,7 +842,7 @@
         SUBROUTINE libxsmm_dmmdispatch(kernel,                          &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(OUT) :: kernel
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                                OPTIONAL, TARGET :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
@@ -863,7 +858,7 @@
         SUBROUTINE libxsmm_smmdispatch(kernel,                          &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(OUT) :: kernel
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                                OPTIONAL, TARGET :: lda, ldb, ldc
           REAL(C_FLOAT),  INTENT(IN), OPTIONAL, TARGET :: alpha, beta
@@ -879,7 +874,7 @@
         SUBROUTINE libxsmm_wimmdispatch(kernel,                         &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(OUT) :: kernel
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                                OPTIONAL, TARGET :: lda, ldb, ldc
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
@@ -895,7 +890,7 @@
         SUBROUTINE libxsmm_wsmmdispatch(kernel,                         &
      &  m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)
           TYPE(LIBXSMM_WSMMFUNCTION), INTENT(OUT) :: kernel
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                                OPTIONAL, TARGET :: lda, ldb, ldc
           REAL(C_FLOAT),  INTENT(IN), OPTIONAL, TARGET :: alpha, beta
@@ -1063,7 +1058,7 @@
         SUBROUTINE libxsmm_dgemm(transa, transb, m, n, k,               &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                                OPTIONAL, TARGET :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
@@ -1092,7 +1087,7 @@
         SUBROUTINE libxsmm_sgemm(transa, transb, m, n, k,               &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                               OPTIONAL, TARGET :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
@@ -1121,7 +1116,7 @@
         SUBROUTINE libxsmm_wigemm(transa, transb, m, n, k,              &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                                OPTIONAL, TARGET :: lda, ldb, ldc
           INTEGER(C_INT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
@@ -1150,7 +1145,7 @@
         SUBROUTINE libxsmm_wsgemm(transa, transb, m, n, k,              &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                               OPTIONAL, TARGET :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
@@ -1179,7 +1174,7 @@
         SUBROUTINE libxsmm_blas_dgemm(transa, transb, m, n, k,          &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                                OPTIONAL, TARGET :: lda, ldb, ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
@@ -1208,7 +1203,7 @@
         SUBROUTINE libxsmm_blas_sgemm(transa, transb, m, n, k,          &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL, TARGET :: transa, transb
-          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), VALUE :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN),                    &
      &                               OPTIONAL, TARGET :: lda, ldb, ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL, TARGET :: alpha, beta
@@ -1231,128 +1226,6 @@
      &      C_LOC(alpha), libxsmm_ptr2(a), C_LOC(lda),                  &
      &                    libxsmm_ptr2(b), C_LOC(ldb),                  &
      &       C_LOC(beta), libxsmm_ptr2(c), C_LOC(ldc))
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmatmul
-        SUBROUTINE libxsmm_dmatmul(c, a, b,                             &
-     &  alpha, beta, transa, transb)
-          REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
-          REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
-          CHARACTER :: otransa, otransb
-          INTEGER(C_INT) :: s(2)
-          IF (.NOT.PRESENT(transa)) THEN
-            otransa = 'N'
-          ELSE
-            otransa = transa
-          END IF
-          IF (.NOT.PRESENT(transb)) THEN
-            otransb = 'N'
-          ELSE
-            otransb = transb
-          END IF
-          ! TODO: transpose is currently not supported by LIBXSMM
-          IF (('N'.EQ.otransa).OR.('n'.EQ.otransa)) THEN
-            IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
-              CALL libxsmm_dgemm('N', 'N',                              &
-     &          SIZE(c, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(c, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(a, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          alpha, a, SIZE(a, 1, LIBXSMM_BLASINT_KIND),             &
-     &                 b, SIZE(b, 1, LIBXSMM_BLASINT_KIND),             &
-     &           beta, c, SIZE(c, 1, LIBXSMM_BLASINT_KIND))
-            ELSE ! A x B^T
-              CALL libxsmm_dgemm('N', 'N',                              &
-     &          SIZE(c, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(c, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(a, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          alpha, a, SIZE(a, 1, LIBXSMM_BLASINT_KIND),             &
-     &          TRANSPOSE(b), SIZE(b, 2, LIBXSMM_BLASINT_KIND),         &
-     &          beta, c, SIZE(c, 1, LIBXSMM_BLASINT_KIND))
-            END IF
-          ELSE ! A^T
-            IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
-              CALL libxsmm_dgemm('N', 'N',                              &
-     &          SIZE(c, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(c, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(a, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          alpha, TRANSPOSE(a), SIZE(a, 2, LIBXSMM_BLASINT_KIND),  &
-     &                 b, SIZE(b, 1, LIBXSMM_BLASINT_KIND),             &
-     &           beta, c, SIZE(c, 1, LIBXSMM_BLASINT_KIND))
-            ELSE ! A^T x B^T -> C = (B x A)^T
-              CALL libxsmm_dgemm('N', 'N',                              &
-     &          SIZE(c, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(c, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(a, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          alpha, b, SIZE(b, 1, LIBXSMM_BLASINT_KIND),             &
-     &                 a, SIZE(a, 1, LIBXSMM_BLASINT_KIND),             &
-     &           beta, c, SIZE(c, 1, LIBXSMM_BLASINT_KIND))
-              s(1) = SIZE(c, 2); s(2) = SIZE(c, 1)
-              c = TRANSPOSE(RESHAPE(c, s))
-            END IF
-          END IF
-        END SUBROUTINE
-
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smatmul
-        SUBROUTINE libxsmm_smatmul(c, a, b,                             &
-     &  alpha, beta, transa, transb)
-          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
-          REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
-          CHARACTER :: otransa, otransb
-          INTEGER :: s(2)
-          IF (.NOT.PRESENT(transa)) THEN
-            otransa = 'N'
-          ELSE
-            otransa = transa
-          END IF
-          IF (.NOT.PRESENT(transb)) THEN
-            otransb = 'N'
-          ELSE
-            otransb = transb
-          END IF
-          ! TODO: transpose is currently not supported by LIBXSMM
-          IF (('N'.EQ.otransa).OR.('n'.EQ.otransa)) THEN
-            IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
-              CALL libxsmm_sgemm('N', 'N',                              &
-     &          SIZE(c, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(c, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(a, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          alpha, a, SIZE(a, 1, LIBXSMM_BLASINT_KIND),             &
-     &                 b, SIZE(b, 1, LIBXSMM_BLASINT_KIND),             &
-     &           beta, c, SIZE(c, 1, LIBXSMM_BLASINT_KIND))
-            ELSE ! A x B^T
-              CALL libxsmm_sgemm('N', 'N',                              &
-     &          SIZE(c, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(c, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(a, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          alpha, a, SIZE(a, 1, LIBXSMM_BLASINT_KIND),             &
-     &          TRANSPOSE(b), SIZE(b, 2, LIBXSMM_BLASINT_KIND),         &
-     &          beta, c, SIZE(c, 1, LIBXSMM_BLASINT_KIND))
-            END IF
-          ELSE ! A^T
-            IF (('N'.EQ.otransb).OR.('n'.EQ.otransb)) THEN
-              CALL libxsmm_sgemm('N', 'N',                              &
-     &          SIZE(c, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(c, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(a, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          alpha, TRANSPOSE(a), SIZE(a, 2, LIBXSMM_BLASINT_KIND),  &
-     &                 b, SIZE(b, 1, LIBXSMM_BLASINT_KIND),             &
-     &           beta, c, SIZE(c, 1, LIBXSMM_BLASINT_KIND))
-            ELSE ! A^T x B^T -> C = (B x A)^T
-              CALL libxsmm_sgemm('N', 'N',                              &
-     &          SIZE(c, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(c, 2, LIBXSMM_BLASINT_KIND),                       &
-     &          SIZE(a, 1, LIBXSMM_BLASINT_KIND),                       &
-     &          alpha, b, SIZE(b, 1, LIBXSMM_BLASINT_KIND),             &
-     &                 a, SIZE(a, 1, LIBXSMM_BLASINT_KIND),             &
-     &           beta, c, SIZE(c, 1, LIBXSMM_BLASINT_KIND))
-              s(1) = SIZE(c, 2); s(2) = SIZE(c, 1)
-              c = TRANSPOSE(RESHAPE(c, s))
-            END IF
-          END IF
         END SUBROUTINE
 
         ! Matrix-copy (2-dimensional copy) routine. If the input (optional)
@@ -1470,10 +1343,30 @@
      &      ref, tst, ldref, ldtst)
         END SUBROUTINE
 
-        ! Calculate a hash value for a given key value (array).
+        ! Calculate co-prime number <= n/2 (except: libxsmm_shuffle(0|1) == 0).
         ! Implicit FORTRAN 77 interface:
-        ! INTEGER(4) :: key, keysize, seed
+        ! INTEGER(4) :: coprime (OUT)
+        ! INTEGER(4) :: n
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_shuffle
+        ELEMENTAL FUNCTION libxsmm_shuffle(n)
+          INTEGER(C_LONG_LONG) :: libxsmm_shuffle
+          INTEGER(C_INT), INTENT(IN) :: n
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_shuffle
+          INTERFACE
+            PURE SUBROUTINE internal_shuffle(coprime, n)                &
+     &      BIND(C, NAME="libxsmm_shuffle_")
+              IMPORT C_LONG_LONG, C_INT
+              INTEGER(C_LONG_LONG), INTENT(OUT) :: coprime
+              INTEGER(C_INT), INTENT(IN) :: n
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_shuffle(libxsmm_shuffle, n)
+        END FUNCTION
+
+        ! Calculate a hash value for a given key value (blob of integers).
+        ! Implicit FORTRAN 77 interface:
         ! INTEGER(4) :: hash (OUT)
+        ! INTEGER(4) :: key(:), keysize, seed
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash
         PURE FUNCTION libxsmm_hash(key, seed)
           INTEGER(C_INT), DIMENSION(:), INTENT(IN) :: key
@@ -1484,14 +1377,38 @@
             PURE SUBROUTINE internal_hash(hash, key, keysize, seed)     &
      &      BIND(C, NAME="libxsmm_hash_")
               IMPORT C_INT
+              INTEGER(C_INT), INTENT(OUT) :: hash
               INTEGER(C_INT), INTENT(IN)  :: key
               INTEGER(C_INT), INTENT(IN)  :: keysize
               INTEGER(C_INT), INTENT(IN)  :: seed
-              INTEGER(C_INT), INTENT(OUT) :: hash
             END SUBROUTINE
           END INTERFACE
           CALL internal_hash(libxsmm_hash,                              &
      &      key(LBOUND(key,1)), SIZE(key) * 4, seed)
+        END FUNCTION
+
+        ! Calculate a hash value for a given key value (blob of integers).
+        ! Implicit FORTRAN 77 interface:
+        ! INTEGER(8) :: hash (OUT)
+        ! INTEGER(8) :: key(:), keysize, seed
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash2
+        PURE FUNCTION libxsmm_hash2(key, seed)
+          INTEGER(C_LONG_LONG), DIMENSION(:), INTENT(IN) :: key
+          INTEGER(C_LONG_LONG), INTENT(IN) :: seed
+          INTEGER(C_LONG_LONG) :: libxsmm_hash2
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash2
+          INTERFACE
+            PURE SUBROUTINE internal_hash2(hash, key, keysize, seed)    &
+     &      BIND(C, NAME="libxsmm_hash2_")
+              IMPORT C_LONG_LONG
+              INTEGER(C_LONG_LONG), INTENT(OUT) :: hash
+              INTEGER(C_LONG_LONG), INTENT(IN)  :: key
+              INTEGER(C_LONG_LONG), INTENT(IN)  :: keysize
+              INTEGER(C_LONG_LONG), INTENT(IN)  :: seed
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_hash2(libxsmm_hash2,                            &
+     &      key(LBOUND(key,1,8)), SIZE(key,1,8) * 8, seed)
         END FUNCTION
       END MODULE
 
