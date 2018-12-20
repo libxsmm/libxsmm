@@ -255,7 +255,8 @@ for (j = t-1; j >= 0; --j) {
   for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
     in = (inik % (N/bn))*bn;
     ik = (inik / (N/bn))*bk;
-
+    
+    /* Compute dcp, dci, di, df, dp */
     if (j == 0) {
       libxsmm_internal_compute_dcp_dci_di_df_dp_ld(bk, bn, K, j, t, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K),  &LIBXSMM_VLA_ACCESS(3, dh, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K), &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K), &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, df, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K));    
     } else {

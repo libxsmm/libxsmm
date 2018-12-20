@@ -608,26 +608,26 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_bla
         _ci = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &ci[(j*ld)+i] );
         _t2 = _mm512_fnmsub_ps ( _ci, _ci, _neg_ones);
         _dci = _mm512_mul_ps( _t1, _t2 );
-        _mm512_store_ps( &dci[(j*ld)+i], _dci );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &dci[(j*ld)+i], _dci );
         _t1 = _mm512_mul_ps( _ci, _dcp );
         _t2 = _mm512_sub_ps( _ones, _ii );
         _di = _mm512_mul_ps( _ii, _t2);
         _di = _mm512_mul_ps( _di, _t1);
-        _mm512_store_ps( &di[(j*ld)+i], _di );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &di[(j*ld)+i], _di );
         _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );     
         _t1 = _mm512_mul_ps( _cps, _dcp );
         _f = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &f[(j*ld)+i] );
         _t2 = _mm512_sub_ps( _ones, _f );
         _df = _mm512_mul_ps( _f, _t2);
         _df = _mm512_mul_ps( _df, _t1);
-        _mm512_store_ps( &df[(j*ld)+i], _df );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &df[(j*ld)+i], _df );
         _t1 = _mm512_mul_ps( _dout, _co);
         _t2 = _mm512_sub_ps( _ones, _o );
         _t2 = _mm512_mul_ps( _o, _t2);
         _dp = _mm512_mul_ps( _t1, _t2 );
-        _mm512_store_ps( &dp[(j*ld)+i], _dp );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &dp[(j*ld)+i], _dp );
         _dcp = _mm512_mul_ps( _dcp, _f);
-        _mm512_store_ps( &dcp[(j*ld)+i], _dcp );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &dcp[(j*ld)+i], _dcp );
       }
     }
   } else {
@@ -648,26 +648,26 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_bla
         _ci = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &ci[(j*ld)+i] );
         _t2 = _mm512_fnmsub_ps ( _ci, _ci, _neg_ones);
         _dci = _mm512_mul_ps( _t1, _t2 );
-        _mm512_store_ps( &dci[(j*ld)+i], _dci );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &dci[(j*ld)+i], _dci );
         _t1 = _mm512_mul_ps( _ci, _dcp );
         _t2 = _mm512_sub_ps( _ones, _ii );
         _di = _mm512_mul_ps( _ii, _t2);
         _di = _mm512_mul_ps( _di, _t1);
-        _mm512_store_ps( &di[(j*ld)+i], _di );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &di[(j*ld)+i], _di );
         _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );     
         _t1 = _mm512_mul_ps( _cps, _dcp );
         _f = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &f[(j*ld)+i] );
         _t2 = _mm512_sub_ps( _ones, _f );
         _df = _mm512_mul_ps( _f, _t2);
         _df = _mm512_mul_ps( _df, _t1);
-        _mm512_store_ps( &df[(j*ld)+i], _df );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &df[(j*ld)+i], _df );
         _t1 = _mm512_mul_ps( _dout, _co);
         _t2 = _mm512_sub_ps( _ones, _o );
         _t2 = _mm512_mul_ps( _o, _t2);
         _dp = _mm512_mul_ps( _t1, _t2 );
-        _mm512_store_ps( &dp[(j*ld)+i], _dp );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &dp[(j*ld)+i], _dp );
         _dcp = _mm512_mul_ps( _dcp, _f);
-        _mm512_store_ps( &dcp[(j*ld)+i], _dcp );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &dcp[(j*ld)+i], _dcp );
       }
     }  
   }
