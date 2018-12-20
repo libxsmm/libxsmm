@@ -248,16 +248,7 @@ mn=0;
  *       Solve bottom right A22 part with a DGEMM("Notrans","Notrans",m-bot,n-bot,bot-ii+1,-1.0,A(bot+1,ii),lda,A(ii,bot+1),lda,1.0,A(bot+1,bot+1),lda)
  *       A(bot+1:m,bot+1:n) = A(bot+1:m,bot+1:n) - A(bot+1:m,ii:bot)*A(ii:bot,bot+1:n);
  *       */
-#if 0
-           if ( lay == 102 )
-#else
-           if ( 1 )
-#endif
-           {
-              compact_gemmnn_(tra,trb,trc,bot+1,m1,ii,bot,ii,bot,bot+1,n1,bot+1,m1,bot+1,n1,none,LIBXSMM_X86_GP_REG_RDI,lda,LIBXSMM_X86_GP_REG_RDI,lda,one,LIBXSMM_X86_GP_REG_RDI,lda,io_code,numb,regset,iunroll,junroll,loopi,loopj);
-           } else {
-              compact_gemmnn_(tra,trb,trc,bot+1,n1,ii,bot,ii,bot,bot+1,m1,bot+1,n1,bot+1,m1,none,LIBXSMM_X86_GP_REG_RDI,lda,LIBXSMM_X86_GP_REG_RDI,lda,one,LIBXSMM_X86_GP_REG_RDI,lda,io_code,numb,regset,iunroll,junroll,loopi,loopj);
-           }
+           compact_gemmnn_(tra,trb,trc,bot+1,m1,ii,bot,ii,bot,bot+1,n1,bot+1,m1,bot+1,n1,none,l_matrix_gpreg,lda,l_matrix_gpreg,lda,one,l_matrix_gpreg,lda,io_code,numb,regset,iunroll,junroll,loopi,loopj);
         }      /* Nonempty DGEMM conditional */
      }        /* Main loop for LU */
 
