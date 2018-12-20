@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -31,8 +31,6 @@
 #ifndef LIBXSMM_DNN_RNNCELL_H
 #define LIBXSMM_DNN_RNNCELL_H
 
-#include "libxsmm_macros.h"
-#include "libxsmm_typedefs.h"
 #include "libxsmm_dnn.h"
 
 

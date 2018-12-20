@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -153,7 +153,7 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
      int numb = 0;
      /*int scalealpha = 0;*/
      /*int nounit=0;*/
-     int tra, trb;
+     int tra, trb, trc;
      char regset = 0;
 
      if ( i_packed_pgemm_desc->alpha_val == 0 ) {
@@ -222,10 +222,11 @@ printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,jun
      if ( transa == 'T' || transa == 't' ) tra = 1; else tra = 0;
      if ( transb == 'T' || transb == 't' ) trb = 1; else trb = 0;
      /* Change which registers to use for windows builds */
+     trc = 0;
 #if defined(GENERATOR_PACKED_GEMM_DEBUG)
      printf("Using compact_gemmnn header file\n");
 #endif
-     compact_gemmnn_ ( tra, trb, 1, m1, 1, k1, 1, k1, 1, n1, 1, m1, 1, n1, alpha, LIBXSMM_X86_GP_REG_RDI, lda, LIBXSMM_X86_GP_REG_RSI, ldb, beta, LIBXSMM_X86_GP_REG_RDX, ldc, io_code, numb, regset, iunroll, junroll, loopi, loopj );
+     compact_gemmnn_ ( tra, trb, trc, 1, m1, 1, k1, 1, k1, 1, n1, 1, m1, 1, n1, alpha, LIBXSMM_X86_GP_REG_RDI, lda, LIBXSMM_X86_GP_REG_RSI, ldb, beta, LIBXSMM_X86_GP_REG_RDX, ldc, io_code, numb, regset, iunroll, junroll, loopi, loopj );
 #if defined(GENERATOR_PACKED_GEMM_DEBUG)
      printf("Done using compact_gemmnn header file\n");
 #endif

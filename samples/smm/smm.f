@@ -1,5 +1,5 @@
 !*****************************************************************************!
-!* Copyright (c) 2015-2018, Intel Corporation                                *!
+!* Copyright (c) 2015-2019, Intel Corporation                                *!
 !* All rights reserved.                                                      *!
 !*                                                                           *!
 !* Redistribution and use in source and binary forms, with or without        *!
@@ -225,7 +225,7 @@
           CALL libxsmm_matdiff(diff, LIBXSMM_DATATYPE_F64, m, n,        &
      &      libxsmm_ptr2(d), libxsmm_ptr2(c))
           WRITE(*, "(1A,A,F10.1)") CHAR(9), "diff:      ", diff%l2_abs
-          CALL libxsmm_matdiff_reduce(max_diff, diff)          
+          CALL libxsmm_matdiff_reduce(max_diff, diff)
         END IF
 
         ! Deallocate global arrays

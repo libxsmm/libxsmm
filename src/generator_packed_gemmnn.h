@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -57,6 +57,7 @@
 LIBXSMM_API_INLINE void compact_gemmnn_ (
      unsigned int tra, /* 0 if non-transpose */
      unsigned int trb, /* 0 if non-transpose */
+     unsigned int trc, /* 0 if non-transpose */
      unsigned int am1,
      unsigned int am2,
      unsigned int ak1,
@@ -108,43 +109,43 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
 
      /* Test that the dimensions conform */
      if ( (am2-am1) != (cm2-cm1) ) {
-        printf("compact_gemmnn m-dimensions don't conform: %d != %d\n",am2-am1+1,cm2-cm1+1);
+        printf("compact_gemmnn m-dimensions don't conform: %u != %u\n",am2-am1+1,cm2-cm1+1);
         exit(-1);
      }
      if ( (ak2-ak1) != (bk2-bk1) ) {
-        printf("compact_gemmnn k-dimensions don't conform: %d != %d\n",ak2-ak1+1,bk2-bk1+1);
+        printf("compact_gemmnn k-dimensions don't conform: %u != %u\n",ak2-ak1+1,bk2-bk1+1);
         exit(-1);
      }
      if ( (bn2-bn1) != (cn2-cn1) ) {
-        printf("compact_gemmnn n-dimensions don't conform: %d != %d\n",ak2-ak1+1,bk2-bk1+1);
+        printf("compact_gemmnn n-dimensions don't conform: %u != %u\n",ak2-ak1+1,bk2-bk1+1);
         exit(-1);
      }
 
      /* See that all dimensions are at least 1 */
      if ( am2 < am1) {
-        printf("compact_gemmnn m-dimension too small: %d\n",am2-am1+1);
+        printf("compact_gemmnn m-dimension too small: %u\n",am2-am1+1);
         exit(-1);
      }
      if ( ak2 < ak1) {
-        printf("compact_gemmnn k-dimension too small: %d\n",ak2-ak1+1);
+        printf("compact_gemmnn k-dimension too small: %u\n",ak2-ak1+1);
         exit(-1);
      }
      if ( bn2 < bn1) {
-        printf("compact_gemmnn n-dimension too small: %d\n",bn2-bn1+1);
+        printf("compact_gemmnn n-dimension too small: %u\n",bn2-bn1+1);
         exit(-1);
      }
 
      /* Check that areg, breg, creg is valid */
      if ( /*(areg < 0) ||*/ (areg > 15) ) {
-        printf("compact_gemmnn A gp register invalid: %d\n",areg);
+        printf("compact_gemmnn A gp register invalid: %u\n",areg);
         exit(-1);
      }
      if ( /*(breg < 0) ||*/ (breg > 15) ) {
-        printf("compact_gemmnn B gp register invalid: %d\n",breg);
+        printf("compact_gemmnn B gp register invalid: %u\n",breg);
         exit(-1);
      }
      if ( /*(creg < 0) ||*/ (creg > 15) ) {
-        printf("compact_gemmnn C gp register invalid: %d\n",creg);
+        printf("compact_gemmnn C gp register invalid: %u\n",creg);
         exit(-1);
      }
 
@@ -153,7 +154,7 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
      else if ( (numb == 8) && (regset=='y') ) { datasz = 4; }
      else if ( (numb == 4) && (regset=='y') ) { datasz = 8; }
      else {
-        printf("compact_gemmnn Unknown number=%d or regset=%c\n",numb,regset);
+        printf("compact_gemmnn Unknown number=%u or regset=%c\n",numb,regset);
         exit(-1);
      }
 
@@ -538,14 +539,14 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
               if (l==j+6) { c0=c06 ; c1=c16; c2=c26; c3=c36; c4=c46; c5=c56; c6=c66; c7=c76; }
               if (l==j+7) { c0=c07 ; c1=c17; c2=c27; c3=c37; c4=c47; c5=c57; c6=c67; c7=c77; }
               if ( beta == 1.0 ) {
-                 if (i0 && j0) compact_load_matrix_gen_ ( io_code, 0, ldc, i-am1+cm1, l-bn1+cn1, a0, numb, datasz, regset, creg );
-                 if (i1 && j0) compact_load_matrix_gen_ ( io_code, 0, ldc, i-am1+cm1+1, l-bn1+cn1, a1, numb, datasz, regset, creg );
-                 if (i2 && j0) compact_load_matrix_gen_ ( io_code, 0, ldc, i-am1+cm1+2, l-bn1+cn1, a2, numb, datasz, regset, creg );
-                 if (i3 && j0) compact_load_matrix_gen_ ( io_code, 0, ldc, i-am1+cm1+3, l-bn1+cn1, a3, numb, datasz, regset, creg );
-                 if (i4 && j0) compact_load_matrix_gen_ ( io_code, 0, ldc, i-am1+cm1+4, l-bn1+cn1, a4, numb, datasz, regset, creg );
-                 if (i5 && j0) compact_load_matrix_gen_ ( io_code, 0, ldc, i-am1+cm1+5, l-bn1+cn1, a5, numb, datasz, regset, creg );
-                 if (i6 && j0) compact_load_matrix_gen_ ( io_code, 0, ldc, i-am1+cm1+6, l-bn1+cn1, a6, numb, datasz, regset, creg );
-                 if (i7 && j0) compact_load_matrix_gen_ ( io_code, 0, ldc, i-am1+cm1+7, l-bn1+cn1, a7, numb, datasz, regset, creg );
+                 if (i0 && j0) compact_load_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1, l-bn1+cn1, a0, numb, datasz, regset, creg );
+                 if (i1 && j0) compact_load_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+1, l-bn1+cn1, a1, numb, datasz, regset, creg );
+                 if (i2 && j0) compact_load_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+2, l-bn1+cn1, a2, numb, datasz, regset, creg );
+                 if (i3 && j0) compact_load_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+3, l-bn1+cn1, a3, numb, datasz, regset, creg );
+                 if (i4 && j0) compact_load_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+4, l-bn1+cn1, a4, numb, datasz, regset, creg );
+                 if (i5 && j0) compact_load_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+5, l-bn1+cn1, a5, numb, datasz, regset, creg );
+                 if (i6 && j0) compact_load_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+6, l-bn1+cn1, a6, numb, datasz, regset, creg );
+                 if (i7 && j0) compact_load_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+7, l-bn1+cn1, a7, numb, datasz, regset, creg );
               } else if ( (beta == 0.0) && (alpha != 1.0) ) {
                  if (i0 && j0) compact_set_zero_( io_code, a0, numb, datasz, regset );
                  if (i1 && j0) compact_set_zero_( io_code, a1, numb, datasz, regset );
@@ -575,14 +576,14 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
                  if (i6 && j0) compact_add_two_nums_ ( io_code, a6, c6, c6, numb, regset );
                  if (i7 && j0) compact_add_two_nums_ ( io_code, a7, c7, c7, numb, regset );
               }
-              if (i0 && j0) compact_store_matrix_gen_ ( io_code, ldc, i-am1+cm1, l-bn1+cn1, c0, numb, datasz, regset, creg );
-              if (i1 && j0) compact_store_matrix_gen_ ( io_code, ldc, i-am1+cm1+1, l-bn1+cn1, c1, numb, datasz, regset, creg );
-              if (i2 && j0) compact_store_matrix_gen_ ( io_code, ldc, i-am1+cm1+2, l-bn1+cn1, c2, numb, datasz, regset, creg );
-              if (i3 && j0) compact_store_matrix_gen_ ( io_code, ldc, i-am1+cm1+3, l-bn1+cn1, c3, numb, datasz, regset, creg );
-              if (i4 && j0) compact_store_matrix_gen_ ( io_code, ldc, i-am1+cm1+4, l-bn1+cn1, c4, numb, datasz, regset, creg );
-              if (i5 && j0) compact_store_matrix_gen_ ( io_code, ldc, i-am1+cm1+5, l-bn1+cn1, c5, numb, datasz, regset, creg );
-              if (i6 && j0) compact_store_matrix_gen_ ( io_code, ldc, i-am1+cm1+6, l-bn1+cn1, c6, numb, datasz, regset, creg );
-              if (i7 && j0) compact_store_matrix_gen_ ( io_code, ldc, i-am1+cm1+7, l-bn1+cn1, c7, numb, datasz, regset, creg );
+              if (i0 && j0) compact_store_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1, l-bn1+cn1, c0, numb, datasz, regset, creg );
+              if (i1 && j0) compact_store_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+1, l-bn1+cn1, c1, numb, datasz, regset, creg );
+              if (i2 && j0) compact_store_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+2, l-bn1+cn1, c2, numb, datasz, regset, creg );
+              if (i3 && j0) compact_store_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+3, l-bn1+cn1, c3, numb, datasz, regset, creg );
+              if (i4 && j0) compact_store_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+4, l-bn1+cn1, c4, numb, datasz, regset, creg );
+              if (i5 && j0) compact_store_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+5, l-bn1+cn1, c5, numb, datasz, regset, creg );
+              if (i6 && j0) compact_store_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+6, l-bn1+cn1, c6, numb, datasz, regset, creg );
+              if (i7 && j0) compact_store_matrix_gen_ ( io_code, trc, ldc, i-am1+cm1+7, l-bn1+cn1, c7, numb, datasz, regset, creg );
            } /* Store the results */
            if ( loopi && j0 ) {
               aoffset = datasz*iun*numb;
@@ -633,8 +634,8 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            j0 = 1; /* Turn everything back on again */
         }
      } /* N-loop */
-#if 1
-     printf("Inlined Compact GEMM code pointer ends at: %d\n",io_code->code_size);
+#ifdef COMPACT_GEMMNN_DEBUG
+     printf("Inlined Compact GEMM code pointer ends at: %u\n",io_code->code_size);
 #endif
 }
 
