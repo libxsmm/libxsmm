@@ -31,8 +31,8 @@
 #ifndef LIBXSMM_DNN_GRUCELL_H
 #define LIBXSMM_DNN_GRUCELL_H
 
-#include "libxsmm_syncs.h"
 #include "libxsmm_bgemm.h"
+#include "libxsmm_sync.h"
 #include "libxsmm_dnn.h"
 
 
