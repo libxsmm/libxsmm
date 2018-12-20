@@ -31,7 +31,6 @@
 #ifndef LIBXSMM_DNN_H
 #define LIBXSMM_DNN_H
 
-#include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

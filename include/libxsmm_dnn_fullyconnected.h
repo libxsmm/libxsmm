@@ -31,9 +31,8 @@
 #ifndef LIBXSMM_DNN_FULLYCONNECTED_H
 #define LIBXSMM_DNN_FULLYCONNECTED_H
 
-#include "libxsmm_macros.h"
-#include "libxsmm_typedefs.h"
 #include "libxsmm_dnn.h"
+
 
 /** Opaque handles which represents LIBXSMM fullyconnected */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected libxsmm_dnn_fullyconnected;

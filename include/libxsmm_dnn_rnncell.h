@@ -31,8 +31,6 @@
 #ifndef LIBXSMM_DNN_RNNCELL_H
 #define LIBXSMM_DNN_RNNCELL_H
 
-#include "libxsmm_macros.h"
-#include "libxsmm_typedefs.h"
 #include "libxsmm_dnn.h"
 
 
