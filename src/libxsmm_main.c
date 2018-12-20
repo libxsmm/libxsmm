@@ -323,7 +323,7 @@ LIBXSMM_API_INLINE unsigned int internal_print_statistic(FILE* ostream,
     {
       unsigned int n;
       if (0 != target_arch && 0 != *target_arch) {
-        LIBXSMM_ASSERT(strlen(target_arch) < sizeof(title));
+        assert(strlen(target_arch) < sizeof(title)); /* !LIBXSMM_ASSERT */
         for (n = 0; 0 != target_arch[n] /*avoid code-gen. issue with some clang versions: && n < sizeof(title)*/; ++n) {
           const char c = target_arch[n];
           title[n] = (char)(('a' <= c && c <= 'z') ? (c - 32) : c); /* toupper */

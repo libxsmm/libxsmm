@@ -240,7 +240,7 @@
         IF (1.LT.(max_diff%l2_rel)) STOP 1
 
       CONTAINS
-        SUBROUTINE init(seed, matrix, scale, n)
+        PURE SUBROUTINE init(seed, matrix, scale, n)
           INTEGER, INTENT(IN) :: seed
           REAL(T), INTENT(OUT) :: matrix(:,:)
           REAL(8), INTENT(IN) :: scale

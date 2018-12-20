@@ -33,7 +33,9 @@
 HERE=$(cd $(dirname $0); pwd -P)
 LIBS=${HERE}/../lib
 
+#EXCLUDE="libxsmmgen"
 ABINEW=.abi.log
+ABITMP=.abi.tmp
 ABICUR=.abi.txt
 LIBTYPE=so
 
@@ -44,51 +46,60 @@ DIFF=$(command -v diff 2>/dev/null)
 SED=$(command -v sed 2>/dev/null)
 CUT=$(command -v cut 2>/dev/null)
 LS=$(command -v ls 2>/dev/null)
-RM=$(command -v rm 2>/dev/null)
 CP=$(command -v cp 2>/dev/null)
+MV=$(command -v mv 2>/dev/null)
 NM=$(command -v nm 2>/dev/null)
 
 if [ "" != "${ECHO}" ] && [ "" != "${SORT}" ] && [ "" != "${DIFF}" ] && \
    [ "" != "${NM}"   ] && [ "" != "${SED}"  ] && [ "" != "${CUT}"  ] && \
-   [ "" != "${LS}"   ] && [ "" != "${RM}"   ] && [ "" != "${CP}"   ];
+   [ "" != "${LS}"   ] && [ "" != "${CP}"   ] && [ "" != "${MV}"   ];
 then
   for LIBFILE in $(${LS} -1 ${LIBS}/*.${LIBTYPE} 2>/dev/null); do
     LIBFILES="${LIBFILES} ${LIBFILE}"
   done
   if [ "" != "${LIBFILES}" ]; then
-    ${RM} -f ${ABINEW}
+    ${CP} /dev/null ${ABINEW}
     for LIBFILE in ${LIBFILES}; do
       LIB=$(${BASENAME} ${LIBFILE} .${LIBTYPE})
-      ${ECHO} "Checking ${LIB}..."
-      ${NM} ${LIBFILE} | while read LINE;
-      do
-        SYMBOL=$(${ECHO} "${LINE}" | ${SED} -n "/ T /p" | ${CUT} -d" " -f3)
-        if [ "" != "${SYMBOL}" ]; then
-          if [ "" != "$(${ECHO} ${SYMBOL} | ${SED} -n /^libxsmm/p)" ]; then
-            ${ECHO} "${LIB} -> ${SYMBOL}" >> ${ABINEW}
-          elif [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^__libxsmm/p)" ] && \
-               [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^__..*_/p)" ] && \
-               [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^.gem._/p)" ] && \
-               [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^_init/p)" ] && \
-               [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^_fini/p)" ];
-          then
-            ${ECHO} "Error: ${LIB} -> ${SYMBOL} (non-conforming name)"
-            exit 1
+      if [ "" = "${EXCLUDE}" ] || [ "" != "$(${ECHO} "${EXCLUDE}" | ${SED} "/\b${LIB}\b/d")" ]; then
+        ${ECHO} "Checking ${LIB}..."
+        while read LINE; do
+          SYMBOL=$(${ECHO} "${LINE}" | ${SED} -n "/ T /p" | ${CUT} -d" " -f3)
+          if [ "" != "${SYMBOL}" ]; then
+            if [ "" != "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__libxsmm_MOD_libxsmm/p")" ] || \
+               [ "" != "$(${ECHO} ${SYMBOL} | ${SED} -n "/^libxsmm/p")" ];
+            then
+              ${ECHO} "${SYMBOL}" >> ${ABINEW}
+            elif [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__libxsmm_MOD___/p")" ] && \
+                 [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__wrap_..*_/p")" ] && \
+                 [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^.gem._/p")" ] && \
+                 [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^_init/p")" ] && \
+                 [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^_fini/p")" ];
+            then
+              ${ECHO} "Error: non-conforming function name"
+              ${ECHO} "${LIB} -> ${SYMBOL}"
+              exit 1
+            fi
+          else
+            LOCATION=$(${ECHO} "${LINE}" | ${SED} -n "/..*\.o:$/p")
+            if [ "" != "${LOCATION}" ]; then
+              OBJECT=$(${ECHO} "${LOCATION}" | ${SED} -e "s/:$//")
+            fi
           fi
-        else
-          LOCATION=$(${ECHO} "${LINE}" | ${SED} -n "/..*\.o:$/p")
-          if [ "" != "${LOCATION}" ]; then
-            OBJECT=$(${ECHO} "${LOCATION}" | ${SED} -e "s/:$//")
-          fi
-        fi
-      done
+        done < <(${NM} ${LIBFILE})
+      else
+        ${ECHO} "Excluded ${LIB}"
+      fi
     done
-    REMOVED=$(${DIFF} --new-line-format="" --unchanged-line-format="" <(${SORT} .abi.txt) <(${SORT} .abi.log))
+    ${SORT} -u ${ABINEW} > ${ABITMP}
+    ${MV} ${ABITMP} ${ABINEW}
+    REMOVED=$(${DIFF} --new-line-format="" --unchanged-line-format="" <(${SORT} ${ABICUR}) ${ABINEW})
     if [ "" = "${REMOVED}" ]; then
       ${CP} ${ABINEW} ${ABICUR}
-      ${ECHO} "Successfully Completed."
+      ${ECHO} "Successfully completed."
     else
-      ${ECHO} "Error: ${REMOVED} (removed or renamed)"
+      ${ECHO} "Error: removed or renamed function(s)"
+      ${ECHO} "${REMOVED}"
     fi
   else
     ${ECHO} "Warning: ABI checker requires shared libraries (${LIBTYPE})."
