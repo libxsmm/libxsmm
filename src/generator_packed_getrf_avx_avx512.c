@@ -64,6 +64,11 @@ void libxsmm_generator_packed_getrf_avx_avx512_kernel( libxsmm_generated_code*  
    *      A value of 0 says not, a value of 1 targets AVX512_CORE, a value  *
    *      of 2 targets AVX512_MIC                                           */
   int avx512;
+#if defined(_WIN32) || defined(__CYGWIN__)
+  int l_matrix_gpreg = LIBXSMM_X86_GP_REG_RCX;
+#else
+  int l_matrix_gpreg = LIBXSMM_X86_GP_REG_RDI;
+#endif
 #if 0 /* TOD: introduce/use register mapping rather than directly/hard-coding registers */
   /* Just reuse transpose gp mapping */
   libxsmm_getrf_gp_reg_mapping l_gp_reg_mapping = { 0/*avoid warning "maybe used uninitialized" */ };
@@ -130,9 +135,10 @@ void libxsmm_generator_packed_getrf_avx_avx512_kernel( libxsmm_generated_code*  
      /*const double beta = 1.0;*/
      unsigned int m1=m, n1=n, mn;
      unsigned int j, k, ii;
+     unsigned int tra=0, trb=0, trc=0, iunroll=3, junroll=3, loopi=1, loopj=1;
      /*int REGSIZE;*/
      int numb = 0;
-     unsigned int bot, /*dis,*/ fincol;
+     unsigned int bot, fincol;
      /*int nounit=0;*/
      unsigned int /*mb,*/ nb;
      /*int iun, jun;*/
@@ -159,8 +165,9 @@ void libxsmm_generator_packed_getrf_avx_avx512_kernel( libxsmm_generated_code*  
         else side = 'L';
         if (i_packed_trsm_desc->uplo == 'L' || i_packed_trsm_desc->uplo == 'l' ) uplo = 'U';
         else uplo = 'L';
-#endif
         m1 = n; n1 = m;
+#endif
+        tra = 1; trb = 1; trc = 1;
      }
 #if defined(GENERATOR_PACKED_GETRF_DEBUG)
 printf("Inside libxsmm_generator_packed_getrf_avx_avx512_kernel: m=%d n=%d lay=%d lda=%d datasz=%d\n",m,n,lay,lda,datasz);
@@ -187,10 +194,16 @@ printf("Inside libxsmm_generator_packed_getrf_avx_avx512_kernel: m=%d n=%d lay=%
      {
         numb = 16;
         regset = 'z';
+        iunroll = 4;
+        junroll = 4;
+        onereg = 25;
      } else if ( datasz == 8 && avx512 > 0 )
      {
         numb = 8;
         regset = 'z';
+        iunroll = 4;
+        junroll = 4;
+        onereg = 25;
      }
 
      /* Determine ideal blocksizes: */
@@ -199,40 +212,52 @@ printf("Inside libxsmm_generator_packed_getrf_avx_avx512_kernel: m=%d n=%d lay=%
      if ( n1 <= 2 ) nb = 1;
      mn = LIBXSMM_MIN(m1,n1);
      if ( mn >= 6 ) nb = 3;
-     /*iun = 3;*/
-     /*jun = 3;*/
+     if ( mn >= 12 ) nb = 4;
 
-/* Insert code here */
      compact_set_one_ ( io_code, onereg, numb, datasz, regset );
+#if 0
+compact_store_matrix_gen_ ( io_code, tra, lda, 1, 1, onereg, numb, datasz, regset, l_matrix_gpreg );
+mn=0;
+#endif
+
      for ( ii = 1 ; ii <= mn ; ii += nb ) {
         bot = LIBXSMM_MIN(ii+nb-1,mn);
-        /*dis = bot - ii + 1;*/
 
         for ( j = ii ; j <= bot ; j++ ) {
            for ( i = j+1 ; i <= m1 ; i++ ) {
               if ( i == j+1 ) {
-                 compact_load_matrix1_ ( io_code, lda, j, j, a0, numb, datasz, regset );
+                 compact_load_matrix_gen_ ( io_code, tra, lda, j, j, a0, numb, datasz, regset, l_matrix_gpreg );
                  compact_divide_two_nums_ ( io_code, onereg, a0, a0, numb, regset );
               }
-              compact_load_matrix1_ ( io_code, lda, i, j, a1, numb, datasz, regset );
+              compact_load_matrix_gen_ ( io_code, tra, lda, i, j, a1, numb, datasz, regset, l_matrix_gpreg );
               compact_mult_two_nums_ ( io_code, a0, a1, a1, numb, regset );
               fincol = bot;
               if ( i <= bot ) fincol = n1;
               for ( k = j+1 ; k <= fincol; k++ ) {
-                 compact_load_matrix1_ ( io_code, lda, i, k, a2, numb, datasz, regset );
-                 compact_load_matrix1_ ( io_code, lda, j, k, b0, numb, datasz, regset );
+                 compact_load_matrix_gen_ ( io_code, tra, lda, i, k, a2, numb, datasz, regset, l_matrix_gpreg );
+                 compact_load_matrix_gen_ ( io_code, tra, lda, j, k, b0, numb, datasz, regset, l_matrix_gpreg );
                  compact_fms_cminusab_ ( io_code, a2, a1, b0, numb, regset );
-                 compact_store_matrix1_ ( io_code, lda, i, k, a2, numb, datasz, regset );
+                 compact_store_matrix_gen_ ( io_code, tra, lda, i, k, a2, numb, datasz, regset, l_matrix_gpreg );
+
               }
-              compact_store_matrix1_ ( io_code, lda, i, j, a1, numb, datasz, regset );
+              compact_store_matrix_gen_ ( io_code, tra, lda, i, j, a1, numb, datasz, regset, l_matrix_gpreg );
            }
         }
         if ( (bot < m1) && (bot < n1) ) {
 /*
- *       Solve bottom right A22 part with a DGEMM("Notrans","Notrans",m-bot,n-bot,dis,-1.0,A(bot+1,ii),lda,A(ii,bot+1),lda,1.0,A(bot+1,bot+1),lda)
+ *       Solve bottom right A22 part with a DGEMM("Notrans","Notrans",m-bot,n-bot,bot-ii+1,-1.0,A(bot+1,ii),lda,A(ii,bot+1),lda,1.0,A(bot+1,bot+1),lda)
  *       A(bot+1:m,bot+1:n) = A(bot+1:m,bot+1:n) - A(bot+1:m,ii:bot)*A(ii:bot,bot+1:n);
  *       */
-           compact_gemmnn_(0,0,bot+1,m1,ii,bot,ii,bot,bot+1,n1,bot+1,m1,bot+1,n1,none,LIBXSMM_X86_GP_REG_RDI,lda,LIBXSMM_X86_GP_REG_RDI,lda,one,LIBXSMM_X86_GP_REG_RDI,lda,io_code,numb,regset,3,3,0,0);
+#if 0
+           if ( lay == 102 )
+#else
+           if ( 1 )
+#endif
+           {
+              compact_gemmnn_(tra,trb,trc,bot+1,m1,ii,bot,ii,bot,bot+1,n1,bot+1,m1,bot+1,n1,none,LIBXSMM_X86_GP_REG_RDI,lda,LIBXSMM_X86_GP_REG_RDI,lda,one,LIBXSMM_X86_GP_REG_RDI,lda,io_code,numb,regset,iunroll,junroll,loopi,loopj);
+           } else {
+              compact_gemmnn_(tra,trb,trc,bot+1,n1,ii,bot,ii,bot,bot+1,m1,bot+1,n1,bot+1,m1,none,LIBXSMM_X86_GP_REG_RDI,lda,LIBXSMM_X86_GP_REG_RDI,lda,one,LIBXSMM_X86_GP_REG_RDI,lda,io_code,numb,regset,iunroll,junroll,loopi,loopj);
+           }
         }      /* Nonempty DGEMM conditional */
      }        /* Main loop for LU */
 

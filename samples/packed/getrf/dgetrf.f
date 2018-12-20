@@ -1,4 +1,4 @@
-      SUBROUTINE DGETRFNPI( M, N, NFACT, A, LDA, INFO )
+      SUBROUTINE DGETRFNP( M, N, A, LDA, INFO )
 !
 !  -- LAPACK computational routine (version 3.4.0) --
 !  -- LAPACK is a software package provided by Univ. of Tennessee,    --
@@ -6,7 +6,7 @@
 !     November 2011
 !
 !     .. Scalar Arguments ..
-      INTEGER            INFO, LDA, M, N, NFACT
+      INTEGER            INFO, LDA, M, N
 !     ..
 !     .. Array Arguments ..
       DOUBLE PRECISION   A( LDA, * )
@@ -42,15 +42,11 @@
          INFO = -1
       ELSE IF( N.LT.0 ) THEN
          INFO = -2
-      ELSE IF ( NFACT .LT. 0 ) THEN
-         INFO = -3
-      ELSE IF ( NFACT .GT. MIN(M,N) ) THEN
-         INFO = -3
       ELSE IF( LDA.LT.MAX( 1, M ) ) THEN
-         INFO = -5
+         INFO = -4
       END IF
       IF( INFO.NE.0 ) THEN
-         CALL XERBLA( 'DGETRFNPI', -INFO )
+         CALL XERBLA( 'DGETRFNP', -INFO )
          RETURN
       END IF
 !
@@ -62,7 +58,7 @@
 !
       SFMIN = DLAMCH('S')
 !
-      DO 10 J = 1, NFACT
+      DO 10 J = 1, MIN( M, N )
          JP = J
          IF( A( JP, J ).NE.ZERO ) THEN
 !
@@ -83,17 +79,17 @@
             INFO = J
          END IF
 !
-         IF( J.LT.NFACT ) THEN
+         IF( J.LT.MIN( M, N ) ) THEN
 !
 !           Update trailing submatrix.
 !
-            CALL DGER( NFACT-J, NFACT-J, -ONE, A( J+1, J ), 1,&
+            CALL DGER( M-J, N-J, -ONE, A( J+1, J ), 1,&
                        A( J, J+1 ),LDA,A( J+1, J+1 ), LDA )
          END IF
    10 CONTINUE
       RETURN
 !
-!     End of DGETRFNPI
+!     End of DGETRFNP
 !
       END
 
