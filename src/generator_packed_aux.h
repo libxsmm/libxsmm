@@ -71,7 +71,7 @@ LIBXSMM_API_INLINE void compact_load_parameter_ (
      } else if ( (number == 16) && (regset=='z') ) {
         datasize = 4;
      } else {
-        fprintf(stderr,"Unknown number=%d regset=%c combo for compact_load_parameter\n",number,regset);
+        fprintf(stderr,"Unknown number=%u regset=%c combo for compact_load_parameter\n",number,regset);
         exit(-1);
      }
 
@@ -82,7 +82,7 @@ LIBXSMM_API_INLINE void compact_load_parameter_ (
         libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) vector, "loadconst", regset, reg );
      } else {
         float vector[16];
-        for ( i = 0 ; i < (int)number ; i++ ) vector[i]=alpha;
+        for ( i = 0 ; i < (int)number ; i++ ) vector[i]=(float)alpha;
 
         libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) vector, "loadconst", regset, reg );
      }
@@ -160,7 +160,7 @@ LIBXSMM_API_INLINE void compact_store_matrix_gen_ (
      else          element = number*(i-1)*lda + number*(j-1);
      offset = element * datasize;
      if ( /*(reg < 0) ||*/ (reg >=32) ) {
-        printf("compact_store_matrix_gen trying to store from an invalid register: %d\n",reg);
+        printf("compact_store_matrix_gen trying to store from an invalid register: %u\n",reg);
         exit(-1);
      }
      if ( datasize == 8 )
@@ -356,8 +356,8 @@ LIBXSMM_API_INLINE void compact_load_matrix_gen_ (
      int i_instruction_set;
 
      if ( /*(reg < 0) ||*/ (reg >=32) ) {
-        printf("compact_load_matrix_gen trying to load to an invalid register: %d\n",reg);
-        printf("lda=%d i=%d j=%d reg=%d number=%d datasize=%d regset=%c matrix_gpreg=%d\n",lda,i,j,reg,number,datasize,regset,matrix_gpreg);
+        printf("compact_load_matrix_gen trying to load to an invalid register: %u\n",reg);
+        printf("lda=%u i=%u j=%u reg=%u number=%u datasize=%u regset=%c matrix_gpreg=%u\n",lda,i,j,reg,number,datasize,regset,matrix_gpreg);
         exit(-1);
      }
      if ( !trans ) element = number*(j-1)*lda + number*(i-1);

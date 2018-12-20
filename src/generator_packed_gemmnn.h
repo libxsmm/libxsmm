@@ -109,43 +109,43 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
 
      /* Test that the dimensions conform */
      if ( (am2-am1) != (cm2-cm1) ) {
-        printf("compact_gemmnn m-dimensions don't conform: %d != %d\n",am2-am1+1,cm2-cm1+1);
+        printf("compact_gemmnn m-dimensions don't conform: %u != %u\n",am2-am1+1,cm2-cm1+1);
         exit(-1);
      }
      if ( (ak2-ak1) != (bk2-bk1) ) {
-        printf("compact_gemmnn k-dimensions don't conform: %d != %d\n",ak2-ak1+1,bk2-bk1+1);
+        printf("compact_gemmnn k-dimensions don't conform: %u != %u\n",ak2-ak1+1,bk2-bk1+1);
         exit(-1);
      }
      if ( (bn2-bn1) != (cn2-cn1) ) {
-        printf("compact_gemmnn n-dimensions don't conform: %d != %d\n",ak2-ak1+1,bk2-bk1+1);
+        printf("compact_gemmnn n-dimensions don't conform: %u != %u\n",ak2-ak1+1,bk2-bk1+1);
         exit(-1);
      }
 
      /* See that all dimensions are at least 1 */
      if ( am2 < am1) {
-        printf("compact_gemmnn m-dimension too small: %d\n",am2-am1+1);
+        printf("compact_gemmnn m-dimension too small: %u\n",am2-am1+1);
         exit(-1);
      }
      if ( ak2 < ak1) {
-        printf("compact_gemmnn k-dimension too small: %d\n",ak2-ak1+1);
+        printf("compact_gemmnn k-dimension too small: %u\n",ak2-ak1+1);
         exit(-1);
      }
      if ( bn2 < bn1) {
-        printf("compact_gemmnn n-dimension too small: %d\n",bn2-bn1+1);
+        printf("compact_gemmnn n-dimension too small: %u\n",bn2-bn1+1);
         exit(-1);
      }
 
      /* Check that areg, breg, creg is valid */
      if ( /*(areg < 0) ||*/ (areg > 15) ) {
-        printf("compact_gemmnn A gp register invalid: %d\n",areg);
+        printf("compact_gemmnn A gp register invalid: %u\n",areg);
         exit(-1);
      }
      if ( /*(breg < 0) ||*/ (breg > 15) ) {
-        printf("compact_gemmnn B gp register invalid: %d\n",breg);
+        printf("compact_gemmnn B gp register invalid: %u\n",breg);
         exit(-1);
      }
      if ( /*(creg < 0) ||*/ (creg > 15) ) {
-        printf("compact_gemmnn C gp register invalid: %d\n",creg);
+        printf("compact_gemmnn C gp register invalid: %u\n",creg);
         exit(-1);
      }
 
@@ -154,7 +154,7 @@ LIBXSMM_API_INLINE void compact_gemmnn_ (
      else if ( (numb == 8) && (regset=='y') ) { datasz = 4; }
      else if ( (numb == 4) && (regset=='y') ) { datasz = 8; }
      else {
-        printf("compact_gemmnn Unknown number=%d or regset=%c\n",numb,regset);
+        printf("compact_gemmnn Unknown number=%u or regset=%c\n",numb,regset);
         exit(-1);
      }
 
@@ -634,8 +634,8 @@ if (c70>0) printf("c7,0:7=%d %d %d %d %d %d %d %d\n",c70,c71,c72,c73,c74,c75,c76
            j0 = 1; /* Turn everything back on again */
         }
      } /* N-loop */
-#if 1
-     printf("Inlined Compact GEMM code pointer ends at: %d\n",io_code->code_size);
+#ifdef COMPACT_GEMMNN_DEBUG
+     printf("Inlined Compact GEMM code pointer ends at: %u\n",io_code->code_size);
 #endif
 }
 
