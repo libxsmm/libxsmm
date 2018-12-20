@@ -593,6 +593,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_bla
 
   if (timestep == t-1) {
     for ( j = 0; j < n; ++j ) {
+      LIBXSMM_PRAGMA_UNROLL_N(4)
       for ( i = 0; i < m; i += 16 ) {
         _dout = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &dh[(j*ld)+i] );
         _o = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &o[(j*ld)+i] );
