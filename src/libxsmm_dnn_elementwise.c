@@ -583,6 +583,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square_ld(libxsmm_bla
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, int timestep, int t, LIBXSMM_DNN_ELTWISE_FTYPE *dout, LIBXSMM_DNN_ELTWISE_FTYPE *dh, LIBXSMM_DNN_ELTWISE_FTYPE *o, LIBXSMM_DNN_ELTWISE_FTYPE *co, LIBXSMM_DNN_ELTWISE_FTYPE *dcs, LIBXSMM_DNN_ELTWISE_FTYPE *ii, LIBXSMM_DNN_ELTWISE_FTYPE *ci, LIBXSMM_DNN_ELTWISE_FTYPE *dci, LIBXSMM_DNN_ELTWISE_FTYPE *di, LIBXSMM_DNN_ELTWISE_FTYPE *cps, LIBXSMM_DNN_ELTWISE_FTYPE *f, LIBXSMM_DNN_ELTWISE_FTYPE *df, LIBXSMM_DNN_ELTWISE_FTYPE *dp, LIBXSMM_DNN_ELTWISE_FTYPE *dcp) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) 
   libxsmm_blasint i, j;
   const float neg_ones[16] = { -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0 };
   const float ones[16]  = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
@@ -671,5 +672,12 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_bla
       }
     }  
   }
+#else
+LIBXSMM_UNUSED(m);LIBXSMM_UNUSED(n);LIBXSMM_UNUSED(ld);LIBXSMM_UNUSED(timestep);
+LIBXSMM_UNUSED(t);LIBXSMM_UNUSED(dout);LIBXSMM_UNUSED(dh);LIBXSMM_UNUSED(o);
+LIBXSMM_UNUSED(co);LIBXSMM_UNUSED(dcs);LIBXSMM_UNUSED(ii);LIBXSMM_UNUSED(ci);
+LIBXSMM_UNUSED(dci);LIBXSMM_UNUSED(di);LIBXSMM_UNUSED(cps);LIBXSMM_UNUSED(f);
+LIBXSMM_UNUSED(df);LIBXSMM_UNUSED(dp);LIBXSMM_UNUSED(dcp);
+#endif
 }
 
