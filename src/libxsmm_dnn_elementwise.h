@@ -80,6 +80,8 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_ld(libxsmm_blasint m,
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst);
 
 LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, int timestep, int t, LIBXSMM_DNN_ELTWISE_FTYPE *dout, LIBXSMM_DNN_ELTWISE_FTYPE *dh, LIBXSMM_DNN_ELTWISE_FTYPE *o, LIBXSMM_DNN_ELTWISE_FTYPE *co, LIBXSMM_DNN_ELTWISE_FTYPE *dcs, LIBXSMM_DNN_ELTWISE_FTYPE *ii, LIBXSMM_DNN_ELTWISE_FTYPE *ci, LIBXSMM_DNN_ELTWISE_FTYPE *dci, LIBXSMM_DNN_ELTWISE_FTYPE *di, LIBXSMM_DNN_ELTWISE_FTYPE *cps, LIBXSMM_DNN_ELTWISE_FTYPE *f, LIBXSMM_DNN_ELTWISE_FTYPE *df, LIBXSMM_DNN_ELTWISE_FTYPE *dp, LIBXSMM_DNN_ELTWISE_FTYPE *dcp);
- 
+
+LIBXSMM_API_INTERN void libxsmm_internal_compute_o_cs_co_h_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *f, LIBXSMM_DNN_ELTWISE_FTYPE *cps, LIBXSMM_DNN_ELTWISE_FTYPE *cs, LIBXSMM_DNN_ELTWISE_FTYPE *ii, LIBXSMM_DNN_ELTWISE_FTYPE *ci,LIBXSMM_DNN_ELTWISE_FTYPE *co, LIBXSMM_DNN_ELTWISE_FTYPE *o, LIBXSMM_DNN_ELTWISE_FTYPE *h);
+
 #endif /*LIBXSMM_DNN_ELEMENTWISE_H*/
 

@@ -633,7 +633,8 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_bla
     }
   } else {
     for ( j = 0; j < n; ++j ) {
-      for ( i = 0; i < m; i += 16 ) {
+       LIBXSMM_PRAGMA_UNROLL_N(4)
+       for ( i = 0; i < m; i += 16 ) {
         _dout = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &dout[(j*ld)+i] );
         _dh = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &dh[(j*ld)+i] );
         _dout = _mm512_add_ps( _dout, _dh );
@@ -681,3 +682,35 @@ LIBXSMM_UNUSED(df);LIBXSMM_UNUSED(dp);LIBXSMM_UNUSED(dcp);
 #endif
 }
 
+LIBXSMM_API_INTERN void libxsmm_internal_compute_o_cs_co_h_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *f, LIBXSMM_DNN_ELTWISE_FTYPE *cps, LIBXSMM_DNN_ELTWISE_FTYPE *cs, LIBXSMM_DNN_ELTWISE_FTYPE *ii, LIBXSMM_DNN_ELTWISE_FTYPE *ci,LIBXSMM_DNN_ELTWISE_FTYPE *co, LIBXSMM_DNN_ELTWISE_FTYPE *o, LIBXSMM_DNN_ELTWISE_FTYPE *h) {
+#if defined(LIBXSMM_INTRINSICS_AVX512) 
+  libxsmm_blasint i, j;
+  __m512 _f, _cps, _cs, _ii, _ci, _co, _o, _h;
+  const float halves[16]  = { 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 };
+  __m512 _halves = LIBXSMM_INTRINSICS_MM512_LOAD_PS( halves );
+
+  for ( j = 0; j < n; ++j ) {
+    LIBXSMM_PRAGMA_UNROLL_N(4)
+      for ( i = 0; i < m; i += 16 ) {
+        _o = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &o[(j*ld)+i] );
+        _o = _mm512_fmadd_ps( _mm512_tanh_ps( _mm512_mul_ps( _o, _halves ) ), _halves, _halves);
+        _f = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &f[(j*ld)+i] );
+        _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );
+        _cs = _mm512_mul_ps( _f, _cps );
+        _ii = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &ii[(j*ld)+i] );
+        _ci = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &ci[(j*ld)+i] );
+        _cs = _mm512_fmadd_ps( _ii, _ci, _cs );
+        _co = _mm512_tanh_ps( _cs );
+        _h = _mm512_mul_ps( _o, _co );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &h[(j*ld)+i], _h );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &cs[(j*ld)+i], _cs );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &co[(j*ld)+i], _co );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &o[(j*ld)+i], _o );
+      }
+  }
+#else
+LIBXSMM_UNUSED(m);LIBXSMM_UNUSED(n);LIBXSMM_UNUSED(ld);LIBXSMM_UNUSED(f);
+LIBXSMM_UNUSED(cps);LIBXSMM_UNUSED(cs);LIBXSMM_UNUSED(ii);LIBXSMM_UNUSED(ci);
+LIBXSMM_UNUSED(co);LIBXSMM_UNUSED(o);LIBXSMM_UNUSED(h);
+#endif
+}
