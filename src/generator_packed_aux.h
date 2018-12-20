@@ -55,17 +55,37 @@ LIBXSMM_API_INLINE void compact_load_parameter_ (
      unsigned int number,
      char regset )
 {
-     double vector[16];
+     int datasize;
      int i;
 
-     if ( number > 16 )
-     {
-        fprintf(stderr,"loading too large a parameter for compact_load_parameter\n");
+     if ( (number == 2) && (regset=='x') ) {
+        datasize = 8;
+     } else if ( (number == 4) && (regset=='x') ) {
+        datasize = 4;
+     } else if ( (number == 4) && (regset=='y') ) {
+        datasize = 8;
+     } else if ( (number == 8) && (regset=='y') ) {
+        datasize = 4;
+     } else if ( (number == 8) && (regset=='z') ) {
+        datasize = 8;
+     } else if ( (number == 16) && (regset=='z') ) {
+        datasize = 4;
+     } else {
+        fprintf(stderr,"Unknown number=%d regset=%c combo for compact_load_parameter\n",number,regset);
         exit(-1);
      }
-     for ( i = 0 ; i < (int)number ; i++ ) vector[i]=alpha;
+         
+     if ( datasize == 8 ) {
+        double vector[16];
+        for ( i = 0 ; i < (int)number ; i++ ) vector[i]=alpha;
 
-     libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) vector, "loadconst", regset, reg );
+        libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) vector, "loadconst", regset, reg );
+     } else {
+        float vector[16];
+        for ( i = 0 ; i < (int)number ; i++ ) vector[i]=alpha;
+
+        libxsmm_x86_instruction_full_vec_load_of_constants ( io_code, (unsigned char*) vector, "loadconst", regset, reg );
+     }
 }
 
 LIBXSMM_API_INLINE void compact_set_zero_ (
