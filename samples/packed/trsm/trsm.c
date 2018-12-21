@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Greg Henry (Intel Corp.)
+/* Greg Henry, Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #if 0
 #define USE_KERNEL_GENERATION_DIRECTLY
@@ -312,7 +312,7 @@ void dfill_identity ( double *matrix, unsigned int ld, unsigned int m, unsigned 
   double dtmp;
 
   if ( ld < m ) {
-     fprintf(stderr,"Error is dfill_identity: ld=%u m=%u mismatched!\n",ld,m);
+     fprintf(stderr,"Error in dfill_identity: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
   for ( h = 0; h < (unsigned int)number_of_cases ; h++ ) {
@@ -469,7 +469,7 @@ int main(int argc, char* argv[])
   double dalpha = 1.0;
   float  salpha;
   double dtmp;
-  const unsigned char *cptr;
+  const unsigned char *cptr = NULL;
   unsigned long op_count;
   unsigned int typesize8 = 8;
   const libxsmm_trsm_descriptor* desc8 = NULL;

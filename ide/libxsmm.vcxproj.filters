@@ -785,9 +785,6 @@
     <ClCompile Include="..\src\generator_matcopy_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_packed_trsm.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
@@ -949,6 +946,9 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_fwd_nc_ck_generic.tpl.c">
       <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed.c">
+      <Filter>src\generator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -26,9 +26,9 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Greg Henry (Intel Corp.)
+/* Greg Henry, Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#if 1
+#if 0
 #define USE_KERNEL_GENERATION_DIRECTLY
 #endif
 #if 0
@@ -39,9 +39,7 @@
 
 #if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(TIME_MKL) && \
    (!defined(__linux__) || !defined(USE_KERNEL_GENERATION_DIRECTLY))
-# if 0 /* TODO: provide TRMM API */
 # define USE_XSMM_GENERATED
-# endif
 # include <libxsmm.h>
 #else
 # include <libxsmm_source.h>
@@ -293,7 +291,7 @@ void dfill_matrix ( double *matrix, unsigned int ld, unsigned int m, unsigned in
 
   if ( ld < m )
   {
-     fprintf(stderr,"Error is dfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
+     fprintf(stderr,"Error in dfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
   for ( j = 1 ; j <= n ; j++ )
@@ -578,7 +576,7 @@ int main(int argc, char* argv[])
 #endif
 
 #if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
-  libxsmm_generator_packed_trmm_avx_avx512_kernel ( &io_generated_code, desc8, "hsw" );
+  libxsmm_generator_trmm_kernel ( &io_generated_code, desc8, "hsw" );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
@@ -825,3 +823,4 @@ int main(int argc, char* argv[])
 
   return 0;
 }
+

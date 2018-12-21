@@ -161,6 +161,7 @@ LIBXSMM_APIVAR(unsigned int internal_statistic_mnk);
 LIBXSMM_APIVAR(unsigned int internal_statistic_num_mcopy);
 LIBXSMM_APIVAR(unsigned int internal_statistic_num_tcopy);
 LIBXSMM_APIVAR(unsigned int internal_statistic_num_trsm);
+LIBXSMM_APIVAR(unsigned int internal_statistic_num_trmm);
 LIBXSMM_APIVAR(unsigned int internal_teardown);
 LIBXSMM_APIVAR(int internal_dispatch_trylock_locked);
 LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
@@ -868,6 +869,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
           }
           else if (LIBXSMM_KERNEL_KIND_TRSM == registry_keys[i].xgemm.iflags) {
             ++internal_statistic_num_trsm;
+          }
+          else if (LIBXSMM_KERNEL_KIND_TRMM == registry_keys[i].xgemm.iflags) {
+            ++internal_statistic_num_trmm;
           }
           else {
             fprintf(stderr, "LIBXSMM ERROR: code registry is corrupted!\n");
@@ -1584,6 +1588,22 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         }
       }
     } break;
+    case LIBXSMM_BUILD_KIND_TRMM: { /* compact trmm kernel */
+      unsigned int tsize;
+      LIBXSMM_ASSERT(0 != request->descriptor.trmm);
+      tsize = (unsigned int)request->descriptor.trmm->typesize;
+      if (4 == tsize || 8 == tsize) {
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_trmm_kernel, &generated_code, request->descriptor.trmm, target_arch);
+# if !defined(LIBXSMM_VTUNE)
+        if (0 > libxsmm_verbosity)
+# endif
+        {
+          const char *const tsizename = internal_get_typesize_string(tsize);
+          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
+          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_tsize%s_.trmm", target_arch, tsizename);
+        }
+      }
+    } break;
 # if !defined(NDEBUG) /* library code is expected to be mute */
     default: { /* unknown kind */
       static int error_once = 0;
@@ -2178,6 +2198,24 @@ LIBXSMM_API libxsmm_xtrsmfunction libxsmm_dispatch_trsm(const libxsmm_trsm_descr
     query.trsm = *descriptor;
     query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TRSM;
     result = internal_find_code(&query.xgemm).xtrsm;
+  }
+  else {
+    result = 0;
+  }
+  return result;
+}
+
+
+LIBXSMM_API libxsmm_xtrmmfunction libxsmm_dispatch_trmm(const libxsmm_trmm_descriptor* descriptor)
+{
+  libxsmm_xtrmmfunction result;
+  if (0 != descriptor) {
+    libxsmm_kernel_info query;
+    LIBXSMM_INIT
+    memset(&query, 0, sizeof(query)); /* avoid warning "maybe used uninitialized" */
+    query.trmm = *descriptor;
+    query.xgemm.iflags = LIBXSMM_KERNEL_KIND_TRMM;
+    result = internal_find_code(&query.xgemm).xtrmm;
   }
   else {
     result = 0;

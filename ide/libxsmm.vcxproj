@@ -121,10 +121,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\generator_common.c" />
+    <ClCompile Include="..\src\generator_packed.c" />
     <ClCompile Include="..\src\generator_packed_gemm_avx_avx512.c" />
     <ClCompile Include="..\src\generator_packed_getrf_avx_avx512.c" />
     <ClCompile Include="..\src\generator_packed_trmm_avx_avx512.c" />
-    <ClCompile Include="..\src\generator_packed_trsm.c" />
     <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c" />
     <ClCompile Include="..\src\generator_convolution.c" />
     <ClCompile Include="..\src\generator_convolution_common.c" />

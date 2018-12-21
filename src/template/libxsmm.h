@@ -256,6 +256,9 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_de
 /** Code generation routine for TRSM using a descriptor */
 LIBXSMM_API libxsmm_xtrsmfunction libxsmm_dispatch_trsm(const libxsmm_trsm_descriptor* descriptor);
 
+/** Code generation routine for TRMM using a descriptor */
+LIBXSMM_API libxsmm_xtrmmfunction libxsmm_dispatch_trmm(const libxsmm_trmm_descriptor* descriptor);
+
 /**
  * Code generation routine for the CSR format which multiplies a dense SOA matrix (each element holds a SIMD-width
  * wide vector) and a sparse matrix or a sparse matrix with a dense SOA matrix.
