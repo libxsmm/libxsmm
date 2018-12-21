@@ -48,8 +48,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if 1
-#define GENERATOR_PACKED_GEMM_DEBUG
+#if 0
+# define GENERATOR_PACKED_GEMM_DEBUG
 #endif
 
 
@@ -156,7 +156,6 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
      unsigned int breg = LIBXSMM_X86_GP_REG_RSI;
      unsigned int creg = LIBXSMM_X86_GP_REG_RDX;
 #endif
-
      const double beta = 1.0 ;
      unsigned int m1=m, n1=n, k1=k;
      unsigned int j;
@@ -271,5 +270,5 @@ printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,jun
       printf(".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",buf[i],buf[i+1],buf[i+2],buf[i+3],buf[i+4],buf[i+5],buf[i+6],buf[i+7]);
    }
 #endif
-
 }
+
