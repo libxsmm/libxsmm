@@ -93,6 +93,7 @@ const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_
 /* Auxiliary arrays for batch-reduce gemms  */
 const element_filter_type *A_array[1024];
 const element_input_type  *B_array[1024];
+element_output_type *cps_ptr = NULL;
 
 /* parallelize over C-blocks */
 /* computing first logical thread */
@@ -224,11 +225,10 @@ for (j = 0; j < t; ++j) {
     batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &blocks);
 
 #if 1
-    if (j == 0) {
-      libxsmm_internal_compute_o_i_f_ci_cs_co_h_ld(bk, bn, K, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K), &LIBXSMM_VLA_ACCESS(3, cs, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, j, in, ik, N, K));
-    } else {
-      libxsmm_internal_compute_o_i_f_ci_cs_co_h_ld(bk, bn, K, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, cs, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, j, in, ik, N, K));
-    }
+    cps_ptr = (j == 0) ? (element_output_type*) &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K) : (element_output_type*) &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K) ;
+
+    /* Compute i, ci, f, o, cs, co and h */
+    libxsmm_internal_compute_o_i_f_ci_cs_co_h_ld(bk, bn, K, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), cps_ptr, &LIBXSMM_VLA_ACCESS(3, cs, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, j, in, ik, N, K));
 #else
     /* i = sigmoid(i) */
     libxsmm_internal_matrix_sigmoid_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K) );
