@@ -1652,7 +1652,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_gemm_batch)(const libxsmm_gemm_precisio
   const libxsmm_blasint* batchsize)
 {
   LIBXSMM_ASSERT(0 != precision && 0 != m && 0 != n && 0 != k && 0 != index_base && 0 != index_stride && 0 != batchsize);
-  libxsmm_gemm_batch2(*precision, transa, transb, *m, *n, *k, alpha, a, lda, b, ldb, beta, c, ldc,
+  libxsmm_gemm_batch(*precision, transa, transb, *m, *n, *k, alpha, a, lda, b, ldb, beta, c, ldc,
     *index_base, *index_stride, stride_a, stride_b, stride_c, *batchsize);
 }
 
