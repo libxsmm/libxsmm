@@ -311,6 +311,46 @@ for (j = t-1; j >= 0; --j) {
 
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
+  for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
+    in = (inik % (N/bn))*bn;
+    ikb = inik / (N/bn);
+    ik = ikb*bk;
+
+    dout_ptr = (j > 0) ? (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K) : (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dhp, in, ik, K);
+
+    /* dout += R^T * difoc */
+    for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
+      A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, riT, ikb, icb, 0, 0, kBlocks, bk, bk);
+      B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, di,  in, ic, K);
+    }
+    /* Reduce batch gemm call  */
+    blocks = kBlocks;
+    batchreduce_kerneldz(A_array, B_array, dout_ptr, &blocks);
+
+    for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
+      A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rcT, ikb, icb, 0, 0, kBlocks, bk, bk);
+      B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dci,  in, ic, K);
+    }
+    /* Reduce batch gemm call  */
+    batchreduce_kerneld(A_array, B_array, dout_ptr, &blocks);
+
+    for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
+      A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rfT, ikb, icb, 0, 0, kBlocks, bk, bk);
+      B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, df,  in, ic, K);
+    }
+    /* Reduce batch gemm call  */
+    batchreduce_kerneld(A_array, B_array, dout_ptr, &blocks);
+
+    for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
+      A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, roT, ikb, icb, 0, 0, kBlocks, bk, bk);
+      B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dp,  in, ic, K);
+    }
+    /* Reduce batch gemm call  */
+    batchreduce_kerneld(A_array, B_array, dout_ptr, &blocks);
+
+  }
+
+
  
   if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* dx = W^T * difoc */
@@ -435,45 +475,5 @@ for (j = t-1; j >= 0; --j) {
       _mm512_store_ps(&dbc[ik], dbc_sum);
     }  
   }
-
-  for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
-    in = (inik % (N/bn))*bn;
-    ikb = inik / (N/bn);
-    ik = ikb*bk;
-
-    dout_ptr = (j > 0) ? (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K) : (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dhp, in, ik, K);
-
-    /* dout += R^T * difoc */
-    for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
-      A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, riT, ikb, icb, 0, 0, kBlocks, bk, bk);
-      B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, di,  in, ic, K);
-    }
-    /* Reduce batch gemm call  */
-    blocks = kBlocks;
-    batchreduce_kerneldz(A_array, B_array, dout_ptr, &blocks);
-
-    for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
-      A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rcT, ikb, icb, 0, 0, kBlocks, bk, bk);
-      B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dci,  in, ic, K);
-    }
-    /* Reduce batch gemm call  */
-    batchreduce_kerneld(A_array, B_array, dout_ptr, &blocks);
-
-    for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
-      A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rfT, ikb, icb, 0, 0, kBlocks, bk, bk);
-      B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, df,  in, ic, K);
-    }
-    /* Reduce batch gemm call  */
-    batchreduce_kerneld(A_array, B_array, dout_ptr, &blocks);
-
-    for (ic = 0, icb = 0; ic < K; ic += bk, icb++) {
-      A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, roT, ikb, icb, 0, 0, kBlocks, bk, bk);
-      B_array[icb] = (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dp,  in, ic, K);
-    }
-    /* Reduce batch gemm call  */
-    batchreduce_kerneld(A_array, B_array, dout_ptr, &blocks);
-
-  }
-
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }
