@@ -149,6 +149,7 @@ LIBXSMM_VLA_DECL(4, element_filter_type, rcT, scratch_rcT, kBlocks, bk, bk);
 LIBXSMM_VLA_DECL(4, element_filter_type, rfT, scratch_rfT, kBlocks, bk, bk);
 LIBXSMM_VLA_DECL(4, element_filter_type, roT, scratch_roT, kBlocks, bk, bk);
 LIBXSMM_VLA_DECL(2, element_output_type, hT, scratch_hT, N);
+element_output_type *cps_ptr = NULL;
 /* define batch-reduce gemm kernels */
 const float beta = 0.0;
 const libxsmm_smmfunction_reducebatch batchreduce_kernela = libxsmm_smmdispatch_reducebatch( bc, bn, bk, &bc, &K, &C, NULL, NULL, NULL);
@@ -255,13 +256,11 @@ for (j = t-1; j >= 0; --j) {
   for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
     in = (inik % (N/bn))*bn;
     ik = (inik / (N/bn))*bk;
-    
+
     /* Compute dcp, dci, di, df, dp */
-    if (j == 0) {
-      libxsmm_internal_compute_dcp_dci_di_df_dp_ld(bk, bn, K, j, t, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K),  &LIBXSMM_VLA_ACCESS(3, dh, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K), &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K), &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, df, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K));    
-    } else {
-      libxsmm_internal_compute_dcp_dci_di_df_dp_ld(bk, bn, K, j, t, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K),  &LIBXSMM_VLA_ACCESS(3, dh, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K), &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, df, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K));    
-    }
+    cps_ptr = (j == 0) ? (element_output_type*) &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K) : (element_output_type*) &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K);
+
+    libxsmm_internal_compute_dcp_dci_di_df_dp_ld(bk, bn, K, j, t, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K),  &LIBXSMM_VLA_ACCESS(3, dh, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K), cps_ptr , &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, df, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K));    
   }
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
