@@ -347,10 +347,7 @@ for (j = t-1; j >= 0; --j) {
     }
     /* Reduce batch gemm call  */
     batchreduce_kerneld(A_array, B_array, dout_ptr, &blocks);
-
   }
-
-
  
   if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* dx = W^T * difoc */

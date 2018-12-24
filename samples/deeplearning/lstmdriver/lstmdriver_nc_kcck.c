@@ -1310,13 +1310,11 @@ int main(int argc, char* argv[])
       flops *= t; /* for t time steps */
       tempflops = (8.0 * K * N * C); /* delta{c, i, f, o} * x^T */
       tempflops *= t; /* for t time steps */
-      tempflops += (4.0 * K * C * (t-1)); /* for summation of dJdW{c, i, f, o} */
       flops += tempflops;
       tempflops = (8.0 * K * N * K); /* delta{c, i, f, o} * delta^T */
-      tempflops *= (t - 1); /* for (t - 1) time steps */
-      tempflops += (4.0 * K * N * (t-2)); /* for summation of dJdR{c, i, f, o} */
+      tempflops *= t; /* for t time steps */
       flops += tempflops;
-      flops += (4.0 * K * N * (t - 1)); /* delbias */
+      flops += (4.0 * K * N * t); /* delbias */
       flops *= iters;
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
@@ -1362,13 +1360,11 @@ int main(int argc, char* argv[])
       flops *= t; /* for t time steps */
       tempflops = (8.0 * K * N * C); /* delta{c, i, f, o} * x^T */
       tempflops *= t; /* for t time steps */
-      tempflops += (4.0 * K * C * (t-1)); /* for summation of dJdW{c, i, f, o} */
       flops += tempflops;
       tempflops = (8.0 * K * N * K); /* delta{c, i, f, o} * delta^T */
-      tempflops *= (t - 1); /* for (t - 1) time steps */
-      tempflops += (4.0 * K * N * (t-2)); /* for summation of dJdR{c, i, f, o} */
+      tempflops *= t; /* for t time steps */
       flops += tempflops;
-      flops += (4.0 * K * N * (t - 1)); /* delbias */
+      flops += (4.0 * K * N * t); /* delbias */
       flops *= iters;
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
@@ -1415,13 +1411,11 @@ int main(int argc, char* argv[])
       flops *= t; /* for t time steps */
       tempflops = (8.0 * K * N * C); /* delta{c, i, f, o} * x^T */
       tempflops *= t; /* for t time steps */
-      tempflops += (4.0 * K * C * (t-1)); /* for summation of dJdW{c, i, f, o} */
       flops += tempflops;
       tempflops = (8.0 * K * N * K); /* delta{c, i, f, o} * delta^T */
-      tempflops *= (t - 1); /* for (t - 1) time steps */
-      tempflops += (4.0 * K * N * (t-2)); /* for summation of dJdR{c, i, f, o} */
+      tempflops *= t; /* for t time steps */
       flops += tempflops;
-      flops += (4.0 * K * N * (t - 1)); /* delbias */
+      flops += (4.0 * K * N * t); /* delbias */
       flops += (((2.0 * K * N * C) + (2.0 * K * N * K) + (2.0 * K * N) + (tflops * K * N)) * 4.0 + (4.0 * K * N) + (tflops * K * N)) * (double)t;
       flops *= iters;
 
