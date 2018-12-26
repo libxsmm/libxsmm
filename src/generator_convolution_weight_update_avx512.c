@@ -1256,16 +1256,6 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
                   LIBXSMM_X86_VEC_REG_UNDEF,
                   16);
 
-#if 0
-            /* vfma */
-            libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-                i_conv_kernel_config->instruction_set,
-                i_conv_kernel_config->vfma_instruction,
-                i_conv_kernel_config->vector_name,
-                1,
-                2,
-                i_conv_kernel_config->vector_reg_count - unroll_factor + l_n);
-#endif
               /* vpsrad */
               libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
                   i_conv_kernel_config->instruction_set,
@@ -1294,7 +1284,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
                   0,
                   3,
                   i_conv_kernel_config->vector_reg_count - unroll_factor + l_n);
-#if 1
+
               /* vfma */
               libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                   i_conv_kernel_config->instruction_set,
@@ -1303,7 +1293,6 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
                   1,
                   2,
                   i_conv_kernel_config->vector_reg_count - unroll_factor + l_n);
-#endif
             } else {
               libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                   i_conv_kernel_config->instruction_set,
@@ -1746,16 +1735,6 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
                 LIBXSMM_X86_VEC_REG_UNDEF,
                 16);
 
-#if 0
-          /* vfma */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_conv_kernel_config->instruction_set,
-              i_conv_kernel_config->vfma_instruction,
-              i_conv_kernel_config->vector_name,
-              1,
-              2,
-              i_conv_kernel_config->vector_reg_count - unroll_factor + l_n);
-#endif
              /* vpsrad */
              libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
                 i_conv_kernel_config->instruction_set,
@@ -1784,7 +1763,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
                 0,
                 3,
                 i_conv_kernel_config->vector_reg_count - unroll_factor + l_n);
-#if 1
+             
              /* vfma */
              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                 i_conv_kernel_config->instruction_set,
@@ -1793,7 +1772,6 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
                 1,
                 2,
                 i_conv_kernel_config->vector_reg_count - unroll_factor + l_n);
-#endif
           } else {
             libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                 i_conv_kernel_config->instruction_set,
@@ -2080,16 +2058,6 @@ void libxsmm_generator_convolution_weight_update_avx512_c3k64s2_bf16_all_pixels_
                 LIBXSMM_X86_VEC_REG_UNDEF,
                 16);
 
-#if 0
-          /* vfma */
-          libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-              i_conv_kernel_config->instruction_set,
-              i_conv_kernel_config->vfma_instruction,
-              i_conv_kernel_config->vector_name,
-              1,
-              2,
-              i_conv_kernel_config->vector_reg_count - n_acc_regs + l_n + ofmb*3);
-#endif
             /* vpsrad */
             libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
                 i_conv_kernel_config->instruction_set,
@@ -2118,7 +2086,7 @@ void libxsmm_generator_convolution_weight_update_avx512_c3k64s2_bf16_all_pixels_
                 0,
                 3,
                 i_conv_kernel_config->vector_reg_count - n_acc_regs + l_n + ofmb*3);
-#if 1
+
             /* vfma */
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                 i_conv_kernel_config->instruction_set,
@@ -2127,7 +2095,6 @@ void libxsmm_generator_convolution_weight_update_avx512_c3k64s2_bf16_all_pixels_
                 1,
                 2,
                 i_conv_kernel_config->vector_reg_count - n_acc_regs + l_n + ofmb*3);
-#endif
           } else {
             libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                 i_conv_kernel_config->instruction_set,

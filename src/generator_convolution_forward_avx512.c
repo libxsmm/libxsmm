@@ -818,16 +818,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
               2,
               LIBXSMM_X86_VEC_REG_UNDEF,
               16);
-#if 0
-        /* vfma */
-        libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
-            i_conv_kernel_config->instruction_set,
-            i_conv_kernel_config->vfma_instruction,
-            i_conv_kernel_config->vector_name,
-            1,
-            2,
-            i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
-#endif
+          
           /* vpsrad */
           libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
               i_conv_kernel_config->instruction_set,
@@ -856,7 +847,6 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
               0,
               3,
               i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
-#if 1
           /* vfma */
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
               i_conv_kernel_config->instruction_set,
@@ -865,7 +855,6 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
               1,
               2,
               i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
-#endif
         } else {
           wt_reg = (l_k == 0) ? 0 : 1;
           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
