@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -39,6 +39,19 @@
 
 #if 0
 #define TRIANGLE_IS_IDENTITY
+#endif
+
+#if 1
+#define AVX2_TESTING
+#endif
+#if 0
+#define AVX512_TESTING
+#endif
+#if !defined(AVX2_TESTING) && !defined(AVX512_TESTING)
+  #define AVX2_TESTING
+#endif
+#if defined(AVX2_TESTING) && defined(AVX512_TESTING)
+  #error Compile with either AVX2_TESTING or AVX512_TESTING never both
 #endif
 
 LIBXSMM_INLINE
@@ -181,83 +194,86 @@ void scopy_from_temp ( int layout, float *A, int lda, int m, int n, float *Atemp
 }
 
 #if !defined(USE_MKL_FOR_REFERENCE) && !defined(LIBXSMM_NOFORTRAN) && (!defined(__BLAS) || (0 != __BLAS))
-extern void dtrsm_();
+extern void dgemm_();
 
-/* Reference code for compact dtrsm. Note that this just copies data into
-   a buffer from the compact storage and calls the regular dtrsm code. This
+/* Reference code for compact dgemm. Note that this just copies data into
+   a buffer from the compact storage and calls the regular dgemm code. This
    is very naive reference code just used for testing purposes */
-/* Note: if layout==101 (row major), then this code is known to only work when
- *        nmat == VLEN. To check for accuracy otherwise, transpose everything */
 LIBXSMM_INLINE
-void compact_dtrsm_ ( unsigned int *layout, char *side, char *uplo,
-                      char *transa, char *diag, unsigned int *m,
-                      unsigned int *n, double *alpha, double *A,
+void compact_dgemm_ ( unsigned int *layout, char *transa, char *transb,
+                      unsigned int *m, unsigned int *n,
+                      unsigned int *k, double *alpha, double *A,
                       unsigned int *lda, double *B, unsigned int *ldb,
+                      double *beta, double *C, unsigned int *ldc,
                       unsigned int *nmat, unsigned int *VLEN )
 {
-    int i, j, num, asize, offseta, offsetb;
-    double *Ap, *Bp, Atemp[BUFSIZE], Btemp[BUFSIZE];
+    int i, j, num, info;
+    double *Ap, Atemp[BUFSIZE];
+    double *Bp, Btemp[BUFSIZE];
+    double *Cp, Ctemp[BUFSIZE];
     static int ntimes = 0;
+    char ntrans='N';
+    extern void dgemm();
 
-    if ( ++ntimes < 3 ) printf("Inside reference compact_dtrsm_()\n");
-    if ( *layout == 102 )
+    if ( ++ntimes < 3 ) printf("Inside reference compact_dgemm_()\n");
+    if ( ++ntimes < 3 ) printf("layout=%d m/n/k=%d %d %d lda/b/c=%d %d %d nmat=%d VLEN=%d\n",*layout,*m,*n,*k,*lda,*ldb,*ldc,*nmat,*VLEN);
+    for ( i = 0, num = 0 ; i < (*nmat) ; i+= *VLEN, num++ )
     {
-       if ( (*side == 'L') || (*side == 'l') ) asize = *m;
-       else asize = *n;
-       offsetb = (*ldb)*(*n)*(*VLEN);
-    } else {
-       if ( (*side == 'L') || (*side == 'l') ) asize = *n;
-       else asize = *m;
-       offsetb = (*ldb)*(*m)*(*VLEN);
-    }
-    offseta = (*lda)*asize*(*VLEN);
-    if ( ++ntimes < 3 ) printf("m/n=%u,%u layout=%u asize=%i VLEN=%u nmat=%u offseta=%i offsetb=%i\n",*m,*n,*layout, asize, *VLEN, *nmat, offseta, offsetb );
-    for ( i = 0, num = 0 ; i < (int)(*nmat) ; i+= *VLEN, num++ )
-    {
-       for ( j = 0 ; j < (int)*VLEN ; j++ )
+       for ( j = 0 ; j < *VLEN ; j++ )
        {
-           /* Unpack the data, call a reference DTRSM, repack the data */
-           Ap = &A[j+num*offseta];
-           Bp = &B[j+num*offsetb];
-if (++ntimes < 15 ) printf("Doing a dtrsm at place i=%d j=%d num=%d Ap[%d]=%g Bp[%d]=%g\n",i,j,num,j+num*offseta,Ap[0],j+num*offsetb,Bp[0]);
-           dcopy_to_temp ( *layout, Ap, *lda, asize, asize, Atemp, *VLEN );
-           dcopy_to_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
-           dtrsm_ ( side, uplo, transa, diag, m, n, alpha, Atemp, &asize, Btemp, m);
-           dcopy_from_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
+           /* Unpack the data, call a reference DGEMM, repack the data */
+           Ap = &A[j+num*(*lda)*(*k)*(*VLEN)];
+           Bp = &B[j+num*(*ldb)*(*n)*(*VLEN)];
+           Cp = &C[j+num*(*ldc)*(*n)*(*VLEN)];
+if (++ntimes < 3 ) printf("Doing a dgemm at place i=%d j=%d num=%d Ap[%d]=%g\n",i,j,num,j+num*(*lda)*(*k)*(*VLEN),Ap[0]);
+           dcopy_to_temp ( *layout, Ap, *lda, *m, *k, Atemp, *VLEN );
+           dcopy_to_temp ( *layout, Bp, *ldb, *k, *n, Btemp, *VLEN );
+           dcopy_to_temp ( *layout, Cp, *ldc, *m, *n, Ctemp, *VLEN );
+           dgemm_ ( transa, transb, m, n, k, alpha, Atemp, m, Btemp, k, beta, Ctemp, m );
+           dcopy_from_temp ( *layout, Cp, *ldc, *m, *n, Ctemp, *VLEN );
        }
     }
 }
 
-extern void strsm_();
+extern void sgemm_();
 
-/* Reference code for compact strsm. Note that this just copies data into
-   a buffer from the compact storage and calls the regular strsm code. This
+/* Reference code for compact sgemm. Note that this just copies data into
+   a buffer from the compact storage and calls the regular sgemm code. This
    is very naive reference code just used for testing purposes */
 /* Note: if layout==101 (row major), then this code is known to only work when
  *        nmat == VLEN. To check for accuracy otherwise, transpose everything */
 LIBXSMM_INLINE
-void compact_strsm_ ( unsigned int *layout, char *side, char *uplo,
-                      char *transa, char *diag, unsigned int *m,
-                      unsigned int *n, float *alpha, float *A,
+void compact_sgemm_ ( char *transa, char *transb,
+                      unsigned int *layout, unsigned int *m, unsigned int *n,
+                      unsigned int *k, float *alpha, float *A,
                       unsigned int *lda, float *B, unsigned int *ldb,
+                      float *beta, float *C, unsigned int *ldc,
                       unsigned int *nmat, unsigned int *VLEN )
 {
-    int i, j, num, asize;
-    float *Ap, *Bp, Atemp[BUFSIZE], Btemp[BUFSIZE];
+    int i, j, num, info;
+    float *Ap, Atemp[BUFSIZE];
+    float *Bp, Btemp[BUFSIZE];
+    float *Cp, Ctemp[BUFSIZE];
+    static int ntimes = 0;
+    char ntrans='N';
+    extern void sgemm();
 
-    if ( (*side == 'L') || (*side == 'l') ) asize = *m;
-    else asize = *n;
-    for ( i = 0, num = 0 ; i < (int)(*nmat) ; i+= *VLEN, num++ )
+    if ( ++ntimes < 3 ) printf("Inside reference compact_sgemm_()\n");
+    if ( ++ntimes < 3 ) printf("layout=%d m/n/k=%d %d %d lda/b/c=%d %d %d nmat=%d VLEN=%d\n",*layout,*m,*n,*k,*lda,*ldb,*ldc,*nmat,*VLEN);
+    for ( i = 0, num = 0 ; i < (*nmat) ; i+= *VLEN, num++ )
     {
-       for ( j = 0 ; j < (int)*VLEN ; j++ )
+       for ( j = 0 ; j < *VLEN ; j++ )
        {
-           /* Unpack the data, call a reference DTRSM, repack the data */
-           Ap = &A[j+num*(*lda)*asize*(*VLEN)];
+           /* Unpack the data, call a reference DGEMM, repack the data */
+           Ap = &A[j+num*(*lda)*(*k)*(*VLEN)];
            Bp = &B[j+num*(*ldb)*(*n)*(*VLEN)];
-           scopy_to_temp ( *layout, Ap, *lda, asize, asize, Atemp, *VLEN );
-           scopy_to_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
-           strsm_ ( side, uplo, transa, diag, m, n, alpha, Atemp, &asize, Btemp, m);
-           scopy_from_temp ( *layout, Bp, *ldb, *m, *n, Btemp, *VLEN );
+           Cp = &C[j+num*(*ldc)*(*n)*(*VLEN)];
+if (++ntimes < 3 ) printf("Doing a sgemm at place i=%d j=%d num=%d Ap[%d]=%g\n",i,j,num,j+num*(*lda)*(*k)*(*VLEN),Ap[0]);
+           scopy_to_temp ( *layout, Ap, *lda, *m, *k, Atemp, *VLEN );
+           scopy_to_temp ( *layout, Bp, *ldb, *k, *n, Btemp, *VLEN );
+           scopy_to_temp ( *layout, Cp, *ldc, *m, *n, Ctemp, *VLEN );
+           sgemm_ ( transa, transb, m, n, k, alpha, Atemp, m, Btemp, k, beta, Ctemp, m );
+           scopy_from_temp ( *layout, Cp, *ldc, *m, *n, Ctemp, *VLEN );
        }
     }
 }
@@ -293,7 +309,7 @@ void dfill_identity ( double *matrix, unsigned int ld, unsigned int m, unsigned 
   double dtmp;
 
   if ( ld < m ) {
-     fprintf(stderr,"Error is dfill_identity: ld=%u m=%u mismatched!\n",ld,m);
+     fprintf(stderr,"Error in dfill_identity: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
   for ( h = 0; h < (unsigned int)number_of_cases ; h++ ) {
@@ -334,7 +350,7 @@ double residual_d ( double *A, unsigned int lda, unsigned int m, unsigned int n,
                     double *B, unsigned int ldb, unsigned int *nerrs,
                     unsigned int *ncorr )
 {
-   unsigned int i, j;
+   unsigned int i, j, address, i4, j4, k4, i8, j8, k8;
    double atmp, btmp, dtmp, ref, derror;
    static int ntimes = 0;
 
@@ -360,12 +376,18 @@ double residual_d ( double *A, unsigned int lda, unsigned int m, unsigned int n,
                 printf("Denormal bug: A(%u,%u) is %g B(%u,%u) is %g\n",i,j,atmp,i,j,btmp);
              }
          }
-         if ( dtmp / ref > 1.0e-12 )
-         {
+         if ( (dtmp / ref > 1.0e-12) && (dtmp > 1.0e-15) ) {
              *nerrs = *nerrs + 1;
              if ( ++ntimes < 15 )
              {
-                printf("Bug #%i: A[%u]=A(%u,%u) expected=%g instead=%g err=%g\n",ntimes,(j-1)*lda+(i-1),i,j,atmp,btmp,dtmp);
+                address = (j-1)*lda + (i-1);
+                j4 = (int)(address/(lda*4)) + 1;
+                i4 = (int)((address-(j4-1)*lda*4) / 4) + 1;
+                k4 = (address-(j4-1)*lda*4 - (i4-1)*4) + 1;
+                j8 = (int)(address/(lda*8)) + 1;
+                i8 = (int)((address-(j8-1)*lda*8) / 8) + 1;
+                k8 = (address-(j8-1)*lda*8 - (i8-1)*8) + 1;
+                printf("Bug #%i: A[%u]=A(%u,%u)=A4(%u,%u,%u)=A8(%u,%u,%u) expected=%g instead=%g err=%g\n",ntimes,address,i,j,i4,j4,k4,i8,j8,k8,atmp,btmp,dtmp);
              }
          } else {
              if ( (*nerrs > 0) && (ntimes < 10) && (*ncorr < 40) )
@@ -385,7 +407,7 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
                     float *B, unsigned int ldb, unsigned int *nerrs,
                     unsigned int *ncorr )
 {
-   unsigned int i, j;
+   unsigned int i, j, address, i4, j4, k4, i8, j8, k8;
    double atmp, btmp, dtmp, ref, derror;
    static int ntimes = 0;
 
@@ -411,12 +433,19 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
                 printf("Denormal bug: A(%u,%u) is %g B(%u,%u) is %g\n",i,j,atmp,i,j,btmp);
              }
          }
-         if ( dtmp / ref > 1.0e-4 )
+         if ( (dtmp / ref > 1.0e-4) && (dtmp > 1.0e-7) )
          {
              *nerrs = *nerrs + 1;
              if ( ++ntimes < 15 )
              {
-                printf("Bug #%d: A(%u,%u) expected=%g instead=%g err=%g\n",ntimes,i,j,atmp,btmp,dtmp);
+                address = (j-1)*lda + (i-1);
+                j4 = (int)(address/(lda*4)) + 1;
+                i4 = (int)((address-(j4-1)*lda*4) / 4) + 1;
+                k4 = (address-(j4-1)*lda*4 - (i4-1)*4) + 1;
+                j8 = (int)(address/(lda*8)) + 1;
+                i8 = (int)((address-(j8-1)*lda*8) / 8) + 1;
+                k8 = (address-(j8-1)*lda*8 - (i8-1)*8) + 1;
+                printf("Bug #%i: A[%u]=A(%u,%u)=A4(%u,%u,%u)=A8(%u,%u,%u) expected=%g instead=%g err=%g\n",ntimes,address,i,j,i4,j4,k4,i8,j8,k8,atmp,btmp,dtmp);
              }
          } else {
              if ( (*nerrs > 0) && (ntimes < 10) && (*ncorr < 40) )
@@ -431,8 +460,8 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
    return ( derror );
 }
 
-#if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(TIME_MKL)
-  #define USE_XSMM_GENERATED
+#if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(TIME_MKL) && defined(__linux__)
+  #define USE_KERNEL_GENERATION_DIRECTLY
 #endif
 
 #if 0
@@ -443,7 +472,7 @@ double residual_s ( float *A, unsigned int lda, unsigned int m, unsigned int n,
 #endif
 
 #ifdef USE_PREDEFINED_ASSEMBLY
-extern void trsm_xct_();
+extern void gemm_();
 #endif
 #ifdef MKL_TIMER
 extern double dsecnd_();
@@ -451,22 +480,31 @@ extern double dsecnd_();
 
 int main(int argc, char* argv[])
 {
-  unsigned int m=8, n=8, lda=8, ldb=8, nerrs, num, nmat, nmats, nmatd, ntest;
-  unsigned int layout, asize, VLEND=4, VLENS=8, bsize;
-  unsigned int ncorr;
-  int i, j;
-  char side, uplo, trans, diag;
+  unsigned int m=8, n=8, k=8, lda=8, ldb=8, ldc=8, nerrs, num, nmat;
+  unsigned int layout, asize, bsize, ntest, ncorr;
+#ifdef AVX512_TESTING
+  unsigned int VLEND=8, VLENS=16;
+  char arch[4]="skx";
+#else
+  unsigned int VLEND=4, VLENS=8;
+  char arch[4]="hsw";
+#endif
+  int nmats, nmatd;
+  int i, j, l, iunroll, junroll, loopi, loopj;
+  char side='L', uplo='U', transa='N', transb='N', diag='N';
   unsigned int typesize8 = 8;
   unsigned int typesize4 = 4;
-  float  *sa, *sb, *sc, *sd;
-  double *da, *db, *dc, *dd, *tmpbuf;
+  float  *sa, *sb, *sc, *sd, *sc1;
+  double *da, *db, *dc, *dd, *dc1;
   double dalpha = 1.0;
-  float  salpha;
+  float  salpha = (float)dalpha;
+  double dbeta = 1.0;
+  float  sbeta = (float)dbeta;
   double dtmp;
   const unsigned char *cptr;
   unsigned long op_count;
-  const libxsmm_trsm_descriptor* desc8 = NULL;
-  const libxsmm_trsm_descriptor* desc4 = NULL;
+  const libxsmm_pgemm_descriptor* desc8 = NULL;
+  const libxsmm_pgemm_descriptor* desc4 = NULL;
   libxsmm_descriptor_blob blob;
   union {
     libxsmm_xtrsmfunction dp;
@@ -481,7 +519,7 @@ int main(int argc, char* argv[])
   #include <signal.h>
   #include <malloc.h>
   #include <sys/mman.h>
-  #include "../../src/generator_packed_trsm_avx_avx512.h"
+  /* #include "../../src/generator_packed_trsm_avx_avx512.h" */
   unsigned char *routine_output;
   libxsmm_generated_code io_generated_code;
   int pagesize = sysconf(_SC_PAGE_SIZE);
@@ -500,50 +538,71 @@ int main(int argc, char* argv[])
   io_generated_code.last_error = 0;
 #endif
 
+  printf("\nUSAGE: %s m n k lda ldb ldc nmat layout ntest transa transb iunroll junroll loopj loopi\n",argv[0]);
   if ( argc <= 3 )
   {
-     printf("\nUSAGE: %s m n lda ldb nmat side uplo trans diag layout ntest alpha\n",argv[0]);
-     printf("Compact TRSM a mxn matrix of leading dimension ldb\n");
-     printf("This will test the jit of 1 VLEN work of nmat at a time\n");
-     printf("Defaults: m=n=lda=ldb=nmat=8, alpha=1.0, side=uplo='L',trans=diag='N',layout=102,ntest=1\n");
+#ifdef TEST_SINGLE
+     printf("Compact SGEMM a C_mxn<-C_mxn+A_mxk*B_kxn matrix of leading dims lda/b/c\n");
+     printf("This will test the jit of 1 VLEN=%d ",VLENS);
+     if ( VLENS==8 ) printf("(AVX2)");
+     else            printf("(AVX512)");
+#else
+     printf("Compact DGEMM a C_mxn<-C_mxn+A_mxk*B_kxn matrix of leading dims lda/b/c\n");
+     printf("This will test the jit of 1 VLEN=%d ",VLEND);
+     if ( VLEND==4 ) printf("(AVX2)");
+     else            printf("(AVX512)");
+#endif
+     printf(" work of nmat at a time\n");
+     printf("Configurable: M-loop controlled by iunroll & loopi. N-loop by junroll & loopj\n");
+     printf("Defaults: m=n=k=lda=ldb=ldc=nmat=8, layout=102 (col major), transa=/b='N', ntest=1\n");
   }
   if ( argc > 1 ) m = atoi(argv[1]); else m = 8;
   if ( argc > 2 ) n = atoi(argv[2]); else n = 8;
-  if ( argc > 3 ) lda= atoi(argv[3]); else lda = 8;
-  if ( argc > 4 ) ldb = atoi(argv[4]); else ldb = 8;
-  if ( argc > 5 ) nmat = atoi(argv[5]); else nmat = 8;
-  if ( argc > 6 ) side = argv[6][0]; else side = 'L';
-  if ( argc > 7 ) uplo = argv[7][0]; else uplo = 'L';
-  if ( argc > 8 ) trans = argv[8][0]; else trans = 'N';
-  if ( argc > 9 ) diag = argv[9][0]; else diag = 'N';
-  if ( argc > 10 ) layout = atoi(argv[10]); else layout=102;
-  if ( argc > 11 ) ntest = atoi(argv[11]); else ntest = 1;
-  if ( argc > 12 ) dalpha = atof(argv[12]); else dalpha = 1.0;
-  salpha = (float)dalpha;
+  if ( argc > 3 ) k = atoi(argv[3]); else k = 8;
+  if ( argc > 4 ) lda= atoi(argv[4]); else lda = 8;
+  if ( argc > 5 ) ldb= atoi(argv[5]); else ldb = 8;
+  if ( argc > 6 ) ldc= atoi(argv[6]); else ldc = 8;
+  if ( argc > 7 ) nmat = atoi(argv[7]); else nmat = 8;
+  if ( argc > 8 ) layout = atoi(argv[8]); else layout=102;
+  if ( argc > 9 ) ntest = atoi(argv[9]); else ntest = 1;
+  if ( argc > 10 ) transa = argv[10][0]; else transa = 'N';
+  if ( argc > 11 ) transb = argv[11][0]; else transb = 'N';
+  if ( argc > 12 ) iunroll=atoi(argv[12]); else iunroll=0;
+  if ( argc > 13 ) junroll=atoi(argv[13]); else junroll=0;
+  if ( argc > 14 ) loopj=atoi(argv[14]); else loopj=0;
+  if ( argc > 15 ) loopi=atoi(argv[15]); else loopi=0;
 
+  salpha = (float)dalpha;
   m = LIBXSMM_MAX(m,1);
   n = LIBXSMM_MAX(n,1);
-  /* A is either mxm or nxn depending on side */
-  if ( (side == 'L') || (side=='l') ) asize = m; else asize = n;
+  k = LIBXSMM_MAX(k,1);
+  ntest = LIBXSMM_MAX(ntest,1);
+  nmat = LIBXSMM_MAX(nmat,VLEND);
+  layout = LIBXSMM_MAX(LIBXSMM_MIN(layout,102),101);
 
-  lda = LIBXSMM_MAX(lda,asize);
-  if ( layout == 102 )
-  {
-      /* Column major: B is mxn, and stored in B format */
-      ldb = LIBXSMM_MAX(ldb,m);
-      bsize = ldb*n;
-  } else {
-      /* Row major: B is mxn, and stored in B^T format */
-      ldb = LIBXSMM_MAX(ldb,n);
-      bsize = ldb*m;
-  }
+  if ( transa!='N' && transa!='n' && transa!='T' && transa!='t' ) transa='N';
+  if ( transb!='N' && transb!='n' && transb!='T' && transb!='t' ) transb='N';
+
+  lda = LIBXSMM_MAX(lda,m);
+  ldb = LIBXSMM_MAX(ldb,k);
+  ldc = LIBXSMM_MAX(ldc,m);
+
   nmats = LIBXSMM_MAX(VLENS,nmat - (nmat%VLENS));
   nmatd = LIBXSMM_MAX(VLEND,nmat - (nmat%VLEND));
-  nmat = LIBXSMM_MAX(nmats,nmatd);
+#ifdef TEST_SINGLE
+  nmat = nmats;
+#else
+  nmat = nmatd;
+#endif
 
-  op_count = n * m * asize;
+  op_count = nmat * 2.0 * (double)m * (double)n * (double)k;
 
-  printf("This is a real*%u tester for JIT compact TRSM kernels! (%c%c%c%c m=%u n=%u lda=%u ldb=%u layout=%u nmat=%u)\n",typesize8,side,uplo,trans,diag,m,n,lda,ldb,layout,nmat);
+#ifdef TEST_SINGLE
+printf("This is a real*%d tester for JIT compact SGEMM %c%c kernels! (m=%u n=%u k=%u lda=%u ldb=%u ldc=%u layout=%d nmat=%d alpha=%g beta=%g iun=%d jun=%d loopi=%d loopj=%d VLEN=%d)\n",typesize4,transa,transb,m,n,k,lda,ldb,ldc,layout,nmat,dalpha,dbeta,iunroll,junroll,loopi,loopj,VLENS);
+#else
+printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u k=%u lda=%u ldb=%u ldc=%u layout=%d nmat=%d alpha=%g beta=%g iun=%d jun=%d loopi=%d loopj=%d VLEN=%d)\n",typesize8,transa,transb,m,n,k,lda,ldb,ldc,layout,nmat,dalpha,dbeta,iunroll,junroll,loopi,loopj,VLEND);
+#endif
+
 #ifdef USE_XSMM_GENERATED
   printf("This code tests the LIBXSMM generated kernels\n");
 #endif
@@ -556,53 +615,65 @@ int main(int argc, char* argv[])
 #ifdef TIME_MKL
   printf("This code tests MKL compact batch directly\n");
 #endif
+#ifdef AVX512_TESTING
+  printf("This tests AVX512 binaries\n");
+#endif
+#ifdef AVX2_TESTING
+  printf("This tests AVX2 binaries\n");
+#endif
 
-  desc8 = libxsmm_trsm_descriptor_init(&blob, typesize8, m, n, lda, ldb, &dalpha, trans, diag, side, uplo, layout);
-  desc4 = libxsmm_trsm_descriptor_init(&blob, typesize4, m, n, lda, ldb, &salpha, trans, diag, side, uplo, layout);
+  desc8 = libxsmm_pgemm_descriptor_init(&blob, typesize8, m, n, k, lda, ldb, ldc, &dalpha, transa, transb, layout );
+#ifdef TEST_SINGLE
+  desc4 = libxsmm_pgemm_descriptor_init(&blob, typesize4, m, n, k, lda, ldb, ldc, &dalpha, transa, transb, layout );
+#endif
+
+  printf("Descriptor set\n");
+
+
 #ifdef USE_XSMM_GENERATED
-  printf("calling libxsmm_dispatch_trsm: typesize8=%u\n",typesize8);
-  mykernel.dp = libxsmm_dispatch_trsm(desc8);
-  printf("done calling libxsmm_dispatch_trsm: typesize8=%u\n",typesize8);
+  printf("calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
+  mykernel.dp = libxsmm_dispatch_gemm(desc8);
+  printf("done calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
   if ( mykernel.dp == NULL ) printf("R8 Kernel after the create call is null\n");
-  mykernel.sp = libxsmm_dispatch_trsm(desc4);
+#ifdef TEST_SINGLE
+  mykernel.sp = libxsmm_dispatch_gemm(desc4);
   if ( mykernel.sp == NULL ) printf("R4 kernel after the create call is null\n");
+#endif
 #endif
 
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
-  libxsmm_generator_trsm_kernel ( &io_generated_code, &desc8, "hsw" );
+  libxsmm_generator_packed_gemm_avx_avx512_kernel ( &io_generated_code, desc8, arch, iunroll, junroll, loopi, loopj );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
   printf("mallocing matrices\n");
 #endif
-  sa  = (float  *) malloc ( lda*asize*nmats*sizeof(float) );
-  da  = (double *) malloc ( lda*asize*nmatd*sizeof(double) );
-  sb  = (float  *) malloc ( bsize*nmats*sizeof(float) );
-  db  = (double *) malloc ( bsize*nmatd*sizeof(double) );
-  sc  = (float  *) malloc ( bsize*nmats*sizeof(float) );
-  dc  = (double *) malloc ( bsize*nmatd*sizeof(double) );
-  sd  = (float  *) malloc ( bsize*nmats*sizeof(float) );
-  dd  = (double *) malloc ( bsize*nmatd*sizeof(double) );
-  tmpbuf = (double *) malloc ( asize*VLEND*sizeof(double) );
+  sa  = (float  *) malloc ( lda*k*nmat*sizeof(float) );
+  da  = (double *) malloc ( lda*k*nmat*sizeof(double) );
+  sb  = (float  *) malloc ( ldb*n*nmat*sizeof(float) );
+  db  = (double *) malloc ( ldb*n*nmat*sizeof(double) );
+  sc1 = (float  *) malloc ( ldc*n*nmat*sizeof(float) );
+  dc1 = (double *) malloc ( ldc*n*nmat*sizeof(double) );
+  sc  = (float  *) malloc ( ldc*n*nmat*sizeof(float) );
+  dc  = (double *) malloc ( ldc*n*nmat*sizeof(double) );
+  sd  = (float  *) malloc ( ldc*n*nmat*sizeof(float) );
+  dd  = (double *) malloc ( ldc*n*nmat*sizeof(double) );
 
 #ifndef NO_ACCURACY_CHECK
   printf("filling matrices\n");
 #endif
-  sfill_matrix ( sa, lda, asize, asize*nmats );
-#ifdef TRIANGLE_IS_IDENTITY
-  printf("Warning: setting triangular matrix to identity. Not good for accuracy testing\n");
-  dfill_identity ( da, lda, asize, asize, VLEND, nmatd/VLEND );
-#else
-  dfill_matrix ( da, lda, asize, asize*nmatd );
-#endif
-  sfill_matrix ( sb, bsize, bsize, nmats );
-  dfill_matrix ( db, bsize, bsize, nmatd );
+  sfill_matrix ( sa, lda, m, k*nmat );
+  sfill_matrix ( sb, ldb, k, n*nmat );
+  sfill_matrix ( sc, ldc, m, n*nmat );
+  dfill_matrix ( da, lda, m, k*nmat );
+  dfill_matrix ( db, ldb, k, n*nmat );
+  dfill_matrix ( dc, ldc, m, n*nmat );
 
 #ifndef NO_ACCURACY_CHECK
-  for ( i = 0 ; i < (int)(bsize*nmats) ; i++ ) sc[i]=sb[i];
-  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) dc[i]=db[i];
-  for ( i = 0 ; i < (int)(bsize*nmats) ; i++ ) sd[i]=sb[i];
-  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) dd[i]=db[i];
+  for ( i = 0 ; i < ldc*n*nmat ; i++ ) sd[i]=sc[i];
+  for ( i = 0 ; i < ldc*n*nmat ; i++ ) dd[i]=dc[i];
+  for ( i = 0 ; i < ldc*n*nmat ; i++ ) sc1[i]=sc[i];
+  for ( i = 0 ; i < ldc*n*nmat ; i++ ) dc1[i]=dc[i];
   printf("Pointing at the kernel now\n");
 #endif
 
@@ -610,7 +681,7 @@ int main(int argc, char* argv[])
   cptr = (const unsigned char*) mykernel.pv;
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
-  cptr = (const unsigned char*) trsm_xct_;
+  cptr = (const unsigned char*) gemm_;
 #endif
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
   cptr = (const unsigned char*) &routine_output[0];
@@ -627,16 +698,16 @@ int main(int argc, char* argv[])
   char buffer[80];
   fputs("\t.text\n",fp);
   fputs("\t.align 256\n",fp);
-  fputs("\t.globl trsm_xct_\n",fp);
-  fputs("trsm_xct_:\n",fp);
-  for (i = 0 ; i < 4000; i+=4 )
+  fputs("\t.globl gemm_\n",fp);
+  fputs("gemm_:\n",fp);
+  for (i = 0 ; i < 7000; i+=4 )
   {
      sprintf(buffer,".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",cptr[i],cptr[i+1],cptr[i+2],cptr[i+3]);
      fputs(buffer,fp);
   }
   fputs("\tretq\n",fp);
-  fputs("\t.type trsm_xct_,@function\n",fp);
-  fputs("\t.size trsm_xct_,.-trsm_xct_\n",fp);
+  fputs("\t.type gemm_,@function\n",fp);
+  fputs("\t.size gemm_,.-gemm_\n",fp);
   fclose(fp);
 #endif
 
@@ -645,7 +716,8 @@ int main(int argc, char* argv[])
   MKL_LAYOUT CLAYOUT = (layout == 101) ? MKL_ROW_MAJOR : MKL_COL_MAJOR;
   MKL_SIDE SIDE = (side == 'R' || side == 'r') ? MKL_RIGHT : MKL_LEFT;
   MKL_UPLO UPLO = (uplo == 'U' || uplo == 'u') ? MKL_UPPER : MKL_LOWER;
-  MKL_TRANSPOSE TRANSA = (trans == 'N' || trans == 'n') ? MKL_NOTRANS : MKL_TRANS;
+  MKL_TRANSPOSE TRANSA = (transa == 'N' || transa == 'n') ? MKL_NOTRANS : MKL_TRANS;
+  MKL_TRANSPOSE TRANSB = (transb == 'N' || transb == 'n') ? MKL_NOTRANS : MKL_TRANS;
   MKL_DIAG DIAG = (diag == 'N' || diag == 'n') ? MKL_NONUNIT : MKL_UNIT;
   MKL_COMPACT_PACK CMP_FORMAT = mkl_get_format_compact();
 #if 0
@@ -654,12 +726,12 @@ int main(int argc, char* argv[])
 #endif
 
 #ifndef NO_ACCURACY_CHECK
-  printf("Before routine, initial B(1,1)=%g B[256]=%g\n",db[0],db[256]);
+  printf("Before routine, initial A(1,1)=%g A[256]=%g\n",da[0],da[256]);
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
   double one = 1.0;
 #endif
-  double timer;
+  double timer, firsttime;
 #ifdef MKL_TIMER
   double tmptimer;
   tmptimer = dsecnd_();
@@ -670,59 +742,70 @@ int main(int argc, char* argv[])
   timer = 0.0;
   for ( j = 0 ; j < (int)ntest ; j++ )
   {
-#ifndef TRIANGLE_IS_IDENTITY
-  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) db[i]=dd[i];
-#endif
-  for ( i = 0 , num = 0; i < (int)nmatd ; i+= (int)VLEND, num++ )
+  for ( i = 0 ; i < ldc*n*nmat ; i++ ) dc[i]=dc1[i];
+  for ( i = 0 , num = 0; i < (int)nmat ; i+= (int)VLEND, num++ )
   {
-     double *Ap = &da[num*lda*asize*VLEND];
-     double *Bp = &db[num*bsize*VLEND];
+     double *Ap = &da[num*lda*k*VLEND];
+     double *Bp = &db[num*ldb*n*VLEND];
+     double *Cp = &dc[num*ldc*n*VLEND];
 #ifdef MKL_TIMER
      tmptimer = dsecnd_();
 #else
      l_start = libxsmm_timer_tick();
 #endif
 
+#if !defined(USE_XSMM_GENERATED) && !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(TIME_MKL) && !defined(USE_PREDEFINED_ASSEMBLY_XCT)
+     gen_compact_dgemm_ ( &layout, &m, &n, &k, &dalpha, Ap, &lda, Bp, &ldb, &dbeta, Cp, &ldc, &VLEND );
+#endif
 #ifdef USE_XSMM_GENERATED
-     mykernel.dp ( Ap, Bp, tmpbuf );
+     mykernel.dp ( Ap, Bp, Cp );
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
-     trsm_xct_ ( Ap, Bp, &one );
+     gemm_ ( Ap, Bp, Cp );
 #endif
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
-     (*opcode_routine)( Ap, Bp );
+     (*opcode_routine)( Ap, Bp, Cp );
 #endif
 #ifdef TIME_MKL
-     mkl_dtrsm_compact ( CLAYOUT, SIDE, UPLO, TRANSA, DIAG, m, n, dalpha, da, lda, db, ldb, CMP_FORMAT, nmatd );
+     mkl_dgemm_compact ( CLAYOUT, TRANSA, TRANSB, m, n, k, dalpha, da, lda, db, ldb, dbeta, dc, ldc, CMP_FORMAT, nmat );
      i+=nmatd; /* Because MKL will do everything */
 #endif
 #ifdef MKL_TIMER
-     timer += dsecnd_() - tmptimer;
+     dtmp = dsecnd_() - tmptimer;
 #else
      l_end = libxsmm_timer_tick();
-     timer += libxsmm_timer_duration(l_start,l_end);
+     dtmp = libxsmm_timer_duration(l_start,l_end);
 #endif
+     if ( j == 0 ) firsttime=dtmp;
+     timer += dtmp;
   }
   }
-  timer /= ((double)ntest);
+  if ( ntest >= 100 ) {
+      /* Skip the first timing: super necessary if using MKL */
+      timer = (timer-firsttime)/((double)(ntest-1));
+  } else {
+      timer /= ((double)ntest);
+  }
 
 #ifndef NO_ACCURACY_CHECK
-  printf("Average time to get through %u matrices: %g\n",nmatd,timer);
-  printf("Gflops: %g\n",(double)(op_count*nmatd)/(timer*1.0e9));
-  printf("after routine, new      B(1,1)=%g B[256]=%g\n",db[0],db[256]);
+  printf("Average time to get through %u matrices: %g\n",nmat,timer);
+  printf("Gflops: %g\n",(double)op_count/(timer*1.0e9));
+  printf("after routine, new      C(1,1)=%g C[256]=%g\n",dc[0],dc[256]);
 #endif
 
 #ifdef TEST_SINGLE
-  printf("Before r4 routine, initial B(1,1)=%g B[256]=%g\n",sb[0],sb[256]);
+  printf("Before r4 routine, initial C(1,1)=%g C[256]=%g\n",sc[0],sc[256]);
+
   for ( i = 0 , num = 0; i < nmats ; i+= VLENS, num++ )
   {
-     float *Ap = &sa[num*lda*asize*VLENS];
-     float *Bp = &sb[num*bsize*VLENS];
+     float *Ap = &sa[num*lda*k*VLENS];
+     float *Bp = &sb[num*ldb*n*VLENS];
+     float *Cp = &sc[num*ldc*n*VLENS];
 #ifdef USE_XSMM_GENERATED
-     mykernel.sp ( Ap, Bp, NULL );
+     mykernel.sp ( Ap, Bp, Cp );
 #endif
   }
-  printf("after r4 routine, new      B(1,1)=%g B]256]=%g\n",db[0],db[256]);
+  printf("after r4 routine, new      C(1,1)=%g C]256]=%g\n",dc[0],dc[256]);
 #endif
 
 #ifndef NO_ACCURACY_CHECK
@@ -730,29 +813,17 @@ int main(int argc, char* argv[])
   double timer2 = 0.0;
   for ( j = 0 ; j < (int)ntest ; j++ )
   {
-#ifndef TRIANGLE_IS_IDENTITY
-  for ( i = 0 ; i < (int)(bsize*nmatd) ; i++ ) dc[i]=dd[i];
-#endif
-
+  for ( i = 0 ; i < ldc*n*nmat ; i++ ) dd[i]=dc1[i];
 #ifdef MKL_TIMER
   tmptimer = dsecnd_();
 #else
   l_start = libxsmm_timer_tick();
 #endif
 
-#ifdef USE_MKL_FOR_REFERENCE
-  mkl_dtrsm_compact ( CLAYOUT, SIDE, UPLO, TRANSA, DIAG, m, n, dalpha, da, lda, dc, ldb, CMP_FORMAT, nmatd );
-#elif !defined(LIBXSMM_NOFORTRAN) && (!defined(__BLAS) || (0 != __BLAS))
-  if ( (layout == 101) && (nmatd!=VLEND) )
-  {
-     unsigned int lay = 102, m1 = n, n1 = m;
-     char side1='L', uplo1='L';
-     if ( side == 'L' || side == 'l' ) side1 = 'R';
-     if ( uplo == 'L' || uplo == 'l' ) uplo1 = 'U';
-     compact_dtrsm_ ( &lay, &side1, &uplo1, &trans, &diag, &m1, &n1, &dalpha, da, &lda, dc, &ldb, &nmatd, &VLEND );
-  } else {
-     compact_dtrsm_ ( &layout, &side, &uplo, &trans, &diag, &m, &n, &dalpha, da, &lda, dc, &ldb, &nmatd, &VLEND );
-  }
+#ifndef USE_MKL_FOR_REFERENCE
+  compact_dgemm_ ( &layout, &transa, &transb, &m, &n, &k, &dalpha, da, &lda, db, &ldb, &dbeta, dd, &ldc, &nmat, &VLEND );
+#else
+  mkl_dgemm_compact ( CLAYOUT, TRANSA, TRANSB, m, n, k, dalpha, da, lda, db, ldb, dbeta, dd, ldc, CMP_FORMAT, nmat );
 #endif
 
 #ifdef MKL_TIMER
@@ -764,36 +835,36 @@ int main(int argc, char* argv[])
 
   }
   timer2 /= ((double)ntest);
-  printf("Reference time=%g Reference Gflops=%g\n",timer2,(op_count*nmatd)/(timer2*1.0e9));
+  printf("Reference time=%g Reference Gflops=%g\n",timer2,op_count/(timer2*1.0e9));
 
   /* Compute the residual between B and C */
-  dtmp = residual_d ( dc, bsize, bsize, nmatd, db, bsize, &nerrs, &ncorr );
-  printf("R8 %c%c%c%c m=%u n=%u lda=%u ldb=%u error: %g number of errors: %u corrects: %u",side,uplo,trans,diag,m,n,lda,ldb,dtmp,nerrs,ncorr);
+  dtmp = residual_d ( dc, ldc, m, n*nmat, dd, ldc, &nerrs, &ncorr );
+  printf("R8 mnk=%u %u %u ldabc=%u %u %u error: %g number of errors: %u corrects: %u",m,n,k,lda,ldb,ldc,dtmp,nerrs,ncorr);
   if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*8 %u case",m,n,layout);
   printf("\n");
 
 #ifdef TEST_SINGLE
   /* Call some reference code now on a copy of the B matrix (C) */
-  compact_strsm_ ( &layout, &side, &uplo, &trans, &diag, &m, &n, &salpha, sa, &lda, sc, &ldb, &nmats, &VLENS );
-  /* Compute the residual between B and C */
-  dtmp = residual_s ( sc, bsize, bsize, nmats, sb, bsize, &nerrs, &ncorr );
-  printf("R4 %c%c%c%c m=%u n=%u lda=%u ldb=%u error: %g number of errors: %u corrects: %u\n",side,uplo,trans,diag,m,n,lda,ldb,dtmp,nerrs,ncorr);
+  compact_dgemm_ ( &layout, &transa, &transb, &m, &n, &k, &salpha, sa, &lda, sb, &ldb, &sbeta, sd, &ldc, &nmat, &VLENS );
+  /* Compute the residual between C and D */
+  dtmp = residual_s ( sc, ldc, m, n*nmat, sd, ldc, &nerrs, &ncorr );
+  printf("R4 mnk=%u %u %u ldabc=%u %u %u error: %g number of errors: %u corrects: %u",m,n,k,lda,ldb,ldc,dtmp,nerrs,ncorr);
   if ( nerrs > 0 ) printf(" ->FAILED at %ux%u real*4 case",m,n);
   printf("\n");
 #endif
 
 #else
-  for ( j = 0, nerrs = 0 ; j < bsize*nmatd ; j++ )
+  for ( j = 0, nerrs = 0 ; j < lda*n*nmat; j++ )
   {
-     if ( isnan(db[j]) || isinf(db[j]) )
+     if ( isnan(dc[j]) || isinf(dc[j]) )
      {
         if ( ++nerrs < 10 )
         {
-           printf("WARNING: db[%d]=%g\n",j,db[j]);
+           printf("WARNING: dc[%d]=%g\n",j,dc[j]);
         }
      }
   }
-  printf("%g,real*8 %c%c%c%c m=%u n=%u lda=%u ldb=%u Denormals=%u Time=%g Gflops=%g",(op_count*nmatd)/(timer*1.0e9),side,uplo,trans,diag,m,n,lda,ldb,nerrs,timer,(op_count*nmatd)/(timer*1.0e9));
+  printf("%g,real*8 m/n/k=%u %u %u lda-c=%u %u %u Denormals=%u Time=%g Gflops=%g",op_count/(timer*1.0e9),m,n,k,lda,ldb,ldc,nerrs,timer,op_count/(timer*1.0e9));
   if ( nerrs > 0 ) printf(" -> FAILED at %ux%u real*8 case",m,n);
   printf("\n");
 #endif
@@ -802,6 +873,8 @@ int main(int argc, char* argv[])
   free(sd);
   free(dc);
   free(sc);
+  free(dc1);
+  free(sc1);
   free(db);
   free(sb);
   free(da);
@@ -809,4 +882,3 @@ int main(int argc, char* argv[])
 
   return 0;
 }
-

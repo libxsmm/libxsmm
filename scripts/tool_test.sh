@@ -1,6 +1,6 @@
 #!/bin/bash
 #############################################################################
-# Copyright (c) 2016-2018, Intel Corporation                                #
+# Copyright (c) 2016-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -32,21 +32,21 @@
 set -o pipefail
 
 HERE=$(cd $(dirname $0); pwd -P)
-MKDIR=$(which mkdir 2>/dev/null)
-CHMOD=$(which chmod 2>/dev/null)
-UNAME=$(which uname 2>/dev/null)
-ECHO=$(which echo 2>/dev/null)
-SYNC=$(which sync 2>/dev/null)
-SORT=$(which sort 2>/dev/null)
-GREP=$(which grep 2>/dev/null)
-WGET=$(which wget 2>/dev/null)
-GIT=$(which git 2>/dev/null)
-SED=$(which sed 2>/dev/null)
-CUT=$(which cut 2>/dev/null)
-TR=$(which tr 2>/dev/null)
-WC=$(which wc 2>/dev/null)
-RM=$(which rm 2>/dev/null)
-CP=$(which cp 2>/dev/null)
+MKDIR=$(command -v mkdir 2>/dev/null)
+CHMOD=$(command -v chmod 2>/dev/null)
+UNAME=$(command -v uname 2>/dev/null)
+ECHO=$(command -v echo 2>/dev/null)
+SYNC=$(command -v sync 2>/dev/null)
+SORT=$(command -v sort 2>/dev/null)
+GREP=$(command -v grep 2>/dev/null)
+WGET=$(command -v wget 2>/dev/null)
+GIT=$(command -v git 2>/dev/null)
+SED=$(command -v sed 2>/dev/null)
+CUT=$(command -v cut 2>/dev/null)
+TR=$(command -v tr 2>/dev/null)
+WC=$(command -v wc 2>/dev/null)
+RM=$(command -v rm 2>/dev/null)
+CP=$(command -v cp 2>/dev/null)
 
 MKTEMP=${HERE}/../.mktmp.sh
 FASTCI=$2
@@ -137,7 +137,7 @@ then
   else
     export NS=1 NC=1 NT=1 HT=1
   fi
-  if [ "" != "${CUT}" ] && [ "" != "$(which numactl 2>/dev/null)" ]; then
+  if [ "" != "${CUT}" ] && [ "" != "$(command -v numactl 2>/dev/null)" ]; then
     export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
   else
     export NN=${NS}
@@ -194,13 +194,13 @@ then
     fi
     if [ "" != "${LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
-      TESTSCRIPT=${HERE}/../.libxsmm_test-${LABEL}.sh
+      TESTSCRIPT=${HERE}/../.tool_test-${LABEL}.sh
     fi
     umask 007
     if [ "" != "${TESTSCRIPT}" ]; then
       touch ${TESTSCRIPT}
     else
-      TESTSCRIPT=$(${MKTEMP} ${HERE}/../.libxsmm_XXXXXX.sh)
+      TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
     fi
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
@@ -245,7 +245,7 @@ then
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
         then
-          LICSDIR=$(which icc 2>/dev/null | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
+          LICSDIR=$(command -v icc 2>/dev/null | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
           ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
           ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
           ${CP} -u ${LICSDIR}/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null

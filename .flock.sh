@@ -1,6 +1,6 @@
 #!/bin/sh
 #############################################################################
-# Copyright (c) 2017-2018, Intel Corporation                                #
+# Copyright (c) 2017-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -30,7 +30,7 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-FLOCK=$(which flock 2>/dev/null)
+FLOCK=$(command -v flock 2>/dev/null)
 
 if [ -d $1 ]; then
   ABSDIR=$(cd $1; pwd -P)

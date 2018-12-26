@@ -1,18 +1,6 @@
 # Export all variables to sub-make processes.
 #.EXPORT_ALL_VARIABLES: #export
 
-# Automatically disable parallel builds
-# depending on the version of GNU Make.
-# MAKE_PARALLEL=0: disable explicitly
-# MAKE_PARALLEL=1: enable explicitly
-ifeq (0,$(MAKE_PARALLEL))
-.NOTPARALLEL:
-else ifeq (,$(MAKE_PARALLEL))
-ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
-.NOTPARALLEL:
-endif
-endif
-
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
 SRCDIR = $(ROOTDIR)
@@ -97,9 +85,9 @@ ifneq (,$(EIGENROOT))
   DFLAGS += -D__EIGEN
   IFLAGS += -I$(EIGENROOT)
   EIGEN ?= 1
-  ifneq (0,$(MKL))
-    DFLAGS += -DEIGEN_USE_MKL_ALL
-  endif
+  #ifneq (0,$(MKL))
+    #DFLAGS += -DEIGEN_USE_MKL_ALL
+  #endif
   ifneq (0,$(shell echo "$$((1 < $(BLAS) || 1 < $(EIGEN)))"))
     DFLAGS += -DEIGEN_USE_THREADS
   else

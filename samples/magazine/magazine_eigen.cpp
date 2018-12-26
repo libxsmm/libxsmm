@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2018, Intel Corporation                                     **
+** Copyright (c) 2018-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -67,7 +67,7 @@ template<> struct stride_helper<false> {
 int main(int argc, char* argv[])
 {
 #if defined(__EIGEN)
-  typedef double T;
+  typedef TYPE T;
   typedef Eigen::Matrix<T,Eigen::Dynamic,Eigen::Dynamic,Eigen::ColMajor> matrix_type;
 #if 1 /* dynamic strides make things slower even if lda == m, etc. */
   const size_t alignment = 64; /* must be power of two */

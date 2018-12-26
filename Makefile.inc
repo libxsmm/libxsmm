@@ -1,5 +1,5 @@
 #############################################################################
-# Copyright (c) 2015-2018, Intel Corporation                                #
+# Copyright (c) 2015-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -28,6 +28,36 @@
 #############################################################################
 # Hans Pabst (Intel Corp.)
 #############################################################################
+
+MAKE_VERSION_MAJOR = $(shell echo "$(MAKE_VERSION)" | cut -d"." -f1)
+MAKE_VERSION_MINOR = $(shell echo "$(MAKE_VERSION)" | cut -d"." -f2)
+MAKE_VERSION_PATCH = $(shell echo "$(MAKE_VERSION)" | cut -d"." -f3)
+ifeq (,$(MAKE_VERSION_MAJOR))
+MAKE_VERSION_MAJOR = 0
+endif
+ifeq (,$(MAKE_VERSION_MINOR))
+MAKE_VERSION_MINOR = 0
+endif
+ifeq (,$(MAKE_VERSION_PATCH))
+MAKE_VERSION_PATCH = 0
+endif
+MAKE_VERSION_INT = $(shell echo "$$(($(MAKE_VERSION_MAJOR)*10000+$(MAKE_VERSION_MINOR)*100+$(MAKE_VERSION_PATCH)))")
+
+# Automatically disable parallel builds
+# depending on the version of GNU Make.
+# MAKE_PARALLEL=0: disable explicitly
+# MAKE_PARALLEL=1: enable explicitly
+ifeq (0,$(MAKE_PARALLEL))
+.NOTPARALLEL:
+else ifeq (,$(strip $(MAKE_PARALLEL)))
+ifneq (0,$(shell echo "$$((38200>$(MAKE_VERSION_INT)))"))
+.NOTPARALLEL:
+else ifneq (0,$(shell echo "$$((40000<=$(MAKE_VERSION_INT)))"))
+MAKEFLAGS += -O
+endif
+else ifneq (0,$(shell echo "$$((40000<=$(MAKE_VERSION_INT)))"))
+MAKEFLAGS += -O
+endif
 
 MAKEINC = $(abspath $(dir $(filter %Makefile.inc,$(MAKEFILE_LIST))))
 
@@ -125,6 +155,11 @@ endif
 # compatible with the GCC tool chain
 COMPATIBLE ?= 0
 
+# Control visibility of symbols
+# 0: hidden unless explicitly marked visible
+# 1: default visibility
+VISIBILITY ?= 0
+
 # Number of repeated calls (tests),
 # or used to scale the problem size
 TESTSIZE ?= 1
@@ -188,6 +223,7 @@ PEDANTIC ?= 0
 
 # Embed InterProcedural Optimization information into libraries
 IPO ?= 0
+FAT ?= 0
 
 # ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
 ILP64 ?= 0
@@ -315,8 +351,8 @@ endif
 
 # check if the Intel Development Tools are available
 INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
-  $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1) \
-  $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d' ' -f1)))))")
+  $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | cut -d' ' -f1) \
+  $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . | cut -d' ' -f1)))))")
 
 ifeq (0,$(INTEL))
   ifeq (,$(shell which $(CXX) 2>/dev/null))
@@ -335,7 +371,7 @@ ifeq (0,$(INTEL))
   endif
 endif
 
-CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
 CXX_VERSION_MAJOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f1)
 CXX_VERSION_MINOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f2)
 CXX_VERSION_PATCH = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f3)
@@ -349,7 +385,7 @@ else
   CXX_VERSION = 0
 endif
 
-CC_VERSION_STRING = $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+CC_VERSION_STRING = $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
 CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION_STRING)" | cut -d"." -f1)
 CC_VERSION_MINOR = $(shell echo "$(CC_VERSION_STRING)" | cut -d"." -f2)
 CC_VERSION_PATCH = $(shell echo "$(CC_VERSION_STRING)" | cut -d"." -f3)
@@ -392,7 +428,7 @@ ifneq (,$(strip $(FC)))
 endif
 
 ifneq (,$(strip $(FC)))
-  FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+  FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
   FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
   FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
   FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
@@ -405,11 +441,11 @@ ifneq (,$(strip $(FC)))
     FC_VERSION_STRING = $(NULL)
     FC_VERSION = 0
   endif
-  ifeq (GNU,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | cut -d" " -f1))
+  ifeq (GNU,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -m1 . | cut -d" " -f1))
     ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
       ifneq (gfortran,$(notdir $(FC)))
         FC = gfortran
-        FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+        FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
         FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
         FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
         FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
@@ -444,13 +480,13 @@ ifeq (,$(strip $(FC)))
 endif
 
 # compiler names
-CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 \
+CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . \
            | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" -e "s/ [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
            | rev | cut -d" " -f1 | rev))
 ifeq (,$(strip $(CXX_NAME)))
   CXX_NAME = $(basename $(notdir $(CXX)))
 endif
-CC_NAME = $(basename $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 \
+CC_NAME = $(basename $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . \
           | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" -e "s/ [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
           | rev | cut -d" " -f1 | rev))
 ifeq (,$(strip $(CC_NAME)))
@@ -466,7 +502,7 @@ endif
 ifneq (0,$(FORTRAN))
   ifeq (,$(strip $(GFC)))
     ifneq (,$(strip $(FC)))
-      ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
+      ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/.* (\(..*\)) .*/\1/"))
         GFC = $(FC)
       else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
         GFC = $(FC)
@@ -490,7 +526,7 @@ endif
 GCC ?= 0
 ifeq (0,$(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
   GCC = 1
-else ifeq (GCC,$(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
+else ifeq (GCC,$(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/.* (\(..*\)) .*/\1/"))
   GCC = 1
 else ifneq (pgcc,$(CC_NAME))
   ifneq (,$(findstring pgcc,$(CC_NAME)))
@@ -500,7 +536,7 @@ endif
 ifeq (1,$(GCC))
   ifeq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
     GCC = 2
-  else ifeq (GCC,$(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/.* (\(..*\)) .*/\1/"))
+  else ifeq (GCC,$(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/.* (\(..*\)) .*/\1/"))
     GCC = 2
   else ifneq (,$(findstring g++,$(CXX_NAME)))
     GCC = 2
@@ -558,7 +594,7 @@ ifneq (0,$(GCC))
 else ifeq (0,$(CLANG))
   GCCBIN = $(notdir $(shell which gcc 2>/dev/null))
   ifneq (,$(strip $(GCCBIN)))
-    GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) 2>/dev/null | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
+    GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
     GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f1)
     GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f2)
     GCC_VERSION_PATCH = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f3)
@@ -888,14 +924,12 @@ ifneq (0,$(INTEL))
     ifeq (0,$(COMPATIBLE))
     ifneq (,$(filter environment% override command%,$(origin COMPATIBLE)))
       ifeq (3,$(AVX))
-        ifeq (0,$(MIC))
-          ifneq (file,$(origin MIC))
-            CTARGET = -xCORE-AVX512
-          else
-            CTARGET = -xCOMMON-AVX512
-          endif
-        else
+        ifeq (,$(MIC))
+          CTARGET = -xCOMMON-AVX512
+        else ifneq (0,$(MIC))
           CTARGET = -xMIC-AVX512
+        else
+          CTARGET = -xCORE-AVX512
         endif
       else ifeq (2,$(AVX))
         CTARGET = -xCORE-AVX2
@@ -921,14 +955,12 @@ ifneq (0,$(INTEL))
     endif
     endif
     ifeq (3,$(AVX))
-      ifneq (,$(MIC)) # specified
-        ifneq (0,$(MIC)) # MIC
-          CTARGET = -xMIC-AVX512
-        else # SKX
-          CTARGET = -xCORE-AVX512
-        endif
-      else
+      ifeq (,$(MIC))
         CTARGET = -xCOMMON-AVX512
+      else ifneq (0,$(MIC))
+        CTARGET = -xMIC-AVX512
+      else
+        CTARGET = -xCORE-AVX512
       endif
     else ifeq (2,$(AVX))
       CTARGET = -march=core-avx2
@@ -1082,11 +1114,16 @@ else # GCC assumed
       FCFLAGS += -funroll-loops
     endif
     ifneq (0,$(IPO))
-      CXXFLAGS += -flto -ffat-lto-objects
-      CFLAGS += -flto -ffat-lto-objects
-      FCFLAGS += -flto -ffat-lto-objects
-      FLDFLAGS += -fno-lto
-      LDFLAGS += -flto
+      CXXFLAGS += -flto
+      CFLAGS += -flto
+      FCFLAGS += -flto
+      #FLDFLAGS += -fno-lto
+      LDFLAGS += $(XLNKOPT)-flto
+      ifneq (0,$(FAT))
+        CXXFLAGS += -ffat-lto-objects
+        CFLAGS += -ffat-lto-objects
+        FCFLAGS += -ffat-lto-objects
+      endif
     endif
   endif
   ifneq (0,$(INSTRUMENT))
@@ -1200,31 +1237,29 @@ else # GCC assumed
   endif
 endif
 
-ifeq (,$(CTARGET))
-ifneq (0,$(shell echo "$$((3>$(DBG)))"))
-  # prevents Clang BE error (CRC32 and others)
-  ifneq (Windows_NT,$(UNAME))
-  ifneq (Darwin,$(UNAME))
-  ifeq (3,$(GCC))
-  ifeq (0,$(DEPSTATIC))
-    CTARGET = -msse3
-  else ifneq (0,$(SHARED))
-    ifneq (,$(SHARED))
-      CTARGET = -msse3
-    endif
-  endif
-  endif
-  endif
-  endif
+ifeq (undefined,$(origin TARGET))
   ifeq (,$(CTARGET))
-  ifeq (3,$(AVX))
-  ifneq (0,$(shell echo "$$(((0!=$(CLANG) && 40000<=$(CC_VERSION)) || 50000<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
-  ifeq (0,$(shell $(CC) -E -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
-    CTARGET = -mavx512f -mavx512cd
-    # fix for Clang
-    CTARGET += -mfma
-    ifneq (,$(MIC)) # specified
-      ifneq (0,$(MIC)) # MIC
+  ifneq (0,$(shell echo "$$((3>$(DBG)))"))
+    # prevents Clang BE error (CRC32 and others)
+    ifneq (Windows_NT,$(UNAME))
+    ifneq (Darwin,$(UNAME))
+    ifeq (3,$(GCC))
+    ifeq (0,$(DEPSTATIC))
+      CTARGET = -msse3
+    else ifneq (0,$(SHARED))
+      ifneq (,$(SHARED))
+        CTARGET = -msse3
+      endif
+    endif
+    endif
+    endif
+    endif
+    ifeq (,$(CTARGET))
+    ifeq (3,$(AVX))
+    ifneq (0,$(shell echo "$$(((0!=$(GCC) && 50000<=$(GCC_VERSION)) || (0!=$(CLANG) && (40000<=$(CC_VERSION) || 0==$(CC_VERSION)))))"))
+    ifeq (0,$(shell $(CC) -E -mfma -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+      CTARGET = -mfma -mavx512f -mavx512cd
+      ifneq (0,$(lastword $(sort 0 $(MIC)))) # MIC
         ifeq (0,$(shell $(CC) -E -mavx512pf -mavx512er /dev/null 2>/dev/null >/dev/null; echo "$$?"))
           CTARGET += -mavx512pf -mavx512er
         endif
@@ -1240,33 +1275,63 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
         endif
       endif
     endif
-  endif
-  endif
-  endif
-  endif
-  ifeq (,$(CTARGET)) # fall-back to AVX2
-  ifneq (,$(filter 2 3,$(AVX)))
-    ifneq (0,$(PGI))
-      #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-      CTARGET = -tp=haswell
-    else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40800<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
-      CTARGET ?= -march=core-avx2
     endif
-  endif
-  endif
-  ifeq (,$(CTARGET)) # fall-back to AVX
-  ifneq (,$(filter 1 2 3,$(AVX)))
-    ifneq (0,$(PGI))
-      #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-      CTARGET = -tp=sandybridge
-    else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40400<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
-      CTARGET ?= -mavx
     endif
-  endif
-  endif
-  ifneq (,$(filter 1 2 3 4,$(SSE) $(AVX)))
-    ifeq (,$(CTARGET)) # SSE-4.2
-      ifneq (,$(filter 40 41 42 43,$(SSE)$(AVX)))
+    endif
+    ifeq (,$(CTARGET)) # fall-back to AVX2
+    ifneq (,$(filter 2 3,$(AVX)))
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
+        CTARGET = -tp=haswell
+      else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40800<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
+        CTARGET ?= -march=core-avx2
+      endif
+    endif
+    endif
+    ifeq (,$(CTARGET)) # fall-back to AVX
+    ifneq (,$(filter 1 2 3,$(AVX)))
+      ifneq (0,$(PGI))
+        #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
+        CTARGET = -tp=sandybridge
+      else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40400<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
+        CTARGET ?= -mavx
+      endif
+    endif
+    endif
+    ifneq (,$(filter 1 2 3 4,$(SSE) $(AVX)))
+      ifeq (,$(CTARGET)) # SSE-4.2
+        ifneq (,$(filter 40 41 42 43,$(SSE)$(AVX)))
+          ifneq (0,$(PGI))
+            #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
+            CTARGET = -tp=nehalem
+          else ifneq (0,$(GCC))
+            ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
+              CTARGET = -msse4.2
+            else
+              CTARGET = -msse3
+            endif
+          endif
+          CTARGET ?= -msse4.2
+        else ifneq (,$(filter-out 0 1,$(SSE))) # better to use TARGET flag directly
+          CTARGET = -msse$(SSE)
+        endif
+      endif
+      ifeq (,$(CTARGET)) # SSE3
+      ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
+        ifneq (0,$(PGI))
+          #DFLAGS += -D__SSSE3__ -D__SSE3__
+          CTARGET = -tp=penryn
+        endif
+        ifneq (Darwin,$(UNAME))
+          CTARGET ?= -msse3
+        else # prevents Clang BE error (CRC32 and others)
+          CTARGET ?= -msse4.2
+        endif
+      endif
+      endif
+      # SSE=2 is implicitly present (64-bit ABI)
+      ifeq (,$(CTARGET)) # default SSE
+      ifneq (,$(filter 01 02 03 10 11 12 13,$(SSE)$(AVX)))
         ifneq (0,$(PGI))
           #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
           CTARGET = -tp=nehalem
@@ -1278,70 +1343,40 @@ ifneq (0,$(shell echo "$$((3>$(DBG)))"))
           endif
         endif
         CTARGET ?= -msse4.2
-      else ifneq (,$(filter-out 0 1,$(SSE))) # better to use TARGET flag directly
-        CTARGET = -msse$(SSE)
       endif
-    endif
-    ifeq (,$(CTARGET)) # SSE3
-    ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__SSSE3__ -D__SSE3__
-        CTARGET = -tp=penryn
       endif
-      ifneq (Darwin,$(UNAME))
-        CTARGET ?= -msse3
-      else # prevents Clang BE error (CRC32 and others)
-        CTARGET ?= -msse4.2
-      endif
+    else ifneq (0,$(AVX))
+      CTARGET = -march=native
     endif
-    endif
-    # SSE=2 is implicitly present (64-bit ABI)
-    ifeq (,$(CTARGET)) # default SSE
-    ifneq (,$(filter 01 02 03 10 11 12 13,$(SSE)$(AVX)))
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-        CTARGET = -tp=nehalem
-      else ifneq (0,$(GCC))
-        ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
-          CTARGET = -msse4.2
-        else
-          CTARGET = -msse3
-        endif
-      endif
-      CTARGET ?= -msse4.2
-    endif
-    endif
-  else ifneq (0,$(AVX))
-    CTARGET = -march=native
   endif
-endif
-endif
-
-# take user's TARGET into account
-ifneq (undefined,$(origin TARGET))
+  endif
+else # take user's TARGET into account
   CTARGET = $(TARGET)
 endif
 
-# check target flags by feeding an ad-hoc C program into the compiler
-ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
-  echo "int main(void) { return 0; }" > $${CINFILE}; \
-  CTEST=$$($(CC) $(CTARGET) -c $${CINFILE} 2>&1); \
-  if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-  rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
-# revoke target flags
+ifeq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+  # check target flags by feeding an ad-hoc C program into the compiler
+  ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
+    echo "int main(void) { return 0; }" > $${CINFILE}; \
+    CTEST=$$($(CC) $(CTARGET) -c $${CINFILE} 2>&1); \
+    if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
+      CTARGET = $(NULL)
+  endif
+  ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
+  ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/libxsmm_XXXXXX-f.f); \
+    echo "      PROGRAM test" > $${FINFILE}; \
+    echo "      END PROGRAM" >> $${FINFILE}; \
+    FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
+    if [ "" = "$${FTEST}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/libxsmm_??????-f.f libxsmm_??????-f.o* 2>/dev/null))
+      # inherit CTARGET flags
+      FTARGET = $(CTARGET)
+  endif
+  endif
+else # revoke target flags
   CTARGET = $(NULL)
-endif
-
-ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
-ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/libxsmm_XXXXXX-f.f); \
-  echo "      PROGRAM test" > $${FINFILE}; \
-  echo "      END PROGRAM" >> $${FINFILE}; \
-  FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
-  if [ "" = "$${FTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-  rm -f /tmp/libxsmm_??????-f.f libxsmm_??????-f.o* 2>/dev/null))
-# inherit CTARGET flags
-  FTARGET = $(CTARGET)
-endif
+  FTARGET = $(NULL)
 endif
 
 ifeq (0,$(COMPATIBLE))
@@ -1432,12 +1467,16 @@ ifeq (0,$(COMPATIBLE))
       endif
     endif
     endif
-    # flag -fvisibility=hidden is causing crashes (assertions during validation)
-    CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
-    CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
-    FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+    CXXFLAGS += -fdata-sections -ffunction-sections
+    FCFLAGS += -fdata-sections -ffunction-sections
+    CFLAGS += -fdata-sections -ffunction-sections
     # --gc-sections: relies on section-flags present at compile-stage
     LDFLAGS += $(XLNKOPT)--gc-sections
+    ifeq (0,$(VISIBILITY)) # -fvisibility=hidden may cause crashes
+      CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
+      #FCFLAGS += -fvisibility=hidden
+      CFLAGS += -fvisibility=hidden
+    endif
   endif
   ifeq (0,$(EXP))
     CXXFLAGS += -fno-exceptions
@@ -1571,7 +1610,7 @@ endif
 ifeq (,$(strip $(MKLROOT)))
   MKL_INCFILE = $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h)))
   ifneq (,$(strip $(MKL_INCFILE)))
-    MKLROOT = $(dir $(MKL_INCFILE))/..
+    MKLROOT = $(abspath $(dir $(MKL_INCFILE))/..)
   endif
 endif
 ifneq (,$(strip $(MKLROOT)))
@@ -1784,13 +1823,16 @@ extname = $(subst .,,$(suffix $(1)))
 # derives the name of an object files from a given source file
 objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG)),%-$(call extname,$(ARG)).o,$(notdir $(ARG)))))
 
-STATE := $(foreach V,$(sort $(.VARIABLES)), $(if \
+STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL \
-    $(EXCLUDE_STATE) CPUFLAGS TEST TESTSIZE BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED \
-    abslibfile abslibpath absliblpath abslibrpath \
-    libpath abslib solink extname objname,$V), \
-    $V=$($V)?)))
+  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_STATE .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR \
+    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CPUFLAGS CP CXX_VERSION_FLAG CXX_VERSION_STRING FSTD \
+    DEPDIR DLIBEXT ENV EXTDEP FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO \
+    IMPEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION_INT MKL_INCFILE MV ROOTDIR SLIBEXT SUITE XLNKOPT TESTSIZE \
+    BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB \
+    SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPLIBFILE NOBLASLIB NOBLAS_% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB \
+    FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 \
+    cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V),$V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
 %/.make:

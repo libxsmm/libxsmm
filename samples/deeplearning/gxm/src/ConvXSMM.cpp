@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -78,10 +78,7 @@ ConvXSMM::ConvXSMM(ConvImplParams* gp, int engine) : ConvImpl(gp, engine)
   if(gp->out_data_type == DT_FLOAT)
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
   else if(gp->out_data_type == DT_BF16)
-  {
-    conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
     conv_desc.options = LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE_OVERWRITE;
-  }
 
   if(gp->bias_term)
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS;
@@ -121,7 +118,7 @@ ConvXSMM::ConvXSMM(ConvImplParams* gp, int engine) : ConvImpl(gp, engine)
 
 void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *biasp, TensorBuf *outp, int tid)
 {
-  // Conv input
+  // Conv input. LPBuffer is non-NULL if data layer output is BF16
   if(inp->getLPBuffer() != NULL)
     in_ptr = inp->getLPBuffer();
   else
@@ -173,7 +170,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *b
 
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)wt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
       memcpy(wt_ptr, wt_prv_ptr, welem*sizeof(float));
-      
+
       libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor(libxsmm_layout, wt_ptr, &status);
       CHKERR_LIBXSMM_DNN( status );
 
@@ -226,7 +223,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *b
 
     if(gp->compute_stats)
     {
-      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_BATCH_STATS, &status ); 
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_BATCH_STATS, &status );
       CHKERR_LIBXSMM_DNN( status );
       libxsmm_batchstats  = libxsmm_dnn_link_tensor( libxsmm_layout, stats_ptr, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );

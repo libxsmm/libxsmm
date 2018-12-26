@@ -1,18 +1,6 @@
 # Export all variables to sub-make processes.
 #.EXPORT_ALL_VARIABLES: #export
 
-# Automatically disable parallel builds
-# depending on the version of GNU Make.
-# MAKE_PARALLEL=0: disable explicitly
-# MAKE_PARALLEL=1: enable explicitly
-ifeq (0,$(MAKE_PARALLEL))
-.NOTPARALLEL:
-else ifeq (,$(MAKE_PARALLEL))
-ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
-.NOTPARALLEL:
-endif
-endif
-
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../..
 SRCDIR = $(ROOTDIR)
@@ -25,8 +13,6 @@ CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
-# Fortran code here does not allow for PEDANTIC=2
-override PEDANTIC = 1
 BLAS = 2
 OMP = 1
 SYM = 1

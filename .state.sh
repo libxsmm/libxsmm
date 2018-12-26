@@ -1,6 +1,6 @@
 #!/bin/sh
 #############################################################################
-# Copyright (c) 2016-2018, Intel Corporation                                #
+# Copyright (c) 2016-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -33,10 +33,10 @@
 HERE=$(cd $(dirname $0); pwd -P)
 NAME=$(basename $0)
 
-TOUCH=$(which touch)
-ECHO=$(which echo)
-SED=$(which sed)
-TR=$(which tr)
+TOUCH=$(command -v touch)
+ECHO=$(command -v echo)
+SED=$(command -v sed)
+TR=$(command -v tr)
 
 DEST=$1
 if [ "$1" = "" ]; then
@@ -44,13 +44,13 @@ if [ "$1" = "" ]; then
 fi
 
 STATEFILE=${DEST}/.state
-STATE=$(${TR} '?' '\n' | ${SED} -e 's/^  *//')
+STATE=$(${TR} '?' '\n' | ${SED} -e 's/^ */\"/' -e 's/   */ /g' -e 's/ *$/\\n\"/')
 
-if [ ! -e ${STATEFILE} ] || [ 0 != $(${ECHO} "${STATE}" | diff -q ${STATEFILE} - >/dev/null; ${ECHO} $?) ]; then
+if [ ! -e ${STATEFILE} ] || [ "0" != "$(${ECHO} "${STATE}" | diff -q ${STATEFILE} - >/dev/null; ${ECHO} "$?")" ]; then
   if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
-    ${ECHO} "${STATE}" > ${STATEFILE}
+    printf "%s\n" "${STATE}" > ${STATEFILE}
   fi
-  ${ECHO} $0
+  ${ECHO} "$0"
   ${TOUCH} $0
 fi
 

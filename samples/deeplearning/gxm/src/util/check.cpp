@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -49,6 +49,7 @@ void check_physical_pad(const char *s, float *tensor, int nImg, int nBfm, int fh
                 success = false;
               }
               if ( tensor_vla[img][fm][fhi-1-ph][w][v] != 0.0f ) {
+                float val = tensor_vla[img][fm][fhi-1-ph][w][v];
                 success = false;
               }
             }
@@ -254,7 +255,7 @@ void MeanOfLayer(char *s, float *array, int size)
 //      s, size,  mean, absmean, stddev, abstddev, max, which_max, min, which_min, ((double)nnz)/((double)size), nnz, first_nz, last_nz);
   //printf("%s %.10f %.10f %.10f %.10f\n", s, mean, stddev, max, min);
   //printf("%s %10g %10g %10g %10g(%d) %10g(%d), nnz-perc:%.10g(%d:f=%d l=%d)\n", s, mean, absmean, stddev, max, which_max, min, which_min, ((double)nnz)/((double)size), nnz, first_nz, last_nz);
-  printf("%s %10g %10g %10g %10g\n", s, sum, absum, max, min);
+  printf("%s %.10f %.10f %.10f %.10f\n", s, sum, absum, max, min);
 }
 
 void MeanOfLayer(char *s, double *array, int size)

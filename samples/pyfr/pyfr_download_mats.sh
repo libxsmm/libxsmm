@@ -1,6 +1,6 @@
 #!/bin/sh
 #############################################################################
-# Copyright (c) 2017-2018, Intel Corporation                                #
+# Copyright (c) 2017-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -31,8 +31,8 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-MKDIR=$(which mkdir)
-WGET=$(which wget)
+MKDIR=$(command -v mkdir)
+WGET=$(command -v wget)
 
 DATASET="p1 p2 p3 p4 p5 p6"
 KINDS="hex pri quad tet tri"

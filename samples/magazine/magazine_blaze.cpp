@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2018, Intel Corporation                                     **
+** Copyright (c) 2018-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -50,7 +50,7 @@
 int main(int argc, char* argv[])
 {
 #if defined(__BLAZE)
-  typedef double T;
+  typedef TYPE T;
   typedef blaze::CustomMatrix<T,blaze::aligned,blaze::padded,blaze::columnMajor> matrix_type;
   const size_t alignment = 64; /* must be power of two */
 

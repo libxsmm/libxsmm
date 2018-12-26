@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2018, Intel Corporation                                     **
+** Copyright (c) 2018-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -77,7 +77,7 @@ double norm(const TYPE* src, int nrows, int ncols, int ld) {
   for (i = 0; i < ncols; ++i) {
     for (j = 0; j < nrows; ++j) {
       const int k = i * ld + j;
-      const TYPE v = src[k], a = (0 <= v ? v : -v) - comp, b = result + a;
+      const double v = src[k], a = (0 <= v ? v : -v) - comp, b = result + a;
       comp = (b - result) - a;
       result = b;
     }

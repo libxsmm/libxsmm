@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -102,12 +102,12 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    ITYPE* agold = (ITYPE*)libxsmm_malloc((size_t)lda * k * sizeof(ITYPE));
-    ITYPE* bgold = (ITYPE*)libxsmm_malloc((size_t)ldb * n * sizeof(ITYPE));
-    ITYPE* cgold = (ITYPE*)libxsmm_malloc((size_t)ldc * n * sizeof(ITYPE));
-    ITYPE* a = (ITYPE*)libxsmm_malloc((size_t)m * k * sizeof(ITYPE));
-    ITYPE* b = (ITYPE*)libxsmm_malloc((size_t)k * n * sizeof(ITYPE));
-    ITYPE* c = (ITYPE*)libxsmm_malloc((size_t)m * n * sizeof(ITYPE));
+    ITYPE* agold = (ITYPE*)libxsmm_malloc((size_t)lda * (size_t)k * sizeof(ITYPE));
+    ITYPE* bgold = (ITYPE*)libxsmm_malloc((size_t)ldb * (size_t)n * sizeof(ITYPE));
+    ITYPE* cgold = (ITYPE*)libxsmm_malloc((size_t)ldc * (size_t)n * sizeof(ITYPE));
+    ITYPE* a = (ITYPE*)libxsmm_malloc((size_t)m * (size_t)k * sizeof(ITYPE));
+    ITYPE* b = (ITYPE*)libxsmm_malloc((size_t)k * (size_t)n * sizeof(ITYPE));
+    ITYPE* c = (ITYPE*)libxsmm_malloc((size_t)m * (size_t)n * sizeof(ITYPE));
     libxsmm_bgemm_handle* handle = 0;
     unsigned long long start;
     double duration;
@@ -177,7 +177,7 @@ int main(int argc, char* argv[])
         if (0 != ctest) {
           libxsmm_matdiff_info diff;
           libxsmm_bgemm_copyout_c(handle, c, &ldc, ctest);
-          result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, cgold, ctest, &ldc, &ldc, &diff);
+          result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(ITYPE), m, n, cgold, ctest, &ldc, &ldc);
           if (EXIT_SUCCESS == result) {
             fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
             if (check < 100.0 * diff.normf_rel) {

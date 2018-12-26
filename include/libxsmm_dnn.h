@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -31,7 +31,6 @@
 #ifndef LIBXSMM_DNN_H
 #define LIBXSMM_DNN_H
 
-#include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -54,7 +53,12 @@ typedef unsigned int libxsmm_dnn_err_t;
 
 /** Define error and warning codes */
 #define LIBXSMM_DNN_SUCCESS                             0
+
 #define LIBXSMM_DNN_WARN_FALLBACK                   90000
+#define LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING  90001
+#define LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_C_BLOCKING  90002
+#define LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_K_BLOCKING  90003
+
 #define LIBXSMM_DNN_ERR_GENERAL                    100000
 #define LIBXSMM_DNN_ERR_CREATE_HANDLE              100001
 #define LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE       100002
@@ -90,6 +94,7 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN     100032
 #define LIBXSMM_DNN_ERR_UNSUPPORTED_POOLING        100033
 #define LIBXSMM_DNN_ERR_INVALID_FORMAT_FC          100034
+#define LIBXSMM_DNN_ERR_INVALID_RNN_TYPE           100035
 
 /** Kinds of supported compute flavor operations. */
 typedef enum libxsmm_dnn_compute_kind {
@@ -200,61 +205,46 @@ typedef enum libxsmm_dnn_tensor_type {
 
   /** regular input buffer */
   LIBXSMM_DNN_RNN_REGULAR_INPUT,
+  /** regular previous cell state buffer */
+  LIBXSMM_DNN_RNN_REGULAR_CS_PREV,
+  /** regular previous hidden state buffer */
+  LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV,
+  /** regular weight (LSTM: wi, wc, wf, wo) */
+  LIBXSMM_DNN_RNN_REGULAR_WEIGHT,
+  /** regular recurrent weight (LSTM: ri, rc, rf, ro) */
+  LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT,
+  /** regular bias (LSTM: bi, bc, bf, bo) */
+  LIBXSMM_DNN_RNN_REGULAR_BIAS,
+  /** regular output cell state buffer */
+  LIBXSMM_DNN_RNN_REGULAR_CS,
   /** regular hidden state buffer */
   LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE,
-  /** regular weight */
-  LIBXSMM_DNN_RNN_REGULAR_WEIGHT,
-  /** regular recurrent weight */
-  LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT,
-  /** regular bias */
-  LIBXSMM_DNN_RNN_REGULAR_BIAS,
   /** gradient input buffer */
   LIBXSMM_DNN_RNN_GRADIENT_INPUT,
-  /** gradient hidden state buffer */
-  LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE,
+  /** gradient previous cell state buffer */
+  LIBXSMM_DNN_RNN_GRADIENT_CS_PREV,
+  /** gradient previous hidden state buffer */
+  LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV,
   /** gradient weight */
   LIBXSMM_DNN_RNN_GRADIENT_WEIGHT,
   /** gradient recurrent weight */
   LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT,
   /** gradient bias */
   LIBXSMM_DNN_RNN_GRADIENT_BIAS,
-
-  /** regular input buffer */
-  LIBXSMM_DNN_LSTM_REGULAR_INPUT,
-  /** regular previous cell state buffer */
-  LIBXSMM_DNN_LSTM_REGULAR_CS_PREV,
-  /** regular previous hidden state buffer */
-  LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE_PREV,
-  /** regular weight (includes wi, wf, wo, wc, ri, rf, ro, rc) */
-  LIBXSMM_DNN_LSTM_REGULAR_WEIGHT,
-  /** regular bias (includes bi, bf, bo, bc) */
-  LIBXSMM_DNN_LSTM_REGULAR_BIAS,
-  /** regular output cell state buffer */
-  LIBXSMM_DNN_LSTM_REGULAR_CS,
-  /** regular hidden state buffer */
-  LIBXSMM_DNN_LSTM_REGULAR_HIDDEN_STATE,
-  /** internal i buffer */
-  LIBXSMM_DNN_LSTM_INTERNAL_I,
-  /** internal f buffer */
-  LIBXSMM_DNN_LSTM_INTERNAL_F,
-  /** internal o buffer */
-  LIBXSMM_DNN_LSTM_INTERNAL_O,
-  /** internal c buffer */
-  LIBXSMM_DNN_LSTM_INTERNAL_C,
-  /** gradient input buffer */
-  LIBXSMM_DNN_LSTM_GRADIENT_INPUT,
-  /** gradient previous cell state buffer */
-  LIBXSMM_DNN_LSTM_GRADIENT_CS_PREV,
-  /** gradient previous hidden state buffer */
-  LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE_PREV,
-  /** gradient weight */
-  LIBXSMM_DNN_LSTM_GRADIENT_WEIGHT,
-  /** gradient bias */
-  LIBXSMM_DNN_LSTM_GRADIENT_BIAS,
   /** gradient output cell state buffer */
-  LIBXSMM_DNN_LSTM_GRADIENT_CS,
+  LIBXSMM_DNN_RNN_GRADIENT_CS,
   /** gradient hidden state buffer */
-  LIBXSMM_DNN_LSTM_GRADIENT_HIDDEN_STATE,
+  LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE,
+  /** internal i buffer */
+  LIBXSMM_DNN_RNN_INTERNAL_I,
+  /** internal f buffer */
+  LIBXSMM_DNN_RNN_INTERNAL_F,
+  /** internal o buffer */
+  LIBXSMM_DNN_RNN_INTERNAL_O,
+  /** internal ci buffer */
+  LIBXSMM_DNN_RNN_INTERNAL_CI,
+  /** internal co buffer */
+  LIBXSMM_DNN_RNN_INTERNAL_CO,
 
   /** regular input buffer */
   LIBXSMM_DNN_GRU_REGULAR_INPUT,
@@ -430,6 +420,7 @@ LIBXSMM_API unsigned int libxsmm_dnn_get_tensor_elements(const libxsmm_dnn_tenso
 /** Create and manage buffers, filters and bias (non-NULL if successful) */
 LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_link_tensor(const libxsmm_dnn_tensor_datalayout* layout, const void* data, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_link_qtensor(const libxsmm_dnn_tensor_datalayout* layout, const void* data, const unsigned char exp, libxsmm_dnn_err_t* status);
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_set_tensor_data_ptr(libxsmm_dnn_tensor* tensor, const void* data);
 LIBXSMM_API void* libxsmm_dnn_get_tensor_data_ptr(const libxsmm_dnn_tensor* tensor, libxsmm_dnn_err_t* status);
 LIBXSMM_API unsigned char libxsmm_dnn_get_qtensor_scf(const libxsmm_dnn_tensor* tensor, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_set_qtensor_scf(libxsmm_dnn_tensor* tensor, const unsigned char scf);
@@ -466,7 +457,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_get_parallel_tasks(libxsmm_dnn_layer* 
 
 /** some quantization helper functions,
     @TODO need to be integrated better for all different ways of quantizations */
-#define _mm512_quantize_near_ps_epi16( A, B ) _mm512_cvtepi32_epi16( _mm512_cvt_roundps_epi32( _mm512_mul_ps( _mm512_load_ps(A), B), (_MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC) ) )
 LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int length, unsigned char add_shift, unsigned char* scf, int round_mode );
 LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, unsigned int N, unsigned int C, unsigned int H, unsigned int W, unsigned int cblk_f32, unsigned int cblk_i16, unsigned int lp_blk, unsigned char add_shift, unsigned char* scf, int round_mode );
 LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, unsigned int K, unsigned int C, unsigned int R, unsigned int S, unsigned int cblk_f32, unsigned int cblk_i16, unsigned int kblk_f32, unsigned int kblk_i16, unsigned int lp_blk, unsigned char add_shift, unsigned char* scf, int round_mode );

@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -113,7 +113,7 @@ SplitNode::SplitNode(SplitParams *p, MLEngine *e) : NNNode(p, e)
     if(bp_flag_)
     {
       tenBotDiff_ = tenBot_->addBuf();
-      tenBotDiff_->setDataType(in_dtype); 
+      tenBotDiff_->setDataType(in_dtype);
       tenBotDiff_->setBufferType(DIFF);
       tenBotDiff_->setBufferSize(tenBotData_->getBufferSize());
     }

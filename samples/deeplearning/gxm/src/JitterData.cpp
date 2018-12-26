@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -95,12 +95,15 @@ JitterDataNode::JitterDataNode(JitterDataParams* p, MLEngine* e) : NNNode(p, e)
       bool phys_padding = p->get_physical_padding();
       if(phys_padding)
       {
-        gparams_.pad_h = p->get_pad_h();  
+        gparams_.pad_h = p->get_pad_h();
         gparams_.pad_w = p->get_pad_w();
         size = size * (tts.dims[2] + 2*gparams_.pad_h) * (tts.dims[3] + 2*gparams_.pad_w);
       }
-      else
+      else {
+        gparams_.pad_h = 0;
+        gparams_.pad_w = 0;
         size = size * tts.dims[2] * tts.dims[3];
+      }
 
       if(dtype == DT_FLOAT)
         size = size*sizeof(float);
@@ -258,9 +261,8 @@ JitterDataNode::JitterDataNode(JitterDataParams* p, MLEngine* e) : NNNode(p, e)
   drand2 = new double[gparams_.batch_size*60];
   drand3 = new double[gparams_.batch_size*60];
 
-//  ridx_ = 0;
-
-  setupTrainIndices();
+  if(mode == TRAIN)
+    setupTrainIndices();
   setupTestIndices();
   labels_.resize(gparams_.lookahead);
   for(int i=0; i < gparams_.lookahead; i++)
@@ -352,9 +354,7 @@ void JitterDataNode::cropVGG(const cv::Mat& cv_img, cv::Mat& cv_cropped_img, int
   assert(scalejittering_max >= gparams_.crop_sizes[0]);
 
   if(eptr_->get_execution_mode() == TRAIN) {
-//    curr_scalejittering = r_offset[ridx_] % (scalejittering_max-scalejittering_min+1) + scalejittering_min;
     curr_scalejittering = r_offset[ridx] % (scalejittering_max-scalejittering_min+1) + scalejittering_min;
-//    ridx_++;
     ridx++;
   }
   else
@@ -374,15 +374,9 @@ void JitterDataNode::cropVGG(const cv::Mat& cv_img, cv::Mat& cv_cropped_img, int
 
   //    /* We only do random crop when we do training.*/
   if (eptr_->get_execution_mode() == TRAIN) {
-#if 0
-    *h_off = r_offset[ridx_] % (img_height - gparams_.crop_sizes[0] + 1);
-    *w_off = c_offset[ridx_] % (img_width - gparams_.crop_sizes[1] + 1);
-    ridx_++;
-#else
     *h_off = r_offset[ridx] % (img_height - gparams_.crop_sizes[0] + 1);
     *w_off = c_offset[ridx] % (img_width - gparams_.crop_sizes[1] + 1);
     ridx++;
-#endif
   } else {
     *h_off = (img_height - gparams_.crop_sizes[0]) / 2;
     *w_off = (img_width - gparams_.crop_sizes[1]) / 2;
@@ -419,16 +413,13 @@ void JitterDataNode::cropTorch(const cv::Mat& cv_img, cv::Mat& cv_cropped_img, i
     float area = img_height*img_width;
 
     for(int attempt = 0; attempt < 60; attempt++) {
-//      float target_area = ((max_percent_area-min_percent_area)*((float)rand()/(float)RAND_MAX) + min_percent_area)*area;
       float target_area = ((max_percent_area-min_percent_area)*((float)drand1[didx]) + min_percent_area)*area;
-//      float aspect_ratio = ((max_aspect_ratio-min_aspect_ratio)*((float)rand()/(float)RAND_MAX) + min_aspect_ratio);
       float aspect_ratio = ((max_aspect_ratio-min_aspect_ratio)*((float)drand2[didx]) + min_aspect_ratio);
 
       int tmp_w = 0, tmp_h = 0;
       tmp_w = round(sqrt(target_area * aspect_ratio));
       tmp_h = round(sqrt(target_area /aspect_ratio));
 
-//      if(((float)rand()/(float)RAND_MAX) < 0.5) {
       if((float)drand3[didx] < 0.5) {
         tmp_w += tmp_h;
         tmp_h = tmp_w - tmp_h;
@@ -439,19 +430,13 @@ void JitterDataNode::cropTorch(const cv::Mat& cv_img, cv::Mat& cv_cropped_img, i
       if( tmp_w < img_width && tmp_h < img_height) {
         int rw = img_width - tmp_w + 1;
         int rh = img_height - tmp_h + 1;
-#if 0
-        *w_off = c_offset[ridx_] % rw;
-        *h_off = r_offset[ridx_] % rh;
-        ridx_++;
-#else
         *w_off = c_offset[ridx] % rw;
         *h_off = r_offset[ridx] % rh;
         ridx++;
-#endif
+
         cv::Rect roi(*w_off, *h_off, tmp_w, tmp_h);
         cv_cropped_img = cv_img(roi);
         cv::resize(cv_cropped_img, cv_cropped_img, cv::Size(gparams_.crop_sizes[0], gparams_.crop_sizes[1]), 0 , 0, cv::INTER_CUBIC );
-    //    printf("x:%d y:%d w:%d h:%d imgW:%d  imgH:%d\n",*w_off,*h_off, tmp_w,tmp_h,img_width,img_height);
         return;
       }
     }
@@ -513,19 +498,12 @@ void JitterDataNode::imageTransform(vector<cv::Mat>& vcrop, float* outp)
           assert(vcrop[img].channels() == nOfm);
           int out_idx;
 
-#if 0
-          if(gparams_.exec_mode == TRAIN)
-          {
-            if((augmentation[img] < 6) && (ap.mirror == true))
-              out_idx = ((img * nOfm + ofm) * ofh + h) * ofw + (ofw-w-1);
-            else
-              out_idx = ((img * nOfm + ofm) * ofh + h) * ofw + w;
-          }
-          else
-            out_idx = ((img * nOfm + ofm) * ofh + h) * ofw + w;
-#endif
           int oh = h+padh;
           int ow = w+padw;
+
+          float inp = static_cast<float>(ptr[img_index++]);
+          int fm = (gparams_.scale_values.size() == 1) ? 0 : ofm;
+
           if(gparams_.exec_mode == TRAIN)
           {
             if((augmentation[img] < 6) && (ap.mirror == true))
@@ -534,11 +512,7 @@ void JitterDataNode::imageTransform(vector<cv::Mat>& vcrop, float* outp)
               out_idx = img * ofhp * ofwp * nOfm + oh * ofwp * nOfm + ow * nOfm + ofm;
           }
           else
-              out_idx = img * ofhp * ofwp * nOfm + oh * ofwp * nOfm + ow * nOfm + ofm;
-
-
-          float inp = static_cast<float>(ptr[img_index++]);
-          int fm = (gparams_.scale_values.size() == 1) ? 0 : ofm;
+            out_idx = img * ofhp * ofwp * nOfm + oh * ofwp * nOfm + ow * nOfm + ofm;
 
           outp[out_idx] = (inp - mean[ofm]) * rscale[fm];
         }
@@ -674,6 +648,11 @@ void JitterDataNode::forwardPropagate()
 
     imageTransform(cropbuf_[mbslot], topdata);
 
+#ifndef NDEBUG
+    if(gparams_.pad_h && gparams_.pad_w)
+      check_physical_pad(nname_.c_str(), topdata, nImg, 1, ofh, ofw, nOfm, gparams_.pad_h, gparams_.pad_w);
+#endif
+
     int out_dtype = tenTopData_[0]->getDataType();
     int crop_img_size = nImg * ofhp * ofwp * nOfm;
 
@@ -688,8 +667,11 @@ void JitterDataNode::forwardPropagate()
     }
 
 #ifdef GETSTATS
-    MeanOfLayer("Data", topdata, crop_img_size);
-    MeanOfLayer("Labels", toplabel, gparams_.batch_size);
+    if(global_node_id_ == 0)
+    {
+      MeanOfLayer("Data", topdata, crop_img_size);
+      MeanOfLayer("Labels", toplabel, gparams_.batch_size);
+    }
 #endif
 
     ctrain_proc_mb_++;
@@ -700,7 +682,7 @@ void JitterDataNode::forwardPropagate()
       full_train_prefetch_ = true;
     }
   }
-  else if(em == TEST) {
+  else if(em == TEST || em == VAL) {
     if(full_test_prefetch_) {
       for(int i=0; i<gparams_.lookahead; i++) {
         for(int img=0; img<gparams_.batch_size; img++) {
@@ -769,7 +751,11 @@ void JitterDataNode::forwardPropagate()
 
     if(out_dtype == DT_BF16)
     {
-      assert(bf16_img != NULL);
+      if(bf16_img == NULL)
+      {
+        bf16_img = _mm_malloc(crop_img_size*sizeof(libxsmm_bfloat16), 64);
+        tenTopData_[0]->setLPBuffer(bf16_img);
+      }
       convert_f32_bf16(topdata, (libxsmm_bfloat16*)bf16_img, crop_img_size);
     }
 

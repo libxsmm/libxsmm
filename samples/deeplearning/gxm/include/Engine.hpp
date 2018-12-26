@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -58,7 +58,8 @@ extern int iter;
 #endif
 
 #define TRAIN 0
-#define TEST 1
+#define VAL 1
+#define TEST 2
 #define START_GUARD_BAND 64
 #define END_GUARD_BAND 64
 #define CANARY 0x7F
@@ -84,7 +85,7 @@ class MLEngine
     MLSL::Session *session_;
 #endif
     vector<MLNode*> ntg_;
-    list<Task*> etg_[2]; // 0 - Training, 1 - Validation/testing
+    list<Task*> etg_[3]; // 0 - Training, 1 - Validation, 2 - testing
     SolverParams *solverParams_;
     SolverNode* solver_;
     Tensor* tenScratch_;
@@ -110,6 +111,7 @@ class MLEngine
     int global_node_id_;
     float lr_, *wt_lr_mult_, *wt_decay_mult_;
     float *bias_lr_mult_, *bias_decay_mult_;
+    float scf_=0;
 
     void *input_buf_=NULL;
     void *fact_buf_=NULL, *bact_buf_=NULL, *wbuf_=NULL;
@@ -166,12 +168,14 @@ class MLEngine
     int get_num_test_batches() { return num_test_batches_; }
     int get_num_test_views() {return num_test_views_; }
     int get_batch_size() { return batch_size_; }
+    float get_scaling_factor() { return scf_; }
 
     void set_batch_size(int b) {batch_size_ = b; }
     void set_num_train_batches(int ntrainb) {num_train_batches_ = ntrainb; }
     void set_num_test_batches(int ntestb) {num_test_batches_ = ntestb; }
     void set_num_test_views(int ntestv) {num_test_views_ = ntestv; }
     void set_learning_rate(float lr) { lr_ = lr; }
+    void set_scaling_factor(float scf) { scf_ = scf; }
 #ifdef USE_MLSL
     MLSL::Distribution* get_distribution() { return data_parallelism; }
     MLSL::Session *get_session() { return session_; }

@@ -1,6 +1,6 @@
 #!/bin/sh
 #############################################################################
-# Copyright (c) 2015-2018, Intel Corporation                                #
+# Copyright (c) 2015-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -31,7 +31,7 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-ECHO=$(which echo)
+ECHO=$(command -v echo)
 SCRT=${HERE}/../../scripts/libxsmm_utilities.py
 FILE=eigen_smm-cp2k.txt
 

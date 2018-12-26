@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -179,7 +179,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
               (strcmp(i_arch, "cpx") == 0) ||
               (strcmp(i_arch, "icl") == 0) ) {
     /* call actual kernel generation with revised parameters */
-    if ( (LIBXSMM_GEMM_PRECISION_I16 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
+    if ( ( LIBXSMM_GEMM_PRECISION_I16  != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )   &&
+           LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
          ( (l_vector_length == 16  && (l_xgemm_desc_mod.m == 32 || l_xgemm_desc_mod.m == 48 || l_xgemm_desc_mod.m == 64)) ||
            (l_vector_length == 8   && (l_xgemm_desc_mod.m == 16 || l_xgemm_desc_mod.m == 24 || l_xgemm_desc_mod.m == 32))    ) ) {
       libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );

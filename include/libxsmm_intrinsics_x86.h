@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -36,7 +36,11 @@
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
 
-#if !defined(LIBXSMM_INTRINSICS_STATIC) && /* GCC 4.4 (target-attribute) */ \
+#if defined(__PGI) /* no intrinsics: tested with 17.x and 18.x */
+# if !defined(LIBXSMM_INTRINSICS_NONE)
+#   define LIBXSMM_INTRINSICS_NONE
+# endif
+#elif !defined(LIBXSMM_INTRINSICS_STATIC) && /* GCC 4.4 (target-attribute) */ \
     (defined(__GNUC__) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) && !defined(_CRAYC) && \
      LIBXSMM_VERSION3(4, 4, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
  || (defined(__clang__) && LIBXSMM_VERSION3(3, 7, 0) > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
@@ -47,11 +51,6 @@
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-
-/** PGI's intrinsic headers do not compile, __SSE4_x__/__AVX__ etc. are never defined (-tp=haswell, etc.) */
-#if !defined(LIBXSMM_INTRINSICS_NONE) && defined(__PGI)
-# define LIBXSMM_INTRINSICS_NONE
 #endif
 
 #if defined(__MIC__) && !defined(LIBXSMM_INTRINSICS_NONE)
@@ -138,7 +137,8 @@
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
-#   elif (LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) && !defined(__PGI)
+#   elif (defined(__GNUC__) && LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
+      && !defined(__PGI)
       /* AVX-512 pseudo intrinsics are missing e.g., reductions */
 #     if !defined(LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS)
 #       define LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS
@@ -150,7 +150,8 @@
 #     endif
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
-#   elif (LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) && !defined(__PGI)
+#   elif (defined(__GNUC__) && LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
+      && !defined(__PGI)
       /* too many AVX-512 (pseudo-)intrinsics are missing e.g., reductions, or casts (_mm512_castps_si512) */
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     define LIBXSMM_INTRINSICS_INCLUDE
@@ -180,9 +181,6 @@
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
 #       if !defined(LIBXSMM_INTRINSICS_STATIC) && (LIBXSMM_STATIC_TARGET_ARCH < LIBXSMM_X86_AVX2/*workaround*/)
 #         define LIBXSMM_INTRINSICS_STATIC
-#       endif
-#       if !defined(LIBXSMM_INTRINSICS_NONE) && defined(__PGI)
-#         define LIBXSMM_INTRINSICS_NONE
 #       endif
 #     endif
 #     if !defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(__PGI)
@@ -393,7 +391,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-/** Intrinsic-specific fix-ups */
+/**
+ * Intrinsic-specific fix-ups
+ */
 #if defined(__clang__)
 # define LIBXSMM_INTRINSICS_LDDQU_SI128(A) _mm_loadu_si128(A)
 #else
@@ -453,6 +453,9 @@
 # define LIBXSMM_INTRINSICS_MM_UNDEFINED_PD() _mm_set1_pd(0)
 #endif
 
+/**
+ * Pseudo intrinsics for portability
+ */
 LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD32_SW(unsigned int n) {
   unsigned int i, r = 0; if (0 != n) for (i = 1; 0 == (n & i); i <<= 1) { ++r; } return r;
 }
@@ -492,6 +495,9 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
 # define LIBXSMM_INTRINSICS_BITSCANBWD64 LIBXSMM_INTRINSICS_BITSCANBWD64_SW
 #endif
 
+/**
+ * Target attribution
+ */
 #if !defined(LIBXSMM_INTRINSICS_KNC) && !defined(LIBXSMM_INTRINSICS_NONE) && defined(__MIC__)
 # define LIBXSMM_INTRINSICS_KNC
 #endif
@@ -551,6 +557,22 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
 # define LIBXSMM_INTRINSICS_AVX512_CPX
 #endif
 
+
+/**
+ * Pseudo intrinsics that eventually need target-attribution (AVX-512)
+ */
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
+# define LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16( A, B ) _mm512_cvtepi32_epi16(_mm512_cvt_roundps_epi32( \
+    _mm512_mul_ps(_mm512_load_ps(A), B), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC))
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(__m512 a) {
+  const __m512i vnaninf = _mm512_set1_epi32(0x7f800000), vrneadd = _mm512_set1_epi32(0x00007fff);
+  const __m512i vfixup = _mm512_set1_epi32(0x00000001), vfixupmask = _mm512_set1_epi32(0x00010000);
+  const __m512i mm512_roundbf16rne_a_ = _mm512_castps_si512(a);
+  const __mmask16 mm512_roundbf16rne_mask1_ = _mm512_cmp_epi32_mask(_mm512_and_epi32(mm512_roundbf16rne_a_, vnaninf), vnaninf, _MM_CMPINT_NE);
+  const __mmask16 mm512_roundbf16rne_mask2_ = _mm512_cmp_epi32_mask(_mm512_and_epi32(mm512_roundbf16rne_a_, vfixupmask), vfixupmask, _MM_CMPINT_EQ);
+  return _mm512_mask_add_epi32(mm512_roundbf16rne_a_, mm512_roundbf16rne_mask1_, mm512_roundbf16rne_a_, _mm512_mask_add_epi32(vrneadd, mm512_roundbf16rne_mask2_, vrneadd, vfixup));
+}
+#endif
 
 #endif /*LIBXSMM_INTRINSICS_X86_H*/
 

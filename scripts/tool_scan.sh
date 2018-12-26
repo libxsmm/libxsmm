@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
-# Copyright (c) 2016-2018, Intel Corporation                                #
+# Copyright (c) 2016-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -85,7 +85,7 @@ for KEYWORD in $(cat ${KEYFILE}); do
 done
 
 # make unique by SHA, sort from older to newer, and drop timestamp (sort key)
-HIST=$(echo -e ${HITS} | sort -uk2 | sort -nuk1 | cut -d' ' -f2)
+HIST=$(echo -e "${HITS}" | sort -uk2 | sort -nuk1 | cut -d' ' -f2)
 HITS=$(echo -n "${HIST}" | wc -l)
 
 if [ "0" != "${HITS}" ]; then

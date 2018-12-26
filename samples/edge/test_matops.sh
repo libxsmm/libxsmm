@@ -1,6 +1,6 @@
 #!/bin/bash
 #############################################################################
-# Copyright (c) 2017-2018, Intel Corporation                                #
+# Copyright (c) 2017-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -33,7 +33,7 @@ SDE64_BIN=/swtools/sde/kits/latest/sde64
 SDE64_ARCH="-knl"
 SDE64_FLAGS="-ptr_check -null_check -ptr_raise"
 SDE=${SDE64_BIN}" "${SDE64_FLAGS}" "${SDE64_ARCH}" -- "
-GREP=$(which grep 2>/dev/null)
+GREP=$(command -v grep 2>/dev/null)
 
 # iterations, order, precision, arch  and format
 if [ $# -eq 5 ]

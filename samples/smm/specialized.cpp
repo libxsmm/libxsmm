@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -85,7 +85,8 @@ int main(int argc, char* argv[])
     const libxsmm_blasint max_size = ((2ULL << 30/*2 GB*/) / ((static_cast<size_t>(asize) + bsize) * sizeof(ITYPE) + csize * sizeof(OTYPE)));
     const libxsmm_blasint s = LIBXSMM_MIN(0 < q ? q : max_size, max_size);
     const libxsmm_blasint aspace = LIBXSMM_ALIGNMENT / sizeof(ITYPE);
-    const size_t bwsize = (static_cast<size_t>(asize)/*load*/ + bsize/*load*/) * sizeof(ITYPE) + sizeof(OTYPE) * csize * 2/*RFO*/;
+    const size_t bwsize = (static_cast<size_t>(asize)/*load*/ + static_cast<size_t>(bsize)/*load*/) * sizeof(ITYPE)
+                        + (sizeof(OTYPE) * static_cast<size_t>(csize) * 2/*RFO*/);
     const double gflops = 2E-9 * s * m * n * k;
 #if LIBXSMM_TYPEINFO(ITYPE, FP)
     const char *const ops = "FLOPS";
@@ -220,7 +221,7 @@ int main(int argc, char* argv[])
           for (libxsmm_blasint h = 0; h < s; ++h) {
             const OTYPE *const u = c + static_cast<size_t>(csize) * h, *const v = c_array[h];
             libxsmm_matdiff_info dv;
-            result = libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc, &dv);
+            result = libxsmm_matdiff(&dv, LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc);
             if (EXIT_SUCCESS == result) {
               libxsmm_matdiff_reduce(&diff, &dv);
             }
@@ -285,7 +286,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint h = 0; h < s; ++h) {
           const OTYPE *const u = c + static_cast<size_t>(csize) * h, *const v = c_array[h];
           libxsmm_matdiff_info dv;
-          result = libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc, &dv);
+          result = libxsmm_matdiff(&dv, LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc);
           if (EXIT_SUCCESS == result) {
             libxsmm_matdiff_reduce(&diff, &dv);
           }
@@ -349,7 +350,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint h = 0; h < s; ++h) {
           const OTYPE *const u = c + static_cast<size_t>(csize) * h, *const v = c_array[h];
           libxsmm_matdiff_info dv;
-          result = libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc, &dv);
+          result = libxsmm_matdiff(&dv, LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc);
           if (EXIT_SUCCESS == result) {
             libxsmm_matdiff_reduce(&diff, &dv);
           }
@@ -487,7 +488,7 @@ int main(int argc, char* argv[])
 
       if (0 != check) {
         libxsmm_matdiff_info diff;
-        result = libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m, n, 0 == (benchmark & 1) ? c : d, NULL, &ldc, &ldc, &diff);
+        result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(OTYPE), m, n, 0 == (benchmark & 1) ? c : d, NULL, &ldc, &ldc);
         if (EXIT_SUCCESS == result) {
           fprintf(stdout, "\tcheck: %f\n", diff.l1_ref);
         }

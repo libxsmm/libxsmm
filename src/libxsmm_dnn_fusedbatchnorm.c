@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -460,7 +460,7 @@ LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_fusedbatchnorm_get_tensor(libxsmm_dn
       return_tensor = handle->grad_add;
     } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
       return_tensor = handle->reg_beta;
-    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+    } else if ( type == LIBXSMM_DNN_GRADIENT_CHANNEL_BETA ) {
       return_tensor = handle->grad_beta;
     } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA ) {
       return_tensor = handle->reg_gamma;
@@ -513,7 +513,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_release_tensor(libxsmm_
       handle->grad_add = 0;
     } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
       handle->reg_beta = 0;
-    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BETA ) {
+    } else if ( type == LIBXSMM_DNN_GRADIENT_CHANNEL_BETA ) {
       handle->grad_beta = 0;
     } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_GAMMA ) {
       handle->reg_gamma = 0;

@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -251,7 +251,7 @@ int main(int argc, char* argv[])
 #else
           if (LIBXSMM_GEMM_PREFETCH_NONE == prefetch) kernel(a, b, c); else kernel(a, b, c, a, b, c);
 #endif
-          result = libxsmm_matdiff(LIBXSMM_DATATYPE(double), maxsize, maxsize, NULL, c, &rnd[j].m, &rnd[j].m, &diff);
+          result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(double), maxsize, maxsize, NULL, c, &rnd[j].m, &rnd[j].m);
         }
         else {
           result = EXIT_FAILURE;

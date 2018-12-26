@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -43,11 +43,11 @@
 #endif
 
 /* function prototypes for below implementations */
-LIBXSMM_API_INTERN void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle);
-LIBXSMM_API_INTERN void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handle);
-LIBXSMM_API_INTERN void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS);
+LIBXSMM_API_INTERN void libxsmm_dnn_inout_transpose_lp(int ltid, libxsmm_dnn_layer* handle);
+LIBXSMM_API_INTERN void libxsmm_dnn_inout_transpose_resize_lp(int ltid, libxsmm_dnn_layer* handle);
+LIBXSMM_API_INTERN void libxsmm_dnn_transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*transposer)(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS);
-LIBXSMM_API_INTERN transposer get_transposer(int M, int N, int ldD, int ldS);
+LIBXSMM_API_INTERN transposer libxsmm_dnn_transposer(int M, int N, int ldD, int ldS);
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
@@ -151,7 +151,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i
 
 #if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
-void lp_transpose_input_and_output_vperm(int my_img_start, int my_img_end, libxsmm_dnn_layer* handle)
+void libxsmm_dnn_inout_transpose_lp_vperm(int my_img_start, int my_img_end, libxsmm_dnn_layer* handle)
 {
   typedef short element_input_type;
   typedef short element_output_type;
@@ -305,7 +305,7 @@ void lp_transpose_input_and_output_vperm(int my_img_start, int my_img_end, libxs
 #endif /*defined(LIBXSMM_INTRINSICS_AVX512_CORE)*/
 
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
-void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle)
+void libxsmm_dnn_inout_transpose_lp(int ltid, libxsmm_dnn_layer* handle)
 {
   typedef short element_input_type;
   typedef short element_output_type;
@@ -316,7 +316,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle)
 
 #if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
   if (handle->use_vperm_transposes == 1) {
-    lp_transpose_input_and_output_vperm(my_img_start, my_img_end, handle);
+    libxsmm_dnn_inout_transpose_lp_vperm(my_img_start, my_img_end, handle);
   }
   else
 #endif
@@ -432,7 +432,7 @@ void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle)
 
 #if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
-void lp_transpose_and_resize_input_and_output_vperm(int my_img_start, int my_img_end, libxsmm_dnn_layer* handle)
+void libxsmm_dnn_inout_transpose_resize_lp_vperm(int my_img_start, int my_img_end, libxsmm_dnn_layer* handle)
 {
   /*typedef short element_input_type;*/
   typedef short element_output_type;
@@ -491,7 +491,7 @@ void lp_transpose_and_resize_input_and_output_vperm(int my_img_start, int my_img
 #endif /*defined(LIBXSMM_INTRINSICS_AVX512_CORE)*/
 
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
-void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handle)
+void libxsmm_dnn_inout_transpose_resize_lp(int ltid, libxsmm_dnn_layer* handle)
 {
   typedef short element_input_type;
   typedef short element_output_type;
@@ -580,7 +580,7 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
 
 #if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
   if (handle->use_vperm_transposes == 1) {
-    lp_transpose_and_resize_input_and_output_vperm(my_img_start, my_img_end, handle);
+    libxsmm_dnn_inout_transpose_resize_lp_vperm(my_img_start, my_img_end, handle);
   }
   else
 #endif
@@ -621,10 +621,10 @@ void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handl
   }
 }
 #else
-LIBXSMM_API_INTERN void lp_transpose_and_resize_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
+LIBXSMM_API_INTERN void libxsmm_dnn_inout_transpose_resize_lp(int ltid, libxsmm_dnn_layer* handle) {
   LIBXSMM_UNUSED(ltid); LIBXSMM_UNUSED(handle);
 }
-LIBXSMM_API_INTERN void lp_transpose_input_and_output(int ltid, libxsmm_dnn_layer* handle) {
+LIBXSMM_API_INTERN void libxsmm_dnn_inout_transpose_lp(int ltid, libxsmm_dnn_layer* handle) {
   LIBXSMM_UNUSED(ltid); LIBXSMM_UNUSED(handle);
 }
 #endif /*defined(LIBXSMM_INTRINSICS_AVX512)*/
@@ -908,7 +908,7 @@ void gather_transpose_ps_16_9_10_16(int M, int N, float *LIBXSMM_RESTRICT dst, i
 }
 
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
-void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS)
+void libxsmm_dnn_transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS)
 {
   const __m512i vindex_base = _mm512_set_epi32(15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0);
   const __m512i vindex = _mm512_mullo_epi32(_mm512_set1_epi32(ldS), vindex_base);
@@ -930,7 +930,7 @@ void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, cons
   }
 }
 #else
-LIBXSMM_API_INTERN void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS)
+LIBXSMM_API_INTERN void libxsmm_dnn_transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS)
 {
   int n, m;
   for (n = 0; n < N; ++n) {
@@ -941,7 +941,7 @@ LIBXSMM_API_INTERN void transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT
 }
 #endif
 
-LIBXSMM_API_INTERN transposer get_transposer(int M, int N, int ldD, int ldS)
+LIBXSMM_API_INTERN transposer libxsmm_dnn_transposer(int M, int N, int ldD, int ldS)
 {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
   if (M == 16 && N == 7 && ldD == 8 && ldS == 16) {
@@ -995,7 +995,7 @@ LIBXSMM_API_INTERN transposer get_transposer(int M, int N, int ldD, int ldS)
 #else
   LIBXSMM_UNUSED(M); LIBXSMM_UNUSED(N); LIBXSMM_UNUSED(ldD); LIBXSMM_UNUSED(ldS);
 #endif
-  return transpose_fallback;
+  return libxsmm_dnn_transpose_fallback;
 }
 
 
@@ -1131,8 +1131,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(l
   /* check if we have a kernel JITed */
   if ( handle->use_upd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      const libxsmm_blasint ldx     = (libxsmm_blasint)(handle->desc.W+(2*handle->desc.pad_w));
-      const libxsmm_blasint ldx_alt = (libxsmm_blasint)(handle->desc.v*handle->ifmblock);
+      const libxsmm_blasint ldx     = (libxsmm_blasint)handle->desc.W+((libxsmm_blasint)2*handle->desc.pad_w);
+      const libxsmm_blasint ldx_alt = (libxsmm_blasint)handle->desc.v*handle->ifmblock;
       const libxsmm_blasint ldb_alt = (libxsmm_blasint)handle->ofwp;
       typedef float element_input_type;
       typedef float element_output_type;
@@ -1187,13 +1187,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_custom(lib
   /* check if we have a kernel JITed */
   if ( handle->use_upd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      const libxsmm_blasint lda     = (libxsmm_blasint)(handle->blocksofm*handle->ofmblock);
-      const libxsmm_blasint ldb     = (libxsmm_blasint)(handle->desc.W+(2*handle->desc.pad_w));
-      const libxsmm_blasint ldc     = (libxsmm_blasint)(handle->ofmblock);
+      const libxsmm_blasint lda     = (libxsmm_blasint)handle->blocksofm*handle->ofmblock;
+      const libxsmm_blasint ldb     = (libxsmm_blasint)handle->desc.W+((libxsmm_blasint)2*handle->desc.pad_w);
+      const libxsmm_blasint ldc     = (libxsmm_blasint)handle->ofmblock;
       const libxsmm_blasint lda_alt = (libxsmm_blasint)((handle->desc.pad_h == handle->desc.pad_h_in && handle->desc.pad_w == handle->desc.pad_w_in)
                             ? (handle->desc.v*handle->blocksifm*handle->ifmblock) : (handle->desc.v*handle->ifmblock));
-      const libxsmm_blasint ldb_alt = (libxsmm_blasint)(handle->ofwp);
-      const libxsmm_blasint ldc_alt = (libxsmm_blasint)(handle->ifmblock);
+      const libxsmm_blasint ldb_alt = (libxsmm_blasint)handle->ofwp;
+      const libxsmm_blasint ldc_alt = (libxsmm_blasint)handle->ifmblock;
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
@@ -1234,13 +1234,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_nhwc_rsck(libxs
   /* check if we have a kernel JITed */
   if ( handle->use_upd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      const libxsmm_blasint lda     = (libxsmm_blasint)(handle->blocksofm*handle->ofmblock);
-      const libxsmm_blasint ldb     = (libxsmm_blasint)(handle->desc.W+(2*handle->desc.pad_w));
-      const libxsmm_blasint ldc     = (libxsmm_blasint)(handle->blocksofm*handle->ofmblock);
+      const libxsmm_blasint lda     = (libxsmm_blasint)handle->blocksofm*handle->ofmblock;
+      const libxsmm_blasint ldb     = (libxsmm_blasint)handle->desc.W+((libxsmm_blasint)2*handle->desc.pad_w);
+      const libxsmm_blasint ldc     = (libxsmm_blasint)handle->blocksofm*handle->ofmblock;
       const libxsmm_blasint lda_alt = (libxsmm_blasint)((handle->desc.pad_h == handle->desc.pad_h_in && handle->desc.pad_w == handle->desc.pad_w_in)
                             ? (handle->desc.v*handle->blocksifm*handle->ifmblock) : (handle->desc.v*handle->ifmblock));
-      const libxsmm_blasint ldb_alt = (libxsmm_blasint)(handle->ofwp);
-      const libxsmm_blasint ldc_alt = (libxsmm_blasint)(handle->ifmblock);
+      const libxsmm_blasint ldb_alt = (libxsmm_blasint)handle->ofwp;
+      const libxsmm_blasint ldc_alt = (libxsmm_blasint)handle->ifmblock;
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;

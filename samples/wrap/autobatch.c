@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -81,9 +81,9 @@ int main(int argc, char* argv[])
 
   libxsmm_init();
 
-  a = (ITYPE*)malloc((size_t)maxn * maxn * sizeof(ITYPE));
-  b = (ITYPE*)malloc((size_t)maxn * maxn * sizeof(ITYPE));
-  c = (ITYPE*)malloc((size_t)maxn * maxn * sizeof(ITYPE));
+  a = (ITYPE*)malloc((size_t)maxn * (size_t)maxn * sizeof(ITYPE));
+  b = (ITYPE*)malloc((size_t)maxn * (size_t)maxn * sizeof(ITYPE));
+  c = (ITYPE*)malloc((size_t)maxn * (size_t)maxn * sizeof(ITYPE));
   if (0 == a || 0 == b || 0 == c) result = EXIT_FAILURE;
 
   if (EXIT_SUCCESS == result) {

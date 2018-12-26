@@ -1,6 +1,6 @@
 #!/bin/bash
 #############################################################################
-# Copyright (c) 2017-2018, Intel Corporation                                #
+# Copyright (c) 2017-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -30,9 +30,9 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-MKTEMP=$(which mktemp 2>/dev/null)
-ECHO=$(which echo 2>/dev/null)
-MV=$(which mv 2>/dev/null)
+MKTEMP=$(command -v mktemp 2>/dev/null)
+ECHO=$(command -v echo 2>/dev/null)
+MV=$(command -v mv 2>/dev/null)
 
 if [ "" != "${MKTEMP}" ] && [ "" != "${ECHO}" ] && [ "" != "${MV}" ]; then
   TEMPLATE=${1/XXXXXX/}.XXXXXX

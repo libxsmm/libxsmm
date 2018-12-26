@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2018, Intel Corporation                                     **
+** Copyright (c) 2018-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -47,7 +47,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_zero(libxsmm_blasint size, LIBXS
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -63,7 +63,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_add(libxsmm_blasint size, LIBXSM
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -79,7 +79,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_eltwise_mult(libxsmm_blasint siz
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -95,7 +95,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid(libxsmm_blasint size, LI
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -112,7 +112,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh(libxsmm_blasint size, LIBXS
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -128,7 +128,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu(libxsmm_blasint size, LIBXS
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -144,7 +144,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_inverse(libxsmm_blasint 
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -162,7 +162,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse(libxsmm_blasint siz
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -179,7 +179,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse(libxsmm_blasint siz
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -197,7 +197,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_transpose(libxsmm_blasint rows, 
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, src2D, src, cols);
   LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, dst2D, dst, rows);
   libxsmm_blasint job;
@@ -217,7 +217,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_copy(libxsmm_blasint size, LIBXS
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -233,7 +233,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement(libxsmm_blasint size,
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -249,7 +249,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square(libxsmm_blasin
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -265,7 +265,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_inverse(libxsmm_blasint size, LI
   const libxsmm_blasint chunksize = (size % nthreads == 0) ? (size / nthreads) : (size / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < size) ? (ltid * chunksize) : size;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < size) ? ((ltid + 1) * chunksize) : size;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, size);
   libxsmm_blasint i;
 
   for (i = thr_begin; i < thr_end; i++) {
@@ -281,7 +281,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_1D_2D(libxsmm_blasint m, libxsmm
   const libxsmm_blasint chunksize = (m % nthreads == 0) ? (m / nthreads) : (m / nthreads) + 1;
   /* compute thr_begin and thr_end */
   const libxsmm_blasint thr_begin = (ltid * chunksize < m) ? (ltid * chunksize) : m;
-  const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < m) ? ((ltid + 1) * chunksize) : m;
+  const libxsmm_blasint thr_end = LIBXSMM_MIN(ltid * chunksize + chunksize, m);
   libxsmm_blasint i, j;
   LIBXSMM_VLA_DECL(4, LIBXSMM_DNN_ELTWISE_FTYPE, real_dst, (LIBXSMM_DNN_ELTWISE_FTYPE*)dst, m/bm, bn, bm);
 
@@ -443,6 +443,17 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_bcst_colvector_ld(libxsmm_blasin
   }
 }
 
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_bcst_colvector_const_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *srcdst, LIBXSMM_DNN_ELTWISE_FTYPE *colv, LIBXSMM_DNN_ELTWISE_FTYPE const_bias) {
+  libxsmm_blasint i, j;
+
+  for ( j = 0; j < n; ++j ) {
+    LIBXSMM_PRAGMA_SIMD
+    for ( i = 0; i < m; ++i ) {
+      srcdst[(j*ld)+i] = colv[i] + const_bias;
+    }
+  }
+}
+
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
   libxsmm_blasint i, j;
 
@@ -545,17 +556,6 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse_inplace_eltwise_mul
     LIBXSMM_PRAGMA_SIMD
     for ( i = 0; i < m; ++i ) {
       dst[(j*ld)+i] *= (src[(j*ld)+i] < 0) ? (LIBXSMM_DNN_ELTWISE_FTYPE)0 : (LIBXSMM_DNN_ELTWISE_FTYPE)1;
-    }
-  }
-}
-
-LIBXSMM_API_INTERN void libxsmm_internal_matrix_elt_mult_tanh_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *src0, LIBXSMM_DNN_ELTWISE_FTYPE *src1, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
-  libxsmm_blasint i, j;
-
-  for ( j = 0; j < n; ++j ) {
-    LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      dst[(j*ld)+i] = src0[(j*ld)+i] * (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double) src1[(j*ld)+i]);
     }
   }
 }

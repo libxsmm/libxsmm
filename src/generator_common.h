@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -369,6 +369,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_mloop;
   unsigned int gp_reg_nloop;
   unsigned int gp_reg_kloop;
+  unsigned int gp_reg_reduce_count;
+  unsigned int gp_reg_reduce_loop;
   unsigned int gp_reg_help_0;
   unsigned int gp_reg_help_1;
   unsigned int gp_reg_help_2;
@@ -581,12 +583,10 @@ LIBXSMM_API_INTERN
 void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_generated_code,
                                            const char*                     i_routine_name     );
 
-LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking( unsigned int i_size,
-                                                            unsigned int i_max_block,
-                                                            unsigned int* o_range_1,
-                                                            unsigned int* o_block_1,
-                                                            unsigned int* o_range_2,
-                                                            unsigned int* o_block_2 );
+LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
+  unsigned int i_size, unsigned int i_max_block,
+  unsigned int* o_range_1, unsigned int* o_block_1,
+  unsigned int* o_range_2, unsigned int* o_block_2 );
 
 #endif /* GENERATOR_COMMON_H */
 

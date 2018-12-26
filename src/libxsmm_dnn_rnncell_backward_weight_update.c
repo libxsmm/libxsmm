@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_rnncell_backward_weight_update.h"
 #include "libxsmm_dnn_elementwise.h"
@@ -67,11 +67,10 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck_f32_f32(libxsmm_dnn_rnncel
 # define LIBXSMM_DNN_RNN_TANH_BWDUPD
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
 # undef LIBXSMM_DNN_RNN_TANH_BWDUPD
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
+# include "template/libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_ck_generic.tpl.c"
   } else {
     /* should not happen */
-  }
-  { /* open new scope for additional variable declarations (C89) */
-# include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
   }
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(kind);
@@ -133,6 +132,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck(libxsmm
 #define LIBXSMM_DNN_RNN_TANH_BWDUPD
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_DNN_RNN_TANH_BWDUPD
+      } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
+# include "template/libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_ck_generic.tpl.c"
       } else {
         /* should not happen */
       }

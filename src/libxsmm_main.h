@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2014-2018, Intel Corporation                                **
+** Copyright (c) 2014-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -188,6 +188,32 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor { /* 30 Byt
   char transa;
 };
 
+/** Structure storing arguments of packed GEMM. */
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_pgemm_descriptor { /* 30 Byte */
+  unsigned int m, n, k, lda, ldb, ldc;
+  unsigned char typesize;
+  unsigned char layout;
+  char transa, transb;
+  char alpha_val;
+};
+
+/** Structure storing arguments of packed TRSM. */
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor { /* 30 Byte */
+  union { double d; float s; } alpha;
+  unsigned int m, n, lda, ldb;
+  unsigned char typesize;
+  unsigned char layout;
+  char diag, side, uplo;
+  char transa;
+};
+
+/** Structure storing arguments of packed GETRF. */
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_getrf_descriptor { /* 30 Byte */
+  unsigned int m, n, lda;
+  unsigned char typesize;
+  unsigned char layout;
+};
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
   const libxsmm_gemm_descriptor* gemm;
   const unsigned int* row_ptr;
@@ -293,6 +319,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_xtransfunction xtrans;
   libxsmm_xconvfunction xconv;
   libxsmm_xtrsmfunction xtrsm;
+  libxsmm_xtrmmfunction xtrmm;
 } libxsmm_code_pointer;
 
 /** Structure which describes all tensors in LIBXSMM's DNN module */
@@ -586,24 +613,42 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_blasint bn;
   libxsmm_blasint bc;
   /* extrenal tensors */
-  libxsmm_dnn_tensor* w;
   libxsmm_dnn_tensor* xt;
-  libxsmm_dnn_tensor* u;
-  libxsmm_dnn_tensor* ht;
+  libxsmm_dnn_tensor* csp;
+  libxsmm_dnn_tensor* hp;
+  libxsmm_dnn_tensor* w;
+  libxsmm_dnn_tensor* r;
   libxsmm_dnn_tensor* b;
-  libxsmm_dnn_tensor* djdht;
-  libxsmm_dnn_tensor* djdu;
-  libxsmm_dnn_tensor* djdw;
-  libxsmm_dnn_tensor* djdxt;
-  libxsmm_dnn_tensor* djdb;
+  libxsmm_dnn_tensor* cst;
+  libxsmm_dnn_tensor* ht;
+  libxsmm_dnn_tensor* dxt;
+  libxsmm_dnn_tensor* dcsp;
+  libxsmm_dnn_tensor* dhp;
+  libxsmm_dnn_tensor* dw;
+  libxsmm_dnn_tensor* dr;
+  libxsmm_dnn_tensor* db;
+  libxsmm_dnn_tensor* dcs;
+  libxsmm_dnn_tensor* dht;
+  libxsmm_dnn_tensor* it;
+  libxsmm_dnn_tensor* ft;
+  libxsmm_dnn_tensor* ot;
+  libxsmm_dnn_tensor* cit;
+  libxsmm_dnn_tensor* cot;
+  float forget_bias;
   /* internal  state */
   void* internal_z;
   /* scratch pointers */
-  void* scratch_deltat;
   void* scratch_wT;
-  void* scratch_uT;
+  void* scratch_rT;
   void* scratch_xT;
   void* scratch_hT;
+  void* scratch_deltat;
+  void* scratch_di;
+  void* scratch_df;
+  void* scratch_do;
+  void* scratch_dci;
+  void* scratch_t1;
+  void* scratch_t2;
   /* options */
   int fwd_generic;
   int bwdupd_generic;
@@ -638,6 +683,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_MCOPY    = LIBXSMM_KERNEL_KIND_MCOPY,
   LIBXSMM_BUILD_KIND_TRANS    = LIBXSMM_KERNEL_KIND_TRANS,
   LIBXSMM_BUILD_KIND_TRSM     = LIBXSMM_KERNEL_KIND_TRSM,
+  LIBXSMM_BUILD_KIND_TRMM     = LIBXSMM_KERNEL_KIND_TRMM,
   LIBXSMM_BUILD_KIND_RMACSOA  = LIBXSMM_KERNEL_KIND_INVALID,
   LIBXSMM_BUILD_KIND_RMBCSOA,
   LIBXSMM_BUILD_KIND_SRSOA,
@@ -663,6 +709,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_mcopy_descriptor* matcopy;
   const libxsmm_trans_descriptor* trans;
   const libxsmm_trsm_descriptor* trsm;
+  const libxsmm_trmm_descriptor* trmm;
 } libxsmm_build_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
@@ -734,6 +781,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
   libxsmm_mcopy_descriptor mcopy;
   libxsmm_trans_descriptor trans;
   libxsmm_trsm_descriptor trsm;
+  libxsmm_trmm_descriptor trmm;
 } libxsmm_kernel_info;
 
 /** Attempts to receive information about JIT-generated code. */

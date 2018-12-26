@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Kunal Banerjee (Intel Corp.)
+/* Alexander Heinecke, Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
 #include <libxsmm.h>
@@ -63,10 +63,24 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     if (rnncell_desc.t < 1) {
       *status = LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL;
     }
-    handle->bk = 64;
-    handle->bn = 64;
-    handle->bc = 64;
-    if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
+
+    handle->bk = (handle->desc.bk == 0) ? 64 : handle->desc.bk;
+    handle->bn = (handle->desc.bn == 0) ? 64 : handle->desc.bn;
+    handle->bc = (handle->desc.bc == 0) ? 64 : handle->desc.bc;
+
+    if ( handle->desc.N % handle->bn != 0 ) {
+      handle->bn = handle->desc.N;
+      *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING;
+    }
+    if ( handle->desc.C % handle->bc != 0 ) {
+      handle->bc = handle->desc.C;
+      *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_C_BLOCKING;
+    }
+    if ( handle->desc.K % handle->bk != 0 ) {
+      handle->bk = handle->desc.K;
+      *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_K_BLOCKING;
+    }
+     if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
       handle->fwd_generic = 0;
       handle->bwdupd_generic = 0;
     } else {
@@ -75,11 +89,21 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     }
     /* Need to allocate space for scratch libxsmm_dnn_tensor's */
     handle->internal_z = 0;
+    handle->scratch_wT = 0;
+    handle->scratch_rT = 0;
+    handle->scratch_xT = 0;
+    handle->scratch_hT = 0;
     handle->scratch_deltat = 0;
+    handle->scratch_di = 0;
+    handle->scratch_df = 0;
+    handle->scratch_do = 0;
+    handle->scratch_dci = 0;
     handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
     if (NULL == handle->barrier)
     {
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
+      free(handle);
+      return 0;
     }
   } else {
     *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
@@ -112,8 +136,14 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
     layout = (libxsmm_dnn_tensor_datalayout*) malloc(sizeof(libxsmm_dnn_tensor_datalayout));
     if (layout != 0) {
       memset(layout, 0, sizeof(libxsmm_dnn_tensor_datalayout));
-      if ( (type == LIBXSMM_DNN_RNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_RNN_GRADIENT_INPUT) ||
-           (type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE) || (type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE) ) {
+      if ( (type == LIBXSMM_DNN_RNN_REGULAR_INPUT)             || (type == LIBXSMM_DNN_RNN_GRADIENT_INPUT)             ||
+           (type == LIBXSMM_DNN_RNN_REGULAR_CS_PREV)           || (type == LIBXSMM_DNN_RNN_GRADIENT_CS_PREV)           ||
+           (type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV) || (type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV) ||
+           (type == LIBXSMM_DNN_RNN_REGULAR_CS)                || (type == LIBXSMM_DNN_RNN_GRADIENT_CS)                ||
+           (type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE)      || (type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE)      ||
+           (type == LIBXSMM_DNN_RNN_INTERNAL_I)                || (type == LIBXSMM_DNN_RNN_INTERNAL_F)                 ||
+           (type == LIBXSMM_DNN_RNN_INTERNAL_O)                || (type == LIBXSMM_DNN_RNN_INTERNAL_CI)                ||
+           (type == LIBXSMM_DNN_RNN_INTERNAL_CO) ) {
         layout->format = handle->desc.buffer_format;
         layout->tensor_type = LIBXSMM_DNN_ACTIVATION;
         if ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_NCNC) > 0) {
@@ -134,7 +164,13 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
                 layout->dim_size[1] = (unsigned int)handle->bn;
                 layout->dim_size[2] = (unsigned int)(handle->desc.C / handle->bc);
                 layout->dim_size[3] = (unsigned int)(handle->desc.N / handle->bn);
-              } else if ( (type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE) || (type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE) ) {
+              } else if ( (type == LIBXSMM_DNN_RNN_REGULAR_CS_PREV)           || (type == LIBXSMM_DNN_RNN_GRADIENT_CS_PREV)           ||
+                          (type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV) || (type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV) ||
+                          (type == LIBXSMM_DNN_RNN_REGULAR_CS)                || (type == LIBXSMM_DNN_RNN_GRADIENT_CS)                ||
+                          (type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE)      || (type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE)      ||
+                          (type == LIBXSMM_DNN_RNN_INTERNAL_I)                || (type == LIBXSMM_DNN_RNN_INTERNAL_F)                 ||
+                          (type == LIBXSMM_DNN_RNN_INTERNAL_O)                || (type == LIBXSMM_DNN_RNN_INTERNAL_CI)                ||
+                          (type == LIBXSMM_DNN_RNN_INTERNAL_CO) ) {
                 layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
                 layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
@@ -178,7 +214,13 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
                 layout->dim_size[1] = (unsigned int)(handle->desc.C / handle->bc);
                 layout->dim_size[2] = (unsigned int)handle->bn;
                 layout->dim_size[3] = (unsigned int)(handle->desc.N / handle->bn);
-              } else if ( (type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE) || (type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE) ) {
+              } else if ( (type == LIBXSMM_DNN_RNN_REGULAR_CS_PREV)           || (type == LIBXSMM_DNN_RNN_GRADIENT_CS_PREV)           ||
+                          (type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV) || (type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV) ||
+                          (type == LIBXSMM_DNN_RNN_REGULAR_CS)                || (type == LIBXSMM_DNN_RNN_GRADIENT_CS)                ||
+                          (type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE)      || (type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE)      ||
+                          (type == LIBXSMM_DNN_RNN_INTERNAL_I)                || (type == LIBXSMM_DNN_RNN_INTERNAL_F)                 ||
+                          (type == LIBXSMM_DNN_RNN_INTERNAL_O)                || (type == LIBXSMM_DNN_RNN_INTERNAL_CI)                ||
+                          (type == LIBXSMM_DNN_RNN_INTERNAL_CO) ) {
                 layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
@@ -227,19 +269,33 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
                 layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
                 layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
                 layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
-                layout->dim_size[0] = (unsigned int)handle->bk;
-                layout->dim_size[1] = (unsigned int)handle->bc;
-                layout->dim_size[2] = (unsigned int)(handle->desc.C / handle->bc);
-                layout->dim_size[3] = (unsigned int)(handle->desc.K / handle->bk);
+                if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
+                  layout->dim_size[0] = (unsigned int)handle->bk;
+                  layout->dim_size[1] = (unsigned int)handle->bc;
+                  layout->dim_size[2] = (unsigned int)(handle->desc.C / handle->bc) * 4;
+                  layout->dim_size[3] = (unsigned int)(handle->desc.K / handle->bk) * 4;
+                } else {
+                  layout->dim_size[0] = (unsigned int)handle->bk;
+                  layout->dim_size[1] = (unsigned int)handle->bc;
+                  layout->dim_size[2] = (unsigned int)(handle->desc.C / handle->bc);
+                  layout->dim_size[3] = (unsigned int)(handle->desc.K / handle->bk);
+                }
               } else if ( (type == LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT) || (type == LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT) ) {
                 layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
-                layout->dim_size[0] = (unsigned int)handle->bk;
-                layout->dim_size[1] = (unsigned int)handle->bk;
-                layout->dim_size[2] = (unsigned int)(handle->desc.K / handle->bk);
-                layout->dim_size[3] = (unsigned int)(handle->desc.K / handle->bk);
+                if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
+                  layout->dim_size[0] = (unsigned int)handle->bk;
+                  layout->dim_size[1] = (unsigned int)handle->bk;
+                  layout->dim_size[2] = (unsigned int)(handle->desc.K / handle->bk) * 4;
+                  layout->dim_size[3] = (unsigned int)(handle->desc.K / handle->bk) * 4;
+                } else {
+                  layout->dim_size[0] = (unsigned int)handle->bk;
+                  layout->dim_size[1] = (unsigned int)handle->bk;
+                  layout->dim_size[2] = (unsigned int)(handle->desc.K / handle->bk);
+                  layout->dim_size[3] = (unsigned int)(handle->desc.K / handle->bk);
+                }
               } else {
                 free(layout->dim_type);
                 free(layout->dim_size);
@@ -271,19 +327,33 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
                 layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
                 layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_size[0] = (unsigned int)handle->bk;
-                layout->dim_size[1] = (unsigned int)(handle->desc.K / handle->bk);
-                layout->dim_size[2] = (unsigned int)handle->bc;
-                layout->dim_size[3] = (unsigned int)(handle->desc.C / handle->bc);
+                if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
+                  layout->dim_size[0] = (unsigned int)handle->bk;
+                  layout->dim_size[1] = (unsigned int)(handle->desc.K / handle->bk) * 4;
+                  layout->dim_size[2] = (unsigned int)handle->bc;
+                  layout->dim_size[3] = (unsigned int)(handle->desc.C / handle->bc) * 4;
+                } else {
+                  layout->dim_size[0] = (unsigned int)handle->bk;
+                  layout->dim_size[1] = (unsigned int)(handle->desc.K / handle->bk);
+                  layout->dim_size[2] = (unsigned int)handle->bc;
+                  layout->dim_size[3] = (unsigned int)(handle->desc.C / handle->bc);
+                }
               } else if ( (type == LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT) || (type == LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT) ) {
                 layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
-                layout->dim_size[0] = (unsigned int)handle->bk;
-                layout->dim_size[1] = (unsigned int)(handle->desc.K / handle->bk);
-                layout->dim_size[2] = (unsigned int)handle->bk;
-                layout->dim_size[3] = (unsigned int)(handle->desc.K / handle->bk);
+                if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
+                  layout->dim_size[0] = (unsigned int)handle->bk;
+                  layout->dim_size[1] = (unsigned int)(handle->desc.K / handle->bk) * 4;
+                  layout->dim_size[2] = (unsigned int)handle->bk;
+                  layout->dim_size[3] = (unsigned int)(handle->desc.K / handle->bk) * 4;
+                } else {
+                  layout->dim_size[0] = (unsigned int)handle->bk;
+                  layout->dim_size[1] = (unsigned int)(handle->desc.K / handle->bk);
+                  layout->dim_size[2] = (unsigned int)handle->bk;
+                  layout->dim_size[3] = (unsigned int)(handle->desc.K / handle->bk);
+                }
               } else {
                 free(layout->dim_type);
                 free(layout->dim_size);
@@ -322,8 +392,13 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
               if ( (type == LIBXSMM_DNN_RNN_REGULAR_BIAS) || (type == LIBXSMM_DNN_RNN_GRADIENT_BIAS) ) {
                 layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
-                layout->dim_size[0] = (unsigned int)handle->bk;
-                layout->dim_size[1] = (unsigned int)(handle->desc.K / handle->bk);
+                if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
+                  layout->dim_size[0] = (unsigned int)handle->bk;
+                  layout->dim_size[1] = (unsigned int)(handle->desc.K / handle->bk) * 4;
+                } else {
+                  layout->dim_size[0] = (unsigned int)handle->bk;
+                  layout->dim_size[1] = (unsigned int)(handle->desc.K / handle->bk);
+                }
               } else {
                 free(layout->dim_type);
                 free(layout->dim_size);
@@ -367,27 +442,57 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
-    switch (kind) {
-      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-        size += 0;
+    switch (handle->desc.cell_type) {
+      case LIBXSMM_DNN_RNNCELL_RNN_RELU:
+      case LIBXSMM_DNN_RNNCELL_RNN_SIGMOID:
+      case LIBXSMM_DNN_RNNCELL_RNN_TANH: {
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+            size += 0;
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+            size += (size_t)handle->desc.C * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in)  + 64; /* wT */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in)  + 64; /* rT */
+            size += (size_t)handle->desc.C * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_in)  + 64; /* xT */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* hT */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t + 64; /* deltat */
+          } break;
+          default: {
+            *status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
+        }
       } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_BWD:
-      case LIBXSMM_DNN_COMPUTE_KIND_UPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-        size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t; /* deltat */
-        size += 64;
-        size += (size_t)handle->desc.C * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in); /* wT */
-        size += 64;
-        size += (size_t)handle->desc.K * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in); /* uT */
-        size += 64;
-        size += (size_t)handle->desc.C * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_in); /* xT */
-        size += 64;
-        size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_in); /* hT */
-        size += 64;
+      case  LIBXSMM_DNN_RNNCELL_LSTM: {
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+            size += 0;
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+            size += (size_t)handle->desc.C * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in) * 4 + 64; /* wT */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in) * 4 + 64; /* rT */
+            size += (size_t)handle->desc.C * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_in)  + 64; /* xT */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* hT */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* deltat */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* di */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* df */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* do */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* dci */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* t1 */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* t2 */
+          } break;
+          default: {
+            *status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
+        }
       } break;
       default: {
-        *status = LIBXSMM_DNN_ERR_INVALID_KIND;
+        *status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
     }
   } else {
@@ -405,62 +510,177 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
   size_t offset = 0;
 
   if (0 != handle) {
-    switch (kind) {
-      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-        /* forward only has no scratch need */
+    switch (handle->desc.cell_type) {
+      case LIBXSMM_DNN_RNNCELL_RNN_RELU:
+      case LIBXSMM_DNN_RNNCELL_RNN_SIGMOID:
+      case LIBXSMM_DNN_RNNCELL_RNN_TANH: {
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+            /* forward only has no scratch need */
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+            if (scratch == 0) {
+              status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
+              return status;
+            }
+            /* wT */
+            if (address % 64 == 0) {
+              handle->scratch_wT = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_wT = (void*)(address+offset);
+            }
+            address += ((size_t)handle->desc.C * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in)) + 64;
+            /* rT */
+            if (address % 64 == 0) {
+              handle->scratch_rT = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_rT = (void*)(address+offset);
+            }
+            address += ((size_t)handle->desc.K * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in)) + 64;
+            /* xT */
+            if (address % 64 == 0) {
+              handle->scratch_xT = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_xT = (void*)(address+offset);
+            }
+            address += ((size_t)handle->desc.C * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_in)) + 64;
+            /* hT */
+            if (address % 64 == 0) {
+              handle->scratch_hT = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_hT = (void*)(address+offset);
+            }
+            address += ((size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out)) + 64;
+            /* deltat */
+            if (address % 64 == 0) {
+              handle->scratch_deltat = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_deltat = (void*)(address+offset);
+            }
+            address += ((size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t) + 64;
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
+        }
       } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_BWD:
-      case LIBXSMM_DNN_COMPUTE_KIND_UPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-        if (scratch == 0) {
-          status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
-          return status;
+      case LIBXSMM_DNN_RNNCELL_LSTM: {
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+            /* forward only has no scratch need */
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+            if (scratch == 0) {
+              status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
+              return status;
+            }
+            /* wT */
+            if (address % 64 == 0) {
+              handle->scratch_wT = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_wT = (void*)(address+offset);
+            }
+            address += ((size_t)handle->desc.C * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in)) * 4 + 64;
+            /* rT */
+            if (address % 64 == 0) {
+              handle->scratch_rT = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_rT = (void*)(address+offset);
+            }
+            address += ((size_t)handle->desc.K * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in)) * 4 + 64;
+            /* xT */
+            if (address % 64 == 0) {
+              handle->scratch_xT = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_xT = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.C * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_in) + 64;
+            /* hT */
+            if (address % 64 == 0) {
+              handle->scratch_hT = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_hT = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* deltat */
+            if (address % 64 == 0) {
+              handle->scratch_deltat = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_deltat = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* di */
+            if (address % 64 == 0) {
+              handle->scratch_di = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_di = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* df */
+            if (address % 64 == 0) {
+              handle->scratch_df = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_df = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* do */
+            if (address % 64 == 0) {
+              handle->scratch_do = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_do = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* dci */
+            if (address % 64 == 0) {
+              handle->scratch_dci = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_dci = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* t1 */
+            if (address % 64 == 0) {
+              handle->scratch_t1 = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_t1 = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* t2 */
+            if (address % 64 == 0) {
+              handle->scratch_t2 = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_t2 = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
         }
-
-        /* deltat */
-        if (address % 64 == 0) {
-          handle->scratch_deltat = (void*)address;
-        } else {
-          offset = (64 - address % 64);
-          handle->scratch_deltat = (void*)(address+offset);
-        }
-        address += ((size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) * (size_t)handle->desc.t) + 64;
-        /* wT */
-        if (address % 64 == 0) {
-          handle->scratch_wT = (void*)address;
-        } else {
-          offset = (64 - address % 64);
-          handle->scratch_wT = (void*)(address+offset);
-        }
-        address += ((size_t)handle->desc.C * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in)) + 64;
-        /* uT */
-        if (address % 64 == 0) {
-          handle->scratch_uT = (void*)address;
-        } else {
-          offset = (64 - address % 64);
-          handle->scratch_uT = (void*)(address+offset);
-        }
-        address += ((size_t)handle->desc.K * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in)) + 64;
-        /* xT */
-        if (address % 64 == 0) {
-          handle->scratch_xT = (void*)address;
-        } else {
-          offset = (64 - address % 64);
-          handle->scratch_xT = (void*)(address+offset);
-        }
-        address += ((size_t)handle->desc.C * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_in)) + 64;
-        /* hT */
-        if (address % 64 == 0) {
-          handle->scratch_hT = (void*)address;
-        } else {
-          offset = (64 - address % 64);
-          handle->scratch_hT = (void*)(address+offset);
-        }
-        address += ((size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_in)) + 64;
       } break;
       default: {
-        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+        status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
     }
   } else {
@@ -476,22 +696,57 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rn
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
-    switch (kind) {
-      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-        /* forward only has no scratch need */
+    switch (handle->desc.cell_type) {
+      case LIBXSMM_DNN_RNNCELL_RNN_RELU:
+      case LIBXSMM_DNN_RNNCELL_RNN_SIGMOID:
+      case LIBXSMM_DNN_RNNCELL_RNN_TANH: {
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+            /* forward only has no scratch need */
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+            handle->scratch_wT = 0;
+            handle->scratch_rT = 0;
+            handle->scratch_xT = 0;
+            handle->scratch_hT = 0;
+            handle->scratch_deltat = 0;
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
+        }
       } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_BWD:
-      case LIBXSMM_DNN_COMPUTE_KIND_UPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-        handle->scratch_deltat = 0;
-        handle->scratch_wT = 0;
-        handle->scratch_uT = 0;
-        handle->scratch_xT = 0;
-        handle->scratch_hT = 0;
+      case LIBXSMM_DNN_RNNCELL_LSTM: {
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+            /* forward only has no scratch need */
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+            handle->scratch_wT = 0;
+            handle->scratch_rT = 0;
+            handle->scratch_xT = 0;
+            handle->scratch_hT = 0;
+            handle->scratch_deltat = 0;
+            handle->scratch_di = 0;
+            handle->scratch_df = 0;
+            handle->scratch_do = 0;
+            handle->scratch_dci = 0;
+            handle->scratch_t1 = 0;
+            handle->scratch_t2 = 0;
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
+        }
       } break;
       default: {
-        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+        status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
     }
   } else {
@@ -508,20 +763,43 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_internalstate_size(const libxsmm_dnn_
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
-    switch (kind) {
-      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-        size += (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype * (size_t)handle->desc.t; /* zt */
-        size += 64;
+    switch (handle->desc.cell_type) {
+      case LIBXSMM_DNN_RNNCELL_RNN_RELU:
+      case LIBXSMM_DNN_RNNCELL_RNN_SIGMOID:
+      case LIBXSMM_DNN_RNNCELL_RNN_TANH: {
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype * (size_t)handle->desc.t + 64; /* zt */
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype * (size_t)handle->desc.t + 64; /* zt */
+          } break;
+          default: {
+            *status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
+        }
       } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_BWD:
-      case LIBXSMM_DNN_COMPUTE_KIND_UPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-        size += (size_t)handle->desc.K * (size_t)handle->desc.N * sizeof_datatype * (size_t)handle->desc.t; /* zt */
-        size += 64;
+      case LIBXSMM_DNN_RNNCELL_LSTM: {
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+            /* with i, f, o, ci, co, cs exposed as i/o, there is currently no need for internal state */
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+            /* with i, f, o, ci, co, cs exposed as i/o, there is currently no need for internal state */
+          } break;
+          default: {
+            *status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
+        }
       } break;
       default: {
-        *status = LIBXSMM_DNN_ERR_INVALID_KIND;
+        *status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
     }
   } else {
@@ -538,34 +816,56 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_internalstate(libxsmm_dnn
   uintptr_t address = (uintptr_t)internalstate;
   size_t offset = 0;
 
-  if (internalstate == 0) {
-    status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
-    return status;
-  }
-
   if (0 != handle) {
-    switch (kind) {
-      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-        if (address % 64 == 0) {
-          handle->internal_z = (void*)address;
-        } else {
-          offset = (64 - address % 64);
-          handle->internal_z = (void*)(address+offset);
+    switch (handle->desc.cell_type) {
+      case LIBXSMM_DNN_RNNCELL_RNN_RELU:
+      case LIBXSMM_DNN_RNNCELL_RNN_SIGMOID:
+      case LIBXSMM_DNN_RNNCELL_RNN_TANH: {
+        if (internalstate == 0) {
+          status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
+          return status;
+        }
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+            if (address % 64 == 0) {
+              handle->internal_z = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->internal_z = (void*)(address+offset);
+            }
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+            if (address % 64 == 0) {
+              handle->internal_z = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->internal_z = (void*)(address+offset);
+            }
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
         }
       } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_BWD:
-      case LIBXSMM_DNN_COMPUTE_KIND_UPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-        if (address % 64 == 0) {
-          handle->internal_z = (void*)address;
-        } else {
-          offset = (64 - address % 64);
-          handle->internal_z = (void*)(address+offset);
+      case LIBXSMM_DNN_RNNCELL_LSTM: {
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
         }
       } break;
       default: {
-        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+        status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
     }
   } else {
@@ -581,18 +881,41 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_internalstate(libxsmm_
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
-    switch (kind) {
-      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-        handle->internal_z = 0;
+    switch (handle->desc.cell_type) {
+      case LIBXSMM_DNN_RNNCELL_RNN_RELU:
+      case LIBXSMM_DNN_RNNCELL_RNN_SIGMOID:
+      case LIBXSMM_DNN_RNNCELL_RNN_TANH: {
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+            handle->internal_z = 0;
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+            handle->internal_z = 0;
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
+        }
       } break;
-      case LIBXSMM_DNN_COMPUTE_KIND_BWD:
-      case LIBXSMM_DNN_COMPUTE_KIND_UPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
-      case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-        handle->internal_z = 0;
+      case LIBXSMM_DNN_RNNCELL_LSTM: {
+        switch (kind) {
+          case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+          } break;
+          case LIBXSMM_DNN_COMPUTE_KIND_BWD:
+          case LIBXSMM_DNN_COMPUTE_KIND_UPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
+          case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_KIND;
+          }
+        }
       } break;
       default: {
-        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+        status = LIBXSMM_DNN_ERR_INVALID_RNN_TYPE;
       }
     }
   } else {
@@ -603,18 +926,12 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_internalstate(libxsmm_
 }
 
 
-LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_assign_internalstate(libxsmm_dnn_rnncell* handle, const void* zgoldtb)
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_allocate_forget_bias(libxsmm_dnn_rnncell* handle, const float forget_bias)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
-  if (handle != 0 && zgoldtb != 0) {
-    const libxsmm_blasint K = handle->desc.K, N = handle->desc.N, t = handle->desc.t;
-    LIBXSMM_VLA_DECL(2, /*const*/ LIBXSMM_DNN_ELTWISE_FTYPE, zgold, (/*const*/ LIBXSMM_DNN_ELTWISE_FTYPE*)zgoldtb, K * N);
-    LIBXSMM_VLA_DECL(2, LIBXSMM_DNN_ELTWISE_FTYPE, z, (LIBXSMM_DNN_ELTWISE_FTYPE*)handle->internal_z, K * N);
-    libxsmm_blasint it;
-    for (it = 0; it < t; ++it) {
-      libxsmm_internal_matrix_copy(K*N, &LIBXSMM_VLA_ACCESS(2, zgold, it, 0, K * N), &LIBXSMM_VLA_ACCESS(2, z, it, 0, K * N), 0, 0, 1);
-    }
+  if (handle != 0) {
+    handle->forget_bias = forget_bias;
   } else {
     status = LIBXSMM_DNN_ERR_INVALID_HANDLE_TENSOR;
   }
@@ -628,11 +945,17 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_tensor(libxsmm_dnn_rnncel
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check for tensor type */
-  if ( (type != LIBXSMM_DNN_RNN_REGULAR_INPUT)        && (type != LIBXSMM_DNN_RNN_GRADIENT_INPUT)  &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE) && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE) &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_WEIGHT)       && (type != LIBXSMM_DNN_RNN_GRADIENT_WEIGHT) &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT) && (type != LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT) &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_BIAS)         && (type != LIBXSMM_DNN_RNN_GRADIENT_BIAS) ) {
+  if ( (type != LIBXSMM_DNN_RNN_REGULAR_INPUT)             && (type != LIBXSMM_DNN_RNN_GRADIENT_INPUT)             &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_CS_PREV)           && (type != LIBXSMM_DNN_RNN_GRADIENT_CS_PREV)           &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV) && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV) &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_WEIGHT)            && (type != LIBXSMM_DNN_RNN_GRADIENT_WEIGHT)            &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT)      && (type != LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT)      &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_BIAS)              && (type != LIBXSMM_DNN_RNN_GRADIENT_BIAS)              &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_CS)                && (type != LIBXSMM_DNN_RNN_GRADIENT_CS)                &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE)      && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE)      &&
+       (type != LIBXSMM_DNN_RNN_INTERNAL_I)                && (type != LIBXSMM_DNN_RNN_INTERNAL_F)                 &&
+       (type != LIBXSMM_DNN_RNN_INTERNAL_O)                && (type != LIBXSMM_DNN_RNN_INTERNAL_CI)                &&
+       (type != LIBXSMM_DNN_RNN_INTERNAL_CO) ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
     return status;
   }
@@ -644,23 +967,45 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_tensor(libxsmm_dnn_rnncel
       if ( type == LIBXSMM_DNN_RNN_REGULAR_INPUT ) {
         handle->xt = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_INPUT ) {
-        handle->djdxt = (libxsmm_dnn_tensor*)tensor;
-      } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE ) {
-        handle->ht = (libxsmm_dnn_tensor*)tensor;
-      } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE ) {
-        handle->djdht = (libxsmm_dnn_tensor*)tensor;
+        handle->dxt = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_REGULAR_CS_PREV ) {
+        handle->csp = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_CS_PREV ) {
+        handle->dcsp = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV ) {
+        handle->hp = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV ) {
+        handle->dhp = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_REGULAR_WEIGHT ) {
         handle->w = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_WEIGHT ) {
-        handle->djdw = (libxsmm_dnn_tensor*)tensor;
+        handle->dw = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT ) {
-        handle->u = (libxsmm_dnn_tensor*)tensor;
+        handle->r = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT ) {
-        handle->djdu = (libxsmm_dnn_tensor*)tensor;
+        handle->dr = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_REGULAR_BIAS ) {
         handle->b = (libxsmm_dnn_tensor*)tensor;
       } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_BIAS ) {
-        handle->djdb = (libxsmm_dnn_tensor*)tensor;
+        handle->db = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_REGULAR_CS ) {
+        handle->cst = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_CS ) {
+        handle->dcs = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE ) {
+        handle->ht = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE ) {
+        handle->dht = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_I ) {
+        handle->it = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_F ) {
+        handle->ft = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_O ) {
+        handle->ot = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_CI ) {
+        handle->cit = (libxsmm_dnn_tensor*)tensor;
+      } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_CO ) {
+        handle->cot = (libxsmm_dnn_tensor*)tensor;
       } else {
         /* cannot happen */
       }
@@ -684,11 +1029,17 @@ LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_rnncell_get_tensor(libxsmm_dnn_rnnce
   LIBXSMM_UNUSED(status/*TODO*/);
 
   /* check for tensor type */
-  if ( (type != LIBXSMM_DNN_RNN_REGULAR_INPUT)        && (type != LIBXSMM_DNN_RNN_GRADIENT_INPUT)  &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE) && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE) &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_WEIGHT)       && (type != LIBXSMM_DNN_RNN_GRADIENT_WEIGHT) &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT) && (type != LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT) &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_BIAS)         && (type != LIBXSMM_DNN_RNN_GRADIENT_BIAS) ) {
+  if ( (type != LIBXSMM_DNN_RNN_REGULAR_INPUT)             && (type != LIBXSMM_DNN_RNN_GRADIENT_INPUT)             &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_CS_PREV)           && (type != LIBXSMM_DNN_RNN_GRADIENT_CS_PREV)           &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV) && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV) &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_WEIGHT)            && (type != LIBXSMM_DNN_RNN_GRADIENT_WEIGHT)            &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT)      && (type != LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT)      &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_BIAS)              && (type != LIBXSMM_DNN_RNN_GRADIENT_BIAS)              &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_CS)                && (type != LIBXSMM_DNN_RNN_GRADIENT_CS)                &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE)      && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE)      &&
+       (type != LIBXSMM_DNN_RNN_INTERNAL_I)                && (type != LIBXSMM_DNN_RNN_INTERNAL_F)                 &&
+       (type != LIBXSMM_DNN_RNN_INTERNAL_O)                && (type != LIBXSMM_DNN_RNN_INTERNAL_CI)                &&
+       (type != LIBXSMM_DNN_RNN_INTERNAL_CO) ) {
     return tensor;
   }
 
@@ -696,23 +1047,45 @@ LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_rnncell_get_tensor(libxsmm_dnn_rnnce
     if ( type == LIBXSMM_DNN_RNN_REGULAR_INPUT ) {
       tensor = handle->xt;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_INPUT ) {
-      tensor = handle->djdxt;
-    } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE ) {
-      tensor = handle->ht;
-    } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE ) {
-      tensor = handle->djdht;
+      tensor = handle->dxt;
+    } else if ( type == LIBXSMM_DNN_RNN_REGULAR_CS_PREV ) {
+      tensor = handle->csp;
+    } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_CS_PREV ) {
+      tensor = handle->dcsp;
+    } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV ) {
+      tensor = handle->hp;
+    } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV ) {
+      tensor = handle->dhp;
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_WEIGHT ) {
       tensor = handle->w;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_WEIGHT ) {
-      tensor = handle->djdw;
+      tensor = handle->dw;
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT ) {
-      tensor = handle->u;
+      tensor = handle->r;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT ) {
-      tensor = handle->djdu;
+      tensor = handle->dr;
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_BIAS ) {
       tensor = handle->b;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_BIAS ) {
-      tensor = handle->djdb;
+      tensor = handle->db;
+    } else if ( type == LIBXSMM_DNN_RNN_REGULAR_CS ) {
+      tensor = handle->cst;
+    } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_CS ) {
+      tensor = handle->dcs;
+    } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE ) {
+      tensor = handle->ht;
+    } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE ) {
+      tensor = handle->dht;
+    } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_I ) {
+      tensor = handle->it;
+    } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_F ) {
+      tensor = handle->ft;
+    } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_O ) {
+      tensor = handle->ot;
+    } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_CI ) {
+      tensor = handle->cit;
+    } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_CO ) {
+      tensor = handle->cot;
     } else {
       /* cannot happen */
     }
@@ -727,11 +1100,17 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_tensor(libxsmm_dnn_rnn
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   /* check for tensor type */
-  if ( (type != LIBXSMM_DNN_RNN_REGULAR_INPUT)       && (type != LIBXSMM_DNN_RNN_GRADIENT_INPUT)  &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE) && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE) &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_WEIGHT)       && (type != LIBXSMM_DNN_RNN_GRADIENT_WEIGHT) &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT) && (type != LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT) &&
-       (type != LIBXSMM_DNN_RNN_REGULAR_BIAS)         && (type != LIBXSMM_DNN_RNN_GRADIENT_BIAS) ) {
+  if ( (type != LIBXSMM_DNN_RNN_REGULAR_INPUT)             && (type != LIBXSMM_DNN_RNN_GRADIENT_INPUT)             &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_CS_PREV)           && (type != LIBXSMM_DNN_RNN_GRADIENT_CS_PREV)           &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV) && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV) &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_WEIGHT)            && (type != LIBXSMM_DNN_RNN_GRADIENT_WEIGHT)            &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT)      && (type != LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT)      &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_BIAS)              && (type != LIBXSMM_DNN_RNN_GRADIENT_BIAS)              &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_CS)                && (type != LIBXSMM_DNN_RNN_GRADIENT_CS)                &&
+       (type != LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE)      && (type != LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE)      &&
+       (type != LIBXSMM_DNN_RNN_INTERNAL_I)                && (type != LIBXSMM_DNN_RNN_INTERNAL_F)                 &&
+       (type != LIBXSMM_DNN_RNN_INTERNAL_O)                && (type != LIBXSMM_DNN_RNN_INTERNAL_CI)                &&
+       (type != LIBXSMM_DNN_RNN_INTERNAL_CO) ) {
     status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
     return status;
   }
@@ -740,23 +1119,45 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_tensor(libxsmm_dnn_rnn
     if ( type == LIBXSMM_DNN_RNN_REGULAR_INPUT ) {
       handle->xt = 0;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_INPUT ) {
-      handle->djdxt = 0;
-    } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE ) {
-      handle->ht = 0;
-    } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE ) {
-      handle->djdht = 0;
+      handle->dxt = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_REGULAR_CS_PREV ) {
+      handle->csp = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_CS_PREV ) {
+      handle->dcsp = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV ) {
+      handle->hp = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV ) {
+      handle->dhp = 0;
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_WEIGHT ) {
       handle->w = 0;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_WEIGHT ) {
-      handle->djdw = 0;
+      handle->dw = 0;
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT ) {
-      handle->u = 0;
+      handle->r = 0;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT ) {
-      handle->djdu = 0;
+      handle->dr = 0;
     } else if ( type == LIBXSMM_DNN_RNN_REGULAR_BIAS ) {
       handle->b = 0;
     } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_BIAS ) {
-      handle->djdb = 0;
+      handle->db = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_REGULAR_CS ) {
+      handle->cst = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_CS ) {
+      handle->dcs = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE ) {
+      handle->ht = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE ) {
+      handle->dht = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_I ) {
+      handle->it = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_F ) {
+      handle->ft = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_O ) {
+      handle->ot = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_CI ) {
+      handle->cit = 0;
+    } else if ( type == LIBXSMM_DNN_RNN_INTERNAL_CO ) {
+      handle->cot = 0;
     } else {
       /* cannot happen */
     }
@@ -780,8 +1181,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_st(libxsmm_dnn_rnncell
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CK) ) {
           status = libxsmm_dnn_rnncell_st_fwd_nc_ck( handle, start_thread, tid );
         } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK)  ) {
-          status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
-          /*status = libxsmm_dnn_rnncell_st_fwd_ncnc_kcck( handle, start_thread, tid );*/
+          status = libxsmm_dnn_rnncell_st_fwd_ncnc_kcck( handle, start_thread, tid );
+        } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK)  ) {
+          status = libxsmm_dnn_rnncell_st_fwd_nc_kcck( handle, start_thread, tid );
         } else {
           status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
         }

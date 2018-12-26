@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -73,7 +73,6 @@ class FusedBNormXSMM : public FusedBNormImpl
     libxsmm_dnn_err_t status;
 
     void *bexpect=NULL, *bstddev=NULL, *bvariance=NULL;
-    float scaling_factor_=0;
     void *scratch=NULL;
     bool updated_scratch=false;
 
@@ -82,6 +81,6 @@ class FusedBNormXSMM : public FusedBNormImpl
     virtual ~FusedBNormXSMM(void) {}
 
     // Assume external threading, e.g., #pragma omp
-    void forwardPropagate(vector<TensorBuf*> inp, TensorBuf* gammap, TensorBuf* betap, float *gmeanp, float *gvarp, TensorBuf *outp, int tid);
+    void forwardPropagate(vector<TensorBuf*> inp, TensorBuf* gammap, TensorBuf* betap, TensorBuf *gmeanp, TensorBuf *gvarp, TensorBuf *outp, int tid);
     void backPropagate(vector<TensorBuf*> inp, TensorBuf* outp, TensorBuf* gammap, TensorBuf *deloutp, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf *> delinp, int tid);
 };

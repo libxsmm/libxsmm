@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -39,438 +39,15 @@
 # include <omp.h>
 #endif
 
-#define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) { fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) ); global_status = A; }
-
 #define USE_OVERWRITE
 /*#define USE_FUSED_BATCH_STATS*/
 /*#define USE_FUSED_RELU_BWD*/
 #define USE_OVERWRITE_RNE
 
-/* it's fine to alias in and out */
-void truncate_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
-  unsigned int i = 0;
+/* include c-based dnn library */
+#include "../common/dnn_common.h"
 
-  /* truncate buffer to bfp16 */
-  for ( i = 0; i < len; ++i ) {
-    union libxsmm_bfloat16_hp t;
-
-    t.f = in[i];
-    t.i[0] = 0;
-    out[i] = t.f;
-  }
-}
-
-/* it's fine to alias in and out */
-void rnaz_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
-  unsigned int i = 0;
-
-  /* rnaz buffer to bfp16 */
-  for ( i = 0; i < len; ++i ) {
-    unsigned int int_round = 0;
-    unsigned int do_round = 1;
-    const void *const ptr = &int_round;
-
-    int_round = *((unsigned int*)&(in[i]));
-
-    /* we don't round NaN and inf */
-    if ( (int_round & 0x7f800000) == 0x7f800000 ) {
-      do_round = 0;
-    }
-
-    /* perform round nearest tie away from zero */
-    if ( do_round != 0 ) {
-      int_round = int_round + 0x00008000;
-    }
-
-    /* chop bits to create BFP16 in FP32 */
-    int_round = int_round & 0xffff0000;
-
-    out[i] = *((float*)ptr);
-  }
-}
-
-/* it's fine to alias in and out */
-void rne_mask_fp32_bfp16(float* in, float* out, unsigned int len) {
-  unsigned int i = 0;
-
-  /* rnaz buffer to bfp16 */
-  for ( i = 0; i < len; ++i ) {
-    unsigned int int_round = 0;
-    unsigned int do_round = 1;
-    const void *const ptr = &int_round;
-
-    int_round = *((unsigned int*)&(in[i]));
-
-    /* we don't round NaN and inf */
-    if ( (int_round & 0x7f800000) == 0x7f800000 ) {
-      do_round = 0;
-    }
-
-    /* perform round nearest tie even */
-    if ( do_round != 0 ) {
-      unsigned int fixup = (int_round >> 16) & 1;
-      int_round = int_round + 0x00007fff + fixup;
-    }
-
-    /* chop bits to create BFP16 in FP32 */
-    int_round = int_round & 0xffff0000;
-
-    out[i] = *((float*)ptr);
-  }
-}
-
-typedef struct {
-  int nImg;
-  int nIfm;
-  int nOfm;
-  int ifhp;
-  int ifwp;
-  int ifh;
-  int ifw;
-  int ofhp;
-  int ofwp;
-  int ofh;
-  int ofw;
-  int pad_h;
-  int pad_w;
-  int pad_h_in;
-  int pad_w_in;
-  int pad_h_out;
-  int pad_w_out;
-  int kh;
-  int kw;
-  int stride_h;
-  int stride_w;
-} naive_conv_t;
-
-LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < (int)size; ++i) {
-    buf[i] = 0.0f;
-  }
-}
-
-LIBXSMM_INLINE void copy_buf(float* src, float* dst, size_t size) {
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < (int)size; ++i) {
-    dst[i] = src[i];
-  }
-}
-
-LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
-{
-  int i;
-  zero_buf(buf, size);
-  for (i = 0; i < (int)size; ++i) {
-    buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rand_f64() : (0.05 - libxsmm_rand_f64()/10.0)));
-  }
-}
-
-LIBXSMM_INLINE void set_zeropad_nchw(float* nchw, int N, int C, int H, int W, int pad_h, int pad_w)
-{
-  LIBXSMM_VLA_DECL(4, float, input, nchw, C, H, W);
-  int n, h, w, c;
-
-  for ( n = 0; n < N; n++ ) {
-    for ( c = 0; c < C; c++ ) {
-      for ( h = 0; h < H; h++ ) {
-        for ( w = 0; w < W; w++ ) {
-          if (h < pad_h || h >= H-pad_h || w < pad_w || w >= W-pad_w)
-            LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W) = 0.0;
-        }
-      }
-    }
-  }
-}
-
-LIBXSMM_INLINE void copy_internal_nchw(float* dst , float* src, int N, int C, int H, int W, int pad_h, int pad_w)
-{
-  LIBXSMM_VLA_DECL(4, float, input, src, C, H, W);
-  LIBXSMM_VLA_DECL(4, float, new_input, dst, C, H+2*pad_h, W+2*pad_w);
-  int n, h, w, c;
-
-  for ( n = 0; n < N; n++ ) {
-    for ( c = 0; c < C; c++ ) {
-      for ( h = 0; h < H; h++ ) {
-        for ( w = 0; w < W; w++ ) {
-          LIBXSMM_VLA_ACCESS(4, new_input, n, c, h+pad_h, w+pad_w, C, H+2*pad_h, W+2*pad_w) =  LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W);
-        }
-      }
-    }
-  }
-}
-
-LIBXSMM_INLINE void naive_copy_NCHW_to_NHWC(const float* nchw, float* nhwc, int N, int H, int W, int C)
-{
-  LIBXSMM_VLA_DECL(4,       float, output, nhwc, H, W, C);
-  LIBXSMM_VLA_DECL(4, const float,  input, nchw, C, H, W);
-  int n, h, w, c;
-
-  for ( n = 0; n < N; n++ ) {
-    for ( h = 0; h < H; h++ ) {
-      for ( w = 0; w < W; w++ ) {
-        for ( c = 0; c < C; c++ ) {
-          LIBXSMM_VLA_ACCESS(4, output, n, h, w, c, H, W, C) =
-          LIBXSMM_VLA_ACCESS(4,  input, n, c, h, w, C, H, W);
-        }
-      }
-    }
-  }
-}
-
-
-LIBXSMM_INLINE void naive_copy_NHWC_to_NCHW(const float* nhwc, float* nchw, int N, int H, int W, int C)
-{
-  LIBXSMM_VLA_DECL(4,       float, output, nchw, C, H, W);
-  LIBXSMM_VLA_DECL(4, const float,  input, nhwc, H, W, C);
-  int n, h, w, c;
-
-  for ( n = 0; n < N; n++ ) {
-    for ( h = 0; h < H; h++ ) {
-      for ( w = 0; w < W; w++ ) {
-        for ( c = 0; c < C; c++ ) {
-          LIBXSMM_VLA_ACCESS(4, output, n, c, h, w, C, H, W) =
-          LIBXSMM_VLA_ACCESS(4,  input, n, h, w, c, H, W, C);
-        }
-      }
-    }
-  }
-}
-
-
-LIBXSMM_INLINE void naive_copy_KCRS_to_RSCK(const float* kcrs, float* rsck, int R, int S, int C, int K)
-{
-  LIBXSMM_VLA_DECL(4,       float, output, rsck, S, C, K);
-  LIBXSMM_VLA_DECL(4, const float,  input, kcrs, C, R, S);
-  int r, s, c, k;
-
-  for ( r = 0; r < R; r++ ) {
-    for ( s = 0; s < S; s++ ) {
-      for ( c = 0; c < C; c++ ) {
-        for ( k = 0; k < K; k++ ) {
-          LIBXSMM_VLA_ACCESS(4, output, r, s, c, k, S, C, K) =
-          LIBXSMM_VLA_ACCESS(4,  input, k, c, r, s, C, R, S);
-        }
-      }
-    }
-  }
-}
-
-
-LIBXSMM_INLINE void naive_copy_RSCK_to_KCRS(const float* rsck, float* kcrs, int R, int S, int C, int K)
-{
-  LIBXSMM_VLA_DECL(4, const float,  input, rsck, S, C, K);
-  LIBXSMM_VLA_DECL(4,       float, output, kcrs, C, R, S);
-  int r, s, c, k;
-
-  for ( r = 0; r < R; r++ ) {
-    for ( s = 0; s < S; s++ ) {
-      for ( c = 0; c < C; c++ ) {
-        for ( k = 0; k < K; k++ ) {
-          LIBXSMM_VLA_ACCESS(4, output, k, c, r, s, C, R, S) =
-            LIBXSMM_VLA_ACCESS(4,  input, r, s, c, k, S, C, K);
-        }
-      }
-    }
-  }
-}
-
-
-LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float* output, const float* filter)
-{
-  int nImg      = param->nImg;
-  int nIfm      = param->nIfm;
-  int nOfm      = param->nOfm;
-  int ifhp      = param->ifhp;
-  int ifwp      = param->ifwp;
-  int ofhp      = param->ofhp;
-  int ofwp      = param->ofwp;
-  int ifh       = param->ifh;
-  int ifw       = param->ifw;
-  int ofh       = param->ofh;
-  int ofw       = param->ofw;
-  int pad_h     = param->pad_h;
-  int pad_w     = param->pad_w;
-  int pad_h_in  = param->pad_h_in;
-  int pad_w_in  = param->pad_w_in;
-  int pad_h_out = param->pad_h_out;
-  int pad_w_out = param->pad_w_out;
-  int kh        = param->kh;
-  int kw        = param->kw;
-  int stride_h  = param->stride_h;
-  int stride_w  = param->stride_w;
-  /* loop counters */
-  int img, ofm, ifm, oj, oi, ij, ii, kj, ki;
-
-  LIBXSMM_VLA_DECL(4,       float, output_t, output + (pad_h_out * ofwp + pad_w_out), nOfm, ofhp, ofwp);
-  LIBXSMM_VLA_DECL(4, const float,  input_t,  input + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
-  LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
-
-#if defined(_OPENMP)
-# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
-#endif
-  for (img = 0; img < nImg; ++img) {
-    for (ofm = 0; ofm < nOfm; ++ofm) {
-      for (ifm = 0; ifm < nIfm; ++ifm) {
-        for (oj = 0; oj < ofh; ++oj) {
-          ij = oj * stride_h - pad_h;
-          for (oi = 0; oi < ofw; ++oi) {
-            ii = oi * stride_w - pad_w;
-            for (kj = 0; kj < kh; ++kj) {
-              if (ij+kj < 0 || ij+kj >= ifh) continue;
-              for (ki = 0; ki < kw; ++ki) {
-                if (ii+ki < 0 || ii+ki >= ifw) continue;
-                LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) +=
-                  LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
-                  * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
-              }
-            }
-          }
-        }
-      }
-#if defined(USE_FUSED_RELU) || defined(USE_FUSED_BIAS_RELU)
-      for (oj = 0; oj < ofh; ++oj) {
-        for (oi = 0; oi < ofw; ++oi) {
-          LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) =
-            (LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) < 0.0f) ? 0.0f : LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
-        }
-      }
-#endif
-    }
-  }
-}
-
-LIBXSMM_INLINE void naive_conv_bp(naive_conv_t* param, float* input, const float* output, const float* filter, const float* naive_input_save)
-{
-  int nImg      = param->nImg;
-  int nIfm      = param->nIfm;
-  int nOfm      = param->nOfm;
-  int ifhp      = param->ifhp;
-  int ifwp      = param->ifwp;
-  int ofhp      = param->ofhp;
-  int ofwp      = param->ofwp;
-  int ifh       = param->ifh;
-  int ifw       = param->ifw;
-  int ofh       = param->ofh;
-  int ofw       = param->ofw;
-  int pad_h     = param->pad_h;
-  int pad_w     = param->pad_w;
-  int pad_h_in  = param->pad_h_in;
-  int pad_w_in  = param->pad_w_in;
-  int pad_h_out = param->pad_h_out;
-  int pad_w_out = param->pad_w_out;
-  int kh        = param->kh;
-  int kw        = param->kw;
-  int stride_h  = param->stride_h;
-  int stride_w  = param->stride_w;
-  /* loop counters */
-  int img, ofm, ifm, oj, oi, ij, ii, kj, ki;
-
-  LIBXSMM_VLA_DECL(4, const float, output_t, output + (pad_h_out * ofwp + pad_w_out), nOfm, ofhp, ofwp);
-  LIBXSMM_VLA_DECL(4,       float,  input_t,  input + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
-  LIBXSMM_VLA_DECL(4, const float, filter_t, filter, nIfm, kh, kw);
-#if defined(USE_FUSED_RELU_BWD)
-  LIBXSMM_VLA_DECL(4, const float, naive_input_t, naive_input_save + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
-#else
-  LIBXSMM_UNUSED(naive_input_save);
-#endif
-
-#if defined(_OPENMP)
-# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
-#endif
-  for (img = 0; img < nImg; ++img) {
-    for (ifm = 0; ifm < nIfm; ++ifm) {
-      for (ofm = 0; ofm < nOfm; ++ofm) {
-        for (oj = 0; oj < ofh; ++oj) {
-          ij = oj * stride_h - pad_h;
-          for (oi = 0; oi < ofw; ++oi) {
-            ii = oi * stride_w - pad_w;
-            for (kj = 0; kj < kh; ++kj) {
-              if (ij+kj < 0 || ij+kj >= ifh) continue;
-              for (ki = 0; ki < kw; ++ki) {
-                if (ii+ki < 0 || ii+ki >= ifw) continue;
-                LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp) +=
-                  LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp)
-                  * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
-              }
-            }
-          }
-        }
-      }
-#if defined(USE_FUSED_RELU_BWD)
-      for (ij = 0; ij < ifh; ij++) {
-        for (ii = 0; ii < ifw; ii++) {
-          if ( LIBXSMM_VLA_ACCESS(4,  naive_input_t, img, ifm, ij, ii , nIfm, ifhp, ifwp) == 0.0 ) {
-            LIBXSMM_VLA_ACCESS(4, input_t, img, ifm, ij, ii , nIfm, ifhp, ifwp) = 0.0;
-          }
-        }
-      }
-#endif
-    }
-  }
-}
-
-LIBXSMM_INLINE void naive_conv_wu(naive_conv_t* param, const float* input, const float* output, float* filter)
-{
-  int nImg      = param->nImg;
-  int nIfm      = param->nIfm;
-  int nOfm      = param->nOfm;
-  int ifhp      = param->ifhp;
-  int ifwp      = param->ifwp;
-  int ofhp      = param->ofhp;
-  int ofwp      = param->ofwp;
-  int ifh       = param->ifh;
-  int ifw       = param->ifw;
-  int ofh       = param->ofh;
-  int ofw       = param->ofw;
-  int pad_h     = param->pad_h;
-  int pad_w     = param->pad_w;
-  int pad_h_in  = param->pad_h_in;
-  int pad_w_in  = param->pad_w_in;
-  int pad_h_out = param->pad_h_out;
-  int pad_w_out = param->pad_w_out;
-  int kh        = param->kh;
-  int kw        = param->kw;
-  int stride_h  = param->stride_h;
-  int stride_w  = param->stride_w;
-  /* loop counters */
-  int img, ofm, ifm, oj, oi, ij, ii, kj, ki;
-
-  LIBXSMM_VLA_DECL(4, const float, output_t, output + (pad_h_out * ofwp + pad_w_out), nOfm, ofhp, ofwp);
-  LIBXSMM_VLA_DECL(4, const float,  input_t,  input + (pad_h_in * ifwp + pad_w_in), nIfm, ifhp, ifwp);
-  LIBXSMM_VLA_DECL(4,       float, filter_t, filter, nIfm, kh, kw);
-
-#if defined(_OPENMP)
-# pragma omp parallel for LIBXSMM_OPENMP_COLLAPSE(2) private(img, ofm, ifm, oj, oi, ij, ii, kj, ki)
-#endif
-  for (ofm = 0; ofm < nOfm; ++ofm) {
-    for (ifm = 0; ifm < nIfm; ++ifm) {
-      for (img = 0; img < nImg; ++img) {
-        for (oj = 0; oj < ofh; ++oj) {
-          ij = oj * stride_h - pad_h;
-          for (oi = 0; oi < ofw; ++oi) {
-            ii = oi * stride_w - pad_w;
-            for (kj = 0; kj < kh; ++kj) {
-              if (ij+kj < 0 || ij+kj >= ifh) continue;
-              for (ki = 0; ki < kw; ++ki) {
-                if (ii+ki < 0 || ii+ki >= ifw) continue;
-                LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw) +=
-                  LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
-                  * LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp);
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-}
+#define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) { fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) ); global_status = A; }
 
 int main(int argc, char* argv[])
 {
@@ -725,7 +302,7 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
     /* run naive convolutions */
     if (type == 'A' || type == 'F') {
-      naive_conv_fp(&naive_param, naive_input, naive_output_fp, naive_filter);
+      naive_conv_fp(&naive_param, naive_input, naive_output_fp, naive_filter, NULL);
     }
     /* run naive convolutions */
     if (type == 'A' || type == 'B') {
@@ -877,7 +454,7 @@ int main(int argc, char* argv[])
     libxsmm_convert_bf16_f32( naive_libxsmm_output, naive_libxsmm_output_f32, nImg*nOfm*ofhp*ofwp );
 
     /* compare */
-    libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output_fp, naive_libxsmm_output_f32, 0, 0, &norms_fwd);
+    libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output_fp, naive_libxsmm_output_f32, 0, 0);
     printf("L1 reference  : %.25f\n", norms_fwd.l1_ref);
     printf("L1 test       : %.25f\n", norms_fwd.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -927,7 +504,7 @@ int main(int argc, char* argv[])
         }
       }
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum, ch_sum_fuse, 0, 0, &norms_batchstats);
+      libxsmm_matdiff(&norms_batchstats, LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum, ch_sum_fuse, 0, 0);
       printf("Channel Sum:\n");
       printf("L1 reference  : %.25g\n", norms_batchstats.l1_ref);
       printf("L1 test       : %.25g\n", norms_batchstats.l1_tst);
@@ -937,7 +514,7 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_batchstats.linf_rel);
       printf("Check-norm    : %.24f\n", norms_batchstats.normf_rel);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum2, ch_sum2_fuse, 0, 0, &norms_batchstats);
+      libxsmm_matdiff(&norms_batchstats, LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum2, ch_sum2_fuse, 0, 0);
       printf("Channel Sum2:\n");
       printf("L1 reference  : %.25g\n", norms_batchstats.l1_ref);
       printf("L1 test       : %.25g\n", norms_batchstats.l1_tst);
@@ -977,7 +554,7 @@ int main(int argc, char* argv[])
     libxsmm_convert_bf16_f32( naive_libxsmm_input, naive_libxsmm_input_f32, nImg*nIfm*ifhp*ifwp );
 
     /* compare */
-    libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input_bp, naive_libxsmm_input_f32, 0, 0, &norms_bwd);
+    libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input_bp, naive_libxsmm_input_f32, 0, 0);
     printf("L1 reference  : %.25f\n", norms_bwd.l1_ref);
     printf("L1 test       : %.25f\n", norms_bwd.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -1010,7 +587,7 @@ int main(int argc, char* argv[])
     libxsmm_convert_bf16_f32( naive_libxsmm_filter, naive_libxsmm_filter_f32, nOfm*nIfm*kh*kw);
 
     /* compare */
-    libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter_f32, 0, 0, &norms_upd);
+    libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter_f32, 0, 0);
     printf("L1 reference  : %.25f\n", norms_upd.l1_ref);
     printf("L1 test       : %.25f\n", norms_upd.l1_tst);
     printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);

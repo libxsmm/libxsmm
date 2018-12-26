@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -38,122 +38,11 @@
 # include <omp.h>
 #endif
 
+/* include c-based dnn library */
+#include "../common/dnn_common.h"
+
 #define CHKERR_LIBXSMM_DNN(A) { const int chkerr_libxsmm_dnn_ = A; if (LIBXSMM_DNN_SUCCESS != chkerr_libxsmm_dnn_) { \
   fprintf(stderr, "%s\n", libxsmm_dnn_get_error(chkerr_libxsmm_dnn_)); global_status = chkerr_libxsmm_dnn_; } \
-}
-
-typedef struct {
-  int N;
-  int C;
-  int K;
-  int fuse_type;  /* 0: nothing fused */
-} naive_fullyconnected_t;
-
-LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < (int)size; ++i) {
-    buf[i] = 0.0f;
-  }
-}
-
-LIBXSMM_INLINE void copy_buf(float* src, float* dst, size_t size) {
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < (int)size; ++i) {
-    dst[i] = src[i];
-  }
-}
-
-LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
-{
-  int i;
-  zero_buf(buf, size);
-  for (i = 0; i < (int)size; ++i) {
-    buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rand_f64() : (0.05 - libxsmm_rand_f64()/10.0)));
-  }
-}
-
-LIBXSMM_INLINE void naive_fullyconnected_fp(naive_fullyconnected_t* param, const float* input_ptr, float* output_ptr, const float* filter_ptr)
-{
-  const int nImg = param->N;
-  const int nIFm = param->C;
-  const int nOFm = param->K;
-
-  int img, ifm, ofm;
-
-  LIBXSMM_VLA_DECL(2, const float, input,  input_ptr,  nIFm);
-  LIBXSMM_VLA_DECL(2, const float, filter, filter_ptr, nIFm);
-  LIBXSMM_VLA_DECL(2,       float, output, output_ptr, nOFm);
-
-#if defined(_OPENMP)
-#pragma omp parallel for private(img, ofm, ifm)
-#endif
-  for (ofm = 0; ofm < nOFm; ++ofm) {
-    for(img = 0; img < nImg; ++img) {
-      LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) = (float)0;
-      for (ifm = 0; ifm < nIFm; ++ifm) {
-        LIBXSMM_VLA_ACCESS(2, output, img, ofm, nOFm) +=
-          LIBXSMM_VLA_ACCESS(2, filter, ofm, ifm, nIFm) * LIBXSMM_VLA_ACCESS(2, input, img, ifm, nIFm);
-      }
-    }
-  }
-}
-
-LIBXSMM_INLINE void naive_fullyconnected_bp(naive_fullyconnected_t* param, float* delinput_ptr, const float* deloutput_ptr, const float* filter_ptr)
-{
-  const int nImg = param->N;
-  const int nIFm = param->C;
-  const int nOFm = param->K;
-
-  int img, ifm, ofm;
-
-  LIBXSMM_VLA_DECL(2,       float,  dinput,  delinput_ptr, nIFm);
-  LIBXSMM_VLA_DECL(2, const float,  filter,    filter_ptr, nIFm);
-  LIBXSMM_VLA_DECL(2, const float, doutput, deloutput_ptr, nOFm);
-
-#if defined(_OPENMP)
-#pragma omp parallel for private(img, ofm, ifm)
-#endif
-  for (ifm = 0; ifm < nIFm; ++ifm) {
-    for(img = 0; img < nImg; ++img) {
-      LIBXSMM_VLA_ACCESS(2, dinput, img, ifm, nIFm) = (float)0;
-      for (ofm = 0; ofm < nOFm; ++ofm) {
-        LIBXSMM_VLA_ACCESS(2, dinput, img, ifm, nIFm) +=
-          LIBXSMM_VLA_ACCESS(2, filter, ofm, ifm, nIFm) * LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm);
-      }
-    }
-  }
-}
-
-LIBXSMM_INLINE void naive_fullyconnected_wu(naive_fullyconnected_t* param, const float* input_ptr, const float* deloutput_ptr, float* delfilter_ptr)
-{
-  const int nImg = param->N;
-  const int nIFm = param->C;
-  const int nOFm = param->K;
-
-  int img, ifm, ofm;
-
-  LIBXSMM_VLA_DECL(2, const float,   input,     input_ptr, nIFm);
-  LIBXSMM_VLA_DECL(2,       float, dfilter, delfilter_ptr, nIFm);
-  LIBXSMM_VLA_DECL(2, const float, doutput, deloutput_ptr, nOFm);
-
-#if defined(_OPENMP)
-#pragma omp parallel for private(img, ofm, ifm)
-#endif
-  for (ofm = 0; ofm < nOFm; ++ofm) {
-    for (ifm = 0; ifm < nIFm; ++ifm) {
-      LIBXSMM_VLA_ACCESS(2, dfilter, ofm, ifm, nIFm) = (float)0;
-      for(img = 0; img < nImg; ++img) {
-        LIBXSMM_VLA_ACCESS(2, dfilter, ofm, ifm, nIFm) +=
-          LIBXSMM_VLA_ACCESS(2, doutput, img, ofm, nOFm) * LIBXSMM_VLA_ACCESS(2, input, img, ifm, nIFm);
-      }
-    }
-  }
 }
 
 int main(int argc, char* argv[])
@@ -398,7 +287,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output, naive_libxsmm_output, 0, 0, &norms_fwd);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output, naive_libxsmm_output, 0, 0);
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -430,7 +319,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delinput,     (void*)naive_libxsmm_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIFm, 1, naive_delinput, naive_libxsmm_delinput, 0, 0, &norms_bwd);
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIFm, 1, naive_delinput, naive_libxsmm_delinput, 0, 0);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -462,7 +351,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delfilter,     (void*)naive_libxsmm_delfilter,     LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIFm*nOFm, 1, naive_delfilter, naive_libxsmm_delfilter, 0, 0, &norms_upd);
+      libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nIFm*nOFm, 1, naive_delfilter, naive_libxsmm_delfilter, 0, 0);
       printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);

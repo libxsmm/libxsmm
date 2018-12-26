@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -115,6 +115,7 @@ LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsi
   LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size!");
   LIBXSMM_ASSERT_MSG(0 < tm && 0 < tn, "Invalid tile size!");
   LIBXSMM_ASSERT_MSG(typesize <= 255, "Invalid type-size!");
+  LIBXSMM_ASSERT(0 < mtasks);
 
   if (nthreads <= mtasks) { /* parallelized over M */
     const unsigned int mt = (m + nthreads - 1) / nthreads;
@@ -257,6 +258,7 @@ LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsig
   LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size!");
   LIBXSMM_ASSERT_MSG(0 < tm && 0 < tn, "Invalid tile size!");
   LIBXSMM_ASSERT_MSG(typesize <= 255, "Invalid type-size!");
+  LIBXSMM_ASSERT(0 < mtasks);
 
   if (nthreads <= mtasks) { /* parallelized over M */
     const unsigned int mt = (m + nthreads - 1) / nthreads;
@@ -438,7 +440,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* out, const void* in, con
   libxsmm_blasint ldx;
   LIBXSMM_ASSERT(0 != typesize && 0 != m);
   ldx = *(0 != ldi ? ldi : m);
-  libxsmm_matcopy(out, in, *typesize, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx, prefetch);
+  libxsmm_matcopy(out, in, *typesize, *m, *(0 != n ? n : m), ldx, 0 != ldo ? *ldo : ldx, prefetch);
 }
 
 
@@ -451,7 +453,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* out, const void* in, cons
   libxsmm_blasint ldx;
   LIBXSMM_ASSERT(0 != typesize && 0 != m);
   ldx = *(0 != ldi ? ldi : m);
-  libxsmm_otrans(out, in, *typesize, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx);
+  libxsmm_otrans(out, in, *typesize, *m, *(0 != n ? n : m), ldx, 0 != ldo ? *ldo : ldx);
 }
 
 
@@ -462,7 +464,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* inout, const unsigned int
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ld)
 {
   LIBXSMM_ASSERT(0 != typesize && 0 != m);
-  libxsmm_itrans(inout, *typesize, *m, *(n ? n : m), *(0 != ld ? ld : m));
+  libxsmm_itrans(inout, *typesize, *m, *(0 != n ? n : m), *(0 != ld ? ld : m));
 }
 
 #endif /*defined(LIBXSMM_BUILD)*/

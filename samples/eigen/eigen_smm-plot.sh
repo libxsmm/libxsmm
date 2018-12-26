@@ -1,6 +1,6 @@
 #!/bin/bash
 #############################################################################
-# Copyright (c) 2015-2018, Intel Corporation                                #
+# Copyright (c) 2015-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -30,15 +30,15 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-SORT=$(which sort)
-JOIN=$(which join)
-GREP=$(which grep)
-ECHO=$(which echo)
-CAT=$(which cat)
-CUT=$(which cut)
-SED=$(which sed)
-AWK=$(which awk)
-RM=$(which rm)
+SORT=$(command -v sort)
+JOIN=$(command -v join)
+GREP=$(command -v grep)
+ECHO=$(command -v echo)
+CAT=$(command -v cat)
+CUT=$(command -v cut)
+SED=$(command -v sed)
+AWK=$(command -v awk)
+RM=$(command -v rm)
 
 VARIANT="LIBXSMM streamed (A,B)"
 
@@ -58,7 +58,7 @@ ${ECHO} "num=${NUM}"
 ${ECHO} "min=${MIN}"
 ${ECHO} "max=${MAX}"
 
-BC=$(which bc 2>/dev/null)
+BC=$(command -v bc 2>/dev/null)
 if [ "" != "${BC}" ]; then
   AVG=$(${ECHO} "$(${ECHO} -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
   NUM2=$((NUM / 2))
@@ -82,7 +82,7 @@ elif [ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]; then
   WGNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot
   GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot
 else
-  GNUPLOT=$(which gnuplot 2>/dev/null)
+  GNUPLOT=$(command -v gnuplot 2>/dev/null)
   WGNUPLOT=${GNUPLOT}
 fi
 

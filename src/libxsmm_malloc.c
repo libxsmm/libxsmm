@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2014-2018, Intel Corporation                                **
+** Copyright (c) 2014-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -28,11 +28,6 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-
-/* must be defined *before* other files are included */
-#if !defined(_GNU_SOURCE)
-# define _GNU_SOURCE
-#endif
 #include "libxsmm_trace.h"
 #include "libxsmm_main.h"
 #include "libxsmm_hash.h"
@@ -813,7 +808,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
       }
     }
     else {
-      if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+      if ((2 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
         fprintf(stderr, "LIBXSMM WARNING: zero-sized memory allocation detected!\n");

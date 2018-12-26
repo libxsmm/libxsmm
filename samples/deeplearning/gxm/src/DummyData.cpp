@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -80,7 +80,6 @@ DummyDataNode::DummyDataNode(DummyDataParams* p, MLEngine* e) : NNNode(p, e)
 
       num_machines_ = e->get_num_machines();
       global_batch_size_ = num_machines_ * ts_->dims[0];
-printf("gbs = %d\n", global_batch_size_);
 #ifdef USE_MLSL
       MLSL::Session *s = e->get_session();
       s->SetGlobalMinibatchSize(global_batch_size_);
@@ -144,7 +143,7 @@ void DummyDataNode::fillData(float* ptr, long long int size)
   }
 
   Shape *ts = tenTop_[0]->getShape();
-  
+
   int ifhp = ts->dims[2]+2*pad_h_;
   int ifwp = ts->dims[3]+2*pad_w_;
   int nFM = ts->dims[1];

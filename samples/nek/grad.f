@@ -1,5 +1,5 @@
 !*****************************************************************************!
-!* Copyright (c) 2015-2018, Intel Corporation                                *!
+!* Copyright (c) 2015-2019, Intel Corporation                                *!
 !* All rights reserved.                                                      *!
 !*                                                                           *!
 !* Redistribution and use in source and binary forms, with or without        *!
@@ -41,18 +41,18 @@
         REAL(T), PARAMETER :: alpha = 1, beta = 0
 
         REAL(T), ALLOCATABLE, DIMENSION(:,:,:,:), TARGET :: a
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: a
+        !DIR$ ATTRIBUTES ALIGN:64 :: a
         REAL(T), ALLOCATABLE, DIMENSION(:,:,:,:), TARGET :: cx, cy, cz
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: cx, cy, cz
+        !DIR$ ATTRIBUTES ALIGN:64 :: cx, cy, cz
         REAL(T), ALLOCATABLE, DIMENSION(:,:,:,:), TARGET :: rx, ry, rz
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: rx, ry, rz
+        !DIR$ ATTRIBUTES ALIGN:64 :: rx, ry, rz
         REAL(T), ALLOCATABLE, TARGET :: dx(:,:), dy(:,:), dz(:,:)
         REAL(T), ALLOCATABLE, TARGET, SAVE :: tm1(:,:,:)
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm1
+        !DIR$ ATTRIBUTES ALIGN:64 :: tm1
         REAL(T), ALLOCATABLE, TARGET, SAVE :: tm2(:,:,:)
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm2
+        !DIR$ ATTRIBUTES ALIGN:64 :: tm2
         REAL(T), ALLOCATABLE, TARGET, SAVE :: tm3(:,:,:)
-        !DIR$ ATTRIBUTES ALIGN:LIBXSMM_ALIGNMENT :: tm3
+        !DIR$ ATTRIBUTES ALIGN:64 :: tm3
         !$OMP THREADPRIVATE(tm1, tm2, tm3)
         TYPE(LIBXSMM_DMMFUNCTION) :: xmm1, xmm2, xmm3
         DOUBLE PRECISION :: duration, max_diff

@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -77,6 +77,12 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Success!";
     case LIBXSMM_DNN_WARN_FALLBACK:
       return "LIBXSMM DNN Warning: Falling back to naive code as target is currently not supported by LIBXSMM!";
+    case LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING:
+      return "LIBXSMM DNN Warning: RNN cell suboptimal minibatch blocking!";
+    case LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_C_BLOCKING:
+      return "LIBXSMM DNN Warning: RNN cell suboptimal input feature blocking!";
+    case LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_K_BLOCKING:
+      return "LIBXSMM DNN Warning: RNN cell suboptimal output feature blocking!";
     case LIBXSMM_DNN_ERR_GENERAL:
       return "LIBXSMM DNN Error: General error occurred!";
     case LIBXSMM_DNN_ERR_CREATE_HANDLE:
@@ -1128,6 +1134,28 @@ LIBXSMM_API unsigned int libxsmm_dnn_get_tensor_elements(const libxsmm_dnn_tenso
 }
 
 
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_set_tensor_data_ptr(libxsmm_dnn_tensor* tensor, const void* data) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  if ((0 != tensor) && (0 != data)) {
+    if (0 != tensor->layout) {
+      if (0 < tensor->layout->num_dims) {
+        tensor->data = (void*)data;
+      } else {
+        status = LIBXSMM_DNN_ERR_INVALID_LAYOUT;
+      }
+    } else {
+      status = LIBXSMM_DNN_ERR_INVALID_LAYOUT;
+    }
+  }
+  else {
+    status = LIBXSMM_DNN_ERR_INVALID_TENSOR;
+  }
+
+  return status;
+}
+
+
 LIBXSMM_API void* libxsmm_dnn_get_tensor_data_ptr(const libxsmm_dnn_tensor* tensor, libxsmm_dnn_err_t* status)
 {
   *status = LIBXSMM_DNN_SUCCESS;
@@ -1178,6 +1206,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_tensor(const libxsmm_dnn_tenso
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != tensor) { /* it is not an error attempting to destroy a NULL-handle */
+    /* free layout information stored in tensor */
+    if (0 != tensor->layout) {
+      libxsmm_dnn_destroy_tensor_datalayout( (libxsmm_dnn_tensor_datalayout*)tensor->layout );
+    }
     /* deallocate handle structure */
     free(/*remove constness*/(libxsmm_dnn_tensor*)tensor);
   }
@@ -2680,7 +2712,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
 #     pragma omp parallel for private(i)
 #endif
       for (i = 0; i < length; i+=16 ) {
-        _mm256_stream_si256( (__m256i *)&(out_buffer[i]), _mm512_quantize_near_ps_epi16( &(in_buffer[i]), vscfq ) );
+        _mm256_stream_si256( (__m256i *)&(out_buffer[i]), LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16( &(in_buffer[i]), vscfq ) );
       }
     } else {
 #endif
@@ -2749,7 +2781,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
 #     pragma omp parallel for private(i1)
 #endif
       for (i1 = 0; i1 < (int)(N*C*H*W); i1 += 16 ) {
-        _mm256_stream_si256( (__m256i *)&(out_buffer[i1]), _mm512_quantize_near_ps_epi16( &(in_buffer[i1]), vscfq ) );
+        _mm256_stream_si256( (__m256i *)&(out_buffer[i1]), LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16( &(in_buffer[i1]), vscfq ) );
       }
     } else {
 #endif
@@ -2859,9 +2891,9 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
           for (i3 = 0; i3 < (int)R; ++i3 ) {
             for (i4 = 0; i4 < (int)S; ++i4 ) {
               for (i5 = 0; i5 < 16; i5+=2 ) {
-                __m256i even_ch = _mm512_quantize_near_ps_epi16(
+                __m256i even_ch = LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16(
                   &LIBXSMM_VLA_ACCESS(6, in, i1, i2, i3, i4, i5 + 0, 0, C / cblk_f32, R, S, cblk_f32, kblk_f32), vscfq);
-                __m256i odd_ch  = _mm512_quantize_near_ps_epi16(
+                __m256i odd_ch  = LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16(
                   &LIBXSMM_VLA_ACCESS(6, in, i1, i2, i3, i4, i5 + 1, 0, C / cblk_f32, R, S, cblk_f32, kblk_f32), vscfq);
                 __m256i compressed_lo = _mm256_unpacklo_epi16(even_ch, odd_ch);
                 __m256i compressed_hi = _mm256_unpackhi_epi16(even_ch, odd_ch);

@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 ###############################################################################
-# Copyright (c) 2014-2018, Intel Corporation                                  #
+# Copyright (c) 2014-2019, Intel Corporation                                  #
 # All rights reserved.                                                        #
 #                                                                             #
 # Redistribution and use in source and binary forms, with or without          #
@@ -85,7 +85,7 @@ if __name__ == "__main__":
             print(template.substitute(substitute))
         else:
             version, branch = \
-                libxsmm_utilities.version_branch()
+                libxsmm_utilities.version_branch(16)
             major, minor, update, patch = \
                 libxsmm_utilities.version_numbers(version)
             substitute = {

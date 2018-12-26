@@ -1,10 +1,10 @@
 #!/bin/bash
 
-UNAME=$(which uname 2>/dev/null)
-SORT=$(which sort 2>/dev/null)
-GREP=$(which grep 2>/dev/null)
-CUT=$(which cut 2>/dev/null)
-WC=$(which wc 2>/dev/null)
+UNAME=$(command -v uname 2>/dev/null)
+SORT=$(command -v sort 2>/dev/null)
+GREP=$(command -v grep 2>/dev/null)
+CUT=$(command -v cut 2>/dev/null)
+WC=$(command -v wc 2>/dev/null)
 
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=1000; fi
@@ -44,7 +44,7 @@ if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
 else
   export NS=1 NC=1 NT=1 HT=1
 fi
-if [ "" != "${CUT}" ] && [ "" != "$(which numactl 2>/dev/null)" ]; then
+if [ "" != "${CUT}" ] && [ "" != "$(command -v numactl 2>/dev/null)" ]; then
   export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
 else
   export NN=${NS}

@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
-# Copyright (c) 2017-2018, Intel Corporation                                #
+# Copyright (c) 2017-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -33,19 +33,23 @@
 PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.sh *.py *.yml *.txt"
 BANNED_CHARS="\t"
 
+PATBAN="s/[${BANNED_CHARS}]//"
+PATEOL="s/\r$//"
+PATSPC="s/\s\s*$//"
+
 HERE=$(cd $(dirname $0); pwd -P)
 REPO=${HERE}/..
 CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
 
-FLAKE8=$(which flake8 2>/dev/null)
-ICONV=$(which iconv 2>/dev/null)
-ECHO=$(which echo 2>/dev/null)
-GIT=$(which git 2>/dev/null)
-SED=$(which sed 2>/dev/null)
-TR=$(which tr 2>/dev/null)
-CP=$(which cp 2>/dev/null)
-RM=$(which rm 2>/dev/null)
+FLAKE8=$(command -v flake8 2>/dev/null)
+ICONV=$(command -v iconv 2>/dev/null)
+ECHO=$(command -v echo 2>/dev/null)
+GIT=$(command -v git 2>/dev/null)
+SED=$(command -v sed 2>/dev/null)
+TR=$(command -v tr 2>/dev/null)
+CP=$(command -v cp 2>/dev/null)
+RM=$(command -v rm 2>/dev/null)
 
 if [ -e ${CODEFILE} ]; then
   PATTERNS="$(cat ${CODEFILE})"
@@ -61,38 +65,40 @@ if [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && \
    [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
    [ "" != "${CP}" ] && [ "" != "${RM}" ];
 then
-  TMPF=$(${MKTEMP} .libxsmm_XXXXXX.txt)
-
-  # disable glob in Shell
-  set -f
-  # Search the content of the diffs matching the given file types
-  for PATTERN in ${PATTERNS}; do
-    for FILE in $("${GIT}" ls-files ${PATTERN}); do
-      BANNED=$(${SED} -n "/[${BANNED_CHARS}]/p" ${FILE} 2>/dev/null)
-      DOSEOL=$(${SED} -n "/\r$/p" ${FILE} 2>/dev/null | ${TR} -d "\n")
-      TRAILS=$(${SED} -n "/\s\s*$/p" ${FILE} 2>/dev/null)
-      if [ "" != "${BANNED}" ]; then
-        ${ECHO} "Warning: ${FILE} contains banned characters!"
-      fi
-      if [ "" != "${DOSEOL}" ]; then
-        ${ECHO} "Warning: ${FILE} uses non-UNIX line endings!"
-      fi
-      if [ "" != "${TRAILS}" ]; then
-        if [ "" != "${ICONV}" ]; then
-          ${ICONV} -t ASCII ${FILE} | ${SED} -e "s/\s\s*$//" > ${TMPF}
-        else
-          ${SED} ${FILE} -e "s/\s\s*$//" > ${TMPF}
+  if [ "" != "${ICONV}" ]; then
+    CAT="${ICONV} -t ASCII"
+  else
+    CAT=$(command -v cat 2>/dev/null)
+  fi
+  if [ "" != "${CAT}" ]; then
+    TMPF=$(${MKTEMP} .libxsmm_XXXXXX.txt)
+    # disable glob in Shell
+    set -f
+    # Search the content of the diffs matching the given file types
+    for PATTERN in ${PATTERNS}; do
+      for FILE in $("${GIT}" ls-files ${PATTERN}); do
+        BANNED=$(${SED} -n "${PATBAN}p" ${FILE} 2>/dev/null)
+        DOSEOL=$(${SED} -n "${PATEOL}p" ${FILE} 2>/dev/null | ${TR} -d "\n")
+        TRAILS=$(${SED} -n "${PATSPC}p" ${FILE} 2>/dev/null)
+        if [ "" != "${BANNED}" ]; then
+          ${ECHO} "Warning: ${FILE} contains banned characters!"
         fi
-        ${CP} ${TMPF} ${FILE}
-        ${ECHO} "${FILE}: removed trailing white spaces."
-      fi
+        if [ "" != "${DOSEOL}" ]; then
+          ${ECHO} "Warning: ${FILE} uses non-UNIX line endings!"
+        fi
+        if [ "" != "${TRAILS}" ]; then
+          ${CAT} ${FILE} | ${SED} -e "${PATSPC}" > ${TMPF}
+          ${CP} ${TMPF} ${FILE}
+          ${ECHO} "${FILE}: removed trailing white spaces."
+        fi
+      done
     done
-  done
-
-  ${RM} ${TMPF}
-  ${ECHO} "Successfully Completed."
-else
-  ${ECHO} "Error: missing prerequisites!"
-  exit 1
+    ${RM} ${TMPF}
+    ${ECHO} "Successfully Completed."
+    exit 0
+  fi
 fi
+
+${ECHO} "Error: missing prerequisites!"
+exit 1
 

@@ -1,6 +1,6 @@
 #!/bin/sh
 #############################################################################
-# Copyright (c) 2016-2018, Intel Corporation                                #
+# Copyright (c) 2016-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -30,7 +30,7 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-WGET=$(which wget)
+WGET=$(command -v wget)
 
 DATASET="LOH1_small merapi_15e5"
 KINDS="bound neigh orient sides size"

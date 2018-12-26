@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -97,10 +97,10 @@ libxsmm_convfunction kernel = ( handle->trans_ofw_ifm == 0 ) ? (libxsmm_convfunc
 transposer tp_func = NULL;
 if ( handle->trans_ofw_ifm > 0 ) {
   if (handle->padding_flag == 1) {
-    tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
+    tp_func = libxsmm_dnn_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
   }
   else {
-    tp_func = get_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
+    tp_func = libxsmm_dnn_transposer(handle->ifmblock, handle->ifwp, ifwp_extended, handle->ifmblock);
   }
 }
 

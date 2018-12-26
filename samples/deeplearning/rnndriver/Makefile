@@ -1,18 +1,6 @@
 # Export all variables to sub-make processes.
 #.EXPORT_ALL_VARIABLES: #export
 
-# Automatically disable parallel builds
-# depending on the version of GNU Make.
-# MAKE_PARALLEL=0: disable explicitly
-# MAKE_PARALLEL=1: enable explicitly
-ifeq (0,$(MAKE_PARALLEL))
-.NOTPARALLEL:
-else ifeq (,$(MAKE_PARALLEL))
-ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
-.NOTPARALLEL:
-endif
-endif
-
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../../..
 SRCDIR = $(ROOTDIR)
@@ -57,16 +45,21 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)
-
+XFILES := $(OUTDIR)/rnndriver_nc_ck $(OUTDIR)/rnndriver_ncnc_kcck $(OUTDIR)/rnndriver_nc_kcck
 .PHONY: all
 all: $(XFILES)
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/rnndriver_nc_ck: $(OUTDIR)/.make $(BLDDIR)/rnndriver_nc_ck-c.o $(EXTDEP) $(LIBDEP) 
+	$(LD) -o $@ $(BLDDIR)/rnndriver_nc_ck-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/rnndriver_ncnc_kcck: $(OUTDIR)/.make $(BLDDIR)/rnndriver_ncnc_kcck-c.o $(EXTDEP) $(LIBDEP) 
+	$(LD) -o $@ $(BLDDIR)/rnndriver_ncnc_kcck-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/rnndriver_nc_kcck: $(OUTDIR)/.make $(BLDDIR)/rnndriver_nc_kcck-c.o $(EXTDEP) $(LIBDEP) 
+	$(LD) -o $@ $(BLDDIR)/rnndriver_nc_kcck-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

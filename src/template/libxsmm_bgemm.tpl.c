@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -76,7 +76,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
       const libxsmm_blasint nw_k3 = nw_k / b_k2;
       const libxsmm_blasint nw2 = nw * nw_k3;
       const libxsmm_blasint s = (ltid * nw2) / handle->nthreads;
-      const libxsmm_blasint e = ((ltid + 1) * nw2) / handle->nthreads;
+      const libxsmm_blasint e = (((libxsmm_blasint)ltid + 1) * nw2) / handle->nthreads;
       libxsmm_blasint o_i2 = 0, o_j2 = 0;
       nw_k2 = nw_k3;
 

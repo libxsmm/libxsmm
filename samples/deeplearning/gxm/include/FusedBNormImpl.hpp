@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -53,6 +53,7 @@ typedef struct {
   float eps, mmf;
   bool relu, bwd_relu;
   bool eltwise, use_global_stats;
+  string exec_mode;
   int algType;
   int in_data_type, out_data_type;
   int num_threads;
@@ -70,6 +71,7 @@ class FusedBNormImpl
     bool use_global_stats;
     string nname;
     TensorBuf* scratchp;
+    float scaling_factor_;
 
   public:
     FusedBNormImpl(FusedBNormImplParams* gp_, int engine_): gp(gp_), engine(engine_) {}
@@ -79,14 +81,15 @@ class FusedBNormImpl
     void set_node_name(string s) { nname = s; }
     void set_scratch_buffer(TensorBuf* sb) { scratchp = sb; }
     void set_global_stats(bool s) { use_global_stats = s; }
+    void set_scaling_factor(float s) { scaling_factor_ = s; }
 
     // Assume external threading, e.g., #pragma omp
-   virtual void forwardPropagate(vector<TensorBuf *> inp, TensorBuf* gammap, TensorBuf* betap, float* gmeanp, float* grstdp, TensorBuf *outp, int tid)
+   virtual void forwardPropagate(vector<TensorBuf *> inp, TensorBuf* gammap, TensorBuf* betap, TensorBuf* gmeanp, TensorBuf* gvarp, TensorBuf *outp, int tid)
     {
       switch(engine)
       {
         case XSMM:
-          forwardPropagate(inp, gammap, betap, gmeanp, grstdp, outp, tid);
+          forwardPropagate(inp, gammap, betap, gmeanp, gvarp, outp, tid);
           break;
       }
     }

@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -95,10 +95,15 @@ int main(int argc, char* argv[])
   else if(strcmp(argv[1], "test") == 0)
   {
     string mlcfg(argv[2]);
-    string solvercfg = string();
+    string solvercfg(argv[3]);
     engine->create(TEST, mlcfg, solvercfg);
     engine->run(TEST);
   }
+
+#ifdef USE_MLSL
+  MLSL::Environment::GetEnv().Finalize();
+#endif
+
   return 0;
 }
 

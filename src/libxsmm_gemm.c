@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -1638,21 +1638,21 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_mmbatch)(libxsmm_xmmfunction kernel, co
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_gemm_batch)(const libxsmm_gemm_precision*, const libxsmm_gemm_precision*,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_gemm_batch)(const libxsmm_gemm_precision*,
   const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const void*, const void*, const libxsmm_blasint*, const void*, const libxsmm_blasint*,
   const void*, void*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
   const libxsmm_blasint[], const libxsmm_blasint[], const libxsmm_blasint[],
   const libxsmm_blasint*);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_gemm_batch)(const libxsmm_gemm_precision* iprec, const libxsmm_gemm_precision* oprec,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_gemm_batch)(const libxsmm_gemm_precision* precision,
   const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
   const void* beta, void* c, const libxsmm_blasint* ldc, const libxsmm_blasint* index_base, const libxsmm_blasint* index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const libxsmm_blasint* batchsize)
 {
-  LIBXSMM_ASSERT(0 != iprec && 0 != oprec && 0 != m && 0 != n && 0 != k && 0 != index_base && 0 != index_stride && 0 != batchsize);
-  libxsmm_gemm_batch2(*iprec, *oprec, transa, transb, *m, *n, *k, alpha, a, lda, b, ldb, beta, c, ldc,
+  LIBXSMM_ASSERT(0 != precision && 0 != m && 0 != n && 0 != k && 0 != index_base && 0 != index_stride && 0 != batchsize);
+  libxsmm_gemm_batch(*precision, transa, transb, *m, *n, *k, alpha, a, lda, b, ldb, beta, c, ldc,
     *index_base, *index_stride, stride_a, stride_b, stride_c, *batchsize);
 }
 

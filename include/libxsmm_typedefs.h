@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -137,6 +137,12 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor li
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor libxsmm_trans_descriptor;
 /** Structure storing arguments of packed TRSM. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor libxsmm_trsm_descriptor;
+/** Structure storing arguments of packed TRMM. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor libxsmm_trmm_descriptor;
+/** Structure storing arguments of packed GETRF. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_getrf_descriptor libxsmm_getrf_descriptor;
+/** Structure storing arguments of packed GEMM. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_pgemm_descriptor libxsmm_pgemm_descriptor;
 
 /** Enumerates element/data types. */
 typedef enum libxsmm_datatype {
@@ -550,8 +556,10 @@ typedef enum libxsmm_kernel_kind {
   LIBXSMM_KERNEL_KIND_TRANS   = 2,
   /** TRSM kernel kind */
   LIBXSMM_KERNEL_KIND_TRSM    = 3,
+  /** TRMM kernel kind */
+  LIBXSMM_KERNEL_KIND_TRMM    = 4,
   /** Not a JIT kernel */
-  LIBXSMM_KERNEL_KIND_INVALID = 4
+  LIBXSMM_KERNEL_KIND_INVALID = 5
 } libxsmm_kernel_kind;
 
 /** Specialized function for matrix-copy (weak-typed). */
@@ -562,8 +570,12 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmcopyfunction)(
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(
   const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo);
 
-/** Specialized function for TRSMy (weak-typed). */
+/** Specialized function for TRSM (weak-typed). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtrsmfunction)(
+  const void* a, const void* b, void* c);
+
+/** Specialized function for TRMM (weak-typed). */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_xtrmmfunction)(
   const void* a, const void* b, void* c);
 
 /** Structure to receive information about GEMM-kernels (libxsmm_get_mmkernel_info). */

@@ -1,18 +1,6 @@
 # Export all variables to sub-make processes.
 #.EXPORT_ALL_VARIABLES: #export
 
-# Automatically disable parallel builds
-# depending on the version of GNU Make.
-# MAKE_PARALLEL=0: disable explicitly
-# MAKE_PARALLEL=1: enable explicitly
-ifeq (0,$(MAKE_PARALLEL))
-.NOTPARALLEL:
-else ifeq (,$(MAKE_PARALLEL))
-ifneq (3.82,$(firstword $(sort $(MAKE_VERSION) 3.82)))
-.NOTPARALLEL:
-endif
-endif
-
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
 DEPDIR = ../../..
 SRCDIR = $(ROOTDIR)
@@ -71,11 +59,10 @@ $(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o $(L
 $(OUTDIR)/layer_example_bf16: $(OUTDIR)/.make $(BLDDIR)/layer_example_bf16-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/layer_example_bf16-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-
-$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+$(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
 
-$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
+$(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h
 	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
 
 .PHONY: clean
