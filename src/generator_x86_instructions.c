@@ -974,7 +974,7 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
           exit(-1);
     }
 
-    if ( (i_vec_instr == LIBXSMM_X86_INSTR_VCVTNE2PS2BF16) || (i_vec_reg_src_1 == LIBXSMM_X86_VEC_REG_UNDEF) ) {
+    if ( (i_vec_instr == LIBXSMM_X86_INSTR_VCVTNE2PS2BF16) && (i_vec_reg_src_1 == LIBXSMM_X86_VEC_REG_UNDEF) ) {
       fprintf(stderr, "libxsmm_instruction_vec_compute_convert: VCVTNE2PS2BF16 needs to inputs\n");
       exit(-1);
     }
