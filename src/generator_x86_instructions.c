@@ -943,7 +943,8 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
                                                    const unsigned int      i_instruction_set,
                                                    const unsigned int      i_vec_instr,
                                                    const char              i_vector_name,
-                                                   const unsigned int      i_vec_reg_src,
+                                                   const unsigned int      i_vec_reg_src_0,
+                                                   const unsigned int      i_vec_reg_src_1,
                                                    const unsigned int      i_vec_reg_dst,
                                                    const unsigned int      i_shuffle_operand )
 {
@@ -973,37 +974,44 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
           exit(-1);
     }
 
+    if ( (i_vec_instr == LIBXSMM_X86_INSTR_VCVTNE2PS2BF16) || (i_vec_reg_src_1 == LIBXSMM_X86_VEC_REG_UNDEF) ) {
+      fprintf(stderr, "libxsmm_instruction_vec_compute_convert: VCVTNE2PS2BF16 needs to inputs\n");
+      exit(-1);
+    }
+
     switch ( i_vec_instr ) {
        case LIBXSMM_X86_INSTR_VCVTDQ2PS:
           l_fifth = 0x48;
-          l_vec0 = i_vec_reg_src;
+          l_vec0 = i_vec_reg_src_0;
           l_vec1 = i_vec_reg_dst;
           break;
        case LIBXSMM_X86_INSTR_VCVTPS2PD:
           l_fifth = 0x47;
-          l_vec0 = i_vec_reg_src;
+          l_vec0 = i_vec_reg_src_0;
           l_vec1 = i_vec_reg_dst;
           break;
        case LIBXSMM_X86_INSTR_VCVTPS2PH:
           l_second = 2;
           l_third = 1;
           l_fifth = 0x0a;
-          l_vec1 = i_vec_reg_src;
+          l_vec1 = i_vec_reg_src_0;
           l_vec0 = i_vec_reg_dst;
           break;
        case LIBXSMM_X86_INSTR_VCVTPH2PS:
           l_second = 1;
           l_third = 1;
-          l_vec0 = i_vec_reg_src;
+          l_vec0 = i_vec_reg_src_0;
           l_vec1 = i_vec_reg_dst;
           break;
        case LIBXSMM_X86_INSTR_VPMOVDW:
           l_second = 1;
           l_third = 2;
           l_fifth = 0x20;
-          l_vec1 = i_vec_reg_src;
+          l_vec1 = i_vec_reg_src_0;
           l_vec0 = i_vec_reg_dst;
           break;
+       case LIBXEMM_X86_INSTR_VCVTNEPS2BF16:
+       case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_convert: Unknown instruction type: %u\n", i_vec_instr);
           break;

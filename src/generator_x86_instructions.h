@@ -135,8 +135,9 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
  * @param i_instruction_set requested instruction set to encode
  * @param i_vec_instr actual operation variant
  * @param i_vector_name the vector register name prefix (x,y or z)
- * @param i_vec_reg_src the first/source vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_dst the second/destination vector register number (xmm/ymm: 0-15, zmm: 0-31)
+ * @param i_vec_reg_src_0 the first source vector register number (xmm/ymm: 0-15, zmm: 0-31)
+ * @param i_vec_reg_src_1 the seconf source vector register number (xmm/ymm: 0-15, zmm: 0-31)
+ * @param i_vec_reg_dst the destination vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_shuffle_operand is an immediate (only looked at when needed)
  */
 LIBXSMM_API_INTERN
@@ -144,7 +145,8 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
                                               const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_src,
+                                              const unsigned int      i_vec_reg_src_0,
+                                              const unsigned int      i_vec_reg_src_1,
                                               const unsigned int      i_vec_reg_dst,
                                               const unsigned int      i_shuffle_operand );
 

@@ -684,7 +684,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
               i_conv_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VPMOVDW,
               i_conv_kernel_config->vector_name,
-              reg_X,
+              reg_X, LIBXSMM_X86_VEC_REG_UNDEF,
               0,
               LIBXSMM_X86_VEC_REG_UNDEF);
 #if 0
