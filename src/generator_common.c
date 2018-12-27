@@ -478,7 +478,7 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_VDPBF16PS:
       libxsmm_strncpy(o_instr_name, "vdpbf16ps", i_instr_name_max_length, 9 );
       break;
-    case LIBXEMM_X86_INSTR_VCVTNEPS2BF16:
+    case LIBXSMM_X86_INSTR_VCVTNEPS2BF16:
       libxsmm_strncpy(o_instr_name, "vcvtneps2bf16", i_instr_name_max_length, 13 );
       break;
     case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:

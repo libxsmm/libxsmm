@@ -953,9 +953,11 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size; /* i = *loc; */
     unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_vec0 = 0, l_vec1 = 0, l_second = 0, l_third = 0, l_fifth = 0;
+    int l_vec0=0, l_vec1=0, l_second=0, l_third=0, l_fourth=0, l_fifth=0;
     int l_vecval0, l_vecgrp0, l_oddgrp0, l_2or3grp0;
     int l_vecval1, l_vecgrp1, l_oddgrp1, l_2or3grp1;
+    /* these defines are for LIBXSMM_X86_INSTR_VCVTNE2PS2BF16 only: */
+    int l_vecvalsrc1, l_vecgrpsrc1, l_oddgrpsrc1, l_2or3grpsrc1;
 
     if ( l_maxsize - i < 20 )
     {
@@ -1010,8 +1012,24 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
           l_vec1 = i_vec_reg_src_0;
           l_vec0 = i_vec_reg_dst;
           break;
-       case LIBXEMM_X86_INSTR_VCVTNEPS2BF16:
+       case LIBXSMM_X86_INSTR_VCVTNEPS2BF16:
+          l_second = 1;
+          l_third = 2;
+          l_fifth = 0x5F;
+          l_vec1 = i_vec_reg_dst;
+          l_vec0 = i_vec_reg_src_0;
+          break;
        case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
+          l_vecvalsrc1 = i_vec_reg_src_1 % 8;
+          l_vecgrpsrc1 = i_vec_reg_src_1 / 8;
+          l_oddgrpsrc1 = ((l_vecgrpsrc1 % 2)==1);
+          l_2or3grpsrc1 = (l_vecgrpsrc1>=2);
+          l_second = 1;
+          l_third = 3 - l_oddgrpsrc1*0x40 - l_vecvalsrc1*0x08;
+          l_fourth = -l_2or3grpsrc1 * 0x08;
+          l_fifth = 0x5F;
+          l_vec1 = i_vec_reg_dst;
+          l_vec0 = i_vec_reg_src_0;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_convert: Unknown instruction type: %u\n", i_vec_instr);
           break;
@@ -1027,8 +1045,8 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
 
     buf[i++] = (unsigned char)(0x62);
     buf[i++] = (unsigned char)(0xf1 + l_second - l_oddgrp0 * 0x20 - l_oddgrp1 * 0x80 - l_2or3grp0 * 0x40 - l_2or3grp1 * 0x10);
-    buf[i++] = (unsigned char)(0x7c + l_third );
-    buf[i++] = (unsigned char)(0x48);
+    buf[i++] = (unsigned char)(0x7c + l_third);
+    buf[i++] = (unsigned char)(0x48 + l_fourth);
     buf[i++] = (unsigned char)(0x13 + l_fifth);
     buf[i++] = (unsigned char)(0xc0 + l_vecval0 + l_vecval1*8);
 
