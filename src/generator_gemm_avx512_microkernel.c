@@ -764,7 +764,8 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
   unsigned int b_pref_freq = 1;
 
 #if !defined(NDEBUG)
-  if ( i_n_blocking > 28 ) {
+  /* @TODO, this is just worst case handling, int16 and bf16 might require 28 as upper limit on certain platforms */
+  if ( i_n_blocking > 30 ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
   }
