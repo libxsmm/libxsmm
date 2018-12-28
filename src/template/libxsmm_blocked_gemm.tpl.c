@@ -30,7 +30,7 @@
    Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-LIBXSMM_VLA_DECL(2, libxsmm_bgemm_lock, locks, handle->locks, handle->nb);
+LIBXSMM_VLA_DECL(2, libxsmm_blocked_gemm_lock, locks, handle->locks, handle->nb);
 /* TODO: pad thread-local buffer members by the size of a cache-line in order to avoid "Ping-Pong" */
 LIBXSMM_VLA_DECL(2, LIBXSMM_BGEMM_TEMPLATE_TYPE_C, l_out, (LIBXSMM_BGEMM_TEMPLATE_TYPE_C*)(((char*)handle->buffer) +
   ltid * LIBXSMM_UP2(handle->bm * handle->bn * sizeof(LIBXSMM_BGEMM_TEMPLATE_TYPE_C), LIBXSMM_CACHELINE)), handle->bm);
@@ -91,7 +91,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
         }
         else {
           if (o_i2 != i2 || o_j2 != j2) {
-            libxsmm_bgemm_lock *const lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
+            libxsmm_blocked_gemm_lock *const lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
             LIBXSMM_ATOMIC_ACQUIRE(&lock->state, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
             for (ki = 0; ki < handle->bn; ++ki) {
               LIBXSMM_PRAGMA_SIMD
@@ -137,7 +137,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
         }
 
         if (w_i == (e - 1)) {
-          libxsmm_bgemm_lock* lock;
+          libxsmm_blocked_gemm_lock* lock;
           o_i2 = i2;
           o_j2 = j2;
 

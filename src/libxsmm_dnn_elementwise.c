@@ -29,7 +29,7 @@
 /* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_elementwise.h"
-#include "libxsmm_bgemm_types.h"
+#include "libxsmm_blocked_gemm_types.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -304,14 +304,14 @@ extern unsigned long long Gbl_t_input, Gbl_t_recur, Gbl_t_eltwise, Gbl_t_nonlin;
 extern double Gbl_duration_input, Gbl_duration_recur, Gbl_duration_eltwise, Gbl_duration_nonlin;
 #endif
 
-LIBXSMM_API_INTERN void libxsmm_internal_recursive_step(libxsmm_bgemm_handle* handle, LIBXSMM_DNN_ELTWISE_FTYPE* u, LIBXSMM_DNN_ELTWISE_FTYPE* h, LIBXSMM_DNN_ELTWISE_FTYPE* op1, LIBXSMM_DNN_ELTWISE_FTYPE *op2,
+LIBXSMM_API_INTERN void libxsmm_internal_recursive_step(libxsmm_blocked_gemm_handle* handle, LIBXSMM_DNN_ELTWISE_FTYPE* u, LIBXSMM_DNN_ELTWISE_FTYPE* h, LIBXSMM_DNN_ELTWISE_FTYPE* op1, LIBXSMM_DNN_ELTWISE_FTYPE *op2,
   LIBXSMM_DNN_ELTWISE_FTYPE *temp, LIBXSMM_DNN_ELTWISE_FTYPE *dst, int act, libxsmm_blasint size, int start_thread, int tid)
 {
   const int ltid = tid - start_thread;
 #if defined(LSTM_TIMING)
   if (ltid == 0) { Gbl_t_recur = libxsmm_timer_tick(); }
 #endif
-  libxsmm_bgemm_st(handle, u, h, op1, start_thread, ltid);
+  libxsmm_blocked_gemm_st(handle, u, h, op1, start_thread, ltid);
 #if defined(LSTM_TIMING)
   if (ltid == 0) {
     Gbl_duration_recur = libxsmm_timer_duration(Gbl_t_recur, libxsmm_timer_tick());
