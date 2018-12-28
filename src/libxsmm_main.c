@@ -1184,6 +1184,9 @@ LIBXSMM_API_INLINE const char* internal_get_typename(int datatype)
   else if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
     return "i8i32";
   }
+  else if ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
+    return "bf16f32";
+  }
   else {
     return "void";
   }

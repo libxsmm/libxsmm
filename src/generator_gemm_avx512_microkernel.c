@@ -270,6 +270,37 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                        i_k_blocking * i_micro_kernel_config->datatype_size * i_xgemm_desc->lda );
     }
 
+    /* in case of bfloat16 "prepare" A matrix in registers zmm l_k%2 and zmm3 using FP32 numbers */
+    if ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      /* we put "0" elements of A matrix into zmm3 */
+      libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          LIBXSMM_X86_INSTR_VPSLLD,
+          i_micro_kernel_config->vector_name,
+          l_k%2,
+          3,
+          LIBXSMM_X86_VEC_REG_UNDEF,
+          16);
+
+      /* we put "1" elements of A matrix into l_k%2 zmm*/
+      libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          LIBXSMM_X86_INSTR_VPSRAD,
+          i_micro_kernel_config->vector_name,
+          l_k%2,
+          l_k%2,
+          LIBXSMM_X86_VEC_REG_UNDEF,
+          16);
+      libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
+          i_micro_kernel_config->instruction_set,
+          LIBXSMM_X86_INSTR_VPSLLD,
+          i_micro_kernel_config->vector_name,
+          l_k%2,
+          l_k%2,
+          LIBXSMM_X86_VEC_REG_UNDEF,
+          16);
+    }
+
     /* compute vectorwidth (A) * column broadcast (B) */
     for ( l_n = 0; l_n < i_n_blocking; l_n++) {
       /* determining base, idx and scale values */
@@ -373,34 +404,6 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
         }
       } else if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
         if ( 1 == 1 ) {
-          /* we put "0" elements of A matrix into zmm3 */
-          libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPSLLD,
-              i_micro_kernel_config->vector_name,
-              l_k%2,
-              3,
-              LIBXSMM_X86_VEC_REG_UNDEF,
-              16);
-
-          /* we put "1" elements of A matrix into l_k%2 zmm*/
-          libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPSRAD,
-              i_micro_kernel_config->vector_name,
-              l_k%2,
-              l_k%2,
-              LIBXSMM_X86_VEC_REG_UNDEF,
-              16);
-          libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPSLLD,
-              i_micro_kernel_config->vector_name,
-              l_k%2,
-              l_k%2,
-              LIBXSMM_X86_VEC_REG_UNDEF,
-              16);
-
           /* broadcast pair of B matrix values into zmm2 */
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             i_micro_kernel_config->instruction_set,
@@ -779,34 +782,6 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
         }
       } else if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
         if ( 1 == 1 ) {
-          /* we put "0" elements of A matrix into zmm3 */
-          libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPSLLD,
-              i_micro_kernel_config->vector_name,
-              l_k%2,
-              3,
-              LIBXSMM_X86_VEC_REG_UNDEF,
-              16);
-
-          /* we put "1" elements of A matrix into l_k%2 zmm*/
-          libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPSRAD,
-              i_micro_kernel_config->vector_name,
-              l_k%2,
-              l_k%2,
-              LIBXSMM_X86_VEC_REG_UNDEF,
-              16);
-          libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
-              i_micro_kernel_config->instruction_set,
-              LIBXSMM_X86_INSTR_VPSLLD,
-              i_micro_kernel_config->vector_name,
-              l_k%2,
-              l_k%2,
-              LIBXSMM_X86_VEC_REG_UNDEF,
-              16);
-
           /* broadcast pair of B matrix values into zmm2 */
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             i_micro_kernel_config->instruction_set,
@@ -2076,7 +2051,8 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                                       i_xgemm_desc->n,
                                                       i_xgemm_desc->k);
     } else {
-      if ( LIBXSMM_GEMM_PRECISION_I16 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+      if ( (LIBXSMM_GEMM_PRECISION_I16  != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && 
+           (LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ))    ) {
         libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( io_generated_code,
                                                                    i_gp_reg_mapping,
                                                                    i_micro_kernel_config,
