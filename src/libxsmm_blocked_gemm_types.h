@@ -28,13 +28,13 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_BGEMM_TYPES_H
-#define LIBXSMM_BGEMM_TYPES_H
+#ifndef LIBXSMM_BLOCKED_GEMM_TYPES_H
+#define LIBXSMM_BLOCKED_GEMM_TYPES_H
 
 #include "libxsmm_gemm.h"
 
-#if !defined(LIBXSMM_BGEMM_CHECKS) && !defined(NDEBUG)
-# define LIBXSMM_BGEMM_CHECKS
+#if !defined(LIBXSMM_BLOCKED_GEMM_CHECKS) && !defined(NDEBUG)
+# define LIBXSMM_BLOCKED_GEMM_CHECKS
 #endif
 
 
@@ -59,5 +59,5 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_blocked_gemm_handle {
   int nthreads;
 };
 
-#endif /*LIBXSMM_BGEMM_TYPES_H*/
+#endif /*LIBXSMM_BLOCKED_GEMM_TYPES_H*/
 

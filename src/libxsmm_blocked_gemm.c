@@ -52,7 +52,7 @@ LIBXSMM_API libxsmm_blocked_gemm_handle* libxsmm_blocked_gemm_handle_create(/*un
   const libxsmm_gemm_prefetch_type* prefetch,
   const libxsmm_blocked_gemm_order* order)
 {
-  const char *const env_m = getenv("LIBXSMM_BGEMM_M"), *const env_n = getenv("LIBXSMM_BGEMM_N"), *const env_k = getenv("LIBXSMM_BGEMM_K");
+  const char *const env_m = getenv("LIBXSMM_BLOCKED_GEMM_M"), *const env_n = getenv("LIBXSMM_BLOCKED_GEMM_N"), *const env_k = getenv("LIBXSMM_BLOCKED_GEMM_K");
   const libxsmm_blasint mm = LIBXSMM_MIN(0 == bm ? ((0 == env_m || 0 == *env_m) ? 32 : atoi(env_m)) : *bm, m);
   const libxsmm_blasint kk = LIBXSMM_MIN(0 == bk ? ((0 == env_k || 0 == *env_k) ? mm : atoi(env_k)) : *bk, k);
   const libxsmm_blasint nn = LIBXSMM_MIN(0 == bn ? ((0 == env_n || 0 == *env_n) ? kk : atoi(env_n)) : *bn, n);
@@ -71,7 +71,7 @@ LIBXSMM_API libxsmm_blocked_gemm_handle* libxsmm_blocked_gemm_handle_create(/*un
       if (0 == prefetch) { /* auto-prefetch */
         /* TODO: more sophisticated strategy perhaps according to CPUID */
         const libxsmm_gemm_prefetch_type prefetch_default = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;
-        const char *const env_p = getenv("LIBXSMM_BGEMM_PREFETCH");
+        const char *const env_p = getenv("LIBXSMM_BLOCKED_GEMM_PREFETCH");
         desc = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec, mm, nn, kk, mm/*lda*/, kk/*ldb*/, mm/*ldc*/,
           alpha, beta, 0 == gemm_flags ? LIBXSMM_GEMM_FLAG_NONE : *gemm_flags,
           (0 == env_p || 0 == *env_p) ? prefetch_default : libxsmm_gemm_uid2prefetch(atoi(env_p)));
@@ -116,7 +116,7 @@ LIBXSMM_API libxsmm_blocked_gemm_handle* libxsmm_blocked_gemm_handle_create(/*un
           handle.b_m1 = *b_m1; handle.b_n1 = *b_n1; handle.b_k1 = *b_k1; handle.b_k2 = *b_k2;
           handle.iprec = iprec; handle.oprec = oprec;
           memset(handle.locks, 0, size_locks);
-          handle.order = (0 == order ? LIBXSMM_BGEMM_ORDER_JIK : *order);
+          handle.order = (0 == order ? LIBXSMM_BLOCKED_GEMM_ORDER_JIK : *order);
           handle.nthreads = nthreads;
           *result = handle;
         }
@@ -180,19 +180,19 @@ LIBXSMM_API int libxsmm_blocked_gemm_copyin_a(const libxsmm_blocked_gemm_handle*
 #endif
     switch (handle->iprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE double
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE double
 #       include "template/libxsmm_blocked_gemm_copyin_a.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE float
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE float
 #       include "template/libxsmm_blocked_gemm_copyin_a.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE short
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE short
 #       include "template/libxsmm_blocked_gemm_copyin_a.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -230,19 +230,19 @@ LIBXSMM_API int libxsmm_blocked_gemm_copyin_b(const libxsmm_blocked_gemm_handle*
 #endif
     switch (handle->iprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE double
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE double
 #       include "template/libxsmm_blocked_gemm_copyin_b.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE float
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE float
 #       include "template/libxsmm_blocked_gemm_copyin_b.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE short
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE short
 #       include "template/libxsmm_blocked_gemm_copyin_b.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -280,19 +280,19 @@ LIBXSMM_API int libxsmm_blocked_gemm_copyin_c(const libxsmm_blocked_gemm_handle*
 #endif
     switch (handle->oprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE double
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE double
 #       include "template/libxsmm_blocked_gemm_copyin_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE float
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE float
 #       include "template/libxsmm_blocked_gemm_copyin_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE int
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE int
 #       include "template/libxsmm_blocked_gemm_copyin_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -330,19 +330,19 @@ LIBXSMM_API int libxsmm_blocked_gemm_copyout_c(const libxsmm_blocked_gemm_handle
 #endif
     switch (handle->oprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE double
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE double
 #       include "template/libxsmm_blocked_gemm_copyout_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE float
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE float
 #       include "template/libxsmm_blocked_gemm_copyout_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE int
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE int
 #       include "template/libxsmm_blocked_gemm_copyout_c.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -380,19 +380,19 @@ LIBXSMM_API int libxsmm_blocked_gemm_convert_b_to_a(const libxsmm_blocked_gemm_h
 #endif
     switch (handle->iprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE double
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE double
 #       include "template/libxsmm_blocked_gemm_convert_b_to_a.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE float
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE float
 #       include "template/libxsmm_blocked_gemm_convert_b_to_a.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE short
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE short
 #       include "template/libxsmm_blocked_gemm_convert_b_to_a.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -430,19 +430,19 @@ LIBXSMM_API int libxsmm_blocked_gemm_transpose_b(const libxsmm_blocked_gemm_hand
 #endif
     switch (handle->iprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE double
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE double
 #       include "template/libxsmm_blocked_gemm_transpose_b.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE float
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE float
 #       include "template/libxsmm_blocked_gemm_transpose_b.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE short
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE short
 #       include "template/libxsmm_blocked_gemm_transpose_b.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE
       } break;
       default: {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -471,32 +471,32 @@ LIBXSMM_API_INLINE void internal_bgemm_order(libxsmm_blocked_gemm_order order,
   libxsmm_blasint* i2, libxsmm_blasint* j2, libxsmm_blasint* k2)
 {
   switch (order) {
-    case LIBXSMM_BGEMM_ORDER_JIK: {
+    case LIBXSMM_BLOCKED_GEMM_ORDER_JIK: {
       *j2 = (w_i / (nw_i * nw_k));
       *i2 = (w_i - (*j2) * (nw_i * nw_k)) / nw_k;
       *k2 = (w_i % nw_k);
     } break;
-    case LIBXSMM_BGEMM_ORDER_IJK: {
+    case LIBXSMM_BLOCKED_GEMM_ORDER_IJK: {
       *i2 = (w_i / (nw_j * nw_k));
       *j2 = (w_i - (*i2) * (nw_j * nw_k)) / nw_k;
       *k2 = (w_i % nw_k);
     } break;
-    case LIBXSMM_BGEMM_ORDER_JKI: {
+    case LIBXSMM_BLOCKED_GEMM_ORDER_JKI: {
       *j2 = (w_i / (nw_k * nw_i));
       *k2 = (w_i - (*j2) * (nw_k * nw_i)) / nw_i;
       *i2 = (w_i % nw_i);
     } break;
-    case LIBXSMM_BGEMM_ORDER_IKJ: {
+    case LIBXSMM_BLOCKED_GEMM_ORDER_IKJ: {
       *i2 = (w_i / (nw_k * nw_j));
       *k2 = (w_i - (*i2) * (nw_k * nw_j)) / nw_j;
       *j2 = (w_i % nw_j);
     } break;
-    case LIBXSMM_BGEMM_ORDER_KJI: {
+    case LIBXSMM_BLOCKED_GEMM_ORDER_KJI: {
       *k2 = (w_i / (nw_j * nw_i));
       *j2 = (w_i - (*k2) * (nw_j * nw_i)) / nw_i;
       *i2 = (w_i % nw_i);
     } break;
-    case LIBXSMM_BGEMM_ORDER_KIJ: {
+    case LIBXSMM_BLOCKED_GEMM_ORDER_KIJ: {
       *k2 = (w_i / (nw_i * nw_j));
       *i2 = (w_i - (*k2) * (nw_i * nw_j)) / nw_j;
       *j2 = (w_i % nw_j);
@@ -509,7 +509,7 @@ LIBXSMM_API void libxsmm_blocked_gemm_st(const libxsmm_blocked_gemm_handle* hand
   /*unsigned*/int start_thread, /*unsigned*/int tid)
 {
   static int error_once = 0;
-#if defined(LIBXSMM_BGEMM_CHECKS)
+#if defined(LIBXSMM_BLOCKED_GEMM_CHECKS)
   if (0 != handle && 0 != a && 0 != b && 0 != c && start_thread <= tid && 0 <= tid)
 #endif
   {
@@ -519,33 +519,33 @@ LIBXSMM_API void libxsmm_blocked_gemm_st(const libxsmm_blocked_gemm_handle* hand
     }
     switch (handle->iprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE_AB double
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE_C  double
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB double
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C  double
 #       include "template/libxsmm_blocked_gemm.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE_AB
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE_C
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C
       } break;
       case LIBXSMM_GEMM_PRECISION_F32: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE_AB float
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE_C  float
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB float
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C  float
 #       include "template/libxsmm_blocked_gemm.tpl.c"
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE_AB
-#       undef  LIBXSMM_BGEMM_TEMPLATE_TYPE_C
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB
+#       undef  LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C
       } break;
       case LIBXSMM_GEMM_PRECISION_I16: {
-#       define LIBXSMM_BGEMM_TEMPLATE_TYPE_AB short
+#       define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB short
         if (LIBXSMM_GEMM_PRECISION_I32 == handle->oprec) {
-#         define LIBXSMM_BGEMM_TEMPLATE_TYPE_C int
+#         define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C int
 #         include "template/libxsmm_blocked_gemm.tpl.c"
-#         undef LIBXSMM_BGEMM_TEMPLATE_TYPE_C
+#         undef LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C
         }
         else { /* WSMM */
-#         define LIBXSMM_BGEMM_TEMPLATE_TYPE_C float
+#         define LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C float
 #         include "template/libxsmm_blocked_gemm.tpl.c"
-#         undef LIBXSMM_BGEMM_TEMPLATE_TYPE_C
+#         undef LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C
           LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_F32 == handle->oprec);
         }
-#       undef LIBXSMM_BGEMM_TEMPLATE_TYPE_AB
+#       undef LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB
       } break;
       default: if (0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -557,7 +557,7 @@ LIBXSMM_API void libxsmm_blocked_gemm_st(const libxsmm_blocked_gemm_handle* hand
       libxsmm_barrier_wait(handle->barrier, ltid);
     }
   }
-#if defined(LIBXSMM_BGEMM_CHECKS)
+#if defined(LIBXSMM_BLOCKED_GEMM_CHECKS)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {

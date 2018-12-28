@@ -28,20 +28,20 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_BGEMM_H
-#define LIBXSMM_BGEMM_H
+#ifndef LIBXSMM_BLOCKED_GEMM_H
+#define LIBXSMM_BLOCKED_GEMM_H
 
 #include "libxsmm_typedefs.h"
 
 
 /** Denotes the BGEMM data order. */
 typedef enum libxsmm_blocked_gemm_order {
-  LIBXSMM_BGEMM_ORDER_JIK = 0,
-  LIBXSMM_BGEMM_ORDER_IJK = 1,
-  LIBXSMM_BGEMM_ORDER_JKI = 2,
-  LIBXSMM_BGEMM_ORDER_IKJ = 3,
-  LIBXSMM_BGEMM_ORDER_KJI = 4,
-  LIBXSMM_BGEMM_ORDER_KIJ = 5
+  LIBXSMM_BLOCKED_GEMM_ORDER_JIK = 0,
+  LIBXSMM_BLOCKED_GEMM_ORDER_IJK = 1,
+  LIBXSMM_BLOCKED_GEMM_ORDER_JKI = 2,
+  LIBXSMM_BLOCKED_GEMM_ORDER_IKJ = 3,
+  LIBXSMM_BLOCKED_GEMM_ORDER_KJI = 4,
+  LIBXSMM_BLOCKED_GEMM_ORDER_KIJ = 5
 } libxsmm_blocked_gemm_order;
 
 /** Describes the Block-GEMM (BGEMM) operation. */
@@ -95,5 +95,5 @@ LIBXSMM_API void libxsmm_blocked_gemm_st(const libxsmm_blocked_gemm_handle* hand
 LIBXSMM_APIEXT void libxsmm_blocked_gemm_omp(const libxsmm_blocked_gemm_handle* handle,
   const void* a, const void* b, void* c, /*unsigned*/int count);
 
-#endif /*LIBXSMM_BGEMM_H*/
+#endif /*LIBXSMM_BLOCKED_GEMM_H*/
 

@@ -267,18 +267,18 @@ int main(int argc, char* argv[])
   int bn = 32;      /* first blocking factor for n */
   int bk = 32;      /* first blocking factor for k */
   /* denotes order of execution for bgemm */
-  libxsmm_blocked_gemm_order order = LIBXSMM_BGEMM_ORDER_JIK;
-  const char *const env_b_m1 = getenv("LIBXSMM_BGEMM_M1");
+  libxsmm_blocked_gemm_order order = LIBXSMM_BLOCKED_GEMM_ORDER_JIK;
+  const char *const env_b_m1 = getenv("LIBXSMM_BLOCKED_GEMM_M1");
   const int b_m1 = (0 == env_b_m1) ? 1 : atoi(env_b_m1);
-  const char *const env_b_n1 = getenv("LIBXSMM_BGEMM_N1");
+  const char *const env_b_n1 = getenv("LIBXSMM_BLOCKED_GEMM_N1");
   const int b_n1 = (0 == env_b_n1) ? 1 : atoi(env_b_n1);
-  const char *const env_b_k1 = getenv("LIBXSMM_BGEMM_K1");
+  const char *const env_b_k1 = getenv("LIBXSMM_BLOCKED_GEMM_K1");
   const int b_k1 = (0 == env_b_k1) ? 1 : atoi(env_b_k1);
-  const char *const env_b_m2 = getenv("LIBXSMM_BGEMM_M2");
+  const char *const env_b_m2 = getenv("LIBXSMM_BLOCKED_GEMM_M2");
   const int b_m2 = (0 == env_b_m2) ? 1 : atoi(env_b_m2);
-  const char *const env_b_n2 = getenv("LIBXSMM_BGEMM_N2");
+  const char *const env_b_n2 = getenv("LIBXSMM_BLOCKED_GEMM_N2");
   const int b_n2 = (0 == env_b_n2) ? 1 : atoi(env_b_n2);
-  const char *const env_b_k2 = getenv("LIBXSMM_BGEMM_K2");
+  const char *const env_b_k2 = getenv("LIBXSMM_BLOCKED_GEMM_K2");
   const int b_k2 = (0 == env_b_k2) ? 1 : atoi(env_b_k2);
   libxsmm_blocked_gemm_handle* handleux = 0;
   libxsmm_blocked_gemm_handle* handlewh = 0;
