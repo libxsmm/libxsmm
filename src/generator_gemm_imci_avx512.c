@@ -396,6 +396,27 @@ void libxsmm_generator_gemm_imci_avx512_kernel_mloop( libxsmm_generated_code*   
 }
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_imci_avx512_get_max_n_blocking( const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                                    const char*                    i_arch ) {
+  /* handle KNM qmadd */
+  if ( (strcmp(i_arch, "knm") == 0) && (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) {
+    return 28;
+  }
+
+  /* handle int16 on SKX */
+  if ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) {
+    return 28;
+  }
+
+  /* handle bf16 */
+  if ( /*(strcmp(i_arch, "skx") == 0) &&*/ (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) {
+    return 28;
+  }
+
+  return 30;
+}
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         io_generated_code,
     const libxsmm_gemm_descriptor* i_xgemm_desc,
     const char*                    i_arch ) {
@@ -403,7 +424,7 @@ void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
-  unsigned int l_max_n_rb_block = ( (strcmp(i_arch, "knm") == 0) || ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) ) ? 28 : 30;
+  unsigned int l_max_n_rb_block = libxsmm_generator_gemm_imci_avx512_get_max_n_blocking( i_xgemm_desc, i_arch );
   unsigned int l_number_of_chunks = 1+((i_xgemm_desc->n-1)/l_max_n_rb_block);
   unsigned int l_modulo = i_xgemm_desc->n%l_number_of_chunks;
   unsigned int l_n2 = i_xgemm_desc->n/l_number_of_chunks;
