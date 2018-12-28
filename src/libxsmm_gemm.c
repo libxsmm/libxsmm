@@ -1057,6 +1057,11 @@ LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
   const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
+  LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(beta);
+  LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb);
+  LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
+  LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(c);
+  LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(ldb); LIBXSMM_UNUSED(ldc);
   LIBXSMM_ASSERT_MSG(0, "libxsmm_bsgemm is not yet implemented!");
 }
 
