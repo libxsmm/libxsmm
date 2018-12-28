@@ -388,7 +388,7 @@ for (j = t-1; j >= 0; --j) {
   }
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-    if (C == K) {
+    if ((C == K) && (bc == bk)) {
       /* Interleave computation of dr = difoc * h^T and dw = difoc * x^T to take advantage of temporal locality */
       for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
         icb = ikic / (K/bk);
