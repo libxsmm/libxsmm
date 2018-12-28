@@ -86,6 +86,9 @@ libxsmm_blas_dgemm_
 libxsmm_blas_sgemm_
 libxsmm_blas_xgemm
 libxsmm_blas_xgemm_
+libxsmm_bsgemm_descriptor_init
+libxsmm_bsmmdispatch
+libxsmm_bsmmdispatch_reducebatch
 libxsmm_convert_bf16_f32
 libxsmm_cpuid
 libxsmm_cpuid_x86
