@@ -153,7 +153,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bsgemm_descriptor_init(libxsmm_desc
     && 0 != blob)
   {
     result.blob = blob;
-    LIBXSMM_GEMM_DESCRIPTOR2(*result.ptr, LIBXSMM_GEMM_PRECISION(bfloat), LIBXSMM_GEMM_PRECISION(float),
+    LIBXSMM_GEMM_DESCRIPTOR2(*result.ptr, LIBXSMM_GEMM_PRECISION(libxsmm_bfloat16), LIBXSMM_GEMM_PRECISION(float),
       flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
   }
   else { /* unsupported */
