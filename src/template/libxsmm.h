@@ -42,7 +42,7 @@
 #define LIBXSMM_BRANCH  LIBXSMM_CONFIG_BRANCH
 
 /**
- * Numbers to denote the version of LIBXSMM (libxsmm_config.h).
+ * Semantic version according to https://semver.org/ (see also libxsmm_config.h).
  * LIBXSMM_VERSION_MAJOR:  Major version derived from the most recent RCS-tag.
  * LIBXSMM_VERSION_MINOR:  Minor version derived from the most recent RCS-tag.
  * LIBXSMM_VERSION_UPDATE: Update number derived from the most recent RCS-tag.
