@@ -212,7 +212,7 @@ LIBXSMM_INLINE void matrix_inverse(int size, float *src, float *dst)
 }
 
 
-void libxsmm_bgemm_copyout_b(int k, int n, int blk_k, int blk_n, float *src, float *dst)
+void libxsmm_blocked_gemm_copyout_b(int k, int n, int blk_k, int blk_n, float *src, float *dst)
 {
   LIBXSMM_VLA_DECL(4, float, real_src, src, k/blk_k, blk_n, blk_k);
   LIBXSMM_VLA_DECL(2, float, real_dst, dst, k);
@@ -267,23 +267,23 @@ int main(int argc, char* argv[])
   int bn = 32;      /* first blocking factor for n */
   int bk = 32;      /* first blocking factor for k */
   /* denotes order of execution for bgemm */
-  libxsmm_bgemm_order order = LIBXSMM_BGEMM_ORDER_JIK;
-  const char *const env_b_m1 = getenv("LIBXSMM_BGEMM_M1");
+  libxsmm_blocked_gemm_order order = LIBXSMM_BLOCKED_GEMM_ORDER_JIK;
+  const char *const env_b_m1 = getenv("LIBXSMM_BLOCKED_GEMM_M1");
   const int b_m1 = (0 == env_b_m1) ? 1 : atoi(env_b_m1);
-  const char *const env_b_n1 = getenv("LIBXSMM_BGEMM_N1");
+  const char *const env_b_n1 = getenv("LIBXSMM_BLOCKED_GEMM_N1");
   const int b_n1 = (0 == env_b_n1) ? 1 : atoi(env_b_n1);
-  const char *const env_b_k1 = getenv("LIBXSMM_BGEMM_K1");
+  const char *const env_b_k1 = getenv("LIBXSMM_BLOCKED_GEMM_K1");
   const int b_k1 = (0 == env_b_k1) ? 1 : atoi(env_b_k1);
-  const char *const env_b_m2 = getenv("LIBXSMM_BGEMM_M2");
+  const char *const env_b_m2 = getenv("LIBXSMM_BLOCKED_GEMM_M2");
   const int b_m2 = (0 == env_b_m2) ? 1 : atoi(env_b_m2);
-  const char *const env_b_n2 = getenv("LIBXSMM_BGEMM_N2");
+  const char *const env_b_n2 = getenv("LIBXSMM_BLOCKED_GEMM_N2");
   const int b_n2 = (0 == env_b_n2) ? 1 : atoi(env_b_n2);
-  const char *const env_b_k2 = getenv("LIBXSMM_BGEMM_K2");
+  const char *const env_b_k2 = getenv("LIBXSMM_BLOCKED_GEMM_K2");
   const int b_k2 = (0 == env_b_k2) ? 1 : atoi(env_b_k2);
-  libxsmm_bgemm_handle* handleux = 0;
-  libxsmm_bgemm_handle* handlewh = 0;
-  libxsmm_bgemm_handle* handlett = 0;
-  libxsmm_bgemm_handle* handlewd = 0;
+  libxsmm_blocked_gemm_handle* handleux = 0;
+  libxsmm_blocked_gemm_handle* handlewh = 0;
+  libxsmm_blocked_gemm_handle* handlett = 0;
+  libxsmm_blocked_gemm_handle* handlewd = 0;
   const libxsmm_gemm_prefetch_type strategy = LIBXSMM_PREFETCH_AUTO;
 
   const char *const env_check = getenv("CHECK");
@@ -662,26 +662,26 @@ int main(int argc, char* argv[])
   LIBXSMM_VLA_DECL(2, float, hb, ht, m * n);
 
   if (pass == 0) {
-    handleux = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handleux = libxsmm_blocked_gemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
-    handlewh = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handlewh = libxsmm_blocked_gemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
-    handlett = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handlett = libxsmm_blocked_gemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, n*t, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, &strategy, &order);
   } else {
-    handlewd = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handlewd = libxsmm_blocked_gemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, n, m, &bm, &bn, &bm, &b_m1, &b_n1, &b_m1, &b_m2,
       &alpha, &beta, &gemm_flags, &strategy, &order); /* W^T*delta */
-    handlewh = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handlewh = libxsmm_blocked_gemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, m, n, &bm, &bm, &bn, &b_m1, &b_m1, &b_n1, &b_n2,
       &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*h^T */
-    handlett = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handlett = libxsmm_blocked_gemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       m, k, n, &bm, &bk, &bn, &b_m1, &b_k1, &b_n1, &b_n2,
       &alpha, &beta, &gemm_flags, &strategy, &order); /* delta*x^T */
-    handleux = libxsmm_bgemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
+    handleux = libxsmm_blocked_gemm_handle_create(nThreads, LIBXSMM_GEMM_PRECISION(float), LIBXSMM_GEMM_PRECISION(float),
       k, n, m, &bk, &bn, &bm, &b_k1, &b_n1, &b_m1, &b_m2,
       &alpha, &beta, &gemm_flags, &strategy, &order); /* U^T*delta */
   }
@@ -932,19 +932,19 @@ int main(int argc, char* argv[])
 
     /* copy in data to LIBXSMM format */
     if (pass == 0) {
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, urgold, &m, ur) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, uzgold, &m, uz) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, uggold, &m, ug) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handleux, urgold, &m, ur) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handleux, uzgold, &m, uz) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handleux, uggold, &m, ug) );
       for (it = 0; it < t; ++it) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handleux, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_b(handleux, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
       }
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewh, wrgold, &m, wr) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewh, wzgold, &m, wz) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewh, wggold, &m, wg) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handlewh, wrgold, &m, wr) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handlewh, wzgold, &m, wz) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handlewh, wggold, &m, wg) );
       if (reuse) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewh, hgold_temp, &m, h) );
+        CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_b(handlewh, hgold_temp, &m, h) );
       } else {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewh, hgold_temp, &m, &LIBXSMM_VLA_ACCESS(2, hnr, 0, 0, m * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_b(handlewh, hgold_temp, &m, &LIBXSMM_VLA_ACCESS(2, hnr, 0, 0, m * n)) );
         zero_buf(&LIBXSMM_VLA_ACCESS(2, hnr, 1, 0, m * n), m*n*t);
       }
       matrix_copy(m, brgold, br);
@@ -952,23 +952,23 @@ int main(int argc, char* argv[])
       matrix_copy(m, bggold, bg);
     } else {
       matrix_transpose(m, k, urgold, urgoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, urgoldTp, &k, ur) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handleux, urgoldTp, &k, ur) );
       matrix_transpose(m, k, uzgold, uzgoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, uzgoldTp, &k, uz) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handleux, uzgoldTp, &k, uz) );
       matrix_transpose(m, k, uggold, uggoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handleux, uggoldTp, &k, ug) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handleux, uggoldTp, &k, ug) );
       for (it = 0; it < t; ++it) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewd, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, hb, it, 0, m * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_b(handlewd, &LIBXSMM_VLA_ACCESS(2, hgoldb, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, hb, it, 0, m * n)) );
         matrix_transpose(k, n, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, k * n), xgoldTp);
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlett, xgoldTp, &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_b(handlewd, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, djdh, it, 0, m * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_b(handlett, xgoldTp, &k, &LIBXSMM_VLA_ACCESS(2, x, it, 0, k * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_b(handlewd, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, m * n), &m, &LIBXSMM_VLA_ACCESS(2, djdh, it, 0, m * n)) );
       }
       matrix_transpose(m, m, wrgold, wrgoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wrgoldTp, &m, wr) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handlewd, wrgoldTp, &m, wr) );
       matrix_transpose(m, m, wzgold, wzgoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wzgoldTp, &m, wz) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handlewd, wzgoldTp, &m, wz) );
       matrix_transpose(m, m, wggold, wggoldTp);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyin_a(handlewd, wggoldTp, &m, wg) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyin_a(handlewd, wggoldTp, &m, wg) );
     }
 
     /* bind buffers and filter to handle */
@@ -1047,9 +1047,9 @@ int main(int argc, char* argv[])
       }
       /* copy out data */
       if (reuse) {
-        libxsmm_bgemm_copyout_b( m, n, bm, bn, h, htest );
+        libxsmm_blocked_gemm_copyout_b( m, n, bm, bn, h, htest );
       } else {
-        libxsmm_bgemm_copyout_b( m, n, bm, bn, &LIBXSMM_VLA_ACCESS(2, hnr, t, 0, m * n), htest );
+        libxsmm_blocked_gemm_copyout_b( m, n, bm, bn, &LIBXSMM_VLA_ACCESS(2, hnr, t, 0, m * n), htest );
       }
 
       /* compare */
@@ -1084,7 +1084,7 @@ int main(int argc, char* argv[])
       /* copy out data */
       LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, k * n);
       for (i = 0; i < t; ++i) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handleux, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, k * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handleux, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, k * n)) );
       }
 
       /* compare */
@@ -1120,12 +1120,12 @@ int main(int argc, char* argv[])
       LIBXSMM_VLA_DECL(2, float, djdw3test, djdwtest, m * m);
       LIBXSMM_VLA_DECL(2, float, djdu3test, djdutest, m * k);
       LIBXSMM_VLA_DECL(2, float, djdb3test, djdbtest, m);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlett, djdur, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 0, 0, m * k)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlett, djduz, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 1, 0, m * k)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlett, djdug, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 2, 0, m * k)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwr, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 0, 0, m * m)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwz, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 1, 0, m * m)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwg, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 2, 0, m * m)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlett, djdur, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 0, 0, m * k)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlett, djduz, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 1, 0, m * k)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlett, djdug, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 2, 0, m * k)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlewh, djdwr, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 0, 0, m * m)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlewh, djdwz, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 1, 0, m * m)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlewh, djdwg, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 2, 0, m * m)) );
       matrix_copy(m, djdbr, &LIBXSMM_VLA_ACCESS(2, djdb3test, 0, 0, m));
       matrix_copy(m, djdbz, &LIBXSMM_VLA_ACCESS(2, djdb3test, 1, 0, m));
       matrix_copy(m, djdbg, &LIBXSMM_VLA_ACCESS(2, djdb3test, 2, 0, m));
@@ -1197,17 +1197,17 @@ int main(int argc, char* argv[])
       /* copy out data */
       LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, k * n);
       for (i = 0; i < t; ++i) {
-        CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handleux, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, k * n)) );
+        CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handleux, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, k * n), &k, &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, k * n)) );
       }
       LIBXSMM_VLA_DECL(2, float, djdu3test, djdutest, m * k);
       LIBXSMM_VLA_DECL(2, float, djdw3test, djdwtest, m * m);
       LIBXSMM_VLA_DECL(2, float, djdb3test, djdbtest, m);
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlett, djdur, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 0, 0, m * k)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlett, djduz, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 1, 0, m * k)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlett, djdug, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 2, 0, m * k)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwr, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 0, 0, m * m)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwz, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 1, 0, m * m)) );
-      CHKERR_LIBXSMM_DNN( libxsmm_bgemm_copyout_c(handlewh, djdwg, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 2, 0, m * m)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlett, djdur, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 0, 0, m * k)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlett, djduz, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 1, 0, m * k)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlett, djdug, &m, &LIBXSMM_VLA_ACCESS(2, djdu3test, 2, 0, m * k)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlewh, djdwr, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 0, 0, m * m)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlewh, djdwz, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 1, 0, m * m)) );
+      CHKERR_LIBXSMM_DNN( libxsmm_blocked_gemm_copyout_c(handlewh, djdwg, &m, &LIBXSMM_VLA_ACCESS(2, djdw3test, 2, 0, m * m)) );
       matrix_copy(m, djdbr, &LIBXSMM_VLA_ACCESS(2, djdb3test, 0, 0, m));
       matrix_copy(m, djdbz, &LIBXSMM_VLA_ACCESS(2, djdb3test, 1, 0, m));
       matrix_copy(m, djdbg, &LIBXSMM_VLA_ACCESS(2, djdb3test, 2, 0, m));

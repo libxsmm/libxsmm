@@ -42,7 +42,7 @@
 #define LIBXSMM_BRANCH  LIBXSMM_CONFIG_BRANCH
 
 /**
- * Numbers to denote the version of LIBXSMM (libxsmm_config.h).
+ * Semantic version according to https://semver.org/ (see also libxsmm_config.h).
  * LIBXSMM_VERSION_MAJOR:  Major version derived from the most recent RCS-tag.
  * LIBXSMM_VERSION_MINOR:  Minor version derived from the most recent RCS-tag.
  * LIBXSMM_VERSION_UPDATE: Update number derived from the most recent RCS-tag.
@@ -62,7 +62,7 @@
 #include "libxsmm_frontend.h"
 #include "libxsmm_fsspmdm.h"
 #include "libxsmm_malloc.h"
-#include "libxsmm_bgemm.h"
+#include "libxsmm_blocked_gemm.h"
 #include "libxsmm_spmdm.h"
 #include "libxsmm_cpuid.h"
 #include "libxsmm_timer.h"

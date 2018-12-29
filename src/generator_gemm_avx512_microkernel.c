@@ -2051,7 +2051,7 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_kloop( libxsmm_generated_code*
                                                       i_xgemm_desc->n,
                                                       i_xgemm_desc->k);
     } else {
-      if ( (LIBXSMM_GEMM_PRECISION_I16  != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) && 
+      if ( (LIBXSMM_GEMM_PRECISION_I16  != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
            (LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ))    ) {
         libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( io_generated_code,
                                                                    i_gp_reg_mapping,
