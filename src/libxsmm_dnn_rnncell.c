@@ -98,6 +98,11 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->scratch_df = 0;
     handle->scratch_do = 0;
     handle->scratch_dci = 0;
+    handle->scratch_diB = 0;
+    handle->scratch_dfB = 0;
+    handle->scratch_dciB = 0;
+    handle->scratch_dfB = 0;
+
     handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
     if (NULL == handle->barrier)
     {
@@ -483,6 +488,10 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
             size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* df */
             size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* do */
             size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* dci */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* diB */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* dfB */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* dpB */
+            size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* dciB */
             size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* t1 */
             size += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64; /* t2 */
           } break;
@@ -655,6 +664,38 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
             } else {
               offset = (64 - address % 64);
               handle->scratch_dci = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* diB */
+            if (address % 64 == 0) {
+              handle->scratch_diB = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_diB = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* dfB */
+            if (address % 64 == 0) {
+              handle->scratch_dfB = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_dfB = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* dpB */
+            if (address % 64 == 0) {
+              handle->scratch_dpB = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_dpB = (void*)(address+offset);
+            }
+            address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
+            /* dciB */
+            if (address % 64 == 0) {
+              handle->scratch_dciB = (void*)address;
+            } else {
+              offset = (64 - address % 64);
+              handle->scratch_dciB = (void*)(address+offset);
             }
             address += (size_t)handle->desc.K * (size_t)handle->desc.N * libxsmm_dnn_typesize(handle->desc.datatype_out) + 64;
             /* t1 */

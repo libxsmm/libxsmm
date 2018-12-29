@@ -153,13 +153,20 @@ element_output_type *dout_ptr = NULL;
 element_output_type *cps_ptr = NULL;
 /* define batch-reduce gemm kernels */
 const libxsmm_smmfunction_reducebatch batchreduce_kernela = libxsmm_smmdispatch_reducebatch( bc, bn, bk, &bc, &K, &C, NULL, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_reducebatch( bk, bk, bn, &K, &N, &bk, NULL, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kernelc = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &K, &N, &bk, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_reducebatch( bk, bk, bn, &bk, &N, &bk, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernelc = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &bk, &N, &bk, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernelb1 = libxsmm_smmdispatch_reducebatch( bk, bk, bn, &K, &N, &bk, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernelc1 = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &K, &N, &bk, NULL, NULL, NULL);
 const libxsmm_smmfunction_reducebatch batchreduce_kerneld = libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL);
 
 /* Auxiliary arrays for batch-reduce gemm calls  */
 const element_filter_type *A_array[1024];
 const element_output_type *B_array[1024];
+
+LIBXSMM_VLA_DECL(4, element_output_type, diB, (element_output_type*)handle->scratch_diB, kBlocks, bn, bk);
+LIBXSMM_VLA_DECL(4, element_output_type, dfB, (element_output_type*)handle->scratch_dfB, kBlocks, bn, bk);
+LIBXSMM_VLA_DECL(4, element_output_type, dpB, (element_output_type*)handle->scratch_dpB, kBlocks, bn, bk);
+LIBXSMM_VLA_DECL(4, element_output_type, dciB, (element_output_type*)handle->scratch_dciB, kBlocks, bn, bk);
 
 /* computing first logical thread */
 const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_thread;
@@ -274,14 +281,33 @@ for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
 for (j = t-1; j >= 0; --j) {
   /* let's run the cell in blocks for good locality */
   for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
+    inb = inik % (N/bn);
+    ikb = inik / (N/bn);
     in = (inik % (N/bn))*bn;
     ik = (inik / (N/bn))*bk;
 
     /* Compute dcp, dci, di, df, dp */
     cps_ptr = (j == 0) ? (element_output_type*) &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K) : (element_output_type*) &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K);
+    libxsmm_internal_compute_dcp_dci_di_df_dp_ld(bk, bn, K, j, t, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K),  &LIBXSMM_VLA_ACCESS(3, dh, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K), cps_ptr , &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, df, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K)); 
 
-    libxsmm_internal_compute_dcp_dci_di_df_dp_ld(bk, bn, K, j, t, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K),  &LIBXSMM_VLA_ACCESS(3, dh, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K), cps_ptr , &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, df, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K));    
+    /* Also reformat di, dci, df and dp to be used in the UPD pass in blocked format ... */
+    if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+      if (K % 2048 == 0) {
+        for (jb = 0; jb < bn; ++jb) {
+          for (jk = 0; jk < bk; ++jk) {
+            en = inb * bn + jb;
+            ek = ikb * bk + jk;
+            LIBXSMM_VLA_ACCESS(4, diB, inb, ikb, jb, jk, kBlocks, bn, bk) = LIBXSMM_VLA_ACCESS(2, di, en, ek, K);
+            LIBXSMM_VLA_ACCESS(4, dciB, inb, ikb, jb, jk, kBlocks, bn, bk) = LIBXSMM_VLA_ACCESS(2, dci, en, ek, K);
+            LIBXSMM_VLA_ACCESS(4, dfB, inb, ikb, jb, jk, kBlocks, bn, bk) = LIBXSMM_VLA_ACCESS(2, df, en, ek, K);
+            LIBXSMM_VLA_ACCESS(4, dpB, inb, ikb, jb, jk, kBlocks, bn, bk) = LIBXSMM_VLA_ACCESS(2, dp, en, ek, K);
+          }
+        }
+      }
+    }
+
   }
+
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* transpose xt for current timestep */
@@ -413,61 +439,121 @@ for (j = t-1; j >= 0; --j) {
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     if ((C == K) && (bc == bk)) {
-      /* Interleave computation of dr = difoc * h^T and dw = difoc * x^T to take advantage of temporal locality */
-      for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
-        icb = ikic / (K/bk);
-        ic = icb*bk;
-        ikb = ikic % (K/bk);
-        ik = ikb*bk;
-        blocks = nBlocks;   
+      if (K % 2048 != 0) {
+        /* Interleave computation of dr = difoc * h^T and dw = difoc * x^T to take advantage of temporal locality */
+        for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
+          icb = ikic / (K/bk);
+          ic = icb*bk;
+          ikb = ikic % (K/bk);
+          ik = ikb*bk;
+          blocks = nBlocks;   
 
-        for (in = 0, inb = 0; in < N; in += bn, inb++) {
-          A_array[inb] = &LIBXSMM_VLA_ACCESS(2, di,  in, ik, K);
-          B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
-        }
-        batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dri, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(2, di,  in, ik, K);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
+          }
+          batchreduce_kernelb1(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dri, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
 
-        for (in = 0, inb = 0; in < N; in += bn, inb++) {
-          A_array[inb] = &LIBXSMM_VLA_ACCESS(2, di,  in, ik, K);
-          B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
-        }
-        batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwi, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(2, di,  in, ik, K);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
+          }
+          batchreduce_kernelc1(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwi, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
 
-        for (in = 0, inb = 0; in < N; in += bn, inb++) {
-          A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K);
-          B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
-        }
-        batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, drc, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
+          }
+          batchreduce_kernelb1(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, drc, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
 
-        for (in = 0, inb = 0; in < N; in += bn, inb++) {
-          A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K);
-          B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
-        }
-        batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwc, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dci,  in, ik, K);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
+          }
+          batchreduce_kernelc1(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwc, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
 
-        for (in = 0, inb = 0; in < N; in += bn, inb++) {
-          A_array[inb] = &LIBXSMM_VLA_ACCESS(2, df,  in, ik, K);
-          B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
-        }
-        batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, drf, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(2, df,  in, ik, K);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
+          }
+          batchreduce_kernelb1(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, drf, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
 
-        for (in = 0, inb = 0; in < N; in += bn, inb++) {
-          A_array[inb] = &LIBXSMM_VLA_ACCESS(2, df,  in, ik, K);
-          B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
-        }
-        batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwf, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(2, df,  in, ik, K);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
+          }
+          batchreduce_kernelc1(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwf, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
 
-        for (in = 0, inb = 0; in < N; in += bn, inb++) {
-          A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dp,  in, ik, K);
-          B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
-        }
-        batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dro, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dp,  in, ik, K);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
+          }
+          batchreduce_kernelb1(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dro, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
 
-        for (in = 0, inb = 0; in < N; in += bn, inb++) {
-          A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dp,  in, ik, K);
-          B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(2, dp,  in, ik, K);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
+          }
+          batchreduce_kernelc1(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwo, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
         }
-        batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwo, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
+      } else {
+        /* Interleave computation of dr = difoc * h^T and dw = difoc * x^T to take advantage of temporal locality */
+        /* Use blocked format for di, dci, df and db */
+        for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
+          icb = ikic / (K/bk);
+          ic = icb*bk;
+          ikb = ikic % (K/bk);
+          ik = ikb*bk;
+          blocks = nBlocks;   
+
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(4, diB, inb, ikb, 0, 0, kBlocks, bn, bk);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
+          }
+          batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dri, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
+
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(4, diB, inb, ikb, 0, 0, kBlocks, bn, bk);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
+          }
+          batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwi, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
+
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(4, dciB, inb, ikb, 0, 0, kBlocks, bn, bk);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
+          }
+          batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, drc, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
+
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(4, dciB, inb, ikb, 0, 0, kBlocks, bn, bk);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
+          }
+          batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwc, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
+
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(4, dfB, inb, ikb, 0, 0, kBlocks, bn, bk);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
+          }
+          batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, drf, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
+
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(4, dfB, inb, ikb, 0, 0, kBlocks, bn, bk);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
+          }
+          batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwf, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
+
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(4, dpB, inb, ikb, 0, 0, kBlocks, bn, bk);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, hT, ic, in, N);
+          }
+          batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dro, ikb, icb, 0, 0, kBlocks, bk, bk), &blocks);
+
+          for (in = 0, inb = 0; in < N; in += bn, inb++) {
+            A_array[inb] = &LIBXSMM_VLA_ACCESS(4, dpB, inb, ikb, 0, 0, kBlocks, bn, bk);
+            B_array[inb] = &LIBXSMM_VLA_ACCESS(2, xT, ic, in, N);
+          }
+          batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwo, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
+        }
       }
     } else {
       /* dr = difoc * h^T */

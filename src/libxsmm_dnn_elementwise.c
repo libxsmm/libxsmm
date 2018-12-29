@@ -682,6 +682,7 @@ LIBXSMM_UNUSED(df);LIBXSMM_UNUSED(dp);LIBXSMM_UNUSED(dcp);
 #endif
 }
 
+
 LIBXSMM_API_INTERN void libxsmm_internal_compute_o_i_f_ci_cs_co_h_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *f, LIBXSMM_DNN_ELTWISE_FTYPE *cps, LIBXSMM_DNN_ELTWISE_FTYPE *cs, LIBXSMM_DNN_ELTWISE_FTYPE *ii, LIBXSMM_DNN_ELTWISE_FTYPE *ci,LIBXSMM_DNN_ELTWISE_FTYPE *co, LIBXSMM_DNN_ELTWISE_FTYPE *o, LIBXSMM_DNN_ELTWISE_FTYPE *h) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) 
   libxsmm_blasint i, j;
