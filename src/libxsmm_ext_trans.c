@@ -297,8 +297,8 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_otrans_omp)(void* out, const void* i
 {
   libxsmm_blasint ldx;
   LIBXSMM_ASSERT(0 != typesize && 0 != m);
-  ldx = *(ldi ? ldi : m);
-  libxsmm_otrans_omp(out, in, *typesize, *m, *(n ? n : m), ldx, ldo ? *ldo : ldx);
+  ldx = *(NULL != ldi ? ldi : m);
+  libxsmm_otrans_omp(out, in, *typesize, *m, *(NULL != n ? n : m), ldx, NULL != ldo ? *ldo : ldx);
 }
 
 #endif /*defined(LIBXSMM_BUILD)*/
