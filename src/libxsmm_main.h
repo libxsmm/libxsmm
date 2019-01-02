@@ -85,7 +85,11 @@
 #if !defined(LIBXSMM_INIT) && !defined(LIBXSMM_CTOR)
 # define LIBXSMM_INIT libxsmm_init();
 #elif !defined(LIBXSMM_INIT)
-# define LIBXSMM_INIT
+# if defined(NDEBUG)
+#   define LIBXSMM_INIT
+# else
+#   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(0 != libxsmm_ninit, "LIBXSMM is not initialized!");
+# endif
 #endif
 
 /** Check if M, N, K, or LDx fits into the descriptor. */

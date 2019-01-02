@@ -559,8 +559,7 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
   double avg_blocks_per_thread;
   double load_imbalance_1, load_imbalance_2, load_imbalance;
 
-  /* initialize internal library structures in any case (!LIBXSMM_INIT) */
-  libxsmm_init();
+  libxsmm_init(); /* !LIBXSMM_INIT */
 
   handle->m  = M;
   handle->n  = N;
