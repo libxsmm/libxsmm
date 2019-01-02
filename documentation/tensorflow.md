@@ -21,7 +21,7 @@ export CC=/path/to/gcc/bin/gcc
 export FC=/path/to/gcc/bin/gfortran
 ```
 
-TensorFlow may be configured for the first time. In the past, Python&#160;3 was problematic since it was not the primary development vehicle (and Python&#160;2.7 was a de-facto prerequisite). It is recommended to use the default Python version available on the system (Linux distribution's default). For the configuration, all questions may be (interactively) answered with the suggested defaults. If not needed, some of the frameworks can be disabled with Bazel's build-line (`--config=noaws --config=nogcp --config=nohdfs --config=noignite --config=nokafka --config=nonccl`), or can be disabled at configure-time using environment variables (`TF_NEED_GCP=0 TF_NEED_HDFS=0 TF_NEED_S3=0 TF_NEED_KAFKA=0` with previous revisions of TensorFlow).
+TensorFlow may be configured for the first time. In the past, Python&#160;3 was problematic since it was not the primary development vehicle (and Python&#160;2.7 was a de-facto prerequisite). It is recommended to use the default Python version available on the system (Linux distribution's default). For the configuration, all questions may be (interactively) answered with the suggested defaults. In earlier revisions of TensorFlow some frameworks can be disabled at configure-time using environment variables (`TF_NEED_GCP=0`, `TF_NEED_HDFS=0`, `TF_NEED_S3=0`, `TF_NEED_KAFKA=0`). However, the current mechanism to disable certain frameworks is per Bazel's build-line (`--config=noaws`, `--config=nogcp`, `--config=nohdfs`, `--config=noignite`, `--config=nokafka`, `--config=nonccl`).
 
 ```bash
 cd /path/to/tensorflow-xsmm
