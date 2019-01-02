@@ -1173,9 +1173,7 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size, size_t alignment, const ch
 #endif
     if (end == pool) pool = pool0; /* fall-back to new pool */
     if (end != pool) {
-      const internal_malloc_info_type* info = NULL;
       const size_t counter = LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.counter, (size_t)1, LIBXSMM_ATOMIC_SEQ_CST);
-      info = internal_malloc_info(pool->instance.buffer);
 
       if (NULL == pool->instance.buffer && 1 == counter) {
         const size_t scratch_size = internal_get_scratch_size(pool);
@@ -1244,6 +1242,7 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size, size_t alignment, const ch
         }
       }
       else {
+        const internal_malloc_info_type *const info = internal_malloc_info(pool->instance.buffer);
         const size_t used_size = pool->instance.head - pool->instance.buffer;
         const size_t pool_size = (NULL != info ? info->size : 0);
         const size_t req_size = alloc_size + used_size;
@@ -1324,8 +1323,12 @@ LIBXSMM_API void libxsmm_free(const void* memory)
           const size_t maxsize = pool->instance.minsize + pool->instance.incsize;
           const size_t minsize = LIBXSMM_MIN(maxsize, limit_size);
 
+          if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pool->instance.site) { /* update watermark eventually */
+            const size_t watermark = scratch_size + info->size; /* info is still valid at this point */
+            if (internal_malloc_scratch_size < watermark) internal_malloc_scratch_size = watermark;
+          }
+
           if (pool->instance.minsize < minsize) {
-            pool->instance.buffer = pool->instance.head = NULL;
 # if (0 != LIBXSMM_SYNC)
 #   if !defined(NDEBUG) /* library code is expected to be mute */
             if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && libxsmm_get_tid() != pool->instance.tid) {
@@ -1340,13 +1343,11 @@ LIBXSMM_API void libxsmm_free(const void* memory)
 #   endif
 # endif
             libxsmm_xfree(pool->instance.buffer);
+            pool->instance.buffer = NULL;
+            pool->instance.head = NULL;
           }
           else { /* reuse scratch domain */
             pool->instance.head = (char*)LIBXSMM_MIN(pool->instance.head, buffer);
-          }
-          if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != pool->instance.site) {
-            const size_t watermark = scratch_size + info->size;
-            if (internal_malloc_scratch_size < watermark) internal_malloc_scratch_size = watermark;
           }
         }
         /* TODO: document/check that allocation/deallocation must follow the linear/scoped allocator policy */
