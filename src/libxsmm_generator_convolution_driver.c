@@ -159,7 +159,6 @@ int main(int argc, char* argv []) {
   l_conv_desc.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
   l_conv_desc.format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
 
-  libxsmm_init();
   /* generate code */
   if ( strcmp(l_type, "inlineasm")  == 0 ) {
     libxsmm_generator_convolution_forward_inlineasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );

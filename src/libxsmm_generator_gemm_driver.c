@@ -255,7 +255,6 @@ int main(int argc, char* argv []) {
     return EXIT_FAILURE;
   }
 
-  libxsmm_init();
   switch (l_single_precision) {
     case 0: {
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F64,

@@ -149,7 +149,6 @@ int main(int argc, char* argv []) {
   l_conv_desc.ur_ifm = l_ur_ifm;
   l_conv_desc.prefetch = l_prefetch;
 
-  libxsmm_init();
   if ( (strcmp(l_type, "dense")     == 0) ||
        (strcmp(l_type, "dense_asm") == 0) ) {
     if ( flag_ur ) {
