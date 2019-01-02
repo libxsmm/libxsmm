@@ -547,6 +547,16 @@ LIBXSMM_API_INLINE void internal_finalize(void)
 }
 
 
+LIBXSMM_API_INLINE size_t internal_strlen(const char* cstr, size_t maxlen)
+{
+  size_t result = 0;
+  if (NULL != cstr) {
+    while (0 != cstr[result] && result < maxlen) ++result;
+  }
+  return result;
+}
+
+
 LIBXSMM_API_INLINE void internal_init(void)
 {
 #if defined(LIBXSMM_TRACE)
@@ -587,7 +597,7 @@ LIBXSMM_API_INLINE void internal_init(void)
         libxsmm_scratch_limit = (size_t)limit;
       }
       else {
-        size_t u = strlen(env) - 1; /* 0 < strlen(env) */
+        size_t u = internal_strlen(env, 32) - 1;
         const char *const unit = "kmgKMG", *const hit = strchr(unit, env[u]);
         libxsmm_scratch_limit = (size_t)strtoul(env, 0, 10);
         u = (0 != hit ? ((hit - unit) % 3) : 3);
