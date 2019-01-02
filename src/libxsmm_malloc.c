@@ -1329,6 +1329,8 @@ LIBXSMM_API void libxsmm_free(const void* memory)
           }
 
           if (pool->instance.minsize < minsize) {
+            const void *const pool_buffer = pool->instance.buffer;
+            pool->instance.buffer = pool->instance.head = NULL;
 # if (0 != LIBXSMM_SYNC)
 #   if !defined(NDEBUG) /* library code is expected to be mute */
             if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && libxsmm_get_tid() != pool->instance.tid) {
@@ -1342,9 +1344,7 @@ LIBXSMM_API void libxsmm_free(const void* memory)
             if (limit_size < maxsize) pool->instance.tid = LIBXSMM_MALLOC_NO_AFFINITY;
 #   endif
 # endif
-            libxsmm_xfree(pool->instance.buffer);
-            pool->instance.buffer = NULL;
-            pool->instance.head = NULL;
+            libxsmm_xfree(pool_buffer);
           }
           else { /* reuse scratch domain */
             pool->instance.head = (char*)LIBXSMM_MIN(pool->instance.head, buffer);
