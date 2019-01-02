@@ -82,7 +82,7 @@ int main(int argc, char* argv []) {
   /* check argument count for a valid range */
   if ( argc != 20 ) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* names of files and routines */
@@ -115,7 +115,7 @@ int main(int argc, char* argv []) {
   if ( (strcmp(l_type, "inlineasm") != 0) &&
        (strcmp(l_type, "plainasm")  != 0) ) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* check value of arch flag */
@@ -123,7 +123,7 @@ int main(int argc, char* argv []) {
        (strcmp(l_arch, "knm") != 0)    &&
        (strcmp(l_arch, "skx") != 0) ) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* set up convultion descriptor */
@@ -159,6 +159,7 @@ int main(int argc, char* argv []) {
   l_conv_desc.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
   l_conv_desc.format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
 
+  libxsmm_init();
   /* generate code */
   if ( strcmp(l_type, "inlineasm")  == 0 ) {
     libxsmm_generator_convolution_forward_inlineasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
@@ -166,6 +167,6 @@ int main(int argc, char* argv []) {
     libxsmm_generator_convolution_forward_directasm( l_file_out, l_routine_name, &l_conv_desc, l_arch );
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 

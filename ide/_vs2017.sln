@@ -185,16 +185,19 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "drivers", "drivers", "{FD54
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmm_generator_gemm_driver", "libxsmm_generator_gemm_driver.vcxproj", "{47EDE325-4516-48DA-862B-F689F12DDBD3}"
 	ProjectSection(ProjectDependencies) = postProject
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmm_generator_convolution_driver", "libxsmm_generator_convolution_driver.vcxproj", "{19039CFD-697A-4736-B747-C03E70735737}"
 	ProjectSection(ProjectDependencies) = postProject
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmm_generator_convolution_winograd_driver", "libxsmm_generator_convolution_winograd_driver.vcxproj", "{45E6E950-40C4-435B-A374-78496C8D60AC}"
 	ProjectSection(ProjectDependencies) = postProject
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
@@ -341,6 +344,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rnndriver_ncnc_kcck", "..\s
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 		{FFFB45C1-DFE2-477E-ACA1-EF5906463BEA} = {FFFB45C1-DFE2-477E-ACA1-EF5906463BEA}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmmnoblas", "libxsmmnoblas.vcxproj", "{7C7D5D58-A367-414E-87B4-C23B8A578EC5}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -1132,6 +1137,18 @@ Global
 		{632FA101-8478-4D32-A1E3-B7A02E6C87DE}.symbols|Win32.Build.0 = symbols|Win32
 		{632FA101-8478-4D32-A1E3-B7A02E6C87DE}.symbols|x64.ActiveCfg = symbols|x64
 		{632FA101-8478-4D32-A1E3-B7A02E6C87DE}.symbols|x64.Build.0 = symbols|x64
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.debug|Win32.ActiveCfg = debug|Win32
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.debug|Win32.Build.0 = debug|Win32
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.debug|x64.ActiveCfg = debug|x64
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.debug|x64.Build.0 = debug|x64
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.release|Win32.ActiveCfg = release|Win32
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.release|Win32.Build.0 = release|Win32
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.release|x64.ActiveCfg = release|x64
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.release|x64.Build.0 = release|x64
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.symbols|Win32.ActiveCfg = symbols|Win32
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.symbols|Win32.Build.0 = symbols|Win32
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.symbols|x64.ActiveCfg = symbols|x64
+		{7C7D5D58-A367-414E-87B4-C23B8A578EC5}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

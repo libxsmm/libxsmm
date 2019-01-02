@@ -27,26 +27,31 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\src\libxsmm_generator_convolution_winograd_driver.c" />
+    <ClCompile Include="..\src\libxsmm_ext.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\src\libxsmm_ext.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="..\LICENSE.md" />
     <None Include="..\Makefile" />
     <None Include="..\Makefile.inc" />
     <None Include="..\README.md" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>libxsmm_generator_convolution_winograd_driver</ProjectName>
-    <ProjectGuid>{45E6E950-40C4-435B-A374-78496C8D60AC}</ProjectGuid>
+    <ProjectName>libxsmmnoblas</ProjectName>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <ProjectGuid>{7C7D5D58-A367-414E-87B4-C23B8A578EC5}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <InterproceduralOptimization>true</InterproceduralOptimization>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
@@ -54,7 +59,7 @@
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <InterproceduralOptimization>true</InterproceduralOptimization>
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
@@ -62,14 +67,14 @@
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'" Label="Configuration">
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" Label="Configuration">
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <InterproceduralOptimization>true</InterproceduralOptimization>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
@@ -77,7 +82,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='symbols|x64'" Label="Configuration">
     <WholeProgramOptimization>true</WholeProgramOptimization>
-    <ConfigurationType>Application</ConfigurationType>
+    <ConfigurationType>StaticLibrary</ConfigurationType>
     <InterproceduralOptimization>true</InterproceduralOptimization>
     <ProfileGuidedOptimization>Disabled</ProfileGuidedOptimization>
     <CodeCoverageOperations>Disabled</CodeCoverageOperations>
@@ -85,8 +90,7 @@
     <PlatformToolset>v141</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
-  <ImportGroup Label="ExtensionSettings">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionSettings" />
   <ImportGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
@@ -108,18 +112,20 @@
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup>
     <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|Win32'">bin\ia32\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">bin\ia32\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|Win32'">build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">bin\intel64\</OutDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">bin\intel64\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">bin\ia32\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
-    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">bin\intel64\</OutDir>
-    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|Win32'">$(SolutionDir)..\lib\ia32\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">$(SolutionDir)..\lib\ia32\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">$(SolutionDir)..\lib\ia32\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|Win32'">$(SolutionDir)..\build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">$(SolutionDir)..\build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">$(SolutionDir)..\build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)..\lib\intel64\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">$(SolutionDir)..\lib\intel64\</OutDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)..\lib\intel64\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='release|x64'">$(SolutionDir)..\build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">$(SolutionDir)..\build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(SolutionDir)..\build\$(Platform)-$(Configuration)\$(ProjectName)\</IntDir>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">$(ProjectName)-$(Configuration)</TargetName>
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='debug|x64'">$(ProjectName)-$(Configuration)</TargetName>
     <ProfileDirectory Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">build\$(Platform)-$(Configuration)\$(ProjectName)\</ProfileDirectory>
     <ProfileDirectory Condition="'$(Configuration)|$(Platform)'=='release|Win32'">build\$(Platform)-$(Configuration)\$(ProjectName)\</ProfileDirectory>
     <ProfileDirectory Condition="'$(Configuration)|$(Platform)'=='debug|x64'">build\$(Platform)-$(Configuration)\$(ProjectName)\</ProfileDirectory>
@@ -135,31 +141,25 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='release|x64'" />
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">
-    <TargetName>$(ProjectName)-$(Configuration)</TargetName>
-  </PropertyGroup>
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|x64'">
-    <TargetName>$(ProjectName)-$(Configuration)</TargetName>
-  </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='release|Win32'">
     <ClCompile>
       <Optimization>Full</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)..\build;$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;__BLAS=0;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <WarningLevel>Level4</WarningLevel>
       <FloatingPointModel>Fast</FloatingPointModel>
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
-      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <OffloadConstructs>None</OffloadConstructs>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <ResourceCompile>
@@ -171,36 +171,36 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm.lib;libxsmmnoblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)..\build;$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;__BLAS=0;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <WarningLevel>Level4</WarningLevel>
       <FloatingPointModel>Fast</FloatingPointModel>
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
-      <EnableEnhancedInstructionSet>StreamingSIMDExtensions2</EnableEnhancedInstructionSet>
-      <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <ResourceCompile>
@@ -212,14 +212,15 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ProjectReference />
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -229,21 +230,22 @@
     </Midl>
     <ClCompile>
       <Optimization>Full</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)..\build;$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;__BLAS=0;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <WarningLevel>Level4</WarningLevel>
       <FloatingPointModel>Fast</FloatingPointModel>
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
-      <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
-      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
+      <OffloadConstructs>None</OffloadConstructs>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <ResourceCompile>
@@ -254,13 +256,14 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\intel64;$(LIBXSMMROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm.lib;libxsmmnoblas.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <ProjectReference />
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -270,22 +273,22 @@
     </Midl>
     <ClCompile>
       <Optimization>MaxSpeed</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)..\build;$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;__BLAS=0;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <StringPooling>true</StringPooling>
       <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
       <BufferSecurityCheck>false</BufferSecurityCheck>
-      <WarningLevel>Level4</WarningLevel>
       <FloatingPointModel>Fast</FloatingPointModel>
       <UnmaskFloatingPointExceptions>NoTraps</UnmaskFloatingPointExceptions>
       <FlushDenormalResultsToZero>true</FlushDenormalResultsToZero>
       <EnableAnsiAliasing>true</EnableAnsiAliasing>
-      <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
+      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <OffloadConstructs>None</OffloadConstructs>
       <InterproceduralOptimization>SingleFile</InterproceduralOptimization>
-      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
+      <WarningLevel>EnableAllWarnings</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <ResourceCompile>
@@ -296,30 +299,31 @@
       <OptimizeReferences>true</OptimizeReferences>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\intel64;$(LIBXSMMROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <ProjectReference />
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)..\build;$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;__BLAS=0;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
-      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <OffloadConstructs>None</OffloadConstructs>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
+      <WarningLevel>Level4</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <ResourceCompile>
@@ -331,14 +335,15 @@
       <LargeAddressAware>true</LargeAddressAware>
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\ia32;$(LIBXSMMROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\ia32;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
     <ProjectReference />
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -348,16 +353,16 @@
     </Midl>
     <ClCompile>
       <Optimization>Disabled</Optimization>
-      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)..\build;$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;__BLAS=0;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <WarningLevel>Level4</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
-      <OffloadConstructs>None</OffloadConstructs>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
-      <OpenMPSupport>true</OpenMPSupport>
-      <DisableSpecificDiagnostics>3948,10373,10382</DisableSpecificDiagnostics>
-      <UseProcessorExtensions>HOST</UseProcessorExtensions>
+      <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
+      <OffloadConstructs>None</OffloadConstructs>
+      <DisableSpecificDiagnostics>177,3948,10373,10382</DisableSpecificDiagnostics>
+      <UseProcessorExtensions>SSE42</UseProcessorExtensions>
+      <WarningLevel>Level4</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
     </ClCompile>
     <ResourceCompile>
@@ -368,18 +373,18 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <DetectOneDefinitionRule>true</DetectOneDefinitionRule>
       <SubSystem>Console</SubSystem>
-      <AdditionalLibraryDirectories>$(SolutionDir)..\lib\intel64;$(LIBXSMMROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>libxsmm-$(Configuration).lib;libxsmmnoblas-$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib;mkl_rt.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <IgnoreSpecificDefaultLibraries>MSVCRT</IgnoreSpecificDefaultLibraries>
     </Link>
     <ProjectReference />
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
-  <ImportGroup Label="ExtensionTargets">
-  </ImportGroup>
+  <ImportGroup Label="ExtensionTargets" />
 </Project>
