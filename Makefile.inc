@@ -736,7 +736,8 @@ ifneq (Darwin,$(UNAME))
     XLNKOPT = -Wl,
   endif
   linkopt = $(XLNKOPT)$(if $2,$1=$2,$1)
-  abslibrpath = $(strip $(if $(wildcard $1),$(call linkopt,--rpath,$(dir $(abspath $1))),$(NULL)))
+  abslibrpath = $(strip $(if $(wildcard $1),$(call linkopt,--rpath,$(if \
+    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))),$(NULL)))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
   ifneq (0,$(ASNEEDED))
@@ -748,20 +749,17 @@ else
     XLNKOPT = -Xlinker
   endif
   linkopt = $(XLNKOPT) $1 $(XLNKOPT) $2
-  abslibrpath = $(strip $(if $(wildcard $1),$(call linkopt,-rpath,$(dir $(abspath $1))),$(NULL)))
+  abslibrpath = $(strip $(if $(wildcard $1),$(call linkopt,--rpath,$(if \
+    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))),$(NULL)))
 endif
 
-absliblpath = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
-  $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)),$(NULL)))
+absliblpath = $(strip $(if $(wildcard $1), \
+  $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+  $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
+  $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1)),$(NULL)))
 abslibfile = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
   $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
     -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
-
-ifneq (0,$(ABSLIBS))
-  abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
-else
-  abslibpath = $(call absliblpath,$1)
-endif
 
 LIBDEP = $(LIBNAME).$(IMPEXT)
 MAINLIB = $(call abslib,$(LIBDEP))
@@ -1557,28 +1555,19 @@ ifeq (0,$(OMP))
   EXTLIB += $(OMPLIB)
 endif
 
-ifeq (Darwin,$(UNAME))
-ifneq (,$(OMPLIBFILE))
-  ifeq (0,$(ABSLIBS))
-    LDFLAGS += $(call abslibrpath,$(OMPLIBFILE))
-  endif
-  LDFLAGS += $(call abslib,$(OMPLIBFILE))
-endif
-endif
-
 ifneq (0,$(TBB))
 ifneq (,$(TBBROOT))
   ifneq (Windows_NT,$(UNAME))
     TBBLIB_DIR = $(TBBROOT)/lib/intel64
     TBBLIB_DIRGCC = gcc$(GCC_VERSION_MAJOR).$(GCC_VERSION_MINOR)
-    TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.so)
+    TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(DLIBEXT))
     ifeq (,$(TBBLIB_MALLOC))
       ifneq (0,$(TBB_OLDRTL))
         TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | tr "\n" " " | cut -d" " -f1)
       else
         TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | tr "\n" " " | rev | cut -d" " -f2 | rev)
       endif
-      TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.so)
+      TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(DLIBEXT))
     endif
     ifneq (,$(TBBLIB_MALLOC))
       IFLAGS += -I$(TBBROOT)/include
@@ -1611,12 +1600,31 @@ ifneq (0,$(BLAS))
   endif
 endif
 
+# enable MKL if available
 ifeq (,$(strip $(MKLROOT)))
   MKL_INCFILE = $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h)))
   ifneq (,$(strip $(MKL_INCFILE)))
     MKLROOT = $(abspath $(dir $(MKL_INCFILE))/..)
+    ABSLIBS = 1
   endif
 endif
+
+ifneq (0,$(ABSLIBS))
+ifeq (0,$(DEPSTATIC))
+  abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
+endif
+endif
+abslibpath ?= $(call absliblpath,$1)
+
+ifeq (Darwin,$(UNAME))
+ifneq (,$(OMPLIBFILE))
+  ifeq (0,$(ABSLIBS))
+    LDFLAGS += $(call abslibrpath,$(OMPLIBFILE))
+  endif
+  LDFLAGS += $(call abslib,$(OMPLIBFILE))
+endif
+endif
+
 ifneq (,$(strip $(MKLROOT)))
   MKL ?= $(BLAS)
   ifneq (,$(strip $(FC)))
@@ -1679,7 +1687,12 @@ ifneq (0,$(MKL))
   BLAS_IFLAGS += -I$(MKLROOT)/include
   BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifeq (0,$(BLAS_STATIC)) # shared
-    BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_$(MKL_FCRTL)_$(MKL_BITS) -lmkl_core -lmkl_$(MKL_THREADS) $(BLAS_LDFLAGS)
+    #BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_$(MKL_FCRTL)_$(MKL_BITS) -lmkl_core -lmkl_$(MKL_THREADS) $(BLAS_LDFLAGS)
+    BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
+      $(call abslibfile,libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(DLIBEXT)) \
+      $(call abslibfile,libmkl_core.$(DLIBEXT)) \
+      $(call abslibfile,libmkl_$(MKL_THREADS).$(DLIBEXT)) \
+      $(BLAS_LDFLAGS)
     ifneq (0,$(INTEL))
     ifneq (0,$(OFFLOAD))
       BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_$(MKL_FCRTL)_$(MKL_BITS) -lmkl_core -lmkl_$(MKL_THREADS)"
