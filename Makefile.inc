@@ -736,8 +736,6 @@ ifneq (Darwin,$(UNAME))
     XLNKOPT = -Wl,
   endif
   linkopt = $(XLNKOPT)$(if $2,$1=$2,$1)
-  abslibrpath = $(strip $(if $(wildcard $1),$(call linkopt,--rpath,$(if \
-    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))),$(NULL)))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
   ifneq (0,$(ASNEEDED))
@@ -749,14 +747,13 @@ else
     XLNKOPT = -Xlinker
   endif
   linkopt = $(XLNKOPT) $1 $(XLNKOPT) $2
-  abslibrpath = $(strip $(if $(wildcard $1),$(call linkopt,--rpath,$(if \
-    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))),$(NULL)))
 endif
 
-absliblpath = $(strip $(if $(wildcard $1), \
-  $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+abslibrpath = $(strip $(call linkopt,--rpath,$(if \
+  $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
+absliblpath = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
   $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
-  $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1)),$(NULL)))
+  $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1)))
 abslibfile = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
   $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
     -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
@@ -1687,7 +1684,6 @@ ifneq (0,$(MKL))
   BLAS_IFLAGS += -I$(MKLROOT)/include
   BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifeq (0,$(BLAS_STATIC)) # shared
-    #BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_$(MKL_FCRTL)_$(MKL_BITS) -lmkl_core -lmkl_$(MKL_THREADS) $(BLAS_LDFLAGS)
     BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
       $(call abslibfile,libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(DLIBEXT)) \
       $(call abslibfile,libmkl_core.$(DLIBEXT)) \
