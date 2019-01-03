@@ -82,13 +82,15 @@
 #endif
 
 /* Helper macro to eventually (if defined) call libxsmm_init */
-#if !defined(LIBXSMM_INIT) && !defined(LIBXSMM_CTOR)
-# define LIBXSMM_INIT libxsmm_init();
-#elif !defined(LIBXSMM_INIT)
-# if defined(NDEBUG)
-#   define LIBXSMM_INIT
+#if !defined(LIBXSMM_INIT)
+# if !defined(LIBXSMM_CTOR)
+#   define LIBXSMM_INIT libxsmm_init();
+# elif !defined(NDEBUG)
+#   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG( \
+      0 != libxsmm_ninit, \
+      "LIBXSMM is not initialized!");
 # else
-#   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(0 != libxsmm_ninit, "LIBXSMM is not initialized!");
+#   define LIBXSMM_INIT
 # endif
 #endif
 
