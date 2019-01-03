@@ -736,6 +736,8 @@ ifneq (Darwin,$(UNAME))
     XLNKOPT = -Wl,
   endif
   linkopt = $(XLNKOPT)$(if $2,$1=$2,$1)
+  abslibrpath = $(strip $(call linkopt,--rpath,$(if \
+    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
   ifneq (0,$(ASNEEDED))
@@ -747,10 +749,10 @@ else
     XLNKOPT = -Xlinker
   endif
   linkopt = $(XLNKOPT) $1 $(XLNKOPT) $2
+  abslibrpath = $(strip $(call linkopt,-rpath,$(if \
+    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
 endif
 
-abslibrpath = $(strip $(call linkopt,--rpath,$(if \
-  $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
 absliblpath = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
   $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
   $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1)))
