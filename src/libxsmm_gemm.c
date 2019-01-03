@@ -263,7 +263,7 @@ LIBXSMM_API_INTERN int libxsmm_gemm_cast(libxsmm_gemm_precision precision, doubl
 LIBXSMM_API_INLINE libxsmm_gemm_prefetch_type internal_get_gemm_prefetch(int prefetch)
 {
   const int result = (0 > prefetch ? ((int)libxsmm_gemm_auto_prefetch_default) : prefetch);
-  LIBXSMM_ASSERT_MSG(0 <= result, "LIBXSMM_PREFETCH_AUTO is not translated!");
+  LIBXSMM_ASSERT_MSG(0 <= result, "LIBXSMM_PREFETCH_AUTO is not translated");
   return (libxsmm_gemm_prefetch_type)result;
 }
 
@@ -879,8 +879,8 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* sc
       char *const ct = bt + size_b;
       /* loop induction variables and other variables */
       unsigned int om = handle->otypesize * m0, im = m0, in = n0, ik = k0, im1, in1, ik1;
-      LIBXSMM_ASSERT_MSG(mtid < handle->mt && ntid < handle->nt && ktid < handle->kt, "Invalid task ID!");
-      LIBXSMM_ASSERT_MSG(m1 <= handle->m && n1 <= handle->n && k1 <= handle->k, "Invalid task size!");
+      LIBXSMM_ASSERT_MSG(mtid < handle->mt && ntid < handle->nt && ktid < handle->kt, "Invalid task-ID");
+      LIBXSMM_ASSERT_MSG(m1 <= handle->m && n1 <= handle->n && k1 <= handle->k, "Invalid task size");
       for (im1 = im + handle->tm; (im1 - 1) < m1; im = im1, im1 += handle->tm, om += dom) {
         unsigned int dn = don, dka = dik, dkb = dik;
         char *c0 = (char*)c, *ci;

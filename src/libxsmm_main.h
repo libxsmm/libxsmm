@@ -88,7 +88,7 @@
 # elif !defined(NDEBUG)
 #   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG( \
       0 != libxsmm_ninit, \
-      "LIBXSMM is not initialized!");
+      "LIBXSMM is not initialized");
 # else
 #   define LIBXSMM_INIT
 # endif
