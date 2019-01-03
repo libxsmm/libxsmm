@@ -838,7 +838,7 @@ ifneq (0,$(INTEL))
     endif
     FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   endif
-  ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+  ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
     CPEDANTIC += -Wcheck
   endif
   CPEDANTIC += -diag-disable 177,1419,1572,2547,10382
@@ -851,7 +851,7 @@ ifneq (0,$(INTEL))
       FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
       FCFLAGS += -free
     endif
-    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
       CXXFLAGS += -Wcheck
       CFLAGS += -Wcheck
     endif
@@ -878,7 +878,7 @@ ifneq (0,$(INTEL))
   CFLAGS += $(OPTFLAG)
   FCFLAGS += $(OPTFLAG)
   ifeq (0,$(OFFLOAD))
-    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
       CXXFLAGS += -qno-offload
       CFLAGS += -qno-offload
     endif
@@ -890,7 +890,7 @@ ifneq (0,$(INTEL))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
     CXXFLAGS += -fno-alias -ansi-alias
     CFLAGS += -fno-alias -ansi-alias
-    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
       CXXFLAGS += -qoverride_limits #-fp-model fast=2
       CFLAGS += -qoverride_limits #-fp-model fast=2
     endif
@@ -909,8 +909,8 @@ ifneq (0,$(INTEL))
       CXXFLAGS += -ipo
       CFLAGS += -ipo
     endif
-  else # debugging enabled
-    ifeq (,$(strip $(GFC)))
+  else ifeq (,$(strip $(GFC))) # debugging enabled
+    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
       FCFLAGS += -check
     endif
   endif
@@ -1468,8 +1468,12 @@ ifeq (0,$(COMPATIBLE))
     endif
     endif
     CXXFLAGS += -fdata-sections -ffunction-sections
-    FCFLAGS += -fdata-sections -ffunction-sections
     CFLAGS += -fdata-sections -ffunction-sections
+    ifeq (0,$(INTEL))
+      FCFLAGS += -fdata-sections -ffunction-sections
+    else ifneq (,$(strip $(GFC)))
+      FCFLAGS += -fdata-sections -ffunction-sections
+    endif
     # --gc-sections: relies on section-flags present at compile-stage
     LDFLAGS += $(XLNKOPT)--gc-sections
     ifeq (0,$(VISIBILITY)) # -fvisibility=hidden may cause crashes

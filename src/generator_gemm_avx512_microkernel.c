@@ -403,7 +403,9 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
           /* shouldn't happen */
         }
       } else if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+#if 0
         if ( 1 == 1 ) {
+#endif
           /* broadcast pair of B matrix values into zmm2 */
           libxsmm_x86_instruction_vec_move( io_generated_code,
                                             i_micro_kernel_config->instruction_set,
@@ -469,9 +471,11 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                             3,
                                             2,
                                             i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
+#if 0
         } else {
           /* shouldn't happen */
         }
+#endif
       } else {
         /* shoudn't happen */
       }

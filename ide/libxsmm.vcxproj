@@ -113,6 +113,10 @@
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_main.h" />
     <ClInclude Include="..\src\libxsmm_perf.h" />
+    <ClInclude Include="..\src\libxsmm_spmdm_begin.h" />
+    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx2.h" />
+    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx512.h" />
+    <ClInclude Include="..\src\libxsmm_spmdm_end.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
     <ClInclude Include="..\src\libxsmm_trans.h" />
     <ClInclude Include="..\src\perf_jitdump.h" />

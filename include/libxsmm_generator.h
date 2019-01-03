@@ -318,6 +318,8 @@ void libxsmm_generator_convolution_winograd_forward_directasm(const char*       
                                                               const libxsmm_convolution_winograd_descriptor* i_conv_desc,
                                                               const char*                                    i_arch);
 
+/** Initialization counter that can be used to check whether the library is initialized (!=0) or not (==0). */
+LIBXSMM_APIVAR(unsigned int libxsmm_ninit);
 /** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
 LIBXSMM_APIVAR(int libxsmm_verbosity);
 
