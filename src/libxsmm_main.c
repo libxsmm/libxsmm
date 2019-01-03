@@ -707,6 +707,7 @@ LIBXSMM_API_INLINE void internal_init(void)
         libxsmm_gemm_init(libxsmm_target_archid);
         if (0 == libxsmm_ninit) {
           atexit(internal_finalize);
+          ++libxsmm_ninit;
         }
         {
           void *const pv_registry = &internal_registry;

@@ -507,7 +507,7 @@
 #if !defined(LIBXSMM_NO_CTOR) && defined(__GNUC__) && !defined(LIBXSMM_CTOR)
 # define LIBXSMM_ATTRIBUTE_CTOR LIBXSMM_ATTRIBUTE(constructor)
 # define LIBXSMM_ATTRIBUTE_DTOR LIBXSMM_ATTRIBUTE(destructor)
-# if defined(LIBXSMM_BUILD) && !defined(__STATIC) && !defined(__clang__)
+# if defined(LIBXSMM_BUILD) && !defined(__STATIC)
 #   define LIBXSMM_CTOR
 # endif
 #else
