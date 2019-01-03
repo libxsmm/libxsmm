@@ -54,6 +54,8 @@ if [ "" != "${ECHO}" ] && [ "" != "${SORT}" ] && [ "" != "${DIFF}" ] && \
    [ "" != "${NM}"   ] && [ "" != "${SED}"  ] && [ "" != "${CUT}"  ] && \
    [ "" != "${LS}"   ] && [ "" != "${CP}"   ] && [ "" != "${MV}"   ];
 then
+  # determine behavior of sort command
+  export LC_ALL=C
   for LIBFILE in $(${LS} -1 ${LIBS}/*.${LIBTYPE} 2>/dev/null); do
     LIBFILES="${LIBFILES} ${LIBFILE}"
   done

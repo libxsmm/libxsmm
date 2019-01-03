@@ -1005,7 +1005,7 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       break;
     case LIBXSMM_ERR_CSC_INPUT:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "could not open the specified CSC input file (error #%u)!", i_error_code );
+        "could not open the CSC input file, or invalid file content found (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_CSC_READ_LEN:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

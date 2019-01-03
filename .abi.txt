@@ -72,6 +72,10 @@ libxsmm_barrier_create
 libxsmm_barrier_destroy
 libxsmm_barrier_init
 libxsmm_barrier_wait
+libxsmm_blas_dgemm_
+libxsmm_blas_sgemm_
+libxsmm_blas_xgemm
+libxsmm_blas_xgemm_
 libxsmm_blocked_gemm_convert_b_to_a
 libxsmm_blocked_gemm_copyin_a
 libxsmm_blocked_gemm_copyin_b
@@ -82,10 +86,8 @@ libxsmm_blocked_gemm_handle_destroy
 libxsmm_blocked_gemm_omp
 libxsmm_blocked_gemm_st
 libxsmm_blocked_gemm_transpose_b
-libxsmm_blas_dgemm_
-libxsmm_blas_sgemm_
-libxsmm_blas_xgemm
-libxsmm_blas_xgemm_
+libxsmm_bsgemm
+libxsmm_bsgemm_
 libxsmm_bsgemm_descriptor_init
 libxsmm_bsmmdispatch
 libxsmm_bsmmdispatch_reducebatch
