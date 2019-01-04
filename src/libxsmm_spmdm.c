@@ -35,7 +35,6 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -122,7 +121,7 @@ LIBXSMM_API_INLINE void internal_spmdm_allocate_csr_a(libxsmm_spmdm_handle* hand
     char* memory_head  = memory_block;
     libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice*)(memory_head);
     memory_head += (size_t)handle->mb * handle->kb * sizeof(libxsmm_CSR_sparseslice);
-    assert(0 != libxsmm_output_csr_a/*sanity check*/);
+    LIBXSMM_ASSERT(0 != libxsmm_output_csr_a/*sanity check*/);
 
     for (kb = 0; kb < k_blocks; kb++) {
       for (mb = 0; mb < m_blocks; mb++) {
@@ -135,7 +134,7 @@ LIBXSMM_API_INLINE void internal_spmdm_allocate_csr_a(libxsmm_spmdm_handle* hand
         memory_head += (size_t)handle->bm * handle->bk * sizeof(float);
       }
     }
-    assert(memory_head == (memory_block + sz_all_blocks));
+    LIBXSMM_ASSERT(memory_head == (memory_block + sz_all_blocks));
     *libxsmm_output_csr = libxsmm_output_csr_a;
   }
   else if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
@@ -267,7 +266,7 @@ void libxsmm_spmdm_createSparseSlice_fp32_thread(
       (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH)
   internal_spmdm_createSparseSlice_fp32_thread_avx2(handle, transa, a, libxsmm_output_csr_a, block_id, tid, nthreads);
 #else /* pointer based function call */
-  assert(0 != internal_spmdm_createSparseSlice_fp32_thread);
+  LIBXSMM_ASSERT(0 != internal_spmdm_createSparseSlice_fp32_thread);
   internal_spmdm_createSparseSlice_fp32_thread(handle, transa, a, libxsmm_output_csr_a, block_id, tid, nthreads);
 #endif
 }
@@ -343,7 +342,7 @@ void libxsmm_spmdm_createSparseSlice_bfloat16_thread(
       (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH)
   internal_spmdm_createSparseSlice_bfloat16_thread_avx2(handle, transa, bf16_a, libxsmm_output_csr_a, block_id, tid, nthreads);
 #else /* pointer based function call */
-  assert(0 != internal_spmdm_createSparseSlice_fp32_thread);
+  LIBXSMM_ASSERT(0 != internal_spmdm_createSparseSlice_fp32_thread);
   internal_spmdm_createSparseSlice_bfloat16_thread(handle, transa, bf16_a, libxsmm_output_csr_a, block_id, tid, nthreads);
 #endif
 }
@@ -438,7 +437,7 @@ void libxsmm_spmdm_compute_fp32_thread(
       (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH)
   internal_spmdm_compute_fp32_thread_avx2(handle, transa, transb, alpha, a_sparse, b, transc, beta, c, block_id, tid, nthreads);
 #else /* pointer based function call */
-  assert(0 != internal_spmdm_compute_fp32_thread);
+  LIBXSMM_ASSERT(0 != internal_spmdm_compute_fp32_thread);
   internal_spmdm_compute_fp32_thread(handle, transa, transb, alpha, a_sparse, b, transc, beta, c, block_id, tid, nthreads);
 #endif
 }
@@ -536,7 +535,7 @@ void libxsmm_spmdm_compute_bfloat16_thread(
       (LIBXSMM_STATIC_TARGET_ARCH == LIBXSMM_MAX_STATIC_TARGET_ARCH)
   internal_spmdm_compute_bfloat16_thread_avx2(handle, transa, transb, bf16_alpha, a_sparse, bf16_b, transc, bf16_beta, c, block_id, tid, nthreads);
 #else /* pointer based function call */
-  assert(0 != internal_spmdm_compute_bfloat16_thread);
+  LIBXSMM_ASSERT(0 != internal_spmdm_compute_bfloat16_thread);
   internal_spmdm_compute_bfloat16_thread(handle, transa, transb, bf16_alpha, a_sparse, bf16_b, transc, bf16_beta, c, block_id, tid, nthreads);
 #endif
 }
@@ -635,14 +634,14 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
   if (LIBXSMM_X86_AVX <= libxsmm_target_archid) {
     internal_spmdm_init_shufmask_avx();
   }
-  assert(0 != internal_spmdm_shufmasks_32);
-  assert(0 != internal_spmdm_shufmasks_16);
+  LIBXSMM_ASSERT(0 != internal_spmdm_shufmasks_32);
+  LIBXSMM_ASSERT(0 != internal_spmdm_shufmasks_16);
 #endif
 
   /* post-conditions */
-  assert(0 != internal_spmdm_createSparseSlice_fp32_thread);
-  assert(0 != internal_spmdm_createSparseSlice_bfloat16_thread);
-  assert(0 != internal_spmdm_compute_fp32_thread);
-  assert(0 != internal_spmdm_compute_bfloat16_thread);
+  LIBXSMM_ASSERT(0 != internal_spmdm_createSparseSlice_fp32_thread);
+  LIBXSMM_ASSERT(0 != internal_spmdm_createSparseSlice_bfloat16_thread);
+  LIBXSMM_ASSERT(0 != internal_spmdm_compute_fp32_thread);
+  LIBXSMM_ASSERT(0 != internal_spmdm_compute_bfloat16_thread);
 }
 
