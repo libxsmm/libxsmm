@@ -151,7 +151,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_BATCHSCALE));
       if (EXIT_SUCCESS == libxsmm_xmalloc((void**)p,
         (size_t)(LIBXSMM_GEMM_BATCHSCALE) * sizeof(libxsmm_gemm_batchitem) * batchsize,
-        0, LIBXSMM_MALLOC_FLAG_SCRATCH, &extra, sizeof(extra)))
+        0, LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE, &extra, sizeof(extra)))
       {
         const char *const env_g = getenv("LIBXSMM_GEMM_BATCHGRAIN");
         const unsigned int batchgrain = ((0 == env_g || 0 == *env_g || 0 >= atoi(env_g)) ? (LIBXSMM_GEMM_BATCHGRAIN) : atoi(env_g));

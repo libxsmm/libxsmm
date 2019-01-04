@@ -116,7 +116,7 @@ LIBXSMM_API_INLINE void internal_spmdm_allocate_csr_a(libxsmm_spmdm_handle* hand
 
   /* use low-level scratch memory allocation since life-time of this buffer is unknown */
   if (EXIT_SUCCESS == libxsmm_xmalloc((void**)pv, sz_all_blocks, 2097152,
-    LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
+    LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE, 0/*extra*/, 0/*extra_size*/))
   {
     char* memory_head  = memory_block;
     libxsmm_CSR_sparseslice* libxsmm_output_csr_a = (libxsmm_CSR_sparseslice*)(memory_head);
@@ -157,7 +157,7 @@ LIBXSMM_API_INLINE void internal_spmdm_allocate_scratch(libxsmm_spmdm_handle* ha
 
   /* use low-level scratch memory allocation since life-time of this buffer is unknown */
   if (EXIT_SUCCESS == libxsmm_xmalloc((void**)pv, sz_total_memory, 2097152,
-    LIBXSMM_MALLOC_FLAG_SCRATCH, 0/*extra*/, 0/*extra_size*/))
+    LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE, 0/*extra*/, 0/*extra_size*/))
   {
     handle->memory_for_scratch_per_thread = (int)sz_memory_for_scratch_per_thread;
   }
