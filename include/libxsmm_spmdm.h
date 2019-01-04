@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_SPMDM_H
 #define LIBXSMM_SPMDM_H
 
-#include "libxsmm_macros.h"
+#include "libxsmm_typedefs.h"
 
 
 typedef enum libxsmm_spmdm_datatype {
@@ -98,7 +98,7 @@ LIBXSMM_API void libxsmm_spmdm_createSparseSlice_fp32_thread(
 LIBXSMM_API void libxsmm_spmdm_createSparseSlice_bfloat16_thread(
   const libxsmm_spmdm_handle* handle,
   char transa,
-  const void* a/*libxsmm_bfloat16*/,
+  const libxsmm_bfloat16* a,
   libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
   int block_id,
   int tid, int nthreads);
@@ -122,11 +122,11 @@ LIBXSMM_API void libxsmm_spmdm_compute_bfloat16_thread(
   const libxsmm_spmdm_handle* handle,
   char transa,
   char transb,
-  const void* alpha/*libxsmm_bfloat16*/,
+  const libxsmm_bfloat16* alpha,
   libxsmm_CSR_sparseslice* a_sparse,
-  const void* b/*libxsmm_bfloat16*/,
+  const libxsmm_bfloat16* b,
   char transc,
-  const void* beta/*libxsmm_bfloat16*/,
+  const libxsmm_bfloat16* beta,
   float* c,
   int block_id,
   int tid, int nthreads);
