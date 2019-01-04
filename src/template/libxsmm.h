@@ -407,8 +407,6 @@ LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
 $MNK_INTERFACE_LIST
 #if defined(__cplusplus)
 
-namespace Eigen { struct half; }
-namespace tensorflow { struct bfloat16; }
 /** Map a built-in type to libxsmm_gemm_precision (libxsmm_gemm_precision_enum). */
 template<typename T> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum             { static const libxsmm_gemm_precision value = static_cast<libxsmm_gemm_precision>(LIBXSMM_DATATYPE_UNSUPPORTED); };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<double>               { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F64; };
@@ -687,7 +685,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
                       const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
-   const float* beta,       float* c, const libxsmm_blasint* ldc)
+   const float* beta,                  float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_bsgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
@@ -695,7 +693,7 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
   /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
                       const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
-   const float* beta,       float* c, const libxsmm_blasint* ldc)
+   const float* beta,                  float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_bsgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }

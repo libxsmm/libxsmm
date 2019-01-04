@@ -51,13 +51,6 @@
 #define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
 
-/* support for bfloat */
-typedef unsigned short libxsmm_bfloat16;
-union libxsmm_bfloat16_hp {
-  float              f;
-  libxsmm_bfloat16   i[2];
-};
-
 /** Helper macro for type names. */
 #define LIBXSMM_TYPENAME(TYPE) LIBXSMM_STRINGIFY(LIBXSMM_CONCATENATE(LIBXSMM_TYPENAME_, TYPE))
 #define LIBXSMM_TYPENAME_double f64
@@ -115,6 +108,19 @@ union libxsmm_bfloat16_hp {
 /** Necessary size to store a descriptor/blob (GEMM, MCOPY, TRANS). */
 #define LIBXSMM_DESCRIPTOR_MAXSIZE 32
 
+
+/* Support for Bfloat16 */
+typedef unsigned short libxsmm_bfloat16;
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_hp {
+  libxsmm_bfloat16 i[2];
+  float f;
+} libxsmm_bfloat16_hp;
+
+#if defined(__cplusplus)
+namespace Eigen { struct half; }
+namespace tensorflow { struct bfloat16; }
+#endif /*__cplusplus*/
 
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
 typedef LIBXSMM_BLASINT libxsmm_blasint;
@@ -342,7 +348,7 @@ typedef enum libxsmm_dnn_conv_option {
   LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE = 8,
   /* external filter transpose to bwd convolutions */
   LIBXSMM_DNN_CONV_OPTION_UPD_NO_INPUT_TRANSPOSE = 16,
-  /* Downconvert for BF16 using RNE rounding */
+  /* Down-convert for BF16 using RNE rounding */
   LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE = 32,
   /* compound types */
   LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_OVERWRITE | LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE,
@@ -354,12 +360,12 @@ typedef enum libxsmm_dnn_conv_option {
 } libxsmm_dnn_conv_option;
 
 typedef enum libxsmm_dnn_fusedbatchnorm_fuse_order {
-  /* the fuse order is: 1. BN, 2. eltwise 3. RELU */
+  /* the fuse order is: 1. BN, 2. element-wise 3. RELU */
   LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU = 0
 } libxsmm_dnn_fusedbatchnorm_fuse_order;
 
 typedef enum libxsmm_dnn_fusedbatchnorm_fuse_op {
-  /* the fuse order is: 1. BN, 2. eltwise 3. RELU */
+  /* the fuse order is: 1. BN, 2. element-wise 3. RELU */
   LIBXSMM_DNN_FUSEDBN_OPS_BN = 1,
   LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE = 2,
   LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE = 4,
@@ -379,7 +385,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm_
   int W;                                     /* width of input image */
   int u;                                     /* vertical stride */
   int v;                                     /* horizontal stride */
-  int pad_h_in;                              /* height of physcial zero-padding in input buffer */
+  int pad_h_in;                              /* height of physical zero-padding in input buffer */
   int pad_w_in;                              /* width of physical zero-padding in input buffer */
   int pad_h_out;                             /* height of physical zero-padding in output buffer */
   int pad_w_out;                             /* width of physical zero-padding in output buffer */

@@ -67,7 +67,7 @@ SIMDTYPE_INT32 vzero = _MM_SETZERO_INT32();
 #endif
 
 LIBXSMM_UNUSED(nthreads);
-LIBXSMM_UNUSED(transA);
+LIBXSMM_UNUSED(transa);
 LIBXSMM_UNUSED(alpha);
 LIBXSMM_UNUSED(beta);
 LIBXSMM_UNUSED(tid);
@@ -86,8 +86,8 @@ num_full_regs = (num_n / SIMD_WIDTH_FP32);
 if ((num_full_regs > 0) && (num_full_regs%2)) num_full_regs--;
 last_n_start = num_full_regs*SIMD_WIDTH_FP32;
 
-/* Copy in C matrix to buffer */
-ptr_result = C + (size_t)m_overall_start*handle->n + n_overall_start;
+/* Copy in c matrix to buffer */
+ptr_result = c + (size_t)m_overall_start*handle->n + n_overall_start;
 if (LIBXSMM_FEQ(0.f, *beta)) {
   if (!last_block_n) {
     for (m = 0; m < num_m; m++) {
@@ -111,12 +111,12 @@ if (LIBXSMM_FEQ(0.f, *beta)) {
   }
 }
 else if (LIBXSMM_FEQ(1.f, *beta)) {
-  if ('T' == transC || 't' == transC) {
+  if ('T' == transc || 't' == transc) {
     int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int m2;
 
-    ptr_result = C + (size_t)n_overall_start*handle->m + m_overall_start;
+    ptr_result = c + (size_t)n_overall_start*handle->m + m_overall_start;
 
     for (m = 0; m < num_m_simd; m += SIMD_WIDTH_FP32) {
       for (n = 0; n < num_n_simd; n += SIMD_WIDTH_FP32) {
@@ -162,12 +162,12 @@ else if (LIBXSMM_FEQ(1.f, *beta)) {
 }
 else {
   SIMDTYPE_FP32 beta_v = _MM_SET1_FP32(*beta);
-  if ('T' == transC || 't' == transC) {
+  if ('T' == transc || 't' == transc) {
     int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int m2;
 
-    ptr_result = C + (size_t)n_overall_start*handle->m + m_overall_start;
+    ptr_result = c + (size_t)n_overall_start*handle->m + m_overall_start;
 
     for (m = 0; m < num_m_simd; m += SIMD_WIDTH_FP32) {
       for (n = 0; n < num_n_simd; n += SIMD_WIDTH_FP32) {
@@ -226,20 +226,20 @@ for (kb = 0; kb < k_blocks; kb++) {
   float * LIBXSMM_RESTRICT scratch_C_base;
   const float * LIBXSMM_RESTRICT scratch_B_base;
   int block_A = kb * m_blocks + mb;
-  libxsmm_CSR_sparseslice slice = A_sparse[block_A];
+  libxsmm_CSR_sparseslice slice = a_sparse[block_A];
   int m_local = 0;
 
   k_overall_start = kb*k_block_size;
   k_overall_end   = (kb+1)*k_block_size;
   num_k = (k_overall_end - k_overall_start);
 
-  /* Copy in B matrix */
-  if ('T' == transB || 't' == transB) {
+  /* Copy in b matrix */
+  if ('T' == transb || 't' == transb) {
     int num_k_simd = num_k / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int k2;
 
-    ptr_dense = B + (size_t)n_overall_start*handle->k + k_overall_start;
+    ptr_dense = b + (size_t)n_overall_start*handle->k + k_overall_start;
 
     for (k = 0; k < num_k_simd; k += SIMD_WIDTH_FP32) {
       for (n = 0; n < num_n_simd; n += SIMD_WIDTH_FP32) {
@@ -267,7 +267,7 @@ for (kb = 0; kb < k_blocks; kb++) {
       }
     }
   } else {
-    ptr_dense = B + (size_t)k_overall_start*handle->n + n_overall_start;
+    ptr_dense = b + (size_t)k_overall_start*handle->n + n_overall_start;
     if (!last_block_n) {
       for (k = 0; k < num_k; k++) {
         SIMDTYPE_INT32 vload_0 = _MM_LOADU_INT32((const SIMDTYPE_INT32*)(ptr_dense + (size_t)k*handle->n + 2*0*SIMD_WIDTH_FP32));
@@ -321,7 +321,7 @@ for (kb = 0; kb < k_blocks; kb++) {
     float *const LIBXSMM_RESTRICT result_m_index   = scratch_C_base + ((size_t)m)  *LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
     float *const LIBXSMM_RESTRICT result_m_index_2 = scratch_C_base + ((size_t)m+1)*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32;
 
-    if (m_local >= m_block_size) { block_A++; slice = A_sparse[block_A]; m_local = 0; }
+    if (m_local >= m_block_size) { block_A++; slice = a_sparse[block_A]; m_local = 0; }
 
     start_j = slice.rowidx[m_local];
     end_j   = slice.rowidx[m_local + 1];
@@ -469,7 +469,7 @@ for (kb = 0; kb < k_blocks; kb++) {
     const float* LIBXSMM_RESTRICT sp_v_ptr_base;
     float* LIBXSMM_RESTRICT result_m_index;
 
-    if (m_local >= m_block_size) { block_A++; slice = A_sparse[block_A]; m_local = 0; }
+    if (m_local >= m_block_size) { block_A++; slice = a_sparse[block_A]; m_local = 0; }
 
     start_j = slice.rowidx[m_local];
     end_j   = slice.rowidx[m_local + 1];
@@ -532,13 +532,13 @@ for (kb = 0; kb < k_blocks; kb++) {
   }
 } /* kb */
 
-/* Copy out C matrix */
-if ('T' == transC || 't' == transC) {
+/* Copy out c matrix */
+if ('T' == transc || 't' == transc) {
   int num_m_simd = num_m / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
   int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
   int n2;
 
-  ptr_result = C + (size_t)n_overall_start*handle->m + m_overall_start;
+  ptr_result = c + (size_t)n_overall_start*handle->m + m_overall_start;
   for (n = 0; n < num_n_simd; n += SIMD_WIDTH_FP32) {
     for (m = 0; m < num_m_simd; m += SIMD_WIDTH_FP32) {
       TRANSPOSE_SIMD_WIDTH_KERNEL(scratch_C + (size_t)m*n_block_size + n, n_block_size, ptr_result + (size_t)n*handle->m + m, handle->m);
