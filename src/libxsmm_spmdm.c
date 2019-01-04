@@ -629,11 +629,10 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
 #if defined(LIBXSMM_SPMDM_AVX)
   if (LIBXSMM_X86_AVX <= libxsmm_target_archid) {
     internal_spmdm_init_shufmask_avx();
+    LIBXSMM_ASSERT(0 != internal_spmdm_shufmasks_32);
+    LIBXSMM_ASSERT(0 != internal_spmdm_shufmasks_16);
   }
-  LIBXSMM_ASSERT(0 != internal_spmdm_shufmasks_32);
-  LIBXSMM_ASSERT(0 != internal_spmdm_shufmasks_16);
 #endif
-
   /* post-conditions */
   LIBXSMM_ASSERT(0 != internal_spmdm_createSparseSlice_fp32_thread);
   LIBXSMM_ASSERT(0 != internal_spmdm_createSparseSlice_bfloat16_thread);
