@@ -627,7 +627,7 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
 
   /* Initialize shuffle masks for the computation */
 #if defined(LIBXSMM_SPMDM_AVX)
-  if (LIBXSMM_X86_AVX <= libxsmm_target_archid) {
+  if (LIBXSMM_X86_AVX <= libxsmm_target_archid || LIBXSMM_X86_AVX <= LIBXSMM_STATIC_TARGET_ARCH) {
     internal_spmdm_init_shufmask_avx();
     LIBXSMM_ASSERT(0 != internal_spmdm_shufmasks_32);
     LIBXSMM_ASSERT(0 != internal_spmdm_shufmasks_16);
