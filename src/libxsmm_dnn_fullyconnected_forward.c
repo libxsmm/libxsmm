@@ -59,11 +59,17 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom_f32_f32(libxsmm_dnn_f
   libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.C;
   libxsmm_blasint ldc = (libxsmm_blasint)handle->desc.K;
   element_input_type alpha = (element_input_type)1;
-  element_input_type beta = (element_input_type)0;
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-    gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->desc.N, handle->desc.C, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+    if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK) ) {
+      element_input_type beta = (element_input_type)1;
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->bk, handle->bn, handle->bc, &handle->bk, &handle->bc, &handle->bk, &alpha, &beta, NULL, NULL);
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c"
+    } else {
+      element_input_type beta = (element_input_type)0;
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->desc.N, handle->desc.C, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_custom_generic.tpl.c"
+    }
   } else {
     status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
   }
@@ -91,10 +97,15 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom_bf16_f32(libxsmm_dnn_
   float beta = (element_input_type)0;
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-    gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->desc.N, handle->desc.C, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+    if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK) ) {
+      /* @TODO */
+      status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+    } else {
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->desc.N, handle->desc.C, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # define LIBXSMM_DNN_FULLYCONNECTED_FWD_BF16_F32
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FULLYCONNECTED_FWD_BF16_F32
+    }
   } else {
     status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
   }
@@ -139,11 +150,17 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom(li
       libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.C;
       libxsmm_blasint ldc = (libxsmm_blasint)handle->desc.K;
       element_input_type alpha = (element_input_type)1;
-      element_input_type beta = (element_input_type)0;
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-        gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->desc.N, handle->desc.C, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+        if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK) ) {
+          element_input_type beta = (element_input_type)1;
+          gemm_function gemm_kernel = libxsmm_smmdispatch(handle->bk, handle->bn, handle->bc, &handle->bk, &handle->bc, &handle->bk, &alpha, &beta, NULL, NULL);
+# include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c"
+        } else {
+          element_input_type beta = (element_input_type)0;
+          gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->desc.N, handle->desc.C, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_custom_generic.tpl.c"
+        }
       } else {
         status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
       }
@@ -159,10 +176,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom(li
       float beta = (element_input_type)0;
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-        gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->desc.N, handle->desc.C, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+        if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK) ) {
+          status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
+        } else {
+          gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->desc.N, handle->desc.C, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # define LIBXSMM_DNN_FULLYCONNECTED_FWD_BF16_F32
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FULLYCONNECTED_FWD_BF16_F32
+        }
       } else {
         status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
       }

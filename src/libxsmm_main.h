@@ -585,6 +585,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   int blocksifm_lp;  /* not used */
   int blocksofm_lp;  /* not used */
   int fm_lp_block;
+  int bn;
+  int bk;
+  int bc;
   size_t scratch_size;
   void* scratch;
 };
