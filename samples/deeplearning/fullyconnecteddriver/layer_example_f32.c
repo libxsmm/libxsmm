@@ -121,8 +121,8 @@ int main(int argc, char* argv[])
     printf("fuse type needs to be 0\n");
     return -1;
   }
-  if (format != 'L') {
-    printf("format needs to be 'L' (libxsmm)\n");
+  if (format != 'L' && format != 'B') {
+    printf("format needs to be 'L' (libxsmm) or 'B' (for locked NCNC KCCK)\n");
     return -1;
   }
 
@@ -208,8 +208,13 @@ int main(int argc, char* argv[])
     fullyconnected_desc.threads = nThreads;
     fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
-    fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
-    fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+    if ( format == 'L' ) {
+      fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+      fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+    } else {
+      fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NCNC;
+      fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_KCCK;
+    }
     fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE;
 
     libxsmm_handle = libxsmm_dnn_create_fullyconnected( fullyconnected_desc, &status );
@@ -243,12 +248,21 @@ int main(int argc, char* argv[])
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our
        own external to the library */
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,        (void*)naive_input,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output,       (void*)naive_output,       LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter,       (void*)naive_filter,       LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delinput,     (void*)naive_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_deloutput,    (void*)naive_deloutput,    LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delfilter,    (void*)naive_delfilter,    LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+    if ( format == 'L' ) { 
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,        (void*)naive_input,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output,       (void*)naive_output,       LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter,       (void*)naive_filter,       LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delinput,     (void*)naive_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_deloutput,    (void*)naive_deloutput,    LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delfilter,    (void*)naive_delfilter,    LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+    } else {
+      matrix_copy_NC_to_NCNC( naive_input,     input_libxsmm,     1, nImg, nIFm, 64, 64 );
+      matrix_copy_NC_to_NCNC( naive_delinput,  delinput_libxsmm,  1, nImg, nIFm, 64, 64 );
+      matrix_copy_NC_to_NCNC( naive_output,    output_libxsmm,    1, nImg, nOFm, 64, 64 );
+      matrix_copy_NC_to_NCNC( naive_deloutput, deloutput_libxsmm, 1, nImg, nOFm, 64, 64 );
+      matrix_copy_CK_to_KCCK( naive_filter,    filter_libxsmm      , nIFm, nOFm, 64, 64 );
+      matrix_copy_CK_to_KCCK( naive_delfilter, delfilter_libxsmm   , nIFm, nOFm, 64, 64 );
+    }
 
     /* bind buffers and filter to handle */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle, libxsmm_input,        LIBXSMM_DNN_REGULAR_INPUT ) );
@@ -284,7 +298,11 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      if ( format == 'L' ) {
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      } else {
+        matrix_copy_NCNC_to_NC( output_libxsmm, naive_libxsmm_output, 1, nImg, nOFm, 64, 64 );
+      }
 
       /* compare */
       libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output, naive_libxsmm_output, 0, 0);
