@@ -64,7 +64,7 @@ for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
   
   for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
     for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
-      LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1,  0, 0, nBlocksOFm, handle->bn, handle->bk) = (element_output_type)0;
+      LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = (element_output_type)0;
     }
   }
 }

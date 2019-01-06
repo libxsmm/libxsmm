@@ -195,7 +195,7 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
   }
 
-  if (format == 'A' || format == 'L') {
+  if (format == 'B' || format == 'L') {
     printf("\n");
     printf("##########################################\n");
     printf("#      Setting Up  (custom-Storage)      #\n");

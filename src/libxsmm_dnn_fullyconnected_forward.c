@@ -55,17 +55,20 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom_f32_f32(libxsmm_dnn_f
   typedef float element_output_type;
   typedef float element_filter_type;
   typedef libxsmm_smmfunction gemm_function;
-  libxsmm_blasint lda = (libxsmm_blasint)handle->ofmblock;
-  libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.C;
-  libxsmm_blasint ldc = (libxsmm_blasint)handle->desc.K;
   element_input_type alpha = (element_input_type)1;
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
     if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK) ) {
+      libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
+      libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
+      libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
       element_input_type beta = (element_input_type)1;
-      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->bk, handle->bn, handle->bc, &handle->bk, &handle->bc, &handle->bk, &alpha, &beta, NULL, NULL);
+      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c"
     } else {
+      libxsmm_blasint lda = (libxsmm_blasint)handle->ofmblock;
+      libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.C;
+      libxsmm_blasint ldc = (libxsmm_blasint)handle->desc.K;
       element_input_type beta = (element_input_type)0;
       gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->desc.N, handle->desc.C, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_custom_generic.tpl.c"
@@ -146,17 +149,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom(li
       typedef float element_output_type;
       typedef float element_filter_type;
       typedef libxsmm_smmfunction gemm_function;
-      libxsmm_blasint lda = (libxsmm_blasint)handle->ofmblock;
-      libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.C;
-      libxsmm_blasint ldc = (libxsmm_blasint)handle->desc.K;
       element_input_type alpha = (element_input_type)1;
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK) ) {
+          libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
+          libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
+          libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
           element_input_type beta = (element_input_type)1;
-          gemm_function gemm_kernel = libxsmm_smmdispatch(handle->bk, handle->bn, handle->bc, &handle->bk, &handle->bc, &handle->bk, &alpha, &beta, NULL, NULL);
+          gemm_function gemm_kernel = libxsmm_smmdispatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c"
         } else {
+          libxsmm_blasint lda = (libxsmm_blasint)handle->ofmblock;
+          libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.C;
+          libxsmm_blasint ldc = (libxsmm_blasint)handle->desc.K;
           element_input_type beta = (element_input_type)0;
           gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->desc.N, handle->desc.C, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_custom_generic.tpl.c"
