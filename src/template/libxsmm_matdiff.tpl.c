@@ -49,8 +49,8 @@ for (i = 0; i < nn; ++i) {
       /* maximum absolute error and location */
       if (info->linf_abs < di) {
         info->linf_abs = di;
-        info->linf_abs_m = j;
-        info->linf_abs_n = i;
+        info->m = j;
+        info->n = i;
       }
 
       /* maximum error relative to current value */
@@ -102,8 +102,8 @@ for (i = 0; i < nn; ++i) {
       }
     }
     else { /* NaN */
-      info->linf_abs_m = j;
-      info->linf_abs_n = i;
+      info->m = j;
+      info->n = i;
       result_nan = 1;
       break;
     }

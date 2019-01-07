@@ -112,7 +112,7 @@ int main(void)
   LIBXSMM_MATINIT_OMP(ITYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
   LIBXSMM_MATINIT_OMP(OTYPE,  0, c, max_size_c, 1, max_size_c, 1.0);
   LIBXSMM_MATINIT_OMP(OTYPE,  0, d, max_size_c, 1, max_size_c, 1.0);
-  memset(&diff, 0, sizeof(diff));
+  libxsmm_matdiff_clear(&diff);
 
   for (test = begin; test < end && EXIT_SUCCESS == result; ++test) {
     for (i = i0; i < i1 && EXIT_SUCCESS == result; ++i) {

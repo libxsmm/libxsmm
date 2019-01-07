@@ -79,7 +79,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
     inf.raw = 0x7F800000;
 #endif
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
-    memset(info, 0, sizeof(*info)); /* nullify */
+    libxsmm_matdiff_clear(info);
     switch (datatype) {
       case LIBXSMM_DATATYPE_F64: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
@@ -147,10 +147,11 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
                         = info->linf_abs = info->linf_rel
                         = inf.value;
       }
+      LIBXSMM_ASSERT(info->m < mm && info->n < nn);
       if (1 == n) {
-        const libxsmm_blasint tmp = info->linf_abs_m;
-        info->linf_abs_m = info->linf_abs_n;
-        info->linf_abs_n = tmp;
+        const libxsmm_blasint tmp = info->m;
+        info->m = info->n;
+        info->n = tmp;
       }
       if (0 != result_swap) {
         info->l1_tst = info->l1_ref;
@@ -169,8 +170,7 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 {
   LIBXSMM_ASSERT(0 != output && 0 != input);
   if (output->normf_rel < input->normf_rel) {
-    output->linf_abs_m = input->linf_abs_m;
-    output->linf_abs_n = input->linf_abs_n;
+    output->m = input->m; output->n = input->n;
     output->norm1_abs = input->norm1_abs;
     output->norm1_rel = input->norm1_rel;
     output->normi_abs = input->normi_abs;
@@ -188,7 +188,11 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 
 LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 {
-  if (NULL != info) memset(info, 0, sizeof(*info)); /* nullify */
+  if (NULL != info) {
+    memset(info, 0, sizeof(*info)); /* nullify */
+    /* no location discovered yet with a difference */
+    info->m = info->n = -1;
+  }
 }
 
 
