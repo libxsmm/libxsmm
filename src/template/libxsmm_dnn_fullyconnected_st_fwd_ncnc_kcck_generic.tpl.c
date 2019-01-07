@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
 /* size variables, all const */
@@ -55,30 +55,24 @@ LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)han
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc, handle->bk);
 
+const element_filter_type *A_array[1024];
+const element_input_type  *B_array[1024];
+unsigned long long  blocks = nBlocksIFm;
+
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
-/* Zero out C */
-for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
-  int mb1  = mb1ofm1/nBlocksOFm;
-  int ofm1 = mb1ofm1%nBlocksOFm;
-  
-  for ( mb2 = 0; mb2 < handle->bn; ++mb2 ) {
-    for ( ofm2 = 0; ofm2 < handle->bk; ++ofm2 ) {
-      LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, mb2, ofm2, nBlocksOFm, handle->bn, handle->bk) = (element_output_type)0;
-    }
-  }
-}
-libxsmm_barrier_wait(handle->barrier, ltid);
 
 for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
   int mb1  = mb1ofm1/nBlocksOFm;
   int ofm1 = mb1ofm1%nBlocksOFm;
- 
+
+  /* prepare arguments for batch-reduce call  */
   for( ifm1 = 0; ifm1 < nBlocksIFm; ++ifm1 ) {
-    gemm_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1, 0, 0, nBlocksIFm, handle->bc, handle->bk),
-                 &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1,  0, 0, nBlocksIFm, handle->bn, handle->bc),
-                 &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1,  0, 0, nBlocksOFm, handle->bn, handle->bk) );
+    A_array[ifm1] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1, 0, 0, nBlocksIFm, handle->bc, handle->bk);
+    B_array[ifm1] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1,  0, 0, nBlocksIFm, handle->bn, handle->bc);
   }
+  batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1,  0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
+
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);

@@ -62,8 +62,8 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom_f32_f32(libxsmm_dnn_f
       libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
       libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
       libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
-      element_input_type beta = (element_input_type)1;
-      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+      element_input_type beta = (element_input_type)0;
+      libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c"
     } else {
       libxsmm_blasint lda = (libxsmm_blasint)handle->ofmblock;
@@ -156,8 +156,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom(li
           libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
           libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
           libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
-          element_input_type beta = (element_input_type)1;
-          gemm_function gemm_kernel = libxsmm_smmdispatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+          element_input_type beta = (element_input_type)0;
+          libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c"
         } else {
           libxsmm_blasint lda = (libxsmm_blasint)handle->ofmblock;
