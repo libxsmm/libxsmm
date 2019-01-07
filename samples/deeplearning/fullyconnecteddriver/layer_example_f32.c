@@ -64,6 +64,9 @@ int main(int argc, char* argv[])
   int fuse_type = 0;      /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'L';
+  int bn = 64;
+  int bk = 64;
+  int bc = 64;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
@@ -112,6 +115,10 @@ int main(int argc, char* argv[])
   if (argc > i) fuse_type  = atoi(argv[i++]);
   if (argc > i) type       = *(argv[i++]);
   if (argc > i) format     = *(argv[i++]);
+  if (argc > i) bn         = atoi(argv[i++]);
+  if (argc > i) bk         = atoi(argv[i++]);
+  if (argc > i) bc         = atoi(argv[i++]);
+ 
 
   if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only)\n");
@@ -205,6 +212,9 @@ int main(int argc, char* argv[])
     fullyconnected_desc.N = nImg;
     fullyconnected_desc.C = nIFm;
     fullyconnected_desc.K = nOFm;
+    fullyconnected_desc.bn = bn;
+    fullyconnected_desc.bk = bk;
+    fullyconnected_desc.bc = bc;
     fullyconnected_desc.threads = nThreads;
     fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
@@ -256,12 +266,12 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_deloutput,    (void*)naive_deloutput,    LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delfilter,    (void*)naive_delfilter,    LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
     } else {
-      matrix_copy_NC_to_NCNC( naive_input,     input_libxsmm,     1, nImg, nIFm, 64, 64 );
-      matrix_copy_NC_to_NCNC( naive_delinput,  delinput_libxsmm,  1, nImg, nIFm, 64, 64 );
-      matrix_copy_NC_to_NCNC( naive_output,    output_libxsmm,    1, nImg, nOFm, 64, 64 );
-      matrix_copy_NC_to_NCNC( naive_deloutput, deloutput_libxsmm, 1, nImg, nOFm, 64, 64 );
-      matrix_copy_CK_to_KCCK( naive_filter,    filter_libxsmm      , nIFm, nOFm, 64, 64 );
-      matrix_copy_CK_to_KCCK( naive_delfilter, delfilter_libxsmm   , nIFm, nOFm, 64, 64 );
+      matrix_copy_NC_to_NCNC( naive_input,     input_libxsmm,     1, nImg, nIFm, bn, bc );
+      matrix_copy_NC_to_NCNC( naive_delinput,  delinput_libxsmm,  1, nImg, nIFm, bn, bc );
+      matrix_copy_NC_to_NCNC( naive_output,    output_libxsmm,    1, nImg, nOFm, bn, bk );
+      matrix_copy_NC_to_NCNC( naive_deloutput, deloutput_libxsmm, 1, nImg, nOFm, bn, bk );
+      matrix_copy_KC_to_KCCK( naive_filter,    filter_libxsmm      , nIFm, nOFm, bc, bk );
+      matrix_copy_KC_to_KCCK( naive_delfilter, delfilter_libxsmm   , nIFm, nOFm, bc, bk );
     }
 
     /* bind buffers and filter to handle */
@@ -301,7 +311,7 @@ int main(int argc, char* argv[])
       if ( format == 'L' ) {
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
       } else {
-        matrix_copy_NCNC_to_NC( output_libxsmm, naive_libxsmm_output, 1, nImg, nOFm, 64, 64 );
+        matrix_copy_NCNC_to_NC( output_libxsmm, naive_libxsmm_output, 1, nImg, nOFm, bn, bk );
       }
 
       /* compare */

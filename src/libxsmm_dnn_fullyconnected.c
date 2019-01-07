@@ -60,9 +60,9 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
       handle->desc = fullyconnected_desc;
       /* @TODO perhaps we need a better switch here */
       if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK) ) {
-        handle->bk = 64;
-        handle->bn = 64;
-        handle->bc = 64;
+        handle->bk = handle->desc.bk;
+        handle->bn = handle->desc.bn;
+        handle->bc = handle->desc.bc;
 
         if ( handle->desc.N % handle->bn != 0 ) {
           handle->bn = handle->desc.N;

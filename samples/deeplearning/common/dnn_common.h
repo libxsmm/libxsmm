@@ -559,6 +559,26 @@ LIBXSMM_INLINE void matrix_copy_CK_to_KCCK(float *src, float *dst, int C, int K,
   }
 }
 
+LIBXSMM_INLINE void matrix_copy_KC_to_KCCK(float *src, float *dst, int C, int K, int bc, int bk)
+{
+  int k1, k2, c1, c2;
+  int kBlocks = K/bk;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(2, float, real_src, src, C);
+  LIBXSMM_VLA_DECL(4, float, real_dst, dst, cBlocks, bc, bk);
+
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (c2 = 0; c2 < bc; c2++) {
+        for (k2 = 0; k2 < bk; k2++) {
+          LIBXSMM_VLA_ACCESS(4, real_dst, k1, c1, c2, k2, cBlocks, bc, bk) =
+            LIBXSMM_VLA_ACCESS(2, real_src, k1*bk+k2, c1*bc+c2, C);
+        }
+      }
+    }
+  }
+}
+
 LIBXSMM_INLINE void naive_conv_fp(naive_conv_t* param, const float* input, float* output, const float* filter, const float* bias)
 {
   int nImg      = param->nImg;
