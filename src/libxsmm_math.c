@@ -116,10 +116,12 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         result = EXIT_FAILURE;
       }
     }
+    LIBXSMM_ASSERT((0 <= info->m && 0 <= info->n) || (0 > info->m && 0 > info->n));
+    LIBXSMM_ASSERT(info->m < mm && info->n < nn);
     if (EXIT_SUCCESS == result) {
       const char *const env = getenv("LIBXSMM_DUMP");
-      if (0 != env && 0 != *env && (('0' < *env && '9' >= *env) || '0' != *env)) {
-        const char *const defaultname = ('0' < *env && '9' >= *env) ? "libxsmm_dump" : env;
+      if (0 != env && 0 != *env && '0' != *env && ('-' != *env || (0 <= info->m && 0 <= info->n))) {
+        const char *const defaultname = (('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env;
         const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
         const libxsmm_mhd_elemtype type_dst = LIBXSMM_MAX(LIBXSMM_MHD_ELEMTYPE_U8, type_src);
         char filename[256];
@@ -147,7 +149,6 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
                         = info->linf_abs = info->linf_rel
                         = inf.value;
       }
-      LIBXSMM_ASSERT(info->m < mm && info->n < nn);
       if (1 == n) {
         const libxsmm_blasint tmp = info->m;
         info->m = info->n;
