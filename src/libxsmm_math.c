@@ -68,15 +68,15 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n, const void* ref, const void* tst,
   const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst)
 {
-  int result = EXIT_SUCCESS, result_swap = 0;
+  int result = EXIT_SUCCESS, result_swap = 0, result_nan = 0;
   if (0 == ref && 0 != tst) { ref = tst; tst = NULL; result_swap = 1; }
   if (0 != ref && 0 != info) {
     libxsmm_blasint mm = m, nn = n, ldr = (0 == ldref ? m : *ldref), ldt = (0 == ldtst ? m : *ldtst);
-    union { int i; float s; } inf;
+    union { int raw; float value; } inf;
 #if defined(INFINITY)
-    inf.s = INFINITY;
+    inf.value = INFINITY;
 #else
-    inf.i = 0x7F800000;
+    inf.raw = 0x7F800000;
 #endif
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
     memset(info, 0, sizeof(*info)); /* nullify */
@@ -136,9 +136,17 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
             NULL/*extension*/, 0/*extension_size*/);
         }
       }
-      info->normf_rel = libxsmm_dsqrt(info->normf_rel);
-      info->l2_abs = libxsmm_dsqrt(info->l2_abs);
-      info->l2_rel = libxsmm_dsqrt(info->l2_rel);
+      if (0 == result_nan) {
+        info->normf_rel = libxsmm_dsqrt(info->normf_rel);
+        info->l2_abs = libxsmm_dsqrt(info->l2_abs);
+        info->l2_rel = libxsmm_dsqrt(info->l2_rel);
+      }
+      else {
+        info->norm1_abs = info->norm1_rel = info->normi_abs = info->normi_rel = info->normf_rel
+                        = info->l2_abs = info->l2_rel = info->l1_ref = info->l1_tst
+                        = info->linf_abs = info->linf_rel
+                        = inf.value;
+      }
       if (1 == n) {
         const libxsmm_blasint tmp = info->linf_abs_m;
         info->linf_abs_m = info->linf_abs_n;

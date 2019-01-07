@@ -45,7 +45,7 @@ for (i = 0; i < nn; ++i) {
     const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
     const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
 
-    if (LIBXSMM_NOTNAN(ta) && inf.s > ta) {
+    if (LIBXSMM_NOTNAN(ta) && inf.value > ta) {
       /* maximum absolute error and location */
       if (info->linf_abs < di) {
         info->linf_abs = di;
@@ -59,7 +59,7 @@ for (i = 0; i < nn; ++i) {
         if (info->linf_rel < dri) info->linf_rel = dri;
         /* sum of relative differences */
         v0 = dri * dri;
-        if (inf.s > v0) {
+        if (inf.value > v0) {
           v0 -= compd;
           v1 = info->l2_rel + v0;
           compd = (v1 - info->l2_rel) - v0;
@@ -94,7 +94,7 @@ for (i = 0; i < nn; ++i) {
 
       /* Froebenius-norm of differences with Kahan compensation */
       v0 = di * di;
-      if (inf.s > v0) {
+      if (inf.value > v0) {
         v0 -= compf;
         v1 = info->l2_abs + v0;
         compf = (v1 - info->l2_abs) - v0;
@@ -102,12 +102,14 @@ for (i = 0; i < nn; ++i) {
       }
     }
     else { /* NaN */
-      result = EXIT_FAILURE;
+      info->linf_abs_m = j;
+      info->linf_abs_n = i;
+      result_nan = 1;
       break;
     }
   }
 
-  if (EXIT_SUCCESS == result) {
+  if (0 == result_nan) {
     /* summarize reference values */
     v0 = normrj - compr; v1 = info->l1_ref + v0;
     compr = (v1 - info->l1_ref) - v0;
@@ -129,7 +131,7 @@ for (i = 0; i < nn; ++i) {
   }
 }
 
-if (EXIT_SUCCESS == result) {
+if (0 == result_nan) {
   /* Infinity-norm relative to reference */
   if (0 < normr) {
     info->normi_rel = info->normi_abs / normr;
