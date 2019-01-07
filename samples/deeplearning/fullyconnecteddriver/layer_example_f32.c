@@ -248,7 +248,7 @@ int main(int argc, char* argv[])
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our
        own external to the library */
-    if ( format == 'L' ) { 
+    if ( format == 'L' ) {
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,        (void*)naive_input,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output,       (void*)naive_output,       LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter,       (void*)naive_filter,       LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
