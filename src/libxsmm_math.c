@@ -132,7 +132,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
           NULL/*extension*/, 0/*extension_size*/);
         if (NULL != tst) {
           size_t pt[2]; pt[0] = (size_t)ldt; pt[1] = (size_t)nn;
-          LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-tst.mhd", defaultname, tst);
+          LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-tst.mhd", defaultname, ref/*adopt ref-ptr*/);
           libxsmm_mhd_write(filename, NULL/*offset*/, size, pt, 2/*ndims*/, 1/*ncomponents*/,
             type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
             NULL/*extension*/, 0/*extension_size*/);
