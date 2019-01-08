@@ -48,8 +48,6 @@ const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) :
 /* loop variables */
 int mb1ofm1 = 0;
 int ifm1 = 0;
-int mb2 = 0;
-int ofm2 = 0;
 
 LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
