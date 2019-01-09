@@ -59,6 +59,10 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_wsgemm_descriptor_init(libxsmm_desc
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   float alpha, float beta, int flags, libxsmm_gemm_prefetch_type prefetch);
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bsgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+  float alpha, float beta, int flags, libxsmm_gemm_prefetch_type prefetch);
 
 /** Initialize GEMM descriptor (generic: double-precision alpha/beta). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit(libxsmm_descriptor_blob* blob,
@@ -100,14 +104,14 @@ LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descri
   unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,
   const void* alpha, char transa, char diag, char side, char uplo, int layout);
 
-/** Initialize packed getrf descriptor as used by low-level routines. */
-LIBXSMM_API libxsmm_getrf_descriptor* libxsmm_getrf_descriptor_init(libxsmm_descriptor_blob* blob,
-  unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, int layout);
-
 /** Initialize packed trmm descriptor as used by low-level routines. */
 LIBXSMM_API libxsmm_trmm_descriptor* libxsmm_trmm_descriptor_init(libxsmm_descriptor_blob* blob,
   unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,
   const void* alpha, char transa, char diag, char side, char uplo, int layout);
+
+/** Initialize packed getrf descriptor as used by low-level routines. */
+LIBXSMM_API libxsmm_getrf_descriptor* libxsmm_getrf_descriptor_init(libxsmm_descriptor_blob* blob,
+  unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, int layout);
 
 /** Initialize packed pgemm descriptor as used by low-level routines. */
 LIBXSMM_API libxsmm_pgemm_descriptor* libxsmm_pgemm_descriptor_init(libxsmm_descriptor_blob* blob,
@@ -226,6 +230,11 @@ void libxsmm_generator_trsm_kernel ( libxsmm_generated_code*        io_generated
                                      const libxsmm_trsm_descriptor* i_packed_trsm_desc,
                                      const char*                    i_arch );
 
+LIBXSMM_API
+void libxsmm_generator_trmm_kernel ( libxsmm_generated_code*        io_generated_code,
+                                     const libxsmm_trmm_descriptor* i_packed_trmm_desc,
+                                     const char*                    i_arch );
+
 /* @TODO change int based architecture value */
 LIBXSMM_API
 void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*            io_generated_code,
@@ -309,8 +318,10 @@ void libxsmm_generator_convolution_winograd_forward_directasm(const char*       
                                                               const libxsmm_convolution_winograd_descriptor* i_conv_desc,
                                                               const char*                                    i_arch);
 
+/** Initialization counter that can be used to check whether the library is initialized (!=0) or not (==0). */
+LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_ninit);
 /** Verbosity level (0: quiet, 1: errors, 2: warnings, 3: info, neg.: all/dump). */
-LIBXSMM_APIVAR(int libxsmm_verbosity);
+LIBXSMM_APIVAR_PUBLIC(int libxsmm_verbosity);
 
 #endif /*LIBXSMM_GENERATOR_H*/
 

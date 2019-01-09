@@ -73,7 +73,7 @@ int main(int argc, char* argv []) {
   /* check argument count for a valid range */
   if (argc != 13) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* names of files and routines */
@@ -99,7 +99,7 @@ int main(int argc, char* argv []) {
   if ( (strcmp(l_type, "dense")     != 0) &&
        (strcmp(l_type, "dense_asm") != 0) ) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* set value of prefetch flag */
@@ -109,7 +109,7 @@ int main(int argc, char* argv []) {
     l_prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
   } else {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* check value of arch flag */
@@ -117,7 +117,7 @@ int main(int argc, char* argv []) {
        (strcmp(l_arch, "knl") != 0) &&
        (strcmp(l_arch, "skx") != 0) ) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* check and evaluate precision flag */
@@ -126,7 +126,7 @@ int main(int argc, char* argv []) {
     LIBXSMM_UNUSED(l_single_precision/*TODO*/);
   } else {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   /* check value of pass flag */
@@ -134,12 +134,12 @@ int main(int argc, char* argv []) {
        (strcmp(l_pass, "bwd") != 0) &&
        (strcmp(l_pass, "upd") != 0) ) {
     print_help();
-    return -1;
+    return EXIT_FAILURE;
   }
 
   if ( !flag_ur && (0 != (l_itiles*l_jtiles*l_bimg % l_ur)) ) {
     printf("\n(itiles*jtiles*bimg) = %d must be perfectly divisible by ur %d\n", l_itiles*l_jtiles*l_bimg, l_ur);
-    return -1;
+    return EXIT_FAILURE;
   }
 
   l_conv_desc.itiles = l_itiles;
@@ -175,6 +175,6 @@ int main(int argc, char* argv []) {
     }
   }
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 

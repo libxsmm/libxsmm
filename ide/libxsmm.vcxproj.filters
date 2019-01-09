@@ -111,7 +111,7 @@
     <ClInclude Include="..\include\libxsmm_mhd.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_bgemm.h">
+    <ClInclude Include="..\include\libxsmm_blocked_gemm.h">
       <Filter>include</Filter>
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_dnn_dryruns.h">
@@ -237,7 +237,7 @@
     <ClInclude Include="..\src\generator_x86_instructions.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_bgemm_types.h">
+    <ClInclude Include="..\src\libxsmm_blocked_gemm_types.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_dnn_grucell.h">
@@ -290,6 +290,18 @@
     </ClInclude>
     <ClInclude Include="..\src\generator_packed_getrf_avx_avx512.h">
       <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_spmdm_begin.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx2.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx512.h">
+      <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\libxsmm_spmdm_end.h">
+      <Filter>src</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -353,7 +365,7 @@
     <ClCompile Include="..\src\libxsmm_fsspmdm.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_bgemm.c">
+    <ClCompile Include="..\src\libxsmm_blocked_gemm.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_mhd.c">
@@ -440,19 +452,19 @@
     <ClCompile Include="..\src\template\kernel_repeat.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_copyin_a.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyin_a.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_copyin_b.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyin_b.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_copyin_c.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyin_c.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_copyout_c.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyout_c.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_bwd_custom_custom_padding.tpl.c">
@@ -785,9 +797,6 @@
     <ClCompile Include="..\src\generator_matcopy_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_packed_trsm.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
@@ -851,10 +860,10 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_fusedbatchnorm_st_bwd_custom_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_transpose_b.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_transpose_b.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_convert_b_to_a.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_convert_b_to_a.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_fullyconnected.c">
@@ -949,6 +958,9 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_fwd_nc_ck_generic.tpl.c">
       <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed.c">
+      <Filter>src\generator</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

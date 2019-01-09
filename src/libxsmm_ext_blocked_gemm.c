@@ -29,7 +29,7 @@
 /* Kunal Banerjee (Intel Corp.), Dheevatsa Mudigere (Intel Corp.)
    Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_bgemm_types.h"
+#include "libxsmm_blocked_gemm_types.h"
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -44,7 +44,7 @@
 #endif
 
 
-LIBXSMM_APIEXT void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
+LIBXSMM_APIEXT void libxsmm_blocked_gemm_omp(const libxsmm_blocked_gemm_handle* handle,
   const void* a, const void* b, void* c, /*unsigned*/int count)
 {
   static int error_once = 0;
@@ -60,14 +60,14 @@ LIBXSMM_APIEXT void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
       const int tid = 0;
 #endif
       for (i = 0; i < count; ++i) {
-        libxsmm_bgemm_st(handle, a, b, c, 0/*start_thread*/, tid);
+        libxsmm_blocked_gemm_st(handle, a, b, c, 0/*start_thread*/, tid);
       }
     }
   }
   else if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_bgemm_omp!\n");
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_blocked_gemm_omp!\n");
   }
 }
 

@@ -29,8 +29,8 @@
 /* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
-LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_TYPE, real_dst, (LIBXSMM_BGEMM_TEMPLATE_TYPE*)dst, handle->kb, handle->bn, handle->bk);
-LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_TYPE, real_src, (const LIBXSMM_BGEMM_TEMPLATE_TYPE*)src, handle->nb, handle->bk, handle->bn);
+LIBXSMM_VLA_DECL(4, LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE, real_dst, (LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE*)dst, handle->kb, handle->bn, handle->bk);
+LIBXSMM_VLA_DECL(4, const LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE, real_src, (const LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE*)src, handle->nb, handle->bk, handle->bn);
 libxsmm_blasint kb, nb, bk, bn;
 libxsmm_blasint ii, jj, job, jobT;
 

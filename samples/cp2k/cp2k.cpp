@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
       // eventually JIT-compile the requested kernel
       const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, LIBXSMM_PREFETCH);
 
-      memset(&diff, 0, sizeof(diff));
+      libxsmm_matdiff_clear(&diff);
       { // LAPACK/BLAS3 (warmup BLAS Library)
         std::fill_n(expect, csize, zero);
 #if defined(_OPENMP)

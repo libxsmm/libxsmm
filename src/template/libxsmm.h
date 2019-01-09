@@ -42,7 +42,7 @@
 #define LIBXSMM_BRANCH  LIBXSMM_CONFIG_BRANCH
 
 /**
- * Numbers to denote the version of LIBXSMM (libxsmm_config.h).
+ * Semantic version according to https://semver.org/ (see also libxsmm_config.h).
  * LIBXSMM_VERSION_MAJOR:  Major version derived from the most recent RCS-tag.
  * LIBXSMM_VERSION_MINOR:  Minor version derived from the most recent RCS-tag.
  * LIBXSMM_VERSION_UPDATE: Update number derived from the most recent RCS-tag.
@@ -62,7 +62,7 @@
 #include "libxsmm_frontend.h"
 #include "libxsmm_fsspmdm.h"
 #include "libxsmm_malloc.h"
-#include "libxsmm_bgemm.h"
+#include "libxsmm_blocked_gemm.h"
 #include "libxsmm_spmdm.h"
 #include "libxsmm_cpuid.h"
 #include "libxsmm_timer.h"
@@ -135,12 +135,16 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_b
 LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/short-precision), int-accumulate */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/short-precision, int-accumulate) */
 LIBXSMM_API libxsmm_wimmfunction libxsmm_wimmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const int* alpha, const int* beta, const int* flags, const int* prefetch);
-/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/short-precision), fp-accumulate */
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (low/short-precision, fp32-accumulate) */
 LIBXSMM_API libxsmm_wsmmfunction libxsmm_wsmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const float* alpha, const float* beta, const int* flags, const int* prefetch);
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (bf16 inputs, fp32-accumulate) */
+LIBXSMM_API libxsmm_bsmmfunction libxsmm_bsmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
 
@@ -149,6 +153,9 @@ LIBXSMM_API libxsmm_dmmfunction_reducebatch libxsmm_dmmdispatch_reducebatch(libx
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta, const int* prefetch);
 /** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (single-precision). */
 LIBXSMM_API libxsmm_smmfunction_reducebatch libxsmm_smmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* prefetch);
+/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate). */
+LIBXSMM_API libxsmm_bsmmfunction_reducebatch libxsmm_bsmmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* prefetch);
 
 /** Process a series of matrix multiplications (batch). */
@@ -255,6 +262,9 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_de
 
 /** Code generation routine for TRSM using a descriptor */
 LIBXSMM_API libxsmm_xtrsmfunction libxsmm_dispatch_trsm(const libxsmm_trsm_descriptor* descriptor);
+
+/** Code generation routine for TRMM using a descriptor */
+LIBXSMM_API libxsmm_xtrmmfunction libxsmm_dispatch_trmm(const libxsmm_trmm_descriptor* descriptor);
 
 /**
  * Code generation routine for the CSR format which multiplies a dense SOA matrix (each element holds a SIMD-width
@@ -388,11 +398,15 @@ LIBXSMM_API void libxsmm_wsgemm(const char* transa, const char* transb,
   const float* alpha, const short* a, const libxsmm_blasint* lda,
   const short* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
+/** Dispatched general dense matrix multiplication (BF16 input, F32 result). */
+LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
+  const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc);
 $MNK_INTERFACE_LIST
 #if defined(__cplusplus)
 
-namespace Eigen { struct half; }
-namespace tensorflow { struct bfloat16; }
 /** Map a built-in type to libxsmm_gemm_precision (libxsmm_gemm_precision_enum). */
 template<typename T> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum             { static const libxsmm_gemm_precision value = static_cast<libxsmm_gemm_precision>(LIBXSMM_DATATYPE_UNSUPPORTED); };
 template<> struct LIBXSMM_RETARGETABLE libxsmm_gemm_precision_enum<double>               { static const libxsmm_gemm_precision value = LIBXSMM_GEMM_PRECISION_F64; };
@@ -664,6 +678,24 @@ inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* tr
    const float* beta,       float* c, const libxsmm_blasint* ldc)
 {
   libxsmm_wsgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+/** Dispatched general dense matrix multiplication (low-precision). */
+inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
+                      const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
+   const float* beta,                  float* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_bsgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+inline LIBXSMM_RETARGETABLE void libxsmm_gemm(const char* transa, const char* transb,
+  /* by-value */ libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
+                      const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
+   const float* beta,                  float* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_bsgemm(transa, transb, &m, &n, &k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 /** General dense matrix multiplication based on LAPACK/BLAS (double-precision). */

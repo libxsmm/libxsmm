@@ -46,6 +46,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected_
   int N;                                        /* number of images in mini-batch */
   int C;                                        /* number of input feature maps */
   int K;                                        /* number of output feature maps */
+  int bn;
+  int bk;
+  int bc;
   int threads;                                  /* number of threads used */
   libxsmm_dnn_datatype datatype_in;             /* datatype used for all input related buffers */
   libxsmm_dnn_datatype datatype_out;            /* datatype used for all output related buffers */

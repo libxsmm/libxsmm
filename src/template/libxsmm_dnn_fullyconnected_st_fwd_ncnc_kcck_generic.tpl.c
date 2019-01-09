@@ -26,46 +26,52 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Greg Henry, Hans Pabst (Intel Corp.)
+/* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_generator.h>
-#include "generator_common.h"
-#include "generator_packed_trsm_avx_avx512.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
+/* size variables, all const */
+/* here we assume that input and output blocking is similar */
+const int nBlocksIFm = handle->desc.C / handle->bc;
+const int nBlocksOFm = handle->desc.K / handle->bk;
+const int nBlocksMB  = handle->desc.N / handle->bn;
 
+/* computing first logical thread */
+const int ltid = tid - start_thread;
+/* number of tasks that could be run in parallel */
+const int work = nBlocksOFm * nBlocksMB;
+/* compute chunk size */
+const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
-/* @TODO change int based architecture value */
-LIBXSMM_API
-void libxsmm_generator_trsm_kernel( libxsmm_generated_code*         io_generated_code,
-                                    const libxsmm_trsm_descriptor*  i_packed_trsm_desc,
-                                    const char*                     i_arch ) {
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, i_arch );
+/* loop variables */
+int mb1ofm1 = 0;
+int ifm1 = 0;
 
-  /* generate kernel */
-  if ( (strcmp(i_arch, "skx") == 0) ||
-       (strcmp(i_arch, "knm") == 0) ||
-       (strcmp(i_arch, "knl") == 0) ||
-       (strcmp(i_arch, "hsw") == 0) ||
-       (strcmp(i_arch, "snb") == 0)    ) {
-    libxsmm_generator_packed_trsm_avx_avx512_kernel( io_generated_code, i_packed_trsm_desc, i_arch );
-  } else {
-    /* TODO fix this error */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-    return;
+LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, handle->bn, handle->bk);
+LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
+LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc, handle->bk);
+
+const element_filter_type *A_array[1024];
+const element_input_type  *B_array[1024];
+unsigned long long  blocks = nBlocksIFm;
+
+/* lazy barrier init */
+libxsmm_barrier_init(handle->barrier, ltid);
+
+for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
+  int mb1  = mb1ofm1/nBlocksOFm;
+  int ofm1 = mb1ofm1%nBlocksOFm;
+
+  /* prepare arguments for batch-reduce call  */
+  for( ifm1 = 0; ifm1 < nBlocksIFm; ++ifm1 ) {
+    A_array[ifm1] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1, 0, 0, nBlocksIFm, handle->bc, handle->bk);
+    B_array[ifm1] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1,  0, 0, nBlocksIFm, handle->bn, handle->bc);
   }
+  batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1,  0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
 
-  /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
 }
+
+libxsmm_barrier_wait(handle->barrier, ltid);
 

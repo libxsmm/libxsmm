@@ -306,12 +306,12 @@ int main(int argc, char* argv[])
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd_w, norms_upd_r, norms_upd_b, diff;
-  memset(&norms_fwd, 0, sizeof(norms_fwd));
-  memset(&norms_bwd, 0, sizeof(norms_bwd));
-  memset(&norms_upd_w, 0, sizeof(norms_upd_w));
-  memset(&norms_upd_r, 0, sizeof(norms_upd_r));
-  memset(&norms_upd_b, 0, sizeof(norms_upd_b));
-  memset(&diff, 0, sizeof(diff));
+  libxsmm_matdiff_clear(&norms_fwd);
+  libxsmm_matdiff_clear(&norms_bwd);
+  libxsmm_matdiff_clear(&norms_upd_w);
+  libxsmm_matdiff_clear(&norms_upd_r);
+  libxsmm_matdiff_clear(&norms_upd_b);
+  libxsmm_matdiff_clear(&diff);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("\nUsage: ./lstmdriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [N] [C] [K] [time_steps > 0]\n\n");
@@ -447,7 +447,7 @@ int main(int argc, char* argv[])
   dcs   = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   dht   = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
   htest = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  djdxtestt  = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  djdxtestt  = (float*)libxsmm_aligned_malloc(N*C*t*sizeof(float), 2097152);
   djdwtest   = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
   djdrtest   = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
   djdbtest   = (float*)libxsmm_aligned_malloc(K*4*sizeof(float), 2097152);

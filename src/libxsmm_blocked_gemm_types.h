@@ -26,21 +26,38 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Hans Pabst (Intel Corp.)
+/* Hans Pabst (Intel Corp.)
 ******************************************************************************/
+#ifndef LIBXSMM_BLOCKED_GEMM_TYPES_H
+#define LIBXSMM_BLOCKED_GEMM_TYPES_H
 
-LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_TYPE, real_dst, (LIBXSMM_BGEMM_TEMPLATE_TYPE*)dst, handle->mb, handle->bn, handle->bm);
-LIBXSMM_VLA_DECL(2, const LIBXSMM_BGEMM_TEMPLATE_TYPE, real_src, (const LIBXSMM_BGEMM_TEMPLATE_TYPE*)src, handle->m);
-libxsmm_blasint mb, nb, bm, bn;
+#include "libxsmm_gemm.h"
 
-for (nb = 0; nb < handle->nb; ++nb) {
-  for (mb = 0; mb < handle->mb; ++mb) {
-    for (bn = 0; bn < handle->bn; ++bn) {
-      for (bm = 0; bm < handle->bm; ++bm) {
-        LIBXSMM_VLA_ACCESS(4, real_dst, nb, mb, bn, bm, handle->mb, handle->bn, handle->bm) =
-        LIBXSMM_VLA_ACCESS(2, real_src, nb * handle->bn + bn, mb * handle->bm + bm, handle->m);
-      }
-    }
-  }
-}
+#if !defined(LIBXSMM_BLOCKED_GEMM_CHECKS) && !defined(NDEBUG)
+# define LIBXSMM_BLOCKED_GEMM_CHECKS
+#endif
+
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_blocked_gemm_lock {
+  char pad[LIBXSMM_CACHELINE];
+  volatile LIBXSMM_ATOMIC_LOCKTYPE state;
+} libxsmm_blocked_gemm_lock;
+
+
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_blocked_gemm_handle {
+  union { double d; float s; int w; } alpha, beta;
+  libxsmm_gemm_precision iprec, oprec;
+  libxsmm_xmmfunction kernel_pf;
+  libxsmm_xmmfunction kernel;
+  libxsmm_barrier* barrier;
+  libxsmm_blocked_gemm_lock* locks;
+  libxsmm_blocked_gemm_order order;
+  libxsmm_blasint m, n, k, bm, bn, bk;
+  libxsmm_blasint b_m1, b_n1, b_k1, b_k2;
+  libxsmm_blasint mb, nb, kb;
+  void* buffer;
+  int nthreads;
+};
+
+#endif /*LIBXSMM_BLOCKED_GEMM_TYPES_H*/
 
