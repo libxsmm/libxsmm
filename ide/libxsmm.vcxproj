@@ -29,7 +29,7 @@
   <ItemGroup>
     <ClInclude Include="..\build\libxsmm_dispatch.h" />
     <ClInclude Include="..\include\libxsmm.h" />
-    <ClInclude Include="..\include\libxsmm_bgemm.h" />
+    <ClInclude Include="..\include\libxsmm_blocked_gemm.h" />
     <ClInclude Include="..\include\libxsmm_config.h" />
     <ClInclude Include="..\include\libxsmm_cpuid.h" />
     <ClInclude Include="..\include\libxsmm_dnn.h" />
@@ -58,7 +58,7 @@
     <ClInclude Include="..\src\generator_packed_trmm_avx_avx512.h" />
     <ClInclude Include="..\src\generator_packed_trsm_dmacros.h" />
     <ClInclude Include="..\src\generator_packed_xct_avx2_lln.h" />
-    <ClInclude Include="..\src\libxsmm_bgemm_types.h" />
+    <ClInclude Include="..\src\libxsmm_blocked_gemm_types.h" />
     <ClInclude Include="..\src\libxsmm_dnn_elementwise.h" />
     <ClInclude Include="..\src\generator_common.h" />
     <ClInclude Include="..\src\generator_packed_trsm_avx_avx512.h" />
@@ -113,6 +113,10 @@
     <ClInclude Include="..\src\libxsmm_gemm.h" />
     <ClInclude Include="..\src\libxsmm_main.h" />
     <ClInclude Include="..\src\libxsmm_perf.h" />
+    <ClInclude Include="..\src\libxsmm_spmdm_begin.h" />
+    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx2.h" />
+    <ClInclude Include="..\src\libxsmm_spmdm_begin_avx512.h" />
+    <ClInclude Include="..\src\libxsmm_spmdm_end.h" />
     <ClInclude Include="..\src\libxsmm_trace.h" />
     <ClInclude Include="..\src\libxsmm_trans.h" />
     <ClInclude Include="..\src\perf_jitdump.h" />
@@ -121,10 +125,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\generator_common.c" />
+    <ClCompile Include="..\src\generator_packed.c" />
     <ClCompile Include="..\src\generator_packed_gemm_avx_avx512.c" />
     <ClCompile Include="..\src\generator_packed_getrf_avx_avx512.c" />
     <ClCompile Include="..\src\generator_packed_trmm_avx_avx512.c" />
-    <ClCompile Include="..\src\generator_packed_trsm.c" />
     <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c" />
     <ClCompile Include="..\src\generator_convolution.c" />
     <ClCompile Include="..\src\generator_convolution_common.c" />
@@ -161,7 +165,7 @@
     <ClCompile Include="..\src\generator_transpose.c" />
     <ClCompile Include="..\src\generator_transpose_avx_avx512.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
-    <ClCompile Include="..\src\libxsmm_bgemm.c" />
+    <ClCompile Include="..\src\libxsmm_blocked_gemm.c" />
     <ClCompile Include="..\src\libxsmm_dnn.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_backward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_forward.c" />
@@ -218,7 +222,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
@@ -226,7 +230,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_convert_b_to_a.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_convert_b_to_a.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
@@ -234,7 +238,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_copyin_a.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyin_a.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
@@ -242,7 +246,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_copyin_b.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyin_b.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
@@ -250,7 +254,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_copyin_c.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyin_c.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
@@ -258,7 +262,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_copyout_c.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_copyout_c.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
@@ -266,7 +270,7 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_bgemm_transpose_b.tpl.c">
+    <ClCompile Include="..\src\template\libxsmm_blocked_gemm_transpose_b.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>

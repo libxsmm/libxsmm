@@ -189,11 +189,11 @@
           REAL(C_DOUBLE) normf_rel            ! Froebenius-norm
           ! L1-norm and L2-norm of differences.
           REAL(C_DOUBLE) l2_abs, l2_rel, l1_ref, l1_tst
-          ! Maximum absolute and relative error.
+          ! Maximum absolute and relative difference.
           REAL(C_DOUBLE) linf_abs, linf_rel
-          ! Location of maximum error (m, n).
-          INTEGER(LIBXSMM_BLASINT_KIND) linf_abs_m
-          INTEGER(LIBXSMM_BLASINT_KIND) linf_abs_n
+          ! Location (m, n) of largest difference (linf_abs).
+          INTEGER(LIBXSMM_BLASINT_KIND) m
+          INTEGER(LIBXSMM_BLASINT_KIND) n
         END TYPE
 
         INTERFACE libxsmm_ptr0
@@ -252,15 +252,72 @@
           MODULE PROCEDURE libxsmm_smmcall_abc, libxsmm_smmcall_prf
         END INTERFACE
 
-        ! Overloaded GEMM routines (single/double precision).
+        ! Overloaded GEMM routines (double precision).
+        INTERFACE libxsmm_dgemm
+          MODULE PROCEDURE libxsmm_dgemm0
+          MODULE PROCEDURE libxsmm_dgemm1
+          MODULE PROCEDURE libxsmm_dgemm2
+        END INTERFACE
+
+        ! Overloaded GEMM routines (single precision).
+        INTERFACE libxsmm_sgemm
+          MODULE PROCEDURE libxsmm_sgemm0
+          MODULE PROCEDURE libxsmm_sgemm1
+          MODULE PROCEDURE libxsmm_sgemm2
+        END INTERFACE
+
+        ! Overloaded GEMM routines (low precision).
+        INTERFACE libxsmm_wigemm
+          MODULE PROCEDURE libxsmm_wigemm0
+          MODULE PROCEDURE libxsmm_wigemm1
+          MODULE PROCEDURE libxsmm_wigemm2
+        END INTERFACE
+
+        ! Overloaded GEMM routines (low precision).
+        INTERFACE libxsmm_wsgemm
+          MODULE PROCEDURE libxsmm_wsgemm0
+          MODULE PROCEDURE libxsmm_wsgemm1
+          MODULE PROCEDURE libxsmm_wsgemm2
+        END INTERFACE
+
+        ! Overloaded GEMM routines.
         INTERFACE libxsmm_gemm
-          MODULE PROCEDURE libxsmm_dgemm,  libxsmm_sgemm
-          MODULE PROCEDURE libxsmm_wigemm, libxsmm_wsgemm
+          MODULE PROCEDURE libxsmm_dgemm0
+          MODULE PROCEDURE libxsmm_dgemm1
+          MODULE PROCEDURE libxsmm_dgemm2
+          MODULE PROCEDURE libxsmm_sgemm0
+          MODULE PROCEDURE libxsmm_sgemm1
+          MODULE PROCEDURE libxsmm_sgemm2
+          MODULE PROCEDURE libxsmm_wigemm0
+          MODULE PROCEDURE libxsmm_wigemm1
+          MODULE PROCEDURE libxsmm_wigemm2
+          MODULE PROCEDURE libxsmm_wsgemm0
+          MODULE PROCEDURE libxsmm_wsgemm1
+          MODULE PROCEDURE libxsmm_wsgemm2
+        END INTERFACE
+
+        ! Overloaded BLAS GEMM routines (double precision).
+        INTERFACE libxsmm_blas_dgemm
+          MODULE PROCEDURE libxsmm_blas_dgemm0
+          MODULE PROCEDURE libxsmm_blas_dgemm1
+          MODULE PROCEDURE libxsmm_blas_dgemm2
+        END INTERFACE
+
+        ! Overloaded BLAS GEMM routines (single precision).
+        INTERFACE libxsmm_blas_sgemm
+          MODULE PROCEDURE libxsmm_blas_sgemm0
+          MODULE PROCEDURE libxsmm_blas_sgemm1
+          MODULE PROCEDURE libxsmm_blas_sgemm2
         END INTERFACE
 
         ! Overloaded BLAS GEMM routines (single/double precision).
         INTERFACE libxsmm_blas_gemm
-          MODULE PROCEDURE libxsmm_blas_sgemm, libxsmm_blas_dgemm
+          MODULE PROCEDURE libxsmm_blas_dgemm0
+          MODULE PROCEDURE libxsmm_blas_dgemm1
+          MODULE PROCEDURE libxsmm_blas_dgemm2
+          MODULE PROCEDURE libxsmm_blas_sgemm0
+          MODULE PROCEDURE libxsmm_blas_sgemm1
+          MODULE PROCEDURE libxsmm_blas_sgemm2
         END INTERFACE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
@@ -1050,8 +1107,8 @@
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm
-        PURE SUBROUTINE libxsmm_dgemm(transa, transb, m, n, k,          &
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm0
+        PURE SUBROUTINE libxsmm_dgemm0(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -1059,8 +1116,8 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
+          REAL(C_DOUBLE), INTENT(IN) :: a, b
+          REAL(C_DOUBLE), INTENT(INOUT) :: c
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
@@ -1078,13 +1135,45 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(transa, transb, m, n, k,                   &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm1
+        PURE SUBROUTINE libxsmm_dgemm1(transa, transb, m, n, k,         &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN) :: a(:), b(:)
+          REAL(C_DOUBLE), INTENT(INOUT) :: c(:)
+          CALL libxsmm_dgemm0(transa, transb, m, n, k,                  &
+     &      alpha, a(LBOUND(a,1)), lda,                                 &
+     &             b(LBOUND(b,1)), ldb,                                 &
+     &       beta, c(LBOUND(c,1)), ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm2
+        PURE SUBROUTINE libxsmm_dgemm2(transa, transb, m, n, k,         &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
+          REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
+          CALL libxsmm_dgemm0(transa, transb, m, n, k,                  &
      &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
      &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
      &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm
-        PURE SUBROUTINE libxsmm_sgemm(transa, transb, m, n, k,          &
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm0
+        PURE SUBROUTINE libxsmm_sgemm0(transa, transb, m, n, k,         &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -1092,8 +1181,8 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
+          REAL(C_FLOAT), INTENT(IN) :: a, b
+          REAL(C_FLOAT), INTENT(INOUT) :: c
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
@@ -1111,13 +1200,45 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(transa, transb, m, n, k,                   &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm1
+        PURE SUBROUTINE libxsmm_sgemm1(transa, transb, m, n, k,         &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN) :: a(:), b(:)
+          REAL(C_FLOAT), INTENT(INOUT) :: c(:)
+          CALL libxsmm_sgemm0(transa, transb, m, n, k,                  &
+     &      alpha, a(LBOUND(a,1)), lda,                                 &
+     &             b(LBOUND(b,1)), ldb,                                 &
+     &       beta, c(LBOUND(c,1)), ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm2
+        PURE SUBROUTINE libxsmm_sgemm2(transa, transb, m, n, k,         &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
+          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
+          CALL libxsmm_sgemm0(transa, transb, m, n, k,                  &
      &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
      &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
      &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm
-        PURE SUBROUTINE libxsmm_wigemm(transa, transb, m, n, k,         &
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm0
+        PURE SUBROUTINE libxsmm_wigemm0(transa, transb, m, n, k,        &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -1125,8 +1246,8 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_SHORT), INTENT(IN) :: a(:,:), b(:,:)
-          INTEGER(C_INT), INTENT(INOUT) :: c(:,:)
+          INTEGER(C_SHORT), INTENT(IN) :: a, b
+          INTEGER(C_INT), INTENT(INOUT) :: c
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
@@ -1144,13 +1265,45 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(transa, transb, m, n, k,                   &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm1
+        PURE SUBROUTINE libxsmm_wigemm1(transa, transb, m, n, k,        &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          INTEGER(C_INT), INTENT(IN), OPTIONAL :: alpha, beta
+          INTEGER(C_SHORT), INTENT(IN) :: a(:), b(:)
+          INTEGER(C_INT), INTENT(INOUT) :: c(:)
+          CALL libxsmm_wigemm0(transa, transb, m, n, k,                 &
+     &      alpha, a(LBOUND(a,1)), lda,                                 &
+     &             b(LBOUND(b,1)), ldb,                                 &
+     &       beta, c(LBOUND(c,1)), ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm2
+        PURE SUBROUTINE libxsmm_wigemm2(transa, transb, m, n, k,        &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          INTEGER(C_INT), INTENT(IN), OPTIONAL :: alpha, beta
+          INTEGER(C_SHORT), INTENT(IN) :: a(:,:), b(:,:)
+          INTEGER(C_INT), INTENT(INOUT) :: c(:,:)
+          CALL libxsmm_wigemm0(transa, transb, m, n, k,                 &
      &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
      &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
      &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsgemm
-        PURE SUBROUTINE libxsmm_wsgemm(transa, transb, m, n, k,         &
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsgemm0
+        PURE SUBROUTINE libxsmm_wsgemm0(transa, transb, m, n, k,        &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -1158,8 +1311,8 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          INTEGER(C_SHORT), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
+          INTEGER(C_SHORT), INTENT(IN) :: a, b
+          REAL(C_FLOAT), INTENT(INOUT) :: c
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
@@ -1177,13 +1330,45 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(transa, transb, m, n, k,                   &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsgemm1
+        PURE SUBROUTINE libxsmm_wsgemm1(transa, transb, m, n, k,        &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          INTEGER(C_SHORT), INTENT(IN) :: a(:), b(:)
+          REAL(C_FLOAT), INTENT(INOUT) :: c(:)
+          CALL libxsmm_wsgemm0(transa, transb, m, n, k,                 &
+     &      alpha, a(LBOUND(a,1)), lda,                                 &
+     &             b(LBOUND(b,1)), ldb,                                 &
+     &       beta, c(LBOUND(c,1)), ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsgemm2
+        PURE SUBROUTINE libxsmm_wsgemm2(transa, transb, m, n, k,        &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          INTEGER(C_SHORT), INTENT(IN) :: a(:,:), b(:,:)
+          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
+          CALL libxsmm_wsgemm0(transa, transb, m, n, k,                 &
      &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
      &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
      &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm
-        PURE SUBROUTINE libxsmm_blas_dgemm(transa, transb, m, n, k,     &
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm0
+        PURE SUBROUTINE libxsmm_blas_dgemm0(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -1191,8 +1376,8 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
-          REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
+          REAL(C_DOUBLE), INTENT(IN) :: a, b
+          REAL(C_DOUBLE), INTENT(INOUT) :: c
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
@@ -1210,13 +1395,45 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(transa, transb, m, n, k,                   &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm1
+        PURE SUBROUTINE libxsmm_blas_dgemm1(transa, transb, m, n, k,    &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN) :: a(:), b(:)
+          REAL(C_DOUBLE), INTENT(INOUT) :: c(:)
+          CALL libxsmm_blas_dgemm0(transa, transb, m, n, k,             &
+     &      alpha, a(LBOUND(a,1)), lda,                                 &
+     &             b(LBOUND(b,1)), ldb,                                 &
+     &       beta, c(LBOUND(c,1)), ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm2
+        PURE SUBROUTINE libxsmm_blas_dgemm2(transa, transb, m, n, k,    &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
+          REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
+          CALL libxsmm_blas_dgemm0(transa, transb, m, n, k,             &
      &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
      &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
      &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
         END SUBROUTINE
 
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm
-        PURE SUBROUTINE libxsmm_blas_sgemm(transa, transb, m, n, k,     &
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm0
+        PURE SUBROUTINE libxsmm_blas_sgemm0(transa, transb, m, n, k,    &
      &  alpha, a, lda, b, ldb, beta, c, ldc)
           CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
@@ -1224,8 +1441,8 @@
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
-          REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
-          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
+          REAL(C_FLOAT), INTENT(IN) :: a, b
+          REAL(C_FLOAT), INTENT(INOUT) :: c
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_gemm
           INTERFACE
             PURE SUBROUTINE internal_gemm(transa, transb, m, n, k,      &
@@ -1243,6 +1460,38 @@
             END SUBROUTINE
           END INTERFACE
           CALL internal_gemm(transa, transb, m, n, k,                   &
+     &      alpha, a, lda, b, ldb, beta, c, ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm1
+        PURE SUBROUTINE libxsmm_blas_sgemm1(transa, transb, m, n, k,    &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN) :: a(:), b(:)
+          REAL(C_FLOAT), INTENT(INOUT) :: c(:)
+          CALL libxsmm_blas_sgemm0(transa, transb, m, n, k,             &
+     &      alpha, a(LBOUND(a,1)), lda,                                 &
+     &             b(LBOUND(b,1)), ldb,                                 &
+     &       beta, c(LBOUND(c,1)), ldc)
+        END SUBROUTINE
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm2
+        PURE SUBROUTINE libxsmm_blas_sgemm2(transa, transb, m, n, k,    &
+     &  alpha, a, lda, b, ldb, beta, c, ldc)
+          CHARACTER, INTENT(IN), OPTIONAL :: transa, transb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: lda
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldb
+          INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN), OPTIONAL :: ldc
+          REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
+          REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
+          REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
+          CALL libxsmm_blas_sgemm0(transa, transb, m, n, k,             &
      &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
      &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
      &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
@@ -1331,7 +1580,11 @@
           CALL internal_itrans(matrix, typesize, m, n, ld)
         END SUBROUTINE
 
-        ! Utility function to calculate the difference between two matrices.
+        ! Utility function to calculate a collection of scalar differences
+        ! between two matrices (libxsmm_matdiff_info). The location (m, n)
+        ! of the largest difference (linf_abs) is recorded (also if NaN).
+        ! In case of NaN, differences are set to infinity. If no difference
+        ! is discovered, the location (m, n) is negative (OOB).
         ! Implicit FORTRAN 77 interface:
         ! TYPE         :: info
         ! INTEGER(4)   :: datatype

@@ -141,12 +141,12 @@ int main(int argc, char* argv[])
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff, norms_batchstats, norms_quant;
-  memset(&norms_fwd, 0, sizeof(norms_fwd));
-  memset(&norms_bwd, 0, sizeof(norms_bwd));
-  memset(&norms_upd, 0, sizeof(norms_upd));
-  memset(&norms_batchstats, 0, sizeof(norms_batchstats));
-  memset(&diff, 0, sizeof(diff));
-  memset(&norms_quant, 0, sizeof(norms_quant));
+  libxsmm_matdiff_clear(&norms_fwd);
+  libxsmm_matdiff_clear(&norms_bwd);
+  libxsmm_matdiff_clear(&norms_upd);
+  libxsmm_matdiff_clear(&norms_batchstats);
+  libxsmm_matdiff_clear(&diff);
+  libxsmm_matdiff_clear(&norms_quant);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type format padding_mode\n", argv[0]);

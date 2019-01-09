@@ -111,10 +111,10 @@ LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsi
   const int mtasks = (m + tm - 1) / tm;
   unsigned int m0, m1, n0, n1;
 
-  LIBXSMM_ASSERT_MSG(tid < nthreads && 0 < nthreads, "Invalid task setup!");
-  LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size!");
-  LIBXSMM_ASSERT_MSG(0 < tm && 0 < tn, "Invalid tile size!");
-  LIBXSMM_ASSERT_MSG(typesize <= 255, "Invalid type-size!");
+  LIBXSMM_ASSERT_MSG(tid < nthreads && 0 < nthreads, "Invalid task setup");
+  LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size");
+  LIBXSMM_ASSERT_MSG(0 < tm && 0 < tn, "Invalid tile size");
+  LIBXSMM_ASSERT_MSG(typesize <= 255, "Invalid type-size");
   LIBXSMM_ASSERT(0 < mtasks);
 
   if (nthreads <= mtasks) { /* parallelized over M */
@@ -130,8 +130,8 @@ LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsi
     n0 = LIBXSMM_MIN(ntid * nt, n); n1 = LIBXSMM_MIN(n0 + nt, n);
   }
 
-  LIBXSMM_ASSERT_MSG(m0 <= m1 && m1 <= m, "Invalid task size!");
-  LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= n, "Invalid task size!");
+  LIBXSMM_ASSERT_MSG(m0 <= m1 && m1 <= m, "Invalid task size");
+  LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= n, "Invalid task size");
 
   if (0 != prefetch && 0 != *prefetch) { /* prefetch */
     libxsmm_matcopy_internal_pf(out, in, typesize, ldi, ldo,
@@ -254,10 +254,10 @@ LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsig
   const int mtasks = (m + tm - 1) / tm;
   unsigned int m0, m1, n0, n1;
 
-  LIBXSMM_ASSERT_MSG(tid < nthreads && 0 < nthreads, "Invalid task setup!");
-  LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size!");
-  LIBXSMM_ASSERT_MSG(0 < tm && 0 < tn, "Invalid tile size!");
-  LIBXSMM_ASSERT_MSG(typesize <= 255, "Invalid type-size!");
+  LIBXSMM_ASSERT_MSG(tid < nthreads && 0 < nthreads, "Invalid task setup");
+  LIBXSMM_ASSERT_MSG(tm <= m && tn <= n, "Invalid problem size");
+  LIBXSMM_ASSERT_MSG(0 < tm && 0 < tn, "Invalid tile size");
+  LIBXSMM_ASSERT_MSG(typesize <= 255, "Invalid type-size");
   LIBXSMM_ASSERT(0 < mtasks);
 
   if (nthreads <= mtasks) { /* parallelized over M */
@@ -273,8 +273,8 @@ LIBXSMM_API void libxsmm_otrans_thread_internal(void* out, const void* in, unsig
     n0 = LIBXSMM_MIN(ntid * nt, n); n1 = LIBXSMM_MIN(n0 + nt, n);
   }
 
-  LIBXSMM_ASSERT_MSG(m0 <= m1 && m1 <= m, "Invalid task size!");
-  LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= n, "Invalid task size!");
+  LIBXSMM_ASSERT_MSG(m0 <= m1 && m1 <= m, "Invalid task size");
+  LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= n, "Invalid task size");
 
   libxsmm_otrans_internal(out, in, typesize, ldi, ldo, m0, m1, n0, n1, tm, tn, kernel);
 }

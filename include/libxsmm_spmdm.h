@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_SPMDM_H
 #define LIBXSMM_SPMDM_H
 
-#include "libxsmm_macros.h"
+#include "libxsmm_typedefs.h"
 
 
 typedef enum libxsmm_spmdm_datatype {
@@ -54,8 +54,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_spmdm_handle {
   int nb;
   int kb;
   libxsmm_spmdm_datatype datatype;
-  char * base_ptr_scratch_A;
-  char * base_ptr_scratch_B_scratch_C;
+  char* base_ptr_scratch_A;
+  char* base_ptr_scratch_B_scratch_C;
   int memory_for_scratch_per_thread;
 } libxsmm_spmdm_handle;
 
@@ -65,9 +65,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_spmdm_handle {
  */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_CSR_sparseslice {
   /* Since bm and bk are assumed to be <=256, a 16-bit integer is enough to store the local rowidx, colidx */
-  uint16_t * rowidx;
-  uint16_t * colidx;
-  float*     values;
+  uint16_t* rowidx;
+  uint16_t* colidx;
+  float*    values;
 } libxsmm_CSR_sparseslice;
 
 
@@ -78,7 +78,7 @@ LIBXSMM_API void libxsmm_spmdm_init(
   libxsmm_CSR_sparseslice** libxsmm_output_csr);
 
 LIBXSMM_API void libxsmm_spmdm_destroy(
-  libxsmm_spmdm_handle * handle);
+  libxsmm_spmdm_handle* handle);
 
 LIBXSMM_API int libxsmm_spmdm_get_num_createSparseSlice_blocks(
   const libxsmm_spmdm_handle* handle);
@@ -89,16 +89,16 @@ LIBXSMM_API int libxsmm_spmdm_get_num_compute_blocks(
 /** This converts a dense representation of the sparse matrix to 2D array of sparse slices. */
 LIBXSMM_API void libxsmm_spmdm_createSparseSlice_fp32_thread(
   const libxsmm_spmdm_handle* handle,
-  char transA,
-  const float * A,
+  char transa,
+  const float* a,
   libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
   int block_id,
   int tid, int nthreads);
 
 LIBXSMM_API void libxsmm_spmdm_createSparseSlice_bfloat16_thread(
   const libxsmm_spmdm_handle* handle,
-  char transA,
-  const uint16_t * A,
+  char transa,
+  const libxsmm_bfloat16* a,
   libxsmm_CSR_sparseslice* libxsmm_output_csr_a,
   int block_id,
   int tid, int nthreads);
@@ -106,29 +106,30 @@ LIBXSMM_API void libxsmm_spmdm_createSparseSlice_bfloat16_thread(
 /** NOTE: This code currently ignores alpha input to the matrix multiply */
 LIBXSMM_API void libxsmm_spmdm_compute_fp32_thread(
   const libxsmm_spmdm_handle* handle,
-  char transA,
-  char transB,
-  const float *alpha,
-  libxsmm_CSR_sparseslice* A_sparse,
-  const float *B,
-  char transC,
-  const float *beta,
-  float* C,
+  char transa,
+  char transb,
+  const float* alpha,
+  libxsmm_CSR_sparseslice* a_sparse,
+  const float* b,
+  char transc,
+  const float* beta,
+  float* c,
   int block_id,
   int tid, int nthreads);
 
 /** NOTE: This code currently ignores alpha input to the matrix multiply */
 LIBXSMM_API void libxsmm_spmdm_compute_bfloat16_thread(
   const libxsmm_spmdm_handle* handle,
-  char transA,
-  char transB,
-  const uint16_t *alpha,
-  libxsmm_CSR_sparseslice* A_sparse,
-  const uint16_t *B,
-  char transC,
-  const uint16_t *beta,
-  float* C,
+  char transa,
+  char transb,
+  const libxsmm_bfloat16* alpha,
+  libxsmm_CSR_sparseslice* a_sparse,
+  const libxsmm_bfloat16* b,
+  char transc,
+  const libxsmm_bfloat16* beta,
+  float* c,
   int block_id,
   int tid, int nthreads);
 
 #endif /*LIBXSMM_SPMDM_H*/
+
