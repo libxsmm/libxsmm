@@ -191,7 +191,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom(li
 # define LIBXSMM_DNN_FULLYCONNECTED_FWD_BF16_F32
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_custom_generic.tpl.c"
 # undef LIBXSMM_DNN_FULLYCONNECTED_FWD_BF16_F32
-        }
       } else {
         status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
       }
