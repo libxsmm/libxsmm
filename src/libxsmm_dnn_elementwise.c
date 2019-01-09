@@ -585,13 +585,9 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square_ld(libxsmm_bla
 LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, int timestep, int t, LIBXSMM_DNN_ELTWISE_FTYPE *dout, LIBXSMM_DNN_ELTWISE_FTYPE *dh, LIBXSMM_DNN_ELTWISE_FTYPE *o, LIBXSMM_DNN_ELTWISE_FTYPE *co, LIBXSMM_DNN_ELTWISE_FTYPE *dcs, LIBXSMM_DNN_ELTWISE_FTYPE *ii, LIBXSMM_DNN_ELTWISE_FTYPE *ci, LIBXSMM_DNN_ELTWISE_FTYPE *dci, LIBXSMM_DNN_ELTWISE_FTYPE *di, LIBXSMM_DNN_ELTWISE_FTYPE *cps, LIBXSMM_DNN_ELTWISE_FTYPE *f, LIBXSMM_DNN_ELTWISE_FTYPE *df, LIBXSMM_DNN_ELTWISE_FTYPE *dp, LIBXSMM_DNN_ELTWISE_FTYPE *dcp) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) 
   libxsmm_blasint i, j;
-  const float neg_ones[16] = { -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0 };
-  const float ones[16]  = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
-
   __m512 _dout, _dh, _o, _t1, _t2, _co, _dcs, _dcp, _ii, _ci, _dci, _di, _cps, _f, _df, _dp;
-  __m512 _neg_ones = LIBXSMM_INTRINSICS_MM512_LOAD_PS( neg_ones );
-  __m512 _ones = LIBXSMM_INTRINSICS_MM512_LOAD_PS( ones );
-
+  const __m512 _neg_ones = _mm512_set1_ps( (float)-1.0 );    
+  const __m512 _ones = _mm512_set1_ps( (float)1.0 ); 
   if (timestep == t-1) {
     for ( j = 0; j < n; ++j ) {
       LIBXSMM_PRAGMA_UNROLL_N(4)
@@ -685,12 +681,9 @@ LIBXSMM_UNUSED(df);LIBXSMM_UNUSED(dp);LIBXSMM_UNUSED(dcp);
 LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld_and_reformat_dci_di_df_dp_ld2(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ld2, int timestep, int t, LIBXSMM_DNN_ELTWISE_FTYPE *dout, LIBXSMM_DNN_ELTWISE_FTYPE *dh, LIBXSMM_DNN_ELTWISE_FTYPE *o, LIBXSMM_DNN_ELTWISE_FTYPE *co, LIBXSMM_DNN_ELTWISE_FTYPE *dcs, LIBXSMM_DNN_ELTWISE_FTYPE *ii, LIBXSMM_DNN_ELTWISE_FTYPE *ci, LIBXSMM_DNN_ELTWISE_FTYPE *dci, LIBXSMM_DNN_ELTWISE_FTYPE *di, LIBXSMM_DNN_ELTWISE_FTYPE *cps, LIBXSMM_DNN_ELTWISE_FTYPE *f, LIBXSMM_DNN_ELTWISE_FTYPE *df, LIBXSMM_DNN_ELTWISE_FTYPE *dp, LIBXSMM_DNN_ELTWISE_FTYPE *dcp, LIBXSMM_DNN_ELTWISE_FTYPE *dciB, LIBXSMM_DNN_ELTWISE_FTYPE *diB, LIBXSMM_DNN_ELTWISE_FTYPE *dfB, LIBXSMM_DNN_ELTWISE_FTYPE *dpB) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) 
   libxsmm_blasint i, j;
-  const float neg_ones[16] = { -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0 };
-  const float ones[16]  = { 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0 };
-
   __m512 _dout, _dh, _o, _t1, _t2, _co, _dcs, _dcp, _ii, _ci, _dci, _di, _cps, _f, _df, _dp;
-  __m512 _neg_ones = LIBXSMM_INTRINSICS_MM512_LOAD_PS( neg_ones );
-  __m512 _ones = LIBXSMM_INTRINSICS_MM512_LOAD_PS( ones );
+  const __m512 _neg_ones = _mm512_set1_ps( (float)-1.0 );    
+  const __m512 _ones = _mm512_set1_ps( (float)1.0 );    
 
   if (timestep == t-1) {
     for ( j = 0; j < n; ++j ) {
@@ -790,15 +783,30 @@ LIBXSMM_UNUSED(df);LIBXSMM_UNUSED(dp);LIBXSMM_UNUSED(dcp);
 #endif
 }
 
-
+#if defined(LIBXSMM_INTRINSICS_AVX512)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 _mm512_tanh_generic_ps( __m512 x ) {
+  int i;
+  LIBXSMM_DNN_ELTWISE_FTYPE _x[16];
+  _mm512_store_ps( _x, x );
+  LIBXSMM_PRAGMA_SIMD
+  for (i = 0; i < 16; i++) {
+    _x[i] = (LIBXSMM_DNN_ELTWISE_FTYPE) tanh((double) _x[i] ); 
+  }
+  __m512 result = _mm512_loadu_ps( _x );
+  return result;
+}
+#endif
 
 LIBXSMM_API_INTERN void libxsmm_internal_compute_o_i_f_ci_cs_co_h_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *f, LIBXSMM_DNN_ELTWISE_FTYPE *cps, LIBXSMM_DNN_ELTWISE_FTYPE *cs, LIBXSMM_DNN_ELTWISE_FTYPE *ii, LIBXSMM_DNN_ELTWISE_FTYPE *ci,LIBXSMM_DNN_ELTWISE_FTYPE *co, LIBXSMM_DNN_ELTWISE_FTYPE *o, LIBXSMM_DNN_ELTWISE_FTYPE *h) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) 
+#if defined(LIBXSMM_INTRINSICS_AVX512)
+#if defined(LIBXSMM_INTEL_COMPILER)
+#define _MM512_TANH_PS(A) _mm512_tanh_ps(A)
+#else
+#define _MM512_TANH_PS(A) _mm512_tanh_generic_ps(A)
+#endif
   libxsmm_blasint i, j;
   __m512 _f, _cps, _cs, _ii, _ci, _co, _o, _h;
-  const float halves[16]  = { 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 };
-  __m512 _halves = LIBXSMM_INTRINSICS_MM512_LOAD_PS( halves );
-
+  const __m512 _halves = _mm512_set1_ps( (float)0.5 );    
     for ( j = 0; j < n; ++j ) {
        LIBXSMM_PRAGMA_UNROLL_N(4)
        for ( i = 0; i < m; i += 16 ) {
@@ -807,13 +815,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_o_i_f_ci_cs_co_h_ld(libxsmm_bla
         _ci = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &ci[(j*ld)+i] );
         _f = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &f[(j*ld)+i] );
         _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );
-        _o = _mm512_fmadd_ps( _mm512_tanh_ps( _mm512_mul_ps( _o, _halves ) ), _halves, _halves);
-        _ii = _mm512_fmadd_ps( _mm512_tanh_ps( _mm512_mul_ps( _ii, _halves ) ), _halves, _halves);
-        _ci = _mm512_tanh_ps( _ci );
-        _f = _mm512_fmadd_ps( _mm512_tanh_ps( _mm512_mul_ps( _f, _halves ) ), _halves, _halves);
+        _o = _mm512_fmadd_ps( _MM512_TANH_PS( _mm512_mul_ps( _o, _halves ) ), _halves, _halves);
+        _ii = _mm512_fmadd_ps( _MM512_TANH_PS( _mm512_mul_ps( _ii, _halves ) ), _halves, _halves);
+        _ci = _MM512_TANH_PS( _ci );
+        _f = _mm512_fmadd_ps( _MM512_TANH_PS( _mm512_mul_ps( _f, _halves ) ), _halves, _halves);
         _cs = _mm512_mul_ps( _f, _cps );
         _cs = _mm512_fmadd_ps( _ii, _ci, _cs );
-        _co = _mm512_tanh_ps( _cs );
+        _co = _MM512_TANH_PS( _cs );
         _h = _mm512_mul_ps( _o, _co );
         _mm512_store_ps( &o[(j*ld)+i], _o );
         _mm512_store_ps( &ii[(j*ld)+i], _ii );
@@ -824,6 +832,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_o_i_f_ci_cs_co_h_ld(libxsmm_bla
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &h[(j*ld)+i], _h );
       }
   }
+#undef _MM512_TANH_PS
 #else
 LIBXSMM_UNUSED(m);LIBXSMM_UNUSED(n);LIBXSMM_UNUSED(ld);LIBXSMM_UNUSED(f);
 LIBXSMM_UNUSED(cps);LIBXSMM_UNUSED(cs);LIBXSMM_UNUSED(ii);LIBXSMM_UNUSED(ci);
