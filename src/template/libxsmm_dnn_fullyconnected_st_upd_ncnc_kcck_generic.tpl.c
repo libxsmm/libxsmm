@@ -82,7 +82,7 @@ for (mb1ifm1 = transpose_thr_begin; mb1ifm1 < transpose_thr_end; ++mb1ifm1) {
 /* wait for transpose to finish */
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {    
+for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {
   ofm1 = ifm1ofm1 / nBlocksIFm;
   ifm1 = ifm1ofm1 % nBlocksIFm;
   /* prepare arguments for batch-reduce call  */
