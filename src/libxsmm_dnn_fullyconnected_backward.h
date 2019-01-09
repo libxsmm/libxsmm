@@ -35,6 +35,8 @@
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
 
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
+
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_nhwc(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid);
 
 #endif /* LIBXSMM_DNN_FULLYCONNECTED_BACKWARD_H */
