@@ -118,7 +118,6 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_hp {
 } libxsmm_bfloat16_hp;
 
 #if defined(__cplusplus)
-namespace Eigen { struct half; }
 namespace tensorflow { struct bfloat16; }
 #endif /*__cplusplus*/
 
@@ -151,13 +150,14 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_pgemm_descriptor li
 
 /** Enumerates element/data types. */
 typedef enum libxsmm_datatype {
-  LIBXSMM_DATATYPE_UNSUPPORTED = -1,
   LIBXSMM_DATATYPE_F64,
   LIBXSMM_DATATYPE_F32,
   LIBXSMM_DATATYPE_BF16,
+  LIBXSMM_DATATYPE_I64,
   LIBXSMM_DATATYPE_I32,
   LIBXSMM_DATATYPE_I16,
-  LIBXSMM_DATATYPE_I8
+  LIBXSMM_DATATYPE_I8,
+  LIBXSMM_DATATYPE_UNSUPPORTED
 } libxsmm_datatype;
 
 /** Denotes the precision/data type of GEMM. */
@@ -436,7 +436,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_de
   unsigned int compute_max;
   unsigned int perform_relu_in_kernel;
   unsigned int n_variants;
-  unsigned int f32_bf16_cvt_rne;                /* non-zero if inc case of bf16 we perform RNE rounding when converting down from f32 in JIT sequence */
+  unsigned int f32_bf16_cvt_rne;                /* non-zero if in case of bf16 we perform RNE rounding when converting down from f32 in JIT sequence */
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;

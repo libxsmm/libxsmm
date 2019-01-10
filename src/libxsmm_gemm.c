@@ -366,7 +366,7 @@ LIBXSMM_API void libxsmm_gemm_print2(void* ostream,
   const libxsmm_blasint ilda = (NULL != lda ? *lda : (('n' == ctransa || 'N' == ctransa) ? *m : kk));
   const libxsmm_blasint ildb = (NULL != ldb ? *ldb : (('n' == ctransb || 'N' == ctransb) ? kk : nn));
   const libxsmm_blasint ildc = *(NULL != ldc ? ldc : m);
-  libxsmm_mhd_elemtype mhd_elemtype = LIBXSMM_MHD_ELEMTYPE_CHAR;
+  libxsmm_mhd_elemtype mhd_elemtype = LIBXSMM_MHD_ELEMTYPE_UNKNOWN;
   char string_a[128], string_b[128], typeprefix = 0;
 
   switch (iprec | oprec) {
