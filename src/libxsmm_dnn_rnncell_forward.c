@@ -213,12 +213,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_ncnc_kcck(libxsm
   /* check if we have a kernel JITed */
   if ( handle->fwd_generic != 0 ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-#if 0
-      typedef float element_input_type;
-      typedef float element_output_type;
-      typedef float element_filter_type;
-# include "template/libxsmm_dnn_rnncell_st_rnn_fwd_ncnc_kcck_generic.tpl.c"
-#endif
+      status = libxsmm_dnn_rnncell_st_fwd_ncnc_kcck_f32_f32( handle, start_thread, tid);
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -251,12 +246,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_nc_kcck(libxsmm_
   /* check if we have a kernel JITed */
   if ( handle->fwd_generic != 0 ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-#if 0
-      typedef float element_input_type;
-      typedef float element_output_type;
-      typedef float element_filter_type;
-# include "template/libxsmm_dnn_rnncell_st_rnn_fwd_ncnc_kcck_generic.tpl.c"
-#endif
+      status = libxsmm_dnn_rnncell_st_fwd_nc_kcck_f32_f32( handle, start_thread, tid);
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
