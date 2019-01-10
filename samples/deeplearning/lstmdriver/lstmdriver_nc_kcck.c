@@ -795,9 +795,17 @@ int main(int argc, char* argv[])
     lstmcell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     lstmcell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NC;
     lstmcell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_KCCK;
-
     libxsmm_handle = libxsmm_dnn_create_rnncell( lstmcell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
+    if ( N % bn != 0 ) {
+      bn = N;
+    }
+    if ( C % bc != 0 ) {
+      bc = C;
+    }
+    if ( K % bk != 0 ) {
+      bk = K;
+    }
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_allocate_forget_bias(libxsmm_handle, forget_bias) );
 
     /* setup LIBXSMM buffers and filter */
@@ -1374,7 +1382,7 @@ int main(int argc, char* argv[])
       printf("PERFDUMP,BP+WU,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
     }
 
-  if ( pass == 4 ) {
+    if ( pass == 4 ) {
       printf("###############################################\n");
       printf("# Performance - FWD+BWD+UPD (nc-kcck Storage) #\n");
       printf("###############################################\n");
