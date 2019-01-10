@@ -90,13 +90,14 @@
 
         ! Enumerates element/data types.
         INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_DATATYPE_UNSUPPORTED = -1,                            &
      &    LIBXSMM_DATATYPE_F64  = 0,                                    &
      &    LIBXSMM_DATATYPE_F32  = 1,                                    &
      &    LIBXSMM_DATATYPE_BF16 = 2,                                    &
-     &    LIBXSMM_DATATYPE_I32  = 3,                                    &
-     &    LIBXSMM_DATATYPE_I16  = 4,                                    &
-     &    LIBXSMM_DATATYPE_I8   = 5
+     &    LIBXSMM_DATATYPE_I64  = 3,                                    &
+     &    LIBXSMM_DATATYPE_I32  = 4,                                    &
+     &    LIBXSMM_DATATYPE_I16  = 5,                                    &
+     &    LIBXSMM_DATATYPE_I8   = 6,                                    &
+     &    LIBXSMM_DATATYPE_UNSUPPORTED = 7
 
         ! Denotes the precision/data type of GEMM (for weak-typed
         ! interface functions such as libxsmm_xmmdispatch).
