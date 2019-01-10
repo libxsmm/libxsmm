@@ -123,6 +123,14 @@ const libxsmm_blasint chunksize_kk = (work_kk % (libxsmm_blasint)handle->desc.th
 const libxsmm_blasint thr_begin_kk = (ltid * chunksize_kk < work_kk) ? (ltid * chunksize_kk) : work_kk;
 const libxsmm_blasint thr_end_kk = ((ltid + 1) * chunksize_kk < work_kk) ? ((ltid + 1) * chunksize_kk) : work_kk;
 
+#if defined(LIBXSMM_INTRINSICS_AVX512)
+int k_tasks = K/16;
+int k_chunksize = (k_tasks % (libxsmm_blasint)handle->desc.threads == 0) ? (k_tasks / (libxsmm_blasint)handle->desc.threads) : ((k_tasks / (libxsmm_blasint)handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const libxsmm_blasint k_thr_begin = (ltid * k_chunksize * 16 < K) ? (ltid * k_chunksize * 16) : K;
+const libxsmm_blasint k_thr_end = ((ltid + 1) * k_chunksize * 16 < K) ? ((ltid + 1) * k_chunksize * 16) : K;
+__m512 db_sum;
+#else
 /* number of tasks that could be run in parallel for K blocks*/
 /* compute chunk size */
 const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads == 0) ? (K / (libxsmm_blasint)handle->desc.threads) : ((K / (libxsmm_blasint)handle->desc.threads) + 1);
@@ -130,12 +138,7 @@ const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads =
 const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
 const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
 
-int k_tasks = K/16;
-int k_chunksize = (k_tasks % (libxsmm_blasint)handle->desc.threads == 0) ? (k_tasks / (libxsmm_blasint)handle->desc.threads) : ((k_tasks / (libxsmm_blasint)handle->desc.threads) + 1);
-/* compute thr_begin and thr_end */
-const libxsmm_blasint k_thr_begin = (ltid * k_chunksize * 16 < K) ? (ltid * k_chunksize * 16) : K;
-const libxsmm_blasint k_thr_end = ((ltid + 1) * k_chunksize * 16 < K) ? ((ltid + 1) * k_chunksize * 16) : K;
-__m512 db_sum;
+#endif
 
 libxsmm_blasint ikic, inic, inik, icin, ikin;
 
@@ -398,6 +401,7 @@ for (i = t-2; i >= 0; --i) {
 
 /* gradient bias */
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+#if defined(LIBXSMM_INTRINSICS_AVX512)
   for (ik = k_thr_begin; ik < k_thr_end; ik += 16) {
     db_sum = _mm512_setzero_ps();
     for (i = 0; i < t; i++) {
@@ -406,6 +410,15 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
       }
     }
     LIBXSMM_INTRINSICS_MM512_STREAM_PS(&db[ik], db_sum);
-  } 
+  }
+#else
+  for (i = 0; i < t; i++) {
+    for (ik = thr_begin_k; ik < thr_end_k; ik++) {
+      for (in = 0; in < N; in++) {
+        db[ik] += LIBXSMM_VLA_ACCESS(3, delta, i, in, ik, N, K);
+      }
+    }
+  }
+#endif
 }
 libxsmm_barrier_wait(handle->barrier, (int)ltid);
