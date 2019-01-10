@@ -228,6 +228,10 @@ int k_chunksize = (k_tasks % (libxsmm_blasint)handle->desc.threads == 0) ? (k_ta
 const libxsmm_blasint k_thr_begin = (ltid * k_chunksize * 16 < K) ? (ltid * k_chunksize * 16) : K;
 const libxsmm_blasint k_thr_end = ((ltid + 1) * k_chunksize * 16 < K) ? ((ltid + 1) * k_chunksize * 16) : K;__m512 dbi_sum, dbf_sum, dbo_sum, dbc_sum;
 #else
+element_output_type *t1D   = (element_output_type*)handle->scratch_t1;
+element_output_type *t2D   = (element_output_type*)handle->scratch_t2;
+LIBXSMM_VLA_DECL(2, element_output_type, t1, t1D, K);
+LIBXSMM_VLA_DECL(2, element_output_type, t2, t2D, K);
 /* number of tasks that could be run in parallel for K blocks*/
 /* compute chunk size */
 const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads == 0) ? (K / (libxsmm_blasint)handle->desc.threads) : ((K / (libxsmm_blasint)handle->desc.threads) + 1);

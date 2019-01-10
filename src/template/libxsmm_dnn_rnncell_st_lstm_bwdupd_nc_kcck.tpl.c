@@ -39,7 +39,6 @@ libxsmm_blasint t = handle->desc.t;
 libxsmm_blasint bk = handle->bk;
 libxsmm_blasint bn = handle->bn;
 libxsmm_blasint bc = handle->bc;
-libxsmm_blasint K4 = K * 4;
 const int cBlocks = C/bc;
 const int kBlocks = K/bk;
 const int nBlocks = N/bn;
