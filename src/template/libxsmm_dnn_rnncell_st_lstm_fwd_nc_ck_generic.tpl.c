@@ -364,7 +364,7 @@ for (j = 0; j < t; ++j) {
 }
 #ifdef PROFILE
 if (ltid == 0) {
-  printf("-------------------PROFILING TIMERS ----------------\n");
+  printf("----- PROFILING LSTM FWD (N = %d, C = %d, K = %d, bn = %d. bc = %d, bk = %d)----\n", N, C, K, bn, bc, bk );
   total_time = (gemm_cycles+eltwise_cycles+reformat_cycles)/(2.5 * 1e9)*1000.0f;
   printf("Elementwise time is %f ms (%.2f%%)\n", eltwise_cycles/(2.5 * 1e9)*1000.0f, eltwise_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
   printf("Reformat weights time is %f ms (%.2f%%)\n", reformat_cycles/(2.5 * 1e9)*1000.0f, reformat_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
