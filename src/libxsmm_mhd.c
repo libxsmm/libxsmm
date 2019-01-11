@@ -71,184 +71,94 @@
     ? /*dst is   signed*/(LIBXSMM_MHD_ELEMTYPE_U64 > (SRC_TYPE) ? ((SRC_TYPE) > (DST_TYPE)) : 0) \
     : /*dst is unsigned*/(LIBXSMM_MHD_ELEMTYPE_U64 > (SRC_TYPE) ? 0 : ((SRC_TYPE) > (DST_TYPE)))))
 
-#define LIBXSMM_MHD_ELEMENT_CONVERSION(DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT) { \
-  const double h = (double)(0.5 - (DST_TYPE)0.5); \
-  double s0 = 0, s1 = 0; \
-  LIBXSMM_ASSERT_MSG(NULL != (PDST) && NULL != (PSRC), "Invalid input or outout"); \
+#define LIBXSMM_MHD_ELEMENT_CONVERSION_F(SRC_TYPE, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT) { \
+  const double h = (0.5 - (DST_TYPE)0.5); \
+  double s = *((const SRC_TYPE*)PSRC), s0 = 0, s1 = 0; \
+  if (NULL != (PSRC_MIN) && LIBXSMM_NOTNAN(s)) { \
+    LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX) && *((const SRC_TYPE*)PSRC_MIN) <= s && s <= *((const SRC_TYPE*)PSRC_MAX), "Invalid value range"); \
+    s0 = *((const SRC_TYPE*)PSRC_MIN); s1 = *((const SRC_TYPE*)PSRC_MAX); \
+    if (LIBXSMM_MHD_ELEMTYPE_U64 <= DST_ENUM) { \
+      const double s0pos = LIBXSMM_MAX(0, s0), s1pos = LIBXSMM_MAX(0, s1), scale = (s0pos < s1pos ? ((s1 - s0) / (s1pos - s0pos)) : 1); \
+      s0 = LIBXSMM_MAX(0, s0); s1 = LIBXSMM_MAX(0, s1); s = scale * LIBXSMM_MAX(0, s); \
+    } \
+    else if (0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) && 0 > s0 && 0 < s1) { \
+      s1 = LIBXSMM_MAX(-s0, s1); s0 = -s1; \
+    } \
+  } \
+  if (s0 < s1) { /* scale */ \
+    const double d0 = (0 <= s0 ? 0 : (DST_MIN)), d1 = (0 <= s1 ? (DST_MAX) : 0), d = (s - s0) * (d1 - d0) / (s1 - s0) + d0; \
+    *((DST_TYPE*)PDST) = (DST_TYPE)LIBXSMM_CLMP(0 <= d ? (d + h) : (d - h), d0, d1); \
+  } \
+  else if (0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM)) { /* clamp */ \
+    *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= s ? LIBXSMM_CLMP(s + h, DST_MIN, DST_MAX) : LIBXSMM_CLMP(s - h, DST_MIN, DST_MAX)); \
+  } \
+  else { /* promote */ \
+    *((DST_TYPE*)PDST) = (DST_TYPE)s; \
+  } \
   RESULT = EXIT_SUCCESS; \
+}
+
+#define LIBXSMM_MHD_ELEMENT_CONVERSION_I(SRC_TYPE, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT) { \
+  const double h = (0.5 - (DST_TYPE)0.5); \
+  SRC_TYPE s = *((const SRC_TYPE*)PSRC); \
+  double s0 = 0, s1 = 0; \
+  if (NULL != (PSRC_MIN)) { \
+    LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX) && *((const SRC_TYPE*)PSRC_MIN) <= s && s <= *((const SRC_TYPE*)PSRC_MAX), "Invalid value range"); \
+    s0 = (double)*((const SRC_TYPE*)PSRC_MIN); s1 = (double)*((const SRC_TYPE*)PSRC_MAX); \
+    if (LIBXSMM_MHD_ELEMTYPE_U64 > DST_ENUM && 0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) && 0 > s0 && 0 < s1) { \
+      s1 = LIBXSMM_MAX(-s0, s1); s0 = -s1; \
+    } \
+  } \
+  if (s0 < s1) { /* scale */ \
+    const double d0 = (0 <= s0 ? 0 : (DST_MIN)), d1 = (0 <= s1 ? (DST_MAX) : 0), d = ((double)s - s0) * (d1 - d0) / (s1 - s0) + d0; \
+    *((DST_TYPE*)PDST) = (DST_TYPE)LIBXSMM_CLMP(0 <= d ? (d + h) : (d - h), d0, d1); \
+  } \
+  else if (0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM)) { /* clamp */ \
+    *((DST_TYPE*)PDST) = (DST_TYPE)LIBXSMM_CLMP(s, DST_MIN, DST_MAX); \
+  } \
+  else { /* promote */ \
+    *((DST_TYPE*)PDST) = (DST_TYPE)s; \
+  } \
+  RESULT = EXIT_SUCCESS; \
+}
+
+#define LIBXSMM_MHD_ELEMENT_CONVERSION_U LIBXSMM_MHD_ELEMENT_CONVERSION_I
+
+#define LIBXSMM_MHD_ELEMENT_CONVERSION(DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT) { \
+  LIBXSMM_ASSERT_MSG(NULL != (PDST) && NULL != (PSRC), "Invalid input or output"); \
   switch(SRC_ENUM) { \
     case LIBXSMM_MHD_ELEMTYPE_F64: { \
-      const double s = *((const double*)PSRC); \
-      if (NULL != (PSRC_MIN)) { \
-        LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
-        s0 = *((const double*)PSRC_MIN); s1 = *((const double*)PSRC_MAX); \
-      } \
-      if (s0 < s1) { /* scale */ \
-        const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
-      } \
-      else { \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) \
-          ? /* clamp */(0 <= s ? LIBXSMM_CLMP(s + h, DST_MIN, DST_MAX) : LIBXSMM_CLMP(s - h, DST_MIN, DST_MAX)) \
-          : /* promo */s); \
-      } \
+      LIBXSMM_MHD_ELEMENT_CONVERSION_F(double, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT); \
     } break; \
     case LIBXSMM_MHD_ELEMTYPE_F32: { \
-      const float s = *((const float*)PSRC); \
-      if (NULL != (PSRC_MIN)) { \
-        LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
-        s0 = *((const float*)PSRC_MIN); s1 = *((const float*)PSRC_MAX); \
-      } \
-      if (s0 < s1) { /* scale */ \
-        const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
-      } \
-      else { /* clamp or promote */ \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) \
-          ? /* clamp */(0 <= s ? LIBXSMM_CLMP(s + h, DST_MIN, DST_MAX) : LIBXSMM_CLMP(s - h, DST_MIN, DST_MAX)) \
-          : /* promo */s); \
-      } \
+      LIBXSMM_MHD_ELEMENT_CONVERSION_F(float, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT); \
     } break; \
     case LIBXSMM_MHD_ELEMTYPE_BF16: { \
       LIBXSMM_ASSERT_MSG(0, "Not implemented yet"); \
     } break; \
     case LIBXSMM_MHD_ELEMTYPE_I64: { \
-      const long long s = *((const long long*)PSRC); \
-      if (NULL != (PSRC_MIN)) { \
-        LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
-        s0 = (double)(*((const long long*)PSRC_MIN)); s1 = (double)(*((const long long*)PSRC_MAX)); \
-      } \
-      if (s0 < s1) { /* scale */ \
-        const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
-      } \
-      else { /* clamp or promote */ \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) \
-          ? /* clamp */LIBXSMM_CLMP(s, DST_MIN, DST_MAX) \
-          : /* promo */s); \
-      } \
+      LIBXSMM_MHD_ELEMENT_CONVERSION_I(long long, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT); \
     } break; \
     case LIBXSMM_MHD_ELEMTYPE_I32: { \
-      const int s = *((const int*)PSRC); \
-      if (NULL != (PSRC_MIN)) { \
-        LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
-        s0 = *((const int*)PSRC_MIN); s1 = *((const int*)PSRC_MAX); \
-      } \
-      if (s0 < s1) { /* scale */ \
-        const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
-      } \
-      else { /* clamp or promote */ \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) \
-          ? /* clamp */LIBXSMM_CLMP(s, DST_MIN, DST_MAX) \
-          : /* promo */s); \
-      } \
+      LIBXSMM_MHD_ELEMENT_CONVERSION_I(int, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT); \
     } break; \
     case LIBXSMM_MHD_ELEMTYPE_I16: { \
-      const short s = *((const short*)PSRC); \
-      if (NULL != (PSRC_MIN)) { \
-        LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
-        s0 = *((const short*)PSRC_MIN); s1 = *((const short*)PSRC_MAX); \
-      } \
-      if (s0 < s1) { /* scale */ \
-        const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
-      } \
-      else { /* clamp or promote */ \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) \
-          ? /* clamp */LIBXSMM_CLMP(s, DST_MIN, DST_MAX) \
-          : /* promo */s); \
-      } \
+      LIBXSMM_MHD_ELEMENT_CONVERSION_I(short, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT); \
     } break; \
     case LIBXSMM_MHD_ELEMTYPE_I8: { \
-      const signed char s = *((const signed char*)PSRC); \
-      if (NULL != (PSRC_MIN)) { \
-        LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
-        s0 = *((const signed char*)PSRC_MIN); s1 = *((const signed char*)PSRC_MAX); \
-      } \
-      if (s0 < s1) { /* scale */ \
-        const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
-      } \
-      else { /* clamp or promote */ \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) \
-          ? /* clamp */LIBXSMM_CLMP(s, DST_MIN, DST_MAX) \
-          : /* promo */s); \
-      } \
+      LIBXSMM_MHD_ELEMENT_CONVERSION_I(signed char, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT); \
     } break; \
     case LIBXSMM_MHD_ELEMTYPE_U64: { \
-      const unsigned long long s = *((const unsigned long long*)PSRC); \
-      if (NULL != (PSRC_MIN)) { \
-        LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
-        s0 = (double)(*((const unsigned long long*)PSRC_MIN)); s1 = (double)(*((const unsigned long long*)PSRC_MAX)); \
-      } \
-      if (s0 < s1) { /* scale */ \
-        const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
-      } \
-      else { /* clamp or promote */ \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) \
-          ? /* clamp */LIBXSMM_CLMP(s, DST_MIN, DST_MAX) \
-          : /* promo */s); \
-      } \
+      LIBXSMM_MHD_ELEMENT_CONVERSION_U(unsigned long long, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT); \
     } break; \
     case LIBXSMM_MHD_ELEMTYPE_U32: { \
-      const unsigned int s = *((const unsigned int*)PSRC); \
-      if (NULL != (PSRC_MIN)) { \
-        LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
-        s0 = *((const unsigned int*)PSRC_MIN); s1 = *((const unsigned int*)PSRC_MAX); \
-      } \
-      if (s0 < s1) { /* scale */ \
-        const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
-      } \
-      else { /* clamp or promote */ \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) \
-          ? /* clamp */LIBXSMM_CLMP(s, DST_MIN, DST_MAX) \
-          : /* promo */s); \
-      } \
+      LIBXSMM_MHD_ELEMENT_CONVERSION_U(unsigned int, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT); \
     } break; \
     case LIBXSMM_MHD_ELEMTYPE_U16: { \
-      const unsigned short s = *((const unsigned short*)PSRC); \
-      if (NULL != (PSRC_MIN)) { \
-        LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
-        s0 = *((const unsigned short*)PSRC_MIN); s1 = *((const unsigned short*)PSRC_MAX); \
-      } \
-      if (s0 < s1) { /* scale */ \
-        const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
-      } \
-      else { /* clamp or promote */ \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) \
-          ? /* clamp */LIBXSMM_CLMP(s, DST_MIN, DST_MAX) \
-          : /* promo */s); \
-      } \
+      LIBXSMM_MHD_ELEMENT_CONVERSION_U(unsigned short, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT); \
     } break; \
     case LIBXSMM_MHD_ELEMTYPE_U8: { \
-      const unsigned char s = *((const unsigned char*)PSRC); \
-      if (NULL != (PSRC_MIN)) { \
-        LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
-        s0 = *((const unsigned char*)PSRC_MIN); s1 = *((const unsigned char*)PSRC_MAX); \
-      } \
-      if (s0 < s1) { /* scale */ \
-        const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
-      } \
-      else { /* clamp or promote */ \
-        *((DST_TYPE*)PDST) = (DST_TYPE)(0 == LIBXSMM_MHD_TYPE_PROMOTE(DST_ENUM, SRC_ENUM) \
-          ? /* clamp */LIBXSMM_CLMP(s, DST_MIN, DST_MAX) \
-          : /* promo */s); \
-      } \
+      LIBXSMM_MHD_ELEMENT_CONVERSION_U(unsigned char, DST_TYPE, DST_ENUM, DST_MIN, DST_MAX, PDST, SRC_ENUM, PSRC, PSRC_MIN, PSRC_MAX, RESULT); \
     } break; \
     default: RESULT = EXIT_FAILURE; \
   } \
@@ -549,7 +459,7 @@ LIBXSMM_API int libxsmm_mhd_element_conversion(
   void* dst, libxsmm_mhd_elemtype dst_type, libxsmm_mhd_elemtype src_type,
   const void* src, const void* src_min, const void* src_max)
 {
-  int result;
+  int result = EXIT_SUCCESS;
   switch (dst_type) {
     case LIBXSMM_MHD_ELEMTYPE_F64: {
       LIBXSMM_MHD_ELEMENT_CONVERSION(double, dst_type, -1.0, 1.0, dst, src_type, src, src_min, src_max, result);

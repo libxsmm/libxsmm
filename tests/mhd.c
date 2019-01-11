@@ -67,11 +67,11 @@ int main(int argc, char* argv[])
     }
   }
 
-  /* perform some tests with libxsmm_mhd_element_conversion  */
+  /* perform tests with libxsmm_mhd_element_conversion (int2signed) */
   if (EXIT_SUCCESS == result) {
     short src = 2507, src_min = 0, src_max = 5000;
     float dst_f32; /* destination range is implicit due to type */
-    signed char dst_i8;  /* destination range is implicit due to type */
+    signed char dst_i8; /* destination range is implicit due to type */
     result = libxsmm_mhd_element_conversion(
       &dst_f32, LIBXSMM_MHD_ELEMTYPE_F32/*dst_type*/, LIBXSMM_MHD_ELEMTYPE_I16/*src_type*/,
       &src, NULL/*src_min*/, NULL/*src_max*/);
@@ -93,6 +93,48 @@ int main(int argc, char* argv[])
         &dst_i8, LIBXSMM_MHD_ELEMTYPE_I8/*dst_type*/, LIBXSMM_MHD_ELEMTYPE_I16/*src_type*/,
         &src, &src_min, &src_max);
       if (EXIT_SUCCESS == result && 64 != dst_i8) result = EXIT_FAILURE;
+    }
+  }
+
+  /* perform tests with libxsmm_mhd_element_conversion (float2int) */
+  if (EXIT_SUCCESS == result) {
+    double src = 1975, src_min = -25071975, src_max = 1981;
+    short dst_i16; /* destination range is implicit due to type */
+    unsigned char dst_u8; /* destination range is implicit due to type */
+    result = libxsmm_mhd_element_conversion(
+      &dst_i16, LIBXSMM_MHD_ELEMTYPE_I16/*dst_type*/, LIBXSMM_MHD_ELEMTYPE_F64/*src_type*/,
+      &src, NULL/*src_min*/, NULL/*src_max*/);
+    if (EXIT_SUCCESS == result && src != dst_i16) result = EXIT_FAILURE;
+    if (EXIT_SUCCESS == result) {
+      result = libxsmm_mhd_element_conversion(
+        &dst_i16, LIBXSMM_MHD_ELEMTYPE_I16/*dst_type*/, LIBXSMM_MHD_ELEMTYPE_F64/*src_type*/,
+        &src, &src_min, &src_max);
+      if (EXIT_SUCCESS == result && 2 != dst_i16) result = EXIT_FAILURE;
+    }
+    if (EXIT_SUCCESS == result) {
+      result = libxsmm_mhd_element_conversion(
+        &dst_u8, LIBXSMM_MHD_ELEMTYPE_U8/*dst_type*/, LIBXSMM_MHD_ELEMTYPE_F64/*src_type*/,
+        &src, NULL/*src_min*/, NULL/*src_max*/);
+      if (EXIT_SUCCESS == result && LIBXSMM_MIN(255, src) != dst_u8) result = EXIT_FAILURE;
+    }
+    if (EXIT_SUCCESS == result) {
+      result = libxsmm_mhd_element_conversion(
+        &dst_u8, LIBXSMM_MHD_ELEMTYPE_U8/*dst_type*/, LIBXSMM_MHD_ELEMTYPE_F64/*src_type*/,
+        &src, &src_min, &src_max);
+      if (EXIT_SUCCESS == result && 255 != dst_u8) result = EXIT_FAILURE;
+    }
+    if (EXIT_SUCCESS == result) {
+      src = -src;
+      result = libxsmm_mhd_element_conversion(
+        &dst_u8, LIBXSMM_MHD_ELEMTYPE_U8/*dst_type*/, LIBXSMM_MHD_ELEMTYPE_F64/*src_type*/,
+        &src, &src_min, &src_max);
+      if (EXIT_SUCCESS == result && 0 != dst_u8) result = EXIT_FAILURE;
+    }
+    if (EXIT_SUCCESS == result) {
+      result = libxsmm_mhd_element_conversion(
+        &dst_i16, LIBXSMM_MHD_ELEMTYPE_I16/*dst_type*/, LIBXSMM_MHD_ELEMTYPE_F64/*src_type*/,
+        &src, &src_min, &src_max);
+      if (EXIT_SUCCESS == result && -3 != dst_i16) result = EXIT_FAILURE;
     }
   }
 

@@ -367,11 +367,10 @@
 #define LIBXSMM_SQRT2(N) (0 < (N) ? ((unsigned int)(1ULL << (LIBXSMM_LOG2(((N) << 1) - 1) >> 1))) : 0)
 #define LIBXSMM_HASH2(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
-/** Compares floating point values but avoids warning about unreliable comparison. */
-#define LIBXSMM_NOTNAN(A) (LIBXSMM_NEQ(0, (A) - (A)) || 0 == ((int)((A) - (A))))
-#define LIBXSMM_ISNAN(A)  (!LIBXSMM_NOTNAN(A))
-#define LIBXSMM_NEQ(A, B) ((A) != (B))
 #define LIBXSMM_FEQ(A, B) ((A) == (B))
+#define LIBXSMM_NEQ(A, B) ((A) != (B))
+#define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
+#define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
 
 #if defined(LIBXSMM_INTEL_COMPILER)
 # if (1600 <= LIBXSMM_INTEL_COMPILER)
