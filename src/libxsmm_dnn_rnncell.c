@@ -798,12 +798,15 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rn
       case LIBXSMM_DNN_RNNCELL_LSTM: {
         switch (kind) {
           case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-            /* forward only has no scratch need */
+            handle->scratch_w  = 0;
+            handle->scratch_r  = 0;
           } break;
           case LIBXSMM_DNN_COMPUTE_KIND_BWD:
           case LIBXSMM_DNN_COMPUTE_KIND_UPD:
           case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
           case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
+            handle->scratch_w  = 0;
+            handle->scratch_r  = 0;                                 
             handle->scratch_wT = 0;
             handle->scratch_rT = 0;
             handle->scratch_xT = 0;
@@ -813,6 +816,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rn
             handle->scratch_df = 0;
             handle->scratch_do = 0;
             handle->scratch_dci = 0;
+            handle->scratch_diB = 0;
+            handle->scratch_dfB = 0;
+            handle->scratch_dpB = 0;
+            handle->scratch_dciB = 0;
             handle->scratch_t1 = 0;
             handle->scratch_t2 = 0;
           } break;

@@ -1546,6 +1546,7 @@ int main(int argc, char* argv[])
   libxsmm_free(rfgold);
   libxsmm_free(rogold);
   libxsmm_free(rcgold);
+  libxsmm_free(r4gold);
   libxsmm_free(bigold);
   libxsmm_free(bfgold);
   libxsmm_free(bogold);
@@ -1563,8 +1564,10 @@ int main(int argc, char* argv[])
   libxsmm_free(cgoldt);
 #endif
   libxsmm_free(dgoldt);
+  libxsmm_free(icfogoldt);
   libxsmm_free(i1gold);
   libxsmm_free(i2gold);
+  libxsmm_free(i3gold);
   libxsmm_free(f1gold);
   libxsmm_free(f2gold);
   libxsmm_free(o1gold);
@@ -1573,11 +1576,10 @@ int main(int argc, char* argv[])
   libxsmm_free(c2gold);
   libxsmm_free(d1gold);
   libxsmm_free(d2gold);
-  libxsmm_free(dhgold);
-  libxsmm_free(i3gold);
-  libxsmm_free(f3gold);
   libxsmm_free(d3gold);
   libxsmm_free(d4gold);
+  libxsmm_free(dhgold);
+  libxsmm_free(f3gold);
   libxsmm_free(deltagoldt);
   libxsmm_free(djdhgoldt);
   libxsmm_free(djdcspgold);
@@ -1634,6 +1636,7 @@ int main(int argc, char* argv[])
   libxsmm_free(djdrgold4);
   libxsmm_free(djdbgold4);
   libxsmm_free(djdcsgold);
+  libxsmm_free(w4gold);
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));
