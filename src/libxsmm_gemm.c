@@ -29,7 +29,7 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_gemm.h"
-#include "libxsmm_trans.h"
+#include "libxsmm_xcopy.h"
 #include "libxsmm_hash.h"
 #include <libxsmm_mhd.h>
 

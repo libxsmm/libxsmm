@@ -290,7 +290,7 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
 SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
           libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c libxsmm_math.c libxsmm_sync.c \
           libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
-          libxsmm_gemm.c libxsmm_trans.c libxsmm_blocked_gemm.c libxsmm_spmdm.c libxsmm_fsspmdm.c \
+          libxsmm_gemm.c libxsmm_xcopy.c libxsmm_blocked_gemm.c libxsmm_spmdm.c libxsmm_fsspmdm.c \
           libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c libxsmm_dnn_elementwise.c \
           libxsmm_dnn_rnncell.c libxsmm_dnn_rnncell_forward.c libxsmm_dnn_rnncell_backward_weight_update.c libxsmm_dnn_grucell.c \
           libxsmm_dnn_fusedbatchnorm.c libxsmm_dnn_fusedbatchnorm_forward.c libxsmm_dnn_fusedbatchnorm_backward.c \
@@ -313,11 +313,11 @@ OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB
 KRNOBJS_HST  = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
 KRNOBJS_MIC  = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 EXTOBJS_HST  = $(BLDDIR)/intel64/libxsmm_ext.o \
-               $(BLDDIR)/intel64/libxsmm_ext_trans.o \
+               $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
                $(BLDDIR)/intel64/libxsmm_ext_blocked_gemm.o \
                $(BLDDIR)/intel64/libxsmm_ext_gemm.o
 EXTOBJS_MIC  = $(BLDDIR)/mic/libxsmm_ext.o \
-               $(BLDDIR)/mic/libxsmm_ext_trans.o \
+               $(BLDDIR)/mic/libxsmm_ext_xcopy.o \
                $(BLDDIR)/mic/libxsmm_ext_blocked_gemm.o \
                $(BLDDIR)/mic/libxsmm_ext_gemm.o
 NOBLAS_HST   = $(BLDDIR)/intel64/libxsmm_noblas.o
