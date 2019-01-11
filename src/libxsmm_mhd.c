@@ -82,10 +82,10 @@
       if (NULL != (PSRC_MIN)) { \
         LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
         s0 = *((const double*)PSRC_MIN); s1 = *((const double*)PSRC_MAX); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
       } \
       if (s0 < s1) { /* scale */ \
         const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
+        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
         *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
       } \
       else { \
@@ -99,10 +99,10 @@
       if (NULL != (PSRC_MIN)) { \
         LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
         s0 = *((const float*)PSRC_MIN); s1 = *((const float*)PSRC_MAX); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
       } \
       if (s0 < s1) { /* scale */ \
         const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
+        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
         *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
       } \
       else { /* clamp or promote */ \
@@ -119,10 +119,10 @@
       if (NULL != (PSRC_MIN)) { \
         LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
         s0 = (double)(*((const long long*)PSRC_MIN)); s1 = (double)(*((const long long*)PSRC_MAX)); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
       } \
       if (s0 < s1) { /* scale */ \
         const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
+        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
         *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
       } \
       else { /* clamp or promote */ \
@@ -136,10 +136,10 @@
       if (NULL != (PSRC_MIN)) { \
         LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
         s0 = *((const int*)PSRC_MIN); s1 = *((const int*)PSRC_MAX); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
       } \
       if (s0 < s1) { /* scale */ \
         const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
+        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
         *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
       } \
       else { /* clamp or promote */ \
@@ -153,10 +153,10 @@
       if (NULL != (PSRC_MIN)) { \
         LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
         s0 = *((const short*)PSRC_MIN); s1 = *((const short*)PSRC_MAX); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
       } \
       if (s0 < s1) { /* scale */ \
         const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
+        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
         *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
       } \
       else { /* clamp or promote */ \
@@ -170,10 +170,10 @@
       if (NULL != (PSRC_MIN)) { \
         LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
         s0 = *((const signed char*)PSRC_MIN); s1 = *((const signed char*)PSRC_MAX); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
       } \
       if (s0 < s1) { /* scale */ \
         const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
+        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
         *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
       } \
       else { /* clamp or promote */ \
@@ -187,10 +187,10 @@
       if (NULL != (PSRC_MIN)) { \
         LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
         s0 = (double)(*((const unsigned long long*)PSRC_MIN)); s1 = (double)(*((const unsigned long long*)PSRC_MAX)); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
       } \
       if (s0 < s1) { /* scale */ \
         const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
+        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
         *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
       } \
       else { /* clamp or promote */ \
@@ -204,10 +204,10 @@
       if (NULL != (PSRC_MIN)) { \
         LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
         s0 = *((const unsigned int*)PSRC_MIN); s1 = *((const unsigned int*)PSRC_MAX); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
       } \
       if (s0 < s1) { /* scale */ \
         const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
+        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
         *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
       } \
       else { /* clamp or promote */ \
@@ -221,10 +221,10 @@
       if (NULL != (PSRC_MIN)) { \
         LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
         s0 = *((const unsigned short*)PSRC_MIN); s1 = *((const unsigned short*)PSRC_MAX); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
       } \
       if (s0 < s1) { /* scale */ \
         const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
+        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
         *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
       } \
       else { /* clamp or promote */ \
@@ -238,10 +238,10 @@
       if (NULL != (PSRC_MIN)) { \
         LIBXSMM_ASSERT_MSG(NULL != (PSRC_MAX), "Invalid input range"); \
         s0 = *((const unsigned char*)PSRC_MIN); s1 = *((const unsigned char*)PSRC_MAX); \
-        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
       } \
       if (s0 < s1) { /* scale */ \
         const double d = ((s - s0) * ((0 <= s1 ? (DST_MAX) : 0) - (0 <= s0 ? 0 : (DST_MIN))) / (s1 - s0) + (0 <= s0 ? 0 : (DST_MIN))); \
+        LIBXSMM_ASSERT_MSG(s0 <= s && s <= s1, "Invalid value range"); \
         *((DST_TYPE*)PDST) = (DST_TYPE)(0 <= d ? (d + h) : (d - h)); \
       } \
       else { /* clamp or promote */ \
