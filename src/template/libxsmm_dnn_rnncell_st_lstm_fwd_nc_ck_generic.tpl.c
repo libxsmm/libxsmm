@@ -28,6 +28,7 @@
 ******************************************************************************/
 /* Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
+#define PROFILE
 
 /* helper variables */
 libxsmm_blasint j, ik, ikb, in, ic, icb, inik, BF, CB, CB_BLOCKS, KB_BLOCKS, ikic, jk, jc;
@@ -140,6 +141,11 @@ const libxsmm_blasint chunksize_kk = (work_kk % (libxsmm_blasint)handle->desc.th
 const libxsmm_blasint thr_begin_kk = (ltid * chunksize_kk < work_kk) ? (ltid * chunksize_kk) : work_kk;
 const libxsmm_blasint thr_end_kk = ((ltid + 1) * chunksize_kk < work_kk) ? ((ltid + 1) * chunksize_kk) : work_kk;
 
+#ifdef PROFILE
+__int64_t eltwise_start, eltwise_end, eltwise_cycles = 0, gemm_start, gemm_end, gemm_cycles = 0, reformat_start, reformat_end, reformat_cycles = 0;
+float total_time = 0.0;
+#endif
+
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, (int)ltid);
 
@@ -162,6 +168,9 @@ KB_BLOCKS = kBlocks/BF;
 
 /* Upfront reformating of W and R */
 /* reformat W */
+#ifdef PROFILE
+if (ltid == 0) reformat_start = _rdtsc();
+#endif
 for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
   ic = (ikic / (K/bk));
   ik = (ikic % (K/bk));
@@ -190,11 +199,20 @@ for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
 }
 
 libxsmm_barrier_wait(handle->barrier, (int)ltid);
+#ifdef PROFILE
+if (ltid == 0) {
+  reformat_end = _rdtsc();
+  reformat_cycles = reformat_end - reformat_start;
+}
+#endif
 
 /* All data is in column-major format */
 for (j = 0; j < t; ++j) {
   /* let's run the cell in blocks for good locality */
   /* Block reduction loop if requested */
+#ifdef PROFILE
+  if (ltid == 0) gemm_start = _rdtsc();
+#endif
   for (CB = 0; CB < BF; CB++) {
     for (inik = thr_begin; inik < thr_end; ++inik ) {
       in = (inik % (N/bn))*bn;
@@ -309,7 +327,13 @@ for (j = 0; j < t; ++j) {
       batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &blocks);
     }
   }
-
+#ifdef PROFILE
+  if (ltid == 0) {
+    gemm_end = _rdtsc();
+    gemm_cycles += gemm_end-gemm_start;
+    eltwise_start = gemm_end;
+  }
+#endif
   for (inik = thr_begin; inik < thr_end; ++inik ) {
     in = (inik % (N/bn))*bn;
     ikb = inik / (N/bn);
@@ -329,6 +353,22 @@ for (j = 0; j < t; ++j) {
     libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K),  &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, j, in, ik, N, K) );
 #endif
   }
+#ifdef PROFILE
+  if (ltid == 0) {
+    eltwise_end = _rdtsc();
+    eltwise_cycles += eltwise_end-eltwise_start;
+  }
+#endif
 
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }
+#ifdef PROFILE
+if (ltid == 0) {
+  printf("-------------------PROFILING TIMERS ----------------\n");
+  total_time = (gemm_cycles+eltwise_cycles+reformat_cycles)/(2.5 * 1e9)*1000.0f;
+  printf("Elementwise time is %f ms (%.2f%%)\n", eltwise_cycles/(2.5 * 1e9)*1000.0f, eltwise_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
+  printf("Reformat weights time is %f ms (%.2f%%)\n", reformat_cycles/(2.5 * 1e9)*1000.0f, reformat_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
+  printf("GEMM time is %f ms (%.2f%%) at %f GFLOPS\n\n", gemm_cycles/(2.5 * 1e9)*1000.0f, gemm_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time, t*2.0*N*K*K*4*2.0/1e9/(gemm_cycles/(2.5 * 1e9)));
+}
+#undef PROFILE
+#endif

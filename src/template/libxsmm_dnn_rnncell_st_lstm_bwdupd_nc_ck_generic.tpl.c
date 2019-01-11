@@ -29,6 +29,8 @@
 /* Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
+#define PROFILE
+
 /* helper variables */
 libxsmm_blasint j, ik, ikb, in, inb, ic, icb, jk, jb/*jn shadows global variable*/, jc, ek, en, ec, BF, KB_BLOCKS, KB;
 /* tensor dimensions */
@@ -239,6 +241,10 @@ const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads =
 const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
 const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
 #endif
+#ifdef PROFILE
+__int64_t _start, _end, eltwise_cycles = 0, dout_cycles = 0, weight_trans_cycles = 0, act_trans_cycles = 0, dx_cycles = 0, dwdr_cycles = 0, gradient_cycles = 0, reformat_cycles = 0;
+float total_time = 0.0;
+#endif
 
 libxsmm_blasint ikic, inic, inik, icin, ikin;
 
@@ -274,6 +280,9 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   libxsmm_internal_matrix_zero(K*4,   db,  start_thread, tid, handle->desc.threads);
 }
 
+#ifdef PROFILE
+if (ltid == 0) _start = _rdtsc();
+#endif
 /* transpose W */
 for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
   ic = (ikic / (K/bk));
@@ -301,9 +310,18 @@ for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
     }
   }
 }
+#ifdef PROFILE
+if (ltid == 0) {
+  _end = _rdtsc();
+  weight_trans_cycles += _end - _start;
+}
+#endif
 
 for (j = t-1; j >= 0; --j) {
   /* let's run the cell in blocks for good locality */
+#ifdef PROFILE
+  if (ltid == 0) _start = _rdtsc();
+#endif
   for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
     inb = inik % (N/bn);
     ikb = inik / (N/bn);
@@ -363,8 +381,17 @@ for (j = t-1; j >= 0; --j) {
     libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K) );
 #endif
   }
+#ifdef PROFILE
+  if (ltid == 0) {
+    _end = _rdtsc();
+    eltwise_cycles += _end - _start;
+  }
+#endif
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+#ifdef PROFILE
+    if (ltid == 0) _start = _rdtsc();
+#endif
     /* transpose xt for current timestep */
     for (icin = thr_begin_nc; icin < thr_end_nc; ++icin ) {
       in = (icin / (C/bc))*bn;
@@ -407,11 +434,20 @@ for (j = t-1; j >= 0; --j) {
         }
       }
     }
+#ifdef PROFILE
+    if (ltid == 0) {
+      _end = _rdtsc();
+      act_trans_cycles += _end - _start;
+    }  
+#endif
   }
 
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+#ifdef PROFILE
+    if (ltid == 0) _start = _rdtsc();
+#endif 
     /* dx = W^T * difoc */
     for (KB = 0; KB < BF; KB++) {
       for (inic = thr_begin_nc; inic < thr_end_nc; ++inic ) {
@@ -449,8 +485,17 @@ for (j = t-1; j >= 0; --j) {
         batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, j, in, ic, N, C)  , &blocks);
       }
     }
+#ifdef PROFILE
+    if (ltid == 0) {
+      _end = _rdtsc();
+      dx_cycles += _end - _start;
+    }
+#endif   
   }
 
+#ifdef PROFILE
+  if (ltid == 0) _start = _rdtsc();
+#endif     
   for (KB = 0; KB < BF; KB++) {
     for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
       in = (inik % (N/bn))*bn;
@@ -491,8 +536,17 @@ for (j = t-1; j >= 0; --j) {
       batchreduce_kerneld(A_array, B_array, dout_ptr, &blocks);
     }
   }
-
+#ifdef PROFILE
+  if (ltid == 0) {
+    _end = _rdtsc();
+    dout_cycles += _end - _start;
+  }
+#endif
+  
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+#ifdef PROFILE
+    if (ltid == 0) _start = _rdtsc();
+#endif
     if ((C == K) && (bc == bk)) {
       if (K % 2048 != 0) {
         /* Interleave computation of dr = difoc * h^T and dw = difoc * x^T to take advantage of temporal locality */
@@ -677,7 +731,16 @@ for (j = t-1; j >= 0; --j) {
         batchreduce_kernelc1(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwo, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
       }
     }
+#ifdef PROFILE
+    if (ltid == 0) {
+      _end = _rdtsc();
+      dwdr_cycles += _end - _start;
+    }
+#endif
 
+#ifdef PROFILE
+    if (ltid == 0) _start = _rdtsc();
+#endif
     /* gradient bias */
 #if defined(LIBXSMM_INTRINSICS_AVX512) 
     for (ik = k_thr_begin; ik < k_thr_end; ik += 16) {
@@ -706,11 +769,20 @@ for (j = t-1; j >= 0; --j) {
       }
     }
 #endif
+#ifdef PROFILE
+    if (ltid == 0) {
+      _end = _rdtsc();
+      gradient_cycles += _end - _start;
+    }
+#endif
   }
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 }
 
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
+#ifdef PROFILE
+  if (ltid == 0) _start = _rdtsc();
+#endif  
   /* Store result weight matrices in CK format */
   for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
     icb = ikic / (K/bk);
@@ -742,5 +814,26 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
     }
   }
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
+#ifdef PROFILE
+  if (ltid == 0) {
+    _end = _rdtsc();
+    reformat_cycles += _end - _start;
+  }
+#endif
 }
 
+#ifdef PROFILE
+if (ltid == 0) {
+  printf("-------------------PROFILING TIMERS ----------------\n");
+  total_time = (gradient_cycles+dwdr_cycles+dx_cycles+act_trans_cycles+weight_trans_cycles+dout_cycles+eltwise_cycles+reformat_cycles)/(2.5 * 1e9)*1000.0f;
+  printf("Transpose weights time is %f ms (%.2f%%)\n", weight_trans_cycles/(2.5 * 1e9)*1000.0f, weight_trans_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
+  printf("Elementwise time is %f ms (%.2f%%)\n", eltwise_cycles/(2.5 * 1e9)*1000.0f, eltwise_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
+  printf("Dx calculation time is %f ms (%.2f%%) at %f GFLOPS\n", dx_cycles/(2.5 * 1e9)*1000.0f, dx_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time, t*2.0*N*C*K*4/1e9/(dx_cycles/(2.5 * 1e9)));
+  printf("Dout calculation time is %f ms (%.2f%%) at %f GFLOPS\n", dout_cycles/(2.5 * 1e9)*1000.0f, dout_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time, t*2.0*N*K*K*4/1e9/(dout_cycles/(2.5 * 1e9)));
+  printf("Transpose input activations time is %f ms (%.2f%%)\n", act_trans_cycles/(2.5 * 1e9)*1000.0f, act_trans_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
+  printf("Dwdr calculation time is %f ms (%.2f%%) at %f GFLOPS\n", dwdr_cycles/(2.5 * 1e9)*1000.0f, dwdr_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time, t*2.0*N*K*K*4*2.0/1e9/(dwdr_cycles/(2.5 * 1e9)));
+  printf("Gradient calculation time is %f ms (%.2f%%)\n", gradient_cycles/(2.5 * 1e9)*1000.0f, gradient_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
+  printf("Reformat dwdr time is %f ms (%.2f%%)\n\n", reformat_cycles/(2.5 * 1e9)*1000.0f, reformat_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
+}
+#undef PROFILE
+#endif
