@@ -795,29 +795,31 @@ LIBXSMM_API int libxsmm_mhd_read(const char filename[],
       }
     }
     if (EXIT_SUCCESS == result) {
+      char *const output = ((char*)data) + offset1 * ncomponents * typesize;
       char minmax[2*(LIBXSMM_MHD_MAX_ELEMSIZE)];
+
       if (0 != header_size) result = fseek(file, (long)header_size, SEEK_SET); /* set file position to data section */
-      if (EXIT_SUCCESS == result) {
+      if (EXIT_SUCCESS == result && datatype != type_stored) { /* conversion needed */
         if (1 == fread(minmax, typesize, 1, file)) {
           memcpy(minmax + (LIBXSMM_MHD_MAX_ELEMSIZE), minmax, typesize);
           result = fseek(file, (long)header_size, SEEK_SET); /* reset file position */
+          if (EXIT_SUCCESS == result) {
+            result = internal_mhd_read(file, NULL/*output*/, size, shape,
+              ndims, ncomponents, type_stored, datatype, typesize, handle_element,
+              1/*search min-max*/, minmax, minmax + (LIBXSMM_MHD_MAX_ELEMSIZE));
+          }
+          if (EXIT_SUCCESS == result) {
+            result = fseek(file, (long)header_size, SEEK_SET); /* reset file position */
+          }
         }
         else {
           result = EXIT_FAILURE;
         }
       }
       if (EXIT_SUCCESS == result) {
-        result = internal_mhd_read(file, ((char*)data) + offset1 * ncomponents * typesize, size, shape,
+        result = internal_mhd_read(file, output, size, shape,
           ndims, ncomponents, type_stored, datatype, typesize, handle_element,
-          1/*search min-max*/, minmax, minmax + (LIBXSMM_MHD_MAX_ELEMSIZE));
-      }
-      if (EXIT_SUCCESS == result && 0 != libxsmm_diff(minmax, minmax + (LIBXSMM_MHD_MAX_ELEMSIZE), LIBXSMM_MHD_MAX_ELEMSIZE)) {
-        if (EXIT_SUCCESS == result) result = fseek(file, (long)header_size, SEEK_SET); /* reset file position */
-        if (EXIT_SUCCESS == result) {
-          result = internal_mhd_read(file, ((char*)data) + offset1 * ncomponents * typesize, size, shape,
-            ndims, ncomponents, type_stored, datatype, typesize, handle_element,
-            0/*use min-max*/, minmax, minmax + (LIBXSMM_MHD_MAX_ELEMSIZE));
-        }
+          0/*use min-max*/, minmax, minmax + (LIBXSMM_MHD_MAX_ELEMSIZE));
       }
     }
     if (0 != extension && 0 < extension_size) {
@@ -888,7 +890,6 @@ LIBXSMM_API_INLINE int internal_mhd_write(FILE* file, const void* data, const si
 
         if (0 != minmax) {
           /* determine value-range for scaled data-conversion */
-          memcpy(minval, data, typesize_data); memcpy(maxval, data, typesize_data); /* initial condition */
           result = internal_mhd_minmax(data, size[0] * ncomponents, type_data, minval, maxval);
         }
         else {
@@ -983,29 +984,22 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
     }
     /* ElementDataFile must be the last entry before writing the data */
     if (EXIT_SUCCESS == result && 0 < fprintf(file, "\nElementType = %s\nElementDataFile = LOCAL\n", elemname)) {
+      const size_t *const shape = (0 != pitch ? pitch : size);
+      const char *const input = ((const char*)data) + libxsmm_offset(offset, shape, ndims, NULL/*size*/) * ncomponents * typesize_data;
       const long file_position = ftell(file); /* determine the header size */
-      if (0 < file_position) {
-        const size_t *const shape = (0 != pitch ? pitch : size);
-        char minmax[2*(LIBXSMM_MHD_MAX_ELEMSIZE)];
-        result = internal_mhd_write(file,
-          ((const char*)data) + libxsmm_offset(offset, shape, ndims, NULL/*size*/) * ncomponents * typesize_data,
-          size, shape, ndims, ncomponents, type_data, elemtype, typesize_data, typesize,
+      char minmax[2*(LIBXSMM_MHD_MAX_ELEMSIZE)];
+
+      result = (0 < file_position ? EXIT_SUCCESS : EXIT_FAILURE);
+      if (EXIT_SUCCESS == result && type_data != elemtype) { /* conversion needed */
+        memcpy(minmax, data, typesize_data); memcpy(minmax + (LIBXSMM_MHD_MAX_ELEMSIZE), data, typesize_data); /* initial condition */
+        result = internal_mhd_write(file, input, size, shape, ndims, ncomponents, type_data, elemtype, typesize_data, typesize,
           1/*search min-max*/, minmax, minmax + (LIBXSMM_MHD_MAX_ELEMSIZE));
-        if (EXIT_SUCCESS == result) {
-          if (0 != header_size) *header_size = file_position;
-          if (0 != libxsmm_diff(minmax, minmax + (LIBXSMM_MHD_MAX_ELEMSIZE), LIBXSMM_MHD_MAX_ELEMSIZE)) {
-            result = fseek(file, file_position, SEEK_SET); /* reset file position */
-            if (EXIT_SUCCESS == result) {
-              result = internal_mhd_write(file,
-                ((const char*)data) + libxsmm_offset(offset, shape, ndims, NULL/*size*/) * ncomponents * typesize_data,
-                size, shape, ndims, ncomponents, type_data, elemtype, typesize_data, typesize,
-                0/*use min-max*/, minmax, minmax + (LIBXSMM_MHD_MAX_ELEMSIZE));
-            }
-          }
-        }
       }
-      else {
-        result = EXIT_FAILURE;
+      if (EXIT_SUCCESS == result) {
+        if (NULL != header_size) *header_size = file_position;
+        LIBXSMM_ASSERT(file_position == ftell(file));
+        result = internal_mhd_write(file, input, size, shape, ndims, ncomponents, type_data, elemtype, typesize_data, typesize,
+          0/*use min-max*/, minmax, minmax + (LIBXSMM_MHD_MAX_ELEMSIZE));
       }
     }
     /* append the extension data after the regular data section */
