@@ -105,8 +105,8 @@ int main(int argc, char* argv[])
   const char *const env_mult = getenv("MULT"), *const env_orig = getenv("ORIG");
   /* extents of result image become multiples of block-size */
   const int mult = ((0 == env_mult || 0 == *env_mult) ? 64/*default*/ : LIBXSMM_MAX(atoi(env_mult), 0));
-  /* save result image with original compute-type (type_dnn), and not with pixel-type of input (type_in) */
-  const int orig = ((0 == env_orig || 0 == *env_orig) ? 0/*disabled*/ : atoi(env_orig));
+  /* save result with original pixel-type of input (type_in), otherwise save with compute-type (type_dnn) */
+  const int orig = ((0 == env_orig || 0 == *env_orig) ? 1/*enabled*/ : atoi(env_orig));
 
   /* Generate an input file if a pseudo filename (resolution) is given. */
   if (0 != FEXIST(filename_in) && 0 < atoi(filename_in)) {
@@ -123,9 +123,9 @@ int main(int argc, char* argv[])
           ((unsigned char*)image)[i*size_in[0]+j] = (unsigned char)(0 == (i + j) % r ? c1 : c0);
         }
       }
-      result = libxsmm_mhd_write(filename, 0/*offset*/, size_in, size_in,
+      result = libxsmm_mhd_write(filename, NULL/*offset*/, size_in, size_in,
         2/*ndims*/, 1/*ncomponents*/, LIBXSMM_MHD_ELEMTYPE_U8, NULL/*conversion*/, image,
-        0/*header_size*/, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
+        0/*header_size*/, NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
       if (EXIT_SUCCESS == result) filename_in = filename;
     }
     else {
@@ -233,7 +233,7 @@ int main(int argc, char* argv[])
       offset, size_in, pitch, ndims, ncomponents, header_size, type_in,
       /* eventually perform a type-conversion (type_in != type_dnn) */
       (const libxsmm_mhd_elemtype*)pv, image,
-      0/*handle_element*/, 0/*extension*/, 0/*extension_size*/);
+      NULL/*handle_element*/, NULL/*extension*/, 0/*extension_size*/);
   }
 
   /* Setup convolution descriptor. */
@@ -388,31 +388,11 @@ int main(int argc, char* argv[])
       size_in[0] = size_out[0];
       size_in[1] = size_out[1];
     }
-    result = libxsmm_mhd_write(filename_out, offset, size_in, size_out, 2/*ndims*/, ncomponents,
-      (libxsmm_mhd_elemtype)type_dnn/* assume MHD I/O provides a super-set of DNN types */,
-      NULL/*conversion*/, image, &header_size, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
-  }
 
-  /* convert into input pixel-type, and re-write result image. */
-  if (EXIT_SUCCESS == result && 0 == orig && (((int)type_in) != ((int)type_dnn))) {
-    size_t typesize_in;
-    if (0 != libxsmm_mhd_typename(type_in, &typesize_in, 0/*ctypename*/)) {
-      /* we do not want to convert to a larger type (typesize can be equal, but type may be different) */
-      if (typesize_in <= typesize_dnn) { /* make sure we can reuse image buffer */
-        result = libxsmm_mhd_read(filename_out,
-          0/*offset*/, size_in, size_in, 2/*ndims*/, ncomponents, header_size,
-          (libxsmm_mhd_elemtype)type_dnn, &type_in, /* conversion requested */
-          image, 0/*handle_element*/, 0/*extension*/, 0/*extension_size*/);
-        if (EXIT_SUCCESS == result) {
-          result = libxsmm_mhd_write(filename_out,
-            0/*offset*/, size_in, size_in, 2/*ndims*/, ncomponents, type_in, NULL/*conversion*/, image,
-            0/*header_size*/, 0/*extension_header*/, 0/*extension*/, 0/*extension_size*/);
-        }
-      }
-    }
-    else {
-      result = EXIT_FAILURE;
-    }
+    /* write result image without offset/padding. */
+    result = libxsmm_mhd_write(filename_out, NULL/*offset*/, size_in, size_in, 2/*ndims*/, ncomponents,
+      (libxsmm_mhd_elemtype)type_dnn/* assume super-set of DNN types */, 0 != orig ? &type_in : NULL, image,
+      0/*header_size*/, NULL/*extension_header*/, NULL/*extension*/, 0/*extension_size*/);
   }
 
   /* Release resources. */
