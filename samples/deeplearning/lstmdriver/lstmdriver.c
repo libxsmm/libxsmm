@@ -259,6 +259,20 @@ LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
 }
 
 
+LIBXSMM_INLINE void matrix_complement_ld(int m, int n, int ld, float *src, float *dst)
+{
+  int i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < m*n; i++) {
+    int row = i / m;
+    int col = i % m;
+    dst[i] = 1.0f - src[row*ld + col];
+  }
+}
+
+
 LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
 {
   int i;
@@ -269,6 +283,21 @@ LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
     dst[i] = 1.0f - (src[i] * src[i]);
   }
 }
+
+
+LIBXSMM_INLINE void matrix_complement_square_ld(int m, int n, int ld, float *src, float *dst)
+{
+  int i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < m*n; i++) {
+    int row = i / m;
+    int col = i % m;
+    dst[i] = 1.0f - (src[row*ld + col] * src[row*ld + col]);
+  }
+}
+
 
 LIBXSMM_INLINE void convert_ck_c4k(int C, int K, int offset, float *src, float *dst)
 {
@@ -686,10 +715,7 @@ int main(int argc, char* argv[])
         matrix_add(K * N, &LIBXSMM_VLA_ACCESS(2, doutgold, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, djdhgold, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, deltagold, j, 0, K * N));
       }
       /* compute djdcspgold */
-      /* matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, deltagold, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, ogold, j, 0, K * N), d1gold); */
-      for (l = 0; l < N; l++) {
-        matrix_eltwise_mult(K, &LIBXSMM_VLA_ACCESS(2, deltagold, j, l*K, K * N), &LIBXSMM_VLA_ACCESS(3, icfogold, j, l, 3*K, N, 4 * K), &(d1gold[l*K]));
-      }
+      matrix_eltwise_mult_ld_a(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K), &LIBXSMM_VLA_ACCESS(2, deltagold, j, 0, K * N), d1gold);
       matrix_tanh_inverse(K * N, &LIBXSMM_VLA_ACCESS(2, dgold, j, 0, K * N), d2gold);
       matrix_eltwise_mult(K * N, d1gold, d2gold, d3gold);
       if (j == t-1) {
@@ -698,26 +724,13 @@ int main(int argc, char* argv[])
         matrix_add(K * N, d3gold, djdcspgold, djdcspgold);
       }
       /* compute djdcgold */
-      /*
-      matrix_eltwise_mult(K * N, djdcspgold, &LIBXSMM_VLA_ACCESS(2, igold, j, 0, K * N), c1gold);
-      matrix_complement_square(K * N, &LIBXSMM_VLA_ACCESS(2, cgold, j, 0, K * N), c2gold);
-      */
-      for (l = 0; l < N; l++) {
-        matrix_eltwise_mult(K, &(djdcspgold[l*K]), &LIBXSMM_VLA_ACCESS(3, icfogold, j, l, 0, N, 4 * K), &(c1gold[l*K]));
-        matrix_complement_square(K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, l, K, N, 4 * K), &(c2gold[l*K]));
-      }
+      matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), djdcspgold, c1gold);
+      matrix_complement_square_ld(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K, N, 4 * K), c2gold);
       matrix_eltwise_mult(K * N, c1gold, c2gold, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, K * N));
       /* compute djdigold */
-      /*
-      matrix_eltwise_mult(K * N, djdcspgold, &LIBXSMM_VLA_ACCESS(2, cgold, j, 0, K * N), i1gold);
-      matrix_complement(K * N, &LIBXSMM_VLA_ACCESS(2, igold, j, 0, K * N), i2gold);
-      matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, igold, j, 0, K * N), i2gold, i3gold);
-      */
-      for (l = 0; l < N; l++) {
-        matrix_eltwise_mult(K, &(djdcspgold[l*K]), &LIBXSMM_VLA_ACCESS(3, icfogold, j, l, K, N, 4 * K), &(i1gold[l*K]));
-        matrix_complement  (K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, l, 0, N, 4 * K), &(i2gold[l*K]));
-        matrix_eltwise_mult(K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, l, 0, N, 4 * K), &(i2gold[l*K]), &(i3gold[l*K]));
-      }
+      matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K, N, 4 * K), djdcspgold, i1gold);
+      matrix_complement_ld       (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), i2gold);
+      matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), i2gold, i3gold);
       matrix_eltwise_mult(K * N, i1gold, i3gold, &LIBXSMM_VLA_ACCESS(2, djdigold, j, 0, K * N));
       /* compute djdfgold */
       if (j == 0) {
@@ -725,32 +738,17 @@ int main(int argc, char* argv[])
       } else {
         matrix_eltwise_mult(K * N, djdcspgold, &LIBXSMM_VLA_ACCESS(2, dgold, j-1, 0, K * N), f1gold);
       }
-      /*
-      matrix_complement(K * N, &LIBXSMM_VLA_ACCESS(2, fgold, j, 0, K * N), f2gold);
-      matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, fgold, j, 0, K * N), f2gold, f3gold);
-      */
-      for (l = 0; l < N; l++) {
-        matrix_complement  (K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, l, 2*K, N, 4 * K), &(f2gold[l*K]));
-        matrix_eltwise_mult(K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, l, 2*K, N, 4 * K), &(f2gold[l*K]), &(f3gold[l*K]));
-      }
+      matrix_complement_ld       (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), f2gold);
+      matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), f2gold, f3gold);
       matrix_eltwise_mult(K * N, f1gold, f3gold, &LIBXSMM_VLA_ACCESS(2, djdfgold, j, 0, K * N));
       /* compute djdogold */
       matrix_tanh(K * N, &LIBXSMM_VLA_ACCESS(2, dgold, j, 0, K * N), o1gold);
       matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, deltagold, j, 0, K * N), o1gold, o1gold);
-      /*
-      matrix_complement(K * N, &LIBXSMM_VLA_ACCESS(2, ogold, j, 0, K * N), o2gold);
-      matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, ogold, j, 0, K * N), o2gold, o2gold);
-      */
-      for (l = 0; l < N; l++) {
-        matrix_complement  (K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, l, 3*K, N, 4 * K), &(o2gold[l*K]));
-        matrix_eltwise_mult(K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, l, 3*K, N, 4 * K), &(o2gold[l*K]), &(o2gold[l*K]));
-      }
+      matrix_complement_ld       (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K), o2gold);
+      matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K), o2gold, o2gold);
       matrix_eltwise_mult(K * N, o1gold, o2gold, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, K * N));
       /* update djdcspgold */
-      /* matrix_eltwise_mult(K * N, djdcspgold, &LIBXSMM_VLA_ACCESS(2, fgold, j, 0, K * N), djdcspgold); */
-      for (l = 0; l < N; l++) {
-        matrix_eltwise_mult(K, &(djdcspgold[l*K]), &LIBXSMM_VLA_ACCESS(3, icfogold, j, l, 2*K, N, 4 * K), &(djdcspgold[l*K]));
-      }
+      matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), djdcspgold, djdcspgold);
       if (j > 0) {
         /* compute doutgold */
         matrix_transpose(K, K, rigold, rgoldTp);
