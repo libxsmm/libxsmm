@@ -82,7 +82,7 @@ int main(int argc, char* argv[])
   const int kh = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : kw, 1);
   const char *const filename_out = (5 < argc ? argv[5] : "iconv_out.mhd");
   int result = 0 != strcmp(filename_in, filename_out) ? EXIT_SUCCESS : EXIT_FAILURE;
-  size_t ndims = 2, size_in[2] = { 0 }, size_out[2], pitch[2], offset[2], ncomponents = 1, header_size = 0, extension_size;
+  size_t ndims = 2, size_in[] = { 0, 0 }, size_out[] = { 0, 0 }, pitch[2], offset[2], ncomponents = 1, header_size = 0, extension_size;
   void *conv_input_buffer = 0, *conv_filter_buffer = 0, *conv_output_buffer = 0;
   libxsmm_dnn_tensor *conv_input = 0, *conv_output = 0, *conv_filter = 0;
   libxsmm_mhd_elemtype type_in = LIBXSMM_MHD_ELEMTYPE_UNKNOWN;
@@ -412,10 +412,10 @@ int main(int argc, char* argv[])
 
   if (EXIT_SUCCESS == result) {
     if (0 < duration) {
-      fprintf(stdout, "\tfrequency: %.1f Hz\n", nrepeat / duration);
+      fprintf(stdout, "\tfrequency: %.0f Hz\n", nrepeat / duration);
     }
     assert(0 != nrepeat);
-    fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration / nrepeat);
+    fprintf(stdout, "\tduration: %.0f ms\n", 1E3 * duration / nrepeat);
     fprintf(stdout, "Finished.\n");
   }
   else {
