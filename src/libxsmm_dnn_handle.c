@@ -38,6 +38,10 @@
 #if !defined(LIBXSMM_DNN_HANDLE_DEBUG) && 0
 # define LIBXSMM_DNN_HANDLE_DEBUG
 #endif
+#if !defined(LIBXSMM_DNN_HANDLE_FALLBACK_MIXED) && 0
+# define LIBXSMM_DNN_HANDLE_FALLBACK_MIXED
+#endif
+
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -112,12 +116,19 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
          && (handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
       /* Forward path setup */
       status = libxsmm_dnn_setup_fwd(handle, &noarch);
-
+#if !defined(LIBXSMM_DNN_HANDLE_FALLBACK_MIXED)
+      if (LIBXSMM_DNN_SUCCESS != status) noarch = 1;
+#endif
       /* Backward path setup */
-      if (LIBXSMM_DNN_SUCCESS == status || 0 != handle->use_fwd_generic) status = libxsmm_dnn_setup_bwd(handle, &noarch);
-
+      status = libxsmm_dnn_setup_bwd(handle, &noarch);
+#if !defined(LIBXSMM_DNN_HANDLE_FALLBACK_MIXED)
+      if (LIBXSMM_DNN_SUCCESS != status) noarch = 1;
+#endif
       /* Weight update path setup */
-      if (LIBXSMM_DNN_SUCCESS == status || 0 != handle->use_bwd_generic) status = libxsmm_dnn_setup_upd(handle, &noarch);
+      status = libxsmm_dnn_setup_upd(handle, &noarch);
+#if !defined(LIBXSMM_DNN_HANDLE_FALLBACK_MIXED)
+      if (LIBXSMM_DNN_SUCCESS != status) noarch = 1;
+#endif
     }
 
     /* Calculate scratch requirements */
@@ -125,7 +136,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   }
 
   /* Setup generic code generation */
-  if (0 != noarch /*|| 0 != handle->use_fwd_generic || 0 != handle->use_bwd_generic || 0 != handle->use_upd_generic*/) {
+  if (0 != noarch) {
     status = libxsmm_dnn_setup_generic(handle);
   }
 
