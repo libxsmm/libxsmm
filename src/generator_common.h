@@ -325,11 +325,14 @@
 #if defined(LIBXSMM_HANDLE_ERROR_QUIET)
 # define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE)
 # define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE)
+# define LIBXSMM_HANDLE_WARNING(GENERATED_CODE, ERROR_CODE)
 #else
 # define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-    GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, 0 != libxsmm_ninit ? libxsmm_verbosity : 1)
+    GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, 0 != libxsmm_ninit ? libxsmm_verbosity : 1, 0)
 # define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-    GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, 1)
+    GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, 1/*print always*/, 0/*error*/)
+# define LIBXSMM_HANDLE_WARNING(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
+    GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, 0 != libxsmm_ninit ? libxsmm_verbosity : 1, 1)
 #endif
 
 /* micro kernel configuration */
@@ -570,7 +573,8 @@ LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
                            const char*             context,
-                           int emit_message );
+                           int emit_message,
+                           int warning );
 
 LIBXSMM_API_INTERN
 void libxsmm_convfunction_signature_fp32( libxsmm_generated_code*         io_generated_code,

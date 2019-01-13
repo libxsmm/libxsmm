@@ -924,18 +924,20 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
 
 LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
-                           const unsigned int      i_error_code,
+                           const unsigned int i_error_code,
                            const char* context,
-                           int emit_message ) {
+                           int emit_message,
+                           int warning ) {
   static LIBXSMM_TLS unsigned int last_error_code;
   if (i_error_code != last_error_code) {
     if (0 != emit_message) {
+      const char *const kind = (0 == warning ? "ERROR" : "WARNING");
       LIBXSMM_STDIO_ACQUIRE();
       if (0 != context && 0 != *context && '0' != *context) {
-        fprintf(stderr, "LIBXSMM ERROR (%s): %s\n", context, libxsmm_strerror(i_error_code));
+        fprintf(stderr, "LIBXSMM %s (%s): %s\n", kind, context, libxsmm_strerror(i_error_code));
       }
       else {
-        fprintf(stderr, "LIBXSMM ERROR: %s\n", libxsmm_strerror(i_error_code));
+        fprintf(stderr, "LIBXSMM %s: %s\n", kind, libxsmm_strerror(i_error_code));
       }
       LIBXSMM_STDIO_RELEASE();
     }
@@ -1139,15 +1141,15 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       break;
     case LIBXSMM_ERR_CONV_OFM_VEC:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "forward conv. or weight upd. vect. failed, OFM blocking is not divisible by VLEN (error #%u)!", i_error_code );
+        "vectorization failed (fwd. or upd.), OFM blocking is not divisible by VLEN (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_CONV_IFM_VEC:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "backward conv vectorization failed, IFM blocking is not divisible by VLEN (error #%u)!", i_error_code );
+        "backward conv. vectorization failed, IFM blocking is not divisible by VLEN (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_CONV_CONT_STRIDE:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "backward conv vectorization failed, stride_h/w need to be 1 (error #%u)!", i_error_code );
+        "backward conv. vectorization failed, stride_h/w need to be 1 (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_UNSUP_DATATYPE:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
