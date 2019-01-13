@@ -124,7 +124,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     libxsmm_dnn_setup_scratch(handle);
   }
 
-  if (0 != noarch) { /* Setup generic code generation */
+  /* Setup generic code generation */
+  if (0 != noarch || 0 != handle->use_fwd_generic || 0 != handle->use_bwd_generic || 0 != handle->use_upd_generic) {
     status = libxsmm_dnn_setup_generic(handle);
   }
 
