@@ -574,6 +574,16 @@ LIBXSMM_API_INLINE void internal_init(void)
 # endif
 #endif
   if (0 == internal_registry) { /* double-check after acquiring the lock(s) */
+    /* setup verbosity as early as possible since below code may rely on verbose output */
+    const char *const env_verbose = getenv("LIBXSMM_VERBOSE");
+    if (0 != env_verbose && 0 != *env_verbose) {
+      libxsmm_verbosity = atoi(env_verbose);
+    }
+#if !defined(NDEBUG)
+    else {
+      libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
+    }
+#endif
     LIBXSMM_ASSERT(0 == internal_registry_keys); /* should never happen */
 #if !defined(_WIN32) && 0
     umask(S_IRUSR | S_IWUSR); /* setup default/secure file mask */
@@ -637,17 +647,6 @@ LIBXSMM_API_INLINE void internal_init(void)
 #endif
     {
       libxsmm_nt = 4;
-    }
-    {
-      const char *const env = getenv("LIBXSMM_VERBOSE");
-      if (0 != env && 0 != *env) {
-        libxsmm_verbosity = atoi(env);
-      }
-#if !defined(NDEBUG)
-      else {
-        libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
-      }
-#endif
     }
     internal_statistic_mnk = libxsmm_icbrt_u32(LIBXSMM_MAX_MNK);
     internal_statistic_sml = 13;
@@ -1060,7 +1059,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       fprintf(stderr, "LIBXSMM WARNING: \"%s\" code would fail to run on \"%s\"!\n",
         target_arch, internal_get_target_arch(cpuid));
     }
+#if defined(NDEBUG) /* allow to debug with higher code path */
     target_archid = cpuid;
+#endif
   }
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 }
