@@ -647,6 +647,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   /* internal  state */
   void* internal_z;
   /* scratch pointers */
+  void* scratch_base;
   void* scratch_wT;
   void* scratch_rT;
   void* scratch_w;

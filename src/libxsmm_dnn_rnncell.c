@@ -515,6 +515,22 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
 }
 
 
+LIBXSMM_API void* libxsmm_dnn_rnncell_get_scratch_ptr(const libxsmm_dnn_rnncell* handle, libxsmm_dnn_err_t* status)
+{
+  size_t size = 0;
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handle) {
+    return handle->scratch_base;
+  } else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+    return 0;
+  }
+
+  return 0;
+}
+
+
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind, const void* scratch)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -528,7 +544,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
       case LIBXSMM_DNN_RNNCELL_RNN_TANH: {
         switch (kind) {
           case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
-            /* forward only has no scratch need */                                  
+            /* forward only has no scratch need */ 
           } break;
           case LIBXSMM_DNN_COMPUTE_KIND_BWD:
           case LIBXSMM_DNN_COMPUTE_KIND_UPD:
@@ -538,6 +554,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
               status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
               return status;
             }
+            handle->scratch_base = (void*)address; 
             /* wT */
             if (address % 64 == 0) {
               handle->scratch_wT = (void*)address;
@@ -587,6 +604,11 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
       case LIBXSMM_DNN_RNNCELL_LSTM: {
         switch (kind) {
           case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+            if (scratch == 0) {
+              status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
+              return status;
+            }
+            handle->scratch_base = (void*)address; 
             /* w scratch */
             if (address % 64 == 0) {
               handle->scratch_w = (void*)address;
@@ -613,6 +635,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
               status = LIBXSMM_DNN_ERR_SCRATCH_NOT_ALLOCED;
               return status;
             }
+            handle->scratch_base = (void*)address; 
             /* w scratch */
             if (address % 64 == 0) {
               handle->scratch_w = (void*)address;
@@ -890,6 +913,22 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_internalstate_size(const libxsmm_dnn_
   }
 
   return size;
+}
+
+
+LIBXSMM_API void* libxsmm_dnn_rnncell_get_internalstate_ptr(const libxsmm_dnn_rnncell* handle, libxsmm_dnn_err_t* status)
+{
+  size_t size = 0;
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handle) {
+    return handle->internal_z;
+  } else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+    return 0;
+  }
+
+  return 0;
 }
 
 
