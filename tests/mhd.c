@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
       result = libxsmm_mhd_element_conversion(
         &dst_f32, LIBXSMM_MHD_ELEMTYPE_F32/*dst_type*/, LIBXSMM_MHD_ELEMTYPE_I16/*src_type*/,
         &src, &src_min, &src_max);
-      if (EXIT_SUCCESS == result && 0.5014f != dst_f32) result = EXIT_FAILURE;
+      if (EXIT_SUCCESS == result && src != dst_f32) result = EXIT_FAILURE;
     }
     if (EXIT_SUCCESS == result) {
       result = libxsmm_mhd_element_conversion(
