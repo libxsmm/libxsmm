@@ -722,6 +722,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       if ( handle->n_variants == 1 ) {
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
         handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
+        if (NULL == handle->code_fwd[0].pmm) *noarch = 1;
       }
       if (handle->padding_flag == 1) {
         handle->matcopy_fwd[0].xmatcopy = libxsmm_dispatch_mcopy(&matcopy_descriptor);
@@ -745,7 +746,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     /* TODO: proper error handling */
     LIBXSMM_ASSERT(NULL != handle->n_entries_fwd && NULL != handle->compute_fwd_indices_ptrs);
     LIBXSMM_ASSERT(NULL != handle->bn_stats_indices_ptrs && NULL != handle->bn_aux_stats_indices_ptrs && NULL != handle->bn_aux_input_indices_ptrs && NULL != handle->kernel_fwd_variant_ptrs);
-  LIBXSMM_ASSERT(NULL != handle->n_fwd_code_segments && NULL != handle->fwd_code_segments);
+    LIBXSMM_ASSERT(NULL != handle->n_fwd_code_segments && NULL != handle->fwd_code_segments);
     LIBXSMM_ASSERT(NULL != handle->ofh_fwd_start && NULL != handle->ofh_fwd_end);
 
     memset( handle->n_entries_fwd, 0, handle->desc.threads * sizeof(int) );
@@ -767,10 +768,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       descriptor.ofh_rb = hrb1;
       descriptor.ofw_rb = wrb1;
       handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
+      if (NULL == handle->code_fwd[0].pmm) *noarch = 1;
       descriptor.ofh_rb = hrb2;
       descriptor.ofw_rb = wrb2;
       descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
       handle->code_fwd[1].pmm = libxsmm_create_xconv_forward(&descriptor);
+      if (NULL == handle->code_fwd[1].pmm) *noarch = 1;
       handle->fwd_ofh_rb = hrb1;
       descriptor.ofh_rb = hrb1;
       descriptor.ofw_rb = wrb1;
@@ -1051,13 +1054,16 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
           fwd_equivalent_descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
           if ( handle->n_variants == 1) {
             handle->code_bwd[0].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
+            if (NULL == handle->code_bwd[0].pmm) *noarch = 1;
           } else {
             fwd_equivalent_descriptor.ofh_rb = hrb1;
             fwd_equivalent_descriptor.ofw_rb = wrb1;
             handle->code_bwd[0].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
+            if (NULL == handle->code_bwd[0].pmm) *noarch = 1;
             fwd_equivalent_descriptor.ofh_rb = hrb2;
             fwd_equivalent_descriptor.ofw_rb = wrb2;
             handle->code_bwd[1].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
+            if (NULL == handle->code_bwd[1].pmm) *noarch = 1;
             handle->bwd_ofh_rb = hrb1;
             handle->bwd_ofw_rb = wrb1;
             fwd_equivalent_descriptor.ofh_rb = hrb1;
@@ -1604,18 +1610,24 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_NONE;
         if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
           handle->code_upd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
-        } else {
-          /*handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);*/
         }
+#if 0
+        else {
+          handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+          if (NULL == handle->code_upd[0].pmm) *noarch = 1;
+        }
+#endif
         /*ALL*/
         descriptor.transpose_ofw_ifm = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
         handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+        if (NULL == handle->code_upd[0].pmm) *noarch = 1;
         /*TRANSPOSE ALL*/
         descriptor.transpose_ofw_ifm = 1;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
         if (handle->use_fastpath) {
           handle->code_upd[1].pmm = libxsmm_create_xconv_update_weights(&descriptor);
+          if (NULL == handle->code_upd[1].pmm) *noarch = 1;
         }
 
         /* enable JIT code path */
