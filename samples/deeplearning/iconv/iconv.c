@@ -343,7 +343,7 @@ int main(int argc, char* argv[])
   start = libxsmm_timer_tick();
   for (i = 0; i < nrepeat && EXIT_SUCCESS == result; ++i) {
 #if defined(_OPENMP)
-#   pragma omp parallel
+# pragma omp parallel
 #endif
     {
 #if defined(_OPENMP)
