@@ -60,7 +60,7 @@
     <ClInclude Include="..\src\libxsmm_dnn_convolution_forward.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_trans.h">
+    <ClInclude Include="..\src\libxsmm_xcopy.h">
       <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_malloc.h">
@@ -320,7 +320,7 @@
     <ClCompile Include="..\src\libxsmm_cpuid_x86.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_trans.c">
+    <ClCompile Include="..\src\libxsmm_xcopy.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn.c">
@@ -961,6 +961,15 @@
     </ClCompile>
     <ClCompile Include="..\src\generator_packed.c">
       <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c">
+      <Filter>src\template</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

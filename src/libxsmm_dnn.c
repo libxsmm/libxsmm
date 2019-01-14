@@ -83,6 +83,12 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Warning: RNN cell suboptimal input feature blocking!";
     case LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_K_BLOCKING:
       return "LIBXSMM DNN Warning: RNN cell suboptimal output feature blocking!";
+    case LIBXSMM_DNN_WARN_FC_SUBOPTIMAL_N_BLOCKING:
+      return "LIBXSMM DNN Warning: FC layer suboptimal minibatch blocking!";
+    case LIBXSMM_DNN_WARN_FC_SUBOPTIMAL_C_BLOCKING:
+      return "LIBXSMM DNN Warning: FC layer suboptimal input feature blocking!";
+    case LIBXSMM_DNN_WARN_FC_SUBOPTIMAL_K_BLOCKING:
+      return "LIBXSMM DNN Warning: FC layer suboptimal output feature blocking!";
     case LIBXSMM_DNN_ERR_GENERAL:
       return "LIBXSMM DNN Error: General error occurred!";
     case LIBXSMM_DNN_ERR_CREATE_HANDLE:

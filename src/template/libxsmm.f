@@ -90,13 +90,14 @@
 
         ! Enumerates element/data types.
         INTEGER(C_INT), PARAMETER ::                                    &
-     &    LIBXSMM_DATATYPE_UNSUPPORTED = -1,                            &
      &    LIBXSMM_DATATYPE_F64  = 0,                                    &
      &    LIBXSMM_DATATYPE_F32  = 1,                                    &
      &    LIBXSMM_DATATYPE_BF16 = 2,                                    &
-     &    LIBXSMM_DATATYPE_I32  = 3,                                    &
-     &    LIBXSMM_DATATYPE_I16  = 4,                                    &
-     &    LIBXSMM_DATATYPE_I8   = 5
+     &    LIBXSMM_DATATYPE_I64  = 3,                                    &
+     &    LIBXSMM_DATATYPE_I32  = 4,                                    &
+     &    LIBXSMM_DATATYPE_I16  = 5,                                    &
+     &    LIBXSMM_DATATYPE_I8   = 6,                                    &
+     &    LIBXSMM_DATATYPE_UNSUPPORTED = 7
 
         ! Denotes the precision/data type of GEMM (for weak-typed
         ! interface functions such as libxsmm_xmmdispatch).
@@ -190,11 +191,11 @@
           REAL(C_DOUBLE) normf_rel            ! Froebenius-norm
           ! L1-norm and L2-norm of differences.
           REAL(C_DOUBLE) l2_abs, l2_rel, l1_ref, l1_tst
-          ! Maximum absolute and relative error.
+          ! Maximum absolute and relative difference.
           REAL(C_DOUBLE) linf_abs, linf_rel
-          ! Location of maximum error (m, n).
-          INTEGER(LIBXSMM_BLASINT_KIND) linf_abs_m
-          INTEGER(LIBXSMM_BLASINT_KIND) linf_abs_n
+          ! Location (m, n) of largest difference (linf_abs).
+          INTEGER(LIBXSMM_BLASINT_KIND) m
+          INTEGER(LIBXSMM_BLASINT_KIND) n
         END TYPE
 
         INTERFACE libxsmm_ptr0
@@ -1581,7 +1582,11 @@
           CALL internal_itrans(matrix, typesize, m, n, ld)
         END SUBROUTINE
 
-        ! Utility function to calculate the difference between two matrices.
+        ! Utility function to calculate a collection of scalar differences
+        ! between two matrices (libxsmm_matdiff_info). The location (m, n)
+        ! of the largest difference (linf_abs) is recorded (also if NaN).
+        ! In case of NaN, differences are set to infinity. If no difference
+        ! is discovered, the location (m, n) is negative (OOB).
         ! Implicit FORTRAN 77 interface:
         ! TYPE         :: info
         ! INTEGER(4)   :: datatype

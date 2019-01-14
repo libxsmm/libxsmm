@@ -82,10 +82,16 @@
 #endif
 
 /* Helper macro to eventually (if defined) call libxsmm_init */
-#if !defined(LIBXSMM_INIT) && !defined(LIBXSMM_CTOR)
-# define LIBXSMM_INIT libxsmm_init();
-#elif !defined(LIBXSMM_INIT)
-# define LIBXSMM_INIT
+#if !defined(LIBXSMM_INIT)
+# if !defined(LIBXSMM_CTOR)
+#   define LIBXSMM_INIT libxsmm_init();
+# elif !defined(NDEBUG)
+#   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG( \
+      0 != libxsmm_ninit, \
+      "LIBXSMM is not initialized");
+# else
+#   define LIBXSMM_INIT
+# endif
 #endif
 
 /** Check if M, N, K, or LDx fits into the descriptor. */
@@ -579,6 +585,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   int blocksifm_lp;  /* not used */
   int blocksofm_lp;  /* not used */
   int fm_lp_block;
+  int bn;
+  int bk;
+  int bc;
   size_t scratch_size;
   void* scratch;
 };
@@ -720,12 +729,13 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
 typedef enum libxsmm_malloc_flags {
   LIBXSMM_MALLOC_FLAG_DEFAULT = 0,
   LIBXSMM_MALLOC_FLAG_SCRATCH = 1,
-  LIBXSMM_MALLOC_FLAG_MMAP = 2,
-  LIBXSMM_MALLOC_FLAG_R = 4,
-  LIBXSMM_MALLOC_FLAG_W = 8,
-  LIBXSMM_MALLOC_FLAG_X = 16,
+  LIBXSMM_MALLOC_FLAG_PRIVATE = 2,
+  LIBXSMM_MALLOC_FLAG_MMAP    = 4,
+  LIBXSMM_MALLOC_FLAG_R       = 8,
+  LIBXSMM_MALLOC_FLAG_W       = 16,
+  LIBXSMM_MALLOC_FLAG_X       = 32,
   LIBXSMM_MALLOC_FLAG_RW  = LIBXSMM_MALLOC_FLAG_R | LIBXSMM_MALLOC_FLAG_W,
-  LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_RW | LIBXSMM_MALLOC_FLAG_X
+  LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_RW
 } libxsmm_malloc_flags;
 
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
@@ -766,6 +776,9 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
 
 /** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
 LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+
+/** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
+LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
 
 /** Determines the given value in double-precision based on the given type. */
 LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);

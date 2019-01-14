@@ -20,7 +20,7 @@
     <ClCompile Include="..\src\libxsmm_ext_gemm.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_ext_trans.c">
+    <ClCompile Include="..\src\libxsmm_ext_xcopy.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_ext.c">

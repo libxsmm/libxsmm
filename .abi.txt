@@ -312,6 +312,7 @@ libxsmm_matdiff_reduce
 libxsmm_matdiff_reduce_
 libxsmm_mcopy_descriptor_init
 libxsmm_mhd_element_comparison
+libxsmm_mhd_element_conversion
 libxsmm_mhd_read
 libxsmm_mhd_read_header
 libxsmm_mhd_typeinfo

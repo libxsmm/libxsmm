@@ -816,7 +816,7 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_
   int l_max_code_length = 511;
   int l_code_length = 0;
 
-  LIBXSMM_ASSERT_MSG(NULL != i_xgemm_desc, "Invalid descriptor!");
+  LIBXSMM_ASSERT_MSG(NULL != i_xgemm_desc, "Invalid descriptor");
   if ( io_generated_code->code_type > 1 ) {
     return;
   } else if ( io_generated_code->code_type == 1 ) {

@@ -29,7 +29,7 @@
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_trace.h"
-#include "libxsmm_trans.h"
+#include "libxsmm_xcopy.h"
 #include "libxsmm_gemm.h"
 #include "libxsmm_hash.h"
 #include "libxsmm_main.h"
@@ -577,6 +577,16 @@ LIBXSMM_API_INLINE void internal_init(void)
 # endif
 #endif
   if (0 == internal_registry) { /* double-check after acquiring the lock(s) */
+    /* setup verbosity as early as possible since below code may rely on verbose output */
+    const char *const env_verbose = getenv("LIBXSMM_VERBOSE");
+    if (0 != env_verbose && 0 != *env_verbose) {
+      libxsmm_verbosity = atoi(env_verbose);
+    }
+#if !defined(NDEBUG)
+    else {
+      libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
+    }
+#endif
     LIBXSMM_ASSERT(0 == internal_registry_keys); /* should never happen */
 #if !defined(_WIN32) && 0
     umask(S_IRUSR | S_IWUSR); /* setup default/secure file mask */
@@ -641,17 +651,6 @@ LIBXSMM_API_INLINE void internal_init(void)
     {
       libxsmm_nt = 4;
     }
-    {
-      const char *const env = getenv("LIBXSMM_VERBOSE");
-      if (0 != env && 0 != *env) {
-        libxsmm_verbosity = atoi(env);
-      }
-#if !defined(NDEBUG)
-      else {
-        libxsmm_verbosity = INT_MAX; /* quiet -> verbose */
-      }
-#endif
-    }
     internal_statistic_mnk = libxsmm_icbrt_u32(LIBXSMM_MAX_MNK);
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
@@ -710,6 +709,7 @@ LIBXSMM_API_INLINE void internal_init(void)
         libxsmm_gemm_init(libxsmm_target_archid);
         if (0 == libxsmm_ninit) {
           atexit(internal_finalize);
+          ++libxsmm_ninit;
         }
         {
           void *const pv_registry = &internal_registry;
@@ -1067,7 +1067,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
       fprintf(stderr, "LIBXSMM WARNING: \"%s\" code would fail to run on \"%s\"!\n",
         target_arch, internal_get_target_arch(cpuid));
     }
+#if defined(NDEBUG) /* allow to debug with higher code path */
     target_archid = cpuid;
+#endif
   }
 #endif
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
@@ -1129,6 +1131,7 @@ LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype)
     case LIBXSMM_DATATYPE_F64:  return 8;
     case LIBXSMM_DATATYPE_F32:  return 4;
     case LIBXSMM_DATATYPE_BF16: return 2;
+    case LIBXSMM_DATATYPE_I64:  return 8;
     case LIBXSMM_DATATYPE_I32:  return 4;
     case LIBXSMM_DATATYPE_I16:  return 2;
     case LIBXSMM_DATATYPE_I8:   return 1;
@@ -1183,30 +1186,33 @@ LIBXSMM_API_INTERN int libxsmm_cast(libxsmm_datatype datatype, double dvalue, vo
 }
 
 
-LIBXSMM_API_INLINE const char* internal_get_typename(int datatype)
+LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
 {
   switch (datatype) {
-    case LIBXSMM_DATATYPE_F64: return "f64";
-    case LIBXSMM_DATATYPE_F32: return "f32";
-    case LIBXSMM_DATATYPE_I32: return "i32";
-    case LIBXSMM_DATATYPE_I16: return "i16";
+    case LIBXSMM_DATATYPE_F64:  return "f64";
+    case LIBXSMM_DATATYPE_F32:  return "f32";
     case LIBXSMM_DATATYPE_BF16: return "bf16";
-    case LIBXSMM_DATATYPE_I8:  return "i8";
-  }
-  if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
-    return "i16i32";
-  }
-  else if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
-    return "i16f32";
-  }
-  else if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
-    return "i8i32";
-  }
-  else if ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
-    return "bf16f32";
-  }
-  else {
-    return "void";
+    case LIBXSMM_DATATYPE_I64:  return "i64";
+    case LIBXSMM_DATATYPE_I32:  return "i32";
+    case LIBXSMM_DATATYPE_I16:  return "i16";
+    case LIBXSMM_DATATYPE_I8:   return "i8";
+    default: {
+      if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
+        return "i16i32";
+      }
+      else if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
+        return "i16f32";
+      }
+      else if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
+        return "i8i32";
+      }
+      else if ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
+        return "bf16f32";
+      }
+      else {
+        return "void";
+      }
+    }
   }
 }
 
@@ -1272,7 +1278,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.gemm->prefetch);
-          const char *const tname = internal_get_typename(request->descriptor.gemm->datatype);
+          const char *const tname = libxsmm_typename((libxsmm_datatype)request->descriptor.gemm->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i_br%i.mxm", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.gemm->flags) ? 'n' : 't',
@@ -1297,7 +1303,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.srsoa->gemm->prefetch);
-          const char *const tname = internal_get_typename(request->descriptor.srsoa->gemm->datatype);
+          const char *const tname = libxsmm_typename((libxsmm_datatype)request->descriptor.srsoa->gemm->datatype);
           const unsigned int nnz = (request->descriptor.srsoa->gemm->lda == 0) ?
             request->descriptor.srsoa->row_ptr[request->descriptor.srsoa->gemm->m] : request->descriptor.srsoa->row_ptr[request->descriptor.srsoa->gemm->k];
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
@@ -1324,7 +1330,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.scsoa->gemm->prefetch);
-          const char *const tname = internal_get_typename(request->descriptor.scsoa->gemm->datatype);
+          const char *const tname = libxsmm_typename((libxsmm_datatype)request->descriptor.scsoa->gemm->datatype);
           const unsigned int nnz = (request->descriptor.scsoa->gemm->lda == 0) ?
             request->descriptor.scsoa->column_ptr[request->descriptor.scsoa->gemm->k] : request->descriptor.scsoa->column_ptr[request->descriptor.scsoa->gemm->n];
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
@@ -1349,7 +1355,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.rmacsoa->gemm->prefetch);
-          const char *const tname = internal_get_typename(request->descriptor.rmacsoa->gemm->datatype);
+          const char *const tname = libxsmm_typename((libxsmm_datatype)request->descriptor.rmacsoa->gemm->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.rmacsoa", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.rmacsoa->gemm->flags) ? 'n' : 't',
@@ -1372,7 +1378,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.rmbcsoa->gemm->prefetch);
-          const char *const tname = internal_get_typename(request->descriptor.rmbcsoa->gemm->datatype);
+          const char *const tname = libxsmm_typename((libxsmm_datatype)request->descriptor.rmbcsoa->gemm->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.rmbcsoa", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.rmbcsoa->gemm->flags) ? 'n' : 't',
@@ -1399,7 +1405,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
         {
           const int uid = libxsmm_gemm_prefetch2uid((libxsmm_gemm_prefetch_type)request->descriptor.sreg->gemm->prefetch);
-          const char *const tname = internal_get_typename(request->descriptor.sreg->gemm->datatype);
+          const char *const tname = libxsmm_typename((libxsmm_datatype)request->descriptor.sreg->gemm->datatype);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_%s_%c%c_%ux%ux%u_%u_%u_%u_a%i_b%i_p%i.sreg", target_arch, tname,
             0 == (LIBXSMM_GEMM_FLAG_TRANS_A & request->descriptor.sreg->gemm->flags) ? 'n' : 't',
@@ -1424,8 +1430,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const precision_in = internal_get_typename(request->descriptor.cfwd->datatype);
-          const char *const precision_out = internal_get_typename(request->descriptor.cfwd->datatype_itm);
+          const char *const precision_in  = libxsmm_typename((libxsmm_datatype)request->descriptor.cfwd->datatype);
+          const char *const precision_out = libxsmm_typename((libxsmm_datatype)request->descriptor.cfwd->datatype_itm);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           if (request->descriptor.cfwd->use_fwd_generator_for_bwd == 0) {
            LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_fwd_%s_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_p%i_f%i.conv",
@@ -1470,8 +1476,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const precision_in = internal_get_typename(request->descriptor.cupd->datatype);
-          const char *const precision_out = internal_get_typename(request->descriptor.cupd->datatype_itm);
+          const char *const precision_in  = libxsmm_typename((libxsmm_datatype)request->descriptor.cupd->datatype);
+          const char *const precision_out = libxsmm_typename((libxsmm_datatype)request->descriptor.cupd->datatype_itm);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_upd_%s_%s_%ux%u_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%ux%uu%u_if%uu_t%u_p%i_f%i.conv",
             target_arch/*code path name*/, precision_in, precision_out,
@@ -1502,8 +1508,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const precision_in = internal_get_typename(LIBXSMM_DNN_DATATYPE_F32);
-          const char *const precision_out = internal_get_typename(LIBXSMM_DNN_DATATYPE_F32);
+          const char *const precision_in  = libxsmm_typename((libxsmm_datatype)LIBXSMM_DNN_DATATYPE_F32);
+          const char *const precision_out = libxsmm_typename((libxsmm_datatype)LIBXSMM_DNN_DATATYPE_F32);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_wfwd_%s_%s_t%ux%u_mb%u_u%u_p%i.convwino",
             target_arch/*code path name*/, precision_in, precision_out,
@@ -1525,8 +1531,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const precision_in = internal_get_typename(LIBXSMM_DNN_DATATYPE_F32);
-          const char *const precision_out = internal_get_typename(LIBXSMM_DNN_DATATYPE_F32);
+          const char *const precision_in  = libxsmm_typename((libxsmm_datatype)LIBXSMM_DNN_DATATYPE_F32);
+          const char *const precision_out = libxsmm_typename((libxsmm_datatype)LIBXSMM_DNN_DATATYPE_F32);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_wbwd_%s_%s_t%ux%u_mb%u_u%u_p%i.convwino",
             target_arch/*code path name*/, precision_in, precision_out,
@@ -1548,8 +1554,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         if (0 > libxsmm_verbosity)
 # endif
         {
-          const char *const precision_in = internal_get_typename(LIBXSMM_DNN_DATATYPE_F32);
-          const char *const precision_out = internal_get_typename(LIBXSMM_DNN_DATATYPE_F32);
+          const char *const precision_in  = libxsmm_typename((libxsmm_datatype)LIBXSMM_DNN_DATATYPE_F32);
+          const char *const precision_out = libxsmm_typename((libxsmm_datatype)LIBXSMM_DNN_DATATYPE_F32);
           /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_wupd_%s_%s_t%ux%u_mb%u_u%u_p%i.convwino",
             target_arch/*code path name*/, precision_in, precision_out,

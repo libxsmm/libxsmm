@@ -68,18 +68,18 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n, const void* ref, const void* tst,
   const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst)
 {
-  int result = EXIT_SUCCESS, result_swap = 0;
+  int result = EXIT_SUCCESS, result_swap = 0, result_nan = 0;
   if (0 == ref && 0 != tst) { ref = tst; tst = NULL; result_swap = 1; }
   if (0 != ref && 0 != info) {
     libxsmm_blasint mm = m, nn = n, ldr = (0 == ldref ? m : *ldref), ldt = (0 == ldtst ? m : *ldtst);
-    union { int i; float s; } inf;
+    union { int raw; float value; } inf;
 #if defined(INFINITY)
-    inf.s = INFINITY;
+    inf.value = INFINITY;
 #else
-    inf.i = 0x7F800000;
+    inf.raw = 0x7F800000;
 #endif
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
-    memset(info, 0, sizeof(*info)); /* nullify */
+    libxsmm_matdiff_clear(info);
     switch (datatype) {
       case LIBXSMM_DATATYPE_F64: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
@@ -116,33 +116,53 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         result = EXIT_FAILURE;
       }
     }
+    LIBXSMM_ASSERT((0 <= info->m && 0 <= info->n) || (0 > info->m && 0 > info->n));
+    LIBXSMM_ASSERT(info->m < mm && info->n < nn);
     if (EXIT_SUCCESS == result) {
       const char *const env = getenv("LIBXSMM_DUMP");
-      if (0 != env && 0 != *env && (('0' < *env && '9' >= *env) || '0' != *env)) {
-        const char *const defaultname = ('0' < *env && '9' >= *env) ? "libxsmm_dump" : env;
-        const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
-        const libxsmm_mhd_elemtype type_dst = LIBXSMM_MAX(LIBXSMM_MHD_ELEMTYPE_U8, type_src);
-        char filename[256];
-        size_t size[2], pr[2]; size[0] = (size_t)mm; size[1] = (size_t)nn; pr[0] = (size_t)ldr; pr[1] = (size_t)nn;
-        LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-ref%p.mhd", defaultname, ref);
-        libxsmm_mhd_write(filename, NULL/*offset*/, size, pr, 2/*ndims*/, 1/*ncomponents*/,
-          type_src, &type_dst, ref, NULL/*header_size*/, NULL/*extension_header*/,
-          NULL/*extension*/, 0/*extension_size*/);
-        if (NULL != tst) {
-          size_t pt[2]; pt[0] = (size_t)ldt; pt[1] = (size_t)nn;
-          LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-tst%p.mhd", defaultname, tst);
-          libxsmm_mhd_write(filename, NULL/*offset*/, size, pt, 2/*ndims*/, 1/*ncomponents*/,
-            type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
+      if (0 != env && 0 != *env && '0' != *env) {
+        if ('-' != *env || (0 <= info->m && 0 <= info->n)) {
+          const char *const defaultname = (('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env;
+          const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
+          const libxsmm_mhd_elemtype type_dst = LIBXSMM_MIN(LIBXSMM_MHD_ELEMTYPE_F32, type_src);
+          char filename[256];
+          size_t size[2], pr[2]; size[0] = (size_t)mm; size[1] = (size_t)nn; pr[0] = (size_t)ldr; pr[1] = (size_t)nn;
+          LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-ref.mhd", defaultname, ref);
+          libxsmm_mhd_write(filename, NULL/*offset*/, size, pr, 2/*ndims*/, 1/*ncomponents*/,
+            type_src, &type_dst, ref, NULL/*header_size*/, NULL/*extension_header*/,
             NULL/*extension*/, 0/*extension_size*/);
+          if (NULL != tst) {
+            size_t pt[2]; pt[0] = (size_t)ldt; pt[1] = (size_t)nn;
+            LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-tst.mhd", defaultname, ref/*adopt ref-ptr*/);
+            libxsmm_mhd_write(filename, NULL/*offset*/, size, pt, 2/*ndims*/, 1/*ncomponents*/,
+              type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
+              NULL/*extension*/, 0/*extension_size*/);
+            if ('-' == *env && '1' < env[1]) {
+              printf("LIBXSMM MATDIFF (%s): m=%i n=%i ldi=%i ldo=%i failed.\n",
+                libxsmm_typename(datatype), m, n, ldr, ldt);
+            }
+          }
+        }
+        else if ('-' == *env && '1' < env[1] && NULL != tst) {
+          printf("LIBXSMM MATDIFF (%s): m=%i n=%i ldi=%i ldo=%i passed.\n",
+            libxsmm_typename(datatype), m, n, ldr, ldt);
         }
       }
-      info->normf_rel = libxsmm_dsqrt(info->normf_rel);
-      info->l2_abs = libxsmm_dsqrt(info->l2_abs);
-      info->l2_rel = libxsmm_dsqrt(info->l2_rel);
+      if (0 == result_nan) {
+        info->normf_rel = libxsmm_dsqrt(info->normf_rel);
+        info->l2_abs = libxsmm_dsqrt(info->l2_abs);
+        info->l2_rel = libxsmm_dsqrt(info->l2_rel);
+      }
+      else {
+        info->norm1_abs = info->norm1_rel = info->normi_abs = info->normi_rel = info->normf_rel
+                        = info->l2_abs = info->l2_rel = info->l1_ref = info->l1_tst
+                        = info->linf_abs = info->linf_rel
+                        = inf.value;
+      }
       if (1 == n) {
-        const libxsmm_blasint tmp = info->linf_abs_m;
-        info->linf_abs_m = info->linf_abs_n;
-        info->linf_abs_n = tmp;
+        const libxsmm_blasint tmp = info->m;
+        info->m = info->n;
+        info->n = tmp;
       }
       if (0 != result_swap) {
         info->l1_tst = info->l1_ref;
@@ -161,8 +181,7 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 {
   LIBXSMM_ASSERT(0 != output && 0 != input);
   if (output->normf_rel < input->normf_rel) {
-    output->linf_abs_m = input->linf_abs_m;
-    output->linf_abs_n = input->linf_abs_n;
+    output->m = input->m; output->n = input->n;
     output->norm1_abs = input->norm1_abs;
     output->norm1_rel = input->norm1_rel;
     output->normi_abs = input->normi_abs;
@@ -180,7 +199,11 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 
 LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 {
-  if (NULL != info) memset(info, 0, sizeof(*info)); /* nullify */
+  if (NULL != info) {
+    memset(info, 0, sizeof(*info)); /* nullify */
+    /* no location discovered yet with a difference */
+    info->m = info->n = -1;
+  }
 }
 
 

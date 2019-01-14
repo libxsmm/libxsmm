@@ -28,16 +28,16 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_TRANS_H
-#define LIBXSMM_TRANS_H
+#ifndef LIBXSMM_XCOPY_H
+#define LIBXSMM_XCOPY_H
 
 #include <libxsmm.h>
 
-#if !defined(LIBXSMM_TRANS_CHECK) && !defined(NDEBUG)
-# define LIBXSMM_TRANS_CHECK
+#if !defined(LIBXSMM_XCOPY_CHECK) && !defined(NDEBUG)
+# define LIBXSMM_XCOPY_CHECK
 #endif
-#if !defined(LIBXSMM_TRANS_TASKSCALE)
-# define LIBXSMM_TRANS_TASKSCALE 2
+#if !defined(LIBXSMM_XCOPY_TASKSCALE)
+# define LIBXSMM_XCOPY_TASKSCALE 2
 #endif
 
 /* kernel uses consecutive stores and consecutive loads (copy) */
@@ -140,7 +140,7 @@
 
 #define LIBXSMM_XCOPY(XKERNEL, KERNEL_CALL, KERNEL, OUT, IN, TYPESIZE, LDI, LDO, TILE_M, TILE_N, M0, M1, N0, N1, XALIGN) { \
   libxsmm_blasint libxsmm_xcopy_i_ = M0, libxsmm_xcopy_j_ = N0; \
-  LIBXSMM_ASSERT_MSG(0 < (TILE_M) && 0 < (TILE_N), "XCOPY cannot make progress!"); \
+  LIBXSMM_ASSERT_MSG(0 < (TILE_M) && 0 < (TILE_N), "XCOPY cannot make progress"); \
   if (0 != (KERNEL)) { /* inner tiles with JIT */ \
     for (; libxsmm_xcopy_i_ < (((libxsmm_blasint)M1) - ((libxsmm_blasint)TILE_M) + 1); libxsmm_xcopy_i_ += TILE_M) { \
       for (libxsmm_xcopy_j_ = N0; libxsmm_xcopy_j_ < (((libxsmm_blasint)N1) - ((libxsmm_blasint)TILE_N) + 1); libxsmm_xcopy_j_ += TILE_N) { \
@@ -216,5 +216,5 @@ LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_trans_mtile);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_trans_taskscale);
 
-#endif /*LIBXSMM_TRANS_H*/
+#endif /*LIBXSMM_XCOPY_H*/
 

@@ -44,13 +44,17 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
   /** Froebenius-norm */  double normf_rel;
   /** L1-norm and L2-norm of differences. */
   double l2_abs, l2_rel, l1_ref, l1_tst;
-  /** Maximum absolute and relative error. */
+  /** Maximum absolute and relative difference. */
   double linf_abs, linf_rel;
-  /** Location of maximum error (m, n). */
-  libxsmm_blasint linf_abs_m, linf_abs_n;
+  /** Location (m, n) of largest difference (linf_abs). */
+  libxsmm_blasint m, n;
 } libxsmm_matdiff_info;
 
-/** Utility function to calculate the difference between two matrices. */
+/**
+ * Utility function to calculate a collection of scalar differences between two matrices (libxsmm_matdiff_info).
+ * The location (m, n) of the largest difference (linf_abs) is recorded (also in case of NaN). In case of NaN,
+ * differences are set to infinity. If no difference is discovered, the location (m, n) is negative (OOB).
+ */
 LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   libxsmm_datatype datatype, libxsmm_blasint m, libxsmm_blasint n, const void* ref, const void* tst,
   const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst);
