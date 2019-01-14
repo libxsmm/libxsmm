@@ -574,10 +574,6 @@ int main(int argc, char* argv[])
   LIBXSMM_MATINIT_OMP(float, 42, wfgold, C, K, C, 1.0);
   LIBXSMM_MATINIT_OMP(float, 42, wogold, C, K, C, 1.0);
   LIBXSMM_MATINIT_OMP(float, 42, wcgold, C, K, C, 1.0);
-  convert_ck_c4k(C, K, 0, wigold, w4gold);
-  convert_ck_c4k(C, K, 1, wcgold, w4gold);
-  convert_ck_c4k(C, K, 2, wfgold, w4gold);
-  convert_ck_c4k(C, K, 3, wogold, w4gold);
   for (j = 0; j < t; ++j) {
     LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, N * C), N, C, N, 1.0);
   }
@@ -585,10 +581,6 @@ int main(int argc, char* argv[])
   LIBXSMM_MATINIT_OMP(float, 42, rfgold, K, K, K, 1.0);
   LIBXSMM_MATINIT_OMP(float, 42, rogold, K, K, K, 1.0);
   LIBXSMM_MATINIT_OMP(float, 42, rcgold, K, K, K, 1.0);
-  convert_ck_c4k(K, K, 0, rigold, r4gold);
-  convert_ck_c4k(K, K, 1, rcgold, r4gold);
-  convert_ck_c4k(K, K, 2, rfgold, r4gold);
-  convert_ck_c4k(K, K, 3, rogold, r4gold);
   LIBXSMM_MATINIT_OMP(float, 24, bigold, 1, K, 1, 1.0);
   LIBXSMM_MATINIT_OMP(float, 24, bfgold, 1, K, 1, 1.0);
   LIBXSMM_MATINIT_OMP(float, 24, bogold, 1, K, 1, 1.0);
@@ -679,6 +671,14 @@ int main(int argc, char* argv[])
     printf("#         Computing Reference ...        #\n");
     printf("##########################################\n");
     /* FWD */
+    convert_ck_c4k(C, K, 0, wigold, w4gold);
+    convert_ck_c4k(C, K, 1, wcgold, w4gold);
+    convert_ck_c4k(C, K, 2, wfgold, w4gold);
+    convert_ck_c4k(C, K, 3, wogold, w4gold);
+    convert_ck_c4k(K, K, 0, rigold, r4gold);
+    convert_ck_c4k(K, K, 1, rcgold, r4gold);
+    convert_ck_c4k(K, K, 2, rfgold, r4gold);
+    convert_ck_c4k(K, K, 3, rogold, r4gold);
     for (j = 0; j < t; ++j) {
       /* Initialization with bias */
       matrix_copy_bias(K, N, 4*K, bigold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
