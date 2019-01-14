@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -58,8 +58,8 @@ int main(void)
     (ITYPE)1.10, (ITYPE)99.00, (ITYPE)11.0
   };
 
-  result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 3/*n*/,
-    a/*ref*/, b/*tst*/, NULL/*ldref*/, NULL/*ldtst*/, &diff);
+  result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 3/*n*/,
+    a/*ref*/, b/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
 
   if (EXIT_SUCCESS == result) {
     /* One-norm */
@@ -80,12 +80,12 @@ int main(void)
     if (0.0000004 < LIBXSMM_ABS(diff.linf_abs - 0.9300000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.linf_rel - 0.5600000)) result = EXIT_FAILURE;
     /* Location of maximum absolute error */
-    if (2 != diff.linf_abs_m) result = EXIT_FAILURE;
-    if (2 != diff.linf_abs_n) result = EXIT_FAILURE;
+    if (2 != diff.m) result = EXIT_FAILURE;
+    if (2 != diff.n) result = EXIT_FAILURE;
   }
 
-  result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), 1/*m*/, 3/*n*/,
-    x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/, &diff);
+  result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(ITYPE), 1/*m*/, 3/*n*/,
+    x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
 
   if (EXIT_SUCCESS == result) {
     /* One-norm */
@@ -106,12 +106,12 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.linf_abs - 2.0000000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.linf_rel - 0.2222222)) result = EXIT_FAILURE;
     /* Location of maximum absolute error */
-    if (0 != diff.linf_abs_m) result = EXIT_FAILURE;
-    if (2 != diff.linf_abs_n) result = EXIT_FAILURE;
+    if (0 != diff.m) result = EXIT_FAILURE;
+    if (2 != diff.n) result = EXIT_FAILURE;
   }
 
-  result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
-    x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/, &diff);
+  result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(ITYPE), 3/*m*/, 1/*n*/,
+    x/*ref*/, y/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
 
   if (EXIT_SUCCESS == result) {
     /* One-norm */
@@ -132,8 +132,8 @@ int main(void)
     if (0.0000001 < LIBXSMM_ABS(diff.linf_abs - 2.0000000)) result = EXIT_FAILURE;
     if (0.0000001 < LIBXSMM_ABS(diff.linf_rel - 0.2222222)) result = EXIT_FAILURE;
     /* Location of maximum absolute error */
-    if (2 != diff.linf_abs_m) result = EXIT_FAILURE;
-    if (0 != diff.linf_abs_n) result = EXIT_FAILURE;
+    if (2 != diff.m) result = EXIT_FAILURE;
+    if (0 != diff.n) result = EXIT_FAILURE;
   }
 
   return result;

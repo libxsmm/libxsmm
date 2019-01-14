@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -31,9 +31,8 @@
 #ifndef LIBXSMM_DNN_FULLYCONNECTED_H
 #define LIBXSMM_DNN_FULLYCONNECTED_H
 
-#include "libxsmm_macros.h"
-#include "libxsmm_typedefs.h"
 #include "libxsmm_dnn.h"
+
 
 /** Opaque handles which represents LIBXSMM fullyconnected */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected libxsmm_dnn_fullyconnected;
@@ -47,6 +46,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected_
   int N;                                        /* number of images in mini-batch */
   int C;                                        /* number of input feature maps */
   int K;                                        /* number of output feature maps */
+  int bn;
+  int bk;
+  int bc;
   int threads;                                  /* number of threads used */
   libxsmm_dnn_datatype datatype_in;             /* datatype used for all input related buffers */
   libxsmm_dnn_datatype datatype_out;            /* datatype used for all output related buffers */

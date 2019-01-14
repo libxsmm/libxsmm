@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,21 +26,21 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Hans Pabst (Intel Corp.)
+/* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
 
-LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_TYPE, real_dst, (LIBXSMM_BGEMM_TEMPLATE_TYPE*)dst, handle->kb, handle->bk, handle->bm);
-LIBXSMM_VLA_DECL(2, const LIBXSMM_BGEMM_TEMPLATE_TYPE, real_src, (const LIBXSMM_BGEMM_TEMPLATE_TYPE*)src, handle->m);
-libxsmm_blasint mb, kb, bm, bk;
+LIBXSMM_VLA_DECL(4, LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE, real_dst, (LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE*)dst, handle->nb, handle->bn, handle->bm);
+LIBXSMM_VLA_DECL(4, const LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE, real_src, (const LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE*)src, handle->mb, handle->bn, handle->bm);
+
+libxsmm_blasint mb, nb, bm, bn;
 
 for (mb = 0; mb < handle->mb; ++mb) {
-  for (kb = 0; kb < handle->kb; ++kb) {
-    for (bk = 0; bk < handle->bk; ++bk) {
+  for (nb = 0; nb < handle->nb; ++nb) {
+    for (bn = 0; bn < handle->bn; ++bn) {
       for (bm = 0; bm < handle->bm; ++bm) {
-        LIBXSMM_VLA_ACCESS(4, real_dst, mb, kb, bk, bm, handle->kb, handle->bk, handle->bm) =
-        LIBXSMM_VLA_ACCESS(2, real_src, kb * handle->bk + bk, mb * handle->bm + bm, handle->m);
+        LIBXSMM_VLA_ACCESS(4, real_dst, mb, nb, bn, bm, handle->nb, handle->bn, handle->bm) =
+        LIBXSMM_VLA_ACCESS(4, real_src, nb, mb, bn, bm, handle->mb, handle->bn, handle->bm);
       }
     }
   }
 }
-

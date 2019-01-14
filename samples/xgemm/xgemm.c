@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -156,7 +156,7 @@ int main(int argc, char* argv[])
       if (0 < duration) {
         fprintf(stdout, "\tBLAS: %.1f GFLOPS/s\n", gflops * nrepeat / duration);
       }
-      result = libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m, n, d, c, &ldc, &ldc, &diff);
+      result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(OTYPE), m, n, d, c, &ldc, &ldc);
       if (EXIT_SUCCESS == result) {
         fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
         if (check < diff.l2_rel) {

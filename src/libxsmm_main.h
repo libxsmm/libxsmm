@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2014-2018, Intel Corporation                                **
+** Copyright (c) 2014-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -82,10 +82,16 @@
 #endif
 
 /* Helper macro to eventually (if defined) call libxsmm_init */
-#if !defined(LIBXSMM_INIT) && !defined(LIBXSMM_CTOR)
-# define LIBXSMM_INIT libxsmm_init();
-#elif !defined(LIBXSMM_INIT)
-# define LIBXSMM_INIT
+#if !defined(LIBXSMM_INIT)
+# if !defined(LIBXSMM_CTOR)
+#   define LIBXSMM_INIT libxsmm_init();
+# elif !defined(NDEBUG)
+#   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG( \
+      0 != libxsmm_ninit, \
+      "LIBXSMM is not initialized");
+# else
+#   define LIBXSMM_INIT
+# endif
 #endif
 
 /** Check if M, N, K, or LDx fits into the descriptor. */
@@ -188,6 +194,15 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor { /* 30 Byt
   char transa;
 };
 
+/** Structure storing arguments of packed GEMM. */
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_pgemm_descriptor { /* 30 Byte */
+  unsigned int m, n, k, lda, ldb, ldc;
+  unsigned char typesize;
+  unsigned char layout;
+  char transa, transb;
+  char alpha_val;
+};
+
 /** Structure storing arguments of packed TRSM. */
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor { /* 30 Byte */
   union { double d; float s; } alpha;
@@ -196,6 +211,13 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor { /* 30 Byt
   unsigned char layout;
   char diag, side, uplo;
   char transa;
+};
+
+/** Structure storing arguments of packed GETRF. */
+LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_getrf_descriptor { /* 30 Byte */
+  unsigned int m, n, lda;
+  unsigned char typesize;
+  unsigned char layout;
 };
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_soa_descriptor {
@@ -303,6 +325,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_xtransfunction xtrans;
   libxsmm_xconvfunction xconv;
   libxsmm_xtrsmfunction xtrsm;
+  libxsmm_xtrmmfunction xtrmm;
 } libxsmm_code_pointer;
 
 /** Structure which describes all tensors in LIBXSMM's DNN module */
@@ -562,6 +585,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   int blocksifm_lp;  /* not used */
   int blocksofm_lp;  /* not used */
   int fm_lp_block;
+  int bn;
+  int bk;
+  int bc;
   size_t scratch_size;
   void* scratch;
 };
@@ -605,8 +631,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_tensor* cst;
   libxsmm_dnn_tensor* ht;
   libxsmm_dnn_tensor* dxt;
-  libxsmm_dnn_tensor* dcspt;
-  libxsmm_dnn_tensor* dhpt;
+  libxsmm_dnn_tensor* dcsp;
+  libxsmm_dnn_tensor* dhp;
   libxsmm_dnn_tensor* dw;
   libxsmm_dnn_tensor* dr;
   libxsmm_dnn_tensor* db;
@@ -626,10 +652,10 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   void* scratch_xT;
   void* scratch_hT;
   void* scratch_deltat;
-  void* scratch_dit;
-  void* scratch_dft;
-  void* scratch_dot;
-  void* scratch_dcit;
+  void* scratch_di;
+  void* scratch_df;
+  void* scratch_do;
+  void* scratch_dci;
   void* scratch_t1;
   void* scratch_t2;
   /* options */
@@ -666,6 +692,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_MCOPY    = LIBXSMM_KERNEL_KIND_MCOPY,
   LIBXSMM_BUILD_KIND_TRANS    = LIBXSMM_KERNEL_KIND_TRANS,
   LIBXSMM_BUILD_KIND_TRSM     = LIBXSMM_KERNEL_KIND_TRSM,
+  LIBXSMM_BUILD_KIND_TRMM     = LIBXSMM_KERNEL_KIND_TRMM,
   LIBXSMM_BUILD_KIND_RMACSOA  = LIBXSMM_KERNEL_KIND_INVALID,
   LIBXSMM_BUILD_KIND_RMBCSOA,
   LIBXSMM_BUILD_KIND_SRSOA,
@@ -691,6 +718,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_mcopy_descriptor* matcopy;
   const libxsmm_trans_descriptor* trans;
   const libxsmm_trsm_descriptor* trsm;
+  const libxsmm_trmm_descriptor* trmm;
 } libxsmm_build_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
@@ -701,12 +729,13 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
 typedef enum libxsmm_malloc_flags {
   LIBXSMM_MALLOC_FLAG_DEFAULT = 0,
   LIBXSMM_MALLOC_FLAG_SCRATCH = 1,
-  LIBXSMM_MALLOC_FLAG_MMAP = 2,
-  LIBXSMM_MALLOC_FLAG_R = 4,
-  LIBXSMM_MALLOC_FLAG_W = 8,
-  LIBXSMM_MALLOC_FLAG_X = 16,
+  LIBXSMM_MALLOC_FLAG_PRIVATE = 2,
+  LIBXSMM_MALLOC_FLAG_MMAP    = 4,
+  LIBXSMM_MALLOC_FLAG_R       = 8,
+  LIBXSMM_MALLOC_FLAG_W       = 16,
+  LIBXSMM_MALLOC_FLAG_X       = 32,
   LIBXSMM_MALLOC_FLAG_RW  = LIBXSMM_MALLOC_FLAG_R | LIBXSMM_MALLOC_FLAG_W,
-  LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_RW | LIBXSMM_MALLOC_FLAG_X
+  LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_RW
 } libxsmm_malloc_flags;
 
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
@@ -762,6 +791,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
   libxsmm_mcopy_descriptor mcopy;
   libxsmm_trans_descriptor trans;
   libxsmm_trsm_descriptor trsm;
+  libxsmm_trmm_descriptor trmm;
 } libxsmm_kernel_info;
 
 /** Attempts to receive information about JIT-generated code. */

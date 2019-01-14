@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -31,9 +31,8 @@
 #ifndef LIBXSMM_DNN_FUSEDBATCHNORM_H
 #define LIBXSMM_DNN_FUSEDBATCHNORM_H
 
-#include "libxsmm_macros.h"
-#include "libxsmm_typedefs.h"
 #include "libxsmm_dnn.h"
+
 
 LIBXSMM_API libxsmm_dnn_fusedbatchnorm* libxsmm_dnn_create_fusedbatchnorm(libxsmm_dnn_fusedbatchnorm_desc fusedbatchnorm_desc, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_fusedbatchnorm(const libxsmm_dnn_fusedbatchnorm* handle);

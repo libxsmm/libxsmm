@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,38 +26,21 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Hans Pabst (Intel Corp.)
+/* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_BGEMM_TYPES_H
-#define LIBXSMM_BGEMM_TYPES_H
 
-#include "libxsmm_gemm.h"
+LIBXSMM_VLA_DECL(4, LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE, real_dst, (LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE*)dst, handle->kb, handle->bk, handle->bm);
+LIBXSMM_VLA_DECL(2, const LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE, real_src, (const LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE*)src, handle->m);
+libxsmm_blasint mb, kb, bm, bk;
 
-#if !defined(LIBXSMM_BGEMM_CHECKS) && !defined(NDEBUG)
-# define LIBXSMM_BGEMM_CHECKS
-#endif
-
-
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bgemm_lock {
-  char pad[LIBXSMM_CACHELINE];
-  volatile LIBXSMM_ATOMIC_LOCKTYPE state;
-} libxsmm_bgemm_lock;
-
-
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle {
-  union { double d; float s; int w; } alpha, beta;
-  libxsmm_gemm_precision iprec, oprec;
-  libxsmm_xmmfunction kernel_pf;
-  libxsmm_xmmfunction kernel;
-  libxsmm_barrier* barrier;
-  libxsmm_bgemm_lock* locks;
-  libxsmm_bgemm_order order;
-  libxsmm_blasint m, n, k, bm, bn, bk;
-  libxsmm_blasint b_m1, b_n1, b_k1, b_k2;
-  libxsmm_blasint mb, nb, kb;
-  void* buffer;
-  int nthreads;
-};
-
-#endif /*LIBXSMM_BGEMM_TYPES_H*/
+for (mb = 0; mb < handle->mb; ++mb) {
+  for (kb = 0; kb < handle->kb; ++kb) {
+    for (bk = 0; bk < handle->bk; ++bk) {
+      for (bm = 0; bm < handle->bm; ++bm) {
+        LIBXSMM_VLA_ACCESS(4, real_dst, mb, kb, bk, bm, handle->kb, handle->bk, handle->bm) =
+        LIBXSMM_VLA_ACCESS(2, real_src, kb * handle->bk + bk, mb * handle->bm + bm, handle->m);
+      }
+    }
+  }
+}
 

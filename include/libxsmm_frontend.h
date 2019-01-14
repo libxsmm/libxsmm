@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -93,6 +93,7 @@
 #define LIBXSMM_TPREFIX_floatfloat s
 #define LIBXSMM_TPREFIX_shortfloat ws
 #define LIBXSMM_TPREFIX_shortint wi
+#define LIBXSMM_TPREFIX_libxsmm_bfloat16float bs
 /** Defaults if only the input type is specified. */
 #define LIBXSMM_TPREFIX_double LIBXSMM_TPREFIX_doubledouble
 #define LIBXSMM_TPREFIX_float LIBXSMM_TPREFIX_floatfloat
@@ -224,6 +225,8 @@
   LIBXSMM_INLINE_XGEMM(short, int, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #define LIBXSMM_BLAS_FUNCTION_wsgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
   LIBXSMM_INLINE_XGEMM(short, float, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+#define LIBXSMM_BLAS_FUNCTION_bsgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+  LIBXSMM_INLINE_XGEMM(libxsmm_bfloat16, float, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (macro template). */
 #define LIBXSMM_BLAS_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \

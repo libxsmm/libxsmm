@@ -21,7 +21,7 @@ export CC=/path/to/gcc/bin/gcc
 export FC=/path/to/gcc/bin/gfortran
 ```
 
-TensorFlow may be configured for the first time. In the past, Python&#160;3 was problematic since it was not the primary development vehicle (and Python&#160;2.7 was a de-facto prerequisite). It is recommended to use the default Python version available on the system (Linux distribution's default). For the configuration, all questions may be (interactively) answered with the suggested defaults. If not needed, some of the frameworks can be disabled (`TF_NEED_GCP=0`, `TF_NEED_HDFS=0`, `TF_NEED_S3=0`, and `TF_NEED_KAFKA=0`).
+TensorFlow may be configured for the first time. In the past, Python&#160;3 was problematic since it was not the primary development vehicle (and Python&#160;2.7 was a de-facto prerequisite). It is recommended to use the default Python version available on the system (Linux distribution's default). For the configuration, all questions may be (interactively) answered with the suggested defaults. In earlier revisions of TensorFlow some frameworks can be disabled at configure-time using environment variables (`TF_NEED_GCP=0`, `TF_NEED_HDFS=0`, `TF_NEED_S3=0`, `TF_NEED_KAFKA=0`). However, the current mechanism to disable certain frameworks is per Bazel's build-line (`--config=noaws`, `--config=nogcp`, `--config=nohdfs`, `--config=noignite`, `--config=nokafka`, `--config=nonccl`).
 
 ```bash
 cd /path/to/tensorflow-xsmm
@@ -41,8 +41,8 @@ export http_proxy=http://proxy.domain.com:911
 If the build step of any of the Bazel commands goes wrong, `-s --verbose_failures` can be used (`-s` shows the full command of each of the build steps). For non-production code such as for debug purpose, TensorFlow can be built with `-c dbg` (or at least `--copt=-O0`). For further reference, please consult the [official guide](https://www.tensorflow.org/install/install_sources) to build TensorFlow from sources. In case of production code, it is recommended the use a moderate optimization level (`-c opt --copt=-O2`), and to better focus on a reasonable set of target-flags (`-mfma -mavx2`). LIBXSMM makes use of CPUID-dispatch, and it is not too critical to pick for instance AVX-512 (even if AVX-512 is available on the intended production target). However, if the desired workload is bottlenecked by Eigen code paths that are not covered by LIBXSMM, one may be sufficiently served with Intel AVX2 instructions (`-mfma -mavx2`).
 
 ```bash
-bazel build -c opt --copt=-O2 --linkopt=-pthread --cxxopt=-D_GLIBCXX_USE_CXX11_ABI=0 \
-  --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD \
+bazel build --incompatible_remove_native_http_archive=false -c opt --copt=-O2 --linkopt=-pthread \
+  --cxxopt=-D_GLIBCXX_USE_CXX11_ABI=0 --copt=-fopenmp-simd --copt=-DLIBXSMM_OPENMP_SIMD \
   --define tensorflow_xsmm=1 --define tensorflow_xsmm_convolutions=1 \
   --define tensorflow_xsmm_backward_convolutions=1 \
   --copt=-mfma --copt=-mavx2 \

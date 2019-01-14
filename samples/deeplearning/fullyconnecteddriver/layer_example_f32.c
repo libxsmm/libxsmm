@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -64,6 +64,9 @@ int main(int argc, char* argv[])
   int fuse_type = 0;      /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'L';
+  int bn = 64;
+  int bk = 64;
+  int bc = 64;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
@@ -92,10 +95,10 @@ int main(int argc, char* argv[])
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff;
-  memset(&norms_fwd, 0, sizeof(norms_fwd));
-  memset(&norms_bwd, 0, sizeof(norms_bwd));
-  memset(&norms_upd, 0, sizeof(norms_upd));
-  memset(&diff, 0, sizeof(diff));
+  libxsmm_matdiff_clear(&norms_fwd);
+  libxsmm_matdiff_clear(&norms_bwd);
+  libxsmm_matdiff_clear(&norms_upd);
+  libxsmm_matdiff_clear(&diff);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters nImg nIFm nOFm fuse_type type format\n", argv[0]);
@@ -112,6 +115,10 @@ int main(int argc, char* argv[])
   if (argc > i) fuse_type  = atoi(argv[i++]);
   if (argc > i) type       = *(argv[i++]);
   if (argc > i) format     = *(argv[i++]);
+  if (argc > i) bn         = atoi(argv[i++]);
+  if (argc > i) bk         = atoi(argv[i++]);
+  if (argc > i) bc         = atoi(argv[i++]);
+ 
 
   if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only)\n");
@@ -121,8 +128,8 @@ int main(int argc, char* argv[])
     printf("fuse type needs to be 0\n");
     return -1;
   }
-  if (format != 'L') {
-    printf("format needs to be 'L' (libxsmm)\n");
+  if (format != 'L' && format != 'B') {
+    printf("format needs to be 'L' (libxsmm) or 'B' (for locked NCNC KCCK)\n");
     return -1;
   }
 
@@ -195,7 +202,7 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
   }
 
-  if (format == 'A' || format == 'L') {
+  if (format == 'B' || format == 'L') {
     printf("\n");
     printf("##########################################\n");
     printf("#      Setting Up  (custom-Storage)      #\n");
@@ -205,11 +212,19 @@ int main(int argc, char* argv[])
     fullyconnected_desc.N = nImg;
     fullyconnected_desc.C = nIFm;
     fullyconnected_desc.K = nOFm;
+    fullyconnected_desc.bn = bn;
+    fullyconnected_desc.bk = bk;
+    fullyconnected_desc.bc = bc;
     fullyconnected_desc.threads = nThreads;
     fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
-    fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
-    fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+    if ( format == 'L' ) {
+      fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+      fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
+    } else {
+      fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NCNC;
+      fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_KCCK;
+    }
     fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE;
 
     libxsmm_handle = libxsmm_dnn_create_fullyconnected( fullyconnected_desc, &status );
@@ -243,12 +258,21 @@ int main(int argc, char* argv[])
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our
        own external to the library */
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,        (void*)naive_input,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output,       (void*)naive_output,       LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter,       (void*)naive_filter,       LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delinput,     (void*)naive_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_deloutput,    (void*)naive_deloutput,    LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delfilter,    (void*)naive_delfilter,    LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+    if ( format == 'L' ) {
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_input,        (void*)naive_input,        LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_output,       (void*)naive_output,       LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter,       (void*)naive_filter,       LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delinput,     (void*)naive_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_deloutput,    (void*)naive_deloutput,    LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_delfilter,    (void*)naive_delfilter,    LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+    } else {
+      matrix_copy_NC_to_NCNC( naive_input,     input_libxsmm,     1, nImg, nIFm, bn, bc );
+      matrix_copy_NC_to_NCNC( naive_delinput,  delinput_libxsmm,  1, nImg, nIFm, bn, bc );
+      matrix_copy_NC_to_NCNC( naive_output,    output_libxsmm,    1, nImg, nOFm, bn, bk );
+      matrix_copy_NC_to_NCNC( naive_deloutput, deloutput_libxsmm, 1, nImg, nOFm, bn, bk );
+      matrix_copy_KC_to_KCCK( naive_filter,    filter_libxsmm      , nIFm, nOFm, bc, bk );
+      matrix_copy_KC_to_KCCK( naive_delfilter, delfilter_libxsmm   , nIFm, nOFm, bc, bk );
+    }
 
     /* bind buffers and filter to handle */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle, libxsmm_input,        LIBXSMM_DNN_REGULAR_INPUT ) );
@@ -284,10 +308,14 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      if ( format == 'L' ) {
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      } else {
+        matrix_copy_NCNC_to_NC( output_libxsmm, naive_libxsmm_output, 1, nImg, nOFm, bn, bk );
+      }
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output, naive_libxsmm_output, 0, 0, &norms_fwd);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output, naive_libxsmm_output, 0, 0);
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -316,10 +344,14 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delinput,     (void*)naive_libxsmm_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      if ( format == 'L' ) {
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delinput,     (void*)naive_libxsmm_delinput,     LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
+      } else {
+        matrix_copy_NCNC_to_NC( delinput_libxsmm, naive_libxsmm_delinput, 1, nImg, nIFm, bn, bc );
+      }
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIFm, 1, naive_delinput, naive_libxsmm_delinput, 0, 0, &norms_bwd);
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIFm, 1, naive_delinput, naive_libxsmm_delinput, 0, 0);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -348,10 +380,14 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delfilter,     (void*)naive_libxsmm_delfilter,     LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+      if ( format == 'L' ) {
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_delfilter,     (void*)naive_libxsmm_delfilter,     LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+      } else {
+        matrix_copy_KCCK_to_KC( delfilter_libxsmm, naive_libxsmm_delfilter, nIFm, nOFm, bc, bk );
+      }
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIFm*nOFm, 1, naive_delfilter, naive_libxsmm_delfilter, 0, 0, &norms_upd);
+      libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nIFm*nOFm, 1, naive_delfilter, naive_libxsmm_delfilter, 0, 0);
       printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
@@ -390,8 +426,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", gflop/l_total);
 
       printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
-        nOFm, ((double)(l_total/iters)), gflop/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
-        norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
+          nOFm, ((double)(l_total/iters)), gflop/l_total, norms_fwd.l1_ref, norms_fwd.l1_tst,
+          norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
     }
 
     if (type == 'A' || type == 'B') {
@@ -422,8 +458,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", gflop/l_total);
 
       printf("PERFDUMP,BP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
-        nOFm, ((double)(l_total/iters)), gflop/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
-        norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
+          nOFm, ((double)(l_total/iters)), gflop/l_total, norms_bwd.l1_ref, norms_bwd.l1_tst,
+          norms_bwd.l2_abs, norms_bwd.l2_rel, norms_bwd.linf_abs, norms_bwd.linf_rel, norms_bwd.normf_rel);
     }
 
     if (type == 'A' || type == 'U') {
@@ -454,8 +490,8 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", gflop/l_total);
 
       printf("PERFDUMP,UP,%s,%i,%i,%i,%i,%.5g,%.5g,%f,%f,%f,%f,%f,%f,%f\n", LIBXSMM_VERSION, nThreads, nImg, nIFm,
-        nOFm, ((double)(l_total/iters)), gflop/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
-        norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
+          nOFm, ((double)(l_total/iters)), gflop/l_total, norms_upd.l1_ref, norms_upd.l1_tst,
+          norms_upd.l2_abs, norms_upd.l2_rel, norms_upd.linf_abs, norms_upd.linf_rel, norms_upd.normf_rel);
     }
 
     /* clean-up */

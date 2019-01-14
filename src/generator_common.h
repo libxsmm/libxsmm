@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -327,7 +327,7 @@
 # define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE)
 #else
 # define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-    GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, libxsmm_verbosity)
+    GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, 0 != libxsmm_ninit ? libxsmm_verbosity : 1)
 # define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
     GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, 1)
 #endif
@@ -366,6 +366,8 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_mloop;
   unsigned int gp_reg_nloop;
   unsigned int gp_reg_kloop;
+  unsigned int gp_reg_reduce_count;
+  unsigned int gp_reg_reduce_loop;
   unsigned int gp_reg_help_0;
   unsigned int gp_reg_help_1;
   unsigned int gp_reg_help_2;

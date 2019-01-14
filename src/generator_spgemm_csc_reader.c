@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -117,7 +117,9 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
     } else {
       /* if we are the first line after comment header, we allocate our data structures */
       if ( l_header_read == 0 ) {
-        if ( sscanf(l_line, "%u %u %u", o_row_count, o_column_count, o_element_count) == 3 ) {
+        if (3 == sscanf(l_line, "%u %u %u", o_row_count, o_column_count, o_element_count) &&
+            0 != *o_row_count && 0 != *o_column_count && 0 != *o_element_count)
+        {
           /* allocate CSC data structure matching mtx file */
           *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_element_count));
           *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * ((size_t)(*o_column_count) + 1));
@@ -168,8 +170,8 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
           return;
         }
         /* adjust numbers to zero termination */
-        l_row--;
-        l_column--;
+        LIBXSMM_ASSERT(0 != l_row && 0 != l_column);
+        l_row--; l_column--;
         /* add these values to row and value structure */
         (*o_row_idx)[l_i] = l_row;
         (*o_values)[l_i] = l_value;
@@ -204,5 +206,4 @@ void libxsmm_sparse_csc_reader( libxsmm_generated_code* io_generated_code,
     free( l_column_idx_id );
   }
 }
-
 

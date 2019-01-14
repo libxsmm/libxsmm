@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -54,16 +54,6 @@ element_output_type *ft  = (element_output_type*)handle->ft->data;
 element_output_type *ot  = (element_output_type*)handle->ot->data;
 element_output_type *cit = (element_output_type*)handle->cit->data;
 element_output_type *cot = (element_output_type*)handle->cot->data;
-#if 0
-element_filter_type *wiD = &(w[0]);
-element_filter_type *wcD = &(w[C*K]);
-element_filter_type *wfD = &(w[2*C*K]);
-element_filter_type *woD = &(w[3*C*K]);
-element_filter_type *riD = &(r[0]);
-element_filter_type *rcD = &(r[K*K]);
-element_filter_type *rfD = &(r[2*K*K]);
-element_filter_type *roD = &(r[3*K*K]);
-#endif
 element_filter_type *wiD = &(w[0]);
 element_filter_type *wcD = &(w[K]);
 element_filter_type *wfD = &(w[2*K]);
@@ -95,10 +85,6 @@ LIBXSMM_VLA_DECL(3, element_output_type, o, ot, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, ci, cit, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, co, cot, N, K);
 /* define gemm kernels */
-#if 0
-libxsmm_smmfunction gemmkernela = libxsmm_smmdispatch( bk, bn, bc, &K, &C, &K, NULL, NULL, NULL, NULL );
-libxsmm_smmfunction gemmkernelb = libxsmm_smmdispatch( bk, bn, bk, &K, &K, &K, NULL, NULL, NULL, NULL );
-#endif
 libxsmm_smmfunction gemmkernela = libxsmm_smmdispatch( bk, bn, bc, &K4, &C, &K, NULL, NULL, NULL, NULL );
 libxsmm_smmfunction gemmkernelb = libxsmm_smmdispatch( bk, bn, bk, &K4, &K, &K, NULL, NULL, NULL, NULL );
 /* parallelize over C-blocks */

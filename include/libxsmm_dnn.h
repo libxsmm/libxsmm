@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -31,7 +31,6 @@
 #ifndef LIBXSMM_DNN_H
 #define LIBXSMM_DNN_H
 
-#include "libxsmm_macros.h"
 #include "libxsmm_typedefs.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -54,7 +53,15 @@ typedef unsigned int libxsmm_dnn_err_t;
 
 /** Define error and warning codes */
 #define LIBXSMM_DNN_SUCCESS                             0
+
 #define LIBXSMM_DNN_WARN_FALLBACK                   90000
+#define LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING  90001
+#define LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_C_BLOCKING  90002
+#define LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_K_BLOCKING  90003
+#define LIBXSMM_DNN_WARN_FC_SUBOPTIMAL_N_BLOCKING   90004
+#define LIBXSMM_DNN_WARN_FC_SUBOPTIMAL_C_BLOCKING   90005
+#define LIBXSMM_DNN_WARN_FC_SUBOPTIMAL_K_BLOCKING   90006
+
 #define LIBXSMM_DNN_ERR_GENERAL                    100000
 #define LIBXSMM_DNN_ERR_CREATE_HANDLE              100001
 #define LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE       100002

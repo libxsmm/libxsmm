@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -209,7 +209,7 @@ int main(int argc, char* argv[])
       // eventually JIT-compile the requested kernel
       const libxsmm_mmfunction<T> xmm(LIBXSMM_GEMM_FLAGS(transa, transb), m, n, k, LIBXSMM_PREFETCH);
 
-      memset(&diff, 0, sizeof(diff));
+      libxsmm_matdiff_clear(&diff);
       { // LAPACK/BLAS3 (warmup BLAS Library)
         std::fill_n(expect, csize, zero);
 #if defined(_OPENMP)
@@ -255,7 +255,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0, &d)) {
+        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
           fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
           libxsmm_matdiff_reduce(&diff, &d);
         }
@@ -287,7 +287,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0, &d)) {
+        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
           fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
           libxsmm_matdiff_reduce(&diff, &d);
         }
@@ -319,7 +319,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0, &d)) {
+        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
           fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
           libxsmm_matdiff_reduce(&diff, &d);
         }
@@ -357,7 +357,7 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tcalls/s: %.0f Hz\n", s / duration);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0, &d)) {
+        if (!LIBXSMM_FEQ(0, check) && EXIT_SUCCESS == libxsmm_matdiff(&d, LIBXSMM_DATATYPE(ITYPE), m, n, expect, c, 0, 0)) {
           fprintf(stdout, "\tdiff: L2abs=%f Linfo=%f\n", d.l2_abs, d.linf_abs);
           libxsmm_matdiff_reduce(&diff, &d);
         }

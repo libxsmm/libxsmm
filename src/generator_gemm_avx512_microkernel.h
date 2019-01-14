@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -50,16 +50,6 @@ void libxsmm_generator_gemm_avx512_microkernel_qfma( libxsmm_generated_code*    
                                                      const libxsmm_gemm_descriptor*     i_xgemm_desc,
                                                      const unsigned int                 i_n_blocking,
                                                      const unsigned int                 i_k_blocking );
-
-#if 0
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_avx512_microkernel_k_large( libxsmm_generated_code*             io_generated_code,
-                                                         const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                         const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                         const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                         const unsigned int                 i_n_blocking,
-                                                         const unsigned int                 i_k_blocking );
-#endif
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_avx512_microkernel_k_large_n_nine( libxsmm_generated_code*             io_generated_code,

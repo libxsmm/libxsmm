@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -49,7 +49,7 @@
 #endif
 
 #if 0
-#define GENERATOR_PACKED_GEMM_DEBUG
+# define GENERATOR_PACKED_GEMM_DEBUG
 #endif
 
 
@@ -58,7 +58,7 @@
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*        io_code,
-                                                      const libxsmm_trsm_descriptor* i_packed_trsm_desc,
+                                                      const libxsmm_pgemm_descriptor* i_packed_pgemm_desc,
                                                       const char*                    i_arch
 #ifdef GARBAGE_PARAMETERS
                                                     , unsigned int                   iunroll,
@@ -132,20 +132,30 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
   if ( io_code->code_type > 1 )
   {
      unsigned int i = io_code->code_size;
-     unsigned int m = i_packed_trsm_desc->m;
-     unsigned int n = i_packed_trsm_desc->n;
-     unsigned int lda = i_packed_trsm_desc->lda;
-     unsigned int ldb = i_packed_trsm_desc->ldb;
-     /* HACK! */
-     unsigned int ldc = m ;
-     char transa = i_packed_trsm_desc->transa;
-     /*char side = i_packed_trsm_desc->side;*/
-     /*char uplo = i_packed_trsm_desc->uplo;*/
-     char transb = i_packed_trsm_desc->diag;
-     /* HACK ! */
-     const unsigned int k = (unsigned int)i_packed_trsm_desc->layout;
-     unsigned int datasz = (unsigned int)i_packed_trsm_desc->typesize;
-     const double alpha = (8 == datasz ? i_packed_trsm_desc->alpha.d : ((double)i_packed_trsm_desc->alpha.s));
+     unsigned int m = i_packed_pgemm_desc->m;
+     unsigned int n = i_packed_pgemm_desc->n;
+     unsigned int k = i_packed_pgemm_desc->k;
+     unsigned int lda = i_packed_pgemm_desc->lda;
+     unsigned int ldb = i_packed_pgemm_desc->ldb;
+     unsigned int ldc = i_packed_pgemm_desc->ldc;
+     char transa = i_packed_pgemm_desc->transa;
+     char transb = i_packed_pgemm_desc->transb;
+     unsigned layout = (unsigned int) i_packed_pgemm_desc->layout;
+     unsigned int datasz = (unsigned int)i_packed_pgemm_desc->typesize;
+#if 0
+     const double alpha = (8 == datasz ? i_packed_pgemm_desc->alpha.d : ((double)i_packed_pgemm_desc->alpha.s));
+#else
+     double alpha=1.0;
+#endif
+#if defined(_WIN32) || defined(__CYGWIN__)
+     unsigned int areg = LIBXSMM_X86_GP_REG_RCX;
+     unsigned int breg = LIBXSMM_X86_GP_REG_RDX;
+     unsigned int creg = LIBXSMM_X86_GP_REG_R8 ;
+#else
+     unsigned int areg = LIBXSMM_X86_GP_REG_RDI;
+     unsigned int breg = LIBXSMM_X86_GP_REG_RSI;
+     unsigned int creg = LIBXSMM_X86_GP_REG_RDX;
+#endif
      const double beta = 1.0 ;
      unsigned int m1=m, n1=n, k1=k;
      unsigned int j;
@@ -153,11 +163,18 @@ void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*   
      int numb = 0;
      /*int scalealpha = 0;*/
      /*int nounit=0;*/
-     int tra, trb;
+     int tra, trb, trc;
      char regset = 0;
 
+     if ( i_packed_pgemm_desc->alpha_val == 0 ) {
+        alpha = 1.0;
+     } else if ( i_packed_pgemm_desc->alpha_val == 1 ) {
+        alpha = -1.0;
+     } else {
+        printf("Warning: libxsmm_generator_packed_gemm_avx_avx512 has unknown alpha, using 1.0\n");
+     }
 #if defined(GENERATOR_PACKED_GEMM_DEBUG)
-printf("Inside libxsmm_generator_packed_gemm_avx_avx512_kernel: transa=%c transb=%c m=%d n=%d k=%d lda=%d ldb=%d ldc=%d alpha=%g beta=%g datasz=%d avx512=%d\n",transa,transb,m,n,k,lda,ldb,ldc,alpha,beta,datasz,avx512);
+printf("Inside libxsmm_generator_packed_gemm_avx_avx512_kernel: transa=%c transb=%c m=%d n=%d k=%d lda=%d ldb=%d ldc=%d alpha=%g beta=%g datasz=%d avx512=%d lay=%d\n",transa,transb,m,n,k,lda,ldb,ldc,alpha,beta,datasz,avx512,layout);
 printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,junroll,loopi,loopj);
 #endif
      if ( ( datasz !=4 ) && (datasz != 8) )
@@ -214,8 +231,21 @@ printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,jun
 
      if ( transa == 'T' || transa == 't' ) tra = 1; else tra = 0;
      if ( transb == 'T' || transb == 't' ) trb = 1; else trb = 0;
+     trc = 0;
+     if ( layout == 101 ) { /* Row-major swaps tra/trb/trc */
+        if ( tra ) tra = 0; else tra = 1;
+        if ( trb ) trb = 0; else trb = 1;
+        if ( trc ) trc = 0; else trc = 1;
+     }
+        
      /* Change which registers to use for windows builds */
-     compact_gemmnn_ ( tra, trb, 1, m1, 1, k1, 1, k1, 1, n1, 1, m1, 1, n1, alpha, LIBXSMM_X86_GP_REG_RDI, lda, LIBXSMM_X86_GP_REG_RSI, ldb, beta, LIBXSMM_X86_GP_REG_RDX, ldc, io_code, numb, regset, iunroll, junroll, loopi, loopj );
+#if defined(GENERATOR_PACKED_GEMM_DEBUG)
+     printf("Using compact_gemmnn header file\n");
+#endif
+     compact_gemmnn_ ( tra, trb, trc, 1, m1, 1, k1, 1, k1, 1, n1, 1, m1, 1, n1, alpha, areg, lda, breg, ldb, beta, creg, ldc, io_code, numb, regset, iunroll, junroll, loopi, loopj );
+#if defined(GENERATOR_PACKED_GEMM_DEBUG)
+     printf("Done using compact_gemmnn header file\n");
+#endif
 
   }
 
@@ -240,5 +270,5 @@ printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,jun
       printf(".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",buf[i],buf[i+1],buf[i+2],buf[i+3],buf[i+4],buf[i+5],buf[i+6],buf[i+7]);
    }
 #endif
-
 }
+

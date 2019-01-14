@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -31,8 +31,8 @@
 #ifndef LIBXSMM_DNN_GRUCELL_H
 #define LIBXSMM_DNN_GRUCELL_H
 
-#include "libxsmm_macros.h"
-#include "libxsmm_typedefs.h"
+#include "libxsmm_blocked_gemm.h"
+#include "libxsmm_sync.h"
 #include "libxsmm_dnn.h"
 
 
@@ -138,10 +138,10 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_grucell {
   libxsmm_dnn_tensor* djdbr;
   libxsmm_dnn_tensor* djdbz;
   libxsmm_dnn_tensor* djdbg;
-  libxsmm_bgemm_handle* handleux;
-  libxsmm_bgemm_handle* handlewh;
-  libxsmm_bgemm_handle* handlett;
-  libxsmm_bgemm_handle* handlewd;
+  libxsmm_blocked_gemm_handle* handleux;
+  libxsmm_blocked_gemm_handle* handlewh;
+  libxsmm_blocked_gemm_handle* handlett;
+  libxsmm_blocked_gemm_handle* handlewd;
   libxsmm_barrier* barrier; /* barrier */
 } libxsmm_dnn_grucell;
 

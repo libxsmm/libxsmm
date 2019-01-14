@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -78,7 +78,9 @@ static void libxsmm_sparse_csr_reader( const char*    i_csr_file_in,
     } else {
       /* if we are the first line after comment header, we allocate our data structures */
       if ( l_header_read == 0 ) {
-        if ( sscanf(l_line, "%u %u %u", o_row_count, o_column_count, o_element_count) == 3 ) {
+        if (3 == sscanf(l_line, "%u %u %u", o_row_count, o_column_count, o_element_count) &&
+            0 != *o_row_count && 0 != *o_column_count && 0 != *o_element_count)
+        {
           /* allocate CSC datastructure matching mtx file */
           *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_element_count));
           *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_row_count + 1));

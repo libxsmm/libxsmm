@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,38 +26,52 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee (Intel Corp.)
+/* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_TYPE, real_dst, (LIBXSMM_BGEMM_TEMPLATE_TYPE*)dst, handle->kb, handle->bn, handle->bk);
-LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_TYPE, real_src, (const LIBXSMM_BGEMM_TEMPLATE_TYPE*)src, handle->nb, handle->bk, handle->bn);
-libxsmm_blasint kb, nb, bk, bn;
-libxsmm_blasint ii, jj, job, jobT;
+/* size variables, all const */
+/* here we assume that input and output blocking is similar */
+const int nBlocksIFm = handle->desc.C / handle->bc;
+const int nBlocksOFm = handle->desc.K / handle->bk;
+const int nBlocksMB  = handle->desc.N / handle->bn;
 
-if (handle->n == handle->k && handle->bn == handle->bk) {
-  for (kb = 0; kb < handle->kb; ++kb) {
-    for (nb = 0; nb < handle->nb; ++nb) {
-      for (bk = 0; bk < handle->bk; ++bk) {
-        for (bn = 0; bn < handle->bn; ++bn) {
-          LIBXSMM_VLA_ACCESS(4, real_dst, nb, kb, bn, bk, handle->kb, handle->bn, handle->bk) =
-            LIBXSMM_VLA_ACCESS(4, real_src, kb, nb, bk, bn, handle->nb, handle->bk, handle->bn);
-        }
-      }
-    }
+/* computing first logical thread */
+const int ltid = tid - start_thread;
+/* number of tasks that could be run in parallel */
+const int work = nBlocksOFm * nBlocksMB;
+/* compute chunk size */
+const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : ((work / handle->desc.threads) + 1);
+/* compute thr_begin and thr_end */
+const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+
+/* loop variables */
+int mb1ofm1 = 0;
+int ifm1 = 0;
+
+LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, handle->bn, handle->bk);
+LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
+LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc, handle->bk);
+
+const element_filter_type *A_array[1024];
+const element_input_type  *B_array[1024];
+unsigned long long  blocks = nBlocksIFm;
+
+/* lazy barrier init */
+libxsmm_barrier_init(handle->barrier, ltid);
+
+for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
+  int mb1  = mb1ofm1/nBlocksOFm;
+  int ofm1 = mb1ofm1%nBlocksOFm;
+
+  /* prepare arguments for batch-reduce call  */
+  for( ifm1 = 0; ifm1 < nBlocksIFm; ++ifm1 ) {
+    A_array[ifm1] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1, 0, 0, nBlocksIFm, handle->bc, handle->bk);
+    B_array[ifm1] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1,  0, 0, nBlocksIFm, handle->bn, handle->bc);
   }
-} else {
-  for (kb = 0; kb < handle->kb; ++kb) {
-    for (nb = 0; nb < handle->nb; ++nb) {
-      for (bk = 0; bk < handle->bk; ++bk) {
-        for (bn = 0; bn < handle->bn; ++bn) {
-          job = (kb*handle->bk + bk)*handle->n + (nb*handle->bn + bn);
-          ii = job / handle->k;
-          jj = job % handle->k;
-          jobT = jj*handle->n + ii;
-          LIBXSMM_VLA_ACCESS(4, real_dst, (jobT/handle->k)/handle->bn, (jobT%handle->k)/handle->bk, (jobT/handle->k)%handle->bn, (jobT%handle->k)%handle->bk, handle->kb, handle->bn, handle->bk) =
-            LIBXSMM_VLA_ACCESS(4, real_src, kb, nb, bk, bn, handle->nb, handle->bk, handle->bn);
-        }
-      }
-    }
-  }
+  batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1,  0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
+
 }
+
+libxsmm_barrier_wait(handle->barrier, ltid);
+

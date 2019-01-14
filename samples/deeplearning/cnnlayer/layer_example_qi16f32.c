@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -141,12 +141,12 @@ int main(int argc, char* argv[])
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff, norms_batchstats, norms_quant;
-  memset(&norms_fwd, 0, sizeof(norms_fwd));
-  memset(&norms_bwd, 0, sizeof(norms_bwd));
-  memset(&norms_upd, 0, sizeof(norms_upd));
-  memset(&norms_batchstats, 0, sizeof(norms_batchstats));
-  memset(&diff, 0, sizeof(diff));
-  memset(&norms_quant, 0, sizeof(norms_quant));
+  libxsmm_matdiff_clear(&norms_fwd);
+  libxsmm_matdiff_clear(&norms_bwd);
+  libxsmm_matdiff_clear(&norms_upd);
+  libxsmm_matdiff_clear(&norms_batchstats);
+  libxsmm_matdiff_clear(&diff);
+  libxsmm_matdiff_clear(&norms_quant);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type format padding_mode\n", argv[0]);
@@ -584,7 +584,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
       /* norms quantization */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input_save, dq_naive_input, 0, 0, &norms_quant);
+      libxsmm_matdiff(&norms_quant, LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input_save, dq_naive_input, 0, 0);
       printf("Input Quantization:\n");
       printf("L1 reference  : %.25g\n", norms_quant.l1_ref);
       printf("L1 test       : %.25g\n", norms_quant.l1_tst);
@@ -594,7 +594,7 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_quant.linf_rel);
       printf("Check-norm    : %.24f\n", norms_quant.normf_rel);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIfm*nOfm*kw*kh, 1, naive_filter, dq_naive_filter, 0, 0, &norms_quant);
+      libxsmm_matdiff(&norms_quant, LIBXSMM_DATATYPE_F32, nIfm*nOfm*kw*kh, 1, naive_filter, dq_naive_filter, 0, 0);
       printf("Filter Quantization:\n");
       printf("L1 reference  : %.25g\n", norms_quant.l1_ref);
       printf("L1 test       : %.25g\n", norms_quant.l1_tst);
@@ -605,7 +605,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_quant.normf_rel);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0, &norms_fwd);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0);
       printf("Output:\n");
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
@@ -681,7 +681,7 @@ int main(int argc, char* argv[])
           }
         }
 
-        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum, ch_sum_fuse, 0, 0, &norms_batchstats);
+        libxsmm_matdiff(&norms_batchstats, LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum, ch_sum_fuse, 0, 0);
         printf("Channel Sum:\n");
         printf("L1 reference  : %.25g\n", norms_batchstats.l1_ref);
         printf("L1 test       : %.25g\n", norms_batchstats.l1_tst);
@@ -691,7 +691,7 @@ int main(int argc, char* argv[])
         printf("Linf rel.error: %.24f\n", norms_batchstats.linf_rel);
         printf("Check-norm    : %.24f\n", norms_batchstats.normf_rel);
 
-        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum2, ch_sum2_fuse, 0, 0, &norms_batchstats);
+        libxsmm_matdiff(&norms_batchstats, LIBXSMM_DATATYPE_F32, nOfm, 1, ch_sum2, ch_sum2_fuse, 0, 0);
         printf("Channel Sum2:\n");
         printf("L1 reference  : %.25g\n", norms_batchstats.l1_ref);
         printf("L1 test       : %.25g\n", norms_batchstats.l1_tst);
@@ -747,7 +747,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_dinput, (void*)naive_libxsmm_input, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
       /* norms quantization */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output_bp, dq_naive_doutput, 0, 0, &norms_quant);
+      libxsmm_matdiff(&norms_quant, LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output_bp, dq_naive_doutput, 0, 0);
       printf("del-Output Quantization:\n");
       printf("L1 reference  : %.25g\n", norms_quant.l1_ref);
       printf("L1 test       : %.25g\n", norms_quant.l1_tst);
@@ -757,7 +757,7 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_quant.linf_rel);
       printf("Check-norm    : %.24f\n", norms_quant.normf_rel);
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIfm*nOfm*kw*kh, 1, naive_filter, dq_naive_filter, 0, 0, &norms_quant);
+      libxsmm_matdiff(&norms_quant, LIBXSMM_DATATYPE_F32, nIfm*nOfm*kw*kh, 1, naive_filter, dq_naive_filter, 0, 0);
       printf("Filter Quantization:\n");
       printf("L1 reference  : %.25g\n", norms_quant.l1_ref);
       printf("L1 test       : %.25g\n", norms_quant.l1_tst);
@@ -768,7 +768,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_quant.normf_rel);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0, &norms_bwd);
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0);
       printf("del-Input:\n");
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
@@ -847,7 +847,7 @@ int main(int argc, char* argv[])
       /* copy out data */
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_dfilter, (void*)naive_libxsmm_filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
 
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input_save, dq_naive_input, 0, 0, &norms_quant);
+      libxsmm_matdiff(&norms_quant, LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input_save, dq_naive_input, 0, 0);
       printf("Input Quantization:\n");
       printf("L1 reference  : %.25g\n", norms_quant.l1_ref);
       printf("L1 test       : %.25g\n", norms_quant.l1_tst);
@@ -858,7 +858,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_quant.normf_rel);
 
       /* norms quantization */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output_wu, dq_naive_doutput, 0, 0, &norms_quant);
+      libxsmm_matdiff(&norms_quant, LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output_wu, dq_naive_doutput, 0, 0);
       printf("del-Output Quantization:\n");
       printf("L1 reference  : %.25g\n", norms_quant.l1_ref);
       printf("L1 test       : %.25g\n", norms_quant.l1_tst);
@@ -869,7 +869,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_quant.normf_rel);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0, &norms_upd);
+      libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0);
       printf("del-Filter:\n");
       printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd.l1_tst);

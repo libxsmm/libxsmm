@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2018, Intel Corporation                                     **
+** Copyright (c) 2018-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -139,6 +139,30 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_wsgemm_descriptor_init(libxsmm_desc
 }
 
 
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bsgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+  float alpha, float beta, int flags, libxsmm_gemm_prefetch_type prefetch)
+{
+  union {
+    libxsmm_gemm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k)
+    && 0 != blob)
+  {
+    result.blob = blob;
+    LIBXSMM_GEMM_DESCRIPTOR2(*result.ptr, LIBXSMM_GEMM_PRECISION(libxsmm_bfloat16), LIBXSMM_GEMM_PRECISION(float),
+      flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+  }
+  else { /* unsupported */
+    result.ptr = 0;
+  }
+  return result.ptr;
+}
+
+
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, double alpha, double beta,
@@ -153,7 +177,8 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_desc
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, double alpha, double beta,
   int flags, libxsmm_gemm_prefetch_type prefetch)
 {
-  libxsmm_gemm_descriptor* result;
+  /* avoid warning about potentially uninitialized variable (initialize outside of control flow) */
+  libxsmm_gemm_descriptor* result = 0;
   switch (iprec) {
     case LIBXSMM_GEMM_PRECISION_F64: {
       LIBXSMM_ASSERT(iprec == oprec);
@@ -176,6 +201,12 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_desc
           (float)alpha, (float)beta, flags, prefetch);
       }
     } break;
+    case LIBXSMM_GEMM_PRECISION_BF16: {
+      if (LIBXSMM_GEMM_PRECISION_F32 == oprec) {
+        result = libxsmm_bsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
+          (float)alpha, (float)beta, flags, prefetch);
+      }
+    } break;
     default: {
       static int error_once = 0;
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -183,7 +214,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_desc
       {
         fprintf(stderr, "LIBXSMM ERROR: GEMM precision is not supported!\n");
       }
-      result = 0;
+      /*result = 0;*/
     }
   }
   return result;
@@ -215,7 +246,8 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
   int flags, libxsmm_gemm_prefetch_type prefetch,
   double* dalpha, double* dbeta)
 {
-  libxsmm_gemm_descriptor* result;
+  /* avoid warning about potentially uninitialized variable (initialize outside of control flow) */
+  libxsmm_gemm_descriptor* result = 0;
   switch (iprec) {
     case LIBXSMM_GEMM_PRECISION_F64: {
       const double aa = (NULL != alpha ? *((const double*)alpha) : (LIBXSMM_ALPHA));
@@ -256,6 +288,15 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
         if (NULL != dbeta) *dbeta = (double)bb;
       }
     } break;
+    case LIBXSMM_GEMM_PRECISION_BF16: {
+      if (LIBXSMM_GEMM_PRECISION_F32 == oprec) {
+        const float aa = (0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
+        const float bb = (0 != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
+        result = libxsmm_bsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
+        if (NULL != dalpha) *dalpha = (double)aa;
+        if (NULL != dbeta) *dbeta = (double)bb;
+      }
+    } break;
     default: {
       static int error_once = 0;
       if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -263,7 +304,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
       {
         fprintf(stderr, "LIBXSMM ERROR: GEMM precision is not supported!\n");
       }
-      result = 0;
+      /*result = 0;*/
     }
   }
   return result;
@@ -279,6 +320,7 @@ LIBXSMM_API libxsmm_trans_descriptor* libxsmm_trans_descriptor_init(libxsmm_desc
   } result;
   /* limit the amount of (unrolled) code by rejecting larger kernels */
   if (LIBXSMM_TRANS_NO_BYPASS(m, n)) {
+    int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
     result.blob = blob;
     result.ptr->typesize = (unsigned char)typesize;
     result.ptr->ldo = ldo;
@@ -302,6 +344,7 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
   } result;
   if (0 == LIBXSMM_MOD2(typesize, 4)) { /* TODO: more general kernel */
     const unsigned int typescale = LIBXSMM_DIV2(typesize, 4);
+    int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
     result.blob = blob;
     result.ptr->unroll_level = (unsigned char)((0 == unroll || 0 >= *unroll) ? 2/*default*/ : LIBXSMM_MIN(*unroll, 64));
     result.ptr->typesize = (unsigned char)/*typesize*/4;
@@ -326,6 +369,7 @@ LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descri
     libxsmm_trsm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
+  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
   result.blob = blob;
   result.ptr->typesize = (unsigned char)typesize;
   result.ptr->lda = (unsigned char)lda;
@@ -351,20 +395,112 @@ LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descri
 }
 
 
+LIBXSMM_API libxsmm_trmm_descriptor* libxsmm_trmm_descriptor_init(libxsmm_descriptor_blob* blob,
+  unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, libxsmm_blasint ldb,
+  const void* alpha, char transa, char diag, char side, char uplo, int layout)
+{
+  union {
+    libxsmm_trmm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  result.blob = blob;
+  result.ptr->typesize = (unsigned char)typesize;
+  result.ptr->lda = (unsigned char)lda;
+  result.ptr->ldb = (unsigned char)ldb;
+  result.ptr->m = (unsigned char)m;
+  result.ptr->n = (unsigned char)n;
+  result.ptr->transa = transa;
+  result.ptr->diag = diag;
+  result.ptr->side = side;
+  result.ptr->uplo = uplo;
+  result.ptr->layout = (unsigned char)layout;
+  switch (typesize) {
+  case 4: {
+    result.ptr->alpha.s = (0 != alpha ? (*(const float*)alpha) : ((float)LIBXSMM_ALPHA));
+  } break;
+  case 8: {
+    result.ptr->alpha.d = (0 != alpha ? (*(const double*)alpha) : ((double)LIBXSMM_ALPHA));
+  } break;
+  default: /* TODO: generate warning */
+    ;
+  }
+  return result.ptr;
+}
+
+
+LIBXSMM_API libxsmm_pgemm_descriptor* libxsmm_pgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+  unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+  const void* alpha, char transa, char transb, int layout)
+{
+  union {
+    libxsmm_pgemm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  result.blob = blob;
+  result.ptr->typesize = (unsigned char)typesize;
+  result.ptr->lda = (unsigned char)lda;
+  result.ptr->ldb = (unsigned char)ldb;
+  result.ptr->ldc = (unsigned char)ldc;
+  result.ptr->m = (unsigned char)m;
+  result.ptr->n = (unsigned char)n;
+  result.ptr->k = (unsigned char)k;
+  result.ptr->transa = transa;
+  result.ptr->transb = transb;
+  result.ptr->layout = (unsigned char)layout;
+  if ( typesize == 4 ) {
+    float *alpha_val = (float *)alpha;
+    if ( *alpha_val == 1.0 ) result.ptr->alpha_val = 0;
+    else if ( *alpha_val == -1.0 ) result.ptr->alpha_val = 1;
+    else {
+       printf("Warning: real*4 alpha value should be 1.0 or -1.0\n");
+       exit(-1);
+    }
+  } else {
+    double *alpha_val = (double *)alpha;
+    if ( *alpha_val == 1.0 ) result.ptr->alpha_val = 0;
+    else if ( *alpha_val == -1.0 ) result.ptr->alpha_val = 1;
+    else {
+       printf("Warning: real*8 alpha value should be 1.0 or -1.0\n");
+       exit(-1);
+    }
+  }
+  return result.ptr;
+}
+
+
+LIBXSMM_API libxsmm_getrf_descriptor* libxsmm_getrf_descriptor_init(libxsmm_descriptor_blob* blob,
+  unsigned int typesize, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint lda, int layout)
+{
+  union {
+    libxsmm_getrf_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  result.blob = blob;
+  result.ptr->typesize = (unsigned char)typesize;
+  result.ptr->lda = (unsigned char)lda;
+  result.ptr->m = (unsigned char)m;
+  result.ptr->n = (unsigned char)n;
+  result.ptr->layout = (unsigned char)layout;
+  return result.ptr;
+}
+
 LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b)
 {
   while (0 != b) {
     const size_t r = a % b;
-    a = b;
-    b = r;
+    a = b; b = r;
   }
-  return a;
+  return 0 != a ? a : 1;
 }
 
 
 LIBXSMM_API size_t libxsmm_lcm(size_t a, size_t b)
 {
-  return (a * b) / libxsmm_gcd(a, b);
+  const size_t gcd = libxsmm_gcd(a, b);
+  return 0 != gcd ? ((a / gcd) * b) : 0;
 }
 
 
@@ -410,7 +546,7 @@ LIBXSMM_API_INLINE unsigned int internal_product_limit(unsigned int product, uns
       for (i = 0; i < n; ++i) {
         if (minfct < fact[i]) {
           result = fact[i];
-          i = n; /* break */
+          break;
         }
       }
     }
@@ -444,7 +580,7 @@ LIBXSMM_API_INLINE unsigned int internal_product_limit(unsigned int product, uns
       if (f <= limit) {
         result = f;
       }
-      else i = n; /* break */
+      else break;
     }
   }
   return result;

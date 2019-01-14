@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -112,7 +112,7 @@ int main(void)
   LIBXSMM_MATINIT_OMP(ITYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
   LIBXSMM_MATINIT_OMP(OTYPE,  0, c, max_size_c, 1, max_size_c, 1.0);
   LIBXSMM_MATINIT_OMP(OTYPE,  0, d, max_size_c, 1, max_size_c, 1.0);
-  memset(&diff, 0, sizeof(diff));
+  libxsmm_matdiff_clear(&diff);
 
   for (test = begin; test < end && EXIT_SUCCESS == result; ++test) {
     for (i = i0; i < i1 && EXIT_SUCCESS == result; ++i) {
@@ -158,7 +158,7 @@ int main(void)
         GEMM_GOLD(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 
-        result = libxsmm_matdiff(LIBXSMM_DATATYPE(OTYPE), m[test], n[test], d, c, ldc + test, ldc + test, &diff_test);
+        result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(OTYPE), m[test], n[test], d, c, ldc + test, ldc + test);
         if (EXIT_SUCCESS == result) {
           if (1.0 >= (1000.0 * diff_test.normf_rel)) {
             libxsmm_matdiff_reduce(&diff, &diff_test);

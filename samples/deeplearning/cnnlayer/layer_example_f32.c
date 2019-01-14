@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -150,11 +150,11 @@ int main(int argc, char* argv[])
   libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
   libxsmm_matdiff_info norms_fwd, norms_bwd, norms_upd, diff, norms_batchstats;
-  memset(&norms_fwd, 0, sizeof(norms_fwd));
-  memset(&norms_bwd, 0, sizeof(norms_bwd));
-  memset(&norms_upd, 0, sizeof(norms_upd));
-  memset(&norms_batchstats, 0, sizeof(norms_batchstats));
-  memset(&diff, 0, sizeof(diff));
+  libxsmm_matdiff_clear(&norms_fwd);
+  libxsmm_matdiff_clear(&norms_bwd);
+  libxsmm_matdiff_clear(&norms_upd);
+  libxsmm_matdiff_clear(&norms_batchstats);
+  libxsmm_matdiff_clear(&diff);
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type format padding_mode\n", argv[0]);
@@ -663,7 +663,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output, (void*)naive_libxsmm_output, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0, &norms_fwd);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_libxsmm_output, 0, 0);
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -709,7 +709,7 @@ int main(int argc, char* argv[])
           rcpstddev_naive[ch_i] = (float) (1.0/sqrt((double)variance_naive[ch_i] + sqrt_eps));
         }
 
-        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, expectval_naive, expectval_libxsmm, 0, 0, &norms_batchstats);
+        libxsmm_matdiff(&norms_batchstats, LIBXSMM_DATATYPE_F32, nOfm, 1, expectval_naive, expectval_libxsmm, 0, 0);
         printf("Expected values:\n");
         printf("L1 reference  : %.25g\n", norms_batchstats.l1_ref);
         printf("L1 test       : %.25g\n", norms_batchstats.l1_tst);
@@ -720,7 +720,7 @@ int main(int argc, char* argv[])
         printf("Check-norm    : %.24f\n", norms_batchstats.normf_rel);
         libxsmm_matdiff_reduce(&diff, &norms_batchstats);
 
-        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, rcpstddev_naive, rcpstddev_libxsmm, 0, 0, &norms_batchstats);
+        libxsmm_matdiff(&norms_batchstats, LIBXSMM_DATATYPE_F32, nOfm, 1, rcpstddev_naive, rcpstddev_libxsmm, 0, 0);
         printf("rcpstddev values:\n");
         printf("L1 reference  : %.25g\n", norms_batchstats.l1_ref);
         printf("L1 test       : %.25g\n", norms_batchstats.l1_tst);
@@ -731,7 +731,7 @@ int main(int argc, char* argv[])
         printf("Check-norm    : %.24f\n", norms_batchstats.normf_rel);
         libxsmm_matdiff_reduce(&diff, &norms_batchstats);
 
-        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm, 1, variance_naive, variance_libxsmm, 0, 0, &norms_batchstats);
+        libxsmm_matdiff(&norms_batchstats, LIBXSMM_DATATYPE_F32, nOfm, 1, variance_naive, variance_libxsmm, 0, 0);
         printf("rcpstddev values:\n");
         printf("L1 reference  : %.25g\n", norms_batchstats.l1_ref);
         printf("L1 test       : %.25g\n", norms_batchstats.l1_tst);
@@ -777,7 +777,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_dinput, (void*)naive_libxsmm_input, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0, &norms_bwd);
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_libxsmm_input, 0, 0);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -803,7 +803,7 @@ int main(int argc, char* argv[])
 
         naive_fusedbatchnorm_bp(&naive_param, naive_bn_input, naive_input, naive_del_input_add, naive_dbeta, naive_dgamma, naive_bmean, naive_rcpstddev);
 
-        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIfm, 1, naive_dbeta, dbeta_libxsmm, 0, 0, &norms_batchstats);
+        libxsmm_matdiff(&norms_batchstats, LIBXSMM_DATATYPE_F32, nIfm, 1, naive_dbeta, dbeta_libxsmm, 0, 0);
         printf("\nDelta beta values:\n");
         printf("L1 reference  : %.25g\n", norms_batchstats.l1_ref);
         printf("L1 test       : %.25g\n", norms_batchstats.l1_tst);
@@ -814,7 +814,7 @@ int main(int argc, char* argv[])
         printf("Check-norm    : %.24f\n\n", norms_batchstats.normf_rel);
         libxsmm_matdiff_reduce(&diff, &norms_batchstats);
 
-        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nIfm, 1, naive_dgamma, dgamma_libxsmm, 0, 0, &norms_batchstats);
+        libxsmm_matdiff(&norms_batchstats, LIBXSMM_DATATYPE_F32, nIfm, 1, naive_dgamma, dgamma_libxsmm, 0, 0);
         printf("Delta gamma values:\n");
         printf("L1 reference  : %.25g\n", norms_batchstats.l1_ref);
         printf("L1 test       : %.25g\n", norms_batchstats.l1_tst);
@@ -826,7 +826,7 @@ int main(int argc, char* argv[])
         libxsmm_matdiff_reduce(&diff, &norms_batchstats);
 
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_del_input_add, (void*)naive_libxsmm_del_input_add, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-        libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp), 1, naive_del_input_add, naive_libxsmm_del_input_add, 0, 0, &norms_bwd);
+        libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIfm*(stride_bn*ifhp)*(stride_bn*ifwp), 1, naive_del_input_add, naive_libxsmm_del_input_add, 0, 0);
         printf("Del input add values:\n");
         printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
         printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
@@ -868,7 +868,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_dfilter, (void*)naive_libxsmm_filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0, &norms_upd);
+      libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0);
       printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
@@ -1113,7 +1113,7 @@ int main(int argc, char* argv[])
       naive_copy_NHWC_to_NCHW(output_nhwc, naive_output_nhwc, nImg, ofhp, ofwp, nOfm);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_output_nhwc, 0, 0, &norms_fwd);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_output_nhwc, 0, 0);
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -1147,7 +1147,7 @@ int main(int argc, char* argv[])
       naive_copy_NHWC_to_NCHW(dinput_nhwc, naive_input_nhwc, nImg, ifhp, ifwp, nIfm);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_input_nhwc, 0, 0, &norms_bwd);
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_input_nhwc, 0, 0);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -1185,7 +1185,7 @@ int main(int argc, char* argv[])
       naive_copy_RSCK_to_KCRS(dfilter_rsck, naive_filter_kcrs, kh, kw, nIfm, nOfm);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_filter_kcrs, 0, 0, &norms_upd);
+      libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_filter_kcrs, 0, 0);
       printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);
@@ -1429,7 +1429,7 @@ int main(int argc, char* argv[])
       naive_copy_NHWC_to_NCHW(output_nhwc, naive_output_nhwc, nImg, ofhp, ofwp, nOfm);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_output_nhwc, 0, 0, &norms_fwd);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOfm*ofhp*ofwp, 1, naive_output, naive_output_nhwc, 0, 0);
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -1463,7 +1463,7 @@ int main(int argc, char* argv[])
       naive_copy_NHWC_to_NCHW(dinput_nhwc, naive_input_nhwc, nImg, ifhp, ifwp, nIfm);
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_input_nhwc, 0, 0, &norms_bwd);
+      libxsmm_matdiff(&norms_bwd, LIBXSMM_DATATYPE_F32, nImg*nIfm*ifhp*ifwp, 1, naive_input, naive_input_nhwc, 0, 0);
       printf("L1 reference  : %.25g\n", norms_bwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_bwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_bwd.l2_abs);
@@ -1501,7 +1501,7 @@ int main(int argc, char* argv[])
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_dfilter, (void*)naive_libxsmm_filter, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
 
       /* compare */
-      libxsmm_matdiff(LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0, &norms_upd);
+      libxsmm_matdiff(&norms_upd, LIBXSMM_DATATYPE_F32, nOfm*nIfm*kh*kw, 1, naive_filter_wu, naive_libxsmm_filter, 0, 0);
       printf("L1 reference  : %.25g\n", norms_upd.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_upd.l2_abs);

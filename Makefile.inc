@@ -1,5 +1,5 @@
 #############################################################################
-# Copyright (c) 2015-2018, Intel Corporation                                #
+# Copyright (c) 2015-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -155,6 +155,11 @@ endif
 # compatible with the GCC tool chain
 COMPATIBLE ?= 0
 
+# Control visibility of symbols
+# 0: hidden unless explicitly marked visible
+# 1: default visibility
+VISIBILITY ?= 0
+
 # Number of repeated calls (tests),
 # or used to scale the problem size
 TESTSIZE ?= 1
@@ -218,6 +223,7 @@ PEDANTIC ?= 0
 
 # Embed InterProcedural Optimization information into libraries
 IPO ?= 0
+FAT ?= 0
 
 # ILP64=0 (LP64 with 32-bit integers), and ILP64=0 (64-bit integers)
 ILP64 ?= 0
@@ -730,7 +736,8 @@ ifneq (Darwin,$(UNAME))
     XLNKOPT = -Wl,
   endif
   linkopt = $(XLNKOPT)$(if $2,$1=$2,$1)
-  abslibrpath = $(strip $(if $(wildcard $1),$(call linkopt,--rpath,$(dir $(abspath $1))),$(NULL)))
+  abslibrpath = $(strip $(call linkopt,--rpath,$(if \
+    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
   ifneq (0,$(ASNEEDED))
@@ -742,20 +749,16 @@ else
     XLNKOPT = -Xlinker
   endif
   linkopt = $(XLNKOPT) $1 $(XLNKOPT) $2
-  abslibrpath = $(strip $(if $(wildcard $1),$(call linkopt,-rpath,$(dir $(abspath $1))),$(NULL)))
+  abslibrpath = $(strip $(call linkopt,-rpath,$(if \
+    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
 endif
 
 absliblpath = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
-  $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)),$(NULL)))
+  $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
+  $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1)))
 abslibfile = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
   $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
     -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
-
-ifneq (0,$(ABSLIBS))
-  abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
-else
-  abslibpath = $(call absliblpath,$1)
-endif
 
 LIBDEP = $(LIBNAME).$(IMPEXT)
 MAINLIB = $(call abslib,$(LIBDEP))
@@ -832,7 +835,7 @@ ifneq (0,$(INTEL))
     endif
     FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   endif
-  ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+  ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
     CPEDANTIC += -Wcheck
   endif
   CPEDANTIC += -diag-disable 177,1419,1572,2547,10382
@@ -845,7 +848,7 @@ ifneq (0,$(INTEL))
       FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
       FCFLAGS += -free
     endif
-    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
       CXXFLAGS += -Wcheck
       CFLAGS += -Wcheck
     endif
@@ -872,7 +875,7 @@ ifneq (0,$(INTEL))
   CFLAGS += $(OPTFLAG)
   FCFLAGS += $(OPTFLAG)
   ifeq (0,$(OFFLOAD))
-    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
       CXXFLAGS += -qno-offload
       CFLAGS += -qno-offload
     endif
@@ -884,7 +887,7 @@ ifneq (0,$(INTEL))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
     CXXFLAGS += -fno-alias -ansi-alias
     CFLAGS += -fno-alias -ansi-alias
-    ifneq (0,$(shell echo "$$((99990000>$(CC_VERSION)))"))
+    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
       CXXFLAGS += -qoverride_limits #-fp-model fast=2
       CFLAGS += -qoverride_limits #-fp-model fast=2
     endif
@@ -903,8 +906,8 @@ ifneq (0,$(INTEL))
       CXXFLAGS += -ipo
       CFLAGS += -ipo
     endif
-  else # debugging enabled
-    ifeq (,$(strip $(GFC)))
+  else ifeq (,$(strip $(GFC))) # debugging enabled
+    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
       FCFLAGS += -check
     endif
   endif
@@ -1108,11 +1111,16 @@ else # GCC assumed
       FCFLAGS += -funroll-loops
     endif
     ifneq (0,$(IPO))
-      CXXFLAGS += -flto -ffat-lto-objects
-      CFLAGS += -flto -ffat-lto-objects
-      FCFLAGS += -flto -ffat-lto-objects
-      FLDFLAGS += -fno-lto
-      LDFLAGS += -flto
+      CXXFLAGS += -flto
+      CFLAGS += -flto
+      FCFLAGS += -flto
+      #FLDFLAGS += -fno-lto
+      LDFLAGS += $(XLNKOPT)-flto
+      ifneq (0,$(FAT))
+        CXXFLAGS += -ffat-lto-objects
+        CFLAGS += -ffat-lto-objects
+        FCFLAGS += -ffat-lto-objects
+      endif
     endif
   endif
   ifneq (0,$(INSTRUMENT))
@@ -1456,12 +1464,20 @@ ifeq (0,$(COMPATIBLE))
       endif
     endif
     endif
-    # flag -fvisibility=hidden is causing crashes (assertions during validation)
-    CXXFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden -fvisibility-inlines-hidden
-    CFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
-    FCFLAGS += -fdata-sections -ffunction-sections #-fvisibility=hidden
+    CXXFLAGS += -fdata-sections -ffunction-sections
+    CFLAGS += -fdata-sections -ffunction-sections
+    ifeq (0,$(INTEL))
+      FCFLAGS += -fdata-sections -ffunction-sections
+    else ifneq (,$(strip $(GFC)))
+      FCFLAGS += -fdata-sections -ffunction-sections
+    endif
     # --gc-sections: relies on section-flags present at compile-stage
     LDFLAGS += $(XLNKOPT)--gc-sections
+    ifeq (0,$(VISIBILITY)) # -fvisibility=hidden may cause crashes
+      CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
+      #FCFLAGS += -fvisibility=hidden
+      CFLAGS += -fvisibility=hidden
+    endif
   endif
   ifeq (0,$(EXP))
     CXXFLAGS += -fno-exceptions
@@ -1538,28 +1554,19 @@ ifeq (0,$(OMP))
   EXTLIB += $(OMPLIB)
 endif
 
-ifeq (Darwin,$(UNAME))
-ifneq (,$(OMPLIBFILE))
-  ifeq (0,$(ABSLIBS))
-    LDFLAGS += $(call abslibrpath,$(OMPLIBFILE))
-  endif
-  LDFLAGS += $(call abslib,$(OMPLIBFILE))
-endif
-endif
-
 ifneq (0,$(TBB))
 ifneq (,$(TBBROOT))
   ifneq (Windows_NT,$(UNAME))
     TBBLIB_DIR = $(TBBROOT)/lib/intel64
     TBBLIB_DIRGCC = gcc$(GCC_VERSION_MAJOR).$(GCC_VERSION_MINOR)
-    TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.so)
+    TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(DLIBEXT))
     ifeq (,$(TBBLIB_MALLOC))
       ifneq (0,$(TBB_OLDRTL))
         TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | tr "\n" " " | cut -d" " -f1)
       else
         TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | tr "\n" " " | rev | cut -d" " -f2 | rev)
       endif
-      TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.so)
+      TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(DLIBEXT))
     endif
     ifneq (,$(TBBLIB_MALLOC))
       IFLAGS += -I$(TBBROOT)/include
@@ -1592,12 +1599,31 @@ ifneq (0,$(BLAS))
   endif
 endif
 
+# enable MKL if available
 ifeq (,$(strip $(MKLROOT)))
   MKL_INCFILE = $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h)))
   ifneq (,$(strip $(MKL_INCFILE)))
     MKLROOT = $(abspath $(dir $(MKL_INCFILE))/..)
+    ABSLIBS = 1
   endif
 endif
+
+ifneq (0,$(ABSLIBS))
+ifeq (0,$(DEPSTATIC))
+  abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
+endif
+endif
+abslibpath ?= $(call absliblpath,$1)
+
+ifeq (Darwin,$(UNAME))
+ifneq (,$(OMPLIBFILE))
+  ifeq (0,$(ABSLIBS))
+    LDFLAGS += $(call abslibrpath,$(OMPLIBFILE))
+  endif
+  LDFLAGS += $(call abslib,$(OMPLIBFILE))
+endif
+endif
+
 ifneq (,$(strip $(MKLROOT)))
   MKL ?= $(BLAS)
   ifneq (,$(strip $(FC)))
@@ -1660,7 +1686,11 @@ ifneq (0,$(MKL))
   BLAS_IFLAGS += -I$(MKLROOT)/include
   BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifeq (0,$(BLAS_STATIC)) # shared
-    BLAS_LDFLAGS := -L$(MKLROOT)/lib/$(MKL_ARCH) -lmkl_$(MKL_FCRTL)_$(MKL_BITS) -lmkl_core -lmkl_$(MKL_THREADS) $(BLAS_LDFLAGS)
+    BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
+      $(call abslibfile,libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(DLIBEXT)) \
+      $(call abslibfile,libmkl_core.$(DLIBEXT)) \
+      $(call abslibfile,libmkl_$(MKL_THREADS).$(DLIBEXT)) \
+      $(BLAS_LDFLAGS)
     ifneq (0,$(INTEL))
     ifneq (0,$(OFFLOAD))
       BLAS_LDFLAGS += -qoffload-option,mic,ld,"-L$(MKLROOT)/lib/mic -lmkl_$(MKL_FCRTL)_$(MKL_BITS) -lmkl_core -lmkl_$(MKL_THREADS)"

@@ -78,6 +78,7 @@ _*.txt
 *.dll
 *.mhd
 *.out
+*.err
 *.so
 *.o
 *.a

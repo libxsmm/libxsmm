@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -30,18 +30,18 @@
    Alexander Heinecke (Intel Corp.), Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-LIBXSMM_VLA_DECL(2, libxsmm_bgemm_lock, locks, handle->locks, handle->nb);
+LIBXSMM_VLA_DECL(2, libxsmm_blocked_gemm_lock, locks, handle->locks, handle->nb);
 /* TODO: pad thread-local buffer members by the size of a cache-line in order to avoid "Ping-Pong" */
-LIBXSMM_VLA_DECL(2, LIBXSMM_BGEMM_TEMPLATE_TYPE_C, l_out, (LIBXSMM_BGEMM_TEMPLATE_TYPE_C*)(((char*)handle->buffer) +
-  ltid * LIBXSMM_UP2(handle->bm * handle->bn * sizeof(LIBXSMM_BGEMM_TEMPLATE_TYPE_C), LIBXSMM_CACHELINE)), handle->bm);
-LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_TYPE_AB, real_a, (const LIBXSMM_BGEMM_TEMPLATE_TYPE_AB*)a, handle->kb, handle->bk, handle->bm);
-LIBXSMM_VLA_DECL(4, const LIBXSMM_BGEMM_TEMPLATE_TYPE_AB, real_b, (const LIBXSMM_BGEMM_TEMPLATE_TYPE_AB*)b, handle->kb, handle->bn, handle->bk);
-LIBXSMM_VLA_DECL(4, LIBXSMM_BGEMM_TEMPLATE_TYPE_C, real_c, (LIBXSMM_BGEMM_TEMPLATE_TYPE_C*)c, handle->mb, handle->bn, handle->bm);
+LIBXSMM_VLA_DECL(2, LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C, l_out, (LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C*)(((char*)handle->buffer) +
+  ltid * LIBXSMM_UP2(handle->bm * handle->bn * sizeof(LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C), LIBXSMM_CACHELINE)), handle->bm);
+LIBXSMM_VLA_DECL(4, const LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB, real_a, (const LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB*)a, handle->kb, handle->bk, handle->bm);
+LIBXSMM_VLA_DECL(4, const LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB, real_b, (const LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB*)b, handle->kb, handle->bn, handle->bk);
+LIBXSMM_VLA_DECL(4, LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C, real_c, (LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C*)c, handle->mb, handle->bn, handle->bm);
 
-const LIBXSMM_MMFUNCTION_TYPE2(LIBXSMM_BGEMM_TEMPLATE_TYPE_AB, LIBXSMM_BGEMM_TEMPLATE_TYPE_C) kernel =
-        handle->kernel.LIBXSMM_TPREFIX2(LIBXSMM_BGEMM_TEMPLATE_TYPE_AB, LIBXSMM_BGEMM_TEMPLATE_TYPE_C, mm);
-const LIBXSMM_MMFUNCTION_TYPE2(LIBXSMM_BGEMM_TEMPLATE_TYPE_AB, LIBXSMM_BGEMM_TEMPLATE_TYPE_C) kernel_pf =
-        handle->kernel_pf.LIBXSMM_TPREFIX2(LIBXSMM_BGEMM_TEMPLATE_TYPE_AB, LIBXSMM_BGEMM_TEMPLATE_TYPE_C, mm);
+const LIBXSMM_MMFUNCTION_TYPE2(LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB, LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C) kernel =
+        handle->kernel.LIBXSMM_TPREFIX2(LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB, LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C, mm);
+const LIBXSMM_MMFUNCTION_TYPE2(LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB, LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C) kernel_pf =
+        handle->kernel_pf.LIBXSMM_TPREFIX2(LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_AB, LIBXSMM_BLOCKED_GEMM_TEMPLATE_TYPE_C, mm);
 
 const libxsmm_blasint b_m1 = handle->b_m1;
 const libxsmm_blasint b_n1 = handle->b_n1;
@@ -91,7 +91,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
         }
         else {
           if (o_i2 != i2 || o_j2 != j2) {
-            libxsmm_bgemm_lock *const lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
+            libxsmm_blocked_gemm_lock *const lock = &LIBXSMM_VLA_ACCESS(2, locks, o_i2, o_j2, handle->nb);
             LIBXSMM_ATOMIC_ACQUIRE(&lock->state, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
             for (ki = 0; ki < handle->bn; ++ki) {
               LIBXSMM_PRAGMA_SIMD
@@ -137,7 +137,7 @@ for (mb = 0, m = 0; mb < b_m1; ++mb, m += nw_i) {
         }
 
         if (w_i == (e - 1)) {
-          libxsmm_bgemm_lock* lock;
+          libxsmm_blocked_gemm_lock* lock;
           o_i2 = i2;
           o_j2 = j2;
 

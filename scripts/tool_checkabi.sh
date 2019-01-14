@@ -1,6 +1,6 @@
 #!/bin/bash
 #############################################################################
-# Copyright (c) 2018, Intel Corporation                                     #
+# Copyright (c) 2018-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -33,47 +33,78 @@
 HERE=$(cd $(dirname $0); pwd -P)
 LIBS=${HERE}/../lib
 
+#EXCLUDE="libxsmmgen"
+ABINEW=.abi.log
+ABITMP=.abi.tmp
+ABICUR=.abi.txt
+LIBTYPE=so
+
 BASENAME=$(command -v basename 2>/dev/null)
 ECHO=$(command -v echo 2>/dev/null)
+SORT=$(command -v sort 2>/dev/null)
+DIFF=$(command -v diff 2>/dev/null)
 SED=$(command -v sed 2>/dev/null)
-CAT=$(command -v cat 2>/dev/null)
 CUT=$(command -v cut 2>/dev/null)
 LS=$(command -v ls 2>/dev/null)
-RM=$(command -v rm 2>/dev/null)
+CP=$(command -v cp 2>/dev/null)
+MV=$(command -v mv 2>/dev/null)
 NM=$(command -v nm 2>/dev/null)
 
-if [ "" != "${ECHO}" ] && [ "" != "${SED}" ] && [ "" != "${CAT}" ] && [ "" != "${CUT}" ] && \
-   [ "" != "${LS}" ] && [ "" != "${RM}" ] && [ "" != "${NM}" ];
+if [ "" != "${ECHO}" ] && [ "" != "${SORT}" ] && [ "" != "${DIFF}" ] && \
+   [ "" != "${NM}"   ] && [ "" != "${SED}"  ] && [ "" != "${CUT}"  ] && \
+   [ "" != "${LS}"   ] && [ "" != "${CP}"   ] && [ "" != "${MV}"   ];
 then
-  ${RM} -f .checkabi.log
-  for LIBTYPE in a so; do
-    for LIBFILE in $(ls -1 ${LIBS}/*.${LIBTYPE} 2>/dev/null); do
-      LIB=$(${BASENAME} ${LIBFILE} .${LIBTYPE})
-      ${ECHO} "Checking ${LIB}..."
-      ${NM} ${LIBFILE} | while read LINE;
-      do
-        SYMBOL=$(${ECHO} "${LINE}" | ${SED} -n "/ T /p" | ${CUT} -d" " -f3)
-        if [ "" != "${SYMBOL}" ]; then
-          if [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^libxsmm/p)" ] && \
-             [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /^__/p)" ] && \
-             [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n /_$/p)" ];
-          then
-            ${ECHO} "  ${LIB}.${LIBTYPE} -> ${OBJECT} -> ${SYMBOL}" >> .checkabi.log
-          fi
-        else
-          LOCATION=$(${ECHO} "${LINE}" | ${SED} -n "/..*\.o:$/p")
-          if [ "" != "${LOCATION}" ]; then
-            OBJECT=$(${ECHO} "${LOCATION}" | ${SED} -e "s/:$//")
-          fi
-        fi
-      done
-    done
+  # determine behavior of sort command
+  export LC_ALL=C
+  for LIBFILE in $(${LS} -1 ${LIBS}/*.${LIBTYPE} 2>/dev/null); do
+    LIBFILES="${LIBFILES} ${LIBFILE}"
   done
-  if [ -e .checkabi.log ]; then
-    ${ECHO} "There are non-conforming function names:"
-    ${CAT} .checkabi.log
+  if [ "" != "${LIBFILES}" ]; then
+    ${CP} /dev/null ${ABINEW}
+    for LIBFILE in ${LIBFILES}; do
+      LIB=$(${BASENAME} ${LIBFILE} .${LIBTYPE})
+      if [ "" = "${EXCLUDE}" ] || [ "" != "$(${ECHO} "${EXCLUDE}" | ${SED} "/\b${LIB}\b/d")" ]; then
+        ${ECHO} "Checking ${LIB}..."
+        while read LINE; do
+          SYMBOL=$(${ECHO} "${LINE}" | ${SED} -n "/ T /p" | ${CUT} -d" " -f3)
+          if [ "" != "${SYMBOL}" ]; then
+            if [ "" != "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__libxsmm_MOD_libxsmm/p")" ] || \
+               [ "" != "$(${ECHO} ${SYMBOL} | ${SED} -n "/^libxsmm/p")" ];
+            then
+              ${ECHO} "${SYMBOL}" >> ${ABINEW}
+            elif [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__libxsmm_MOD___/p")" ] && \
+                 [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^__wrap_..*_/p")" ] && \
+                 [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^.gem._/p")" ] && \
+                 [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^_init/p")" ] && \
+                 [ "" = "$(${ECHO} ${SYMBOL} | ${SED} -n "/^_fini/p")" ];
+            then
+              ${ECHO} "Error: non-conforming function name"
+              ${ECHO} "${LIB} -> ${SYMBOL}"
+              exit 1
+            fi
+          else
+            LOCATION=$(${ECHO} "${LINE}" | ${SED} -n "/..*\.o:$/p")
+            if [ "" != "${LOCATION}" ]; then
+              OBJECT=$(${ECHO} "${LOCATION}" | ${SED} -e "s/:$//")
+            fi
+          fi
+        done < <(${NM} ${LIBFILE})
+      else
+        ${ECHO} "Excluded ${LIB}"
+      fi
+    done
+    ${SORT} -u ${ABINEW} > ${ABITMP}
+    ${MV} ${ABITMP} ${ABINEW}
+    REMOVED=$(${DIFF} --new-line-format="" --unchanged-line-format="" <(${SORT} ${ABICUR}) ${ABINEW})
+    if [ "" = "${REMOVED}" ]; then
+      ${CP} ${ABINEW} ${ABICUR}
+      ${ECHO} "Successfully completed."
+    else
+      ${ECHO} "Error: removed or renamed function(s)"
+      ${ECHO} "${REMOVED}"
+    fi
   else
-    ${ECHO} "Successfully Completed."
+    ${ECHO} "Warning: ABI checker requires shared libraries (${LIBTYPE})."
   fi
 else
   ${ECHO} "Error: missing prerequisites!"

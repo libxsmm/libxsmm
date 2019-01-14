@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,9 +26,9 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Greg Henry (Intel Corp.)
+/* Greg Henry, Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#if 1
+#if 0
 #define USE_KERNEL_GENERATION_DIRECTLY
 #endif
 #if 0
@@ -39,9 +39,7 @@
 
 #if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(TIME_MKL) && \
    (!defined(__linux__) || !defined(USE_KERNEL_GENERATION_DIRECTLY))
-# if 0 /* TODO: provide TRMM API */
 # define USE_XSMM_GENERATED
-# endif
 # include <libxsmm.h>
 #else
 # include <libxsmm_source.h>
@@ -293,7 +291,7 @@ void dfill_matrix ( double *matrix, unsigned int ld, unsigned int m, unsigned in
 
   if ( ld < m )
   {
-     fprintf(stderr,"Error is dfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
+     fprintf(stderr,"Error in dfill_matrix: ld=%u m=%u mismatched!\n",ld,m);
      exit(-1);
   }
   for ( j = 1 ; j <= n ; j++ )
@@ -474,10 +472,10 @@ int main(int argc, char* argv[])
   const unsigned char *cptr = NULL;
   unsigned long op_count;
   unsigned int typesize8 = 8;
-  const libxsmm_trsm_descriptor* desc8 = NULL;
+  const libxsmm_trmm_descriptor* desc8 = NULL;
 #ifdef TEST_SINGLE
   unsigned int typesize4 = 4;
-  const libxsmm_trsm_descriptor* desc4 = NULL;
+  const libxsmm_trmm_descriptor* desc4 = NULL;
 #endif
   libxsmm_descriptor_blob blob;
   union {
@@ -562,9 +560,9 @@ int main(int argc, char* argv[])
   printf("This code tests MKL compact batch directly\n");
 #endif
 
-  desc8 = libxsmm_trsm_descriptor_init(&blob, typesize8, m, n, lda, ldb, &dalpha, trans, diag, side, uplo, layout);
+  desc8 = libxsmm_trmm_descriptor_init(&blob, typesize8, m, n, lda, ldb, &dalpha, trans, diag, side, uplo, layout);
 #ifdef TEST_SINGLE
-  desc4 = libxsmm_trsm_descriptor_init(&blob, typesize4, m, n, lda, ldb, &salpha, trans, diag, side, uplo, layout);
+  desc4 = libxsmm_trmm_descriptor_init(&blob, typesize4, m, n, lda, ldb, &salpha, trans, diag, side, uplo, layout);
 #endif
 #ifdef USE_XSMM_GENERATED
   printf("calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
@@ -572,13 +570,13 @@ int main(int argc, char* argv[])
   printf("done calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
   if ( mykernel.dp == NULL ) printf("R8 Kernel after the create call is null\n");
 #ifdef TEST_SINGLE
-  mykernel.sp = libxsmm_dispatch_trsm(desc4);
+  mykernel.sp = libxsmm_dispatch_trmm(desc4);
   if ( mykernel.sp == NULL ) printf("R4 kernel after the create call is null\n");
 #endif
 #endif
 
 #if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
-  libxsmm_generator_packed_trmm_avx_avx512_kernel ( &io_generated_code, desc8, "hsw" );
+  libxsmm_generator_trmm_kernel ( &io_generated_code, desc8, "hsw" );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
@@ -825,3 +823,4 @@ int main(int argc, char* argv[])
 
   return 0;
 }
+

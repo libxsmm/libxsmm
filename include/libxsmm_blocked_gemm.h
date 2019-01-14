@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -28,27 +28,27 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_BGEMM_H
-#define LIBXSMM_BGEMM_H
+#ifndef LIBXSMM_BLOCKED_GEMM_H
+#define LIBXSMM_BLOCKED_GEMM_H
 
 #include "libxsmm_typedefs.h"
 
 
 /** Denotes the BGEMM data order. */
-typedef enum libxsmm_bgemm_order {
-  LIBXSMM_BGEMM_ORDER_JIK = 0,
-  LIBXSMM_BGEMM_ORDER_IJK = 1,
-  LIBXSMM_BGEMM_ORDER_JKI = 2,
-  LIBXSMM_BGEMM_ORDER_IKJ = 3,
-  LIBXSMM_BGEMM_ORDER_KJI = 4,
-  LIBXSMM_BGEMM_ORDER_KIJ = 5
-} libxsmm_bgemm_order;
+typedef enum libxsmm_blocked_gemm_order {
+  LIBXSMM_BLOCKED_GEMM_ORDER_JIK = 0,
+  LIBXSMM_BLOCKED_GEMM_ORDER_IJK = 1,
+  LIBXSMM_BLOCKED_GEMM_ORDER_JKI = 2,
+  LIBXSMM_BLOCKED_GEMM_ORDER_IKJ = 3,
+  LIBXSMM_BLOCKED_GEMM_ORDER_KJI = 4,
+  LIBXSMM_BLOCKED_GEMM_ORDER_KIJ = 5
+} libxsmm_blocked_gemm_order;
 
 /** Describes the Block-GEMM (BGEMM) operation. */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_bgemm_handle libxsmm_bgemm_handle;
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_blocked_gemm_handle libxsmm_blocked_gemm_handle;
 
 
-LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
+LIBXSMM_API libxsmm_blocked_gemm_handle* libxsmm_blocked_gemm_handle_create(
   /** Number of threads used to run BGEMM. */
   /*unsigned*/ int nthreads, libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
@@ -61,39 +61,39 @@ LIBXSMM_API libxsmm_bgemm_handle* libxsmm_bgemm_handle_create(
   /** See libxsmm_gemm_flags (LIBXSMM_FLAGS is used if NULL is given). */ const int* gemm_flags,
   /** See libxsmm_gemm_prefetch_type; a strategy chosen automatically if NULL is given. */
   const libxsmm_gemm_prefetch_type* prefetch,
-  /** See libxsmm_bgemm_order; an order is chosen automatically if NULL is given. */
-  const libxsmm_bgemm_order* order);
+  /** See libxsmm_blocked_gemm_order; an order is chosen automatically if NULL is given. */
+  const libxsmm_blocked_gemm_order* order);
 
-LIBXSMM_API void libxsmm_bgemm_handle_destroy(const libxsmm_bgemm_handle* handle);
+LIBXSMM_API void libxsmm_blocked_gemm_handle_destroy(const libxsmm_blocked_gemm_handle* handle);
 
 /** Copy-in functions for A, B, and C matrices. A leading dimension for the source buffer is optional and can be NULL. */
-LIBXSMM_API int libxsmm_bgemm_copyin_a(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
-LIBXSMM_API int libxsmm_bgemm_copyin_b(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
-LIBXSMM_API int libxsmm_bgemm_copyin_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
+LIBXSMM_API int libxsmm_blocked_gemm_copyin_a(const libxsmm_blocked_gemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
+LIBXSMM_API int libxsmm_blocked_gemm_copyin_b(const libxsmm_blocked_gemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
+LIBXSMM_API int libxsmm_blocked_gemm_copyin_c(const libxsmm_blocked_gemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 /** Copy-out function for the C-matrix. A leading dimension for the destination buffer is optional and can be NULL. */
-LIBXSMM_API int libxsmm_bgemm_copyout_c(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
+LIBXSMM_API int libxsmm_blocked_gemm_copyout_c(const libxsmm_blocked_gemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 
 /** Convert function required to reorganize elements in delta for BWD and UPD passes of RNN, LSTM and GRU */
-LIBXSMM_API int libxsmm_bgemm_convert_b_to_a(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
+LIBXSMM_API int libxsmm_blocked_gemm_convert_b_to_a(const libxsmm_blocked_gemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 /** Transpose matrix b for UPD pass of GRU */
-LIBXSMM_API int libxsmm_bgemm_transpose_b(const libxsmm_bgemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
+LIBXSMM_API int libxsmm_blocked_gemm_transpose_b(const libxsmm_blocked_gemm_handle* handle, const void* src, const libxsmm_blasint* ld, void* dst);
 
 /**
 * Fine grain parallelized block-GEMM (BGEMM), which uses a block structure
 * layout for the A and B matrices. The implementation is parallelized
 * among M, N, and K using fine-grained on-demand locks when writing C.
 */
-LIBXSMM_API void libxsmm_bgemm_st(const libxsmm_bgemm_handle* handle, const void* a, const void* b, void* c,
+LIBXSMM_API void libxsmm_blocked_gemm_st(const libxsmm_blocked_gemm_handle* handle, const void* a, const void* b, void* c,
   /*unsigned*/int start_thread, /*unsigned*/int tid);
 
 /**
- * Implementation of libxsmm_bgemm, which is parallelized with OpenMP
+ * Implementation of libxsmm_blocked_gemm, which is parallelized with OpenMP
  * and uses an OpenMP or custom barrier implementation. The function
  * allows to run multiple GEMMs, which is specified by 'count' (RNNs).
  * This function requires to link against libxsmmext.
  */
-LIBXSMM_APIEXT void libxsmm_bgemm_omp(const libxsmm_bgemm_handle* handle,
+LIBXSMM_APIEXT void libxsmm_blocked_gemm_omp(const libxsmm_blocked_gemm_handle* handle,
   const void* a, const void* b, void* c, /*unsigned*/int count);
 
-#endif /*LIBXSMM_BGEMM_H*/
+#endif /*LIBXSMM_BLOCKED_GEMM_H*/
 

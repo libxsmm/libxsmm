@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2018, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -51,19 +51,11 @@
 #define LIBXSMM_PREFETCH_SIGONLY 1
 #define LIBXSMM_PREFETCH_NONE 0
 
-/* support for bfloat */
-typedef unsigned short libxsmm_bfloat16;
-union libxsmm_bfloat16_hp {
-  float              f;
-  libxsmm_bfloat16   i[2];
-};
-
-
 /** Helper macro for type names. */
 #define LIBXSMM_TYPENAME(TYPE) LIBXSMM_STRINGIFY(LIBXSMM_CONCATENATE(LIBXSMM_TYPENAME_, TYPE))
 #define LIBXSMM_TYPENAME_double f64
 #define LIBXSMM_TYPENAME_float f32
-#define LIBXSMM_TYPENAME_bfloat bf16
+#define LIBXSMM_TYPENAME_libxsmm_bfloat16 bf16
 #define LIBXSMM_TYPENAME_int i32
 #define LIBXSMM_TYPENAME_short i16
 #define LIBXSMM_TYPENAME_char i8
@@ -72,7 +64,7 @@ union libxsmm_bfloat16_hp {
 #define LIBXSMM_TYPEINFO(TYPE, INFO) LIBXSMM_CONCATENATE3(LIBXSMM_TYPEINFO_, INFO, _, TYPE)
 #define LIBXSMM_TYPEINFO_FP_double 1
 #define LIBXSMM_TYPENAME_FP_float 1
-#define LIBXSMM_TYPENAME_FP_bfloat 1
+#define LIBXSMM_TYPENAME_FP_libxsmm_bfloat16 1
 #define LIBXSMM_TYPENAME_FP_int 0
 #define LIBXSMM_TYPENAME_FP_short 0
 #define LIBXSMM_TYPENAME_FP_char 0
@@ -81,7 +73,7 @@ union libxsmm_bfloat16_hp {
 #define LIBXSMM_TYPESYMBOL(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TYPESYMBOL_, TYPE)
 #define LIBXSMM_TYPESYMBOL_double F64
 #define LIBXSMM_TYPESYMBOL_float F32
-#define LIBXSMM_TYPESYMBOL_bfloat BF16
+#define LIBXSMM_TYPESYMBOL_libxsmm_bfloat16 BF16
 #define LIBXSMM_TYPESYMBOL_int I32
 #define LIBXSMM_TYPESYMBOL_short I16
 #define LIBXSMM_TYPESYMBOL_char I8
@@ -117,6 +109,18 @@ union libxsmm_bfloat16_hp {
 #define LIBXSMM_DESCRIPTOR_MAXSIZE 32
 
 
+/* Support for Bfloat16 */
+typedef unsigned short libxsmm_bfloat16;
+
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_bfloat16_hp {
+  libxsmm_bfloat16 i[2];
+  float f;
+} libxsmm_bfloat16_hp;
+
+#if defined(__cplusplus)
+namespace tensorflow { struct bfloat16; }
+#endif /*__cplusplus*/
+
 /** Integer type for LAPACK/BLAS (LP64: 32-bit, and ILP64: 64-bit). */
 typedef LIBXSMM_BLASINT libxsmm_blasint;
 
@@ -137,16 +141,23 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor li
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor libxsmm_trans_descriptor;
 /** Structure storing arguments of packed TRSM. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor libxsmm_trsm_descriptor;
+/** Structure storing arguments of packed TRMM. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor libxsmm_trmm_descriptor;
+/** Structure storing arguments of packed GETRF. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_getrf_descriptor libxsmm_getrf_descriptor;
+/** Structure storing arguments of packed GEMM. */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_pgemm_descriptor libxsmm_pgemm_descriptor;
 
 /** Enumerates element/data types. */
 typedef enum libxsmm_datatype {
-  LIBXSMM_DATATYPE_UNSUPPORTED = -1,
   LIBXSMM_DATATYPE_F64,
   LIBXSMM_DATATYPE_F32,
   LIBXSMM_DATATYPE_BF16,
+  LIBXSMM_DATATYPE_I64,
   LIBXSMM_DATATYPE_I32,
   LIBXSMM_DATATYPE_I16,
-  LIBXSMM_DATATYPE_I8
+  LIBXSMM_DATATYPE_I8,
+  LIBXSMM_DATATYPE_UNSUPPORTED
 } libxsmm_datatype;
 
 /** Denotes the precision/data type of GEMM. */
@@ -337,7 +348,7 @@ typedef enum libxsmm_dnn_conv_option {
   LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE = 8,
   /* external filter transpose to bwd convolutions */
   LIBXSMM_DNN_CONV_OPTION_UPD_NO_INPUT_TRANSPOSE = 16,
-  /* Downconvert for BF16 using RNE rounding */
+  /* Down-convert for BF16 using RNE rounding */
   LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE = 32,
   /* compound types */
   LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE_OVERWRITE = LIBXSMM_DNN_CONV_OPTION_OVERWRITE | LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE,
@@ -349,12 +360,12 @@ typedef enum libxsmm_dnn_conv_option {
 } libxsmm_dnn_conv_option;
 
 typedef enum libxsmm_dnn_fusedbatchnorm_fuse_order {
-  /* the fuse order is: 1. BN, 2. eltwise 3. RELU */
+  /* the fuse order is: 1. BN, 2. element-wise 3. RELU */
   LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU = 0
 } libxsmm_dnn_fusedbatchnorm_fuse_order;
 
 typedef enum libxsmm_dnn_fusedbatchnorm_fuse_op {
-  /* the fuse order is: 1. BN, 2. eltwise 3. RELU */
+  /* the fuse order is: 1. BN, 2. element-wise 3. RELU */
   LIBXSMM_DNN_FUSEDBN_OPS_BN = 1,
   LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE = 2,
   LIBXSMM_DNN_FUSEDBN_OPS_ELTWISE = 4,
@@ -374,7 +385,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm_
   int W;                                     /* width of input image */
   int u;                                     /* vertical stride */
   int v;                                     /* horizontal stride */
-  int pad_h_in;                              /* height of physcial zero-padding in input buffer */
+  int pad_h_in;                              /* height of physical zero-padding in input buffer */
   int pad_w_in;                              /* width of physical zero-padding in input buffer */
   int pad_h_out;                             /* height of physical zero-padding in output buffer */
   int pad_w_out;                             /* width of physical zero-padding in output buffer */
@@ -425,7 +436,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_forward_de
   unsigned int compute_max;
   unsigned int perform_relu_in_kernel;
   unsigned int n_variants;
-  unsigned int f32_bf16_cvt_rne;                /* non-zero if inc case of bf16 we perform RNE rounding when converting down from f32 in JIT sequence */
+  unsigned int f32_bf16_cvt_rne;                /* non-zero if in case of bf16 we perform RNE rounding when converting down from f32 in JIT sequence */
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;
@@ -529,15 +540,18 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction)(const 
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wimmfunction)(const short* a, const short* b, int* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (low-precision). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wsmmfunction)(const short* a, const short* b, float* c, ...);
+/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (bf16, fp32-accumulate). */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, float* c, ...);
 
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction_reducebatch)(const double** a, const double** b, double* c, const unsigned long long* count, ...);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction_reducebatch)(const float** a, const float** b, float* c, const unsigned long long* count, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction_reducebatch)(const libxsmm_bfloat16** a, const libxsmm_bfloat16** b, float* c, const unsigned long long* count, ...);
 
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   void (*xmm)(const void* a, const void* b, void* c, ...);
-  libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wimmfunction wimm; libxsmm_wsmmfunction wsmm;
-  libxsmm_dmmfunction_reducebatch dmr; libxsmm_smmfunction_reducebatch smr;
+  libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wimmfunction wimm; libxsmm_wsmmfunction wsmm; libxsmm_bsmmfunction bsmm;
+  libxsmm_dmmfunction_reducebatch dmr; libxsmm_smmfunction_reducebatch smr; libxsmm_bsmmfunction_reducebatch bsmr;
 } libxsmm_xmmfunction;
 
 /** Determines the kernel kind. */
@@ -550,8 +564,10 @@ typedef enum libxsmm_kernel_kind {
   LIBXSMM_KERNEL_KIND_TRANS   = 2,
   /** TRSM kernel kind */
   LIBXSMM_KERNEL_KIND_TRSM    = 3,
+  /** TRMM kernel kind */
+  LIBXSMM_KERNEL_KIND_TRMM    = 4,
   /** Not a JIT kernel */
-  LIBXSMM_KERNEL_KIND_INVALID = 4
+  LIBXSMM_KERNEL_KIND_INVALID = 5
 } libxsmm_kernel_kind;
 
 /** Specialized function for matrix-copy (weak-typed). */
@@ -562,8 +578,12 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmcopyfunction)(
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(
   const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo);
 
-/** Specialized function for TRSMy (weak-typed). */
+/** Specialized function for TRSM (weak-typed). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtrsmfunction)(
+  const void* a, const void* b, void* c);
+
+/** Specialized function for TRMM (weak-typed). */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_xtrmmfunction)(
   const void* a, const void* b, void* c);
 
 /** Structure to receive information about GEMM-kernels (libxsmm_get_mmkernel_info). */

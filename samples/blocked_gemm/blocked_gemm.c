@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint bm = (4 < argc ? atoi(argv[4]) : 32);
   const libxsmm_blasint bk = (6 < argc ? atoi(argv[6]) : bm);
   const libxsmm_blasint bn = (5 < argc ? atoi(argv[5]) : bk);
-  const libxsmm_bgemm_order order = (libxsmm_bgemm_order)(7 < argc ? atoi(argv[7]) : 0);
+  const libxsmm_blocked_gemm_order order = (libxsmm_blocked_gemm_order)(7 < argc ? atoi(argv[7]) : 0);
   const int nrepeat = (8 < argc ? atoi(argv[8]) : 100);
   const libxsmm_blasint b_m1 = (9 < argc ? atoi(argv[9]) : 1);
   const libxsmm_blasint b_n1  = (10 < argc ? atoi(argv[10]) : 1);
@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
     ITYPE* a = (ITYPE*)libxsmm_malloc((size_t)m * (size_t)k * sizeof(ITYPE));
     ITYPE* b = (ITYPE*)libxsmm_malloc((size_t)k * (size_t)n * sizeof(ITYPE));
     ITYPE* c = (ITYPE*)libxsmm_malloc((size_t)m * (size_t)n * sizeof(ITYPE));
-    libxsmm_bgemm_handle* handle = 0;
+    libxsmm_blocked_gemm_handle* handle = 0;
     unsigned long long start;
     double duration;
 #if defined(_OPENMP)
@@ -116,7 +116,7 @@ int main(int argc, char* argv[])
 #else
     const int nthreads = 1;
 #endif
-    handle = libxsmm_bgemm_handle_create(nthreads,
+    handle = libxsmm_blocked_gemm_handle_create(nthreads,
       LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(ITYPE),
       m, n, k, &bm, &bn, &bk, &b_m1, &b_n1, &b_k1, &b_k2,
       &alpha, &beta, &gemm_flags, NULL/*auto-prefetch*/, &order);
@@ -125,14 +125,14 @@ int main(int argc, char* argv[])
       LIBXSMM_MATINIT_OMP(ITYPE, 42, agold, m, k, lda, 1.0);
       LIBXSMM_MATINIT_OMP(ITYPE, 24, bgold, k, n, ldb, 1.0);
       LIBXSMM_MATINIT_OMP(ITYPE,  0, cgold, m, n, ldc, 1.0);
-      libxsmm_bgemm_copyin_a(handle, agold, &lda, a);
-      libxsmm_bgemm_copyin_b(handle, bgold, &ldb, b);
-      libxsmm_bgemm_copyin_c(handle, cgold, &ldc, c);
+      libxsmm_blocked_gemm_copyin_a(handle, agold, &lda, a);
+      libxsmm_blocked_gemm_copyin_b(handle, bgold, &ldb, b);
+      libxsmm_blocked_gemm_copyin_c(handle, cgold, &ldc, c);
 #if defined(MKL_ENABLE_AVX512)
       mkl_enable_instructions(MKL_ENABLE_AVX512);
 #endif
       /* warm-up OpenMP (populate thread pool) */
-      libxsmm_bgemm_omp(handle, a, b, c, 1);
+      libxsmm_blocked_gemm_omp(handle, a, b, c, 1);
 #if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
       if (!LIBXSMM_FEQ(0, check)) {
         LIBXSMM_GEMM_SYMBOL(ITYPE)(&transa, &transb, &m, &n, &k, &alpha, agold, &lda, bgold, &ldb, &beta, cgold, &ldc);
@@ -144,7 +144,7 @@ int main(int argc, char* argv[])
       fprintf(stdout, "\n\n");
       }
       start = libxsmm_timer_tick();
-      libxsmm_bgemm_omp(handle, a, b, c, nrepeat);
+      libxsmm_blocked_gemm_omp(handle, a, b, c, nrepeat);
       duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
       if (0 < duration) {
         if (ab) {
@@ -176,8 +176,8 @@ int main(int argc, char* argv[])
         ctest = (ITYPE*)libxsmm_malloc((size_t)ldc * n * sizeof(ITYPE));
         if (0 != ctest) {
           libxsmm_matdiff_info diff;
-          libxsmm_bgemm_copyout_c(handle, c, &ldc, ctest);
-          result = libxsmm_matdiff(LIBXSMM_DATATYPE(ITYPE), m, n, cgold, ctest, &ldc, &ldc, &diff);
+          libxsmm_blocked_gemm_copyout_c(handle, c, &ldc, ctest);
+          result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(ITYPE), m, n, cgold, ctest, &ldc, &ldc);
           if (EXIT_SUCCESS == result) {
             fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
             if (check < 100.0 * diff.normf_rel) {
@@ -189,7 +189,7 @@ int main(int argc, char* argv[])
         }
       }
 #endif
-      libxsmm_bgemm_handle_destroy(handle);
+      libxsmm_blocked_gemm_handle_destroy(handle);
     }
     else {
       fprintf(stderr, "FAILED to create BGEMM-handle! For details retry with LIBXSMM_VERBOSE=1.\n");

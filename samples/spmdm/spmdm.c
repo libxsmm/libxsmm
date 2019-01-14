@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -41,22 +41,20 @@
 
 #if !defined(USE_BFLOAT) && 0
 # define USE_BFLOAT
-typedef uint16_t real;
+typedef libxsmm_bfloat16 REAL_TYPE;
 #else
-typedef float real;
+typedef float REAL_TYPE;
 #endif
 
 
-LIBXSMM_INLINE
-void spmdm_check_c( const libxsmm_spmdm_handle* handle,
-                    float* test,
-                    float* gold) {
+LIBXSMM_INLINE void spmdm_check_c(const libxsmm_spmdm_handle* handle, float* test, float* gold)
+{
   double max_error = 0.0;
   double src_norm = 0.0;
   double dst_norm = 0.0;
   size_t l;
 
-  for ( l = 0; l < (size_t)handle->m * (size_t)handle->n; l++ ) {
+  for (l = 0; l < (size_t)handle->m * (size_t)handle->n; ++l) {
     const double dstval = (double)test[l];
     const double srcval = (double)gold[l];
     const double local_error = fabs(dstval - srcval);
@@ -71,6 +69,7 @@ void spmdm_check_c( const libxsmm_spmdm_handle* handle,
   printf(" max error: %f, sum BLAS: %f, sum LIBXSMM: %f \n", max_error, src_norm, dst_norm );
 }
 
+
 LIBXSMM_INLINE
 void spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
                       const char transA,
@@ -84,8 +83,8 @@ void spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
                       libxsmm_CSR_sparseslice* A_sparse) {
   int num_createSparseSlice_blocks = libxsmm_spmdm_get_num_createSparseSlice_blocks(handle);
   int num_compute_blocks = libxsmm_spmdm_get_num_compute_blocks(handle);
-
   int i;
+
 # if defined(_OPENMP)
 # pragma omp parallel private(i)
 # endif
@@ -100,33 +99,34 @@ void spmdm_exec_fp32( const libxsmm_spmdm_handle* handle,
 # if defined(_OPENMP)
 #   pragma omp for
 # endif
-    for ( i = 0; i < num_createSparseSlice_blocks; i++ ) {
+    for (i = 0; i < num_createSparseSlice_blocks; ++i) {
       libxsmm_spmdm_createSparseSlice_fp32_thread(handle, transA, A, A_sparse, i, tid, nthreads);
     }
 # if defined(_OPENMP)
 #   pragma omp for
 # endif
-    for ( i = 0; i < num_compute_blocks; i++ ) {
+    for (i = 0; i < num_compute_blocks; ++i) {
       libxsmm_spmdm_compute_fp32_thread(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, i, tid, nthreads);
     }
   }
 }
 
+
 LIBXSMM_INLINE
 void spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
                           const char transA,
                           const char transB,
-                          const uint16_t* alpha,
-                          const uint16_t* A,
-                          const uint16_t* B,
+                          const libxsmm_bfloat16* alpha,
+                          const libxsmm_bfloat16* A,
+                          const libxsmm_bfloat16* B,
                           const char transC,
-                          const uint16_t* beta,
+                          const libxsmm_bfloat16* beta,
                           float* C,
                           libxsmm_CSR_sparseslice* A_sparse) {
   int num_createSparseSlice_blocks = libxsmm_spmdm_get_num_createSparseSlice_blocks(handle);
   int num_compute_blocks = libxsmm_spmdm_get_num_compute_blocks(handle);
-
   int i;
+
 # if defined(_OPENMP)
 # pragma omp parallel private(i)
 # endif
@@ -141,25 +141,26 @@ void spmdm_exec_bfloat16( const libxsmm_spmdm_handle* handle,
 # if defined(_OPENMP)
 #   pragma omp for
 # endif
-    for ( i = 0; i < num_createSparseSlice_blocks; i++ ) {
+    for (i = 0; i < num_createSparseSlice_blocks; ++i) {
       libxsmm_spmdm_createSparseSlice_bfloat16_thread(handle, transA, A, A_sparse, i, tid, nthreads);
     }
 # if defined(_OPENMP)
 #   pragma omp for
 # endif
-    for ( i = 0; i < num_compute_blocks; i++ ) {
+    for (i = 0; i < num_compute_blocks; ++i) {
       libxsmm_spmdm_compute_bfloat16_thread(handle, transA, transB, alpha, A_sparse, B, transC, beta, C, i, tid, nthreads);
     }
   }
 }
 
+
 int main(int argc, char *argv[])
 {
-  real *A_gold, *B_gold, *A_gold2, *B_gold2;
+  REAL_TYPE *A_gold, *B_gold, *A_gold2, *B_gold2;
   float *C_gold, *C0_gold, *C, *C2;
 
   int M, N, K;
-  real alpha, beta;
+  REAL_TYPE alpha, beta;
   int reps;
 
   libxsmm_spmdm_handle handle, handle2;
@@ -174,11 +175,11 @@ int main(int argc, char *argv[])
   size_t l;
 
   /* Step 1: Initialize handle */
-  M = 0; N = 0; K = 0; alpha = (real)1.0; beta = (real)0.0;   reps = 0; transA = 'N'; transB = 'N';
+  M = 0; N = 0; K = 0; alpha = (REAL_TYPE)1.0; beta = (REAL_TYPE)0.0; reps = 0; transA = 'N'; transB = 'N';
 
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) {
-    printf("\nUsage: ./block_gemm [M] [N] [K] [transA] [transB] [reps]\n\n");
-    return 0;
+    printf("\nUsage: %s [M] [N] [K] [transA] [transB] [reps]\n\n", argv[0]);
+    return EXIT_SUCCESS;
   }
 
   /* defaults */
@@ -201,43 +202,43 @@ int main(int argc, char *argv[])
   if (argc > i) reps = atoi(argv[i++]);
 
   /* Step 2: allocate data */
-  A_gold  = (real*)libxsmm_aligned_malloc( M*K*sizeof(real), 64 );
-  B_gold  = (real*)libxsmm_aligned_malloc( K*N*sizeof(real), 64 );
+  A_gold  = (REAL_TYPE*)libxsmm_aligned_malloc( M*K*sizeof(REAL_TYPE), 64 );
+  B_gold  = (REAL_TYPE*)libxsmm_aligned_malloc( K*N*sizeof(REAL_TYPE), 64 );
   C_gold  = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 64 );
   C0_gold = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 64 );
   C       = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 64 );
 
   /* Step 3: init data */
   libxsmm_srand(1);
-  for ( l = 0; l < (size_t)M * (size_t)K; l++ ) {
-    double random = libxsmm_rand_f64();
-    #ifdef USE_BFLOAT
-    float  random_f = (float)random;
-    int    random_int = *(int *)(&random_f);
-    uint16_t val = (random_int>>16);
-    #else
-    float  val = (float)random;
-    #endif
-    if (random > 0.85) A_gold[l] = val;
-    else              A_gold[l] = (real)0.0;
+  for (l = 0; l < (size_t)M * (size_t)K; ++l) {
+    const double r64 = libxsmm_rand_f64();
+    const float r32 = (float)r64;
+#ifdef USE_BFLOAT
+    const int r = *(const int*)(&r32);
+    const libxsmm_bfloat16 val = (r >> 16);
+#else
+    const float val = r32;
+#endif
+    if (r64 > 0.85) A_gold[l] = val;
+    else              A_gold[l] = (REAL_TYPE)0.0;
   }
 
-  for ( l = 0; l < (size_t)K * (size_t)N; l++ ) {
-    double random = libxsmm_rand_f64();
-    #ifdef USE_BFLOAT
-    float  random_f = (float)random;
-    int    random_int = *(int *)(&random_f);
-    uint16_t val = (random_int>>16);
-    #else
-    float  val = (float)random;
-    #endif
+  for (l = 0; l < (size_t)K * (size_t)N; ++l) {
+    const double r64 = libxsmm_rand_f64();
+    const float r32 = (float)r64;
+#ifdef USE_BFLOAT
+    const int r = *(const int*)(&r32);
+    const libxsmm_bfloat16 val = (r >> 16);
+#else
+    const float val = r32;
+#endif
     B_gold[l] = val;
   }
-  for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
+  for (l = 0; l < (size_t)M * (size_t)N; ++l) {
     C0_gold[l] = (float)libxsmm_rand_f64();
     C_gold[l] = C0_gold[l];
   }
-  for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
+  for (l = 0; l < (size_t)M * (size_t)N; ++l) {
     C[l] = (float)C0_gold[l];
   }
   flops = (double)M * (double)N * (double)K * 2.0;
@@ -267,21 +268,21 @@ int main(int argc, char *argv[])
 
   /* Checks */
 
-  /* Compute a "gold" answer sequentially - we can also use MKL; not using MKL now due to difficulty for bfloat16 */
+  /* Compute a "gold" answer sequentially */
 #if defined(_OPENMP)
   LIBXSMM_OMP_VAR(k);
 # pragma omp parallel for private(i, j, k) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
-  for (i = 0; i < M; i++) {
-    for (j = 0; j < N; j++) {
+  for (i = 0; i < M; ++i) {
+    for (j = 0; j < N; ++j) {
       float sum = 0.0;
       float Cval;
-      for (k = 0; k < K; k++) {
+      for (k = 0; k < K; ++k) {
 #       ifdef USE_BFLOAT
-        uint16_t Atmp = A_gold[i*K + k];
+        libxsmm_bfloat16 Atmp = A_gold[i*K+k];
         int Atmp_int  = Atmp; Atmp_int <<= 16;
         float Aval = *(float *)&Atmp_int;
-        uint16_t Btmp = B_gold[k*N + j];
+        libxsmm_bfloat16 Btmp = B_gold[k*N+j];
         int Btmp_int  = Btmp; Btmp_int <<= 16;
         float Bval = *(float *)&Btmp_int;
 #       else
@@ -301,7 +302,7 @@ int main(int argc, char *argv[])
 
   /* Timing loop starts */
   start = libxsmm_timer_tick();
-  for ( i = 0; i < reps; i++) {
+  for (i = 0; i < reps; ++i) {
 #   ifdef USE_BFLOAT
     spmdm_exec_bfloat16( &handle, transA, transB, &alpha, A_gold, B_gold, transC, &beta, C, A_sparse);
 #   else
@@ -318,16 +319,16 @@ int main(int argc, char *argv[])
   transA = 'T'; transB = 'N'; transC = 'T';
   libxsmm_spmdm_init(M, N, K, max_threads, &handle2, &A_sparse2);
   printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, mb=%i, nb=%i, kb=%i, reps=%i, transA = Y, transC = Y -- weight update\n", handle2.m, handle2.n, handle2.k, handle2.bm, handle2.bn, handle2.bk, handle2.mb, handle2.nb, handle2.kb, reps );
-  A_gold2 = (real*)libxsmm_aligned_malloc( M*K*sizeof(real), 64 );
+  A_gold2 = (REAL_TYPE*)libxsmm_aligned_malloc( M*K*sizeof(REAL_TYPE), 64 );
   C2 = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 64 );
 
-  for (i = 0; i < M; i++) {
-    for (j = 0; j < K; j++) {
+  for (i = 0; i < M; ++i) {
+    for (j = 0; j < K; ++j) {
       A_gold2[j*M + i] = A_gold[i*K + j];
     }
   }
-  for (i = 0; i < M; i++) {
-    for (j = 0; j < N; j++) {
+  for (i = 0; i < M; ++i) {
+    for (j = 0; j < N; ++j) {
       C[j*M + i] = (float)C0_gold[i*N + j];
     }
   }
@@ -340,8 +341,8 @@ int main(int argc, char *argv[])
   spmdm_exec_fp32( &handle2, transA, transB, &alpha, A_gold2, B_gold, transC, &beta, C, A_sparse2);
 # endif
 
-  for (i = 0; i < M; i++) {
-    for (j = 0; j < N; j++) {
+  for (i = 0; i < M; ++i) {
+    for (j = 0; j < N; ++j) {
       C2[i*N + j] = C[j*M + i];
     }
   }
@@ -350,7 +351,7 @@ int main(int argc, char *argv[])
 
   /* Timing loop starts */
   start = libxsmm_timer_tick();
-  for ( i = 0; i < reps; i++) {
+  for (i = 0; i < reps; ++i) {
 #   ifdef USE_BFLOAT
     spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold2, B_gold, transC, &beta, C, A_sparse2);
 #   else
@@ -365,14 +366,14 @@ int main(int argc, char *argv[])
   /* Step 6: Test transpose B  */
   transA = 'N'; transB = 'T'; transC = 'N';
   printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, mb=%i, nb=%i, kb=%i, reps=%i, transB = Y -- backprop\n", handle2.m, handle2.n, handle2.k, handle2.bm, handle2.bn, handle2.bk, handle2.mb, handle2.nb, handle2.kb, reps );
-  B_gold2 = (real*)libxsmm_aligned_malloc( K*N*sizeof(real), 64 );
+  B_gold2 = (REAL_TYPE*)libxsmm_aligned_malloc( K*N*sizeof(REAL_TYPE), 64 );
 
-  for (i = 0; i < K; i++) {
-    for (j = 0; j < N; j++) {
+  for (i = 0; i < K; ++i) {
+    for (j = 0; j < N; ++j) {
       B_gold2[j*K + i] = B_gold[i*N + j];
     }
   }
-  for ( l = 0; l < (size_t)M * (size_t)N; l++ ) {
+  for (l = 0; l < (size_t)M * (size_t)N; ++l) {
     C[l] = (float)C0_gold[l];
   }
   /* The overall function that takes in matrix inputs in dense format, does the conversion of A to sparse format and does the matrix multiply */
@@ -389,7 +390,7 @@ int main(int argc, char *argv[])
 
   /* Timing loop starts */
   start = libxsmm_timer_tick();
-  for ( i = 0; i < reps; i++) {
+  for (i = 0; i < reps; ++i) {
 #   ifdef USE_BFLOAT
     spmdm_exec_bfloat16( &handle2, transA, transB, &alpha, A_gold, B_gold2, transC, &beta, C, A_sparse2);
 #   else
@@ -410,6 +411,6 @@ int main(int argc, char *argv[])
   libxsmm_free(B_gold2);
   libxsmm_free(A_gold2);
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 

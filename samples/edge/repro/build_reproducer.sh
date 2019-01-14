@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# Copyright (c) 2017-2018, Intel Corporation
+# Copyright (c) 2017-2019, Intel Corporation
 # Copyright (c) 2017, Regents of the University of California
 #
 # Redistribution and use in source and binary forms, with or without

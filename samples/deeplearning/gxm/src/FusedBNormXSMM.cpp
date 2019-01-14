@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2017-2018, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -295,7 +295,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
   }
 
   if(libxsmm_input_test == NULL && libxsmm_input_add_test == NULL && libxsmm_expectval_test == NULL &&
-      libxsmm_stddev_test == NULL && libxsmm_variance_test == NULL && libxsmm_gamma_test == NULL && 
+      libxsmm_stddev_test == NULL && libxsmm_variance_test == NULL && libxsmm_gamma_test == NULL &&
       libxsmm_beta_test == NULL && libxsmm_output_test == NULL)
   {
     libxsmm_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout( libxsmm_handle_test, LIBXSMM_DNN_REGULAR_INPUT, &status );

@@ -27,14 +27,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="rnndriver.c" />
+    <ClCompile Include="rnndriver_ncnc_kcck.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>rnndriver</ProjectName>
-    <ProjectGuid>{9776BA53-EEDA-4A39-89A8-9DAB45F4D82A}</ProjectGuid>
+    <ProjectName>rnndriver_ncnc_kcck</ProjectName>
+    <ProjectGuid>{632FA101-8478-4D32-A1E3-B7A02E6C87DE}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

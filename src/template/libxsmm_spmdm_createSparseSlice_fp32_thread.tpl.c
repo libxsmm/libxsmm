@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2018, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -17,7 +17,7 @@
 ** THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS       **
 ** "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT         **
 ** LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR     **
-** A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
+** a PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT      **
 ** HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,    **
 ** SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  **
 ** TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR    **
@@ -46,7 +46,7 @@ LIBXSMM_UNUSED(tid);
 
 kb = block_id / handle->mb;
 mb = block_id % handle->mb;
-if ('T' == transA || 't' == transA) {
+if ('T' == transa || 't' == transa) {
   int kk;
   block_offset_base = mb * handle->bm;
   block_offset = block_offset_base + kb * handle->m * handle->bk;
@@ -64,7 +64,7 @@ else {
   /*printf("nrows: %d, ncols: %d\n", nrows, ncols);*/
   int ncols_aligned = ncols / (4*SIMD_WIDTH_FP32)*(4*SIMD_WIDTH_FP32);
   int ncols_aligned_2 = ncols / (SIMD_WIDTH_FP32)*(SIMD_WIDTH_FP32);
-  const float * input_ptr = A + block_offset;
+  const float * input_ptr = a + block_offset;
   uint16_t * rowidx_ptr = slice.rowidx;
   uint16_t * colidx_ptr = slice.colidx;
   float    * values_ptr = (float *)(slice.values);
@@ -76,7 +76,7 @@ else {
 #endif
   for (i = 0; i < nrows; i++) {
     rowidx_ptr[i] = cnt;
-    if ('T' == transA || 't' == transA) {
+    if ('T' == transa || 't' == transa) {
       for (k = 0; k < ncols_aligned; k += 4*SIMD_WIDTH_FP32) {
         SIMDTYPE_FP32 v1 = _MM_GATHER_FP32(input_ptr + (size_t)k * handle->m + i, vindex, 4);
         SIMDTYPE_FP32 v2 = _MM_GATHER_FP32(input_ptr + ((size_t)k+1*SIMD_WIDTH_FP32) * handle->m + i, vindex, 4);
