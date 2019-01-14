@@ -1177,7 +1177,7 @@ LIBXSMM_API_INTERN int libxsmm_cast(libxsmm_datatype datatype, double dvalue, vo
 }
 
 
-LIBXSMM_API_INTERN const char* libxsmm_typename(int datatype)
+LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
 {
   switch (datatype) {
     case LIBXSMM_DATATYPE_F64:  return "f64";
@@ -1187,21 +1187,23 @@ LIBXSMM_API_INTERN const char* libxsmm_typename(int datatype)
     case LIBXSMM_DATATYPE_I32:  return "i32";
     case LIBXSMM_DATATYPE_I16:  return "i16";
     case LIBXSMM_DATATYPE_I8:   return "i8";
-  }
-  if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
-    return "i16i32";
-  }
-  else if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
-    return "i16f32";
-  }
-  else if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
-    return "i8i32";
-  }
-  else if ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
-    return "bf16f32";
-  }
-  else {
-    return "void";
+    default: {
+      if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
+        return "i16i32";
+      }
+      else if ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
+        return "i16f32";
+      }
+      else if ( LIBXSMM_GEMM_PRECISION_I8 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_I32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
+        return "i8i32";
+      }
+      else if ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( datatype ) ) {
+        return "bf16f32";
+      }
+      else {
+        return "void";
+      }
+    }
   }
 }
 
