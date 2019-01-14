@@ -137,10 +137,14 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
             libxsmm_mhd_write(filename, NULL/*offset*/, size, pt, 2/*ndims*/, 1/*ncomponents*/,
               type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
               NULL/*extension*/, 0/*extension_size*/);
-          }          
+            if ('-' == *env && '1' < env[1]) {
+              printf("LIBXSMM MATDIFF (%s): m=%i n=%i ldi=%i ldo=%i failed.\n",
+                libxsmm_typename(datatype), m, n, ldr, ldt);
+            }
+          }
         }
-        else if ('-' == *env && '1' < env[1]) {
-          printf("LIBXSMM MATDIFF (%s): passed for m=%i n=%i ldi=%i ldo=%i\n",
+        else if ('-' == *env && '1' < env[1] && NULL != tst) {
+          printf("LIBXSMM MATDIFF (%s): m=%i n=%i ldi=%i ldo=%i passed.\n",
             libxsmm_typename(datatype), m, n, ldr, ldt);
         }
       }
