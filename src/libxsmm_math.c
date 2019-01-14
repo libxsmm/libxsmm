@@ -140,8 +140,8 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
           }          
         }
         else if ('-' == *env && '1' < env[1]) {
-          printf("LIBXSMM MATDIFF (%s): %p == %p with m=%i n=%i ldi=%i ldo=%i\n",
-            libxsmm_typename(datatype), ref, tst, m, n, ldr, ldt);
+          printf("LIBXSMM MATDIFF (%s): passed for m=%i n=%i ldi=%i ldo=%i\n",
+            libxsmm_typename(datatype), m, n, ldr, ldt);
         }
       }
       if (0 == result_nan) {
