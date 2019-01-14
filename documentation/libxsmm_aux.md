@@ -2,7 +2,7 @@
 
 ### Getting and Setting the Target Architecture
 
-This functionality is available for the C and Fortran interface. There are [ID based](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_cpuid.h#L47) (same for C and Fortran) and string based functions to query the code path (as determined by the CPUID), or to set the code path regardless of the presented CPUID features. The latter may degrade performance (if a lower set of instruction set extensions is requested), which can be still useful for studying the performance impact of different instruction set extensions.  
+This functionality is available for the C and Fortran interface. There are [ID based](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_cpuid.h#L47) (same for C and Fortran) and string based functions to query the code path (as determined by the CPUID), or to set the code path regardless of the presented CPUID features. The latter may degrade performance if a lower set of instruction set extensions is requested, which can be still useful for studying the performance impact of different instruction set extensions.  
 **NOTE**: There is no additional check performed if an unsupported instruction set extension is requested, and incompatible JIT-generated code may be executed (unknown instruction signaled).
 
 ```C
@@ -16,16 +16,15 @@ void libxsmm_set_target_arch(const char* arch);
 Available code paths (IDs and corresponding strings):
 
 * LIBXSMM_TARGET_ARCH_GENERIC: "**generic**", "none", "0"
-* LIBXSMM_X86_GENERIC: "**x86**", "sse2"
-* LIBXSMM_X86_SSE3: "**sse3**"
-* LIBXSMM_X86_SSE4: "**wsm**", "nhm", "sse", "sse4", "sse4_2", "sse4.2"
+* LIBXSMM_X86_GENERIC: "**x86**", "x64", "sse2"
+* LIBXSMM_X86_SSE3: "**sse3**", "sse", "ssse3", "ssse"
+* LIBXSMM_X86_SSE4: "**wsm**", "nhm", "sse4", "sse4_1", "sse4.1", "sse4_2", "sse4.2"
 * LIBXSMM_X86_AVX: "**snb**", "avx"
 * LIBXSMM_X86_AVX2: "**hsw**", "avx2"
-* LIBXSMM_X86_AVX512: "**avx3**", "avx512"
 * LIBXSMM_X86_AVX512_MIC: "**knl**", "mic"
 * LIBXSMM_X86_AVX512_KNM: "**knm**"
-* LIBXSMM_X86_AVX512_CORE: "**skx**", "skl"
-* LIBXSMM_X86_AVX512_ICL: "**icl**"
+* LIBXSMM_X86_AVX512_CORE: "**skx**", "skl", "avx3", "avx512"
+* LIBXSMM_X86_AVX512_ICL: "**icl**", "icx"
 
 The **bold** names are returned by `libxsmm_get_target_arch` whereas `libxsmm_set_target_arch` accepts all of the above strings (similar to the environment variable LIBXSMM_TARGET).
 
@@ -40,12 +39,15 @@ void libxsmm_set_verbosity(int level);
 
 ### Timer Facility
 
-Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface ([libxsmm_timer.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_timer.h#L37) and [libxsmm.f](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f#L32)). The timer is used in many of the [code samples](https://github.com/hfp/libxsmm/tree/master/samples) to measure the duration of executing various code regions. The timer is based on monotonic clock tick, which uses a platform-specific resolution. The counter may rely on the time stamp counter instruction (RDTSC), but this is not necessarily counting CPU cycles due to varying CPU clock speed (Turbo Boost), different clock domains (e.g., depending on the instructions executed), and other reasons (which are out of scope in this context).
+Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface ([libxsmm_timer.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_timer.h#L37) and [libxsmm.f](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f#L32)). The timer is used in many of the [code samples](https://github.com/hfp/libxsmm/tree/master/samples) to measure the duration of executing a region of the code. The timer is based on a monotonic clock tick, which uses a platform-specific resolution. The counter may rely on the time stamp counter instruction (RDTSC), which is not necessarily counting CPU cycles (reasons are out of scope in this context). However, `libxsmm_timer_cycles` delivers raw clock ticks (RDTSC).
 
 ```C
 typedef unsigned long long libxsmm_timer_tickint;
 libxsmm_timer_tickint libxsmm_timer_tick(void);
 double libxsmm_timer_duration(
+  libxsmm_timer_tickint tick0,
+  libxsmm_timer_tickint tick1);
+libxsmm_timer_tickint libxsmm_timer_cycles(
   libxsmm_timer_tickint tick0,
   libxsmm_timer_tickint tick1);
 ```

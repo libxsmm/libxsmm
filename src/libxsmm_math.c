@@ -120,22 +120,32 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
     LIBXSMM_ASSERT(info->m < mm && info->n < nn);
     if (EXIT_SUCCESS == result) {
       const char *const env = getenv("LIBXSMM_DUMP");
-      if (0 != env && 0 != *env && '0' != *env && ('-' != *env || (0 <= info->m && 0 <= info->n))) {
-        const char *const defaultname = (('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env;
-        const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
-        const libxsmm_mhd_elemtype type_dst = LIBXSMM_MIN(LIBXSMM_MHD_ELEMTYPE_F32, type_src);
-        char filename[256];
-        size_t size[2], pr[2]; size[0] = (size_t)mm; size[1] = (size_t)nn; pr[0] = (size_t)ldr; pr[1] = (size_t)nn;
-        LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-ref.mhd", defaultname, ref);
-        libxsmm_mhd_write(filename, NULL/*offset*/, size, pr, 2/*ndims*/, 1/*ncomponents*/,
-          type_src, &type_dst, ref, NULL/*header_size*/, NULL/*extension_header*/,
-          NULL/*extension*/, 0/*extension_size*/);
-        if (NULL != tst) {
-          size_t pt[2]; pt[0] = (size_t)ldt; pt[1] = (size_t)nn;
-          LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-tst.mhd", defaultname, ref/*adopt ref-ptr*/);
-          libxsmm_mhd_write(filename, NULL/*offset*/, size, pt, 2/*ndims*/, 1/*ncomponents*/,
-            type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
+      if (0 != env && 0 != *env && '0' != *env) {
+        if ('-' != *env || (0 <= info->m && 0 <= info->n)) {
+          const char *const defaultname = (('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env;
+          const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
+          const libxsmm_mhd_elemtype type_dst = LIBXSMM_MIN(LIBXSMM_MHD_ELEMTYPE_F32, type_src);
+          char filename[256];
+          size_t size[2], pr[2]; size[0] = (size_t)mm; size[1] = (size_t)nn; pr[0] = (size_t)ldr; pr[1] = (size_t)nn;
+          LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-ref.mhd", defaultname, ref);
+          libxsmm_mhd_write(filename, NULL/*offset*/, size, pr, 2/*ndims*/, 1/*ncomponents*/,
+            type_src, &type_dst, ref, NULL/*header_size*/, NULL/*extension_header*/,
             NULL/*extension*/, 0/*extension_size*/);
+          if (NULL != tst) {
+            size_t pt[2]; pt[0] = (size_t)ldt; pt[1] = (size_t)nn;
+            LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-tst.mhd", defaultname, ref/*adopt ref-ptr*/);
+            libxsmm_mhd_write(filename, NULL/*offset*/, size, pt, 2/*ndims*/, 1/*ncomponents*/,
+              type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
+              NULL/*extension*/, 0/*extension_size*/);
+            if ('-' == *env && '1' < env[1]) {
+              printf("LIBXSMM MATDIFF (%s): m=%i n=%i ldi=%i ldo=%i failed.\n",
+                libxsmm_typename(datatype), m, n, ldr, ldt);
+            }
+          }
+        }
+        else if ('-' == *env && '1' < env[1] && NULL != tst) {
+          printf("LIBXSMM MATDIFF (%s): m=%i n=%i ldi=%i ldo=%i passed.\n",
+            libxsmm_typename(datatype), m, n, ldr, ldt);
         }
       }
       if (0 == result_nan) {
