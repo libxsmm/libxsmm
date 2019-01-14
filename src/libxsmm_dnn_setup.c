@@ -620,14 +620,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     libxsmm_convolution_forward_descriptor descriptor;
     libxsmm_mcopy_descriptor matcopy_descriptor;
     libxsmm_mcopy_descriptor matzero_descriptor;
-
     /* init descriptors */
     memset( &descriptor, 0, sizeof(libxsmm_convolution_forward_descriptor) );
     memset( &matcopy_descriptor, 0, sizeof(libxsmm_mcopy_descriptor) );
     memset( &matzero_descriptor, 0, sizeof(libxsmm_mcopy_descriptor) );
-
-    /* attempt to use jit code path */
-    handle->use_fwd_generic = 0;
 
     descriptor.input_L2_prefetching = 0;
     descriptor.lookahead = 0;
@@ -726,12 +722,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       if ( handle->n_variants == 1 ) {
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
         handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
-        if (NULL == handle->code_fwd[0].pmm) handle->use_fwd_generic = 1;
+        if (NULL == handle->code_fwd[0].pmm) *noarch = 1;
       }
       if (handle->padding_flag == 1) {
         handle->matcopy_fwd[0].xmatcopy = libxsmm_dispatch_mcopy(&matcopy_descriptor);
       }
     }
+    /* use jit code path */
+    handle->use_fwd_generic = 0;
 
     /* allocate buffers */
     handle->n_entries_fwd = (int*) malloc(handle->desc.threads * sizeof(int));
@@ -770,17 +768,16 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
       descriptor.ofh_rb = hrb1;
       descriptor.ofw_rb = wrb1;
       handle->code_fwd[0].pmm = libxsmm_create_xconv_forward(&descriptor);
-      if (NULL == handle->code_fwd[0].pmm) handle->use_fwd_generic = 1;
+      if (NULL == handle->code_fwd[0].pmm) *noarch = 1;
       descriptor.ofh_rb = hrb2;
       descriptor.ofw_rb = wrb2;
       descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
       handle->code_fwd[1].pmm = libxsmm_create_xconv_forward(&descriptor);
-      if (NULL == handle->code_fwd[1].pmm) handle->use_fwd_generic = 1;
+      if (NULL == handle->code_fwd[1].pmm) *noarch = 1;
       handle->fwd_ofh_rb = hrb1;
       descriptor.ofh_rb = hrb1;
       descriptor.ofw_rb = wrb1;
     }
-
     for (i = 0; i < handle->desc.threads; i++) {
       handle->compute_fwd_indices_ptrs[i] = NULL;
       handle->kernel_fwd_variant_ptrs[i] = NULL;
@@ -1048,9 +1045,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
         handle->code_bwd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
       } else {
         if (handle->exploit_duality == 1) {
-          /* attempt to enable jit code */
-          handle->use_bwd_generic = 0;
-
           if (handle->padding_flag == 1) {
             handle->matcopy_bwd[0].xmatcopy = libxsmm_dispatch_mcopy(&matcopy_descriptor);
             matcopy_descriptor.n = 1;
@@ -1060,21 +1054,24 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
           fwd_equivalent_descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
           if ( handle->n_variants == 1) {
             handle->code_bwd[0].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
-            if (NULL == handle->code_bwd[0].pmm) handle->use_bwd_generic = 1;
+            if (NULL == handle->code_bwd[0].pmm) *noarch = 1;
           } else {
             fwd_equivalent_descriptor.ofh_rb = hrb1;
             fwd_equivalent_descriptor.ofw_rb = wrb1;
             handle->code_bwd[0].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
-            if (NULL == handle->code_bwd[0].pmm) handle->use_bwd_generic = 1;
+            if (NULL == handle->code_bwd[0].pmm) *noarch = 1;
             fwd_equivalent_descriptor.ofh_rb = hrb2;
             fwd_equivalent_descriptor.ofw_rb = wrb2;
             handle->code_bwd[1].pmm = libxsmm_create_xconv_forward(&fwd_equivalent_descriptor);
-            if (NULL == handle->code_bwd[1].pmm) handle->use_bwd_generic = 1;
+            if (NULL == handle->code_bwd[1].pmm) *noarch = 1;
             handle->bwd_ofh_rb = hrb1;
             handle->bwd_ofw_rb = wrb1;
             fwd_equivalent_descriptor.ofh_rb = hrb1;
             fwd_equivalent_descriptor.ofw_rb = wrb1;
           }
+
+          /* enable jit code */
+          handle->use_bwd_generic = 0;
         } else {
           /* disable jit code, use generic */
           handle->bwd_ofh_rb = 1;
@@ -1298,9 +1295,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         const unsigned int wu_max_code_size = 8000;
         int upper_limit_ofw_rb = wu_max_code_size / wu_each_iter_code_size, upper_limit_ofh_rb = 0;
         unsigned int chunk_size;
-
-        /* attempt to enable JIT code path */
-        handle->use_upd_generic = 0;
 
         descriptor.ifm_unroll = 1;
         handle->enforce_sfma_kernel = 0;
@@ -1620,21 +1614,24 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
 #if 0
         else {
           handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
-          if (NULL == handle->code_upd[0].pmm) handle->use_upd_generic = 1;
+          if (NULL == handle->code_upd[0].pmm) *noarch = 1;
         }
 #endif
         /*ALL*/
         descriptor.transpose_ofw_ifm = 0;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
         handle->code_upd[0].pmm = libxsmm_create_xconv_update_weights(&descriptor);
-        if (NULL == handle->code_upd[0].pmm) handle->use_upd_generic = 1;
+        if (NULL == handle->code_upd[0].pmm) *noarch = 1;
         /*TRANSPOSE ALL*/
         descriptor.transpose_ofw_ifm = 1;
         descriptor.prefetch = LIBXSMM_CONVOLUTION_PREFETCH_ALL;
         if (handle->use_fastpath) {
           handle->code_upd[1].pmm = libxsmm_create_xconv_update_weights(&descriptor);
-          if (NULL == handle->code_upd[1].pmm) handle->use_upd_generic = 1;
+          if (NULL == handle->code_upd[1].pmm) *noarch = 1;
         }
+
+        /* enable JIT code path */
+        handle->use_upd_generic = 0;
       } else {
         assert(0/*should not happen*/);
       }
