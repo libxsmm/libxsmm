@@ -46,7 +46,7 @@
 #endif
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
-
+/* #define TWO_GEMMS */
 
 LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
   int i;
@@ -299,16 +299,15 @@ LIBXSMM_INLINE void matrix_complement_square_ld(int m, int n, int ld, float *src
 }
 
 
-LIBXSMM_INLINE void convert_ck_c4k(int C, int K, int offset, float *src, float *dst)
+LIBXSMM_INLINE void convert_ck_c4k(int C, int K, float *src, float *dst)
 {
-  /* offsets: i--0, c--1, f--2, o--3 */
   int x, y;
 #if defined(_OPENMP)
 # pragma omp parallel for private(x, y)
 #endif
   for (y = 0; y < C; y++) {
     for (x = 0; x < K; x++) {
-      dst[y*4*K + offset*K + x] = src[y*K + x];
+      dst[y*4*K + x] = src[y*K + x];
     }
   }
 }
@@ -331,10 +330,29 @@ LIBXSMM_INLINE void convert_c4k_4ck(int C, int K, float *src, float *dst)
 }
 
 
+LIBXSMM_INLINE void convert_nk_nck(int N, int K, int CK, float *src, float *dst)
+{
+  int x, y;
+#if defined(_OPENMP)
+# pragma omp parallel for private(x, y)
+#endif
+  for (y = 0; y < N; y++) {
+    for (x = 0; x < K; x++) {
+      dst[y*CK + x] = src[y*K + x];
+    }
+  }
+}
+
+
 int main(int argc, char* argv[])
 {
-  float *wigold, *wfgold, *wogold, *wcgold, *xgoldt, *rigold, *rfgold, *rogold, *rcgold, *hgoldt, *bigold, *bfgold, *bogold, *bcgold, *bfgold_fb;
-  float *w4gold, *r4gold, *icfogoldt;
+  float *wigold, *wfgold, *wogold, *wcgold, *xgoldt, *rigold, *rfgold, *rogold, *rcgold, *bigold, *bfgold, *bogold, *bcgold, *bfgold_fb;
+  float *icfogoldt, *hgoldt;
+#if defined(TWO_GEMMS)
+  float *w4gold, *r4gold;
+#else
+  float *wr8gold, *xhgold;
+#endif
   float *cspgold,*hpgold, *djdcspgold, *djdhpgold, *dgoldt, *doutgoldt;
   float *i1gold, *i2gold, *f1gold, *f2gold, *o1gold, *o2gold, *c1gold, *c2gold, *d1gold, *d2gold, *dhgold;
   float *xt, *csp, *hp, *w, *r, *b, *cst, *ht;
@@ -359,7 +377,8 @@ int main(int argc, char* argv[])
   int C = 512;      /* number of inputs */
   int K = 64;       /* number of outputs */
   int t = 5;        /* number of time steps (>= 1) */
-  int K4 = K*4;
+  int K4 = K * 4;
+  int CK = C + K;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 0/*disabled by default*/ : atof(env_check));
@@ -426,7 +445,8 @@ int main(int argc, char* argv[])
   if (argc > j) C     = atoi(argv[j++]);
   if (argc > j) K     = atoi(argv[j++]);
   if (argc > j) t     = atoi(argv[j++]);
-  K4 = K*4;
+  K4 = K * 4;
+  CK = C + K;
 
   if (t <= 0) {
     printf("time_steps %d should be greater than 1\n\n", t);
@@ -461,12 +481,17 @@ int main(int argc, char* argv[])
   wfgold = (float*)libxsmm_aligned_malloc(C*K*sizeof(float), 2097152);
   wogold = (float*)libxsmm_aligned_malloc(C*K*sizeof(float), 2097152);
   wcgold = (float*)libxsmm_aligned_malloc(C*K*sizeof(float), 2097152);
-  w4gold = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
   rigold = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
   rfgold = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
   rogold = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
   rcgold = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
+#if defined(TWO_GEMMS)
+  w4gold = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
   r4gold = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
+#else
+  wr8gold= (float*)libxsmm_aligned_malloc((C+K)*K*4*sizeof(float), 2097152);
+  xhgold = (float*)libxsmm_aligned_malloc((C+K)*N*sizeof(float), 2097152);
+#endif
   bigold = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
   bfgold = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
   bogold = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
@@ -588,7 +613,6 @@ int main(int argc, char* argv[])
   for (j = 0; j < K; j++) {
     bfgold_fb[j] = bfgold[j] + forget_bias;
   }
-  zero_buf(hgoldt, K*N*t);
   zero_buf(dgoldt, K*N*t);
   zero_buf(icfogoldt, 4*K*N*t);
   zero_buf(i1gold, K*N);
@@ -602,6 +626,13 @@ int main(int argc, char* argv[])
   zero_buf(d1gold, K*N);
   zero_buf(d2gold, K*N);
   zero_buf(dhgold, K*N);
+#if defined(TWO_GEMMS)
+  zero_buf(w4gold, C*K*4);
+  zero_buf(r4gold, K*K*4);
+#else
+  zero_buf(wr8gold, (C+K)*K*4);
+  zero_buf(xhgold,  (C+K)*N);
+#endif
   /* BWD/UPD */
   for (j = 0; j < t; ++j) {
     LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, j, 0, K * N), N, K, N, 1.0);
@@ -671,20 +702,32 @@ int main(int argc, char* argv[])
     printf("#         Computing Reference ...        #\n");
     printf("##########################################\n");
     /* FWD */
-    convert_ck_c4k(C, K, 0, wigold, w4gold);
-    convert_ck_c4k(C, K, 1, wcgold, w4gold);
-    convert_ck_c4k(C, K, 2, wfgold, w4gold);
-    convert_ck_c4k(C, K, 3, wogold, w4gold);
-    convert_ck_c4k(K, K, 0, rigold, r4gold);
-    convert_ck_c4k(K, K, 1, rcgold, r4gold);
-    convert_ck_c4k(K, K, 2, rfgold, r4gold);
-    convert_ck_c4k(K, K, 3, rogold, r4gold);
+#if defined(TWO_GEMMS)
+    convert_ck_c4k(C, K, wigold, w4gold);
+    convert_ck_c4k(C, K, wcgold, &(w4gold[K]));
+    convert_ck_c4k(C, K, wfgold, &(w4gold[2*K]));
+    convert_ck_c4k(C, K, wogold, &(w4gold[3*K]));
+    convert_ck_c4k(K, K, rigold, r4gold);
+    convert_ck_c4k(K, K, rcgold, &(r4gold[K]));
+    convert_ck_c4k(K, K, rfgold, &(r4gold[2*K]));
+    convert_ck_c4k(K, K, rogold, &(r4gold[3*K]));
+#else
+    convert_ck_c4k(C, K, wigold, wr8gold);
+    convert_ck_c4k(C, K, wcgold, &(wr8gold[K]));
+    convert_ck_c4k(C, K, wfgold, &(wr8gold[2*K]));
+    convert_ck_c4k(C, K, wogold, &(wr8gold[3*K]));
+    convert_ck_c4k(K, K, rigold, &(wr8gold[C*K*4]));
+    convert_ck_c4k(K, K, rcgold, &(wr8gold[C*K*4 + K]));
+    convert_ck_c4k(K, K, rfgold, &(wr8gold[C*K*4 + 2*K]));
+    convert_ck_c4k(K, K, rogold, &(wr8gold[C*K*4 + 3*K]));
+#endif
     for (j = 0; j < t; ++j) {
       /* Initialization with bias */
       matrix_copy_bias(K, N, 4*K, bigold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
       matrix_copy_bias(K, N, 4*K, bcgold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K));
       matrix_copy_bias(K, N, 4*K, bfgold_fb, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K));
       matrix_copy_bias(K, N, 4*K, bogold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K));
+#if defined(TWO_GEMMS)
       /* icfo += W * x */
       LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &C, &alpha, w4gold, &K4, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, N * C), &C, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
       /* icfo += R * h */
@@ -693,6 +736,17 @@ int main(int argc, char* argv[])
       } else {
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &K, &alpha, r4gold, &K4, &LIBXSMM_VLA_ACCESS(2, hgold, j-1, 0, K * N), &K, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
       }
+#else
+      /* Concatenate x and h */
+      convert_nk_nck(N, C, C+K, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, N * C),  xhgold);
+      if (j == 0) {
+        convert_nk_nck(N, K, C+K, hpgold, &(xhgold[C]));
+      } else {
+        convert_nk_nck(N, K, C+K, &LIBXSMM_VLA_ACCESS(2, hgold, j-1, 0, K * N), &(xhgold[C]));
+      }
+      /* icfo += (W * x) + (R * h) */
+      LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &CK, &alpha, wr8gold, &K4, xhgold, &CK, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
+#endif
       /* icfo = non-lin(icfo) */
       matrix_sigmoid_ld(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
       matrix_tanh_ld   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K));
@@ -928,14 +982,14 @@ int main(int argc, char* argv[])
     matrix_copy(N*C*t, xgoldt, xt);
     matrix_copy(K*N, cspgold, csp);
     matrix_copy(K*N, hpgold, hp);
-    convert_ck_c4k(C, K, 0, wigold, w);
-    convert_ck_c4k(C, K, 1, wcgold, w);
-    convert_ck_c4k(C, K, 2, wfgold, w);
-    convert_ck_c4k(C, K, 3, wogold, w);
-    convert_ck_c4k(K, K, 0, rigold, r);
-    convert_ck_c4k(K, K, 1, rcgold, r);
-    convert_ck_c4k(K, K, 2, rfgold, r);
-    convert_ck_c4k(K, K, 3, rogold, r);
+    convert_ck_c4k(C, K, wigold, w);
+    convert_ck_c4k(C, K, wcgold, &(w[K]));
+    convert_ck_c4k(C, K, wfgold, &(w[2*K]));
+    convert_ck_c4k(C, K, wogold, &(w[3*K]));
+    convert_ck_c4k(K, K, rigold, r);
+    convert_ck_c4k(K, K, rcgold, &(r[K]));
+    convert_ck_c4k(K, K, rfgold, &(r[2*K]));
+    convert_ck_c4k(K, K, rogold, &(r[3*K]));
     matrix_copy(K, bigold, &(b[0]));
     matrix_copy(K, bcgold, &(b[K]));
     matrix_copy(K, bfgold, &(b[2*K]));
@@ -1491,9 +1545,9 @@ int main(int argc, char* argv[])
   libxsmm_free(bfgold);
   libxsmm_free(bogold);
   libxsmm_free(bcgold);
-  libxsmm_free(hgoldt);
   libxsmm_free(bfgold_fb);
   libxsmm_free(dgoldt);
+  libxsmm_free(hgoldt);
   libxsmm_free(icfogoldt);
   libxsmm_free(i1gold);
   libxsmm_free(i2gold);
@@ -1542,6 +1596,13 @@ int main(int argc, char* argv[])
   libxsmm_free(xgoldTp);
   libxsmm_free(hgoldTp);
   libxsmm_free(doutgoldt);
+#if defined(TWO_GEMMS)
+  libxsmm_free(w4gold);
+  libxsmm_free(r4gold);
+#else
+  libxsmm_free(wr8gold);
+  libxsmm_free(xhgold);
+#endif
   libxsmm_free(xt);
   libxsmm_free(csp);
   libxsmm_free(hp);
