@@ -6,16 +6,16 @@ node {
   propagate_down: false
   mode: TEST
   data_param {
-    train_source: "/scratch/savancha/jpegs_256resized"
-    train_list: "/scratch/savancha/jpegs_256resized/train_images_labels.list"
-    test_source: "/scratch/savancha/jpegs_256resized"
-    test_list: "/scratch/savancha/jpegs_256resized/val_images_labels.list"
-    batch_size: 54
+    train_source: "/scratch/savancha/jpegs_256resized_split"
+    train_list: "/scratch/savancha/jpegs_256resized_split/split_1/train_images_labels.list"
+    test_source: "/scratch/savancha/jpegs_256resized_split"
+    test_list: "/scratch/savancha/jpegs_256resized_split/split_1/val_images_labels.list"
+    batch_size: 50
     num_train_files: 1281167
     num_test_files: 50000
     numsplits: 1
     lookahead: 2 
-    shuffle: true
+    shuffle: false
     engine: XSMM
     data_type: FLOAT
 

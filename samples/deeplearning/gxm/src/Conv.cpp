@@ -315,8 +315,8 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
 
   if(gparams_.physical_padding)
   {
-    gparams_.opad_h = vp[0];
-    gparams_.opad_w = vp[1];
+    gparams_.opad_h = ovp[0];
+    gparams_.opad_w = ovp[1];
   }
   else
   {
@@ -440,13 +440,15 @@ void ConvNode::Checkpoint(TensorBuf *tBuf, string name, string format)
 {
   long long int bytes = tBuf->getBufferSize();
   int dtype = tBuf->getDataType();
+  int buftype = tBuf->getBufferType();
 
   FILE* f;
   void* ptr;
   size_t pos;
 
-  while((pos = name.find("/", 10)) != name.npos)
-    name.replace(pos, 1, 1, '_');
+  if((name.find("30") == name.npos) && (name.find("60") == name.npos) && (name.find("80") == name.npos))
+    while((pos = name.find("/", 10)) != name.npos)
+      name.replace(pos, 1, 1, '_');
 
   float* p = (float*)tBuf->getBuffer();
   bool no_checkpt = false;
@@ -462,7 +464,7 @@ void ConvNode::Checkpoint(TensorBuf *tBuf, string name, string format)
 
   if(!no_checkpt)
   {
-    if(format.compare("binary") == 0)
+    if(format == "binary")
     {
       f = fopen(name.c_str(), "wb");
       if(f != NULL)
@@ -479,7 +481,7 @@ void ConvNode::Checkpoint(TensorBuf *tBuf, string name, string format)
         size_t b = fwrite(ptr, 1, bytes, f);
         assert((long long int)b == bytes);
 
-        if(name.find("wt") != name.npos)
+        if(name.find("wt") != name.npos && buftype==DATA)
           _mm_free(ptr);
       }
       else
@@ -610,6 +612,8 @@ void ConvNode::forwardPropagate()
         ptr[i] = 0;
     }
 
+    cbptr = (float*)_mm_malloc(10240*4, 64);
+
     first_fp = false;
   }
 
@@ -644,7 +648,8 @@ void ConvNode::forwardPropagate()
     }
   }
 
-  impl->forwardPropagate(tenBotData_, tenWeightData_, tenBiasData_, tenTopData_);
+  impl->forwardPropagate(tenBotData_, tenWeightData_, tenWeightInc_, tenBiasData_, tenTopData_);
+
 
 #ifdef CHECK_BLOWUP_FP32
   if(out_dtype == DT_FLOAT)
@@ -661,8 +666,8 @@ void ConvNode::forwardPropagate()
   }
   else if(out_dtype == DT_BF16)
   {
-    convert_bf16_f32((libxsmm_bfloat16*)tenTopData_->getBuffer(), cbptr, 16);
-    for(int i=0; i<16; i++)
+    convert_bf16_f32((libxsmm_bfloat16*)tenTopData_->getBuffer(), cbptr, 10240);
+    for(int i=0; i<10240; i++)
     {
       if(isnan(cbptr[i]) || isinf(cbptr[i]))
       {

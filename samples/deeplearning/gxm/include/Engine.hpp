@@ -46,6 +46,9 @@
 #include "Solver.hpp"
 #include "libxsmm.h"
 #include "common.hpp"
+#ifdef USE_MLSL
+#include "mpi.h"
+#endif
 
 using namespace std;
 using namespace gxm;
@@ -130,9 +133,9 @@ class MLEngine
     void allocate_tensor_memory(Tensor*, int, void*);
     void clear_history(TensorList);
     int find_in_nodeTypeList(string);
-    void checkpoint(TensorList L);
+    void checkpoint(TensorList L, int);
     void read_checkpoint_file(TensorBuf*, string, string);
-    void load_checkpoint(TensorList, string);
+    void load_checkpoint(TensorList, int, string);
     void canary_check(void*, vector<int>&, int);
     void* allocate_memory(string, TensorList, int, vector<int>&, int*, long long int*);
     void* allocate_gradient_tensor(TensorList, int, int, long long int);

@@ -320,7 +320,7 @@ class FusedBNormNode : public NNNode
     TensorBuf *tenScratchData_;
 
     float *gmean_, *gvar_, eps, lr_mult_, decay_mult_;
-    float *stptr=NULL, cbptr[16];
+    float *stptr=NULL,*cbptr;
     string scale_, shift_, mean_, var_;
     bool first_fp=true, first_bp=true;
 

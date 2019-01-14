@@ -116,7 +116,7 @@ ConvXSMM::ConvXSMM(ConvImplParams* gp, int engine) : ConvImpl(gp, engine)
   gbot_layout = libxsmm_handle;
 }
 
-void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *biasp, TensorBuf *outp, int tid)
+void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *hweightp, TensorBuf *biasp, TensorBuf *outp, int tid)
 {
   // Conv input. LPBuffer is non-NULL if data layer output is BF16
   if(inp->getLPBuffer() != NULL)
@@ -130,6 +130,15 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *b
   else
     wt_ptr = weightp->getBuffer();
   void *wt_prv_ptr = NULL;
+
+  // Conv weight history
+  if(hweightp != NULL)
+  {
+    if(hweightp->getLPBuffer() != NULL)
+      hwt_ptr = hweightp->getLPBuffer();
+    else
+      hwt_ptr = hweightp->getBuffer();
+  }
 
   // Conv output
   out_ptr = outp->getBuffer();
@@ -157,7 +166,6 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *b
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_input, LIBXSMM_DNN_REGULAR_INPUT ) );
 
-    // Assume that weights are in KCRS format
     libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER, &status );
     CHKERR_LIBXSMM_DNN( status );
 
@@ -165,6 +173,8 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *b
     if(gp->in_data_type == DT_FLOAT)
     {
       wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(float), 2097152);
+
+      // Transform weight layout
       libxsmm_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
       CHKERR_LIBXSMM_DNN( status );
 
@@ -177,6 +187,19 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *b
       libxsmm_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_ptr, &status );
       CHKERR_LIBXSMM_DNN( status );
 
+      // Transform weight history layout
+      if(hwt_ptr != NULL)
+      {
+        libxsmm_temp = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
+        CHKERR_LIBXSMM_DNN( status );
+
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_temp, (void*)hwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+        memcpy(hwt_ptr, wt_prv_ptr, welem*sizeof(float));
+
+        libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor(libxsmm_layout, hwt_ptr, &status);
+        CHKERR_LIBXSMM_DNN( status );
+      }
+
       libxsmm_free(wt_prv_ptr);
       wt_prv_ptr = NULL;
       weightp->setPrivBuffer(NULL);
@@ -184,6 +207,8 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *b
     else if(gp->in_data_type == DT_BF16)
     {
       wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(libxsmm_bfloat16), 2097152);
+
+      // Transform BF16 weight layout
       libxsmm_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
       CHKERR_LIBXSMM_DNN( status );
 
@@ -191,8 +216,22 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *b
       memcpy(wt_ptr, wt_prv_ptr, welem*sizeof(libxsmm_bfloat16));
       libxsmm_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_ptr, &status );
       CHKERR_LIBXSMM_DNN( status );
-      libxsmm_free(wt_prv_ptr);
 
+      // Transform BF16 weight history layout
+      if(hwt_ptr != NULL)
+      {
+        libxsmm_temp = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
+        CHKERR_LIBXSMM_DNN( status );
+
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_temp, (void*)hwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+        memcpy(hwt_ptr, wt_prv_ptr, welem*sizeof(libxsmm_bfloat16));
+
+        libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor(libxsmm_layout, hwt_ptr, &status);
+        CHKERR_LIBXSMM_DNN( status );
+        libxsmm_free(wt_prv_ptr);
+      }
+
+      // Transform FP32 weight layout
       libxsmm_layout->datatype = LIBXSMM_DNN_DATATYPE_F32;
       wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(float), 2097152);
       libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
@@ -203,6 +242,20 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *b
 
       libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor( libxsmm_layout, fwt_ptr, &status );
       CHKERR_LIBXSMM_DNN( status );
+
+      // Transform FP32 weight history layout
+      if(hwt_ptr != NULL)
+      {
+        libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
+        CHKERR_LIBXSMM_DNN( status );
+
+        void *hfwt_ptr = weightp->getBuffer();
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_checkpoint_history_filter, (void*)hfwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+        memcpy(hfwt_ptr, wt_prv_ptr, welem*sizeof(float));
+
+        libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor(libxsmm_layout, hfwt_ptr, &status);
+        CHKERR_LIBXSMM_DNN( status );
+      }
 
       libxsmm_free(wt_prv_ptr);
       wt_prv_ptr = NULL;
@@ -571,5 +624,12 @@ void ConvXSMM::weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf* delwe
 
 void ConvXSMM::dumpBuffer(TensorBuf* tBuf, void* wtemp)
 {
-  CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_checkpoint_filter, (void*)wtemp, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+  int buftype = tBuf->getBufferType();
+
+  if(buftype == DATA)
+  {
+    CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyout_tensor(libxsmm_checkpoint_filter, wtemp, LIBXSMM_DNN_TENSOR_FORMAT_KCRS));
+  }
+  else if(buftype == HISTORY)
+    CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyout_tensor(libxsmm_checkpoint_history_filter, wtemp, LIBXSMM_DNN_TENSOR_FORMAT_KCRS));
 }

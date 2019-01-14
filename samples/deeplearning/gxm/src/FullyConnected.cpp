@@ -385,8 +385,9 @@ void FCNode::Checkpoint(TensorBuf *tBuf, string name, string format)
   FILE* f;
   size_t pos;
 
-  while((pos = name.find("/", 10)) != name.npos)
-    name.replace(pos, 1, 1, '_');
+  if((name.find("30") == name.npos) && (name.find("60") == name.npos) && (name.find("80") == name.npos))
+    while((pos = name.find("/", 10)) != name.npos)
+      name.replace(pos, 1, 1, '_');
 
   float* p = (float*)ptr;
   bool no_checkpt = false;

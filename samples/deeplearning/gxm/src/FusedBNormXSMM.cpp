@@ -456,6 +456,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
       float tmp = (float)gvar[i]/scaling_factor_;
       ((float*)bstddev)[i] = 1./sqrt(tmp + gp->eps);
     }
+
 #if defined(_OPENMP)
 #pragma omp parallel
 #endif

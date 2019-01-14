@@ -37,6 +37,7 @@
 #include "Engine.hpp"
 #include <math.h>
 #include "libxsmm.h"
+#include "check.hpp"
 
 using namespace std;
 

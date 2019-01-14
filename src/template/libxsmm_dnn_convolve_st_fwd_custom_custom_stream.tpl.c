@@ -62,7 +62,7 @@ int *bn_stream = handle->bn_stats_indices_ptrs[ltid];
 
 /* Batch stats related variables */
 int nImg = 0, work = 0, chunksize = 0, thr_begin = 0, thr_end = 0, fm = 0;
-float nhw, recp_nhw, sqrt_eps = 1e-7f;
+float nhw, recp_nhw, sqrt_eps = 1e-5f;
 float *sum_img_ptr = NULL, *sumsq_img_ptr = NULL;
 libxsmm_dnn_fusedbatchnorm *bn_handle = NULL;
 #if defined(LIBXSMM_INTRINSICS_AVX512)

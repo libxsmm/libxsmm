@@ -198,13 +198,8 @@ LMDBDataNode::LMDBDataNode(LMDBDataParams* p, MLEngine* e) : NNNode(p, e)
   {
     num_train_files_ = p->get_num_train_files();
 
-#ifdef DUMP_ACT_DATA
-    train_batches_ = 2;
-#elif DUMP_WT_DATA
-    train_batches_ = 10;
-#else
     train_batches_ = num_train_files_ % global_batch_size_ > 0 ? (((int)(num_train_files_/global_batch_size_)) + 1) : num_train_files_/global_batch_size_;
-#endif
+
     e->set_num_train_batches(train_batches_);
 
     num_test_files_ = p->get_num_test_files();
@@ -465,7 +460,6 @@ void LMDBDataNode::forwardPropagate()
     for(int i=0; i<gparams_.batch_size; i++)
       toplabel[i] = tempbuf_[mbslot][i].label();
 
-#if !defined(DUMP_ACT_DATA) && !defined(DUMP_WT_DATA)
     if(gparams_.crop_sizes[0] != gparams_.orig_sizes[0] && gparams_.crop_sizes[1] != gparams_.orig_sizes[1])
     {
 #ifdef _OPENMP
@@ -480,7 +474,6 @@ void LMDBDataNode::forwardPropagate()
         augmentation[i] = lrand48() % 12;
       }
     }
-#endif
 
     trainImageTransform(tempbuf_[mbslot], topdata);
 
@@ -579,21 +572,5 @@ void LMDBDataNode::forwardPropagate()
       }
     }
   }
-
-#ifdef DUMP_ACT_DATA
-  int iter = eptr->get_current_batch();
-  int crop_size = gparams_.batch_size * gparams_.crop_sizes[0] * gparams_.crop_sizes[1] * gparams_.channels;
-  string fname = NNNode::nname_ + "_fp_out_" + to_string(iter);
-  FILE *f = fopen(fname.c_str(), "w");
-  for(int i=0; i<crop_size; i++)
-    fprintf(f, "%10g\n", topdata[i]);
-  fclose(f);
-
-  fname = NNNode::nname_ + "_fp_label_" + to_string(iter);
-  f = fopen(fname.c_str(), "w");
-  for(int i=0; i<gparams_.batch_size; i++)
-    fprintf(f, "%d\n", toplabel[i]);
-  fclose(f);
-#endif
 }
 

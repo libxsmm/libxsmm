@@ -55,25 +55,27 @@ class ConvXSMM : public ConvImpl
     libxsmm_dnn_tensor* libxsmm_output = NULL;
     libxsmm_dnn_tensor* libxsmm_filter = NULL;
     libxsmm_dnn_tensor* libxsmm_checkpoint_filter = NULL;
+    libxsmm_dnn_tensor* libxsmm_checkpoint_history_filter = NULL;
     libxsmm_dnn_tensor* libxsmm_delinput = NULL;
     libxsmm_dnn_tensor* libxsmm_deloutput = NULL;
     libxsmm_dnn_tensor* libxsmm_delfilter = NULL;
     libxsmm_dnn_tensor* libxsmm_batchstats = NULL;
+    libxsmm_dnn_tensor* libxsmm_temp = NULL;
     libxsmm_dnn_tensor_datalayout* libxsmm_layout;
     libxsmm_dnn_err_t status;
 
     ConvImplParams *cp;
     float *dinptr, *dwtptr;
     bool updated_scratch=false;
-    libxsmm_bfloat16 *bf16_in_ptr, *bf16_wt_ptr, *bf16_dout_ptr;
-    void *in_ptr=NULL, *wt_ptr=NULL, *out_ptr=NULL;
+    libxsmm_bfloat16 *bf16_in_ptr, *bf16_wt_ptr, *bf16_hwt_ptr, *bf16_dout_ptr;
+    void *in_ptr=NULL, *wt_ptr=NULL, *hwt_ptr=NULL, *out_ptr=NULL;
     void *din_ptr=NULL, *dwt_ptr=NULL, *dwt_prv_ptr=NULL, *dout_ptr=NULL;
     void *scratch=NULL;
 
   public:
     ConvXSMM(ConvImplParams *gp, int engine);
     virtual ~ConvXSMM(void) {}
-    void forwardPropagate(TensorBuf *inp, TensorBuf* weightp, TensorBuf* biasp, TensorBuf *outp, int tid);
+    void forwardPropagate(TensorBuf *inp, TensorBuf* weightp, TensorBuf* hweightp, TensorBuf* biasp, TensorBuf *outp, int tid);
     void backPropagate(TensorBuf *inp, TensorBuf* weightp, TensorBuf *deloutp, TensorBuf *delinp, int tid);
     void weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf *delweightp, TensorBuf *delbiasp, int tid);
     void dumpBuffer(TensorBuf *wt, void* temp);
