@@ -209,7 +209,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel(
 
   /* check if we have full vectors */
   if ( i_conv_desc->ofm_block % l_conv_kernel_config.vector_length_out != 0 ) {
-    LIBXSMM_HANDLE_WARNING( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
+    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_CONV_OFM_VEC );
     return;
   }
 
