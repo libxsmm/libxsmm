@@ -1027,11 +1027,11 @@ cp2k_mic: lib_mic
 
 .PHONY: wrap
 wrap: lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0"
 
 .PHONY: wrap_mic
 wrap_mic: lib_mic
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1 TRACE=0"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1 TRACE=0"
 
 .PHONY: nek
 nek: lib_hst
@@ -1315,7 +1315,7 @@ $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh 
 
 .PHONY: test-wrap
 test-wrap: wrap
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 test"
+	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0 test"
 
 .PHONY: test-smm
 ifneq (,$(strip $(FC)))
@@ -1407,8 +1407,8 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-o $(notdir $@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md
-	@cat $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md \
+$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(SPLDIR)/packed/*/README.md
+	@cat $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(SPLDIR)/packed/*/README.md \
 	| sed \
 		-e 's/^#/##/' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
