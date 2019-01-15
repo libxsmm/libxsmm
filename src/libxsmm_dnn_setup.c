@@ -201,6 +201,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
   int lp_block;
   int ifmblock_hp;
   int ofmblock_lp;
+  LIBXSMM_UNUSED(K);
 
   if ( (datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
     ifmblock = (C >=16) ? 16 : C;
