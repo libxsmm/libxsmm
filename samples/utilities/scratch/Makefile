@@ -2,7 +2,7 @@
 #.EXPORT_ALL_VARIABLES: #export
 
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-DEPDIR = ../..
+DEPDIR = ../../..
 SRCDIR = $(ROOTDIR)
 INCDIR = .
 BLDDIR = build
