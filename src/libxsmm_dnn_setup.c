@@ -204,13 +204,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
 
   if ( (datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
     ifmblock = (C >=16) ? 16 : C;
-    ofmblock = (K >=16) ? 16 : K;
+    ofmblock = 16;
     lp_block = 1;
     ifmblock_hp = ifmblock * lp_block;
     ofmblock_lp = ofmblock / lp_block;
   } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
     ifmblock = (C >=16) ? 8 : C/2;
-    ofmblock = (K >=16) ? 16 : K/2;
+    ofmblock = 16;
     lp_block = 2;
     if (C == 3) {
       ifmblock = C;
@@ -220,7 +220,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
     ofmblock_lp = ofmblock / lp_block;
   } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
     ifmblock = (C >=16) ? 8 : (C/2);
-    ofmblock = (K >=16) ? 16 : (K/2);
+    ofmblock = 16;
     lp_block = 2;
     ifmblock_hp = ifmblock * lp_block;
     ofmblock_lp = ofmblock / lp_block;
@@ -229,7 +229,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
     }
   } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (datatype_out == LIBXSMM_DNN_DATATYPE_I32)) {
     ifmblock = (C >=16) ? 4 : (C/4);
-    ofmblock = (K >=16) ? 16 : (K/4);
+    ofmblock = 16;
     lp_block = 4;
     ifmblock_hp = ifmblock * lp_block;
     ofmblock_lp = ofmblock / lp_block;
