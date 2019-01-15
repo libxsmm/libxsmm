@@ -30,7 +30,7 @@
 ******************************************************************************/
 #include "magazine.h"
 
-#if !defined(__BLAZE) && 0
+#if !defined(__BLAZE) && 1
 # define __BLAZE
 #endif
 
@@ -61,9 +61,9 @@ int main(int argc, char* argv[])
   const int n = (3 < argc ? atoi(argv[3]) : 5);
   const int k = (4 < argc ? atoi(argv[4]) : 7);
   /* leading dimensions are used to each pad (row-major!) */
-  const int lda = ((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const int ldb = ((sizeof(T) * k + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const int ldc = ((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const int lda = (5 < argc ? (m < atoi(argv[5]) ? atoi(argv[5]) : m) : (((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T)));
+  const int ldb = (6 < argc ? (k < atoi(argv[6]) ? atoi(argv[6]) : k) : (((sizeof(T) * k + alignment - 1) & ~(alignment - 1)) / sizeof(T)));
+  const int ldc = (7 < argc ? (m < atoi(argv[7]) ? atoi(argv[7]) : m) : (((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T)));
 #if 0
   const char transa = 'n', transb = 'n';
 #endif
