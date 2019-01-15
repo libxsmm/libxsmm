@@ -27,16 +27,16 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="iconv.c" />
+    <None Include="Makefile" />
+    <None Include="mhd.sh" />
+    <None Include="mhd_in.mhd" />
+    <None Include="README.md" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="iconv_in.mhd" />
-    <None Include="iconv_out.mhd" />
-    <None Include="Makefile" />
-    <None Include="iconv.sh" />
+    <ClCompile Include="mhd.c" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>iconv</ProjectName>
+    <ProjectName>mhd</ProjectName>
     <ProjectGuid>{54F8CC52-A93E-41BA-9AED-AFC609542A10}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
