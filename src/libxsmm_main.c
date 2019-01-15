@@ -1257,8 +1257,8 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         const unsigned int m = request->descriptor.gemm->m, n = request->descriptor.gemm->n, k = request->descriptor.gemm->k;
 # if !defined(LIBXSMM_DENY_RETARGET) /* disable: ECFLAGS=-DLIBXSMM_DENY_RETARGET */
         if (LIBXSMM_X86_AVX2 < libxsmm_target_archid &&
-           (LIBXSMM_DATATYPE_F64 == request->descriptor.gemm->datatype || LIBXSMM_DATATYPE_F32 == request->descriptor.gemm->datatype) &&
-           (LIBXSMM_MNK_SIZE(4, 4, 4) >= LIBXSMM_MNK_SIZE(m, n, k)))
+           (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.gemm->datatype || LIBXSMM_GEMM_PRECISION_F32 == request->descriptor.gemm->datatype) &&
+           (16 >= (m * k) || 16 >= (k * n) || 16 >= (m * n)))
         {
           target_arch = "hsw";
         }
