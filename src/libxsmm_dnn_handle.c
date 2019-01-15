@@ -108,17 +108,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
       return status;
     }
 
-    /* Forward path setup, @TODO check status */
-    status = libxsmm_dnn_setup_fwd(handle, &noarch);
+    /* only continue if we could block data in LIBXSMM's custom format, otherwise use generic code */
+    if ( noarch == 0 ) {
+      /* Forward path setup, @TODO check status */
+      status = libxsmm_dnn_setup_fwd(handle, &noarch);
 
-    /* Backward path setup, @TODO check status */
-    status = libxsmm_dnn_setup_bwd(handle, &noarch);
+      /* Backward path setup, @TODO check status */
+      status = libxsmm_dnn_setup_bwd(handle, &noarch);
 
-    /* Weight update path setup, @TODO check status */
-    status = libxsmm_dnn_setup_upd(handle, &noarch);
+      /* Weight update path setup, @TODO check status */
+      status = libxsmm_dnn_setup_upd(handle, &noarch);
 
-    /* Calculate scratch requirements */
-    libxsmm_dnn_setup_scratch(handle);
+      /* Calculate scratch requirements */
+      libxsmm_dnn_setup_scratch(handle);
+    }
   }
 
   if (0 != noarch) { /* Setup generic code generation */
