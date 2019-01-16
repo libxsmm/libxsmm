@@ -409,7 +409,7 @@ int main(int argc, char* argv[])
   double l_total = 0.0;
   double flops = 0.0, tempflops = 0.0;
   const double tflops = 12; /* transcendental flops */
-  int j, l;
+  int j, l, p;
 
   libxsmm_dnn_rnncell_desc lstmcell_desc;
   libxsmm_dnn_rnncell* libxsmm_handle;
@@ -860,14 +860,17 @@ int main(int argc, char* argv[])
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &CK, &N, &alpha, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, xhgoldTp, &N, &beta, djdwr8gold, &K4);
 #endif
 
+#if defined(_OPENMP)
+#     pragma omp parallel for private(l, p)
+#endif
         /* compute djdbgold */
-        for (l = 0; l < K*N; l++) {
-          int row = l / K;
-          int col = l % K;
-          djdb4gold[col]       += LIBXSMM_VLA_ACCESS(3, dicfogold, j, row, col,       N, 4 * K);
-          djdb4gold[col + K]   += LIBXSMM_VLA_ACCESS(3, dicfogold, j, row, col + K,   N, 4 * K);
-          djdb4gold[col + 2*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, row, col + 2*K, N, 4 * K);
-          djdb4gold[col + 3*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, row, col + 3*K, N, 4 * K);
+        for (l = 0; l < K; l++) {
+          for (p = 0; p < N; p++) {
+            djdb4gold[l]       += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l,       N, 4 * K);
+            djdb4gold[l + K]   += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + K,   N, 4 * K);
+            djdb4gold[l + 2*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + 2*K, N, 4 * K);
+            djdb4gold[l + 3*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + 3*K, N, 4 * K);
+          }
         }
       }
     }
