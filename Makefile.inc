@@ -74,21 +74,21 @@ ifeq (Windows_NT,$(OS))
 endif
 
 # Command line utilities
-#PKGCFG ?= $(shell which pkg-config 2>/dev/null)
-CP ?= $(shell which cp 2>/dev/null)
-MV ?= $(shell which mv 2>/dev/null)
+#PKGCFG ?= $(shell command -v pkg-config 2>/dev/null)
+CP ?= $(shell command -v cp 2>/dev/null)
+MV ?= $(shell command -v mv 2>/dev/null)
 UNAME ?= $(shell uname)
 MAKE ?= make
 ENV ?= env
 
 # Python interpreter per PYTHON=/path/to/python
-PYTHON3 ?= $(shell which python3 2>/dev/null)
-PYTHON ?= $(shell which python 2>/dev/null)
+PYTHON3 ?= $(shell command -v python3 2>/dev/null)
+PYTHON ?= $(shell command -v python 2>/dev/null)
 
 ifeq (,$(PYTHON))
 ifneq (,$(PYTHON3))
   SHELL := env PATH=$(MAKEINC):$(PATH) $(SHELL)
-  PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null && which python 2>/dev/null)
+  PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null && command -v python 2>/dev/null)
 else
   $(info ERROR: No Python interpreter found!)
 endif
@@ -257,7 +257,7 @@ endif
 ifneq (0,$(PYMOD))
   PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
   PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d"." -f1,2)
-  PYROOT = $(abspath $(dir $(shell which $(PYTHON) 2>/dev/null))/..)
+  PYROOT = $(abspath $(dir $(shell command -v $(PYTHON) 2>/dev/null))/..)
   PYINC = $(wildcard $(PYROOT)/include/python$(PYVERSION)/Python.h)
   ifneq (,$(PYINC))
     LDFLAGS += -lpython$(PYVERSION)
@@ -319,17 +319,17 @@ CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 # or pickup the Intel Compiler (if available).
 GNU ?= 0
 ifeq (0,$(GNU))
-  ifneq (,$(notdir $(shell which icpc 2>/dev/null)))
+  ifneq (,$(notdir $(shell command -v icpc 2>/dev/null)))
     CXX = icpc
-  else ifneq (,$(notdir $(shell which icpx 2>/dev/null)))
+  else ifneq (,$(notdir $(shell command -v icpx 2>/dev/null)))
     CXX = icpx
   endif
-  ifneq (,$(notdir $(shell which icc 2>/dev/null)))
+  ifneq (,$(notdir $(shell command -v icc 2>/dev/null)))
     CC = icc
-  else ifneq (,$(notdir $(shell which icx 2>/dev/null)))
+  else ifneq (,$(notdir $(shell command -v icx 2>/dev/null)))
     CC = icx
   endif
-  ifneq (,$(notdir $(shell which ifort 2>/dev/null)))
+  ifneq (,$(notdir $(shell command -v ifort 2>/dev/null)))
     FC = ifort
   endif
 endif
@@ -340,16 +340,16 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
   $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . | cut -d' ' -f1)))))")
 
 ifeq (0,$(INTEL))
-  ifeq (,$(shell which $(CXX) 2>/dev/null))
+  ifeq (,$(shell command -v $(CXX) 2>/dev/null))
     CXX = g++
   else ifneq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CXX = g++
-  else ifneq (gcc,$(notdir $(shell which $(CC) 2>/dev/null)))
-    ifeq (g++,$(notdir $(shell which $(CXX) 2>/dev/null)))
+  else ifneq (gcc,$(notdir $(shell command -v $(CC) 2>/dev/null)))
+    ifeq (g++,$(notdir $(shell command -v $(CXX) 2>/dev/null)))
       CC = gcc
     endif
   endif
-  ifeq (,$(shell which $(CC) 2>/dev/null))
+  ifeq (,$(shell command -v $(CC) 2>/dev/null))
     CC = gcc
   else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CC = gcc
@@ -392,17 +392,17 @@ endif
 # fixup FC-default given by MAKE
 ifneq (,$(strip $(FC)))
   FIXFC ?= 0
-  ifeq (,$(shell which $(FC) 2>/dev/null))
+  ifeq (,$(shell command -v $(FC) 2>/dev/null))
     FIXFC = 1
   else ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     FIXFC = 1
-  else ifneq (gfortran,$(notdir $(shell which $(FC) 2>/dev/null)))
-    ifeq (g++,$(notdir $(shell which $(CXX) 2>/dev/null)))
+  else ifneq (gfortran,$(notdir $(shell command -v $(FC) 2>/dev/null)))
+    ifeq (g++,$(notdir $(shell command -v $(CXX) 2>/dev/null)))
       FIXFC = 1
     endif
   endif
   ifneq (0,$(FIXFC))
-    ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
+    ifneq (,$(notdir $(shell command -v gfortran 2>/dev/null)))
       MKL_FCRTL = gf
       GFC = gfortran
       FC = $(GFC)
@@ -561,10 +561,13 @@ ifneq (0,$(DEPSTATIC))
 else
   LIBEXT ?= $(DLIBEXT)
 endif
-ifneq (0,$(MINGW))
+
+# Import-library
+ifeq (0,$(MINGW))
+  ILIBEXT ?= $(DLIBEXT)
+else # MinGW
   ILIBEXT ?= a
 endif
-ILIBEXT ?= $(LIBEXT)
 
 # Separate control on how to link against the BLAS library
 BLAS_STATIC ?= $(DEPSTATIC)
@@ -591,7 +594,7 @@ ifneq (0,$(GCC))
   GCC_VERSION_MINOR = $(CXX_VERSION_MINOR)
   GCC_VERSION_PATCH = $(CXX_VERSION_PATCH)
 else ifeq (0,$(CLANG))
-  GCCBIN = $(notdir $(shell which gcc 2>/dev/null))
+  GCCBIN = $(notdir $(shell command -v gcc 2>/dev/null))
   ifneq (,$(strip $(GCCBIN)))
     GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
     GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f1)
@@ -678,6 +681,16 @@ PGI ?= 0
 LD = $(CC)
 XLD = $(CXX)
 
+# adopt fully equipped archiver
+CCAR = $(shell command -v $(CC)-ar 2>/dev/null)
+ifneq (,$(CCAR))
+  ifeq (default,$(origin AR))
+    AR = $(CCAR)
+  else
+    AR ?= $(CCAR)
+  endif
+endif
+
 ifeq (0,$(DEPSTATIC))
   LIB_LD := $(LD) -shared $(PICFLAG)
   LIB_XLD := $(XLD) -shared $(PICFLAG)
@@ -759,17 +772,17 @@ abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
   $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
     -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
 
-LIBDEP = $(LIBNAME).$(ILIBEXT)
+LIBDEP = $(LIBNAME).$(LIBEXT)
 MAINLIB = $(call abslib,$(LIBDEP))
 
-FORTDEP = $(LIBNAME)f.$(ILIBEXT)
+FORTDEP = $(LIBNAME)f.$(LIBEXT)
 FORTLIB = $(call abslib,$(FORTDEP))
 
-EXTDEP = $(LIBNAME)ext.$(ILIBEXT)
+EXTDEP = $(LIBNAME)ext.$(LIBEXT)
 EXTLIB = $(XLIB_BEGIN) $(call abslib,$(EXTDEP)) $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides libxsmmnoblas to satisfy BLAS symbols
-  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(ILIBEXT)) $(XLIB_END)
+  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(LIBEXT)) $(XLIB_END)
 else
   NOBLASLIB = $(NULL)
 endif
@@ -1851,9 +1864,6 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 
 %/.make:
 	@mkdir -p $(basename $@)
-#@touch $@
 
 .PHONY: .make
-#.make:
-#	@touch $@
 

@@ -246,20 +246,16 @@ else
   GENTARGET = noarch
 endif
 
-ifeq (0,$(STATIC))
-  ifneq (Darwin,$(UNAME))
-    GENGEMM = @$(ENV) \
-      LD_LIBRARY_PATH=$(OUTDIR):$${LD_LIBRARY_PATH} \
-      PATH=$(OUTDIR):$${PATH} \
-    $(BINDIR)/libxsmm_gemm_generator
-  else # osx
-    GENGEMM = @$(ENV) \
-      DYLD_LIBRARY_PATH=$(OUTDIR):$${DYLD_LIBRARY_PATH} \
-      PATH=$(OUTDIR):$${PATH} \
-    $(BINDIR)/libxsmm_gemm_generator
-  endif
-else
-  GENGEMM = $(BINDIR)/libxsmm_gemm_generator
+ifneq (Darwin,$(UNAME))
+  GENGEMM = @$(ENV) \
+    LD_LIBRARY_PATH=$(OUTDIR):$${LD_LIBRARY_PATH} \
+    PATH=$(OUTDIR):$${PATH} \
+  $(BINDIR)/libxsmm_gemm_generator
+else # osx
+  GENGEMM = @$(ENV) \
+    DYLD_LIBRARY_PATH=$(OUTDIR):$${DYLD_LIBRARY_PATH} \
+    PATH=$(OUTDIR):$${PATH} \
+  $(BINDIR)/libxsmm_gemm_generator
 endif
 
 INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
@@ -1072,7 +1068,7 @@ $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/$(SPLDIR)/cp2k/.make $(ROOTDI
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "ECHO=\$$(which echo)" >> $@
+	@echo "ECHO=\$$(command -v echo)" >> $@
 	@echo "FILE=cp2k-perf.txt" >> $@
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
@@ -1117,7 +1113,7 @@ $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh: $(ROOTDIR)/$(SPLDIR)/smm/.make $(ROOTDIR)
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "ECHO=\$$(which echo)" >> $@
+	@echo "ECHO=\$$(command -v echo)" >> $@
 	@echo "FILE=\$${HERE}/smmf-perf.txt" >> $@
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
@@ -1156,7 +1152,7 @@ $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "ECHO=\$$(which echo)" >> $@
+	@echo "ECHO=\$$(command -v echo)" >> $@
 	@echo "FILE=\$${HERE}/axhm-perf.txt" >> $@
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
@@ -1195,7 +1191,7 @@ $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "ECHO=\$$(which echo)" >> $@
+	@echo "ECHO=\$$(command -v echo)" >> $@
 	@echo "FILE=\$${HERE}/grad-perf.txt" >> $@
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
@@ -1234,7 +1230,7 @@ $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "ECHO=\$$(which echo)" >> $@
+	@echo "ECHO=\$$(command -v echo)" >> $@
 	@echo "FILE=\$${HERE}/rstr-perf.txt" >> $@
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
@@ -1587,12 +1583,12 @@ endif
 .PHONY: clean-all
 clean-all: clean
 	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
-		"$(MAKE) --no-print-directory clean 2>/dev/null || true" \;
+		"$(MAKE) --no-print-directory clean" \; 2>/dev/null || true
 
 .PHONY: realclean-all
 realclean-all: realclean
 	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
-		"$(MAKE) --no-print-directory realclean 2>/dev/null || true" \;
+		"$(MAKE) --no-print-directory realclean" \; 2>/dev/null || true
 
 .PHONY: distclean
 distclean: realclean-all
@@ -1800,7 +1796,7 @@ endif
 
 .PHONY: deb
 deb:
-	@if [ "" != "$$(which git)" ]; then \
+	@if [ "" != "$$(command -v git)" ]; then \
 		VERSION_ARCHIVE=$$(git describe --tags --abbrev=0 2>/dev/null); \
 		VERSION_ARCHIVE_SONAME=$$($(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $${VERSION_ARCHIVE}); \
 	fi; \
