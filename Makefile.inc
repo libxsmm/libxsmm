@@ -1853,6 +1853,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 	@mkdir -p $(basename $@)
 #@touch $@
 
+.PHONY: .make
 #.make:
 #	@touch $@
 
