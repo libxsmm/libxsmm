@@ -508,7 +508,7 @@ LIBXSMM_API float libxsmm_sexp2(float x)
 #if defined(LIBXSMM_NO_LIBM)
   return libxsmm_sexp2_fast(x, 20/*compromise*/);
 #else
-  return powf(2.f, x);
+  return LIBXSMM_POWF(2.f, x);
 #endif
 }
 
