@@ -861,13 +861,16 @@ int main(int argc, char* argv[])
 #endif
 
         /* compute djdbgold */
-        for (l = 0; l < K*N; l++) {
-          int row = l / K;
-          int col = l % K;
-          djdb4gold[col]       += LIBXSMM_VLA_ACCESS(3, dicfogold, j, row, col,       N, 4 * K);
-          djdb4gold[col + K]   += LIBXSMM_VLA_ACCESS(3, dicfogold, j, row, col + K,   N, 4 * K);
-          djdb4gold[col + 2*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, row, col + 2*K, N, 4 * K);
-          djdb4gold[col + 3*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, row, col + 3*K, N, 4 * K);
+#if defined(_OPENMP)
+# pragma omp parallel for private(l)
+#endif
+        for (l = 0; l < K; l++) {
+          for (int p = 0; p < N; p++) {
+            djdb4gold[l]       += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l,       N, 4 * K);
+            djdb4gold[l + K]   += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + K,   N, 4 * K);
+            djdb4gold[l + 2*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + 2*K, N, 4 * K);
+            djdb4gold[l + 3*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + 3*K, N, 4 * K);
+          }
         }
       }
     }
