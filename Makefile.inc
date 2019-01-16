@@ -772,17 +772,17 @@ abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
   $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
     -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
 
-LIBDEP = $(LIBNAME).$(ILIBEXT)
+LIBDEP = $(LIBNAME).$(LIBEXT)
 MAINLIB = $(call abslib,$(LIBDEP))
 
-FORTDEP = $(LIBNAME)f.$(ILIBEXT)
+FORTDEP = $(LIBNAME)f.$(LIBEXT)
 FORTLIB = $(call abslib,$(FORTDEP))
 
-EXTDEP = $(LIBNAME)ext.$(ILIBEXT)
+EXTDEP = $(LIBNAME)ext.$(LIBEXT)
 EXTLIB = $(XLIB_BEGIN) $(call abslib,$(EXTDEP)) $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides libxsmmnoblas to satisfy BLAS symbols
-  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(ILIBEXT)) $(XLIB_END)
+  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(LIBEXT)) $(XLIB_END)
 else
   NOBLASLIB = $(NULL)
 endif
