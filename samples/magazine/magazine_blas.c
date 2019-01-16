@@ -70,9 +70,9 @@ int main(int argc, char* argv[])
   const int n = (3 < argc ? atoi(argv[3]) : 5);
   const int k = (4 < argc ? atoi(argv[4]) : 7);
   /* leading dimensions are made multiples of the size of a cache-line */
-  const int lda = (5 < argc ? (m < atoi(argv[5]) ? atoi(argv[5]) : m) : (((sizeof(TYPE) * m + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE)));
-  const int ldb = (6 < argc ? (k < atoi(argv[6]) ? atoi(argv[6]) : k) : (((sizeof(TYPE) * k + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE)));
-  const int ldc = (7 < argc ? (m < atoi(argv[7]) ? atoi(argv[7]) : m) : (((sizeof(TYPE) * m + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE)));
+  const int lda = (5 < argc ? (m < atoi(argv[5]) ? atoi(argv[5]) : m) : (int)(((sizeof(TYPE) * m + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE)));
+  const int ldb = (6 < argc ? (k < atoi(argv[6]) ? atoi(argv[6]) : k) : (int)(((sizeof(TYPE) * k + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE)));
+  const int ldc = (7 < argc ? (m < atoi(argv[7]) ? atoi(argv[7]) : m) : (int)(((sizeof(TYPE) * m + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE)));
   /* micro-kernels are limited to certain alpha- and beta-values */
   const char transa = 'n', transb = 'n';
   const TYPE alpha = 1, beta = 1;
