@@ -2,7 +2,7 @@
 #.EXPORT_ALL_VARIABLES: #export
 
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-DEPDIR = ../..
+DEPDIR = ../../..
 SRCDIR = $(ROOTDIR)
 INCDIR = .
 BLDDIR = build
@@ -14,8 +14,8 @@ DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
 BLAS = 0
-SYM = 1
 OMP = 1
+SYM = 1
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
@@ -45,21 +45,13 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME) $(OUTDIR)/$(OUTNAME)f
+XFILES := $(OUTDIR)/$(OUTNAME)
 
 .PHONY: all
 all: $(XFILES)
 
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
-
-ifneq (,$(strip $(FC)))
-$(OUTDIR)/$(OUTNAME)f: $(OUTDIR)/.make $(FTNOBJS) $(FORTDEP) $(EXTDEP) $(LIBDEP)
-	$(FLD) -o $@ $(FTNOBJS) $(FORTLIB) $(MAINLIB) $(NOBLASLIB) \
-		$(FCMTFLAGS) $(SLDFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
-else
-.PHONY: $(OUTDIR)/$(OUTNAME)f
-endif
 
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBDEP) $(EXTDEP)
 	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)

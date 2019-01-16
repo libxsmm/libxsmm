@@ -31,7 +31,7 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-DEPDIR=${HERE}/../..
+DEPDIR=${HERE}/../../..
 
 TMPF=$(${DEPDIR}/.mktmp.sh /tmp/.libxsmm_XXXXXX.out)
 UNAME=$(command -v uname)

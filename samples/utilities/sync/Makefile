@@ -2,7 +2,7 @@
 #.EXPORT_ALL_VARIABLES: #export
 
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-DEPDIR = ../..
+DEPDIR = ../../..
 SRCDIR = $(ROOTDIR)
 INCDIR = .
 BLDDIR = build
@@ -14,8 +14,8 @@ DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
 BLAS = 0
-OMP = 1
 SYM = 1
+OMP = 1
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
@@ -45,7 +45,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)
+XFILES := $(OUTDIR)/$(OUTNAME)_barrier $(OUTDIR)/$(OUTNAME)_lock
 
 .PHONY: all
 all: $(XFILES)
@@ -53,8 +53,11 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBDEP) $(EXTDEP)
-	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/$(OUTNAME)_barrier: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_barrier-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_barrier-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/$(OUTNAME)_lock: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_lock-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_lock-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

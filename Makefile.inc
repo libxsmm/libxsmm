@@ -294,21 +294,6 @@ else
   DEPSTATIC ?= 0
 endif
 
-# Library extension
-ifneq (0,$(DEPSTATIC))
-  LIBEXT ?= $(SLIBEXT)
-else
-  LIBEXT ?= $(DLIBEXT)
-endif
-
-# Separate control on how to link against the BLAS library
-BLAS_STATIC ?= $(DEPSTATIC)
-ifneq (0,$(BLAS_STATIC))
-  BLASLIBEXT ?= $(SLIBEXT)
-else # shared (DLL)
-  BLASLIBEXT ?= $(IMPEXT)
-endif
-
 LNKSOFT ?= 1
 ifeq (0,$(STATIC))
   ifeq (Windows_NT,$(UNAME))
@@ -570,10 +555,24 @@ endif
 endif
 MINGW ?= 0
 
-#ifneq (0,$(MINGW))
-#  IMPEXT ?= $(SLIBEXT)
-#endif
-IMPEXT ?= $(LIBEXT)
+# Library extension
+ifneq (0,$(DEPSTATIC))
+  LIBEXT ?= $(SLIBEXT)
+else
+  LIBEXT ?= $(DLIBEXT)
+endif
+ifneq (0,$(MINGW))
+  ILIBEXT ?= a
+endif
+ILIBEXT ?= $(LIBEXT)
+
+# Separate control on how to link against the BLAS library
+BLAS_STATIC ?= $(DEPSTATIC)
+ifneq (0,$(BLAS_STATIC))
+  BLASLIBEXT ?= $(SLIBEXT)
+else # shared (DLL)
+  BLASLIBEXT ?= $(ILIBEXT)
+endif
 
 # Too many ICEs with older Clang (need to know if Clang is used)
 ifeq (0,$(GCC)) # not GCC
@@ -737,7 +736,7 @@ ifneq (Darwin,$(UNAME))
   endif
   linkopt = $(XLNKOPT)$(if $2,$1=$2,$1)
   abslibrpath = $(strip $(call linkopt,--rpath,$(if \
-    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
+    $(filter .$(ILIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
   ifneq (0,$(ASNEEDED))
@@ -750,27 +749,27 @@ else
   endif
   linkopt = $(XLNKOPT) $1 $(XLNKOPT) $2
   abslibrpath = $(strip $(call linkopt,-rpath,$(if \
-    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
+    $(filter .$(ILIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
 endif
 
-absliblpath = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+absliblpath = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
   $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
   $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1)))
-abslibfile = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
   $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
     -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
 
-LIBDEP = $(LIBNAME).$(IMPEXT)
+LIBDEP = $(LIBNAME).$(ILIBEXT)
 MAINLIB = $(call abslib,$(LIBDEP))
 
-FORTDEP = $(LIBNAME)f.$(IMPEXT)
+FORTDEP = $(LIBNAME)f.$(ILIBEXT)
 FORTLIB = $(call abslib,$(FORTDEP))
 
-EXTDEP = $(LIBNAME)ext.$(IMPEXT)
+EXTDEP = $(LIBNAME)ext.$(ILIBEXT)
 EXTLIB = $(XLIB_BEGIN) $(call abslib,$(EXTDEP)) $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides libxsmmnoblas to satisfy BLAS symbols
-  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(IMPEXT)) $(XLIB_END)
+  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(ILIBEXT)) $(XLIB_END)
 else
   NOBLASLIB = $(NULL)
 endif
@@ -1559,14 +1558,14 @@ ifneq (,$(TBBROOT))
   ifneq (Windows_NT,$(UNAME))
     TBBLIB_DIR = $(TBBROOT)/lib/intel64
     TBBLIB_DIRGCC = gcc$(GCC_VERSION_MAJOR).$(GCC_VERSION_MINOR)
-    TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(DLIBEXT))
+    TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(ILIBEXT))
     ifeq (,$(TBBLIB_MALLOC))
       ifneq (0,$(TBB_OLDRTL))
         TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | tr "\n" " " | cut -d" " -f1)
       else
         TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | tr "\n" " " | rev | cut -d" " -f2 | rev)
       endif
-      TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(DLIBEXT))
+      TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(ILIBEXT))
     endif
     ifneq (,$(TBBLIB_MALLOC))
       IFLAGS += -I$(TBBROOT)/include
@@ -1687,9 +1686,9 @@ ifneq (0,$(MKL))
   BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
-      $(call abslibfile,libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(DLIBEXT)) \
-      $(call abslibfile,libmkl_core.$(DLIBEXT)) \
-      $(call abslibfile,libmkl_$(MKL_THREADS).$(DLIBEXT)) \
+      $(call abslibfile,libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(ILIBEXT)) \
+      $(call abslibfile,libmkl_core.$(ILIBEXT)) \
+      $(call abslibfile,libmkl_$(MKL_THREADS).$(ILIBEXT)) \
       $(BLAS_LDFLAGS)
     ifneq (0,$(INTEL))
     ifneq (0,$(OFFLOAD))
@@ -1843,7 +1842,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_STATE .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR \
     CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CPUFLAGS CP CXX_VERSION_FLAG CXX_VERSION_STRING FSTD \
     DEPDIR DLIBEXT ENV EXTDEP FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO \
-    IMPEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION_INT MKL_INCFILE MV ROOTDIR SLIBEXT SUITE XLNKOPT TESTSIZE \
+    ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION_INT MKL_INCFILE MV ROOTDIR SLIBEXT SUITE XLNKOPT TESTSIZE \
     BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB \
     SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPLIBFILE NOBLASLIB NOBLAS_% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB \
     FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 \
@@ -1852,8 +1851,9 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 
 %/.make:
 	@mkdir -p $(basename $@)
-	@touch $@
+#@touch $@
 
-.make:
-	@touch $@
+.PHONY: .make
+#.make:
+#	@touch $@
 

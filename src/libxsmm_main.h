@@ -777,6 +777,9 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
 /** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
 LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 
+/** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
+LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
+
 /** Determines the given value in double-precision based on the given type. */
 LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
 
