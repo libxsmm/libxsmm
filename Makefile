@@ -246,20 +246,16 @@ else
   GENTARGET = noarch
 endif
 
-ifeq (0,$(STATIC))
-  ifneq (Darwin,$(UNAME))
-    GENGEMM = @$(ENV) \
-      LD_LIBRARY_PATH=$(OUTDIR):$${LD_LIBRARY_PATH} \
-      PATH=$(OUTDIR):$${PATH} \
-    $(BINDIR)/libxsmm_gemm_generator
-  else # osx
-    GENGEMM = @$(ENV) \
-      DYLD_LIBRARY_PATH=$(OUTDIR):$${DYLD_LIBRARY_PATH} \
-      PATH=$(OUTDIR):$${PATH} \
-    $(BINDIR)/libxsmm_gemm_generator
-  endif
-else
-  GENGEMM = $(BINDIR)/libxsmm_gemm_generator
+ifneq (Darwin,$(UNAME))
+  GENGEMM = @$(ENV) \
+    LD_LIBRARY_PATH=$(OUTDIR):$${LD_LIBRARY_PATH} \
+    PATH=$(OUTDIR):$${PATH} \
+  $(BINDIR)/libxsmm_gemm_generator
+else # osx
+  GENGEMM = @$(ENV) \
+    DYLD_LIBRARY_PATH=$(OUTDIR):$${DYLD_LIBRARY_PATH} \
+    PATH=$(OUTDIR):$${PATH} \
+  $(BINDIR)/libxsmm_gemm_generator
 endif
 
 INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
@@ -1587,12 +1583,12 @@ endif
 .PHONY: clean-all
 clean-all: clean
 	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
-		"$(MAKE) --no-print-directory clean 2>/dev/null || true" \;
+		"$(MAKE) --no-print-directory clean" \; 2>/dev/null || true
 
 .PHONY: realclean-all
 realclean-all: realclean
 	@find $(ROOTDIR) -type f -name Makefile -exec $(FLOCK) {} \
-		"$(MAKE) --no-print-directory realclean 2>/dev/null || true" \;
+		"$(MAKE) --no-print-directory realclean" \; 2>/dev/null || true
 
 .PHONY: distclean
 distclean: realclean-all
