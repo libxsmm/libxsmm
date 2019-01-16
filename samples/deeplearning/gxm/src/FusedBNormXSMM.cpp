@@ -202,7 +202,18 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
   __assume_aligned(gvar, 64);
   __assume_aligned(output,64);
 
-  void *scratch = scratchp->getBuffer();
+  if(scratch != NULL)
+  {
+    if(updated_scratch && scratch != scratchp->getBuffer())
+    {
+      printf("Warning: updating scratch from %p to %p\n",scratch, scratchp->getBuffer());
+      scratch = scratchp->getBuffer();
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_train, scratch ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_test, scratch ) );
+    }
+  }
+  else
+    scratch = scratchp->getBuffer();
 
   if(libxsmm_input_train == NULL && libxsmm_input_add_train == NULL && libxsmm_expectval_train == NULL &&
       libxsmm_stddev_train == NULL && libxsmm_variance_train == NULL && libxsmm_gamma_train == NULL &&

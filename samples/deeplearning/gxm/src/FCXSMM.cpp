@@ -79,7 +79,18 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* b
   if(gp->bias_term)
     bias = biaspb->getBuffer();
   void *output = outpb->getBuffer();
-  void *scratch = scratchp->getBuffer();
+
+  if(scratch != NULL)
+  {
+    if(updated_scratch && scratch != scratchp->getBuffer())
+    {
+      printf("Warning: updating scratch from %p to %p\n",scratch, scratchp->getBuffer());
+      scratch = scratchp->getBuffer();
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle, scratch ) );
+    }
+  }
+  else
+    scratch = scratchp->getBuffer();
 
   __assume_aligned(input,64);
   __assume_aligned(weight,64);

@@ -738,7 +738,7 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
   // Allocate memory
   bool lp = (data_type_ == BF16) && (tenType=="WEIGHT") && (buftype == DATA);
 #ifdef USE_MLSL
-#if 1
+#if 0
   void* buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
   if(lp)
       lpweight_buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s/sizeof(libxsmm_bfloat16), 2097152);

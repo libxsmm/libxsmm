@@ -83,7 +83,7 @@ const int thr_begin2 = (ltid * chunksize2 < work2) ? (ltid * chunksize2) : work2
 const int thr_end2 = ((ltid + 1) * chunksize2 < work2) ? ((ltid + 1) * chunksize2) : work2;
 
 /* eps to avoid sqrt of zero */
-const element_stats_type sqrt_eps = 1e-5f;
+const element_stats_type sqrt_eps = 1e-7f;
 const element_stats_type nhw = (element_stats_type)(nImg * ifh * ifw);
 const element_stats_type recp_nhw = 1.0f/nhw;
 
@@ -163,10 +163,10 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
     lcl_vbmeansq = _mm512_mul_ps( lcl_vbmean,   lcl_vbmean );   /* E(X)^2 */
     lcl_vsqbmean = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsumsq );   /* E(X^2) */
     lcl_vvar     = _mm512_sub_ps( lcl_vsqbmean, lcl_vbmeansq ); /* variance */
-#if 1
+#if 0
     {
       __m512d lcl_voned = _mm512_set1_pd(1.0);
-      __m512d lcl_vepsd = _mm512_set1_pd(1e-5);
+      __m512d lcl_vepsd = _mm512_set1_pd(1e-7);
       __m512d lcl_vlo   = _mm512_cvtps_pd( _mm256_castpd_ps( _mm512_extractf64x4_pd( _mm512_castps_pd( lcl_vvar ), 0 ) ) );
       __m512d lcl_vhi   = _mm512_cvtps_pd( _mm256_castpd_ps( _mm512_extractf64x4_pd( _mm512_castps_pd( lcl_vvar ), 1 ) ) );
       lcl_vlo = _mm512_sqrt_pd( _mm512_add_pd( lcl_vlo, lcl_vepsd ) );

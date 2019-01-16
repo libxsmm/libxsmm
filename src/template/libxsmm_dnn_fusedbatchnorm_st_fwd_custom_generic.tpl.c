@@ -68,7 +68,7 @@ const int thr_begin2 = (ltid * chunksize2 < work2) ? (ltid * chunksize2) : work2
 const int thr_end2 = ((ltid + 1) * chunksize2 < work2) ? ((ltid + 1) * chunksize2) : work2;
 
 /* eps to avoid sqrt of zero */
-const element_stats_type sqrt_eps = 1e-5f;
+const element_stats_type sqrt_eps = 1e-7f;
 const element_stats_type nhw = (element_stats_type)(nImg * ifh * ifw);
 const element_stats_type recp_nhw = 1.0f/nhw;
 

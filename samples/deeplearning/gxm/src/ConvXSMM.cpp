@@ -155,7 +155,17 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
       stats_ptr = out_ptr + offset * sizeof(libxsmm_bfloat16);
   }
 
-  void *scratch = scratchp->getBuffer();
+  if(scratch != NULL)
+  {
+    if(updated_scratch && scratch != scratchp->getBuffer())
+    {
+      printf("Warning: updating scratch from %p to %p\n",scratch, scratchp->getBuffer());
+      scratch = scratchp->getBuffer();
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
+    }
+  }
+  else
+    scratch = scratchp->getBuffer();
 
   if(libxsmm_input == NULL && libxsmm_filter == NULL && libxsmm_output == NULL)
   {
