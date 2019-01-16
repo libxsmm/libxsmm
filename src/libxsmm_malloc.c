@@ -879,7 +879,7 @@ LIBXSMM_API_INTERN int libxsmm_xfree(const void* memory)
              && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
             {
               const char *const error_message = strerror(errno);
-              fprintf(stderr, "LIBXSMM ERROR: %s (munmap error #%i for range %p+%llu)!\n",
+              fprintf(stderr, "LIBXSMM ERROR: %s (munmap error #%i for range %p+%" PRIu64 ")!\n",
                 error_message, errno, buffer, (unsigned long long)alloc_size);
             }
             result = EXIT_FAILURE;
@@ -892,7 +892,7 @@ LIBXSMM_API_INTERN int libxsmm_xfree(const void* memory)
              && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
             {
               const char *const error_message = strerror(errno);
-              fprintf(stderr, "LIBXSMM ERROR: %s (munmap error #%i for range %p+%llu)!\n",
+              fprintf(stderr, "LIBXSMM ERROR: %s (munmap error #%i for range %p+%" PRIu64 ")!\n",
                 error_message, errno, reloc, (unsigned long long)alloc_size);
             }
             result = EXIT_FAILURE;
