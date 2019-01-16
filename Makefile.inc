@@ -561,10 +561,13 @@ ifneq (0,$(DEPSTATIC))
 else
   LIBEXT ?= $(DLIBEXT)
 endif
-ifneq (0,$(MINGW))
+
+# Import-library
+ifeq (0,$(MINGW))
+  ILIBEXT ?= $(DLIBEXT)
+else # MinGW
   ILIBEXT ?= a
 endif
-ILIBEXT ?= $(LIBEXT)
 
 # Separate control on how to link against the BLAS library
 BLAS_STATIC ?= $(DEPSTATIC)
