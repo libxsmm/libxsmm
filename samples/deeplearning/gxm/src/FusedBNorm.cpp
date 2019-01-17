@@ -368,8 +368,9 @@ void FusedBNormNode::Checkpoint(TensorBuf *tBuf, string name, string format)
   void* ptr;
   size_t pos;
 
-  while((pos = name.find("/", 10)) != name.npos)
-    name.replace(pos, 1, 1, '_');
+  if((name.find("30") == name.npos) && (name.find("60") == name.npos) && (name.find("80") == name.npos))
+    while((pos = name.find("/", 10)) != name.npos)
+      name.replace(pos, 1, 1, '_');
 
   float* p = (float*)tBuf->getBuffer();
   bool no_checkpt = false;
@@ -385,7 +386,7 @@ void FusedBNormNode::Checkpoint(TensorBuf *tBuf, string name, string format)
 
   if(!no_checkpt)
   {
-    if(format.compare("binary") == 0)
+    if(format == "binary")
     {
       f = fopen(name.c_str(), "wb");
       if(f != NULL)
@@ -490,6 +491,8 @@ void FusedBNormNode::forwardPropagate()
         ptr[i] = 0;
     }
 
+    cbptr = (float*)_mm_malloc(10240*4, 64);
+
     scf_ = eptr_->get_scaling_factor();
     impl->set_scaling_factor(scf_);
 
@@ -521,8 +524,8 @@ void FusedBNormNode::forwardPropagate()
   }
   else if(out_dtype == DT_BF16)
   {
-    convert_bf16_f32((libxsmm_bfloat16*)tenTopData_->getBuffer(), cbptr, 16);
-    for(int i=0; i<16; i++)
+    convert_bf16_f32((libxsmm_bfloat16*)tenTopData_->getBuffer(), cbptr, 10240);
+    for(int i=0; i<10240; i++)
     {
       if(isnan(cbptr[i]) || isinf(cbptr[i]))
       {

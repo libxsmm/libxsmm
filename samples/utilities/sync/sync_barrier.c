@@ -40,34 +40,31 @@
 
 int main(int argc, char* argv[])
 {
-  int num_cores, threads_per_core, num_threads, num_iterations = 50000;
+  int num_cores, threads_per_core, num_threads, num_iterations;
   libxsmm_timer_tickint start;
   libxsmm_barrier* barrier;
 
-  if (3 > argc || 4 < argc) {
+  if (4 < argc) {
     fprintf(stderr, "Usage:\n  %s <cores> <threads-per-core> [<iterations>]\n", argv[0]);
-    return -1;
+    return EXIT_SUCCESS;
   }
 
   /* parse the command line and set up the test parameters */
-  num_cores = (int)strtol(argv[1], NULL, 10);
-  assert(num_cores > 1);
+  num_cores = (1 < argc ? atoi(argv[1]) : 2);
+  assert(num_cores >= 1);
 
-  threads_per_core = (int)strtol(argv[2], NULL, 10);
+  threads_per_core = (2 < argc ? atoi(argv[2]) : 2);
   assert(threads_per_core >= 1);
 
-  num_threads = num_cores * threads_per_core;
-
-  if (4 == argc) {
-    num_iterations = (int)strtol(argv[3], NULL, 10);
-    assert(num_iterations > 0);
-  }
+  num_iterations = (1 < argc ? atoi(argv[1]) : 50000);
+  assert(num_iterations > 0);
 
   /* create a new barrier */
   barrier = libxsmm_barrier_create(num_cores, threads_per_core);
-  assert(barrier != NULL);
+  assert(NULL != barrier);
 
   /* each thread must initialize with the barrier */
+  num_threads = num_cores * threads_per_core;
 #if defined(_OPENMP)
 # pragma omp parallel num_threads(num_threads)
 #endif
@@ -97,11 +94,11 @@ int main(int argc, char* argv[])
   }
 
   printf("libxsmm_barrier_wait(): %llu cycles (%d threads)\n",
-    libxsmm_timer_diff(start, libxsmm_timer_tick()) / num_iterations,
+    libxsmm_timer_cycles(start, libxsmm_timer_tick()) / num_iterations,
     num_threads);
 
-  libxsmm_barrier_release(barrier);
+  libxsmm_barrier_destroy(barrier);
 
-  return 0;
+  return EXIT_SUCCESS;
 }
 

@@ -88,8 +88,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   handle->use_bwd_generic = 1;
   handle->use_upd_generic = 1;
 
-  /* If we have AVX512 and kernel streams is enabled, then we generate specialized code */
-  if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
+  /* If we have AVX512 and kernel streams is enabled, and we use libxsmm's custom format, then we generate specialized code */
+  if ( (LIBXSMM_X86_AVX512 <= libxsmm_target_archid)                &&
+       (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) &&
+       (handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)    ) {
     /* This is basically a decision pertaining for all three passes: FWD, BWD and UPD */
     /* Initialize fields that control layer fusion */
     noarch = 0;
@@ -106,22 +108,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
       return status;
     }
 
-    /* lets check if we actually want to setup kernel streams */
-    if ( ( 0 >= (handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) )
-         && (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM)
-         && (handle->filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
-      /* Forward path setup */
+    /* only continue if we could block data in LIBXSMM's custom format, otherwise use generic code */
+    if ( noarch == 0 ) {
+      /* Forward path setup, @TODO check status */
       status = libxsmm_dnn_setup_fwd(handle, &noarch);
 
-      /* Backward path setup */
+      /* Backward path setup, @TODO check status */
       status = libxsmm_dnn_setup_bwd(handle, &noarch);
 
-      /* Weight update path setup */
+      /* Weight update path setup, @TODO check status */
       status = libxsmm_dnn_setup_upd(handle, &noarch);
-    }
 
-    /* Calculate scratch requirements */
-    libxsmm_dnn_setup_scratch(handle);
+      /* Calculate scratch requirements */
+      libxsmm_dnn_setup_scratch(handle);
+    }
   }
 
   if (0 != noarch) { /* Setup generic code generation */

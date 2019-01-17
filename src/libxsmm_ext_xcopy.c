@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_trans.h"
+#include "libxsmm_xcopy.h"
 #include "libxsmm_ext.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -108,7 +108,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
           const int nthreads = omp_get_num_threads();
           const int ntasks = (0 == libxsmm_trans_taskscale
-            ? (LIBXSMM_TRANS_TASKSCALE)
+            ? (LIBXSMM_XCOPY_TASKSCALE)
             : libxsmm_trans_taskscale) * nthreads;
           int tid;
           for (tid = 0; tid < ntasks; ++tid) {
@@ -215,7 +215,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
           const int nthreads = omp_get_num_threads();
           const int ntasks = (0 == libxsmm_trans_taskscale
-            ? (LIBXSMM_TRANS_TASKSCALE)
+            ? (LIBXSMM_XCOPY_TASKSCALE)
             : libxsmm_trans_taskscale) * nthreads;
           int tid;
           for (tid = 0; tid < ntasks; ++tid) {

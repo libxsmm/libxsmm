@@ -28,16 +28,16 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_TRANS_H
-#define LIBXSMM_TRANS_H
+#ifndef LIBXSMM_XCOPY_H
+#define LIBXSMM_XCOPY_H
 
 #include <libxsmm.h>
 
-#if !defined(LIBXSMM_TRANS_CHECK) && !defined(NDEBUG)
-# define LIBXSMM_TRANS_CHECK
+#if !defined(LIBXSMM_XCOPY_CHECK) && !defined(NDEBUG)
+# define LIBXSMM_XCOPY_CHECK
 #endif
-#if !defined(LIBXSMM_TRANS_TASKSCALE)
-# define LIBXSMM_TRANS_TASKSCALE 2
+#if !defined(LIBXSMM_XCOPY_TASKSCALE)
+# define LIBXSMM_XCOPY_TASKSCALE 2
 #endif
 
 /* kernel uses consecutive stores and consecutive loads (copy) */
@@ -216,5 +216,5 @@ LIBXSMM_APIVAR_PUBLIC(unsigned int* libxsmm_trans_mtile);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_PUBLIC(int libxsmm_trans_taskscale);
 
-#endif /*LIBXSMM_TRANS_H*/
+#endif /*LIBXSMM_XCOPY_H*/
 

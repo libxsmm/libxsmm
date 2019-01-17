@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include "libxsmm_trans.h"
+#include "libxsmm_xcopy.h"
 #include "libxsmm_main.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -41,31 +41,31 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_TRANS_JIT)
+#if !defined(LIBXSMM_XCOPY_JIT)
 # if defined(_WIN32) || defined(__CYGWIN__)
 /* only enable matcopy code generation (workaround issue with taking GP registers correctly) */
-#   define LIBXSMM_TRANS_JIT 1
+#   define LIBXSMM_XCOPY_JIT 1
 # else
-#   define LIBXSMM_TRANS_JIT 3
+#   define LIBXSMM_XCOPY_JIT 3
 # endif
 #endif
 
 
 LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
 {
-  /* setup tile sizes according to CPUID or environment (LIBXSMM_TRANS_M, LIBXSMM_TRANS_N) */
+  /* setup tile sizes according to CPUID or environment (LIBXSMM_XCOPY_M, LIBXSMM_XCOPY_N) */
   static unsigned int config_tm[/*config*/][2/*DP/SP*/] = {
     /* generic (hsw) */ { 2, 2 },
     /* mic (knl/knm) */ { 2, 2 },
     /* core (skx)    */ { 2, 2 }
   };
   { /* check if JIT-code generation is permitted */
-    const char *const env_jit = getenv("LIBXSMM_TRANS_JIT");
+    const char *const env_jit = getenv("LIBXSMM_XCOPY_JIT");
     /* determine if JIT-kernels are used (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
-    libxsmm_trans_jit = ((0 == env_jit || 0 == *env_jit) ? (LIBXSMM_TRANS_JIT) : atoi(env_jit));
+    libxsmm_trans_jit = ((0 == env_jit || 0 == *env_jit) ? (LIBXSMM_XCOPY_JIT) : atoi(env_jit));
   }
   { /* load/adjust tile sizes */
-    const char *const env_m = getenv("LIBXSMM_TRANS_M"), *const env_n = getenv("LIBXSMM_TRANS_N");
+    const char *const env_m = getenv("LIBXSMM_XCOPY_M"), *const env_n = getenv("LIBXSMM_XCOPY_N");
     const int m = ((0 == env_m || 0 == *env_m) ? 0 : atoi(env_m));
     const int n = ((0 == env_n || 0 == *env_n) ? 0 : atoi(env_n));
     int i;
@@ -91,9 +91,9 @@ LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
     }
   }
   { /* determines if OpenMP tasks are used (when available) */
-    const char *const env_t = getenv("LIBXSMM_TRANS_TASKS");
+    const char *const env_t = getenv("LIBXSMM_XCOPY_TASKS");
     libxsmm_trans_taskscale = ((0 == env_t || 0 == *env_t)
-      ? 0/*disabled*/ : (LIBXSMM_TRANS_TASKSCALE * atoi(env_t)));
+      ? 0/*disabled*/ : (LIBXSMM_XCOPY_TASKSCALE * atoi(env_t)));
   }
 }
 
@@ -402,7 +402,7 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
           }
         }
       }
-#if defined(LIBXSMM_TRANS_CHECK)
+#if defined(LIBXSMM_XCOPY_CHECK)
       if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {

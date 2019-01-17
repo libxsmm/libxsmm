@@ -367,11 +367,21 @@
 #define LIBXSMM_SQRT2(N) (0 < (N) ? ((unsigned int)(1ULL << (LIBXSMM_LOG2(((N) << 1) - 1) >> 1))) : 0)
 #define LIBXSMM_HASH2(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
-/** Compares floating point values but avoids warning about unreliable comparison. */
-#define LIBXSMM_NOTNAN(A) (LIBXSMM_NEQ(0, (A) - (A)) || 0 == ((int)((A) - (A))))
-#define LIBXSMM_ISNAN(A)  (!LIBXSMM_NOTNAN(A))
-#define LIBXSMM_NEQ(A, B) ((A) != (B))
 #define LIBXSMM_FEQ(A, B) ((A) == (B))
+#define LIBXSMM_NEQ(A, B) ((A) != (B))
+#define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
+#define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
+#if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
+# define LIBXSMM_ROUND(A) round(A)
+# define LIBXSMM_ROUNDF(A) roundf(A)
+# define LIBXSMM_FREXPF(A, B) frexpf(A, B)
+# define LIBXSMM_POWF(A, B) powf(A, B)
+#else
+# define LIBXSMM_ROUND(A) ((double)((long long)(0 < (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
+# define LIBXSMM_ROUNDF(A) ((float)((long long)(0 < (A) ? ((float)(A) + 0.5f) : ((float)(A) - 0.5f))))
+# define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
+# define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
+#endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
 # if (1600 <= LIBXSMM_INTEL_COMPILER)

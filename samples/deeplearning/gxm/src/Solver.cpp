@@ -189,6 +189,11 @@ void SolverNode::applyUpdate(float *blob, float *inc, void *grad, int s, float* 
       prev_lrval_1_ = prev_lrval_;
       prev_lrval_ = lrval_;
     }
+
+#if 0
+    MeanOfLayer("history", inc, s);
+#endif
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
