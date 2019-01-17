@@ -142,7 +142,7 @@ const libxsmm_blasint thr_begin_kk = (ltid * chunksize_kk < work_kk) ? (ltid * c
 const libxsmm_blasint thr_end_kk = ((ltid + 1) * chunksize_kk < work_kk) ? ((ltid + 1) * chunksize_kk) : work_kk;
 
 #ifdef PROFILE
-__int64_t eltwise_start, eltwise_end, eltwise_cycles = 0, gemm_start, gemm_end, gemm_cycles = 0, reformat_start, reformat_end, reformat_cycles = 0;
+__int64_t eltwise_start, eltwise_end, eltwise_cycles = 0, gemm_start, gemm_end, gemm_cycles = 0, gemm_cycles2 = 0, reformat_start, reformat_end, reformat_cycles = 0;
 float total_time = 0.0;
 #endif
 
@@ -215,15 +215,15 @@ if (ltid == 0) {
 for (j = 0; j < t; ++j) {
   /* let's run the cell in blocks for good locality */
   /* Block reduction loop if requested */
-#ifdef PROFILE
-  if (ltid == 0) gemm_start = _rdtsc();
-#endif
   for (CB = 0; CB < BF; CB++) {
     for (inik = thr_begin; inik < thr_end; ++inik ) {
       in = (inik % (N/bn))*bn;
       ikb = inik / (N/bn);
       ik = ikb*bk;
       /* initialize i with bi */
+#ifdef PROFILE
+      if (ltid == 0) gemm_start = _rdtsc();
+#endif
       if (CB == 0) libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &bi[ik] );
       /* i += W.x */
       for (icb = 0, ic = 0; icb < CB_BLOCKS; ic += bc, icb++) {
@@ -233,7 +233,15 @@ for (j = 0; j < t; ++j) {
       /* Reduce batch gemm call  */
       blocks = CB_BLOCKS;
       batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &blocks);
-
+#ifdef PROFILE
+      if (ltid == 0) {
+        gemm_end = _rdtsc();
+        gemm_cycles += gemm_end-gemm_start;
+      }
+#endif
+#ifdef PROFILE
+      if (ltid == 0) gemm_start = _rdtsc();
+#endif
       /* i += R.h */
       if (0 == j) {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
@@ -249,7 +257,15 @@ for (j = 0; j < t; ++j) {
       /* Reduce batch gemm call  */
       blocks = KB_BLOCKS;
       batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &blocks);
-
+#ifdef PROFILE
+      if (ltid == 0) {
+        gemm_end = _rdtsc();
+        gemm_cycles2 += gemm_end-gemm_start;
+      }
+#endif
+#ifdef PROFILE
+      if (ltid == 0) gemm_start = _rdtsc();
+#endif
       /* initialize ci with bd */
       if (CB == 0) libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &bd[ik] );
       /* ci += W.x */
@@ -260,7 +276,15 @@ for (j = 0; j < t; ++j) {
       /* Reduce batch gemm call  */
       blocks = CB_BLOCKS;
       batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &blocks);
-
+#ifdef PROFILE
+      if (ltid == 0) {
+        gemm_end = _rdtsc();
+        gemm_cycles += gemm_end-gemm_start;
+      }
+#endif
+#ifdef PROFILE
+      if (ltid == 0) gemm_start = _rdtsc();
+#endif
       /* ci += R.h */
       if (0 == j) {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
@@ -276,7 +300,15 @@ for (j = 0; j < t; ++j) {
       /* Reduce batch gemm call  */
       blocks = KB_BLOCKS;
       batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &blocks);
-
+#ifdef PROFILE
+      if (ltid == 0) {
+        gemm_end = _rdtsc();
+        gemm_cycles2 += gemm_end-gemm_start;
+      }
+#endif
+#ifdef PROFILE
+      if (ltid == 0) gemm_start = _rdtsc();
+#endif
       /* initialize f with (bf + forget_bias) */
       if (CB == 0)  libxsmm_internal_matrix_bcst_colvector_const_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &bf[ik], handle->forget_bias );
       /* f += W.x */
@@ -287,7 +319,15 @@ for (j = 0; j < t; ++j) {
       /* Reduce batch gemm call  */
       blocks = CB_BLOCKS;
       batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &blocks);
-
+#ifdef PROFILE
+      if (ltid == 0) {
+        gemm_end = _rdtsc();
+        gemm_cycles += gemm_end-gemm_start;
+      }
+#endif
+#ifdef PROFILE
+      if (ltid == 0) gemm_start = _rdtsc();
+#endif
       /* f += R.h */
       if (0 == j) {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
@@ -303,7 +343,15 @@ for (j = 0; j < t; ++j) {
       /* Reduce batch gemm call  */
       blocks = KB_BLOCKS;
       batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &blocks);
-
+#ifdef PROFILE
+      if (ltid == 0) {
+        gemm_end = _rdtsc();
+        gemm_cycles2 += gemm_end-gemm_start;
+      }
+#endif
+#ifdef PROFILE
+      if (ltid == 0) gemm_start = _rdtsc();
+#endif
       /* initialize o with bo */
       if (CB == 0) libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &bo[ik] );
       /* o += W.x */
@@ -314,7 +362,15 @@ for (j = 0; j < t; ++j) {
       /* Reduce batch gemm call  */
       blocks = CB_BLOCKS;
       batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &blocks);
-
+#ifdef PROFILE
+      if (ltid == 0) {
+        gemm_end = _rdtsc();
+        gemm_cycles += gemm_end-gemm_start;
+      }
+#endif
+#ifdef PROFILE
+      if (ltid == 0) gemm_start = _rdtsc();
+#endif
       /* o += R.h */
       if (0 == j) {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
@@ -330,13 +386,17 @@ for (j = 0; j < t; ++j) {
       /* Reduce batch gemm call  */
       blocks = KB_BLOCKS;
       batchreduce_kernelb(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &blocks);
+#ifdef PROFILE
+      if (ltid == 0) {
+        gemm_end = _rdtsc();
+        gemm_cycles2 += gemm_end-gemm_start;
+      }
+#endif
     }
   }
 #ifdef PROFILE
   if (ltid == 0) {
-    gemm_end = _rdtsc();
-    gemm_cycles += gemm_end-gemm_start;
-    eltwise_start = gemm_end;
+    eltwise_start = _rdtsc();
   }
 #endif
   for (inik = thr_begin; inik < thr_end; ++inik ) {
@@ -381,10 +441,11 @@ for (j = 0; j < t; ++j) {
 #ifdef PROFILE
 if (ltid == 0) {
   printf("----- PROFILING LSTM FWD (N = %d, C = %d, K = %d, bn = %d. bc = %d, bk = %d)----\n", N, C, K, bn, bc, bk );
-  total_time = (gemm_cycles+eltwise_cycles+reformat_cycles)/(2.5 * 1e9)*1000.0f;
+  total_time = (gemm_cycles+gemm_cycles2+eltwise_cycles+reformat_cycles)/(2.5 * 1e9)*1000.0f;
   printf("Elementwise time is %f ms (%.2f%%)\n", eltwise_cycles/(2.5 * 1e9)*1000.0f, eltwise_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
   printf("Reformat weights time is %f ms (%.2f%%)\n", reformat_cycles/(2.5 * 1e9)*1000.0f, reformat_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
-  printf("GEMM time is %f ms (%.2f%%) at %f GFLOPS\n\n", gemm_cycles/(2.5 * 1e9)*1000.0f, gemm_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time, t*2.0*(N*K*K*2.0+N*C*K*2.0)*2.0/1e9/(gemm_cycles/(2.5 * 1e9)));
+  printf("GEMM W*x  time is %f ms (%.2f%%) at %f GFLOPS\n", gemm_cycles/(2.5 * 1e9)*1000.0f, gemm_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time, t*(N*C*K*2.0)*4.0/1e9/(gemm_cycles/(2.5 * 1e9)));
+  printf("GEMM R*h  time is %f ms (%.2f%%) at %f GFLOPS\n\n", gemm_cycles2/(2.5 * 1e9)*1000.0f, gemm_cycles2/(2.5 * 1e9)*1000.0f*100.0/total_time, t*(N*K*K*2.0)*4.0/1e9/(gemm_cycles2/(2.5 * 1e9)));
 }
 #undef PROFILE
 #endif
