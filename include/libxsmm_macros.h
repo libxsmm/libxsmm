@@ -371,16 +371,19 @@
 #define LIBXSMM_NEQ(A, B) ((A) != (B))
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
+
+#define LIBXSMM_ROUND_SW(A) ((double)((long long)(0 < (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
+#define LIBXSMM_ROUNDF_SW(A) ((float)((long long)(0 < (A) ? ((float)(A) + 0.5f) : ((float)(A) - 0.5f))))
 #if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
-# define LIBXSMM_ROUND(A) round(A)
-# define LIBXSMM_ROUNDF(A) roundf(A)
 # define LIBXSMM_FREXPF(A, B) frexpf(A, B)
 # define LIBXSMM_POWF(A, B) powf(A, B)
+# define LIBXSMM_ROUNDF(A) roundf(A)
+# define LIBXSMM_ROUND(A) round(A)
 #else
-# define LIBXSMM_ROUND(A) ((double)((long long)(0 < (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
-# define LIBXSMM_ROUNDF(A) ((float)((long long)(0 < (A) ? ((float)(A) + 0.5f) : ((float)(A) - 0.5f))))
 # define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
 # define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
+# define LIBXSMM_ROUNDF LIBXSMM_ROUNDF_SW
+# define LIBXSMM_ROUND LIBXSMM_ROUND_SW
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
