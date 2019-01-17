@@ -372,8 +372,7 @@
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
 
-#define LIBXSMM_ROUND_SW(A) ((double)((long long)(0 < (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
-#define LIBXSMM_ROUNDF_SW(A) ((float)((long long)(0 < (A) ? ((float)(A) + 0.5f) : ((float)(A) - 0.5f))))
+#define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
 #if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
 # define LIBXSMM_FREXPF(A, B) frexpf(A, B)
 # define LIBXSMM_POWF(A, B) powf(A, B)
@@ -382,8 +381,8 @@
 #else
 # define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
 # define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
-# define LIBXSMM_ROUNDF LIBXSMM_ROUNDF_SW
-# define LIBXSMM_ROUND LIBXSMM_ROUND_SW
+# define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
+# define LIBXSMM_ROUND(A) LIBXSMM_ROUNDX(double, A)
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)

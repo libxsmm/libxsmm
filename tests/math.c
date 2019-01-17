@@ -61,17 +61,17 @@ int main(int argc, char* argv[])
     double d1, d2, e1, e2, e3;
     unsigned int a, b;
 
-    if (LIBXSMM_NEQ(LIBXSMM_ROUND((double)r1), LIBXSMM_ROUND_SW((double)r1))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUND((double)r2), LIBXSMM_ROUND_SW((double)r2))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUND(r1), LIBXSMM_ROUND_SW(r1))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUND(r2), LIBXSMM_ROUND_SW(r2))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUND(rd), LIBXSMM_ROUND_SW(rd))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUND((double)r1), LIBXSMM_ROUNDX(double, (double)r1))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUND((double)r2), LIBXSMM_ROUNDX(double, (double)r2))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUND(r1), LIBXSMM_ROUNDX(double, r1))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUND(r2), LIBXSMM_ROUNDX(double, r2))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUND(rd), LIBXSMM_ROUNDX(double, rd))) exit(EXIT_FAILURE);
 
-    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF((float)r1), LIBXSMM_ROUNDF_SW((float)r1))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF((float)r2), LIBXSMM_ROUNDF_SW((float)r2))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF(r1), LIBXSMM_ROUNDF_SW(r1))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF(r2), LIBXSMM_ROUNDF_SW(r2))) exit(EXIT_FAILURE);
-    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF(rd), LIBXSMM_ROUNDF_SW(rd))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF((float)r1), LIBXSMM_ROUNDX(float, (float)r1))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF((float)r2), LIBXSMM_ROUNDX(float, (float)r2))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF(r1), LIBXSMM_ROUNDX(float, r1))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF(r2), LIBXSMM_ROUNDX(float, r2))) exit(EXIT_FAILURE);
+    if (LIBXSMM_NEQ(LIBXSMM_ROUNDF(rd), LIBXSMM_ROUNDX(float, rd))) exit(EXIT_FAILURE);
 
     d1 = libxsmm_sexp2_fast((float)rd, exp_maxiter);
     d2 = LIBXSMM_POWF(2, rd);
