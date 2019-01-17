@@ -209,6 +209,7 @@
       <OpenMP>GenerateParallelCode</OpenMP>
       <OpenMPSupport>true</OpenMPSupport>
       <ConformanceMode>true</ConformanceMode>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -301,6 +302,7 @@
       <OpenMP>GenerateParallelCode</OpenMP>
       <OpenMPSupport>true</OpenMPSupport>
       <ConformanceMode>true</ConformanceMode>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -328,7 +330,6 @@
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;LIBXSMM_BUILD_EXT;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
@@ -338,6 +339,7 @@
       <OpenMP>GenerateParallelCode</OpenMP>
       <OpenMPSupport>true</OpenMPSupport>
       <ConformanceMode>true</ConformanceMode>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -369,7 +371,6 @@
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;LIBXSMM_BUILD_EXT;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
@@ -379,6 +380,7 @@
       <OpenMP>GenerateParallelCode</OpenMP>
       <OpenMPSupport>true</OpenMPSupport>
       <ConformanceMode>true</ConformanceMode>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>

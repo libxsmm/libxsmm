@@ -444,6 +444,9 @@ header_only: header-only
 .PHONY: interface
 interface: headers module
 
+.PHONY: winterface
+winterface: headers sources
+
 .PHONY: lib_mic
 lib_mic: clib_mic flib_mic ext_mic noblas_mic
 
