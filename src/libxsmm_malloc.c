@@ -1331,7 +1331,10 @@ LIBXSMM_API void libxsmm_free(const void* memory)
           const size_t maxsize = pool->instance.minsize + pool->instance.incsize;
           const size_t minsize = LIBXSMM_MIN(maxsize, limit_size);
 
-          if (pool->instance.minsize < minsize) {
+          if (minsize <= pool->instance.minsize) { /* reuse scratch domain */
+            pool->instance.head = (char*)LIBXSMM_MIN(pool->instance.head, buffer);
+          }
+          else {
             const void *const pool_buffer = pool->instance.buffer;
             pool->instance.buffer = pool->instance.head = NULL;
 # if (0 != LIBXSMM_SYNC)
@@ -1348,9 +1351,6 @@ LIBXSMM_API void libxsmm_free(const void* memory)
 #   endif
 # endif
             libxsmm_xfree(pool_buffer);
-          }
-          else { /* reuse scratch domain */
-            pool->instance.head = (char*)LIBXSMM_MIN(pool->instance.head, buffer);
           }
         }
         /* TODO: document/check that allocation/deallocation must follow the linear/scoped allocator policy */
