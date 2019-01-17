@@ -1864,6 +1864,8 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 
 %/.make:
 	@mkdir -p $(basename $@)
+	@touch $@
 
-.PHONY: .make
+.make:
+	@touch $@
 
