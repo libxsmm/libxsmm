@@ -163,6 +163,11 @@ if (C > 2048 || K > 2048) {
     BF--;
   }
 }
+
+if (C == 2048 && K == 1024) {
+  BF = 2;
+}
+
 CB_BLOCKS = cBlocks/BF;
 KB_BLOCKS = kBlocks/BF;
 
@@ -379,7 +384,7 @@ if (ltid == 0) {
   total_time = (gemm_cycles+eltwise_cycles+reformat_cycles)/(2.5 * 1e9)*1000.0f;
   printf("Elementwise time is %f ms (%.2f%%)\n", eltwise_cycles/(2.5 * 1e9)*1000.0f, eltwise_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
   printf("Reformat weights time is %f ms (%.2f%%)\n", reformat_cycles/(2.5 * 1e9)*1000.0f, reformat_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time );
-  printf("GEMM time is %f ms (%.2f%%) at %f GFLOPS\n\n", gemm_cycles/(2.5 * 1e9)*1000.0f, gemm_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time, t*2.0*N*K*K*4*2.0/1e9/(gemm_cycles/(2.5 * 1e9)));
+  printf("GEMM time is %f ms (%.2f%%) at %f GFLOPS\n\n", gemm_cycles/(2.5 * 1e9)*1000.0f, gemm_cycles/(2.5 * 1e9)*1000.0f*100.0/total_time, t*2.0*(N*K*K*2.0+N*C*K*2.0)*2.0/1e9/(gemm_cycles/(2.5 * 1e9)));
 }
 #undef PROFILE
 #endif
