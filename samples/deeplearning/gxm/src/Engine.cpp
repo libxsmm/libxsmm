@@ -241,10 +241,8 @@ void MLEngine::clear_history(TensorList L)
   }
 }
 
-void MLEngine::checkpoint(TensorList L)
+void MLEngine::checkpoint(TensorList L, int buftype)
 {
-  int buftype = DATA;
-
   for(Iter it=L.begin(); it != L.end(); it++)
   {
     Tensor* t = it->t;
@@ -263,22 +261,59 @@ void MLEngine::checkpoint(TensorList L)
     if(!found) continue;
 
     int tenType = t->getType();
-    string n = checkpoint_dir_ + "/" + t->getTensorName();
+    string tn = t->getTensorName();
+    string n = checkpoint_dir_ + "/" + tn;
+    if(buftype == HISTORY)
+      n = n + "_history";
+
+    if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+    {
+      if(tenType == ACT)
+      {
+        n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
+        if(tn.find("conv") != tn.npos)
+        {
+          ConvNode* cn = dynamic_cast<ConvNode*>(t->getOwner());
+          cn->Checkpoint(tBuf, n, checkpoint_format_);
+        }
+      }
+    }
 
     if((tenType == CONVWEIGHT) || (tenType == CONVBIAS))
     {
       ConvNode* cn = dynamic_cast<ConvNode*>(t->getOwner());
       cn->Checkpoint(tBuf, n, checkpoint_format_);
+      if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+      {
+        n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
+        if(buftype == HISTORY)
+          n = n + "_history";
+        cn->Checkpoint(tBuf, n, checkpoint_format_);
+      }
     }
     else if((tenType == FCWEIGHT) || (tenType == FCBIAS))
     {
       FCNode* fn = dynamic_cast<FCNode*>(t->getOwner());
       fn->Checkpoint(tBuf, n, checkpoint_format_);
+      if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+      {
+        n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
+        if(buftype == HISTORY)
+          n = n + "_history";
+        fn->Checkpoint(tBuf, n, checkpoint_format_);
+      }
     }
     else if((tenType == BNORMSCALE) || (tenType == BNORMSHIFT) || (tenType == BNORMMEAN) || (tenType == BNORMVAR))
     {
       FusedBNormNode* bn = dynamic_cast<FusedBNormNode*>(t->getOwner());
       bn->Checkpoint(tBuf, n, checkpoint_format_);
+      if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+      {
+        n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
+        if(buftype == HISTORY)
+          n = n + "_history";
+        bn->Checkpoint(tBuf, n, checkpoint_format_);
+      }
     }
   }
 }
@@ -286,15 +321,13 @@ void MLEngine::checkpoint(TensorList L)
 void MLEngine::read_checkpoint_file(TensorBuf* tBuf, string filename, string format)
 {
   long long int bytes = tBuf->getBufferSize();
-  int dtype = tBuf->getBufferType();
+  int dtype = tBuf->getDataType();
 
   void* ptr;
-  string s = tBuf->getTensor()->getTensorName();
-
   ptr = tBuf->getBuffer();
 
   FILE* f;
-  if(format.compare("binary") == 0)
+  if(format == "binary")
   {
     f = fopen(filename.c_str(), "rb");
     assert(f != NULL);
@@ -315,13 +348,12 @@ void MLEngine::read_checkpoint_file(TensorBuf* tBuf, string filename, string for
   }
   fclose(f);
 
-  if(data_type_ == BF16 && (s.find("conv") != s.npos || s.find("fc") != s.npos))
+  if(data_type_ == BF16 && (filename.find("conv") != filename.npos || filename.find("fc") != filename.npos))
     convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)tBuf->getLPBuffer(), bytes/sizeof(float));
 }
 
-void MLEngine::load_checkpoint(TensorList L, string format)
+void MLEngine::load_checkpoint(TensorList L, int buftype, string format)
 {
-  int buftype = DATA;
   TensorBuf* tBuf;
 
   for(Iter it=L.begin(); it != L.end(); it++)
@@ -345,6 +377,10 @@ void MLEngine::load_checkpoint(TensorList L, string format)
     if(!found) continue;
 
     string n = checkpoint_dir_ + "/" + t->getTensorName();
+
+    if(buftype == HISTORY)
+      n = n + "_history";
+
     size_t pos;
     while((pos = n.find("/", 10)) != n.npos)
       n.replace(pos, 1, 1, '_');
@@ -408,9 +444,11 @@ void MLEngine::run(int mode)
 
       if(current_epoch_ != num_epochs_ - 1)
         current_epoch_++;
-      load_checkpoint(wTList_, checkpoint_format_);
-      load_checkpoint(biasTList_, checkpoint_format_);
-      load_checkpoint(statsTList_, checkpoint_format_);
+      load_checkpoint(wTList_, DATA, checkpoint_format_);
+      load_checkpoint(wTList_, HISTORY, checkpoint_format_);
+      load_checkpoint(biasTList_, DATA, checkpoint_format_);
+      load_checkpoint(biasTList_, HISTORY, checkpoint_format_);
+      load_checkpoint(statsTList_, DATA, checkpoint_format_);
       load_from_checkpoint_ = false;
     }
 
@@ -448,7 +486,6 @@ void MLEngine::run(int mode)
 #ifdef TIMING
           gettimeofday(&tvts, NULL);
 #endif
-
           (*it)->invoke();
 
 #ifdef TIMING
@@ -509,9 +546,17 @@ void MLEngine::run(int mode)
       // Checkpoint weights and biases
       if(global_node_id_ == 0)
       {
-        checkpoint(wTList_);
-        checkpoint(biasTList_);
-        checkpoint(statsTList_);
+        checkpoint(wTList_, DATA);
+        checkpoint(wTList_, HISTORY);
+        checkpoint(biasTList_, DATA);
+        checkpoint(biasTList_, HISTORY);
+        checkpoint(statsTList_, DATA);
+
+#ifdef DUMP_ACT_DATA
+        if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+          checkpoint(outTList_, DATA);
+#endif
+
         FILE* f = fopen("checkpoint", "w");
         if(f != NULL)
         {
@@ -523,11 +568,7 @@ void MLEngine::run(int mode)
       data_parallelism->Barrier(MLSL::GT_DATA);
 #endif
 
-      clear_history(wTList_);
-      clear_history(biasTList_);
-
       // Tell data node that it should use test data
-
       exec_mode_ = VAL;
 
       if(global_node_id_ == 0)
@@ -548,27 +589,30 @@ void MLEngine::run(int mode)
       current_batch_ = 0;
 
 #ifdef CANARY_CHECK
-        canary_check(input_buf_, input_can_ptr, ic);
-        canary_check(fact_buf_, fact_can_ptr, fac);
-        canary_check(weight_buf_, wt_can_ptr, wtc);
-        canary_check(bias_buf_, bias_can_ptr, bic);
+      canary_check(input_buf_, input_can_ptr, ic);
+      canary_check(fact_buf_, fact_can_ptr, fac);
+      canary_check(weight_buf_, wt_can_ptr, wtc);
+      canary_check(bias_buf_, bias_can_ptr, bic);
 #endif
     }
   }
   else if(mode == TEST)
   {
     exec_mode_ = TEST;
+
     FILE *f = fopen("checkpoint", "r");
     fscanf(f, "%d %f %f\n",&current_epoch_, &lr_, &scf_);
     fclose(f);
 
-    printf("scaling factor = %.10f\n", scf_);
+    printf("====================================================================\n");
+    printf("TEST mode, testing batches %d, scaling factor %.10f\n", num_test_batches_, scf_);
+    printf("====================================================================\n");
 
-    load_checkpoint(wTList_, checkpoint_format_);
-    load_checkpoint(biasTList_, checkpoint_format_);
-    load_checkpoint(statsTList_, checkpoint_format_);
+    load_checkpoint(wTList_, DATA, checkpoint_format_);
+    load_checkpoint(biasTList_, DATA, checkpoint_format_);
+    load_checkpoint(statsTList_, DATA, checkpoint_format_);
 
-    // Run validation or test network when command-line mode is set to "test"
+    // Run test network when command-line mode is set to "test"
     for(int b=0; b<num_test_batches_; b++)
     {
       for(auto it = etg_[TEST].begin(); it != etg_[TEST].end(); it++)
@@ -601,6 +645,7 @@ void MLEngine::convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len)
     _mm512_storeu_ps( out+i, vfp32 );
   }
 }
+
 void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector<int>& can_ptr, int* nc, long long int* bufsize)
 {
   bool ttp = (tenType != "WEIGHT") & (tenType != "BIAS");
@@ -693,7 +738,7 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
   // Allocate memory
   bool lp = (data_type_ == BF16) && (tenType=="WEIGHT") && (buftype == DATA);
 #ifdef USE_MLSL
-#if 1
+#if 0
   void* buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
   if(lp)
       lpweight_buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s/sizeof(libxsmm_bfloat16), 2097152);
@@ -837,9 +882,12 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       {
         ConvNode* cn = dynamic_cast<ConvNode*>(t->getOwner());
         assert(bytes > 0);
-        cn->fillWeightBuffers(tBuf, buftype, bytes);
-        if(lp)
-          convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16));
+        if(!load_from_checkpoint_)
+        {
+          cn->fillWeightBuffers(tBuf, buftype, bytes);
+          if(lp)
+            convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16));
+        }
 
         if(solver_->getGlobalFlag())
           if(buftype == DIFF)
@@ -852,7 +900,8 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       {
         ConvNode* cn = dynamic_cast<ConvNode*>(t->getOwner());
         assert(bytes > 0);
-        cn->fillBiasBuffers(tBuf, buftype, bytes);
+        if(!load_from_checkpoint_)
+          cn->fillBiasBuffers(tBuf, buftype, bytes);
         if(solver_->getGlobalFlag())
           if(buftype == DIFF)
             cn->fillBiasMultipliers(lrptr, decptr, bytes/sizeof(float));
@@ -861,9 +910,12 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       {
         FCNode* fn = dynamic_cast<FCNode*>(t->getOwner());
         assert(bytes > 0);
-        fn->fillWeightBuffers(tBuf, buftype, bytes);
-        if(lp)
-          convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16));
+        if(!load_from_checkpoint_)
+        {
+          fn->fillWeightBuffers(tBuf, buftype, bytes);
+          if(lp)
+            convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16));
+        }
 
         if(solver_->getGlobalFlag())
           if(buftype == DIFF)
@@ -876,7 +928,8 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       {
         FCNode* fn = dynamic_cast<FCNode*>(t->getOwner());
         assert(bytes > 0);
-        fn->fillBiasBuffers(tBuf, buftype, bytes);
+        if(!load_from_checkpoint_)
+          fn->fillBiasBuffers(tBuf, buftype, bytes);
         if(solver_->getGlobalFlag())
           if(buftype == DIFF)
             fn->fillBiasMultipliers(lrptr, decptr, bytes/sizeof(float));
@@ -885,7 +938,8 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       {
         FusedBNormNode* bn = dynamic_cast<FusedBNormNode*>(t->getOwner());
         assert(bytes > 0);
-        bn->fillBuffer(tBuf, buftype, bytes);
+        if(!load_from_checkpoint_)
+          bn->fillBuffer(tBuf, buftype, bytes);
         if(solver_->getGlobalFlag())
           if(buftype == DIFF)
             bn->fillBiasMultipliers(lrptr, decptr, bytes/sizeof(float));
@@ -894,7 +948,8 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       {
         FusedBNormNode* bn = dynamic_cast<FusedBNormNode*>(t->getOwner());
         assert(bytes > 0);
-        bn->fillBuffer(tBuf, buftype, bytes);
+        if(!load_from_checkpoint_)
+          bn->fillBuffer(tBuf, buftype, bytes);
       }
     }
 
@@ -1293,7 +1348,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
     /***********************************************************************/
 #if !defined(USE_OPTBP_ALLOC)
     long long int total_bact_size;
-    bact_buf_ = allocate_memory("ACT", outTList_, DIFF, bact_can_ptr, &bac, &total_bact_size);
+    bact_buf_ = allocate_memory("BACT", outTList_, DIFF, bact_can_ptr, &bac, &total_bact_size);
     if(global_node_id_ == 0)
       printf("Total backward activation memory allocated %lld bytes\n", total_bact_size);
 #else
