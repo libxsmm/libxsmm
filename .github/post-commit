@@ -36,13 +36,13 @@ if [ "" = "${GIT_DIR}" ]; then
 fi
 LOCKFILE=${GIT_DIR}/.commit
 
-GREP=$(which grep 2>/dev/null)
-SED=$(which sed 2>/dev/null)
-GIT=$(which git 2>/dev/null)
-RM=$(which rm 2>/dev/null)
+GREP=$(command -v grep 2>/dev/null)
+SED=$(command -v sed 2>/dev/null)
+GIT=$(command -v git 2>/dev/null)
+RM=$(command -v rm 2>/dev/null)
 
 if [ -e ${LOCKFILE}-version ] && \
-   [ "" != "${RM}" ]; \
+   [ "" != "${RM}" ];
 then
   # lock file must be deleted *prior* to below commit
   ${RM} ${LOCKFILE}-version

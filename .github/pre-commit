@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
 # Copyright (c) 2015-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
@@ -38,21 +38,22 @@ LOCKFILE=${GIT_DIR}/.commit
 CODEFILE=.codefile
 BANNED_CHARS="\t"
 
-TOUCH=$(which touch 2>/dev/null)
-ECHO=$(which echo 2>/dev/null)
-GREP=$(which grep 2>/dev/null)
-GIT=$(which git 2>/dev/null)
-#SED=$(which sed 2>/dev/null)
-RM=$(which rm 2>/dev/null)
+TOUCH=$(command -v touch 2>/dev/null)
+ECHO=$(command -v echo 2>/dev/null)
+GREP=$(command -v grep 2>/dev/null)
+GIT=$(command -v git 2>/dev/null)
+SED=$(command -v sed 2>/dev/null)
+RM=$(command -v rm 2>/dev/null)
 
 if [ "" != "${GIT}" ]; then
   if [ "" != "${ECHO}" ] && [ "" != "${SED}" ] && [ "" != "${GREP}" ] && \
-     [ "" != "$(${GIT} rev-parse --verify HEAD 2>/dev/null)" ]; \
+     [ "" != "$(${GIT} rev-parse --verify HEAD 2>/dev/null)" ];
   then
     if [ -e ${CODEFILE} ]; then
       # transform wildcard-style patterns to regular expressions
       PATTERNS="$(${SED} -e 's/\./\\./g' -e 's/\*/..*/g' -e 's/?/./g' -e 's/$/\$/g' ${CODEFILE} 2>/dev/null)"
     fi
+    ISSUES=0
     IFS_BACKUP="${IFS}"
     IFS=""
     while read -r LINE; do
@@ -60,41 +61,47 @@ if [ "" != "${GIT}" ]; then
       # determine the filename of the patch snippet
       MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^diff --git a\/\(..*\) b..*$/\1/p" 2>/dev/null)
       if [ "" != "${MATCH}" ]; then
-        FILENAME=${MATCH}
-        LOCATION=""
+        # check if problem is with a permitted file type
+        for PATTERN in ${PATTERNS}; do
+          MATCHOK=$(${ECHO} "${MATCH}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
+          if [ "" != "${MATCHOK}" ]; then
+            FILENAME=${MATCHOK}
+            LINENMBR=""
+            break
+          fi
+        done
       elif [ "" != "${FILENAME}" ]; then
-        # determine the line number of the change
+        # determine the baseline number of the change
         MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^@@ -..* +\([0-9][0-9]*\),..*$/\1/p" 2>/dev/null)
-        if [ "" != "${MATCH}" ]; then LOCATION=":${MATCH}"; fi
+        if [ "" != "${MATCH}" ]; then
+          LINENMBR=$((MATCH-2))
+        elif [ "" != "${LINENMBR}" ]; then
+          LINENMBR=$((LINENMBR+1))
+        fi
+        if [ "" != "${LINENMBR}" ]; then
+          LOCATION="${FILENAME}:${LINENMBR}"
+        else
+          LOCATION="${FILENAME}"
+        fi
         # check against banned characters
         if [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*[${BANNED_CHARS}]..*$/p" 2>/dev/null)" ]; then
-          # check if problem is with a permitted file type
-          for PATTERN in ${PATTERNS}; do
-            MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
-            if [ "" != "${MATCH}" ]; then # print an error message and exit
-              >&2 ${ECHO} "Error: ${FILENAME}${LOCATION} contains banned character(s)!"
-              exit 1
-            fi
-          done
+          >&2 ${ECHO} "Issue: ${LOCATION} contains banned character(s)!"
+          ISSUES=$((ISSUES+1))
+        fi
         # check against trailing whitespace(s)
-        elif [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*\s\s*$/p" 2>/dev/null)" ]; then
-          # check if problem is with a permitted file type
-          for PATTERN in ${PATTERNS}; do
-            MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
-            if [ "" != "${MATCH}" ]; then # print an error message and exit
-              >&2 ${ECHO} "Error: ${FILENAME}${LOCATION} has trailing whitespace(s)!"
-              #exit 1
-              break
-            fi
-          done
+        if [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*\s\s*$/p" 2>/dev/null)" ]; then
+          >&2 ${ECHO} "Issue: ${LOCATION} has trailing whitespace(s)!"
+          ISSUES=$((ISSUES+1))
         fi
       fi
       IFS=""
-    done \
-<< EOD
-$(${GIT} diff-index -p -M --cached HEAD)
-EOD
+    done < <(${GIT} diff-index -p -M --cached HEAD)
     IFS="${IFS_BACKUP}"
+    # reject commit in case of an issue
+    if [ "0" != "${ISSUES}" ]; then
+      >&2 ${ECHO} "Error: ${ISSUES} issue(s) found - consider ./scripts/tool_normalize.sh!"
+      exit 1
+    fi
   fi
 
   if [ "" != "${TOUCH}" ] && [ "" != "${GREP}" ] && [ "" != "${RM}" ]; then
