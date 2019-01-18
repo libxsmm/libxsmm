@@ -685,9 +685,9 @@ XLD = $(CXX)
 CCAR = $(shell command -v $(CC)-ar 2>/dev/null)
 ifneq (,$(CCAR))
   ifeq (default,$(origin AR))
-    AR = $(CCAR)
+    AR = $(CC)-ar
   else
-    AR ?= $(CCAR)
+    AR ?= $(CC)-ar
   endif
 endif
 
@@ -1858,7 +1858,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION_INT MKL_INCFILE MV ROOTDIR SLIBEXT SUITE XLNKOPT TESTSIZE \
     BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB \
     SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPLIBFILE NOBLASLIB NOBLAS_% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB \
-    FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 \
+    FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 CCAR \
     cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V),$V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
