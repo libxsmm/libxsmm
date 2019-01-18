@@ -264,17 +264,17 @@ LIBXSMM_API int libxsmm_smmbatch_blas(const char* transa, const char* transb, li
 LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
 
 /** auto-batch descriptor (filter). */
-LIBXSMM_APIVAR_PUBLIC(libxsmm_gemm_descriptor libxsmm_gemm_batchdesc);
+LIBXSMM_APIVAR_ALIGNED(libxsmm_gemm_descriptor libxsmm_gemm_batchdesc);
 /** Records a batch of SMMs. */
-LIBXSMM_APIVAR_PUBLIC(libxsmm_gemm_batchitem* libxsmm_gemm_batcharray);
+LIBXSMM_APIVAR_ALIGNED(libxsmm_gemm_batchitem* libxsmm_gemm_batcharray);
 /** Lock: libxsmm_mmbatch_begin, libxsmm_mmbatch_end, internal_mmbatch_flush. */
-LIBXSMM_APIVAR_PUBLIC(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_gemm_batchlock);
+LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_gemm_batchlock);
 /** Maximum size of the recorded batch. */
-LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_batchsize);
+LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_batchsize);
 /** Minimum batchsize per thread/task. */
-LIBXSMM_APIVAR_PUBLIC(unsigned int libxsmm_gemm_batchgrain);
+LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_batchgrain);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
-LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_taskscale);
+LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_taskscale);
 
 /** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
@@ -288,7 +288,7 @@ LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
 * - 3: GEMV is intercepted; small problem sizes
 * - 4: GEMV is intercepted; all problem sizes
 */
-LIBXSMM_APIVAR_PUBLIC(int libxsmm_gemm_wrap);
+LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_wrap);
 
 #endif /*LIBXSMM_GEMM_H*/
 

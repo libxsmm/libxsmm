@@ -864,6 +864,12 @@ int main(int argc, char* argv[])
 #     pragma omp parallel for private(l, p)
 #endif
         /* compute djdbgold */
+<<<<<<< HEAD
+=======
+#if defined(_OPENMP)
+# pragma omp parallel for private(l, p)
+#endif
+>>>>>>> 4ef919ce5cf537ecccec60abfd9f2085a0b047dc
         for (l = 0; l < K; l++) {
           for (p = 0; p < N; p++) {
             djdb4gold[l]       += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l,       N, 4 * K);
