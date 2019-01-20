@@ -51,7 +51,7 @@ PERF=$(${GREP} -A1 -i "${VARIANT}" ${FILE} | \
   ${SORT} -n)
 
 ECHO=$(command -v echo)
-NUM=$(${ECHO} "${PERF}" | wc -l)
+NUM=$(${ECHO} "${PERF}" | wc -l | tr -d " ")
 MIN=$(${ECHO} ${PERF} | ${CUT} -d" " -f1)
 MAX=$(${ECHO} ${PERF} | ${CUT} -d" " -f${NUM})
 

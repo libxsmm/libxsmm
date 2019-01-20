@@ -32,7 +32,7 @@
 #Usage: ./parse.sh output_log_file batch_id
 
 NEXT_BID=$(($2+1))
-N_LINES=$(cat $1 | grep -A 10000 'Executing batch number '$2'' |  grep -B 10000 'Executing batch number '$NEXT_BID''| wc -l)
+N_LINES=$(cat $1 | grep -A 10000 'Executing batch number '$2'' |  grep -B 10000 'Executing batch number '$NEXT_BID''| wc -l | tr -d ' ')
 N_LINES=$(($N_LINES-1))
 
 echo "================================================"

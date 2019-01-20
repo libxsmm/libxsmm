@@ -63,7 +63,7 @@ ${CAT} /dev/null > ${OUT_XSMM}
 ${CAT} /dev/null > ${OUT_BLAS}
 
 NRUN=1
-NMAX=$(${ECHO} ${RUNS} | wc -w)
+NMAX=$(${ECHO} ${RUNS} | wc -w | tr -d " ")
 for RUN in ${RUNS} ; do
   MVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f1)
   NVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f2)
