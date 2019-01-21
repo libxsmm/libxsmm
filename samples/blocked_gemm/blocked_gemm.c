@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
   int result = EXIT_SUCCESS;
 #if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
   const char *const env_check = getenv("CHECK");
-  const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+  const double check = LIBXSMM_ABS(NULL == env_check ? 0 : atof(env_check));
 #endif
   if (argc > 1 && !strncmp(argv[1], "-h", 3)) { /* check command line */
     printf("\nUsage: ./bgemm [M] [N] [K] [bm] [bn] [bk] [order] [reps] [b_m1] [b_n1] [b_k1] [b_k2] [verbose]\n\n");

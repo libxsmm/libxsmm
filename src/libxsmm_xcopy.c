@@ -62,12 +62,12 @@ LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
   { /* check if JIT-code generation is permitted */
     const char *const env_jit = getenv("LIBXSMM_XCOPY_JIT");
     /* determine if JIT-kernels are used (0: none, 1: matcopy, 2: transpose, 3: matcopy+transpose). */
-    libxsmm_trans_jit = ((0 == env_jit || 0 == *env_jit) ? (LIBXSMM_XCOPY_JIT) : atoi(env_jit));
+    libxsmm_trans_jit = ((NULL == env_jit || 0 == *env_jit) ? (LIBXSMM_XCOPY_JIT) : atoi(env_jit));
   }
   { /* load/adjust tile sizes */
     const char *const env_m = getenv("LIBXSMM_XCOPY_M"), *const env_n = getenv("LIBXSMM_XCOPY_N");
-    const int m = ((0 == env_m || 0 == *env_m) ? 0 : atoi(env_m));
-    const int n = ((0 == env_n || 0 == *env_n) ? 0 : atoi(env_n));
+    const int m = ((NULL == env_m || 0 == *env_m) ? 0 : atoi(env_m));
+    const int n = ((NULL == env_n || 0 == *env_n) ? 0 : atoi(env_n));
     int i;
     if (LIBXSMM_X86_AVX512_CORE <= archid) {
       libxsmm_trans_mtile = config_tm[2];
@@ -92,7 +92,7 @@ LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
   }
   { /* determines if OpenMP tasks are used (when available) */
     const char *const env_t = getenv("LIBXSMM_XCOPY_TASKS");
-    libxsmm_trans_taskscale = ((0 == env_t || 0 == *env_t)
+    libxsmm_trans_taskscale = ((NULL == env_t || 0 == *env_t)
       ? 0/*disabled*/ : (LIBXSMM_XCOPY_TASKSCALE * atoi(env_t)));
   }
 }

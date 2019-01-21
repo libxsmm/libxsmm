@@ -429,7 +429,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   libxsmm_finalize();
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
-    const char *const target_arch = (0 == env_target_hidden || 0 == atoi(env_target_hidden))
+    const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? internal_get_target_arch(libxsmm_target_archid)
       : NULL/*hidden*/;
     const double regsize = 1.0 * internal_registry_nbytes / (1ULL << 20);
@@ -592,7 +592,7 @@ LIBXSMM_API_INLINE void internal_init(void)
     libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
     { const char *const env = getenv("LIBXSMM_SCRATCH_POOLS");
-      if (0 == env || 0 == *env) {
+      if (NULL == env || 0 == *env) {
         libxsmm_scratch_pools = LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS;
       }
       else {
@@ -602,7 +602,7 @@ LIBXSMM_API_INLINE void internal_init(void)
       LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
     }
     { const char *const env = getenv("LIBXSMM_SCRATCH_LIMIT");
-      if (0 == env || 0 == *env) {
+      if (NULL == env || 0 == *env) {
         /*const*/ unsigned long long limit = LIBXSMM_MALLOC_SCRATCH_LIMIT;
         libxsmm_scratch_limit = (size_t)limit;
       }
@@ -618,7 +618,7 @@ LIBXSMM_API_INLINE void internal_init(void)
       }
     }
     { const char *const env = getenv("LIBXSMM_SCRATCH_SCALE");
-      if (0 == env || 0 == *env) {
+      if (NULL == env || 0 == *env) {
         libxsmm_scratch_scale = LIBXSMM_MALLOC_SCRATCH_SCALE;
       }
       else {
@@ -634,7 +634,7 @@ LIBXSMM_API_INLINE void internal_init(void)
     libxsmm_set_target_arch(getenv("LIBXSMM_TARGET"));
 #endif
     { const char *const env = getenv("LIBXSMM_SYNC");
-      libxsmm_nosync = (0 == env || 0 == *env) ? 0/*default*/ : atoi(env);
+      libxsmm_nosync = (NULL == env || 0 == *env) ? 0/*default*/ : atoi(env);
     }
     /* clear internal counters/statistic */
     for (i = 0; i < 4/*sml/med/big/xxx*/; ++i) {
@@ -766,7 +766,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       LIBXSMM_LOCK_INIT(LIBXSMM_LOCK, &libxsmm_lock_global, &attr_global);
       LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK, &attr_global);
       /* control number of locks needed; LIBXSMM_TRYLOCK implies only 1 lock */
-      if (0 == env_trylock || 0 == *env_trylock) { /* no LIBXSMM_TRYLOCK */
+      if (NULL == env_trylock || 0 == *env_trylock) { /* no LIBXSMM_TRYLOCK */
 #if defined(LIBXSMM_VTUNE)
         internal_reglock_count = 1; /* avoid duplicated kernels */
 #else

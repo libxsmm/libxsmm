@@ -108,9 +108,9 @@ int main(int argc, char* argv[])
 
   const char *const env_mult = getenv("MULT"), *const env_orig = getenv("ORIG");
   /* extents of result image become multiples of block-size */
-  const int mult = ((0 == env_mult || 0 == *env_mult) ? 64/*default*/ : LIBXSMM_MAX(atoi(env_mult), 0));
+  const int mult = ((NULL == env_mult || 0 == *env_mult) ? 64/*default*/ : LIBXSMM_MAX(atoi(env_mult), 0));
   /* save result with original pixel-type of input (type_in), otherwise save with compute-type (type_dnn) */
-  const int orig = ((0 == env_orig || 0 == *env_orig) ? 1/*enabled*/ : atoi(env_orig));
+  const int orig = ((NULL == env_orig || 0 == *env_orig) ? 1/*enabled*/ : atoi(env_orig));
 
   /* Generate an input file if a pseudo filename (resolution) is given. */
   if (0 != FEXIST(filename_in) && 0 < atoi(filename_in)) {

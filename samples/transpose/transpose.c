@@ -161,8 +161,8 @@ int main(int argc, char* argv[])
 #endif
   {
     const char *const env_tasks = getenv("TASKS"), *const env_check = getenv("CHECK");
-    const int tasks = (0 == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
-    const int check = (0 == env_check || 0 == *env_check) ? 1/*default*/ : atoi(env_check);
+    const int tasks = (NULL == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
+    const int check = (NULL == env_check || 0 == *env_check) ? 1/*default*/ : atoi(env_check);
     ELEM_TYPE *const a = (ELEM_TYPE*)libxsmm_malloc((size_t)(ldi * (('o' == t || 'O' == t) ? n : ldo) * sizeof(ELEM_TYPE)));
     ELEM_TYPE *const b = (ELEM_TYPE*)libxsmm_malloc((size_t)(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE)));
     libxsmm_timer_tickint start, duration = 0, duration2 = 0;

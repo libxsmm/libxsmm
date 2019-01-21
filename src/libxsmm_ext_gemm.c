@@ -222,7 +222,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
     {
 #if defined(_DEBUG)
       const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
-      const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+      const double check = LIBXSMM_ABS(NULL == env_check ? 0 : atof(env_check));
       void* d = NULL;
       if (LIBXSMM_NEQ(0, check)) {
         const size_t size = (size_t)(*ldc) * (size_t)(*n) * sizeof(double);
@@ -364,7 +364,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
     {
 #if defined(_DEBUG)
       const char *const env_check = getenv("LIBXSMM_GEMM_CHECK");
-      const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+      const double check = LIBXSMM_ABS(NULL == env_check ? 0 : atof(env_check));
       void* d = NULL;
       if (LIBXSMM_NEQ(0, check)) {
         const size_t size = (size_t)(*ldc) * (size_t)(*n) * sizeof(float);
