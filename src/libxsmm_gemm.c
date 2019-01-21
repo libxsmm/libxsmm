@@ -1491,6 +1491,12 @@ LIBXSMM_API void libxsmm_gemm_batch2(libxsmm_gemm_precision iprec, libxsmm_gemm_
           index_base, index_stride, stride_a, stride_b, stride_c, batchsize);
       } break;
       default: result = EXIT_FAILURE;
+      if (EXIT_SUCCESS == result
+        && (2 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+        && (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)))
+      {
+        fprintf(stderr, "LIBXSMM WARNING: batched GEMM was falling back to BLAS!\n");
+      }
     }
   }
   if (EXIT_SUCCESS != result

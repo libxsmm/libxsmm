@@ -1092,7 +1092,7 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w)" >> $@
+	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w | tr -d " ")" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
 	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f2)" >> $@
@@ -1131,7 +1131,7 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w)" >> $@
+	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w | tr -d " ")" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
 	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f2)" >> $@
@@ -1170,7 +1170,7 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w)" >> $@
+	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w | tr -d " ")" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
 	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f2)" >> $@
@@ -1209,7 +1209,7 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w)" >> $@
+	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w | tr -d " ")" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
 	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f2)" >> $@
@@ -1250,8 +1250,8 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NRUNS=\$$(\$${ECHO} \$${RUNS} | wc -w)" >> $@
-	@echo "NRUNT=\$$(\$${ECHO} \$${RUNT} | wc -w)" >> $@
+	@echo "NRUNS=\$$(\$${ECHO} \$${RUNS} | wc -w | tr -d " ")" >> $@
+	@echo "NRUNT=\$$(\$${ECHO} \$${RUNT} | wc -w | tr -d " ")" >> $@
 	@echo "NMAX=\$$((NRUNS*NRUNT))" >> $@
 	@echo "for RUN1 in \$${RUNS} ; do" >> $@
 	@echo "  for RUN2 in \$${RUNT} ; do" >> $@

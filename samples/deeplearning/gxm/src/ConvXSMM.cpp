@@ -226,20 +226,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
       memcpy(wt_ptr, wt_prv_ptr, welem*sizeof(libxsmm_bfloat16));
       libxsmm_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_ptr, &status );
       CHKERR_LIBXSMM_DNN( status );
-
-      // Transform BF16 weight history layout
-      if(hwt_ptr != NULL)
-      {
-        libxsmm_temp = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
-        CHKERR_LIBXSMM_DNN( status );
-
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_temp, (void*)hwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-        memcpy(hwt_ptr, wt_prv_ptr, welem*sizeof(libxsmm_bfloat16));
-
-        libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor(libxsmm_layout, hwt_ptr, &status);
-        CHKERR_LIBXSMM_DNN( status );
-        libxsmm_free(wt_prv_ptr);
-      }
+      libxsmm_free(wt_prv_ptr);
 
       // Transform FP32 weight layout
       libxsmm_layout->datatype = LIBXSMM_DNN_DATATYPE_F32;
@@ -259,7 +246,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
         libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
         CHKERR_LIBXSMM_DNN( status );
 
-        void *hfwt_ptr = weightp->getBuffer();
+        void *hfwt_ptr = hweightp->getBuffer();
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_checkpoint_history_filter, (void*)hfwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
         memcpy(hfwt_ptr, wt_prv_ptr, welem*sizeof(float));
 

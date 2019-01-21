@@ -48,7 +48,7 @@ cat /dev/null > smm-inlined.txt
 cat /dev/null > smm-specialized.txt
 
 NRUN=1
-NMAX=$(echo ${RUNS} | wc -w)
+NMAX=$(echo ${RUNS} | wc -w | tr -d " ")
 for RUN in ${RUNS} ; do
   MVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f1)
   NVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f2)
