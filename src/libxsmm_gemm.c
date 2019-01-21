@@ -664,9 +664,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       return NULL;
     }
     result.ptr->flags = flags;
-    if (LIBXSMM_GEMM_HANDLE_FLAG_AUTO == flags && /* check for big enough problem size */
-      ((unsigned long long)(LIBXSMM_MAX_MNK)) < LIBXSMM_MNK_SIZE(um, un, uk))
-    {
+    if (LIBXSMM_GEMM_HANDLE_FLAG_AUTO == flags && 0 == LIBXSMM_SMM(um, un, uk)) {
       result.ptr->flags |= LIBXSMM_GEMM_HANDLE_FLAG_COPY_C;
     }
     result.ptr->itypesize = libxsmm_gemm_typesize(iprec);
@@ -1431,15 +1429,17 @@ LIBXSMM_API void libxsmm_gemm_batch2(libxsmm_gemm_precision iprec, libxsmm_gemm_
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize)
 {
+  libxsmm_xmmfunction kernel;
+  static int error_once = 0;
+  int result;
+
   const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
   libxsmm_descriptor_blob blob;
   const libxsmm_gemm_descriptor *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec, m, n, k,
     NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
     NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
     NULL != ldc ? *ldc : m, alpha, beta, gemm_flags, libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
-  const libxsmm_xmmfunction kernel = libxsmm_xmmdispatch(descriptor);
-  static int error_once = 0;
-  int result;
+  kernel = libxsmm_xmmdispatch(descriptor);
 
   if (NULL != kernel.xmm) {
     result = libxsmm_mmbatch(kernel, index_base, index_stride,

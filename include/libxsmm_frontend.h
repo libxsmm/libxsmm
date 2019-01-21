@@ -275,6 +275,9 @@
 
 /** Calculate problem size from M, N, and K using the correct integer type in order to cover the general case. */
 #define LIBXSMM_MNK_SIZE(M, N, K) (((unsigned long long)(M)) * ((unsigned long long)(N)) * ((unsigned long long)(K)))
+/** Determine whether an SMM is "suitable" i.e., small enough. */
+#define LIBXSMM_SMM(M, N, K) ((LIBXSMM_MAX_MNK) >= LIBXSMM_MNK_SIZE(M, N, K))
+
 
 /** Fall-back code paths: LIBXSMM_XGEMM_FALLBACK0, and LIBXSMM_XGEMM_FALLBACK1 (macro template). */
 #if !defined(LIBXSMM_XGEMM_FALLBACK0)
@@ -300,7 +303,7 @@
   const libxsmm_blasint *const libxsmm_xgemm_ldb_ = (NULL != ((void*)(LDB)) ? (LDB) : \
     (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? libxsmm_xgemm_k_ : libxsmm_xgemm_n_)); \
   const libxsmm_blasint *const libxsmm_xgemm_ldc_ = (NULL != (LDC) ? (LDC) : (M)); \
-  if (((unsigned long long)(LIBXSMM_MAX_MNK)) >= LIBXSMM_MNK_SIZE(*(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_)) { \
+  if (LIBXSMM_SMM(*(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_)) { \
     const LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) libxsmm_mmfunction_ = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)( \
       *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, libxsmm_xgemm_lda_, libxsmm_xgemm_ldb_, libxsmm_xgemm_ldc_, \
       (const OTYPE*)(ALPHA), (const OTYPE*)(BETA), &libxsmm_xgemm_flags_, NULL); \
