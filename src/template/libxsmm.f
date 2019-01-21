@@ -623,8 +623,7 @@
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             ! Stride used to walk stride_a, stride_b, and stride_c;
             ! zero turns stride_* into scalar values. The index_stride
-            ! is always measured in Bytes (value of LIBXSMM_BLASINT_KIND
-            ! determines a packed array of indexes).
+            ! is measured in elements.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
             ! The number of matrix multiplications. If the size is given as
             ! a negative value, then internal synchronization is omitted.
@@ -636,8 +635,7 @@
             ! index_stride==0: a single value (in Bytes) for stride_* is expected,
             ! index_stride!=0: stride_* are arrays of indexes (measured in elements);
             !                  array size equals batchsize, and indexes are discovered
-            !                  using the index_stride (in Bytes). The typical value of
-            !                  index_stride is LIBXSMM_BLASINT_KIND (packed indexes).
+            !                  using the index_stride (in Bytes).
             ! A stride of zero (zero-index) does not advance the matrix-operand.
             ! Note: accesses to the same C-matrix are internally synchronized.
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_a

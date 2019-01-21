@@ -197,8 +197,8 @@ int main(int argc, char* argv[])
         fprintf(stdout, "Indirect (A,B,C)...\n");
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a + static_cast<size_t>(asize) * helper.shuffle(i);
-        b_array[i] = b + static_cast<size_t>(bsize) * helper.shuffle(i);
-        c_array[i] = d + static_cast<size_t>(csize) * i;
+          b_array[i] = b + static_cast<size_t>(bsize) * helper.shuffle(i);
+          c_array[i] = d + static_cast<size_t>(csize) * i;
         }
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
