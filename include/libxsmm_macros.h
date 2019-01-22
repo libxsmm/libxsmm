@@ -501,6 +501,9 @@
     ELEMENT_TYPE *LIBXSMM_RESTRICT LIBXSMM_CONCATENATE(ARRAY_VAR, LIBXSMM_VLA_POSTFIX) = /*(ELEMENT_TYPE*)*/(INIT_VALUE)
 #endif
 
+/** Access an array of TYPE with Byte-measured stride. */
+#define LIBXSMM_ACCESS(TYPE, ARRAY, STRIDE) (*(TYPE*)((char*)(ARRAY) + (STRIDE)))
+
 #if !defined(LIBXSMM_UNUSED)
 # if 0
 #   define LIBXSMM_UNUSED(VARIABLE) LIBXSMM_PRAGMA(unused(VARIABLE))
