@@ -1524,6 +1524,7 @@
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -1612,6 +1613,7 @@
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>EnableAllWarnings</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -1639,7 +1641,6 @@
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)..\build;$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
@@ -1647,6 +1648,7 @@
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>
@@ -1678,7 +1680,6 @@
       <AdditionalIncludeDirectories>$(SolutionDir)..\include;$(SolutionDir)..\build;$(LIBXSMMROOT)\include;$(LIBXSMMROOT)\build;$(LIBXSMMROOT)\src;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <PreprocessorDefinitions>__SUPPRESS_FOR_PRODUCT;_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES;_CRT_SECURE_NO_DEPRECATE;_SCL_SECURE_NO_DEPRECATE;_USE_MATH_DEFINES;WIN32_LEAN_AND_MEAN;NOMINMAX;LIBXSMM_BUILD;_DEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
-      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <RuntimeTypeInfo>false</RuntimeTypeInfo>
       <DisableSpecificWarnings>4710;4711;4752;4820</DisableSpecificWarnings>
       <OffloadConstructs>None</OffloadConstructs>
@@ -1686,6 +1687,7 @@
       <UseProcessorExtensions>SSE42</UseProcessorExtensions>
       <WarningLevel>Level4</WarningLevel>
       <ConformanceMode>true</ConformanceMode>
+      <ProgramDataBaseFileName>$(OutDir)$(TargetName).pdb</ProgramDataBaseFileName>
     </ClCompile>
     <ResourceCompile>
       <Culture>0x0407</Culture>

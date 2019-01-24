@@ -30,8 +30,12 @@
 ******************************************************************************/
 #include "magazine.h"
 
-#if !defined(__EIGEN) && 0
+#if !defined(__EIGEN)
 # define __EIGEN
+#endif
+
+#if !defined(__EIGEN_TIMER) && 0
+# define __EIGEN_TIMER
 #endif
 
 #if defined(__EIGEN)
@@ -44,7 +48,7 @@
 # include <Eigen/Dense>
 # if defined(_OPENMP)
 #   include <omp.h>
-# else
+# elif defined(__EIGEN_TIMER)
 #   include <bench/BenchTimer.h>
 # endif
 #endif
@@ -106,8 +110,8 @@ int main(int argc, char* argv[])
   T *const pb = static_cast<T*>(std::align(alignment, sb - alignment + 1, wb, sb));
   T *const pc = static_cast<T*>(std::align(alignment, sc - alignment + 1, wc, sc));
   const double scale = 1.0 / size;
-  double duration;
-#if !defined(_OPENMP)
+  double duration = 0;
+#if !defined(_OPENMP) && defined(__EIGEN_TIMER)
   Eigen::BenchTimer timer;
 #endif
 
@@ -126,7 +130,9 @@ int main(int argc, char* argv[])
 #endif
   {
 #if !defined(_OPENMP)
+# if defined(__EIGEN_TIMER)
     timer.start();
+# endif
 #else /* OpenMP thread pool is already populated (parallel region) */
 #   pragma omp single
     duration = omp_get_wtime();
@@ -167,16 +173,15 @@ int main(int argc, char* argv[])
   }
 #if defined(_OPENMP)
   duration = omp_get_wtime() - duration;
-#else
+#elif defined(__EIGEN_TIMER)
   timer.stop();
   duration = timer.total();
 #endif
   if (0 < duration) {
     const double gflops = 2.0 * m * n * k * 1E-9;
     printf("%.1f GFLOPS/s\n", gflops / duration * size);
+    printf("%.1f ms\n", 1000.0 * duration);
   }
-  printf("%.1f ms\n", 1000.0 * duration);
-
   { /* calculate checksum */
     double check = 0;
     for (int i = 0; i < size; ++i) {

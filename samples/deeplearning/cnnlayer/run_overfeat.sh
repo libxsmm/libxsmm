@@ -5,6 +5,7 @@ SORT=$(command -v sort 2>/dev/null)
 GREP=$(command -v grep 2>/dev/null)
 CUT=$(command -v cut 2>/dev/null)
 WC=$(command -v wc 2>/dev/null)
+TR=$(command -v tr 2>/dev/null)
 
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_MB}" ]; then CHECK_DNN_MB=256; fi
@@ -35,9 +36,9 @@ else
 fi
 
 if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
-  export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
-  export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)))
-  export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l)
+  export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
+  export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")))
+  export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
 elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
   export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
   export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")

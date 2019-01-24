@@ -86,7 +86,7 @@ done
 
 # make unique by SHA, sort from older to newer, and drop timestamp (sort key)
 HIST=$(echo -e "${HITS}" | sort -uk2 | sort -nuk1 | cut -d' ' -f2)
-HITS=$(echo -n "${HIST}" | wc -l)
+HITS=$(echo -n "${HIST}" | wc -l | tr -d " ")
 
 if [ "0" != "${HITS}" ]; then
   echo

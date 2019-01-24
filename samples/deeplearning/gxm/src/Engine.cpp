@@ -349,7 +349,8 @@ void MLEngine::read_checkpoint_file(TensorBuf* tBuf, string filename, string for
   fclose(f);
 
   if(data_type_ == BF16 && (filename.find("conv") != filename.npos || filename.find("fc") != filename.npos))
-    convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)tBuf->getLPBuffer(), bytes/sizeof(float));
+    if(filename.find("history") == filename.npos)
+      convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)tBuf->getLPBuffer(), bytes/sizeof(float));
 }
 
 void MLEngine::load_checkpoint(TensorList L, int buftype, string format)

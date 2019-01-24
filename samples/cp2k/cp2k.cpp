@@ -157,7 +157,7 @@ int main(int argc, char* argv[])
     const double gflops = 2.0 * s * m * n * k * 1E-9, scale = 1.0 / s;
     const char *const ops = "FLOPS";
     const char *const env_check = getenv("CHECK");
-    const double check = LIBXSMM_ABS(0 == env_check ? 0 : atof(env_check));
+    const double check = LIBXSMM_ABS(NULL == env_check ? 0 : atof(env_check));
 
     LIBXSMM_RETARGETABLE struct LIBXSMM_RETARGETABLE raii { // avoid std::vector (first-touch init. causes NUMA issue)
       T *a, *b, *c;

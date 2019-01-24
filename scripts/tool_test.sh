@@ -121,9 +121,9 @@ then
   fi
 
   if [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
-    export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
-    export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)))
-    export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l)
+    export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
+    export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")))
+    export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
   elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
     export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
     export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
