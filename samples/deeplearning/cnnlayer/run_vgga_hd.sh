@@ -27,15 +27,15 @@ else
   PADMODE=$7
 fi
 
-UNAME=$(command -v uname 2>/dev/null)
-PASTE=$(command -v paste 2>/dev/null)
-GREP=$(command -v grep 2>/dev/null)
-SORT=$(command -v sort 2>/dev/null)
-DATE=$(command -v date 2>/dev/null)
-CUT=$(command -v cut 2>/dev/null)
-WC=$(command -v wc 2>/dev/null)
-TR=$(command -v tr 2>/dev/null)
-BC=$(command -v bc 2>/dev/null)
+UNAME=$(command -v uname)
+PASTE=$(command -v paste)
+GREP=$(command -v grep)
+SORT=$(command -v sort)
+DATE=$(command -v date)
+CUT=$(command -v cut)
+WC=$(command -v wc)
+TR=$(command -v tr)
+BC=$(command -v bc)
 
 if [ "" != "${GREP}" ] && [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
   export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
@@ -51,7 +51,7 @@ if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
 else
   export NS=1 NC=1 NT=1 HT=1
 fi
-if [ "" != "${CUT}" ] && [ "" != "$(command -v numactl 2>/dev/null)" ]; then
+if [ "" != "${CUT}" ] && [ "" != "$(command -v numactl)" ]; then
   export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
 else
   export NN=${NS}

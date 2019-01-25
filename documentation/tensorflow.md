@@ -2,10 +2,10 @@
 
 ## Getting Started
 
-The [TensorFlow repository](https://github.com/hfp/tensorflow-xsmm) (as cloned below) is tracking the master revision of the [original TensorFlow](https://github.com/tensorflow/tensorflow/) and it is modified to use a recent revision of LIBXSMM (likely the master revision) as well as a recent revision of the Eigen library (which may be [an improved version](https://github.com/hfp/libxsmm)). It is also possible to build this fork of TensorFlow without LIBXSMM (see [Performance Tuning and Profiling](#performance-tuning-and-profiling)).
+The [TensorFlow repository](https://github.com/hfp/tensorflow-xsmm) (as cloned below) is tracking the master revision of the [original TensorFlow](https://github.com/tensorflow/tensorflow/) and it is modified to use a recent revisions of LIBXSMM, Eigen, and MKL-DNN.
 
 ```bash
-git clone https://github.com/hfp/tensorflow-xsmm.git
+git clone https://github.com/hfp/tensorflow.git
 ```
 
 <a name="non-default-compiler"></a>LIBXSMM does not impose to build for a specific code path, and always exploits the most suitable instruction set extension for JIT-enabled code paths. LIBXSMM may also use non-JIT code paths which are CPUID-dispatched (if the static code path has lower capabilities). This however only works with GCC&#160;5.1 (v4.9 is fine if the intended target does not support AVX-512), Clang (not tested), or the Intel Compiler. It is hence recommended to use a recent GNU Compiler Collection to build TensorFlow. If the static code path does not match the highest possible CPU target (march=native), a very minor performance penalty (if at all) is expected (indirect calls due to CPUID-dispatch). If this is unwanted or in case of compilation issues (e.g., due to outdated Binutils on OSX), one can disable the afore mentioned facility by adding `--copt=-DLIBXSMM_INTRINSICS_STATIC=1` to Bazel's build line (see later). With any [recent Bazel version](https://github.com/bazelbuild/bazel/releases), a non-default compiler can be source'd i.e., it can be added to the environment just normally as shown below (the second block of exports may be safely omitted).
@@ -208,9 +208,9 @@ bazel-bin/tensorflow/core/kernels/conv_ops_test
 bazel run <all-build-flags-used-to-build-the-wheel> //tensorflow/python/kernel_tests:conv_ops_test
 ```
 
-## Running Inception-v3 inference on the ImageNet dataset
+## Running Inception-v3
 
-Please follow the instructions at the following [link](https://github.com/tensorflow/models/blob/master/inception/README.md#getting-started) to download and preprocess the Inception-v3 dataset:
+To run Inception-v3 inference on the ImageNet dataset, please follow the instructions at the following [link](https://github.com/tensorflow/models/blob/master/inception/README.md#getting-started) to download and preprocess the Inception-v3 dataset:
 The relevant part of the instructions are duplicated below for convenience.
 
 ```bash
