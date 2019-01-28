@@ -77,16 +77,16 @@ endif
 which = $(shell command -v $1)
 
 # Command line utilities
-PKGCFG ?= $(which pkg-config)
-CP ?= $(which cp)
-MV ?= $(which mv)
+PKGCFG ?= $(call which,pkg-config)
+CP ?= $(call which,cp)
+MV ?= $(call which,mv)
 UNAME ?= $(shell uname)
 MAKE ?= make
 ENV ?= env
 
 # Python interpreter per PYTHON=/path/to/python
-PYTHON3 ?= $(which python3)
-PYTHON ?= $(which python)
+PYTHON3 ?= $(call which,python3)
+PYTHON ?= $(call which,python)
 
 ifeq (,$(PYTHON))
 ifneq (,$(PYTHON3))
@@ -260,7 +260,7 @@ endif
 ifneq (0,$(PYMOD))
   PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
   PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d"." -f1,2)
-  PYROOT = $(abspath $(dir $(which $(PYTHON)))/..)
+  PYROOT = $(abspath $(dir $(call which,$(PYTHON)))/..)
   PYINC = $(wildcard $(PYROOT)/include/python$(PYVERSION)/Python.h)
   ifneq (,$(PYINC))
     LDFLAGS += -lpython$(PYVERSION)
@@ -322,17 +322,17 @@ CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 # or pickup the Intel Compiler (if available).
 GNU ?= 0
 ifeq (0,$(GNU))
-  ifneq (,$(notdir $(which icpc)))
+  ifneq (,$(notdir $(call which,icpc)))
     CXX = icpc
-  else ifneq (,$(notdir $(which icpx)))
+  else ifneq (,$(notdir $(call which,icpx)))
     CXX = icpx
   endif
-  ifneq (,$(notdir $(which icc)))
+  ifneq (,$(notdir $(call which,icc)))
     CC = icc
-  else ifneq (,$(notdir $(which icx)))
+  else ifneq (,$(notdir $(call which,icx)))
     CC = icx
   endif
-  ifneq (,$(notdir $(which ifort)))
+  ifneq (,$(notdir $(call which,ifort)))
     FC = ifort
   endif
 endif
@@ -343,16 +343,16 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
   $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . | cut -d' ' -f1)))))")
 
 ifeq (0,$(INTEL))
-  ifeq (,$(which $(CXX)))
+  ifeq (,$(call which,$(CXX)))
     CXX = g++
   else ifneq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CXX = g++
-  else ifneq (gcc,$(notdir $(which $(CC))))
-    ifeq (g++,$(notdir $(which $(CXX))))
+  else ifneq (gcc,$(notdir $(call which,$(CC))))
+    ifeq (g++,$(notdir $(call which,$(CXX))))
       CC = gcc
     endif
   endif
-  ifeq (,$(which $(CC)))
+  ifeq (,$(call which,$(CC)))
     CC = gcc
   else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CC = gcc
@@ -395,17 +395,17 @@ endif
 # fixup FC-default given by MAKE
 ifneq (,$(strip $(FC)))
   FIXFC ?= 0
-  ifeq (,$(which $(FC)))
+  ifeq (,$(call which,$(FC)))
     FIXFC = 1
   else ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     FIXFC = 1
-  else ifneq (gfortran,$(notdir $(which $(FC))))
-    ifeq (g++,$(notdir $(which $(CXX))))
+  else ifneq (gfortran,$(notdir $(call which,$(FC))))
+    ifeq (g++,$(notdir $(call which,$(CXX))))
       FIXFC = 1
     endif
   endif
   ifneq (0,$(FIXFC))
-    ifneq (,$(notdir $(which gfortran)))
+    ifneq (,$(notdir $(call which,gfortran)))
       MKL_FCRTL = gf
       GFC = gfortran
       FC = $(GFC)
@@ -597,7 +597,7 @@ ifneq (0,$(GCC))
   GCC_VERSION_MINOR = $(CXX_VERSION_MINOR)
   GCC_VERSION_PATCH = $(CXX_VERSION_PATCH)
 else ifeq (0,$(CLANG))
-  GCCBIN = $(notdir $(which gcc))
+  GCCBIN = $(notdir $(call which,gcc))
   ifneq (,$(strip $(GCCBIN)))
     GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
     GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f1)
@@ -685,7 +685,7 @@ LD = $(CC)
 XLD = $(CXX)
 
 # adopt fully equipped archiver
-CCAR = $(which $(CC)-ar)
+CCAR = $(call which,$(CC)-ar)
 ifneq (,$(CCAR))
   ifeq (default,$(origin AR))
     AR = $(CC)-ar
