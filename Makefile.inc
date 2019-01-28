@@ -73,8 +73,8 @@ ifeq (Windows_NT,$(OS))
   SLIBEXT ?= lib
 endif
 
-#which = $(shell which $1 2>/dev/null)
-which = $(shell command -v $1)
+which = $(shell which $1 2>/dev/null)
+which ?= $(shell command -v $1)
 
 # Command line utilities
 PKGCFG ?= $(call which,pkg-config)
