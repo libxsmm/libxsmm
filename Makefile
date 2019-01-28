@@ -1071,7 +1071,6 @@ $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh: $(ROOTDIR)/$(SPLDIR)/cp2k/.make $(ROOTDI
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "ECHO=\$$(command -v echo)" >> $@
 	@echo "FILE=cp2k-perf.txt" >> $@
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
@@ -1092,21 +1091,21 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w | tr -d " ")" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d " ")" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f3)" >> $@
-	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >> $@
+	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/cp2k.sh \$${MVALUE} \$${SIZE} 0 \$${NVALUE} \$${KVALUE} >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
-	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
-	@echo "    \$${ECHO} \"OK \$${ERROR}\"" >> $@
+	@echo "    echo \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
-	@echo "  \$${ECHO} >> \$${FILE}" >> $@
+	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
@@ -1116,7 +1115,6 @@ $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh: $(ROOTDIR)/$(SPLDIR)/smm/.make $(ROOTDIR)
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "ECHO=\$$(command -v echo)" >> $@
 	@echo "FILE=\$${HERE}/smmf-perf.txt" >> $@
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
@@ -1131,21 +1129,21 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w | tr -d " ")" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d " ")" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f3)" >> $@
-	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >> $@
+	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/smm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
-	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
-	@echo "    \$${ECHO} \"OK \$${ERROR}\"" >> $@
+	@echo "    echo \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
-	@echo "  \$${ECHO} >> \$${FILE}" >> $@
+	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
@@ -1155,7 +1153,6 @@ $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "ECHO=\$$(command -v echo)" >> $@
 	@echo "FILE=\$${HERE}/axhm-perf.txt" >> $@
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
@@ -1170,21 +1167,21 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w | tr -d " ")" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d " ")" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f3)" >> $@
-	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >> $@
+	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/axhm.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
-	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
-	@echo "    \$${ECHO} \"OK \$${ERROR}\"" >> $@
+	@echo "    echo \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
-	@echo "  \$${ECHO} >> \$${FILE}" >> $@
+	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
@@ -1194,7 +1191,6 @@ $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "ECHO=\$$(command -v echo)" >> $@
 	@echo "FILE=\$${HERE}/grad-perf.txt" >> $@
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
@@ -1209,21 +1205,21 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(\$${ECHO} \$${RUNS} | wc -w | tr -d " ")" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d " ")" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
-	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN} | cut -d_ -f3)" >> $@
-	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN} | cut -d_ -f3)" >> $@
+	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/grad.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$$* >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
-	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
-	@echo "    \$${ECHO} \"OK \$${ERROR}\"" >> $@
+	@echo "    echo \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
-	@echo "  \$${ECHO} >> \$${FILE}" >> $@
+	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo >> $@
@@ -1233,7 +1229,6 @@ $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh: $(ROOTDIR)/$(SPLDIR)/nek/.make $(ROOTDIR)
 	@echo "#!/bin/sh" > $@
 	@echo >> $@
 	@echo "HERE=\$$(cd \$$(dirname \$$0); pwd -P)" >> $@
-	@echo "ECHO=\$$(command -v echo)" >> $@
 	@echo "FILE=\$${HERE}/rstr-perf.txt" >> $@
 ifneq (,$(strip $(INDICES)))
 	@echo "RUNS=\"$(INDICES)\"" >> $@
@@ -1250,27 +1245,27 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NRUNS=\$$(\$${ECHO} \$${RUNS} | wc -w | tr -d " ")" >> $@
-	@echo "NRUNT=\$$(\$${ECHO} \$${RUNT} | wc -w | tr -d " ")" >> $@
+	@echo "NRUNS=\$$(echo \$${RUNS} | wc -w | tr -d " ")" >> $@
+	@echo "NRUNT=\$$(echo \$${RUNT} | wc -w | tr -d " ")" >> $@
 	@echo "NMAX=\$$((NRUNS*NRUNT))" >> $@
 	@echo "for RUN1 in \$${RUNS} ; do" >> $@
 	@echo "  for RUN2 in \$${RUNT} ; do" >> $@
-	@echo "  MVALUE=\$$(\$${ECHO} \$${RUN1} | cut -d_ -f1)" >> $@
-	@echo "  NVALUE=\$$(\$${ECHO} \$${RUN1} | cut -d_ -f2)" >> $@
-	@echo "  KVALUE=\$$(\$${ECHO} \$${RUN1} | cut -d_ -f3)" >> $@
-	@echo "  MMVALUE=\$$(\$${ECHO} \$${RUN2} | cut -d_ -f1)" >> $@
-	@echo "  NNVALUE=\$$(\$${ECHO} \$${RUN2} | cut -d_ -f2)" >> $@
-	@echo "  KKVALUE=\$$(\$${ECHO} \$${RUN2} | cut -d_ -f3)" >> $@
-	@echo "  >&2 \$\$${ECHO} -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  MVALUE=\$$(echo \$${RUN1} | cut -d_ -f1)" >> $@
+	@echo "  NVALUE=\$$(echo \$${RUN1} | cut -d_ -f2)" >> $@
+	@echo "  KVALUE=\$$(echo \$${RUN1} | cut -d_ -f3)" >> $@
+	@echo "  MMVALUE=\$$(echo \$${RUN2} | cut -d_ -f1)" >> $@
+	@echo "  NNVALUE=\$$(echo \$${RUN2} | cut -d_ -f2)" >> $@
+	@echo "  KKVALUE=\$$(echo \$${RUN2} | cut -d_ -f3)" >> $@
+	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} \$$* >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
-	@echo "    \$${ECHO} \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
+	@echo "    echo \"FAILED(\$${RESULT}) \$${ERROR}\"" >> $@
 	@echo "    exit 1" >> $@
 	@echo "  else" >> $@
-	@echo "    \$${ECHO} \"OK \$${ERROR}\"" >> $@
+	@echo "    echo \"OK \$${ERROR}\"" >> $@
 	@echo "  fi" >> $@
-	@echo "  \$${ECHO} >> \$${FILE}" >> $@
+	@echo "  echo >> \$${FILE}" >> $@
 	@echo "  NRUN=\$$((NRUN+1))" >> $@
 	@echo "done" >> $@
 	@echo "done" >> $@
