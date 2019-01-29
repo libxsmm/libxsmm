@@ -43,12 +43,12 @@ MSG_NOCI="[skip ci]"
 MSG_FILE=$1
 MSG_KIND=$2
 
-GIT=$(command -v git 2>/dev/null)
+GIT=$(command -v git)
 
 if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no amend)
-  ECHO=$(command -v echo 2>/dev/null)
-  GREP=$(command -v grep 2>/dev/null)
-  CAT=$(command -v cat 2>/dev/null)
+  ECHO=$(command -v echo)
+  GREP=$(command -v grep)
+  CAT=$(command -v cat)
 
   if [ "" != "${ECHO}" ] && [ "" != "${GREP}" ] && [ "" != "${CAT}" ] && \
      [ "message" = "${MSG_KIND}" ] && [ "" != "${MSG_FILE}" ] && \

@@ -36,10 +36,10 @@ if [ "" = "${GIT_DIR}" ]; then
 fi
 LOCKFILE=${GIT_DIR}/.commit
 
-GREP=$(command -v grep 2>/dev/null)
-SED=$(command -v sed 2>/dev/null)
-GIT=$(command -v git 2>/dev/null)
-RM=$(command -v rm 2>/dev/null)
+GREP=$(command -v grep)
+SED=$(command -v sed)
+GIT=$(command -v git)
+RM=$(command -v rm)
 
 if [ -e ${LOCKFILE}-version ] && \
    [ "" != "${RM}" ];

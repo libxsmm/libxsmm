@@ -52,7 +52,7 @@ else
   fi
 fi
 
-MICINFO=$(command -v micinfo 2>/dev/null)
+MICINFO=$(command -v micinfo)
 if [ "" != "${MICINFO}" ]; then
   MICCORES=$(${MICINFO} 2>/dev/null | sed -n "0,/\s\+Total No of Active Cores :\s\+\([0-9]\+\)/s//\1/p")
 fi

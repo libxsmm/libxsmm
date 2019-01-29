@@ -31,9 +31,9 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-ECHO=$(command -v echo 2>/dev/null)
-CAT=$(command -v cat 2>/dev/null)
-TR=$(command -v tr 2>/dev/null)
+ECHO=$(command -v echo)
+CAT=$(command -v cat)
+TR=$(command -v tr)
 
 # setup thread affinity
 export OMP_SCHEDULE=static OMP_PROC_BIND=TRUE
