@@ -33,7 +33,7 @@ SDE64_BIN=/swtools/sde/kits/latest/sde64
 SDE64_ARCH="-knl"
 SDE64_FLAGS="-ptr_check -null_check -ptr_raise"
 SDE=${SDE64_BIN}" "${SDE64_FLAGS}" "${SDE64_ARCH}" -- "
-GREP=$(command -v grep 2>/dev/null)
+GREP=$(command -v grep)
 
 # iterations, order, precision, arch  and format
 if [ $# -eq 5 ]

@@ -35,6 +35,10 @@
 #include "generator_common.h"
 
 LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_imci_avx512_get_max_n_blocking( const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                                    const char*                    i_arch );
+
+LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         io_generated_code,
                                                  const libxsmm_gemm_descriptor* i_xgemm_desc,
                                                  const char*                    i_arch );

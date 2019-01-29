@@ -42,14 +42,14 @@ REPO=${HERE}/..
 CODEFILE=${REPO}/.codefile
 MKTEMP=${REPO}/.mktmp.sh
 
-FLAKE8=$(command -v flake8 2>/dev/null)
-ICONV=$(command -v iconv 2>/dev/null)
-ECHO=$(command -v echo 2>/dev/null)
-GIT=$(command -v git 2>/dev/null)
-SED=$(command -v sed 2>/dev/null)
-TR=$(command -v tr 2>/dev/null)
-CP=$(command -v cp 2>/dev/null)
-RM=$(command -v rm 2>/dev/null)
+FLAKE8=$(command -v flake8)
+ICONV=$(command -v iconv)
+ECHO=$(command -v echo)
+GIT=$(command -v git)
+SED=$(command -v sed)
+TR=$(command -v tr)
+CP=$(command -v cp)
+RM=$(command -v rm)
 
 if [ -e ${CODEFILE} ]; then
   PATTERNS="$(cat ${CODEFILE})"
@@ -68,7 +68,7 @@ then
   if [ "" != "${ICONV}" ]; then
     CAT="${ICONV} -t ASCII"
   else
-    CAT=$(command -v cat 2>/dev/null)
+    CAT=$(command -v cat)
   fi
   if [ "" != "${CAT}" ]; then
     TMPF=$(${MKTEMP} .libxsmm_XXXXXX.txt)

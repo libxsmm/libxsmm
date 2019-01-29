@@ -71,12 +71,14 @@ endif
 
 ifneq (0,$(EIGEN))
 ifeq (,$(strip $(EIGENROOT)))
-  ifneq (,$(wildcard $(DEPDIR)/../eigen*/Eigen/Dense))
-    EIGENROOT = $(firstword $(wildcard $(DEPDIR)/../eigen*))
-  else ifneq (,$(wildcard $(HOME)/eigen*/Eigen/Dense))
-    EIGENROOT = $(firstword $(wildcard $(HOME)/eigen*))
+  ifneq (,$(lastword $(sort $(wildcard $(DEPDIR)/../eigen*/Eigen/Dense))))
+    EIGENROOT = $(lastword $(sort $(wildcard $(DEPDIR)/../eigen*)))
+  else ifneq (,$(lastword $(sort $(wildcard $(HOME)/eigen*/Eigen/Dense))))
+    EIGENROOT = $(lastword $(sort $(wildcard $(HOME)/eigen*)))
   else ifneq (,$(wildcard /usr/include/eigen3/Eigen/Dense))
     EIGENROOT = /usr/include/eigen3
+  else ifneq (,$(wildcard /usr/local/opt/eigen/include/eigen3/Eigen/Dense))
+    EIGENROOT = /usr/local/opt/eigen/include/eigen3
   endif
 endif
 endif

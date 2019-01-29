@@ -1,11 +1,11 @@
 #!/bin/bash
 
-UNAME=$(command -v uname 2>/dev/null)
-SORT=$(command -v sort 2>/dev/null)
-GREP=$(command -v grep 2>/dev/null)
-CUT=$(command -v cut 2>/dev/null)
-WC=$(command -v wc 2>/dev/null)
-TR=$(command -v tr 2>/dev/null)
+UNAME=$(command -v uname)
+SORT=$(command -v sort)
+GREP=$(command -v grep)
+CUT=$(command -v cut)
+WC=$(command -v wc)
+TR=$(command -v tr)
 
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_MB}" ]; then CHECK_DNN_MB=64; fi
@@ -49,7 +49,7 @@ if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
 else
   export NS=1 NC=1 NT=1 HT=1
 fi
-if [ "" != "${CUT}" ] && [ "" != "$(command -v numactl 2>/dev/null)" ]; then
+if [ "" != "${CUT}" ] && [ "" != "$(command -v numactl)" ]; then
   export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
 else
   export NN=${NS}

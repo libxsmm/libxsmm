@@ -73,22 +73,25 @@ ifeq (Windows_NT,$(OS))
   SLIBEXT ?= lib
 endif
 
+which = $(shell which $1 2>/dev/null)
+which ?= $(shell command -v $1)
+
 # Command line utilities
-#PKGCFG ?= $(shell command -v pkg-config 2>/dev/null)
-CP ?= $(shell command -v cp 2>/dev/null)
-MV ?= $(shell command -v mv 2>/dev/null)
+PKGCFG ?= $(call which,pkg-config)
+CP ?= $(call which,cp)
+MV ?= $(call which,mv)
 UNAME ?= $(shell uname)
 MAKE ?= make
 ENV ?= env
 
 # Python interpreter per PYTHON=/path/to/python
-PYTHON3 ?= $(shell command -v python3 2>/dev/null)
-PYTHON ?= $(shell command -v python 2>/dev/null)
+PYTHON3 ?= $(call which,python3)
+PYTHON ?= $(call which,python)
 
 ifeq (,$(PYTHON))
 ifneq (,$(PYTHON3))
   SHELL := env PATH=$(MAKEINC):$(PATH) $(SHELL)
-  PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null && command -v python 2>/dev/null)
+  PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null && command -v python)
 else
   $(info ERROR: No Python interpreter found!)
 endif
@@ -257,7 +260,7 @@ endif
 ifneq (0,$(PYMOD))
   PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
   PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d"." -f1,2)
-  PYROOT = $(abspath $(dir $(shell command -v $(PYTHON) 2>/dev/null))/..)
+  PYROOT = $(abspath $(dir $(call which,$(PYTHON)))/..)
   PYINC = $(wildcard $(PYROOT)/include/python$(PYVERSION)/Python.h)
   ifneq (,$(PYINC))
     LDFLAGS += -lpython$(PYVERSION)
@@ -319,17 +322,17 @@ CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 # or pickup the Intel Compiler (if available).
 GNU ?= 0
 ifeq (0,$(GNU))
-  ifneq (,$(notdir $(shell command -v icpc 2>/dev/null)))
+  ifneq (,$(notdir $(call which,icpc)))
     CXX = icpc
-  else ifneq (,$(notdir $(shell command -v icpx 2>/dev/null)))
+  else ifneq (,$(notdir $(call which,icpx)))
     CXX = icpx
   endif
-  ifneq (,$(notdir $(shell command -v icc 2>/dev/null)))
+  ifneq (,$(notdir $(call which,icc)))
     CC = icc
-  else ifneq (,$(notdir $(shell command -v icx 2>/dev/null)))
+  else ifneq (,$(notdir $(call which,icx)))
     CC = icx
   endif
-  ifneq (,$(notdir $(shell command -v ifort 2>/dev/null)))
+  ifneq (,$(notdir $(call which,ifort)))
     FC = ifort
   endif
 endif
@@ -340,16 +343,16 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
   $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . | cut -d' ' -f1)))))")
 
 ifeq (0,$(INTEL))
-  ifeq (,$(shell command -v $(CXX) 2>/dev/null))
+  ifeq (,$(call which,$(CXX)))
     CXX = g++
   else ifneq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CXX = g++
-  else ifneq (gcc,$(notdir $(shell command -v $(CC) 2>/dev/null)))
-    ifeq (g++,$(notdir $(shell command -v $(CXX) 2>/dev/null)))
+  else ifneq (gcc,$(notdir $(call which,$(CC))))
+    ifeq (g++,$(notdir $(call which,$(CXX))))
       CC = gcc
     endif
   endif
-  ifeq (,$(shell command -v $(CC) 2>/dev/null))
+  ifeq (,$(call which,$(CC)))
     CC = gcc
   else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CC = gcc
@@ -392,17 +395,17 @@ endif
 # fixup FC-default given by MAKE
 ifneq (,$(strip $(FC)))
   FIXFC ?= 0
-  ifeq (,$(shell command -v $(FC) 2>/dev/null))
+  ifeq (,$(call which,$(FC)))
     FIXFC = 1
   else ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     FIXFC = 1
-  else ifneq (gfortran,$(notdir $(shell command -v $(FC) 2>/dev/null)))
-    ifeq (g++,$(notdir $(shell command -v $(CXX) 2>/dev/null)))
+  else ifneq (gfortran,$(notdir $(call which,$(FC))))
+    ifeq (g++,$(notdir $(call which,$(CXX))))
       FIXFC = 1
     endif
   endif
   ifneq (0,$(FIXFC))
-    ifneq (,$(notdir $(shell command -v gfortran 2>/dev/null)))
+    ifneq (,$(notdir $(call which,gfortran)))
       MKL_FCRTL = gf
       GFC = gfortran
       FC = $(GFC)
@@ -594,7 +597,7 @@ ifneq (0,$(GCC))
   GCC_VERSION_MINOR = $(CXX_VERSION_MINOR)
   GCC_VERSION_PATCH = $(CXX_VERSION_PATCH)
 else ifeq (0,$(CLANG))
-  GCCBIN = $(notdir $(shell command -v gcc 2>/dev/null))
+  GCCBIN = $(notdir $(call which,gcc))
   ifneq (,$(strip $(GCCBIN)))
     GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
     GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f1)
@@ -682,7 +685,7 @@ LD = $(CC)
 XLD = $(CXX)
 
 # adopt fully equipped archiver
-CCAR = $(shell command -v $(CC)-ar 2>/dev/null)
+CCAR = $(call which,$(CC)-ar)
 ifneq (,$(CCAR))
   ifeq (default,$(origin AR))
     AR = $(CC)-ar
@@ -1859,7 +1862,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB \
     SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPLIBFILE NOBLASLIB NOBLAS_% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB \
     FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 CCAR \
-    cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V),$V=$($V)?)))
+    which cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V),$V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
 %/.make:
