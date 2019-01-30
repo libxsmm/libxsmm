@@ -583,11 +583,11 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square_ld(libxsmm_bla
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, int timestep, int t, LIBXSMM_DNN_ELTWISE_FTYPE *dout, LIBXSMM_DNN_ELTWISE_FTYPE *dh, LIBXSMM_DNN_ELTWISE_FTYPE *o, LIBXSMM_DNN_ELTWISE_FTYPE *co, LIBXSMM_DNN_ELTWISE_FTYPE *dcs, LIBXSMM_DNN_ELTWISE_FTYPE *ii, LIBXSMM_DNN_ELTWISE_FTYPE *ci, LIBXSMM_DNN_ELTWISE_FTYPE *dci, LIBXSMM_DNN_ELTWISE_FTYPE *di, LIBXSMM_DNN_ELTWISE_FTYPE *cps, LIBXSMM_DNN_ELTWISE_FTYPE *f, LIBXSMM_DNN_ELTWISE_FTYPE *df, LIBXSMM_DNN_ELTWISE_FTYPE *dp, LIBXSMM_DNN_ELTWISE_FTYPE *dcp) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) 
+#if defined(LIBXSMM_INTRINSICS_AVX512)
   libxsmm_blasint i, j;
   __m512 _dout, _dh, _o, _t1, _t2, _co, _dcs, _dcp, _ii, _ci, _dci, _di, _cps, _f, _df, _dp;
-  const __m512 _neg_ones = _mm512_set1_ps( (float)-1.0 );    
-  const __m512 _ones = _mm512_set1_ps( (float)1.0 ); 
+  const __m512 _neg_ones = _mm512_set1_ps( (float)-1.0 );
+  const __m512 _ones = _mm512_set1_ps( (float)1.0 );
   if (timestep == t-1) {
     for ( j = 0; j < n; ++j ) {
       LIBXSMM_PRAGMA_UNROLL_N(4)
@@ -611,7 +611,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_bla
         _di = _mm512_mul_ps( _ii, _t2);
         _di = _mm512_mul_ps( _di, _t1);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &di[(j*ld)+i], _di );
-        _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );     
+        _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );
         _t1 = _mm512_mul_ps( _cps, _dcp );
         _f = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &f[(j*ld)+i] );
         _t2 = _mm512_sub_ps( _ones, _f );
@@ -652,7 +652,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_bla
         _di = _mm512_mul_ps( _ii, _t2);
         _di = _mm512_mul_ps( _di, _t1);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &di[(j*ld)+i], _di );
-        _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );     
+        _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );
         _t1 = _mm512_mul_ps( _cps, _dcp );
         _f = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &f[(j*ld)+i] );
         _t2 = _mm512_sub_ps( _ones, _f );
@@ -667,7 +667,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_bla
         _dcp = _mm512_mul_ps( _dcp, _f);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &dcp[(j*ld)+i], _dcp );
       }
-    }  
+    }
   }
 #else
 LIBXSMM_UNUSED(m);LIBXSMM_UNUSED(n);LIBXSMM_UNUSED(ld);LIBXSMM_UNUSED(timestep);
@@ -679,11 +679,11 @@ LIBXSMM_UNUSED(df);LIBXSMM_UNUSED(dp);LIBXSMM_UNUSED(dcp);
 }
 
 LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld_and_reformat_dci_di_df_dp_ld2(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_blasint ld2, int timestep, int t, LIBXSMM_DNN_ELTWISE_FTYPE *dout, LIBXSMM_DNN_ELTWISE_FTYPE *dh, LIBXSMM_DNN_ELTWISE_FTYPE *o, LIBXSMM_DNN_ELTWISE_FTYPE *co, LIBXSMM_DNN_ELTWISE_FTYPE *dcs, LIBXSMM_DNN_ELTWISE_FTYPE *ii, LIBXSMM_DNN_ELTWISE_FTYPE *ci, LIBXSMM_DNN_ELTWISE_FTYPE *dci, LIBXSMM_DNN_ELTWISE_FTYPE *di, LIBXSMM_DNN_ELTWISE_FTYPE *cps, LIBXSMM_DNN_ELTWISE_FTYPE *f, LIBXSMM_DNN_ELTWISE_FTYPE *df, LIBXSMM_DNN_ELTWISE_FTYPE *dp, LIBXSMM_DNN_ELTWISE_FTYPE *dcp, LIBXSMM_DNN_ELTWISE_FTYPE *dciB, LIBXSMM_DNN_ELTWISE_FTYPE *diB, LIBXSMM_DNN_ELTWISE_FTYPE *dfB, LIBXSMM_DNN_ELTWISE_FTYPE *dpB) {
-#if defined(LIBXSMM_INTRINSICS_AVX512) 
+#if defined(LIBXSMM_INTRINSICS_AVX512)
   libxsmm_blasint i, j;
   __m512 _dout, _dh, _o, _t1, _t2, _co, _dcs, _dcp, _ii, _ci, _dci, _di, _cps, _f, _df, _dp;
-  const __m512 _neg_ones = _mm512_set1_ps( (float)-1.0 );    
-  const __m512 _ones = _mm512_set1_ps( (float)1.0 );    
+  const __m512 _neg_ones = _mm512_set1_ps( (float)-1.0 );
+  const __m512 _ones = _mm512_set1_ps( (float)1.0 );
 
   if (timestep == t-1) {
     for ( j = 0; j < n; ++j ) {
@@ -710,7 +710,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld_and_reforma
         _di = _mm512_mul_ps( _di, _t1);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &di[(j*ld)+i], _di );
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &diB[(j*ld2)+i], _di );
-        _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );     
+        _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );
         _t1 = _mm512_mul_ps( _cps, _dcp );
         _f = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &f[(j*ld)+i] );
         _t2 = _mm512_sub_ps( _ones, _f );
@@ -755,7 +755,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld_and_reforma
         _di = _mm512_mul_ps( _di, _t1);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &di[(j*ld)+i], _di );
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &diB[(j*ld2)+i], _di );
-        _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );     
+        _cps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &cps[(j*ld)+i] );
         _t1 = _mm512_mul_ps( _cps, _dcp );
         _f = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &f[(j*ld)+i] );
         _t2 = _mm512_sub_ps( _ones, _f );
@@ -772,7 +772,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld_and_reforma
         _dcp = _mm512_mul_ps( _dcp, _f);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &dcp[(j*ld)+i], _dcp );
       }
-    }  
+    }
   }
 #else
 LIBXSMM_UNUSED(m);LIBXSMM_UNUSED(n);LIBXSMM_UNUSED(ld);LIBXSMM_UNUSED(timestep);
@@ -790,7 +790,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 _mm512_tanh_gen
   _mm512_store_ps( _x, x );
   LIBXSMM_PRAGMA_SIMD
   for (i = 0; i < 16; i++) {
-    _x[i] = (LIBXSMM_DNN_ELTWISE_FTYPE) tanh((double) _x[i] ); 
+    _x[i] = (LIBXSMM_DNN_ELTWISE_FTYPE) tanh((double) _x[i] );
   }
   __m512 result = _mm512_loadu_ps( _x );
   return result;
@@ -806,7 +806,7 @@ LIBXSMM_API_INTERN void libxsmm_internal_compute_o_i_f_ci_cs_co_h_ld(libxsmm_bla
 #endif
   libxsmm_blasint i, j;
   __m512 _f, _cps, _cs, _ii, _ci, _co, _o, _h;
-  const __m512 _halves = _mm512_set1_ps( (float)0.5 );    
+  const __m512 _halves = _mm512_set1_ps( (float)0.5 );
     for ( j = 0; j < n; ++j ) {
        LIBXSMM_PRAGMA_UNROLL_N(4)
        for ( i = 0; i < m; i += 16 ) {

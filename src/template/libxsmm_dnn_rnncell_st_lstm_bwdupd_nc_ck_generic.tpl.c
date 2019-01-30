@@ -327,15 +327,15 @@ for (j = t-1; j >= 0; --j) {
     in = (inik % (N/bn))*bn;
     ik = (inik / (N/bn))*bk;
 
-#if defined(LIBXSMM_INTRINSICS_AVX512) 
+#if defined(LIBXSMM_INTRINSICS_AVX512)
     /* Compute dcp, dci, di, df, dp */
     cps_ptr = (j == 0) ? (element_output_type*) &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K) : (element_output_type*) &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K);
     if (bcbk_multiples_of_16) {
       if (K % 2048 != 0 || LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) {
-        libxsmm_internal_compute_dcp_dci_di_df_dp_ld(bk, bn, K, j, t, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K),  &LIBXSMM_VLA_ACCESS(3, dh, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K), cps_ptr , &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, df, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K)); 
+        libxsmm_internal_compute_dcp_dci_di_df_dp_ld(bk, bn, K, j, t, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K),  &LIBXSMM_VLA_ACCESS(3, dh, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K), cps_ptr , &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, df, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K));
       } else {
         /* Also reformat di, dci, df and dp to be used in the UPD pass in blocked format ... */
-        libxsmm_internal_compute_dcp_dci_di_df_dp_ld_and_reformat_dci_di_df_dp_ld2(bk, bn, K, bk, j, t, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K),  &LIBXSMM_VLA_ACCESS(3, dh, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K), cps_ptr , &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, df, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K), &LIBXSMM_VLA_ACCESS(4, dciB, inb, ikb, 0, 0, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(4, diB, inb, ikb, 0, 0, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(4, dfB, inb, ikb, 0, 0, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(4, dpB, inb, ikb, 0, 0, kBlocks, bn, bk)); 
+        libxsmm_internal_compute_dcp_dci_di_df_dp_ld_and_reformat_dci_di_df_dp_ld2(bk, bn, K, bk, j, t, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K),  &LIBXSMM_VLA_ACCESS(3, dh, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dcs, in, ik, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dci, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K), cps_ptr , &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, df, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K), &LIBXSMM_VLA_ACCESS(4, dciB, inb, ikb, 0, 0, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(4, diB, inb, ikb, 0, 0, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(4, dfB, inb, ikb, 0, 0, kBlocks, bn, bk), &LIBXSMM_VLA_ACCESS(4, dpB, inb, ikb, 0, 0, kBlocks, bn, bk));
       }
     } else {
       /* compute dhp */
@@ -479,7 +479,7 @@ for (j = t-1; j >= 0; --j) {
     if (ltid == 0) {
       _end = _rdtsc();
       act_trans_cycles += _end - _start;
-    }  
+    }
 #endif
   }
 
@@ -488,7 +488,7 @@ for (j = t-1; j >= 0; --j) {
   if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
 #ifdef PROFILE
     if (ltid == 0) _start = _rdtsc();
-#endif 
+#endif
     /* dx = W^T * difoc */
     for (KB = 0; KB < BF; KB++) {
       for (inic = thr_begin_nc; inic < thr_end_nc; ++inic ) {
@@ -531,12 +531,12 @@ for (j = t-1; j >= 0; --j) {
       _end = _rdtsc();
       dx_cycles += _end - _start;
     }
-#endif   
+#endif
   }
 
 #ifdef PROFILE
   if (ltid == 0) _start = _rdtsc();
-#endif     
+#endif
   for (KB = 0; KB < BF; KB++) {
     for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
       in = (inik % (N/bn))*bn;
@@ -596,7 +596,7 @@ for (j = t-1; j >= 0; --j) {
           ic = icb*bk;
           ikb = ikic % (K/bk);
           ik = ikb*bk;
-          blocks = nBlocks;   
+          blocks = nBlocks;
 
           for (in = 0, inb = 0; in < N; in += bn, inb++) {
             A_array[inb] = &LIBXSMM_VLA_ACCESS(2, di,  in, ik, K);
@@ -654,7 +654,7 @@ for (j = t-1; j >= 0; --j) {
           ic = icb*bk;
           ikb = ikic % (K/bk);
           ik = ikb*bk;
-          blocks = nBlocks;   
+          blocks = nBlocks;
 
           for (in = 0, inb = 0; in < N; in += bn, inb++) {
             A_array[inb] = &LIBXSMM_VLA_ACCESS(4, diB, inb, ikb, 0, 0, kBlocks, bn, bk);
@@ -784,7 +784,7 @@ for (j = t-1; j >= 0; --j) {
 #endif
     /* gradient bias */
 #if defined(LIBXSMM_INTRINSICS_AVX512)
-    if (bcbk_multiples_of_16) { 
+    if (bcbk_multiples_of_16) {
       for (ik = k_thr_begin; ik < k_thr_end; ik += 16) {
         dbi_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbi[ik]);
         dbf_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbf[ik]);
@@ -800,7 +800,7 @@ for (j = t-1; j >= 0; --j) {
         _mm512_store_ps(&dbf[ik], dbf_sum);
         _mm512_store_ps(&dbo[ik], dbo_sum);
         _mm512_store_ps(&dbc[ik], dbc_sum);
-      }  
+      }
     } else {
       for (ik = thr_begin_k; ik < thr_end_k; ik++) {
         for (in = 0; in < N; in++) {
@@ -834,7 +834,7 @@ for (j = t-1; j >= 0; --j) {
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
 #ifdef PROFILE
   if (ltid == 0) _start = _rdtsc();
-#endif  
+#endif
   /* Store result weight matrices in CK format */
   for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
     icb = ikic / (K/bk);

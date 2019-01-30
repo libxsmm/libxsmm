@@ -789,7 +789,7 @@ int main(int argc, char* argv[])
     lstmcell_desc.t = t;
     lstmcell_desc.bn = bn;
     lstmcell_desc.bk = bk;
-    lstmcell_desc.bc = bc;    
+    lstmcell_desc.bc = bc;
     lstmcell_desc.cell_type = LIBXSMM_DNN_RNNCELL_LSTM;
     lstmcell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     lstmcell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
@@ -906,7 +906,7 @@ int main(int argc, char* argv[])
     convert_ck_c4k(K, K, 2, rfgold, r_tmp);
     convert_ck_c4k(K, K, 3, rogold, r_tmp);
     matrix_copy_CK_to_KCCK(w_tmp, w, C, 4*K, bc, bk);
-    matrix_copy_CK_to_KCCK(r_tmp, r, K, 4*K, bk, bk);   
+    matrix_copy_CK_to_KCCK(r_tmp, r, K, 4*K, bk, bk);
     matrix_copy(K, bigold, &(b[0]));
     matrix_copy(K, bcgold, &(b[K]));
     matrix_copy(K, bfgold, &(b[2*K]));

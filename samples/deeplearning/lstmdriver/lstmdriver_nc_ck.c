@@ -372,6 +372,42 @@ LIBXSMM_INLINE void convert_nk_nck(int N, int K, int CK, float *src, float *dst)
 }
 
 
+LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, float *f, float *o, float *csp, float *cs, float *h)
+{
+  int j;
+  float *t;
+  t = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+
+#if defined(_OPENMP)
+# pragma omp parallel for private(j)
+#endif
+  for (j = 0; j < N*K; j++) {
+    const int row = j / K;
+    const int col = j % K;
+    float exp_value;
+    /* i = sigmoid(i) */
+    exp_value = (float)exp((double) -i[row*4*K + col]);
+    i[row*4*K + col] = 1.0f / (1.0f + exp_value);
+    /* c = tanh(c) */
+    c[row*4*K + col] = (float)tanh((double)c[row*4*K + col]);
+    /* f = sigmoid(f) */
+    exp_value = (float)exp((double) -f[row*4*K + col]);
+    f[row*4*K + col] = 1.0f / (1.0f + exp_value);
+    /* o = sigmoid(o) */
+    exp_value = (float)exp((double) -o[row*4*K + col]);
+    o[row*4*K + col] = 1.0f / (1.0f + exp_value);
+    /* cs = f.csp + i.c */
+    cs[j] = f[row*4*K + col]*csp[j] + i[row*4*K + col]*c[row*4*K + col];
+    /* t = tanh(cs) */
+    t[j] = (float)tanh((double)cs[j]);
+    /* h = o.t */
+    h[j] = o[row*4*K + col] * t[j];
+  }
+
+  libxsmm_free(t);
+}
+
+
 void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
                    float *wigold, float *wcgold, float *wfgold, float *wogold,
                    float *rigold, float *rcgold, float *rfgold, float *rogold,
@@ -384,7 +420,6 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
 #if !defined(TWO_GEMMS)
   float *xhgold;
 #endif
-  float *t1gold, *t2gold, *t3gold;
   const char transa = 'N', transb = 'N';   /* no transposes */
   const float alpha = 1, beta = 1;
   int j;
@@ -395,9 +430,6 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
 #if !defined(TWO_GEMMS)
   xhgold    = (float*)libxsmm_aligned_malloc((C+K)*N*sizeof(float), 2097152);
 #endif
-  t1gold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  t2gold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  t3gold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N * C);
   LIBXSMM_VLA_DECL(2, float, csgold, csgoldt, K * N);
   LIBXSMM_VLA_DECL(2, float, hgold, hgoldt, K * N);
@@ -452,34 +484,31 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
     /* icfo += (W * x) + (R * h) */
     LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &CK, &alpha, wgold, &K4, xhgold, &CK, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
 #endif
-    /* icfo = non-lin(icfo) */
-    matrix_sigmoid_ld(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
-    matrix_tanh_ld   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K));
-    matrix_sigmoid_ld(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K));
-    matrix_sigmoid_ld(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K));
-    /* t1 = f.cs */
     if (j == 0) {
-      matrix_eltwise_mult_ld_a(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, 2*K, N, 4 * K), cspgold, t1gold);
+      lstm_fwd_eltwise_merged( N, K,
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, 0,   N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, K,   N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, 2*K, N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, 3*K, N, 4 * K),
+                               cspgold,
+                               &LIBXSMM_VLA_ACCESS(2, csgold, 0, 0, K * N),
+                               &LIBXSMM_VLA_ACCESS(2, hgold, 0, 0, K * N) );
     } else {
-      matrix_eltwise_mult_ld_a(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), &LIBXSMM_VLA_ACCESS(2, csgold, j-1, 0, K * N), t1gold);
+      lstm_fwd_eltwise_merged( N, K,
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(2, csgold, j-1, 0, K * N),
+                               &LIBXSMM_VLA_ACCESS(2, csgold, j, 0, K * N),
+                               &LIBXSMM_VLA_ACCESS(2, hgold, j, 0, K * N) );
     }
-    /* t2 = i.c */
-    matrix_eltwise_mult_ld_ab(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K, N, 4 * K), t2gold);
-    /* cs = t1 + t2 */
-    matrix_add(K*N, t1gold, t2gold, &LIBXSMM_VLA_ACCESS(2, csgold, j, 0, K * N));
-    /* t3 = tanh(cs) */
-    matrix_tanh(K*N, &LIBXSMM_VLA_ACCESS(2, csgold, j, 0, K * N), t3gold);
-    /* h = o.t3 */
-    matrix_eltwise_mult_ld_a (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K), t3gold, &LIBXSMM_VLA_ACCESS(2, hgold, j, 0, K * N));
   }
 
   libxsmm_free(bfgold_fb);
 #if !defined(TWO_GEMMS)
   libxsmm_free(xhgold);
 #endif
-  libxsmm_free(t1gold);
-  libxsmm_free(t2gold);
-  libxsmm_free(t3gold);
 }
 
 
@@ -724,7 +753,7 @@ int main(int argc, char* argv[])
   if (argc > j) t     = atoi(argv[j++]);
   if (argc > j) bn     = atoi(argv[j++]);
   if (argc > j) bk     = atoi(argv[j++]);
-  if (argc > j) bc     = atoi(argv[j++]);  
+  if (argc > j) bc     = atoi(argv[j++]);
 
   if (t <= 0) {
     printf("time_steps %d should be greater than or equal to 1\n\n", t);
@@ -911,7 +940,7 @@ int main(int argc, char* argv[])
     lstmcell_desc.t = t;
     lstmcell_desc.bn = bn;
     lstmcell_desc.bk = bk;
-    lstmcell_desc.bc = bc;    
+    lstmcell_desc.bc = bc;
     lstmcell_desc.cell_type = LIBXSMM_DNN_RNNCELL_LSTM;
     lstmcell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     lstmcell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
