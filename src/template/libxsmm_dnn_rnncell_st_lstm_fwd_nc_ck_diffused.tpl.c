@@ -237,7 +237,7 @@ for (j = 0; j < t; ++j) {
 #endif
         cps_ptr = (j == 0) ? (element_output_type*) &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K) : (element_output_type*) &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K) ;
         /* Compute i, ci, f, o, cs, co and h */
-#if defined(LIBXSMM_INTRINSICS_AVX512) 
+#if defined(LIBXSMM_INTRINSICS_AVX512)
         if (bk % 16 == 0 && bc % 16 == 0) {
           libxsmm_internal_compute_o_i_f_ci_cs_co_h_ld(bk, bn, K, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), cps_ptr, &LIBXSMM_VLA_ACCESS(3, cs, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, h, j, in, ik, N, K));
         } else {
@@ -267,7 +267,7 @@ for (j = 0; j < t; ++j) {
           eltwise_cycles += eltwise_end-eltwise_start;
         }
 #endif
-      }    
+      }
     }
   }
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
