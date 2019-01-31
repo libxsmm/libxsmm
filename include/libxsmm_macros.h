@@ -348,7 +348,8 @@
 /** LIBXSMM_NBITS determines the minimum number of bits needed to represent N. */
 #define LIBXSMM_NBITS(N) (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + LIBXSMM_MIN(1, N))
 /** LIBXSMM_LOG2 definition matches ceil(log2(N)). */
-#define LIBXSMM_LOG2(N) (LIBXSMM_NBITS(N) - LIBXSMM_MIN(1, LIBXSMM_NBITS(N) - LIBXSMM_NBITS((N) - 1)))
+#define LIBXSMM_LOG2(N) (1 < (N) ? (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + \
+  (LIBXSMM_INTRINSICS_BITSCANBWD64((N) - 1) != LIBXSMM_INTRINSICS_BITSCANBWD64(N) ? 0 : 1)) : 0)
 
 /** LIBXSMM_UP2POT rounds up to the next power of two (POT). */
 #define LIBXSMM_UP2POT_01(N) ((N) | ((N) >> 1))
