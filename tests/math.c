@@ -34,6 +34,12 @@ LIBXSMM_INLINE unsigned int ref_icbrt_u64(unsigned long long u64)
 }
 
 
+LIBXSMM_INLINE unsigned int ref_ilog2_u32(unsigned int u32)
+{
+  return (unsigned int)ceil(libxsmm_log2(u32));
+}
+
+
 int main(int argc, char* argv[])
 {
   const int exp_maxiter = (1 < argc ? atoi(argv[1]) : 20);
@@ -54,10 +60,11 @@ int main(int argc, char* argv[])
   }
 
   for (i = 0; i < (N); ++i) {
-    const int r1 = rand(), r2 = rand();
+    const int r1 = (0 != i ? rand() : 0), r2 = (1 < i ? rand() : 0);
     const double rd = 2.0 * (r1 * (r2 - RAND_MAX / 2)) / RAND_MAX;
     const unsigned long long r64 = scale64 * r1;
     const unsigned int r32 = scale32 * r1;
+    const unsigned int s32 = scale32 * r2;
     double d1, d2, e1, e2, e3;
     unsigned int a, b;
 
@@ -80,13 +87,11 @@ int main(int argc, char* argv[])
     if (1E-4 < fmin(e1, e3)) exit(EXIT_FAILURE);
 
     a = LIBXSMM_SQRT2(r32);
-    if ((r32 * 2.0) < ((double)a * a)) {
-      exit(EXIT_FAILURE);
-    }
+    b = libxsmm_isqrt_u32(r32);
+    if (a < LIBXSMM_DIFF(a, b)) exit(EXIT_FAILURE);
     a = LIBXSMM_SQRT2(r64);
-    if ((r64 * 2.0) < ((double)a * a)) {
-      exit(EXIT_FAILURE);
-    }
+    b = libxsmm_isqrt_u64(r64);
+    if (0 != a/*u32-overflow*/ && a < LIBXSMM_DIFF(a, b)) exit(EXIT_FAILURE);
 
     a = libxsmm_isqrt_u32(r32);
     b = ref_isqrt_u32(r32);
@@ -127,6 +132,38 @@ int main(int argc, char* argv[])
     a = libxsmm_icbrt_u64(r64);
     b = ref_icbrt_u64(r64);
     if (a != b) exit(EXIT_FAILURE);
+
+    a = LIBXSMM_INTRINSICS_BITSCANFWD32(r32);
+    b = LIBXSMM_INTRINSICS_BITSCANFWD32_SW(r32);
+    if (a != b) exit(EXIT_FAILURE);
+    a = LIBXSMM_INTRINSICS_BITSCANBWD32(r32);
+    b = LIBXSMM_INTRINSICS_BITSCANBWD32_SW(r32);
+    if (a != b) exit(EXIT_FAILURE);
+
+    a = LIBXSMM_INTRINSICS_BITSCANFWD64(r64);
+    b = LIBXSMM_INTRINSICS_BITSCANFWD64_SW(r64);
+    if (a != b) exit(EXIT_FAILURE);
+    a = LIBXSMM_INTRINSICS_BITSCANBWD64(r64);
+    b = LIBXSMM_INTRINSICS_BITSCANBWD64_SW(r64);
+    if (a != b) exit(EXIT_FAILURE);
+
+    a = LIBXSMM_LOG2(r32);
+    b = ref_ilog2_u32(r32);
+    if (0 != r32 && a != b) exit(EXIT_FAILURE);
+
+    b = LIBXSMM_LO2POT(s32);
+    a = LIBXSMM_MUL2(r32, b);
+    if (a != r32 * b) exit(EXIT_FAILURE);
+    b = LIBXSMM_UP2POT(s32);
+    a = LIBXSMM_MUL2(r32, b);
+    if (a != r32 * b) exit(EXIT_FAILURE);
+
+    b = LIBXSMM_LO2POT(s32);
+    a = LIBXSMM_DIV2(r32, b);
+    if (0 != b && a != r32 / b) exit(EXIT_FAILURE);
+    b = LIBXSMM_UP2POT(s32);
+    a = LIBXSMM_DIV2(r32, b);
+    if (0 != b && a != r32 / b) exit(EXIT_FAILURE);
   }
 
   if (0 < warn_ssqrt || 0 < warn_dsqrt) {
