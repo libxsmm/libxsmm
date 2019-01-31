@@ -375,6 +375,81 @@ LIBXSMM_INLINE void convert_nk_nck(int N, int K, int CK, float *src, float *dst)
 LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, float *f, float *o, float *csp, float *cs, float *co, float *h)
 {
   int j;
+#if defined(__AVX512F__)
+  int l;
+  int rem = (K/16)*16;
+  __m512 minus1 = _mm512_set1_ps (-1.0f);
+  __m512 plus1  = _mm512_set1_ps (1.0f);
+#if defined(_OPENMP)
+# pragma omp parallel for private(j, l) collapse(2)
+#endif
+  for (j = 0; j < N; j++) {
+    for (l = 0; l < K; l+=16) {
+      __m512 iv   = _mm512_load_ps (&(i[j*4*K + l]));
+      __m512 cv   = _mm512_load_ps (&(c[j*4*K + l]));
+      __m512 fv   = _mm512_load_ps (&(f[j*4*K + l]));
+      __m512 ov   = _mm512_load_ps (&(o[j*4*K + l]));
+      __m512 cspv = _mm512_load_ps (&(csp[j*K + l]));
+      __m512 csv, cov, hv;
+      /* i = sigmoid(i) */
+      iv = _mm512_mul_ps (iv, minus1);
+      iv = _mm512_exp_ps (iv);
+      iv = _mm512_add_ps (iv, plus1);
+      iv = _mm512_rcp14_ps (iv);
+      /* c = tanh(c) */
+      cv = _mm512_tanh_ps (cv);
+      /* f = sigmoid(f) */
+      fv = _mm512_mul_ps (fv, minus1);
+      fv = _mm512_exp_ps (fv);
+      fv = _mm512_add_ps (fv, plus1);
+      fv = _mm512_rcp14_ps (fv);
+      /* o = sigmoid(o) */
+      ov = _mm512_mul_ps (ov, minus1);
+      ov = _mm512_exp_ps (ov);
+      ov = _mm512_add_ps (ov, plus1);
+      ov = _mm512_rcp14_ps (ov);
+      /* cs = f.csp + i.c */
+      csv = _mm512_mul_ps (fv, cspv);
+      csv = _mm512_fmadd_ps (iv, cv, csv);
+      /* co = tanh(cs) */
+      cov = _mm512_tanh_ps (csv);
+      /* h = o.co */
+      hv = _mm512_mul_ps (ov, cov);
+      _mm512_store_ps (&(i[j*4*K + l]), iv);
+      _mm512_store_ps (&(c[j*4*K + l]), cv);
+      _mm512_store_ps (&(f[j*4*K + l]), fv);
+      _mm512_store_ps (&(o[j*4*K + l]), ov);
+      _mm512_store_ps (&(cs[j*K + l]),  csv);
+      _mm512_store_ps (&(co[j*K + l]),  cov);
+      _mm512_store_ps (&(h[j*K + l]),   hv);
+    }
+  }
+#if defined(_OPENMP)
+# pragma omp parallel for private(j, l) collapse(2)
+#endif
+  for (j = 0; j < N; j++) {
+    for (l = rem; l < K; l++) {
+      float exp_value;
+      /* i = sigmoid(i) */
+      exp_value = (float)exp((double) -i[j*4*K + l]);
+      i[j*4*K + l] = 1.0f / (1.0f + exp_value);
+      /* c = tanh(c) */
+      c[j*4*K + l] = (float)tanh((double)c[j*4*K + l]);
+      /* f = sigmoid(f) */
+      exp_value = (float)exp((double) -f[j*4*K + l]);
+      f[j*4*K + l] = 1.0f / (1.0f + exp_value);
+      /* o = sigmoid(o) */
+      exp_value = (float)exp((double) -o[j*4*K + l]);
+      o[j*4*K + l] = 1.0f / (1.0f + exp_value);
+      /* cs = f.csp + i.c */
+      cs[j*K + l] = f[j*4*K + l]*csp[j*K + l] + i[j*4*K + l]*c[j*4*K + l];
+      /* co = tanh(cs) */
+      co[j*K + l] = (float)tanh((double)cs[j*K + l]);
+      /* h = o.co */
+      h[j*K + l] = o[j*4*K + l] * co[j*K + l];
+    }
+  }
+#else
 #if defined(_OPENMP)
 # pragma omp parallel for private(j)
 #endif
@@ -397,9 +472,10 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
     cs[j] = f[row*4*K + col]*csp[j] + i[row*4*K + col]*c[row*4*K + col];
     /* co = tanh(cs) */
     co[j] = (float)tanh((double)cs[j]);
-    /* h = o.t */
+    /* h = o.co */
     h[j] = o[row*4*K + col] * co[j];
   }
+#endif
 }
 
 
@@ -407,34 +483,125 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
                                                 float *dh, float *dout, float *di, float *dc, float *df, float *dp, float *dcsp, float *dcs)
 {
   int j;
-  float *delta;
-  delta = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+#if defined(__AVX512F__)
+  int l;
+  int rem = (K/16)*16;
+  __m512 plus1  = _mm512_set1_ps (1.0f);
+#if defined(_OPENMP)
+# pragma omp parallel for private(j, l) collapse(2)
+#endif
+  for (j = 0; j < N; j++) {
+    for (l = 0; l < K; l+=16) {
+      __m512 iv       = _mm512_load_ps (&(i[j*4*K + l]));
+      __m512 cv       = _mm512_load_ps (&(c[j*4*K + l]));
+      __m512 fv       = _mm512_load_ps (&(f[j*4*K + l]));
+      __m512 ov       = _mm512_load_ps (&(o[j*4*K + l]));
+      __m512 cspv     = _mm512_load_ps (&(csp[j*K + l]));
+      __m512 cov      = _mm512_load_ps (&(co[j*K + l]));
+      __m512 dcsv     = _mm512_load_ps (&(dcs[j*K + l]));
+      __m512 dhv, doutv, div, dcv, dfv, dov, dcspv, deltav, tv;
+      /* compute delta */
+      if (NULL == dout) {
+        deltav = _mm512_load_ps (&(dh[j*K + l]));
+      } else {
+        dhv    = _mm512_load_ps (&(dh[j*K + l]));
+        doutv  = _mm512_load_ps (&(dout[j*K + l]));
+        deltav = _mm512_add_ps (dhv, doutv);
+      }
+      /* compute dcsp */
+      /* dcsp = delta.o.(1 - (co.co)) + dcs */
+      tv    = _mm512_mul_ps (cov, cov);
+      tv    = _mm512_sub_ps (plus1, tv);
+      dcspv = _mm512_mul_ps (deltav, ov);
+      dcspv = _mm512_fmadd_ps (dcspv, tv, dcsv);
+      /* compute di */
+      /* di = dcsp.c.i.(1 - i) */
+      tv  = _mm512_sub_ps (plus1, iv);
+      tv  = _mm512_mul_ps (iv, tv);
+      div = _mm512_mul_ps (dcspv, cv);
+      div = _mm512_mul_ps (div, tv);
+      /* compute dc */
+      /* dc = dcsp.i.(1 - (c.c)) */
+      tv  = _mm512_mul_ps (cv, cv);
+      tv  = _mm512_sub_ps (plus1, tv);
+      dcv = _mm512_mul_ps (dcspv, iv);
+      dcv = _mm512_mul_ps (dcv, tv);
+      /* compute df */
+      /* df = dcsp.csp.f.(1 - f) */
+      tv  = _mm512_sub_ps (plus1, fv);
+      tv  = _mm512_mul_ps (fv, tv);
+      dfv = _mm512_mul_ps (dcspv, cspv);
+      dfv = _mm512_mul_ps (dfv, tv);
+      /* compute do */
+      /* do = delta.co.o.(1 - o) */
+      tv  = _mm512_sub_ps (plus1, ov);
+      tv  = _mm512_mul_ps (ov, tv);
+      dov = _mm512_mul_ps (deltav, cov);
+      dov = _mm512_mul_ps (dov, tv);
+      /* update dcsp */
+      /* dcsp = dcsp.f */
+      dcspv = _mm512_mul_ps (dcspv, fv);
+      _mm512_store_ps (&(di[j*4*K + l]), div);
+      _mm512_store_ps (&(dc[j*4*K + l]), dcv);
+      _mm512_store_ps (&(df[j*4*K + l]), dfv);
+      _mm512_store_ps (&(dp[j*4*K + l]), dov);
+      _mm512_store_ps (&(dcsp[j*K + l]), dcspv);
+    }
+  }
+#if defined(_OPENMP)
+# pragma omp parallel for private(j, l) collapse(2)
+#endif
+  for (j = 0; j < N; j++) {
+    for (l = rem; l < K; l++) {
+      float delta;
+      /* compute delta */
+      if (NULL == dout) {
+        delta = dh[j*K + l];
+      } else {
+        delta = dh[j*K + l] + dout[j*K + l];
+      }
+      /* compute dcsp */
+      dcsp[j*K + l] = delta * o[j*4*K + l] * (1.0f - (co[j*K + l]*co[j*K + l])) + dcs[j*K + l];
+      /* compute di */
+      di[j*4*K + l] = dcsp[j*K + l] * c[j*4*K + l] * i[j*4*K + l] * (1.0f - i[j*4*K + l]);
+      /* compute dc */
+      dc[j*4*K + l] = dcsp[j*K + l] * i[j*4*K + l] * (1.0f - (c[j*4*K + l]*c[j*4*K + l]));
+      /* compute df */
+      df[j*4*K + l] = dcsp[j*K + l] * csp[j*K + l] * f[j*4*K + l] * (1.0f - f[j*4*K + l]);
+      /* compute do */
+      dp[j*4*K + l] = delta * co[j*K + l] * o[j*4*K + l] * (1.0f - o[j*4*K + l]);
+      /* update dcsp */
+      dcsp[j*K + l] = dcsp[j*K + l] * f[j*4*K + l];
+    }
+  }
+#else
 #if defined(_OPENMP)
 # pragma omp parallel for private(j)
 #endif
   for (j = 0; j < N*K; j++) {
     const int row = j / K;
     const int col = j % K;
+    float delta;
     /* compute delta */
     if (NULL == dout) {
-      delta[j] = dh[j];
+      delta = dh[j];
     } else {
-      delta[j] = dh[j] + dout[j];
+      delta = dh[j] + dout[j];
     }
     /* compute dcsp */
-    dcsp[j] = delta[j] * o[row*4*K + col] * (1.0f - (co[j]*co[j])) + dcs[j];
-    /* compute dc */
-    dc[row*4*K + col] = dcsp[j] * i[row*4*K + col] * (1.0f - (c[row*4*K + col]*c[row*4*K + col]));
+    dcsp[j] = delta * o[row*4*K + col] * (1.0f - (co[j]*co[j])) + dcs[j];
     /* compute di */
     di[row*4*K + col] = dcsp[j] * c[row*4*K + col] * i[row*4*K + col] * (1.0f - i[row*4*K + col]);
+    /* compute dc */
+    dc[row*4*K + col] = dcsp[j] * i[row*4*K + col] * (1.0f - (c[row*4*K + col]*c[row*4*K + col]));
     /* compute df */
     df[row*4*K + col] = dcsp[j] * csp[j] * f[row*4*K + col] * (1.0f - f[row*4*K + col]);
     /* compute do */
-    dp[row*4*K + col] = delta[j] * co[j] * o[row*4*K + col] * (1.0f - o[row*4*K + col]);
+    dp[row*4*K + col] = delta * co[j] * o[row*4*K + col] * (1.0f - o[row*4*K + col]);
     /* update dcsp */
     dcsp[j] = dcsp[j] * f[row*4*K + col];
   }
-  libxsmm_free(delta);
+#endif
 }
 
 
@@ -1336,6 +1503,27 @@ int main(int argc, char* argv[])
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
+      printf("##########################################\n");
+      printf("#   Performance - FWD (BLAS)             #\n");
+      printf("##########################################\n");
+      /* run LIBXSMM LSTM for performance */
+      l_start = libxsmm_timer_tick();
+      for (j = 0; j < iters; ++j) {
+        lstm_ref_fwd( N, C, K, t, forget_bias,
+                      wigold, wcgold, wfgold, wogold,
+                      rigold, rcgold, rfgold, rogold,
+                      bigold, bcgold, bfgold, bogold,
+                      xgoldt, cspgold, hpgold,
+                      csgoldt, cogoldt, hgoldt,
+                      icfogoldt, wgold, rgold );
+      }
+      l_end = libxsmm_timer_tick();
+      l_total = libxsmm_timer_duration(l_start, l_end);
+
+      printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("fp time = %.5g\n", ((double)(l_total/iters)));
+      printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+
       printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
     }
 
@@ -1484,6 +1672,27 @@ int main(int argc, char* argv[])
       flops += tempflops;
       flops += (4.0 * K * N * (t - 1)); /* delbias */
       flops *= iters;
+
+      printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("bp+wu time = %.5g\n", ((double)(l_total/iters)));
+      printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+
+      printf("##########################################\n");
+      printf("# Performance - BWD+UPD (BLAS)           #\n");
+      printf("##########################################\n");
+      /* run LIBXSMM LSTM for performance */
+      l_start = libxsmm_timer_tick();
+      for (j = 0; j < iters; ++j) {
+        lstm_ref_bwd_upd( N, C, K, t,
+                          xgoldt, cspgold, hpgold,
+                          csgoldt, cogoldt, hgoldt,
+                          icfogoldt, wgold, rgold,
+                          dcsgold, dhgoldt,
+                          dwgold, drgold, dbgold,
+                          dxgoldt, dcspgold, dhpgold );
+      }
+      l_end = libxsmm_timer_tick();
+      l_total = libxsmm_timer_duration(l_start, l_end);
 
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
       printf("bp+wu time = %.5g\n", ((double)(l_total/iters)));
