@@ -945,7 +945,7 @@ int main(int argc, char* argv[])
     lstmcell_desc.N = N;
     lstmcell_desc.C = C;
     lstmcell_desc.K = K;
-    lstmcell_desc.t = t;
+    lstmcell_desc.max_T = t;
     lstmcell_desc.bn = bn;
     lstmcell_desc.bk = bk;
     lstmcell_desc.bc = bc;

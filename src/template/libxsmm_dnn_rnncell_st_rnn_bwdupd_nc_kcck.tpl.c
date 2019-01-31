@@ -35,7 +35,7 @@ libxsmm_blasint i, ik, ikb, in, inb, ic, icb, jk, jb/*jn shadows global variable
 libxsmm_blasint K = handle->desc.K;
 libxsmm_blasint N = handle->desc.N;
 libxsmm_blasint C = handle->desc.C;
-libxsmm_blasint t = handle->desc.t;
+libxsmm_blasint t = handle->T;
 libxsmm_blasint bk = handle->bk;
 libxsmm_blasint bn = handle->bn;
 libxsmm_blasint bc = handle->bc;

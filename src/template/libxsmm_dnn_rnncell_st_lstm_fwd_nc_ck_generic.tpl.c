@@ -36,7 +36,7 @@ libxsmm_blasint j, ik, ikb, in, ic, icb, inik, BF, CB, CB_BLOCKS, KB_BLOCKS, iki
 const libxsmm_blasint K =  handle->desc.K;
 const libxsmm_blasint N =  handle->desc.N;
 const libxsmm_blasint C =  handle->desc.C;
-const libxsmm_blasint t =  handle->desc.t;
+const libxsmm_blasint t =  handle->T;
 const libxsmm_blasint bk = handle->bk;
 const libxsmm_blasint bn = handle->bn;
 const libxsmm_blasint bc = handle->bc;

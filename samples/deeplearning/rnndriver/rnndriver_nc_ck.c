@@ -528,8 +528,8 @@ int main(int argc, char* argv[])
     rnncell_desc.bn = 64;
     rnncell_desc.bk = 64;
     rnncell_desc.bc = 64;
+    rnncell_desc.max_T = t;
 
-    rnncell_desc.t = t;
     if ( nonlin == 1 ) {
       rnncell_desc.cell_type = LIBXSMM_DNN_RNNCELL_RNN_RELU;
     } else if ( nonlin == 2 ) {
