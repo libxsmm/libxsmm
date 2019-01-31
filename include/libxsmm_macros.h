@@ -345,7 +345,7 @@
 # define LIBXSMM_OPENMP_COLLAPSE(N)
 #endif
 
-/** LIBXSMM_NBITS definition is such that LIBXSMM_MUL2(N, 0) yields zero. */
+/** LIBXSMM_NBITS determines the minimum number of bits needed to represent N. */
 #define LIBXSMM_NBITS(N) (0 != (N) ? (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + LIBXSMM_MIN(1, N)) : 64U)
 /** LIBXSMM_LOG2 definition matches ceil(log2(N)). */
 #define LIBXSMM_LOG2(N) (LIBXSMM_NBITS(N) - LIBXSMM_MIN(1, LIBXSMM_NBITS(N) - LIBXSMM_NBITS((N) - 1)))
@@ -369,8 +369,6 @@
 #define LIBXSMM_MOD2(A, NPOT) ((A) & ((NPOT) - 1))
 #define LIBXSMM_DIFF(T0, T1) ((T0) < (T1) ? ((T1) - (T0)) : ((T0) - (T1)))
 #define LIBXSMM_CLMP(VALUE, LO, HI) ((LO) < (VALUE) ? ((VALUE) <= (HI) ? (VALUE) : LIBXSMM_MIN(VALUE, HI)) : LIBXSMM_MAX(LO, VALUE))
-#define LIBXSMM_MUL2(N, NPOT) ((((unsigned long long)N) << (LIBXSMM_NBITS((NPOT) >> 1) - 1)) << 1)
-#define LIBXSMM_DIV2(N, NPOT) ((((unsigned long long)N) >> (LIBXSMM_NBITS((NPOT) >> 1) - 1)) >> 1)
 #define LIBXSMM_SQRT2(N) ((unsigned int)((1ULL << (LIBXSMM_NBITS(N) >> 1)) /*+ LIBXSMM_MIN(1, N)*/))
 #define LIBXSMM_HASH2(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
@@ -412,7 +410,7 @@
 # define LIBXSMM_ASSUME_ALIGNED(A, N) assert(0 == ((uintptr_t)(A)) % (N))
 #endif
 #define LIBXSMM_ALIGN(POINTER, ALIGNMENT/*POT*/) ((POINTER) + (LIBXSMM_UP2((uintptr_t)(POINTER), ALIGNMENT) - ((uintptr_t)(POINTER))) / sizeof(*(POINTER)))
-#define LIBXSMM_FOLD2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(LIBXSMM_DIV2((uintptr_t)(POINTER), ALIGNMENT), NPOT)
+#define LIBXSMM_FOLD2(POINTER, ALIGNMENT/*POT*/, NPOT) LIBXSMM_MOD2(((uintptr_t)(POINTER) / (ALIGNMENT)), NPOT)
 
 #if defined(_MSC_VER) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) /* account for incorrect handling of __VA_ARGS__ */
 # define LIBXSMM_SELECT_ELEMENT(INDEX1/*one-based*/, .../*elements*/) LIBXSMM_CONCATENATE(LIBXSMM_SELECT_ELEMENT_, INDEX1)LIBXSMM_EXPAND((__VA_ARGS__))
