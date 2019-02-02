@@ -34,7 +34,7 @@
 /* 128 bit state for scalar rng */
 static uint32_t libxsmm_rng_scalar_state[4];
 
-LIBXSMM_API_INTERN inline uint32_t libxsmm_rng_float_next_uint32() {
+static inline uint32_t libxsmm_rng_float_next_uint32() {
   const uint32_t new = libxsmm_rng_scalar_state[0] + libxsmm_rng_scalar_state[3];
   const uint32_t t = libxsmm_rng_scalar_state[1] << 9;
 
@@ -79,7 +79,7 @@ LIBXSMM_API void  libxsmm_rng_float_jump() {
   uint32_t s1 = 0;
   uint32_t s2 = 0;
   uint32_t s3 = 0;
-  int i,b;
+  size_t i, b;
 
   for(i = 0; i < sizeof(JUMP) / sizeof(*JUMP); i++) {
     for(b = 0; b < 32; b++) {
