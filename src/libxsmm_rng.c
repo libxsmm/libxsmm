@@ -35,7 +35,7 @@
 static uint32_t libxsmm_rng_scalar_state[4];
 
 static inline uint32_t libxsmm_rng_float_next_uint32() {
-  const uint32_t new = libxsmm_rng_scalar_state[0] + libxsmm_rng_scalar_state[3];
+  const uint32_t rn = libxsmm_rng_scalar_state[0] + libxsmm_rng_scalar_state[3];
   const uint32_t t = libxsmm_rng_scalar_state[1] << 9;
 
   libxsmm_rng_scalar_state[2] ^= libxsmm_rng_scalar_state[0];
@@ -45,7 +45,7 @@ static inline uint32_t libxsmm_rng_float_next_uint32() {
   libxsmm_rng_scalar_state[2] ^= t;
   libxsmm_rng_scalar_state[3] = ( (libxsmm_rng_scalar_state[3] << 11) | (libxsmm_rng_scalar_state[3] >> (32 - 11)) );
 
-  return new;
+  return rn;
 }
 
 
