@@ -45,7 +45,7 @@
 #endif
 
 /* set the seed of the rng */
-LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed[4] );
+LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed );
 
 /* This float rng is using xoshiro128+ 1.0, work done by
    David Blackman and Sebastiano Vigna (vigna@acm.org)

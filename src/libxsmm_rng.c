@@ -49,11 +49,11 @@ LIBXSMM_API_INTERN inline uint32_t libxsmm_rng_float_next_uint32() {
 }
 
 
-LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed[4] ) {
-  libxsmm_rng_scalar_state[0] = seed[0];
-  libxsmm_rng_scalar_state[1] = seed[1];
-  libxsmm_rng_scalar_state[2] = seed[2];
-  libxsmm_rng_scalar_state[3] = seed[3];
+LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed ) {
+  libxsmm_rng_scalar_state[0] = seed;
+  libxsmm_rng_scalar_state[1] = seed+10;
+  libxsmm_rng_scalar_state[2] = seed+20;
+  libxsmm_rng_scalar_state[3] = seed+30;
 }
 
 
@@ -66,7 +66,7 @@ LIBXSMM_API float libxsmm_rng_float_next() {
 
   rng_mantissa = rng_mantissa >> 9;
   rng.f = 1.0f;
-  rng.i = rng.i & rng_mantissa;
+  rng.i = rng.i | rng_mantissa;
 
   return (rng.f - 1.0f);
 }
