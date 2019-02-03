@@ -117,10 +117,10 @@ LIBXSMM_API void libxsmm_rng_float_set_seed_avx512( const uint32_t seed ) {
   }
 
   /* load state */
-  libxsmm_rng_avx512_state_0 = _mm512_loadu_epi32( temp_state    );
-  libxsmm_rng_avx512_state_1 = _mm512_loadu_epi32( temp_state+16 );
-  libxsmm_rng_avx512_state_2 = _mm512_loadu_epi32( temp_state+32 );
-  libxsmm_rng_avx512_state_3 = _mm512_loadu_epi32( temp_state+48 );
+  libxsmm_rng_avx512_state_0 = _mm512_loadu_si512( temp_state    );
+  libxsmm_rng_avx512_state_1 = _mm512_loadu_si512( temp_state+16 );
+  libxsmm_rng_avx512_state_2 = _mm512_loadu_si512( temp_state+32 );
+  libxsmm_rng_avx512_state_3 = _mm512_loadu_si512( temp_state+48 );
 }
 
 
