@@ -49,6 +49,7 @@ int main(int argc, char* argv[])
   double rng_var;
   double rng_stddev;
   float* rngs;
+  float  vrng[16];
   libxsmm_blasint num_rngs;
   libxsmm_blasint i;
   unsigned long long start;
@@ -74,6 +75,9 @@ int main(int argc, char* argv[])
   rng_min = 2.0;
   rng_max = 0.0;
   for ( i = 0 ; i < num_rngs; ++i ) {
+#if 0
+    printf("%f ", rngs[i] );
+#endif
     rng_sum += (double)rngs[i];
     rng_min = (rngs[i] < rng_min) ? rngs[i] : rng_min;
     rng_max = (rngs[i] > rng_max) ? rngs[i] : rng_max;
@@ -90,8 +94,15 @@ int main(int argc, char* argv[])
   for (i = 0; i < num_rngs; ++i) {
     libxsmm_rng_float_seq( rngs, 1 );
   }
-  printf("\nlibxsmm_rng_float:  %llu cycles per random number\n",
+  printf("\nlibxsmm_rng_float:  %llu cycles per random number (scalar)\n",
     libxsmm_timer_cycles(start, libxsmm_timer_tick()) / num_rngs);
+
+  start = libxsmm_timer_tick();
+  for (i = 0; i < num_rngs; ++i) {
+    libxsmm_rng_float_seq( vrng, 16 );
+  }
+  printf("\nlibxsmm_rng_float:  %llu cycles per random number (vlen=16)\n",
+    libxsmm_timer_cycles(start, libxsmm_timer_tick()) / (num_rngs*16));
 
   /* let's compute some values of the random numbers */
   printf("\nWe have generatred %i random numbers uniformly distributed in [0,1(\n", num_rngs);

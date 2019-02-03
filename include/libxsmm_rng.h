@@ -56,7 +56,4 @@ LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed );
  */
 LIBXSMM_API void libxsmm_rng_float_seq( float* rngs, const libxsmm_blasint count );
 
-/* Jump by sequence by 2^64 entries */
-LIBXSMM_API void libxsmm_rng_float_jump();
-
 #endif /* LIBXSMM_RNG_H */
