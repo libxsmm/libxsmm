@@ -54,9 +54,9 @@ LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed );
    floating-point generation, what we do here and generate numbers in
    [0,1(.
  */
-LIBXSMM_API float libxsmm_rng_float_next();
+LIBXSMM_API void libxsmm_rng_float_seq( float* rngs, const libxsmm_blasint count );
 
 /* Jump by sequence by 2^64 entries */
-LIBXSMM_API void  libxsmm_rng_float_jump();
+LIBXSMM_API void libxsmm_rng_float_jump();
 
 #endif /* LIBXSMM_RNG_H */

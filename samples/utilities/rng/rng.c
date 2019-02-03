@@ -49,8 +49,8 @@ int main(int argc, char* argv[])
   double rng_var;
   double rng_stddev;
   float* rngs;
-  int num_rngs;
-  int i;
+  libxsmm_blasint num_rngs;
+  libxsmm_blasint i;
   unsigned long long start;
 
   if (2 < argc) {
@@ -67,11 +67,13 @@ int main(int argc, char* argv[])
   libxsmm_rng_float_set_seed( (uint32_t)(time(0)));
 
   /* fill array with random floats */
+  libxsmm_rng_float_seq( rngs, num_rngs );
+
+  /* calculate quality of random numbers */
   rng_sum = 0.0;
   rng_min = 2.0;
   rng_max = 0.0;
   for ( i = 0 ; i < num_rngs; ++i ) {
-    rngs[i] = libxsmm_rng_float_next();
     rng_sum += (double)rngs[i];
     rng_min = (rngs[i] < rng_min) ? rngs[i] : rng_min;
     rng_max = (rngs[i] > rng_max) ? rngs[i] : rng_max;
@@ -86,7 +88,7 @@ int main(int argc, char* argv[])
 
   start = libxsmm_timer_tick();
   for (i = 0; i < num_rngs; ++i) {
-    libxsmm_rng_float_next();
+    libxsmm_rng_float_seq( rngs, 1 );
   }
   printf("\nlibxsmm_rng_float:  %llu cycles per random number\n",
     libxsmm_timer_cycles(start, libxsmm_timer_tick()) / num_rngs);

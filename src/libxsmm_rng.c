@@ -57,18 +57,21 @@ LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed ) {
 }
 
 
-LIBXSMM_API float libxsmm_rng_float_next() {
+LIBXSMM_API void libxsmm_rng_float_seq( float* rngs, const libxsmm_blasint count ) {
   union Rng_local {
     uint32_t i;
     float    f;
   } rng;
-  uint32_t rng_mantissa = libxsmm_rng_float_next_uint32();
+  uint32_t rng_mantissa;
+  libxsmm_blasint i;
 
-  rng_mantissa = rng_mantissa >> 9;
-  rng.f = 1.0f;
-  rng.i = rng.i | rng_mantissa;
-
-  return (rng.f - 1.0f);
+  for ( i = 0; i < count; ++i ) {
+    rng_mantissa = libxsmm_rng_float_next_uint32();
+    rng_mantissa = rng_mantissa >> 9;
+    rng.f = 1.0f;
+    rng.i = rng.i | rng_mantissa;
+    rngs[i] = (rng.f - 1.0f);
+  }
 }
 
 
