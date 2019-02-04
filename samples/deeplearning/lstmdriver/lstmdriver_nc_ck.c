@@ -395,19 +395,19 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
       iv = _mm512_mul_ps (iv, minus1);
       iv = _mm512_exp_ps (iv);
       iv = _mm512_add_ps (iv, plus1);
-      iv = _mm512_rcp14_ps (iv);
+      iv = _mm512_div_ps (plus1, iv);
       /* c = tanh(c) */
       cv = _mm512_tanh_ps (cv);
       /* f = sigmoid(f) */
       fv = _mm512_mul_ps (fv, minus1);
       fv = _mm512_exp_ps (fv);
       fv = _mm512_add_ps (fv, plus1);
-      fv = _mm512_rcp14_ps (fv);
+      fv = _mm512_div_ps (plus1, fv);
       /* o = sigmoid(o) */
       ov = _mm512_mul_ps (ov, minus1);
       ov = _mm512_exp_ps (ov);
       ov = _mm512_add_ps (ov, plus1);
-      ov = _mm512_rcp14_ps (ov);
+      ov = _mm512_div_ps (plus1, ov);
       /* cs = f.csp + i.c */
       csv = _mm512_mul_ps (fv, cspv);
       csv = _mm512_fmadd_ps (iv, cv, csv);
@@ -774,14 +774,14 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
 #if defined(TWO_GEMMS)
     if (j > 0) {
       /* compute dout */
-      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K4, &alpha, r4gold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta0, &LIBXSMM_VLA_ACCESS(2, doutgold, j-1, 0, K * N), &K);
+      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K4, &alpha, rgold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta0, &LIBXSMM_VLA_ACCESS(2, doutgold, j-1, 0, K * N), &K);
     } else {
       /* compute dhp */
-      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K4, &alpha, r4gold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, 0, 0, 0, N, 4 * K), &K4, &beta0, dhpgold, &K);
+      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K4, &alpha, rgold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, 0, 0, 0, N, 4 * K), &K4, &beta0, dhpgold, &K);
     }
 
     /* compute dx */
-    LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &C, &N, &K4, &alpha, w4gold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta, &LIBXSMM_VLA_ACCESS(2, dxgold, j, 0, N * C), &C);
+    LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &C, &N, &K4, &alpha, wgold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta, &LIBXSMM_VLA_ACCESS(2, dxgold, j, 0, N * C), &C);
 
     /* compute dw */
     LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K4, &C, &N, &alpha, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, N * C), &C, &beta, dwgold, &K4);
@@ -848,13 +848,13 @@ int main(int argc, char* argv[])
   size_t scratch_size = 0, internalstate_size = 0;
 
   int iters = 10;   /* repetitions of benchmark */
-  int pass = 3;     /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
-  int N = 128;      /* size of mini-batch */
+  int pass = 0;     /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
+  int N = 168;      /* size of mini-batch */
   int C = 512;      /* number of inputs */
-  int K = 64;       /* number of outputs */
-  int t = 5;        /* number of time steps (>= 1) */
+  int K = 512;      /* number of outputs */
+  int t = 50;       /* number of time steps (>= 1) */
+  int bn = 24;
   int bk = 64;
-  int bn = 64;
   int bc = 64;
 
   const char *const env_check = getenv("CHECK");
@@ -923,8 +923,8 @@ int main(int argc, char* argv[])
   if (argc > j) K     = atoi(argv[j++]);
   if (argc > j) t     = atoi(argv[j++]);
   if (argc > j) bn    = atoi(argv[j++]);
-  if (argc > j) bk    = atoi(argv[j++]);
   if (argc > j) bc    = atoi(argv[j++]);
+  if (argc > j) bk    = atoi(argv[j++]);
 
   if (t <= 0) {
     printf("time_steps %d should be greater than or equal to 1\n\n", t);
