@@ -214,9 +214,9 @@ if (ltid == 0) {
 #endif
 
 if (use_fused_implementation) {
-#include "libxsmm_dnn_rnncell_st_lstm_fwd_nc_ck_fused.tpl.c"
+#include "libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_fused.tpl.c"
 } else {
-#include "libxsmm_dnn_rnncell_st_lstm_fwd_nc_ck_diffused.tpl.c"
+#include "libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_diffused.tpl.c"
 }
 
 #ifdef PROFILE
