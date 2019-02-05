@@ -202,7 +202,26 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_kcck(libxs
   /* check if we have a kernel JITed */
   if ( handle->fwd_generic != 0 ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      status = libxsmm_dnn_rnncell_st_bwdupd_nc_kcck_f32_f32( handle, kind, start_thread, tid );
+      typedef float element_input_type;
+      typedef float element_output_type;
+      typedef float element_filter_type;
+      if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_RELU ) {
+#define LIBXSMM_DNN_RNN_RELU_BWDUPD
+# include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_kcck.tpl.c"
+#undef LIBXSMM_DNN_RNN_RELU_BWDUPD
+      } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_SIGMOID ) {
+#define LIBXSMM_DNN_RNN_SIGMOID_BWDUPD
+# include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_kcck.tpl.c"
+#undef LIBXSMM_DNN_RNN_SIGMOID_BWDUPD
+      } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_TANH ) {
+#define LIBXSMM_DNN_RNN_TANH_BWDUPD
+# include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_kcck.tpl.c"
+#undef LIBXSMM_DNN_RNN_TANH_BWDUPD
+      } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
+# include "template/libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck.tpl.c"
+      } else {
+        /* should not happen */
+      }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
@@ -236,7 +255,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_ncnc_kcck(lib
   /* check if we have a kernel JITed */
   if ( handle->fwd_generic != 0 ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      status = libxsmm_dnn_rnncell_st_bwdupd_ncnc_kcck_f32_f32( handle, kind, start_thread, tid );
+      LIBXSMM_UNUSED(kind); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+      status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;

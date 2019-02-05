@@ -82,7 +82,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
       handle->bk = handle->desc.K;
       *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_K_BLOCKING;
     }
-     if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
+    if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
       handle->fwd_generic = 0;
       handle->bwdupd_generic = 0;
     } else {
