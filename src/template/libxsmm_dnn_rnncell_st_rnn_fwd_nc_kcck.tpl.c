@@ -86,18 +86,18 @@ int my_in_start = my_row_id * in_tasks_per_thread;
 int my_in_end = (my_row_id+1) * in_tasks_per_thread;
 int my_ik_start = my_col_id * ik_tasks_per_thread;
 int my_ik_end = (my_col_id+1) * ik_tasks_per_thread;
-int perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads && cBlocks <= 256 && kBlocks <= 256 && ik_tasks_per_thread <= 64 && in_tasks_per_thread <= 2 ) ? 1 : 0;
+int perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads && cBlocks <= 32 && kBlocks <= 32 && ik_tasks_per_thread <= 16 && in_tasks_per_thread <= 2 ) ? 1 : 0;
 
 if (perform_2d_decomp) {
   /* Auxiliary arrays for batch-reduce gemms and potential prefetch */
-  const element_input_type *A_array[64][2][256];
-  const element_input_type *B_array[64][2][256];
-  const element_input_type *A_array2[64][2][256];
-  const element_input_type *B_array2[64][2][256];
-  const element_input_type *A_array_pf[64][2][256];
-  const element_input_type *B_array_pf[64][2][256];
-  const element_input_type *A_array2_pf[64][2][256];
-  const element_input_type *B_array2_pf[64][2][256];
+  const element_input_type *A_array[16][2][32];
+  const element_input_type *B_array[16][2][32];
+  const element_input_type *A_array2[16][2][32];
+  const element_input_type *B_array2[16][2][32];
+  const element_input_type *A_array_pf[16][2][32];
+  const element_input_type *B_array_pf[16][2][32];
+  const element_input_type *A_array2_pf[16][2][32];
+  const element_input_type *B_array2_pf[16][2][32];
   int ii, jj;
 
   /* lazy barrier init */
