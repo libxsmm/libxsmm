@@ -582,6 +582,39 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square_ld(libxsmm_bla
   }
 }
 
+
+LIBXSMM_API_INTERN void libxsmm_internal_matrix_rne_mask_fp32_bfp16_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, float* src, float* dst) {
+  libxsmm_blasint i,j;
+
+  /* rnaz buffer to bfp16 */
+  for ( j = 0; j < n; ++j ) {
+    for ( i = 0; i < m; ++i ) {
+      unsigned int int_round = 0;
+      unsigned int do_round = 1;
+      const void *const ptr = &int_round;
+
+      int_round = *((unsigned int*)&(src[(j*ld)+i]));
+
+      /* we don't round NaN and inf */
+      if ( (int_round & 0x7f800000) == 0x7f800000 ) {
+        do_round = 0;
+      }
+
+      /* perform round nearest tie even */
+      if ( do_round != 0 ) {
+        unsigned int fixup = (int_round >> 16) & 1;
+        int_round = int_round + 0x00007fff + fixup;
+      }
+
+      /* chop bits to create BFP16 in FP32 */
+      int_round = int_round & 0xffff0000;
+
+      dst[(j*ld)+i] = *((float*)ptr);
+    }
+  }
+}
+
+
 LIBXSMM_API_INTERN void libxsmm_internal_compute_dcp_dci_di_df_dp_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, int timestep, int t, LIBXSMM_DNN_ELTWISE_FTYPE *dout, LIBXSMM_DNN_ELTWISE_FTYPE *dh, LIBXSMM_DNN_ELTWISE_FTYPE *o, LIBXSMM_DNN_ELTWISE_FTYPE *co, LIBXSMM_DNN_ELTWISE_FTYPE *dcs, LIBXSMM_DNN_ELTWISE_FTYPE *ii, LIBXSMM_DNN_ELTWISE_FTYPE *ci, LIBXSMM_DNN_ELTWISE_FTYPE *dci, LIBXSMM_DNN_ELTWISE_FTYPE *di, LIBXSMM_DNN_ELTWISE_FTYPE *cps, LIBXSMM_DNN_ELTWISE_FTYPE *f, LIBXSMM_DNN_ELTWISE_FTYPE *df, LIBXSMM_DNN_ELTWISE_FTYPE *dp, LIBXSMM_DNN_ELTWISE_FTYPE *dcp) {
 #if defined(LIBXSMM_INTRINSICS_AVX512)
   libxsmm_blasint i, j;
