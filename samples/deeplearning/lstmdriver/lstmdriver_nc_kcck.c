@@ -495,7 +495,7 @@ int main(int argc, char* argv[])
   dcs   = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   dht   = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
   htest = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  djdxtestt  = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  djdxtestt  = (float*)libxsmm_aligned_malloc(C*N*t*sizeof(float), 2097152);
   djdwtest   = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
   djdrtest   = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
   djdbtest   = (float*)libxsmm_aligned_malloc(K*4*sizeof(float), 2097152);
