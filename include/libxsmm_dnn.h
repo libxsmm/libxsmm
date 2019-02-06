@@ -130,15 +130,10 @@ typedef enum libxsmm_dnn_tensor_dimtype {
   LIBXSMM_DNN_TENSOR_DIMTYPE_R,
   /** kernel width */
   LIBXSMM_DNN_TENSOR_DIMTYPE_S,
+  /** sequence lenth counter */
+  LIBXSMM_DNN_TENSOR_DIMTYPE_T,
   /** general counter */
-  LIBXSMM_DNN_TENSOR_DIMTYPE_X,
-
-  /** number of outputs for RNN/LSTM/GRU */
-  LIBXSMM_DNN_TENSOR_DIMTYPE_RLM,
-  /** number of inputs for RNN/LSTM/GRU */
-  LIBXSMM_DNN_TENSOR_DIMTYPE_RLK,
-  /** size of minibatch for RNN/LSTM/GRU */
-  LIBXSMM_DNN_TENSOR_DIMTYPE_RLN
+  LIBXSMM_DNN_TENSOR_DIMTYPE_X
 } libxsmm_dnn_tensor_dimtype;
 
 /** types of different buffers */
