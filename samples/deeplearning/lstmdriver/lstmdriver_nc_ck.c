@@ -46,7 +46,13 @@
 #endif
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
+
 /* #define TWO_GEMMS */
+#define PROFILE
+#if defined(PROFILE)
+unsigned long long Gbl_blas_start, Gbl_blas_end, Gbl_eltwise_start, Gbl_eltwise_end, Gbl_conv_start, Gbl_conv_end;
+double Gbl_blas_total, Gbl_eltwise_total, Gbl_conv_total;
+#endif
 
 LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
   int i;
@@ -635,6 +641,9 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
   for (j = 0; j < K; j++) {
     bfgold_fb[j] = bfgold[j] + forget_bias;
   }
+#if defined(PROFILE)
+  Gbl_conv_start = libxsmm_timer_tick();
+#endif
 #if defined(TWO_GEMMS)
   convert_ck_c4k(C, K, wigold, wgold);
   convert_ck_c4k(C, K, wcgold, &(wgold[K]));
@@ -654,12 +663,19 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
   convert_ck_c4k(K, K, rfgold, &(wgold[C*K*4 + 2*K]));
   convert_ck_c4k(K, K, rogold, &(wgold[C*K*4 + 3*K]));
 #endif
+#if defined(PROFILE)
+  Gbl_conv_end = libxsmm_timer_tick();
+  Gbl_conv_total += libxsmm_timer_duration(Gbl_conv_start, Gbl_conv_end);
+#endif
   for (j = 0; j < t; ++j) {
     /* Initialization with bias */
     matrix_copy_bias(K, N, 4*K, bigold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
     matrix_copy_bias(K, N, 4*K, bcgold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K));
     matrix_copy_bias(K, N, 4*K, bfgold_fb, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K));
     matrix_copy_bias(K, N, 4*K, bogold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K));
+#if defined(PROFILE)
+    Gbl_blas_start = libxsmm_timer_tick();
+#endif
 #if defined(TWO_GEMMS)
     /* icfo += W * x */
     LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &C, &alpha, wgold, &K4, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, N * C), &C, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
@@ -679,6 +695,11 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
     }
     /* icfo += (W * x) + (R * h) */
     LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &CK, &alpha, wgold, &K4, xhgold, &CK, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
+#endif
+#if defined(PROFILE)
+    Gbl_blas_end = libxsmm_timer_tick();
+    Gbl_blas_total += libxsmm_timer_duration(Gbl_blas_start, Gbl_blas_end);
+    Gbl_eltwise_start = libxsmm_timer_tick();
 #endif
     if (j == 0) {
       lstm_fwd_eltwise_merged( N, K,
@@ -701,6 +722,10 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
                                &LIBXSMM_VLA_ACCESS(2, cogold, j, 0, K * N),
                                &LIBXSMM_VLA_ACCESS(2, hgold, j, 0, K * N) );
     }
+#if defined(PROFILE)
+    Gbl_eltwise_end = libxsmm_timer_tick();
+    Gbl_eltwise_total += libxsmm_timer_duration(Gbl_eltwise_start, Gbl_eltwise_end);
+#endif
   }
   libxsmm_free(bfgold_fb);
 #if !defined(TWO_GEMMS)
@@ -745,6 +770,9 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
   LIBXSMM_VLA_DECL(2, float, doutgold, doutgoldt, K * N);
   /* BWD/UPD */
   for (j = t-1; j >= 0; --j) {
+#if defined(PROFILE)
+    Gbl_eltwise_start = libxsmm_timer_tick();
+#endif
     if (t-1 == j) {
       dout = NULL;
       dcs = dcsgold;
@@ -771,6 +799,11 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
                                  &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 2*K, N, 4 * K),
                                  &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 3*K, N, 4 * K),
                                  dcspgold, dcs);
+#if defined(PROFILE)
+    Gbl_eltwise_end = libxsmm_timer_tick();
+    Gbl_eltwise_total += libxsmm_timer_duration(Gbl_eltwise_start, Gbl_eltwise_end);
+    Gbl_blas_start = libxsmm_timer_tick();
+#endif
 #if defined(TWO_GEMMS)
     if (j > 0) {
       /* compute dout */
@@ -809,6 +842,10 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
       convert_nk_nck(N, K, C+K, &LIBXSMM_VLA_ACCESS(2, hgold, j-1, 0, K * N), &(xhgold[C]));
     }
     LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K4, &CK, &N, &alpha, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, xhgold, &CK, &beta, dwgold, &K4);
+#endif
+#if defined(PROFILE)
+    Gbl_blas_end = libxsmm_timer_tick();
+    Gbl_blas_total += libxsmm_timer_duration(Gbl_blas_start, Gbl_blas_end);
 #endif
     /* compute db */
 #if defined(_OPENMP)
@@ -1516,6 +1553,11 @@ int main(int argc, char* argv[])
       printf("#   Performance - FWD (BLAS)             #\n");
       printf("##########################################\n");
       /* run LIBXSMM LSTM for performance */
+#if defined(PROFILE)
+      Gbl_blas_total = 0.0;
+      Gbl_eltwise_total = 0.0;
+      Gbl_conv_total = 0.0;
+#endif
       l_start = libxsmm_timer_tick();
       for (j = 0; j < iters; ++j) {
         lstm_ref_fwd( N, C, K, t, forget_bias,
@@ -1532,6 +1574,22 @@ int main(int argc, char* argv[])
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+#if defined(PROFILE)
+      flops = (((2.0 * K * N * C) + (2.0 * K * N * K)) * 4.0) * (double)t * (double)iters;
+      printf("BLAS GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("BLAS time = %.5g\n", ((double)(Gbl_blas_total/iters)));
+      printf("BLAS GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_blas_total);
+
+      flops = ((tflops * K * N) * 4.0 + (4.0 * K * N) + (tflops * K * N)) * (double)t * (double)iters;
+      printf("ELTWISE GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("ELTWISE time = %.5g\n", ((double)(Gbl_eltwise_total/iters)));
+      printf("ELTWISE GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_eltwise_total);
+
+      flops = ((C * K  + K * K) * 4.0) * (double)iters;
+      printf("CONVERSION GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("CONVERSION time = %.5g\n", ((double)(Gbl_conv_total/iters)));
+      printf("CONVERSION GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_conv_total);
+#endif
 
       printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
     }
@@ -1690,6 +1748,10 @@ int main(int argc, char* argv[])
       printf("# Performance - BWD+UPD (BLAS)           #\n");
       printf("##########################################\n");
       /* run LIBXSMM LSTM for performance */
+#if defined(PROFILE)
+      Gbl_blas_total = 0.0;
+      Gbl_eltwise_total = 0.0;
+#endif
       l_start = libxsmm_timer_tick();
       for (j = 0; j < iters; ++j) {
         lstm_ref_bwd_upd( N, C, K, t,
@@ -1706,6 +1768,17 @@ int main(int argc, char* argv[])
       printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
       printf("bp+wu time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+#if defined(PROFILE)
+      flops = (((4.0 * K * N * C) + (4.0 * K * N * K)) * 4.0) * (double)t * (double)iters;
+      printf("BLAS GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("BLAS time = %.5g\n", ((double)(Gbl_blas_total/iters)));
+      printf("BLAS GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_blas_total);
+
+      flops = (19.0 * K * N) * (double)t * (double)iters;
+      printf("ELTWISE GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("ELTWISE time = %.5g\n", ((double)(Gbl_eltwise_total/iters)));
+      printf("ELTWISE GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_eltwise_total);
+#endif
 
       printf("PERFDUMP,BP+WU,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
     }
