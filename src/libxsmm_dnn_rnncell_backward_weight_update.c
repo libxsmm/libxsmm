@@ -53,6 +53,7 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck_f32_f32(libxsmm_dnn_rnncel
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
+#define LIBXSMM_RNN_CELL_AVX512
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
@@ -69,13 +70,12 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck_f32_f32(libxsmm_dnn_rnncel
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_ck_generic.tpl.c"
 # undef LIBXSMM_DNN_RNN_TANH_BWDUPD
   } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
-#define LIBXSMM_RNN_CELL_AVX512
 # include "template/libxsmm_internal_lstm_bwdupd_fused_eltwise.tpl.c"
 # include "template/libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_ck_generic.tpl.c"
-#undef LIBXSMM_RNN_CELL_AVX512
   } else {
     /* should not happen */
   }
+#undef LIBXSMM_RNN_CELL_AVX512
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(kind);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
@@ -88,6 +88,7 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_kcck_f32_f32(libxsmm_dnn_rnnc
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
+#define LIBXSMM_RNN_CELL_AVX512
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
@@ -104,13 +105,12 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_kcck_f32_f32(libxsmm_dnn_rnnc
 # include "template/libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_kcck.tpl.c"
 # undef LIBXSMM_DNN_RNN_TANH_BWDUPD
   } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
-#define LIBXSMM_RNN_CELL_AVX512
 # include "template/libxsmm_internal_lstm_bwdupd_fused_eltwise.tpl.c"
 # include "template/libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck.tpl.c"
-#undef LIBXSMM_RNN_CELL_AVX512
   } else {
     /* should not happen */
   }
+#undef LIBXSMM_RNN_CELL_AVX512
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid); LIBXSMM_UNUSED(kind);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;

@@ -123,7 +123,7 @@ const libxsmm_blasint chunksize_kk = (work_kk % (libxsmm_blasint)handle->desc.th
 const libxsmm_blasint thr_begin_kk = (ltid * chunksize_kk < work_kk) ? (ltid * chunksize_kk) : work_kk;
 const libxsmm_blasint thr_end_kk = ((ltid + 1) * chunksize_kk < work_kk) ? ((ltid + 1) * chunksize_kk) : work_kk;
 
-#if defined(LIBXSMM_INTRINSICS_AVX512)
+#if defined(LIBXSMM_RNN_CELL_AVX512)
 int k_tasks = K/16;
 int k_chunksize = (k_tasks % (libxsmm_blasint)handle->desc.threads == 0) ? (k_tasks / (libxsmm_blasint)handle->desc.threads) : ((k_tasks / (libxsmm_blasint)handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
@@ -401,7 +401,7 @@ for (i = t-2; i >= 0; --i) {
 
 /* gradient bias */
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-#if defined(LIBXSMM_INTRINSICS_AVX512)
+#if defined(LIBXSMM_RNN_CELL_AVX512)
   for (ik = k_thr_begin; ik < k_thr_end; ik += 16) {
     db_sum = _mm512_setzero_ps();
     for (i = 0; i < t; i++) {
