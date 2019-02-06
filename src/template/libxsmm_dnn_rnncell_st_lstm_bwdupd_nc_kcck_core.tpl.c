@@ -40,7 +40,7 @@ for (j = t-1; j >= 0; --j) {
     in = (inik % (N/bn))*bn;
     ik = (inik / (N/bn))*bk;
 
-#if defined(LIBXSMM_INTRINSICS_AVX512)
+#if defined(LIBXSMM_RNN_CELL_AVX512)
     /* Compute dcp, dci, di, df, dp */
     cps_ptr = (j == 0) ? (element_output_type*) &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K) : (element_output_type*) &LIBXSMM_VLA_ACCESS(3, cs, j-1, in, ik, N, K);
     if (bcbk_multiples_of_16) {
@@ -496,7 +496,7 @@ for (j = t-1; j >= 0; --j) {
     if (ltid == 0) _start = _rdtsc();
 #endif
     /* gradient bias */
-#if defined(LIBXSMM_INTRINSICS_AVX512)
+#if defined(LIBXSMM_RNN_CELL_AVX512)
     if (bcbk_multiples_of_16) {
       for (ik = k_thr_begin; ik < k_thr_end; ik += 16) {
         dbi_sum = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&dbi[ik]);
