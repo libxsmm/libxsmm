@@ -259,6 +259,9 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   libxsmm_internal_matrix_zero(K*4,   db,  start_thread, tid, handle->desc.threads);
 }
 
+#ifdef PROFILE
+if (ltid == 0) _start = _rdtsc();
+#endif
 /* transpose W */
 for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
   ic = (ikic / (K/bk));
@@ -286,6 +289,12 @@ for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
     }
   }
 }
+#ifdef PROFILE
+if (ltid == 0) {
+  _end = _rdtsc();
+  weight_trans_cycles += _end - _start;
+}
+#endif
 
 #include "libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck_core.tpl.c"
 
