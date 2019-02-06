@@ -384,7 +384,7 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
 # pragma omp parallel for private(j, l) collapse(2)
 #endif
   for (j = 0; j < N; j++) {
-    for (l = 0; l < K; l+=16) {
+    for (l = 0; l < rem; l+=16) {
       __m512 iv   = _mm512_load_ps (&(i[j*4*K + l]));
       __m512 cv   = _mm512_load_ps (&(c[j*4*K + l]));
       __m512 fv   = _mm512_load_ps (&(f[j*4*K + l]));
@@ -491,7 +491,7 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
 # pragma omp parallel for private(j, l) collapse(2)
 #endif
   for (j = 0; j < N; j++) {
-    for (l = 0; l < K; l+=16) {
+    for (l = 0; l < rem; l+=16) {
       __m512 iv       = _mm512_load_ps (&(i[j*4*K + l]));
       __m512 cv       = _mm512_load_ps (&(c[j*4*K + l]));
       __m512 fv       = _mm512_load_ps (&(f[j*4*K + l]));
@@ -1124,6 +1124,15 @@ int main(int argc, char* argv[])
 
     libxsmm_handle = libxsmm_dnn_create_rnncell( lstmcell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
+    if ( N % bn != 0 ) {
+      bn = N;
+    }
+    if ( C % bc != 0 ) {
+      bc = C;
+    }
+    if ( K % bk != 0 ) {
+      bk = K;
+    }
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_allocate_forget_bias(libxsmm_handle, forget_bias) );
 
     /* setup LIBXSMM buffers and filter */
