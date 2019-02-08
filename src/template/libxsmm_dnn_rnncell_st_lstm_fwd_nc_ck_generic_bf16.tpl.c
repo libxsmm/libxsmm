@@ -244,10 +244,10 @@ if (ltid == 0) {
 }
 #endif
 
-if (1) { // (use_fused_implementation) {
+if (use_fused_implementation) {
 #include "libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_fused_bf16.tpl.c"
 } else {
-  //#include "libxsmm_dnn_rnncell_st_lstm_fwd_nc_ck_diffused.tpl.c"
+#include "libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_diffused_bf16.tpl.c"
 }
 
 #ifdef PROFILE
