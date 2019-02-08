@@ -48,7 +48,7 @@
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
-/* #define TWO_GEMMS */
+//#define TWO_GEMMS
 #define PROFILE
 #if defined(PROFILE)
 unsigned long long Gbl_blas_start, Gbl_blas_end, Gbl_eltwise_start, Gbl_eltwise_end, Gbl_conv_start, Gbl_conv_end;
@@ -62,6 +62,16 @@ LIBXSMM_INLINE void zero_buf_bfp16(libxsmm_bfloat16* buf, size_t size) {
 #endif
   for (i = 0; i < (int)size; ++i) {
     buf[i] = 0;
+  }
+}
+
+LIBXSMM_INLINE void zero_buf_f32(float* buf, size_t size) {
+  int i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < (int)size; ++i) {
+    buf[i] = 0.0f;
   }
 }
 
@@ -1114,24 +1124,24 @@ int main(int argc, char* argv[])
   LIBXSMM_MATINIT_OMP(float, 24, bfgold, 1, K, 1, 1.0);
   LIBXSMM_MATINIT_OMP(float, 24, bogold, 1, K, 1, 1.0);
   LIBXSMM_MATINIT_OMP(float, 24, bcgold, 1, K, 1, 1.0);
-  zero_buf(csgoldt, K*N*t);
-  zero_buf(cogoldt, K*N*t);
-  zero_buf(hgoldt,  K*N*t);
+  zero_buf_f32(csgoldt, K*N*t);
+  zero_buf_f32(cogoldt, K*N*t);
+  zero_buf_f32(hgoldt,  K*N*t);
   /* BWD/UPD */
   for (j = 0; j < t; ++j) {
     LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, dhgold, j, 0, K * N), N, K, N, 1.0);
   }
   LIBXSMM_MATINIT_OMP(float, 24, dcsgold, N, K, N, 1.0);
-  zero_buf(dxgoldt,  N*C*t);
-  zero_buf(dcspgold, K*N);
-  zero_buf(dhpgold,  K*N);
+  zero_buf_f32(dxgoldt,  N*C*t);
+  zero_buf_f32(dcspgold, K*N);
+  zero_buf_f32(dhpgold,  K*N);
 #if defined(TWO_GEMMS)
-  zero_buf(dwgold, C*K*4);
-  zero_buf(drgold, K*K*4);
+  zero_buf_f32(dwgold, C*K*4);
+  zero_buf_f32(drgold, K*K*4);
 #else
-  zero_buf(dwgold, (C+K)*K*4);
+  zero_buf_f32(dwgold, (C+K)*K*4);
 #endif
-  zero_buf(dbgold, K*4);
+  zero_buf_f32(dbgold, K*4);
 
   /* first touch LIBXSMM */
   zero_buf_bfp16(xt,  N*C*t);
@@ -1415,7 +1425,7 @@ int main(int argc, char* argv[])
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
       }
 
-      /* Upconvert libxsmm buffer to fp32 for correctness check */
+      /* Upconvert libxsmm bf16 buffer to fp32 for correctness check */
       matrix_copy_bfp16_f32(t*K*N, ht, h_test);
 
       /* compare */
@@ -1442,8 +1452,6 @@ int main(int argc, char* argv[])
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
       }
     }
-
-    return 0;
 
     if ( (pass == 1) && LIBXSMM_NEQ(0, check) ) {
       printf("##########################################\n");

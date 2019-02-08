@@ -69,7 +69,7 @@ for (j = 0; j < t; ++j) {
       } else {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
           A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(5, ri, ikb, icb + CB*KB_BLOCKS, 0, 0, 0, kBlocks, bk_lp, bk, lpb);
-          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
+          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, h_out, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
         }
       }
       /* Reduce batch gemm call  */
@@ -112,7 +112,7 @@ for (j = 0; j < t; ++j) {
       } else {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
           A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(5, rc, ikb, icb + CB*KB_BLOCKS, 0, 0, 0, kBlocks, bk_lp, bk, lpb);
-          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
+          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, h_out, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
         }
       }
       /* Reduce batch gemm call  */
@@ -155,7 +155,7 @@ for (j = 0; j < t; ++j) {
       } else {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
           A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(5, rf, ikb, icb + CB*KB_BLOCKS, 0, 0, 0, kBlocks, bk_lp, bk, lpb);
-          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
+          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, h_out, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
         }
       }
       /* Reduce batch gemm call  */
@@ -198,7 +198,7 @@ for (j = 0; j < t; ++j) {
       } else {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
           A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(5, ro, ikb, icb + CB*KB_BLOCKS, 0, 0, 0, kBlocks, bk_lp, bk, lpb);
-          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
+          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, h_out, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
         }
       }
       /* Reduce batch gemm call  */
