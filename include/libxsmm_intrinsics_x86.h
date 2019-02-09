@@ -400,15 +400,15 @@
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const double*)(A))
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const float*)(A))
 /* Clang misses _mm512_stream_p? (checked with v3.8.1). */
-# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_store_si512(A, B)
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps(A, B)
+# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_store_si512((A), (B))
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps((A), (B))
 # define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_store_pd(A, B)
 #else
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const float*)(A))
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const double*)(A))
-# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_stream_si512((__m512i*)(A), B)
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_stream_ps(A, B)
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_stream_pd(A, B)
+# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_stream_si512((__m512i*)(A), (B))
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_stream_ps((A), (B))
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_stream_pd((A), (B))
 #endif
 #if defined(LIBXSMM_INTEL_COMPILER)
 # if 1600 <= (LIBXSMM_INTEL_COMPILER)
@@ -557,6 +557,30 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRIN
   const __mmask16 mm512_roundbf16rne_mask1_ = _mm512_cmp_epi32_mask(_mm512_and_epi32(mm512_roundbf16rne_a_, vnaninf), vnaninf, _MM_CMPINT_NE);
   const __mmask16 mm512_roundbf16rne_mask2_ = _mm512_cmp_epi32_mask(_mm512_and_epi32(mm512_roundbf16rne_a_, vfixupmask), vfixupmask, _MM_CMPINT_EQ);
   return _mm512_mask_add_epi32(mm512_roundbf16rne_a_, mm512_roundbf16rne_mask1_, mm512_roundbf16rne_a_, _mm512_mask_add_epi32(vrneadd, mm512_roundbf16rne_mask2_, vrneadd, vfixup));
+}
+
+#include <math.h>
+
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 _mm512_tanh_generic_ps( __m512 x ) {
+  float _x[16];
+  _mm512_store_ps( _x, x );
+  _x[ 0] = (float) tanh((double) _x[ 0] );
+  _x[ 1] = (float) tanh((double) _x[ 1] );
+  _x[ 2] = (float) tanh((double) _x[ 2] );
+  _x[ 3] = (float) tanh((double) _x[ 3] );
+  _x[ 4] = (float) tanh((double) _x[ 4] );
+  _x[ 5] = (float) tanh((double) _x[ 5] );
+  _x[ 6] = (float) tanh((double) _x[ 6] );
+  _x[ 7] = (float) tanh((double) _x[ 7] );
+  _x[ 8] = (float) tanh((double) _x[ 8] );
+  _x[ 9] = (float) tanh((double) _x[ 9] );
+  _x[10] = (float) tanh((double) _x[10] );
+  _x[11] = (float) tanh((double) _x[11] );
+  _x[12] = (float) tanh((double) _x[12] );
+  _x[13] = (float) tanh((double) _x[13] );
+  _x[14] = (float) tanh((double) _x[14] );
+  _x[15] = (float) tanh((double) _x[15] );
+  return _mm512_loadu_ps( _x );
 }
 #endif
 

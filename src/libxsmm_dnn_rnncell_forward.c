@@ -69,7 +69,6 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_nc_ck_f32_f32(libxsmm_dnn_rnncell* 
 # undef LIBXSMM_DNN_RNN_TANH_FWD
   } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
 #define LIBXSMM_RNN_CELL_AVX512
-# include "template/libxsmm_internal_lstm_fwd_fused_eltwise.tpl.c"
 # include "template/libxsmm_dnn_rnncell_st_lstm_fwd_nc_ck_generic.tpl.c"
 #undef LIBXSMM_RNN_CELL_AVX512
   } else {
@@ -137,7 +136,6 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_fwd_nc_kcck_f32_f32(libxsmm_dnn_rnncell
 # undef LIBXSMM_DNN_RNN_TANH_FWD
   } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
 #define LIBXSMM_RNN_CELL_AVX512
-# include "template/libxsmm_internal_lstm_fwd_fused_eltwise.tpl.c"
 # include "template/libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck.tpl.c"
 #undef LIBXSMM_RNN_CELL_AVX512
   } else {
