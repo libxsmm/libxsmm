@@ -343,7 +343,7 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
     libxsmm_descriptor_blob* blob;
   } result;
   if (0 == LIBXSMM_MOD2(typesize, 4)) { /* TODO: more general kernel */
-    const unsigned int typescale = LIBXSMM_DIV2(typesize, 4);
+    const unsigned int typescale = typesize / 4;
     int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
     result.blob = blob;
     result.ptr->unroll_level = (unsigned char)((0 == unroll || 0 >= *unroll) ? 2/*default*/ : LIBXSMM_MIN(*unroll, 64));
