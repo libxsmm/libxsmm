@@ -50,8 +50,8 @@
 /* #define TWO_GEMMS */
 #define PROFILE
 #if defined(PROFILE)
-unsigned long long Gbl_blas_start, Gbl_blas_end, Gbl_eltwise_start, Gbl_eltwise_end, Gbl_conv_start, Gbl_conv_end;
-double Gbl_blas_total, Gbl_eltwise_total, Gbl_conv_total;
+unsigned long long Gbl_blas_start, Gbl_blas_end, Gbl_eltwise_start, Gbl_eltwise_end, Gbl_conv_start, Gbl_conv_end, Gbl_copy_bias_start, Gbl_copy_bias_end;
+double Gbl_blas_total, Gbl_eltwise_total, Gbl_conv_total, Gbl_copy_bias_total;
 #endif
 
 LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
@@ -277,6 +277,20 @@ LIBXSMM_INLINE void matrix_copy_bias(int m, int n, int ld, float *src, float *ds
     int row = i / m;
     int col = i % m;
     dst[row*ld + col] = src[col];
+  }
+}
+
+
+LIBXSMM_INLINE void matrix_copy_forget_bias(int m, int n, int ld, float *src, float *dst, float forget_bias)
+{
+  int i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < m*n; i++) {
+    int row = i / m;
+    int col = i % m;
+    dst[row*ld + col] = src[col] + forget_bias;
   }
 }
 
@@ -617,9 +631,8 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
                    float *bigold, float *bcgold, float *bfgold, float *bogold,
                    float *xgoldt, float *cspgold, float *hpgold,
                    float *csgoldt, float *cogoldt, float *hgoldt,
-                   float *icfogoldt, float *wgold, float *rgold )
+                   float *icfogoldt, float *wgold, float *rgold, float *scratch )
 {
-  float *bfgold_fb;
 #if !defined(TWO_GEMMS)
   float *xhgold;
 #endif
@@ -628,9 +641,8 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
   int j;
   int K4 = K * 4;
   int CK = C + K;
-  bfgold_fb = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
 #if !defined(TWO_GEMMS)
-  xhgold    = (float*)libxsmm_aligned_malloc((C+K)*N*sizeof(float), 2097152);
+  xhgold = scratch;
 #endif
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N * C);
   LIBXSMM_VLA_DECL(2, float, csgold, csgoldt, K * N);
@@ -638,9 +650,6 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
   LIBXSMM_VLA_DECL(2, float, hgold, hgoldt, K * N);
   LIBXSMM_VLA_DECL(3, float, icfogold, icfogoldt, N, 4 * K);
   /* FWD */
-  for (j = 0; j < K; j++) {
-    bfgold_fb[j] = bfgold[j] + forget_bias;
-  }
 #if defined(PROFILE)
   Gbl_conv_start = libxsmm_timer_tick();
 #endif
@@ -669,11 +678,16 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
 #endif
   for (j = 0; j < t; ++j) {
     /* Initialization with bias */
-    matrix_copy_bias(K, N, 4*K, bigold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
-    matrix_copy_bias(K, N, 4*K, bcgold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K));
-    matrix_copy_bias(K, N, 4*K, bfgold_fb, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K));
-    matrix_copy_bias(K, N, 4*K, bogold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K));
 #if defined(PROFILE)
+    Gbl_copy_bias_start = libxsmm_timer_tick();
+#endif
+    matrix_copy_bias       (K, N, 4*K, bigold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
+    matrix_copy_bias       (K, N, 4*K, bcgold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K));
+    matrix_copy_forget_bias(K, N, 4*K, bfgold, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), forget_bias);
+    matrix_copy_bias       (K, N, 4*K, bogold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K));
+#if defined(PROFILE)
+    Gbl_copy_bias_end = libxsmm_timer_tick();
+    Gbl_copy_bias_total += libxsmm_timer_duration(Gbl_copy_bias_start, Gbl_copy_bias_end);
     Gbl_blas_start = libxsmm_timer_tick();
 #endif
 #if defined(TWO_GEMMS)
@@ -727,10 +741,6 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
     Gbl_eltwise_total += libxsmm_timer_duration(Gbl_eltwise_start, Gbl_eltwise_end);
 #endif
   }
-  libxsmm_free(bfgold_fb);
-#if !defined(TWO_GEMMS)
-  libxsmm_free(xhgold);
-#endif
 }
 
 
@@ -740,7 +750,7 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
                        float *icfogoldt, float *wgold, float *rgold,
                        float *dcsgold, float *dhgoldt,
                        float *dwgold, float *drgold, float *dbgold,
-                       float *dxgoldt, float *dcspgold, float *dhpgold )
+                       float *dxgoldt, float *dcspgold, float *dhpgold, float *scratch )
 {
 #if !defined(TWO_GEMMS)
   float *xhgold, *dxhgold;
@@ -753,12 +763,12 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
   int j, l, p;
   int K4 = K * 4;
   int CK = C + K;
+  dicfogoldt = scratch;
+  doutgoldt  = &(scratch[K*N*t*4]);
 #if !defined(TWO_GEMMS)
-  xhgold    = (float*)libxsmm_aligned_malloc((C+K)*N*sizeof(float), 2097152);
-  dxhgold   = (float*)libxsmm_aligned_malloc((C+K)*N*sizeof(float), 2097152);
+  xhgold    = &(scratch[K*N*t*5]);
+  dxhgold   = &(scratch[K*N*t*5 + (C+K)*N]);
 #endif
-  dicfogoldt = (float*)libxsmm_aligned_malloc(K*N*t*4*sizeof(float), 2097152);
-  doutgoldt  = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N * C);
   LIBXSMM_VLA_DECL(2, float, csgold, csgoldt, K * N);
   LIBXSMM_VLA_DECL(2, float, cogold, cogoldt, K * N);
@@ -860,12 +870,6 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
       }
     }
   }
-  libxsmm_free(dicfogoldt);
-  libxsmm_free(doutgoldt);
-#if !defined(TWO_GEMMS)
-  libxsmm_free(xhgold);
-  libxsmm_free(dxhgold);
-#endif
 }
 
 
@@ -876,6 +880,7 @@ int main(int argc, char* argv[])
   float *dwgold, *drgold, *dbgold;
   float *dxgoldt, *dcspgold, *dhpgold, *dcsgold, *dhgoldt;
   float *icfogoldt, *wgold, *rgold;
+  float *scratch_fwd, *scratch_bu;
   float *xt, *csp, *hp, *w, *r, *b, *cst, *ht;
   float *it, *ft, *ot, *cit, *cot;
   float *dxt, *dcsp, *dhp, *dw, *dr, *db, *dcs, *dht;
@@ -1015,11 +1020,15 @@ int main(int argc, char* argv[])
   rgold     = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
   dwgold    = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
   drgold    = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
+  scratch_fwd = NULL;
+  scratch_bu  = (float*)libxsmm_aligned_malloc(K*N*t*5*sizeof(float), 2097152);
 #else
   wgold     = (float*)libxsmm_aligned_malloc((C+K)*K*4*sizeof(float), 2097152);
   rgold     = NULL;
   dwgold    = (float*)libxsmm_aligned_malloc((C+K)*K*4*sizeof(float), 2097152);
   drgold    = NULL;
+  scratch_fwd = (float*)libxsmm_aligned_malloc((C+K)*N*sizeof(float), 2097152);
+  scratch_bu  = (float*)libxsmm_aligned_malloc(((C+K)*N*2 + K*N*t*5)*sizeof(float), 2097152);
 #endif
   dbgold    = (float*)libxsmm_aligned_malloc(K*4*sizeof(float), 2097152);
   dcsgold   = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
@@ -1123,7 +1132,7 @@ int main(int argc, char* argv[])
                   bigold, bcgold, bfgold, bogold,
                   xgoldt, cspgold, hpgold,
                   csgoldt, cogoldt, hgoldt,
-                  icfogoldt, wgold, rgold );
+                  icfogoldt, wgold, rgold, scratch_fwd );
 
     lstm_ref_bwd_upd( N, C, K, t,
                       xgoldt, cspgold, hpgold,
@@ -1131,7 +1140,7 @@ int main(int argc, char* argv[])
                       icfogoldt, wgold, rgold,
                       dcsgold, dhgoldt,
                       dwgold, drgold, dbgold,
-                      dxgoldt, dcspgold, dhpgold );
+                      dxgoldt, dcspgold, dhpgold, scratch_bu );
 
     printf("##########################################\n");
     printf("#      Computing Reference ... done      #\n");
@@ -1557,6 +1566,7 @@ int main(int argc, char* argv[])
       Gbl_blas_total = 0.0;
       Gbl_eltwise_total = 0.0;
       Gbl_conv_total = 0.0;
+      Gbl_copy_bias_total = 0.0;
 #endif
       l_start = libxsmm_timer_tick();
       for (j = 0; j < iters; ++j) {
@@ -1566,7 +1576,7 @@ int main(int argc, char* argv[])
                       bigold, bcgold, bfgold, bogold,
                       xgoldt, cspgold, hpgold,
                       csgoldt, cogoldt, hgoldt,
-                      icfogoldt, wgold, rgold );
+                      icfogoldt, wgold, rgold, scratch_fwd );
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
@@ -1575,6 +1585,7 @@ int main(int argc, char* argv[])
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 #if defined(PROFILE)
+      printf("------------------------------------------\n");
       flops = (((2.0 * K * N * C) + (2.0 * K * N * K)) * 4.0) * (double)t * (double)iters;
       printf("BLAS GFLOP  = %.5g\n", flops*1e-9/(double)iters);
       printf("BLAS time = %.5g\n", ((double)(Gbl_blas_total/iters)));
@@ -1586,9 +1597,15 @@ int main(int argc, char* argv[])
       printf("ELTWISE GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_eltwise_total);
 
       flops = ((C * K  + K * K) * 4.0) * (double)iters;
-      printf("CONVERSION GFLOP  = %.5g\n", flops*1e-9/(double)iters);
-      printf("CONVERSION time = %.5g\n", ((double)(Gbl_conv_total/iters)));
-      printf("CONVERSION GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_conv_total);
+      printf("WEIGHT CONVERSION GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("WEIGHT CONVERSION time = %.5g\n", ((double)(Gbl_conv_total/iters)));
+      printf("WEIGHT CONVERSION GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_conv_total);
+
+      flops = (N * K * 4.0) * (double)iters;
+      printf("COPY BIAS GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("COPY BIAS time = %.5g\n", ((double)(Gbl_copy_bias_total/iters)));
+      printf("COPY BIAS GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_copy_bias_total);
+      printf("------------------------------------------\n");
 #endif
 
       printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
@@ -1760,7 +1777,7 @@ int main(int argc, char* argv[])
                           icfogoldt, wgold, rgold,
                           dcsgold, dhgoldt,
                           dwgold, drgold, dbgold,
-                          dxgoldt, dcspgold, dhpgold );
+                          dxgoldt, dcspgold, dhpgold, scratch_bu );
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
@@ -1769,6 +1786,7 @@ int main(int argc, char* argv[])
       printf("bp+wu time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 #if defined(PROFILE)
+      printf("------------------------------------------\n");
       flops = (((4.0 * K * N * C) + (4.0 * K * N * K)) * 4.0) * (double)t * (double)iters;
       printf("BLAS GFLOP  = %.5g\n", flops*1e-9/(double)iters);
       printf("BLAS time = %.5g\n", ((double)(Gbl_blas_total/iters)));
@@ -1778,6 +1796,7 @@ int main(int argc, char* argv[])
       printf("ELTWISE GFLOP  = %.5g\n", flops*1e-9/(double)iters);
       printf("ELTWISE time = %.5g\n", ((double)(Gbl_eltwise_total/iters)));
       printf("ELTWISE GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_eltwise_total);
+      printf("------------------------------------------\n");
 #endif
 
       printf("PERFDUMP,BP+WU,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
@@ -1870,6 +1889,8 @@ int main(int argc, char* argv[])
   libxsmm_free(dbgold);
   libxsmm_free(dcsgold);
   libxsmm_free(dhgoldt);
+  libxsmm_free(scratch_fwd);
+  libxsmm_free(scratch_bu);
   libxsmm_free(xt);
   libxsmm_free(csp);
   libxsmm_free(hp);
