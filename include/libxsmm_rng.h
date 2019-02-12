@@ -37,22 +37,21 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <stdint.h>
-#if !defined(NDEBUG)
-# include <stdio.h>
-#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
 
-/* set the seed of the rng */
+
+/** Set the seed of the rng. */
 LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed );
 
-/* This float rng is using xoshiro128+ 1.0, work done by
-   David Blackman and Sebastiano Vigna (vigna@acm.org)
-   It's their best and fastest 32-bit generator for 32-bit
-   floating-point numbers. They suggest to use its upper bits for
-   floating-point generation, what we do here and generate numbers in
-   [0,1(.
+/**
+ * This float rng is using xoshiro128+ 1.0, work done by
+ * David Blackman and Sebastiano Vigna (vigna@acm.org).
+ * It is their best and fastest 32-bit generator for
+ * 32-bit floating-point numbers. They suggest to use
+ * its upper bits for floating-point generation, what
+ * we do here and generate numbers in [0,1(.
  */
 LIBXSMM_API void libxsmm_rng_float_seq( float* rngs, const libxsmm_blasint count );
 

@@ -46,6 +46,7 @@
     <ClInclude Include="..\include\libxsmm_malloc.h" />
     <ClInclude Include="..\include\libxsmm_math.h" />
     <ClInclude Include="..\include\libxsmm_mhd.h" />
+    <ClInclude Include="..\include\libxsmm_rng.h" />
     <ClInclude Include="..\include\libxsmm_source.h" />
     <ClInclude Include="..\include\libxsmm_spmdm.h" />
     <ClInclude Include="..\include\libxsmm_sync.h" />
@@ -209,6 +210,7 @@
     <ClCompile Include="..\src\libxsmm_mhd.c" />
     <ClCompile Include="..\src\libxsmm_perf.c" />
     <ClCompile Include="..\src\libxsmm_python.c" />
+    <ClCompile Include="..\src\libxsmm_rng.c" />
     <ClCompile Include="..\src\libxsmm_spmdm.c" />
     <ClCompile Include="..\src\libxsmm_sync.c" />
     <ClCompile Include="..\src\libxsmm_timer.c" />
