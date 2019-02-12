@@ -424,8 +424,8 @@ int main(int argc, char* argv[])
     printf("time_steps %d should be greater than 0\n\n", t);
     return 0;
   }
-        
-if (!(pass == 0 || pass == 1 || pass == 2 || pass == 3 || pass == 4)) {
+
+  if (!(pass == 0 || pass == 1 || pass == 2 || pass == 3 || pass == 4)) {
     printf("Unknown pass: %d, valid arguments for pass = {0(FWD), 1(BWD), 2(UPD), 3(BWD+UPD)\n\n", pass);
     return 0;
   }
@@ -644,7 +644,7 @@ if (!(pass == 0 || pass == 1 || pass == 2 || pass == 3 || pass == 4)) {
     rnncell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NC;
-    rnncell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_KCCK;
+    rnncell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED;
 
     libxsmm_handle = libxsmm_dnn_create_rnncell( rnncell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );

@@ -621,8 +621,8 @@ int main(int argc, char* argv[])
     }
     rnncell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     rnncell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
-    rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NCNC;
-    rnncell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_KCCK;
+    rnncell_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED;
+    rnncell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED;
 
     libxsmm_handle = libxsmm_dnn_create_rnncell( rnncell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
