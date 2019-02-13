@@ -1653,7 +1653,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           /* attribute/protect buffer and revoke unnecessary flags */
           result = libxsmm_malloc_attrib(&code_buffer, LIBXSMM_MALLOC_FLAG_X, jit_name);
           if (EXIT_SUCCESS == result) { /* check for success */
-            code->pmm = code_buffer;
+            code->pmm = code_buffer; /* commit buffer */
+          }
+          else { /* release buffer */
+            libxsmm_xfree(code_buffer);
           }
         }
       }

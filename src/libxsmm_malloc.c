@@ -1044,22 +1044,20 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 # if !defined(LIBXSMM_MALLOC_NOCRC) /* update checksum */
           info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
             (unsigned int)(((char*)&info->hash) - ((char*)info)), LIBXSMM_MALLOC_SEED);
-# endif
-          /* treat memory protection errors as soft error; ignore return value */
+# endif   /* treat memory protection errors as soft error; ignore return value */
           munmap(buffer, alloc_size);
 #endif
         }
 #if !defined(_WIN32)
         else { /* malloc-based fall-back */
-          int mprotect_result;
 # if !defined(LIBXSMM_MALLOC_NOCRC) && defined(LIBXSMM_VTUNE) /* update checksum */
           info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
             (unsigned int)(((char*)&info->hash) - ((char*)info)), LIBXSMM_MALLOC_SEED);
-# endif
-          /* treat memory protection errors as soft error; ignore return value */
-          mprotect_result = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
-          if (0 != internal_malloc_secured) { /* hard-error in case of SELinux */
-            result = mprotect_result;
+# endif   /* treat memory protection errors as soft error; ignore return value */
+          if (EXIT_SUCCESS == mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC)
+            && 0 != internal_malloc_secured) /* hard-error in case of SELinux */
+          {
+            result = EXIT_FAILURE;
           }
         }
 #endif
