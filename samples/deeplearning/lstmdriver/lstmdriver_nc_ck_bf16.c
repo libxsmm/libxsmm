@@ -1171,43 +1171,43 @@ int main(int argc, char* argv[])
   zero_buf_bfp16(dht,  K*N*t);
 
   /* Make things bf16 */
-  truncate_mask_fp32_bfp16( wigold, wigold, C*K );
-  truncate_mask_fp32_bfp16( wcgold, wcgold, C*K );
-  truncate_mask_fp32_bfp16( wfgold, wfgold, C*K );
-  truncate_mask_fp32_bfp16( wogold, wogold, C*K );
-  truncate_mask_fp32_bfp16( rigold, rigold, K*K );
-  truncate_mask_fp32_bfp16( rcgold, rcgold, K*K );
-  truncate_mask_fp32_bfp16( rfgold, rfgold, K*K );
-  truncate_mask_fp32_bfp16( rogold, rogold, K*K );
-  truncate_mask_fp32_bfp16( bigold, bigold, K );
-  truncate_mask_fp32_bfp16( bcgold, bcgold, K );
-  truncate_mask_fp32_bfp16( bfgold, bfgold, K );
-  truncate_mask_fp32_bfp16( bogold, bogold, K );
-  truncate_mask_fp32_bfp16( xgoldt, xgoldt, N*C*t );
-  truncate_mask_fp32_bfp16( cspgold, cspgold, N*K );
-  truncate_mask_fp32_bfp16( hpgold, hpgold, N*K );
-  truncate_mask_fp32_bfp16( csgoldt, csgoldt, N*K*t );
-  truncate_mask_fp32_bfp16( cogoldt, cogoldt, N*K*t );
-  truncate_mask_fp32_bfp16( hgoldt, hgoldt, N*K*t );
-  truncate_mask_fp32_bfp16( icfogoldt, icfogoldt, N*K*t*4 );
+  rne_mask_fp32_bfp16( wigold, wigold, C*K );
+  rne_mask_fp32_bfp16( wcgold, wcgold, C*K );
+  rne_mask_fp32_bfp16( wfgold, wfgold, C*K );
+  rne_mask_fp32_bfp16( wogold, wogold, C*K );
+  rne_mask_fp32_bfp16( rigold, rigold, K*K );
+  rne_mask_fp32_bfp16( rcgold, rcgold, K*K );
+  rne_mask_fp32_bfp16( rfgold, rfgold, K*K );
+  rne_mask_fp32_bfp16( rogold, rogold, K*K );
+  rne_mask_fp32_bfp16( bigold, bigold, K );
+  rne_mask_fp32_bfp16( bcgold, bcgold, K );
+  rne_mask_fp32_bfp16( bfgold, bfgold, K );
+  rne_mask_fp32_bfp16( bogold, bogold, K );
+  rne_mask_fp32_bfp16( xgoldt, xgoldt, N*C*t );
+  rne_mask_fp32_bfp16( cspgold, cspgold, N*K );
+  rne_mask_fp32_bfp16( hpgold, hpgold, N*K );
+  rne_mask_fp32_bfp16( csgoldt, csgoldt, N*K*t );
+  rne_mask_fp32_bfp16( cogoldt, cogoldt, N*K*t );
+  rne_mask_fp32_bfp16( hgoldt, hgoldt, N*K*t );
+  rne_mask_fp32_bfp16( icfogoldt, icfogoldt, N*K*t*4 );
 #if defined(TWO_GEMMS)
-  truncate_mask_fp32_bfp16( wgold, wgold, C*K*4 );
-  truncate_mask_fp32_bfp16( rgold, rgold, K*K*4 );
+  rne_mask_fp32_bfp16( wgold, wgold, C*K*4 );
+  rne_mask_fp32_bfp16( rgold, rgold, K*K*4 );
 #else
-  truncate_mask_fp32_bfp16( wgold, wgold, (C+K)*K*4 );
+  rne_mask_fp32_bfp16( wgold, wgold, (C+K)*K*4 );
 #endif
-  truncate_mask_fp32_bfp16( dcsgold, dcsgold, K*N );
-  truncate_mask_fp32_bfp16( dhgoldt, dhgoldt, K*N*t );
+  rne_mask_fp32_bfp16( dcsgold, dcsgold, K*N );
+  rne_mask_fp32_bfp16( dhgoldt, dhgoldt, K*N*t );
 #if defined(TWO_GEMMS)
-  truncate_mask_fp32_bfp16( dwgold, dwgold, 4*C*K );
-  truncate_mask_fp32_bfp16( drgold, drgold, 4*K*K );
+  rne_mask_fp32_bfp16( dwgold, dwgold, 4*C*K );
+  rne_mask_fp32_bfp16( drgold, drgold, 4*K*K );
 #else
-  truncate_mask_fp32_bfp16( dwgold, dwgold, 4*(C+K)*K );
+  rne_mask_fp32_bfp16( dwgold, dwgold, 4*(C+K)*K );
 #endif
-  truncate_mask_fp32_bfp16( dbgold, dbgold, 4*K );
-  truncate_mask_fp32_bfp16( dxgoldt, dxgoldt, N*C*t );
-  truncate_mask_fp32_bfp16( dcspgold, dcspgold, N*K );
-  truncate_mask_fp32_bfp16( dhpgold, dhpgold, K*N );
+  rne_mask_fp32_bfp16( dbgold, dbgold, 4*K );
+  rne_mask_fp32_bfp16( dxgoldt, dxgoldt, N*C*t );
+  rne_mask_fp32_bfp16( dcspgold, dcspgold, N*K );
+  rne_mask_fp32_bfp16( dhpgold, dhpgold, K*N );
 
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");
@@ -1222,6 +1222,16 @@ int main(int argc, char* argv[])
                   csgoldt, cogoldt, hgoldt,
                   icfogoldt, wgold, rgold );
 
+    /* Make things BF16 for bwd/upd pass refernce computation */
+    rne_mask_fp32_bfp16( icfogoldt, icfogoldt, 4*K*N*t );
+    rne_mask_fp32_bfp16( hgoldt, hgoldt, K*N*t );
+    rne_mask_fp32_bfp16( cogoldt, cogoldt, K*N*t );
+    rne_mask_fp32_bfp16( csgoldt, csgoldt, K*N*t );
+    rne_mask_fp32_bfp16( cspgold, cspgold, K*N );
+    rne_mask_fp32_bfp16( hpgold, hpgold, K*N );
+    rne_mask_fp32_bfp16( dhgoldt, dhgoldt, t*K*N );
+    rne_mask_fp32_bfp16( dcsgold, dcsgold, K*N );
+
     lstm_ref_bwd_upd( N, C, K, t,
                       xgoldt, cspgold, hpgold,
                       csgoldt, cogoldt, hgoldt,
@@ -1229,6 +1239,17 @@ int main(int argc, char* argv[])
                       dcsgold, dhgoldt,
                       dwgold, drgold, dbgold,
                       dxgoldt, dcspgold, dhpgold );
+
+    rne_mask_fp32_bfp16( dxgoldt, dxgoldt, C*N*t );
+#if defined(TWO_GEMMS)
+    rne_mask_fp32_bfp16( dwgold, dwgold, 4*C*K );
+    rne_mask_fp32_bfp16( drgold, drgold, 4*K*K );
+#else
+    rne_mask_fp32_bfp16( dwgold, dwgold, 4*(C+K)*K );
+#endif
+    rne_mask_fp32_bfp16( dbgold, dbgold, 4*K );
+    rne_mask_fp32_bfp16( dcspgold, dcspgold, N*K );
+    rne_mask_fp32_bfp16( dhpgold, dhpgold, K*N );
 
     printf("##########################################\n");
     printf("#      Computing Reference ... done      #\n");
@@ -1445,7 +1466,7 @@ int main(int argc, char* argv[])
       matrix_copy_bfp16_f32(t*K*N, ht, h_test);
 
       /* compare */
-      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, K*N, 1, &LIBXSMM_VLA_ACCESS(2, hgold, t-1, 0, K * N), &LIBXSMM_VLA_ACCESS(2, h, t-1, 0, K * N), 0, 0);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, t*K*N, 1, &LIBXSMM_VLA_ACCESS(2, hgold, 0, 0, K * N), h_test, 0, 0);
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
       printf("L2 abs.error  : %.24f\n", norms_fwd.l2_abs);
@@ -1685,12 +1706,12 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
       for (j = 0; j < iters; ++j) {
         lstm_ref_fwd( N, C, K, t, forget_bias,
-                      wigold, wcgold, wfgold, wogold,
-                      rigold, rcgold, rfgold, rogold,
-                      bigold, bcgold, bfgold, bogold,
-                      xgoldt, cspgold, hpgold,
-                      csgoldt, cogoldt, hgoldt,
-                      icfogoldt, wgold, rgold );
+            wigold, wcgold, wfgold, wogold,
+            rigold, rcgold, rfgold, rogold,
+            bigold, bcgold, bfgold, bogold,
+            xgoldt, cspgold, hpgold,
+            csgoldt, cogoldt, hgoldt,
+            icfogoldt, wgold, rgold );
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
@@ -1879,12 +1900,12 @@ int main(int argc, char* argv[])
       l_start = libxsmm_timer_tick();
       for (j = 0; j < iters; ++j) {
         lstm_ref_bwd_upd( N, C, K, t,
-                          xgoldt, cspgold, hpgold,
-                          csgoldt, cogoldt, hgoldt,
-                          icfogoldt, wgold, rgold,
-                          dcsgold, dhgoldt,
-                          dwgold, drgold, dbgold,
-                          dxgoldt, dcspgold, dhpgold );
+            xgoldt, cspgold, hpgold,
+            csgoldt, cogoldt, hgoldt,
+            icfogoldt, wgold, rgold,
+            dcsgold, dhgoldt,
+            dwgold, drgold, dbgold,
+            dxgoldt, dcspgold, dhpgold );
       }
       l_end = libxsmm_timer_tick();
       l_total = libxsmm_timer_duration(l_start, l_end);
