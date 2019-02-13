@@ -957,6 +957,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 #else
     LIBXSMM_ASSERT((NULL != buffer && MAP_FAILED != buffer) || 0 == size);
 #endif
+    flags |= (info->flags & ~LIBXSMM_MALLOC_FLAG_WX); /* merge with current flags */
     /* quietly keep the read permission, but eventually revoke write permissions */
     if (0 == (LIBXSMM_MALLOC_FLAG_W & flags) || 0 != (LIBXSMM_MALLOC_FLAG_X & flags)) {
       const size_t alignment = (size_t)(((const char*)(*memory)) - ((const char*)buffer));
