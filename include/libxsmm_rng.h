@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2015-2019, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -28,20 +28,31 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#ifndef LIBXSMM_RNG_H
+#define LIBXSMM_RNG_H
 
-#ifndef GENERATOR_GEMM_IMCI_AVX512_H
-#define GENERATOR_GEMM_IMCI_AVX512_H
+#include "libxsmm_typedefs.h"
 
-#include "generator_common.h"
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stdint.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
-LIBXSMM_API_INTERN
-unsigned int libxsmm_generator_gemm_imci_avx512_get_max_n_blocking( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                    const char*                    i_arch );
 
-LIBXSMM_API_INTERN
-void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         io_generated_code,
-                                                 const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                 const char*                    i_arch );
+/** Set the seed of the rng. */
+LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed );
 
-#endif /* GENERATOR_GEMM_IMCI_AVX512_H */
+/**
+ * This float rng is using xoshiro128+ 1.0, work done by
+ * David Blackman and Sebastiano Vigna (vigna@acm.org).
+ * It is their best and fastest 32-bit generator for
+ * 32-bit floating-point numbers. They suggest to use
+ * its upper bits for floating-point generation, what
+ * we do here and generate numbers in [0,1(.
+ */
+LIBXSMM_API void libxsmm_rng_float_seq( float* rngs, const libxsmm_blasint count );
 
+#endif /* LIBXSMM_RNG_H */

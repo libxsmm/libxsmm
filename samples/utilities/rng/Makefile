@@ -2,7 +2,7 @@
 #.EXPORT_ALL_VARIABLES: #export
 
 ROOTDIR = $(abspath $(dir $(firstword $(MAKEFILE_LIST))))
-DEPDIR = ../..
+DEPDIR = ../../..
 SRCDIR = $(ROOTDIR)
 INCDIR = .
 BLDDIR = build
@@ -13,9 +13,9 @@ CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
-BLAS = 1
+BLAS = 0
 SYM = 1
-OMP = 0
+OMP = 1
 
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
@@ -45,62 +45,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/$(OUTNAME)_xsmm $(OUTDIR)/$(OUTNAME)_batch \
-          $(OUTDIR)/$(OUTNAME)_blas \
-          $(OUTDIR)/$(OUTNAME)_blaze \
-          $(OUTDIR)/$(OUTNAME)_eigen
-
-ifneq (0,$(BLAZE))
-ifeq (,$(strip $(BLAZEROOT)))
-  ifneq (,$(wildcard $(DEPDIR)/../blaze*/blaze/Blaze.h))
-    BLAZEROOT = $(firstword $(wildcard $(DEPDIR)/../blaze*))
-  else ifneq (,$(wildcard $(HOME)/blaze*/blaze/Blaze.h))
-    BLAZEROOT = $(firstword $(wildcard $(HOME)/blaze*))
-  endif
-endif
-endif
-
-ifneq (,$(BLAZEROOT))
-  DFLAGS += -D__BLAZE
-  IFLAGS += -I$(BLAZEROOT)
-  BLAZE ?= 1
-  DFLAGS += -DBLAZE_USE_SHARED_MEMORY_PARALLELIZATION=$(shell echo "$$(($(BLAZE)-1))")
-else
-  BLAZE := 0
-endif
-
-ifneq (0,$(EIGEN))
-ifeq (,$(strip $(EIGENROOT)))
-  ifneq (,$(lastword $(sort $(wildcard $(DEPDIR)/../eigen*/Eigen/Dense))))
-    EIGENROOT = $(lastword $(sort $(wildcard $(DEPDIR)/../eigen*)))
-  else ifneq (,$(lastword $(sort $(wildcard $(HOME)/eigen*/Eigen/Dense))))
-    EIGENROOT = $(lastword $(sort $(wildcard $(HOME)/eigen*)))
-  else ifneq (,$(wildcard /usr/include/eigen3/Eigen/Dense))
-    EIGENROOT = /usr/include/eigen3
-  else ifneq (,$(wildcard /usr/local/opt/eigen/include/eigen3/Eigen/Dense))
-    EIGENROOT = /usr/local/opt/eigen/include/eigen3
-  endif
-endif
-endif
-
-ifneq (,$(EIGENROOT))
-  DFLAGS += -D__EIGEN
-  IFLAGS += -I$(EIGENROOT)
-  EIGEN ?= 1
-  #ifneq (0,$(MKL))
-    #DFLAGS += -DEIGEN_USE_MKL_ALL
-  #endif
-  ifneq (0,$(shell echo "$$((1 < $(BLAS) || 1 < $(EIGEN)))"))
-    DFLAGS += -DEIGEN_USE_THREADS
-  else
-    DFLAGS += -DEIGEN_DONT_PARALLELIZE
-  endif
-  ifneq (,$(wildcard $(EIGENROOT)/unsupported/Eigen/CXX11/ThreadPool))
-    DFLAGS += -D__EIGEN_UNSUPPORTED
-  endif
-else
-  EIGEN := 0
-endif
+XFILES := $(OUTDIR)/$(OUTNAME)
 
 .PHONY: all
 all: $(XFILES)
@@ -108,28 +53,8 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
-$(OUTDIR)/$(OUTNAME)_xsmm: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_xsmm-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-
-$(OUTDIR)/$(OUTNAME)_batch: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_batch-c.o $(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_batch-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-
-$(OUTDIR)/$(OUTNAME)_blas: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blas-c.o $(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blas-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-
-ifneq (,$(BLAZEROOT))
-$(OUTDIR)/$(OUTNAME)_blaze: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_blaze-cpp.o
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_blaze-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-else
-.PHONY: $(OUTDIR)/$(OUTNAME)_blaze
-endif
-
-ifneq (,$(EIGENROOT))
-$(OUTDIR)/$(OUTNAME)_eigen: $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)_eigen-cpp.o
-	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)_eigen-cpp.o $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
-else
-.PHONY: $(OUTDIR)/$(OUTNAME)_eigen
-endif
+$(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(BLDDIR)/$(OUTNAME)-c.o $(LIBDEP) $(EXTDEP)
+	$(LD) -o $@ $(BLDDIR)/$(OUTNAME)-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@

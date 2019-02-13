@@ -329,52 +329,55 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
           else {
             char filename[] = "/tmp/.libxsmm_map." LIBXSMM_MKTEMP_PATTERN;
             fd = mkstemp(filename);
-            if (0 <= fd && 0 == unlink(filename) && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
-              char *const buffer = (char*)mmap(NULL, LIBXSMM_TRACE_SYMBOLSIZE,
-                PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+            if (0 <= fd) {
+              if (0 == unlink(filename) && 0 == posix_fallocate(fd, 0, LIBXSMM_TRACE_SYMBOLSIZE)) {
+                char *const buffer = (char*)mmap(NULL, LIBXSMM_TRACE_SYMBOLSIZE,
+                  PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 
-              if (MAP_FAILED != buffer) {
-                int check = -1;
-                ivalue = (int*)buffer;
-                ivalue[0] = fd; /* valid file descriptor for internal_delete */
+                if (MAP_FAILED != buffer) {
+                  int check = -1;
+                  ivalue = (int*)buffer;
+                  ivalue[0] = fd; /* valid file descriptor for internal_delete */
 
-                if (
+                  if (
 #   if (0 != LIBXSMM_SYNC)
-                  0 == pthread_setspecific(internal_trace_key, buffer) &&
+                    0 == pthread_setspecific(internal_trace_key, buffer) &&
 #   endif
-                     (sizeof(int) * 1) == read(fd, &check, sizeof(int))
-                  && (sizeof(int) * 2) == lseek(fd, sizeof(int), SEEK_CUR)
-                  && check == fd)
-                {
-                  abs_tid = LIBXSMM_ATOMIC_ADD_FETCH(&internal_trace_initialized, 1, LIBXSMM_ATOMIC_RELAXED);
-                  assert(0 < abs_tid);
-                  /* use sign bit to flag enabled fall-back for symbol resolution */
-                  ivalue[1] = -abs_tid;
+                       (sizeof(int) * 1) == read(fd, &check, sizeof(int))
+                    && (sizeof(int) * 2) == lseek(fd, sizeof(int), SEEK_CUR)
+                    && check == fd)
+                  {
+                    abs_tid = LIBXSMM_ATOMIC_ADD_FETCH(&internal_trace_initialized, 1, LIBXSMM_ATOMIC_RELAXED);
+                    assert(0 < abs_tid);
+                    /* use sign bit to flag enabled fall-back for symbol resolution */
+                    ivalue[1] = -abs_tid;
 
-                  if (0 > filter || filter == abs_tid - 1) {
-                    value = buffer + sizeof(int) * 2;
+                    if (0 > filter || filter == abs_tid - 1) {
+                      value = buffer + sizeof(int) * 2;
+                    }
+                  }
+                  else {
+#   if !defined(NDEBUG) /* library code is expected to be mute */
+                    fprintf(stderr, "LIBXSMM ERROR: failed to setup buffer\n");
+#   endif
+                    internal_delete(buffer);
                   }
                 }
-                else {
-#   if !defined(NDEBUG) /* library code is expected to be mute */
-                  fprintf(stderr, "LIBXSMM ERROR: failed to setup buffer\n");
-#   endif
-                  internal_delete(buffer);
-                }
-              }
 #   if !defined(NDEBUG)
+                else {
+                  const int error = errno;
+                  fprintf(stderr, "LIBXSMM ERROR: %s (mmap allocation error #%i)\n",
+                    strerror(error), error);
+                }
+#   endif
+              }
+#   if !defined(NDEBUG) /* library code is expected to be mute */
               else {
-                const int error = errno;
-                fprintf(stderr, "LIBXSMM ERROR: %s (mmap allocation error #%i)\n",
-                  strerror(error), error);
+                fprintf(stderr, "LIBXSMM ERROR: failed to setup file descriptor (%i)\n", fd);
               }
 #   endif
+              close(fd);
             }
-#   if !defined(NDEBUG) /* library code is expected to be mute */
-            else {
-              fprintf(stderr, "LIBXSMM ERROR: failed to setup file descriptor (%i)\n", fd);
-            }
-#   endif
           }
 
           if (value) {

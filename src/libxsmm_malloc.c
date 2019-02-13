@@ -507,20 +507,23 @@ LIBXSMM_API_INLINE void* internal_xmap(const char* dir, size_t size, int flags, 
   }
   if (0 <= i && i < (int)sizeof(filename)) {
     i = mkstemp(filename);
-    if (0 <= i && 0 == unlink(filename) && 0 == ftruncate(i, size)) {
-      void *const xmap = mmap(NULL, size, PROT_READ | PROT_EXEC, flags | MAP_SHARED /*| LIBXSMM_MAP_ANONYMOUS*/, i, 0/*offset*/);
-      if (MAP_FAILED != xmap) {
-        LIBXSMM_ASSERT(NULL != xmap);
-        result = mmap(NULL, size, PROT_READ | PROT_WRITE, flags | MAP_SHARED /*| LIBXSMM_MAP_ANONYMOUS*/, i, 0/*offset*/);
-        if (MAP_FAILED != result) {
-          LIBXSMM_ASSERT(NULL != result);
-          internal_mhint(xmap, size);
-          *rx = xmap;
-        }
-        else {
-          munmap(xmap, size);
+    if (0 <= i) {
+      if (0 == unlink(filename) && 0 == ftruncate(i, size)) {
+        void *const xmap = mmap(NULL, size, PROT_READ | PROT_EXEC, flags | MAP_SHARED /*| LIBXSMM_MAP_ANONYMOUS*/, i, 0/*offset*/);
+        if (MAP_FAILED != xmap) {
+          LIBXSMM_ASSERT(NULL != xmap);
+          result = mmap(NULL, size, PROT_READ | PROT_WRITE, flags | MAP_SHARED /*| LIBXSMM_MAP_ANONYMOUS*/, i, 0/*offset*/);
+          if (MAP_FAILED != result) {
+            LIBXSMM_ASSERT(NULL != result);
+            internal_mhint(xmap, size);
+            *rx = xmap;
+          }
+          else {
+            munmap(xmap, size);
+          }
         }
       }
+      close(i);
     }
   }
   return result;

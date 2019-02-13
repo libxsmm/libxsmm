@@ -1423,6 +1423,21 @@ LIBXSMM_API int libxsmm_smmbatch_blas(const char* transa, const char* transb, li
 }
 
 
+LIBXSMM_API void libxsmm_set_gemm_batchflag(libxsmm_gemm_descriptor* descriptor, void* c, libxsmm_blasint index_stride)
+{
+  if (NULL != descriptor && 0 != index_stride && 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & descriptor->flags) /*&& LIBXSMM_X86_AVX <= libxsmm_target_archid*/) {
+    const libxsmm_blasint vw = (LIBXSMM_X86_AVX512 <= libxsmm_target_archid ? 64 : 32);
+    if (0 == LIBXSMM_MOD2((uintptr_t)c, vw)) { /* assume that all C-matrices are aligned eventually */
+      const int oprec = LIBXSMM_GETENUM_OUT(descriptor->datatype);
+      const libxsmm_blasint typesize = LIBXSMM_TYPESIZE(oprec);
+      const libxsmm_blasint csize = descriptor->ldc * descriptor->n * typesize;
+      /* finalize assumption if matrix-size is a multiple of the vector-width */
+      descriptor->flags |= (0 == LIBXSMM_MOD2(csize, vw) ? LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT : 0);
+    }
+  }
+}
+
+
 LIBXSMM_API void libxsmm_gemm_batch2(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
@@ -1434,13 +1449,14 @@ LIBXSMM_API void libxsmm_gemm_batch2(libxsmm_gemm_precision iprec, libxsmm_gemm_
   static int error_once = 0;
   int result;
 
-  if (LIBXSMM_SMM(m, n, k)) { /* whether an SMM is suitable */
+  if (LIBXSMM_SMM(m, n, k)) { /* check if an SMM is suitable */
     const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
     libxsmm_descriptor_blob blob;
-    const libxsmm_gemm_descriptor *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec, m, n, k,
+    libxsmm_gemm_descriptor *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec, m, n, k,
       NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
       NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
       NULL != ldc ? *ldc : m, alpha, beta, gemm_flags, libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
+    libxsmm_set_gemm_batchflag(descriptor, c, index_stride);
     kernel = libxsmm_xmmdispatch(descriptor);
   }
   else {
