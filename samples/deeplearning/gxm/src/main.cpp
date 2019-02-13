@@ -48,6 +48,7 @@
 #include "SoftmaxLoss.hpp"
 #include "Split.hpp"
 #include "FusedBNorm.hpp"
+#include "FusedConvBN.hpp"
 #include "Eltwise.hpp"
 #include "TypeList.hpp"
 
@@ -58,6 +59,7 @@ using namespace gxm;
 TypeList nodeTypes[] = {
   {"Accuracy", parseAccuracyParams, CreateMLNode<AccuracyNode,AccuracyParams>},
   {"FusedBatchNorm", parseFusedBNormParams, CreateMLNode<FusedBNormNode,FusedBNormParams>},
+  {"FusedConvBN", parseFusedConvBNParams, CreateMLNode<FusedConvBNNode,FusedConvBNParams>},
   {"Eltwise", parseEltwiseParams, CreateMLNode<EltwiseNode,EltwiseParams>},
   {"Split", parseSplitParams, CreateMLNode<SplitNode,SplitParams>},
   {"Concat", parseConcatParams, CreateMLNode<ConcatNode,ConcatParams>},
