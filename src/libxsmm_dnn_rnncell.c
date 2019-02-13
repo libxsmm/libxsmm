@@ -603,6 +603,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
 LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status)
 {
   size_t size = 0;
+  size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in) ;
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
@@ -645,7 +646,6 @@ LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncel
           case LIBXSMM_DNN_COMPUTE_KIND_UPD:
           case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
           case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-            size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in) ;
             size += (size_t)handle->desc.C * (size_t)handle->desc.K * dwdr_typesize * 4 + 4 * 64; /* w */
             size += (size_t)handle->desc.K * (size_t)handle->desc.K * dwdr_typesize * 4 + 4 * 64; /* r */
             size += (size_t)handle->desc.C * (size_t)handle->desc.K * libxsmm_dnn_typesize(handle->desc.datatype_in) * 4 + 4 * 64; /* wT */
@@ -707,6 +707,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   uintptr_t address = (uintptr_t)scratch;
+  size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in) ;
   size_t offset = 0;
 
   if (0 != handle) {
@@ -874,7 +875,6 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
               return status;
             }
             handle->scratch_base = (void*)address;
-            size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in) ;
             /* w scratch */
             if (address % 64 == 0) {
               handle->scratch_w = (void*)address;
