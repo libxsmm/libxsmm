@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2019, Intel Corporation                                **
+** Copyright (c) 2019, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,18 +26,27 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
 #include "libxsmm_rng.h"
 #include <libxsmm_intrinsics_x86.h>
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stdlib.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
-/* 128 bit state for scalar rng */
+
+/* 128 bit state for scalar RNG */
 LIBXSMM_APIVAR(uint32_t libxsmm_rng_scalar_state[4]);
 
 
-LIBXSMM_API_INLINE void libxsmm_rng_float_jump( uint32_t* state0, uint32_t* state1, uint32_t* state2, uint32_t* state3 ) {
+LIBXSMM_API_INLINE void libxsmm_rng_float_jump(uint32_t* state0, uint32_t* state1, uint32_t* state2, uint32_t* state3 )
+{
   static const uint32_t JUMP[] = { 0x8764000b, 0xf542d2d3, 0x6fa035c3, 0x77f2db5b };
 
   uint32_t s0 = 0;
@@ -72,7 +81,8 @@ LIBXSMM_API_INLINE void libxsmm_rng_float_jump( uint32_t* state0, uint32_t* stat
 }
 
 
-LIBXSMM_API_INLINE float libxsmm_rng_scalar_float_next() {
+LIBXSMM_API_INLINE float libxsmm_rng_scalar_float_next(void)
+{
   union Rng_local {
     uint32_t i;
     float    f;
@@ -100,7 +110,8 @@ LIBXSMM_APIVAR(__m512i libxsmm_rng_avx512_state_2);
 LIBXSMM_APIVAR(__m512i libxsmm_rng_avx512_state_3);
 
 
-LIBXSMM_API void libxsmm_rng_float_set_seed_avx512( const uint32_t seed ) {
+LIBXSMM_API void libxsmm_rng_float_set_seed_avx512(const uint32_t seed)
+{
   libxsmm_blasint i;
   uint32_t temp_state[] = { seed+ 31, seed+ 30, seed+ 29, seed+ 28, seed+ 27, seed+ 26, seed+ 25, seed+ 24,
                             seed+ 23, seed+ 22, seed+ 21, seed+ 20, seed+ 19, seed+ 18, seed+ 17, seed+ 16,
@@ -124,7 +135,7 @@ LIBXSMM_API void libxsmm_rng_float_set_seed_avx512( const uint32_t seed ) {
 }
 
 
-LIBXSMM_API_INLINE __m512 _mm512_libxmm_rng_ps() {
+LIBXSMM_API_INLINE __m512 _mm512_libxmm_rng_ps(void) {
   __m512i rng_mantissa = _mm512_srli_epi32( _mm512_add_epi32( libxsmm_rng_avx512_state_0, libxsmm_rng_avx512_state_3 ), 9 );
   __m512i t = _mm512_slli_epi32( libxsmm_rng_avx512_state_1, 9) ;
 
@@ -142,7 +153,8 @@ LIBXSMM_API_INLINE __m512 _mm512_libxmm_rng_ps() {
 #endif
 
 
-LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed ) {
+LIBXSMM_API void libxsmm_rng_float_set_seed(const uint32_t seed)
+{
   libxsmm_rng_scalar_state[0] = seed;
   libxsmm_rng_scalar_state[1] = seed+100;
   libxsmm_rng_scalar_state[2] = seed+200;
@@ -155,15 +167,60 @@ LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed ) {
 }
 
 
-LIBXSMM_API void libxsmm_rng_float_seq( float* rngs, const libxsmm_blasint count ) {
+LIBXSMM_API void libxsmm_rng_float_seq(float* rngs, const libxsmm_blasint count)
+{
   libxsmm_blasint i = 0;
-
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) /* __AVX512F__ */
-  for (    ; i < (count/16)*16; i+=16 ) {
+  for (; i < (count/16)*16; i+=16 ) {
     _mm512_storeu_ps( rngs+i, _mm512_libxmm_rng_ps() );
   }
 #endif
-  for (    ; i < count; ++i ) {
+  for (; i < count; ++i ) {
     rngs[i] = libxsmm_rng_scalar_float_next();
   }
 }
+
+
+LIBXSMM_API void libxsmm_srand(unsigned int seed)
+{
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+  srand(seed);
+#else
+  srand48(seed);
+#endif
+}
+
+
+LIBXSMM_API unsigned int libxsmm_rand_u32(unsigned int n)
+{
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+  const unsigned int rand_max1 = (unsigned int)(RAND_MAX)+1U;
+  const unsigned int q = (rand_max1 / n) * n;
+  unsigned int r = (unsigned int)rand();
+  if (q != rand_max1)
+#else
+  const unsigned int q = ((1U << 31) / n) * n;
+  unsigned int r = (unsigned int)lrand48();
+  if (q != (1U << 31))
+#endif
+  {
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+    while (q <= r) r = (unsigned int)rand();
+#else
+    while (q <= r) r = (unsigned int)lrand48();
+#endif
+  }
+  return r % n;
+}
+
+
+LIBXSMM_API double libxsmm_rand_f64(void)
+{
+#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
+  static const double scale = 1.0 / (RAND_MAX);
+  return scale * (double)rand();
+#else
+  return drand48();
+#endif
+}
+
