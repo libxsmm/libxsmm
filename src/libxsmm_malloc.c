@@ -655,20 +655,17 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         else {
           static /*LIBXSMM_TLS*/ int fallback = -1;
           if (0 > fallback) { /* initialize fall-back allocation method */
+            FILE *const selinux = fopen("/sys/fs/selinux/enforce", "rb");
             const char *const env = getenv("LIBXSMM_SE");
-            if (NULL == env || 0 == *env) {
-              FILE *const selinux = fopen("/sys/fs/selinux/enforce", "rb");
-              if (NULL != selinux) {
-                if (1 != fread(&internal_malloc_secured, sizeof(int), 1/*count*/, selinux)) {
-                  internal_malloc_secured = 1; /* conservative assumption in case of an error */
-                }
-                fclose(selinux);
+            if (NULL != selinux) {
+              if (1 != fread(&internal_malloc_secured, sizeof(int), 1/*count*/, selinux)) {
+                internal_malloc_secured = 1; /* conservative assumption in case of an error */
               }
+              fclose(selinux);
             }
-            else { /* user's choice takes precedence */
-              internal_malloc_secured = atoi(env);
-            }
-            fallback = (0 == internal_malloc_secured ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK);
+            /* user's choice takes precedence */
+            fallback = ((0 == internal_malloc_secured && (NULL == env || 0 == *env)) ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK);
+            LIBXSMM_ASSERT(0 <= fallback);
           }
           if (0 == fallback) {
             buffer = internal_xmap("/tmp", alloc_size, xflags, &reloc);
@@ -1057,6 +1054,11 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
           if (EXIT_SUCCESS == mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC)
             && 0 != internal_malloc_secured) /* hard-error in case of SELinux */
           {
+            if (0 != libxsmm_verbosity /* library code is expected to be mute */
+              && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+            {
+              fprintf(stderr, "LIBXSMM ERROR: cannot allocate executable buffer!\n");
+            }
             result = EXIT_FAILURE;
           }
         }
