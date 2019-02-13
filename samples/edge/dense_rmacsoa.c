@@ -111,16 +111,16 @@ int main(int argc, char* argv[]) {
   unsigned int i = 0;
 
   for ( i = 0; i < l_m*l_n*l_r; ++i ) {
-    c1[i] = (REALTYPE)libxsmm_rand_f64();
+    c1[i] = (REALTYPE)libxsmm_rng_f64();
   }
   for ( i = 0; i < l_m*l_n*l_r; ++i ) {
     c2[i] = c1[i];
   }
   for ( i = 0; i < l_m*l_k*l_r; ++i ) {
-    a[i] = (REALTYPE)libxsmm_rand_f64();
+    a[i] = (REALTYPE)libxsmm_rng_f64();
   }
   for ( i = 0; i < l_k*l_n; ++i ) {
-    b[i] = (REALTYPE)libxsmm_rand_f64();
+    b[i] = (REALTYPE)libxsmm_rng_f64();
   }
 
   /* JIT code */

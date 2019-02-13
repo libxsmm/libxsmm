@@ -65,10 +65,10 @@ int main(int argc, char* argv[])
 
   rngs = (float*)malloc( num_rngs*sizeof(float) );
 
-  libxsmm_rng_float_set_seed( (uint32_t)(time(0)));
+  libxsmm_rng_set_seed( (uint32_t)(time(0)));
 
   /* fill array with random floats */
-  libxsmm_rng_float_seq( rngs, num_rngs );
+  libxsmm_rng_f32_seq( rngs, num_rngs );
 
   /* calculate quality of random numbers */
   rng_sum = 0.0;
@@ -92,14 +92,14 @@ int main(int argc, char* argv[])
 
   start = libxsmm_timer_tick();
   for (i = 0; i < num_rngs; ++i) {
-    libxsmm_rng_float_seq( rngs, 1 );
+    libxsmm_rng_f32_seq( rngs, 1 );
   }
   printf("\nlibxsmm_rng_float:  %llu cycles per random number (scalar)\n",
     libxsmm_timer_cycles(start, libxsmm_timer_tick()) / num_rngs);
 
   start = libxsmm_timer_tick();
   for (i = 0; i < num_rngs; ++i) {
-    libxsmm_rng_float_seq( vrng, 16 );
+    libxsmm_rng_f32_seq( vrng, 16 );
   }
   printf("\nlibxsmm_rng_float:  %llu cycles per random number (vlen=16)\n",
     libxsmm_timer_cycles(start, libxsmm_timer_tick()) / (num_rngs*16));

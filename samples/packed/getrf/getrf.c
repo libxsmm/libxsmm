@@ -307,7 +307,7 @@ void dfill_matrix ( int layout, double *matrix, unsigned int nmat, unsigned int 
 #ifdef DUPLICATE_ELEMENTS_ACROSS
               if ( k == 1 )
 #endif
-              if ( i <= row ) dtmp = 1.0 - 2.0*libxsmm_rand_f64();
+              if ( i <= row ) dtmp = 1.0 - 2.0*libxsmm_rng_f64();
               else            dtmp = -99.9;
               matrix [ address ] = dtmp;
            }
@@ -358,7 +358,7 @@ void sfill_matrix ( int layout, float *matrix, unsigned int nmat, unsigned int l
 #ifdef DUPLICATE_ELEMENTS_ACROSS
               if ( k == 1 )
 #endif
-              if ( i <= row ) dtmp = 1.0 - 2.0*libxsmm_rand_f64();
+              if ( i <= row ) dtmp = 1.0 - 2.0*libxsmm_rng_f64();
               else            dtmp = -99.9;
               matrix [ address ] = (float) dtmp;
            }
