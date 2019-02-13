@@ -658,13 +658,20 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             FILE *const selinux = fopen("/sys/fs/selinux/enforce", "rb");
             const char *const env = getenv("LIBXSMM_SE");
             if (NULL != selinux) {
-              if (1 != fread(&internal_malloc_secured, sizeof(int), 1/*count*/, selinux)) {
-                internal_malloc_secured = 1; /* conservative assumption in case of an error */
+              if (1 == fread(&internal_malloc_secured, 1/*sizeof(char)*/, 1/*count*/, selinux)) {
+                internal_malloc_secured -= '0';
+              }
+              else { /* conservative assumption in case of read-error */
+                internal_malloc_secured = 1;
               }
               fclose(selinux);
             }
-            /* user's choice takes precedence */
-            fallback = ((0 == internal_malloc_secured && (NULL == env || 0 == *env)) ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK);
+            if (NULL == env) { /* internal_malloc_secured decides */
+              fallback = (0 == internal_malloc_secured ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK);
+            }
+            else { /* user's choice takes precedence */
+              fallback = (0 != *env ? LIBXSMM_MALLOC_FALLBACK : LIBXSMM_MALLOC_FINAL);
+            }
             LIBXSMM_ASSERT(0 <= fallback);
           }
           if (0 == fallback) {
