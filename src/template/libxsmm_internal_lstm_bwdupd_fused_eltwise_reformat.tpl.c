@@ -46,6 +46,10 @@
   element_input_type* _df = &LIBXSMM_VLA_ACCESS(2, df, in, ik, K);
   element_input_type* _dp = &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K);
   element_input_type* _dcp = &LIBXSMM_VLA_ACCESS(2, dcp, in, ik, K);
+  element_input_type* _dciB = &LIBXSMM_VLA_ACCESS(4, dciB, inb, ikb, 0, 0, kBlocks, bn, bk);
+  element_input_type* _diB = &LIBXSMM_VLA_ACCESS(4, diB, inb, ikb, 0, 0, kBlocks, bn, bk);
+  element_input_type* _dfB = &LIBXSMM_VLA_ACCESS(4, dfB, inb, ikb, 0, 0, kBlocks, bn, bk);
+  element_input_type* _dpB = &LIBXSMM_VLA_ACCESS(4, dpB, inb, ikb, 0, 0, kBlocks, bn, bk);
   const __m512 _vneg_ones = _mm512_set1_ps( (float)-1.0 );
   const __m512 _vones = _mm512_set1_ps( (float)1.0 );
   if (j == t-1) {
@@ -66,11 +70,13 @@
         _vt2 = _mm512_fnmsub_ps ( _vci, _vci, _vneg_ones);
         _vdci = _mm512_mul_ps( _vt1, _vt2 );
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dci[(_j*K)+_k], _vdci );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dciB[(_j*bk)+_k], _vdci );
         _vt1 = _mm512_mul_ps( _vci, _vdcp );
         _vt2 = _mm512_sub_ps( _vones, _vi );
         _vdi = _mm512_mul_ps( _vi, _vt2);
         _vdi = _mm512_mul_ps( _vdi, _vt1);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_di[(_j*K)+_k], _vdi );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_diB[(_j*bk)+_k], _vdi );
         _vcps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_cps[(_j*K)+_k] );
         _vt1 = _mm512_mul_ps( _vcps, _vdcp );
         _vf = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_f[(_j*K)+_k] );
@@ -78,11 +84,13 @@
         _vdf = _mm512_mul_ps( _vf, _vt2);
         _vdf = _mm512_mul_ps( _vdf, _vt1);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_df[(_j*K)+_k], _vdf );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dfB[(_j*bk)+_k], _vdf );
         _vt1 = _mm512_mul_ps( _vdout, _vco);
         _vt2 = _mm512_sub_ps( _vones, _vo );
         _vt2 = _mm512_mul_ps( _vo, _vt2);
         _vdp = _mm512_mul_ps( _vt1, _vt2 );
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dp[(_j*K)+_k], _vdp );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dpB[(_j*bk)+_k], _vdp );
         _vdcp = _mm512_mul_ps( _vdcp, _vf);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dcp[(_j*K)+_k], _vdcp );
       }
@@ -107,11 +115,13 @@
         _vt2 = _mm512_fnmsub_ps ( _vci, _vci, _vneg_ones);
         _vdci = _mm512_mul_ps( _vt1, _vt2 );
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dci[(_j*K)+_k], _vdci );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dciB[(_j*bk)+_k], _vdci );
         _vt1 = _mm512_mul_ps( _vci, _vdcp );
         _vt2 = _mm512_sub_ps( _vones, _vi );
         _vdi = _mm512_mul_ps( _vi, _vt2);
         _vdi = _mm512_mul_ps( _vdi, _vt1);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_di[(_j*K)+_k], _vdi );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_diB[(_j*bk)+_k], _vdi );
         _vcps = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_cps[(_j*K)+_k] );
         _vt1 = _mm512_mul_ps( _vcps, _vdcp );
         _vf = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_f[(_j*K)+_k] );
@@ -119,15 +129,16 @@
         _vdf = _mm512_mul_ps( _vf, _vt2);
         _vdf = _mm512_mul_ps( _vdf, _vt1);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_df[(_j*K)+_k], _vdf );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dfB[(_j*bk)+_k], _vdf );
         _vt1 = _mm512_mul_ps( _vdout, _vco);
         _vt2 = _mm512_sub_ps( _vones, _vo );
         _vt2 = _mm512_mul_ps( _vo, _vt2);
         _vdp = _mm512_mul_ps( _vt1, _vt2 );
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dp[(_j*K)+_k], _vdp );
+        LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dpB[(_j*bk)+_k], _vdp );
         _vdcp = _mm512_mul_ps( _vdcp, _vf);
         LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_dcp[(_j*K)+_k], _vdcp );
       }
     }
   }
 }
-

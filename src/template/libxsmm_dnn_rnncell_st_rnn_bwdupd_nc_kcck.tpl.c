@@ -42,8 +42,8 @@ libxsmm_blasint bc = handle->bc;
 /* tensor raw pointers */
 element_input_type  *xt  = (element_input_type* )handle->xt->data;
 element_input_type  *hpD = (element_input_type* )handle->hp->data;
-element_filter_type *wD  = (element_filter_type*)handle->w->data;
-element_filter_type *rD  = (element_filter_type*)handle->r->data;
+element_filter_type *wtD  = (element_filter_type*)handle->wt->data;
+element_filter_type *rtD  = (element_filter_type*)handle->rt->data;
 element_output_type *ht  = (element_output_type*)handle->ht->data;
 element_input_type  *dxt = (element_input_type*)handle->dxt->data;
 element_filter_type *dwD = (element_filter_type*)handle->dw->data;
@@ -64,8 +64,8 @@ const float beta = 0.0;
 /* multidimensional arrays */
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
-LIBXSMM_VLA_DECL(4, element_filter_type, w, wD, cBlocks, bc, bk);
-LIBXSMM_VLA_DECL(4, element_filter_type, r, rD, kBlocks, bk, bk);
+LIBXSMM_VLA_DECL(4, element_filter_type, wT, wtD, kBlocks, bk, bc);
+LIBXSMM_VLA_DECL(4, element_filter_type, rT, rtD, kBlocks, bk, bk);
 LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
 LIBXSMM_VLA_DECL(3, element_input_type,  dx, dxt, N, C);
 LIBXSMM_VLA_DECL(4, element_filter_type, dw, dwD, cBlocks, bc, bk);
@@ -73,8 +73,10 @@ LIBXSMM_VLA_DECL(4, element_filter_type, dr, drD, kBlocks, bk, bk);
 LIBXSMM_VLA_DECL(3, element_output_type, dh, dht, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, delta, deltat, N, K);
 LIBXSMM_VLA_DECL(2, element_input_type,  xT, scratch_xT, N);
+#if 0
 LIBXSMM_VLA_DECL(4, element_filter_type, wT, scratch_wT, kBlocks, bk, bc);
 LIBXSMM_VLA_DECL(4, element_filter_type, rT, scratch_rT, kBlocks, bk, bk);
+#endif
 LIBXSMM_VLA_DECL(2, element_output_type, hT, scratch_hT, N);
 #if defined(LIBXSMM_DNN_RNN_RELU_BWDUPD) || defined(LIBXSMM_DNN_RNN_SIGMOID_BWDUPD) || defined(LIBXSMM_DNN_RNN_TANH_BWDUPD)
 element_output_type *zt = (element_output_type*)handle->internal_z;
@@ -149,6 +151,7 @@ const element_output_type *B_array[1024];
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, (int)ltid);
 
+#if 0
 if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
   /* transpose W */
   for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
@@ -172,6 +175,7 @@ for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
     }
   }
 }
+#endif
 
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
   /* transpose xt for current timestep */

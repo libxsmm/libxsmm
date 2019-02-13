@@ -68,7 +68,7 @@
 #include "libxsmm_timer.h"
 #include "libxsmm_math.h"
 #include "libxsmm_sync.h"
-
+#include "libxsmm_rng.h"
 
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_API void libxsmm_init(void);

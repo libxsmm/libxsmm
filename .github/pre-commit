@@ -39,14 +39,17 @@ CODEFILE=.codefile
 BANNED_CHARS="\t"
 
 TOUCH=$(command -v touch)
-ECHO=$(command -v echo)
 GREP=$(command -v grep)
 GIT=$(command -v git)
 SED=$(command -v sed)
+CAT=$(command -v cat)
+WC=$(command -v wc)
+TR=$(command -v tr)
 RM=$(command -v rm)
 
 if [ "" != "${GIT}" ]; then
-  if [ "" != "${ECHO}" ] && [ "" != "${SED}" ] && [ "" != "${GREP}" ] && \
+  if [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${CAT}" ] && \
+     [ "" != "${WC}" ] && [ "" != "${TR}" ] && \
      [ "" != "$(${GIT} rev-parse --verify HEAD 2>/dev/null)" ];
   then
     if [ -e ${CODEFILE} ]; then
@@ -59,47 +62,55 @@ if [ "" != "${GIT}" ]; then
     while read -r LINE; do
       IFS="${IFS_BACKUP}"
       # determine the filename of the patch snippet
-      MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^diff --git a\/\(..*\) b..*$/\1/p" 2>/dev/null)
+      MATCH=$(echo "${LINE}" | ${SED} -n "s/^diff --git a\/\(..*\) b..*$/\1/p" 2>/dev/null)
       if [ "" != "${MATCH}" ]; then
         # check if problem is with a permitted file type
         for PATTERN in ${PATTERNS}; do
-          MATCHOK=$(${ECHO} "${MATCH}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
+          MATCHOK=$(echo "${MATCH}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
           if [ "" != "${MATCHOK}" ]; then
             FILENAME=${MATCHOK}
-            LINENMBR=""
             break
           fi
         done
       elif [ "" != "${FILENAME}" ]; then
-        # determine the baseline number of the change
-        MATCH=$(${ECHO} "${LINE}" | ${SED} -n "s/^@@ -..* +\([0-9][0-9]*\),..*$/\1/p" 2>/dev/null)
-        if [ "" != "${MATCH}" ]; then
-          LINENMBR=$((MATCH-2))
-        elif [ "" != "${LINENMBR}" ]; then
-          LINENMBR=$((LINENMBR+1))
-        fi
-        if [ "" != "${LINENMBR}" ]; then
-          LOCATION="${FILENAME}:${LINENMBR}"
-        else
-          LOCATION="${FILENAME}"
-        fi
         # check against banned characters
-        if [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*[${BANNED_CHARS}]..*$/p" 2>/dev/null)" ]; then
-          >&2 ${ECHO} "Issue: ${LOCATION} contains banned character(s)!"
-          ISSUES=$((ISSUES+1))
+        MATCH=$(${CAT} -n ${FILENAME} | ${SED} -n "s/^ *\([0-9][0-9]*\)\t.*[${BANNED_CHARS}]..*$/\1/p" 2>/dev/null)
+        if [ "" != "${MATCH}" ]; then
+          N=$(echo ${MATCH} | ${WC} -w)
+          if [ "1" = "${N}" ]; then # single occurrence
+            >&2 echo "Issue: ${FILENAME}:${MATCH} contains a banned character."
+          else # multiple occurrences
+            LOCATION=$(echo ${MATCH} | ${TR} " " ",")
+            >&2 echo "Issue: ${FILENAME}:${LOCATION} contains banned characters."
+          fi
+          ISSUES=$((ISSUES+N))
         fi
         # check against trailing whitespace(s)
-        if [ "" != "$(${ECHO} "${LINE}" | ${SED} -n "/^+.*\s\s*$/p" 2>/dev/null)" ]; then
-          >&2 ${ECHO} "Issue: ${LOCATION} has trailing whitespace(s)!"
-          ISSUES=$((ISSUES+1))
+        MATCH=$(${CAT} -n ${FILENAME} | ${SED} -n "s/^ *\([0-9][0-9]*\)\t.*\s\s*$/\1/p" 2>/dev/null)
+        if [ "" != "${MATCH}" ]; then
+          N=$(echo ${MATCH} | ${WC} -w)
+          if [ "1" = "${N}" ]; then # single occurrence
+            >&2 echo "Issue: ${FILENAME}:${MATCH} has a trailing whitespace."
+          else # multiple occurrences
+            LOCATION=$(echo ${MATCH} | ${TR} " " ",")
+            >&2 echo "Issue: ${FILENAME}:${LOCATION} has trailing spaces."
+          fi
+          ISSUES=$((ISSUES+N))
         fi
+        # checks are finished for this file
+        FILENAME=""
       fi
       IFS=""
     done < <(${GIT} diff-index -p -M --cached HEAD)
     IFS="${IFS_BACKUP}"
     # reject commit in case of an issue
     if [ "0" != "${ISSUES}" ]; then
-      >&2 ${ECHO} "Error: ${ISSUES} issue(s) found - consider ./scripts/tool_normalize.sh!"
+      if [ "1" = "${ISSUES}" ]; then # single issue
+        >&2 echo -n "Error: 1 issue"
+      else # multiple issues
+        >&2 echo -n "Error: ${ISSUES} issues"
+      fi
+      >&2 echo " found - consider ./scripts/tool_normalize.sh!"
       exit 1
     fi
   fi

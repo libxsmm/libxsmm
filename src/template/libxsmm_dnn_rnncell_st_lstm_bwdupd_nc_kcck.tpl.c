@@ -28,6 +28,9 @@
 ******************************************************************************/
 /* Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
+#if 0
+#define PROFILE
+#endif
 
 /* helper variables */
 libxsmm_blasint j, ik, ikb, in, inb, ic, icb, jk, jb/*jn shadows global variable*/, jc, ek, en, ec, BF, KB_BLOCKS, KB;
@@ -45,10 +48,10 @@ const int nBlocks = N/bn;
 unsigned long long blocks;
 /* tensor raw pointers */
 element_input_type  *xt    = (element_input_type* )handle->xt->data;
-element_input_type *csp   = (element_input_type* )handle->csp->data;
-element_input_type *hpD   = (element_input_type* )handle->hp->data;
-element_filter_type *w     = (element_filter_type*)handle->w->data;
-element_filter_type *r     = (element_filter_type*)handle->r->data;
+element_input_type *csp    = (element_input_type* )handle->csp->data;
+element_input_type *hpD    = (element_input_type* )handle->hp->data;
+element_filter_type *wt    = (element_filter_type*)handle->wt->data;
+element_filter_type *rt    = (element_filter_type*)handle->rt->data;
 element_output_type *cst   = (element_output_type*)handle->cst->data;
 element_output_type *ht    = handle->ht ? (element_output_type*)handle->ht->data : (element_output_type*)NULL;
 element_output_type *it    = (element_output_type*)handle->it->data;
@@ -70,17 +73,19 @@ element_output_type *doD   = (element_output_type*)handle->scratch_do;
 element_output_type *dciD  = (element_output_type*)handle->scratch_dci;
 element_output_type *doutD = (element_output_type*)handle->scratch_deltat;
 element_input_type  *scratch_xT  = (element_input_type* )handle->scratch_xT;
+#if 0
 element_filter_type *scratch_wT  = (element_filter_type*)handle->scratch_wT;
 element_filter_type *scratch_rT  = (element_filter_type*)handle->scratch_rT;
+#endif
 element_output_type *scratch_hT  = (element_output_type*)handle->scratch_hT;
-element_filter_type *wiD   = &(w[0]);
-element_filter_type *wcD   = &(w[C*K]);
-element_filter_type *wfD   = &(w[2*C*K]);
-element_filter_type *woD   = &(w[3*C*K]);
-element_filter_type *riD   = &(r[0]);
-element_filter_type *rcD   = &(r[K*K]);
-element_filter_type *rfD   = &(r[2*K*K]);
-element_filter_type *roD   = &(r[3*K*K]);
+element_filter_type *witD  = &(wt[0]);
+element_filter_type *wctD  = &(wt[C*K]);
+element_filter_type *wftD  = &(wt[2*C*K]);
+element_filter_type *wotD  = &(wt[3*C*K]);
+element_filter_type *ritD  = &(rt[0]);
+element_filter_type *rctD  = &(rt[K*K]);
+element_filter_type *rftD  = &(rt[2*K*K]);
+element_filter_type *rotD  = &(rt[3*K*K]);
 element_filter_type *dwiD  = &(dw[0]);
 element_filter_type *dwcD  = &(dw[C*K]);
 element_filter_type *dwfD  = &(dw[2*C*K]);
@@ -93,6 +98,7 @@ element_output_type *dbi   = &(db[0]);
 element_output_type *dbc   = &(db[K]);
 element_output_type *dbf   = &(db[2*K]);
 element_output_type *dbo   = &(db[3*K]);
+#if 0
 element_filter_type *scratch_wiT = &(scratch_wT[0]);
 element_filter_type *scratch_wcT = &(scratch_wT[C*K]);
 element_filter_type *scratch_wfT = &(scratch_wT[2*C*K]);
@@ -101,6 +107,7 @@ element_filter_type *scratch_riT = &(scratch_rT[0]);
 element_filter_type *scratch_rcT = &(scratch_rT[K*K]);
 element_filter_type *scratch_rfT = &(scratch_rT[2*K*K]);
 element_filter_type *scratch_roT = &(scratch_rT[3*K*K]);
+#endif
 element_output_type *t1D   = (element_output_type*)handle->scratch_t1;
 element_output_type *t2D   = (element_output_type*)handle->scratch_t2;
 /* multidimensional arrays */
@@ -109,6 +116,7 @@ LIBXSMM_VLA_DECL(2, element_output_type, t2, t2D, K);
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 LIBXSMM_VLA_DECL(2, element_input_type,  cp, csp, K);
 LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
+#if 0
 LIBXSMM_VLA_DECL(4, element_filter_type, wi, wiD, cBlocks, bc, bk);
 LIBXSMM_VLA_DECL(4, element_filter_type, wf, wfD, cBlocks, bc, bk);
 LIBXSMM_VLA_DECL(4, element_filter_type, wo, woD, cBlocks, bc, bk);
@@ -117,6 +125,7 @@ LIBXSMM_VLA_DECL(4, element_filter_type, ri, riD, kBlocks, bk, bk);
 LIBXSMM_VLA_DECL(4, element_filter_type, rf, rfD, kBlocks, bk, bk);
 LIBXSMM_VLA_DECL(4, element_filter_type, ro, roD, kBlocks, bk, bk);
 LIBXSMM_VLA_DECL(4, element_filter_type, rc, rcD, kBlocks, bk, bk);
+#endif
 LIBXSMM_VLA_DECL(3, element_output_type, cs, cst, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, i, it, N, K);
@@ -143,14 +152,14 @@ LIBXSMM_VLA_DECL(2, element_output_type, dp, doD, K);
 LIBXSMM_VLA_DECL(2, element_output_type, dci, dciD, K);
 LIBXSMM_VLA_DECL(2, element_output_type, dout, doutD, K);
 LIBXSMM_VLA_DECL(2, element_input_type,  xT, scratch_xT, N);
-LIBXSMM_VLA_DECL(4, element_filter_type, wiT, scratch_wiT, kBlocks, bk, bc);
-LIBXSMM_VLA_DECL(4, element_filter_type, wcT, scratch_wcT, kBlocks, bk, bc);
-LIBXSMM_VLA_DECL(4, element_filter_type, wfT, scratch_wfT, kBlocks, bk, bc);
-LIBXSMM_VLA_DECL(4, element_filter_type, woT, scratch_woT, kBlocks, bk, bc);
-LIBXSMM_VLA_DECL(4, element_filter_type, riT, scratch_riT, kBlocks, bk, bk);
-LIBXSMM_VLA_DECL(4, element_filter_type, rcT, scratch_rcT, kBlocks, bk, bk);
-LIBXSMM_VLA_DECL(4, element_filter_type, rfT, scratch_rfT, kBlocks, bk, bk);
-LIBXSMM_VLA_DECL(4, element_filter_type, roT, scratch_roT, kBlocks, bk, bk);
+LIBXSMM_VLA_DECL(4, element_filter_type, wiT, witD, kBlocks, bk, bc);
+LIBXSMM_VLA_DECL(4, element_filter_type, wcT, wctD, kBlocks, bk, bc);
+LIBXSMM_VLA_DECL(4, element_filter_type, wfT, wftD, kBlocks, bk, bc);
+LIBXSMM_VLA_DECL(4, element_filter_type, woT, wotD, kBlocks, bk, bc);
+LIBXSMM_VLA_DECL(4, element_filter_type, riT, ritD, kBlocks, bk, bk);
+LIBXSMM_VLA_DECL(4, element_filter_type, rcT, rctD, kBlocks, bk, bk);
+LIBXSMM_VLA_DECL(4, element_filter_type, rfT, rftD, kBlocks, bk, bk);
+LIBXSMM_VLA_DECL(4, element_filter_type, roT, rotD, kBlocks, bk, bk);
 LIBXSMM_VLA_DECL(2, element_output_type, hT, scratch_hT, N);
 element_output_type *dout_ptr = NULL;
 /* define batch-reduce gemm kernels */
@@ -259,6 +268,7 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   libxsmm_internal_matrix_zero(K*4,   db,  start_thread, tid, handle->desc.threads);
 }
 
+#if 0
 #ifdef PROFILE
 if (ltid == 0) _start = _rdtsc();
 #endif
@@ -294,6 +304,7 @@ if (ltid == 0) {
   _end = _rdtsc();
   weight_trans_cycles += _end - _start;
 }
+#endif
 #endif
 
 #include "libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck_core.tpl.c"

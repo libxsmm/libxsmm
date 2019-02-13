@@ -559,6 +559,26 @@ LIBXSMM_INLINE void matrix_copy_CK_to_KCCK(float *src, float *dst, int C, int K,
   }
 }
 
+LIBXSMM_INLINE void matrix_copy_CK_to_CKKC(float *src, float *dst, int C, int K, int bc, int bk)
+{
+  int k1, k2, c1, c2;
+  int kBlocks = K/bk;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(2, float, real_src, src, K);
+  LIBXSMM_VLA_DECL(4, float, real_dst, dst, kBlocks, bk, bc);
+
+  for (c1 = 0; c1 < cBlocks; c1++) {
+    for (k1 = 0; k1 < kBlocks; k1++) {
+      for (k2 = 0; k2 < bk; k2++) {
+        for (c2 = 0; c2 < bc; c2++) {
+          LIBXSMM_VLA_ACCESS(4, real_dst, c1, k1, k2, c2, kBlocks, bk, bc) =
+            LIBXSMM_VLA_ACCESS(2, real_src, c1*bc+c2, k1*bk+k2, K);
+        }
+      }
+    }
+  }
+}
+
 LIBXSMM_INLINE void matrix_copy_KC_to_KCCK(float *src, float *dst, int C, int K, int bc, int bk)
 {
   int k1, k2, c1, c2;

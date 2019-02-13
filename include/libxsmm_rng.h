@@ -26,51 +26,34 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Evangelos Georganas (Intel Corp.), Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
+#ifndef LIBXSMM_RNG_H
+#define LIBXSMM_RNG_H
 
-{
-#if defined(LIBXSMM_INTEL_COMPILER)
-#define _MM512_TANH_PS(A) _mm512_tanh_ps(A)
-#else
-#define _MM512_TANH_PS(A) _mm512_tanh_generic_ps(A)
+#include "libxsmm_typedefs.h"
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-  libxsmm_blasint _k, _j;
-  element_input_type* _o = &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K);
-  element_input_type* _i = &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K);
-  element_input_type* _f = &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K);
-  element_input_type* _ci = &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K);
-  element_input_type* _cps = cps_ptr;
-  element_input_type* _cs = &LIBXSMM_VLA_ACCESS(3, cs, j, in, ik, N, K);
-  element_input_type* _h = &LIBXSMM_VLA_ACCESS(3, h, j, in, ik, N, K);
-  element_input_type* _co = &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K);
-  __m512 _vf, _vcs, _vi, _vci, _vco, _vo, _vh;
-  const __m512 _halves = _mm512_set1_ps( (LIBXSMM_DNN_ELTWISE_FTYPE)0.5 );
-  for ( _j = 0; _j < bn; ++_j ) {
-    LIBXSMM_PRAGMA_UNROLL_N(4)
-    for ( _k = 0; _k < bk; _k += 16 ) {
-      _vo = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_o[(_j*K)+_k] );
-      _vi = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_i[(_j*K)+_k] );
-      _vci = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_ci[(_j*K)+_k] );
-      _vf = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_f[(_j*K)+_k] );
-      _vcs = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_cps[(_j*K)+_k] );
-      _vo = _mm512_fmadd_ps( _MM512_TANH_PS( _mm512_mul_ps( _vo, _halves ) ), _halves, _halves);
-      _vi = _mm512_fmadd_ps( _MM512_TANH_PS( _mm512_mul_ps( _vi, _halves ) ), _halves, _halves);
-      _vci = _MM512_TANH_PS( _vci );
-      _vf = _mm512_fmadd_ps( _MM512_TANH_PS( _mm512_mul_ps( _vf, _halves ) ), _halves, _halves);
-      _vcs = _mm512_mul_ps( _vf, _vcs );
-      _vcs = _mm512_fmadd_ps( _vi, _vci, _vcs );
-      _vco = _MM512_TANH_PS( _vcs );
-      _vh = _mm512_mul_ps( _vo, _vco );
-      _mm512_store_ps( &_o[(_j*K)+_k], _vo );
-      _mm512_store_ps( &_i[(_j*K)+_k], _vi );
-      _mm512_store_ps( &_ci[(_j*K)+_k], _vci );
-      _mm512_store_ps( &_f[(_j*K)+_k], _vf );
-      _mm512_store_ps( &_cs[(_j*K)+_k], _vcs );
-      _mm512_store_ps( &_co[(_j*K)+_k], _vco );
-      LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_h[(_j*K)+_k], _vh );
-    }
-  }
-#undef _MM512_TANH_PS
-}
+#include <stdint.h>
+#if !defined(NDEBUG)
+# include <stdio.h>
+#endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
+/* set the seed of the rng */
+LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed );
+
+/* This float rng is using xoshiro128+ 1.0, work done by
+   David Blackman and Sebastiano Vigna (vigna@acm.org)
+   It's their best and fastest 32-bit generator for 32-bit
+   floating-point numbers. They suggest to use its upper bits for
+   floating-point generation, what we do here and generate numbers in
+   [0,1(.
+ */
+LIBXSMM_API void libxsmm_rng_float_seq( float* rngs, const libxsmm_blasint count );
+
+#endif /* LIBXSMM_RNG_H */

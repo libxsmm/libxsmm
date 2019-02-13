@@ -36,14 +36,14 @@
 #define _MM512_TANH_PS(A) _mm512_tanh_generic_ps(A)
 #endif
   libxsmm_blasint _k, _j;
-  element_input_type* _o = &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K);
-  element_input_type* _i = &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K);
-  element_input_type* _f = &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K);
-  element_input_type* _ci = &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K);
-  element_input_type* _cps = cps_ptr;
-  element_input_type* _cs = &LIBXSMM_VLA_ACCESS(3, cs, j, in, ik, N, K);
-  element_input_type* _h = &LIBXSMM_VLA_ACCESS(3, h, j, in, ik, N, K);
-  element_input_type* _co = &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K);
+  float* _o = &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K);
+  float* _i = &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K);
+  float* _f = &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K);
+  float* _ci = &LIBXSMM_VLA_ACCESS(3, ci, j, in, ik, N, K);
+  float* _cps = cps_ptr;
+  float* _cs = &LIBXSMM_VLA_ACCESS(3, cs, j, in, ik, N, K);
+  float* _h = &LIBXSMM_VLA_ACCESS(3, h, j, in, ik, N, K);
+  float* _co = &LIBXSMM_VLA_ACCESS(3, co, j, in, ik, N, K);
   __m512 _vf, _vcs, _vi, _vci, _vco, _vo, _vh;
   const __m512 _halves = _mm512_set1_ps( (LIBXSMM_DNN_ELTWISE_FTYPE)0.5 );
   for ( _j = 0; _j < bn; ++_j ) {
