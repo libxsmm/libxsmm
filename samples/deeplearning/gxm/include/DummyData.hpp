@@ -38,6 +38,7 @@
 #include "Tensor.hpp"
 #include "proto/gxm.pb.h"
 #include "check.hpp"
+#include "libxsmm.h"
 
 using namespace std;
 using namespace gxm;
@@ -220,7 +221,7 @@ class DummyDataNode : public NNNode
     virtual ~DummyDataNode(void) {}
 
     void fillData(float* ptr, long long int size);
-    void fillData(short int* ptr, long long int size);
+    void fillData(float *inptr, libxsmm_bfloat16* outptr, long long int size);
     void fillData(int* ptr, long long int size);
 
   protected:

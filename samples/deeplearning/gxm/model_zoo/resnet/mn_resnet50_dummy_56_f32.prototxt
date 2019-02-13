@@ -1,42 +1,22 @@
 node {
   name: "data"
-  type: "JitterData"
+  type: "DummyData"
   top: "data"
   top: "label"
+  mode: TRAIN
   propagate_down: false
-  mode: TEST
-  data_param {
-    train_source: "/scratch/savancha/jpegs_256resized_split/split_1"
-    train_list: "/scratch/savancha/jpegs_256resized_split/split_1/train_images_labels.list"
-    test_source: "/scratch/savancha/jpegs_256resized_split/split_1"
-    test_list: "/scratch/savancha/jpegs_256resized_split/split_1/val_images_labels.list"
-    batch_size: 50
-    num_train_files: 1281167
-    num_test_files: 50000
-    numsplits: 1
-    lookahead: 2 
-    shuffle: false
+  dummy_data_param {
+    shape: { dim: 540 dim: 54 dim: 3 dim: 224 dim: 224 }
+    pad_h: 3
+    pad_w: 3
+    data_filler {
+      type: "constant"
+      value: 1
+    }
     engine: XSMM
     data_type: FLOAT
-
-    image_xform_param {
-      orig_size: 256
-      mirror: true
-      crop_image: true
-      physical_padding: true
-      crop_size: 224
-      pad_h: 3
-      pad_w: 3
-      mean_values: 0.406
-      mean_values: 0.456
-      mean_values: 0.485
-      scale_values: 0.225
-      scale_values: 0.224
-      scale_values: 0.229
-      test_views: 1
-    }
   }
-}
+} 
 node {
   name: "conv1"
   type: "Convolution"
