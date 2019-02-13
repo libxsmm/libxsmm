@@ -627,7 +627,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_tensor* csp;
   libxsmm_dnn_tensor* hp;
   libxsmm_dnn_tensor* w;
+  libxsmm_dnn_tensor* wt;
   libxsmm_dnn_tensor* r;
+  libxsmm_dnn_tensor* rt;
   libxsmm_dnn_tensor* b;
   libxsmm_dnn_tensor* cst;
   libxsmm_dnn_tensor* ht;
