@@ -1023,13 +1023,12 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
           libxsmm_perf_dump_code(code_ptr, size, name);
 #endif
         }
-        if (0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
+        if (NULL != info->reloc && info->pointer != info->reloc) {
 #if defined(_WIN32)
           /* TODO: implement memory protection under Microsoft Windows */
 #else
           /* memory is already protected at this point; relocate code */
-          LIBXSMM_ASSERT(info->pointer != info->reloc);
-          LIBXSMM_ASSERT(NULL != info->reloc);
+          LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags));
           *memory = code_ptr; /* relocate */
           info->pointer = info->reloc;
           info->reloc = NULL;
