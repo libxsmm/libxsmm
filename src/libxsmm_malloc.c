@@ -670,7 +670,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
               fallback = (0 == internal_malloc_secured ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK);
             }
             else { /* user's choice takes precedence */
-              fallback = (0 != *env ? LIBXSMM_MALLOC_FALLBACK : LIBXSMM_MALLOC_FINAL);
+              fallback = ('0' != *env ? LIBXSMM_MALLOC_FALLBACK : LIBXSMM_MALLOC_FINAL);
             }
             LIBXSMM_ASSERT(0 <= fallback);
           }
@@ -1048,19 +1048,20 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
         }
 #if !defined(_WIN32)
         else { /* malloc-based fall-back */
+          int mprotect_result;
 # if !defined(LIBXSMM_MALLOC_NOCRC) && defined(LIBXSMM_VTUNE) /* update checksum */
           info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
             (unsigned int)(((char*)&info->hash) - ((char*)info)), LIBXSMM_MALLOC_SEED);
 # endif   /* treat memory protection errors as soft error; ignore return value */
-          if (EXIT_SUCCESS == mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC)
-            && 0 != internal_malloc_secured) /* hard-error in case of SELinux */
-          {
+          mprotect_result = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
+          if (0 != internal_malloc_secured) { /* hard-error in case of SELinux */
             if (0 != libxsmm_verbosity /* library code is expected to be mute */
+              && EXIT_SUCCESS != mprotect_result
               && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
             {
               fprintf(stderr, "LIBXSMM ERROR: cannot allocate executable buffer!\n");
             }
-            result = EXIT_FAILURE;
+            result = mprotect_result;
           }
         }
 #endif
