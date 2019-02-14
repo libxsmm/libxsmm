@@ -29,10 +29,6 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 
-#define _mm512_roundbf16rne(A) LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(A)
-#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
-#define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
-
 for (j = t-1; j >= 0; --j) {
   /* let's run the cell in blocks for good locality */
 #ifdef PROFILE
@@ -410,9 +406,4 @@ for (j = t-1; j >= 0; --j) {
     }
     libxsmm_barrier_wait(handle->barrier, (int)ltid);
   }
-
-#undef _mm512_roundbf16rne
-#undef _mm512_loadcvt_bf16_fp32
-#undef _mm512_storecvt_fp32_bf16
-
 
