@@ -229,7 +229,7 @@ int main(int argc, char* argv[]) {
 
   /* touch B */
   for ( l_i = 0; l_i < l_k*l_n; l_i++) {
-    l_b[l_i] = (REALTYPE)libxsmm_rand_f64();
+    l_b[l_i] = (REALTYPE)libxsmm_rng_f64();
   }
 
   /* touch dense A */
@@ -246,7 +246,7 @@ int main(int argc, char* argv[]) {
 
   /* touch C */
   for ( l_i = 0; l_i < l_m*l_n; l_i++) {
-    l_c_gold_betaone[l_i] = (REALTYPE)libxsmm_rand_f64();
+    l_c_gold_betaone[l_i] = (REALTYPE)libxsmm_rng_f64();
   }
   for ( l_i = 0; l_i < l_m*l_n; l_i++) {
     l_c_betaone[l_i] = l_c_gold_betaone[l_i];

@@ -38,6 +38,7 @@
 #include "Conv.hpp"
 #include "FullyConnected.hpp"
 #include "FusedBNorm.hpp"
+#include "FusedConvBN.hpp"
 #include "DummyData.hpp"
 #include "TypeList.hpp"
 
@@ -266,29 +267,54 @@ void MLEngine::checkpoint(TensorList L, int buftype)
     if(buftype == HISTORY)
       n = n + "_history";
 
+    string nntype = dynamic_cast<NNNode*>(t->getOwner())->getNodeType();
+
     if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
     {
       if(tenType == ACT)
       {
         n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
-        if(tn.find("conv") != tn.npos)
+        if(tn.find("bn") != tn.npos)
         {
-          ConvNode* cn = dynamic_cast<ConvNode*>(t->getOwner());
-          cn->Checkpoint(tBuf, n, checkpoint_format_);
+          if(nntype == "FusedBatchNorm")
+          {
+            FusedBNormNode* bn = dynamic_cast<FusedBNormNode*>(t->getOwner());
+            bn->Checkpoint(tBuf, n, checkpoint_format_);
+          }
+          else if(nntype == "FusedConvBN")
+          {
+            FusedConvBNNode* fcbn = dynamic_cast<FusedConvBNNode*>(t->getOwner());
+            fcbn->Checkpoint(tBuf, n, checkpoint_format_);
+          }
         }
       }
     }
 
     if((tenType == CONVWEIGHT) || (tenType == CONVBIAS))
     {
-      ConvNode* cn = dynamic_cast<ConvNode*>(t->getOwner());
-      cn->Checkpoint(tBuf, n, checkpoint_format_);
-      if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+      if(nntype == "Convolution")
       {
-        n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
-        if(buftype == HISTORY)
-          n = n + "_history";
+        ConvNode* cn = dynamic_cast<ConvNode*>(t->getOwner());
         cn->Checkpoint(tBuf, n, checkpoint_format_);
+        if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+        {
+          n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
+          if(buftype == HISTORY)
+            n = n + "_history";
+          cn->Checkpoint(tBuf, n, checkpoint_format_);
+        }
+      }
+      else if(nntype == "FusedConvBN")
+      {
+        FusedConvBNNode* fcbn = dynamic_cast<FusedConvBNNode*>(t->getOwner());
+        fcbn->Checkpoint(tBuf, n, checkpoint_format_);
+        if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+        {
+          n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
+          if(buftype == HISTORY)
+            n = n + "_history";
+          fcbn->Checkpoint(tBuf, n, checkpoint_format_);
+        }
       }
     }
     else if((tenType == FCWEIGHT) || (tenType == FCBIAS))
@@ -305,14 +331,29 @@ void MLEngine::checkpoint(TensorList L, int buftype)
     }
     else if((tenType == BNORMSCALE) || (tenType == BNORMSHIFT) || (tenType == BNORMMEAN) || (tenType == BNORMVAR))
     {
-      FusedBNormNode* bn = dynamic_cast<FusedBNormNode*>(t->getOwner());
-      bn->Checkpoint(tBuf, n, checkpoint_format_);
-      if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+      if(nntype == "FusedBatchNorm")
       {
-        n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
-        if(buftype == HISTORY)
-          n = n + "_history";
+        FusedBNormNode* bn = dynamic_cast<FusedBNormNode*>(t->getOwner());
         bn->Checkpoint(tBuf, n, checkpoint_format_);
+        if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+        {
+          n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
+          if(buftype == HISTORY)
+            n = n + "_history";
+          bn->Checkpoint(tBuf, n, checkpoint_format_);
+        }
+      }
+      else if(nntype == "FusedConvBN")
+      {
+        FusedConvBNNode* fcbn = dynamic_cast<FusedConvBNNode*>(t->getOwner());
+        fcbn->Checkpoint(tBuf, n, checkpoint_format_);
+        if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+        {
+          n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
+          if(buftype == HISTORY)
+            n = n + "_history";
+          fcbn->Checkpoint(tBuf, n, checkpoint_format_);
+        }
       }
     }
   }
@@ -730,8 +771,6 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
     }
   }
 
-  // Total buffer size, including guard bands before and after each buffer (currntly 64 bytes long)
-  *bufsize = s;
 
   // Number of guard bands in tensor; used for canary checking
   *nc = num_canaries;
@@ -739,7 +778,7 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
   // Allocate memory
   bool lp = (data_type_ == BF16) && (tenType=="WEIGHT") && (buftype == DATA);
 #ifdef USE_MLSL
-#if 0
+  s = ALIGN_SIZE(s, 2097152);
   void* buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
   if(lp)
       lpweight_buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s/sizeof(libxsmm_bfloat16), 2097152);
@@ -748,14 +787,14 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
   if(lp)
     lpweight_buf_ = (void*)libxsmm_aligned_malloc(s/sizeof(libxsmm_bfloat16), 2097152);
 #endif
-#else
-  void* buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
-  if(lp)
-    lpweight_buf_ = (void*)libxsmm_aligned_malloc(s/sizeof(libxsmm_bfloat16), 2097152);
-#endif
 
+  // Total buffer size, including guard bands before and after each buffer (currntly 64 bytes long)
+  *bufsize = s + (lp ? s/sizeof(libxsmm_bfloat16) : 0);
+
+#if 0
   printf("Tensor with buffers %d @ %p with total size %lld\n",buftype, buf_, s);
   fflush(stdout);
+#endif
 
   if(buf_ != NULL)
   {
@@ -881,21 +920,42 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       int tType = t->getType();
       if(tType == CONVWEIGHT)
       {
-        ConvNode* cn = dynamic_cast<ConvNode*>(t->getOwner());
-        assert(bytes > 0);
-        if(!load_from_checkpoint_)
+        if(nntype == "FusedConvBN")
         {
-          cn->fillWeightBuffers(tBuf, buftype, bytes);
-          if(lp)
-            convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16));
-        }
+          FusedConvBNNode *fcbn = dynamic_cast<FusedConvBNNode*>(t->getOwner());
+          assert(bytes > 0);
+          if(!load_from_checkpoint_)
+          {
+            fcbn->fillWeightBuffers(tBuf, buftype, bytes);
+            if(lp)
+              convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16));
+          }
 
-        if(solver_->getGlobalFlag())
-          if(buftype == DIFF)
-            if(data_type_ == FLOAT)
-              cn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(float));
-            else if(data_type_ == BF16)
-              cn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(libxsmm_bfloat16));
+          if(solver_->getGlobalFlag())
+            if(buftype == DIFF)
+              if(data_type_ == FLOAT)
+                fcbn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(float));
+              else if(data_type_ == BF16)
+                fcbn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(libxsmm_bfloat16));
+        }
+        else if(nntype == "Convolution")
+        {
+          ConvNode* cn = dynamic_cast<ConvNode*>(t->getOwner());
+          assert(bytes > 0);
+          if(!load_from_checkpoint_)
+          {
+            cn->fillWeightBuffers(tBuf, buftype, bytes);
+            if(lp)
+              convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16));
+          }
+
+          if(solver_->getGlobalFlag())
+            if(buftype == DIFF)
+              if(data_type_ == FLOAT)
+                cn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(float));
+              else if(data_type_ == BF16)
+                cn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(libxsmm_bfloat16));
+        }
       }
       else if(tType == CONVBIAS)
       {
@@ -937,20 +997,43 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       }
       else if((tType == BNORMSCALE) || (tType == BNORMSHIFT))
       {
-        FusedBNormNode* bn = dynamic_cast<FusedBNormNode*>(t->getOwner());
-        assert(bytes > 0);
-        if(!load_from_checkpoint_)
-          bn->fillBuffer(tBuf, buftype, bytes);
-        if(solver_->getGlobalFlag())
-          if(buftype == DIFF)
-            bn->fillBiasMultipliers(lrptr, decptr, bytes/sizeof(float));
+        if(nntype == "FusedConvBN")
+        {
+          FusedConvBNNode *fcbn = dynamic_cast<FusedConvBNNode*>(t->getOwner());
+          assert(bytes > 0);
+          if(!load_from_checkpoint_)
+            fcbn->fillBuffer(tBuf, buftype, bytes);
+          if(solver_->getGlobalFlag())
+            if(buftype == DIFF)
+              fcbn->fillBiasMultipliers(lrptr, decptr, bytes/sizeof(float));
+        }
+        else if(nntype == "FusedBatchNorm")
+        {
+          FusedBNormNode* bn = dynamic_cast<FusedBNormNode*>(t->getOwner());
+          assert(bytes > 0);
+          if(!load_from_checkpoint_)
+            bn->fillBuffer(tBuf, buftype, bytes);
+          if(solver_->getGlobalFlag())
+            if(buftype == DIFF)
+              bn->fillBiasMultipliers(lrptr, decptr, bytes/sizeof(float));
+        }
       }
       else if((tType == BNORMMEAN) || (tType == BNORMVAR))
       {
-        FusedBNormNode* bn = dynamic_cast<FusedBNormNode*>(t->getOwner());
-        assert(bytes > 0);
-        if(!load_from_checkpoint_)
-          bn->fillBuffer(tBuf, buftype, bytes);
+        if(nntype == "FusedConvBN")
+        {
+          FusedConvBNNode *fcbn = dynamic_cast<FusedConvBNNode*>(t->getOwner());
+          assert(bytes > 0);
+          if(!load_from_checkpoint_)
+            fcbn->fillBuffer(tBuf, buftype, bytes);
+        }
+        else if(nntype == "FusedBatchNorm")
+        {
+          FusedBNormNode* bn = dynamic_cast<FusedBNormNode*>(t->getOwner());
+          assert(bytes > 0);
+          if(!load_from_checkpoint_)
+            bn->fillBuffer(tBuf, buftype, bytes);
+        }
       }
     }
 
@@ -991,9 +1074,9 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
         can_ptr.push_back(bytes);
         assert(can_ptr.size() <= num_canaries);
       }
+      if(ttp)
+        ptr += END_GUARD_BAND;
     }
-    if(ttp)
-      ptr += END_GUARD_BAND;
     assert(ptr <= buf_ + s);
 #if 0
     printf("ptr @ %p\n",ptr);

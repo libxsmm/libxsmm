@@ -625,6 +625,9 @@ void JitterDataNode::forwardPropagate()
     for(int i=0; i<gparams_.batch_size; i++)
       toplabel[i] = labels_[mbslot][i];
 
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
     for(int i=0; i<gparams_.batch_size; i++)
     {
       for(int attempts=0; attempts<60; attempts++) {

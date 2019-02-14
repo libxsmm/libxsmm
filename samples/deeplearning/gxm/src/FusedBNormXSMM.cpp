@@ -458,7 +458,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
   }
   else
   {
-#if defined(_OPENMP)
+#ifdef _OPENMP
 #pragma omp parallel for
 #endif
     for(int i=0; i < nFM; i++)
