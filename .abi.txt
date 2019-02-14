@@ -298,6 +298,7 @@ libxsmm_isqrt_u64
 libxsmm_itrans
 libxsmm_itrans_
 libxsmm_lcm
+libxsmm_log2
 libxsmm_malloc
 libxsmm_matcopy
 libxsmm_matcopy_
@@ -346,13 +347,15 @@ libxsmm_otrans_thread_internal
 libxsmm_pgemm_descriptor_init
 libxsmm_primes_u32
 libxsmm_product_limit
-libxsmm_rand_f64
-libxsmm_rand_u32
 libxsmm_release_kernel
 libxsmm_release_kernel_
 libxsmm_release_scratch
 libxsmm_rnaz_convert_fp32_bfp16
 libxsmm_rne_convert_fp32_bfp16
+libxsmm_rng_f32_seq
+libxsmm_rng_f64
+libxsmm_rng_set_seed
+libxsmm_rng_u32
 libxsmm_rwlock_acqread
 libxsmm_rwlock_acquire
 libxsmm_rwlock_create
@@ -365,6 +368,7 @@ libxsmm_scratch_malloc
 libxsmm_set_default_allocator
 libxsmm_set_dispatch_trylock
 libxsmm_set_gemm_auto_prefetch
+libxsmm_set_gemm_batchflag
 libxsmm_set_scratch_allocator
 libxsmm_set_scratch_limit
 libxsmm_set_target_arch
@@ -400,7 +404,6 @@ libxsmm_spmdm_destroy
 libxsmm_spmdm_get_num_compute_blocks
 libxsmm_spmdm_get_num_createSparseSlice_blocks
 libxsmm_spmdm_init
-libxsmm_srand
 libxsmm_ssqrt
 libxsmm_strerror
 libxsmm_timer_cycles
