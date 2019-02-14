@@ -28,7 +28,9 @@
 ******************************************************************************/
 /* Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
-//#define PROFILE
+#if 0
+#define PROFILE
+#endif
 
 /* helper variables */
 libxsmm_blasint j, ik, ikb, in, inb, ic, icb, jk, jb/*jn shadows global variable*/, jc, ek, en, ec, BF, KB_BLOCKS, KB;
