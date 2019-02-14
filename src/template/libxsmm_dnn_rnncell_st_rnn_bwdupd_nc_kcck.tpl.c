@@ -52,8 +52,10 @@ element_output_type *db  = (element_output_type*)handle->db->data;
 element_output_type *dht = (element_output_type*)handle->dht->data;
 element_output_type *deltat = (element_output_type*)handle->scratch_deltat;
 element_input_type  *scratch_xT = (element_input_type*)handle->scratch_xT;
+#if 0
 element_filter_type *scratch_wT = (element_filter_type*)handle->scratch_wT;
 element_filter_type *scratch_rT = (element_filter_type*)handle->scratch_rT;
+#endif
 element_output_type *scratch_hT = (element_output_type*)handle->scratch_hT;
 /* Auxiliary variables for bact-reduce calls  */
 int nBlocks = N/bn;
