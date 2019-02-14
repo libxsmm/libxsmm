@@ -82,6 +82,7 @@ void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
 }
 
 void edge_hp_free( void* ptr,  size_t nbytes ) {
+  LIBXSMM_UNUSED( nbytes );
 #if defined(EDGE_HP_1G)
   /* to be implemented */
 #elif defined(EDGE_HP_2M)
@@ -253,7 +254,6 @@ int main(int argc, char* argv[])
   unsigned long long l_start, l_end;
   double l_total;
   unsigned int l_num_threads;
-  void* onegcode;
   unsigned int l_star_ent = num_quants*num_quants;
   double* l_total_thread;
   double* l_cur_thread_time;
@@ -295,7 +295,7 @@ int main(int argc, char* argv[])
   l_total_thread = (double*)malloc(8*l_num_threads*sizeof(double));
   l_cur_thread_time = (double*)malloc(8*l_num_threads*sizeof(double));
   amoks = (size_t*)malloc(8*(l_num_threads+1)*sizeof(size_t));
-  for ( i = 0; i < 8*(l_num_threads+1); i++ ) {
+  for ( i = 0; i < (int)8*(l_num_threads+1); i++ ) {
     amoks[i] = 0;
   }
 
@@ -386,7 +386,7 @@ int main(int argc, char* argv[])
     }
   }
   for (i = 0; i < (int)num_elems; i++) {
-    for (j = 0; j < (int)3*mat_st_nnz; j++) {
+    for (j = 0; j < (int)mat_st_nnz*3; j++) {
       star[(i*3*mat_st_nnz)+j] = libxsmm_rng_f64();
     }
   }
@@ -409,8 +409,10 @@ int main(int argc, char* argv[])
     int mytid = 0;
 #endif
     libxsmm_timer_tickint mystart, myend;
+#if defined(HANDLE_AMOK)
     size_t cur_amoks = 0;
     size_t non_amoks = l_num_threads;
+#endif
     size_t l_el_chunk = 0;
     size_t l_el_start = 0;
     size_t l_el_end   = 0;
@@ -427,7 +429,7 @@ int main(int argc, char* argv[])
       }
 #endif
       mystart = libxsmm_timer_tick();
-      for (j = l_el_start; j < l_el_end; j++) {
+      for (j = (int)l_el_start; j < (int)l_el_end; j++) {
 #if 1
         st_kernel( star+(j*3*mat_st_nnz)               , qt+(j*elem_size), qs+(mytid*elem_size) );
         a_kernel( qs+(mytid*elem_size), global                        , q+(j*elem_size) );
@@ -488,7 +490,7 @@ int main(int argc, char* argv[])
   flops_vol += (double)num_quants * (double)mat_c_nnz * (double)num_cfr * 2.0;
   flops_vol += (double)num_modes * (double)mat_st_nnz * (double)num_cfr * 6.0; /* 3 star matrix mul */
   printf("%fs time for vol (asm), min %f, max %f, avg %f, #amoks %llu, amok-threads ", l_total, time_min, time_max, time_avg, (unsigned long long)amoks[8*l_num_threads]);
-  for ( i = 0; i < l_num_threads; i++ ) {
+  for ( i = 0; i < (int)l_num_threads; i++ ) {
     if ( amoks[8*i] != 0 ) {
       printf("%i,", i);
     }

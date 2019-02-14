@@ -48,8 +48,12 @@
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
 
-//#define TWO_GEMMS
+#if 0
+#define TWO_GEMMS
+#endif
+#if 0
 #define PROFILE
+#endif
 #if defined(PROFILE)
 unsigned long long Gbl_blas_start, Gbl_blas_end, Gbl_eltwise_start, Gbl_eltwise_end, Gbl_conv_start, Gbl_conv_end;
 double Gbl_blas_total, Gbl_eltwise_total, Gbl_conv_total;
@@ -1001,7 +1005,7 @@ int main(int argc, char* argv[])
     printf("\nUsage: ./lstmdriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [N] [C] [K] [time_steps > 0]\n\n");
     return 0;
   }
-  libxsmm_srand(1);
+  libxsmm_rng_set_seed(1);
 
   /* reading new values from cli */
   j = 1;
