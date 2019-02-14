@@ -228,7 +228,6 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
       tenWeightInc_->setDataType(DT_FLOAT);
       tenWeightInc_->setBufferSize(welem*sizeof(float));
 
-      // Set the size of the weight-gradient buffer and the weight-increment buffer
       if(in_dtype == DT_FLOAT)
       {
         tenWeightDiff_->setDataType(DT_FLOAT);
@@ -315,8 +314,8 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
 
   if(gparams_.physical_padding)
   {
-    gparams_.opad_h = vp[0];
-    gparams_.opad_w = vp[1];
+    gparams_.opad_h = ovp[0];
+    gparams_.opad_w = ovp[1];
   }
   else
   {
@@ -374,9 +373,9 @@ void ConvNode::fillWeightBuffers(TensorBuf* tBuf, int buftype, long long int siz
   void *ptr = tBuf->getBuffer();
 
 #ifdef USE_MLSL
-    unsigned int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
+  unsigned int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
 #else
-    unsigned int node_id = 0;
+  unsigned int node_id = 0;
 #endif
 
   if(buftype == DATA)
@@ -440,13 +439,15 @@ void ConvNode::Checkpoint(TensorBuf *tBuf, string name, string format)
 {
   long long int bytes = tBuf->getBufferSize();
   int dtype = tBuf->getDataType();
+  int buftype = tBuf->getBufferType();
 
   FILE* f;
   void* ptr;
   size_t pos;
 
-  while((pos = name.find("/", 10)) != name.npos)
-    name.replace(pos, 1, 1, '_');
+  if((name.find("30") == name.npos) && (name.find("60") == name.npos) && (name.find("80") == name.npos))
+    while((pos = name.find("/", 10)) != name.npos)
+      name.replace(pos, 1, 1, '_');
 
   float* p = (float*)tBuf->getBuffer();
   bool no_checkpt = false;
@@ -462,7 +463,7 @@ void ConvNode::Checkpoint(TensorBuf *tBuf, string name, string format)
 
   if(!no_checkpt)
   {
-    if(format.compare("binary") == 0)
+    if(format == "binary")
     {
       f = fopen(name.c_str(), "wb");
       if(f != NULL)
@@ -610,6 +611,8 @@ void ConvNode::forwardPropagate()
         ptr[i] = 0;
     }
 
+    cbptr = (float*)_mm_malloc(10240*4, 64);
+
     first_fp = false;
   }
 
@@ -644,7 +647,7 @@ void ConvNode::forwardPropagate()
     }
   }
 
-  impl->forwardPropagate(tenBotData_, tenWeightData_, tenBiasData_, tenTopData_);
+  impl->forwardPropagate(tenBotData_, tenWeightData_, tenWeightInc_, tenBiasData_, tenTopData_);
 
 #ifdef CHECK_BLOWUP_FP32
   if(out_dtype == DT_FLOAT)
@@ -661,8 +664,8 @@ void ConvNode::forwardPropagate()
   }
   else if(out_dtype == DT_BF16)
   {
-    convert_bf16_f32((libxsmm_bfloat16*)tenTopData_->getBuffer(), cbptr, 16);
-    for(int i=0; i<16; i++)
+    convert_bf16_f32((libxsmm_bfloat16*)tenTopData_->getBuffer(), cbptr, 10240);
+    for(int i=0; i<10240; i++)
     {
       if(isnan(cbptr[i]) || isinf(cbptr[i]))
       {
@@ -735,10 +738,13 @@ void ConvNode::forwardPropagate()
         stptr = (float*)libxsmm_aligned_malloc(msize*sizeof(float), 2097152);
       }
 
-      if(eptr_->get_current_batch() % STATFREQ == 0)
       {
         string s = nname_ + "_Inp";
-        libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenBotData_->getBuffer();
+        libxsmm_bfloat16 *ptr;
+        if(tenBotData_->getLPBuffer() != NULL)
+          ptr = (libxsmm_bfloat16*)tenBotData_->getLPBuffer();
+        else
+          ptr = (libxsmm_bfloat16*)tenBotData_->getBuffer();
         convert_bf16_f32(ptr, stptr, nImg*ifm*ifhp*ifwp);
         MeanOfLayer((char*)s.c_str(), stptr, nImg*ifm*ifhp*ifwp);
 
@@ -802,7 +808,6 @@ void ConvNode::backPropagate()
 
   tenTopDiff_ = tenTop_->getBuf(DIFF);
 
-#if 1
   if(first_bp)
   {
     long long int size = nImg * ifm * ifhp *ifwp;
@@ -820,6 +825,7 @@ void ConvNode::backPropagate()
     else if(in_dtype == DT_BF16 && out_dtype == DT_BF16)
     {
       libxsmm_bfloat16* ptr = (libxsmm_bfloat16*)tenBotDiff_->getBuffer();
+
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -829,7 +835,6 @@ void ConvNode::backPropagate()
 
    first_bp = false;
   }
-#endif
 
   impl->backPropagate(tenTopData_, tenWeightData_, tenTopDiff_, tenBotDiff_);
 
@@ -1003,7 +1008,10 @@ void ConvNode::weightUpdate()
   if(in_dtype == DT_BF16)
   {
     if(dwptr == NULL)
-      dwptr = (float*)_mm_malloc(ifm*ofm*kh*kw*sizeof(float), 64);
+    {
+      int wsize = ALIGN_SIZE(ifm*ofm*kh*kw*sizeof(float), 2097152);
+      dwptr = (float*)MLSL::Environment::GetEnv().Alloc(wsize, 2097152);
+    }
     convert_bf16_f32((libxsmm_bfloat16*)mp, dwptr, ifm*ofm*kh*kw);
     op_->GetParameterSet(0)->StartGradientComm(dwptr);
   }
@@ -1015,18 +1023,13 @@ void ConvNode::weightUpdate()
 #endif
 
 #ifdef GETSTATS
-#ifdef USE_MLSL
-  if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0)
-#else
-  if(eptr_->get_current_batch() % STATFREQ == 0)
-#endif
+  if(node_id == 0)
   {
     if(in_dtype == DT_FLOAT)
     {
       string s = nname_ + "_Inp";
       float *ptr = (float*)tenBotData_->getBuffer();
       MeanOfLayer((char*)s.c_str(), ptr, nImg*ifm*ifhp*ifwp);
-
       s = nname_ + "_delOutp";
       ptr = (float*)tenTopDiff_->getBuffer();
       MeanOfLayer((char*)s.c_str(), ptr, nImg*ofm*ofhp*ofwp);
@@ -1040,7 +1043,12 @@ void ConvNode::weightUpdate()
     else if(in_dtype == DT_BF16)
     {
       string s = nname_ + "_Inp";
-      libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenBotData_->getBuffer();
+      libxsmm_bfloat16 *ptr;
+      if(tenBotData_->getLPBuffer() != NULL)
+        ptr = (libxsmm_bfloat16*)tenBotData_->getLPBuffer();
+      else
+        ptr = (libxsmm_bfloat16*)tenBotData_->getBuffer();
+
       memset(stptr, 0, nImg*ifm*ifhp*ifwp);
       convert_bf16_f32(ptr, stptr, nImg*ifm*ifhp*ifwp);
       MeanOfLayer((char*)s.c_str(), stptr, nImg*ifm*ifhp*ifwp);
@@ -1074,19 +1082,12 @@ void ConvNode::solverStep()
   return;
 #endif
 
-  int nImg = gparams_.batch_size;
   int ifm = gparams_.nInput;
   int ofm = gparams_.nOutput;
-  int ifh = gparams_.iHeight;
-  int ifw = gparams_.iWidth;
-  int ofh = gparams_.oHeight;
-  int ofw = gparams_.oWidth;
   int kh = gparams_.kh;
   int kw = gparams_.kw;
 
-  void *gwt_prv_ptr = tenWeightDiff_->getPrivBuffer();
-  void *gwt_ptr = tenWeightDiff_->getBuffer();
-  void *gwt = (gwt_prv_ptr == NULL) ? gwt_ptr : gwt_prv_ptr;
+  void *gwt = tenWeightDiff_->getBuffer();
 
   float *gbias;
   if(gparams_.bias_term)

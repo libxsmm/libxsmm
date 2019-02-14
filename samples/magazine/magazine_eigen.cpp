@@ -34,6 +34,10 @@
 # define __EIGEN
 #endif
 
+#if !defined(__EIGEN_TIMER) && 0
+# define __EIGEN_TIMER
+#endif
+
 #if defined(__EIGEN)
 # if !defined(EIGEN_DONT_PARALLELIZE)
 #   define EIGEN_DONT_PARALLELIZE
@@ -44,7 +48,7 @@
 # include <Eigen/Dense>
 # if defined(_OPENMP)
 #   include <omp.h>
-# else
+# elif defined(__EIGEN_TIMER)
 #   include <bench/BenchTimer.h>
 # endif
 #endif
@@ -81,9 +85,9 @@ int main(int argc, char* argv[])
   const int n = (3 < argc ? atoi(argv[3]) : 5);
   const int k = (4 < argc ? atoi(argv[4]) : 7);
   /* leading dimensions are used to each pad (row-major!) */
-  const int lda = ((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const int ldb = ((sizeof(T) * k + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const int ldc = ((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const int lda = (5 < argc ? (m < atoi(argv[5]) ? atoi(argv[5]) : m) : static_cast<int>(((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T)));
+  const int ldb = (6 < argc ? (k < atoi(argv[6]) ? atoi(argv[6]) : k) : static_cast<int>(((sizeof(T) * k + alignment - 1) & ~(alignment - 1)) / sizeof(T)));
+  const int ldc = (7 < argc ? (m < atoi(argv[7]) ? atoi(argv[7]) : m) : static_cast<int>(((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T)));
   /* Eigen specifies leading dimensions per "outer stride" */
   stride_helper<(sizeof(T)<alignment)> stride(lda, ldb, ldc);
 #if 0
@@ -106,8 +110,8 @@ int main(int argc, char* argv[])
   T *const pb = static_cast<T*>(std::align(alignment, sb - alignment + 1, wb, sb));
   T *const pc = static_cast<T*>(std::align(alignment, sc - alignment + 1, wc, sc));
   const double scale = 1.0 / size;
-  double duration;
-#if !defined(_OPENMP)
+  double duration = 0;
+#if !defined(_OPENMP) && defined(__EIGEN_TIMER)
   Eigen::BenchTimer timer;
 #endif
 
@@ -126,7 +130,9 @@ int main(int argc, char* argv[])
 #endif
   {
 #if !defined(_OPENMP)
+# if defined(__EIGEN_TIMER)
     timer.start();
+# endif
 #else /* OpenMP thread pool is already populated (parallel region) */
 #   pragma omp single
     duration = omp_get_wtime();
@@ -167,16 +173,15 @@ int main(int argc, char* argv[])
   }
 #if defined(_OPENMP)
   duration = omp_get_wtime() - duration;
-#else
+#elif defined(__EIGEN_TIMER)
   timer.stop();
   duration = timer.total();
 #endif
   if (0 < duration) {
     const double gflops = 2.0 * m * n * k * 1E-9;
     printf("%.1f GFLOPS/s\n", gflops / duration * size);
+    printf("%.1f ms\n", 1000.0 * duration);
   }
-  printf("%.1f ms\n", 1000.0 * duration);
-
   { /* calculate checksum */
     double check = 0;
     for (int i = 0; i < size; ++i) {

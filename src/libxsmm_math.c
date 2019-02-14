@@ -508,7 +508,7 @@ LIBXSMM_API float libxsmm_sexp2(float x)
 #if defined(LIBXSMM_NO_LIBM)
   return libxsmm_sexp2_fast(x, 20/*compromise*/);
 #else
-  return powf(2.f, x);
+  return LIBXSMM_POWF(2.f, x);
 #endif
 }
 
@@ -574,46 +574,13 @@ LIBXSMM_API float libxsmm_sexp2_i8i(int x)
 }
 
 
-LIBXSMM_API void libxsmm_srand(unsigned int seed)
+LIBXSMM_API double libxsmm_log2(double x)
 {
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-  srand(seed);
+#if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
+  return log2(x);
 #else
-  srand48(seed);
-#endif
-}
-
-
-LIBXSMM_API unsigned int libxsmm_rand_u32(unsigned int n)
-{
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-  const unsigned int rand_max1 = (unsigned int)(RAND_MAX) + 1U;
-  const unsigned int q = (rand_max1 / n) * n;
-  unsigned int r = (unsigned int)rand();
-  if (q != rand_max1)
-#else
-  const unsigned int q = ((1U << 31) / n) * n;
-  unsigned int r = (unsigned int)lrand48();
-  if (q != (1U << 31))
-#endif
-  {
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-    while (q <= r) r = (unsigned int)rand();
-#else
-    while (q <= r) r = (unsigned int)lrand48();
-#endif
-  }
-  return r % n;
-}
-
-
-LIBXSMM_API double libxsmm_rand_f64(void)
-{
-#if defined(_WIN32) || defined(__CYGWIN__) || !(defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
-  static const double scale = 1.0 / (RAND_MAX);
-  return scale * (double)rand();
-#else
-  return drand48();
+  static const double rcp_ln2 = 1.0 / (M_LN2);
+  return log(x) * rcp_ln2;
 #endif
 }
 

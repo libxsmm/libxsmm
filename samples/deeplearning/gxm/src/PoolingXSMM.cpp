@@ -82,7 +82,18 @@ void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *mask, in
 {
   void *input = inpb->getBuffer();
   void *output = outpb->getBuffer();
-  void *scratch = scratchp->getBuffer();
+
+  if(scratch != NULL)
+  {
+    if(updated_scratch && scratch != scratchp->getBuffer())
+    {
+      printf("Warning: updating scratch from %p to %p\n",scratch, scratchp->getBuffer());
+      scratch = scratchp->getBuffer();
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_scratch( libxsmm_handle, scratch ) );
+    }
+  }
+  else
+    scratch = scratchp->getBuffer();
 
   if(libxsmm_input == NULL && libxsmm_mask == NULL && libxsmm_output == NULL)
   {

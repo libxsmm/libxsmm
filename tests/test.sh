@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
 # Copyright (c) 2015-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
@@ -69,7 +69,7 @@ else
   TESTS=$*
 fi
 NTEST=1
-NMAX=$(${ECHO} "${TESTS}" | wc -w)
+NMAX=$(${ECHO} "${TESTS}" | wc -w | tr -d " ")
 for TEST in ${TESTS}; do
   NAME=$(basename ${TEST} .c)
   ${ECHO} -n "${NTEST} of ${NMAX} (${NAME})... "

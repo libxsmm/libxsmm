@@ -209,9 +209,9 @@ int main(int argc, char *argv[])
   C       = (float*)libxsmm_aligned_malloc( M*N*sizeof(float), 64 );
 
   /* Step 3: init data */
-  libxsmm_srand(1);
+  libxsmm_rng_set_seed(1);
   for (l = 0; l < (size_t)M * (size_t)K; ++l) {
-    const double r64 = libxsmm_rand_f64();
+    const double r64 = libxsmm_rng_f64();
     const float r32 = (float)r64;
 #ifdef USE_BFLOAT
     const int r = *(const int*)(&r32);
@@ -224,7 +224,7 @@ int main(int argc, char *argv[])
   }
 
   for (l = 0; l < (size_t)K * (size_t)N; ++l) {
-    const double r64 = libxsmm_rand_f64();
+    const double r64 = libxsmm_rng_f64();
     const float r32 = (float)r64;
 #ifdef USE_BFLOAT
     const int r = *(const int*)(&r32);
@@ -235,7 +235,7 @@ int main(int argc, char *argv[])
     B_gold[l] = val;
   }
   for (l = 0; l < (size_t)M * (size_t)N; ++l) {
-    C0_gold[l] = (float)libxsmm_rand_f64();
+    C0_gold[l] = (float)libxsmm_rng_f64();
     C_gold[l] = C0_gold[l];
   }
   for (l = 0; l < (size_t)M * (size_t)N; ++l) {

@@ -32,21 +32,21 @@
 set -o pipefail
 
 HERE=$(cd $(dirname $0); pwd -P)
-MKDIR=$(command -v mkdir 2>/dev/null)
-CHMOD=$(command -v chmod 2>/dev/null)
-UNAME=$(command -v uname 2>/dev/null)
-ECHO=$(command -v echo 2>/dev/null)
-SYNC=$(command -v sync 2>/dev/null)
-SORT=$(command -v sort 2>/dev/null)
-GREP=$(command -v grep 2>/dev/null)
-WGET=$(command -v wget 2>/dev/null)
-GIT=$(command -v git 2>/dev/null)
-SED=$(command -v sed 2>/dev/null)
-CUT=$(command -v cut 2>/dev/null)
-TR=$(command -v tr 2>/dev/null)
-WC=$(command -v wc 2>/dev/null)
-RM=$(command -v rm 2>/dev/null)
-CP=$(command -v cp 2>/dev/null)
+MKDIR=$(command -v mkdir)
+CHMOD=$(command -v chmod)
+UNAME=$(command -v uname)
+ECHO=$(command -v echo)
+SYNC=$(command -v sync)
+SORT=$(command -v sort)
+GREP=$(command -v grep)
+WGET=$(command -v wget)
+GIT=$(command -v git)
+SED=$(command -v sed)
+CUT=$(command -v cut)
+TR=$(command -v tr)
+WC=$(command -v wc)
+RM=$(command -v rm)
+CP=$(command -v cp)
 
 MKTEMP=${HERE}/../.mktmp.sh
 FASTCI=$2
@@ -121,9 +121,9 @@ then
   fi
 
   if [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
-    export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)
-    export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l)))
-    export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l)
+    export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
+    export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")))
+    export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
   elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
     export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
     export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
@@ -137,7 +137,7 @@ then
   else
     export NS=1 NC=1 NT=1 HT=1
   fi
-  if [ "" != "${CUT}" ] && [ "" != "$(command -v numactl 2>/dev/null)" ]; then
+  if [ "" != "${CUT}" ] && [ "" != "$(command -v numactl)" ]; then
     export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
   else
     export NN=${NS}
@@ -245,7 +245,7 @@ then
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
         then
-          LICSDIR=$(command -v icc 2>/dev/null | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
+          LICSDIR=$(command -v icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
           ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
           ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
           ${CP} -u ${LICSDIR}/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null

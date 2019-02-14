@@ -50,7 +50,7 @@ PERF=$(${GREP} -A2 "${VARIANT}" ${FILE} \
    | ${CUT} -d" " -f2 \
    | ${SORT} -n)
 
-NUM=$(${ECHO} "${PERF}" | wc -l)
+NUM=$(${ECHO} "${PERF}" | wc -l | tr -d " ")
 MIN=$(${ECHO} ${PERF} | ${CUT} -d" " -f1)
 MAX=$(${ECHO} ${PERF} | ${CUT} -d" " -f${NUM})
 
@@ -58,7 +58,7 @@ ${ECHO} "num=${NUM}"
 ${ECHO} "min=${MIN}"
 ${ECHO} "max=${MAX}"
 
-BC=$(command -v bc 2>/dev/null)
+BC=$(command -v bc)
 if [ "" != "${BC}" ]; then
   AVG=$(${ECHO} "$(${ECHO} -n "scale=3;(${PERF})/${NUM}" | tr "\n" "+")" | ${BC})
   NUM2=$((NUM / 2))
@@ -82,7 +82,7 @@ elif [ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]; then
   WGNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot
   GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot
 else
-  GNUPLOT=$(command -v gnuplot 2>/dev/null)
+  GNUPLOT=$(command -v gnuplot)
   WGNUPLOT=${GNUPLOT}
 fi
 

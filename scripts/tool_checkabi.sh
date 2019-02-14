@@ -39,16 +39,16 @@ ABITMP=.abi.tmp
 ABICUR=.abi.txt
 LIBTYPE=so
 
-BASENAME=$(command -v basename 2>/dev/null)
-ECHO=$(command -v echo 2>/dev/null)
-SORT=$(command -v sort 2>/dev/null)
-DIFF=$(command -v diff 2>/dev/null)
-SED=$(command -v sed 2>/dev/null)
-CUT=$(command -v cut 2>/dev/null)
-LS=$(command -v ls 2>/dev/null)
-CP=$(command -v cp 2>/dev/null)
-MV=$(command -v mv 2>/dev/null)
-NM=$(command -v nm 2>/dev/null)
+BASENAME=$(command -v basename)
+ECHO=$(command -v echo)
+SORT=$(command -v sort)
+DIFF=$(command -v diff)
+SED=$(command -v sed)
+CUT=$(command -v cut)
+LS=$(command -v ls)
+CP=$(command -v cp)
+MV=$(command -v mv)
+NM=$(command -v nm)
 
 if [ "" != "${ECHO}" ] && [ "" != "${SORT}" ] && [ "" != "${DIFF}" ] && \
    [ "" != "${NM}"   ] && [ "" != "${SED}"  ] && [ "" != "${CUT}"  ] && \

@@ -474,7 +474,7 @@ class ConvNode : public NNNode
     bool first_fp = true, first_bp=true;
     bool compute_stats_;
     libxsmm_bfloat16* bf16_wt_ptr=NULL;
-    float cbptr[16], *stptr=NULL, *dwptr=NULL;
+    float *cbptr, *stptr=NULL, *dwptr=NULL;
     ConvImpl *impl=NULL;
 
     SolverNode *solver_;

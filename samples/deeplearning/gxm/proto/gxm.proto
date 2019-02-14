@@ -291,7 +291,7 @@ message NodeParameter {
   //
   // Note: certain nodess may have more than one computational engine
   // for their implementation. These nodess include an Engine type and
-  // engine parameter for selecting the implementation. Last ID = 144
+  // engine parameter for selecting the implementation. Last ID = 123
   // The default for the engine is set by the ENGINE switch at compile-time.
   optional AccuracyParameter accuracy_param = 102;
   optional ArgMaxParameter argmax_param = 103;
@@ -304,6 +304,7 @@ message NodeParameter {
   optional EmbedParameter embed_param = 110;
   optional FullyConnectedParameter fc_param = 111;
   optional FusedBNormParameter fused_bnorm_param = 112;
+  optional FusedConvBNParameter fused_conv_bn_param = 123;
   optional LogParameter log_param = 113;
   optional PoolingParameter pooling_param = 114;
   optional PReLUParameter prelu_param = 115;
@@ -532,6 +533,56 @@ message FusedBNormParameter {
   optional ComputeEngine engine = 18 [default = XSMM];
   optional AlgorithmType algotype = 19 [default = DIRECT];
   optional DataType data_type = 23 [default = FLOAT];
+}
+
+message FusedConvBNParameter {
+  optional uint32 num_output = 1; // The number of outputs for the nodes
+  // Pad, kernel size, and stride are all given as a single value for equal
+  // dimensions in all spatial dimensions, or once per spatial dimension.
+  repeated uint32 ipad = 2; // The padding size; defaults to 0
+  repeated uint32 mpad = 3; // The padding size; defaults to 0
+  repeated uint32 opad = 4; // The padding size; defaults to 0
+  repeated uint32 kernel_size = 5; // The kernel size
+  optional uint32 group = 6 [default = 1]; // The group size for group conv
+  repeated uint32 c_stride = 7; // The stride; defaults to 1
+  repeated uint32 bn_stride = 8; // The stride; defaults to 1
+  optional FillerParameter weight_filler = 9; // The filler for the weight
+  // Factor used to dilate the kernel, (implicitly) zero-filling the resulting
+  // holes. (Kernel dilation is sometimes referred to by its use in the
+  // algorithme à trous from Holschneider et al. 1987.)
+  repeated uint32 dilation = 10; // The dilation; defaults to 1
+
+  // For 2D convolution only, the *_h and *_w versions may also be used to
+  // specify both spatial dimensions.
+  optional uint32 ipad_h = 11 [default = 0]; // The padding height (2D only)
+  optional uint32 ipad_w = 12 [default = 0]; // The padding width (2D only)
+  optional uint32 mpad_h = 13 [default = 0]; // The padding width (2D only)
+  optional uint32 mpad_w = 14 [default = 0]; // The padding width (2D only)
+  optional uint32 opad_h = 15 [default = 0]; // The padding width (2D only)
+  optional uint32 opad_w = 16 [default = 0]; // The padding width (2D only)
+  optional uint32 kernel_h = 17; // The kernel height (2D only)
+  optional uint32 kernel_w = 18; // The kernel width (2D only)
+  optional uint32 c_stride_h = 19 [default = 1]; // The stride height (2D only)
+  optional uint32 c_stride_w = 20 [default = 1]; // The stride width (2D only)
+  optional uint32 bn_stride_h = 21 [default = 1]; // The stride width (2D only)
+  optional uint32 bn_stride_w = 22 [default = 1]; // The stride width (2D only)
+  optional uint32 ndims = 23 [default = 2];
+  optional bool relu_fwd = 24 [default = true];
+  optional bool relu_bwd = 25 [default = true];
+  optional bool physical_padding = 26 [default = false];
+
+  // If false, accumulate global mean/variance values via a moving average. If
+  // true, use those accumulated values instead of computing mean/variance
+  // across the batch.
+  optional bool use_global_stats = 27;
+  // How much does the moving average decay each iteration?
+  optional float mmf = 28 [default = .999];
+  // Small value to add to the variance estimate so that we don't divide by zero.
+  optional float eps = 29 [default = 1e-7];
+  optional bool eltwise = 30 [default = false];
+  optional ComputeEngine engine = 31 [default = XSMM];
+  optional AlgorithmType algotype = 32 [default = DIRECT];
+  optional DataType data_type = 33 [default = FLOAT];
 }
 
 // Message that stores parameters used to apply transformation

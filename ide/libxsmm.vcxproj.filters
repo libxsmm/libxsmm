@@ -303,6 +303,9 @@
     <ClInclude Include="..\src\libxsmm_spmdm_end.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\include\libxsmm_rng.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -970,6 +973,9 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c">
       <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_rng.c">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

@@ -73,22 +73,25 @@ ifeq (Windows_NT,$(OS))
   SLIBEXT ?= lib
 endif
 
+which = $(shell which $1 2>/dev/null)
+which ?= $(shell command -v $1)
+
 # Command line utilities
-#PKGCFG ?= $(shell which pkg-config 2>/dev/null)
-CP ?= $(shell which cp 2>/dev/null)
-MV ?= $(shell which mv 2>/dev/null)
+PKGCFG ?= $(call which,pkg-config)
+CP ?= $(call which,cp)
+MV ?= $(call which,mv)
 UNAME ?= $(shell uname)
 MAKE ?= make
 ENV ?= env
 
 # Python interpreter per PYTHON=/path/to/python
-PYTHON3 ?= $(shell which python3 2>/dev/null)
-PYTHON ?= $(shell which python 2>/dev/null)
+PYTHON3 ?= $(call which,python3)
+PYTHON ?= $(call which,python)
 
 ifeq (,$(PYTHON))
 ifneq (,$(PYTHON3))
   SHELL := env PATH=$(MAKEINC):$(PATH) $(SHELL)
-  PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null && which python 2>/dev/null)
+  PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null && command -v python)
 else
   $(info ERROR: No Python interpreter found!)
 endif
@@ -257,7 +260,7 @@ endif
 ifneq (0,$(PYMOD))
   PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
   PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d"." -f1,2)
-  PYROOT = $(abspath $(dir $(shell which $(PYTHON) 2>/dev/null))/..)
+  PYROOT = $(abspath $(dir $(call which,$(PYTHON)))/..)
   PYINC = $(wildcard $(PYROOT)/include/python$(PYVERSION)/Python.h)
   ifneq (,$(PYINC))
     LDFLAGS += -lpython$(PYVERSION)
@@ -294,21 +297,6 @@ else
   DEPSTATIC ?= 0
 endif
 
-# Library extension
-ifneq (0,$(DEPSTATIC))
-  LIBEXT ?= $(SLIBEXT)
-else
-  LIBEXT ?= $(DLIBEXT)
-endif
-
-# Separate control on how to link against the BLAS library
-BLAS_STATIC ?= $(DEPSTATIC)
-ifneq (0,$(BLAS_STATIC))
-  BLASLIBEXT ?= $(SLIBEXT)
-else # shared (DLL)
-  BLASLIBEXT ?= $(IMPEXT)
-endif
-
 LNKSOFT ?= 1
 ifeq (0,$(STATIC))
   ifeq (Windows_NT,$(UNAME))
@@ -334,17 +322,17 @@ CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 # or pickup the Intel Compiler (if available).
 GNU ?= 0
 ifeq (0,$(GNU))
-  ifneq (,$(notdir $(shell which icpc 2>/dev/null)))
+  ifneq (,$(notdir $(call which,icpc)))
     CXX = icpc
-  else ifneq (,$(notdir $(shell which icpx 2>/dev/null)))
+  else ifneq (,$(notdir $(call which,icpx)))
     CXX = icpx
   endif
-  ifneq (,$(notdir $(shell which icc 2>/dev/null)))
+  ifneq (,$(notdir $(call which,icc)))
     CC = icc
-  else ifneq (,$(notdir $(shell which icx 2>/dev/null)))
+  else ifneq (,$(notdir $(call which,icx)))
     CC = icx
   endif
-  ifneq (,$(notdir $(shell which ifort 2>/dev/null)))
+  ifneq (,$(notdir $(call which,ifort)))
     FC = ifort
   endif
 endif
@@ -355,16 +343,16 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
   $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . | cut -d' ' -f1)))))")
 
 ifeq (0,$(INTEL))
-  ifeq (,$(shell which $(CXX) 2>/dev/null))
+  ifeq (,$(call which,$(CXX)))
     CXX = g++
   else ifneq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CXX = g++
-  else ifneq (gcc,$(notdir $(shell which $(CC) 2>/dev/null)))
-    ifeq (g++,$(notdir $(shell which $(CXX) 2>/dev/null)))
+  else ifneq (gcc,$(notdir $(call which,$(CC))))
+    ifeq (g++,$(notdir $(call which,$(CXX))))
       CC = gcc
     endif
   endif
-  ifeq (,$(shell which $(CC) 2>/dev/null))
+  ifeq (,$(call which,$(CC)))
     CC = gcc
   else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CC = gcc
@@ -407,17 +395,17 @@ endif
 # fixup FC-default given by MAKE
 ifneq (,$(strip $(FC)))
   FIXFC ?= 0
-  ifeq (,$(shell which $(FC) 2>/dev/null))
+  ifeq (,$(call which,$(FC)))
     FIXFC = 1
   else ifneq (0,$(shell $(FC) $(FC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     FIXFC = 1
-  else ifneq (gfortran,$(notdir $(shell which $(FC) 2>/dev/null)))
-    ifeq (g++,$(notdir $(shell which $(CXX) 2>/dev/null)))
+  else ifneq (gfortran,$(notdir $(call which,$(FC))))
+    ifeq (g++,$(notdir $(call which,$(CXX))))
       FIXFC = 1
     endif
   endif
   ifneq (0,$(FIXFC))
-    ifneq (,$(notdir $(shell which gfortran 2>/dev/null)))
+    ifneq (,$(notdir $(call which,gfortran)))
       MKL_FCRTL = gf
       GFC = gfortran
       FC = $(GFC)
@@ -570,10 +558,27 @@ endif
 endif
 MINGW ?= 0
 
-#ifneq (0,$(MINGW))
-#  IMPEXT ?= $(SLIBEXT)
-#endif
-IMPEXT ?= $(LIBEXT)
+# Library extension
+ifneq (0,$(DEPSTATIC))
+  LIBEXT ?= $(SLIBEXT)
+else
+  LIBEXT ?= $(DLIBEXT)
+endif
+
+# Import-library
+ifeq (0,$(MINGW))
+  ILIBEXT ?= $(DLIBEXT)
+else # MinGW
+  ILIBEXT ?= a
+endif
+
+# Separate control on how to link against the BLAS library
+BLAS_STATIC ?= $(DEPSTATIC)
+ifneq (0,$(BLAS_STATIC))
+  BLASLIBEXT ?= $(SLIBEXT)
+else # shared (DLL)
+  BLASLIBEXT ?= $(ILIBEXT)
+endif
 
 # Too many ICEs with older Clang (need to know if Clang is used)
 ifeq (0,$(GCC)) # not GCC
@@ -592,7 +597,7 @@ ifneq (0,$(GCC))
   GCC_VERSION_MINOR = $(CXX_VERSION_MINOR)
   GCC_VERSION_PATCH = $(CXX_VERSION_PATCH)
 else ifeq (0,$(CLANG))
-  GCCBIN = $(notdir $(shell which gcc 2>/dev/null))
+  GCCBIN = $(notdir $(call which,gcc))
   ifneq (,$(strip $(GCCBIN)))
     GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/")
     GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f1)
@@ -679,6 +684,16 @@ PGI ?= 0
 LD = $(CC)
 XLD = $(CXX)
 
+# adopt fully equipped archiver
+CCAR = $(call which,$(CC)-ar)
+ifneq (,$(CCAR))
+  ifeq (default,$(origin AR))
+    AR = $(CC)-ar
+  else
+    AR ?= $(CC)-ar
+  endif
+endif
+
 ifeq (0,$(DEPSTATIC))
   LIB_LD := $(LD) -shared $(PICFLAG)
   LIB_XLD := $(XLD) -shared $(PICFLAG)
@@ -737,7 +752,7 @@ ifneq (Darwin,$(UNAME))
   endif
   linkopt = $(XLNKOPT)$(if $2,$1=$2,$1)
   abslibrpath = $(strip $(call linkopt,--rpath,$(if \
-    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
+    $(filter .$(ILIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
   ifneq (0,$(ASNEEDED))
@@ -750,27 +765,27 @@ else
   endif
   linkopt = $(XLNKOPT) $1 $(XLNKOPT) $2
   abslibrpath = $(strip $(call linkopt,-rpath,$(if \
-    $(filter .$(DLIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
+    $(filter .$(ILIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
 endif
 
-absliblpath = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+absliblpath = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
   $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
   $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1)))
-abslibfile = $(strip $(if $(filter .$(DLIBEXT),$(suffix $1)), \
+abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
   $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
     -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
 
-LIBDEP = $(LIBNAME).$(IMPEXT)
+LIBDEP = $(LIBNAME).$(LIBEXT)
 MAINLIB = $(call abslib,$(LIBDEP))
 
-FORTDEP = $(LIBNAME)f.$(IMPEXT)
+FORTDEP = $(LIBNAME)f.$(LIBEXT)
 FORTLIB = $(call abslib,$(FORTDEP))
 
-EXTDEP = $(LIBNAME)ext.$(IMPEXT)
+EXTDEP = $(LIBNAME)ext.$(LIBEXT)
 EXTLIB = $(XLIB_BEGIN) $(call abslib,$(EXTDEP)) $(XLIB_END)
 ifeq (0,$(BLAS))
   # provides libxsmmnoblas to satisfy BLAS symbols
-  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(IMPEXT)) $(XLIB_END)
+  NOBLASLIB = $(XLIB_BEGIN) $(call abslib,$(LIBNAME)noblas.$(LIBEXT)) $(XLIB_END)
 else
   NOBLASLIB = $(NULL)
 endif
@@ -1559,14 +1574,14 @@ ifneq (,$(TBBROOT))
   ifneq (Windows_NT,$(UNAME))
     TBBLIB_DIR = $(TBBROOT)/lib/intel64
     TBBLIB_DIRGCC = gcc$(GCC_VERSION_MAJOR).$(GCC_VERSION_MINOR)
-    TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(DLIBEXT))
+    TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(ILIBEXT))
     ifeq (,$(TBBLIB_MALLOC))
       ifneq (0,$(TBB_OLDRTL))
         TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | tr "\n" " " | cut -d" " -f1)
       else
         TBBLIB_DIRGCC = $(shell ls -1 "$(TBBLIB_DIR)" | tr "\n" " " | rev | cut -d" " -f2 | rev)
       endif
-      TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(DLIBEXT))
+      TBBLIB_MALLOC = $(wildcard $(TBBLIB_DIR)/$(TBBLIB_DIRGCC)/libtbbmalloc.$(ILIBEXT))
     endif
     ifneq (,$(TBBLIB_MALLOC))
       IFLAGS += -I$(TBBROOT)/include
@@ -1687,9 +1702,9 @@ ifneq (0,$(MKL))
   BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
-      $(call abslibfile,libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(DLIBEXT)) \
-      $(call abslibfile,libmkl_core.$(DLIBEXT)) \
-      $(call abslibfile,libmkl_$(MKL_THREADS).$(DLIBEXT)) \
+      $(call abslibfile,libmkl_$(MKL_FCRTL)_$(MKL_BITS).$(ILIBEXT)) \
+      $(call abslibfile,libmkl_core.$(ILIBEXT)) \
+      $(call abslibfile,libmkl_$(MKL_THREADS).$(ILIBEXT)) \
       $(BLAS_LDFLAGS)
     ifneq (0,$(INTEL))
     ifneq (0,$(OFFLOAD))
@@ -1841,13 +1856,13 @@ objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
   $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_STATE .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR \
-    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CPUFLAGS CP CXX_VERSION_FLAG CXX_VERSION_STRING FSTD \
+    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CP CXX_VERSION_FLAG CXX_VERSION_STRING FSTD \
     DEPDIR DLIBEXT ENV EXTDEP FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO \
-    IMPEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION_INT MKL_INCFILE MV ROOTDIR SLIBEXT SUITE XLNKOPT TESTSIZE \
+    ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION_INT MKL_INCFILE MV ROOTDIR SLIBEXT SUITE XLNKOPT TESTSIZE \
     BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB \
     SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPLIBFILE NOBLASLIB NOBLAS_% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB \
-    FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 \
-    cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V),$V=$($V)?)))
+    FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 CCAR \
+    which cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V),$V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
 %/.make:

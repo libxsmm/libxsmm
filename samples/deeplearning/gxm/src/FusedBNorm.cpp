@@ -368,8 +368,9 @@ void FusedBNormNode::Checkpoint(TensorBuf *tBuf, string name, string format)
   void* ptr;
   size_t pos;
 
-  while((pos = name.find("/", 10)) != name.npos)
-    name.replace(pos, 1, 1, '_');
+  if((name.find("30") == name.npos) && (name.find("60") == name.npos) && (name.find("80") == name.npos))
+    while((pos = name.find("/", 10)) != name.npos)
+      name.replace(pos, 1, 1, '_');
 
   float* p = (float*)tBuf->getBuffer();
   bool no_checkpt = false;
@@ -385,7 +386,7 @@ void FusedBNormNode::Checkpoint(TensorBuf *tBuf, string name, string format)
 
   if(!no_checkpt)
   {
-    if(format.compare("binary") == 0)
+    if(format == "binary")
     {
       f = fopen(name.c_str(), "wb");
       if(f != NULL)
@@ -436,40 +437,37 @@ void FusedBNormNode::forwardPropagate()
   int ofw = gparams_.oWidth;
   int ofhp = ofh + 2*gparams_.pad_h;
   int ofwp = ofw + 2*gparams_.pad_w;
+  int oph = gparams_.pad_h;
+  int opw = gparams_.pad_w;
+  int sh = gparams_.stride_h;
+  int sw = gparams_.stride_w;
 
 #ifdef DEBUG
   {
-    float* bot_r = (float*)(tenBotData_[0]->getBuffer());
-    float* bot_l = (float*)(tenBotData_[1]->getBuffer());
-
-    float* top = (float*)(tenTopData_->getBuffer());
-
-    printf("Executing FP %s: input_r %p, mean %p, mean2 %p, input_l %p, output %p\n",NNNode::nname_.c_str(), bot_r, mean, mean2, bot_l, top);
+    printf("Executing FP %s\n");
     printf("Inputs: %d x %d x %d\n",gparams_.nInput[0], gparams_.iHeight, gparams_.iWidth);
     printf("Outputs: %d x %d x %d\n",gparams_.nOutput, gparams_.oHeight, gparams_.oWidth);
   }
 #endif
 
-  impl->set_bot_compute_engine(bot_cengine_[0]);
-  impl->set_top_compute_engine(top_compute_engine_);
-  impl->set_node_name(nname_);
-  impl->set_scratch_buffer(tenScratchData_);
-  if(eptr_->get_execution_mode() == TRAIN || eptr_->get_execution_mode() == VAL)
-  {
-    impl->set_global_stats(false);
-    gparams_.exec_mode = "TRAIN";
-  }
-  else if(eptr_->get_execution_mode() == TEST)
-    impl->set_global_stats(true);
-
   if(first_fp)
   {
-    int size = gparams_.batch_size * gparams_.nOutput *
-              (gparams_.oHeight/gparams_.stride_h + 2*gparams_.pad_h) *
-              (gparams_.oWidth/gparams_.stride_w + 2*gparams_.pad_w);
+    impl->set_bot_compute_engine(bot_cengine_[0]);
+    impl->set_top_compute_engine(top_compute_engine_);
+    impl->set_node_name(nname_);
+    impl->set_scratch_buffer(tenScratchData_);
+    if(eptr_->get_execution_mode() == TRAIN || eptr_->get_execution_mode() == VAL)
+    {
+      impl->set_global_stats(false);
+      gparams_.exec_mode = "TRAIN";
+    }
+    else if(eptr_->get_execution_mode() == TEST)
+      impl->set_global_stats(true);
+
+    int size = nImg * ofm * (ofh/sh + 2*oph) * (ofw/sw + 2*opw);
 
     if((gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_FLOAT)
-      || (gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_BF16))
+        || (gparams_.in_data_type == DT_FLOAT && gparams_.out_data_type == DT_BF16))
     {
       float* ptr = (float*)tenTopData_->getBuffer();
 
@@ -489,6 +487,8 @@ void FusedBNormNode::forwardPropagate()
       for(int i=0; i<size; i++)
         ptr[i] = 0;
     }
+
+    cbptr = (float*)_mm_malloc(10240*4, 64);
 
     scf_ = eptr_->get_scaling_factor();
     impl->set_scaling_factor(scf_);
@@ -521,8 +521,8 @@ void FusedBNormNode::forwardPropagate()
   }
   else if(out_dtype == DT_BF16)
   {
-    convert_bf16_f32((libxsmm_bfloat16*)tenTopData_->getBuffer(), cbptr, 16);
-    for(int i=0; i<16; i++)
+    convert_bf16_f32((libxsmm_bfloat16*)tenTopData_->getBuffer(), cbptr, 10240);
+    for(int i=0; i<10240; i++)
     {
       if(isnan(cbptr[i]) || isinf(cbptr[i]))
       {
@@ -649,7 +649,6 @@ void FusedBNormNode::backPropagate()
       float* gbot0 = (float*)(tenBotDiff_[0]->getBuffer());
       float* gbot1 = gparams_.eltwise ? (float*)(tenBotDiff_[1]->getBuffer()) : NULL;
 
-#if 1
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -664,14 +663,12 @@ void FusedBNormNode::backPropagate()
         for(int i=0; i<size; i++)
           gbot1[i] = 0.0f;
       }
-#endif
     }
     else if(in_dtype == DT_BF16 && out_dtype == DT_BF16)
     {
       libxsmm_bfloat16* gbot0 = (libxsmm_bfloat16*)(tenBotDiff_[0]->getBuffer());
       libxsmm_bfloat16* gbot1 = gparams_.eltwise ? (libxsmm_bfloat16*)(tenBotDiff_[1]->getBuffer()) : NULL;
 
-#if 1
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -686,7 +683,6 @@ void FusedBNormNode::backPropagate()
         for(int i=0; i<size; i++)
           gbot1[i] = 0;
       }
-#endif
     }
 
     first_bp = false;
@@ -732,14 +728,14 @@ void FusedBNormNode::backPropagate()
     if(out_dtype == DT_FLOAT)
     {
       float *ptr = (float*)tenTopDiff_->getBuffer();
-      int size = nImg*ofm*(ofh/gparams_.stride_h + 2*gparams_.pad_h) * (ofw/gparams_.stride_w + 2*gparams_.pad_w);
+      int size = nImg*ofm*ofhp*ofwp;
       string s = nname_ + "_delOutp";
       MeanOfLayer((char*)s.c_str(), ptr, size);
     }
     else if(out_dtype == DT_BF16)
     {
       libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenTopDiff_->getBuffer();
-      int size = nImg*ofm*(ofh/gparams_.stride_h + 2*gparams_.pad_h) * (ofw/gparams_.stride_w + 2*gparams_.pad_w);
+      int size = nImg*ofm*ofhp*ofwp;
       convert_bf16_f32(ptr, stptr, size);
       string s = nname_ + "_delOutp";
       MeanOfLayer((char*)s.c_str(), stptr, size);
@@ -783,9 +779,6 @@ void FusedBNormNode::weightUpdate()
   this->op_->GetParameterSet(0)->StartGradientComm(tenScaleDiff_->getBuffer());
   this->op_->GetParameterSet(1)->StartGradientComm(tenShiftDiff_->getBuffer());
 
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
   for(int i=0; i<gparams_.nOutput; i++)
   {
     ((float*)gexp_test)[i] = ((float*)gexp)[i]/eptr_->get_num_machines();

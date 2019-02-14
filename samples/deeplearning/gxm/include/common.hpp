@@ -60,6 +60,8 @@
 #define AUTO    0
 #define DIRECT  1
 
+#define ALIGN_SIZE(x, a) ~(a-1) & (x + a - 1);
+
 #define _FIXUP_INPUT_CODE_QNAN  0
 #define _FIXUP_INPUT_CODE_SNAN  1
 #define _FIXUP_INPUT_CODE_NINF  4

@@ -31,9 +31,9 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-ECHO=$(command -v echo 2>/dev/null)
-CAT=$(command -v cat 2>/dev/null)
-TR=$(command -v tr 2>/dev/null)
+ECHO=$(command -v echo)
+CAT=$(command -v cat)
+TR=$(command -v tr)
 
 # setup thread affinity
 export OMP_SCHEDULE=static OMP_PROC_BIND=TRUE
@@ -63,7 +63,7 @@ ${CAT} /dev/null > ${OUT_XSMM}
 ${CAT} /dev/null > ${OUT_BLAS}
 
 NRUN=1
-NMAX=$(${ECHO} ${RUNS} | wc -w)
+NMAX=$(${ECHO} ${RUNS} | wc -w | tr -d " ")
 for RUN in ${RUNS} ; do
   MVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f1)
   NVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f2)

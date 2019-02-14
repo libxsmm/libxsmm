@@ -52,7 +52,7 @@ else
   fi
 fi
 
-MICINFO=$(command -v micinfo 2>/dev/null)
+MICINFO=$(command -v micinfo)
 if [ "" != "${MICINFO}" ]; then
   MICCORES=$(${MICINFO} 2>/dev/null | sed -n "0,/\s\+Total No of Active Cores :\s\+\([0-9]\+\)/s//\1/p")
 fi
@@ -87,41 +87,35 @@ else
     -e "MIC_KMP_HW_SUBSET=$((MICCORES-1))${MICTPERC}t"
 fi
 
-ITERS=100
+ITERS=10
 CHKVAL=1
 
-export OMP_NUM_THREADS=56
+export OMP_NUM_THREADS=28
 export KMP_AFFINITY=granularity=fine,compact,1,0
 
 
-echo "LSTM FWD for inference only"
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  4096  1024  2048    8  1
+echo "LSTM FWD"
+CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  0  168   256   256  50
 wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  3072    32  1024  512  1
+CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  0  168   512   512  50
 wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  4096  1024  1024    8  1
+CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  0  168  1024  1024  50
 wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  1024    32  1024  512  1
+CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  0  168  2048  2048  50
 wait
-
-echo "LSTM FWD for training"
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  4096  1024  2048    8  0
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  3072    32  1024  512  0
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  4096  1024  1024    8  0
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  1024    32  1024  512  0
+CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  0  168  4096  4096  50
 wait
 
-echo "LSTM BWD+UPD for training"
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  3  4096  1024  2048    8  0
+echo "LSTM BWD+UPD"
+CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  3  168   256   256  50
 wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  3  3072    32  1024  512  0
+CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  3  168   512   512  50
 wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  3  4096  1024  1024    8  0
+CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  3  168  1024  1024  50
 wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  3  1024    32  1024  512  0
+CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  3  168  2048  2048  50
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  3  168  4096  4096  50
 wait
 
 echo "LSTM performance done"

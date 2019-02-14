@@ -46,7 +46,7 @@ elif [ -f /cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot ]; then
   WGNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/wgnuplot
   GNUPLOT=/cygdrive/c/Program\ Files\ \(x86\)/gnuplot/bin/gnuplot
 else
-  GNUPLOT=$(command -v gnuplot 2>/dev/null)
+  GNUPLOT=$(command -v gnuplot)
   WGNUPLOT=${GNUPLOT}
 fi
 

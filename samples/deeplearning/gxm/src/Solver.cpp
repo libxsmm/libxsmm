@@ -189,6 +189,8 @@ void SolverNode::applyUpdate(float *blob, float *inc, void *grad, int s, float* 
       prev_lrval_1_ = prev_lrval_;
       prev_lrval_ = lrval_;
     }
+
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif

@@ -153,6 +153,8 @@ LIBXSMM_API const char* libxsmm_dnn_get_error(libxsmm_dnn_err_t code)
       return "LIBXSMM DNN Error: Unsupported pooling operations was requested!";
     case LIBXSMM_DNN_ERR_INVALID_FORMAT_FC:
       return "LIBXSMM DNN Error: Unsupported format when requesting a fullyconnected layer!";
+    case LIBXSMM_DNN_ERR_RNN_INVALID_SEQ_LEN:
+      return "LIBXSMM DNN Error: max sequence length is shorter than sequence length we attempt to set!";
     default:
       return "LIBXSMM DNN Error: Unknown error or warning occurred!";
   }
@@ -2706,8 +2708,8 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
     const float max_value = libxsmm_internal_get_max( in_buffer, length );
     int maxexp = 0;
-    /* take return value of frexpf to mute static analysis issue */
-    float scfq = frexpf(max_value, &maxexp);
+    /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
+    float scfq = LIBXSMM_FREXPF(max_value, &maxexp);
     maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
@@ -2726,7 +2728,7 @@ LIBXSMM_API void libxsmm_dnn_quantize( float* in_buffer, short* out_buffer, int 
 #     pragma omp parallel for private(i)
 #endif
       for (i = 0; i < length; ++i ) {
-        out_buffer[i] = (short)round((double)in_buffer[i] * scfq);
+        out_buffer[i] = (short)LIBXSMM_ROUNDF(in_buffer[i] * scfq);
       }
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
     }
@@ -2774,8 +2776,8 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
     const float max_value = libxsmm_internal_get_max( in_buffer, N*C*H*W );
     int maxexp = 0;
-    /* take return value of frexpf to mute static analysis issue */
-    float scfq = frexpf(max_value, &maxexp);
+    /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
+    float scfq = LIBXSMM_FREXPF(max_value, &maxexp);
     maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
@@ -2806,7 +2808,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_act( float* in_buffer, short* out_buffer, 
                   const int fi3 = i3;
                   const int fi4 = i4;
                   const int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i6)%cblk_f32;
-                  LIBXSMM_VLA_ACCESS(6, out, i1, i2, i3, i4, i5, i6, cblk, H, W, cblk_i16, lp_blk) = (short)round((double)
+                  LIBXSMM_VLA_ACCESS(6, out, i1, i2, i3, i4, i5, i6, cblk, H, W, cblk_i16, lp_blk) = (short)LIBXSMM_ROUNDF(
                   LIBXSMM_VLA_ACCESS(5, in, fi1, fi2, fi3, fi4, fi5, C / cblk_f32, H, W, cblk_f32) * scfq);
                 }
               }
@@ -2880,8 +2882,8 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
   if ( round_mode == LIBXSMM_DNN_QUANT_FPHW_ROUND ) {
     const float max_value = libxsmm_internal_get_max( in_buffer, K*C*R*S );
     int maxexp = 0;
-    /* take return value of frexpf to mute static analysis issue */
-    float scfq = frexpf(max_value, &maxexp);
+    /* take return value of LIBXSMM_FREXPF to mute static analysis issue */
+    float scfq = LIBXSMM_FREXPF(max_value, &maxexp);
     maxexp -= (15/*LIBXSMM_DNN_MANT_DFP16?*/ - add_shift);
     scfq = libxsmm_sexp2_i8i(-maxexp);
 
@@ -2933,7 +2935,7 @@ LIBXSMM_API void libxsmm_dnn_quantize_fil( float* in_buffer, short* out_buffer, 
                     const int fi4 = i4;
                     const int fi5 = ((i2*cblk_i16*lp_blk)+(i5*lp_blk)+i7)%cblk_f32;
                     const int fi6 = ((i1*kblk_i16)+i6)%kblk_f32;
-                    LIBXSMM_VLA_ACCESS(7, out, i1, i2, i3, i4, i5, i6, i7, cblk, R, S, cblk_i16, kblk_i16, lp_blk) = (short)round((double)
+                    LIBXSMM_VLA_ACCESS(7, out, i1, i2, i3, i4, i5, i6, i7, cblk, R, S, cblk_i16, kblk_i16, lp_blk) = (short)LIBXSMM_ROUNDF(
                     LIBXSMM_VLA_ACCESS(6, in, fi1, fi2, fi3, fi4, fi5, fi6, C / cblk_f32, R, S, cblk_f32, kblk_f32) * scfq);
                   }
                 }

@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
 #endif
 #if !defined(_DEBUG)
     const char *const env_check = getenv("CHECK");
-    const int check = (0 == env_check ? 0 : atoi(env_check));
+    const int check = (NULL == env_check ? 0 : atoi(env_check));
 #else
     /*const*/ int check = 1;
 #endif

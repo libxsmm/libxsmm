@@ -39,20 +39,20 @@ if [ "" = "${GIT_DIR}" ]; then
 fi
 ROOTDIR=$(cd ${GIT_DIR}/..; pwd -P)
 CODEFILE=${ROOTDIR}/.codefile
-MSG_TAG="[skip ci]"
+MSG_NOCI="[skip ci]"
 MSG_FILE=$1
 MSG_KIND=$2
 
-GIT=$(which git 2>/dev/null)
+GIT=$(command -v git)
 
 if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no amend)
-  ECHO=$(which echo 2>/dev/null)
-  GREP=$(which grep 2>/dev/null)
-  CAT=$(which cat 2>/dev/null)
+  ECHO=$(command -v echo)
+  GREP=$(command -v grep)
+  CAT=$(command -v cat)
 
   if [ "" != "${ECHO}" ] && [ "" != "${GREP}" ] && [ "" != "${CAT}" ] && \
      [ "message" = "${MSG_KIND}" ] && [ "" != "${MSG_FILE}" ] && \
-     [ "0" != "$(${GREP} -qs -F "${MSG_TAG}" ${MSG_FILE}; ${ECHO} $?)" ];
+     [ "0" != "$(${GREP} -qs -F "${MSG_NOCI}" ${MSG_FILE}; ${ECHO} $?)" ];
   then
     set -o noglob # disable wildcard expansion
 
@@ -75,7 +75,7 @@ if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no 
         fi
       done
     done
-    ${ECHO} "${MSG_TAG}" >> ${MSG_FILE}
+    ${ECHO} "${MSG_NOCI}" >> ${MSG_FILE}
   fi
 fi
 

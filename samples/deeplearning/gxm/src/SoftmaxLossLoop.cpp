@@ -51,7 +51,7 @@ void SMaxLossLoop::forwardPropagate(float *inp, int* label, float *outp)
   float (* __restrict output)[nOfm] = (float (*)[*])outp;
 
 #ifdef _OPENMP
-#pragma omp parallel for num_threads(threads)
+#pragma omp parallel for
 #endif
   for(int img = 0; img < nImg; img++) {
 
@@ -107,7 +107,7 @@ void SMaxLossLoop::backPropagate(float *outp, int* label, float *delinp)
 #endif
 
 #ifdef _OPENMP
-#pragma omp parallel for collapse(2) num_threads(threads)
+#pragma omp parallel for
 #endif
   for(int img = 0; img < nImg; img++) {
     for(int fm = 0; fm < nIfm; fm++) {

@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
     printf("Usage: %s iters nImg nIFm nOFm fuse_type type format\n", argv[0]);
     return 0;
   }
-  libxsmm_srand(1);
+  libxsmm_rng_set_seed(1);
 
   /* reading new values from cli */
   i = 1;
@@ -118,7 +118,6 @@ int main(int argc, char* argv[])
   if (argc > i) bn         = atoi(argv[i++]);
   if (argc > i) bk         = atoi(argv[i++]);
   if (argc > i) bc         = atoi(argv[i++]);
- 
 
   if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only)\n");
@@ -222,8 +221,8 @@ int main(int argc, char* argv[])
       fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
       fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     } else {
-      fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NCNC;
-      fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_KCCK;
+      fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED;
+      fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED;
     }
     fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE;
 

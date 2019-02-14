@@ -68,7 +68,7 @@
 #include "libxsmm_timer.h"
 #include "libxsmm_math.h"
 #include "libxsmm_sync.h"
-
+#include "libxsmm_rng.h"
 
 /** Initialize the library; pay for setup cost at a specific point. */
 LIBXSMM_API void libxsmm_init(void);
@@ -166,15 +166,13 @@ LIBXSMM_API int libxsmm_mmbatch(
   libxsmm_blasint index_base,
   /**
    * Stride used to walk stride_a, stride_b, and stride_c; zero turns stride_* into scalar values.
-   * The index_stride is always measured in Bytes (sizeof(libxsmm_blasint) determines packed indexes).
+   * The index_stride is measured in Bytes (sizeof(libxsmm_blasint) determines packed indexes).
    */
   libxsmm_blasint index_stride,
   /**
    * index_stride==0: a single value (measured in Bytes) for stride_a, stride_b, and stride_c is expected,
    * index_stride!=0: stride_a, stride_b, and stride_c are arrays of indexes (measured in elements);
-   *                  array size equals batchsize, and indexes are discovered using the index_stride
-   *                  (measured in Bytes). The typical value of index_stride is sizeof(libxsmm_blasint),
-   *                  which determines a packed array of indexes.
+   *                  array size equals batchsize, and indexes are discovered using the index_stride.
    * A stride of zero (NULL pointer, or zero-index) does not advance the corresponding matrix-operand.
    * Note: accesses to the same C-matrix are internally synchronized.
    */

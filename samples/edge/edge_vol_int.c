@@ -267,7 +267,7 @@ int main(int argc, char* argv[])
     printf("Usage: %s stif1 stif2 stif3 star nModes nElems nReps\n", argv[0]);
     return 0;
   }
-  libxsmm_srand(1);
+  libxsmm_rng_set_seed(1);
   /* some empty lines at the beginning */
   printf("\n");
 
@@ -372,27 +372,27 @@ int main(int argc, char* argv[])
 
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)elem_size; j++) {
-      q[i*elem_size + j] = libxsmm_rand_f64();
+      q[i*elem_size + j] = libxsmm_rng_f64();
     }
   }
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)elem_size; j++) {
-      qt[i*elem_size + j] = libxsmm_rand_f64();
+      qt[i*elem_size + j] = libxsmm_rng_f64();
     }
   }
   for (i = 0; i < (int)l_num_threads; i++) {
     for (j = 0; j < (int)elem_size; j++) {
-      qs[i*elem_size + j] = libxsmm_rand_f64();
+      qs[i*elem_size + j] = libxsmm_rng_f64();
     }
   }
   for (i = 0; i < (int)num_elems; i++) {
     for (j = 0; j < (int)3*mat_st_nnz; j++) {
-      star[(i*3*mat_st_nnz)+j] = libxsmm_rand_f64();
+      star[(i*3*mat_st_nnz)+j] = libxsmm_rng_f64();
     }
   }
   for (i = 0; i < 3; i++) {
     for (j = 0; j < num_modes*num_modes; j++) {
-      global[(i*num_modes*num_modes)+j] = libxsmm_rand_f64();
+      global[(i*num_modes*num_modes)+j] = libxsmm_rng_f64();
     }
   }
   printf("allocation done!\n\n");
