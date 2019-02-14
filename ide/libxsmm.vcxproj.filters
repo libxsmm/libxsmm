@@ -977,6 +977,54 @@
     <ClCompile Include="..\src\libxsmm_rng.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_internal_lstm_bwdupd_fused_eltwise.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_internal_lstm_bwdupd_fused_eltwise_reformat.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_internal_lstm_bwdupd_fused_eltwise_reformat_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_internal_lstm_fwd_fused_eltwise.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_internal_lstm_fwd_fused_eltwise_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck_core.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck_core_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_fwd_nc_ck_generic_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_diffused.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_diffused_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_fused.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_fwd_nc_kcck_fused_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_rnn_bwdupd_nc_kcck.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_ck_generic_bf16.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">

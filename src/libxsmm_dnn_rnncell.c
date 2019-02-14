@@ -696,7 +696,6 @@ LIBXSMM_API void* libxsmm_dnn_rnncell_get_scratch_ptr(const libxsmm_dnn_rnncell*
     return handle->scratch_base;
   } else {
     *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
-    return 0;
   }
 
   return 0;
@@ -1270,7 +1269,6 @@ LIBXSMM_API void* libxsmm_dnn_rnncell_get_internalstate_ptr(const libxsmm_dnn_rn
     return handle->internal_z;
   } else {
     *status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
-    return 0;
   }
 
   return 0;
