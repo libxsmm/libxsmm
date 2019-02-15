@@ -361,9 +361,8 @@
 #define LIBXSMM_UP2POT(N) (LIBXSMM_UP2POT_32((unsigned long long)(N) - LIBXSMM_MIN(1, N)) + LIBXSMM_MIN(1, N))
 #define LIBXSMM_LO2POT(N) (LIBXSMM_UP2POT_32((unsigned long long)(N) >> 1) + LIBXSMM_MIN(1, N))
 
-#define LIBXSMM_UP3(N, UP, SCALE) ((((N) + (UP) - 1) / (UP)) * (SCALE))
 #define LIBXSMM_UP2(N, NPOT) ((((uintptr_t)N) + ((NPOT) - 1)) & ~((NPOT) - 1))
-#define LIBXSMM_UP(N, UP) LIBXSMM_UP3((uintptr_t)N, UP, UP)
+#define LIBXSMM_UP(N, UP) ((((N) + (UP) - 1) / (UP)) * (UP))
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
