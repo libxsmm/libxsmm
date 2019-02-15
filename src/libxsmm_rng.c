@@ -112,15 +112,16 @@ LIBXSMM_APIVAR(__m512i libxsmm_rng_avx512_state_3);
 
 LIBXSMM_API void libxsmm_rng_set_seed_avx512(unsigned int/*uint32_t*/ seed)
 {
-  uint32_t temp_state[] = { seed+ 31, seed+ 30, seed+ 29, seed+ 28, seed+ 27, seed+ 26, seed+ 25, seed+ 24,
-                            seed+ 23, seed+ 22, seed+ 21, seed+ 20, seed+ 19, seed+ 18, seed+ 17, seed+ 16,
-                            seed+131, seed+130, seed+129, seed+128, seed+127, seed+126, seed+125, seed+124,
-                            seed+123, seed+122, seed+121, seed+120, seed+119, seed+118, seed+117, seed+116,
-                            seed+231, seed+230, seed+229, seed+228, seed+227, seed+226, seed+225, seed+224,
-                            seed+223, seed+222, seed+221, seed+220, seed+219, seed+218, seed+217, seed+216,
-                            seed+331, seed+330, seed+329, seed+328, seed+327, seed+326, seed+325, seed+324,
-                            seed+323, seed+322, seed+321, seed+320, seed+319, seed+318, seed+317, seed+316  };
+  uint32_t temp_state[] = {
+     31,  30,  29,  28,  27,  26,  25,  24,  23,  22,  21,  20,  19,  18,  17,  16,
+    131, 130, 129, 128, 127, 126, 125, 124, 123, 122, 121, 120, 119, 118, 117, 116,
+    231, 230, 229, 228, 227, 226, 225, 224, 223, 222, 221, 220, 219, 218, 217, 216,
+    331, 330, 329, 328, 327, 326, 325, 324, 323, 322, 321, 320, 319, 318, 317, 316
+  };
   libxsmm_blasint i;
+
+  /* finish initializing the state */
+  for (i = 0; i < sizeof(temp_state) / sizeof(*temp_state); ++i) temp_state[i] += seed;
 
   /* progress each sequence by 2^64 */
   for (i = 0; i < 16; ++i) {
