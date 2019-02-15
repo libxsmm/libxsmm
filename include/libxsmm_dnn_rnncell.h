@@ -45,7 +45,9 @@ typedef enum libxsmm_dnn_rnncell_type {
   /** simple RNN cell with tanh as activation function */
   LIBXSMM_DNN_RNNCELL_RNN_TANH,
   /** LSTM cell */
-  LIBXSMM_DNN_RNNCELL_LSTM
+  LIBXSMM_DNN_RNNCELL_LSTM,
+  /** GRU cell */
+  LIBXSMM_DNN_RNNCELL_GRU
 } libxsmm_dnn_rnncell_type;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
@@ -57,7 +59,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
   libxsmm_blasint bk;
   libxsmm_blasint bn;
   libxsmm_blasint bc;
-  libxsmm_dnn_rnncell_type cell_type;       /* cell type RNN ReLU, RNN Sigmoid, RNN Tanh, LSTM */
+  libxsmm_dnn_rnncell_type cell_type;       /* cell type RNN ReLU, RNN Sigmoid, RNN Tanh, LSTM, GRU */
   libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
   libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for activation buffers */

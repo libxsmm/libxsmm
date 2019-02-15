@@ -57,7 +57,6 @@
 #include "libxsmm_dnn_fusedbatchnorm.h"
 #include "libxsmm_dnn_pooling.h"
 #include "libxsmm_dnn_rnncell.h"
-#include "libxsmm_dnn_grucell.h"
 #include "libxsmm_generator.h"
 #include "libxsmm_frontend.h"
 #include "libxsmm_fsspmdm.h"
