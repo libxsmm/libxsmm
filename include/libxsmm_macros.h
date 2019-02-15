@@ -650,7 +650,7 @@
 #endif
 #if !defined(LIBXSMM_GLIBC_FPTYPES) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__) \
   && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
-  || defined(LIBXSMM_INTEL_COMPILER)) /* TODO */
+  || defined(LIBXSMM_INTEL_COMPILER)) && 0 /* TODO */
 # define LIBXSMM_GLIBC_FPTYPES
 #endif
 #if !defined(_Float128X) && defined(LIBXSMM_GLIBC_FPTYPES)
