@@ -62,7 +62,7 @@ float *weight_ptr = ((float*) handle->scratch2) + (handle->desc.N * handle->bloc
 float *per_thread_weight_ptr = ((float*)handle->scratch4) + (ltid*LIBXSMM_MIN(handle->block_upd_ofm,BLOCKSOFM)*LIBXSMM_MIN(handle->block_upd_ifm,BLOCKSIFM)*handle->desc.R*handle->desc.S*handle->ifmblock*handle->ofmblock*handle->fm_lp_block);
 LIBXSMM_VLA_DECL(2, float, per_thread_weight, per_thread_weight_ptr, handle->ofmblock);
 float* reduction_weight_ptr = ((float*)handle->scratch4) + (handle->desc.threads*LIBXSMM_MIN(handle->block_upd_ofm,BLOCKSOFM)*LIBXSMM_MIN(handle->block_upd_ifm,BLOCKSIFM)*handle->desc.R*handle->desc.S*handle->ifmblock*handle->fm_lp_block*handle->ofmblock);
-LIBXSMM_VLA_DECL(3, float, reduction_weight, reduction_weight_ptr, handle->desc.threads, handle->ofmblock);
+LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, reduction_weight, (libxsmm_bfloat16*) reduction_weight_ptr, handle->desc.threads, handle->ofmblock);
 
 /* Pointer related variables for input */
 int padded_h = (handle->padding_flag == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
@@ -140,7 +140,7 @@ if (handle->ofh == 28 || handle->ofh == 56 /*|| handle->ofh == 14*/)
 {
   weight_base = &LIBXSMM_VLA_ACCESS(2, per_thread_weight, 0, 0, handle->ofmblock); /* use thread-private scratchpad to accumulate weights */
 } else {
-  weight_base = &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid, 0, handle->desc.threads, handle->ofmblock); /* weights are accumulated in registers and can be written straight to memory */
+  weight_base = (float*) &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid, 0, handle->desc.threads, handle->ofmblock); /* weights are accumulated in registers and can be written straight to memory */
 }
 
 if ( !handle->reduce_weights  ) {
@@ -218,19 +218,29 @@ if (n_segments) {
       }
     }
 
+#if defined(LIBXSMM_INTRINSICS_AVX512)
+#define _mm512_roundbf16rne(A) LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(A)
+#define _mm512_storecvtrne_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
+#define _mm512_storecvttrunc_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32((union __m512i) (B),16)))
     if (instr == WEIGHT_COPY) {
       offset_w /= handle->desc.R * handle->desc.S * handle->ifmblock_hp * handle->ofmblock;
       offset_w *= handle->desc.R * handle->desc.S * handle->ifmblock_hp;
       offset_s = code_stream[pc].aux_index;
-      for ( j = 0; j < handle->desc.R*handle->desc.S*handle->ifmblock_hp; j++ ) {
-        LIBXSMM_PRAGMA_NONTEMPORAL
-          LIBXSMM_PRAGMA_VALIGNED
-          LIBXSMM_PRAGMA_SIMD
-          for ( k = 0; k < 16; k++ ) {
-            LIBXSMM_VLA_ACCESS(3, reduction_weight, offset_s + j, ltid, k, handle->desc.threads, 16) = LIBXSMM_VLA_ACCESS(2, per_thread_weight, offset_w + j, k, 16);
-          }
+      if ( handle->f32_bf16_cvt_rne ) {
+        for ( j = 0; j < handle->desc.R*handle->desc.S*handle->ifmblock_hp; j++ ) {
+          _mm512_storecvtrne_fp32_bf16( &LIBXSMM_VLA_ACCESS(3, reduction_weight, offset_s + j, ltid, 0, handle->desc.threads, 16), LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, per_thread_weight, offset_w + j, 0, 16)) );
+        }
+      } else {
+        for ( j = 0; j < handle->desc.R*handle->desc.S*handle->ifmblock_hp; j++ ) {
+          _mm512_storecvttrunc_fp32_bf16( &LIBXSMM_VLA_ACCESS(3, reduction_weight, offset_s + j, ltid, 0, handle->desc.threads, 16), LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(2, per_thread_weight, offset_w + j, 0, 16)) );
+        }
       }
     }
+#undef _mm512_roundbf16rne
+#undef _mm512_storecvtrne_fp32_bf16
+#undef _mm512_storecvttrunc_fp32_bf16
+#else
+#endif
 
     /* Run the stream of convolutions for this segment */
     for (conv_i = 0; conv_i < n_convs; conv_i++) {
@@ -254,7 +264,7 @@ if (n_segments) {
     pi = stream[i+3];
     pw = stream[i+4];
     po = stream[i+5];
-    kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, vnni_scratch);
+    kernel( input_base + offset_i, (float*) (((libxsmm_bfloat16*) weight_base) + offset_w), output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, vnni_scratch);
     i+=3;
   }
 }
@@ -270,14 +280,15 @@ if (handle->reduce_weights) {
       __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
       for ( j = 2*reduce_thr_begin; j < 2*reduce_thr_end; j+=2 ) {
 #if defined(LIBXSMM_INTRINSICS_AVX512)
+#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
         __m512 weight_sum_lo = _mm512_setzero_ps();
         __m512 weight_sum_hi = _mm512_setzero_ps();
         __m512i pair_fms;
         for ( i = 0; i < handle->desc.threads; i++ ) {
-          weight_sum_lo = _mm512_add_ps(weight_sum_lo, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
+          weight_sum_lo = _mm512_add_ps(weight_sum_lo, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
         }
         for ( i = 0; i < handle->desc.threads; i++ ) {
-          weight_sum_hi = _mm512_add_ps(weight_sum_hi, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->desc.threads, 16)));
+          weight_sum_hi = _mm512_add_ps(weight_sum_hi, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->desc.threads, 16)));
         }
         { /* open new scope for additional variable declarations (C89) */
           __m512i vfp32     = _mm512_castps_si512( weight_sum_lo);
@@ -302,20 +313,22 @@ if (handle->reduce_weights) {
           pair_fms = _mm512_or_epi32(vbfp16_32_lo, vbfp16_32_hi);
           _mm512_store_epi32( ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16, pair_fms);
         }
+#undef _mm512_loadcvt_bf16_fp32
 #else
 #endif
       }
     } else {
       for ( j = 2*reduce_thr_begin; j < 2*reduce_thr_end; j+=2 ) {
 #if defined(LIBXSMM_INTRINSICS_AVX512)
+#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
         __m512 weight_sum_lo = _mm512_setzero_ps();
         __m512 weight_sum_hi = _mm512_setzero_ps();
         __m512i fm0, fm1, pair_fms;
         for ( i = 0; i < handle->desc.threads; i++ ) {
-          weight_sum_lo = _mm512_add_ps(weight_sum_lo, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
+          weight_sum_lo = _mm512_add_ps(weight_sum_lo, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->desc.threads, 16)));
         }
         for ( i = 0; i < handle->desc.threads; i++ ) {
-          weight_sum_hi = _mm512_add_ps(weight_sum_hi, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->desc.threads, 16)));
+          weight_sum_hi = _mm512_add_ps(weight_sum_hi, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->desc.threads, 16)));
         }
         fm0 = _mm512_castps_si512(weight_sum_lo);
         fm1 = _mm512_castps_si512(weight_sum_hi);
@@ -324,12 +337,14 @@ if (handle->reduce_weights) {
         fm1 = _mm512_slli_epi32 (fm1, 16);
         pair_fms = _mm512_or_epi32(fm0, fm1);
         _mm512_store_epi32( ((libxsmm_bfloat16*) handle->grad_filter->data) + j * 16, pair_fms);
+#undef _mm512_loadcvt_bf16_fp32
 #else
 #endif
       }
     }
   }
 }
+
 libxsmm_barrier_wait(handle->barrier, ltid);
 
 #undef WEIGHT_INIT
