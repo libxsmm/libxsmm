@@ -1014,6 +1014,7 @@ endif
 .PHONY: samples
 samples: lib_hst
 	@find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
+	| grep -v /deeplearning/grudriver/ \
 	| grep -v /deeplearning/gxm/ \
 	| grep -v /packed/getrf/ \
 	| grep -v /packed/gemm/ \

@@ -421,7 +421,7 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
       iv = _mm512_add_ps (iv, plus1);
       iv = _mm512_div_ps (plus1, iv);
       /* c = tanh(c) */
-      cv = _mm512_tanh_ps (cv);
+      cv = LIBXSMM_INTRINSICS_MM512_TANH_PS (cv);
       /* f = sigmoid(f) */
       fv = _mm512_mul_ps (fv, minus1);
       fv = _mm512_exp_ps (fv);
@@ -436,7 +436,7 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
       csv = _mm512_mul_ps (fv, cspv);
       csv = _mm512_fmadd_ps (iv, cv, csv);
       /* co = tanh(cs) */
-      cov = _mm512_tanh_ps (csv);
+      cov = LIBXSMM_INTRINSICS_MM512_TANH_PS (csv);
       /* h = o.co */
       hv = _mm512_mul_ps (ov, cov);
       _mm512_store_ps (&(i[j*4*K + l]), iv);

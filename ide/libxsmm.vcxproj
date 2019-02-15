@@ -184,7 +184,6 @@
     <ClCompile Include="..\src\libxsmm_dnn_fusedbatchnorm.c" />
     <ClCompile Include="..\src\libxsmm_dnn_fusedbatchnorm_backward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_fusedbatchnorm_forward.c" />
-    <ClCompile Include="..\src\libxsmm_dnn_grucell.c" />
     <ClCompile Include="..\src\libxsmm_dnn_handle.c" />
     <ClCompile Include="..\src\libxsmm_dnn_pooling.c" />
     <ClCompile Include="..\src\libxsmm_dnn_pooling_backward.c" />

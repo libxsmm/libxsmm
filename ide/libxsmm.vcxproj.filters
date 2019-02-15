@@ -848,9 +848,6 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_bf16.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_grucell.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_fusedbatchnorm_backward.c">
       <Filter>src</Filter>
     </ClCompile>
