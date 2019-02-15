@@ -118,10 +118,11 @@ LIBXSMM_API void libxsmm_rng_set_seed_avx512(unsigned int/*uint32_t*/ seed)
     231, 230, 229, 228, 227, 226, 225, 224, 223, 222, 221, 220, 219, 218, 217, 216,
     331, 330, 329, 328, 327, 326, 325, 324, 323, 322, 321, 320, 319, 318, 317, 316
   };
+  const size_t n = sizeof(temp_state) / sizeof(*temp_state);
   libxsmm_blasint i;
 
   /* finish initializing the state */
-  for (i = 0; i < sizeof(temp_state) / sizeof(*temp_state); ++i) temp_state[i] += seed;
+  for (i = 0; i < (libxsmm_blasint)n; ++i) temp_state[i] += seed;
 
   /* progress each sequence by 2^64 */
   for (i = 0; i < 16; ++i) {
