@@ -379,10 +379,6 @@
 # endif
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 /**
  * Intrinsic-specific fix-ups
  */
@@ -553,11 +549,11 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
 #endif
 
 /**
- * Pseudo intrinsics that eventually need target-attribution (AVX-512)
+ * Pseudo intrinsics (AVX-512)
  */
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 # define LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16( A, B ) _mm512_cvtepi32_epi16(_mm512_cvt_roundps_epi32( \
-    _mm512_mul_ps(_mm512_load_ps(A), B), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC))
+    _mm512_mul_ps(LIBXSMM_INTRINSICS_MM512_LOAD_PS(A), B), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC))
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(__m512 a) {
   const __m512i vnaninf = _mm512_set1_epi32(0x7f800000), vrneadd = _mm512_set1_epi32(0x00007fff);
   const __m512i vfixup = _mm512_set1_epi32(0x00000001), vfixupmask = _mm512_set1_epi32(0x00010000);
@@ -567,29 +563,23 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRIN
   return _mm512_mask_add_epi32(mm512_roundbf16rne_a_, mm512_roundbf16rne_mask1_, mm512_roundbf16rne_a_, _mm512_mask_add_epi32(vrneadd, mm512_roundbf16rne_mask2_, vrneadd, vfixup));
 }
 
-#include <math.h>
-
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 _mm512_tanh_generic_ps( __m512 x ) {
-  float _x[16];
-  _mm512_store_ps( _x, x );
-  _x[ 0] = (float) tanh((double) _x[ 0] );
-  _x[ 1] = (float) tanh((double) _x[ 1] );
-  _x[ 2] = (float) tanh((double) _x[ 2] );
-  _x[ 3] = (float) tanh((double) _x[ 3] );
-  _x[ 4] = (float) tanh((double) _x[ 4] );
-  _x[ 5] = (float) tanh((double) _x[ 5] );
-  _x[ 6] = (float) tanh((double) _x[ 6] );
-  _x[ 7] = (float) tanh((double) _x[ 7] );
-  _x[ 8] = (float) tanh((double) _x[ 8] );
-  _x[ 9] = (float) tanh((double) _x[ 9] );
-  _x[10] = (float) tanh((double) _x[10] );
-  _x[11] = (float) tanh((double) _x[11] );
-  _x[12] = (float) tanh((double) _x[12] );
-  _x[13] = (float) tanh((double) _x[13] );
-  _x[14] = (float) tanh((double) _x[14] );
-  _x[15] = (float) tanh((double) _x[15] );
-  return _mm512_loadu_ps( _x );
+/** SVML-intrinsics */
+#if defined(LIBXSMM_INTEL_COMPILER)
+# define LIBXSMM_INTRINSICS_MM512_TANH_PS(A) _mm512_tanh_ps(A)
+#else
+# include <math.h>
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS(__m512 a) {
+  float a16[16]; int i;
+  _mm512_store_ps(a16, x);
+  for (i = 0; i < 16; ++i) a16[i] = LIBXSMM_TANHF(_x[i]);
+  return _mm512_loadu_ps(a16);
 }
+#endif /* SVML */
+
+#endif /*__AVX512F__*/
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
 #endif
 
 #endif /*LIBXSMM_INTRINSICS_X86_H*/

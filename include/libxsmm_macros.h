@@ -347,8 +347,8 @@
 
 /** LIBXSMM_NBITS determines the minimum number of bits needed to represent N. */
 #define LIBXSMM_NBITS(N) (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + LIBXSMM_MIN(1, N))
-/** LIBXSMM_LOG2 definition matches ceil(log2(N)). */
-#define LIBXSMM_LOG2(N) (1 < (N) ? (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + \
+/** LIBXSMM_ILOG2 definition matches ceil(log2(N)). */
+#define LIBXSMM_ILOG2(N) (1 < (N) ? (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + \
   (LIBXSMM_INTRINSICS_BITSCANBWD64((N) - 1) != LIBXSMM_INTRINSICS_BITSCANBWD64(N) ? 0 : 1)) : 0)
 
 /** LIBXSMM_UP2POT rounds up to the next power of two (POT). */
@@ -377,18 +377,25 @@
 #define LIBXSMM_NEQ(A, B) ((A) != (B))
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
-
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
+
+/** Makes some functions available independent of C99 support. */
 #if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
 # define LIBXSMM_FREXPF(A, B) frexpf(A, B)
 # define LIBXSMM_POWF(A, B) powf(A, B)
 # define LIBXSMM_ROUNDF(A) roundf(A)
 # define LIBXSMM_ROUND(A) round(A)
+# define LIBXSMM_TANHF(A) tanhf(A)
+# define LIBXSMM_LOG2(A) log2(A)
+# define LIBXSMM_LOGF(A) logf(A)
 #else
 # define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
 # define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
 # define LIBXSMM_ROUND(A) LIBXSMM_ROUNDX(double, A)
+# define LIBXSMM_TANHF(A) ((float)tanh((double)(A)))
+# define LIBXSMM_LOG2(A) (log(A) * (1.0 / (M_LN2)))
+# define LIBXSMM_LOGF(A) ((float)log((double)(A)))
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)

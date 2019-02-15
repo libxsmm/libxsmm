@@ -30,11 +30,6 @@
 ******************************************************************************/
 
 {
-#if defined(LIBXSMM_INTEL_COMPILER)
-#define _MM512_TANH_PS(A) _mm512_tanh_ps(A)
-#else
-#define _MM512_TANH_PS(A) _mm512_tanh_generic_ps(A)
-#endif
   libxsmm_blasint _k, _j;
   float* _o = &LIBXSMM_VLA_ACCESS(3, o, j, in, ik, N, K);
   float* _i = &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K);
@@ -54,13 +49,13 @@
       _vci = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_ci[(_j*K)+_k] );
       _vf = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_f[(_j*K)+_k] );
       _vcs = LIBXSMM_INTRINSICS_MM512_LOAD_PS( &_cps[(_j*K)+_k] );
-      _vo = _mm512_fmadd_ps( _MM512_TANH_PS( _mm512_mul_ps( _vo, _halves ) ), _halves, _halves);
-      _vi = _mm512_fmadd_ps( _MM512_TANH_PS( _mm512_mul_ps( _vi, _halves ) ), _halves, _halves);
-      _vci = _MM512_TANH_PS( _vci );
-      _vf = _mm512_fmadd_ps( _MM512_TANH_PS( _mm512_mul_ps( _vf, _halves ) ), _halves, _halves);
+      _vo = _mm512_fmadd_ps( LIBXSMM_INTRINSICS_MM512_TANH_PS( _mm512_mul_ps( _vo, _halves ) ), _halves, _halves);
+      _vi = _mm512_fmadd_ps( LIBXSMM_INTRINSICS_MM512_TANH_PS( _mm512_mul_ps( _vi, _halves ) ), _halves, _halves);
+      _vci = LIBXSMM_INTRINSICS_MM512_TANH_PS( _vci );
+      _vf = _mm512_fmadd_ps( LIBXSMM_INTRINSICS_MM512_TANH_PS( _mm512_mul_ps( _vf, _halves ) ), _halves, _halves);
       _vcs = _mm512_mul_ps( _vf, _vcs );
       _vcs = _mm512_fmadd_ps( _vi, _vci, _vcs );
-      _vco = _MM512_TANH_PS( _vcs );
+      _vco = LIBXSMM_INTRINSICS_MM512_TANH_PS( _vcs );
       _vh = _mm512_mul_ps( _vo, _vco );
       _mm512_store_ps( &_o[(_j*K)+_k], _vo );
       _mm512_store_ps( &_i[(_j*K)+_k], _vi );
@@ -71,6 +66,5 @@
       LIBXSMM_INTRINSICS_MM512_STREAM_PS( &_h[(_j*K)+_k], _vh );
     }
   }
-#undef _MM512_TANH_PS
 }
 
