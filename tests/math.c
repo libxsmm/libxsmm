@@ -158,7 +158,7 @@ int main(int argc, char* argv[])
   }
 
   if (0 < warn_ssqrt || 0 < warn_dsqrt) {
-    fprintf(stderr, "missed bitwise exact result in %i of %i cases!\n", LIBXSMM_MAX(warn_ssqrt, warn_dsqrt), N);
+    fprintf(stderr, "missed bitwise exact result in %i of the cases!\n", LIBXSMM_UP3(LIBXSMM_MAX(warn_ssqrt, warn_dsqrt), N, 100));
   }
 
   { /* check GCD */
