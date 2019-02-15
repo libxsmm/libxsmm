@@ -900,8 +900,8 @@ int main(int argc, char* argv[])
   int K = 512;      /* number of outputs */
   int t = 50;       /* number of time steps (>= 1) */
   int bn = 24;
-  int bk = 64;
   int bc = 64;
+  int bk = 64;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 0/*disabled by default*/ : atof(env_check));
@@ -1164,8 +1164,8 @@ int main(int argc, char* argv[])
     lstmcell_desc.K = K;
     lstmcell_desc.max_T = t;
     lstmcell_desc.bn = bn;
-    lstmcell_desc.bk = bk;
     lstmcell_desc.bc = bc;
+    lstmcell_desc.bk = bk;
     lstmcell_desc.cell_type = LIBXSMM_DNN_RNNCELL_LSTM;
     lstmcell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     lstmcell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
@@ -1174,15 +1174,6 @@ int main(int argc, char* argv[])
 
     libxsmm_handle = libxsmm_dnn_create_rnncell( lstmcell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
-    if ( N % bn != 0 ) {
-      bn = N;
-    }
-    if ( C % bc != 0 ) {
-      bc = C;
-    }
-    if ( K % bk != 0 ) {
-      bk = K;
-    }
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_allocate_forget_bias(libxsmm_handle, forget_bias) );
 
     /* setup LIBXSMM buffers and filter */
