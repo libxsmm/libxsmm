@@ -58,8 +58,8 @@
 
 #if defined(__EIGEN)
 template<bool pad> struct stride_helper {
-  stride_helper(int pad_a, int pad_b, int pad_c): a(pad_a, 1), b(pad_b, 1), c(pad_c, 1) {}
-  Eigen::Stride<Eigen::Dynamic,Eigen::Dynamic> a, b, c;
+  stride_helper(int pad_a, int pad_b, int pad_c): a(pad_a), b(pad_b), c(pad_c) {}
+  Eigen::OuterStride<Eigen::Dynamic> a, b, c;
 };
 template<> struct stride_helper<false> {
   stride_helper(...) {}
