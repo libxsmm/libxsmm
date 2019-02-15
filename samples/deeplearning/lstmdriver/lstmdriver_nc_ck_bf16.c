@@ -446,11 +446,11 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
 #endif
   for (j = 0; j < N; j++) {
     for (l = 0; l < rem; l+=16) {
-      __m512 iv   = _mm512_load_ps (&(i[j*4*K + l]));
-      __m512 cv   = _mm512_load_ps (&(c[j*4*K + l]));
-      __m512 fv   = _mm512_load_ps (&(f[j*4*K + l]));
-      __m512 ov   = _mm512_load_ps (&(o[j*4*K + l]));
-      __m512 cspv = _mm512_load_ps (&(csp[j*K + l]));
+      __m512 iv   = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(i[j*4*K + l]));
+      __m512 cv   = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(c[j*4*K + l]));
+      __m512 fv   = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(f[j*4*K + l]));
+      __m512 ov   = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(o[j*4*K + l]));
+      __m512 cspv = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(csp[j*K + l]));
       __m512 csv, cov, hv;
       /* i = sigmoid(i) */
       iv = _mm512_mul_ps (iv, minus1);
@@ -553,20 +553,20 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
 #endif
   for (j = 0; j < N; j++) {
     for (l = 0; l < rem; l+=16) {
-      __m512 iv       = _mm512_load_ps (&(i[j*4*K + l]));
-      __m512 cv       = _mm512_load_ps (&(c[j*4*K + l]));
-      __m512 fv       = _mm512_load_ps (&(f[j*4*K + l]));
-      __m512 ov       = _mm512_load_ps (&(o[j*4*K + l]));
-      __m512 cspv     = _mm512_load_ps (&(csp[j*K + l]));
-      __m512 cov      = _mm512_load_ps (&(co[j*K + l]));
-      __m512 dcsv     = _mm512_load_ps (&(dcs[j*K + l]));
+      __m512 iv       = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(i[j*4*K + l]));
+      __m512 cv       = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(c[j*4*K + l]));
+      __m512 fv       = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(f[j*4*K + l]));
+      __m512 ov       = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(o[j*4*K + l]));
+      __m512 cspv     = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(csp[j*K + l]));
+      __m512 cov      = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(co[j*K + l]));
+      __m512 dcsv     = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(dcs[j*K + l]));
       __m512 dhv, doutv, div, dcv, dfv, dov, dcspv, deltav, tv;
       /* compute delta */
       if (NULL == dout) {
-        deltav = _mm512_load_ps (&(dh[j*K + l]));
+        deltav = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(dh[j*K + l]));
       } else {
-        dhv    = _mm512_load_ps (&(dh[j*K + l]));
-        doutv  = _mm512_load_ps (&(dout[j*K + l]));
+        dhv    = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(dh[j*K + l]));
+        doutv  = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(dout[j*K + l]));
         deltav = _mm512_add_ps (dhv, doutv);
       }
       /* compute dcsp */
