@@ -9,5 +9,5 @@ script:
    (echo; echo "--- TEST LSTM (NC-CK/BF16)"; CHECK=1 ./lstmdriver_nc_ck_bf16.sh) &&
    (echo; echo "--- TEST LSTM (NC-CKCK)"; CHECK=1 ./lstmdriver_nc_kcck.sh)
 
-  - make -e ${MAKEJ} && cd samples/deeplearning/grudriver && make -e ${MAKEJ} &&
-   (true || (echo; echo "--- TEST GRU"; CHECK=1 ./grudriver.sh))
+  - true || (make -e ${MAKEJ} && cd samples/deeplearning/grudriver && make -e ${MAKEJ} &&
+   (echo; echo "--- TEST GRU"; CHECK=1 ./grudriver.sh))
