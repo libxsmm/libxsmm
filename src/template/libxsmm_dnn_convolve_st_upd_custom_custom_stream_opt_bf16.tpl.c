@@ -221,7 +221,7 @@ if (n_segments) {
 #if defined(LIBXSMM_INTRINSICS_AVX512)
 #define _mm512_roundbf16rne(A) LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(A)
 #define _mm512_storecvtrne_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
-#define _mm512_storecvttrunc_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32((union __m512i) (B),16)))
+#define _mm512_storecvttrunc_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32((__m512i) (B),16)))
     if (instr == WEIGHT_COPY) {
       offset_w /= handle->desc.R * handle->desc.S * handle->ifmblock_hp * handle->ofmblock;
       offset_w *= handle->desc.R * handle->desc.S * handle->ifmblock_hp;
