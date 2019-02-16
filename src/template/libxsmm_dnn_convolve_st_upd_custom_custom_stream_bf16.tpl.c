@@ -36,6 +36,7 @@ const int ltid = tid-start_thread;
 int BLOCKSIFM = handle->blocksifm;
 int BLOCKSOFM = handle->blocksofm;
 int OFWP = handle->ofwp+handle->output_lp_padding;
+const int adjust_offset = (handle->desc.C == 3 || handle->reduce_weights == 0) ? 2 : 1;
 
 /* Auxiliary integer variables   */
 int ofm1, ifm1, i, j;
@@ -60,7 +61,7 @@ LIBXSMM_VLA_DECL(6, element_filter_type, weight, (element_filter_type*)handle->g
 float *weight_ptr = ((float*) handle->scratch2) + (handle->desc.N * handle->blocksofm * handle->ofmblock * (handle->ofhp+2*handle->desc.pad_h) * (handle->ofwp+8+2*handle->desc.pad_w))/2;
 
 float* reduction_weight_ptr = ((float*)handle->scratch4) + (handle->weight_copies * BLOCKSOFM * BLOCKSIFM * handle->desc.R*handle->desc.S*handle->ifmblock_hp*handle->ofmblock);
-LIBXSMM_VLA_DECL(3, float, reduction_weight, reduction_weight_ptr, handle->weight_copies, handle->ofmblock);
+LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, reduction_weight, (libxsmm_bfloat16*)reduction_weight_ptr, handle->weight_copies, handle->ofmblock);
 
 int padded_h = (handle->padding_flag == 1) ? handle->ifhp + 2 * handle->desc.pad_h : handle->ifhp;
 int padded_w = (handle->padding_flag == 1) ? handle->ifwp + 2 * handle->desc.pad_w : handle->ifwp;
@@ -143,7 +144,7 @@ if (handle->reduce_weights) {
 #else
 #endif
   } else {
-    weight_base = &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid/(handle->desc.threads/handle->weight_copies), 0, handle->weight_copies, handle->ofmblock);
+    weight_base = (float*) &LIBXSMM_VLA_ACCESS(3, reduction_weight, 0, ltid/(handle->desc.threads/handle->weight_copies), 0, handle->weight_copies, handle->ofmblock);
   }
 } else {
   weight_base = weight_ptr;
@@ -198,17 +199,18 @@ if (handle->use_lp_kernel == 1) {
 
 for (pc = 0; pc < instr; pc++) {
   offset_i = stream[i];
-  offset_w = stream[i+1];
+  offset_w = stream[i+1] * adjust_offset;
   offset_o = stream[i+2];
   pi = stream[i+3];
   pw = stream[i+4];
   po = stream[i+5];
-  kernel( input_base + offset_i, weight_base + offset_w, output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, &vnni_scratch[0]);
+  kernel( input_base + offset_i, (float*)((libxsmm_bfloat16*)weight_base + offset_w), output_base + offset_o, input_base + pi, weight_base + pw, output_base + po, &scale_factor, &vnni_scratch[0]);
   i+=3;
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
+#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 if (handle->reduce_weights) {
 #if defined(LIBXSMM_INTRINSICS_AVX512)
   if (handle->desc.C == 3) {
@@ -263,10 +265,10 @@ if (handle->reduce_weights) {
         __m512 weight_sum_hi = _mm512_setzero_ps();
         __m512i pair_fms;
         for ( i = 0; i < handle->weight_copies; i++ ) {
-          weight_sum_lo = _mm512_add_ps(weight_sum_lo, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
+          weight_sum_lo = _mm512_add_ps(weight_sum_lo, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
         }
         for ( i = 0; i < handle->weight_copies; i++ ) {
-          weight_sum_hi = _mm512_add_ps(weight_sum_hi, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->weight_copies, 16)));
+          weight_sum_hi = _mm512_add_ps(weight_sum_hi, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->weight_copies, 16)));
         }
         { /* open new scope for additional variable declarations (C89) */
           __m512i vfp32     = _mm512_castps_si512( weight_sum_lo);
@@ -298,10 +300,10 @@ if (handle->reduce_weights) {
         __m512 weight_sum_hi = _mm512_setzero_ps();
         __m512i fm0, fm1, pair_fms;
         for ( i = 0; i < handle->weight_copies; i++ ) {
-          weight_sum_lo = _mm512_add_ps(weight_sum_lo, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
+          weight_sum_lo = _mm512_add_ps(weight_sum_lo, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j, i, 0, handle->weight_copies, 16)));
         }
         for ( i = 0; i < handle->weight_copies; i++ ) {
-          weight_sum_hi = _mm512_add_ps(weight_sum_hi, LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->weight_copies, 16)));
+          weight_sum_hi = _mm512_add_ps(weight_sum_hi, _mm512_loadcvt_bf16_fp32(&LIBXSMM_VLA_ACCESS(3, reduction_weight, j+1, i, 0, handle->weight_copies, 16)));
         }
         fm0 = _mm512_castps_si512(weight_sum_lo);
         fm1 = _mm512_castps_si512(weight_sum_hi);
@@ -366,5 +368,6 @@ if (handle->reduce_weights) {
   }
 }
 
+#undef _mm512_loadcvt_bf16_fp32
 libxsmm_barrier_wait(handle->barrier, ltid);
 
