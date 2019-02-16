@@ -2197,6 +2197,8 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
     }
   } else {
     if (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_BF16) {
+      unsigned short perm_store_array[32];
+      unsigned int p;
       if ( i_conv_desc->f32_bf16_cvt_rne ) {
         /* push 0x7f800000 on the stack, naninf masking */
         libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, i_gp_reg_mapping->gp_reg_help_5, 0x7f800000);
@@ -2215,8 +2217,6 @@ void libxsmm_generator_convolution_weight_update_store_weight( libxsmm_generated
         libxsmm_x86_instruction_push_reg( io_generated_code, i_gp_reg_mapping->gp_reg_help_5 );
       }
       /* Permute array to convert/truncate zmm to ymm */
-      unsigned short perm_store_array[32];
-      unsigned int p;
       for (p=0; p<16;p++) {
         perm_store_array[p] = (unsigned short)(2*p+1);
       }
