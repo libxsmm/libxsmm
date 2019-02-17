@@ -36,7 +36,7 @@
 
 #if defined(LIBXSMM_INTRINSICS_AVX512)
 # define _mm512_load_act(A)   _mm512_loadu_ps((float*)A)
-# define _mm512_stream_act(A,B) _mm512_stream_ps((float*)A,B)
+# define _mm512_stream_act(A,B) LIBXSMM_INTRINSICS_MM512_STREAM_PS((float*)A,B)
 # define _mm512_store_act(A,B)  _mm512_storeu_ps((float*)A,B)
 #endif
 

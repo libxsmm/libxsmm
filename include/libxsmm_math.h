@@ -146,8 +146,5 @@ LIBXSMM_API float libxsmm_sexp2_i8(signed char x);
 /** Similar to libxsmm_sexp2_i8, but takes an integer as signed 8-bit value (check). */
 LIBXSMM_API float libxsmm_sexp2_i8i(int x);
 
-/** Makes log2 available independent of C99 support. */
-LIBXSMM_API double libxsmm_log2(double x);
-
 #endif /*LIBXSMM_MATH_H*/
 

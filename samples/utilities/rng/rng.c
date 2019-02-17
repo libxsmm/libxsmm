@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2014-2019, Intel Corporation                                **
+** Copyright (c) 2019, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -64,6 +64,7 @@ int main(int argc, char* argv[])
   assert(num_rngs >= 1);
 
   rngs = (float*)malloc( num_rngs*sizeof(float) );
+  if (NULL == rngs) num_rngs = 0;
 
   libxsmm_rng_set_seed( (uint32_t)(time(0)));
 
@@ -102,10 +103,10 @@ int main(int argc, char* argv[])
     libxsmm_rng_f32_seq( vrng, 16 );
   }
   printf("\nlibxsmm_rng_float:  %llu cycles per random number (vlen=16)\n",
-    libxsmm_timer_cycles(start, libxsmm_timer_tick()) / (num_rngs*16));
+    libxsmm_timer_cycles(start, libxsmm_timer_tick()) / ((size_t)num_rngs*16));
 
   /* let's compute some values of the random numbers */
-  printf("\nWe have generatred %i random numbers uniformly distributed in [0,1(\n", num_rngs);
+  printf("\nWe have generated %i random numbers uniformly distributed in [0,1(\n", num_rngs);
   printf("We expect the following values E=0.5, Var=0.083333, Stddev=0.288675\n\n");
   printf("minimum random number is:            %f\n", rng_min);
   printf("maximum random number is:            %f\n", rng_max);

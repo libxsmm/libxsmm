@@ -28,7 +28,13 @@
 ******************************************************************************/
 /* Evangelos Georganas, Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
-//#define PROFILE
+#if 0
+#define PROFILE
+#endif
+
+#define _mm512_roundbf16rne(A) LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(A)
+#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+#define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
 
 /* helper variables */
 libxsmm_blasint j, ik, ikb, in, inb, ic, icb, jk, jb/*jn shadows global variable*/, jc, ek, en, ec, BF, KB_BLOCKS, KB;
@@ -45,7 +51,7 @@ const int cBlocks = C/bc;
 const int kBlocks = K/bk;
 const int nBlocks = N/bn;
 const int lpb = 2;
-const int bc_lp = bc/lpb;
+/*const int bc_lp = bc/lpb;*/
 const int bk_lp = bk/lpb;
 const int bn_lp = bn/lpb;
 unsigned long long blocks;
@@ -124,11 +130,11 @@ element_filter_type *scratch_riT = &(scratch_rT[0]);
 element_filter_type *scratch_rcT = &(scratch_rT[K*K]);
 element_filter_type *scratch_rfT = &(scratch_rT[2*K*K]);
 element_filter_type *scratch_roT = &(scratch_rT[3*K*K]);
-element_output_type *t1D   = (element_output_type*)handle->scratch_t1;
-element_output_type *t2D   = (element_output_type*)handle->scratch_t2;
+/*element_output_type *t1D   = (element_output_type*)handle->scratch_t1;*/
+/*element_output_type *t2D   = (element_output_type*)handle->scratch_t2;*/
 /* multidimensional arrays */
-LIBXSMM_VLA_DECL(2, element_output_type, t1, t1D, K);
-LIBXSMM_VLA_DECL(2, element_output_type, t2, t2D, K);
+/*LIBXSMM_VLA_DECL(2, element_output_type, t1, t1D, K);*/
+/*LIBXSMM_VLA_DECL(2, element_output_type, t2, t2D, K);*/
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 LIBXSMM_VLA_DECL(2, element_input_type,  cp, csp, K);
 LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
@@ -246,10 +252,12 @@ __m512 dbi_sum, dbf_sum, dbo_sum, dbc_sum;
 #endif
 /* number of tasks that could be run in parallel for K blocks*/
 /* compute chunk size */
+#if 0
 const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads == 0) ? (K / (libxsmm_blasint)handle->desc.threads) : ((K / (libxsmm_blasint)handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
 const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
 const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
+#endif
 #ifdef PROFILE
 __int64_t _start, _end, eltwise_cycles = 0, dout_cycles = 0, weight_trans_cycles = 0, act_trans_cycles = 0, dx_cycles = 0, dwdr_cycles = 0, gradient_cycles = 0, reformat_cycles = 0;
 float total_time = 0.0;
@@ -334,17 +342,18 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   if (ltid == 0) _start = _rdtsc();
 #endif
   /* Store result weight matrices in CK format and downcovert to bf16 */
+#if defined(LIBXSMM_RNN_CELL_AVX512)
   for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
     icb = ikic / (K/bk);
     ic = icb*bc;
     ikb = ikic % (K/bk);
     ik = ikb*bk;
     for (jc = 0; jc < bc; ++jc) {
-      for (jk = 0; jk < bk; ++jk) {
-        LIBXSMM_VLA_ACCESS(2, dwi_ck, ic+jc, ik+jk , K4) = libxsmm_internal_scalar_rne_cvt_fp32_bfp16(LIBXSMM_VLA_ACCESS(4, dwi, ikb, icb, jc, jk, cBlocks, bc, bk));
-        LIBXSMM_VLA_ACCESS(2, dwc_ck, ic+jc, ik+jk , K4) = libxsmm_internal_scalar_rne_cvt_fp32_bfp16(LIBXSMM_VLA_ACCESS(4, dwc, ikb, icb, jc, jk, cBlocks, bc, bk));
-        LIBXSMM_VLA_ACCESS(2, dwf_ck, ic+jc, ik+jk , K4) = libxsmm_internal_scalar_rne_cvt_fp32_bfp16(LIBXSMM_VLA_ACCESS(4, dwf, ikb, icb, jc, jk, cBlocks, bc, bk));
-        LIBXSMM_VLA_ACCESS(2, dwo_ck, ic+jc, ik+jk , K4) = libxsmm_internal_scalar_rne_cvt_fp32_bfp16(LIBXSMM_VLA_ACCESS(4, dwo, ikb, icb, jc, jk, cBlocks, bc, bk));
+      for (jk = 0; jk < bk; jk += 16) {
+        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, dwi_ck, ic+jc, ik+jk , K4), LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dwi, ikb, icb, jc, jk, cBlocks, bc, bk)));
+        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, dwc_ck, ic+jc, ik+jk , K4), LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dwc, ikb, icb, jc, jk, cBlocks, bc, bk)));
+        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, dwf_ck, ic+jc, ik+jk , K4), LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dwf, ikb, icb, jc, jk, cBlocks, bc, bk)));
+        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, dwo_ck, ic+jc, ik+jk , K4), LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dwo, ikb, icb, jc, jk, cBlocks, bc, bk)));
       }
     }
   }
@@ -355,14 +364,17 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
     ikb = ikic % (K/bk);
     ik = ikb*bk;
     for (jc = 0; jc < bk; ++jc) {
-      for (jk = 0; jk < bk; ++jk) {
-        LIBXSMM_VLA_ACCESS(2, dri_ck, ic+jc, ik+jk , K4) = libxsmm_internal_scalar_rne_cvt_fp32_bfp16(LIBXSMM_VLA_ACCESS(4, dri, ikb, icb, jc, jk, kBlocks, bk, bk));
-        LIBXSMM_VLA_ACCESS(2, drc_ck, ic+jc, ik+jk , K4) = libxsmm_internal_scalar_rne_cvt_fp32_bfp16(LIBXSMM_VLA_ACCESS(4, drc, ikb, icb, jc, jk, kBlocks, bk, bk));
-        LIBXSMM_VLA_ACCESS(2, drf_ck, ic+jc, ik+jk , K4) = libxsmm_internal_scalar_rne_cvt_fp32_bfp16(LIBXSMM_VLA_ACCESS(4, drf, ikb, icb, jc, jk, kBlocks, bk, bk));
-        LIBXSMM_VLA_ACCESS(2, dro_ck, ic+jc, ik+jk , K4) = libxsmm_internal_scalar_rne_cvt_fp32_bfp16(LIBXSMM_VLA_ACCESS(4, dro, ikb, icb, jc, jk, kBlocks, bk, bk));
+      for (jk = 0; jk < bk; jk += 16) {
+        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, dri_ck, ic+jc, ik+jk , K4), LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dri, ikb, icb, jc, jk, kBlocks, bk, bk)));
+        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, drc_ck, ic+jc, ik+jk , K4), LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, drc, ikb, icb, jc, jk, kBlocks, bk, bk)));
+        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, drf_ck, ic+jc, ik+jk , K4), LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, drf, ikb, icb, jc, jk, kBlocks, bk, bk)));
+        _mm512_storecvt_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, dro_ck, ic+jc, ik+jk , K4), LIBXSMM_INTRINSICS_MM512_LOAD_PS(&LIBXSMM_VLA_ACCESS(4, dro, ikb, icb, jc, jk, kBlocks, bk, bk)));
       }
     }
   }
+#else
+  /* TODO: Add here non AVX512 replacement code  */
+#endif
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 #ifdef PROFILE
   if (ltid == 0) {
@@ -387,3 +399,8 @@ if (ltid == 0) {
 }
 #undef PROFILE
 #endif
+
+#undef _mm512_roundbf16rne
+#undef _mm512_loadcvt_bf16_fp32
+#undef _mm512_storecvt_fp32_bf16
+

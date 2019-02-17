@@ -136,22 +136,23 @@
     }
   }
 
-  /* Store di/dci/df/dp to diB/dciB/dfB/dpB which is CNNC AND vnni format */
-  /* TODO: Vectorize the code  below  */
-  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, di_, _di, K);
-  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, df_, _df, K);
-  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dp_, _dp, K);
-  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dci_, _dci, K);
-  LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, diB_, _diB, bk, _lpb);
-  LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, dfB_, _dfB, bk, _lpb);
-  LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, dpB_, _dpB, bk, _lpb);
-  LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, dciB_, _dciB, bk, _lpb);
-  for ( _j = 0; _j < bn; _j++ ) {
-    for ( _k = 0; _k < bk; _k++ ) {
-      LIBXSMM_VLA_ACCESS(3, diB_, _j/_lpb, _k, _j%_lpb, bk, _lpb) = LIBXSMM_VLA_ACCESS(2, di_, _j, _k, K);
-      LIBXSMM_VLA_ACCESS(3, dfB_, _j/_lpb, _k, _j%_lpb, bk, _lpb) = LIBXSMM_VLA_ACCESS(2, df_, _j, _k, K);
-      LIBXSMM_VLA_ACCESS(3, dpB_, _j/_lpb, _k, _j%_lpb, bk, _lpb) = LIBXSMM_VLA_ACCESS(2, dp_, _j, _k, K);
-      LIBXSMM_VLA_ACCESS(3, dciB_, _j/_lpb, _k, _j%_lpb, bk, _lpb) = LIBXSMM_VLA_ACCESS(2, dci_, _j, _k, K);
+  { /* Store di/dci/df/dp to diB/dciB/dfB/dpB which is CNNC AND vnni format */
+    /* TODO: Vectorize the code  below  */
+    LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, di_, _di, K);
+    LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, df_, _df, K);
+    LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dp_, _dp, K);
+    LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, dci_, _dci, K);
+    LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, diB_, _diB, bk, _lpb);
+    LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, dfB_, _dfB, bk, _lpb);
+    LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, dpB_, _dpB, bk, _lpb);
+    LIBXSMM_VLA_DECL(3, libxsmm_bfloat16, dciB_, _dciB, bk, _lpb);
+    for (_j = 0; _j < bn; _j++) {
+      for (_k = 0; _k < bk; _k++) {
+        LIBXSMM_VLA_ACCESS(3, diB_, _j / _lpb, _k, _j%_lpb, bk, _lpb) = LIBXSMM_VLA_ACCESS(2, di_, _j, _k, K);
+        LIBXSMM_VLA_ACCESS(3, dfB_, _j / _lpb, _k, _j%_lpb, bk, _lpb) = LIBXSMM_VLA_ACCESS(2, df_, _j, _k, K);
+        LIBXSMM_VLA_ACCESS(3, dpB_, _j / _lpb, _k, _j%_lpb, bk, _lpb) = LIBXSMM_VLA_ACCESS(2, dp_, _j, _k, K);
+        LIBXSMM_VLA_ACCESS(3, dciB_, _j / _lpb, _k, _j%_lpb, bk, _lpb) = LIBXSMM_VLA_ACCESS(2, dci_, _j, _k, K);
+      }
     }
   }
 }

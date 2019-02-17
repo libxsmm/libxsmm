@@ -810,6 +810,16 @@ int main(int argc, char* argv[])
     printf("#      Setting Up  (custom-Storage)      #\n");
     printf("##########################################\n");
 
+    if ( N % bn != 0 ) {
+      bn = N;
+    }
+    if ( C % bc != 0 ) {
+      bc = C;
+    }
+    if ( K % bk != 0 ) {
+      bk = K;
+    }
+
     /* setup LIBXSMM handle */
     lstmcell_desc.threads = nThreads;
     lstmcell_desc.N = N;
@@ -826,15 +836,6 @@ int main(int argc, char* argv[])
     lstmcell_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED;
     libxsmm_handle = libxsmm_dnn_create_rnncell( lstmcell_desc, &status );
     CHKERR_LIBXSMM_DNN( status );
-    if ( N % bn != 0 ) {
-      bn = N;
-    }
-    if ( C % bc != 0 ) {
-      bc = C;
-    }
-    if ( K % bk != 0 ) {
-      bk = K;
-    }
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_allocate_forget_bias(libxsmm_handle, forget_bias) );
 
     /* setup LIBXSMM buffers and filter */

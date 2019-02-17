@@ -41,7 +41,7 @@
 #endif
 #else
 # define _mm512_load_act(A)     _mm512_loadu_ps(A)
-# define _mm512_stream_act(A,B) _mm512_stream_ps(A,B)
+# define _mm512_stream_act(A,B) LIBXSMM_INTRINSICS_MM512_STREAM_PS(A,B)
 # define _mm512_store_act(A,B)  _mm512_storeu_ps(A,B)
 #endif
 

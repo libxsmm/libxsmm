@@ -508,6 +508,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_upd
   unsigned int use_fastpath;
   unsigned int ncopies;                         /* number of reduction copies, probably nthreads */
   unsigned int avoid_output_trans;
+  unsigned int f32_bf16_cvt_rne;                /* non-zero if in case of bf16 we perform RNE rounding when converting down from f32 in JIT sequence */
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;
