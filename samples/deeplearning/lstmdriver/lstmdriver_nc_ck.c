@@ -1157,6 +1157,16 @@ int main(int argc, char* argv[])
     printf("#      Setting Up  (custom-Storage)      #\n");
     printf("##########################################\n");
 
+    if ( N % bn != 0 ) {
+      bn = N;
+    }
+    if ( C % bc != 0 ) {
+      bc = C;
+    }
+    if ( K % bk != 0 ) {
+      bk = K;
+    }
+
     /* setup LIBXSMM handle */
     lstmcell_desc.threads = nThreads;
     lstmcell_desc.N = N;
@@ -1164,8 +1174,8 @@ int main(int argc, char* argv[])
     lstmcell_desc.K = K;
     lstmcell_desc.max_T = t;
     lstmcell_desc.bn = bn;
-    lstmcell_desc.bc = bc;
     lstmcell_desc.bk = bk;
+    lstmcell_desc.bc = bc;
     lstmcell_desc.cell_type = LIBXSMM_DNN_RNNCELL_LSTM;
     lstmcell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     lstmcell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
