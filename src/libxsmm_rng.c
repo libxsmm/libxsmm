@@ -91,17 +91,25 @@ LIBXSMM_API_INLINE float libxsmm_rng_scalar_float_next(void)
   LIBXSMM_INTRINSICS_RNG_STATE_SCALAR(3) = ((LIBXSMM_INTRINSICS_RNG_STATE_SCALAR(3) << 11) | (LIBXSMM_INTRINSICS_RNG_STATE_SCALAR(3) >> (32 - 11)));
 
   rng.i = 0x3f800000 | rng_mantissa;
-  return (rng.f - 1.0f);
+  return rng.f - 1.0f;
 }
 
 
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) /* __AVX512F__ */
-LIBXSMM_API void libxsmm_rng_load_seed_avx512()
+LIBXSMM_API void libxsmm_rng_update_avx512()
 {
   LIBXSMM_INTRINSICS_MM512_RNG_STATE(0) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(0));
   LIBXSMM_INTRINSICS_MM512_RNG_STATE(1) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(1));
   LIBXSMM_INTRINSICS_MM512_RNG_STATE(2) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(2));
   LIBXSMM_INTRINSICS_MM512_RNG_STATE(3) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(3));
+}
+
+LIBXSMM_API void libxsmm_rng_update_scalar()
+{
+  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(0), LIBXSMM_INTRINSICS_MM512_RNG_STATE(0));
+  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(1), LIBXSMM_INTRINSICS_MM512_RNG_STATE(1));
+  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(2), LIBXSMM_INTRINSICS_MM512_RNG_STATE(2));
+  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(3), LIBXSMM_INTRINSICS_MM512_RNG_STATE(3));
 }
 #endif
 
@@ -135,9 +143,9 @@ LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed)
       LIBXSMM_INTRINSICS_RNG_STATE(2) + i, LIBXSMM_INTRINSICS_RNG_STATE(3) + i);
   }
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) /* __AVX512F__ */
-  libxsmm_rng_load_seed_avx512();
+  libxsmm_rng_update_avx512();
 #endif
-
+  /* for consistency, other RNGs are seeded as well */
 #if !defined(_WIN32) && !defined(__CYGWIN__) && (defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
   srand48(seed);
 #endif
@@ -154,6 +162,8 @@ LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count)
   for (; i < n; i += vlen) {
     _mm512_storeu_ps(rngs+i, LIBXSMM_INTRINSICS_MM512_RNG_PS());
   }
+  /* bring AVX-512 state back to scalar */
+  if (i < count) libxsmm_rng_update_scalar();
 #endif
   for (; i < count; ++i) {
     rngs[i] = libxsmm_rng_scalar_float_next();
