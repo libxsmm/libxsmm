@@ -48,30 +48,27 @@ LIBXSMM_APIVAR(uint32_t libxsmm_rng_scalar_state[4]);
 LIBXSMM_API_INLINE void libxsmm_rng_float_jump(uint32_t* state0, uint32_t* state1, uint32_t* state2, uint32_t* state3)
 {
   static const uint32_t jump_table[] = { 0x8764000b, 0xf542d2d3, 0x6fa035c3, 0x77f2db5b };
+  static const size_t size = sizeof(jump_table) / sizeof(*jump_table);
+  uint32_t s0 = 0, s1 = 0, s2 = 0, s3 = 0;
+  int i, b;
 
-  uint32_t s0 = 0;
-  uint32_t s1 = 0;
-  uint32_t s2 = 0;
-  uint32_t s3 = 0;
-  uint32_t t;
-  size_t i, b;
-
-  for (i = 0; i < sizeof(jump_table) / sizeof(*jump_table); ++i) {
+  for (i = 0; i < (int)size; ++i) {
     for (b = 0; b < 32; ++b) {
-      if (jump_table[i] & UINT32_C(1) << b) {
+      if (jump_table[i] & (UINT32_C(1) << b)) {
         s0 ^= *state0;
         s1 ^= *state1;
         s2 ^= *state2;
         s3 ^= *state3;
       }
-      /* draw one more integer */
-      t = *state1 << 9;
-      *state2 ^= *state0;
-      *state3 ^= *state1;
-      *state1 ^= *state2;
-      *state0 ^= *state3;
-      *state2 ^= t;
-      *state3 = ((*state3 << 11) | (*state3 >> (32 - 11)));
+      { /* draw one more integer */
+        const uint32_t t = *state1 << 9;
+        *state2 ^= *state0;
+        *state3 ^= *state1;
+        *state1 ^= *state2;
+        *state0 ^= *state3;
+        *state2 ^= t;
+        *state3 = ((*state3 << 11) | (*state3 >> (32 - 11)));
+      }
     }
   }
   *state0 = s0;
@@ -83,12 +80,9 @@ LIBXSMM_API_INLINE void libxsmm_rng_float_jump(uint32_t* state0, uint32_t* state
 
 LIBXSMM_API_INLINE float libxsmm_rng_scalar_float_next(void)
 {
-  union {
-    uint32_t i;
-    float f;
-  } rng;
   const uint32_t rng_mantissa = (libxsmm_rng_scalar_state[0] + libxsmm_rng_scalar_state[3]) >> 9;
   const uint32_t t = libxsmm_rng_scalar_state[1] << 9;
+  union { uint32_t i; float f; } rng;
 
   libxsmm_rng_scalar_state[2] ^= libxsmm_rng_scalar_state[0];
   libxsmm_rng_scalar_state[3] ^= libxsmm_rng_scalar_state[1];
@@ -103,13 +97,6 @@ LIBXSMM_API_INLINE float libxsmm_rng_scalar_float_next(void)
 
 
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) /* __AVX512F__ */
-/* 2048 bit state for AVX512 RNG */
-LIBXSMM_APIVAR(__m512i libxsmm_rng_avx512_state_0);
-LIBXSMM_APIVAR(__m512i libxsmm_rng_avx512_state_1);
-LIBXSMM_APIVAR(__m512i libxsmm_rng_avx512_state_2);
-LIBXSMM_APIVAR(__m512i libxsmm_rng_avx512_state_3);
-
-
 LIBXSMM_API void libxsmm_rng_set_seed_avx512(unsigned int/*uint32_t*/ seed)
 {
   uint32_t temp_state[] = {
@@ -134,23 +121,6 @@ LIBXSMM_API void libxsmm_rng_set_seed_avx512(unsigned int/*uint32_t*/ seed)
   libxsmm_rng_avx512_state_1 = _mm512_loadu_si512(temp_state+16);
   libxsmm_rng_avx512_state_2 = _mm512_loadu_si512(temp_state+32);
   libxsmm_rng_avx512_state_3 = _mm512_loadu_si512(temp_state+48);
-}
-
-
-LIBXSMM_API_INLINE __m512 _mm512_libxmm_rng_ps(void) {
-  const __m512i rng_mantissa = _mm512_srli_epi32(_mm512_add_epi32(libxsmm_rng_avx512_state_0, libxsmm_rng_avx512_state_3), 9);
-  const __m512i t = _mm512_slli_epi32(libxsmm_rng_avx512_state_1, 9);
-
-  libxsmm_rng_avx512_state_2 = _mm512_xor_epi32(libxsmm_rng_avx512_state_2, libxsmm_rng_avx512_state_0);
-  libxsmm_rng_avx512_state_3 = _mm512_xor_epi32(libxsmm_rng_avx512_state_3, libxsmm_rng_avx512_state_1);
-  libxsmm_rng_avx512_state_1 = _mm512_xor_epi32(libxsmm_rng_avx512_state_1, libxsmm_rng_avx512_state_2);
-  libxsmm_rng_avx512_state_0 = _mm512_xor_epi32(libxsmm_rng_avx512_state_0, libxsmm_rng_avx512_state_3);
-  libxsmm_rng_avx512_state_2 = _mm512_xor_epi32(libxsmm_rng_avx512_state_2, t);
-  libxsmm_rng_avx512_state_3 = _mm512_or_epi32(_mm512_slli_epi32(libxsmm_rng_avx512_state_3, 11),
-                                               _mm512_srli_epi32(libxsmm_rng_avx512_state_3, 32-11));
-
-  return _mm512_sub_ps(_mm512_castsi512_ps(_mm512_or_epi32(_mm512_set1_epi32(0x3f800000), rng_mantissa)),
-                       _mm512_set1_ps(1.0f));
 }
 #endif
 
@@ -178,7 +148,7 @@ LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count)
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) /* __AVX512F__ */
   const libxsmm_blasint n = (count / 16) * 16;
   for (; i < n; i += 16) {
-    _mm512_storeu_ps(rngs+i, _mm512_libxmm_rng_ps());
+    _mm512_storeu_ps(rngs+i, LIBXSMM_INTRINSICS_MM512_RNG_PS());
   }
 #endif
   for (; i < count; ++i) {
