@@ -39,11 +39,14 @@ int main(/*int argc, char* argv[]*/)
     0.662635803f, 0.335319161f, 0.369734645f, 0.561638355f, 0.00473213196f, 0.226125360f, 0.0178569555f, 0.288882852f
   };
   libxsmm_blasint num_rngs = 1000, i;
-  libxsmm_matdiff_info info = { 0 };
+  libxsmm_matdiff_info info;
   int result = EXIT_SUCCESS;
 
   float *const rngs = (float*)malloc(num_rngs * sizeof(float));
   if (NULL == rngs) num_rngs = 0;
+
+  /* mute warning about potentially uninitialized variable */
+  libxsmm_matdiff_clear(&info);
 
   /* setup reproducible sequence */
   libxsmm_rng_set_seed(seed);
