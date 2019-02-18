@@ -141,12 +141,14 @@ if (0 == result_nan) {
   const libxsmm_blasint size = mm * nn;
   double compr_var = 0, compt_var = 0;
 
-  /* average/expected value, and initial variance */
-  info->avg_ref = info->l1_ref / size;
-  info->avg_tst = info->l1_tst / size;
+  /* initial variance */
   LIBXSMM_ASSERT(0 == info->var_ref);
   LIBXSMM_ASSERT(0 == info->var_tst);
 
+  if (0 != size) { /* final average */
+    info->avg_ref = info->l1_ref / size;
+    info->avg_tst = info->l1_tst / size;
+  }
   /* Infinity-norm relative to reference */
   if (0 < normr) {
     info->normi_rel = info->normi_abs / normr;
@@ -222,9 +224,9 @@ if (0 == result_nan) {
   else { /* should not happen */
     info->norm1_rel = 0;
   }
-
-  /* final variance values */
-  info->var_ref /= size;
-  info->var_tst /= size;
+  if (0 != size) { /* final variance */
+    info->var_ref /= size;
+    info->var_tst /= size;
+  }
 }
 
