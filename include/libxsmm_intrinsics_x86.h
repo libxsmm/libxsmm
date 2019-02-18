@@ -35,8 +35,6 @@
 
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
-/** Helper macro to access 2048-bit RNG-state. */
-#define LIBXSMM_INTRINSICS_RNG_STATE(IDX) LIBXSMM_CONCATENATE(libxsmm_rng_state_, IDX)
 
 #if defined(__PGI) /* no intrinsics: tested with 17.x and 18.x */
 # if !defined(LIBXSMM_INTRINSICS_NONE)
@@ -550,12 +548,6 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
 # define LIBXSMM_INTRINSICS_AVX512_ICL
 #endif
 
-/** 2048-bit state for RNG */
-LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_0[16]);
-LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_1[16]);
-LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_2[16]);
-LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_3[16]);
-
 /**
  * Pseudo intrinsics (AVX-512)
  */
@@ -585,8 +577,15 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
 }
 #endif /* SVML */
 
-/** Helper macro to access 2048-bit RNG-state. */
-#define LIBXSMM_INTRINSICS_MM512_RNG_STATE(IDX) (*(__m512i*)LIBXSMM_CONCATENATE(libxsmm_rng_state_, IDX))
+/** 2048-bit state for RNG */
+LIBXSMM_APIVAR_AUX(__m512i libxsmm_rng_state_0);
+LIBXSMM_APIVAR_AUX(__m512i libxsmm_rng_state_1);
+LIBXSMM_APIVAR_AUX(__m512i libxsmm_rng_state_2);
+LIBXSMM_APIVAR_AUX(__m512i libxsmm_rng_state_3);
+
+/** Helper macros to access 2048-bit RNG-state. */
+# define LIBXSMM_INTRINSICS_MM512_RNG_STATE(IDX) LIBXSMM_CONCATENATE(libxsmm_rng_state_, IDX)
+# define LIBXSMM_INTRINSICS_RNG_STATE(IDX) ((unsigned int*)&LIBXSMM_INTRINSICS_MM512_RNG_STATE(IDX))
 
 /** Generate random number in the interval [0, 1); not thread-safe. */
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_RNG_PS(void) {
@@ -604,6 +603,14 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   return _mm512_sub_ps(_mm512_castsi512_ps(_mm512_or_epi32(_mm512_set1_epi32(0x3f800000), rng_mantissa)),
     _mm512_set1_ps(1.0f));
 }
+#else
+/** Helper macro to access 2048-bit RNG-state. */
+# define LIBXSMM_INTRINSICS_RNG_STATE(IDX) LIBXSMM_CONCATENATE(libxsmm_rng_state_, IDX)
+/** 2048-bit state for RNG */
+LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_0[16]);
+LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_1[16]);
+LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_2[16]);
+LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_3[16]);
 #endif /*__AVX512F__*/
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)

@@ -41,7 +41,26 @@
 #endif
 
 /** Helper macro to access 2048-bit RNG-state. */
-#define LIBXSMM_INTRINSICS_RNG_STATE_SCALAR(IDX) *LIBXSMM_INTRINSICS_RNG_STATE(IDX)
+# define LIBXSMM_INTRINSICS_RNG_STATE_SCALAR(IDX) *LIBXSMM_INTRINSICS_RNG_STATE(IDX)
+
+
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) /* __AVX512F__ */
+LIBXSMM_API void libxsmm_rng_state_load_avx512(void)
+{
+  LIBXSMM_INTRINSICS_MM512_RNG_STATE(0) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(0));
+  LIBXSMM_INTRINSICS_MM512_RNG_STATE(1) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(1));
+  LIBXSMM_INTRINSICS_MM512_RNG_STATE(2) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(2));
+  LIBXSMM_INTRINSICS_MM512_RNG_STATE(3) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(3));
+}
+
+LIBXSMM_API void libxsmm_rng_state_store_avx512(void)
+{
+  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(0), LIBXSMM_INTRINSICS_MM512_RNG_STATE(0));
+  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(1), LIBXSMM_INTRINSICS_MM512_RNG_STATE(1));
+  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(2), LIBXSMM_INTRINSICS_MM512_RNG_STATE(2));
+  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(3), LIBXSMM_INTRINSICS_MM512_RNG_STATE(3));
+}
+#endif
 
 
 LIBXSMM_API_INLINE void libxsmm_rng_float_jump(uint32_t* state0, uint32_t* state1, uint32_t* state2, uint32_t* state3)
@@ -95,25 +114,6 @@ LIBXSMM_API_INLINE float libxsmm_rng_scalar_float_next(void)
 }
 
 
-#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) /* __AVX512F__ */
-LIBXSMM_API void libxsmm_rng_update_avx512()
-{
-  LIBXSMM_INTRINSICS_MM512_RNG_STATE(0) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(0));
-  LIBXSMM_INTRINSICS_MM512_RNG_STATE(1) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(1));
-  LIBXSMM_INTRINSICS_MM512_RNG_STATE(2) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(2));
-  LIBXSMM_INTRINSICS_MM512_RNG_STATE(3) = _mm512_loadu_si512(LIBXSMM_INTRINSICS_RNG_STATE(3));
-}
-
-LIBXSMM_API void libxsmm_rng_update_scalar()
-{
-  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(0), LIBXSMM_INTRINSICS_MM512_RNG_STATE(0));
-  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(1), LIBXSMM_INTRINSICS_MM512_RNG_STATE(1));
-  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(2), LIBXSMM_INTRINSICS_MM512_RNG_STATE(2));
-  _mm512_storeu_si512(LIBXSMM_INTRINSICS_RNG_STATE(3), LIBXSMM_INTRINSICS_MM512_RNG_STATE(3));
-}
-#endif
-
-
 LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed)
 {
   static const uint32_t temp_state[] = {
@@ -124,11 +124,6 @@ LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed)
   };
   static const size_t n = sizeof(temp_state) / (4 * sizeof(*temp_state));
   libxsmm_blasint i;
-
-  LIBXSMM_ASSERT(n == sizeof(LIBXSMM_INTRINSICS_RNG_STATE(0)) / sizeof(*LIBXSMM_INTRINSICS_RNG_STATE(0)));
-  LIBXSMM_ASSERT(n == sizeof(LIBXSMM_INTRINSICS_RNG_STATE(1)) / sizeof(*LIBXSMM_INTRINSICS_RNG_STATE(1)));
-  LIBXSMM_ASSERT(n == sizeof(LIBXSMM_INTRINSICS_RNG_STATE(2)) / sizeof(*LIBXSMM_INTRINSICS_RNG_STATE(2)));
-  LIBXSMM_ASSERT(n == sizeof(LIBXSMM_INTRINSICS_RNG_STATE(3)) / sizeof(*LIBXSMM_INTRINSICS_RNG_STATE(3)));
 
   /* finish initializing the state */
   for (i = 0; i < (libxsmm_blasint)n; ++i) {
@@ -143,7 +138,7 @@ LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed)
       LIBXSMM_INTRINSICS_RNG_STATE(2) + i, LIBXSMM_INTRINSICS_RNG_STATE(3) + i);
   }
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) /* __AVX512F__ */
-  libxsmm_rng_update_avx512();
+  libxsmm_rng_state_load_avx512(); /* bring scalar state to AVX-512 */
 #endif
   /* for consistency, other RNGs are seeded as well */
 #if !defined(_WIN32) && !defined(__CYGWIN__) && (defined(_SVID_SOURCE) || defined(_XOPEN_SOURCE))
@@ -157,16 +152,22 @@ LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count)
 {
   libxsmm_blasint i = 0;
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) /* __AVX512F__ */
-  static const size_t vlen = sizeof(libxsmm_rng_state_0) / sizeof(*libxsmm_rng_state_0);
-  const libxsmm_blasint n = (count / vlen) * vlen; /* multiple of vector-length */
-  for (; i < n; i += vlen) {
+  const libxsmm_blasint n = (count / 16) * 16; /* multiple of vector-length */
+  for (; i < n; i += 16) {
     _mm512_storeu_ps(rngs+i, LIBXSMM_INTRINSICS_MM512_RNG_PS());
   }
-  /* bring AVX-512 state back to scalar */
-  if (i < count) libxsmm_rng_update_scalar();
+  if (i < count) { /* remainder */
+    /* bring AVX-512 state back to scalar */
+    libxsmm_rng_state_store_avx512();
+#else
+  {
 #endif
-  for (; i < count; ++i) {
-    rngs[i] = libxsmm_rng_scalar_float_next();
+    for (; i < count; ++i) { /* scalar */
+      rngs[i] = libxsmm_rng_scalar_float_next();
+    }
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) /* __AVX512F__ */
+    libxsmm_rng_state_load_avx512(); /* bring scalar state to AVX-512 */
+#endif
   }
 }
 
