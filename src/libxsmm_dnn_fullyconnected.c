@@ -59,7 +59,7 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
       /* let's make the description persistent */
       handle->desc = fullyconnected_desc;
       /* @TODO perhaps we need a better switch here */
-      if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK) ) {
+      if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED) ) {
         handle->bk = handle->desc.bk;
         handle->bn = handle->desc.bn;
         handle->bc = handle->desc.bc;
@@ -300,7 +300,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fullyconnected_create_ten
             layout = 0; /* make sure a NULL is returned */
             *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
           }
-        } else if ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_NCNC) > 0) {
+        } else if ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) > 0) {
           if ( ((handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) ) {
             layout->datatype = LIBXSMM_DNN_DATATYPE_F32;
             layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(4*sizeof(libxsmm_dnn_tensor_dimtype));
@@ -435,7 +435,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fullyconnected_create_ten
             layout = 0; /* make sure a NULL is returned */
             *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
           }
-        } else if ((handle->desc.filter_format & LIBXSMM_DNN_TENSOR_FORMAT_KCCK) > 0) {
+        } else if ((handle->desc.filter_format & LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED) > 0) {
           if ( ((handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) ) {
             layout->datatype = LIBXSMM_DNN_DATATYPE_F32;
             layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(4*sizeof(libxsmm_dnn_tensor_dimtype));
@@ -671,7 +671,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_execute_st(libxsmm_dnn_
       case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
           status = libxsmm_dnn_fullyconnected_st_fwd_custom( handle, start_thread, tid );
-        } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK) ) {
+        } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED) ) {
           status = libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck( handle, start_thread, tid );
         } else {
           status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
@@ -680,7 +680,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_execute_st(libxsmm_dnn_
       case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
           status = libxsmm_dnn_fullyconnected_st_bwd_custom( handle, start_thread, tid );
-        } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK) ) {
+        } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED) ) {
           status = libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck( handle, start_thread, tid );
         } else {
           status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;
@@ -689,7 +689,7 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_execute_st(libxsmm_dnn_
       case LIBXSMM_DNN_COMPUTE_KIND_UPD: {
         if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) ) {
           status = libxsmm_dnn_fullyconnected_st_upd_custom( handle, start_thread, tid );
-        } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCNC) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_KCCK) ) {
+        } else if ( (handle->desc.buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) && (handle->desc.filter_format == LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED) ) {
           status = libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck( handle, start_thread, tid );
         } else {
           status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FC;

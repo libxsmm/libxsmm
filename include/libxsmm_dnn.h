@@ -98,6 +98,7 @@ typedef unsigned int libxsmm_dnn_err_t;
 #define LIBXSMM_DNN_ERR_UNSUPPORTED_POOLING        100033
 #define LIBXSMM_DNN_ERR_INVALID_FORMAT_FC          100034
 #define LIBXSMM_DNN_ERR_INVALID_RNN_TYPE           100035
+#define LIBXSMM_DNN_ERR_RNN_INVALID_SEQ_LEN        100036
 
 /** Kinds of supported compute flavor operations. */
 typedef enum libxsmm_dnn_compute_kind {
@@ -129,15 +130,10 @@ typedef enum libxsmm_dnn_tensor_dimtype {
   LIBXSMM_DNN_TENSOR_DIMTYPE_R,
   /** kernel width */
   LIBXSMM_DNN_TENSOR_DIMTYPE_S,
+  /** sequence lenth counter */
+  LIBXSMM_DNN_TENSOR_DIMTYPE_T,
   /** general counter */
-  LIBXSMM_DNN_TENSOR_DIMTYPE_X,
-
-  /** number of outputs for RNN/LSTM/GRU */
-  LIBXSMM_DNN_TENSOR_DIMTYPE_RLM,
-  /** number of inputs for RNN/LSTM/GRU */
-  LIBXSMM_DNN_TENSOR_DIMTYPE_RLK,
-  /** size of minibatch for RNN/LSTM/GRU */
-  LIBXSMM_DNN_TENSOR_DIMTYPE_RLN
+  LIBXSMM_DNN_TENSOR_DIMTYPE_X
 } libxsmm_dnn_tensor_dimtype;
 
 /** types of different buffers */
@@ -216,6 +212,10 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_RNN_REGULAR_WEIGHT,
   /** regular recurrent weight (LSTM: ri, rc, rf, ro) */
   LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT,
+  /** regular weight (LSTM: wi, wc, wf, wo) */
+  LIBXSMM_DNN_RNN_REGULAR_WEIGHT_TRANS,
+  /** regular recurrent weight (LSTM: ri, rc, rf, ro) */
+  LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT_TRANS,
   /** regular bias (LSTM: bi, bc, bf, bo) */
   LIBXSMM_DNN_RNN_REGULAR_BIAS,
   /** regular output cell state buffer */
@@ -247,52 +247,7 @@ typedef enum libxsmm_dnn_tensor_type {
   /** internal ci buffer */
   LIBXSMM_DNN_RNN_INTERNAL_CI,
   /** internal co buffer */
-  LIBXSMM_DNN_RNN_INTERNAL_CO,
-
-  /** regular input buffer */
-  LIBXSMM_DNN_GRU_REGULAR_INPUT,
-  /** regular hidden state buffer */
-  LIBXSMM_DNN_GRU_REGULAR_HIDDEN_STATE,
-  /** regular weight r */
-  LIBXSMM_DNN_GRU_REGULAR_WEIGHT_R,
-  /** regular weight z */
-  LIBXSMM_DNN_GRU_REGULAR_WEIGHT_Z,
-  /** regular weight g */
-  LIBXSMM_DNN_GRU_REGULAR_WEIGHT_G,
-  /** regular recurrent weight r */
-  LIBXSMM_DNN_GRU_REGULAR_RECUR_WEIGHT_R,
-  /** regular recurrent weight z */
-  LIBXSMM_DNN_GRU_REGULAR_RECUR_WEIGHT_Z,
-  /** regular recurrent weight g */
-  LIBXSMM_DNN_GRU_REGULAR_RECUR_WEIGHT_G,
-  /** regular bias r */
-  LIBXSMM_DNN_GRU_REGULAR_BIAS_R,
-  /** regular bias z */
-  LIBXSMM_DNN_GRU_REGULAR_BIAS_Z,
-  /** regular bias g */
-  LIBXSMM_DNN_GRU_REGULAR_BIAS_G,
-  /** gradient input buffer */
-  LIBXSMM_DNN_GRU_GRADIENT_INPUT,
-  /** gradient hidden state buffer */
-  LIBXSMM_DNN_GRU_GRADIENT_HIDDEN_STATE,
-  /** gradient weight r */
-  LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_R,
-  /** gradient weight z */
-  LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_Z,
-  /** gradient weight g */
-  LIBXSMM_DNN_GRU_GRADIENT_WEIGHT_G,
-  /** gradient recurrent weight r */
-  LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_R,
-  /** gradient recurrent weight z */
-  LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_Z,
-  /** gradient recurrent weight g */
-  LIBXSMM_DNN_GRU_GRADIENT_RECUR_WEIGHT_G,
-  /** gradient bias r */
-  LIBXSMM_DNN_GRU_GRADIENT_BIAS_R,
-  /** gradient bias z */
-  LIBXSMM_DNN_GRU_GRADIENT_BIAS_Z,
-  /** gradient bias g */
-  LIBXSMM_DNN_GRU_GRADIENT_BIAS_G
+  LIBXSMM_DNN_RNN_INTERNAL_CO
 } libxsmm_dnn_tensor_type;
 
 /** layout descriptor to allow external data handling

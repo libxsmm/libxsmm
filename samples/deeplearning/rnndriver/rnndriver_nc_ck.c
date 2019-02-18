@@ -307,7 +307,7 @@ int main(int argc, char* argv[])
     printf("\nUsage: ./rnndriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [nonlin: 1--ReLU, 2--sigmoid, 3--tanh] [N] [C] [K] [time_steps > 0]\n\n");
     return 0;
   }
-  libxsmm_srand(1);
+  libxsmm_rng_set_seed(1);
 
   /* reading new values from cli */
   i = 1;
@@ -323,7 +323,7 @@ int main(int argc, char* argv[])
     printf("time_steps %d should be greater than 0\n\n", t);
     return 0;
   }
-  if (!(pass == 0 || pass == 1 || pass == 2 || pass == 3)) {
+  if (!(pass == 0 || pass == 1 || pass == 2 || pass == 3 || pass == 4)) {
     printf("Unknown pass: %d, valid arguments for pass = {0(FWD), 1(BWD), 2(UPD), 3(BWD+UPD)\n\n", pass);
     return 0;
   }
@@ -528,8 +528,8 @@ int main(int argc, char* argv[])
     rnncell_desc.bn = 64;
     rnncell_desc.bk = 64;
     rnncell_desc.bc = 64;
+    rnncell_desc.max_T = t;
 
-    rnncell_desc.t = t;
     if ( nonlin == 1 ) {
       rnncell_desc.cell_type = LIBXSMM_DNN_RNNCELL_RNN_RELU;
     } else if ( nonlin == 2 ) {
@@ -1028,6 +1028,55 @@ int main(int argc, char* argv[])
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
       printf("PERFDUMP,BP+WU,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
+    }
+
+    if ( pass == 4 ) {
+      printf("#############################################\n");
+      printf("# Performance - FWD+BWD+UPD (nc-ck Storage) #\n");
+      printf("#############################################\n");
+      /* run LIBXSMM RNN for performance */
+      l_start = libxsmm_timer_tick();
+
+#if defined(_OPENMP)
+#     pragma omp parallel private(i)
+#endif
+      {
+#if defined(_OPENMP)
+        const int tid = omp_get_thread_num();
+#else
+        const int tid = 0;
+#endif
+        for (i = 0; i < iters; ++i) {
+          libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid );
+          libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWDUPD, 0, tid );
+        }
+      }
+      l_end = libxsmm_timer_tick();
+      l_total = libxsmm_timer_duration(l_start, l_end);
+      flops = (2.0 * K*N*K); /* U^T * delta */
+      flops += (K*N); /* dJdh + (U^T * delta) */
+      flops += (tflops * K*N); /* sigma'(Z) */
+      flops += (K*N); /* sigma'(Z) * (dJdh + (U^T * delta)) */
+      flops *= t; /* for t time steps */
+      tempflops = (2.0 * K*N*K); /* delta * h^T */
+      tempflops *= t; /* for t time steps */
+      tempflops += (K*K * (t-1)); /* for summation of dJdU */
+      flops += tempflops;
+      tempflops = (2.0 * K*N*C); /* delta * x^T */
+      tempflops *= t; /* for t time steps */
+      tempflops += (C*K * (t-1)); /* for summation of dJdW */
+      flops += tempflops;
+      tempflops = (2.0 * K*N*C); /* W^T * delta */
+      tempflops *= t; /* for t time steps of input */
+      flops += tempflops;
+      flops *= iters;
+      flops += ((2.0 * K*N*C) + (2.0 * K*N*K) + (K*N) + (tflops * K*N)) * (double)t * (double)iters;
+
+      printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("fp+bp+wu time = %.5g\n", ((double)(l_total/iters)));
+      printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+
+      printf("PERFDUMP,FP+BP+WU,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
     }
 
     /* clean-up */

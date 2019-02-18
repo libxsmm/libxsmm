@@ -27,7 +27,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        #
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              #
 #############################################################################
-# Hans Pabst (Intel Corp.), Kunal Banerjee (Intel Corp.)
+# Hans Pabst (Intel Corp.)
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
@@ -87,42 +87,3 @@ else
     -e "MIC_KMP_HW_SUBSET=$((MICCORES-1))${MICTPERC}t"
 fi
 
-ITERS=100
-CHKVAL=1
-
-export OMP_NUM_THREADS=56
-export KMP_AFFINITY=granularity=fine,compact,1,0
-
-
-echo "LSTM FWD for inference only"
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  4096  1024  2048    8  1
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  3072    32  1024  512  1
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  4096  1024  1024    8  1
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  1024    32  1024  512  1
-wait
-
-echo "LSTM FWD for training"
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  4096  1024  2048    8  0
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  3072    32  1024  512  0
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  4096  1024  1024    8  0
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  0  1024    32  1024  512  0
-wait
-
-echo "LSTM BWD+UPD for training"
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  3  4096  1024  2048    8  0
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  3  3072    32  1024  512  0
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  3  4096  1024  1024    8  0
-wait
-CHECK=${CHKVAL} ./lstmdriver  ${ITERS}  3  1024    32  1024  512  0
-wait
-
-echo "LSTM performance done"
-echo ""

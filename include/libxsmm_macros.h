@@ -347,8 +347,8 @@
 
 /** LIBXSMM_NBITS determines the minimum number of bits needed to represent N. */
 #define LIBXSMM_NBITS(N) (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + LIBXSMM_MIN(1, N))
-/** LIBXSMM_LOG2 definition matches ceil(log2(N)). */
-#define LIBXSMM_LOG2(N) (1 < (N) ? (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + \
+/** LIBXSMM_ILOG2 definition matches ceil(log2(N)). */
+#define LIBXSMM_ILOG2(N) (1 < (N) ? (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + \
   (LIBXSMM_INTRINSICS_BITSCANBWD64((N) - 1) != LIBXSMM_INTRINSICS_BITSCANBWD64(N) ? 0 : 1)) : 0)
 
 /** LIBXSMM_UP2POT rounds up to the next power of two (POT). */
@@ -362,7 +362,7 @@
 #define LIBXSMM_LO2POT(N) (LIBXSMM_UP2POT_32((unsigned long long)(N) >> 1) + LIBXSMM_MIN(1, N))
 
 #define LIBXSMM_UP2(N, NPOT) ((((uintptr_t)N) + ((NPOT) - 1)) & ~((NPOT) - 1))
-#define LIBXSMM_UP(N, UP) (((((uintptr_t)N) + (UP) - 1) / (UP)) * (UP))
+#define LIBXSMM_UP(N, UP) ((((N) + (UP) - 1) / (UP)) * (UP))
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
 #define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
@@ -377,18 +377,25 @@
 #define LIBXSMM_NEQ(A, B) ((A) != (B))
 #define LIBXSMM_ISNAN(A)  LIBXSMM_NEQ(A, A)
 #define LIBXSMM_NOTNAN(A) LIBXSMM_FEQ(A, A)
-
 #define LIBXSMM_ROUNDX(TYPE, A) ((TYPE)((long long)(0 <= (A) ? ((double)(A) + 0.5) : ((double)(A) - 0.5))))
+
+/** Makes some functions available independent of C99 support. */
 #if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
 # define LIBXSMM_FREXPF(A, B) frexpf(A, B)
 # define LIBXSMM_POWF(A, B) powf(A, B)
 # define LIBXSMM_ROUNDF(A) roundf(A)
 # define LIBXSMM_ROUND(A) round(A)
+# define LIBXSMM_TANHF(A) tanhf(A)
+# define LIBXSMM_LOG2(A) log2(A)
+# define LIBXSMM_LOGF(A) logf(A)
 #else
 # define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
 # define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
 # define LIBXSMM_ROUND(A) LIBXSMM_ROUNDX(double, A)
+# define LIBXSMM_TANHF(A) ((float)tanh((double)(A)))
+# define LIBXSMM_LOG2(A) (log(A) * (1.0 / (M_LN2)))
+# define LIBXSMM_LOGF(A) ((float)log((double)(A)))
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
@@ -602,7 +609,7 @@
 # if !defined(NOMINMAX)
 #   define NOMINMAX 1
 # endif
-# if defined(LIBXSMM_INTEL_COMPILER) && (190023506 <= _MSC_FULL_VER)
+# if defined(__INTEL_COMPILER) && (190023506 <= _MSC_FULL_VER)
 #   define __builtin_huge_val() HUGE_VAL
 #   define __builtin_huge_valf() HUGE_VALF
 #   define __builtin_nan nan
@@ -632,7 +639,7 @@
 #endif
 
 /* _Float128 was introduced with GNU GCC 7.0. */
-#if !defined(_Float128) && defined(__GNUC__) && !defined(__cplusplus) \
+#if !defined(_Float128) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__) \
   && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
   || (defined(LIBXSMM_INTEL_COMPILER) && defined(LIBXSMM_INTEL_COMPILER_UPDATE) && ( \
         ((1800 <= ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE))) \
@@ -640,6 +647,30 @@
         ((1706  > ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE))) \
       &&    (0 != ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE)))))))
 # define _Float128 __float128
+#endif
+#if !defined(LIBXSMM_GLIBC_FPTYPES) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__) \
+  && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
+  || defined(LIBXSMM_INTEL_COMPILER)) && 0 /* TODO */
+# define LIBXSMM_GLIBC_FPTYPES
+#endif
+#if !defined(_Float128X) && defined(LIBXSMM_GLIBC_FPTYPES)
+# define _Float128X _Float128
+#endif
+#if !defined(_Float32) && defined(LIBXSMM_GLIBC_FPTYPES)
+# define _Float32 float
+#endif
+#if !defined(_Float32x) && defined(LIBXSMM_GLIBC_FPTYPES)
+# define _Float32x _Float32
+#endif
+#if !defined(_Float64) && defined(LIBXSMM_GLIBC_FPTYPES)
+# define _Float64 double
+#endif
+#if !defined(_Float64x) && defined(LIBXSMM_GLIBC_FPTYPES)
+# define _Float64x _Float64
+#endif
+#if /* !LIBXSMM_INTEL_COMPILER */defined(__INTEL_COMPILER) && !defined(__clang__) /* TODO */
+# define __has_feature(A) 0
+# define __has_builtin(A) 0
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -668,6 +699,20 @@
 #   define LIBXSMM_EXPECT_NOT(RESULT, EXPR) (EXPR)
 # else
 #   define LIBXSMM_EXPECT_NOT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) != (EXPR))
+# endif
+#endif
+#if defined(LIBXSMM_GLIBC_FPTYPES)
+# if defined(__cplusplus)
+#   undef __USE_MISC
+#   include <math.h>
+#   if !defined(_DEFAULT_SOURCE)
+#     define _DEFAULT_SOURCE
+#   endif
+#   if !defined(_BSD_SOURCE)
+#     define _BSD_SOURCE
+#   endif
+# elif !defined(__PURE_INTEL_C99_HEADERS__)
+#   define __PURE_INTEL_C99_HEADERS__
 # endif
 #endif
 #include <stddef.h>

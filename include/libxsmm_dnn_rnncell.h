@@ -45,19 +45,21 @@ typedef enum libxsmm_dnn_rnncell_type {
   /** simple RNN cell with tanh as activation function */
   LIBXSMM_DNN_RNNCELL_RNN_TANH,
   /** LSTM cell */
-  LIBXSMM_DNN_RNNCELL_LSTM
+  LIBXSMM_DNN_RNNCELL_LSTM,
+  /** GRU cell */
+  LIBXSMM_DNN_RNNCELL_GRU
 } libxsmm_dnn_rnncell_type;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
-  int threads;
-  int K;     /* number of outputs */
-  int N;     /* size of the minibatch */
-  int C;     /* number of inputs */
-  int t;     /* number of time steps */
-  int bk;
-  int bn;
-  int bc;
-  libxsmm_dnn_rnncell_type cell_type;       /* cell type RNN ReLU, RNN Sigmoid, RNN Tanh, LSTM */
+  libxsmm_blasint threads;
+  libxsmm_blasint K;         /* number of outputs */
+  libxsmm_blasint N;         /* size of the minibatch */
+  libxsmm_blasint C;         /* number of inputs */
+  libxsmm_blasint max_T;     /* number of time steps */
+  libxsmm_blasint bk;
+  libxsmm_blasint bn;
+  libxsmm_blasint bc;
+  libxsmm_dnn_rnncell_type cell_type;       /* cell type RNN ReLU, RNN Sigmoid, RNN Tanh, LSTM, GRU */
   libxsmm_dnn_datatype datatype_in;         /* datatypes used for all input related buffer */
   libxsmm_dnn_datatype datatype_out;        /* datatypes used for all output related buffer */
   libxsmm_dnn_tensor_format buffer_format;  /* format which is for activation buffers */
@@ -70,10 +72,12 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_rnncell(const libxsmm_dnn_rnnc
 LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_datalayout(const libxsmm_dnn_rnncell* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status);
 
 LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status);
+LIBXSMM_API void*  libxsmm_dnn_rnncell_get_scratch_ptr (const libxsmm_dnn_rnncell* handle, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind, const void* scratch);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind);
 
 LIBXSMM_API size_t libxsmm_dnn_rnncell_get_internalstate_size(const libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status);
+LIBXSMM_API void*  libxsmm_dnn_rnncell_get_internalstate_ptr (const libxsmm_dnn_rnncell* handle, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_internalstate(libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind, const void* internalstate);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_internalstate(libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind);
 
@@ -81,6 +85,9 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_allocate_forget_bias(libxsmm_d
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_tensor(libxsmm_dnn_rnncell* handle, const libxsmm_dnn_tensor* tensor, const libxsmm_dnn_tensor_type type);
 LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_rnncell_get_tensor(libxsmm_dnn_rnncell* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_tensor(libxsmm_dnn_rnncell* handle, const libxsmm_dnn_tensor_type type);
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_set_sequence_length( libxsmm_dnn_rnncell* handle, const libxsmm_blasint T );
+LIBXSMM_API libxsmm_blasint libxsmm_dnn_rnncell_get_sequence_length( libxsmm_dnn_rnncell* handle, libxsmm_dnn_err_t* status );
 
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_execute_st(libxsmm_dnn_rnncell* handle, libxsmm_dnn_compute_kind kind,
   /*unsigned*/int start_thread, /*unsigned*/int tid);

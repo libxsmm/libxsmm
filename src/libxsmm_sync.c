@@ -32,7 +32,7 @@
 ******************************************************************************/
 #include "libxsmm_main.h"
 
-#if !defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
+#if !defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__) && defined(_GNU_SOURCE)
 # define LIBXSMM_SYNC_FUTEX
 #endif
 
@@ -46,7 +46,7 @@
 # include <windows.h>
 # include <process.h>
 #else
-# if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
+# if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__) && defined(_GNU_SOURCE)
 #   include <linux/futex.h>
 # endif
 # include <unistd.h>
@@ -415,7 +415,7 @@ LIBXSMM_API void libxsmm_spinlock_release(libxsmm_spinlock* spinlock)
 
 #if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && defined(LIBXSMM_SYNC_SYSTEM)
 typedef LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK_MUTEX) libxsmm_mutex_state;
-#elif defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
+#elif defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__) && defined(_GNU_SOURCE)
 typedef int libxsmm_mutex_state;
 #else
 typedef char libxsmm_mutex_state;
@@ -525,7 +525,7 @@ LIBXSMM_API void libxsmm_mutex_release(libxsmm_mutex* mutex)
   LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_MUTEX, &mutex->impl);
 # else
   LIBXSMM_ATOMIC_SYNC(LIBXSMM_ATOMIC_SEQ_CST);
-#   if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
+#   if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__) && defined(_GNU_SOURCE)
   if (INTERNAL_SYNC_LOCK_CONTESTED == LIBXSMM_ATOMIC_FETCH_SUB(&mutex->state, 1, LIBXSMM_ATOMIC_RELAXED)) {
     mutex->state = INTERNAL_SYNC_LOCK_FREE;
     syscall(INTERNAL_SYNC_FUTEX, &mutex->state, FUTEX_WAKE, 1, NULL, NULL, 0);

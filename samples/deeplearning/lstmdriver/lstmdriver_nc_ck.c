@@ -46,7 +46,17 @@
 #endif
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
-/* #define TWO_GEMMS */
+
+#if 0
+#define TWO_GEMMS
+#endif
+#if 0
+#define PROFILE
+#endif
+#if defined(PROFILE)
+unsigned long long Gbl_blas_start, Gbl_blas_end, Gbl_eltwise_start, Gbl_eltwise_end, Gbl_conv_start, Gbl_conv_end, Gbl_copy_bias_start, Gbl_copy_bias_end;
+double Gbl_blas_total, Gbl_eltwise_total, Gbl_conv_total, Gbl_copy_bias_total;
+#endif
 
 LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
   int i;
@@ -275,6 +285,20 @@ LIBXSMM_INLINE void matrix_copy_bias(int m, int n, int ld, float *src, float *ds
 }
 
 
+LIBXSMM_INLINE void matrix_copy_forget_bias(int m, int n, int ld, float *src, float *dst, float forget_bias)
+{
+  int i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < m*n; i++) {
+    int row = i / m;
+    int col = i % m;
+    dst[row*ld + col] = src[col] + forget_bias;
+  }
+}
+
+
 LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
 {
   int i;
@@ -372,94 +396,312 @@ LIBXSMM_INLINE void convert_nk_nck(int N, int K, int CK, float *src, float *dst)
 }
 
 
-void lstm_ref( int N, int C, int K, int t, float forget_bias,
-               float *wigold, float *wcgold, float *wfgold, float *wogold,
-               float *rigold, float *rcgold, float *rfgold, float *rogold,
-               float *bigold, float *bcgold, float *bfgold, float *bogold,
-               float *xgoldt, float *cspgold, float *hpgold,
-               float *csgoldt, float *hgoldt,
-               float *dcsgold, float *dhgoldt,
-               float *dwgold, float *drgold, float *dbgold,
-               float *dxgoldt, float *dcspgold, float *dhpgold )
+LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, float *f, float *o, float *csp, float *cs, float *co, float *h)
 {
-  float *bfgold_fb, *icfogoldt, *dicfogoldt;
-#if defined(TWO_GEMMS)
-  float *w4gold, *r4gold;
-#else
-  float *wr8gold, *xhgold, *dxhgold;
+  int j;
+#if defined(__AVX512F__)
+  int l;
+  int rem = (K/16)*16;
+  __m512 minus1 = _mm512_set1_ps (-1.0f);
+  __m512 plus1  = _mm512_set1_ps (1.0f);
+#if defined(_OPENMP)
+# pragma omp parallel for private(j, l) collapse(2)
 #endif
-  float *deltagoldt, *doutgoldt;
-  float *t1gold, *t2gold, *t3gold;
+  for (j = 0; j < N; j++) {
+    for (l = 0; l < rem; l+=16) {
+      __m512 iv   = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(i[j*4*K + l]));
+      __m512 cv   = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(c[j*4*K + l]));
+      __m512 fv   = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(f[j*4*K + l]));
+      __m512 ov   = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(o[j*4*K + l]));
+      __m512 cspv = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(csp[j*K + l]));
+      __m512 csv, cov, hv;
+      /* i = sigmoid(i) */
+      iv = _mm512_mul_ps (iv, minus1);
+      iv = _mm512_exp_ps (iv);
+      iv = _mm512_add_ps (iv, plus1);
+      iv = _mm512_div_ps (plus1, iv);
+      /* c = tanh(c) */
+      cv = LIBXSMM_INTRINSICS_MM512_TANH_PS (cv);
+      /* f = sigmoid(f) */
+      fv = _mm512_mul_ps (fv, minus1);
+      fv = _mm512_exp_ps (fv);
+      fv = _mm512_add_ps (fv, plus1);
+      fv = _mm512_div_ps (plus1, fv);
+      /* o = sigmoid(o) */
+      ov = _mm512_mul_ps (ov, minus1);
+      ov = _mm512_exp_ps (ov);
+      ov = _mm512_add_ps (ov, plus1);
+      ov = _mm512_div_ps (plus1, ov);
+      /* cs = f.csp + i.c */
+      csv = _mm512_mul_ps (fv, cspv);
+      csv = _mm512_fmadd_ps (iv, cv, csv);
+      /* co = tanh(cs) */
+      cov = LIBXSMM_INTRINSICS_MM512_TANH_PS (csv);
+      /* h = o.co */
+      hv = _mm512_mul_ps (ov, cov);
+      _mm512_store_ps (&(i[j*4*K + l]), iv);
+      _mm512_store_ps (&(c[j*4*K + l]), cv);
+      _mm512_store_ps (&(f[j*4*K + l]), fv);
+      _mm512_store_ps (&(o[j*4*K + l]), ov);
+      _mm512_store_ps (&(cs[j*K + l]),  csv);
+      _mm512_store_ps (&(co[j*K + l]),  cov);
+      _mm512_store_ps (&(h[j*K + l]),   hv);
+    }
+  }
+#if defined(_OPENMP)
+# pragma omp parallel for private(j, l) collapse(2)
+#endif
+  for (j = 0; j < N; j++) {
+    for (l = rem; l < K; l++) {
+      float exp_value;
+      /* i = sigmoid(i) */
+      exp_value = (float)exp((double) -i[j*4*K + l]);
+      i[j*4*K + l] = 1.0f / (1.0f + exp_value);
+      /* c = tanh(c) */
+      c[j*4*K + l] = (float)tanh((double)c[j*4*K + l]);
+      /* f = sigmoid(f) */
+      exp_value = (float)exp((double) -f[j*4*K + l]);
+      f[j*4*K + l] = 1.0f / (1.0f + exp_value);
+      /* o = sigmoid(o) */
+      exp_value = (float)exp((double) -o[j*4*K + l]);
+      o[j*4*K + l] = 1.0f / (1.0f + exp_value);
+      /* cs = f.csp + i.c */
+      cs[j*K + l] = f[j*4*K + l]*csp[j*K + l] + i[j*4*K + l]*c[j*4*K + l];
+      /* co = tanh(cs) */
+      co[j*K + l] = (float)tanh((double)cs[j*K + l]);
+      /* h = o.co */
+      h[j*K + l] = o[j*4*K + l] * co[j*K + l];
+    }
+  }
+#else
+#if defined(_OPENMP)
+# pragma omp parallel for private(j)
+#endif
+  for (j = 0; j < N*K; j++) {
+    const int row = j / K;
+    const int col = j % K;
+    float exp_value;
+    /* i = sigmoid(i) */
+    exp_value = (float)exp((double) -i[row*4*K + col]);
+    i[row*4*K + col] = 1.0f / (1.0f + exp_value);
+    /* c = tanh(c) */
+    c[row*4*K + col] = (float)tanh((double)c[row*4*K + col]);
+    /* f = sigmoid(f) */
+    exp_value = (float)exp((double) -f[row*4*K + col]);
+    f[row*4*K + col] = 1.0f / (1.0f + exp_value);
+    /* o = sigmoid(o) */
+    exp_value = (float)exp((double) -o[row*4*K + col]);
+    o[row*4*K + col] = 1.0f / (1.0f + exp_value);
+    /* cs = f.csp + i.c */
+    cs[j] = f[row*4*K + col]*csp[j] + i[row*4*K + col]*c[row*4*K + col];
+    /* co = tanh(cs) */
+    co[j] = (float)tanh((double)cs[j]);
+    /* h = o.co */
+    h[j] = o[row*4*K + col] * co[j];
+  }
+#endif
+}
+
+
+LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c, float *f, float *o, float *csp, float *co,
+                                                float *dh, float *dout, float *di, float *dc, float *df, float *dp, float *dcsp, float *dcs)
+{
+  int j;
+#if defined(__AVX512F__)
+  int l;
+  int rem = (K/16)*16;
+  __m512 plus1  = _mm512_set1_ps (1.0f);
+#if defined(_OPENMP)
+# pragma omp parallel for private(j, l) collapse(2)
+#endif
+  for (j = 0; j < N; j++) {
+    for (l = 0; l < rem; l+=16) {
+      __m512 iv       = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(i[j*4*K + l]));
+      __m512 cv       = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(c[j*4*K + l]));
+      __m512 fv       = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(f[j*4*K + l]));
+      __m512 ov       = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(o[j*4*K + l]));
+      __m512 cspv     = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(csp[j*K + l]));
+      __m512 cov      = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(co[j*K + l]));
+      __m512 dcsv     = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(dcs[j*K + l]));
+      __m512 dhv, doutv, div, dcv, dfv, dov, dcspv, deltav, tv;
+      /* compute delta */
+      if (NULL == dout) {
+        deltav = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(dh[j*K + l]));
+      } else {
+        dhv    = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(dh[j*K + l]));
+        doutv  = LIBXSMM_INTRINSICS_MM512_LOAD_PS (&(dout[j*K + l]));
+        deltav = _mm512_add_ps (dhv, doutv);
+      }
+      /* compute dcsp */
+      /* dcsp = delta.o.(1 - (co.co)) + dcs */
+      tv    = _mm512_mul_ps (cov, cov);
+      tv    = _mm512_sub_ps (plus1, tv);
+      dcspv = _mm512_mul_ps (deltav, ov);
+      dcspv = _mm512_fmadd_ps (dcspv, tv, dcsv);
+      /* compute di */
+      /* di = dcsp.c.i.(1 - i) */
+      tv  = _mm512_sub_ps (plus1, iv);
+      tv  = _mm512_mul_ps (iv, tv);
+      div = _mm512_mul_ps (dcspv, cv);
+      div = _mm512_mul_ps (div, tv);
+      /* compute dc */
+      /* dc = dcsp.i.(1 - (c.c)) */
+      tv  = _mm512_mul_ps (cv, cv);
+      tv  = _mm512_sub_ps (plus1, tv);
+      dcv = _mm512_mul_ps (dcspv, iv);
+      dcv = _mm512_mul_ps (dcv, tv);
+      /* compute df */
+      /* df = dcsp.csp.f.(1 - f) */
+      tv  = _mm512_sub_ps (plus1, fv);
+      tv  = _mm512_mul_ps (fv, tv);
+      dfv = _mm512_mul_ps (dcspv, cspv);
+      dfv = _mm512_mul_ps (dfv, tv);
+      /* compute do */
+      /* do = delta.co.o.(1 - o) */
+      tv  = _mm512_sub_ps (plus1, ov);
+      tv  = _mm512_mul_ps (ov, tv);
+      dov = _mm512_mul_ps (deltav, cov);
+      dov = _mm512_mul_ps (dov, tv);
+      /* update dcsp */
+      /* dcsp = dcsp.f */
+      dcspv = _mm512_mul_ps (dcspv, fv);
+      _mm512_store_ps (&(di[j*4*K + l]), div);
+      _mm512_store_ps (&(dc[j*4*K + l]), dcv);
+      _mm512_store_ps (&(df[j*4*K + l]), dfv);
+      _mm512_store_ps (&(dp[j*4*K + l]), dov);
+      _mm512_store_ps (&(dcsp[j*K + l]), dcspv);
+    }
+  }
+#if defined(_OPENMP)
+# pragma omp parallel for private(j, l) collapse(2)
+#endif
+  for (j = 0; j < N; j++) {
+    for (l = rem; l < K; l++) {
+      float delta;
+      /* compute delta */
+      if (NULL == dout) {
+        delta = dh[j*K + l];
+      } else {
+        delta = dh[j*K + l] + dout[j*K + l];
+      }
+      /* compute dcsp */
+      dcsp[j*K + l] = delta * o[j*4*K + l] * (1.0f - (co[j*K + l]*co[j*K + l])) + dcs[j*K + l];
+      /* compute di */
+      di[j*4*K + l] = dcsp[j*K + l] * c[j*4*K + l] * i[j*4*K + l] * (1.0f - i[j*4*K + l]);
+      /* compute dc */
+      dc[j*4*K + l] = dcsp[j*K + l] * i[j*4*K + l] * (1.0f - (c[j*4*K + l]*c[j*4*K + l]));
+      /* compute df */
+      df[j*4*K + l] = dcsp[j*K + l] * csp[j*K + l] * f[j*4*K + l] * (1.0f - f[j*4*K + l]);
+      /* compute do */
+      dp[j*4*K + l] = delta * co[j*K + l] * o[j*4*K + l] * (1.0f - o[j*4*K + l]);
+      /* update dcsp */
+      dcsp[j*K + l] = dcsp[j*K + l] * f[j*4*K + l];
+    }
+  }
+#else
+#if defined(_OPENMP)
+# pragma omp parallel for private(j)
+#endif
+  for (j = 0; j < N*K; j++) {
+    const int row = j / K;
+    const int col = j % K;
+    float delta;
+    /* compute delta */
+    if (NULL == dout) {
+      delta = dh[j];
+    } else {
+      delta = dh[j] + dout[j];
+    }
+    /* compute dcsp */
+    dcsp[j] = delta * o[row*4*K + col] * (1.0f - (co[j]*co[j])) + dcs[j];
+    /* compute di */
+    di[row*4*K + col] = dcsp[j] * c[row*4*K + col] * i[row*4*K + col] * (1.0f - i[row*4*K + col]);
+    /* compute dc */
+    dc[row*4*K + col] = dcsp[j] * i[row*4*K + col] * (1.0f - (c[row*4*K + col]*c[row*4*K + col]));
+    /* compute df */
+    df[row*4*K + col] = dcsp[j] * csp[j] * f[row*4*K + col] * (1.0f - f[row*4*K + col]);
+    /* compute do */
+    dp[row*4*K + col] = delta * co[j] * o[row*4*K + col] * (1.0f - o[row*4*K + col]);
+    /* update dcsp */
+    dcsp[j] = dcsp[j] * f[row*4*K + col];
+  }
+#endif
+}
+
+
+void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
+                   float *wigold, float *wcgold, float *wfgold, float *wogold,
+                   float *rigold, float *rcgold, float *rfgold, float *rogold,
+                   float *bigold, float *bcgold, float *bfgold, float *bogold,
+                   float *xgoldt, float *cspgold, float *hpgold,
+                   float *csgoldt, float *cogoldt, float *hgoldt,
+                   float *icfogoldt, float *wgold, float *rgold, float *scratch )
+{
+#if !defined(TWO_GEMMS)
+  float *xhgold;
+#endif
   const char transa = 'N', transb = 'N';   /* no transposes */
-  const char transaT = 'T', transbT = 'T'; /* transposes */
-  const float alpha = 1, beta = 1, beta0 = 0;
-  int j, l, p;
+  const float alpha = 1, beta = 1;
+  int j;
   int K4 = K * 4;
   int CK = C + K;
-
-  bfgold_fb = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
-  icfogoldt = (float*)libxsmm_aligned_malloc(K*N*t*4*sizeof(float), 2097152);
-#if defined(TWO_GEMMS)
-  w4gold    = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
-  r4gold    = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
-#else
-  wr8gold   = (float*)libxsmm_aligned_malloc((C+K)*K*4*sizeof(float), 2097152);
-  xhgold    = (float*)libxsmm_aligned_malloc((C+K)*N*sizeof(float), 2097152);
-  dxhgold   = (float*)libxsmm_aligned_malloc((C+K)*N*sizeof(float), 2097152);
+#if !defined(TWO_GEMMS)
+  xhgold = scratch;
 #endif
-  dicfogoldt = (float*)libxsmm_aligned_malloc(K*N*t*4*sizeof(float), 2097152);
-  doutgoldt  = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  deltagoldt = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  t1gold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  t2gold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  t3gold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N * C);
   LIBXSMM_VLA_DECL(2, float, csgold, csgoldt, K * N);
+  LIBXSMM_VLA_DECL(2, float, cogold, cogoldt, K * N);
   LIBXSMM_VLA_DECL(2, float, hgold, hgoldt, K * N);
   LIBXSMM_VLA_DECL(3, float, icfogold, icfogoldt, N, 4 * K);
-  LIBXSMM_VLA_DECL(2, float, dxgold, dxgoldt, N * C);
-  LIBXSMM_VLA_DECL(2, float, dhgold, dhgoldt, K * N);
-  LIBXSMM_VLA_DECL(3, float, dicfogold, dicfogoldt, N, 4 * K);
-  LIBXSMM_VLA_DECL(2, float, deltagold, deltagoldt, K * N);
-  LIBXSMM_VLA_DECL(2, float, doutgold, doutgoldt, K * N);
-
   /* FWD */
-  for (j = 0; j < K; j++) {
-    bfgold_fb[j] = bfgold[j] + forget_bias;
-  }
+#if defined(PROFILE)
+  Gbl_conv_start = libxsmm_timer_tick();
+#endif
 #if defined(TWO_GEMMS)
-  convert_ck_c4k(C, K, wigold, w4gold);
-  convert_ck_c4k(C, K, wcgold, &(w4gold[K]));
-  convert_ck_c4k(C, K, wfgold, &(w4gold[2*K]));
-  convert_ck_c4k(C, K, wogold, &(w4gold[3*K]));
-  convert_ck_c4k(K, K, rigold, r4gold);
-  convert_ck_c4k(K, K, rcgold, &(r4gold[K]));
-  convert_ck_c4k(K, K, rfgold, &(r4gold[2*K]));
-  convert_ck_c4k(K, K, rogold, &(r4gold[3*K]));
+  convert_ck_c4k(C, K, wigold, wgold);
+  convert_ck_c4k(C, K, wcgold, &(wgold[K]));
+  convert_ck_c4k(C, K, wfgold, &(wgold[2*K]));
+  convert_ck_c4k(C, K, wogold, &(wgold[3*K]));
+  convert_ck_c4k(K, K, rigold, rgold);
+  convert_ck_c4k(K, K, rcgold, &(rgold[K]));
+  convert_ck_c4k(K, K, rfgold, &(rgold[2*K]));
+  convert_ck_c4k(K, K, rogold, &(rgold[3*K]));
 #else
-  convert_ck_c4k(C, K, wigold, wr8gold);
-  convert_ck_c4k(C, K, wcgold, &(wr8gold[K]));
-  convert_ck_c4k(C, K, wfgold, &(wr8gold[2*K]));
-  convert_ck_c4k(C, K, wogold, &(wr8gold[3*K]));
-  convert_ck_c4k(K, K, rigold, &(wr8gold[C*K*4]));
-  convert_ck_c4k(K, K, rcgold, &(wr8gold[C*K*4 + K]));
-  convert_ck_c4k(K, K, rfgold, &(wr8gold[C*K*4 + 2*K]));
-  convert_ck_c4k(K, K, rogold, &(wr8gold[C*K*4 + 3*K]));
+  convert_ck_c4k(C, K, wigold, wgold);
+  convert_ck_c4k(C, K, wcgold, &(wgold[K]));
+  convert_ck_c4k(C, K, wfgold, &(wgold[2*K]));
+  convert_ck_c4k(C, K, wogold, &(wgold[3*K]));
+  convert_ck_c4k(K, K, rigold, &(wgold[C*K*4]));
+  convert_ck_c4k(K, K, rcgold, &(wgold[C*K*4 + K]));
+  convert_ck_c4k(K, K, rfgold, &(wgold[C*K*4 + 2*K]));
+  convert_ck_c4k(K, K, rogold, &(wgold[C*K*4 + 3*K]));
+#endif
+#if defined(PROFILE)
+  Gbl_conv_end = libxsmm_timer_tick();
+  Gbl_conv_total += libxsmm_timer_duration(Gbl_conv_start, Gbl_conv_end);
 #endif
   for (j = 0; j < t; ++j) {
     /* Initialization with bias */
-    matrix_copy_bias(K, N, 4*K, bigold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
-    matrix_copy_bias(K, N, 4*K, bcgold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K));
-    matrix_copy_bias(K, N, 4*K, bfgold_fb, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K));
-    matrix_copy_bias(K, N, 4*K, bogold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K));
+#if defined(PROFILE)
+    Gbl_copy_bias_start = libxsmm_timer_tick();
+#endif
+    matrix_copy_bias       (K, N, 4*K, bigold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
+    matrix_copy_bias       (K, N, 4*K, bcgold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K));
+    matrix_copy_forget_bias(K, N, 4*K, bfgold, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), forget_bias);
+    matrix_copy_bias       (K, N, 4*K, bogold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K));
+#if defined(PROFILE)
+    Gbl_copy_bias_end = libxsmm_timer_tick();
+    Gbl_copy_bias_total += libxsmm_timer_duration(Gbl_copy_bias_start, Gbl_copy_bias_end);
+    Gbl_blas_start = libxsmm_timer_tick();
+#endif
 #if defined(TWO_GEMMS)
     /* icfo += W * x */
-    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &C, &alpha, w4gold, &K4, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, N * C), &C, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
+    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &C, &alpha, wgold, &K4, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, N * C), &C, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
     /* icfo += R * h */
     if (j == 0) {
-      LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &K, &alpha, r4gold, &K4, hpgold, &K, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, 0, N, 4 * K), &K4);
+      LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &K, &alpha, rgold, &K4, hpgold, &K, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, 0, N, 4 * K), &K4);
     } else {
-      LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &K, &alpha, r4gold, &K4, &LIBXSMM_VLA_ACCESS(2, hgold, j-1, 0, K * N), &K, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
+      LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &K, &alpha, rgold, &K4, &LIBXSMM_VLA_ACCESS(2, hgold, j-1, 0, K * N), &K, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
     }
 #else
     /* Concatenate x and h */
@@ -470,83 +712,123 @@ void lstm_ref( int N, int C, int K, int t, float forget_bias,
       convert_nk_nck(N, K, C+K, &LIBXSMM_VLA_ACCESS(2, hgold, j-1, 0, K * N), &(xhgold[C]));
     }
     /* icfo += (W * x) + (R * h) */
-    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &CK, &alpha, wr8gold, &K4, xhgold, &CK, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
+    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K4, &N, &CK, &alpha, wgold, &K4, xhgold, &CK, &beta, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), &K4);
 #endif
-    /* icfo = non-lin(icfo) */
-    matrix_sigmoid_ld(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
-    matrix_tanh_ld   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K));
-    matrix_sigmoid_ld(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K));
-    matrix_sigmoid_ld(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K));
-    /* t1 = f.cs */
+#if defined(PROFILE)
+    Gbl_blas_end = libxsmm_timer_tick();
+    Gbl_blas_total += libxsmm_timer_duration(Gbl_blas_start, Gbl_blas_end);
+    Gbl_eltwise_start = libxsmm_timer_tick();
+#endif
     if (j == 0) {
-      matrix_eltwise_mult_ld_a(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, 2*K, N, 4 * K), cspgold, t1gold);
+      lstm_fwd_eltwise_merged( N, K,
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, 0,   N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, K,   N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, 2*K, N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, 0, 0, 3*K, N, 4 * K),
+                               cspgold,
+                               &LIBXSMM_VLA_ACCESS(2, csgold, 0, 0, K * N),
+                               &LIBXSMM_VLA_ACCESS(2, cogold, 0, 0, K * N),
+                               &LIBXSMM_VLA_ACCESS(2, hgold, 0, 0, K * N) );
     } else {
-      matrix_eltwise_mult_ld_a(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), &LIBXSMM_VLA_ACCESS(2, csgold, j-1, 0, K * N), t1gold);
+      lstm_fwd_eltwise_merged( N, K,
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K),
+                               &LIBXSMM_VLA_ACCESS(2, csgold, j-1, 0, K * N),
+                               &LIBXSMM_VLA_ACCESS(2, csgold, j, 0, K * N),
+                               &LIBXSMM_VLA_ACCESS(2, cogold, j, 0, K * N),
+                               &LIBXSMM_VLA_ACCESS(2, hgold, j, 0, K * N) );
     }
-    /* t2 = i.c */
-    matrix_eltwise_mult_ld_ab(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K), &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K, N, 4 * K), t2gold);
-    /* cs = t1 + t2 */
-    matrix_add(K*N, t1gold, t2gold, &LIBXSMM_VLA_ACCESS(2, csgold, j, 0, K * N));
-    /* t3 = tanh(cs) */
-    matrix_tanh(K*N, &LIBXSMM_VLA_ACCESS(2, csgold, j, 0, K * N), t3gold);
-    /* h = o.t3 */
-    matrix_eltwise_mult_ld_a (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K), t3gold, &LIBXSMM_VLA_ACCESS(2, hgold, j, 0, K * N));
+#if defined(PROFILE)
+    Gbl_eltwise_end = libxsmm_timer_tick();
+    Gbl_eltwise_total += libxsmm_timer_duration(Gbl_eltwise_start, Gbl_eltwise_end);
+#endif
   }
+}
+
+
+void lstm_ref_bwd_upd( int N, int C, int K, int t,
+                       float *xgoldt, float *cspgold, float *hpgold,
+                       float *csgoldt, float *cogoldt, float *hgoldt,
+                       float *icfogoldt, float *wgold, float *rgold,
+                       float *dcsgold, float *dhgoldt,
+                       float *dwgold, float *drgold, float *dbgold,
+                       float *dxgoldt, float *dcspgold, float *dhpgold, float *scratch )
+{
+#if !defined(TWO_GEMMS)
+  float *xhgold, *dxhgold;
+#endif
+  float *dicfogoldt, *doutgoldt;
+  float *dout, *dcs, *csp;
+  const char transa = 'N', transb = 'N';   /* no transposes */
+  const char transaT = 'T', transbT = 'T'; /* transposes */
+  const float alpha = 1, beta = 1, beta0 = 0;
+  int j, l, p;
+  int K4 = K * 4;
+  int CK = C + K;
+  dicfogoldt = scratch;
+  doutgoldt  = &(scratch[K*N*t*4]);
+#if !defined(TWO_GEMMS)
+  xhgold    = &(scratch[K*N*t*5]);
+  dxhgold   = &(scratch[K*N*t*5 + (C+K)*N]);
+#endif
+  LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N * C);
+  LIBXSMM_VLA_DECL(2, float, csgold, csgoldt, K * N);
+  LIBXSMM_VLA_DECL(2, float, cogold, cogoldt, K * N);
+  LIBXSMM_VLA_DECL(2, float, hgold, hgoldt, K * N);
+  LIBXSMM_VLA_DECL(3, float, icfogold, icfogoldt, N, 4 * K);
+  LIBXSMM_VLA_DECL(2, float, dxgold, dxgoldt, N * C);
+  LIBXSMM_VLA_DECL(2, float, dhgold, dhgoldt, K * N);
+  LIBXSMM_VLA_DECL(3, float, dicfogold, dicfogoldt, N, 4 * K);
+  LIBXSMM_VLA_DECL(2, float, doutgold, doutgoldt, K * N);
   /* BWD/UPD */
   for (j = t-1; j >= 0; --j) {
-    /* compute delta */
-    if (j == t-1) {
-      matrix_copy(K * N, &LIBXSMM_VLA_ACCESS(2, dhgold, t-1, 0, K * N), &LIBXSMM_VLA_ACCESS(2, deltagold, t-1, 0, K * N));
+#if defined(PROFILE)
+    Gbl_eltwise_start = libxsmm_timer_tick();
+#endif
+    if (t-1 == j) {
+      dout = NULL;
+      dcs = dcsgold;
     } else {
-      matrix_add(K * N, &LIBXSMM_VLA_ACCESS(2, doutgold, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, dhgold, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, deltagold, j, 0, K * N));
+      dout = &LIBXSMM_VLA_ACCESS(2, doutgold, j, 0, K * N);
+      dcs = dcspgold;
     }
-    /* compute dcsp */
-    matrix_eltwise_mult_ld_a(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K), &LIBXSMM_VLA_ACCESS(2, deltagold, j, 0, K * N), t1gold);
-    matrix_tanh_inverse(K * N, &LIBXSMM_VLA_ACCESS(2, csgold, j, 0, K * N), t2gold);
-    matrix_eltwise_mult(K * N, t1gold, t2gold, t3gold);
-    if (j == t-1) {
-      matrix_add(K * N, t3gold, dcsgold, dcspgold);
+    if (0 == j) {
+      csp = cspgold;
     } else {
-      matrix_add(K * N, t3gold, dcspgold, dcspgold);
+      csp = &LIBXSMM_VLA_ACCESS(2, csgold, j-1, 0, K * N);
     }
-    /* compute dc */
-    matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), dcspgold, t1gold);
-    matrix_complement_square_ld(K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K, N, 4 * K), t2gold);
-    matrix_eltwise_mult_ld_c   (K, N, 4*K, t1gold, t2gold, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, K, N, 4 * K));
-    /* compute di */
-    matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K, N, 4 * K), dcspgold, t1gold);
-    matrix_complement_ld       (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), t2gold);
-    matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0, N, 4 * K), t2gold, t3gold);
-    matrix_eltwise_mult_ld_c   (K, N, 4*K, t1gold, t3gold, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K));
-    /* compute df */
-    if (j == 0) {
-      matrix_eltwise_mult(K * N, dcspgold, cspgold, t1gold);
-    } else {
-      matrix_eltwise_mult(K * N, dcspgold, &LIBXSMM_VLA_ACCESS(2, csgold, j-1, 0, K * N), t1gold);
-    }
-    matrix_complement_ld       (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), t2gold);
-    matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), t2gold, t3gold);
-    matrix_eltwise_mult_ld_c   (K, N, 4*K, t1gold, t3gold, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 2*K, N, 4 * K));
-    /* compute do */
-    matrix_tanh(K * N, &LIBXSMM_VLA_ACCESS(2, csgold, j, 0, K * N), t1gold);
-    matrix_eltwise_mult(K * N, &LIBXSMM_VLA_ACCESS(2, deltagold, j, 0, K * N), t1gold, t1gold);
-    matrix_complement_ld       (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K), t2gold);
-    matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K), t2gold, t2gold);
-    matrix_eltwise_mult_ld_c   (K, N, 4*K, t1gold, t2gold, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 3*K, N, 4 * K));
-    /* update dcsp */
-    matrix_eltwise_mult_ld_a   (K, N, 4*K, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), dcspgold, dcspgold);
-
+    lstm_bwd_upd_eltwise_merged( N, K,
+                                 &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K),
+                                 &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K),
+                                 &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K),
+                                 &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K),
+                                 csp,
+                                 &LIBXSMM_VLA_ACCESS(2, cogold, j, 0, K * N),
+                                 &LIBXSMM_VLA_ACCESS(2, dhgold, j, 0, K * N),
+                                 dout,
+                                 &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0,   N, 4 * K),
+                                 &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, K,   N, 4 * K),
+                                 &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 2*K, N, 4 * K),
+                                 &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 3*K, N, 4 * K),
+                                 dcspgold, dcs);
+#if defined(PROFILE)
+    Gbl_eltwise_end = libxsmm_timer_tick();
+    Gbl_eltwise_total += libxsmm_timer_duration(Gbl_eltwise_start, Gbl_eltwise_end);
+    Gbl_blas_start = libxsmm_timer_tick();
+#endif
 #if defined(TWO_GEMMS)
     if (j > 0) {
       /* compute dout */
-      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K4, &alpha, r4gold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta0, &LIBXSMM_VLA_ACCESS(2, doutgold, j-1, 0, K * N), &K);
+      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K4, &alpha, rgold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta0, &LIBXSMM_VLA_ACCESS(2, doutgold, j-1, 0, K * N), &K);
     } else {
       /* compute dhp */
-      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K4, &alpha, r4gold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, 0, 0, 0, N, 4 * K), &K4, &beta0, dhpgold, &K);
+      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K4, &alpha, rgold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, 0, 0, 0, N, 4 * K), &K4, &beta0, dhpgold, &K);
     }
 
     /* compute dx */
-    LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &C, &N, &K4, &alpha, w4gold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta, &LIBXSMM_VLA_ACCESS(2, dxgold, j, 0, N * C), &C);
+    LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &C, &N, &K4, &alpha, wgold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta, &LIBXSMM_VLA_ACCESS(2, dxgold, j, 0, N * C), &C);
 
     /* compute dw */
     LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K4, &C, &N, &alpha, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &LIBXSMM_VLA_ACCESS(2, xgold, j, 0, N * C), &C, &beta, dwgold, &K4);
@@ -558,7 +840,7 @@ void lstm_ref( int N, int C, int K, int t, float forget_bias,
       LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K4, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &LIBXSMM_VLA_ACCESS(2, hgold, j-1, 0, K * N), &K, &beta, drgold, &K4);
     }
 #else
-    LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &CK, &N, &K4, &alpha, wr8gold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta0, dxhgold, &CK);
+    LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &CK, &N, &K4, &alpha, wgold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta0, dxhgold, &CK);
     matrix_copy_ld(C, N, C+K, dxhgold, &LIBXSMM_VLA_ACCESS(2, dxgold, j, 0, N * C));
     if (j > 0) {
       matrix_copy_ld(K, N, C+K, &(dxhgold[C]), &LIBXSMM_VLA_ACCESS(2, doutgold, j-1, 0, K * N));
@@ -575,7 +857,10 @@ void lstm_ref( int N, int C, int K, int t, float forget_bias,
     }
     LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K4, &CK, &N, &alpha, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, xhgold, &CK, &beta, dwgold, &K4);
 #endif
-
+#if defined(PROFILE)
+    Gbl_blas_end = libxsmm_timer_tick();
+    Gbl_blas_total += libxsmm_timer_duration(Gbl_blas_start, Gbl_blas_end);
+#endif
     /* compute db */
 #if defined(_OPENMP)
 # pragma omp parallel for private(l, p)
@@ -589,30 +874,17 @@ void lstm_ref( int N, int C, int K, int t, float forget_bias,
       }
     }
   }
-
-  libxsmm_free(bfgold_fb);
-  libxsmm_free(icfogoldt);
-  libxsmm_free(dicfogoldt);
-#if defined(TWO_GEMMS)
-  libxsmm_free(w4gold);
-  libxsmm_free(r4gold);
-#else
-  libxsmm_free(wr8gold);
-  libxsmm_free(xhgold);
-  libxsmm_free(dxhgold);
-#endif
-  libxsmm_free(t1gold);
-  libxsmm_free(t2gold);
-  libxsmm_free(t3gold);
 }
 
 
 int main(int argc, char* argv[])
 {
   float *wigold, *wfgold, *wogold, *wcgold, *rigold, *rfgold, *rogold, *rcgold, *bigold, *bfgold, *bogold, *bcgold;
-  float *xgoldt, *cspgold,*hpgold, *csgoldt, *hgoldt;
+  float *xgoldt, *cspgold,*hpgold, *csgoldt, *cogoldt, *hgoldt;
   float *dwgold, *drgold, *dbgold;
   float *dxgoldt, *dcspgold, *dhpgold, *dcsgold, *dhgoldt;
+  float *icfogoldt, *wgold, *rgold;
+  float *scratch_fwd, *scratch_bu;
   float *xt, *csp, *hp, *w, *r, *b, *cst, *ht;
   float *it, *ft, *ot, *cit, *cot;
   float *dxt, *dcsp, *dhp, *dw, *dr, *db, *dcs, *dht;
@@ -622,11 +894,14 @@ int main(int argc, char* argv[])
   size_t scratch_size = 0, internalstate_size = 0;
 
   int iters = 10;   /* repetitions of benchmark */
-  int pass = 3;     /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
-  int N = 128;      /* size of mini-batch */
+  int pass = 0;     /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
+  int N = 168;      /* size of mini-batch */
   int C = 512;      /* number of inputs */
-  int K = 64;       /* number of outputs */
-  int t = 5;        /* number of time steps (>= 1) */
+  int K = 512;      /* number of outputs */
+  int t = 50;       /* number of time steps (>= 1) */
+  int bn = 24;
+  int bc = 64;
+  int bk = 64;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 0/*disabled by default*/ : atof(env_check));
@@ -683,7 +958,7 @@ int main(int argc, char* argv[])
     printf("\nUsage: ./lstmdriver [reps] [pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD] [N] [C] [K] [time_steps > 0]\n\n");
     return 0;
   }
-  libxsmm_srand(1);
+  libxsmm_rng_set_seed(1);
 
   /* reading new values from cli */
   j = 1;
@@ -693,6 +968,9 @@ int main(int argc, char* argv[])
   if (argc > j) C     = atoi(argv[j++]);
   if (argc > j) K     = atoi(argv[j++]);
   if (argc > j) t     = atoi(argv[j++]);
+  if (argc > j) bn    = atoi(argv[j++]);
+  if (argc > j) bc    = atoi(argv[j++]);
+  if (argc > j) bk    = atoi(argv[j++]);
 
   if (t <= 0) {
     printf("time_steps %d should be greater than or equal to 1\n\n", t);
@@ -720,57 +998,67 @@ int main(int argc, char* argv[])
   printf("SIZE Hidden State: %10.2f MiB\n", (double)(K*N*sizeof(float))/(1024.0*1024.0) );
 
   /* allocate data */
-  xgoldt  = (float*)libxsmm_aligned_malloc(N*C*t*sizeof(float), 2097152);
-  cspgold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  hpgold  = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  wigold  = (float*)libxsmm_aligned_malloc(C*K*sizeof(float), 2097152);
-  wfgold  = (float*)libxsmm_aligned_malloc(C*K*sizeof(float), 2097152);
-  wogold  = (float*)libxsmm_aligned_malloc(C*K*sizeof(float), 2097152);
-  wcgold  = (float*)libxsmm_aligned_malloc(C*K*sizeof(float), 2097152);
-  rigold  = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
-  rfgold  = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
-  rogold  = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
-  rcgold  = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
-  bigold  = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
-  bfgold  = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
-  bogold  = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
-  bcgold  = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
-  csgoldt = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  hgoldt  = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  dxgoldt = (float*)libxsmm_aligned_malloc(N*C*t*sizeof(float), 2097152);
-  dcspgold= (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  dhpgold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  xgoldt    = (float*)libxsmm_aligned_malloc(N*C*t*sizeof(float), 2097152);
+  cspgold   = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  hpgold    = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  wigold    = (float*)libxsmm_aligned_malloc(C*K*sizeof(float), 2097152);
+  wfgold    = (float*)libxsmm_aligned_malloc(C*K*sizeof(float), 2097152);
+  wogold    = (float*)libxsmm_aligned_malloc(C*K*sizeof(float), 2097152);
+  wcgold    = (float*)libxsmm_aligned_malloc(C*K*sizeof(float), 2097152);
+  rigold    = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
+  rfgold    = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
+  rogold    = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
+  rcgold    = (float*)libxsmm_aligned_malloc(K*K*sizeof(float), 2097152);
+  bigold    = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
+  bfgold    = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
+  bogold    = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
+  bcgold    = (float*)libxsmm_aligned_malloc(K*sizeof(float), 2097152);
+  csgoldt   = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  cogoldt   = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  hgoldt    = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  dxgoldt   = (float*)libxsmm_aligned_malloc(N*C*t*sizeof(float), 2097152);
+  dcspgold  = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  dhpgold   = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
 #if defined(TWO_GEMMS)
-  dwgold  = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
-  drgold  = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
+  wgold     = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
+  rgold     = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
+  dwgold    = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
+  drgold    = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
+  scratch_fwd = NULL;
+  scratch_bu  = (float*)libxsmm_aligned_malloc(K*N*t*5*sizeof(float), 2097152);
 #else
-  dwgold  = (float*)libxsmm_aligned_malloc((C+K)*K*4*sizeof(float), 2097152);
-  drgold  = NULL;
+  wgold     = (float*)libxsmm_aligned_malloc((C+K)*K*4*sizeof(float), 2097152);
+  rgold     = NULL;
+  dwgold    = (float*)libxsmm_aligned_malloc((C+K)*K*4*sizeof(float), 2097152);
+  drgold    = NULL;
+  scratch_fwd = (float*)libxsmm_aligned_malloc((C+K)*N*sizeof(float), 2097152);
+  scratch_bu  = (float*)libxsmm_aligned_malloc(((C+K)*N*2 + K*N*t*5)*sizeof(float), 2097152);
 #endif
-  dbgold  = (float*)libxsmm_aligned_malloc(K*4*sizeof(float), 2097152);
-  dcsgold = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  dhgoldt = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  xt      = (float*)libxsmm_aligned_malloc(N*C*t*sizeof(float), 2097152);
-  csp     = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  hp      = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  w       = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
-  r       = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
-  b       = (float*)libxsmm_aligned_malloc(K*4*sizeof(float), 2097152);
-  cst     = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  ht      = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  it      = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  ft      = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  ot      = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  cit     = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  cot     = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
-  dxt     = (float*)libxsmm_aligned_malloc(N*C*t*sizeof(float), 2097152);
-  dcsp    = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  dhp     = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  dw      = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
-  dr      = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
-  db      = (float*)libxsmm_aligned_malloc(K*4*sizeof(float), 2097152);
-  dcs     = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-  dht     = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  dbgold    = (float*)libxsmm_aligned_malloc(K*4*sizeof(float), 2097152);
+  dcsgold   = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  dhgoldt   = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  icfogoldt = (float*)libxsmm_aligned_malloc(K*N*t*4*sizeof(float), 2097152);
+  xt        = (float*)libxsmm_aligned_malloc(N*C*t*sizeof(float), 2097152);
+  csp       = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  hp        = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  w         = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
+  r         = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
+  b         = (float*)libxsmm_aligned_malloc(K*4*sizeof(float), 2097152);
+  cst       = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  ht        = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  it        = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  ft        = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  ot        = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  cit       = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  cot       = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
+  dxt       = (float*)libxsmm_aligned_malloc(N*C*t*sizeof(float), 2097152);
+  dcsp      = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  dhp       = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  dw        = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
+  dr        = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
+  db        = (float*)libxsmm_aligned_malloc(K*4*sizeof(float), 2097152);
+  dcs       = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
+  dht       = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N * C);
   LIBXSMM_VLA_DECL(2, float, hgold, hgoldt, K * N);
   LIBXSMM_VLA_DECL(2, float, dhgold, dhgoldt, K * N);
@@ -795,14 +1083,17 @@ int main(int argc, char* argv[])
   LIBXSMM_MATINIT_OMP(float, 24, bfgold, 1, K, 1, 1.0);
   LIBXSMM_MATINIT_OMP(float, 24, bogold, 1, K, 1, 1.0);
   LIBXSMM_MATINIT_OMP(float, 24, bcgold, 1, K, 1, 1.0);
+  zero_buf(csgoldt, K*N*t);
+  zero_buf(cogoldt, K*N*t);
+  zero_buf(hgoldt,  K*N*t);
   /* BWD/UPD */
   for (j = 0; j < t; ++j) {
     LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, dhgold, j, 0, K * N), N, K, N, 1.0);
   }
   LIBXSMM_MATINIT_OMP(float, 24, dcsgold, N, K, N, 1.0);
-  zero_buf(dxgoldt, N*C*t);
+  zero_buf(dxgoldt,  N*C*t);
   zero_buf(dcspgold, K*N);
-  zero_buf(dhpgold, K*N);
+  zero_buf(dhpgold,  K*N);
 #if defined(TWO_GEMMS)
   zero_buf(dwgold, C*K*4);
   zero_buf(drgold, K*K*4);
@@ -839,15 +1130,21 @@ int main(int argc, char* argv[])
     printf("#         Computing Reference ...        #\n");
     printf("##########################################\n");
 
-    lstm_ref( N, C, K, t, forget_bias,
-              wigold, wcgold, wfgold, wogold,
-              rigold, rcgold, rfgold, rogold,
-              bigold, bcgold, bfgold, bogold,
-              xgoldt, cspgold, hpgold,
-              csgoldt, hgoldt,
-              dcsgold, dhgoldt,
-              dwgold, drgold, dbgold,
-              dxgoldt, dcspgold, dhpgold );
+    lstm_ref_fwd( N, C, K, t, forget_bias,
+                  wigold, wcgold, wfgold, wogold,
+                  rigold, rcgold, rfgold, rogold,
+                  bigold, bcgold, bfgold, bogold,
+                  xgoldt, cspgold, hpgold,
+                  csgoldt, cogoldt, hgoldt,
+                  icfogoldt, wgold, rgold, scratch_fwd );
+
+    lstm_ref_bwd_upd( N, C, K, t,
+                      xgoldt, cspgold, hpgold,
+                      csgoldt, cogoldt, hgoldt,
+                      icfogoldt, wgold, rgold,
+                      dcsgold, dhgoldt,
+                      dwgold, drgold, dbgold,
+                      dxgoldt, dcspgold, dhpgold, scratch_bu );
 
     printf("##########################################\n");
     printf("#      Computing Reference ... done      #\n");
@@ -860,12 +1157,25 @@ int main(int argc, char* argv[])
     printf("#      Setting Up  (custom-Storage)      #\n");
     printf("##########################################\n");
 
+    if ( N % bn != 0 ) {
+      bn = N;
+    }
+    if ( C % bc != 0 ) {
+      bc = C;
+    }
+    if ( K % bk != 0 ) {
+      bk = K;
+    }
+
     /* setup LIBXSMM handle */
     lstmcell_desc.threads = nThreads;
     lstmcell_desc.N = N;
     lstmcell_desc.C = C;
     lstmcell_desc.K = K;
-    lstmcell_desc.t = t;
+    lstmcell_desc.max_T = t;
+    lstmcell_desc.bn = bn;
+    lstmcell_desc.bk = bk;
+    lstmcell_desc.bc = bc;
     lstmcell_desc.cell_type = LIBXSMM_DNN_RNNCELL_LSTM;
     lstmcell_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     lstmcell_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
@@ -1253,6 +1563,56 @@ int main(int argc, char* argv[])
       printf("fp time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
+      printf("##########################################\n");
+      printf("#   Performance - FWD (BLAS)             #\n");
+      printf("##########################################\n");
+      /* run LIBXSMM LSTM for performance */
+#if defined(PROFILE)
+      Gbl_blas_total = 0.0;
+      Gbl_eltwise_total = 0.0;
+      Gbl_conv_total = 0.0;
+      Gbl_copy_bias_total = 0.0;
+#endif
+      l_start = libxsmm_timer_tick();
+      for (j = 0; j < iters; ++j) {
+        lstm_ref_fwd( N, C, K, t, forget_bias,
+                      wigold, wcgold, wfgold, wogold,
+                      rigold, rcgold, rfgold, rogold,
+                      bigold, bcgold, bfgold, bogold,
+                      xgoldt, cspgold, hpgold,
+                      csgoldt, cogoldt, hgoldt,
+                      icfogoldt, wgold, rgold, scratch_fwd );
+      }
+      l_end = libxsmm_timer_tick();
+      l_total = libxsmm_timer_duration(l_start, l_end);
+
+      printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("fp time = %.5g\n", ((double)(l_total/iters)));
+      printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+#if defined(PROFILE)
+      printf("------------------------------------------\n");
+      flops = (((2.0 * K * N * C) + (2.0 * K * N * K)) * 4.0) * (double)t * (double)iters;
+      printf("BLAS GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("BLAS time = %.5g\n", ((double)(Gbl_blas_total/iters)));
+      printf("BLAS GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_blas_total);
+
+      flops = ((tflops * K * N) * 4.0 + (4.0 * K * N) + (tflops * K * N)) * (double)t * (double)iters;
+      printf("ELTWISE GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("ELTWISE time = %.5g\n", ((double)(Gbl_eltwise_total/iters)));
+      printf("ELTWISE GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_eltwise_total);
+
+      flops = ((C * K  + K * K) * 4.0) * (double)iters;
+      printf("WEIGHT CONVERSION GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("WEIGHT CONVERSION time = %.5g\n", ((double)(Gbl_conv_total/iters)));
+      printf("WEIGHT CONVERSION GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_conv_total);
+
+      flops = (N * K * 4.0) * (double)iters;
+      printf("COPY BIAS GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("COPY BIAS time = %.5g\n", ((double)(Gbl_copy_bias_total/iters)));
+      printf("COPY BIAS GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_copy_bias_total);
+      printf("------------------------------------------\n");
+#endif
+
       printf("PERFDUMP,FP,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
     }
 
@@ -1406,6 +1766,44 @@ int main(int argc, char* argv[])
       printf("bp+wu time = %.5g\n", ((double)(l_total/iters)));
       printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
 
+      printf("##########################################\n");
+      printf("# Performance - BWD+UPD (BLAS)           #\n");
+      printf("##########################################\n");
+      /* run LIBXSMM LSTM for performance */
+#if defined(PROFILE)
+      Gbl_blas_total = 0.0;
+      Gbl_eltwise_total = 0.0;
+#endif
+      l_start = libxsmm_timer_tick();
+      for (j = 0; j < iters; ++j) {
+        lstm_ref_bwd_upd( N, C, K, t,
+                          xgoldt, cspgold, hpgold,
+                          csgoldt, cogoldt, hgoldt,
+                          icfogoldt, wgold, rgold,
+                          dcsgold, dhgoldt,
+                          dwgold, drgold, dbgold,
+                          dxgoldt, dcspgold, dhpgold, scratch_bu );
+      }
+      l_end = libxsmm_timer_tick();
+      l_total = libxsmm_timer_duration(l_start, l_end);
+
+      printf("GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("bp+wu time = %.5g\n", ((double)(l_total/iters)));
+      printf("GFLOPS  = %.5g\n", (flops*1e-9)/l_total);
+#if defined(PROFILE)
+      printf("------------------------------------------\n");
+      flops = (((4.0 * K * N * C) + (4.0 * K * N * K)) * 4.0) * (double)t * (double)iters;
+      printf("BLAS GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("BLAS time = %.5g\n", ((double)(Gbl_blas_total/iters)));
+      printf("BLAS GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_blas_total);
+
+      flops = (19.0 * K * N) * (double)t * (double)iters;
+      printf("ELTWISE GFLOP  = %.5g\n", flops*1e-9/(double)iters);
+      printf("ELTWISE time = %.5g\n", ((double)(Gbl_eltwise_total/iters)));
+      printf("ELTWISE GFLOPS  = %.5g\n", (flops*1e-9)/Gbl_eltwise_total);
+      printf("------------------------------------------\n");
+#endif
+
       printf("PERFDUMP,BP+WU,%s,%i,%i,%i,%i,%i,%.5g,%.5g\n", LIBXSMM_VERSION, nThreads, N, C, K, t, ((double)(l_total/iters)), (flops*1e-9)/l_total);
     }
 
@@ -1481,17 +1879,23 @@ int main(int argc, char* argv[])
   libxsmm_free(bogold);
   libxsmm_free(bcgold);
   libxsmm_free(csgoldt);
+  libxsmm_free(cogoldt);
   libxsmm_free(hgoldt);
+  libxsmm_free(wgold);
+  libxsmm_free(icfogoldt);
   libxsmm_free(dxgoldt);
   libxsmm_free(dcspgold);
   libxsmm_free(dhpgold);
   libxsmm_free(dwgold);
 #if defined(TWO_GEMMS)
+  libxsmm_free(rgold);
   libxsmm_free(drgold);
 #endif
   libxsmm_free(dbgold);
   libxsmm_free(dcsgold);
   libxsmm_free(dhgoldt);
+  libxsmm_free(scratch_fwd);
+  libxsmm_free(scratch_bu);
   libxsmm_free(xt);
   libxsmm_free(csp);
   libxsmm_free(hp);

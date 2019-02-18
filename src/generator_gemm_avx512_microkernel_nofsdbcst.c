@@ -169,7 +169,10 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
 
         /* In case of batch reduce try to prefetch a few more columns ahead...  */
         if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
-          unsigned int pf_a_cols_ahead = 4;
+          unsigned int pf_a_cols_ahead = 16;
+          if (i_xgemm_desc->lda == 1024) {
+            pf_a_cols_ahead = 4;
+          }
           libxsmm_x86_instruction_prefetch( io_generated_code,
               LIBXSMM_X86_INSTR_PREFETCHT0,
               i_gp_reg_mapping->gp_reg_a,

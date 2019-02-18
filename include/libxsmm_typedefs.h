@@ -305,19 +305,19 @@ typedef enum libxsmm_convolution_prefetch_type {
 
 typedef enum libxsmm_dnn_tensor_format {
   /* use LIBXSMM internal format, we need to copy data into that */
-  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM = 1,
+  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM  = 1,
   /* use NHWC format internally, this allows no-copy operations */
-  LIBXSMM_DNN_TENSOR_FORMAT_NHWC = 2,
+  LIBXSMM_DNN_TENSOR_FORMAT_NHWC     = 2,
   /* use NCHW format internally, this will include shadow copies, not preferred */
-  LIBXSMM_DNN_TENSOR_FORMAT_NCHW = 4,
+  LIBXSMM_DNN_TENSOR_FORMAT_NCHW     = 4,
   /* use RSCK format internally, this allows no-copy operations  */
-  LIBXSMM_DNN_TENSOR_FORMAT_RSCK = 8,
+  LIBXSMM_DNN_TENSOR_FORMAT_RSCK     = 8,
   /* use KCRS format internally, this will include shadow copies, not preferred */
-  LIBXSMM_DNN_TENSOR_FORMAT_KCRS = 16,
-  LIBXSMM_DNN_TENSOR_FORMAT_CK   = 32,
-  LIBXSMM_DNN_TENSOR_FORMAT_KCCK = 64,
-  LIBXSMM_DNN_TENSOR_FORMAT_NCNC = 128,
-  LIBXSMM_DNN_TENSOR_FORMAT_NC   = 256
+  LIBXSMM_DNN_TENSOR_FORMAT_KCRS     = 16,
+  LIBXSMM_DNN_TENSOR_FORMAT_CK       = 32,
+  LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED = 64,
+  LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED = 128,
+  LIBXSMM_DNN_TENSOR_FORMAT_NC       = 256
 } libxsmm_dnn_tensor_format;
 
 typedef enum libxsmm_dnn_internal_format {
@@ -508,6 +508,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_upd
   unsigned int use_fastpath;
   unsigned int ncopies;                         /* number of reduction copies, probably nthreads */
   unsigned int avoid_output_trans;
+  unsigned int f32_bf16_cvt_rne;                /* non-zero if in case of bf16 we perform RNE rounding when converting down from f32 in JIT sequence */
   libxsmm_dnn_tensor_format format;
   libxsmm_dnn_conv_option option;
   libxsmm_dnn_datatype datatype;

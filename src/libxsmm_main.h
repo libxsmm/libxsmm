@@ -618,6 +618,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_rnncell_desc desc;
   libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts  */
+  libxsmm_blasint T;                              /* sequnece length, must be smaller than max sequence length in desc */
   libxsmm_blasint bk;
   libxsmm_blasint bn;
   libxsmm_blasint bc;
@@ -626,7 +627,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_tensor* csp;
   libxsmm_dnn_tensor* hp;
   libxsmm_dnn_tensor* w;
+  libxsmm_dnn_tensor* wt;
   libxsmm_dnn_tensor* r;
+  libxsmm_dnn_tensor* rt;
   libxsmm_dnn_tensor* b;
   libxsmm_dnn_tensor* cst;
   libxsmm_dnn_tensor* ht;
@@ -647,8 +650,11 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   /* internal  state */
   void* internal_z;
   /* scratch pointers */
+  void* scratch_base;
   void* scratch_wT;
   void* scratch_rT;
+  void* scratch_w;
+  void* scratch_r;
   void* scratch_xT;
   void* scratch_hT;
   void* scratch_deltat;
@@ -656,8 +662,23 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   void* scratch_df;
   void* scratch_do;
   void* scratch_dci;
+  void* scratch_diB;
+  void* scratch_dfB;
+  void* scratch_dpB;
+  void* scratch_dciB;
+  void* scratch_dx;
+  void* scratch_dhp;
+  void* scratch_db;
   void* scratch_t1;
   void* scratch_t2;
+  void* csp_scratch;
+  void* cst_scratch;
+  void* ht_scratch;
+  void* it_scratch;
+  void* ft_scratch;
+  void* ot_scratch;
+  void* cit_scratch;
+  void* cot_scratch;
   /* options */
   int fwd_generic;
   int bwdupd_generic;
@@ -735,6 +756,7 @@ typedef enum libxsmm_malloc_flags {
   LIBXSMM_MALLOC_FLAG_W       = 16,
   LIBXSMM_MALLOC_FLAG_X       = 32,
   LIBXSMM_MALLOC_FLAG_RW  = LIBXSMM_MALLOC_FLAG_R | LIBXSMM_MALLOC_FLAG_W,
+  LIBXSMM_MALLOC_FLAG_WX  = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_W,
   LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_RW
 } libxsmm_malloc_flags;
 

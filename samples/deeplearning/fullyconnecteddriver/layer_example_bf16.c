@@ -104,7 +104,7 @@ int main(int argc, char* argv[])
     printf("Usage: %s iters nImg nIFm nOFm fuse_type type format\n", argv[0]);
     return 0;
   }
-  libxsmm_srand(1);
+  libxsmm_rng_set_seed(1);
 
   /* reading new values from cli */
   i = 1;

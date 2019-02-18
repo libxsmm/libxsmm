@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2019, Intel Corporation                                **
+** Copyright (c) 2019, Intel Corporation                                     **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #ifndef LIBXSMM_RNG_H
 #define LIBXSMM_RNG_H
@@ -41,18 +41,30 @@
 # pragma offload_attribute(pop)
 #endif
 
-
-/** Set the seed of the rng. */
-LIBXSMM_API void libxsmm_rng_float_set_seed( const uint32_t seed );
+/** Set the seed of libxsmm_rng_* (similar to srand). */
+LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed);
 
 /**
- * This float rng is using xoshiro128+ 1.0, work done by
+ * Returns a (pseudo-)random value based on rand/rand48 in the interval [0, n).
+ * This function compensates for an n, which is not a factor of RAND_MAX.
+ * Note: libxsmm_rng_set_seed must be used if one wishes to seed the generator.
+ */
+LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n);
+
+/**
+ * Similar to libxsmm_rng_u32, but returns a DP-value in the interval [0, 1).
+ * Note: libxsmm_rng_set_seed must be used if one wishes to seed the generator.
+ */
+LIBXSMM_API double libxsmm_rng_f64(void);
+
+/**
+ * This SP-RNG is using xoshiro128+ 1.0, work done by
  * David Blackman and Sebastiano Vigna (vigna@acm.org).
  * It is their best and fastest 32-bit generator for
  * 32-bit floating-point numbers. They suggest to use
  * its upper bits for floating-point generation, what
  * we do here and generate numbers in [0,1(.
  */
-LIBXSMM_API void libxsmm_rng_float_seq( float* rngs, const libxsmm_blasint count );
+LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count);
 
 #endif /* LIBXSMM_RNG_H */

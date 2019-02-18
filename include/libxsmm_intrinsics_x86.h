@@ -379,10 +379,6 @@
 # endif
 #endif
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 /**
  * Intrinsic-specific fix-ups
  */
@@ -400,15 +396,15 @@
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const double*)(A))
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const float*)(A))
 /* Clang misses _mm512_stream_p? (checked with v3.8.1). */
-# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_store_si512(A, B)
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps(A, B)
+# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_store_si512((A), (B))
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps((A), (B))
 # define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_store_pd(A, B)
 #else
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const float*)(A))
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const double*)(A))
-# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_stream_si512((__m512i*)(A), B)
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_stream_ps(A, B)
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_stream_pd(A, B)
+# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_stream_si512((__m512i*)(A), (B))
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_stream_ps((A), (B))
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_stream_pd((A), (B))
 #endif
 #if defined(LIBXSMM_INTEL_COMPILER)
 # if 1600 <= (LIBXSMM_INTEL_COMPILER)
@@ -553,11 +549,12 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
 #endif
 
 /**
- * Pseudo intrinsics that eventually need target-attribution (AVX-512)
+ * Pseudo intrinsics (AVX-512)
  */
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 # define LIBXSMM_INTRINSICS_MM512_QUANTIZE_NEAR_PS_EPI16( A, B ) _mm512_cvtepi32_epi16(_mm512_cvt_roundps_epi32( \
-    _mm512_mul_ps(_mm512_load_ps(A), B), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC))
+    _mm512_mul_ps(LIBXSMM_INTRINSICS_MM512_LOAD_PS(A), B), _MM_FROUND_TO_NEAREST_INT | _MM_FROUND_NO_EXC))
+
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(__m512 a) {
   const __m512i vnaninf = _mm512_set1_epi32(0x7f800000), vrneadd = _mm512_set1_epi32(0x00007fff);
   const __m512i vfixup = _mm512_set1_epi32(0x00000001), vfixupmask = _mm512_set1_epi32(0x00010000);
@@ -566,6 +563,24 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512i LIBXSMM_INTRIN
   const __mmask16 mm512_roundbf16rne_mask2_ = _mm512_cmp_epi32_mask(_mm512_and_epi32(mm512_roundbf16rne_a_, vfixupmask), vfixupmask, _MM_CMPINT_EQ);
   return _mm512_mask_add_epi32(mm512_roundbf16rne_a_, mm512_roundbf16rne_mask1_, mm512_roundbf16rne_a_, _mm512_mask_add_epi32(vrneadd, mm512_roundbf16rne_mask2_, vrneadd, vfixup));
 }
+
+/** SVML-intrinsics */
+#if defined(LIBXSMM_INTEL_COMPILER)
+# define LIBXSMM_INTRINSICS_MM512_TANH_PS(A) _mm512_tanh_ps(A)
+#else
+# include <math.h>
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS(__m512 a) {
+  float a16[16]; int i;
+  _mm512_store_ps(a16, a);
+  for (i = 0; i < 16; ++i) a16[i] = LIBXSMM_TANHF(a16[i]);
+  return _mm512_loadu_ps(a16);
+}
+#endif /* SVML */
+
+#endif /*__AVX512F__*/
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
 #endif
 
 #endif /*LIBXSMM_INTRINSICS_X86_H*/
