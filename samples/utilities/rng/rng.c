@@ -67,7 +67,7 @@ int main(int argc, char* argv[])
   /* fill array with random floats */
   libxsmm_rng_f32_seq( rngs, num_rngs );
 
-  /* calculate quality of random numbers */
+  /* some quality measure; variance is based on discovered average rather than expected value */
   if (EXIT_SUCCESS == libxsmm_matdiff(&info, LIBXSMM_DATATYPE_F32, 1/*m*/, num_rngs,
     NULL/*ref*/, rngs/*tst*/, NULL/*ldref*/, NULL/*ldtst*/))
   {

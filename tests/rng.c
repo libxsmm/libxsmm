@@ -26,51 +26,77 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Hans Pabst (Intel Corp.)
+/* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_RNG_H
-#define LIBXSMM_RNG_H
+#include <libxsmm.h>
 
-#include "libxsmm_typedefs.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdint.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
+int main(/*int argc, char* argv[]*/)
+{
+  const unsigned int seed = 25071975;
+  const float rngs_expected[] = {
+    0.438140392f, 0.914508700f, 0.765561819f, 0.526393533f, 0.22156381600f, 0.375500083f, 0.7989841700f, 0.400001645f,
+    0.662635803f, 0.335319161f, 0.369734645f, 0.561638355f, 0.00473213196f, 0.226125360f, 0.0178569555f, 0.288882852f
+  };
+  libxsmm_blasint num_rngs = 1000, i;
+  libxsmm_matdiff_info info = { 0 };
+  int result = EXIT_SUCCESS;
 
-/** Set the seed of libxsmm_rng_* (similar to srand). */
-LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed);
+  float *const rngs = (float*)malloc(num_rngs * sizeof(float));
+  if (NULL == rngs) num_rngs = 0;
 
-/**
- * Returns a (pseudo-)random value based on rand/rand48 in the interval [0, n).
- * This function compensates for an n, which is not a factor of RAND_MAX.
- * Note: libxsmm_rng_set_seed must be used if one wishes to seed the generator.
- */
-LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n);
+  /* setup reproducible sequence */
+  libxsmm_rng_set_seed(seed);
 
-/**
- * Similar to libxsmm_rng_u32, but returns a DP-value in the interval [0, 1).
- * Note: libxsmm_rng_set_seed must be used if one wishes to seed the generator.
- */
-LIBXSMM_API double libxsmm_rng_f64(void);
+  /* fill array with random floats */
+  libxsmm_rng_f32_seq(rngs, num_rngs);
 
-/**
- * This SP-RNG is using xoshiro128+ 1.0, work done by
- * David Blackman and Sebastiano Vigna (vigna@acm.org).
- * It is their best and fastest 32-bit generator for
- * 32-bit floating-point numbers. They suggest to use
- * its upper bits for floating-point generation, what
- * we do here and generate numbers in [0,1(.
- */
-LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count);
+  /* check expected value (depends on reproducible seed) */
+  for (i = 0; i < 16; ++i) {
+    if (rngs_expected[i] != rngs[i]) result = EXIT_FAILURE;
+  }
+  /* reset state */
+  libxsmm_rng_set_seed(seed);
+  /* enforce scalar RNG */
+  libxsmm_rng_f32_seq(rngs, 15);
 
-/** 2048-bit state for RNG */
-LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_0[16]);
-LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_1[16]);
-LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_2[16]);
-LIBXSMM_APIVAR(unsigned int libxsmm_rng_state_3[16]);
+  /* check expected value matches scalar RNG; check successful reset */
+  for (i = 0; i < 15; ++i) {
+    if (rngs_expected[i] != rngs[i]) result = EXIT_FAILURE;
+  }
 
-#endif /* LIBXSMM_RNG_H */
+  if (EXIT_SUCCESS == result) { /* calculate quality of random numbers */
+    result = libxsmm_matdiff(&info, LIBXSMM_DATATYPE_F32, 1/*m*/, num_rngs,
+      NULL/*ref*/, rngs/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
+  }
+
+  if (EXIT_SUCCESS == result) {
+    const double expected = 0.5 * num_rngs;
+    if (expected < 2 * LIBXSMM_DIFF(info.l1_tst, expected)) result = EXIT_FAILURE;
+  }
+
+  if (EXIT_SUCCESS == result) {
+    const double expected = 1.0 / 12.0;
+    if (expected < 2 * LIBXSMM_DIFF(info.var_tst, expected)) result = EXIT_FAILURE;
+  }
+
+  if (EXIT_SUCCESS == result) {
+    libxsmm_blasint num_odd = 0, num_even = 0;
+    const double scale = 0xFFFFFFFF;
+    for (i = 0; i < num_rngs; ++i) {
+      const unsigned int u = (unsigned int)LIBXSMM_ROUND(rngs[i] * scale);
+      if (u & 1) {
+        ++num_odd;
+      }
+      else {
+        ++num_even;
+      }
+    }
+    if (num_rngs < 4 * LIBXSMM_DIFF(num_odd, num_even)) result = EXIT_FAILURE;
+  }
+
+  free(rngs);
+
+  return result;
+}
+
