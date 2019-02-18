@@ -538,7 +538,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
     if (2 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
       const unsigned int ntasks = handle->mt * handle->nt * handle->kt;
       const double imbalance = 100.0 * (handle->nthreads - ntasks) / handle->nthreads;
-      static double max_imbalance = 0;
+      static double max_imbalance = 50.0;
       if (max_imbalance < imbalance) {
         fprintf(stderr, "LIBXSMM WARNING (XGEMM): %.0f%% imbalance (%u of %u workers utilized)!\n",
           imbalance, ntasks, handle->nthreads);
