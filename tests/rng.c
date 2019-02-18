@@ -30,14 +30,24 @@
 ******************************************************************************/
 #include <libxsmm.h>
 
+#if !defined(USE_EXPECTED) && 0
+# define USE_EXPECTED
+#else
+# include <time.h>
+#endif
+
 
 int main(/*int argc, char* argv[]*/)
 {
+#if defined(USE_EXPECTED)
   const unsigned int seed = 25071975;
   const float rngs_expected[] = {
     0.438140392f, 0.914508700f, 0.765561819f, 0.526393533f, 0.22156381600f, 0.375500083f, 0.7989841700f, 0.400001645f,
     0.662635803f, 0.335319161f, 0.369734645f, 0.561638355f, 0.00473213196f, 0.226125360f, 0.0178569555f, 0.288882852f
   };
+#else
+  const unsigned int seed = (unsigned int)time(0);
+#endif
   libxsmm_blasint num_rngs = 1000, i;
   libxsmm_matdiff_info info;
   int result = EXIT_SUCCESS;
@@ -53,7 +63,7 @@ int main(/*int argc, char* argv[]*/)
 
   /* fill array with random floats */
   libxsmm_rng_f32_seq(rngs, num_rngs);
-
+#if defined(USE_EXPECTED)
   /* check expected value (depends on reproducible seed) */
   for (i = 0; i < 16; ++i) {
     if (rngs_expected[i] != rngs[i]) result = EXIT_FAILURE;
@@ -67,7 +77,7 @@ int main(/*int argc, char* argv[]*/)
   for (i = 0; i < 15; ++i) {
     if (rngs_expected[i] != rngs[i]) result = EXIT_FAILURE;
   }
-
+#endif
   if (EXIT_SUCCESS == result) { /* calculate quality of random numbers */
     result = libxsmm_matdiff(&info, LIBXSMM_DATATYPE_F32, 1/*m*/, num_rngs,
       NULL/*ref*/, rngs/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
