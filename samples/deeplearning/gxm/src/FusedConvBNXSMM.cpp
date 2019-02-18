@@ -234,6 +234,8 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
     else
       hwt_ptr = hweightp->getBuffer();
   }
+  else
+    hwt_ptr=NULL;
 
   // Conv output
   middle = midp->getBuffer();
@@ -445,7 +447,7 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
       }
     }
   }
-    
+
   if (libxsmm_input_bntrain==NULL && libxsmm_input_add_bntrain == NULL && libxsmm_output_bntrain == NULL && libxsmm_gamma_train == NULL && libxsmm_beta_train == NULL && libxsmm_expectval_train == NULL && libxsmm_stddev_train == NULL && libxsmm_variance_train == NULL)
   {
     libxsmm_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout( libxsmm_handle_bn_train, LIBXSMM_DNN_REGULAR_INPUT, &status );

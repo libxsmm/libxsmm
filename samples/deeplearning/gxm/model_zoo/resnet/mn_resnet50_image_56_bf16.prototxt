@@ -10,7 +10,7 @@ node {
     train_list: "/home/local_scratch/train_images_labels.list"
     test_source: "/home/local_scratch/jpegs_256resized"
     test_list: "/home/local_scratch/val_images_labels.list"
-    batch_size: 56    #number of cores(56) - number of EP servers (0)
+    batch_size: 54    #number of cores(56) - number of EP servers (2)
     num_train_files: 80073  # per node when numsplits=16
     num_test_files: 3125    # per node when numsplits=16
     numsplits: 16
