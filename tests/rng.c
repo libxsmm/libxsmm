@@ -30,7 +30,7 @@
 ******************************************************************************/
 #include <libxsmm.h>
 
-#if !defined(USE_EXPECTED) && 0
+#if !defined(USE_EXPECTED) && 1
 # define USE_EXPECTED
 #else
 # include <time.h>
@@ -42,8 +42,8 @@ int main(/*int argc, char* argv[]*/)
 #if defined(USE_EXPECTED)
   const unsigned int seed = 25071975;
   const float rngs_expected[] = {
-    0.438140392f, 0.914508700f, 0.765561819f, 0.526393533f, 0.22156381600f, 0.375500083f, 0.7989841700f, 0.400001645f,
-    0.662635803f, 0.335319161f, 0.369734645f, 0.561638355f, 0.00473213196f, 0.226125360f, 0.0178569555f, 0.288882852f
+    0.438140392f, 0.284636021f, 0.808342457f, 0.140940785f, 0.740890265f, 0.0189954042f, 0.4811354880f, 0.616942167f,
+    0.273835897f, 0.636928558f, 0.916998625f, 0.260923862f, 0.673431635f, 0.5160189870f, 0.0404732227f, 0.327739120f
   };
 #else
   const unsigned int seed = (unsigned int)time(0);
@@ -74,7 +74,7 @@ int main(/*int argc, char* argv[]*/)
   libxsmm_rng_f32_seq(rngs, 15);
 
   /* check expected value matches scalar RNG; check successful reset */
-  for (i = 0; i < 15; ++i) {
+  for (i = 0; i < 16; ++i) {
     if (rngs_expected[i] != rngs[i]) result = EXIT_FAILURE;
   }
 #endif
@@ -85,12 +85,12 @@ int main(/*int argc, char* argv[]*/)
 
   if (EXIT_SUCCESS == result) {
     const double expected = 0.5 * num_rngs;
-    if (expected < 2 * LIBXSMM_DIFF(info.l1_tst, expected)) result = EXIT_FAILURE;
+    if (expected < 5 * LIBXSMM_DIFF(info.l1_tst, expected)) result = EXIT_FAILURE;
   }
 
   if (EXIT_SUCCESS == result) {
     const double expected = 1.0 / 12.0;
-    if (expected < 2 * LIBXSMM_DIFF(info.var_tst, expected)) result = EXIT_FAILURE;
+    if (expected < 5 * LIBXSMM_DIFF(info.var_tst, expected)) result = EXIT_FAILURE;
   }
 
   if (EXIT_SUCCESS == result) {
