@@ -29,6 +29,7 @@
 /* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
+#include <math.h>
 
 #if !defined(USE_EXPECTED) && 1
 # define USE_EXPECTED
