@@ -178,7 +178,7 @@ void internal_rng_f32_seq_avx512(float* rngs, libxsmm_blasint count)
     libxsmm_intrinsics_mm512_rng_state3 = _mm512_loadu_si512(internal_rng_state3);
   }
 }
-#endif
+#endif /*defined(LIBXSMM_INTRINSICS_AVX512)*/
 
 
 LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed)
