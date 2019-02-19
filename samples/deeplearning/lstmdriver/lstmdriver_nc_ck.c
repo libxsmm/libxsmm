@@ -396,6 +396,24 @@ LIBXSMM_INLINE void convert_nk_nck(int N, int K, int CK, float *src, float *dst)
 }
 
 
+LIBXSMM_INLINE void lstm_fwd_copy_bias(int N, int K, float *bigold, float *bcgold, float *bfgold, float *bogold, float forget_bias, float *icfogoldt, int j)
+{
+  LIBXSMM_VLA_DECL(3, float, icfogold, icfogoldt, N, 4 * K);
+  int i, l;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i, l) collapse(2)
+#endif
+  for (i = 0; i < N; i++) {
+    for (l = 0; l < K; l++) {
+      LIBXSMM_VLA_ACCESS(3, icfogold, j, i, l,     N, 4 * K) = bigold[l];
+      LIBXSMM_VLA_ACCESS(3, icfogold, j, i, l+K,   N, 4 * K) = bcgold[l];
+      LIBXSMM_VLA_ACCESS(3, icfogold, j, i, l+2*K, N, 4 * K) = bfgold[l] + forget_bias;
+      LIBXSMM_VLA_ACCESS(3, icfogold, j, i, l+3*K, N, 4 * K) = bogold[l];
+    }
+  }
+}
+
+
 LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, float *f, float *o, float *csp, float *cs, float *co, float *h)
 {
   int j;
@@ -653,7 +671,6 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
   LIBXSMM_VLA_DECL(2, float, cogold, cogoldt, K * N);
   LIBXSMM_VLA_DECL(2, float, hgold, hgoldt, K * N);
   LIBXSMM_VLA_DECL(3, float, icfogold, icfogoldt, N, 4 * K);
-  /* FWD */
 #if defined(PROFILE)
   Gbl_conv_start = libxsmm_timer_tick();
 #endif
@@ -685,10 +702,7 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
 #if defined(PROFILE)
     Gbl_copy_bias_start = libxsmm_timer_tick();
 #endif
-    matrix_copy_bias       (K, N, 4*K, bigold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
-    matrix_copy_bias       (K, N, 4*K, bcgold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K));
-    matrix_copy_forget_bias(K, N, 4*K, bfgold, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), forget_bias);
-    matrix_copy_bias       (K, N, 4*K, bogold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K));
+    lstm_fwd_copy_bias(N, K, bigold, bcgold, bfgold, bogold, forget_bias, icfogoldt, j);
 #if defined(PROFILE)
     Gbl_copy_bias_end = libxsmm_timer_tick();
     Gbl_copy_bias_total += libxsmm_timer_duration(Gbl_copy_bias_start, Gbl_copy_bias_end);
@@ -782,7 +796,6 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
   LIBXSMM_VLA_DECL(2, float, dhgold, dhgoldt, K * N);
   LIBXSMM_VLA_DECL(3, float, dicfogold, dicfogoldt, N, 4 * K);
   LIBXSMM_VLA_DECL(2, float, doutgold, doutgoldt, K * N);
-  /* BWD/UPD */
   for (j = t-1; j >= 0; --j) {
 #if defined(PROFILE)
     Gbl_eltwise_start = libxsmm_timer_tick();
