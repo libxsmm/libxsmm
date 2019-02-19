@@ -59,7 +59,7 @@ LIBXSMM_API_INLINE void libxsmm_rng_float_jump(uint32_t* state0, uint32_t* state
   LIBXSMM_ASSERT(4 == sizeof(jump_table) / sizeof(*jump_table));
   for (i = 0; i < 4; ++i) {
     for (b = 0; b < 32; ++b) {
-      if (jump_table[i] & (UINT32_C(1) << b)) {
+      if (jump_table[i] & (1U << b)) {
         s0 ^= *state0;
         s1 ^= *state1;
         s2 ^= *state2;
