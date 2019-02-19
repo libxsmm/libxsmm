@@ -160,6 +160,7 @@
      &    LIBXSMM_X86_AVX512_MIC  = 1010,                               &
      &    LIBXSMM_X86_AVX512_KNM  = 1011,                               &
      &    LIBXSMM_X86_AVX512_CORE = 1020,                               &
+     &    LIBXSMM_X86_AVX512_CLX  = 1021,                               &
      &    LIBXSMM_X86_AVX512_ICL  = 1022
 
         ! Generic function type (double-precision).
@@ -400,7 +401,7 @@
             INTEGER(C_INT), INTENT(IN), VALUE :: id
           END SUBROUTINE
 
-          ! Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|icl", "0": CPUID)
+          ! Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|clx", "0": CPUID)
           ! for subsequent code generation (JIT).
           SUBROUTINE libxsmm_set_target_arch(arch) BIND(C)
             IMPORT :: C_CHAR
