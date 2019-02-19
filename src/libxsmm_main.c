@@ -526,7 +526,8 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       if ( NULL != env_dump_build && 0 != *env_dump_build && '0' != *env_dump_build
         && NULL != internal_build_state)
       {
-        fprintf(stdout, "\n\n%s\n", internal_build_state);
+        fprintf(stdout, "\n\nLIBXSMM=%s\n", LIBXSMM_VERSION);
+        fprintf(stdout, "%s\n", internal_build_state);
       }
       LIBXSMM_STDIO_RELEASE();
 #if defined(_WIN32)
