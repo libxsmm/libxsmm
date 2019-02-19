@@ -558,6 +558,8 @@ int main(int argc, char* argv []) {
       }
     }
   }
+#else
+  LIBXSMM_UNUSED(l_c_b); LIBXSMM_UNUSED(l_b_b); LIBXSMM_UNUSED(l_c_gold_b); LIBXSMM_UNUSED(l_a_b);
 #endif
 
   if (0 == l_xgemm_desc) {
