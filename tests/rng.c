@@ -31,7 +31,7 @@
 #include <libxsmm.h>
 #include <math.h>
 
-#if !defined(USE_EXPECTED) && 1
+#if !defined(USE_EXPECTED)
 # define USE_EXPECTED
 #else
 # include <time.h>
