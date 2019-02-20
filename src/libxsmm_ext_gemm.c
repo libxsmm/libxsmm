@@ -669,28 +669,30 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch2_omp(libxsmm_gemm_precision iprec, libxsm
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize)
 {
-  libxsmm_xmmfunction kernel;
-  static int error_once = 0;
   int result;
-
   if (LIBXSMM_SMM(m, n, k)) { /* check if an SMM is suitable */
     const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
+    libxsmm_xmmfunction kernel;
     libxsmm_descriptor_blob blob;
     libxsmm_gemm_descriptor *const descriptor = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec, m, n, k,
       NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
       NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
       0 != ldc ? *ldc : m, alpha, beta, gemm_flags, libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
-    libxsmm_set_gemm_batchflag(descriptor, c, index_stride);
+    libxsmm_set_gemm_batchflag(descriptor, c, index_stride, stride_a, stride_b, stride_c);
     kernel = libxsmm_xmmdispatch(descriptor);
+    if (NULL != kernel.xmm) {
+      result = libxsmm_mmbatch_omp(kernel, index_base, index_stride,
+        stride_a, stride_b, stride_c, a, b, c, batchsize);
+    }
+    else {
+      result = EXIT_FAILURE;
+    }
   }
   else {
-    kernel.xmm = NULL;
+    result = EXIT_FAILURE;
   }
-  if (0 != kernel.xmm) {
-    result = libxsmm_mmbatch_omp(kernel, index_base, index_stride,
-      stride_a, stride_b, stride_c, a, b, c, batchsize);
-  }
-  else { /* fall-back */
+  if (EXIT_SUCCESS != result) { /* fall-back */
+    static int error_once = 0;
     switch (iprec) {
       case LIBXSMM_GEMM_PRECISION_F64: {
         result = libxsmm_dmmbatch_blas(transa, transb, m, n, k,
@@ -704,12 +706,19 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch2_omp(libxsmm_gemm_precision iprec, libxsm
       } break;
       default: result = EXIT_FAILURE;
     }
-  }
-  if (EXIT_SUCCESS != result
-    && 0 != libxsmm_get_verbosity() /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: libxsmm_gemm_batch_omp failed!\n");
+    if (EXIT_SUCCESS == result) {
+      const int verbosity = libxsmm_get_verbosity();
+      if ((2 < verbosity || 0 > verbosity) /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM WARNING: batched GEMM was falling back to BLAS!\n");
+      }
+    }
+    else if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: libxsmm_gemm_batch_omp failed!\n");
+    }
   }
 }
 
