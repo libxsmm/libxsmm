@@ -77,8 +77,13 @@ int main(/*int argc, char* argv[]*/)
   for (i = 0; i < 16; ++i) {
     if (rngs_expected[i] != rngs[i]) result = EXIT_FAILURE;
   }
+
+  if (EXIT_SUCCESS == result) { /* calculate quality of random numbers */
+    result = libxsmm_matdiff(&info, LIBXSMM_DATATYPE_F32, 1/*m*/, num_rngs,
+      NULL/*ref*/, rngs/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
+  }
 #else
-  { int j; for (j = 0; j < 100; ++j) {
+  { int j; for (j = 0; j < 1000; ++j) {
     /* setup sequence */
     libxsmm_rng_set_seed((unsigned int)time(0));
     /* fill array with random floats */
@@ -88,22 +93,13 @@ int main(/*int argc, char* argv[]*/)
       } break;
       default: libxsmm_rng_f32_seq(rngs, num_rngs);
     }
-#endif
     if (EXIT_SUCCESS == result) { /* calculate quality of random numbers */
-      result = libxsmm_matdiff(&info, LIBXSMM_DATATYPE_F32, 1/*m*/, num_rngs,
+      libxsmm_matdiff_info j_info;
+      result = libxsmm_matdiff(&j_info, LIBXSMM_DATATYPE_F32, 1/*m*/, num_rngs,
         NULL/*ref*/, rngs/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
+      if (EXIT_SUCCESS == result) libxsmm_matdiff_reduce(&info, &j_info);
     }
-
-    if (EXIT_SUCCESS == result) {
-      const double expected = 0.5 * num_rngs;
-      if (expected < 5 * LIBXSMM_DIFF(info.l1_tst, expected)) result = EXIT_FAILURE;
-    }
-
-    if (EXIT_SUCCESS == result) {
-      const double expected = 1.0 / 12.0;
-      if (expected < 5 * LIBXSMM_DIFF(info.var_tst, expected)) result = EXIT_FAILURE;
-    }
-
+#endif
     if (EXIT_SUCCESS == result) {
       libxsmm_blasint num_odd = 0, num_even = 0;
       const double scale = 0xFFFFFFFF;
@@ -121,6 +117,17 @@ int main(/*int argc, char* argv[]*/)
 #if !defined(USE_EXPECTED)
   }}
 #endif
+
+  if (EXIT_SUCCESS == result) {
+    const double range = info.max_tst - info.min_tst, expected = 0.5;
+    if (expected < 5 * LIBXSMM_DIFF(info.avg_tst, expected)) result = EXIT_FAILURE;
+    if (expected < 5 * LIBXSMM_DIFF(0.5 * range, expected)) result = EXIT_FAILURE;
+  }
+  if (EXIT_SUCCESS == result) {
+    const double expected = 1.0 / 12.0;
+    if (expected < 5 * LIBXSMM_DIFF(info.var_tst, expected)) result = EXIT_FAILURE;
+  }
+
   free(rngs);
 
   return result;
