@@ -398,6 +398,12 @@ LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x)
 }
 
 
+LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x)
+{
+  return libxsmm_product_limit(x, libxsmm_isqrt_u32(x), 0/*is_lower*/);
+}
+
+
 LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double x)
 {
 #if defined(LIBXSMM_INTRINSICS_X86)

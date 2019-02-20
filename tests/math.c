@@ -227,6 +227,11 @@ int main(int argc, char* argv[])
   if (libxsmm_product_limit(0, 0, 1) != 0) exit(EXIT_FAILURE);
   if (libxsmm_product_limit(1, 0, 1) != 0) exit(EXIT_FAILURE);
 
+  if (libxsmm_isqrt2_u32(1024) *  32 != 1024) exit(EXIT_FAILURE);
+  if (libxsmm_isqrt2_u32(1981) * 283 != 1981) exit(EXIT_FAILURE);
+  if (libxsmm_isqrt2_u32(2507) * 109 != 2507) exit(EXIT_FAILURE);
+  if (libxsmm_isqrt2_u32(1975) *  79 != 1975) exit(EXIT_FAILURE);
+
   return EXIT_SUCCESS;
 }
 

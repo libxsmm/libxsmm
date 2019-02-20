@@ -114,6 +114,8 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
 LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x);
 /* SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x);
+/* Based on libxsmm_isqrt_u32, but actual factor of x. */
+LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x);
 /* SQRT with Newton's method using double-precision. */
 LIBXSMM_API double libxsmm_dsqrt(double x);
 /* SQRT with Newton's method using single-precision. */
