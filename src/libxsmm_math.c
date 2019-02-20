@@ -121,7 +121,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
           const char *const defaultname = (('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env;
           const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
           const libxsmm_mhd_elemtype type_dst = LIBXSMM_MIN(LIBXSMM_MHD_ELEMTYPE_F32, type_src);
-          const int reshape = (1 < atoi(env + 1));
+          const int envi = atoi(env), reshape = (1 < envi || -1 > envi);
           size_t shape[2], size[2];
           char filename[256];
           if (0 == reshape) {
@@ -130,8 +130,9 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
           }
           else { /* reshape */
             const size_t x = mm * nn, y = libxsmm_isqrt2_u32((unsigned int)x);
-            shape[0] = y; shape[1] = x / y;
-            size[0] = y; size[1] = shape[1];
+            shape[0] = x / y; shape[1] = y;
+            size[0] = shape[0];
+            size[1] = shape[1];
           }
           LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-ref.mhd", defaultname, ref);
           libxsmm_mhd_write(filename, NULL/*offset*/, shape, size, 2/*ndims*/, 1/*ncomponents*/,
