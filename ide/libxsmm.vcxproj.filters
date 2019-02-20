@@ -1064,9 +1064,6 @@
     <None Include="..\scripts\tool_normalize.sh">
       <Filter>scripts</Filter>
     </None>
-    <None Include="..\scripts\tool_scan.sh">
-      <Filter>scripts</Filter>
-    </None>
     <None Include="..\.flock.sh" />
     <None Include="..\scripts\tool_test.sh">
       <Filter>scripts</Filter>
@@ -1078,6 +1075,9 @@
     <None Include="..\.test-rnn.yml" />
     <None Include="..\.test-rnn-fullci" />
     <None Include="..\.test-dnn.yml" />
+    <None Include="..\scripts\tool_checkabi.sh">
+      <Filter>scripts</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Text Include="..\version.txt" />

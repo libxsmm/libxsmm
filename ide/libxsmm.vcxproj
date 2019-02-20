@@ -1480,9 +1480,9 @@
     <None Include="..\scripts\libxsmm_specialized.py" />
     <None Include="..\scripts\libxsmm_utilities.py" />
     <None Include="..\scripts\tool_analyze.sh" />
+    <None Include="..\scripts\tool_checkabi.sh" />
     <None Include="..\scripts\tool_inspector.sh" />
     <None Include="..\scripts\tool_normalize.sh" />
-    <None Include="..\scripts\tool_scan.sh" />
     <None Include="..\scripts\tool_test.sh" />
     <None Include="..\src\template\libxsmm.f" />
   </ItemGroup>
