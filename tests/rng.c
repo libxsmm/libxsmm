@@ -26,80 +26,91 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <stdlib.h>
-#include <stdio.h>
 #include <math.h>
-#include <time.h>
-#include <stdint.h>
 
-#if defined(_OPENMP)
-# include <omp.h>
+#if !defined(USE_EXPECTED)
+# define USE_EXPECTED
+#else
+# include <time.h>
 #endif
 
 
-int main(int argc, char* argv[])
+int main(/*int argc, char* argv[]*/)
 {
-  double rng_stddev = 0;
-  float* rngs;
-  float  vrng[16];
+#if defined(USE_EXPECTED)
+  const unsigned int seed = 25071975;
+  const float rngs_expected[] = {
+    0.438140392f, 0.284636021f, 0.808342457f, 0.140940785f, 0.740890265f, 0.0189954042f, 0.4811354880f, 0.616942167f,
+    0.273835897f, 0.636928558f, 0.916998625f, 0.260923862f, 0.673431635f, 0.5160189870f, 0.0404732227f, 0.327739120f
+  };
+#else
+  const unsigned int seed = (unsigned int)time(0);
+#endif
+  libxsmm_blasint num_rngs = 1000, i;
   libxsmm_matdiff_info info;
-  libxsmm_blasint num_rngs;
-  libxsmm_blasint i;
-  unsigned long long start;
+  int result = EXIT_SUCCESS;
 
-  if (2 < argc) {
-    fprintf(stderr, "Usage:\n  %s number_rngs\n", argv[0]);
-    return EXIT_SUCCESS;
-  }
-
-  /* parse the command line and set up the test parameters */
-  num_rngs = (1 < argc ? atoi(argv[1]) : 1000);
-  assert(num_rngs >= 1);
-
-  rngs = (float*)malloc( num_rngs*sizeof(float) );
+  float *const rngs = (float*)malloc(num_rngs * sizeof(float));
   if (NULL == rngs) num_rngs = 0;
 
-  libxsmm_rng_set_seed( (uint32_t)(time(0)));
+  /* mute warning about potentially uninitialized variable */
+  libxsmm_matdiff_clear(&info);
+
+  /* setup reproducible sequence */
+  libxsmm_rng_set_seed(seed);
 
   /* fill array with random floats */
-  libxsmm_rng_f32_seq( rngs, num_rngs );
+  libxsmm_rng_f32_seq(rngs, num_rngs);
+#if defined(USE_EXPECTED)
+  /* check expected value (depends on reproducible seed) */
+  for (i = 0; i < 16; ++i) {
+    if (rngs_expected[i] != rngs[i]) result = EXIT_FAILURE;
+  }
+  /* reset state */
+  libxsmm_rng_set_seed(seed);
+  /* enforce scalar RNG */
+  libxsmm_rng_f32_seq(rngs, 15);
 
-  /* some quality measure; variance is based on discovered average rather than expected value */
-  if (EXIT_SUCCESS == libxsmm_matdiff(&info, LIBXSMM_DATATYPE_F32, 1/*m*/, num_rngs,
-    NULL/*ref*/, rngs/*tst*/, NULL/*ldref*/, NULL/*ldtst*/))
-  {
-    rng_stddev = sqrt(info.var_tst);
+  /* check expected value matches scalar RNG; check successful reset */
+  for (i = 0; i < 16; ++i) {
+    if (rngs_expected[i] != rngs[i]) result = EXIT_FAILURE;
+  }
+#endif
+  if (EXIT_SUCCESS == result) { /* calculate quality of random numbers */
+    result = libxsmm_matdiff(&info, LIBXSMM_DATATYPE_F32, 1/*m*/, num_rngs,
+      NULL/*ref*/, rngs/*tst*/, NULL/*ldref*/, NULL/*ldtst*/);
   }
 
-  start = libxsmm_timer_tick();
-  for (i = 0; i < num_rngs; ++i) {
-    libxsmm_rng_f32_seq( rngs, 1 );
+  if (EXIT_SUCCESS == result) {
+    const double expected = 0.5 * num_rngs;
+    if (expected < 5 * LIBXSMM_DIFF(info.l1_tst, expected)) result = EXIT_FAILURE;
   }
-  printf("\nlibxsmm_rng_float:  %llu cycles per random number (scalar)\n",
-    libxsmm_timer_cycles(start, libxsmm_timer_tick()) / num_rngs);
 
-  start = libxsmm_timer_tick();
-  for (i = 0; i < num_rngs; ++i) {
-    libxsmm_rng_f32_seq( vrng, 16 );
+  if (EXIT_SUCCESS == result) {
+    const double expected = 1.0 / 12.0;
+    if (expected < 5 * LIBXSMM_DIFF(info.var_tst, expected)) result = EXIT_FAILURE;
   }
-  printf("\nlibxsmm_rng_float:  %llu cycles per random number (vlen=16)\n",
-    libxsmm_timer_cycles(start, libxsmm_timer_tick()) / ((size_t)num_rngs*16));
 
-  /* let's compute some values of the random numbers */
-  printf("\nWe have generated %i random numbers uniformly distributed in [0,1(\n", num_rngs);
-  printf("We expect the following values E=0.5, Var=0.083333, Stddev=0.288675\n\n");
-  printf("minimum random number is:            %f\n", info.min_tst);
-  printf("maximum random number is:            %f\n", info.max_tst);
-  printf("sum of random numbers is:            %f\n", info.l1_tst);
-  printf("Expected Value of random numbers is: %f\n", info.avg_tst);
-  printf("Variance of random numbers is:       %f\n", info.var_tst);
-  printf("StdDev of random numbers is:         %f\n\n", rng_stddev);
+  if (EXIT_SUCCESS == result) {
+    libxsmm_blasint num_odd = 0, num_even = 0;
+    const double scale = 0xFFFFFFFF;
+    for (i = 0; i < num_rngs; ++i) {
+      const unsigned int u = (unsigned int)LIBXSMM_ROUND(rngs[i] * scale);
+      if (u & 1) {
+        ++num_odd;
+      }
+      else {
+        ++num_even;
+      }
+    }
+    if (num_rngs < 4 * LIBXSMM_DIFF(num_odd, num_even)) result = EXIT_FAILURE;
+  }
 
-  free( rngs );
+  free(rngs);
 
-  return EXIT_SUCCESS;
+  return result;
 }
 

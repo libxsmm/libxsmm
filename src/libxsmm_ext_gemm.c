@@ -51,9 +51,9 @@
 # if !defined(LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH)
 #   define LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH 8/*POT*/
 # endif
-LIBXSMM_EXTVAR(libxsmm_gemm_descriptor internal_ext_gemm_batchdesc[LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH]);
-LIBXSMM_EXTVAR(unsigned int internal_ext_gemm_batchdepth);
-LIBXSMM_EXTVAR(unsigned int internal_ext_gemm_batchsize);
+LIBXSMM_APIVAR_ARRAY(libxsmm_gemm_descriptor internal_ext_gemm_batchdesc, LIBXSMM_GEMM_EXT_MMBATCH_MAXDEPTH);
+LIBXSMM_APIVAR(unsigned int internal_ext_gemm_batchdepth);
+LIBXSMM_APIVAR(unsigned int internal_ext_gemm_batchsize);
 #endif
 
 
@@ -538,7 +538,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
     if (2 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
       const unsigned int ntasks = handle->mt * handle->nt * handle->kt;
       const double imbalance = 100.0 * (handle->nthreads - ntasks) / handle->nthreads;
-      static double max_imbalance = 0;
+      static double max_imbalance = 50.0;
       if (max_imbalance < imbalance) {
         fprintf(stderr, "LIBXSMM WARNING (XGEMM): %.0f%% imbalance (%u of %u workers utilized)!\n",
           imbalance, ntasks, handle->nthreads);

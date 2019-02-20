@@ -72,14 +72,10 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   if (0 == ref && 0 != tst) { ref = tst; tst = NULL; result_swap = 1; }
   if (0 != ref && 0 != info) {
     libxsmm_blasint mm = m, nn = n, ldr = (0 == ldref ? m : *ldref), ldt = (0 == ldtst ? m : *ldtst);
-    union { int raw; float value; } inf;
-#if defined(INFINITY)
-    inf.value = INFINITY;
-#else
-    inf.raw = 0x7F800000;
-#endif
+    double inf;
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
     libxsmm_matdiff_clear(info);
+    inf = info->min_ref;
     switch (datatype) {
       case LIBXSMM_DATATYPE_F64: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
@@ -154,10 +150,11 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         info->l2_rel = libxsmm_dsqrt(info->l2_rel);
       }
       else {
-        info->norm1_abs = info->norm1_rel = info->normi_abs = info->normi_rel = info->normf_rel
-                        = info->l2_abs = info->l2_rel = info->l1_ref = info->l1_tst
-                        = info->linf_abs = info->linf_rel
-                        = inf.value;
+        info->norm1_abs = info->l1_ref = info->min_ref = info->max_ref = info->avg_ref = info->var_ref
+                        = info->l1_tst = info->min_tst = info->max_tst = info->avg_tst = info->var_tst
+                        = info->norm1_rel = info->normi_abs = info->normi_rel = info->normf_rel
+                        = info->linf_abs = info->linf_rel = info->l2_abs = info->l2_rel
+                        = inf;
       }
       if (1 == n) {
         const libxsmm_blasint tmp = info->m;
@@ -165,6 +162,14 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         info->n = tmp;
       }
       if (0 != result_swap) {
+        info->min_tst = info->min_ref;
+        info->min_ref = 0;
+        info->max_tst = info->max_ref;
+        info->max_ref = 0;
+        info->avg_tst = info->avg_ref;
+        info->avg_ref = 0;
+        info->var_tst = info->var_ref;
+        info->var_ref = 0;
         info->l1_tst = info->l1_ref;
         info->l1_ref = 0;
       }
@@ -189,10 +194,18 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
     output->normf_rel = input->normf_rel;
     output->linf_abs = input->linf_abs;
     output->linf_rel = input->linf_rel;
-    output->l2_abs = input->l2_abs;
-    output->l2_rel = input->l2_rel;
+    output->min_ref = input->min_ref;
+    output->min_tst = input->min_tst;
+    output->max_ref = input->max_ref;
+    output->max_tst = input->max_tst;
+    output->avg_ref = input->avg_ref;
+    output->avg_tst = input->avg_tst;
+    output->var_ref = input->var_ref;
+    output->var_tst = input->var_tst;
     output->l1_ref = input->l1_ref;
     output->l1_tst = input->l1_tst;
+    output->l2_abs = input->l2_abs;
+    output->l2_rel = input->l2_rel;
   }
 }
 
@@ -200,9 +213,18 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 {
   if (NULL != info) {
+    union { int raw; float value; } inf;
+#if defined(INFINITY)
+    inf.value = INFINITY;
+#else
+    inf.raw = 0x7F800000;
+#endif
     memset(info, 0, sizeof(*info)); /* nullify */
     /* no location discovered yet with a difference */
     info->m = info->n = -1;
+    /* initial minimum/maximum of reference/test */
+    info->min_ref = +inf.value;
+    info->max_ref = -inf.value;
   }
 }
 

@@ -139,7 +139,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
   LIBXSMM_LOCK_TYPE(LIBXSMM_REGNLOCK) state;
 } internal_reglocktype;
 #   endif
-LIBXSMM_APIVAR(internal_reglocktype internal_reglock[INTERNAL_REGLOCK_MAXN]);
+LIBXSMM_APIVAR_ARRAY(internal_reglocktype internal_reglock, INTERNAL_REGLOCK_MAXN);
 # else /* RW-lock */
 #   if !defined(LIBXSMM_REG1LOCK)
 #     if defined(_MSC_VER)
@@ -157,7 +157,7 @@ LIBXSMM_APIVAR(int internal_reglock_count);
 LIBXSMM_APIVAR(size_t internal_registry_nbytes);
 LIBXSMM_APIVAR(libxsmm_kernel_info* internal_registry_keys);
 LIBXSMM_APIVAR(libxsmm_code_pointer* internal_registry);
-LIBXSMM_APIVAR(internal_statistic_type internal_statistic[2/*DP/SP*/][4/*sml/med/big/xxx*/]);
+LIBXSMM_APIVAR_ARRAY(internal_statistic_type internal_statistic[2/*DP/SP*/], 4/*sml/med/big/xxx*/);
 LIBXSMM_APIVAR(unsigned int internal_statistic_sml);
 LIBXSMM_APIVAR(unsigned int internal_statistic_med);
 LIBXSMM_APIVAR(unsigned int internal_statistic_mnk);
@@ -240,8 +240,9 @@ LIBXSMM_API_INLINE const char* internal_get_target_arch(int id)
 {
   const char* target_arch = 0;
   switch (id) {
-    case LIBXSMM_X86_AVX512_ICL: {
-      target_arch = "icl";
+    case LIBXSMM_X86_AVX512_ICL:
+    case LIBXSMM_X86_AVX512_CLX: {
+      target_arch = "clx";
     } break;
     case LIBXSMM_X86_AVX512_CORE: {
       target_arch = "skx";
@@ -526,7 +527,10 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       if ( NULL != env_dump_build && 0 != *env_dump_build && '0' != *env_dump_build
         && NULL != internal_build_state)
       {
-        fprintf(stdout, "\n\n%s\n", internal_build_state);
+        fprintf(stdout, "\n\nREPORTED_VERSION=%i.%i.%i-%i\n",
+          LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE,
+          LIBXSMM_VERSION_PATCH);
+        fprintf(stdout, "%s\n", internal_build_state);
       }
       LIBXSMM_STDIO_RELEASE();
 #if defined(_WIN32)
@@ -950,6 +954,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
     case LIBXSMM_X86_AVX512_ICL:
+    case LIBXSMM_X86_AVX512_CLX:
     case LIBXSMM_X86_AVX512_CORE:
     case LIBXSMM_X86_AVX512_KNM:
     case LIBXSMM_X86_AVX512_MIC:
@@ -1011,7 +1016,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (0 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
-    else if (0 == strcmp("icl", arch) || 0 == strcmp("icx", arch)) {
+    else if (0 == strcmp("icl", arch) || 0 == strcmp("clx", arch)) {
       target_archid = LIBXSMM_X86_AVX512_ICL;
     }
     else if (0 == strcmp("skx", arch) || 0 == strcmp("skl", arch)

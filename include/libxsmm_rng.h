@@ -41,8 +41,19 @@
 # pragma offload_attribute(pop)
 #endif
 
+
 /** Set the seed of libxsmm_rng_* (similar to srand). */
 LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed);
+
+/**
+ * This SP-RNG is using xoshiro128+ 1.0, work done by
+ * David Blackman and Sebastiano Vigna (vigna@acm.org).
+ * It is their best and fastest 32-bit generator for
+ * 32-bit floating-point numbers. They suggest to use
+ * its upper bits for floating-point generation, what
+ * we do here and generate numbers in [0,1(.
+ */
+LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count);
 
 /**
  * Returns a (pseudo-)random value based on rand/rand48 in the interval [0, n).
@@ -57,14 +68,5 @@ LIBXSMM_API unsigned int libxsmm_rng_u32(unsigned int n);
  */
 LIBXSMM_API double libxsmm_rng_f64(void);
 
-/**
- * This SP-RNG is using xoshiro128+ 1.0, work done by
- * David Blackman and Sebastiano Vigna (vigna@acm.org).
- * It is their best and fastest 32-bit generator for
- * 32-bit floating-point numbers. They suggest to use
- * its upper bits for floating-point generation, what
- * we do here and generate numbers in [0,1(.
- */
-LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count);
-
 #endif /* LIBXSMM_RNG_H */
+

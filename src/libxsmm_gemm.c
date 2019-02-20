@@ -85,7 +85,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_gemm_locktype {
   LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) state;
 } internal_gemm_locktype;
 # endif
-LIBXSMM_APIVAR(internal_gemm_locktype internal_gemm_lock[LIBXSMM_GEMM_MAXNLOCKS]);
+LIBXSMM_APIVAR_ARRAY(internal_gemm_locktype internal_gemm_lock, LIBXSMM_GEMM_MAXNLOCKS);
 LIBXSMM_APIVAR(unsigned int internal_gemm_nlocks); /* populated number of locks */
 #endif
 
@@ -553,7 +553,7 @@ LIBXSMM_API_INLINE int libxsmm_gemm_plan_internal(unsigned int nthreads,
           if ((2 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
             && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
           {
-            fprintf(stderr, "LIBXSMM WARNING: K-parallelism triggered!\n");
+            fprintf(stderr, "LIBXSMM WARNING (XGEMM): K-parallelism triggered!\n");
           }
 #endif
         }

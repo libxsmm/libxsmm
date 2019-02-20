@@ -45,7 +45,13 @@ for (i = 0; i < nn; ++i) {
     const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
     const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
 
-    if (LIBXSMM_NOTNAN(ta) && inf.value > ta) {
+    /* minimum/maximum of reference/test set */
+    if (ri < info->min_ref) info->min_ref = ri;
+    if (ri > info->max_ref) info->max_ref = ri;
+    if (ti < info->min_tst) info->min_tst = ti;
+    if (ti > info->max_tst) info->max_tst = ti;
+
+    if (LIBXSMM_NOTNAN(ta) && inf > ta) {
       /* maximum absolute error and location */
       if (info->linf_abs < di) {
         info->linf_abs = di;
@@ -59,7 +65,7 @@ for (i = 0; i < nn; ++i) {
         if (info->linf_rel < dri) info->linf_rel = dri;
         /* sum of relative differences */
         v0 = dri * dri;
-        if (inf.value > v0) {
+        if (inf > v0) {
           v0 -= compd;
           v1 = info->l2_rel + v0;
           compd = (v1 - info->l2_rel) - v0;
@@ -94,7 +100,7 @@ for (i = 0; i < nn; ++i) {
 
       /* Froebenius-norm of differences with Kahan compensation */
       v0 = di * di;
-      if (inf.value > v0) {
+      if (inf > v0) {
         v0 -= compf;
         v1 = info->l2_abs + v0;
         compf = (v1 - info->l2_abs) - v0;
@@ -132,6 +138,17 @@ for (i = 0; i < nn; ++i) {
 }
 
 if (0 == result_nan) {
+  const libxsmm_blasint size = mm * nn;
+  double compr_var = 0, compt_var = 0;
+
+  /* initial variance */
+  LIBXSMM_ASSERT(0 == info->var_ref);
+  LIBXSMM_ASSERT(0 == info->var_tst);
+
+  if (0 != size) { /* final average */
+    info->avg_ref = info->l1_ref / size;
+    info->avg_tst = info->l1_tst / size;
+  }
   /* Infinity-norm relative to reference */
   if (0 < normr) {
     info->normi_rel = info->normi_abs / normr;
@@ -161,10 +178,21 @@ if (0 == result_nan) {
     for (i = 0; i < nn; ++i) {
       const double ri = real_ref[i*ldr + j], ti = (0 != real_tst ? real_tst[i*ldt + j] : 0);
       const double di = (0 != real_tst ? (ri < ti ? (ti - ri) : (ri - ti)) : 0);
+      const double rd = ri - info->avg_ref, td = ti - info->avg_tst;
       const double ra = LIBXSMM_ABS(ri), ta = LIBXSMM_ABS(ti);
 
+      /* variance of reference set with Kahan compensation */
+      double v0 = rd * rd - compr_var, v1 = info->var_ref + v0;
+      compr_var = (v1 - info->var_ref) - v0;
+      info->var_ref = v1;
+
+      /* variance of test set with Kahan compensation */
+      v0 = td * td - compt_var; v1 = info->var_tst + v0;
+      compt_var = (v1 - info->var_tst) - v0;
+      info->var_tst = v1;
+
       /* column-wise sum of reference values with Kahan compensation */
-      double v0 = ra - compri, v1 = normri + v0;
+      v0 = ra - compri; v1 = normri + v0;
       compri = (v1 - normri) - v0;
       normri = v1;
 
@@ -195,6 +223,10 @@ if (0 == result_nan) {
   }
   else { /* should not happen */
     info->norm1_rel = 0;
+  }
+  if (0 != size) { /* final variance */
+    info->var_ref /= size;
+    info->var_tst /= size;
   }
 }
 
