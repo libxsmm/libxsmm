@@ -50,7 +50,7 @@ LIBXSMM_APIVAR_ARRAY(unsigned int internal_rng_state2, 16);
 LIBXSMM_APIVAR_ARRAY(unsigned int internal_rng_state3, 16);
 
 
-LIBXSMM_API_INLINE void libxsmm_rng_float_jump(uint32_t* state0, uint32_t* state1, uint32_t* state2, uint32_t* state3)
+LIBXSMM_API_INLINE void internal_rng_float_jump(uint32_t* state0, uint32_t* state1, uint32_t* state2, uint32_t* state3)
 {
   static const uint32_t jump_table[] = { 0x8764000b, 0xf542d2d3, 0x6fa035c3, 0x77f2db5b };
   uint32_t s0 = 0, s1 = 0, s2 = 0, s3 = 0;
@@ -83,7 +83,7 @@ LIBXSMM_API_INLINE void libxsmm_rng_float_jump(uint32_t* state0, uint32_t* state
 }
 
 
-LIBXSMM_API_INLINE float libxsmm_rng_scalar_float_next(int i)
+LIBXSMM_API_INLINE float internal_rng_scalar_float_next(int i)
 {
   const uint32_t rng_mantissa = (internal_rng_state0[i] + internal_rng_state3[i]) >> 9;
   const uint32_t t = internal_rng_state1[i] << 9;
@@ -101,8 +101,8 @@ LIBXSMM_API_INLINE float libxsmm_rng_scalar_float_next(int i)
 }
 
 
-LIBXSMM_API void internal_rng_set_seed_sw(uint32_t seed);
-LIBXSMM_API void internal_rng_set_seed_sw(uint32_t seed)
+LIBXSMM_API_INTERN void internal_rng_set_seed_sw(uint32_t seed);
+LIBXSMM_API_INTERN void internal_rng_set_seed_sw(uint32_t seed)
 {
   static const uint32_t temp_state[] = {
      31,  30,  29,  28,  27,  26,  25,  24,  23,  22,  21,  20,  19,  18,  17,  16,
@@ -121,7 +121,7 @@ LIBXSMM_API void internal_rng_set_seed_sw(uint32_t seed)
     internal_rng_state3[i] = seed + temp_state[i+48];
   }
   for (i = 0; i < 16; ++i) {
-    libxsmm_rng_float_jump(/* progress each sequence by 2^64 */
+    internal_rng_float_jump( /* progress each sequence by 2^64 */
       internal_rng_state0 + i, internal_rng_state1 + i,
       internal_rng_state2 + i, internal_rng_state3 + i);
   }
@@ -137,7 +137,7 @@ LIBXSMM_API_INLINE void internal_rng_f32_seq_sw(float* rngs, libxsmm_blasint cou
 {
   libxsmm_blasint i = 0;
   for (; i < count; ++i) {
-    rngs[i] = libxsmm_rng_scalar_float_next(LIBXSMM_MOD2(i, 16));
+    rngs[i] = internal_rng_scalar_float_next(LIBXSMM_MOD2(i, 16));
   }
 }
 
@@ -171,7 +171,7 @@ void internal_rng_f32_seq_avx512(float* rngs, libxsmm_blasint count)
     }
     LIBXSMM_ASSERT(count < i + 16);
     do { /* scalar remainder */
-      rngs[i] = libxsmm_rng_scalar_float_next(LIBXSMM_MOD2(i, 16));
+      rngs[i] = internal_rng_scalar_float_next(LIBXSMM_MOD2(i, 16));
       ++i;
     } while (i < count);
     /* bring scalar state to AVX-512 */
