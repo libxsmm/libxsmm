@@ -101,7 +101,7 @@ libxsmm_dnn_err_t libxsmm_dnn_pooling_st_bwd_custom_bf16_bf16(libxsmm_dnn_poolin
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
-  return status;;
+  return status;
 }
 
 
