@@ -527,9 +527,9 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       if ( NULL != env_dump_build && 0 != *env_dump_build && '0' != *env_dump_build
         && NULL != internal_build_state)
       {
-        fprintf(stdout, "\n\nREPORTED_VERSION=%i.%i.%i-%i\n",
+        fprintf(stdout, "\n\nREPORTED_VERSION=%i\n", LIBXSMM_VERSION4(
           LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE,
-          LIBXSMM_VERSION_PATCH);
+          LIBXSMM_VERSION_PATCH));
         fprintf(stdout, "%s\n", internal_build_state);
       }
       LIBXSMM_STDIO_RELEASE();
