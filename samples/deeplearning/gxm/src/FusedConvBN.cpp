@@ -291,8 +291,6 @@ FusedConvBNNode::FusedConvBNNode(FusedConvBNParams* p, MLEngine* e): NNNode(p, e
     }
   }
   else {
-    for(int i=0; i<bottom_.size(); i++)
-      tenBotDiff_[i] = NULL;
     tenMidDiff_ = NULL;
     tenWeightDiff_ = NULL;
     tenWeightInc_ = NULL;
