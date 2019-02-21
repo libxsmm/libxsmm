@@ -373,12 +373,24 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   int tmp_block = 0;
   int blockifm = 8;
   int block_j = 14;
+  int loop_order = 0;
 
   handle->fwd_ofh_rb = 1;
   handle->fwd_ofw_rb = handle->ofw;
   handle->bwd_ofh_rb = 1;
   handle->bwd_ofw_rb = handle->ofw;
   handle->fm_lp_block = 1;
+
+  /* Loop order tuning  */
+  if (handle->desc.H >= 28 && handle->desc.R == 1) {
+    loop_order = 1;
+  }
+  handle->loop_order = loop_order;
+
+  if (handle->ofw == 112) {
+    handle->fwd_ofh_rb = 1;
+    handle->fwd_ofw_rb = 112;
+  }
 
   if (handle->ofw == 56) {
     handle->fwd_ofh_rb = 1;
@@ -403,6 +415,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
 
   if (handle->ofw == 7) {
     handle->fwd_ofh_rb = 1;
+    if (handle->desc.u == 1 && handle->desc.v == 1 && handle->desc.R == 1 && handle->desc.S == 1) {
+      handle->fwd_ofh_rb = 7;
+    }
     handle->fwd_ofw_rb = 7;
   }
 
