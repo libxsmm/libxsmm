@@ -556,6 +556,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction_reduce
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   void (*xmm)(const void* a, const void* b, void* c, ...);
+  void (*xbm)(const void** a, const void** b, void* c, const unsigned long long* count, ...);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wimmfunction wimm; libxsmm_wsmmfunction wsmm; libxsmm_bsmmfunction bsmm;
   libxsmm_dmmfunction_reducebatch dmr; libxsmm_smmfunction_reducebatch smr; libxsmm_bsmmfunction_reducebatch bsmr;
 } libxsmm_xmmfunction;

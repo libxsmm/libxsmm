@@ -678,7 +678,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch2_omp(libxsmm_gemm_precision iprec, libxsm
       NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
       NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
       0 != ldc ? *ldc : m, alpha, beta, gemm_flags, libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
-    libxsmm_set_gemm_batchflag(descriptor, c, index_stride, stride_a, stride_b, stride_c);
+    libxsmm_set_gemm_batchflag(descriptor, c, index_stride, batchsize, 1/*multi-threaded*/);
     kernel = libxsmm_xmmdispatch(descriptor);
     if (NULL != kernel.xmm) {
       result = libxsmm_mmbatch_omp(kernel, index_base, index_stride,
