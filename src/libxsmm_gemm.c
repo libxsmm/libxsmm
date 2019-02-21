@@ -58,7 +58,9 @@
 #if !defined(LIBXSMM_GEMM_BATCHGRAIN)
 # define LIBXSMM_GEMM_BATCHGRAIN 128
 #endif
-
+#if !defined(LIBXSMM_GEMM_BATCHREDUCE_SIZE)
+# define LIBXSMM_GEMM_NBATCHREDUCE ((LIBXSMM_MAX_NTHREADS) * (LIBXSMM_GEMM_BATCHSIZE) / 4)
+#endif
 #if defined(LIBXSMM_BUILD)
 # define LIBXSMM_WEAK LIBXSMM_API_EXPORT LIBXSMM_ATTRIBUTE_WEAK
 #else
@@ -226,7 +228,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE");
     void* p;
     if (NULL != env_r && 0 != *env_r && 0 != atoi(env_r) &&
-      EXIT_SUCCESS == libxsmm_xmalloc(&p, 2/*A and B-matrices*/ * sizeof(void*) * (LIBXSMM_MAX_NTHREADS) * (LIBXSMM_GEMM_BATCHSIZE),
+      EXIT_SUCCESS == libxsmm_xmalloc(&p, /*A and B-matrices*/2 * sizeof(void*) * (LIBXSMM_GEMM_NBATCHREDUCE),
         0/*auto-alignment*/, LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE,
         NULL/*extra*/, 0/*extra_size*/))
     {
@@ -1294,7 +1296,7 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
 #endif
     {
       const size_t n = (size_t)size * nthreads;
-      if (n <= ((LIBXSMM_MAX_NTHREADS) * (LIBXSMM_GEMM_BATCHSIZE))) {
+      if (n <= (LIBXSMM_GEMM_NBATCHREDUCE)) {
         LIBXSMM_ASSERT(NULL != internal_gemm_batch_ptrs);
         if (0 != index_stride) { /* stride arrays contain indexes */
           const size_t end1 = (size_t)end * index_stride, offset = (size_t)tid * size;
