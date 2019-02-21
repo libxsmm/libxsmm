@@ -419,7 +419,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_winograd_st_fwd_custom
       typedef libxsmm_smmfunction gemm_function;
       /* let's do a ofmblock x ofw_rb x ifmblock GEMM :-) or in other words M=nbOfm, N=ofw, K=nbIfm (col-major) */
       gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ofw, handle->ifmblock, NULL, &ldx, NULL, NULL, NULL, NULL, NULL);
-# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_generic.tpl.c"
+//# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_generic.tpl.c"
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;

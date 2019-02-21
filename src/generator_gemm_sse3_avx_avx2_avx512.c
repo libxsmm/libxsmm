@@ -75,6 +75,13 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   if ( (strcmp(i_arch, "skx") == 0) ||
        (strcmp(i_arch, "icl") == 0)   ) {
     l_n_blocking = 6;
+    /* Special cases for sizes arising from CNNs (Resnet50)  */
+    if (i_xgemm_desc->n == 7) {
+      l_n_blocking = 4;
+    }
+     if (i_xgemm_desc->n == 14) {
+      l_n_blocking = 5;
+    }
   }
 
   /* Make sure we properly adjust A,B prefetch pointers in case of batch-reduce gemm kernel  */

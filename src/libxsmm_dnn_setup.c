@@ -368,9 +368,43 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_layer* handle ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  int tmp_max_c_block = 16;
-  int tmp_max_k_block = 16;
+  int tmp_max_c_block = 64;
+  int tmp_max_k_block = 64;
   int tmp_block = 0;
+  int blockifm = 8;
+  int block_j = 14;
+
+  handle->fwd_ofh_rb = 1;
+  handle->fwd_ofw_rb = handle->ofw;
+  handle->bwd_ofh_rb = 1;
+  handle->bwd_ofw_rb = handle->ofw;
+  handle->fm_lp_block = 1;
+
+  if (handle->ofw == 56) {
+    handle->fwd_ofh_rb = 1;
+    handle->fwd_ofw_rb = 28;
+  }
+
+  if (handle->ofw == 28) {
+    handle->fwd_ofh_rb = 1;
+    handle->fwd_ofw_rb = 28;
+  }
+
+  if (handle->ofw == 14) {
+    handle->fwd_ofh_rb = 2;
+    handle->fwd_ofw_rb = 14;
+    if (handle->desc.u != 1 || handle->desc.v != 1  ) {
+      handle->fwd_ofh_rb = 1;
+    }
+    if (handle->desc.R != 1 || handle->desc.S != 1) {
+      handle->fwd_ofh_rb = 1;
+    }
+  }
+
+  if (handle->ofw == 7) {
+    handle->fwd_ofh_rb = 1;
+    handle->fwd_ofw_rb = 7;
+  }
 
   if ( handle->desc.C < tmp_max_c_block ) {
     handle->ifmblock = handle->desc.C;
@@ -390,11 +424,35 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   }
   handle->blocksofm = handle->desc.K / handle->ofmblock;
 
-  handle->fwd_ofh_rb = 1;
-  handle->fwd_ofw_rb = handle->ofw;
-  handle->bwd_ofh_rb = 1;
-  handle->bwd_ofw_rb = handle->ofw;
-  handle->fm_lp_block = 1;
+  if (handle->desc.R == 1 && handle->desc.S == 1) {
+    handle->blocksifm_blocking = handle->blocksifm;
+    if ( (handle->desc.C == 1024 && handle->desc.K == 256) || (handle->desc.C == 2048 && handle->desc.K == 512) ) {
+      handle->blocksifm_blocking = 2;
+    }
+  } else {
+    handle->blocksifm_blocking = 1;
+  }
+
+  handle->avoid_acc_load = 0;
+  if (handle->desc.R == 1 && handle->desc.S == 1 && handle->blocksifm_blocking == handle->blocksifm && (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+    handle->avoid_acc_load = 1;
+  }
+
+  /* Feature map block tuning */
+  while (blockifm % handle->blocksifm_blocking != 0) {
+    blockifm++;
+  }
+  handle->block_fwd_ofm = LIBXSMM_MIN(handle->blocksofm, 16);
+  handle->block_fwd_ifm = blockifm;
+
+  /* Spatial dimension block tuning  */
+  if ((handle->ofh == 7 && handle->desc.u == 2) || (handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
+    block_j = 4;
+  }
+  while ( block_j % handle->fwd_ofh_rb != 0 ) {
+    block_j--;
+  }
+  handle->block_fwd_oj = block_j;
 
   /* here we need to handle BF16 again */
   if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.C % 2 == 0) && (handle->desc.K % 2 == 0) ) {
@@ -746,7 +804,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     /* TODO: proper error handling */
     LIBXSMM_ASSERT(NULL != handle->n_entries_fwd && NULL != handle->compute_fwd_indices_ptrs);
     LIBXSMM_ASSERT(NULL != handle->bn_stats_indices_ptrs && NULL != handle->bn_aux_stats_indices_ptrs && NULL != handle->bn_aux_input_indices_ptrs && NULL != handle->kernel_fwd_variant_ptrs);
-  LIBXSMM_ASSERT(NULL != handle->n_fwd_code_segments && NULL != handle->fwd_code_segments);
+    LIBXSMM_ASSERT(NULL != handle->n_fwd_code_segments && NULL != handle->fwd_code_segments);
     LIBXSMM_ASSERT(NULL != handle->ofh_fwd_start && NULL != handle->ofh_fwd_end);
 
     memset( handle->n_entries_fwd, 0, handle->desc.threads * sizeof(int) );

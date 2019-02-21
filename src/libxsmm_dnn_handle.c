@@ -88,6 +88,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   handle->use_bwd_generic = 1;
   handle->use_upd_generic = 1;
 
+#if 0
   /* If we have AVX512 and kernel streams is enabled, and we use libxsmm's custom format, then we generate specialized code */
   if ( (LIBXSMM_X86_AVX512 <= libxsmm_target_archid)                &&
        (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) &&
@@ -123,6 +124,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
       libxsmm_dnn_setup_scratch(handle);
     }
   }
+#endif
 
   if (0 != noarch) { /* Setup generic code generation */
     status = libxsmm_dnn_setup_generic(handle);
