@@ -1276,14 +1276,13 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
     if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 == (LIBXSMM_GEMM_FLAG_BETA_0 & info->flags))
 #endif
     {
-      const size_t n = sizeof(void*) * size;
-      if (size <= internal_gemm_batch_ptrs_n) {
+      if ((size_t)size <= internal_gemm_batch_ptrs_n) {
         result = EXIT_SUCCESS;
       }
       else { /* resize buffer */
-        void* p = (void*)&internal_gemm_batch_ptrs;
+        void *const p = (void*)&internal_gemm_batch_ptrs;
         libxsmm_xfree(internal_gemm_batch_ptrs);
-        result = libxsmm_xmalloc(&p, 2 * n, 0/*auto-alignment*/,
+        result = libxsmm_xmalloc((void**)p, 2 * sizeof(void*) * size, 0/*auto-alignment*/,
           LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE,
           NULL/*extra*/, 0/*extra_size*/);
         internal_gemm_batch_ptrs_n = size;
