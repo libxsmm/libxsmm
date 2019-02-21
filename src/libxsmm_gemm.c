@@ -89,7 +89,7 @@ LIBXSMM_APIVAR_ARRAY(internal_gemm_locktype internal_gemm_lock, LIBXSMM_GEMM_MAX
 LIBXSMM_APIVAR(unsigned int internal_gemm_nlocks); /* populated number of locks */
 #endif
 
-LIBXSMM_APIVAR(size_t internal_gemm_batch_ptrs_n);
+LIBXSMM_APIVAR(libxsmm_blasint internal_gemm_batch_ptrs_n);
 LIBXSMM_APIVAR(const void** internal_gemm_batch_ptrs);
 
 /** Prefetch strategy for tiled GEMM. */
@@ -221,6 +221,11 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     const char *const env_t = getenv("LIBXSMM_GEMM_TASKS");
     libxsmm_gemm_taskscale = ((NULL == env_t || 0 == *env_t)
       ? 0/*disabled*/ : (LIBXSMM_GEMM_TASKSCALE * atoi(env_t)));
+  }
+  { /* determines if batch-reduce kernel is considered */
+    const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE");
+    internal_gemm_batch_ptrs_n = ((NULL == env_r || 0 == *env_r || 0 == atoi(env_r))
+      ? 0/*disabled*/ : -1/*enabled*/);
   }
   LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_GEMM_LOCK, &attr);
 }
@@ -1272,28 +1277,31 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
       }
     }
     else /* LIBXSMM_GEMM_FLAG_BATCH_REDUCE */
-#if (0 != LIBXSMM_SYNC) && defined(LIBXSMM_GEMM_CHECK)
-    if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 == (LIBXSMM_GEMM_FLAG_BETA_0 & info->flags))
+#if defined(LIBXSMM_GEMM_CHECK)
+    if (
+# if (0 != LIBXSMM_SYNC)
+      (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize) &&
+# endif
+      (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & info->flags)))
 #endif
     {
-      if ((size_t)size <= internal_gemm_batch_ptrs_n) {
+      if ((size * nthreads) <= internal_gemm_batch_ptrs_n) {
         result = EXIT_SUCCESS;
       }
       else { /* resize buffer */
         void *const p = (void*)&internal_gemm_batch_ptrs;
         libxsmm_xfree(internal_gemm_batch_ptrs);
-        result = libxsmm_xmalloc((void**)p, 2 * sizeof(void*) * size, 0/*auto-alignment*/,
-          LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE,
-          NULL/*extra*/, 0/*extra_size*/);
-        internal_gemm_batch_ptrs_n = size;
+        internal_gemm_batch_ptrs_n = size * nthreads;
+        result = libxsmm_xmalloc((void**)p, 2 * sizeof(void*) * internal_gemm_batch_ptrs_n, 0/*auto-alignment*/,
+          LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE, NULL/*extra*/, 0/*extra_size*/);
       }
       if (EXIT_SUCCESS == result) {
         LIBXSMM_ASSERT(NULL != internal_gemm_batch_ptrs);
         if (0 != index_stride) { /* stride arrays contain indexes */
-          const size_t end1 = end * index_stride;
-          size_t i = begin * index_stride;
+          const size_t end1 = (size_t)end * index_stride, n = (size_t)tid * size;
+          size_t i = (size_t)begin * index_stride;
           char *ci = c0 + (size_t)(NULL != stride_c ? ((LIBXSMM_ACCESS(const libxsmm_blasint, stride_c, i) - index_base) * typesize) : 0), *cn = ci;
-          const void **ai = internal_gemm_batch_ptrs, **bi = internal_gemm_batch_ptrs + size;
+          const void **ai = internal_gemm_batch_ptrs + n, **bi = ai + internal_gemm_batch_ptrs_n;
           do {
             unsigned long long count;
             for (count = 0; i < end1 && ci == cn; ++count) {
@@ -1303,8 +1311,8 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
               cn = c0 + (size_t)(NULL != stride_c ? ((LIBXSMM_ACCESS(const libxsmm_blasint, stride_c, j) - index_base) * typesize) : 0);
               i = j;
             }
-            ai = internal_gemm_batch_ptrs;
-            bi = internal_gemm_batch_ptrs + size;
+            ai = internal_gemm_batch_ptrs + n;
+            bi = ai + internal_gemm_batch_ptrs_n;
             kernel.xbm(ai, bi, ci, &count);
             ci = cn;
           } while (i < end1);
@@ -1312,6 +1320,9 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
         else { /* TODO */
           result = EXIT_FAILURE;
         }
+      }
+      else {
+        internal_gemm_batch_ptrs_n = 0;
       }
     }
   }
@@ -1477,7 +1488,7 @@ LIBXSMM_API void libxsmm_set_gemm_batchflag(libxsmm_gemm_descriptor* descriptor,
 {
   if (NULL != descriptor) {
     if (0 != (LIBXSMM_GEMM_FLAG_BETA_0 & descriptor->flags)) {
-      const libxsmm_blasint vw = (LIBXSMM_X86_AVX512 <= libxsmm_target_archid ? 64 : 32);
+      const uintptr_t vw = (LIBXSMM_X86_AVX512 <= libxsmm_target_archid ? 64 : 32);
       /* assume that all C-matrices are aligned eventually */
       if (0 == LIBXSMM_MOD2((uintptr_t)c, vw)
 #if 0 /* should fall-back in BE */
@@ -1492,14 +1503,13 @@ LIBXSMM_API void libxsmm_set_gemm_batchflag(libxsmm_gemm_descriptor* descriptor,
         descriptor->flags |= (0 == LIBXSMM_MOD2(csize, vw) ? LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT : 0);
       }
     }
-    else /* check if reduce-batch kernel can be used */
+    else if ( /* check if reduce-batch kernel can be used */
 #if (0 != LIBXSMM_SYNC)
-    if (0 == multithreaded || 0 == internal_gemm_nlocks || 0 > batchsize)
-#endif
+      (0 == multithreaded || 0 == internal_gemm_nlocks || 0 > batchsize) &&
+#endif/* TODO: DP */
+      LIBXSMM_DATATYPE_F64 < descriptor->datatype && 0 != internal_gemm_batch_ptrs_n)
     {
-#if 0 /* TODO */
       descriptor->flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE;
-#endif
     }
   }
 }
