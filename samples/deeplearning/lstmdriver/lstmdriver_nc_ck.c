@@ -404,7 +404,8 @@ LIBXSMM_INLINE void lstm_fwd_copy_bias(int N, int K, float *bigold, float *bcgol
   LIBXSMM_VLA_DECL(3, float, icfogold, icfogoldt, N, 4 * K);
   int i, l;
 #if defined(_OPENMP)
-# pragma omp parallel for private(i, l) collapse(2)
+  LIBXSMM_OMP_VAR(i); LIBXSMM_OMP_VAR(l);
+# pragma omp parallel for private(i, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (i = 0; i < N; i++) {
     for (l = 0; l < K; l++) {
@@ -426,7 +427,7 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
   __m512 minus1 = _mm512_set1_ps (-1.0f);
   __m512 plus1  = _mm512_set1_ps (1.0f);
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = 0; l < rem; l+=16) {
@@ -470,7 +471,7 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
     }
   }
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = rem; l < K; l++) {
@@ -533,7 +534,7 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
   int rem = (K/16)*16;
   __m512 plus1  = _mm512_set1_ps (1.0f);
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = 0; l < rem; l+=16) {
@@ -594,7 +595,7 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
     }
   }
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = rem; l < K; l++) {
