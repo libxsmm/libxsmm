@@ -496,7 +496,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   /* release global services */
   libxsmm_hash_finalize();
   /* dump per-node info */
-  if ((NULL != env_dump_build && NULL != internal_build_state) || NULL != env_dump_files) {
+  if (NULL != env_dump_build || NULL != env_dump_files) {
 #if defined(_WIN32)
     const HANDLE singleton = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
     const char *const delims = ";,";
@@ -524,13 +524,13 @@ LIBXSMM_API_INLINE void internal_finalize(void)
           }
         }
       }
-      if ( NULL != env_dump_build && 0 != *env_dump_build && '0' != *env_dump_build
-        && NULL != internal_build_state)
-      {
+      if (NULL != env_dump_build && 0 != *env_dump_build && '0' != *env_dump_build) {
         fprintf(stdout, "\n\nREPORTED_VERSION=%i\n", LIBXSMM_VERSION4(
           LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE,
           LIBXSMM_VERSION_PATCH));
-        fprintf(stdout, "%s\n", internal_build_state);
+        if (NULL != internal_build_state) {
+          fprintf(stdout, "%s\n", internal_build_state);
+        }
       }
       LIBXSMM_STDIO_RELEASE();
 #if defined(_WIN32)
