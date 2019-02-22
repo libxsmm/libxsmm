@@ -47,7 +47,10 @@ unsigned long long n_blocks;
 /* offset output pointer in case of physical output padding */
 element_output_type* out = (element_output_type*)handle->reg_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 LIBXSMM_VLA_DECL(5, element_output_type, output, out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-LIBXSMM_VLA_DECL(5, const element_input_type, input, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+element_input_type *input_ptr = (handle->pack_input == 1) ?(element_input_type*)handle->scratch1 + handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock * handle->desc.R * handle->desc.S : (element_input_type*)handle->reg_input->data;
+const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
+const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
+LIBXSMM_VLA_DECL(5, element_input_type, input, input_ptr, handle->blocksifm, IFH, IFW, handle->ifmblock);
 LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 
 if ( imgpt <= 1 ) {
@@ -57,6 +60,24 @@ if ( imgpt <= 1 ) {
   nOfmBlocks = (handle->blocksofm + threads_per_image - 1) / threads_per_image;
   my_ofm_start = LIBXSMM_MIN(myOfmId * nOfmBlocks, handle->blocksofm);
   my_ofm_end = LIBXSMM_MIN((myOfmId+1) * nOfmBlocks, handle->blocksofm);
+}
+
+if (handle->pack_input == 1) {
+  LIBXSMM_VLA_DECL(5, element_input_type, input_src, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  for (img = my_img_start; img < my_img_end; img++) {
+    for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
+      for (oj = 0; oj < handle->ofh; oj++) {
+        for (oi = 0; oi < handle->ofw; oi++) {
+          ij_use = oj * handle->desc.u;
+          ii_use = oi * handle->desc.v;
+          LIBXSMM_PRAGMA_SIMD
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+              LIBXSMM_VLA_ACCESS(5,  input, img, ifm1, oj, oi, ifm2, handle->blocksifm, IFH, IFW, handle->ifmblock) = LIBXSMM_VLA_ACCESS(5,  input_src,  img, ifm1, ij_use, ii_use, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            }
+        }
+      }
+    }
+  }
 }
 
 if (handle->loop_order == 0) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
@@ -84,8 +105,13 @@ if (handle->loop_order == 0) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
               for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
                 for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
                   /* Prepare batch-reduce kernel arguments */
-                  ij_use = oj * handle->desc.u;
-                  ii_use = oi * handle->desc.v;
+                  if (handle->pack_input == 1) {
+                    ij_use = oj;
+                    ii_use = oi;
+                  } else {
+                    ij_use = oj * handle->desc.u;
+                    ii_use = oi * handle->desc.v;
+                  }
                   oi_use = oi;
                   oj_use = oj;
                   ind = 0;
@@ -93,7 +119,7 @@ if (handle->loop_order == 0) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
                     for (kj = 0; kj < handle->desc.R; kj++) {
                       for (ki = 0; ki < handle->desc.S; ki++) {
                         A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm2, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-                        B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                        B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                         ind++;
                       }
                     }
@@ -133,8 +159,13 @@ if (handle->loop_order == 1) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
                 }
                 for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
                   /* Prepare batch-reduce kernel arguments */
-                  ij_use = oj * handle->desc.u;
-                  ii_use = oi * handle->desc.v;
+                  if (handle->pack_input == 1) {
+                    ij_use = oj;
+                    ii_use = oi;
+                  } else {
+                    ij_use = oj * handle->desc.u;
+                    ii_use = oi * handle->desc.v;
+                  }
                   oi_use = oi;
                   oj_use = oj;
                   ind = 0;
@@ -142,7 +173,7 @@ if (handle->loop_order == 1) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
                     for (kj = 0; kj < handle->desc.R; kj++) {
                       for (ki = 0; ki < handle->desc.S; ki++) {
                         A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm2, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-                        B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                        B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                         ind++;
                       }
                     }
@@ -158,47 +189,4 @@ if (handle->loop_order == 1) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
     }
   }
 }
-
-#if 0
-if (loop_order == N_Kb_h_w_k_c ) {
-
-}
-#endif
-
-#if 0
-/* perform convolution */
-for (imgofm1 = thr_begin; imgofm1 < thr_end; ++imgofm1) i{
-  img = imgofm1 / handle->blocksofm;
-  ofm1 = imgofm1 % handle->blocksofm;
-  for (ifm1 = 0; ifm1 < handle->blocksifm; ++ifm1) {
-    /* reset result buffer to zero when intent is to overwrite when first block
-       of input channels should be convoluted */
-    if ( (ifm1 == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && ((handle->fuse_ops & LIBXSMM_DNN_CONV_FUSE_BIAS) == 0) ) {
-      /* set output feature map to zero */
-      for (oj = 0; oj < handle->ofh; ++oj) {
-        element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
-        for (oi = 0; oi < handle->ofw; ++oi) {
-          LIBXSMM_PRAGMA_SIMD
-            for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-              temp_ptr[ofm2] = (element_output_type)0;
-            }
-          temp_ptr += handle->ofmblock;
-        }
-      }
-    }
-    /* run convolution */
-    for (oj = 0; oj < handle->ofh; ++oj) {
-      ij = oj * handle->desc.u;
-      ii = 0; oi = 0;
-      for (kj = 0; kj < handle->desc.R; ++kj) {
-        for (ki = 0; ki< handle->desc.S; ++ki) {
-          gemm_kernel( &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock),
-              &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm1, ij + kj, ii + ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
-              &LIBXSMM_VLA_ACCESS(5, output,  img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock) );
-        }
-      }
-    }
-  }
-}
-#endif
 
