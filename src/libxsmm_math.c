@@ -116,6 +116,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
     LIBXSMM_ASSERT(info->m < mm && info->n < nn);
     if (EXIT_SUCCESS == result) {
       const char *const env = getenv("LIBXSMM_DUMP");
+      LIBXSMM_INIT
       if (0 != env && 0 != *env && '0' != *env) {
         if ('-' != *env || (0 <= info->m && 0 <= info->n)) {
           const char *const defaultname = (('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env;
