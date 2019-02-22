@@ -489,6 +489,9 @@ LIBXSMM_API_INLINE void internal_finalize(void)
         }
       }
     }
+    else {
+      fprintf(stderr, "\n");
+    }
     /* synchronize I/O */
     LIBXSMM_STDIO_RELEASE();
   }
