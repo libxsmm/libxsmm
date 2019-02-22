@@ -96,7 +96,7 @@ class TransposeTune(MeasurementInterface):
         run_result = self.call_program(run_cmd)
         if (0 == run_result["returncode"]):
             match = re.search(
-                "\s*duration:\s+([0-9]+(\.[0-9]*)*)",
+                "\\s*duration:\\s+([0-9]+(\\.[0-9]*)*)",
                 run_result["stdout"])
             assert(match is not None)
             mseconds = float(match.group(1)) / nruns
