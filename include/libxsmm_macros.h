@@ -679,8 +679,10 @@
 #if !defined(_Float64x) && defined(LIBXSMM_GLIBC_FPTYPES)
 # define _Float64x _Float64
 #endif
-#if /* !LIBXSMM_INTEL_COMPILER */defined(__INTEL_COMPILER) && !defined(__clang__) /* TODO */
+#if !defined(__has_feature) && !defined(__clang__)
 # define __has_feature(A) 0
+#endif
+#if !defined(__has_builtin) && !defined(__clang__)
 # define __has_builtin(A) 0
 #endif
 
