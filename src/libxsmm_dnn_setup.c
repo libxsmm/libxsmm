@@ -404,9 +404,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   }
 
   if (handle->ofw == 14) {
-    handle->fwd_ofh_rb = 2;
+    handle->fwd_ofh_rb = 14;
     handle->fwd_ofw_rb = 14;
-    if (handle->desc.u != 1 || handle->desc.v != 1  ) {
+    if (handle->desc.u != 1 || handle->desc.v != 1) {
+      handle->pack_input = 1;
+    }
+    if ((handle->desc.u != 1 || handle->desc.v != 1) && handle->desc.K == 256) {
+      handle->pack_input = 0;
       handle->fwd_ofh_rb = 1;
     }
     if (handle->desc.R != 1 || handle->desc.S != 1) {
@@ -469,7 +473,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->block_fwd_ifm = blockifm;
 
   /* Spatial dimension block tuning  */
-  if ((handle->ofh == 14 && handle->desc.R != 3 ) ||  handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
+  if ( handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
     block_j = 4;
   }
   while ( block_j % handle->fwd_ofh_rb != 0 ) {
