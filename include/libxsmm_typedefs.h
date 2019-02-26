@@ -102,8 +102,8 @@
 /* Construct an enumerator (libxsmm_gemm_precision) from a built-in type (float, double, etc.). */
 #define LIBXSMM_GEMM_PRECISION(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_GEMM_PRECISION_, LIBXSMM_TYPESYMBOL(TYPE))
 /* Construct GEMM-precision from built-in input/output types (float, double, etc.). */
-#define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_GEMM_PRECISION(ITYPE), \
-                                                              LIBXSMM_GEMM_PRECISION(OTYPE))
+#define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) (libxsmm_gemm_precision)LIBXSMM_GETENUM( \
+  LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE))
 
 /** Necessary size to store a descriptor/blob (GEMM, MCOPY, TRANS). */
 #define LIBXSMM_DESCRIPTOR_MAXSIZE 32

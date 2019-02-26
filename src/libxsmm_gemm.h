@@ -188,14 +188,6 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid);
 /** Finalizes the GEMM facility; NOT thread-safe. */
 LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void);
 
-/** Determines the size of the element-type given by precision. */
-LIBXSMM_API_INTERN unsigned char libxsmm_gemm_typesize(libxsmm_gemm_precision precision);
-
-/** Determines the given value in double-precision based on the given precision. */
-LIBXSMM_API_INTERN int libxsmm_gemm_dvalue(libxsmm_gemm_precision precision, const void* value, double* dvalue);
-/** Determines the value given in double-precision. */
-LIBXSMM_API_INTERN int libxsmm_gemm_cast(libxsmm_gemm_precision precision, double dvalue, void* value);
-
 LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
 LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
 
@@ -247,7 +239,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
   /* TODO: consider padding */
 } libxsmm_gemm_batchitem;
 
-LIBXSMM_API void libxsmm_set_gemm_batchflag(libxsmm_gemm_descriptor* descriptor, void* c, libxsmm_blasint index_stride,
+LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* descriptor, void* c, libxsmm_blasint index_stride,
   libxsmm_blasint batchsize, int multithreaded);
 
 LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,

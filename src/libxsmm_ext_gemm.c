@@ -115,17 +115,17 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
         }
       }
       else { /* may happen because of try-lock (registry) */
-        const libxsmm_gemm_precision oprec = LIBXSMM_GETENUM_OUT(batchdesc->datatype);
+        const libxsmm_datatype oprec = LIBXSMM_GETENUM_OUT(batchdesc->datatype);
         char alpha[8], beta[8];
-        result = libxsmm_gemm_cast(oprec, /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & batchdesc->flags) ? 0.0 : */1.0, alpha);
+        result = libxsmm_cast(oprec, /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & batchdesc->flags) ? 0.0 : */1.0, alpha);
         if (EXIT_SUCCESS == result) {
-          result = libxsmm_gemm_cast(oprec, 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & batchdesc->flags) ? 0.0 : 1.0, beta);
+          result = libxsmm_cast(oprec, 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & batchdesc->flags) ? 0.0 : 1.0, beta);
           if (EXIT_SUCCESS == result) {
             const char transa = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & batchdesc->flags) ? 'n' : 't');
             const char transb = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & batchdesc->flags) ? 'n' : 't');
             const libxsmm_blasint lda = batchdesc->lda, ldb = batchdesc->ldb, ldc = batchdesc->ldc;
-            result = libxsmm_mmbatch_internal_blas(
-              LIBXSMM_GETENUM_INP(batchdesc->datatype), oprec, &transa, &transb, batchdesc->m, batchdesc->n, batchdesc->k,
+            result = libxsmm_mmbatch_internal_blas((libxsmm_gemm_precision)LIBXSMM_GETENUM_INP(batchdesc->datatype),
+              (libxsmm_gemm_precision)oprec, &transa, &transb, batchdesc->m, batchdesc->n, batchdesc->k,
               &alpha, &batcharray->value.a, &lda, &batcharray->value.b, &ldb, &beta, &batcharray->value.c, &ldc,
               0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize, batchsize);
           }
@@ -646,16 +646,17 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blas
     }
     if (EXIT_SUCCESS != result) {
       const libxsmm_gemm_descriptor *const desc = &info->xgemm;
-      const libxsmm_gemm_precision oprec = (libxsmm_gemm_precision)LIBXSMM_GETENUM_OUT(desc->datatype);
+      const libxsmm_datatype oprec = (libxsmm_datatype)LIBXSMM_GETENUM_OUT(desc->datatype);
       char alpha[8], beta[8];
-      result = libxsmm_gemm_cast(oprec, /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & desc->flags) ? 0.0 : */1.0, alpha);
+      result = libxsmm_cast(oprec, /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & desc->flags) ? 0.0 : */1.0, alpha);
       if (EXIT_SUCCESS == result) {
-        result = libxsmm_gemm_cast(oprec, 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & desc->flags) ? 0.0 : 1.0, beta);
+        result = libxsmm_cast(oprec, 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & desc->flags) ? 0.0 : 1.0, beta);
         if (EXIT_SUCCESS == result) {
           const char transa = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & desc->flags) ? 'n' : 't');
           const char transb = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & desc->flags) ? 'n' : 't');
           const libxsmm_blasint lda = desc->lda, ldb = desc->ldb, ldc = desc->ldc;
-          result = libxsmm_mmbatch_internal_blas((libxsmm_gemm_precision)LIBXSMM_GETENUM_INP(desc->datatype), oprec,
+          result = libxsmm_mmbatch_internal_blas(
+            (libxsmm_gemm_precision)LIBXSMM_GETENUM_INP(desc->datatype), (libxsmm_gemm_precision)oprec,
             &transa, &transb, desc->m, desc->n, desc->k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc,
             index_base, index_stride, stride_a, stride_b, stride_c, batchsize);
         }
@@ -701,7 +702,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch2_omp(libxsmm_gemm_precision iprec, libxsm
       NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
       NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
       NULL != ldc ? *ldc : m, alpha, beta, gemm_flags, libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
-    libxsmm_set_gemm_batchflag(descriptor, c, index_stride, batchsize, 1/*multi-threaded*/);
+    libxsmm_gemm_internal_set_batchflag(descriptor, c, index_stride, batchsize, 1/*multi-threaded*/);
     kernel = libxsmm_xmmdispatch(descriptor);
   }
   else {
