@@ -229,15 +229,14 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
   { /* determines if batch-reduce kernel is considered */
     const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE");
     if (NULL != env_r && 0 != *env_r) {
-      const size_t batchsize = (LIBXSMM_GEMM_NBATCHREDUCE) * sizeof(void*);
       const int scale = atoi(env_r);
       void* p;
       if (0 != scale && EXIT_SUCCESS == libxsmm_xmalloc(&p,
-          /*A and B-matrices*/2 * batchsize * LIBXSMM_ABS(scale),
+          /*A and B-matrices*/2 * sizeof(void*) * (LIBXSMM_GEMM_NBATCHREDUCE) * LIBXSMM_ABS(scale),
           0/*auto-alignment*/, LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE,
           NULL/*extra*/, 0/*extra_size*/))
       {
-        internal_gemm_batch_size = batchsize * LIBXSMM_ABS(scale);
+        internal_gemm_batch_size = (LIBXSMM_GEMM_NBATCHREDUCE) * LIBXSMM_ABS(scale);
         internal_gemm_batch_ptrs = (const void**)p;
       }
     }
