@@ -32,6 +32,9 @@
   <ItemGroup>
     <ClInclude Include="magazine.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>magazine_blaze</ProjectName>
     <ProjectGuid>{9D98361B-9BB5-485C-BAC7-AFBA216B973E}</ProjectGuid>
