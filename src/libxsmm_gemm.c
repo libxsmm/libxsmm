@@ -1567,7 +1567,7 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
       }
       if (EXIT_SUCCESS != result) {
         static int error_once = 0;
-        if (0 != libxsmm_verbosity && /* library code is expected to be mute */
+        if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && /* library code is expected to be mute */
           1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
           fprintf(stderr, "LIBXSMM WARNING: data type not supported in batch-reduce!\n");
