@@ -227,10 +227,10 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
   { /* determines if batch-reduce kernel is considered */
     const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE");
     if (NULL != env_r && 0 != *env_r) {
-      const int scale = 0 != atoi(env_r);
+      const int scale = atoi(env_r);
       void* p;
       if (0 != scale && EXIT_SUCCESS == libxsmm_xmalloc(&p,
-          LIBXSMM_ABS(scale) * /*A and B-matrices*/2 * sizeof(void*) * (LIBXSMM_GEMM_NBATCHREDUCE),
+          /*A and B-matrices*/2 * sizeof(void*) * (LIBXSMM_GEMM_NBATCHREDUCE) * LIBXSMM_ABS(scale),
           0/*auto-alignment*/, LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE,
           NULL/*extra*/, 0/*extra_size*/))
       {
@@ -1566,10 +1566,27 @@ LIBXSMM_API void libxsmm_set_gemm_batchflag(libxsmm_gemm_descriptor* descriptor,
     else if ( /* check if reduce-batch kernel can be used */
 #if (0 != LIBXSMM_SYNC)
       (0 == multithreaded || 0 == internal_gemm_nlocks || 0 > batchsize) &&
-#endif/* TODO: DP */
-      LIBXSMM_DATATYPE_F64 < descriptor->datatype && NULL != internal_gemm_batch_ptrs)
+#endif
+      NULL != internal_gemm_batch_ptrs)
     {
-      descriptor->flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE;
+      int result = EXIT_SUCCESS;
+      switch (LIBXSMM_GETENUM_INP(descriptor->datatype)) { /* TODO: DP */
+        case LIBXSMM_GEMM_PRECISION_F32: {
+          if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT(descriptor->datatype)) {
+            descriptor->flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE;
+          }
+          else result = EXIT_FAILURE;
+        } break;
+        default: result = EXIT_FAILURE;
+      }
+      if (EXIT_SUCCESS != result) {
+        static int error_once = 0;
+        if (0 != libxsmm_verbosity && /* library code is expected to be mute */
+          1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM WARNING: data type not supported in batch-reduce!\n");
+        }
+      }
     }
   }
 }
