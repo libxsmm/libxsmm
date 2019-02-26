@@ -29,6 +29,7 @@ libxsmm_bsgemm_
 libxsmm_bsgemm_descriptor_init
 libxsmm_bsmmdispatch
 libxsmm_bsmmdispatch_reducebatch
+libxsmm_cast
 libxsmm_convert_bf16_f32
 libxsmm_cpuid
 libxsmm_cpuid_x86
@@ -56,7 +57,6 @@ libxsmm_dispatch_trans
 libxsmm_dispatch_trmm
 libxsmm_dispatch_trsm
 libxsmm_dmmavailable
-libxsmm_dmmbatch_blas
 libxsmm_dmmcall
 libxsmm_dmmcall_abc
 libxsmm_dmmcall_prf
@@ -168,6 +168,7 @@ libxsmm_gemm_dprint
 libxsmm_gemm_dprint2
 libxsmm_gemm_handle_get_scratch_size
 libxsmm_gemm_handle_init
+libxsmm_gemm_internal_set_batchflag
 libxsmm_gemm_print
 libxsmm_gemm_print2
 libxsmm_gemm_thread
@@ -262,6 +263,7 @@ libxsmm_mmbatch_begin_
 libxsmm_mmbatch_end
 libxsmm_mmbatch_end_
 libxsmm_mmbatch_internal
+libxsmm_mmbatch_internal_blas
 libxsmm_mmbatch_omp
 libxsmm_mmbatch_omp_
 libxsmm_mutex_acquire
@@ -324,7 +326,6 @@ libxsmm_scratch_malloc
 libxsmm_set_default_allocator
 libxsmm_set_dispatch_trylock
 libxsmm_set_gemm_auto_prefetch
-libxsmm_set_gemm_batchflag
 libxsmm_set_scratch_allocator
 libxsmm_set_scratch_limit
 libxsmm_set_target_arch
@@ -348,7 +349,6 @@ libxsmm_sgemm_omp_
 libxsmm_shuffle
 libxsmm_shuffle_
 libxsmm_smmavailable
-libxsmm_smmbatch_blas
 libxsmm_smmcall
 libxsmm_smmcall_abc
 libxsmm_smmcall_prf
@@ -380,6 +380,8 @@ libxsmm_trans_descriptor_init
 libxsmm_trmm_descriptor_init
 libxsmm_trsm_descriptor_init
 libxsmm_truncate_convert_f32_bf16
+libxsmm_typename
+libxsmm_typesize
 libxsmm_update_mmstatistic
 libxsmm_wigemm
 libxsmm_wigemm0

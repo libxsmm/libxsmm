@@ -1126,7 +1126,7 @@ LIBXSMM_API void libxsmm_set_gemm_auto_prefetch(libxsmm_gemm_prefetch_type strat
 }
 
 
-LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype)
+LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
 {
   switch (datatype) {
     case LIBXSMM_DATATYPE_F64:  return 8;
@@ -1167,7 +1167,7 @@ LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* val
 }
 
 
-LIBXSMM_API_INTERN int libxsmm_cast(libxsmm_datatype datatype, double dvalue, void* value)
+LIBXSMM_API int libxsmm_cast(libxsmm_datatype datatype, double dvalue, void* value)
 {
   int result = EXIT_SUCCESS;
   if (NULL != value) {
@@ -1187,7 +1187,7 @@ LIBXSMM_API_INTERN int libxsmm_cast(libxsmm_datatype datatype, double dvalue, vo
 }
 
 
-LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
+LIBXSMM_API const char* libxsmm_typename(libxsmm_datatype datatype)
 {
   switch (datatype) {
     case LIBXSMM_DATATYPE_F64:  return "f64";

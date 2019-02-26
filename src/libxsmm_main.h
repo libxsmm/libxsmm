@@ -760,6 +760,18 @@ typedef enum libxsmm_malloc_flags {
   LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_RW
 } libxsmm_malloc_flags;
 
+/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
+LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+
+/** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
+LIBXSMM_API const char* libxsmm_typename(libxsmm_datatype datatype);
+
+/** Determines the generic value given in double-precision. */
+LIBXSMM_API int libxsmm_cast(libxsmm_datatype datatype, double dvalue, void* value);
+
+/** Retrieve internal information about a buffer (default memory domain). */
+LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra);
+
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment);
 
@@ -777,16 +789,6 @@ LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
 LIBXSMM_API_INTERN int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
-/** Retrieve internal information about a buffer (default memory domain). */
-LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra);
-
-/** Allocate memory of the requested size, which is aligned according to the given alignment. */
-LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
-  /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
-  const void* extra, size_t extra_size);
-/** Release memory, which was allocated using libxsmm_[*]malloc. */
-LIBXSMM_API_INTERN int libxsmm_xfree(const void* memory);
-
 /**
  * Attribute memory allocation and protect with only the necessary flags.
  * This procedure is expected to run only one time per buffer, and may
@@ -796,17 +798,15 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
   /** If a name is given, an executable buffer will be dumped into a file. */
   const char* name);
 
-/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
-LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype);
-
-/** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
-LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
+/** Allocate memory of the requested size, which is aligned according to the given alignment. */
+LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
+  /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
+  const void* extra, size_t extra_size);
+/** Release memory, which was allocated using libxsmm_[*]malloc. */
+LIBXSMM_API_INTERN int libxsmm_xfree(const void* memory);
 
 /** Determines the given value in double-precision based on the given type. */
 LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
-
-/** Determines the generic value given in double-precision. */
-LIBXSMM_API_INTERN int libxsmm_cast(libxsmm_datatype datatype, double dvalue, void* value);
 
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
