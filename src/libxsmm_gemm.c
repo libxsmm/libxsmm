@@ -237,8 +237,8 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
           0/*auto-alignment*/, LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE,
           NULL/*extra*/, 0/*extra_size*/))
       {
+        internal_gemm_batch_size = batchsize * LIBXSMM_ABS(scale);
         internal_gemm_batch_ptrs = (const void**)p;
-        internal_gemm_batch_size = batchsize;
       }
     }
   }
