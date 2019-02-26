@@ -62,6 +62,29 @@ if ( imgpt <= 1 ) {
   my_ofm_end = LIBXSMM_MIN((myOfmId+1) * nOfmBlocks, handle->blocksofm);
 }
 
+if ( handle->use_ofm_parallelization == 1 ) {
+  int spread_out = 0;
+  if ( handle->desc.N % 8 == 0) {
+    spread_out = 8;
+  } else if ( handle->desc.N % 4 == 0) {
+    spread_out = 4;
+  } else if (handle->desc.N % 2 == 0) {
+    spread_out = 2;
+  } else {
+    spread_out = 1;
+  }
+  if ((spread_out > 1) && (handle->desc.threads % spread_out == 0)) {
+    int tile_id = ltid / spread_out;
+    int ofmpt = (handle->blocksofm+spread_out-1)/spread_out;
+    int ofm_id = ltid % spread_out;
+    imgpt = ((handle->desc.N + handle->desc.threads - 1)/handle->desc.threads) * spread_out;
+    my_img_start = LIBXSMM_MIN( tile_id * imgpt, handle->desc.N);
+    my_img_end = LIBXSMM_MIN( (tile_id+1) * imgpt, handle->desc.N);
+    my_ofm_start = LIBXSMM_MIN( ofm_id * ofmpt, handle->blocksofm);
+    my_ofm_end = LIBXSMM_MIN( (ofm_id+1) * ofmpt, handle->blocksofm);
+  }
+}
+
 if (handle->pack_input == 1) {
   LIBXSMM_VLA_DECL(5, element_input_type, input_src, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
   for (img = my_img_start; img < my_img_end; img++) {
