@@ -461,7 +461,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   }
 
   handle->avoid_acc_load = 0;
-  if (handle->desc.R == 1 && handle->desc.S == 1 && handle->blocksifm_blocking == handle->blocksifm && (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+  if (handle->blocksifm_blocking == handle->blocksifm && (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
     handle->avoid_acc_load = 1;
   }
 
