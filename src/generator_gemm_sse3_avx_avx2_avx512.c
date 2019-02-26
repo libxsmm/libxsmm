@@ -66,15 +66,20 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   /* initialize n-blocking */
   unsigned int l_n_done = 0;
   unsigned int l_n_done_old = 0;
-  unsigned int l_n_blocking = 3;
+  unsigned int l_n_blocking = 0;
 
   unsigned int adjust_A_pf_ptrs = 0;
   unsigned int adjust_B_pf_ptrs = 0;
 
   /* as we have 32 registers, we can block more aggressively */
+  /* @TODO: take M blocking into account */
   if ( (strcmp(i_arch, "skx") == 0) ||
        (strcmp(i_arch, "icl") == 0)   ) {
-    l_n_blocking = 6;
+    unsigned int tmp0, tmp1, tmp2;
+    libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 6, &tmp0, &l_n_blocking, &tmp1, &tmp2 );
+  } else {
+    unsigned int tmp0, tmp1, tmp2;
+    libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 3, &tmp0, &l_n_blocking, &tmp1, &tmp2 );
   }
 
   /* Make sure we properly adjust A,B prefetch pointers in case of batch-reduce gemm kernel  */
