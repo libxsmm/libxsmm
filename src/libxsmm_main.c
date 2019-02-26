@@ -238,7 +238,7 @@ LIBXSMM_API_INLINE unsigned int internal_update_mmstatistic(const libxsmm_gemm_d
 LIBXSMM_API_INLINE const char* internal_get_target_arch(int id);
 LIBXSMM_API_INLINE const char* internal_get_target_arch(int id)
 {
-  const char* target_arch = 0;
+  const char* target_arch = NULL;
   switch (id) {
     case LIBXSMM_X86_AVX512_ICL:
     case LIBXSMM_X86_AVX512_CLX: {
@@ -284,7 +284,7 @@ LIBXSMM_API_INLINE const char* internal_get_target_arch(int id)
     }
   }
 
-  LIBXSMM_ASSERT(0 != target_arch);
+  LIBXSMM_ASSERT(NULL != target_arch);
   return target_arch;
 }
 
@@ -326,7 +326,7 @@ LIBXSMM_API_INLINE unsigned int internal_print_statistic(FILE* ostream,
     unsigned int counter[4];
     {
       unsigned int n;
-      if (0 != target_arch && 0 != *target_arch) {
+      if (NULL != target_arch && 0 != *target_arch) {
         assert(strlen(target_arch) < sizeof(title)); /* !LIBXSMM_ASSERT */
         for (n = 0; 0 != target_arch[n] /*avoid code-gen. issue with some clang versions: && n < sizeof(title)*/; ++n) {
           const char c = target_arch[n];
@@ -436,22 +436,25 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? internal_get_target_arch(libxsmm_target_archid)
       : NULL/*hidden*/;
-    unsigned int linebreak;
-
+    const int high_verbosity = (2 < libxsmm_verbosity || 0 > libxsmm_verbosity);
     /* synchronize I/O */
     LIBXSMM_STDIO_ACQUIRE();
     fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
       LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
-    linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
-    if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && 0 != target_arch) {
+    if (0 != high_verbosity) {
+      unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
+      if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
+        fprintf(stderr, "\nLIBXSMM_TARGET: %s", target_arch);
+      }
+    }
+    else {
       fprintf(stderr, "\nLIBXSMM_TARGET: %s", target_arch);
     }
     if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
       const double regsize = 1.0 * internal_registry_nbytes / (1ULL << 20);
-      const int verbose = (2 < libxsmm_verbosity || 0 > libxsmm_verbosity);
       libxsmm_scratch_info scratch_info;
       fprintf(stderr, "\nRegistry: %.f MB", regsize);
-      if (0 != verbose) {
+      if (0 != high_verbosity) {
         size_t ngemms = 0;
         int i; for (i = 0; i < 4; ++i) {
           ngemms += (size_t)internal_statistic[0/*DP*/][i].nsta + internal_statistic[1/*SP*/][i].nsta;
@@ -466,9 +469,9 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info)) {
         const unsigned int scratch_internal = (unsigned int)(((512ULL << 10)/*rounding*/ + scratch_info.internal) / (1ULL << 20));
         const unsigned int scratch_size = (unsigned int)(((512ULL << 10)/*rounding*/ + scratch_info.size) / (1ULL << 20));
-        if (0 != scratch_size || (0 != verbose && 0 != scratch_internal)) {
+        if (0 != scratch_size || (0 != high_verbosity && 0 != scratch_internal)) {
           fprintf(stderr, "Scratch: %u MB", scratch_size);
-          if (0 != verbose) {
+          if (0 != high_verbosity) {
 #if (0 != LIBXSMM_SYNC)
             if (1 < libxsmm_threads_count) {
               fprintf(stderr, " (mallocs=%lu, pools=%u, threads=%u, internal=%u MB)\n",
