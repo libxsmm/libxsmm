@@ -77,7 +77,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
     l_n_blocking = 6;
     /* Special cases for sizes arising from CNNs (Resnet50)  */
     if (i_xgemm_desc->n == 7) {
-      l_n_blocking = 4;
+      l_n_blocking = 7;
     }
      if (i_xgemm_desc->n == 14) {
       l_n_blocking = 5;
