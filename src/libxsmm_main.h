@@ -431,6 +431,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int f32_bf16_cvt_rne;
   int fwd_img_par;
   int use_ofm_parallelization;
+  int avoid_fmas_in_rim;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;
