@@ -62,9 +62,9 @@
 # define LIBXSMM_GEMM_NBATCHREDUCE ((LIBXSMM_MAX_NTHREADS) * (LIBXSMM_GEMM_BATCHSIZE) / 4)
 #endif
 #if defined(LIBXSMM_BUILD)
-# define LIBXSMM_WEAK LIBXSMM_API_EXPORT LIBXSMM_ATTRIBUTE_WEAK
+# define LIBXSMM_GEMM_WEAK LIBXSMM_API_EXPORT LIBXSMM_ATTRIBUTE_WEAK
 #else
-# define LIBXSMM_WEAK LIBXSMM_API_EXPORT
+# define LIBXSMM_GEMM_WEAK LIBXSMM_API_EXPORT
 #endif
 
 #if (0 != LIBXSMM_SYNC) /** Locks for the batch interface (duplicated C indexes). */
@@ -107,21 +107,19 @@ LIBXSMM_APIVAR(float internal_gemm_nstretch);
 LIBXSMM_APIVAR(float internal_gemm_kstretch);
 
 
-LIBXSMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
+LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
-  static /*volatile*/ libxsmm_dgemm_function original = 0;
-  LIBXSMM_GEMM_WRAPPER(double, original);
-  LIBXSMM_ASSERT(NULL != original);
-  return original;
+  LIBXSMM_GEMM_WRAPPER(double, libxsmm_original_dgemm_function);
+  LIBXSMM_ASSERT(NULL != libxsmm_original_dgemm_function);
+  return libxsmm_original_dgemm_function;
 }
 
 
-LIBXSMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
+LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
-  static /*volatile*/ libxsmm_sgemm_function original = 0;
-  LIBXSMM_GEMM_WRAPPER(float, original);
-  LIBXSMM_ASSERT(NULL != original);
-  return original;
+  LIBXSMM_GEMM_WRAPPER(float, libxsmm_original_sgemm_function);
+  LIBXSMM_ASSERT(NULL != libxsmm_original_sgemm_function);
+  return libxsmm_original_sgemm_function;
 }
 
 

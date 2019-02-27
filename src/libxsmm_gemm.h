@@ -140,20 +140,32 @@
 #if defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
 # define LIBXSMM_GEMM_WRAPPER_DYNAMIC(TYPE, ORIGINAL) \
     if (0 == (ORIGINAL)) { \
-      union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } libxsmm_gemm_wrapper_dynamic_ = { 0 }; \
+      union { const void* pv; \
+        LIBXSMM_GEMMFUNCTION_TYPE(TYPE) (*cf)(void); /* chain */ \
+        LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; \
+      } libxsmm_blas_wrapper_dynamic_ = { 0 }; \
       dlerror(); /* clear an eventual error status */ \
-      libxsmm_gemm_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMM_SYMBOL_NAME(TYPE))); \
-      /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemm_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
-      ORIGINAL = (NULL == dlerror() ? libxsmm_gemm_wrapper_dynamic_.pf : NULL); \
+      libxsmm_blas_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, gemm))); \
+      if (NULL == libxsmm_blas_wrapper_dynamic_.pv || NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.cf()) { \
+        libxsmm_blas_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMM_SYMBOL_NAME(TYPE))); \
+        /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_blas_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
+        ORIGINAL = (NULL == dlerror() ? libxsmm_blas_wrapper_dynamic_.pf : NULL); \
+      } \
       LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, LIBXSMM_GEMM_SYMBOL_NAME(TYPE)); \
     }
 # define LIBXSMM_GEMV_WRAPPER_DYNAMIC(TYPE, ORIGINAL) \
     if (0 == (ORIGINAL)) { \
-      union { const void* pv; LIBXSMM_GEMVFUNCTION_TYPE(TYPE) pf; } libxsmm_gemv_wrapper_dynamic_ = { 0 }; \
+      union { const void* pv; \
+        LIBXSMM_GEMVFUNCTION_TYPE(TYPE) (*cf)(void); /* chain */ \
+        LIBXSMM_GEMVFUNCTION_TYPE(TYPE) pf; \
+      } libxsmm_blas_wrapper_dynamic_ = { 0 }; \
       dlerror(); /* clear an eventual error status */ \
-      libxsmm_gemv_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMV_SYMBOL_NAME(TYPE))); \
-      /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemv_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
-      ORIGINAL = (NULL == dlerror() ? libxsmm_gemv_wrapper_dynamic_.pf : NULL); \
+      libxsmm_blas_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, gemv))); \
+      if (NULL == libxsmm_blas_wrapper_dynamic_.pv || NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.cf()) { \
+        libxsmm_blas_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMV_SYMBOL_NAME(TYPE))); \
+        /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_blas_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
+        ORIGINAL = (NULL == dlerror() ? libxsmm_blas_wrapper_dynamic_.pf : NULL); \
+      } \
       LIBXSMM_GEMV_WRAPPER_BLAS(TYPE, ORIGINAL, LIBXSMM_GEMV_SYMBOL_NAME(TYPE)); \
     }
 #else
@@ -254,6 +266,9 @@ LIBXSMM_API int libxsmm_mmbatch_internal_blas(
   libxsmm_blasint batchsize);
 
 LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
+
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_dgemm_function libxsmm_original_dgemm_function);
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_sgemm_function libxsmm_original_sgemm_function);
 
 /** auto-batch descriptor (filter). */
 LIBXSMM_APIVAR_ALIGNED(libxsmm_gemm_descriptor libxsmm_gemm_batchdesc);
