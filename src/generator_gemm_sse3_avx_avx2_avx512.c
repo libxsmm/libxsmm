@@ -79,7 +79,10 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
     if (i_xgemm_desc->n == 7) {
       l_n_blocking = 7;
     }
-     if (i_xgemm_desc->n == 14) {
+    if (i_xgemm_desc->n == 13) {
+      l_n_blocking = 5;
+    }
+    if (i_xgemm_desc->n == 14) {
       l_n_blocking = 5;
     }
   }
