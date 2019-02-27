@@ -142,25 +142,25 @@
     if (0 == (ORIGINAL)) { \
       union { const void* pv; LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; } libxsmm_gemm_wrapper_dynamic_ = { 0 }; \
       dlerror(); /* clear an eventual error status */ \
-      libxsmm_gemm_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMM_SYMBOL(TYPE))); \
+      libxsmm_gemm_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMM_SYMBOL_NAME(TYPE))); \
       /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemm_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
       ORIGINAL = (NULL == dlerror() ? libxsmm_gemm_wrapper_dynamic_.pf : NULL); \
-      LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, LIBXSMM_GEMM_SYMBOL(TYPE)); \
+      LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, LIBXSMM_GEMM_SYMBOL_NAME(TYPE)); \
     }
 # define LIBXSMM_GEMV_WRAPPER_DYNAMIC(TYPE, ORIGINAL) \
     if (0 == (ORIGINAL)) { \
       union { const void* pv; LIBXSMM_GEMVFUNCTION_TYPE(TYPE) pf; } libxsmm_gemv_wrapper_dynamic_ = { 0 }; \
       dlerror(); /* clear an eventual error status */ \
-      libxsmm_gemv_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMV_SYMBOL(TYPE))); \
+      libxsmm_gemv_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMV_SYMBOL_NAME(TYPE))); \
       /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_gemv_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
       ORIGINAL = (NULL == dlerror() ? libxsmm_gemv_wrapper_dynamic_.pf : NULL); \
-      LIBXSMM_GEMV_WRAPPER_BLAS(TYPE, ORIGINAL, LIBXSMM_GEMV_SYMBOL(TYPE)); \
+      LIBXSMM_GEMV_WRAPPER_BLAS(TYPE, ORIGINAL, LIBXSMM_GEMV_SYMBOL_NAME(TYPE)); \
     }
 #else
 # define LIBXSMM_GEMM_WRAPPER_DYNAMIC(TYPE, ORIGINAL) LIBXSMM_GEMM_WRAPPER_BLAS( \
-    TYPE, ORIGINAL, LIBXSMM_GEMM_SYMBOL(TYPE))
+    TYPE, ORIGINAL, LIBXSMM_GEMM_SYMBOL_NAME(TYPE))
 # define LIBXSMM_GEMV_WRAPPER_DYNAMIC(TYPE, ORIGINAL) LIBXSMM_GEMV_WRAPPER_BLAS( \
-    TYPE, ORIGINAL, LIBXSMM_GEMV_SYMBOL(TYPE))
+    TYPE, ORIGINAL, LIBXSMM_GEMV_SYMBOL_NAME(TYPE))
 #endif
 
 #if defined(NDEBUG) /* library code is expected to be mute */
