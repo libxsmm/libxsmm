@@ -169,15 +169,46 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
   }
 
   /* check LDB */
-  if ( l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.k ) {
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
-    return;
+  if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+    if ( l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.n ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB_TRANS );
+      return;
+    }
+  } else {
+    if ( l_xgemm_desc_mod.ldb < l_xgemm_desc_mod.k ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDB );
+      return;
+    }
   }
 
   /* check LDC */
   if ( l_xgemm_desc_mod.ldc < l_xgemm_desc_mod.m ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_LDC );
     return;
+  }
+
+  /* check trans to be only available for on SKX in classic kernel */
+  if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+    if ( (strcmp(i_arch, "skx") == 0) ||
+         (strcmp(i_arch, "icl") == 0) ) {
+      /* call actual kernel generation with revised parameters */
+      if ( ( LIBXSMM_GEMM_PRECISION_I16  != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )   &&
+             LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
+           ( (l_vector_length == 16  && (l_xgemm_desc_mod.m == 32 || l_xgemm_desc_mod.m == 48 || l_xgemm_desc_mod.m == 64)) ||
+             (l_vector_length == 8   && (l_xgemm_desc_mod.m == 16 || l_xgemm_desc_mod.m == 24 || l_xgemm_desc_mod.m == 32))    ) ) {
+        /* we are fine, we have transpose support */
+      } else {
+        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
+        return;
+      }
+    } else if ( (strcmp(i_arch, "knc") == 0) ||
+                (strcmp(i_arch, "knl") == 0) ||
+                (strcmp(i_arch, "knm") == 0) ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
+      return;
+    } else {
+      /* we are fine, we have transpose support */
+    }
   }
 
   /* check if alignment is not possible */

@@ -299,8 +299,16 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
                   i_xgemm_desc, l_m_blocking, l_max_blocked_k, 0 );
             }
             if (l_max_blocked_k > 0 ) {
+              /* handle trans B */
+              int l_b_offset = 0;
+              if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+                l_b_offset = i_xgemm_desc->ldb * l_max_blocked_k * l_micro_kernel_config.datatype_size;
+              } else {
+                l_b_offset = l_max_blocked_k * l_micro_kernel_config.datatype_size;
+              }
+
               libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_sub_instruction,
-                  l_gp_reg_mapping.gp_reg_b, l_max_blocked_k * l_micro_kernel_config.datatype_size );
+                  l_gp_reg_mapping.gp_reg_b, l_b_offset );
             }
             for ( l_k = l_max_blocked_k; l_k < (unsigned int)i_xgemm_desc->k; l_k++) {
               l_generator_microkernel(io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config,

@@ -101,8 +101,8 @@
 
 /** Construct symbol name from a given real type name (float, double and short). */
 #define LIBXSMM_USEOMP(FUNCTION)        LIBXSMM_CONCATENATE(FUNCTION, _omp)
-#define LIBXSMM_GEMM_SYMBOL(TYPE)       LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm))
-#define LIBXSMM_GEMV_SYMBOL(TYPE)       LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemv))
+#define LIBXSMM_GEMM_SYMBOL_NAME(TYPE)  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm))
+#define LIBXSMM_GEMV_SYMBOL_NAME(TYPE)  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemv))
 #define LIBXSMM_GEMMFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm_function))
 #define LIBXSMM_GEMVFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemv_function))
 #define LIBXSMM_MMFUNCTION_TYPE(TYPE)   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmfunction))
@@ -153,7 +153,7 @@
 #endif
 
 #define LIBXSMM_GEMM_SYMBOL_BLAS(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
-  void LIBXSMM_GEMM_SYMBOL(TYPE)(CONST char*, CONST char*, \
+  void LIBXSMM_GEMM_SYMBOL_NAME(TYPE)(CONST char*, CONST char*, \
     CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
     CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
     CONST TYPE*, CONST libxsmm_blasint*, \
@@ -448,9 +448,25 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemv_function)(
   const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 
-/** The original GEMM functions (SGEMM and DGEMM). */
+/** The original BLAS functions. */
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_dgemm_function libxsmm_original_dgemm_function);
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_sgemm_function libxsmm_original_sgemm_function);
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_dgemv_function libxsmm_original_dgemv_function);
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_sgemv_function libxsmm_original_sgemv_function);
 LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void);
 LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void);
+
+/* Helper macro to eventually (if defined) call libxsmm_init */
+#if defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR)
+# define LIBXSMM_GEMM_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm_function))
+# define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemv_function))
+# undef LIBXSMM_INIT
+# define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(0 != libxsmm_ninit, "LIBXSMM is not initialized");
+#else
+# define LIBXSMM_INIT libxsmm_init();
+# define LIBXSMM_GEMM_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemm)
+# define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemv)
+#endif
 
 /**
  * General dense matrix multiplication, which re-exposes LAPACK/BLAS
