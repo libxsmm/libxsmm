@@ -135,8 +135,8 @@ if (handle->loop_order == 0) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
                           ij_use = oj;
                           ii_use = oi;
                         } else {
-                          ij_use = oj * handle->desc.u;
-                          ii_use = oi * handle->desc.v;
+                          ij_use = oj * handle->desc.u - (1-handle->desc.pad_h_in);
+                          ii_use = oi * handle->desc.v - (1-handle->desc.pad_w_in);
                         }
                         oi_use = oi;
                         oj_use = oj;
