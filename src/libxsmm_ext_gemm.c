@@ -62,7 +62,7 @@ LIBXSMM_APIVAR(unsigned int internal_ext_gemm_batchsize);
 #if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
 LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
-  LIBXSMM_GEMM_WRAPPER(double, libxsmm_original_dgemm_function);
+  LIBXSMM_GEMM_WRAPPER(double, libxsmm_original_dgemm_function, libxsmm_original_dgemm/*self*/);
   LIBXSMM_ASSERT(NULL != libxsmm_original_dgemm_function);
   return libxsmm_original_dgemm_function;
 }
@@ -70,7 +70,7 @@ LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void)
 
 LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
-  LIBXSMM_GEMM_WRAPPER(float, libxsmm_original_sgemm_function);
+  LIBXSMM_GEMM_WRAPPER(float, libxsmm_original_sgemm_function, libxsmm_original_sgemm/*self*/);
   LIBXSMM_ASSERT(NULL != libxsmm_original_sgemm_function);
   return libxsmm_original_sgemm_function;
 }
