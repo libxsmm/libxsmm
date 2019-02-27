@@ -77,10 +77,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   if ( (strcmp(i_arch, "skx") == 0) ||
        (strcmp(i_arch, "icl") == 0)   ) {
     if (i_xgemm_desc->n == 7) {
-      l_n_n[0] = 7;
-      l_n_n[1] = 0;
-      l_n_N[0] = 7;
-      l_n_N[1] = 0;
+      libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 7, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
     } else {
       libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 6, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
     }
