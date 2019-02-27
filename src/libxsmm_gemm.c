@@ -1577,30 +1577,39 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
         descriptor->flags |= (0 == LIBXSMM_MOD2(csize, vw) ? LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT : 0);
       }
     }
-    else if ( /* check if reduce-batch kernel can be used */
+    else if (NULL != internal_gemm_batch_ptrs) { /* check if reduce-batch kernel can be used */
+      static int error_once = 0;
 #if (0 != LIBXSMM_SYNC)
-      (0 == multithreaded || 0 == internal_gemm_nlocks || 0 > batchsize) &&
+      if (0 == multithreaded || 0 == internal_gemm_nlocks || 0 > batchsize)
 #endif
-      NULL != internal_gemm_batch_ptrs)
-    {
-      int result = EXIT_SUCCESS;
-      switch (LIBXSMM_GETENUM_INP(descriptor->datatype)) { /* TODO: DP */
-        case LIBXSMM_GEMM_PRECISION_F32: {
-          if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT(descriptor->datatype)) {
-            descriptor->flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE;
+      {
+        int result = EXIT_FAILURE;
+        switch (LIBXSMM_GETENUM_INP(descriptor->datatype)) { /* TODO: DP */
+          case LIBXSMM_GEMM_PRECISION_F32: {
+            if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT(descriptor->datatype)) {
+              result = EXIT_SUCCESS;
+            }
+          } break;
+        }
+        if (EXIT_SUCCESS == result) {
+          descriptor->flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE;
+          descriptor->prefetch = 0; /* omit decision */
+        }
+        else {
+          if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && /* library code is expected to be mute */
+            1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+          {
+            fprintf(stderr, "LIBXSMM WARNING: data type not supported in batch-reduce!\n");
           }
-          else result = EXIT_FAILURE;
-        } break;
-        default: result = EXIT_FAILURE;
-      }
-      if (EXIT_SUCCESS != result) {
-        static int error_once = 0;
-        if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && /* library code is expected to be mute */
-          1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-        {
-          fprintf(stderr, "LIBXSMM WARNING: data type not supported in batch-reduce!\n");
         }
       }
+#if (0 != LIBXSMM_SYNC)
+      else if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && /* library code is expected to be mute */
+        1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM: potential data races prevent batch-reduce.\n");
+      }
+#endif
     }
   }
 }
