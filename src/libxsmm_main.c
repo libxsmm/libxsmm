@@ -436,23 +436,18 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? internal_get_target_arch(libxsmm_target_archid)
       : NULL/*hidden*/;
-    const int high_verbosity = (2 < libxsmm_verbosity || 0 > libxsmm_verbosity);
     /* synchronize I/O */
     LIBXSMM_STDIO_ACQUIRE();
     fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
       LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
-    if (0 != high_verbosity) {
+    if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
+      const int high_verbosity = (2 < libxsmm_verbosity || 0 > libxsmm_verbosity);
+      const double regsize = 1.0 * internal_registry_nbytes / (1ULL << 20);
+      libxsmm_scratch_info scratch_info;
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET: %s", target_arch);
       }
-    }
-    else {
-      fprintf(stderr, "\nLIBXSMM_TARGET: %s", target_arch);
-    }
-    if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
-      const double regsize = 1.0 * internal_registry_nbytes / (1ULL << 20);
-      libxsmm_scratch_info scratch_info;
       fprintf(stderr, "\nRegistry: %.f MB", regsize);
       if (0 != high_verbosity) {
         size_t ngemms = 0;
@@ -493,7 +488,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       }
     }
     else {
-      fprintf(stderr, "\n");
+      fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
     }
     /* synchronize I/O */
     LIBXSMM_STDIO_RELEASE();
@@ -2413,17 +2408,17 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
   const unsigned int* row_ptr, const unsigned int* column_idx, const float* values)
 {
   libxsmm_code_pointer result = { 0 };
-  if (0 != descriptor && 0 != row_ptr && 0 != column_idx && 0 != values) {
+  if (NULL != descriptor && NULL != row_ptr && NULL != column_idx && NULL != values) {
     libxsmm_csr_reg_descriptor sreg;
     libxsmm_build_request request;
     const unsigned int n = row_ptr[descriptor->m];
-    double *const d_values = (double*)malloc(n * sizeof(double));
+    double *const d_values = (double*)(0 != n ? malloc(n * sizeof(double)) : NULL);
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
     libxsmm_gemm_descriptor gemm = *descriptor;
     LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(gemm, LIBXSMM_GEMM_PREFETCH_NONE);
     descriptor = &gemm;
 #endif
-    if (0 != d_values) {
+    if (NULL != d_values) {
       unsigned int i;
       LIBXSMM_INIT
       /* we need to copy the values into a double precision buffer */
