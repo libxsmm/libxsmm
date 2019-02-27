@@ -63,11 +63,11 @@
 /** Helper macro for type information: INFO := { FP }. */
 #define LIBXSMM_TYPEINFO(TYPE, INFO) LIBXSMM_CONCATENATE3(LIBXSMM_TYPEINFO_, INFO, _, TYPE)
 #define LIBXSMM_TYPEINFO_FP_double 1
-#define LIBXSMM_TYPENAME_FP_float 1
-#define LIBXSMM_TYPENAME_FP_libxsmm_bfloat16 1
-#define LIBXSMM_TYPENAME_FP_int 0
-#define LIBXSMM_TYPENAME_FP_short 0
-#define LIBXSMM_TYPENAME_FP_char 0
+#define LIBXSMM_TYPEINFO_FP_float 1
+#define LIBXSMM_TYPEINFO_FP_libxsmm_bfloat16 1
+#define LIBXSMM_TYPEINFO_FP_int 0
+#define LIBXSMM_TYPEINFO_FP_short 0
+#define LIBXSMM_TYPEINFO_FP_char 0
 
 /** Helper macro for type postfixes. */
 #define LIBXSMM_TYPESYMBOL(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TYPESYMBOL_, TYPE)
