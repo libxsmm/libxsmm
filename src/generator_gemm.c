@@ -201,9 +201,13 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
         LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
         return;
       }
-    } else {
+    } else if ( (strcmp(i_arch, "knc") == 0) ||
+                (strcmp(i_arch, "knl") == 0) ||
+                (strcmp(i_arch, "knm") == 0) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
       return;
+    } else {
+      /* we are fine, we have transpose support */
     }
   }
 
