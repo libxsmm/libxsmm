@@ -1273,13 +1273,12 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
       (NULL != internal_gemm_batch_ptrs))
 #endif
     {
-      const size_t n = (size_t)size * nthreads;
+      const size_t n = (size_t)size * nthreads, offset = (size_t)tid * size;
+      const void **ai = internal_gemm_batch_ptrs + offset, **bi = ai + n;
+      unsigned long long count;
       LIBXSMM_ASSERT(NULL != internal_gemm_batch_ptrs && 0 != internal_gemm_batch_size);
-      if (n <= internal_gemm_batch_size) {
-        const size_t offset = (size_t)tid * size;
-        const void **ai = internal_gemm_batch_ptrs + offset, **bi = ai + n;
-        unsigned long long count;
-        if (0 != index_stride) { /* stride arrays contain indexes */
+      if (0 != index_stride) { /* stride arrays contain indexes */
+        if (n <= internal_gemm_batch_size) {
           const size_t end_stride = (size_t)end * index_stride;
           size_t i = (size_t)begin * index_stride;
           char *ci = c0 + (size_t)(NULL != stride_c ? ((LIBXSMM_ACCESS(const libxsmm_blasint, stride_c, i) - index_base) * typesize) : 0), *cn = ci;
@@ -1296,61 +1295,64 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
             ci = cn;
           } while (i < end_stride);
         }
-        else { /* singular strides are measured in Bytes */
-          const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
-          const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
-          const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
-          const char *ia = a0 + (size_t)da * begin, *ib = b0 + (size_t)db * begin;
-          char* ic = c0 + (size_t)dc * begin;
-          if (
+        else { /* fall-back */
+          result = EXIT_FAILURE;
+        }
+      }
+      else { /* singular strides are measured in Bytes */
+        const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
+        const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
+        const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
+        const char *ia = a0 + (size_t)da * begin, *ib = b0 + (size_t)db * begin;
+        char* ic = c0 + (size_t)dc * begin;
+        if (
 #if defined(LIBXSMM_GEMM_CHECK)
-            NULL != *((const void**)ia) && NULL != *((const void**)ib) && NULL != *((const void**)ic) &&
+          NULL != *((const void**)ia) && NULL != *((const void**)ib) && NULL != *((const void**)ic) &&
 #endif
-            sizeof(void*) == da && sizeof(void*) == db) /* fast path */
-          {
-            if (0 != dc) {
-              libxsmm_blasint i = begin;
-              char* jc = ic;
-              do {
-                for (count = 0; i < end && *((const void**)ic) == *((const void**)jc); ++i) {
-#if defined(LIBXSMM_GEMM_CHECK)
-                  if (NULL != *((const void**)jc))
-#endif
-                  ++count;
-                  jc += dc; /* next */
-                }
-                kernel.xbm((const void**)ia, (const void**)ib, *((void**)ic), &count);
-                ic = jc;
-              } while (i < end);
-            }
-            else { /* fastest path */
-              count = (unsigned long long)end - begin;
-              kernel.xbm((const void**)ia, (const void**)ib, *((void**)ic), &count);
-            }
-          }
-          else { /* buffer is required */
+          sizeof(void*) == da && sizeof(void*) == db) /* fast path */
+        {
+          if (0 != dc) {
             libxsmm_blasint i = begin;
             char* jc = ic;
             do {
               for (count = 0; i < end && *((const void**)ic) == *((const void**)jc); ++i) {
 #if defined(LIBXSMM_GEMM_CHECK)
-                if (NULL != *((const void**)ia) && NULL != *((const void**)ib) && NULL != *((const void**)jc))
+                if (NULL != *((const void**)jc))
 #endif
-                {
-                  *ai++ = *((const void**)ia); *bi++ = *((const void**)ib);
-                  ++count;
-                }
-                ia += da; ib += db; jc += dc; /* next */
+                ++count;
+                jc += dc; /* next */
               }
-              ai = internal_gemm_batch_ptrs + offset; bi = ai + n;
-              kernel.xbm(ai, bi, *((void**)ic), &count);
+              kernel.xbm((const void**)ia, (const void**)ib, *((void**)ic), &count);
               ic = jc;
             } while (i < end);
           }
+          else { /* fastest path */
+            count = (unsigned long long)end - begin;
+            kernel.xbm((const void**)ia, (const void**)ib, *((void**)ic), &count);
+          }
         }
-      }
-      else { /* fall-back */
-        result = EXIT_FAILURE;
+        else if (n <= internal_gemm_batch_size) { /* buffer is required */
+          libxsmm_blasint i = begin;
+          char* jc = ic;
+          do {
+            for (count = 0; i < end && *((const void**)ic) == *((const void**)jc); ++i) {
+#if defined(LIBXSMM_GEMM_CHECK)
+              if (NULL != *((const void**)ia) && NULL != *((const void**)ib) && NULL != *((const void**)jc))
+#endif
+              {
+                *ai++ = *((const void**)ia); *bi++ = *((const void**)ib);
+                ++count;
+              }
+              ia += da; ib += db; jc += dc; /* next */
+            }
+            ai = internal_gemm_batch_ptrs + offset; bi = ai + n;
+            kernel.xbm(ai, bi, *((void**)ic), &count);
+            ic = jc;
+          } while (i < end);
+        }
+        else { /* fall-back */
+          result = EXIT_FAILURE;
+        }
       }
     }
   }
