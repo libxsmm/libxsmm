@@ -630,7 +630,7 @@ int main(int argc, char* argv[])
         norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
   }
 
-  if ( (type == 'A') || (type == 'B') && (nIfm > 3) ) {
+  if ( (type == 'A') || ((type == 'B') && (nIfm > 3)) ) {
     printf("##########################################\n");
     printf("#   Performance - BWD (custom-Storage)   #\n");
     printf("##########################################\n");
