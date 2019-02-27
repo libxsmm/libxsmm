@@ -32,6 +32,9 @@
   <ItemGroup>
     <ClInclude Include="magazine.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>magazine_xsmm</ProjectName>
     <ProjectGuid>{0EC5E28C-54A4-403B-AA7F-541007E74116}</ProjectGuid>

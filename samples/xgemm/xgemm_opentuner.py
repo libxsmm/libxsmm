@@ -107,7 +107,7 @@ class XgemmTuner(MeasurementInterface):
                 run_cmd + " " + " ".join(map(str, dims)))
             assert(run_result["returncode"] == 0)
             match = re.search(
-                "\s*LIBXSMM:\s+([0-9]+(\.[0-9]*)*)",
+                "\\s*LIBXSMM:\\s+([0-9]+(\\.[0-9]*)*)",
                 run_result["stdout"])
             assert(match is not None)
             gflops = float(match.group(1))

@@ -62,7 +62,7 @@
    &&   defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VL__) && defined(__AVX512VNNI__) \
    &&   defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__) \
    && (!defined(__GNUC__)  || defined(__clang__) || defined(__INTEL_COMPILER) || defined(_CRAYC) \
-                           || (LIBXSMM_VERSION3(5, 0, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))) \
+                           || (LIBXSMM_VERSION3(6, 0, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))) \
    && (!defined(__clang__) || (LIBXSMM_VERSION3(4, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) \
                            || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)))) \
    && (!defined(__APPLE__) || !defined(__MACH__) || LIBXSMM_VERSION3(8, 1, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
@@ -72,7 +72,7 @@
    &&   defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VL__) \
    &&   defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__) \
    && (!defined(__GNUC__)  || defined(__clang__) || defined(__INTEL_COMPILER) || defined(_CRAYC) \
-                           || (LIBXSMM_VERSION3(5, 0, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))) \
+                           || (LIBXSMM_VERSION3(6, 0, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))) \
    && (!defined(__clang__) || (LIBXSMM_VERSION3(4, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) \
                            || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)))) \
    && (!defined(__APPLE__) || !defined(__MACH__) || LIBXSMM_VERSION3(8, 1, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
@@ -82,7 +82,7 @@
    &&   defined(__AVX512PF__) && defined(__AVX512ER__) \
    &&   defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__) \
    && (!defined(__GNUC__)  || defined(__clang__) || defined(__INTEL_COMPILER) || defined(_CRAYC) \
-                           || (LIBXSMM_VERSION3(5, 0, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))) \
+                           || (LIBXSMM_VERSION3(6, 0, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))) \
    && (!defined(__clang__) || (LIBXSMM_VERSION3(4, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) \
                            || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)))) \
    && (!defined(__APPLE__) || !defined(__MACH__) || LIBXSMM_VERSION3(8, 1, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
@@ -91,7 +91,7 @@
 # elif  defined(__AVX512F__) && defined(__AVX512CD__) \
    &&   defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__) \
    && (!defined(__GNUC__)  || defined(__clang__) || defined(__INTEL_COMPILER) || defined(_CRAYC) \
-                           || (LIBXSMM_VERSION3(5, 0, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))) \
+                           || (LIBXSMM_VERSION3(6, 0, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))) \
    && (!defined(__clang__) || (LIBXSMM_VERSION3(4, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) \
                            || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)))) \
    && (!defined(__APPLE__) || !defined(__MACH__) || LIBXSMM_VERSION3(8, 1, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
@@ -137,23 +137,13 @@
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
-#   elif (defined(__GNUC__) && LIBXSMM_VERSION3(5, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
-      && !defined(__PGI)
-      /* AVX-512 pseudo intrinsics are missing e.g., reductions */
-#     if !defined(LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS)
-#       define LIBXSMM_INTRINSICS_AVX512_NOREDUCTIONS
-#     endif
-#     if !defined(__CYGWIN__)
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
-#     else /* Error: invalid register for .seh_savexmm */
-#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
-#     endif
-#     define LIBXSMM_INTRINSICS_INCLUDE
-#     include <immintrin.h>
 #   elif (defined(__GNUC__) && LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
       && !defined(__PGI)
-      /* too many AVX-512 (pseudo-)intrinsics are missing e.g., reductions, or casts (_mm512_castps_si512) */
-#     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#     if LIBXSMM_X86_AVX2 < LIBXSMM_STATIC_TARGET_ARCH && !defined(__CYGWIN__)
+#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
+#     else /* Cygwin: invalid register for .seh_savexmm */
+#       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#     endif
 #     define LIBXSMM_INTRINSICS_INCLUDE
 #     include <immintrin.h>
 #   else /* GCC/legacy incl. Clang */

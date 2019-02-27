@@ -34,7 +34,7 @@
 # define __EIGEN
 #endif
 
-#if !defined(__EIGEN_TIMER) && 0
+#if !defined(__EIGEN_TIMER) && 1
 # define __EIGEN_TIMER
 #endif
 

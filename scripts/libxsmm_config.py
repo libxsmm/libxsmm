@@ -30,6 +30,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 from string import Template
+from datetime import date
 import libxsmm_utilities
 import fnmatch
 import sys
@@ -107,6 +108,7 @@ if __name__ == "__main__":
             "MINOR":      minor,
             "UPDATE":     update,
             "PATCH":      patch,
+            "DATE":       date.today().strftime("%Y%m%d"),
             "CACHELINE":  cacheline,
             "PREFETCH":   [-1, prefetch][0 <= prefetch],
             "MAX_MNK":    maxmnk,

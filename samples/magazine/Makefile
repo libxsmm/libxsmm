@@ -53,9 +53,9 @@ XFILES := $(OUTDIR)/$(OUTNAME)_xsmm $(OUTDIR)/$(OUTNAME)_batch \
 ifneq (0,$(BLAZE))
 ifeq (,$(strip $(BLAZEROOT)))
   ifneq (,$(wildcard $(DEPDIR)/../blaze*/blaze/Blaze.h))
-    BLAZEROOT = $(firstword $(wildcard $(DEPDIR)/../blaze*))
+    BLAZEROOT = $(lastword $(sort $(wildcard $(DEPDIR)/../blaze*)))
   else ifneq (,$(wildcard $(HOME)/blaze*/blaze/Blaze.h))
-    BLAZEROOT = $(firstword $(wildcard $(HOME)/blaze*))
+    BLAZEROOT = $(lastword $(sort $(wildcard $(HOME)/blaze*)))
   endif
 endif
 endif
@@ -71,9 +71,9 @@ endif
 
 ifneq (0,$(EIGEN))
 ifeq (,$(strip $(EIGENROOT)))
-  ifneq (,$(lastword $(sort $(wildcard $(DEPDIR)/../eigen*/Eigen/Dense))))
+  ifneq (,$(wildcard $(DEPDIR)/../eigen*/Eigen/Dense))
     EIGENROOT = $(lastword $(sort $(wildcard $(DEPDIR)/../eigen*)))
-  else ifneq (,$(lastword $(sort $(wildcard $(HOME)/eigen*/Eigen/Dense))))
+  else ifneq (,$(wildcard $(HOME)/eigen*/Eigen/Dense))
     EIGENROOT = $(lastword $(sort $(wildcard $(HOME)/eigen*)))
   else ifneq (,$(wildcard /usr/include/eigen3/Eigen/Dense))
     EIGENROOT = /usr/include/eigen3

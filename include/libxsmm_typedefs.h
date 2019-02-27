@@ -102,8 +102,8 @@
 /* Construct an enumerator (libxsmm_gemm_precision) from a built-in type (float, double, etc.). */
 #define LIBXSMM_GEMM_PRECISION(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_GEMM_PRECISION_, LIBXSMM_TYPESYMBOL(TYPE))
 /* Construct GEMM-precision from built-in input/output types (float, double, etc.). */
-#define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_GEMM_PRECISION(ITYPE), \
-                                                              LIBXSMM_GEMM_PRECISION(OTYPE))
+#define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) (libxsmm_gemm_precision)LIBXSMM_GETENUM( \
+  LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE))
 
 /** Necessary size to store a descriptor/blob (GEMM, MCOPY, TRANS). */
 #define LIBXSMM_DESCRIPTOR_MAXSIZE 32
@@ -556,6 +556,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction_reduce
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   void (*xmm)(const void* a, const void* b, void* c, ...);
+  void (*xbm)(const void** a, const void** b, void* c, const unsigned long long* count, ...);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wimmfunction wimm; libxsmm_wsmmfunction wsmm; libxsmm_bsmmfunction bsmm;
   libxsmm_dmmfunction_reducebatch dmr; libxsmm_smmfunction_reducebatch smr; libxsmm_bsmmfunction_reducebatch bsmr;
 } libxsmm_xmmfunction;

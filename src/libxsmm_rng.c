@@ -186,6 +186,7 @@ void internal_rng_f32_seq_avx512(float* rngs, libxsmm_blasint count)
 
 LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed)
 {
+  LIBXSMM_INIT
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
   internal_rng_set_seed_avx512(seed);
 #elif defined(LIBXSMM_INTRINSICS_AVX512) /* __AVX512F__ */
