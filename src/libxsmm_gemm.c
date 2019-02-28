@@ -58,8 +58,8 @@
 #if !defined(LIBXSMM_GEMM_BATCHGRAIN)
 # define LIBXSMM_GEMM_BATCHGRAIN 128
 #endif
-#if !defined(LIBXSMM_GEMM_NBATCHREDUCE)
-# define LIBXSMM_GEMM_NBATCHREDUCE ((LIBXSMM_MAX_NTHREADS) * (LIBXSMM_GEMM_BATCHSIZE) / 4)
+#if !defined(LIBXSMM_GEMM_BATCHREDUCE) && !defined(_WIN32) && !defined(__CYGWIN__) /* not supported */
+# define LIBXSMM_GEMM_BATCHREDUCE
 #endif
 #if defined(LIBXSMM_BUILD)
 # define LIBXSMM_GEMM_WEAK LIBXSMM_API_EXPORT LIBXSMM_ATTRIBUTE_WEAK
@@ -81,7 +81,6 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_gemm_locktype {
   char pad[LIBXSMM_CACHELINE];
   LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) state;
 } internal_gemm_locktype;
-
 # else
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_gemm_locktype {
   LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) state;
@@ -90,10 +89,6 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_gemm_locktype {
 LIBXSMM_APIVAR_ARRAY(internal_gemm_locktype internal_gemm_lock, LIBXSMM_GEMM_MAXNLOCKS);
 LIBXSMM_APIVAR(unsigned int internal_gemm_nlocks); /* populated number of locks */
 #endif
-
-/** translation buffer for batch-reduce kernel */
-LIBXSMM_APIVAR(const void** internal_gemm_batch_ptrs);
-LIBXSMM_APIVAR(size_t internal_gemm_batch_size);
 
 /** Prefetch strategy for tiled GEMM. */
 LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type internal_gemm_tiled_prefetch);
@@ -142,31 +137,41 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state, &attr);
   }
 #endif
-#if defined(LIBXSMM_GEMM_MMBATCH)
-  { const char *const env_w = getenv("LIBXSMM_GEMM_WRAP");
+#if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_GEMM_MMBATCH)
+  { /* determines if batch-reduce kernel or batch-wrap is considered */
+    const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE");
+    const char *const env_w = getenv("LIBXSMM_GEMM_WRAP");
+    int batchreduce = (NULL == env_r || 0 == *env_r) ? 0 : atoi(env_r);
     /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
-    libxsmm_gemm_wrap = ((NULL == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
-    if (0 != libxsmm_gemm_wrap) {
+    if (NULL == env_w || 0 == *env_w) {
+      if ((3 <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity) || 0 > libxsmm_verbosity) {
+        libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC; /* enable auto-batch statistic */
+        batchreduce = 0;
+      }
+      libxsmm_gemm_wrap = LIBXSMM_WRAP;
+    }
+    else {
+      libxsmm_gemm_wrap = atoi(env_w);
+    }
+    if (0 != batchreduce || 0 != libxsmm_gemm_wrap) {
       const char *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
-      const unsigned int batchsize = ((NULL == env_b || 0 == *env_b || 0 >= atoi(env_b)) ? (LIBXSMM_GEMM_BATCHSIZE) : atoi(env_b));
-      void *const p = &libxsmm_gemm_batcharray;
+      const int env_bi = (NULL == env_b || 0 == *env_b) ? -1/*auto*/ : atoi(env_b);
+      const unsigned int env_bu = (unsigned int)(0 >= env_bi ? (LIBXSMM_GEMM_BATCHSIZE) : env_bi);
+      const unsigned int size = (unsigned int)LIBXSMM_ROUND(sizeof(libxsmm_gemm_batchitem) * (LIBXSMM_GEMM_BATCHSCALE));
+      const unsigned int minsize = (sizeof(void*) * LIBXSMM_ABS(batchreduce) * env_bu * 2/*A and B-matrices*/ + size - 1) / size;
+      const unsigned int batchsize = (0 != batchreduce ? LIBXSMM_MAX(env_bu, minsize) : env_bu);
       const void *const extra = 0;
       /* draw default/non-scratch memory, but utilize the scratch memory allocator */
       LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_BATCHSCALE));
-      if (EXIT_SUCCESS == libxsmm_xmalloc((void**)p,
-        (size_t)(LIBXSMM_GEMM_BATCHSCALE) * sizeof(libxsmm_gemm_batchitem) * batchsize,
-        0, LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE, &extra, sizeof(extra)))
+      if (EXIT_SUCCESS == libxsmm_xmalloc(&libxsmm_gemm_batcharray, (size_t)batchsize * size, 0/*auto-alignment*/,
+        LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE, &extra, sizeof(extra)))
       {
         const char *const env_g = getenv("LIBXSMM_GEMM_BATCHGRAIN");
         const unsigned int batchgrain = ((NULL == env_g || 0 == *env_g || 0 >= atoi(env_g)) ? (LIBXSMM_GEMM_BATCHGRAIN) : atoi(env_g));
         LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &libxsmm_gemm_batchlock, &attr);
+        LIBXSMM_ASSERT(NULL != libxsmm_gemm_batcharray);
         libxsmm_gemm_batchgrain = batchgrain;
         libxsmm_gemm_batchsize = batchsize;
-      }
-      if (((3 <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity) || 0 > libxsmm_verbosity)
-        && (NULL == env_w || 0 == *env_w))
-      { /* enable auto-batch statistic */
-        libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC;
       }
     }
   }
@@ -223,23 +228,6 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     libxsmm_gemm_taskscale = ((NULL == env_t || 0 == *env_t)
       ? 0/*disabled*/ : (LIBXSMM_GEMM_TASKSCALE * atoi(env_t)));
   }
-#if !defined(_WIN32) && !defined(__CYGWIN__) /* not supported */
-  { /* determines if batch-reduce kernel is considered */
-    const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE");
-    if (NULL != env_r && 0 != *env_r) {
-      const int scale = atoi(env_r);
-      void* p;
-      if (0 != scale && EXIT_SUCCESS == libxsmm_xmalloc(&p,
-          /*A and B-matrices*/2 * sizeof(void*) * (LIBXSMM_GEMM_NBATCHREDUCE) * LIBXSMM_ABS(scale),
-          0/*auto-alignment*/, LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE,
-          NULL/*extra*/, 0/*extra_size*/))
-      {
-        internal_gemm_batch_size = (LIBXSMM_GEMM_NBATCHREDUCE) * LIBXSMM_ABS(scale);
-        internal_gemm_batch_ptrs = (const void**)p;
-      }
-    }
-  }
-#endif
   LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_GEMM_LOCK, &attr);
   /* determine BLAS functions */
   libxsmm_original_dgemm();
@@ -252,7 +240,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
 #if (0 != LIBXSMM_SYNC)
   unsigned int i; for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_DESTROY(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state);
 #endif
-#if defined(LIBXSMM_GEMM_MMBATCH)
+#if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_GEMM_MMBATCH)
   if (NULL != libxsmm_gemm_batcharray) {
     void* extra = NULL;
     if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_gemm_batcharray, NULL/*size*/, NULL/*flags*/, &extra) && NULL != extra) {
@@ -263,7 +251,6 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
     LIBXSMM_LOCK_DESTROY(LIBXSMM_GEMM_LOCK, &libxsmm_gemm_batchlock);
   }
 #endif
-  libxsmm_xfree(internal_gemm_batch_ptrs);
 }
 
 
@@ -1263,22 +1250,22 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
 #endif /*(0 != LIBXSMM_SYNC)*/
       }
     }
+#if defined(LIBXSMM_GEMM_BATCHREDUCE)
     else /* LIBXSMM_GEMM_FLAG_BATCH_REDUCE */
-#if defined(LIBXSMM_GEMM_CHECK)
+# if defined(LIBXSMM_GEMM_CHECK)
     if (
-# if (0 != LIBXSMM_SYNC)
+#   if (0 != LIBXSMM_SYNC)
       (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize) &&
-# endif
+#   endif
       (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & info->flags)) &&
-      (NULL != internal_gemm_batch_ptrs))
-#endif
+      (NULL != libxsmm_gemm_batcharray))
+# endif
     {
-      const size_t n = (size_t)size * nthreads, offset = (size_t)tid * size;
-      const void **ai = internal_gemm_batch_ptrs + offset, **bi = ai + n;
-      unsigned long long count;
-      LIBXSMM_ASSERT(NULL != internal_gemm_batch_ptrs && 0 != internal_gemm_batch_size);
-      if (0 != index_stride) { /* stride arrays contain indexes */
-        if (n <= internal_gemm_batch_size) {
+      LIBXSMM_ASSERT(NULL != libxsmm_gemm_batcharray && 0 != libxsmm_gemm_batchsize);
+      if ((unsigned int)size <= libxsmm_gemm_batchsize) {
+        const void **ai = (const void**)libxsmm_gemm_batcharray + begin, **bi = ai + size;
+        unsigned long long count;
+        if (0 != index_stride) { /* stride arrays contain indexes */
           const size_t end_stride = (size_t)end * index_stride;
           size_t i = (size_t)begin * index_stride;
           char *ci = c0 + (size_t)(NULL != stride_c ? ((LIBXSMM_ACCESS(const libxsmm_blasint, stride_c, i) - index_base) * typesize) : 0), *cn = ci;
@@ -1290,71 +1277,71 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
                  cn = c0 + (size_t)(NULL != stride_c ? ((LIBXSMM_ACCESS(const libxsmm_blasint, stride_c, j) - index_base) * typesize) : 0);
               i = j;
             }
-            ai = internal_gemm_batch_ptrs + offset; bi = ai + n;
+            ai = (const void**)libxsmm_gemm_batcharray + begin; bi = ai + size;
             kernel.xbm(ai, bi, ci, &count);
             ci = cn;
           } while (i < end_stride);
         }
-        else { /* fall-back */
-          result = EXIT_FAILURE;
-        }
-      }
-      else { /* singular strides are measured in Bytes */
-        const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
-        const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
-        const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
-        const char *ia = a0 + (size_t)da * begin, *ib = b0 + (size_t)db * begin;
-        char* ic = c0 + (size_t)dc * begin;
-        if (
-#if defined(LIBXSMM_GEMM_CHECK)
-          NULL != *((const void**)ia) && NULL != *((const void**)ib) && NULL != *((const void**)ic) &&
-#endif
-          sizeof(void*) == da && sizeof(void*) == db) /* fast path */
-        {
-          if (0 != dc) {
+        else { /* singular strides are measured in Bytes */
+          const libxsmm_blasint da = (NULL != stride_a ? (*stride_a - index_base * sizeof(void*)) : 0);
+          const libxsmm_blasint db = (NULL != stride_b ? (*stride_b - index_base * sizeof(void*)) : 0);
+          const libxsmm_blasint dc = (NULL != stride_c ? (*stride_c - index_base * sizeof(void*)) : 0);
+          const char *ia = a0 + (size_t)da * begin, *ib = b0 + (size_t)db * begin;
+          char* ic = c0 + (size_t)dc * begin;
+          if (
+# if defined(LIBXSMM_GEMM_CHECK)
+            NULL != *((const void**)ia) && NULL != *((const void**)ib) && NULL != *((const void**)ic) &&
+# endif
+            sizeof(void*) == da && sizeof(void*) == db) /* fast path */
+          {
+            if (0 != dc) {
+              libxsmm_blasint i = begin;
+              char* jc = ic;
+              do {
+                for (count = 0; i < end && *((const void**)ic) == *((const void**)jc); ++i) {
+# if defined(LIBXSMM_GEMM_CHECK)
+                  if (NULL != *((const void**)jc))
+# endif
+                  ++count;
+                  jc += dc; /* next */
+                }
+                memcpy((void*)ai, ia, tasksize); memcpy((void*)bi, ib, tasksize);
+                kernel.xbm(ai, bi, *((void**)ic), &count);
+                ic = jc;
+              } while (i < end);
+            }
+            else { /* fastest path */
+              count = (unsigned long long)end - begin;
+              memcpy((void*)ai, ia, tasksize); memcpy((void*)bi, ib, tasksize);
+              kernel.xbm(ai, bi, *((void**)ic), &count);
+            }
+          }
+          else { /* custom-copy required */
             libxsmm_blasint i = begin;
             char* jc = ic;
             do {
               for (count = 0; i < end && *((const void**)ic) == *((const void**)jc); ++i) {
-#if defined(LIBXSMM_GEMM_CHECK)
-                if (NULL != *((const void**)jc))
-#endif
-                ++count;
-                jc += dc; /* next */
+# if defined(LIBXSMM_GEMM_CHECK)
+                if (NULL != *((const void**)ia) && NULL != *((const void**)ib) && NULL != *((const void**)jc))
+# endif
+                {
+                  *ai++ = *((const void**)ia); *bi++ = *((const void**)ib);
+                  ++count;
+                }
+                ia += da; ib += db; jc += dc; /* next */
               }
-              kernel.xbm((const void**)ia, (const void**)ib, *((void**)ic), &count);
+              ai = (const void**)libxsmm_gemm_batcharray + begin; bi = ai + size;
+              kernel.xbm(ai, bi, *((void**)ic), &count);
               ic = jc;
             } while (i < end);
           }
-          else { /* fastest path */
-            count = (unsigned long long)end - begin;
-            kernel.xbm((const void**)ia, (const void**)ib, *((void**)ic), &count);
-          }
-        }
-        else if (n <= internal_gemm_batch_size) { /* buffer is required */
-          libxsmm_blasint i = begin;
-          char* jc = ic;
-          do {
-            for (count = 0; i < end && *((const void**)ic) == *((const void**)jc); ++i) {
-#if defined(LIBXSMM_GEMM_CHECK)
-              if (NULL != *((const void**)ia) && NULL != *((const void**)ib) && NULL != *((const void**)jc))
-#endif
-              {
-                *ai++ = *((const void**)ia); *bi++ = *((const void**)ib);
-                ++count;
-              }
-              ia += da; ib += db; jc += dc; /* next */
-            }
-            ai = internal_gemm_batch_ptrs + offset; bi = ai + n;
-            kernel.xbm(ai, bi, *((void**)ic), &count);
-            ic = jc;
-          } while (i < end);
-        }
-        else { /* fall-back */
-          result = EXIT_FAILURE;
         }
       }
+      else { /* fall-back */
+        result = EXIT_FAILURE;
+      }
     }
+#endif /*defined(LIBXSMM_GEMM_BATCHREDUCE)*/
   }
   return result;
 }
@@ -1579,11 +1566,12 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
         descriptor->flags |= (0 == LIBXSMM_MOD2(csize, vw) ? LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT : 0);
       }
     }
-    else if (NULL != internal_gemm_batch_ptrs) { /* check if reduce-batch kernel can be used */
+#if defined(LIBXSMM_GEMM_BATCHREDUCE)
+    else if (NULL != libxsmm_gemm_batcharray) { /* check if reduce-batch kernel can be used */
       static int error_once = 0;
-#if (0 != LIBXSMM_SYNC)
+# if (0 != LIBXSMM_SYNC)
       if (0 == multithreaded || 0 == internal_gemm_nlocks || 0 > batchsize)
-#endif
+# endif
       {
         int result = EXIT_FAILURE;
         switch (LIBXSMM_GETENUM_INP(descriptor->datatype)) { /* TODO: DP */
@@ -1605,14 +1593,17 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
           }
         }
       }
-#if (0 != LIBXSMM_SYNC)
+# if (0 != LIBXSMM_SYNC)
       else if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && /* library code is expected to be mute */
         1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
         fprintf(stderr, "LIBXSMM: potential data races prevent batch-reduce.\n");
       }
-#endif
+# endif
     }
+#else
+    LIBXSMM_UNUSED(batchsize); LIBXSMM_UNUSED(multithreaded);
+#endif /*defined(LIBXSMM_GEMM_BATCHREDUCE)*/
   }
 }
 

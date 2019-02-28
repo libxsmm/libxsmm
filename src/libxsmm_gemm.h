@@ -269,8 +269,8 @@ LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
 
 /** auto-batch descriptor (filter). */
 LIBXSMM_APIVAR_ALIGNED(libxsmm_gemm_descriptor libxsmm_gemm_batchdesc);
-/** Records a batch of SMMs. */
-LIBXSMM_APIVAR_ALIGNED(libxsmm_gemm_batchitem* libxsmm_gemm_batcharray);
+/** Records a batch of SMMs or is used for batch-reduce. */
+LIBXSMM_APIVAR_ALIGNED(void* libxsmm_gemm_batcharray);
 /** Lock: libxsmm_mmbatch_begin, libxsmm_mmbatch_end, internal_mmbatch_flush. */
 LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_gemm_batchlock);
 /** Maximum size of the recorded batch. */
