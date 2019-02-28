@@ -3012,8 +3012,7 @@ LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bflo
 
   /* truncate buffer to bfp16 */
   for ( i = 0; i < length; ++i ) {
-    union libxsmm_bfloat16_hp t;
-
+    libxsmm_bfloat16_hp t;
     t.f = in[i];
     out[i] = t.i[1];
   }
@@ -3082,8 +3081,7 @@ LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out
 
   /* up-convert is super simple */
   for ( i = 0; i < length; ++i ) {
-    union libxsmm_bfloat16_hp t;
-
+    libxsmm_bfloat16_hp t;
     t.i[1] = in[i];
     t.i[0] = 0;
     out[i] = t.f;

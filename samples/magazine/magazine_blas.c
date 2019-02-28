@@ -41,8 +41,8 @@ void dgemm_(const char*, const char*, const int*, const int*, const int*,
   const double*, const double*, const int*, const double*, const int*,
   const double*, double*, const int*);
 void sgemm_(const char*, const char*, const int*, const int*, const int*,
-  const double*, const double*, const int*, const double*, const int*,
-  const double*, double*, const int*);
+  const float*, const float*, const int*, const float*, const int*,
+  const float*, float*, const int*);
 #endif
 #if defined(_OPENMP)
 # include <omp.h>
