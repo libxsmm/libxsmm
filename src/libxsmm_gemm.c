@@ -104,6 +104,8 @@ LIBXSMM_APIVAR(unsigned int internal_gemm_mlimit);
 LIBXSMM_APIVAR(float internal_gemm_nstretch);
 /** Table of M-extents per type-size (tile shape). */
 LIBXSMM_APIVAR(float internal_gemm_kstretch);
+/** Determines if batch-reduce is enabled */
+LIBXSMM_APIVAR(int internal_gemm_batchreduce);
 
 
 LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
@@ -143,25 +145,24 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 #endif
 #if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_GEMM_MMBATCH)
   { /* determines if batch-reduce kernel or batch-wrap is considered */
-    const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE");
-    const char *const env_w = getenv("LIBXSMM_GEMM_WRAP");
-    int batchreduce = (NULL == env_r || 0 == *env_r) ? 0 : atoi(env_r);
+    const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE"), *const env_w = getenv("LIBXSMM_GEMM_WRAP");
+    internal_gemm_batchreduce = (NULL == env_r || 0 == *env_r) ? 0 : atoi(env_r);
     /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
     if (NULL == env_w || 0 == *env_w) {
       if ((3 < libxsmm_verbosity && INT_MAX != libxsmm_verbosity) || 0 > libxsmm_verbosity) {
         libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC; /* enable auto-batch statistic */
-        batchreduce = 0;
+        internal_gemm_batchreduce = 0;
       }
       libxsmm_gemm_wrap = LIBXSMM_WRAP;
     }
     else {
       libxsmm_gemm_wrap = atoi(env_w);
     }
-    if (0 != batchreduce || 0 != libxsmm_gemm_wrap) {
+    if (0 != internal_gemm_batchreduce || 0 != libxsmm_gemm_wrap) {
       const char *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
       const int env_bi = (NULL == env_b || 0 == *env_b) ? -1/*auto*/ : atoi(env_b);
       const unsigned int env_bu = (unsigned int)(0 >= env_bi ? (LIBXSMM_GEMM_BATCHSIZE) : env_bi);
-      const unsigned int batchscale = LIBXSMM_ABS(batchreduce) * 512/*arbitrary*/ * 2/*A and B-matrices*/ * sizeof(void*);
+      const unsigned int batchscale = LIBXSMM_ABS(internal_gemm_batchreduce) * 512/*arbitrary*/ * 2/*A and B-matrices*/ * sizeof(void*);
       const unsigned int minsize = (batchscale * env_bu + (LIBXSMM_GEMM_BATCHSCALE) - 1) / (LIBXSMM_GEMM_BATCHSCALE);
       const unsigned int batchsize = LIBXSMM_MAX(env_bu, minsize);
       const void *const extra = 0;
@@ -1262,7 +1263,7 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
       (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize) &&
 #   endif
       (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & info->flags)) &&
-      (NULL != libxsmm_gemm_batcharray))
+      (0 != internal_gemm_batchreduce))
 # endif
     {
       const unsigned int n = libxsmm_gemm_batchsize * (LIBXSMM_GEMM_BATCHSCALE);
@@ -1310,14 +1311,16 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
                   ++count;
                   jc += dc; /* next */
                 }
-                memcpy((void*)ai, ia, tasksize); memcpy((void*)bi, ib, tasksize);
+                memcpy((void*)ai, ia, count * sizeof(void*));
+                memcpy((void*)bi, ib, count * sizeof(void*));
                 kernel.xbm(ai, bi, *((void**)ic), &count);
                 ic = jc;
               } while (i < end);
             }
             else { /* fastest path */
               count = (unsigned long long)end - begin;
-              memcpy((void*)ai, ia, tasksize); memcpy((void*)bi, ib, tasksize);
+              memcpy((void*)ai, ia, count * sizeof(void*));
+              memcpy((void*)bi, ib, count * sizeof(void*));
               kernel.xbm(ai, bi, *((void**)ic), &count);
             }
           }
@@ -1572,8 +1575,9 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
       }
     }
 #if defined(LIBXSMM_GEMM_BATCHREDUCE)
-    else if (NULL != libxsmm_gemm_batcharray) { /* check if reduce-batch kernel can be used */
+    else if (0 != internal_gemm_batchreduce) { /* check if reduce-batch kernel can be used */
       static int error_once = 0;
+      LIBXSMM_ASSERT(NULL != libxsmm_gemm_batcharray);
 # if (0 != LIBXSMM_SYNC)
       if (0 == multithreaded || 0 == internal_gemm_nlocks || 0 > batchsize)
 # endif
