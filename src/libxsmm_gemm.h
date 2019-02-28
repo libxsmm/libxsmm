@@ -145,7 +145,9 @@
         LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; \
       } libxsmm_blas_wrapper_dynamic_ /*= { 0 }*/; \
       dlerror(); /* clear an eventual error status */ \
-      libxsmm_blas_wrapper_dynamic_.pv = ((NULL == (NEXT)) ? dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, gemm))) : NULL); \
+      libxsmm_blas_wrapper_dynamic_.cf = NEXT; \
+      libxsmm_blas_wrapper_dynamic_.pv = ((NULL == libxsmm_blas_wrapper_dynamic_.pv) ? \
+        dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, gemm))) : NULL); \
       if (NULL == libxsmm_blas_wrapper_dynamic_.pf || NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.cf()) { \
         libxsmm_blas_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMM_SYMBOL_NAME(TYPE))); \
         /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_blas_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
@@ -160,7 +162,9 @@
         LIBXSMM_GEMVFUNCTION_TYPE(TYPE) pf; \
       } libxsmm_blas_wrapper_dynamic_ /*= { 0 }*/; \
       dlerror(); /* clear an eventual error status */ \
-      libxsmm_blas_wrapper_dynamic_.pv = ((NULL == (NEXT)) ? dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, gemv))) : NULL); \
+      libxsmm_blas_wrapper_dynamic_.cf = NEXT; \
+      libxsmm_blas_wrapper_dynamic_.pv = ((NULL == libxsmm_blas_wrapper_dynamic_.pv) ? \
+        dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, gemv))) : NULL); \
       if (NULL == libxsmm_blas_wrapper_dynamic_.pf || NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.cf()) { \
         libxsmm_blas_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMV_SYMBOL_NAME(TYPE))); \
         /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_blas_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
