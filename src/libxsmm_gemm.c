@@ -62,6 +62,9 @@
 #if !defined(LIBXSMM_GEMM_BATCHREDUCE) && !defined(_WIN32) && !defined(__CYGWIN__) /* not supported */
 # define LIBXSMM_GEMM_BATCHREDUCE
 #endif
+#if !defined(LIBXSMM_GEMM_BATCHSCALE) && (defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_GEMM_MMBATCH))
+#define LIBXSMM_GEMM_BATCHSCALE ((unsigned int)LIBXSMM_ROUND(sizeof(libxsmm_gemm_batchitem) * (LIBXSMM_GEMM_MMBATCH_SCALE)))
+#endif
 #if defined(LIBXSMM_BUILD)
 # define LIBXSMM_GEMM_WEAK LIBXSMM_API_EXPORT LIBXSMM_ATTRIBUTE_WEAK
 #else
@@ -145,7 +148,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     int batchreduce = (NULL == env_r || 0 == *env_r) ? 0 : atoi(env_r);
     /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
     if (NULL == env_w || 0 == *env_w) {
-      if ((3 <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity) || 0 > libxsmm_verbosity) {
+      if ((3 < libxsmm_verbosity && INT_MAX != libxsmm_verbosity) || 0 > libxsmm_verbosity) {
         libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC; /* enable auto-batch statistic */
         batchreduce = 0;
       }
@@ -158,13 +161,13 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       const char *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
       const int env_bi = (NULL == env_b || 0 == *env_b) ? -1/*auto*/ : atoi(env_b);
       const unsigned int env_bu = (unsigned int)(0 >= env_bi ? (LIBXSMM_GEMM_BATCHSIZE) : env_bi);
-      const unsigned int size = (unsigned int)LIBXSMM_ROUND(sizeof(libxsmm_gemm_batchitem) * (LIBXSMM_GEMM_BATCHSCALE));
-      const unsigned int minsize = (sizeof(void*) * LIBXSMM_ABS(batchreduce) * env_bu * 2/*A and B-matrices*/ + size - 1) / size;
-      const unsigned int batchsize = (0 != batchreduce ? LIBXSMM_MAX(env_bu, minsize) : env_bu);
+      const unsigned int batchscale = LIBXSMM_ABS(batchreduce) * 512/*arbitrary*/ * 2/*A and B-matrices*/ * sizeof(void*);
+      const unsigned int minsize = (batchscale * env_bu + (LIBXSMM_GEMM_BATCHSCALE) - 1) / (LIBXSMM_GEMM_BATCHSCALE);
+      const unsigned int batchsize = LIBXSMM_MAX(env_bu, minsize);
       const void *const extra = 0;
       /* draw default/non-scratch memory, but utilize the scratch memory allocator */
-      LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_BATCHSCALE));
-      if (EXIT_SUCCESS == libxsmm_xmalloc(&libxsmm_gemm_batcharray, (size_t)batchsize * size, 0/*auto-alignment*/,
+      LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_MMBATCH_SCALE));
+      if (EXIT_SUCCESS == libxsmm_xmalloc(&libxsmm_gemm_batcharray, (size_t)batchsize * (LIBXSMM_GEMM_BATCHSCALE), 0/*auto-alignment*/,
         LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE, &extra, sizeof(extra)))
       {
         const char *const env_g = getenv("LIBXSMM_GEMM_BATCHGRAIN");
@@ -1262,8 +1265,9 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
       (NULL != libxsmm_gemm_batcharray))
 # endif
     {
+      const unsigned int n = libxsmm_gemm_batchsize * (LIBXSMM_GEMM_BATCHSCALE);
       LIBXSMM_ASSERT(NULL != libxsmm_gemm_batcharray && 0 != libxsmm_gemm_batchsize);
-      if ((unsigned int)size <= libxsmm_gemm_batchsize) {
+      if ((2U/*A and B matrices*/ * tasksize) <= n) {
         const void **ai = (const void**)libxsmm_gemm_batcharray + begin, **bi = ai + size;
         unsigned long long count;
         if (0 != index_stride) { /* stride arrays contain indexes */
