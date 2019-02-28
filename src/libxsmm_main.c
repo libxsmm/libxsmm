@@ -240,7 +240,6 @@ LIBXSMM_API_INLINE const char* internal_get_target_arch(int id)
 {
   const char* target_arch = NULL;
   switch (id) {
-    case LIBXSMM_X86_AVX512_ICL:
     case LIBXSMM_X86_AVX512_CLX: {
       target_arch = "clx";
     } break;
@@ -953,7 +952,6 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
-    case LIBXSMM_X86_AVX512_ICL:
     case LIBXSMM_X86_AVX512_CLX:
     case LIBXSMM_X86_AVX512_CORE:
     case LIBXSMM_X86_AVX512_KNM:
@@ -1016,8 +1014,8 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (0 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
-    else if (0 == strcmp("icl", arch) || 0 == strcmp("clx", arch)) {
-      target_archid = LIBXSMM_X86_AVX512_ICL;
+    else if (0 == strcmp("clx", arch)) {
+      target_archid = LIBXSMM_X86_AVX512_CLX;
     }
     else if (0 == strcmp("skx", arch) || 0 == strcmp("skl", arch)
           /* "avx3"/"avx512" previously enabled LIBXSMM_X86_AVX512 */

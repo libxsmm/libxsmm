@@ -387,7 +387,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                             3,
                                             i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n,
                                             i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
-        } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL ) {
+        } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX ) {
           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                    i_micro_kernel_config->instruction_set,
                                                    LIBXSMM_X86_INSTR_VPDPWSSDS,
@@ -769,7 +769,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
                                             3,
                                             i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n,
                                             i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
-        } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL ) {
+        } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX ) {
           libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                    i_micro_kernel_config->instruction_set,
                                                    LIBXSMM_X86_INSTR_VPDPWSSDS,

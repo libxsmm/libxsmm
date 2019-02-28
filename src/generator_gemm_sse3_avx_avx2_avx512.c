@@ -75,7 +75,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   /* as we have 32 registers, we can block more aggressively */
   /* @TODO: take M blocking into account */
   if ( (strcmp(i_arch, "skx") == 0) ||
-       (strcmp(i_arch, "icl") == 0)   ) {
+       (strcmp(i_arch, "clx") == 0)   ) {
     libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 6, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
   } else {
     libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 3, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
@@ -142,7 +142,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
     l_generator_microkernel = libxsmm_generator_gemm_avx2_microkernel;
   } else if ( (strcmp(i_arch, "skx") == 0) ) {
     l_generator_microkernel = libxsmm_generator_gemm_avx512_microkernel_nofsdbcst;
-  } else if ( (strcmp(i_arch, "icl") == 0) ) {
+  } else if ( (strcmp(i_arch, "clx") == 0) ) {
     l_generator_microkernel = libxsmm_generator_gemm_avx512_microkernel_nofsdbcst;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
@@ -398,9 +398,9 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking(
     l_m_blocking = 64;
   } else if ( (strcmp( i_arch, "skx" ) == 0) && (LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     l_m_blocking = 32;
-  } else if ( (strcmp( i_arch, "icl" ) == 0) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  } else if ( (strcmp( i_arch, "clx" ) == 0) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     l_m_blocking = 64;
-  } else if ( (strcmp( i_arch, "icl" ) == 0) && (LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+  } else if ( (strcmp( i_arch, "clx" ) == 0) && (LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     l_m_blocking = 32;
   } else { }
 
@@ -524,7 +524,7 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_update_m_blocking( libx
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( (strcmp( i_arch, "icl" ) == 0) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+  } else if ( (strcmp( i_arch, "clx" ) == 0) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     if (i_current_m_blocking == 16) {
       l_m_blocking = 1;
       libxsmm_generator_gemm_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
@@ -537,7 +537,7 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_update_m_blocking( libx
     } else {
       /* we are done with m_blocking */
     }
-  } else if ( (strcmp( i_arch, "icl" ) == 0) && (LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
+  } else if ( (strcmp( i_arch, "clx" ) == 0) && (LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     if (i_current_m_blocking == 8) {
       l_m_blocking = 1;
       libxsmm_generator_gemm_init_micro_kernel_config_scalar( io_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
