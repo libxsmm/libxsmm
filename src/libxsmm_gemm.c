@@ -1266,7 +1266,7 @@ LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_bla
       (0 != internal_gemm_batchreduce))
 # endif
     {
-      const unsigned int n = libxsmm_gemm_batchsize * (LIBXSMM_GEMM_BATCHSCALE) / sizeof(void*);
+      const unsigned int n = libxsmm_gemm_batchsize * (LIBXSMM_GEMM_BATCHSCALE) / ((unsigned int)sizeof(void*));
       LIBXSMM_ASSERT(NULL != libxsmm_gemm_batcharray && 0 != libxsmm_gemm_batchsize);
       if ((2U/*A and B matrices*/ * tasksize) <= n) {
         const void **ai = (const void**)libxsmm_gemm_batcharray + begin, **bi = ai + size;
@@ -1583,7 +1583,12 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
 # endif
       {
         int result = EXIT_FAILURE;
-        switch (LIBXSMM_GETENUM_INP(descriptor->datatype)) { /* TODO: DP */
+        switch (LIBXSMM_GETENUM_INP(descriptor->datatype)) {
+          case LIBXSMM_GEMM_PRECISION_F64: {
+            if (LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_OUT(descriptor->datatype)) {
+              result = EXIT_SUCCESS;
+            }
+          } break;
           case LIBXSMM_GEMM_PRECISION_F32: {
             if (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT(descriptor->datatype)) {
               result = EXIT_SUCCESS;
