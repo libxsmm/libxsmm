@@ -508,10 +508,10 @@ int main(int argc, char* argv[])
 
   int iters = 10;   /* repetitions of benchmark */
   int pass = 0;     /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
-  int N = 24;      /* size of mini-batch */
-  int C = 64;      /* number of inputs */
-  int K = 64;      /* number of outputs */
-  int t = 1;       /* number of time steps (>= 1) */
+  int N = 168;      /* size of mini-batch */
+  int C = 512;      /* number of inputs */
+  int K = 256;      /* number of outputs */
+  int t = 50;       /* number of time steps (>= 1) */
   int bn = 24;
   int bc = 64;
   int bk = 64;
@@ -822,14 +822,6 @@ int main(int argc, char* argv[])
     convert_ck_c3k(K, K, rigold, r);
     convert_ck_c3k(K, K, rcgold, &(r[K]));
     convert_ck_c3k(K, K, rfgold, &(r[2*K]));
-    /*
-    matrix_copy(C*K, wigold, w);
-    matrix_copy(C*K, wcgold, &(w[C*K]));
-    matrix_copy(C*K, wfgold, &(w[2*C*K]));
-    matrix_copy(K*K, rigold, r);
-    matrix_copy(K*K, rcgold, &(r[K*K]));
-    matrix_copy(K*K, rfgold, &(r[2*K*K]));
-    */
     matrix_copy(K, bigold, b);
     matrix_copy(K, bcgold, &(b[K]));
     matrix_copy(K, bfgold, &(b[2*K]));
