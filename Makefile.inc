@@ -539,9 +539,22 @@ endif
 # Fortran runtime library
 MKL_FCRTL ?= intel
 
+# adopt fully equipped archiver
+CCAR = $(call which,$(CC)-ar)
+ifneq (,$(CCAR))
+  ifeq (default,$(origin AR))
+    AR = $(CC)-ar
+  else
+    AR ?= $(CC)-ar
+  endif
+endif
+
 ifneq (,$(FORCE_CXX))
 ifneq (0,$(FORCE_CXX))
-  CC = $(CXX)
+  override CC = $(CXX)
+  ifeq (0,$(shell $(CC) -E -x c++ /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+    override CC += -x c++
+  endif
 endif
 endif
 
@@ -683,16 +696,6 @@ PGI ?= 0
 # linker setup
 LD = $(CC)
 XLD = $(CXX)
-
-# adopt fully equipped archiver
-CCAR = $(call which,$(CC)-ar)
-ifneq (,$(CCAR))
-  ifeq (default,$(origin AR))
-    AR = $(CC)-ar
-  else
-    AR ?= $(CC)-ar
-  endif
-endif
 
 ifeq (0,$(DEPSTATIC))
   LIB_LD := $(LD) -shared $(PICFLAG)
