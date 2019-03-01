@@ -165,6 +165,7 @@ int main(void)
           }
           else {
 # if defined(_DEBUG)
+            fprintf(stderr, "\nERROR: validation failed:\n\t");
             libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
               alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
             fprintf(stderr, ": L2abs=%f Linf=%f (test %i.%i)\n", diff_test.l2_abs, diff_test.linf_abs, test + 1, i + 1);
