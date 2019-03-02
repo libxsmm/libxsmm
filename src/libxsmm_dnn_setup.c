@@ -372,6 +372,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   int tmp_max_k_block = 64;
   int tmp_block = 0;
   int blockifm = 8;
+  int blockofm = 8;
   int block_j = 14;
   int loop_order = 0;
   handle->pack_input = 0;
@@ -452,13 +453,16 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
 
   if (handle->desc.R == 1 && handle->desc.S == 1) {
     handle->blocksifm_blocking = handle->blocksifm;
+    handle->blocksofm_blocking = handle->blocksofm;
     if ( (handle->desc.C == 1024 && handle->desc.K == 256) || (handle->desc.C == 2048 && handle->desc.K == 512) ) {
       /*handle->blocksifm_blocking = 2;*/
     }
   } else {
     handle->blocksifm_blocking = 1;
+    handle->blocksofm_blocking = 1;
     if (handle->desc.R == 3 && handle->desc.S == 3 && handle->ofh == 7 && handle->ofw == 7) {
       handle->blocksifm_blocking = 2;
+      handle->blocksofm_blocking = 2;
       handle->avoid_fmas_in_rim = 1;
     }
   }
@@ -561,6 +565,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->scratch3_size = 0;
   handle->scratch4 = 0;
   handle->scratch4_size = 0;
+
+  /* Setup bwd parameter sbased on duality */
+  handle->bwd_ofh_rb = handle->fwd_ofh_rb;
+  handle->bwd_ofw_rb = handle->fwd_ofw_rb;
+  handle->use_ifm_parallelization = handle->use_ofm_parallelization;
+  /* Feature map block tuning */
+  while (blockofm % handle->blocksofm_blocking != 0) {
+    blockofm++;
+  }
+  handle->pack_input_bwd = (handle->desc.u != 1 || handle->desc.v != 1) ? 1 : 0;
+  handle->block_bwd_ifm = LIBXSMM_MIN(handle->blocksifm, 16);
+  handle->block_bwd_ofm = blockofm;
+  handle->block_bwd_oj = handle->block_fwd_oj;
+
   return status;
 }
 
