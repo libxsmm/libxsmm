@@ -49,6 +49,7 @@ LIBXSMM_API void libxsmm_generator_gemm_rm_ac_soa( libxsmm_generated_code*      
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "knm") == 0 ||
        strcmp(i_arch, "skx") == 0 ||
+       strcmp(i_arch, "clx") == 0 ||
        strcmp(i_arch, "hsw") == 0 ||
        strcmp(i_arch, "snb") == 0 ) {
     libxsmm_generator_gemm_rm_ac_soa_avx256_512( io_generated_code,
