@@ -53,10 +53,6 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
 {
   unsigned int l_n;
   unsigned int l_k;
-  unsigned int l_b_reg;
-  unsigned int l_b_idx;
-  unsigned int l_scale;
-  unsigned int l_disp;
   unsigned int l_displacement_k_b = 0;
   unsigned int l_k_b_updates = 0;
   unsigned int l_displacement_k_a = 0;
@@ -310,10 +306,10 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
     if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) == 0 ) {
       for ( l_n = 0; l_n < i_n_blocking; l_n++) {
         /* determining base, idx and scale values */
-        l_b_reg = i_gp_reg_mapping->gp_reg_b;
-        l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
-        l_scale = 0;
-        l_disp = l_displacement_k_b*i_micro_kernel_config->datatype_size;
+        unsigned int l_b_reg = i_gp_reg_mapping->gp_reg_b;
+        unsigned int l_b_idx = LIBXSMM_X86_GP_REG_UNDEF;
+        unsigned int l_scale = 0;
+        unsigned int l_disp = l_displacement_k_b*i_micro_kernel_config->datatype_size;
         /* select the base register */
         if ( l_n > 26 ) {
           l_b_reg = i_gp_reg_mapping->gp_reg_help_5;
@@ -865,7 +861,19 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
       }
       l_displacement_k_b++;
     } else {
-
+      for ( l_n = 0; l_n < i_n_blocking; l_n++) {
+        libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                 i_micro_kernel_config->instruction_set,
+                                                 i_micro_kernel_config->vmul_instruction,
+                                                 1,
+                                                 i_gp_reg_mapping->gp_reg_b,
+                                                 LIBXSMM_X86_GP_REG_UNDEF,
+                                                 0,
+                                                 (l_k*i_xgemm_desc->ldb*i_micro_kernel_config->datatype_size) + (l_n*i_micro_kernel_config->datatype_size),
+                                                 i_micro_kernel_config->vector_name,
+                                                 l_k%2,
+                                                 i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
+      }
     }
   }
 
@@ -892,7 +900,7 @@ void libxsmm_generator_gemm_avx512_microkernel( libxsmm_generated_code*         
       }
     }
   } else {
-
+    /* nothing to do */
   }
 
   /* add additional accumulators, if needed */

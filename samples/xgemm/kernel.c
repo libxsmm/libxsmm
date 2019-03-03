@@ -604,12 +604,11 @@ int main(int argc, char* argv []) {
     return EXIT_FAILURE;
   }
 
-  /* print some output... */
-  printf("------------------------------------------------\n");
-  printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
-  printf("------------------------------------------------\n");
-
   if (strcmp(l_precision, "DP") == 0) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
     const libxsmm_timer_tickint l_start = libxsmm_timer_tick();
     for (l_t = 0; l_t < g_reps; l_t++) {
       for (l_j = 0; l_j < l_n; l_j++) {
@@ -633,6 +632,10 @@ int main(int argc, char* argv []) {
     libxsmm_free(l_c_gold_d);
   }
   else if ((strcmp(l_precision, "SP") == 0) && (l_trans_b == 0)) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
     const libxsmm_timer_tickint l_start = libxsmm_timer_tick();
     for (l_t = 0; l_t < g_reps; l_t++) {
       for (l_j = 0; l_j < l_n; l_j++) {
@@ -656,6 +659,10 @@ int main(int argc, char* argv []) {
     libxsmm_free(l_c_gold_f);
   }
   else if ((strcmp(l_precision, "SP") == 0) && (l_trans_b != 0)) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i)^T = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
     const libxsmm_timer_tickint l_start = libxsmm_timer_tick();
     for (l_t = 0; l_t < g_reps; l_t++) {
       for (l_j = 0; l_j < l_n; l_j++) {
@@ -679,6 +686,10 @@ int main(int argc, char* argv []) {
     libxsmm_free(l_c_gold_f);
   }
   else if (strcmp(l_precision, "I16I32") == 0) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
     const int l_k_block = 2;
     double l_max_error = 0;
     int l_k2;
@@ -712,6 +723,10 @@ int main(int argc, char* argv []) {
     libxsmm_free(l_c_gold_w_i);
   }
   else if (strcmp(l_precision, "I16F32") == 0) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
     const int l_k_block = 2;
     double l_max_error = 0;
     int l_k2;
@@ -747,6 +762,10 @@ int main(int argc, char* argv []) {
     libxsmm_free(l_c_gold_w_f);
   }
   else if (strcmp(l_precision, "BF16F32") == 0) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
     const int l_k_block = 2;
     double l_max_error = 0;
     int l_k2;
