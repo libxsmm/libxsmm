@@ -439,8 +439,8 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     LIBXSMM_STDIO_ACQUIRE();
     fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
       LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
-    if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
-      const int high_verbosity = (2 < libxsmm_verbosity || 0 > libxsmm_verbosity);
+    if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
+      const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
       const double regsize = 1.0 * internal_registry_nbytes / (1ULL << 20);
       libxsmm_scratch_info scratch_info;
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
@@ -2071,7 +2071,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     }
     result = internal_find_code(descriptor).xgemm;
 #if defined(_DEBUG)
-    if (2 < libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.xmm) {
+    if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.xmm) {
       LIBXSMM_STDIO_ACQUIRE();
       fprintf(stderr, "LIBXSMM: ");
       libxsmm_gemm_xprint(stderr, result, NULL/*a*/, NULL/*b*/, NULL/*c*/);
@@ -2548,7 +2548,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
       result = internal_find_code(descriptor);
       *fn = result.ival;
 #if defined(_DEBUG)
-      if (2 < libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.pmm) {
+      if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.pmm) {
         LIBXSMM_STDIO_ACQUIRE();
         fprintf(stderr, "LIBXSMM: ");
         libxsmm_gemm_xprint(stderr, result.xgemm, NULL/*a*/, NULL/*b*/, NULL/*c*/);
