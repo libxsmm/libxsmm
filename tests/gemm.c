@@ -134,6 +134,7 @@ int main(void)
     for (i = i0; i < i1 && EXIT_SUCCESS == result; ++i) {
       libxsmm_blasint mi = m[test], ni = n[test], ki = k[test];
       const int flags = LIBXSMM_GEMM_FLAGS(transa[i], transb[i]);
+      const int smm = SMM_NO_BYPASS(flags, alpha[test], beta[test]);
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
       _MM_SET_EXCEPTION_STATE(0);
 #endif
@@ -147,8 +148,8 @@ int main(void)
         const libxsmm_blasint ti = LIBXSMM_MIN(mi, ni);
         mi = ni = ki = LIBXSMM_MIN(ti, ki);
       }
-      if (SMM_NO_BYPASS(flags, alpha[test], beta[test])) {
-        SMM(ITYPE)(transa, transb, &mi, &ni, &ki,
+      if (0 != smm) {
+        SMM(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
       }
       else {
@@ -184,7 +185,7 @@ int main(void)
 # endif
           if (1.0 < (1000.0 * diff_test.normf_rel)) {
 # if defined(_DEBUG)
-            if (SMM_NO_BYPASS(flags, alpha[test], beta[test])) {
+            if (0 != smm) {
               fprintf(stderr, "\nERROR: SMM test %i.%i failed!\n\t", test + 1, i + 1);
             }
             else {
