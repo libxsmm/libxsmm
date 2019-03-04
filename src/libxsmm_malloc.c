@@ -336,7 +336,7 @@ LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
   }
   else if (NULL != malloc_fn.function) {
     if (NULL == free_fn.function
-      && /*warning*/(1 < libxsmm_verbosity || 0 > libxsmm_verbosity)
+      && /*warning*/(LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM WARNING: scratch allocator setup without free function!\n");
@@ -453,7 +453,7 @@ LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* 
     }
     else {
 #if !defined(LIBXSMM_MALLOC_NOCRC)
-      if (NULL != memory && (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+      if (NULL != memory && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
         fprintf(stderr, "LIBXSMM WARNING: checksum error for memory buffer %p!\n", memory);
@@ -826,7 +826,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
       }
     }
     else {
-      if ((2 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+      if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
         fprintf(stderr, "LIBXSMM WARNING: zero-sized memory allocation detected!\n");
@@ -910,7 +910,7 @@ LIBXSMM_API_INTERN int libxsmm_xfree(const void* memory)
       }
     }
 #if !defined(LIBXSMM_BUILD)
-    else if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+    else if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM WARNING: attempt to release memory from non-matching implementation!\n");
@@ -918,7 +918,7 @@ LIBXSMM_API_INTERN int libxsmm_xfree(const void* memory)
 #endif
   }
 #if !defined(LIBXSMM_MALLOC_NOCRC)
-  else if (NULL != memory && (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+  else if (NULL != memory && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM WARNING: checksum error for memory buffer %p!\n", memory);
@@ -976,7 +976,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
         LIBXSMM_UNUSED(alloc_size);
 #else
         if (EXIT_SUCCESS != mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ)
-          && (2 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+          && (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
           && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
           fprintf(stderr, "LIBXSMM WARNING: read-only request for buffer failed!\n");
@@ -1071,7 +1071,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
               }
               result = mprotect_result;
             }
-            else if ((2 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+            else if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
               && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
             {
               fprintf(stderr, "LIBXSMM WARNING: read-only request for JIT-buffer failed!\n");
@@ -1091,7 +1091,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
     result = EXIT_FAILURE;
   }
 #if !defined(LIBXSMM_MALLOC_NOCRC)
-  else if (NULL != memory && (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+  else if (NULL != memory && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM WARNING: checksum error for %s buffer %p!\n",
@@ -1262,7 +1262,7 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size, size_t alignment, const ch
           result = LIBXSMM_ALIGN((char*)result, align_size);
           LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch_nmallocs, 1, LIBXSMM_ATOMIC_RELAXED);
 #if defined(LIBXSMM_MALLOC_SCRATCH_JOIN) /* library code is expected to be mute */
-          if (limit_size < maxsize && (1 < libxsmm_verbosity || 0 > libxsmm_verbosity)
+          if (limit_size < maxsize && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
             && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
           {
             fprintf(stderr, "LIBXSMM WARNING: scratch memory domain exhausted!\n");
@@ -1282,7 +1282,7 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size, size_t alignment, const ch
             }
 #if !defined(LIBXSMM_MALLOC_SCRATCH_JOIN)
             else if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != caller
-              && (1 < libxsmm_verbosity || 0 > libxsmm_verbosity))
+              && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity))
             {
               fprintf(stderr, "LIBXSMM WARNING: scratch memory domain exhausted!\n");
             }
@@ -1360,7 +1360,7 @@ LIBXSMM_API void libxsmm_free(const void* memory)
             const void *const pool_buffer = pool->instance.buffer;
             pool->instance.buffer = pool->instance.head = NULL;
 # if defined(LIBXSMM_MALLOC_AFFINITY) && (0 != LIBXSMM_SYNC) && !defined(NDEBUG) /* library code is expected to be mute */
-            if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && libxsmm_get_tid() != pool->instance.tid) {
+            if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) && libxsmm_get_tid() != pool->instance.tid) {
               static int error_once = 0;
               if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
                 fprintf(stderr, "LIBXSMM WARNING: thread-id differs between allocation and deallocation!\n");
