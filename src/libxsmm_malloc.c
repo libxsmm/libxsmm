@@ -1436,7 +1436,7 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
     unsigned int i;
     LIBXSMM_ASSERT(sizeof(internal_malloc_pool_type) <= (LIBXSMM_CACHELINE));
     memset(info, 0, sizeof(libxsmm_scratch_info));
-    info->npools = LIBXSMM_MIN(1, libxsmm_scratch_pools);
+    info->npools = (unsigned int)LIBXSMM_MIN(internal_malloc_scratch_nmallocs, libxsmm_scratch_pools);
     info->npending = pools[0].instance.counter;
     info->nmallocs = internal_malloc_scratch_nmallocs;
     info->internal = internal_malloc_scratch_size_private;
