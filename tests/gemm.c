@@ -81,7 +81,7 @@ int main(void)
   char transa[] = "NN";
 #endif
   char transb[] = "NNTNT";
-  const int begin = 6, end = sizeof(m) / sizeof(*m), i0 = 0, i1 = sizeof(transa) - 1;
+  const int begin = 0, end = sizeof(m) / sizeof(*m), i0 = 0, i1 = sizeof(transa) - 1;
   libxsmm_blasint max_size_a = 0, max_size_b = 0, max_size_c = 0, block = 1;
 #if defined(_DEBUG)
   libxsmm_matdiff_info diff;
