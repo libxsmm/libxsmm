@@ -264,7 +264,8 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
             size = max_size - libxsmm_gemm_batchsize;
             batcharray_cur += libxsmm_gemm_batchsize;
           }
-          i = libxsmm_diff_n(descriptor, batcharray_cur, sizeof(libxsmm_gemm_batchitem), sizeof(libxsmm_gemm_batchitem), 0/*hint*/, size);
+          i = libxsmm_diff_n(descriptor, batcharray_cur, sizeof(libxsmm_gemm_descriptor),
+            sizeof(libxsmm_gemm_batchitem)/*stride*/, 0/*hint*/, size);
 
           if (i < size) { /* update existing entry */
             LIBXSMM_ATOMIC_ADD_FETCH(&batcharray_cur[i].stat.count, 1, LIBXSMM_ATOMIC_RELAXED);
@@ -408,7 +409,8 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
             size = max_size - libxsmm_gemm_batchsize;
             batcharray_cur += libxsmm_gemm_batchsize;
           }
-          i = libxsmm_diff_n(descriptor, batcharray_cur, sizeof(libxsmm_gemm_batchitem), sizeof(libxsmm_gemm_batchitem), 0/*hint*/, size);
+          i = libxsmm_diff_n(descriptor, batcharray_cur, sizeof(libxsmm_gemm_descriptor),
+            sizeof(libxsmm_gemm_batchitem)/*stride*/, 0/*hint*/, size);
 
           if (i < size) { /* update existing entry */
             LIBXSMM_ATOMIC_ADD_FETCH(&batcharray_cur[i].stat.count, 1, LIBXSMM_ATOMIC_RELAXED);
