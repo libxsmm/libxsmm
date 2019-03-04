@@ -56,7 +56,7 @@ int main(void)
   const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   libxsmm_generated_code generated_code;
   libxsmm_registry_info registry_info;
-  const int max_shape = LIBXSMM_AVG_M;
+  const int max_shape = LIBXSMM_MAX_M;
   const int flags = LIBXSMM_FLAGS;
   int nkernels = MAX_NKERNELS;
   int result = EXIT_SUCCESS;

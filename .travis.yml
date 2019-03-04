@@ -92,7 +92,7 @@ script:
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char" install-artifacts tests
+      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" install-artifacts tests
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (

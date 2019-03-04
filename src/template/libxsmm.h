@@ -87,7 +87,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id);
  * libxsmm_get_target_arch* functions, or as set by the LIBXSMM_TARGET environment variable.
  */
 LIBXSMM_API const char* libxsmm_get_target_arch(void);
-/** Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|icl", NULL/"0": CPUID) for subsequent code generation (JIT). */
+/** Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|clx", NULL/"0": CPUID) for subsequent code generation (JIT). */
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch);
 
 /** Get the level of verbosity. */
@@ -158,7 +158,7 @@ LIBXSMM_API libxsmm_bsmmfunction_reducebatch libxsmm_bsmmdispatch_reducebatch(li
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* prefetch);
 
 /** Process a series of matrix multiplications (batch). */
-LIBXSMM_API int libxsmm_mmbatch(
+LIBXSMM_API void libxsmm_mmbatch(
   /** Kernel (matches precision, transa, transb, beta, etc.). */
   libxsmm_xmmfunction kernel,
   /** Determines index-base (usually 0, 1 for one-based indexes); uses the same unit as the strides. */
@@ -191,7 +191,7 @@ LIBXSMM_API int libxsmm_mmbatch(
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 
 /** Process a series of matrix multiplications (batch) with OpenMP (libxsmmext). See also libxsmm_mmbatch. */
-LIBXSMM_APIEXT int libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
+LIBXSMM_APIEXT void libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize);
 

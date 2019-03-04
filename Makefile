@@ -1092,7 +1092,7 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d " ")" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
@@ -1130,7 +1130,7 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d " ")" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
@@ -1168,7 +1168,7 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d " ")" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
@@ -1206,7 +1206,7 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d " ")" >> $@
+	@echo "NMAX=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >> $@
 	@echo "for RUN in \$${RUNS} ; do" >> $@
 	@echo "  MVALUE=\$$(echo \$${RUN} | cut -d_ -f1)" >> $@
 	@echo "  NVALUE=\$$(echo \$${RUN} | cut -d_ -f2)" >> $@
@@ -1246,8 +1246,8 @@ endif
 	@echo "cat /dev/null > \$${FILE}" >> $@
 	@echo >> $@
 	@echo "NRUN=1" >> $@
-	@echo "NRUNS=\$$(echo \$${RUNS} | wc -w | tr -d " ")" >> $@
-	@echo "NRUNT=\$$(echo \$${RUNT} | wc -w | tr -d " ")" >> $@
+	@echo "NRUNS=\$$(echo \$${RUNS} | wc -w | tr -d ' ')" >> $@
+	@echo "NRUNT=\$$(echo \$${RUNT} | wc -w | tr -d ' ')" >> $@
 	@echo "NMAX=\$$((NRUNS*NRUNT))" >> $@
 	@echo "for RUN1 in \$${RUNS} ; do" >> $@
 	@echo "  for RUN2 in \$${RUNT} ; do" >> $@

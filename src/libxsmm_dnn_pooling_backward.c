@@ -101,7 +101,7 @@ libxsmm_dnn_err_t libxsmm_dnn_pooling_st_bwd_custom_bf16_bf16(libxsmm_dnn_poolin
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
 #endif
-  return status;;
+  return status;
 }
 
 
@@ -118,7 +118,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_pooling_st_bwd_custom(libxsmm_d
 
   /* check if we are on an AVX512 platform */
   if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-        libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL ||
+        libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
         libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM  || libxsmm_target_archid == LIBXSMM_X86_AVX512_CPX    ) &&
        (handle->ofmblock == 16) ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {

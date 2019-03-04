@@ -42,14 +42,10 @@
 
 int main(int argc, char* argv[])
 {
-  double rng_sum;
-  double rng_exp;
-  float  rng_min;
-  float  rng_max;
-  double rng_var;
-  double rng_stddev;
+  double rng_stddev = 0;
   float* rngs;
   float  vrng[16];
+  libxsmm_matdiff_info info;
   libxsmm_blasint num_rngs;
   libxsmm_blasint i;
   unsigned long long start;
@@ -71,25 +67,12 @@ int main(int argc, char* argv[])
   /* fill array with random floats */
   libxsmm_rng_f32_seq( rngs, num_rngs );
 
-  /* calculate quality of random numbers */
-  rng_sum = 0.0;
-  rng_min = 2.0;
-  rng_max = 0.0;
-  for ( i = 0 ; i < num_rngs; ++i ) {
-#if 0
-    printf("%f ", rngs[i] );
-#endif
-    rng_sum += (double)rngs[i];
-    rng_min = (rngs[i] < rng_min) ? rngs[i] : rng_min;
-    rng_max = (rngs[i] > rng_max) ? rngs[i] : rng_max;
+  /* some quality measure; variance is based on discovered average rather than expected value */
+  if (EXIT_SUCCESS == libxsmm_matdiff(&info, LIBXSMM_DATATYPE_F32, 1/*m*/, num_rngs,
+    NULL/*ref*/, rngs/*tst*/, NULL/*ldref*/, NULL/*ldtst*/))
+  {
+    rng_stddev = sqrt(info.var_tst);
   }
-  rng_exp = rng_sum/(double)num_rngs;
-  rng_var = 0.0;
-  for( i = 0; i < num_rngs; ++i ) {
-    rng_var += (rngs[i] - rng_exp) * (rngs[i] - rng_exp);
-  }
-  rng_var = rng_var/(double)num_rngs;
-  rng_stddev = sqrt(rng_var);
 
   start = libxsmm_timer_tick();
   for (i = 0; i < num_rngs; ++i) {
@@ -108,11 +91,11 @@ int main(int argc, char* argv[])
   /* let's compute some values of the random numbers */
   printf("\nWe have generated %i random numbers uniformly distributed in [0,1(\n", num_rngs);
   printf("We expect the following values E=0.5, Var=0.083333, Stddev=0.288675\n\n");
-  printf("minimum random number is:            %f\n", rng_min);
-  printf("maximum random number is:            %f\n", rng_max);
-  printf("sum of random numbers is:            %f\n", rng_sum);
-  printf("Expected Value of random numbers is: %f\n", rng_exp);
-  printf("Variance of random numbers is:       %f\n", rng_var);
+  printf("minimum random number is:            %f\n", info.min_tst);
+  printf("maximum random number is:            %f\n", info.max_tst);
+  printf("sum of random numbers is:            %f\n", info.l1_tst);
+  printf("Expected Value of random numbers is: %f\n", info.avg_tst);
+  printf("Variance of random numbers is:       %f\n", info.var_tst);
   printf("StdDev of random numbers is:         %f\n\n", rng_stddev);
 
   free( rngs );

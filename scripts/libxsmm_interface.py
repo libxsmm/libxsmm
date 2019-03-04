@@ -84,12 +84,12 @@ if __name__ == "__main__":
                 substitute["MNK_INTERFACE_LIST"] += "\n"
             print(template.substitute(substitute))
         else:
-            version, branch = \
+            version, branch, realversion = \
                 libxsmm_utilities.version_branch(16)
             major, minor, update, patch = \
                 libxsmm_utilities.version_numbers(version)
             substitute = {
-                "VERSION":  version,
+                "VERSION":  realversion,
                 "BRANCH":   branch,
                 "MAJOR":    major,
                 "MINOR":    minor,

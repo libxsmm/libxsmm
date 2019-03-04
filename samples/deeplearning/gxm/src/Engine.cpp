@@ -266,6 +266,8 @@ void MLEngine::checkpoint(TensorList L, int buftype)
     string n = checkpoint_dir_ + "/" + tn;
     if(buftype == HISTORY)
       n = n + "_history";
+    else if(buftype == DIFF)
+      n = n + "_grad";
 
     string nntype = dynamic_cast<NNNode*>(t->getOwner())->getNodeType();
 
@@ -301,6 +303,8 @@ void MLEngine::checkpoint(TensorList L, int buftype)
           n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
           if(buftype == HISTORY)
             n = n + "_history";
+          else if(buftype == DIFF)
+            n = n + "_diff";
           cn->Checkpoint(tBuf, n, checkpoint_format_);
         }
       }
@@ -313,6 +317,8 @@ void MLEngine::checkpoint(TensorList L, int buftype)
           n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
           if(buftype == HISTORY)
             n = n + "_history";
+          else if(buftype == DIFF)
+            n = n + "_grad";
           fcbn->Checkpoint(tBuf, n, checkpoint_format_);
         }
       }
@@ -326,6 +332,8 @@ void MLEngine::checkpoint(TensorList L, int buftype)
         n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
         if(buftype == HISTORY)
           n = n + "_history";
+        else if(buftype == DIFF)
+          n = n + "_grad";
         fn->Checkpoint(tBuf, n, checkpoint_format_);
       }
     }
@@ -340,6 +348,8 @@ void MLEngine::checkpoint(TensorList L, int buftype)
           n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
           if(buftype == HISTORY)
             n = n + "_history";
+          else if(buftype == DIFF)
+            n = n + "_grad";
           bn->Checkpoint(tBuf, n, checkpoint_format_);
         }
       }
@@ -352,6 +362,8 @@ void MLEngine::checkpoint(TensorList L, int buftype)
           n = checkpoint_dir_ + to_string(current_epoch_) + "/" + tn;
           if(buftype == HISTORY)
             n = n + "_history";
+          else if(buftype == DIFF)
+            n = n + "_grad";
           fcbn->Checkpoint(tBuf, n, checkpoint_format_);
         }
       }
@@ -389,7 +401,7 @@ void MLEngine::read_checkpoint_file(TensorBuf* tBuf, string filename, string for
   }
   fclose(f);
 
-  if(data_type_ == BF16 && (filename.find("conv") != filename.npos || filename.find("fc") != filename.npos))
+  if(data_type_ == BF16 && (filename.find("wt") != filename.npos))
     if(filename.find("history") == filename.npos)
       convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)tBuf->getLPBuffer(), bytes/sizeof(float));
 }
@@ -544,6 +556,10 @@ void MLEngine::run(int mode)
 #ifdef TIMING
           gettimeofday(&tvis, NULL);
 #endif
+          if(global_node_id_ == 0)
+            if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+              if(current_batch_ == num_train_batches_-1)
+                checkpoint(wTList_, DIFF);
 
           solver_->applyUpdate((float*)weight_buf_, (float*)winc_buf_, wdiff_buf_, total_weights_, (float*)wt_lr_mult_, (float*)wt_decay_mult_, "WEIGHT");
 
@@ -596,7 +612,10 @@ void MLEngine::run(int mode)
 
 #ifdef DUMP_ACT_DATA
         if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
+        {
           checkpoint(outTList_, DATA);
+          checkpoint(outTList_, DIFF);
+        }
 #endif
 
         FILE* f = fopen("checkpoint", "w");

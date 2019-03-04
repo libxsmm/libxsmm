@@ -41,8 +41,8 @@ void dgemm_(const char*, const char*, const int*, const int*, const int*,
   const double*, const double*, const int*, const double*, const int*,
   const double*, double*, const int*);
 void sgemm_(const char*, const char*, const int*, const int*, const int*,
-  const double*, const double*, const int*, const double*, const int*,
-  const double*, double*, const int*);
+  const float*, const float*, const int*, const float*, const int*,
+  const float*, float*, const int*);
 #endif
 #if defined(_OPENMP)
 # include <omp.h>
@@ -55,7 +55,7 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
 # define CONCATENATE(A, B) CONCATENATE_AUX(A, B)
 # define GEMM CONCATENATE(GEMM_, TYPE)
 #endif
-#if !defined(NOFALLBACK)
+#if !defined(NOFALLBACK) && 0
 # define NOFALLBACK
 #endif
 
@@ -139,7 +139,7 @@ int main(int argc, char* argv[])
 # elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     duration = dsecnd() - duration;
 # endif
-}
+  }
   else
 # if defined(NOFALLBACK)
   if (0/*false*/)

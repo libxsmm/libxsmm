@@ -190,11 +190,12 @@ def version_branch(max_strlen=-1):
     filepath_default = os.path.realpath(os.path.join(os.path.dirname(
         inspect.getfile(inspect.currentframe())), "..", version_filename))
     filepath_local = os.path.realpath(version_filename)  # local version file
-    version, branch = version_branch_from_file(filepath_default)
+    realversion, branch = version_branch_from_file(filepath_default)
+    version = realversion
     out_of_tree = (filepath_default != filepath_local)
     if (out_of_tree and os.path.isfile(filepath_local)):
         local, ignored = version_branch_from_file(filepath_local)
-        if (version_numbers(version) < version_numbers(local)):
+        if (version_numbers(realversion) < version_numbers(local)):
             version = local
     if (0 < max_strlen):
         start = int(max_strlen / 3)
@@ -205,7 +206,7 @@ def version_branch(max_strlen=-1):
             branch = branch[0:cut]
         else:
             branch = branch[0:max_strlen]
-    return (version, branch)
+    return (version, branch, realversion)
 
 
 def version_numbers(version):
@@ -249,7 +250,7 @@ if __name__ == "__main__":
             major, minor, update, patch = version_numbers(sys.argv[2])
             print(major)  # soname version
         else:
-            version, branch = version_branch()
+            version, branch, realversion = version_branch()
             major, minor, update, patch = version_numbers(version)
             if (1 == arg1):
                 print(major)
@@ -260,9 +261,9 @@ if __name__ == "__main__":
             elif (4 == arg1):
                 print(patch)
             elif ("" != branch):
-                print(branch + "-" + version)
+                print(branch + "-" + realversion)
             else:
-                print(version)
+                print(realversion)
     else:
         sys.tracebacklimit = 0
         raise ValueError(

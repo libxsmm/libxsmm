@@ -1179,6 +1179,14 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "input vector register parameter must be undefined here (error #%u)!", i_error_code );
       break;
+    case LIBXSMM_ERR_TRANS_B:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "GEMM kernel with trans B requested, but target/datatype not supported (error #%u)!", i_error_code );
+      break;
+    case LIBXSMM_ERR_LDB_TRANS:
+      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
+        "ldb needs to be greater than or equal to n (error #%u)!", i_error_code );
+      break;
     default: /* we do not know what happened */
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "an unknown error occurred (error #%u)!", i_error_code );

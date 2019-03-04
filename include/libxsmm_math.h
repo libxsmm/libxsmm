@@ -42,10 +42,12 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_matdiff_info {
   /** One-norm */         double norm1_abs, norm1_rel;
   /** Infinity-norm */    double normi_abs, normi_rel;
   /** Froebenius-norm */  double normf_rel;
-  /** L1-norm and L2-norm of differences. */
-  double l2_abs, l2_rel, l1_ref, l1_tst;
-  /** Maximum absolute and relative difference. */
-  double linf_abs, linf_rel;
+  /** Maximum difference, and L2-norm (both absolute and relative). */
+  double linf_abs, linf_rel, l2_abs, l2_rel;
+  /** Statistics: sum/l1, min., max., arith. avg., and variance. */
+  double l1_ref, min_ref, max_ref, avg_ref, var_ref;
+  /** Statistics: sum/l1, min., max., arith. avg., and variance. */
+  double l1_tst, min_tst, max_tst, avg_tst, var_tst;
   /** Location (m, n) of largest difference (linf_abs). */
   libxsmm_blasint m, n;
 } libxsmm_matdiff_info;
@@ -112,6 +114,8 @@ LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned in
 LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x);
 /* SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x);
+/* Based on libxsmm_isqrt_u32, but actual factor of x. */
+LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x);
 /* SQRT with Newton's method using double-precision. */
 LIBXSMM_API double libxsmm_dsqrt(double x);
 /* SQRT with Newton's method using single-precision. */

@@ -79,7 +79,12 @@
 
 #define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
 #define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (LIBXSMM_VERSION2(MAJOR, MINOR) + (UPDATE))
-#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) ((MAJOR) * 100000000 + (MINOR) * 1000000 + (UPDATE) * 10000 + (PATCH))
+#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) \
+  (((MAJOR/*7b*/) << 24) | ((MINOR/*5b*/) << 19) | ((UPDATE/*5b*/) << 14) | (PATCH/*14b*/))
+#define LIBXSMM_VERSION41(VERSION) (((VERSION) >> 24))
+#define LIBXSMM_VERSION42(VERSION) (((VERSION) >> 19) & 0x1F)
+#define LIBXSMM_VERSION43(VERSION) (((VERSION) >> 14) & 0x1F)
+#define LIBXSMM_VERSION44(VERSION) (((VERSION)) & 0x3FFF)
 
 #if defined(__cplusplus)
 # define LIBXSMM_VARIADIC ...
@@ -167,12 +172,12 @@
 #endif
 #define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
-#if !defined(__STATIC) && !defined(_WINDLL) && !defined(__MINGW32__) && (defined(_WIN32) || defined(__CYGWIN__))
+#if !defined(__STATIC) && !defined(_WINDLL) && (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
 # define __STATIC
 #endif
 
 /* may include Clang and other compatible compilers */
-#if defined(__GNUC__) && !defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(__GNUC__) && !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
 # define LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ATTRIBUTE(visibility("internal"))
 # define LIBXSMM_VISIBILITY_HIDDEN LIBXSMM_ATTRIBUTE(visibility("hidden"))
 # define LIBXSMM_VISIBILITY_PUBLIC LIBXSMM_ATTRIBUTE(visibility("default"))
@@ -191,7 +196,7 @@
 #endif
 
 /* Windows Dynamic Link Library (DLL) */
-#if !defined(__STATIC) && (defined(_WIN32) || defined(__CYGWIN__))
+#if !defined(__STATIC) && (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
 # define LIBXSMM_VISIBILITY_EXPORT LIBXSMM_ATTRIBUTE(dllexport)
 # define LIBXSMM_VISIBILITY_IMPORT LIBXSMM_ATTRIBUTE(dllimport)
 #endif
@@ -207,7 +212,6 @@
 # define LIBXSMM_API_EXPORT LIBXSMM_API
 # define LIBXSMM_APIVAR_PUBLIC(DECL) LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE DECL; LIBXSMM_RETARGETABLE DECL
 # define LIBXSMM_APIVAR(DECL) LIBXSMM_APIVAR_PUBLIC(DECL)
-# define LIBXSMM_EXTVAR(DECL) LIBXSMM_APIVAR(DECL)
 # define LIBXSMM_APIEXT_INTERN LIBXSMM_API_INTERN
 # define LIBXSMM_APIEXT LIBXSMM_APIEXT_INTERN
 #else /* classic ABI */
@@ -218,7 +222,6 @@
 #   define LIBXSMM_APIVAR_PUBLIC(DECL) LIBXSMM_API DECL; LIBXSMM_API DECL
 #   define LIBXSMM_APIVAR(DECL) LIBXSMM_EXTERN_C LIBXSMM_VISIBILITY_PRIVATE LIBXSMM_RETARGETABLE DECL; \
                                 LIBXSMM_EXTERN_C LIBXSMM_VISIBILITY_PRIVATE LIBXSMM_RETARGETABLE DECL
-#   define LIBXSMM_EXTVAR(DECL) LIBXSMM_APIVAR(DECL)
 #   define LIBXSMM_APIEXT LIBXSMM_VISIBILITY_EXPORT LIBXSMM_RETARGETABLE
 #   define LIBXSMM_APIEXT_INTERN LIBXSMM_API_INTERN
 # elif defined(LIBXSMM_BUILD)
@@ -242,9 +245,11 @@
 # endif
 #endif
 #if !defined(_WIN32)
-# define LIBXSMM_APIVAR_ALIGNED(DECL) LIBXSMM_APIVAR_PUBLIC(LIBXSMM_ALIGNED(DECL, 32))
+# define LIBXSMM_APIVAR_ALIGNED(DECL) LIBXSMM_APIVAR_PUBLIC(LIBXSMM_ALIGNED(DECL, LIBXSMM_CONFIG_CACHELINE))
+# define LIBXSMM_APIVAR_ARRAY(DECL, N) LIBXSMM_APIVAR(LIBXSMM_ALIGNED(DECL[N], LIBXSMM_CONFIG_CACHELINE))
 #else /* Windows */
-# define LIBXSMM_APIVAR_ALIGNED LIBXSMM_APIVAR_PUBLIC
+# define LIBXSMM_APIVAR_ALIGNED(DECL) LIBXSMM_APIVAR_PUBLIC(DECL)
+# define LIBXSMM_APIVAR_ARRAY(DECL, N) LIBXSMM_APIVAR(DECL[N])
 #endif
 #define LIBXSMM_API_INLINE LIBXSMM_EXTERN_C LIBXSMM_INLINE LIBXSMM_RETARGETABLE
 
@@ -321,8 +326,14 @@
 # define LIBXSMM_PRAGMA_FORCEINLINE
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG)
 # define LIBXSMM_PRAGMA_UNROLL_AND_JAM(N)
-# define LIBXSMM_PRAGMA_UNROLL_N(N)
 # define LIBXSMM_PRAGMA_UNROLL
+#endif
+#if !defined(LIBXSMM_PRAGMA_UNROLL_N)
+# if defined(__GNUC__) && (LIBXSMM_VERSION3(8, 3, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+#   define LIBXSMM_PRAGMA_UNROLL_N(N) LIBXSMM_PRAGMA(GCC unroll N)
+# else
+#   define LIBXSMM_PRAGMA_UNROLL_N(N)
+# endif
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
@@ -668,8 +679,10 @@
 #if !defined(_Float64x) && defined(LIBXSMM_GLIBC_FPTYPES)
 # define _Float64x _Float64
 #endif
-#if /* !LIBXSMM_INTEL_COMPILER */defined(__INTEL_COMPILER) && !defined(__clang__) /* TODO */
+#if !defined(__has_feature) && !defined(__clang__)
 # define __has_feature(A) 0
+#endif
+#if !defined(__has_builtin) && !defined(__clang__)
 # define __has_builtin(A) 0
 #endif
 

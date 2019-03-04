@@ -98,8 +98,8 @@ void libxsmm_generator_convolution_forward_avx512_kernel(
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_MIC;
   } else if ( strcmp( i_arch, "skx" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
-  } else if ( strcmp( i_arch, "icl" ) == 0 ) {
-    l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_ICL;
+  } else if ( strcmp( i_arch, "clx" ) == 0 ) {
+    l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CLX;
   } else if ( strcmp( i_arch, "cpx" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CPX;
   } else {
@@ -739,7 +739,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
             0,
             2,
             0);
- 
+
         /* vpslld  */
         libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
             i_conv_kernel_config->instruction_set,
@@ -818,7 +818,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
               2,
               LIBXSMM_X86_VEC_REG_UNDEF,
               16);
-          
+
           /* vpsrad */
           libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
               i_conv_kernel_config->instruction_set,
@@ -1201,7 +1201,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
                 0,
                 3,
                 i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
-            
+
             /* vfma */
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                 i_conv_kernel_config->instruction_set,

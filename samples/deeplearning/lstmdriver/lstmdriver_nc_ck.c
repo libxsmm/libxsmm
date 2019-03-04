@@ -355,6 +355,7 @@ LIBXSMM_INLINE void convert_ck_c4k(int C, int K, float *src, float *dst)
 {
   int x, y;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(x); LIBXSMM_OMP_VAR(y);
 # pragma omp parallel for private(x, y)
 #endif
   for (y = 0; y < C; y++) {
@@ -370,6 +371,7 @@ LIBXSMM_INLINE void convert_c4k_4ck(int C, int K, float *src, float *dst)
   /* offsets: i--0, c--1, f--2, o--3 */
   int x, y, offset;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(x); LIBXSMM_OMP_VAR(y);
 # pragma omp parallel for private(x, y, offset)
 #endif
   for (offset = 0; offset < 4; offset++) {
@@ -386,11 +388,31 @@ LIBXSMM_INLINE void convert_nk_nck(int N, int K, int CK, float *src, float *dst)
 {
   int x, y;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(x);
 # pragma omp parallel for private(x, y)
 #endif
   for (y = 0; y < N; y++) {
     for (x = 0; x < K; x++) {
       dst[y*CK + x] = src[y*K + x];
+    }
+  }
+}
+
+
+LIBXSMM_INLINE void lstm_fwd_copy_bias(int N, int K, float *bigold, float *bcgold, float *bfgold, float *bogold, float forget_bias, float *icfogoldt, int j)
+{
+  LIBXSMM_VLA_DECL(3, float, icfogold, icfogoldt, N, 4 * K);
+  int i, l;
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i); LIBXSMM_OMP_VAR(l);
+# pragma omp parallel for private(i, l) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
+  for (i = 0; i < N; i++) {
+    for (l = 0; l < K; l++) {
+      LIBXSMM_VLA_ACCESS(3, icfogold, j, i, l,     N, 4 * K) = bigold[l];
+      LIBXSMM_VLA_ACCESS(3, icfogold, j, i, l+K,   N, 4 * K) = bcgold[l];
+      LIBXSMM_VLA_ACCESS(3, icfogold, j, i, l+2*K, N, 4 * K) = bfgold[l] + forget_bias;
+      LIBXSMM_VLA_ACCESS(3, icfogold, j, i, l+3*K, N, 4 * K) = bogold[l];
     }
   }
 }
@@ -405,7 +427,7 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
   __m512 minus1 = _mm512_set1_ps (-1.0f);
   __m512 plus1  = _mm512_set1_ps (1.0f);
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = 0; l < rem; l+=16) {
@@ -449,7 +471,7 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
     }
   }
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = rem; l < K; l++) {
@@ -512,7 +534,7 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
   int rem = (K/16)*16;
   __m512 plus1  = _mm512_set1_ps (1.0f);
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = 0; l < rem; l+=16) {
@@ -573,7 +595,7 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
     }
   }
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = rem; l < K; l++) {
@@ -653,7 +675,6 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
   LIBXSMM_VLA_DECL(2, float, cogold, cogoldt, K * N);
   LIBXSMM_VLA_DECL(2, float, hgold, hgoldt, K * N);
   LIBXSMM_VLA_DECL(3, float, icfogold, icfogoldt, N, 4 * K);
-  /* FWD */
 #if defined(PROFILE)
   Gbl_conv_start = libxsmm_timer_tick();
 #endif
@@ -667,6 +688,7 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
   convert_ck_c4k(K, K, rfgold, &(rgold[2*K]));
   convert_ck_c4k(K, K, rogold, &(rgold[3*K]));
 #else
+  LIBXSMM_UNUSED(rgold);
   convert_ck_c4k(C, K, wigold, wgold);
   convert_ck_c4k(C, K, wcgold, &(wgold[K]));
   convert_ck_c4k(C, K, wfgold, &(wgold[2*K]));
@@ -685,10 +707,7 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
 #if defined(PROFILE)
     Gbl_copy_bias_start = libxsmm_timer_tick();
 #endif
-    matrix_copy_bias       (K, N, 4*K, bigold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 0,   N, 4 * K));
-    matrix_copy_bias       (K, N, 4*K, bcgold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, K,   N, 4 * K));
-    matrix_copy_forget_bias(K, N, 4*K, bfgold, &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 2*K, N, 4 * K), forget_bias);
-    matrix_copy_bias       (K, N, 4*K, bogold,    &LIBXSMM_VLA_ACCESS(3, icfogold, j, 0, 3*K, N, 4 * K));
+    lstm_fwd_copy_bias(N, K, bigold, bcgold, bfgold, bogold, forget_bias, icfogoldt, j);
 #if defined(PROFILE)
     Gbl_copy_bias_end = libxsmm_timer_tick();
     Gbl_copy_bias_total += libxsmm_timer_duration(Gbl_copy_bias_start, Gbl_copy_bias_end);
@@ -782,7 +801,6 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
   LIBXSMM_VLA_DECL(2, float, dhgold, dhgoldt, K * N);
   LIBXSMM_VLA_DECL(3, float, dicfogold, dicfogoldt, N, 4 * K);
   LIBXSMM_VLA_DECL(2, float, doutgold, doutgoldt, K * N);
-  /* BWD/UPD */
   for (j = t-1; j >= 0; --j) {
 #if defined(PROFILE)
     Gbl_eltwise_start = libxsmm_timer_tick();
@@ -840,6 +858,7 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
       LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K4, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &LIBXSMM_VLA_ACCESS(2, hgold, j-1, 0, K * N), &K, &beta, drgold, &K4);
     }
 #else
+    LIBXSMM_UNUSED(rgold); LIBXSMM_UNUSED(drgold);
     LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &CK, &N, &K4, &alpha, wgold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta0, dxhgold, &CK);
     matrix_copy_ld(C, N, C+K, dxhgold, &LIBXSMM_VLA_ACCESS(2, dxgold, j, 0, N * C));
     if (j > 0) {
@@ -863,6 +882,7 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
 #endif
     /* compute db */
 #if defined(_OPENMP)
+    LIBXSMM_OMP_VAR(p);
 # pragma omp parallel for private(l, p)
 #endif
     for (l = 0; l < K; l++) {

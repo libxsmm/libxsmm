@@ -32,6 +32,9 @@
   <ItemGroup>
     <ClInclude Include="magazine.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Makefile" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>magazine_batch</ProjectName>
     <ProjectGuid>{3853732E-7E62-4029-9998-96CF710CC9F5}</ProjectGuid>

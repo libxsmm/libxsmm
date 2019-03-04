@@ -551,7 +551,7 @@ int main(int argc, char* argv[])
   zero_buf(djdb, K);
   zero_buf(djdht, K*N*t);
   /*LIBXSMM_VLA_DECL(2, float, x, xt, N*C);*/
-  LIBXSMM_VLA_DECL(2, float, h, ht, K*N);
+  /*LIBXSMM_VLA_DECL(2, float, h, ht, K*N);*/
 
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");

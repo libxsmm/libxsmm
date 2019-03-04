@@ -51,6 +51,8 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    beta: 0 or 1\n");
   printf("    0: unaligned A, otherwise aligned\n");
   printf("    0: unaligned C, otherwise aligned\n");
+  printf("    0: A normal, 1: A trans\n");
+  printf("    0: B normal, 1: B trans\n");
   printf("    PREFETCH: nopf (none), pfsigonly, BL2viaC, AL2, curAL2, AL2jpst, AL2_BL2viaC, curAL2_BL2viaC, AL2jpst_BL2viaC, AL1_BL1_CL1\n");
   printf("    PRECISION: SP, DP, I16I32, I16F32, BF16F32\n");
   printf("    #repetitions\n");
@@ -278,6 +280,8 @@ int main(int argc, char* argv []) {
   int l_m = 0, l_n = 0, l_k = 0;
   int l_aligned_a = 0;
   int l_aligned_c = 0;
+  int l_trans_a = 0;
+  int l_trans_b = 0;
   double l_alpha = 0;
   double l_beta = 0;
 
@@ -310,7 +314,7 @@ int main(int argc, char* argv []) {
   int* l_c_gold_w_i = 0;
 
   /* check argument count for a valid range */
-  if ( argc != 14 ) {
+  if ( argc != 16 ) {
     print_help();
     return EXIT_FAILURE;
   }
@@ -328,43 +332,49 @@ int main(int argc, char* argv []) {
   l_beta = atof(argv[8]);
   l_aligned_a = atoi(argv[9]);
   l_aligned_c = atoi(argv[10]);
+  l_trans_a = atoi(argv[11]);
+  l_trans_b = atoi(argv[12]);
+
+  if ( l_trans_b != 0 ) {
+    l_flags |= LIBXSMM_GEMM_FLAG_TRANS_B;
+  }
 
   l_flags |= (0 != l_aligned_a ? LIBXSMM_GEMM_FLAG_ALIGN_A : 0);
   l_flags |= (0 != l_aligned_c ? LIBXSMM_GEMM_FLAG_ALIGN_C : 0);
 
   /* arch specific stuff */
-  l_precision = argv[12];
-  g_reps = atoi(argv[13]);
+  l_precision = argv[14];
+  g_reps = atoi(argv[15]);
 
   /* set value of prefetch flag */
-  if (strcmp("nopf", argv[11]) == 0) {
+  if (strcmp("nopf", argv[13]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
   }
-  else if (strcmp("pfsigonly", argv[11]) == 0) {
+  else if (strcmp("pfsigonly", argv[13]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_SIGONLY;
   }
-  else if (strcmp("BL2viaC", argv[11]) == 0) {
+  else if (strcmp("BL2viaC", argv[13]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_BL2_VIA_C;
   }
-  else if (strcmp("curAL2", argv[11]) == 0) {
+  else if (strcmp("curAL2", argv[13]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;
   }
-  else if (strcmp("curAL2_BL2viaC", argv[11]) == 0) {
+  else if (strcmp("curAL2_BL2viaC", argv[13]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_AHEAD;
   }
-  else if (strcmp("AL2", argv[11]) == 0) {
+  else if (strcmp("AL2", argv[13]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2;
   }
-  else if (strcmp("AL2_BL2viaC", argv[11]) == 0) {
+  else if (strcmp("AL2_BL2viaC", argv[13]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C;
   }
-  else if (strcmp("AL2jpst", argv[11]) == 0) {
+  else if (strcmp("AL2jpst", argv[13]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2_JPST;
   }
-  else if (strcmp("AL2jpst_BL2viaC", argv[11]) == 0) {
+  else if (strcmp("AL2jpst_BL2viaC", argv[13]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C_JPST;
   }
-  else if (strcmp("AL1_BL1_CL1", argv[11]) == 0) {
+  else if (strcmp("AL1_BL1_CL1", argv[13]) == 0) {
     l_prefetch = LIBXSMM_GEMM_PREFETCH_AL1_BL1_CL1;
   }
   else {
@@ -413,7 +423,7 @@ int main(int argc, char* argv []) {
       }
     }
   }
-  else if (strcmp(l_precision, "SP") == 0) {
+  else if ((strcmp(l_precision, "SP") == 0) && (l_trans_b == 0)) {
     l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F32,
       l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
     l_a_f = (float*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(float), 64);
@@ -429,6 +439,33 @@ int main(int argc, char* argv []) {
     /* touch B */
     for (l_i = 0; l_i < l_ldb; l_i++) {
       for (l_j = 0; l_j < l_n; l_j++) {
+        l_b_f[(l_j * l_ldb) + l_i] = (float)libxsmm_rng_f64();
+      }
+    }
+    /* touch C */
+    for (l_i = 0; l_i < l_ldc; l_i++) {
+      for (l_j = 0; l_j < l_n; l_j++) {
+        l_c_f[(l_j * l_ldc) + l_i] = 0.f;
+        l_c_gold_f[(l_j * l_ldc) + l_i] = 0.f;
+      }
+    }
+  }
+  else if ((strcmp(l_precision, "SP") == 0) && (l_trans_b != 0)) {
+    l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F32,
+      l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
+    l_a_f = (float*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(float), 64);
+    l_b_f = (float*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_k * sizeof(float), 64);
+    l_c_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
+    l_c_gold_f = (float*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(float), 64);
+    /* touch A */
+    for (l_i = 0; l_i < l_lda; l_i++) {
+      for (l_j = 0; l_j < l_k; l_j++) {
+        l_a_f[(l_j * l_lda) + l_i] = (float)libxsmm_rng_f64();
+      }
+    }
+    /* touch B */
+    for (l_i = 0; l_i < l_ldb; l_i++) {
+      for (l_j = 0; l_j < l_k; l_j++) {
         l_b_f[(l_j * l_ldb) + l_i] = (float)libxsmm_rng_f64();
       }
     }
@@ -558,6 +595,8 @@ int main(int argc, char* argv []) {
       }
     }
   }
+#else
+  LIBXSMM_UNUSED(l_c_b); LIBXSMM_UNUSED(l_b_b); LIBXSMM_UNUSED(l_c_gold_b); LIBXSMM_UNUSED(l_a_b);
 #endif
 
   if (0 == l_xgemm_desc) {
@@ -565,12 +604,11 @@ int main(int argc, char* argv []) {
     return EXIT_FAILURE;
   }
 
-  /* print some output... */
-  printf("------------------------------------------------\n");
-  printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
-  printf("------------------------------------------------\n");
-
   if (strcmp(l_precision, "DP") == 0) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
     const libxsmm_timer_tickint l_start = libxsmm_timer_tick();
     for (l_t = 0; l_t < g_reps; l_t++) {
       for (l_j = 0; l_j < l_n; l_j++) {
@@ -593,7 +631,11 @@ int main(int argc, char* argv []) {
     libxsmm_free(l_c_d);
     libxsmm_free(l_c_gold_d);
   }
-  else if (strcmp(l_precision, "SP") == 0) {
+  else if ((strcmp(l_precision, "SP") == 0) && (l_trans_b == 0)) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
     const libxsmm_timer_tickint l_start = libxsmm_timer_tick();
     for (l_t = 0; l_t < g_reps; l_t++) {
       for (l_j = 0; l_j < l_n; l_j++) {
@@ -616,7 +658,38 @@ int main(int argc, char* argv []) {
     libxsmm_free(l_c_f);
     libxsmm_free(l_c_gold_f);
   }
+  else if ((strcmp(l_precision, "SP") == 0) && (l_trans_b != 0)) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i)^T = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
+    const libxsmm_timer_tickint l_start = libxsmm_timer_tick();
+    for (l_t = 0; l_t < g_reps; l_t++) {
+      for (l_j = 0; l_j < l_n; l_j++) {
+        for (l_s = 0; l_s < l_k; l_s++) {
+          for (l_i = 0; l_i < l_m; l_i++) {
+            l_c_gold_f[(l_j * l_ldc) + l_i] += l_a_f[(l_s * l_lda) + l_i] * l_b_f[(l_s * l_ldb) + l_j];
+          }
+        }
+      }
+    }
+    l_runtime = libxsmm_timer_duration(l_start, libxsmm_timer_tick());
+    printf("%fs for C\n", l_runtime);
+    printf("%f GFLOPS for C\n", ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime * 1.0e9));
+    run_jit_float( l_xgemm_desc, l_a_f, l_b_f, l_c_f );
+    libxsmm_matdiff(&l_diff, LIBXSMM_DATATYPE_F32, l_m, l_n, l_c_gold_f, l_c_f, &l_ldc, &l_ldc);
+    printf("max. error: %f\n", l_diff.linf_abs);
+
+    libxsmm_free(l_a_f);
+    libxsmm_free(l_b_f);
+    libxsmm_free(l_c_f);
+    libxsmm_free(l_c_gold_f);
+  }
   else if (strcmp(l_precision, "I16I32") == 0) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
     const int l_k_block = 2;
     double l_max_error = 0;
     int l_k2;
@@ -650,6 +723,10 @@ int main(int argc, char* argv []) {
     libxsmm_free(l_c_gold_w_i);
   }
   else if (strcmp(l_precision, "I16F32") == 0) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
     const int l_k_block = 2;
     double l_max_error = 0;
     int l_k2;
@@ -685,6 +762,10 @@ int main(int argc, char* argv []) {
     libxsmm_free(l_c_gold_w_f);
   }
   else if (strcmp(l_precision, "BF16F32") == 0) {
+    printf("------------------------------------------------\n");
+    printf("RUNNING (%ix%i) X (%ix%i) = (%ix%i), %s\n", l_m, l_k, l_k, l_n, l_m, l_n, l_precision);
+    printf("------------------------------------------------\n");
+
     const int l_k_block = 2;
     double l_max_error = 0;
     int l_k2;

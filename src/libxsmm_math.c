@@ -72,14 +72,10 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   if (0 == ref && 0 != tst) { ref = tst; tst = NULL; result_swap = 1; }
   if (0 != ref && 0 != info) {
     libxsmm_blasint mm = m, nn = n, ldr = (0 == ldref ? m : *ldref), ldt = (0 == ldtst ? m : *ldtst);
-    union { int raw; float value; } inf;
-#if defined(INFINITY)
-    inf.value = INFINITY;
-#else
-    inf.raw = 0x7F800000;
-#endif
+    double inf;
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
     libxsmm_matdiff_clear(info);
+    inf = info->min_ref;
     switch (datatype) {
       case LIBXSMM_DATATYPE_F64: {
 #       define LIBXSMM_MATDIFF_TEMPLATE_ELEM_TYPE double
@@ -120,21 +116,36 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
     LIBXSMM_ASSERT(info->m < mm && info->n < nn);
     if (EXIT_SUCCESS == result) {
       const char *const env = getenv("LIBXSMM_DUMP");
+      LIBXSMM_INIT
       if (0 != env && 0 != *env && '0' != *env) {
         if ('-' != *env || (0 <= info->m && 0 <= info->n)) {
           const char *const defaultname = (('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env;
           const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
           const libxsmm_mhd_elemtype type_dst = LIBXSMM_MIN(LIBXSMM_MHD_ELEMTYPE_F32, type_src);
+          const int envi = atoi(env), reshape = (1 < envi || -1 > envi);
+          size_t shape[2], size[2];
           char filename[256];
-          size_t size[2], pr[2]; size[0] = (size_t)mm; size[1] = (size_t)nn; pr[0] = (size_t)ldr; pr[1] = (size_t)nn;
+          if (0 == reshape) {
+            shape[0] = (size_t)mm; shape[1] = (size_t)nn;
+            size[0] = (size_t)ldr; size[1] = (size_t)nn;
+          }
+          else { /* reshape */
+            const size_t x = mm * nn, y = libxsmm_isqrt2_u32((unsigned int)x);
+            shape[0] = x / y; shape[1] = y;
+            size[0] = shape[0];
+            size[1] = shape[1];
+          }
           LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-ref.mhd", defaultname, ref);
-          libxsmm_mhd_write(filename, NULL/*offset*/, size, pr, 2/*ndims*/, 1/*ncomponents*/,
+          libxsmm_mhd_write(filename, NULL/*offset*/, shape, size, 2/*ndims*/, 1/*ncomponents*/,
             type_src, &type_dst, ref, NULL/*header_size*/, NULL/*extension_header*/,
             NULL/*extension*/, 0/*extension_size*/);
           if (NULL != tst) {
-            size_t pt[2]; pt[0] = (size_t)ldt; pt[1] = (size_t)nn;
+            if (0 == reshape) {
+              size[0] = (size_t)ldt;
+              size[1] = (size_t)nn;
+            }
             LIBXSMM_SNPRINTF(filename, sizeof(filename), "%s-%p-tst.mhd", defaultname, ref/*adopt ref-ptr*/);
-            libxsmm_mhd_write(filename, NULL/*offset*/, size, pt, 2/*ndims*/, 1/*ncomponents*/,
+            libxsmm_mhd_write(filename, NULL/*offset*/, shape, size, 2/*ndims*/, 1/*ncomponents*/,
               type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
               NULL/*extension*/, 0/*extension_size*/);
             if ('-' == *env && '1' < env[1]) {
@@ -154,10 +165,10 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         info->l2_rel = libxsmm_dsqrt(info->l2_rel);
       }
       else {
+        /* in case of NaN in test-set, statistics is not set to inf (ref/test) */
         info->norm1_abs = info->norm1_rel = info->normi_abs = info->normi_rel = info->normf_rel
-                        = info->l2_abs = info->l2_rel = info->l1_ref = info->l1_tst
-                        = info->linf_abs = info->linf_rel
-                        = inf.value;
+                        = info->linf_abs = info->linf_rel = info->l2_abs = info->l2_rel
+                        = inf;
       }
       if (1 == n) {
         const libxsmm_blasint tmp = info->m;
@@ -165,6 +176,14 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         info->n = tmp;
       }
       if (0 != result_swap) {
+        info->min_tst = info->min_ref;
+        info->min_ref = 0;
+        info->max_tst = info->max_ref;
+        info->max_ref = 0;
+        info->avg_tst = info->avg_ref;
+        info->avg_ref = 0;
+        info->var_tst = info->var_ref;
+        info->var_ref = 0;
         info->l1_tst = info->l1_ref;
         info->l1_ref = 0;
       }
@@ -179,30 +198,78 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
 
 LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libxsmm_matdiff_info* input)
 {
-  LIBXSMM_ASSERT(0 != output && 0 != input);
-  if (output->normf_rel < input->normf_rel) {
-    output->m = input->m; output->n = input->n;
-    output->norm1_abs = input->norm1_abs;
-    output->norm1_rel = input->norm1_rel;
-    output->normi_abs = input->normi_abs;
-    output->normi_rel = input->normi_rel;
-    output->normf_rel = input->normf_rel;
+  LIBXSMM_ASSERT(NULL != output && NULL != input);
+  if (output->linf_abs < input->linf_abs) {
     output->linf_abs = input->linf_abs;
-    output->linf_rel = input->linf_rel;
-    output->l2_abs = input->l2_abs;
-    output->l2_rel = input->l2_rel;
-    output->l1_ref = input->l1_ref;
-    output->l1_tst = input->l1_tst;
+    LIBXSMM_ASSERT(0 <= input->m);
+    output->m = input->m;
+    LIBXSMM_ASSERT(0 <= input->n);
+    output->n = input->n;
   }
+  if (output->norm1_abs < input->norm1_abs) {
+    output->norm1_abs = input->norm1_abs;
+  }
+  if (output->norm1_rel < input->norm1_rel) {
+    output->norm1_rel = input->norm1_rel;
+  }
+  if (output->normi_abs < input->normi_abs) {
+    output->normi_abs = input->normi_abs;
+  }
+  if (output->normi_rel < input->normi_rel) {
+    output->normi_rel = input->normi_rel;
+  }
+  if (output->normf_rel < input->normf_rel) {
+    output->normf_rel = input->normf_rel;
+  }
+  if (output->linf_rel < input->linf_rel) {
+    output->linf_rel = input->linf_rel;
+  }
+  if (output->l2_abs < input->l2_abs) {
+    output->l2_abs = input->l2_abs;
+  }
+  if (output->l2_rel < input->l2_rel) {
+    output->l2_rel = input->l2_rel;
+  }
+  if (output->var_ref < input->var_ref) {
+    output->var_ref = input->var_ref;
+  }
+  if (output->var_tst < input->var_tst) {
+    output->var_tst = input->var_tst;
+  }
+  if (output->max_ref < input->max_ref) {
+    output->max_ref = input->max_ref;
+  }
+  if (output->max_tst < input->max_tst) {
+    output->max_tst = input->max_tst;
+  }
+  if (output->min_ref > input->min_ref) {
+    output->min_ref = input->min_ref;
+  }
+  if (output->min_tst > input->min_tst) {
+    output->min_tst = input->min_tst;
+  }
+  output->avg_ref = 0.5 * (output->avg_ref + input->avg_ref);
+  output->avg_tst = 0.5 * (output->avg_tst + input->avg_tst);
+  output->l1_ref += input->l1_ref;
+  output->l1_tst += input->l1_tst;
 }
 
 
 LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 {
   if (NULL != info) {
+    union { int raw; float value; } inf;
+#if defined(INFINITY)
+    inf.value = INFINITY;
+#else
+    inf.raw = 0x7F800000;
+#endif
     memset(info, 0, sizeof(*info)); /* nullify */
     /* no location discovered yet with a difference */
     info->m = info->n = -1;
+    /* initial minimum/maximum of reference/test */
+    info->min_ref = +inf.value;
+    info->max_ref = -inf.value;
   }
 }
 
@@ -373,6 +440,12 @@ LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x)
     if (b <= x) { x -= b; y |= s; }
   }
   return y;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x)
+{
+  return libxsmm_product_limit(x, libxsmm_isqrt_u32(x), 0/*is_lower*/);
 }
 
 

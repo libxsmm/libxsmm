@@ -83,8 +83,8 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_MIC;
   } else if ( strcmp( i_arch, "skx" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CORE;
-  } else if ( strcmp( i_arch, "icl" ) == 0 ) {
-    l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_ICL;
+  } else if ( strcmp( i_arch, "clx" ) == 0 ) {
+    l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CLX;
   } else if ( strcmp( i_arch, "cpx" ) == 0 ) {
     l_conv_kernel_config.instruction_set = LIBXSMM_X86_AVX512_CPX;
   } else if ( strcmp( i_arch, "knm" ) == 0 ) {
@@ -202,7 +202,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   }
 
   /* Load scratch lines for transpose */
-  if (((i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) || i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_BF16) && (l_conv_kernel_config.instruction_set == LIBXSMM_X86_AVX512_ICL || l_conv_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE || l_conv_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CPX ) ) {
+  if (((i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) || i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_BF16) && (l_conv_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CLX || l_conv_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE || l_conv_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CPX ) ) {
     unsigned int rsp_offset = 56;
 
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, l_gp_reg_mapping.gp_reg_help_5);
@@ -1218,7 +1218,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
                   i_conv_kernel_config->vector_reg_count - unroll_factor + l_n,
                   i_conv_kernel_config->vector_reg_count - unroll_factor + l_n );
 
-            } else if (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL || i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX) {
+            } else if (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX || i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX) {
               libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                   i_conv_kernel_config->instruction_set,
                   LIBXSMM_X86_INSTR_VPDPWSSDS,
@@ -1245,7 +1245,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
                   l_disp,
                   i_conv_kernel_config->vector_name,
                   3, 0, 1, 0 );
-            
+
               /* vpslld  */
               libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
                   i_conv_kernel_config->instruction_set,
@@ -1304,7 +1304,7 @@ void libxsmm_generator_convolution_weight_update_transpose_avx512_ofwloop_all_pi
                   l_disp,
                   i_conv_kernel_config->vector_name,
                   0,
-                  i_conv_kernel_config->vector_reg_count - unroll_factor + l_n );              
+                  i_conv_kernel_config->vector_reg_count - unroll_factor + l_n );
             }
           } else if ((i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I8  && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_I32 && (i_conv_desc->option & LIBXSMM_DNN_CONV_OPTION_ACTIVATION_UNSIGNED) > 0)) {
             /* broadcast in quadruples of 8 bit values */
@@ -1518,7 +1518,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
   }
 
   for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb; l_k_1++) {
-    unsigned int pipeline_vperms = (use_lp_kernel == 1 && (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_ICL || i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE || i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX )) ? 1 : 0;
+    unsigned int pipeline_vperms = (use_lp_kernel == 1 && (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX || i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE || i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX )) ? 1 : 0;
     unsigned int input_reg_to_use;
 
     /* Load+per to buf0  */
@@ -1763,7 +1763,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
                 0,
                 3,
                 i_conv_kernel_config->vector_reg_count - unroll_factor + l_n);
-             
+
              /* vfma */
              libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                 i_conv_kernel_config->instruction_set,
@@ -1784,9 +1784,9 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
                 i_conv_kernel_config->vector_name,
                 0,
                 i_conv_kernel_config->vector_reg_count - unroll_factor + l_n );
-          }          
+          }
         } else if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 ) {
-          if ( (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_ICL) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX) ) {
+          if ( (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CLX) && (i_conv_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX) ) {
             libxsmm_x86_instruction_vec_move( io_generated_code,
                 i_conv_kernel_config->instruction_set,
                 LIBXSMM_X86_INSTR_VPBROADCASTD,

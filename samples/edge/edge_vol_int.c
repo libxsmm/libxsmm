@@ -295,7 +295,7 @@ int main(int argc, char* argv[])
   l_total_thread = (double*)malloc(8*l_num_threads*sizeof(double));
   l_cur_thread_time = (double*)malloc(8*l_num_threads*sizeof(double));
   amoks = (size_t*)malloc(8*(l_num_threads+1)*sizeof(size_t));
-  for ( i = 0; i < (int)8*(l_num_threads+1); i++ ) {
+  for ( i = 0; i < 8*((int)l_num_threads+1); i++ ) {
     amoks[i] = 0;
   }
 

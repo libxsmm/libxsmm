@@ -204,6 +204,7 @@ LIBXSMM_INLINE void convert_ck_c4k(int C, int K, int offset, float *src, float *
   /* offsets: i--0, c--1, f--2, o--3 */
   int x, y;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(x);
 # pragma omp parallel for private(x, y)
 #endif
   for (y = 0; y < C; y++) {
@@ -219,6 +220,7 @@ LIBXSMM_INLINE void convert_c4k_4ck(int C, int K, float *src, float *dst)
   /* offsets: i--0, c--1, f--2, o--3 */
   int x, y, offset;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(x); LIBXSMM_OMP_VAR(y);
 # pragma omp parallel for private(x, y, offset)
 #endif
   for (offset = 0; offset < 4; offset++) {
@@ -1191,8 +1193,8 @@ int main(int argc, char* argv[])
       matrix_copy_KCCK_to_CK(dr, r_tmp, K, 4*K, bk, bk);
       convert_c4k_4ck(C, K, w_tmp, djdwtest);
       convert_c4k_4ck(K, K, r_tmp, djdrtest);
-      LIBXSMM_VLA_DECL(2, float, djdw4test, djdwtest, C*K);
-      LIBXSMM_VLA_DECL(2, float, djdr4test, djdrtest, K*K);
+      /*LIBXSMM_VLA_DECL(2, float, djdw4test, djdwtest, C*K);*/
+      /*LIBXSMM_VLA_DECL(2, float, djdr4test, djdrtest, K*K);*/
       LIBXSMM_VLA_DECL(2, float, djdb4test, djdbtest, K);
       matrix_copy(K, &(db[0]),   &LIBXSMM_VLA_ACCESS(2, djdb4test, 0, 0, K));
       matrix_copy(K, &(db[K]),   &LIBXSMM_VLA_ACCESS(2, djdb4test, 1, 0, K));

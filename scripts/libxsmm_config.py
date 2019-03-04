@@ -30,6 +30,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 from string import Template
+from datetime import date
 import libxsmm_utilities
 import fnmatch
 import sys
@@ -78,7 +79,7 @@ if __name__ == "__main__":
         if (14 < argc):
             mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[14:], 0))
 
-        version, branch = \
+        version, branch, realversion = \
             libxsmm_utilities.version_branch()
         major, minor, update, patch = \
             libxsmm_utilities.version_numbers(version)
@@ -101,12 +102,13 @@ if __name__ == "__main__":
         maxk = libxsmm_utilities.max_mnk(mnklist, avgdim, 2)
 
         substitute = {
-            "VERSION":    version,
+            "VERSION":    realversion,
             "BRANCH":     branch,
             "MAJOR":      major,
             "MINOR":      minor,
             "UPDATE":     update,
             "PATCH":      patch,
+            "DATE":       date.today().strftime("%Y%m%d"),
             "CACHELINE":  cacheline,
             "PREFETCH":   [-1, prefetch][0 <= prefetch],
             "MAX_MNK":    maxmnk,

@@ -101,8 +101,8 @@
 
 /** Construct symbol name from a given real type name (float, double and short). */
 #define LIBXSMM_USEOMP(FUNCTION)        LIBXSMM_CONCATENATE(FUNCTION, _omp)
-#define LIBXSMM_GEMM_SYMBOL(TYPE)       LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm))
-#define LIBXSMM_GEMV_SYMBOL(TYPE)       LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemv))
+#define LIBXSMM_GEMM_SYMBOL_NAME(TYPE)  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm))
+#define LIBXSMM_GEMV_SYMBOL_NAME(TYPE)  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemv))
 #define LIBXSMM_GEMMFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm_function))
 #define LIBXSMM_GEMVFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemv_function))
 #define LIBXSMM_MMFUNCTION_TYPE(TYPE)   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmfunction))
@@ -153,7 +153,7 @@
 #endif
 
 #define LIBXSMM_GEMM_SYMBOL_BLAS(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
-  void LIBXSMM_GEMM_SYMBOL(TYPE)(CONST char*, CONST char*, \
+  void LIBXSMM_GEMM_SYMBOL_NAME(TYPE)(CONST char*, CONST char*, \
     CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
     CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
     CONST TYPE*, CONST libxsmm_blasint*, \
@@ -237,18 +237,18 @@
     (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & LIBXSMM_FLAGS) ? 'n' : 't')); \
   const libxsmm_blasint *const libxsmm_blas_xgemm_k_ = (NULL != ((void*)(K)) ? (K) : (M)); \
   const libxsmm_blasint *const libxsmm_blas_xgemm_n_ = (NULL != ((void*)(N)) ? (N) : libxsmm_blas_xgemm_k_); \
-  const libxsmm_blasint *const libxsmm_blas_xgemm_lda_ = (NULL != ((void*)(LDA)) ? (LDA) : \
-    (('n' == libxsmm_blas_xgemm_transa_ || *"N" == libxsmm_blas_xgemm_transa_) ? (M) : libxsmm_blas_xgemm_k_)); \
-  const libxsmm_blasint *const libxsmm_blas_xgemm_ldb_ = (NULL != ((void*)(LDB)) ? (LDB) : \
-    (('n' == libxsmm_blas_xgemm_transb_ || *"N" == libxsmm_blas_xgemm_transb_) ? libxsmm_blas_xgemm_k_ : libxsmm_blas_xgemm_n_)); \
-  const libxsmm_blasint *const libxsmm_blas_xgemm_ldc_ = (NULL != ((void*)(LDC)) ? (LDC) : (M)); \
+  const libxsmm_blasint libxsmm_blas_xgemm_lda_ = LIBXSMM_MAX(NULL != ((void*)(LDA)) ? *(LDA) : \
+    *(('n' == libxsmm_blas_xgemm_transa_ || *"N" == libxsmm_blas_xgemm_transa_) ? (M) : libxsmm_blas_xgemm_k_), 1); \
+  const libxsmm_blasint libxsmm_blas_xgemm_ldb_ = LIBXSMM_MAX(NULL != ((void*)(LDB)) ? *(LDB) : \
+    *(('n' == libxsmm_blas_xgemm_transb_ || *"N" == libxsmm_blas_xgemm_transb_) ? libxsmm_blas_xgemm_k_ : libxsmm_blas_xgemm_n_), 1); \
+  const libxsmm_blasint libxsmm_blas_xgemm_ldc_ = LIBXSMM_MAX(NULL != ((void*)(LDC)) ? *(LDC) : *(M), 1); \
   const OTYPE libxsmm_blas_xgemm_alpha_ = (NULL != ((void*)(ALPHA)) ? (*(const OTYPE*)(ALPHA)) : ((OTYPE)LIBXSMM_ALPHA)); \
   const OTYPE libxsmm_blas_xgemm_beta_  = (NULL != ((void*)(BETA))  ? (*(const OTYPE*)(BETA))  : ((OTYPE)LIBXSMM_BETA)); \
   LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, gemm)(&libxsmm_blas_xgemm_transa_, &libxsmm_blas_xgemm_transb_, \
     M, libxsmm_blas_xgemm_n_, libxsmm_blas_xgemm_k_, \
-    &libxsmm_blas_xgemm_alpha_, (const ITYPE*)(A), libxsmm_blas_xgemm_lda_, \
-                                (const ITYPE*)(B), libxsmm_blas_xgemm_ldb_, \
-     &libxsmm_blas_xgemm_beta_,       (ITYPE*)(C), libxsmm_blas_xgemm_ldc_); \
+    &libxsmm_blas_xgemm_alpha_, (const ITYPE*)(A), &libxsmm_blas_xgemm_lda_, \
+                                (const ITYPE*)(B), &libxsmm_blas_xgemm_ldb_, \
+     &libxsmm_blas_xgemm_beta_,       (ITYPE*)(C), &libxsmm_blas_xgemm_ldc_); \
 }
 
 /** Helper macros for calling a dispatched function in a row/column-major aware fashion. */
@@ -306,18 +306,18 @@
   const int libxsmm_xgemm_flags_ = LIBXSMM_GEMM_PFLAGS(TRANSA, TRANSB, LIBXSMM_FLAGS); \
   const libxsmm_blasint *const libxsmm_xgemm_k_ = (NULL != (K) ? (K) : (M)); \
   const libxsmm_blasint *const libxsmm_xgemm_n_ = (NULL != (N) ? (N) : libxsmm_xgemm_k_); \
-  const libxsmm_blasint *const libxsmm_xgemm_lda_ = (NULL != ((void*)(LDA)) ? (LDA) : \
-    (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & libxsmm_xgemm_flags_) ? (M) : libxsmm_xgemm_k_)); \
-  const libxsmm_blasint *const libxsmm_xgemm_ldb_ = (NULL != ((void*)(LDB)) ? (LDB) : \
-    (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? libxsmm_xgemm_k_ : libxsmm_xgemm_n_)); \
-  const libxsmm_blasint *const libxsmm_xgemm_ldc_ = (NULL != (LDC) ? (LDC) : (M)); \
+  const libxsmm_blasint libxsmm_xgemm_lda_ = LIBXSMM_MAX(NULL != ((void*)(LDA)) ? *(LDA) : \
+    *(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & libxsmm_xgemm_flags_) ? (M) : libxsmm_xgemm_k_), 1); \
+  const libxsmm_blasint libxsmm_xgemm_ldb_ = LIBXSMM_MAX(NULL != ((void*)(LDB)) ? *(LDB) : \
+    *(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? libxsmm_xgemm_k_ : libxsmm_xgemm_n_), 1); \
+  const libxsmm_blasint libxsmm_xgemm_ldc_ = LIBXSMM_MAX(NULL != (LDC) ? *(LDC) : *(M), 1); \
   if (LIBXSMM_SMM(*(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_)) { \
     const LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) libxsmm_mmfunction_ = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)( \
-      *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, libxsmm_xgemm_lda_, libxsmm_xgemm_ldb_, libxsmm_xgemm_ldc_, \
+      *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
       (const OTYPE*)(ALPHA), (const OTYPE*)(BETA), &libxsmm_xgemm_flags_, NULL); \
     if (NULL != libxsmm_mmfunction_) { \
       LIBXSMM_MMCALL_LDX(libxsmm_mmfunction_, (const ITYPE*)(A), (const ITYPE*)(B), (OTYPE*)(C), \
-        *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, *libxsmm_xgemm_lda_, *libxsmm_xgemm_ldb_, *libxsmm_xgemm_ldc_); \
+        *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, libxsmm_xgemm_lda_, libxsmm_xgemm_ldb_, libxsmm_xgemm_ldc_); \
     } \
     else { \
       const char libxsmm_xgemm_transa_ = (char)(0 == (LIBXSMM_GEMM_FLAG_TRANS_A & libxsmm_xgemm_flags_) ? 'n' : 't'); \
@@ -326,9 +326,9 @@
       const OTYPE libxsmm_xgemm_beta_  = (NULL != ((void*)(BETA))  ? (*(const OTYPE*)(BETA))  : ((OTYPE)LIBXSMM_BETA)); \
       LIBXSMM_XGEMM_FALLBACK0(ITYPE, OTYPE, &libxsmm_xgemm_transa_, &libxsmm_xgemm_transb_, \
         M, libxsmm_xgemm_n_, libxsmm_xgemm_k_, \
-        &libxsmm_xgemm_alpha_, A, libxsmm_xgemm_lda_, \
-                               B, libxsmm_xgemm_ldb_, \
-         &libxsmm_xgemm_beta_, C, libxsmm_xgemm_ldc_); \
+        &libxsmm_xgemm_alpha_, A, &libxsmm_xgemm_lda_, \
+                               B, &libxsmm_xgemm_ldb_, \
+         &libxsmm_xgemm_beta_, C, &libxsmm_xgemm_ldc_); \
     } \
   } \
   else { \
@@ -338,9 +338,9 @@
     const OTYPE libxsmm_xgemm_beta_  = (NULL != ((void*)(BETA))  ? (*(const OTYPE*)(BETA))  : ((OTYPE)LIBXSMM_BETA)); \
     LIBXSMM_XGEMM_FALLBACK1(ITYPE, OTYPE, &libxsmm_xgemm_transa_, &libxsmm_xgemm_transb_, \
       M, libxsmm_xgemm_n_, libxsmm_xgemm_k_, \
-      &libxsmm_xgemm_alpha_, A, libxsmm_xgemm_lda_, \
-                             B, libxsmm_xgemm_ldb_, \
-       &libxsmm_xgemm_beta_, C, libxsmm_xgemm_ldc_); \
+      &libxsmm_xgemm_alpha_, A, &libxsmm_xgemm_lda_, \
+                             B, &libxsmm_xgemm_ldb_, \
+       &libxsmm_xgemm_beta_, C, &libxsmm_xgemm_ldc_); \
   } \
 }
 
@@ -448,9 +448,25 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemv_function)(
   const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
   const double*, double*, const libxsmm_blasint*);
 
-/** The original GEMM functions (SGEMM and DGEMM). */
+/** The original BLAS functions. */
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_dgemm_function libxsmm_original_dgemm_function);
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_sgemm_function libxsmm_original_sgemm_function);
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_dgemv_function libxsmm_original_dgemv_function);
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_sgemv_function libxsmm_original_sgemv_function);
 LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void);
 LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void);
+
+/* Helper macro to eventually (if defined) call libxsmm_init */
+#if defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR)
+# define LIBXSMM_GEMM_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm_function))
+# define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemv_function))
+# undef LIBXSMM_INIT
+# define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(0 != libxsmm_ninit, "LIBXSMM is not initialized");
+#else
+# define LIBXSMM_INIT libxsmm_init();
+# define LIBXSMM_GEMM_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemm)
+# define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemv)
+#endif
 
 /**
  * General dense matrix multiplication, which re-exposes LAPACK/BLAS

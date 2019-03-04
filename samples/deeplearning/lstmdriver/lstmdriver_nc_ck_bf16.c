@@ -261,7 +261,7 @@ LIBXSMM_INLINE void matrix_copy_f32_bfp16(int size, float *src, libxsmm_bfloat16
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    union libxsmm_bfloat16_hp t;
+    libxsmm_bfloat16_hp t;
     t.f = src[i];
     dst[i] = t.i[1];
   }
@@ -274,7 +274,7 @@ LIBXSMM_INLINE void matrix_copy_bfp16_f32(int size, libxsmm_bfloat16 *src, float
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    union libxsmm_bfloat16_hp t;
+    libxsmm_bfloat16_hp t;
     t.i[1] = src[i];
     t.i[0] = 0;
     dst[i] = t.f;
@@ -373,15 +373,15 @@ LIBXSMM_INLINE void matrix_complement_square_ld(int m, int n, int ld, float *src
 }
 
 LIBXSMM_INLINE void convert_ck_f32_to_c4k_bfp16(int C, int K, float *src, libxsmm_bfloat16 *dst)
-
 {
   int x, y;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(x);
 # pragma omp parallel for private(x, y)
 #endif
   for (y = 0; y < C; y++) {
     for (x = 0; x < K; x++) {
-      union libxsmm_bfloat16_hp t;
+      libxsmm_bfloat16_hp t;
       t.f = src[y*K + x];
       dst[y*4*K + x] = t.i[1];
     }
@@ -392,6 +392,7 @@ LIBXSMM_INLINE void convert_ck_c4k(int C, int K, float *src, float *dst)
 {
   int x, y;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(x);
 # pragma omp parallel for private(x, y)
 #endif
   for (y = 0; y < C; y++) {
@@ -407,6 +408,7 @@ LIBXSMM_INLINE void convert_c4k_4ck(int C, int K, float *src, float *dst)
   /* offsets: i--0, c--1, f--2, o--3 */
   int x, y, offset;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(x); LIBXSMM_OMP_VAR(y);
 # pragma omp parallel for private(x, y, offset)
 #endif
   for (offset = 0; offset < 4; offset++) {
@@ -423,6 +425,7 @@ LIBXSMM_INLINE void convert_nk_nck(int N, int K, int CK, float *src, float *dst)
 {
   int x, y;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(x);
 # pragma omp parallel for private(x, y)
 #endif
   for (y = 0; y < N; y++) {
@@ -442,7 +445,7 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
   __m512 minus1 = _mm512_set1_ps (-1.0f);
   __m512 plus1  = _mm512_set1_ps (1.0f);
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = 0; l < rem; l+=16) {
@@ -486,7 +489,7 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
     }
   }
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = rem; l < K; l++) {
@@ -549,7 +552,7 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
   int rem = (K/16)*16;
   __m512 plus1  = _mm512_set1_ps (1.0f);
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = 0; l < rem; l+=16) {
@@ -610,7 +613,7 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
     }
   }
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = rem; l < K; l++) {
@@ -709,6 +712,7 @@ void lstm_ref_fwd( int N, int C, int K, int t, float forget_bias,
   convert_ck_c4k(K, K, rfgold, &(rgold[2*K]));
   convert_ck_c4k(K, K, rogold, &(rgold[3*K]));
 #else
+  LIBXSMM_UNUSED(rgold);
   convert_ck_c4k(C, K, wigold, wgold);
   convert_ck_c4k(C, K, wcgold, &(wgold[K]));
   convert_ck_c4k(C, K, wfgold, &(wgold[2*K]));
@@ -881,6 +885,7 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
       LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K4, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &LIBXSMM_VLA_ACCESS(2, hgold, j-1, 0, K * N), &K, &beta, drgold, &K4);
     }
 #else
+    LIBXSMM_UNUSED(rgold); LIBXSMM_UNUSED(drgold);
     LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &CK, &N, &K4, &alpha, wgold, &K4, &LIBXSMM_VLA_ACCESS(3, dicfogold, j, 0, 0, N, 4 * K), &K4, &beta0, dxhgold, &CK);
     matrix_copy_ld(C, N, C+K, dxhgold, &LIBXSMM_VLA_ACCESS(2, dxgold, j, 0, N * C));
     if (j > 0) {
@@ -904,6 +909,7 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
 #endif
     /* compute db */
 #if defined(_OPENMP)
+    LIBXSMM_OMP_VAR(p);
 # pragma omp parallel for private(l, p)
 #endif
     for (l = 0; l < K; l++) {
@@ -1111,7 +1117,7 @@ int main(int argc, char* argv[])
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N * C);
   LIBXSMM_VLA_DECL(2, float, hgold, hgoldt, K * N);
   LIBXSMM_VLA_DECL(2, float, dhgold, dhgoldt, K * N);
-  LIBXSMM_VLA_DECL(2, float, h, h_test, K * N);
+  /*LIBXSMM_VLA_DECL(2, float, h, h_test, K * N);*/
 
   /* initialize data */
   /* FWD */

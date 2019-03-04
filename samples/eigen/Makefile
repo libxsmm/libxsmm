@@ -49,9 +49,9 @@ XFILES := $(OUTDIR)/$(OUTNAME)_smm $(OUTDIR)/$(OUTNAME)_tensor
 
 ifneq (0,$(EIGEN))
 ifeq (,$(strip $(EIGENROOT)))
-  ifneq (,$(lastword $(sort $(wildcard $(DEPDIR)/../eigen*/Eigen/Dense))))
+  ifneq (,$(wildcard $(DEPDIR)/../eigen*/Eigen/Dense))
     EIGENROOT = $(lastword $(sort $(wildcard $(DEPDIR)/../eigen*)))
-  else ifneq (,$(lastword $(sort $(wildcard $(HOME)/eigen*/Eigen/Dense))))
+  else ifneq (,$(wildcard $(HOME)/eigen*/Eigen/Dense))
     EIGENROOT = $(lastword $(sort $(wildcard $(HOME)/eigen*)))
   else ifneq (,$(wildcard /usr/include/eigen3/Eigen/Dense))
     EIGENROOT = /usr/include/eigen3
