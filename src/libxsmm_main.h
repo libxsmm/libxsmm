@@ -386,6 +386,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int avoid_acc_load;
   int pack_input;
   int pack_input_bwd;
+  int spread_input_bwd;
   int use_fwd_for_bwd;
   int exploit_duality;
   int qfma_input_pad;

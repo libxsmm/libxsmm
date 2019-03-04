@@ -221,8 +221,8 @@ if (handle->loop_order == 0) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
                 for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
                   for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
                     /* Prepare batch-reduce kernel arguments */
-                    ij_use = oj;
-                    ii_use = oi;
+                    ij_use = (handle->spread_input_bwd == 1) ? oj * handle->desc.u : oj;
+                    ii_use = (handle->spread_input_bwd == 1) ? oi * handle->desc.v : oi;
                     oi_use = oi;
                     oj_use = oj;
                     ind = 0;
@@ -271,8 +271,8 @@ if (handle->loop_order == 1) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
                 }
                 for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_bwd_ofm, handle->blocksofm); ofm1 += handle->blocksofm_blocking) {
                   /* Prepare batch-reduce kernel arguments */
-                  ij_use = oj;
-                  ii_use = oi;
+                  ij_use = (handle->spread_input_bwd == 1) ? oj * handle->desc.u : oj;
+                  ii_use = (handle->spread_input_bwd == 1) ? oi * handle->desc.v : oi;
                   oi_use = oi;
                   oj_use = oj;
                   ind = 0;
@@ -318,6 +318,21 @@ if (handle->pack_input_bwd == 1) {
       }
     }
   }
+} else if (handle->spread_input_bwd == 1) {
+  LIBXSMM_VLA_DECL(5, element_input_type, del_input_full, (element_input_type*)handle->grad_input->data + ((size_t)handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->ifmblock, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  for (img = my_img_start; img < my_img_end; img++) {
+    for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
+      for (oj = 0; oj < handle->ifhp; oj++) {
+        for (oi = 0; oi < handle->ifwp; oi++) {
+          if (oi % handle->desc.v != 0 || oj % handle->desc.u != 0) {
+            LIBXSMM_PRAGMA_SIMD
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                LIBXSMM_VLA_ACCESS(5,  del_input_full, img, ifm1, oj, oi, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock) = (element_input_type)0;
+              }
+          }
+        }
+      }
+    }
+  }
 }
-
 

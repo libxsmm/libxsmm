@@ -376,6 +376,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   int block_j = 14;
   int loop_order = 0;
   handle->pack_input = 0;
+  handle->pack_input_bwd = 0;
   handle->use_ofm_parallelization = 0;
   handle->avoid_fmas_in_rim = 0;
 
@@ -574,7 +575,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   while (blockofm % handle->blocksofm_blocking != 0) {
     blockofm++;
   }
-  handle->pack_input_bwd = (handle->desc.u != 1 || handle->desc.v != 1) ? 1 : 0;
+
+  handle->pack_input_bwd = (handle->desc.u != 1 && handle->bwd_ofh_rb != 1) ? 1 : 0;
+  handle->spread_input_bwd = ((handle->desc.u != 1 || handle->desc.v != 1) && handle->bwd_ofh_rb == 1) ? 1 : 0;
   handle->block_bwd_ifm = LIBXSMM_MIN(handle->blocksifm, 16);
   handle->block_bwd_ofm = blockofm;
   handle->block_bwd_oj = handle->block_fwd_oj;

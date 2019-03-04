@@ -154,7 +154,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(l
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       const libxsmm_blasint ldx = ((libxsmm_blasint)handle->ifmblock);
       const libxsmm_blasint ldA = handle->ofmblock;
-      const libxsmm_blasint ldC = handle->ofmblock;
+      const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? handle->ofmblock * handle->desc.v : handle->ofmblock;
       const float  beta = (handle->avoid_acc_load) ? 0.0 : 1.0;
       typedef float element_input_type;
       typedef float element_output_type;
