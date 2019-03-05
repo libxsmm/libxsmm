@@ -1143,7 +1143,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(l
       int LDA = handle->ofmblock;
       int LDB = handle->ifmblock;
       int LDC = handle->ofmblock;
-      const float beta = 0.0;
+      const float beta = (handle->avoid_init_weights == 1) ? 0.0 : 1.0;
       int l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
       gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->upd_ofw_rb * handle->upd_ofh_rb, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, NULL);
 

@@ -56,6 +56,10 @@ my_img_end = ltid+1;
 
 libxsmm_barrier_init(handle->barrier, ltid);
 
+if (handle->avoid_init_weights == 0) {
+  memset(weight_ptr, 0, handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * sizeof(element_filter_type));
+}
+
 for (img = my_img_start; img < my_img_end; img++) {
   for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
     for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
@@ -69,8 +73,8 @@ for (img = my_img_start; img < my_img_end; img++) {
                     ii = oi * handle->desc.u;
                     ij = oj * handle->desc.v;
                     gemm_kernel( &LIBXSMM_VLA_ACCESS(5,      output,  img, ofm1, oj,      oi,  0,     handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-                                 &LIBXSMM_VLA_ACCESS(5,      input,  img, ifm1, ij,      ii,  0,     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
-                                 &LIBXSMM_VLA_ACCESS(6,      weight_private, ofm1, ifm1, kj,      ki, 0, 0,  handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) );
+                        &LIBXSMM_VLA_ACCESS(5,      input,  img, ifm1, ij,      ii,  0,     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+                        &LIBXSMM_VLA_ACCESS(6,      weight_private, ofm1, ifm1, kj,      ki, 0, 0,  handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) );
                   }
                 }
               }

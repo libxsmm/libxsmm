@@ -585,9 +585,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
 
   /* Setup upd parameters */
   handle->upd_ofw_rb = handle->ofw;
-  handle->upd_ofh_rb = handle->ofh;
+  handle->upd_ofh_rb = 4;
   handle->block_upd_ofm = 1;
   handle->block_upd_ifm = 1;
+  handle->avoid_init_weights = (handle->upd_ofw_rb * handle->upd_ofh_rb == handle->ofwp * handle->ofhp) ? 1 : 0;
 
   return status;
 }
