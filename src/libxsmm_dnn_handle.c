@@ -161,7 +161,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     if (0 != handle->use_upd_generic) {
       /* FIXME: currently filter data-type is always smaller/equal output type */
       const size_t filter_typesize = libxsmm_dnn_typesize(handle->datatype_out);
-      const size_t size7 = (size_t)handle->desc.R * handle->desc.S * handle->ifmblock * handle->ofmblock * filter_typesize;
+      const size_t size7 = (size_t)handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * filter_typesize;
       handle->scratch7_size = LIBXSMM_UP2(size7, LIBXSMM_CACHELINE) * handle->desc.threads;
     }
   }

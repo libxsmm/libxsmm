@@ -567,7 +567,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->scratch4 = 0;
   handle->scratch4_size = 0;
 
-  /* Setup bwd parameter sbased on duality */
+  /* Setup bwd parameters based on duality */
   handle->bwd_ofh_rb = handle->fwd_ofh_rb;
   handle->bwd_ofw_rb = handle->fwd_ofw_rb;
   handle->use_ifm_parallelization = handle->use_ofm_parallelization;
@@ -581,6 +581,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->block_bwd_ifm = LIBXSMM_MIN(handle->blocksifm, 16);
   handle->block_bwd_ofm = blockofm;
   handle->block_bwd_oj = handle->block_fwd_oj;
+
+
+  /* Setup upd parameters */
+  handle->upd_ofw_rb = handle->ofw;
+  handle->upd_ofh_rb = handle->ofh;
+  handle->block_upd_ofm = 1;
+  handle->block_upd_ifm = 1;
 
   return status;
 }
