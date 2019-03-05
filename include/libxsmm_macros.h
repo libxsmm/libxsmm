@@ -172,12 +172,12 @@
 #endif
 #define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
-#if !defined(__STATIC) && !defined(_WINDLL) && !defined(__MINGW32__) && (defined(_WIN32) || defined(__CYGWIN__))
+#if !defined(__STATIC) && !defined(_WINDLL) && (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
 # define __STATIC
 #endif
 
 /* may include Clang and other compatible compilers */
-#if defined(__GNUC__) && !defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(__GNUC__) && !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
 # define LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ATTRIBUTE(visibility("internal"))
 # define LIBXSMM_VISIBILITY_HIDDEN LIBXSMM_ATTRIBUTE(visibility("hidden"))
 # define LIBXSMM_VISIBILITY_PUBLIC LIBXSMM_ATTRIBUTE(visibility("default"))
@@ -196,7 +196,7 @@
 #endif
 
 /* Windows Dynamic Link Library (DLL) */
-#if !defined(__STATIC) && (defined(_WIN32) || defined(__CYGWIN__))
+#if !defined(__STATIC) && (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
 # define LIBXSMM_VISIBILITY_EXPORT LIBXSMM_ATTRIBUTE(dllexport)
 # define LIBXSMM_VISIBILITY_IMPORT LIBXSMM_ATTRIBUTE(dllimport)
 #endif
@@ -392,16 +392,20 @@
 
 /** Makes some functions available independent of C99 support. */
 #if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
+# if defined(__PGI)
+#   define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
+# else
+#   define LIBXSMM_POWF(A, B) powf(A, B)
+# endif
 # define LIBXSMM_FREXPF(A, B) frexpf(A, B)
-# define LIBXSMM_POWF(A, B) powf(A, B)
 # define LIBXSMM_ROUNDF(A) roundf(A)
 # define LIBXSMM_ROUND(A) round(A)
 # define LIBXSMM_TANHF(A) tanhf(A)
 # define LIBXSMM_LOG2(A) log2(A)
 # define LIBXSMM_LOGF(A) logf(A)
 #else
-# define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
 # define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
+# define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
 # define LIBXSMM_ROUND(A) LIBXSMM_ROUNDX(double, A)
 # define LIBXSMM_TANHF(A) ((float)tanh((double)(A)))
@@ -454,8 +458,8 @@
  * VLA-support is signaled by LIBXSMM_VLA.
  */
 #if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && !defined(__PGI) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
-   (!defined(__STDC_NO_VLA__) && 199901L/*C99*/ < __STDC_VERSION__))) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32) && !defined(__cplusplus)) || \
-    (defined(__INTEL_COMPILER) && !defined(_WIN32)) || (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus))/*depends on prior C99-check*/)
+   (!defined(__STDC_NO_VLA__) && 199901L/*C99*/ < __STDC_VERSION__))) || (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus)) /*|| \
+    (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32) && !defined(__cplusplus)) || (defined(__INTEL_COMPILER) && !defined(_WIN32))*/)
 # define LIBXSMM_VLA
 #endif
 

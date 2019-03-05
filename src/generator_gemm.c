@@ -133,11 +133,11 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
     l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/2;
     l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/2;
-  } else if ( (strcmp(i_arch, "icl") == 0) && LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+  } else if ( (strcmp(i_arch, "clx") == 0) && LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 8;
-  } else if ( (strcmp(i_arch, "icl") == 0) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+  } else if ( (strcmp(i_arch, "clx") == 0) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 16;
-  } else if ( (strcmp(i_arch, "icl") == 0) && LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+  } else if ( (strcmp(i_arch, "clx") == 0) && LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 16;
     /* some checks as we cannot mask everything */
     if ( (l_xgemm_desc_mod.k % 2 != 0) ) {
@@ -146,7 +146,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     }
     l_xgemm_desc_mod.k = l_xgemm_desc_mod.k/2;
     l_xgemm_desc_mod.ldb = l_xgemm_desc_mod.ldb/2;
-  } else if ( (strcmp(i_arch, "icl") == 0) && LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
+  } else if ( (strcmp(i_arch, "clx") == 0) && LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) {
     l_vector_length = 16;
     /* some checks as we cannot mask everything */
     if ( (l_xgemm_desc_mod.k % 2 != 0) ) {
@@ -187,23 +187,14 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     return;
   }
 
-  /* check trans to be only available for on SKX in classic kernel */
+  /* check for trans B cases which are not supported in the generator */
   if ( (l_xgemm_desc_mod.flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
-    if ( (strcmp(i_arch, "skx") == 0) ||
-         (strcmp(i_arch, "icl") == 0) ) {
-      /* call actual kernel generation with revised parameters */
-      if ( ( LIBXSMM_GEMM_PRECISION_I16  != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )   &&
-             LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
-           ( (l_vector_length == 16  && (l_xgemm_desc_mod.m == 32 || l_xgemm_desc_mod.m == 48 || l_xgemm_desc_mod.m == 64)) ||
-             (l_vector_length == 8   && (l_xgemm_desc_mod.m == 16 || l_xgemm_desc_mod.m == 24 || l_xgemm_desc_mod.m == 32))    ) ) {
-        /* we are fine, we have transpose support */
-      } else {
-        LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
-        return;
-      }
-    } else if ( (strcmp(i_arch, "knc") == 0) ||
-                (strcmp(i_arch, "knl") == 0) ||
-                (strcmp(i_arch, "knm") == 0) ) {
+    if ( (strcmp(i_arch, "knc") == 0)  ) {
+      LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
+      return;
+    } else if ( (LIBXSMM_GEMM_PRECISION_I16  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) ||
+                (LIBXSMM_GEMM_PRECISION_I8   == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )) ||
+                (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ))    ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_TRANS_B );
       return;
     } else {
@@ -230,7 +221,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_gemm_imci_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( (strcmp(i_arch, "skx") == 0) ||
-              (strcmp(i_arch, "icl") == 0) ) {
+              (strcmp(i_arch, "clx") == 0) ) {
     /* call actual kernel generation with revised parameters */
     if ( ( LIBXSMM_GEMM_PRECISION_I16  != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )   &&
            LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
