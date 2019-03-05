@@ -70,8 +70,8 @@ for (img = my_img_start; img < my_img_end; img++) {
               for (oi = 0; oi < handle->ofw; oi += handle->upd_ofw_rb) {
                 for (kj = 0; kj < handle->desc.R; ++kj) {
                   for (ki = 0; ki < handle->desc.S; ++ki) {
-                    ii = oi * handle->desc.u;
-                    ij = oj * handle->desc.v;
+                    ii = oi * handle->desc.u + ki;
+                    ij = oj * handle->desc.v + kj;
                     gemm_kernel( &LIBXSMM_VLA_ACCESS(5,      output,  img, ofm1, oj,      oi,  0,     handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                         &LIBXSMM_VLA_ACCESS(5,      input,  img, ifm1, ij,      ii,  0,     handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
                         &LIBXSMM_VLA_ACCESS(6,      weight_private, ofm1, ifm1, kj,      ki, 0, 0,  handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) );
@@ -85,7 +85,6 @@ for (img = my_img_start; img < my_img_end; img++) {
     }
   }
 }
-
 
 /* Perform reduction here  */
 libxsmm_barrier_wait(handle->barrier, ltid);
