@@ -392,16 +392,20 @@
 
 /** Makes some functions available independent of C99 support. */
 #if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
+# if defined(__PGI)
+#   define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
+# else
+#   define LIBXSMM_POWF(A, B) powf(A, B)
+# endif
 # define LIBXSMM_FREXPF(A, B) frexpf(A, B)
-# define LIBXSMM_POWF(A, B) powf(A, B)
 # define LIBXSMM_ROUNDF(A) roundf(A)
 # define LIBXSMM_ROUND(A) round(A)
 # define LIBXSMM_TANHF(A) tanhf(A)
 # define LIBXSMM_LOG2(A) log2(A)
 # define LIBXSMM_LOGF(A) logf(A)
 #else
-# define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
 # define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
+# define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
 # define LIBXSMM_ROUND(A) LIBXSMM_ROUNDX(double, A)
 # define LIBXSMM_TANHF(A) ((float)tanh((double)(A)))
