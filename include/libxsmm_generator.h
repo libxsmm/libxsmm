@@ -244,7 +244,7 @@ void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*            io_gen
 LIBXSMM_API
 void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_generated_code,
                                          const libxsmm_trans_descriptor*  i_trans_desc,
-                                         const char*                      i_arch );
+                                         int                              i_arch );
 
 /* @TODO change int based architecture value */
 LIBXSMM_API

@@ -32,6 +32,7 @@
 #define GENERATOR_COMMON_H
 
 #include <libxsmm_generator.h>
+#include <libxsmm_cpuid.h>
 
 /*@TODO check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */

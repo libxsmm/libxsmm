@@ -61,5 +61,8 @@ LIBXSMM_API int libxsmm_cpuid_x86(void);
 /** Similar to libxsmm_cpuid_x86, but conceptually not x86-specific. */
 LIBXSMM_API int libxsmm_cpuid(void);
 
+/** Names the CPU architecture given by CPUID. */
+LIBXSMM_API const char* libxsmm_cpuid_name(int id);
+
 #endif /*LIBXSMM_CPUID_H*/
 
