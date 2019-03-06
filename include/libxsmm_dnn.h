@@ -291,7 +291,7 @@ typedef enum libxsmm_dnn_conv_algo {
   /** let the library decide */
   LIBXSMM_DNN_CONV_ALGO_AUTO,
   /** direct convolution. */
-  LIBXSMM_DNN_CONV_ALGO_DIRECT,
+  LIBXSMM_DNN_CONV_ALGO_DIRECT
 } libxsmm_dnn_conv_algo;
 
 /** Structure which describes the input and output of data (DNN). */
