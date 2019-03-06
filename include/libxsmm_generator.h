@@ -248,20 +248,6 @@ void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_gen
 
 /* @TODO change int based architecture value */
 LIBXSMM_API
-void libxsmm_generator_convolution_forward_inlineasm(const char*                       i_file_out,
-                                                     const char*                       i_routine_name,
-                                                     const libxsmm_convolution_forward_descriptor* i_conv_desc,
-                                                     const char*                       i_arch);
-
-/* @TODO change int based architecture value */
-LIBXSMM_API
-void libxsmm_generator_convolution_forward_directasm(const char*                       i_file_out,
-                                                     const char*                       i_routine_name,
-                                                     const libxsmm_convolution_forward_descriptor* i_conv_desc,
-                                                     const char*                       i_arch);
-
-/* @TODO change int based architecture value */
-LIBXSMM_API
 void libxsmm_generator_convolution_forward_kernel(libxsmm_generated_code*           io_generated_code,
                                                   const libxsmm_convolution_forward_descriptor* i_conv_desc,
                                                   const char*                       i_arch);
