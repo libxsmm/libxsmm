@@ -1130,12 +1130,12 @@ LIBXSMM_API_INLINE const void* internal_malloc_site(const char* site)
   else {
 #if defined(NDEBUG) /* internal_malloc_site is inlined */
 # if defined(_WIN32) || defined(__CYGWIN__)
-    void* stacktrace[] = { 0, 0, 0 };
+    const void* stacktrace[] = { 0, 0, 0 };
 # else
-    void* stacktrace[] = { 0, 0 };
+    const void* stacktrace[] = { 0, 0 };
 # endif
 #else /* not inlined */
-    void* stacktrace[] = { 0, 0, 0, 0 };
+    const void* stacktrace[] = { 0, 0, 0, 0 };
 #endif
     const unsigned int size = sizeof(stacktrace) / sizeof(*stacktrace);
     result = (size == libxsmm_backtrace(stacktrace, size) ? stacktrace[size-1] : 0);

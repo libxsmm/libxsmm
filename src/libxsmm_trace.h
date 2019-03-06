@@ -58,23 +58,27 @@ LIBXSMM_API int libxsmm_trace_init(
 LIBXSMM_API int libxsmm_trace_finalize(void);
 
 /** Receives the backtrace of up to 'size' addresses. Returns the actual number of addresses (n <= size). */
-LIBXSMM_API unsigned int libxsmm_backtrace(void* buffer[], unsigned int size);
+LIBXSMM_API unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size);
 
 /** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
 LIBXSMM_API const char* libxsmm_trace_info(
-  /* Specify relative pos. in stack (NULL/0: default); output: abs. location in trace. */
+  /* Query and output the abs. location in stacktrace (no input). */
   unsigned int* depth,
   /* Query and output the thread id (no input). */
   unsigned int* threadid,
+  /* Lookup symbol (depth argument becomes relative to symbol position). */
+  const void* filter_symbol,
   /* Filter for thread id (-1: all, NULL: libxsmm_trace_init). */
   const int* filter_threadid,
-  /* Specify min. absolute pos. in stack trace (0: all, NULL: libxsmm_trace_init). */
+  /* Specify min. abs. position in stack trace (0: all, NULL: libxsmm_trace_init). */
   const int* filter_mindepth,
   /* Specify max. depth of stack trace (-1: all, NULL: libxsmm_trace_init). */
   const int* filter_maxnsyms);
 
 /** Prints an entry of the function where libxsmm_trace is called from (indented/hierarchical). */
-LIBXSMM_API void libxsmm_trace(FILE* stream, unsigned int depth,
+LIBXSMM_API void libxsmm_trace(FILE* stream,
+  /* Lookup symbol (depth argument becomes relative to symbol position). */
+  const void* filter_symbol,
   /* Filter for thread id (-1: all, NULL: libxsmm_trace_init). */
   const int* filter_threadid,
   /* Specify min. absolute pos. in stack trace (0: all, NULL: libxsmm_trace_init). */
