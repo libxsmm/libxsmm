@@ -394,7 +394,7 @@ int main(int argc, char* argv []) {
     exit(EXIT_FAILURE);
   }
 
-  if (strcmp(l_precision, "DP") == 0) {
+  if ((strcmp(l_precision, "DP") == 0) && (l_trans_b == 0)) {
     l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F64,
       l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags,
       /* translate an eventual LIBXSMM_PREFETCH_AUTO */
@@ -412,6 +412,35 @@ int main(int argc, char* argv []) {
     /* touch B */
     for (l_i = 0; l_i < l_ldb; l_i++) {
       for (l_j = 0; l_j < l_n; l_j++) {
+        l_b_d[(l_j * l_ldb) + l_i] = libxsmm_rng_f64();
+      }
+    }
+    /* touch C */
+    for (l_i = 0; l_i < l_ldc; l_i++) {
+      for (l_j = 0; l_j < l_n; l_j++) {
+        l_c_d[(l_j * l_ldc) + l_i] = 0.0;
+        l_c_gold_d[(l_j * l_ldc) + l_i] = 0.0;
+      }
+    }
+  }
+  else if ((strcmp(l_precision, "DP") == 0) && (l_trans_b == 1)) {
+    l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F64,
+      l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags,
+      /* translate an eventual LIBXSMM_PREFETCH_AUTO */
+      libxsmm_get_gemm_prefetch(l_prefetch));
+    l_a_d = (double*)libxsmm_aligned_malloc((size_t)l_lda * (size_t)l_k * sizeof(double), 64);
+    l_b_d = (double*)libxsmm_aligned_malloc((size_t)l_ldb * (size_t)l_k * sizeof(double), 64);
+    l_c_d = (double*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(double), 64);
+    l_c_gold_d = (double*)libxsmm_aligned_malloc((size_t)l_ldc * (size_t)l_n * sizeof(double), 64);
+    /* touch A */
+    for (l_i = 0; l_i < l_lda; l_i++) {
+      for (l_j = 0; l_j < l_k; l_j++) {
+        l_a_d[(l_j * l_lda) + l_i] = libxsmm_rng_f64();
+      }
+    }
+    /* touch B */
+    for (l_i = 0; l_i < l_ldb; l_i++) {
+      for (l_j = 0; l_j < l_k; l_j++) {
         l_b_d[(l_j * l_ldb) + l_i] = libxsmm_rng_f64();
       }
     }
