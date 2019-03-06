@@ -151,21 +151,25 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
         if (threshold < ci && count < limit /* limit printed statistic */
           && 0 < m && 0 < n && 0 < k)
         {
-          LIBXSMM_ASSERT(0 != ci);
-          if (0 == count) {
-            fprintf(stderr, "\nLIBXSMM STATISTIC: %u multiplication%c\n", batchcount, 1 < batchcount ? 's' : ' ');
+          const unsigned int ciperc = (unsigned int)(100.0 * ci / batchcount + 0.5);
+          if (0 != ciperc) {
+            LIBXSMM_ASSERT(0 != ci);
+            if (0 == count) {
+              fprintf(stderr, "\nLIBXSMM STATISTIC: %u multiplication%c\n", batchcount, 1 < batchcount ? 's' : ' ');
+            }
+            LIBXSMM_GEMM_PRINT2(stderr,
+              LIBXSMM_GETENUM_INP(descriptor.datatype), LIBXSMM_GETENUM_OUT(descriptor.datatype), descriptor.flags, m, n, k,
+              /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & batchdesc->flags) ? 0 : */1, NULL/*a*/, lda, NULL/*b*/, ldb,
+              0 != (LIBXSMM_GEMM_FLAG_BETA_0 & batchdesc->flags) ? 0 : 1, NULL/*c*/, ldc);
+            if (NULL != symbol && 0 != *symbol) {
+              fprintf(stderr, ": %u%% [%s]\n", ciperc, symbol);
+            }
+            else {
+              fprintf(stderr, ": %u%%\n", ciperc);
+            }
+            ++count;
           }
-          LIBXSMM_GEMM_PRINT2(stderr,
-            LIBXSMM_GETENUM_INP(descriptor.datatype), LIBXSMM_GETENUM_OUT(descriptor.datatype), descriptor.flags, m, n, k,
-            /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & batchdesc->flags) ? 0 : */1, NULL/*a*/, lda, NULL/*b*/, ldb,
-            0 != (LIBXSMM_GEMM_FLAG_BETA_0 & batchdesc->flags) ? 0 : 1, NULL/*c*/, ldc);
-          if (NULL != symbol) {
-            fprintf(stderr, ": %.0f%% [%s]\n", 100.0 * ci / batchcount, symbol);
-          }
-          else {
-            fprintf(stderr, ": %.0f%%\n", 100.0 * ci / batchcount);
-          }
-          ++count;
+          else break;
         }
       }
       LIBXSMM_STDIO_RELEASE();
