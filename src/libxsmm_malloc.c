@@ -236,7 +236,7 @@ LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
 {
   int result = EXIT_SUCCESS;
   if (NULL != lock) {
-    libxsmm_init(); /* !LIBXSMM_INIT */
+    if (0 == libxsmm_ninit) libxsmm_init(); /* !LIBXSMM_INIT */
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, lock);
   }
   if (NULL != malloc_fn.function && NULL != free_fn.function) {
@@ -292,7 +292,7 @@ LIBXSMM_API_INTERN int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
   int result = EXIT_SUCCESS;
   if (NULL != context || NULL != malloc_fn || NULL != free_fn) {
     if (NULL != lock) {
-      libxsmm_init(); /* !LIBXSMM_INIT */
+      if (0 == libxsmm_ninit) libxsmm_init(); /* !LIBXSMM_INIT */
       LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, lock);
     }
     if (context) *context = libxsmm_default_allocator_context;
@@ -320,7 +320,7 @@ LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
   int result = EXIT_SUCCESS;
   static int error_once = 0;
   if (NULL != lock) {
-    libxsmm_init(); /* !LIBXSMM_INIT */
+    if (0 == libxsmm_ninit) libxsmm_init(); /* !LIBXSMM_INIT */
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, lock);
   }
   /* make sure the default allocator is setup before adopting it eventually */
@@ -373,7 +373,7 @@ LIBXSMM_API_INTERN int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
   int result = EXIT_SUCCESS;
   if (NULL != context || NULL != malloc_fn || NULL != free_fn) {
     if (NULL != lock) {
-      libxsmm_init(); /* !LIBXSMM_INIT */
+      if (0 == libxsmm_ninit) libxsmm_init(); /* !LIBXSMM_INIT */
       LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, lock);
     }
     if (context) *context = libxsmm_scratch_allocator_context;
