@@ -169,7 +169,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom(li
       libxsmm_blasint ldc = (libxsmm_blasint)handle->ofmblock;
       element_input_type alpha = (element_input_type)1;
       element_input_type beta = (element_input_type)0;
- 
+
      if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
        gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->desc.N, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_upd_custom_generic.tpl.c"

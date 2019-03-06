@@ -39,7 +39,6 @@
  */
 #define LIBXSMM_TARGET_ARCH_UNKNOWN 0
 #define LIBXSMM_TARGET_ARCH_GENERIC 1
-#define LIBXSMM_X86_IMCI         1001
 #define LIBXSMM_X86_GENERIC      1002
 #define LIBXSMM_X86_SSE3         1003
 #define LIBXSMM_X86_SSE4         1004
@@ -61,6 +60,9 @@ LIBXSMM_API int libxsmm_cpuid_x86(void);
 
 /** Similar to libxsmm_cpuid_x86, but conceptually not x86-specific. */
 LIBXSMM_API int libxsmm_cpuid(void);
+
+/** Names the CPU architecture given by CPUID. */
+LIBXSMM_API const char* libxsmm_cpuid_name(int id);
 
 #endif /*LIBXSMM_CPUID_H*/
 

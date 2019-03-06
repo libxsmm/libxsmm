@@ -307,10 +307,10 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 #   else
           char *const raw_value = (char*)pthread_getspecific(internal_trace_key);
 #   endif
-          int* ivalue = 0, fd = -1;
-          char* value = 0;
+          int* ivalue = NULL, fd = -1;
+          char* value = NULL;
 
-          if (raw_value) {
+          if (NULL != raw_value) {
             ivalue = (int*)raw_value;
             abs_tid = (0 <= ivalue[1] ? ivalue[1] : -ivalue[1]);
 
@@ -352,7 +352,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                     /* use sign bit to flag enabled fall-back for symbol resolution */
                     ivalue[1] = -abs_tid;
 
-                    if (0 > filter || filter == abs_tid - 1) {
+                    if (0 > filter || (abs_tid - 1) == filter) {
                       value = buffer + sizeof(int) * 2;
                     }
                   }
@@ -376,11 +376,10 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                 fprintf(stderr, "LIBXSMM ERROR: failed to setup file descriptor (%i)\n", fd);
               }
 #   endif
-              close(fd);
             }
           }
 
-          if (value) {
+          if (NULL != value) {
             backtrace_symbols_fd(symbol, 1, fd);
 
             /* attempt to parse symbol name */
@@ -396,7 +395,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
             }
 
             /* fall-back to symbol address */
-            if (0 > ivalue[1] && 0 == fname) {
+            if (0 > ivalue[1] && NULL == fname) {
               sprintf(value, "0x%llx", (unsigned long long)*symbol);
               fname = value;
             }
@@ -480,10 +479,10 @@ LIBXSMM_API void __cyg_profile_func_enter(void* this_fn, void* call_site)
     } info;
 #   endif
     if (0 != dladdr(this_fn, (Dl_info*)&info)) {
-      if (0 != info.dli_sname) {
+      if (NULL != info.dli_sname) {
         fprintf(stderr, "%s\n", info.dli_sname);
       }
-      else if (0 != info.dli_saddr) {
+      else if (NULL != info.dli_saddr) {
         fprintf(stderr, "0x%llx\n", (unsigned long long)info.dli_saddr);
       }
     }

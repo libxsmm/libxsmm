@@ -132,13 +132,13 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
       memset(batcharray, 0, (size_t)batchsize * (size_t)itemsize); /* clear */
     }
     else { /* print statistic */
-      const libxsmm_blasint limit = (3 < libxsmm_verbosity ? batchsize : 7);
+      const libxsmm_blasint limit = (LIBXSMM_GEMM_MMBATCH_VERBOSITY < libxsmm_verbosity ? batchsize/*unlimited*/ : 7/*limited*/);
       unsigned int threshold, batchcount;
       libxsmm_blasint count = 0, i;
       LIBXSMM_ASSERT(NULL != batcharray);
       qsort(batcharray, (size_t)batchsize, (size_t)itemsize, internal_mmbatch_sortrev);
       batchcount = batcharray[0].stat.count;
-      threshold = ((3 < libxsmm_verbosity || 3 >= batchsize) ? 0 : (batchcount / 2));
+      threshold = ((LIBXSMM_GEMM_MMBATCH_VERBOSITY < libxsmm_verbosity || 3 >= batchsize) ? 0 : (batchcount / 2));
       for (i = 1; i < batchsize; ++i) batchcount += batcharray[i].stat.count;
       LIBXSMM_STDIO_ACQUIRE();
       for (i = 0; i < batchsize; ++i) {
@@ -264,7 +264,8 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
             size = max_size - libxsmm_gemm_batchsize;
             batcharray_cur += libxsmm_gemm_batchsize;
           }
-          i = libxsmm_diff_n(descriptor, batcharray_cur, sizeof(libxsmm_gemm_batchitem), sizeof(libxsmm_gemm_batchitem), 0/*hint*/, size);
+          i = libxsmm_diff_n(descriptor, batcharray_cur, sizeof(libxsmm_gemm_descriptor),
+            sizeof(libxsmm_gemm_batchitem)/*stride*/, 0/*hint*/, size);
 
           if (i < size) { /* update existing entry */
             LIBXSMM_ATOMIC_ADD_FETCH(&batcharray_cur[i].stat.count, 1, LIBXSMM_ATOMIC_RELAXED);
@@ -408,7 +409,8 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
             size = max_size - libxsmm_gemm_batchsize;
             batcharray_cur += libxsmm_gemm_batchsize;
           }
-          i = libxsmm_diff_n(descriptor, batcharray_cur, sizeof(libxsmm_gemm_batchitem), sizeof(libxsmm_gemm_batchitem), 0/*hint*/, size);
+          i = libxsmm_diff_n(descriptor, batcharray_cur, sizeof(libxsmm_gemm_descriptor),
+            sizeof(libxsmm_gemm_batchitem)/*stride*/, 0/*hint*/, size);
 
           if (i < size) { /* update existing entry */
             LIBXSMM_ATOMIC_ADD_FETCH(&batcharray_cur[i].stat.count, 1, LIBXSMM_ATOMIC_RELAXED);
@@ -531,7 +533,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       libxsmm_gemm_thread(handle, scratch, a, b, c, 0/*tid*/);
 # endif
     }
-    if (2 < libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
+    if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
       const unsigned int ntasks = handle->mt * handle->nt * handle->kt;
       const double imbalance = 100.0 * (handle->nthreads - ntasks) / handle->nthreads;
       static double max_imbalance = 50.0;
@@ -550,7 +552,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
   else { /* fall-back or error */
     static int error_once = 0;
     if (NULL == handle) { /* fall-back */
-      if ((2 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+      if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
         fprintf(stderr, "LIBXSMM WARNING (XGEMM): fall-back code path triggered!\n");
@@ -664,7 +666,7 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blas
         }
       }
       if (EXIT_SUCCESS == result) {
-        if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+        if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
           && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
           fprintf(stderr, "LIBXSMM WARNING: batched GEMM was falling back to BLAS!\n");

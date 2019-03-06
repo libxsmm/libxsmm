@@ -150,7 +150,6 @@
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_TARGET_ARCH_UNKNOWN = 0,                              &
      &    LIBXSMM_TARGET_ARCH_GENERIC = 1,                              &
-     &    LIBXSMM_X86_IMCI        = 1001,                               &
      &    LIBXSMM_X86_GENERIC     = 1002,                               &
      &    LIBXSMM_X86_SSE3        = 1003,                               &
      &    LIBXSMM_X86_SSE4        = 1004,                               &

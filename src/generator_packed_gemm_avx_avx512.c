@@ -237,7 +237,7 @@ printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,jun
         if ( trb ) trb = 0; else trb = 1;
         if ( trc ) trc = 0; else trc = 1;
      }
-        
+
      /* Change which registers to use for windows builds */
 #if defined(GENERATOR_PACKED_GEMM_DEBUG)
      printf("Using compact_gemmnn header file\n");

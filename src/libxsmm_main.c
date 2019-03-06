@@ -235,59 +235,6 @@ LIBXSMM_API_INLINE unsigned int internal_update_mmstatistic(const libxsmm_gemm_d
 }
 
 
-LIBXSMM_API_INLINE const char* internal_get_target_arch(int id);
-LIBXSMM_API_INLINE const char* internal_get_target_arch(int id)
-{
-  const char* target_arch = NULL;
-  switch (id) {
-    case LIBXSMM_X86_AVX512_CLX: {
-      target_arch = "clx";
-    } break;
-    case LIBXSMM_X86_AVX512_CORE: {
-      target_arch = "skx";
-    } break;
-    case LIBXSMM_X86_AVX512_KNM: {
-      target_arch = "knm";
-    } break;
-    case LIBXSMM_X86_AVX512_MIC: {
-      target_arch = "knl";
-    } break;
-    case LIBXSMM_X86_AVX512: {
-      /* TODO: rework BE to use target ID instead of set of strings (target_arch = "avx3") */
-      target_arch = "hsw";
-    } break;
-    case LIBXSMM_X86_AVX2: {
-      target_arch = "hsw";
-    } break;
-    case LIBXSMM_X86_AVX: {
-      target_arch = "snb";
-    } break;
-    case LIBXSMM_X86_SSE4: {
-      /* TODO: rework BE to use target ID instead of set of strings (target_arch = "sse4") */
-      target_arch = "wsm";
-    } break;
-    case LIBXSMM_X86_SSE3: {
-      /* WSM includes SSE4, but BE relies on SSE3 only,
-       * hence we enter "wsm" path starting with SSE3.
-       */
-      target_arch = "wsm";
-    } break;
-    case LIBXSMM_TARGET_ARCH_GENERIC: {
-      target_arch = "generic";
-    } break;
-    default: if (LIBXSMM_X86_GENERIC <= id) {
-      target_arch = "x86";
-    }
-    else {
-      target_arch = "unknown";
-    }
-  }
-
-  LIBXSMM_ASSERT(NULL != target_arch);
-  return target_arch;
-}
-
-
 LIBXSMM_API_INLINE unsigned int internal_print_number(unsigned int n, char default_unit, char* unit)
 {
   unsigned int number = n;
@@ -433,14 +380,14 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
-      ? internal_get_target_arch(libxsmm_target_archid)
+      ? libxsmm_cpuid_name(libxsmm_target_archid)
       : NULL/*hidden*/;
     /* synchronize I/O */
     LIBXSMM_STDIO_ACQUIRE();
     fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
       LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
-    if (1 < libxsmm_verbosity || 0 > libxsmm_verbosity) {
-      const int high_verbosity = (2 < libxsmm_verbosity || 0 > libxsmm_verbosity);
+    if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
+      const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
       const double regsize = 1.0 * internal_registry_nbytes / (1ULL << 20);
       libxsmm_scratch_info scratch_info;
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
@@ -975,9 +922,9 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
   if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
     const int cpuid = libxsmm_cpuid();
     if (cpuid < target_archid) {
-      const char *const target_arch = internal_get_target_arch(target_archid);
+      const char *const target_arch = libxsmm_cpuid_name(target_archid);
       fprintf(stderr, "LIBXSMM WARNING: \"%s\" code will fail to run on \"%s\"!\n",
-        target_arch, internal_get_target_arch(cpuid));
+        target_arch, libxsmm_cpuid_name(cpuid));
     }
   }
 }
@@ -986,7 +933,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
 LIBXSMM_API const char* libxsmm_get_target_arch(void)
 {
   LIBXSMM_INIT
-  return internal_get_target_arch(libxsmm_target_archid);
+  return libxsmm_cpuid_name(libxsmm_target_archid);
 }
 
 
@@ -1061,9 +1008,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
   }
   if (cpuid < target_archid) { /* limit code path to what was identified per CPUID */
     if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-      const char *const target_arch = internal_get_target_arch(target_archid);
+      const char *const target_arch = libxsmm_cpuid_name(target_archid);
       fprintf(stderr, "LIBXSMM WARNING: \"%s\" code would fail to run on \"%s\"!\n",
-        target_arch, internal_get_target_arch(cpuid));
+        target_arch, libxsmm_cpuid_name(cpuid));
     }
 #if defined(NDEBUG) /* allow to debug with higher code path */
     target_archid = cpuid;
@@ -1233,7 +1180,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 {
   int result = EXIT_SUCCESS;
 #if !defined(__MIC__)
-  const char* target_arch = internal_get_target_arch(libxsmm_target_archid);
+  const char* target_arch = libxsmm_cpuid_name(libxsmm_target_archid);
   libxsmm_generated_code generated_code;
   char jit_name[256] = { 0 };
 
@@ -1584,7 +1531,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     case LIBXSMM_BUILD_KIND_TRANS: { /* transpose kernel */
       LIBXSMM_ASSERT(0 != request->descriptor.trans);
       if (4 == request->descriptor.trans->typesize || 8 == request->descriptor.trans->typesize) {
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_transpose_kernel, &generated_code, request->descriptor.trans, target_arch);
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_transpose_kernel, &generated_code, request->descriptor.trans, libxsmm_target_archid);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif
@@ -2071,7 +2018,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     }
     result = internal_find_code(descriptor).xgemm;
 #if defined(_DEBUG)
-    if (2 < libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.xmm) {
+    if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.xmm) {
       LIBXSMM_STDIO_ACQUIRE();
       fprintf(stderr, "LIBXSMM: ");
       libxsmm_gemm_xprint(stderr, result, NULL/*a*/, NULL/*b*/, NULL/*c*/);
@@ -2548,7 +2495,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn,
       result = internal_find_code(descriptor);
       *fn = result.ival;
 #if defined(_DEBUG)
-      if (2 < libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.pmm) {
+      if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity && 0 != result.pmm) {
         LIBXSMM_STDIO_ACQUIRE();
         fprintf(stderr, "LIBXSMM: ");
         libxsmm_gemm_xprint(stderr, result.xgemm, NULL/*a*/, NULL/*b*/, NULL/*c*/);

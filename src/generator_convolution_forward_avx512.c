@@ -1120,7 +1120,7 @@ void libxsmm_generator_convolution_forward_avx512_ifmloop_one_row( libxsmm_gener
                 0,
                 3,
                 i_conv_kernel_config->vector_reg_count - l_reg_block + l_n );
-            
+
             /* vfma */
             libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
                 i_conv_kernel_config->instruction_set,

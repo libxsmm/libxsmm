@@ -149,7 +149,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     internal_gemm_batchreduce = (NULL == env_r || 0 == *env_r) ? 0 : atoi(env_r);
     /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
     if (NULL == env_w || 0 == *env_w) {
-      if ((3 < libxsmm_verbosity && INT_MAX != libxsmm_verbosity) || 0 > libxsmm_verbosity) {
+      if ((LIBXSMM_GEMM_MMBATCH_VERBOSITY <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity) || 0 > libxsmm_verbosity) {
         libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC; /* enable auto-batch statistic */
         internal_gemm_batchreduce = 0;
       }
@@ -549,7 +549,7 @@ LIBXSMM_API_INLINE int libxsmm_gemm_plan_internal(unsigned int nthreads,
           replan = 0;
 #else
           static int error_once = 0;
-          if ((2 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+          if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
             && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
           {
             fprintf(stderr, "LIBXSMM WARNING (XGEMM): K-parallelism triggered!\n");
@@ -1390,7 +1390,7 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_xmmfunction kernel, libxsmm_blasint ind
         }
       }
       if (EXIT_SUCCESS == result) {
-        if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+        if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
           && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
           fprintf(stderr, "LIBXSMM WARNING: batched GEMM was falling back to BLAS!\n");
@@ -1571,7 +1571,7 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
         const libxsmm_blasint typesize = LIBXSMM_TYPESIZE(oprec);
         const libxsmm_blasint csize = descriptor->ldc * descriptor->n * typesize;
         /* finalize assumption if matrix-size is a multiple of the vector-width */
-        descriptor->flags |= (0 == LIBXSMM_MOD2(csize, vw) ? LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT : 0);
+        descriptor->flags |= (unsigned short)(0 == LIBXSMM_MOD2(csize, vw) ? LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT : 0);
       }
     }
 #if defined(LIBXSMM_GEMM_BATCHREDUCE)
@@ -1600,7 +1600,7 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
           descriptor->prefetch = 0; /* omit decision */
         }
         else {
-          if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && /* library code is expected to be mute */
+          if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) && /* library code is expected to be mute */
             1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
           {
             fprintf(stderr, "LIBXSMM WARNING: data type not supported in batch-reduce!\n");
@@ -1608,7 +1608,7 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
         }
       }
 # if (0 != LIBXSMM_SYNC)
-      else if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) && /* library code is expected to be mute */
+      else if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) && /* library code is expected to be mute */
         1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
         fprintf(stderr, "LIBXSMM: potential data races prevent batch-reduce.\n");

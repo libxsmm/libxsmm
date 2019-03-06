@@ -147,3 +147,54 @@ LIBXSMM_API int libxsmm_cpuid(void)
   return libxsmm_cpuid_x86();
 }
 
+
+LIBXSMM_API const char* libxsmm_cpuid_name(int id)
+{
+  const char* target_arch = NULL;
+  switch (id) {
+    case LIBXSMM_X86_AVX512_CLX: {
+      target_arch = "clx";
+    } break;
+    case LIBXSMM_X86_AVX512_CORE: {
+      target_arch = "skx";
+    } break;
+    case LIBXSMM_X86_AVX512_KNM: {
+      target_arch = "knm";
+    } break;
+    case LIBXSMM_X86_AVX512_MIC: {
+      target_arch = "knl";
+    } break;
+    case LIBXSMM_X86_AVX512: {
+      /* TODO: rework BE to use target ID instead of set of strings (target_arch = "avx3") */
+      target_arch = "hsw";
+    } break;
+    case LIBXSMM_X86_AVX2: {
+      target_arch = "hsw";
+    } break;
+    case LIBXSMM_X86_AVX: {
+      target_arch = "snb";
+    } break;
+    case LIBXSMM_X86_SSE4: {
+      /* TODO: rework BE to use target ID instead of set of strings (target_arch = "sse4") */
+      target_arch = "wsm";
+    } break;
+    case LIBXSMM_X86_SSE3: {
+      /* WSM includes SSE4, but BE relies on SSE3 only,
+       * hence we enter "wsm" path starting with SSE3.
+       */
+      target_arch = "wsm";
+    } break;
+    case LIBXSMM_TARGET_ARCH_GENERIC: {
+      target_arch = "generic";
+    } break;
+    default: if (LIBXSMM_X86_GENERIC <= id) {
+      target_arch = "x86";
+    }
+    else {
+      target_arch = "unknown";
+    }
+  }
+
+  LIBXSMM_ASSERT(NULL != target_arch);
+  return target_arch;
+}
