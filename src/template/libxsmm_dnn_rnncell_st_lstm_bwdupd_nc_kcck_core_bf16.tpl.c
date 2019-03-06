@@ -156,7 +156,7 @@ for (j = t-1; j >= 0; --j) {
         /* Reduce batch gemm call  */
         batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, j, in, ic, N, C), &blocks);
 
-        /* If last block, make sure we doewnconvert dx to bf16 */
+        /* If last block, make sure we downconvert dx to bf16 */
         if (KB == BF-1) {
           libxsmm_internal_matrix_rne_cvt_fp32_bfp16_ld(bc, bn, C, &LIBXSMM_VLA_ACCESS(3, dx, j, in, ic, N, C), &LIBXSMM_VLA_ACCESS(3, dx_bf16, j, in, ic, N, C));
         }
