@@ -711,7 +711,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_SCSOA,
   LIBXSMM_BUILD_KIND_SREG,
   LIBXSMM_BUILD_KIND_CFWD,
-  LIBXSMM_BUILD_KIND_CUPD,
+  LIBXSMM_BUILD_KIND_CUPD
 } libxsmm_build_kind;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
