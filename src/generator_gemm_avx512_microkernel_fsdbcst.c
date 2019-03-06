@@ -900,7 +900,14 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
       }
     }
   } else {
-    /* nothing to do */
+    /* advance pointers of B only when we are not fully unrolling K and taking care of intermediate advances */
+    if ( i_k_blocking < (unsigned int)i_xgemm_desc->k ) {
+      /* advance B ptr by K rows */
+      libxsmm_x86_instruction_alu_imm( io_generated_code,
+                                       i_micro_kernel_config->alu_add_instruction,
+                                       i_gp_reg_mapping->gp_reg_b,
+                                       (i_k_blocking * i_micro_kernel_config->datatype_size * i_xgemm_desc->ldb) );
+    }
   }
 
   /* add additional accumulators, if needed */
@@ -1991,10 +1998,17 @@ unsigned int libxsmm_generator_gemm_avx512_kernel_fsdbcst_kloop( libxsmm_generat
                                                        i_xgemm_desc->k-l_max_blocked_k );
     /* reset B manually */
     if (l_max_blocked_k > 0 ) {
+      int l_b_offset = 0;
+      if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+        l_b_offset = i_xgemm_desc->ldb * i_xgemm_desc->k * i_micro_kernel_config->datatype_size;
+      } else {
+        l_b_offset = i_xgemm_desc->k * i_micro_kernel_config->datatype_size;
+      }
+
       libxsmm_x86_instruction_alu_imm( io_generated_code,
                                        i_micro_kernel_config->alu_sub_instruction,
                                        i_gp_reg_mapping->gp_reg_b,
-                                       i_xgemm_desc->k * i_micro_kernel_config->datatype_size );
+                                       l_b_offset );
     }
   }
 
