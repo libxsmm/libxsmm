@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2019, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,41 +26,22 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Hans Pabst (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_CPUID_H
-#define LIBXSMM_CPUID_H
 
-#include "libxsmm_macros.h"
+#ifndef GENERATOR_GEMM_IMCI_AVX512_H
+#define GENERATOR_GEMM_IMCI_AVX512_H
 
-/**
- * Enumerates the available target architectures and instruction
- * set extensions as returned by libxsmm_get_target_archid().
- */
-#define LIBXSMM_TARGET_ARCH_UNKNOWN 0
-#define LIBXSMM_TARGET_ARCH_GENERIC 1
-#define LIBXSMM_X86_IMCI         1001
-#define LIBXSMM_X86_GENERIC      1002
-#define LIBXSMM_X86_SSE3         1003
-#define LIBXSMM_X86_SSE4         1004
-#define LIBXSMM_X86_AVX          1005
-#define LIBXSMM_X86_AVX2         1006
-#define LIBXSMM_X86_AVX512       1007
-#define LIBXSMM_X86_AVX512_MIC   1010
-#define LIBXSMM_X86_AVX512_KNM   1011
-#define LIBXSMM_X86_AVX512_CORE  1020
-#define LIBXSMM_X86_AVX512_CLX   1021
+#include "generator_common.h"
 
-/**
- * Returns the target architecture and instruction set extensions, but *not* necessarily the
- * code path as used by LIBXSMM. To determine (or manually adjust) the code path in use, one
- * needs to rely on libxsmm_get_target_archid/libxsmm_get_target_arch (to manually adjust
- * the coda path use libxsmm_set_target_archid/libxsmm_set_target_arch).
- */
-LIBXSMM_API int libxsmm_cpuid_x86(void);
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_imci_avx512_get_max_n_blocking( const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                                    const char*                    i_arch );
 
-/** Similar to libxsmm_cpuid_x86, but conceptually not x86-specific. */
-LIBXSMM_API int libxsmm_cpuid(void);
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_imci_avx512_kernel( libxsmm_generated_code*         io_generated_code,
+                                                 const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                 const char*                    i_arch );
 
-#endif /*LIBXSMM_CPUID_H*/
+#endif /* GENERATOR_GEMM_IMCI_AVX512_H */
 

@@ -68,6 +68,9 @@ if __name__ == "__main__":
             print("#elif defined(__SSE3__) && "
                   "defined(LIBXSMM_GENTARGET_wsm_sp)")
             print("  libxsmm_smm_" + mnkstr + "_wsm(" + signature + ");")
+            print("#elif defined(__MIC__) && "
+                  "defined(LIBXSMM_GENTARGET_knc_sp)")
+            print("  libxsmm_smm_" + mnkstr + "_knc(" + signature + ");")
             print("#else")
             print("  const char transa = (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & "
                   "LIBXSMM_FLAGS) ? 'N' : 'T');")
@@ -123,6 +126,9 @@ if __name__ == "__main__":
             print("#elif defined(__SSE3__) && "
                   "defined(LIBXSMM_GENTARGET_wsm_dp)")
             print("  libxsmm_dmm_" + mnkstr + "_wsm(" + signature + ");")
+            print("#elif defined(__MIC__) && "
+                  "defined(LIBXSMM_GENTARGET_knc_dp)")
+            print("  libxsmm_dmm_" + mnkstr + "_knc(" + signature + ");")
             print("#else")
             print("  const char transa = (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & "
                   "LIBXSMM_FLAGS) ? 'N' : 'T');")

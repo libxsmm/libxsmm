@@ -104,7 +104,8 @@ void libxsmm_generator_spgemm_csr_asparse( libxsmm_generated_code*         io_ge
     } else {}
 
 
-  } else if ( ( strcmp( i_arch, "knl" ) == 0 ) ||
+  } else if ( ( strcmp( i_arch, "knc" ) == 0 ) ||
+              ( strcmp( i_arch, "knl" ) == 0 ) ||
               ( strcmp( i_arch, "knm" ) == 0 ) ||
               ( strcmp( i_arch, "clx" ) == 0 ) ||
               ( strcmp( i_arch, "skx" ) == 0 ) ) {

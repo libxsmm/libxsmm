@@ -5,7 +5,8 @@
 There might be situations in which it is up-front not clear which problem-sizes will be needed when running an application. To leverage LIBXSMM's high-performance kernels, the library implements a JIT (Just-In-Time) code generation backend which generates the requested kernels on the fly (in-memory). This is accomplished by emitting the corresponding byte-code directly into an executable buffer. The actual JIT code is generated per the CPUID flags, and therefore does not rely on the code path selected when building the library. In the current implementation, some limitations apply to the JIT backend specifically:
 
 1. To stay agnostic to any threading model used, Pthread mutexes are guarding the updates of the JIT'ted code cache (link line with `-lpthread` is required); building with OMP=1 employs an OpenMP critical section as an alternative locking mechanism.
-2. There is limited support for the Windows calling convention (only kernels without prefetch signature).
+2. There is no support for the Intel&#160;SSE (Intel&#160;Xeon 5500/5600 series) and IMCI (Intel&#160;Xeon&#160;Phi coprocessor code-named Knights Corner) instruction set extensions. However, statically generated SSE-kernels can be leveraged without disabling support for JIT'ting AVX kernels.
+3. There is limited support for the Windows calling convention (only kernels without prefetch signature).
 
 The JIT backend can also be disabled at build time (`make JIT=0`) as well as at runtime (`LIBXSMM_TARGET=0`, or anything prior to Intel&#160;AVX). The latter is an environment variable which allows to set a code path independent of the CPUID (LIBXSMM_TARGET=0&#124;1&#124;sse&#124;snb&#124;hsw&#124;knl&#124;knm&#124;skx). Please note that LIBXSMM_TARGET cannot enable the JIT backend if it was disabled at build time (JIT=0).
 
@@ -35,7 +36,7 @@ The code generator driver program accepts the following arguments:
 11. beta (0 or 1)
 12. Alignment override for A (1 auto, 0 no alignment)
 13. Alignment override for C (1 auto, 0 no alignment)
-14. Architecture (noarch, wsm, snb, hsw, knl, knm, skx, clx)
+14. Architecture (noarch, wsm, snb, hsw, knc, knl, knm, skx)
 15. Prefetch strategy, see below enumeration (dense/dense_asm only)
 16. single precision (SP), or double precision (DP)
 17. CSC file (just required when 1. is "sparse"). Matrix market format.
