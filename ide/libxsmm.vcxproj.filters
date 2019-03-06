@@ -96,15 +96,6 @@
     <ClInclude Include="..\include\libxsmm_spmdm.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_backward.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_forward.h">
-      <Filter>src</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_fsspmdm.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -145,12 +136,6 @@
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_winograd_forward_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_winograd_weight_update_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_gemm_avx_microkernel.h">
@@ -353,15 +338,6 @@
     <ClCompile Include="..\src\libxsmm_spmdm.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_backward.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_forward.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_convolution_winograd_weight_update.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_fsspmdm.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -471,159 +447,6 @@
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_bwd_custom_custom_padding_img_par.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_inlined.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_inlined_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_input_trans_alpha6_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_output_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_output_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_custom_custom_output_trans_alpha6_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_inlined.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_inlined_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_input_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_input_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_input_trans_alpha6_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_output_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_output_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_nhwc_custom_output_trans_alpha6_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_weight_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_backward_weight_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_inlined_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_input_trans_alpha6_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_custom_custom_output_trans_alpha6_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_inlined_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_input_trans_alpha6_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_nhwc_custom_output_trans_alpha6_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_forward_weight_trans_alpha6_avx512.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_deloutput_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_deloutput_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_inlined_knm.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_input_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_custom_custom_input_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_delweight_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_delweight_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_deloutput_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_deloutput_trans_alpha6.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_inlined.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_inlined_knm.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_input_trans_alpha4.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolution_winograd_weight_update_nhwc_custom_input_trans_alpha6.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_fwd_custom_custom.tpl.c">
@@ -741,15 +564,6 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_convolution_weight_update_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_winograd.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_winograd_forward_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_winograd_weight_update_avx512.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm.c">

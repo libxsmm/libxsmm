@@ -345,9 +345,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_tensor_format filter_format;
   libxsmm_dnn_conv_fuse_op fuse_ops;
   libxsmm_dnn_conv_option options;
-  libxsmm_convolution_winograd_descriptor cwino_fwd;
-  libxsmm_convolution_winograd_descriptor cwino_bwd;
-  libxsmm_convolution_winograd_descriptor cwino_upd;
   libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
   /* These are the batchnorm handles in case of fusion  */
@@ -714,10 +711,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_SCSOA,
   LIBXSMM_BUILD_KIND_SREG,
   LIBXSMM_BUILD_KIND_CFWD,
-  LIBXSMM_BUILD_KIND_CUPD,
-  LIBXSMM_BUILD_KIND_CWFWD,
-  LIBXSMM_BUILD_KIND_CWBWD,
-  LIBXSMM_BUILD_KIND_CWUPD
+  LIBXSMM_BUILD_KIND_CUPD
 } libxsmm_build_kind;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
@@ -729,7 +723,6 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_csr_reg_descriptor* sreg;
   const libxsmm_convolution_forward_descriptor* cfwd;
   const libxsmm_convolution_weight_update_descriptor* cupd;
-  const libxsmm_convolution_winograd_descriptor* cwino;
   const libxsmm_mcopy_descriptor* matcopy;
   const libxsmm_trans_descriptor* trans;
   const libxsmm_trsm_descriptor* trsm;
@@ -843,15 +836,6 @@ LIBXSMM_API_INTERN void* libxsmm_create_xconv_backward(const libxsmm_convolution
 
 /** Code generation routine for a convolution kernel as specified by descriptor. */
 LIBXSMM_API_INTERN void* libxsmm_create_xconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
-
-/** Code generation routine for a forward-convolution Winograd kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_forward(const libxsmm_convolution_winograd_descriptor* descriptor);
-
-/** Code generation routine for a backward-convolution Winograd kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_backward(const libxsmm_convolution_winograd_descriptor* descriptor);
-
-/** Code generation routine for a weight-update-convolution Winograd kernel as specified by descriptor. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_update_weights(const libxsmm_convolution_winograd_descriptor* descriptor);
 
 /** Global lock; create an own lock for an independent domain. */
 LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
