@@ -231,7 +231,7 @@ LIBXSMM_API_INLINE const char* internal_trace_get_symbolname(const void* address
   {
     char* c = map;
     for (; '+' != *c && 0 != *c; ++c);
-    if ('+' == *c) {
+    if ('+' == *c && c != map) {
       result = map;
       map = c;
     }
@@ -417,17 +417,14 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
           if (NULL != value) {
             int next = symbol + 1;
             if (NULL != filter_symbol) {
-              while (next < n) {
-                fname = (filter_symbol != stacktrace[symbol] ? internal_trace_get_symbolname(stacktrace[symbol], value, fd, fdoff) : NULL);
-                symbol = next;
-                if (NULL != fname) {
-                  ++next; /* determine the symbol after the match which is checked below */
-                  if (filter_symbol == stacktrace[symbol] || NULL != strstr(fname, (const char*)filter_symbol)) break;
-                }
-                else {
-                  if (filter_symbol == stacktrace[symbol]) ++next;
+              while (next < n && (filter_symbol == stacktrace[symbol] ||
+                NULL != internal_trace_get_symbolname(stacktrace[symbol], value, fd, fdoff)))
+              {
+                if (filter_symbol == stacktrace[symbol] || NULL != strstr(value, (const char*)filter_symbol)) {
+                  symbol = next++; /* determine the symbol after the match which is checked below */
                   break;
                 }
+                symbol = next++;
               }
             }
             if (symbol != next && filter_symbol != stacktrace[symbol] &&
