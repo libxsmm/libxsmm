@@ -513,7 +513,7 @@ LIBXSMM_API_INLINE size_t internal_strlen(const char* cstr, size_t maxlen)
 LIBXSMM_API_INLINE void internal_init(void)
 {
 #if defined(LIBXSMM_TRACE)
-  int filter_threadid = 0, filter_mindepth = -1, filter_maxnsyms = 0, init_code = EXIT_SUCCESS;
+  int filter_threadid = 0, filter_mindepth = 0, filter_maxnsyms = 0, init_code = EXIT_SUCCESS;
 #endif
   int i;
   const libxsmm_malloc_function null_malloc_fn = { 0 };

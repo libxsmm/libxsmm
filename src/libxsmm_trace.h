@@ -66,10 +66,10 @@ LIBXSMM_API const char* libxsmm_trace_info(
   unsigned int* depth,
   /* Query and output the thread id (no input). */
   unsigned int* threadid,
-  /* Lookup symbol (depth argument becomes relative to symbol position). */
-  const void* filter_symbol,
   /* Filter for thread id (-1: all, NULL: libxsmm_trace_init). */
   const int* filter_threadid,
+  /* Lookup symbol (depth argument becomes relative to symbol position). */
+  const void* filter_symbol,
   /* Specify min. abs. position in stack trace (-1 or 0: all, NULL: libxsmm_trace_init). */
   const int* filter_mindepth,
   /* Specify max. depth of stack trace (-1 or 0: all, NULL: libxsmm_trace_init). */
@@ -77,10 +77,10 @@ LIBXSMM_API const char* libxsmm_trace_info(
 
 /** Prints an entry of the function where libxsmm_trace is called from (indented/hierarchical). */
 LIBXSMM_API void libxsmm_trace(FILE* stream,
-  /* Lookup symbol (depth argument becomes relative to symbol position). */
-  const void* filter_symbol,
   /* Filter for thread id (-1: all, NULL: libxsmm_trace_init). */
   const int* filter_threadid,
+  /* Lookup symbol (depth argument becomes relative to symbol position). */
+  const void* filter_symbol,
   /* Specify min. absolute pos. in stack trace (-1 or 0: all, NULL: libxsmm_trace_init). */
   const int* filter_mindepth,
   /* Specify max. depth of stack trace (-1 or 0: all, NULL: libxsmm_trace_init). */

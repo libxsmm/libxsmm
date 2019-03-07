@@ -31,8 +31,20 @@
 #include "libxsmm_trace.h"
 #include <libxsmm_sync.h>
 
-#if !defined(LIBXSMM_TRACE_DLINFO) && 0
+#if !defined(LIBXSMM_TRACE_DLINFO) /*&& !defined(__STATIC)*/
 # define LIBXSMM_TRACE_DLINFO
+#endif
+#if !defined(LIBXSMM_TRACE_MINDEPTH) || 0 > (LIBXSMM_TRACE_MINDEPTH)
+# undef LIBXSMM_TRACE_MINDEPTH
+# define LIBXSMM_TRACE_MINDEPTH 1
+#endif
+#if !defined(LIBXSMM_TRACE_MAXDEPTH) || 0 >= (LIBXSMM_TRACE_MAXDEPTH)
+# undef LIBXSMM_TRACE_MAXDEPTH
+# define LIBXSMM_TRACE_MAXDEPTH 32768
+#endif
+#if !defined(LIBXSMM_TRACE_SYMBOLSIZE) || 0 >= (LIBXSMM_TRACE_SYMBOLSIZE)
+# undef LIBXSMM_TRACE_SYMBOLSIZE
+# define LIBXSMM_TRACE_SYMBOLSIZE 256
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -55,16 +67,47 @@
 # if defined(_MSC_VER)
 #   pragma warning(pop)
 # endif
+LIBXSMM_APIVAR(volatile LONG internal_trace_initialized);
 #else
+LIBXSMM_APIVAR(volatile int internal_trace_initialized);
 # include <execinfo.h>
-# include <sys/stat.h>
-# include <sys/mman.h>
-# include <unistd.h>
-# include <fcntl.h>
 # if defined(LIBXSMM_TRACE_DLINFO)
 #   include <dlfcn.h>
-# endif
-# if defined(__APPLE__) && defined(__MACH__)
+# else
+#   include <sys/stat.h>
+#   include <sys/mman.h>
+#   include <unistd.h>
+#   include <pthread.h>
+#   include <fcntl.h>
+#   if (0 != LIBXSMM_SYNC)
+LIBXSMM_APIVAR(pthread_key_t internal_trace_key);
+#   endif
+LIBXSMM_API_INLINE void internal_delete(void* value)
+{
+  int fd;
+#   if !(defined(__APPLE__) && defined(__MACH__))
+  LIBXSMM_ASSERT(NULL != value);
+#   endif
+  fd = *((int*)value);
+#   if defined(NDEBUG)
+  munmap(value, LIBXSMM_TRACE_SYMBOLSIZE);
+#   else /* library code is expected to be mute */
+  if (0 != munmap(value, LIBXSMM_TRACE_SYMBOLSIZE)) {
+    const int error = errno;
+    fprintf(stderr, "LIBXSMM ERROR: %s (munmap error #%i at %p)\n",
+      strerror(error), error, value);
+  }
+#   endif
+  if (0 <= fd) {
+    close(fd);
+  }
+#   if !defined(NDEBUG) /* library code is expected to be mute */
+  else {
+    fprintf(stderr, "LIBXSMM ERROR: invalid file descriptor (%i)\n", fd);
+  }
+#   endif
+}
+#   if defined(__APPLE__) && defined(__MACH__)
 /* taken from "libtransmission" fdlimit.c */
 LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
 {
@@ -76,65 +119,16 @@ LIBXSMM_API_INLINE int posix_fallocate(int fd, off_t offset, off_t length)
   fst.fst_bytesalloc = 0;
   return fcntl(fd, F_PREALLOCATE, &fst);
 }
-# elif (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
-       (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
+#   elif (!defined(_XOPEN_SOURCE) || 600 > _XOPEN_SOURCE) && \
+         (!defined(_POSIX_C_SOURCE) || 200112L > _POSIX_C_SOURCE)
 /* C89: avoid warning about posix_fallocate declared implicitly */
 LIBXSMM_EXTERN int posix_fallocate(int, off_t, off_t);
+#   endif
 # endif
-#endif
-#if !defined(_WIN32)
-# include <pthread.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
-
-#if !defined(LIBXSMM_TRACE_MINDEPTH) || 0 > (LIBXSMM_TRACE_MINDEPTH)
-# undef LIBXSMM_TRACE_MINDEPTH
-# define LIBXSMM_TRACE_MINDEPTH 1
-#endif
-#if !defined(LIBXSMM_TRACE_MAXDEPTH) || 0 >= (LIBXSMM_TRACE_MAXDEPTH)
-# undef LIBXSMM_TRACE_MAXDEPTH
-# define LIBXSMM_TRACE_MAXDEPTH 32768
-#endif
-#if !defined(LIBXSMM_TRACE_SYMBOLSIZE) || 0 >= (LIBXSMM_TRACE_SYMBOLSIZE)
-# undef LIBXSMM_TRACE_SYMBOLSIZE
-# define LIBXSMM_TRACE_SYMBOLSIZE 256
-#endif
-
-#if defined(_WIN32) || defined(__CYGWIN__)
-LIBXSMM_APIVAR(volatile LONG internal_trace_initialized);
-#else
-LIBXSMM_APIVAR(volatile int internal_trace_initialized);
-#if (0 != LIBXSMM_SYNC)
-LIBXSMM_APIVAR(pthread_key_t internal_trace_key);
-#endif
-LIBXSMM_API_INLINE void internal_delete(void* value)
-{
-  int fd;
-#if !(defined(__APPLE__) && defined(__MACH__))
-  LIBXSMM_ASSERT(NULL != value);
-#endif
-  fd = *((int*)value);
-#if defined(NDEBUG)
-  munmap(value, LIBXSMM_TRACE_SYMBOLSIZE);
-#else /* library code is expected to be mute */
-  if (0 != munmap(value, LIBXSMM_TRACE_SYMBOLSIZE)) {
-    const int error = errno;
-    fprintf(stderr, "LIBXSMM ERROR: %s (munmap error #%i at %p)\n",
-      strerror(error), error, value);
-  }
-#endif
-  if (0 <= fd) {
-    close(fd);
-  }
-#if !defined(NDEBUG) /* library code is expected to be mute */
-  else {
-    fprintf(stderr, "LIBXSMM ERROR: invalid file descriptor (%i)\n", fd);
-  }
-#endif
-}
-#endif /*!defined(_WIN32) && !defined(__CYGWIN__)*/
 
 
 LIBXSMM_APIVAR(int internal_trace_mindepth);
@@ -156,7 +150,7 @@ LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int
 # if defined(_WIN32) || defined(__CYGWIN__)
   SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
   result = (FALSE != SymInitialize(GetCurrentProcess(), NULL, TRUE) ? EXIT_SUCCESS : GetLastError());
-# elif (0 != LIBXSMM_SYNC)
+# elif (0 != LIBXSMM_SYNC) && !defined(LIBXSMM_TRACE_DLINFO)
   result = pthread_key_create(&internal_trace_key, internal_delete);
 # endif
   if (EXIT_SUCCESS == result) {
@@ -189,7 +183,7 @@ LIBXSMM_API int libxsmm_trace_finalize(void)
     internal_trace_initialized = -1; /* disable */
 # if defined(_WIN32) || defined(__CYGWIN__)
     result = (FALSE != SymCleanup(GetCurrentProcess()) ? EXIT_SUCCESS : GetLastError());
-# elif (0 != LIBXSMM_SYNC)
+# elif (0 != LIBXSMM_SYNC) && !defined(LIBXSMM_TRACE_DLINFO)
     result = pthread_key_delete(internal_trace_key);
 # endif
   }
@@ -239,6 +233,15 @@ unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned
 LIBXSMM_API_INLINE const char* internal_trace_get_symbolname(const void* address, char* map, int fd, off_t fdoff)
 {
   const char* result = NULL;
+#if defined(LIBXSMM_TRACE_DLINFO)
+  Dl_info info;
+  LIBXSMM_UNUSED(fd); LIBXSMM_UNUSED(fdoff);
+  LIBXSMM_ASSERT(NULL != address && NULL != map);
+  if (0 != dladdr(address, &info) && NULL != info.dli_sname) {
+    strncpy(map, info.dli_sname, LIBXSMM_TRACE_SYMBOLSIZE);
+    result = map;
+  }
+#else
   LIBXSMM_ASSERT(NULL != address && NULL != map);
   backtrace_symbols_fd((void**)&address, 1, fd);
   if (fdoff == lseek(fd, fdoff, SEEK_SET) /* reset map */
@@ -252,6 +255,7 @@ LIBXSMM_API_INLINE const char* internal_trace_get_symbolname(const void* address
     }
   }
   *map = 0; /* terminate */
+#endif
   return result;
 }
 #endif
@@ -261,8 +265,8 @@ LIBXSMM_API
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const void* filter_symbol,
-  const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms);
+const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const int* filter_threadid,
+  const void* filter_symbol, const int* filter_mindepth, const int* filter_maxnsyms);
 
 LIBXSMM_API
 #if defined(_WIN32)
@@ -270,8 +274,8 @@ LIBXSMM_API
 #elif defined(__GNUC__)
 /*LIBXSMM_ATTRIBUTE(noinline)*/
 #endif
-const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const void* filter_symbol,
-  const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms)
+const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, const int* filter_threadid,
+  const void* filter_symbol, const int* filter_mindepth, const int* filter_maxnsyms)
 {
   const char *fname = NULL;
 #if defined(LIBXSMM_TRACE)
@@ -291,21 +295,19 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
     if (0 <= n) { /* do nothing if not yet initialized */
       const int mindepth = (NULL != filter_mindepth ? *filter_mindepth : internal_trace_mindepth);
       const int maxnsyms = (NULL != filter_maxnsyms ? *filter_maxnsyms : internal_trace_maxnsyms);
-      n = libxsmm_backtrace(stacktrace, /* according to filter_mindepth and filter_maxnsyms */
-        0 >= maxnsyms ? (LIBXSMM_TRACE_MAXDEPTH) : maxnsyms, LIBXSMM_MAX(mindepth, 0));
-      if (depth) *depth = n;
+      n = libxsmm_backtrace(stacktrace, LIBXSMM_TRACE_MAXDEPTH, 0);
       if (0 < n) {
         const int filter = (NULL != filter_threadid ? *filter_threadid : internal_trace_threadid);
         int abs_tid = 0;
-# if defined(_WIN32) || defined(__CYGWIN__)
+# if defined(_WIN32) || defined(__CYGWIN__) || defined(LIBXSMM_TRACE_DLINFO)
         static LIBXSMM_TLS struct {
+#   if defined(_WIN32) || defined(__CYGWIN__)
           char buffer[sizeof(SYMBOL_INFO)+LIBXSMM_TRACE_SYMBOLSIZE];
+#   else
+          char buffer[LIBXSMM_TRACE_SYMBOLSIZE];
+#   endif
           int tid;
         } info;
-        PSYMBOL_INFO value = (PSYMBOL_INFO)info.buffer;
-        value->SizeOfStruct = sizeof(SYMBOL_INFO);
-        value->MaxNameLen = LIBXSMM_TRACE_SYMBOLSIZE - 1;
-        value->NameLen = 0;
         if (0 != info.tid) {
           abs_tid = (0 <= info.tid ? info.tid : -info.tid);
         }
@@ -316,36 +318,58 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
         }
         LIBXSMM_ASSERT(0 < abs_tid);
         if (0 > filter || filter == abs_tid - 1) {
+#   if defined(_WIN32) || defined(__CYGWIN__)
           const HANDLE process = GetCurrentProcess();
+          PSYMBOL_INFO value = (PSYMBOL_INFO)info.buffer;
+          value->SizeOfStruct = sizeof(SYMBOL_INFO);
+          value->MaxNameLen = LIBXSMM_TRACE_SYMBOLSIZE - 1;
+          value->NameLen = 0;
+#   endif
           int next = symbol + 1;
           if (NULL != filter_symbol) {
             while (next < n && (filter_symbol == stacktrace[symbol] ||
+#   if defined(_WIN32) || defined(__CYGWIN__)
               (FALSE != SymFromAddr(process, (DWORD64)stacktrace[symbol], NULL, value) && 0 < value->NameLen)))
             {
               if (filter_symbol == stacktrace[symbol] || NULL != strstr(value->Name, (const char*)filter_symbol)) {
+#   else
+              (NULL != internal_trace_get_symbolname(stacktrace[symbol], info.buffer, 0, 0))))
+            {
+              if (filter_symbol == stacktrace[symbol] || NULL != strstr(info.buffer, (const char*)filter_symbol)) {
+#   endif
                 symbol = next++; /* determine the symbol after the match which is checked below */
                 break;
               }
               symbol = next++;
             }
-            if (next == n) symbol = 0; /* not found */
+            symbol = next != n ? LIBXSMM_CLMP(symbol + mindepth, 0, n - 1) : 0/*not found*/;
           }
-          if (symbol != next && filter_symbol != stacktrace[symbol] &&
-            FALSE != SymFromAddr(process, (DWORD64)stacktrace[symbol], NULL, value) && 0 < value->NameLen)
-          {
-            /* disable fall-back allowing unresolved symbol names */
-            info.tid = abs_tid; /* make unsigned */
-            fname = value->Name;
-          }
-          if (NULL == fname && 0 > info.tid) { /* fall-back allowing unresolved symbol names */
-#   if defined(__MINGW32__)
-            sprintf(info.buffer, "%p", stacktrace[symbol]);
+          /* apply filters based on absolute symbol position */
+          if ((NULL != filter_symbol || LIBXSMM_MAX(mindepth, 0) <= symbol) && (0 >= maxnsyms || symbol < maxnsyms)) {
+            if (symbol != next && filter_symbol != stacktrace[symbol] &&
+#   if defined(_WIN32) || defined(__CYGWIN__)
+              FALSE != SymFromAddr(process, (DWORD64)stacktrace[symbol], NULL, value) && 0 < value->NameLen)
 #   else
-            sprintf(info.buffer, "0x%" PRIxPTR, (uintptr_t)stacktrace[symbol]);
+              NULL != internal_trace_get_symbolname(stacktrace[symbol], info.buffer, 0, 0))
 #   endif
-            fname = info.buffer;
+            {
+              /* disable fall-back allowing unresolved symbol names */
+              info.tid = abs_tid; /* make unsigned */
+#   if defined(_WIN32) || defined(__CYGWIN__)
+              fname = value->Name;
+#   else
+              fname = info.buffer;
+#   endif
+            }
+            if (NULL == fname && 0 > info.tid) { /* fall-back allowing unresolved symbol names */
+#   if defined(__MINGW32__)
+              sprintf(info.buffer, "%p", stacktrace[symbol]);
+#   else
+              sprintf(info.buffer, "0x%" PRIxPTR, (uintptr_t)stacktrace[symbol]);
+#   endif
+              fname = info.buffer;
+            }
           }
-          if (threadid) *threadid = abs_tid - 1;
         }
 # else
 #   if (0 == LIBXSMM_SYNC)
@@ -433,22 +457,26 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
               }
               symbol = next++;
             }
-            if (next == n) symbol = 0; /* not found */
+            symbol = next != n ? LIBXSMM_CLMP(symbol + mindepth, 0, n - 1) : 0/*not found*/;
           }
-          if (symbol != next && filter_symbol != stacktrace[symbol] &&
-            NULL != internal_trace_get_symbolname(stacktrace[symbol], value, fd, fdoff))
-          {
-            /* disable fall-back allowing unresolved symbol names */
-            ivalue[1] = abs_tid; /* make unsigned */
-            fname = value;
+          /* apply filters based on absolute symbol position */
+          if ((NULL != filter_symbol || LIBXSMM_MAX(mindepth, 0) <= symbol) && (0 >= maxnsyms || symbol < maxnsyms)) {
+            if (symbol != next && filter_symbol != stacktrace[symbol] &&
+              NULL != internal_trace_get_symbolname(stacktrace[symbol], value, fd, fdoff))
+            {
+              /* disable fall-back allowing unresolved symbol names */
+              ivalue[1] = abs_tid; /* make unsigned */
+              fname = value;
+            }
+            if (NULL == fname && 0 > ivalue[1]) { /* fall-back to symbol address */
+              sprintf(value, "0x%llx", (unsigned long long)stacktrace[symbol]);
+              fname = value;
+            }
           }
-          if (NULL == fname && 0 > ivalue[1]) { /* fall-back to symbol address */
-            sprintf(value, "0x%llx", (unsigned long long)stacktrace[symbol]);
-            fname = value;
-          }
-          if (threadid) *threadid = abs_tid - 1;
         }
 # endif
+        if (threadid) *threadid = abs_tid - 1;
+        if (depth) *depth = symbol;
       }
     }
     --cerberus;
@@ -456,12 +484,11 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 #else
   LIBXSMM_UNUSED(depth);
   LIBXSMM_UNUSED(threadid);
-  LIBXSMM_UNUSED(filter_symbol);
   LIBXSMM_UNUSED(filter_threadid);
+  LIBXSMM_UNUSED(filter_symbol);
   LIBXSMM_UNUSED(filter_mindepth);
   LIBXSMM_UNUSED(filter_maxnsyms);
 #endif
-
   return fname;
 }
 
@@ -470,27 +497,26 @@ LIBXSMM_API
 #if defined(__GNUC__)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-void libxsmm_trace(FILE* stream, const void* filter_symbol, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms);
+void libxsmm_trace(FILE* stream, const int* filter_threadid, const void* filter_symbol, const int* filter_mindepth, const int* filter_maxnsyms);
 
-LIBXSMM_API void libxsmm_trace(FILE* stream, const void* filter_symbol, const int* filter_threadid, const int* filter_mindepth, const int* filter_maxnsyms)
+LIBXSMM_API void libxsmm_trace(FILE* stream, const int* filter_threadid, const void* filter_symbol, const int* filter_mindepth, const int* filter_maxnsyms)
 {
 #if defined(LIBXSMM_TRACE)
   unsigned int depth, threadid;
-  const char *const name = libxsmm_trace_info(&depth, &threadid, filter_symbol, filter_threadid, filter_mindepth, filter_maxnsyms);
-  if (name && *name) { /* implies actual other results to be valid */
-    const int mindepth = LIBXSMM_MAX(NULL != filter_mindepth ? *filter_mindepth : internal_trace_mindepth, 0);
+  const char *const name = libxsmm_trace_info(&depth, &threadid, filter_threadid, filter_symbol, filter_mindepth, filter_maxnsyms);
+  if (NULL != name && 0 != *name) { /* implies actual other results to be valid */
     LIBXSMM_ASSERT(NULL != stream/*otherwise fprintf handles the error*/);
-    if ((0 == filter_threadid && 0 > internal_trace_threadid) || (NULL != filter_threadid && 0 > *filter_threadid)) {
-      fprintf(stream, "%*s%s@%u\n", (int)(depth - mindepth), "", name, threadid);
+    if ((NULL == filter_threadid && 0 > internal_trace_threadid) || (NULL != filter_threadid && 0 > *filter_threadid)) {
+      fprintf(stream, "%*s%s@%u\n", (int)depth, "", name, threadid);
     }
     else {
-      fprintf(stream, "%*s%s\n", (int)(depth - mindepth), "", name);
+      fprintf(stream, "%*s%s\n", (int)depth, "", name);
     }
   }
 #else /* suppress warning */
   LIBXSMM_UNUSED(stream);
-  LIBXSMM_UNUSED(filter_symbol);
   LIBXSMM_UNUSED(filter_threadid);
+  LIBXSMM_UNUSED(filter_symbol);
   LIBXSMM_UNUSED(filter_mindepth);
   LIBXSMM_UNUSED(filter_maxnsyms);
 #endif
@@ -503,38 +529,10 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE(no_instrument_function) void __cyg_profile_func_en
 LIBXSMM_API void __cyg_profile_func_enter(void* this_fn, void* call_site)
 {
 #if defined(LIBXSMM_TRACE)
-# if !defined(LIBXSMM_TRACE_DLINFO)
-  LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
-  libxsmm_trace(stderr, call_site,
-    /* inherit global settings from libxsmm_trace_init */
-    NULL, NULL, NULL);
-# else
-  if (0 <= internal_trace_initialized && NULL != internal_trace_maxnsyms) {
-#   if 1
-    Dl_info info;
-#   else
-    struct {
-      const char* dli_fname;
-      /* address at which shared object is loaded */
-      void* dli_fbase;
-      /* name of nearest symbol with address lower than address */
-      const char* dli_sname;
-      void* dli_saddr;
-    } info;
-#   endif
-    if (0 != dladdr(this_fn, (Dl_info*)&info)) {
-      if (NULL != info.dli_sname) {
-        fprintf(stderr, "%s\n", info.dli_sname);
-      }
-      else if (NULL != info.dli_saddr) {
-        fprintf(stderr, "0x%llx\n", (unsigned long long)info.dli_saddr);
-      }
-    }
-  }
-# endif
-#else
-  LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site); /* suppress warning */
+  /* NULL: inherit global settings from libxsmm_trace_init */
+  libxsmm_trace(stderr, NULL/*filter_threadid*/, LIBXSMM_CALLER, NULL, NULL);
 #endif
+  LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site);
 }
 
 
