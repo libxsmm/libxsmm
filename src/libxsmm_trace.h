@@ -70,9 +70,9 @@ LIBXSMM_API const char* libxsmm_trace_info(
   const void* filter_symbol,
   /* Filter for thread id (-1: all, NULL: libxsmm_trace_init). */
   const int* filter_threadid,
-  /* Specify min. abs. position in stack trace (0: all, NULL: libxsmm_trace_init). */
+  /* Specify min. abs. position in stack trace (-1 or 0: all, NULL: libxsmm_trace_init). */
   const int* filter_mindepth,
-  /* Specify max. depth of stack trace (-1: all, NULL: libxsmm_trace_init). */
+  /* Specify max. depth of stack trace (-1 or 0: all, NULL: libxsmm_trace_init). */
   const int* filter_maxnsyms);
 
 /** Prints an entry of the function where libxsmm_trace is called from (indented/hierarchical). */
@@ -81,9 +81,9 @@ LIBXSMM_API void libxsmm_trace(FILE* stream,
   const void* filter_symbol,
   /* Filter for thread id (-1: all, NULL: libxsmm_trace_init). */
   const int* filter_threadid,
-  /* Specify min. absolute pos. in stack trace (0: all, NULL: libxsmm_trace_init). */
+  /* Specify min. absolute pos. in stack trace (-1 or 0: all, NULL: libxsmm_trace_init). */
   const int* filter_mindepth,
-  /* Specify max. depth of stack trace (-1: all, NULL: libxsmm_trace_init). */
+  /* Specify max. depth of stack trace (-1 or 0: all, NULL: libxsmm_trace_init). */
   const int* filter_maxnsyms);
 
 #endif /*LIBXSMM_TRACE_H*/
