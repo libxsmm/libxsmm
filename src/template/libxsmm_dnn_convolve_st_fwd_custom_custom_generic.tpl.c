@@ -53,6 +53,8 @@ const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
 LIBXSMM_VLA_DECL(5, element_input_type, input, input_ptr, handle->blocksifm, IFH, IFW, handle->ifmblock);
 LIBXSMM_VLA_DECL(6, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
 
+libxsmm_barrier_init(handle->barrier, ltid);
+
 if ( imgpt <= 1 ) {
   my_img_start = LIBXSMM_MIN( ltid / threads_per_image, handle->desc.N);
   my_img_end = LIBXSMM_MIN( my_img_start + 1, handle->desc.N);
@@ -293,4 +295,6 @@ if (handle->loop_order == 1) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
     }
   }
 }
+
+libxsmm_barrier_wait(handle->barrier, ltid);
 

@@ -66,21 +66,23 @@ LIBXSMM_VLA_DECL(6, element_filter_type, tr_wt, (element_filter_type*)handle->sc
 element_filter_type* weight_base = ((handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) > 0 ) ? (element_filter_type*)handle->reg_filter_tr->data : (element_filter_type*)handle->scratch1 ;
 LIBXSMM_VLA_DECL(6, const element_filter_type, weight, weight_base, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock);
 
+/* lazy barrier init */
+libxsmm_barrier_init(handle->barrier, ltid);
+
 /* transpose filters, if requested */
 if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) == 0 ) {
-  /* lazy barrier init */
-  libxsmm_barrier_init(handle->barrier, ltid);
+
   for (ifm1ofm1 = transpose_thr_begin; ifm1ofm1 < transpose_thr_end; ++ifm1ofm1) {
     ofm1 = ifm1ofm1 / handle->blocksifm;
     ifm1 = ifm1ofm1 % handle->blocksifm;
     for (kj=0; kj < handle->desc.R; kj++) {
       for (ki=0; ki < handle->desc.S; ki++) {
         for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-        LIBXSMM_PRAGMA_SIMD
-          for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
-            LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, ofm2, ifm2, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock) =
-              LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-          }
+          LIBXSMM_PRAGMA_SIMD
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ++ifm2) {
+              LIBXSMM_VLA_ACCESS(6, tr_wt, ifm1, ofm1, handle->desc.R-1-kj, handle->desc.S-1-ki, ofm2, ifm2, handle->blocksofm, handle->desc.R, handle->desc.S, handle->ofmblock, handle->ifmblock) =
+                LIBXSMM_VLA_ACCESS(6, wt, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+            }
         }
       }
     }
@@ -335,4 +337,6 @@ if (handle->pack_input_bwd == 1) {
     }
   }
 }
+
+libxsmm_barrier_wait(handle->barrier, ltid);
 

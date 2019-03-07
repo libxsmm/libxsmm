@@ -431,6 +431,11 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int avoid_fmas_in_rim;
   int avoid_init_weights;
   int upd_use_batchreduce;
+  int upd_pack_input;
+  int upd_img_br_block;
+  int upd_loop_order;
+  int upd_linearized_tasklist;
+  int upd_avoid_rim_fmas;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;

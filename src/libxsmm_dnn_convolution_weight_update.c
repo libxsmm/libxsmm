@@ -1131,27 +1131,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(l
   /* check if we have a kernel JITed */
   if ( handle->use_upd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      const libxsmm_blasint ldx     = (libxsmm_blasint)handle->desc.W+((libxsmm_blasint)2*handle->desc.pad_w);
-      const libxsmm_blasint ldx_alt = (libxsmm_blasint)handle->desc.v*handle->ifmblock;
-      const libxsmm_blasint ldb_alt = (libxsmm_blasint)handle->ofwp;
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
       typedef libxsmm_smmfunction gemm_function;
       typedef libxsmm_smmfunction_reducebatch gemm_br_function;
-      /* let's do a ofmblock x ifmblock x ofw_rb GEMM :-) or in other words M=nbOfm, N=nbIfm, K=ofw (col-major) */
-      //gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->ofw, NULL, &ldx, NULL, NULL, NULL, NULL, NULL);
-      int LDA = handle->ofmblock;
-      int LDB = handle->ifmblock;
-      int LDC = handle->ofmblock;
-      const float beta = (handle->avoid_init_weights == 1) ? 0.0 : 1.0;
-      int l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
-      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock, handle->ifmblock, handle->upd_ofw_rb * handle->upd_ofh_rb, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, NULL);
-      gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch(handle->ofmblock, handle->ifmblock, handle->upd_ofw_rb, &LDA, &LDB, &LDC, NULL, &beta, &l_flags);
-      /* for strided convolutions with kernel size bigger than 1 the above GEMM doesn't work and we need to switch to more transposes and an
-         alternative GEMM:
-         let's do a ifmblock x ofmblock x ofw_rb GEMM :-) or in other words M=nbIfm, N=nbOfm, K=ofw (col-major) */
-      gemm_function gemm_kernel_alt = libxsmm_smmdispatch(handle->ifmblock, handle->ofmblock, handle->ofw, &ldx_alt, &ldb_alt, NULL, NULL, NULL, NULL, NULL);
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic.tpl.c"
     }
     else {

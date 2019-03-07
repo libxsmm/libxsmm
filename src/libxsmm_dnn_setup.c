@@ -582,14 +582,102 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->block_bwd_ofm = blockofm;
   handle->block_bwd_oj = handle->block_fwd_oj;
 
-
-  /* Setup upd parameters */
+  /* Setup upd parameters and use algorithms on a per layer basis */
+  handle->upd_ofh_rb = 1;
+  handle->upd_img_br_block = 1;
+  handle->upd_use_batchreduce = 0;
+  handle->weight_copies = 1;
+  handle->upd_loop_order = 0;
+  handle->upd_pack_input = 0;
+  handle->upd_linearized_tasklist = 0;
+  handle->upd_avoid_rim_fmas = 0;
   handle->upd_ofw_rb = handle->ofw;
-  handle->upd_ofh_rb = atoi(getenv("OFH"));
-  handle->upd_use_batchreduce = atoi(getenv("BR"));
+
+  if (handle->ofh == 112 || handle->ofh == 56 || (handle->desc.H == 56 && handle->desc.u == 2)) {
+    handle->upd_ofh_rb = 1;
+    handle->upd_use_batchreduce = 0;
+    handle->weight_copies = handle->desc.threads;
+    if (handle->desc.H == 56 && handle->desc.u == 2 && handle->desc.C == 512) {
+      handle->upd_loop_order = 0;
+    } else {
+      handle->upd_loop_order = 1;
+    }
+  }
+
+  if (handle->ofh == 28 && handle->desc.u == 1 && handle->desc.R == 1 && handle->desc.S == 1) {
+    handle->upd_ofh_rb = 28;
+    handle->upd_use_batchreduce = 1;
+    handle->weight_copies = handle->desc.threads;
+    if (handle->desc.K == 512) {
+      handle->upd_loop_order = 0;
+    } else {
+      handle->upd_loop_order = 1;
+    }
+  }
+
+  if (handle->ofh == 28 && handle->desc.R == 3 && handle->desc.S == 3) {
+    handle->upd_ofh_rb = 28;
+    handle->upd_use_batchreduce = 1;
+    handle->weight_copies = handle->desc.threads;
+  }
+
+  if (handle->ofh == 14 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 256) {
+    handle->upd_ofh_rb = 14;
+    handle->upd_use_batchreduce = 1;
+    handle->weight_copies = handle->desc.threads;
+  }
+
+  if (handle->ofh == 14 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 1024) {
+    handle->upd_ofh_rb = 14;
+    handle->upd_pack_input = 1;
+    handle->upd_linearized_tasklist = 1;
+    handle->weight_copies = 1;
+    handle->upd_use_batchreduce = 0;
+  }
+
+  if (handle->ofh == 14 && handle->desc.R == 3 && handle->desc.S == 3) {
+    handle->upd_ofh_rb = 14;
+    handle->upd_use_batchreduce = 1;
+    handle->weight_copies = 7;
+  }
+
+  if (handle->ofh == 14 && handle->desc.u == 1 && handle->desc.v == 1) {
+    handle->upd_ofh_rb = 14;
+    handle->upd_use_batchreduce = 1;
+    handle->weight_copies = 7;
+  }
+
+  if (handle->ofh == 7 && handle->desc.u == 2 && handle->desc.v == 2) {
+    handle->upd_ofh_rb = 7;
+    handle->upd_pack_input = 1;
+    handle->upd_linearized_tasklist = 1;
+    handle->weight_copies = 1;
+    handle->upd_use_batchreduce = 0;
+  }
+
+  if (handle->ofh == 7 && handle->desc.u == 1 && handle->desc.v == 1) {
+    handle->upd_ofh_rb = 7;
+    handle->upd_pack_input = 0;
+    handle->upd_linearized_tasklist = 1;
+    handle->weight_copies = 1;
+    handle->upd_use_batchreduce = 0;
+  }
+
+  if (handle->ofh == 7 && handle->desc.R == 3 && handle->desc.S == 3) {
+    handle->upd_ofh_rb = 7;
+    handle->upd_linearized_tasklist = 1;
+    handle->weight_copies = 1;
+    handle->upd_use_batchreduce = 1;
+    handle->upd_avoid_rim_fmas = 1;
+  }
+
+  while (handle->desc.threads % handle->weight_copies != 0) {
+    handle->weight_copies = handle->weight_copies - 1;
+  }
+
   handle->block_upd_ofm = 1;
   handle->block_upd_ifm = 1;
-  handle->avoid_init_weights = (handle->upd_ofw_rb * handle->upd_ofh_rb == handle->ofw * handle->ofh) ? 1 : 0;
+  /* handle->avoid_init_weights = ((handle->upd_ofw_rb*handle->upd_ofh_rb == handle->ofw*handle->ofh) && (handle->weight_copies == handle->desc.threads)) ? 1 : 0;*/
 
   return status;
 }
