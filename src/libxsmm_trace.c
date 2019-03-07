@@ -145,7 +145,7 @@ int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxn
 LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms)
 {
   int result = EXIT_SUCCESS;
-#if defined(LIBXSMM_TRACE)
+#if defined(__TRACE)
   const char *const env = getenv("LIBXSMM_TRACE");
   if (NULL != env && 0 != *env) {
     char buffer[32] = { 0 };
@@ -302,23 +302,23 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 {
   const char *fname = NULL;
 #if defined(LIBXSMM_TRACE)
-  const void *stacktrace[LIBXSMM_TRACE_MAXDEPTH];
   static LIBXSMM_TLS int cerberus = 0;
-  int n, symbol = 0;
-
   /* check against entering a recursion (recursion should not happen due to
    * attribute "no_instrument_function" but better prevent this in any case)
    */
   if (0 == cerberus) {
+    int init;
     ++cerberus;
 # if defined(__GNUC__)
     __asm__("");
 # endif
-    n = LIBXSMM_ATOMIC_LOAD(&internal_trace_initialized, LIBXSMM_ATOMIC_RELAXED);
-    if (0 != n) { /* do nothing if not yet initialized */
+    init = LIBXSMM_ATOMIC_LOAD(&internal_trace_initialized, LIBXSMM_ATOMIC_RELAXED);
+    if (0 != init) { /* do nothing if not yet initialized */
       const int mindepth = (NULL != filter_mindepth ? *filter_mindepth : internal_trace_mindepth);
       const int maxnsyms = (NULL != filter_maxnsyms ? *filter_maxnsyms : internal_trace_maxnsyms);
-      n = libxsmm_backtrace(stacktrace, LIBXSMM_TRACE_MAXDEPTH, 0);
+      const void *stacktrace[LIBXSMM_TRACE_MAXDEPTH];
+      const int n = libxsmm_backtrace(stacktrace, LIBXSMM_TRACE_MAXDEPTH, 0);
+      int symbol = 0;
       if (0 < n) {
         const int filter = (NULL != filter_threadid ? *filter_threadid : internal_trace_threadid);
         int abs_tid = 0;
@@ -335,7 +335,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
           abs_tid = LIBXSMM_ABS(info.tid);
         }
         else {
-          const int tid = LIBXSMM_ATOMIC_ADD_FETCH(&internal_trace_initialized, 0 < n ? 1 : -1, LIBXSMM_ATOMIC_RELAXED);
+          const int tid = LIBXSMM_ATOMIC_ADD_FETCH(&internal_trace_initialized, 0 < init ? 1 : -1, LIBXSMM_ATOMIC_RELAXED);
           abs_tid = LIBXSMM_ABS(tid) - 1;
           /* use sign bit to flag enabled fall-back for symbol resolution */
           info.tid = -abs_tid;
@@ -366,7 +366,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
               }
               symbol = next++;
             }
-            symbol = next != n ? LIBXSMM_CLMP(symbol + mindepth, 0, n - 1) : 0/*not found*/;
+            symbol = (next != n ? LIBXSMM_CLMP(symbol + mindepth, 0, n - 1) : 0/*not found*/);
           }
           /* apply filters based on absolute symbol position */
           if ((NULL != filter_symbol || LIBXSMM_MAX(mindepth, 0) <= symbol) && (0 >= maxnsyms || symbol < maxnsyms)) {
@@ -439,7 +439,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                   && fdoff == lseek(fd, sizeof(int), SEEK_CUR)
                   && check == fd)
                 {
-                  const int tid = LIBXSMM_ATOMIC_ADD_FETCH(&internal_trace_initialized, 0 < n ? 1 : -1, LIBXSMM_ATOMIC_RELAXED);
+                  const int tid = LIBXSMM_ATOMIC_ADD_FETCH(&internal_trace_initialized, 0 < init ? 1 : -1, LIBXSMM_ATOMIC_RELAXED);
                   abs_tid = LIBXSMM_ABS(tid) - 1;
                   LIBXSMM_ASSERT(0 < abs_tid);
                   /* use sign bit to flag enabled fall-back for symbol resolution */
@@ -482,7 +482,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
               }
               symbol = next++;
             }
-            symbol = next != n ? LIBXSMM_CLMP(symbol + mindepth, 0, n - 1) : 0/*not found*/;
+            symbol = (next != n ? LIBXSMM_CLMP(symbol + mindepth, 0, n - 1) : 0/*not found*/);
           }
           /* apply filters based on absolute symbol position */
           if ((NULL != filter_symbol || LIBXSMM_MAX(mindepth, 0) <= symbol) && (0 >= maxnsyms || symbol < maxnsyms)) {
