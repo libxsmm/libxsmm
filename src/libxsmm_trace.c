@@ -145,24 +145,26 @@ int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxn
 LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms)
 {
   int result = EXIT_SUCCESS;
+  if (0 <= filter_threadid) ++filter_threadid;
 #if defined(__TRACE)
-  const char *const env = getenv("LIBXSMM_TRACE");
-  if (NULL != env && 0 != *env) {
-    char buffer[32] = { 0 };
-    if (1 == sscanf(env, "%32[^,],", buffer)) {
-      result = (0 <= sscanf(buffer, "%i", &filter_threadid) ? EXIT_SUCCESS : EXIT_FAILURE);
-    }
-    if (1 == sscanf(env, "%*[^,],%32[^,],", buffer)) {
-      result = (0 <= sscanf(buffer, "%i", &filter_mindepth) ? EXIT_SUCCESS : EXIT_FAILURE);
-    }
-    if (1 == sscanf(env, "%*[^,],%*[^,],%32s", buffer)) {
-      result = (0 <= sscanf(buffer, "%i", &filter_maxnsyms) ? EXIT_SUCCESS : EXIT_FAILURE);
-    }
-    else {
-      filter_maxnsyms = -1; /* all */
-    }
-    if (EXIT_SUCCESS == result) {
-      internal_trace_initialized = -1; /* auto */
+  { const char *const env = getenv("LIBXSMM_TRACE");
+    if (NULL != env && 0 != *env) {
+      char buffer[32] = { 0 };
+      if (1 == sscanf(env, "%32[^,],", buffer)) {
+        result = (0 <= sscanf(buffer, "%i", &filter_threadid) ? EXIT_SUCCESS : EXIT_FAILURE);
+      }
+      if (1 == sscanf(env, "%*[^,],%32[^,],", buffer)) {
+        result = (0 <= sscanf(buffer, "%i", &filter_mindepth) ? EXIT_SUCCESS : EXIT_FAILURE);
+      }
+      if (1 == sscanf(env, "%*[^,],%*[^,],%32s", buffer)) {
+        result = (0 <= sscanf(buffer, "%i", &filter_maxnsyms) ? EXIT_SUCCESS : EXIT_FAILURE);
+      }
+      else {
+        filter_maxnsyms = -1; /* all */
+      }
+      if (EXIT_SUCCESS == result) {
+        internal_trace_initialized = -1; /* auto */
+      }
     }
   }
   if (EXIT_SUCCESS == result)
@@ -179,7 +181,9 @@ LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int
       internal_trace_threadid = filter_threadid;
       internal_trace_maxnsyms = filter_maxnsyms;
       internal_trace_mindepth = filter_mindepth;
-      internal_trace_initialized = 1;
+      if (0 == internal_trace_initialized) {
+        internal_trace_initialized = 1;
+      }
     }
 #else
     LIBXSMM_UNUSED(filter_threadid);
@@ -341,7 +345,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
           info.tid = -abs_tid;
         }
         LIBXSMM_ASSERT(0 < abs_tid);
-        if (0 > filter || filter == abs_tid - 1) {
+        if (0 > filter || filter == abs_tid) {
 #   if defined(_WIN32) || defined(__CYGWIN__)
           const HANDLE process = GetCurrentProcess();
           PSYMBOL_INFO value = (PSYMBOL_INFO)info.buffer;
@@ -408,8 +412,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
         if (NULL != raw_value) {
           ivalue = (int*)raw_value;
           abs_tid = (0 <= ivalue[1] ? ivalue[1] : -ivalue[1]);
-
-          if (0 > filter || filter == abs_tid - 1) {
+          if (0 > filter || filter == abs_tid) {
             fd = ivalue[0];
             if (0 <= fd && fdoff == lseek(fd, fdoff, SEEK_SET)) {
               value = raw_value + fdoff;

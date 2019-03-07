@@ -652,14 +652,6 @@ LIBXSMM_API_INLINE void internal_init(void)
       free(internal_registry_keys);
       free(new_registry);
     }
-#if defined(LIBXSMM_TRACE)
-    { int filter_threadid = 0, filter_mindepth = 0, filter_maxnsyms = 0;
-      const int init_code = libxsmm_trace_init(filter_threadid - 1, filter_mindepth, filter_maxnsyms);
-      if (EXIT_SUCCESS != init_code && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
-        fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
-      }
-    }
-#endif
   }
 #if (0 != LIBXSMM_SYNC) /* release locks */
 # if (0 < INTERNAL_REGLOCK_MAXN)
@@ -731,6 +723,14 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     }
 #endif
     internal_init();
+#if defined(LIBXSMM_TRACE)
+    { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
+      const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);
+      if (EXIT_SUCCESS != init_code && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+        fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
+      }
+    }
+#endif
   }
 }
 
