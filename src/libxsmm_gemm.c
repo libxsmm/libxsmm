@@ -126,8 +126,12 @@ LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
 
 LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 {
+  /* determines if batch-wrap is considered */
+  const char *const env_w = getenv("LIBXSMM_GEMM_WRAP");
   LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr;
   LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_GEMM_LOCK, &attr);
+  /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
+  libxsmm_gemm_wrap = ((NULL == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
   { /* setup prefetch strategy for tiled GEMMs */
     const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH");
     const libxsmm_gemm_prefetch_type tiled_prefetch_default = LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;
@@ -145,18 +149,11 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 #endif
 #if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_GEMM_MMBATCH)
   { /* determines if batch-reduce kernel or batch-wrap is considered */
-    const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE"), *const env_w = getenv("LIBXSMM_GEMM_WRAP");
+    const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE");
     internal_gemm_batchreduce = (NULL == env_r || 0 == *env_r) ? 0 : atoi(env_r);
-    /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
-    if (NULL == env_w || 0 == *env_w) {
-      if ((LIBXSMM_GEMM_MMBATCH_VERBOSITY <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity) || 0 > libxsmm_verbosity) {
-        libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC; /* enable auto-batch statistic */
-        internal_gemm_batchreduce = 0;
-      }
-      libxsmm_gemm_wrap = LIBXSMM_WRAP;
-    }
-    else {
-      libxsmm_gemm_wrap = atoi(env_w);
+    if ((NULL == env_w || 0 == *env_w) && ((LIBXSMM_GEMM_MMBATCH_VERBOSITY <= libxsmm_verbosity && INT_MAX != libxsmm_verbosity) || 0 > libxsmm_verbosity)) {
+      libxsmm_gemm_batchdesc.flags = LIBXSMM_MMBATCH_FLAG_STATISTIC; /* enable auto-batch statistic */
+      internal_gemm_batchreduce = 0;
     }
     if (0 != internal_gemm_batchreduce || 0 != libxsmm_gemm_wrap) {
       const char *const env_b = getenv("LIBXSMM_GEMM_BATCHSIZE");
