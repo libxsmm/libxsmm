@@ -159,8 +159,8 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
             }
             LIBXSMM_GEMM_PRINT2(stderr,
               LIBXSMM_GETENUM_INP(descriptor.datatype), LIBXSMM_GETENUM_OUT(descriptor.datatype), descriptor.flags, m, n, k,
-              /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & batchdesc->flags) ? 0 : */1, NULL/*a*/, lda, NULL/*b*/, ldb,
-              0 != (LIBXSMM_GEMM_FLAG_BETA_0 & batchdesc->flags) ? 0 : 1, NULL/*c*/, ldc);
+            /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & descriptor.flags) ? 0 : */1, NULL/*a*/, lda, NULL/*b*/, ldb,
+              0 != (LIBXSMM_GEMM_FLAG_BETA_0  & descriptor.flags) ? 0 : 1, NULL/*c*/, ldc);
             if (NULL != symbol && 0 != *symbol) {
               fprintf(stderr, ": %u%% [%s]\n", ciperc, symbol);
             }
