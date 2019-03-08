@@ -673,15 +673,11 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blas
       }
     }
   }
-#if defined(LIBXSMM_GEMM_CHECK)
-  else { /* incorrect argument(s) */
-  if (0 != libxsmm_verbosity /* library code is expected to be mute */
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: libxsmm_gemm_batch called with incorrect argument(s)!\n");
   }
-  }
-#endif
 }
 
 
