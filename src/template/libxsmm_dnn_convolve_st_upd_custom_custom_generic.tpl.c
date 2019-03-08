@@ -294,6 +294,8 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     my_ofm_end = handle->blocksofm;
     block_ofm = my_ofm_end-my_ofm_start+1;
     block_ifm = my_ifm_end-my_ifm_start+1;
+    //block_ofm = handle->block_upd_ofm;
+    //block_ifm = handle->block_upd_ifm;
     img_block_size = my_img_end - my_img_start;
 
     if (handle->upd_loop_order == 0) {

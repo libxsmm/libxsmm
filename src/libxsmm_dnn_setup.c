@@ -379,6 +379,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->pack_input_bwd = 0;
   handle->use_ofm_parallelization = 0;
   handle->avoid_fmas_in_rim = 0;
+  handle->block_upd_ofm = 1;
+  handle->block_upd_ifm = 1;
 
   handle->fwd_ofh_rb = 1;
   handle->fwd_ofw_rb = handle->ofw;
@@ -648,12 +650,21 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     handle->weight_copies = 7;
   }
 
-  if (handle->ofh == 7 && handle->desc.u == 2 && handle->desc.v == 2) {
+  if (handle->ofh == 7 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 2048 ) {
     handle->upd_ofh_rb = 7;
     handle->upd_pack_input = 1;
     handle->upd_linearized_tasklist = 1;
     handle->weight_copies = 1;
     handle->upd_use_batchreduce = 0;
+  }
+
+  if (handle->ofh == 7 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 512 ) {
+    handle->upd_ofh_rb = 7;
+    handle->upd_pack_input = 0;
+    handle->upd_linearized_tasklist = 0;
+    handle->weight_copies = 7;
+    handle->upd_use_batchreduce = 1;
+    handle->upd_loop_order = 0;
   }
 
   if (handle->ofh == 7 && handle->desc.u == 1 && handle->desc.v == 1) {
@@ -671,6 +682,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     handle->upd_use_batchreduce = 1;
     handle->upd_avoid_rim_fmas = 1;
   }
+
 #if 0
     handle->upd_ofh_rb = atoi(getenv("OFH"));
     handle->upd_pack_input = atoi(getenv("PACK"));
@@ -678,14 +690,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     handle->weight_copies = atoi(getenv("COPIES"));
     handle->upd_use_batchreduce = atoi(getenv("BR"));
     handle->upd_loop_order = atoi(getenv("LOOP"));
+    handle->block_upd_ofm = atoi(getenv("OFM"));
+   handle->block_upd_ifm = atoi(getenv("IFM"));
 #endif
 
   while (handle->desc.threads % handle->weight_copies != 0) {
     handle->weight_copies = handle->weight_copies - 1;
   }
 
-  handle->block_upd_ofm = 1;
-  handle->block_upd_ifm = 1;
   /* handle->avoid_init_weights = ((handle->upd_ofw_rb*handle->upd_ofh_rb == handle->ofw*handle->ofh) && (handle->weight_copies == handle->desc.threads)) ? 1 : 0;*/
 
   return status;
