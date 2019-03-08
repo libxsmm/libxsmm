@@ -238,22 +238,27 @@ LIBXSMM_API
 unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned int skip)
 {
   unsigned int result;
-  skip += LIBXSMM_TRACE_MINDEPTH;
+  if (NULL != buffer && 0 != size && skip < size) {
+    skip += LIBXSMM_TRACE_MINDEPTH;
 #if defined(_WIN32) || defined(__CYGWIN__)
-  result = CaptureStackBackTrace(skip, LIBXSMM_MIN(size, LIBXSMM_TRACE_MAXDEPTH), (PVOID*)buffer, NULL/*hash*/);
+    result = CaptureStackBackTrace(skip, LIBXSMM_MIN(size, LIBXSMM_TRACE_MAXDEPTH), (PVOID*)buffer, NULL/*hash*/);
 #else
-  { const int n = backtrace((void**)buffer, LIBXSMM_MIN((int)(size + skip), LIBXSMM_TRACE_MAXDEPTH));
-    if ((int)skip < n) {
-      result = n - skip;
-      if (0 != skip) {
-        memmove(buffer, buffer + skip, result * sizeof(void*));
+    { const int n = backtrace((void**)buffer, LIBXSMM_MIN((int)(size + skip), LIBXSMM_TRACE_MAXDEPTH));
+      if ((int)skip < n) {
+        result = n - skip;
+        if (0 != skip) {
+          memmove(buffer, buffer + skip, result * sizeof(void*));
+        }
+      }
+      else {
+        result = 0;
       }
     }
-    else {
-      result = 0;
-    }
-  }
 #endif
+  }
+  else {
+    result = 0;
+  }
   return result;
 }
 
