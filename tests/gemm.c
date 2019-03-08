@@ -65,15 +65,15 @@ LIBXSMM_GEMM_SYMBOL_DECL(LIBXSMM_GEMM_CONST, ITYPE)
 
 int main(void)
 {
-  /* reported test #:       1  2  3  4  5  6  7  8  9 10 11    12   13     14     15   16   17   18   19   20  21  22  23  24    25    26 */
-  libxsmm_blasint m[]   = { 0, 1, 0, 0, 1, 1, 2, 3, 3, 1, 8,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32,    9 };
-  libxsmm_blasint n[]   = { 0, 0, 1, 0, 1, 2, 2, 3, 1, 3, 1,    8, 239, 13824, 65792,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33,    9 };
-  libxsmm_blasint k[]   = { 0, 0, 0, 1, 1, 2, 2, 3, 2, 2, 0,   64,  64,    16,    16,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192, 1742 };
-  libxsmm_blasint lda[] = { 1, 1, 1, 1, 1, 1, 2, 3, 3, 1, 8,   64,  64,    16,    16, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9 };
-  libxsmm_blasint ldb[] = { 1, 1, 1, 1, 1, 2, 2, 3, 2, 2, 8, 9216, 240,    16,    16,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742 };
-  libxsmm_blasint ldc[] = { 1, 1, 1, 1, 1, 1, 2, 3, 3, 1, 8, 4096, 240,    16,    16, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
-  OTYPE alpha[]         = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,    1,   1,     1,     1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
-  OTYPE beta[]          = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0,    0,   1,     0,     1,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0 };
+  /* reported test #:       1  2  3  4  5  6  7  8  9 10 11    12   13     14  15  16  17  18     19   20   21   22   23   24   25   26   27   28  29  30  31  32    33    34 */
+  libxsmm_blasint m[]   = { 0, 1, 0, 0, 1, 1, 2, 3, 3, 1, 8,   64,  64,    16, 80, 80, 80, 80,    16, 260, 260, 260, 260, 350, 350, 350, 350, 350,  5, 10, 12, 20,   32,    9 };
+  libxsmm_blasint n[]   = { 0, 0, 1, 0, 1, 2, 2, 3, 1, 3, 1,    8, 239, 13824,  1,  3,  5,  7, 65792,   1,   3,   5,   7,  16,   1,  25,   4,   9, 13,  1, 10,  6,   33,    9 };
+  libxsmm_blasint k[]   = { 0, 0, 0, 1, 1, 2, 2, 3, 2, 2, 0,   64,  64,    16,  1,  3,  6, 10,    16,   1,   3,   6,  10,  20,   1,  35,   4,  10, 70,  1, 12,  6,  192, 1742 };
+  libxsmm_blasint lda[] = { 1, 1, 1, 1, 1, 1, 2, 3, 3, 1, 8,   64,  64,    16, 80, 80, 80, 80,    16, 260, 260, 260, 260, 350, 350, 350, 350, 350,  5, 22, 22, 22,   32,    9 };
+  libxsmm_blasint ldb[] = { 1, 1, 1, 1, 1, 2, 2, 3, 2, 2, 8, 9216, 240,    16,  1,  3,  5,  5,    16,   1,   3,   5,   7,  35,  35,  35,  35,  35, 70,  1, 20,  8, 2048, 1742 };
+  libxsmm_blasint ldc[] = { 1, 1, 1, 1, 1, 1, 2, 3, 3, 1, 8, 4096, 240,    16, 80, 80, 80, 80,    16, 260, 260, 260, 260, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9 };
+  OTYPE alpha[]         = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,    1,   1,     1,  1,  1,  1,  1,     1,   1,   1,   1,   1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1 };
+  OTYPE beta[]          = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0,    0,   1,     0,  0,  0,  0,  0,     1,   0,   0,   0,   0,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0 };
 #if !defined(__BLAS) || (0 != __BLAS)
   char transa[] = "NNNTT";
 #else
@@ -119,13 +119,10 @@ int main(void)
 #if !defined(__BLAS) || (0 != __BLAS)
   gold = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
   LIBXSMM_ASSERT(NULL != gold);
-  LIBXSMM_MATINIT_OMP(OTYPE, 0, gold, max_size_c, 1, max_size_c, 1.0);
 #endif
   LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c && NULL != d);
-  LIBXSMM_MATINIT_OMP(ITYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
-  LIBXSMM_MATINIT_OMP(ITYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
-  LIBXSMM_MATINIT_OMP(OTYPE,  0, c, max_size_c, 1, max_size_c, 1.0);
-  LIBXSMM_MATINIT_OMP(OTYPE,  0, d, max_size_c, 1, max_size_c, 1.0);
+  LIBXSMM_MATINIT(ITYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
+  LIBXSMM_MATINIT(ITYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
 #if defined(_DEBUG)
   libxsmm_matdiff_clear(&diff);
 #endif
@@ -146,6 +143,20 @@ int main(void)
       else if ('N' != transa[i] && 'N' != transb[i]) { /* TT */
         const libxsmm_blasint ti = LIBXSMM_MIN(mi, ni);
         mi = ni = ki = LIBXSMM_MIN(ti, ki);
+      }
+      if (LIBXSMM_FEQ(0, beta[test])) {
+#if !defined(__BLAS) || (0 != __BLAS)
+        memset(gold, -1, sizeof(OTYPE) * max_size_c);
+#endif
+        memset(c, -1, sizeof(OTYPE) * max_size_c);
+        memset(d, -1, sizeof(OTYPE) * max_size_c);
+      }
+      else {
+#if !defined(__BLAS) || (0 != __BLAS)
+        memset(gold, 0, sizeof(OTYPE) * max_size_c);
+#endif
+        memset(c, 0, sizeof(OTYPE) * max_size_c);
+        memset(d, 0, sizeof(OTYPE) * max_size_c);
       }
       if (0 != smm) {
         SMM(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
@@ -177,7 +188,7 @@ int main(void)
         GEMM_GOLD(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, gold, ldc + test);
 
-        result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(OTYPE), m[test], n[test], gold, c, ldc + test, ldc + test);
+        result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(OTYPE), mi, ni, gold, c, ldc + test, ldc + test);
         if (EXIT_SUCCESS == result) {
 # if defined(_DEBUG)
           libxsmm_matdiff_reduce(&diff, &diff_test);
@@ -197,7 +208,7 @@ int main(void)
             result = EXIT_FAILURE;
           }
           else {
-            result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(OTYPE), m[test], n[test], gold, d, ldc + test, ldc + test);
+            result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(OTYPE), mi, ni, gold, d, ldc + test, ldc + test);
             if (EXIT_SUCCESS == result) {
 # if defined(_DEBUG)
               libxsmm_matdiff_reduce(&diff, &diff_test);
@@ -213,13 +224,11 @@ int main(void)
               }
             }
           }
-          /* avoid drift between Gold and test-results in case of beta!=0 */
-          if (LIBXSMM_NEQ(0, beta[test])) {
-            memcpy(c, gold, sizeof(OTYPE) * max_size_c);
-            memcpy(d, gold, sizeof(OTYPE) * max_size_c);
-          }
         }
       }
+      /* avoid drift between Gold and test-results */
+      memcpy(c, gold, sizeof(OTYPE) * max_size_c);
+      memcpy(d, gold, sizeof(OTYPE) * max_size_c);
 #elif defined(_DEBUG)
       fprintf(stderr, "Warning: skipped the test due to missing BLAS support!\n");
 #endif
