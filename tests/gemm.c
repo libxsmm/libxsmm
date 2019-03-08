@@ -50,7 +50,11 @@
 # define GEMM_GOLD LIBXSMM_GEMM_SYMBOL
 #endif
 #if !defined(GEMM)
-# define GEMM LIBXSMM_YGEMM_SYMBOL
+# if 1
+#   define GEMM LIBXSMM_XGEMM_SYMBOL
+# else
+#   define GEMM LIBXSMM_YGEMM_SYMBOL
+# endif
 #endif
 #if !defined(SMM)
 # define SMM LIBXSMM_XGEMM_SYMBOL
@@ -86,7 +90,10 @@ int main(void)
   libxsmm_matdiff_info diff;
 #endif
   ITYPE *a = NULL, *b = NULL;
-  OTYPE *c = NULL, *d = NULL;
+  OTYPE *c = NULL;
+#if defined(GEMM)
+  OTYPE *d = NULL;
+#endif
 #if !defined(__BLAS) || (0 != __BLAS)
   OTYPE *gold = NULL;
 #endif
@@ -115,12 +122,15 @@ int main(void)
   a = (ITYPE*)libxsmm_malloc((size_t)(max_size_a * sizeof(ITYPE)));
   b = (ITYPE*)libxsmm_malloc((size_t)(max_size_b * sizeof(ITYPE)));
   c = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
+#if defined(GEMM)
   d = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
+  LIBXSMM_ASSERT(NULL != d);
+#endif
 #if !defined(__BLAS) || (0 != __BLAS)
   gold = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
   LIBXSMM_ASSERT(NULL != gold);
 #endif
-  LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c && NULL != d);
+  LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c);
   LIBXSMM_MATINIT(ITYPE, 42, a, max_size_a, 1, max_size_a, 1.0);
   LIBXSMM_MATINIT(ITYPE, 24, b, max_size_b, 1, max_size_b, 1.0);
 #if defined(_DEBUG)
@@ -149,25 +159,31 @@ int main(void)
         memset(gold, -1, sizeof(OTYPE) * max_size_c);
 #endif
         memset(c, -1, sizeof(OTYPE) * max_size_c);
+#if defined(GEMM)
         memset(d, -1, sizeof(OTYPE) * max_size_c);
+#endif
       }
       else {
 #if !defined(__BLAS) || (0 != __BLAS)
         memset(gold, 0, sizeof(OTYPE) * max_size_c);
 #endif
         memset(c, 0, sizeof(OTYPE) * max_size_c);
+#if defined(GEMM)
         memset(d, 0, sizeof(OTYPE) * max_size_c);
+#endif
       }
       if (0 != smm) {
         SMM(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
       }
+#if defined(GEMM)
       else {
         GEMM(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
       }
       GEMM(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
         alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
+#endif
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
       fpstate = _MM_GET_EXCEPTION_STATE() & fpcheck;
       result = (0 == fpstate ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -183,6 +199,9 @@ int main(void)
 # endif
 #endif
 #if !defined(__BLAS) || (0 != __BLAS)
+# if !defined(GEMM)
+      if (0 != smm)
+# endif
       {
         libxsmm_matdiff_info diff_test;
         GEMM_GOLD(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
@@ -207,28 +226,32 @@ int main(void)
 # endif
             result = EXIT_FAILURE;
           }
+# if defined(GEMM)
           else {
             result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(OTYPE), mi, ni, gold, d, ldc + test, ldc + test);
             if (EXIT_SUCCESS == result) {
-# if defined(_DEBUG)
+#   if defined(_DEBUG)
               libxsmm_matdiff_reduce(&diff, &diff_test);
-# endif
+#   endif
               if (1.0 < (1000.0 * diff_test.normf_rel)) {
-# if defined(_DEBUG)
+#   if defined(_DEBUG)
                 fprintf(stderr, "\nERROR: test %i.%i failed!\n\t", test + 1, i + 1);
                 libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
                   alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
                 fprintf(stderr, "\n");
-# endif
+#   endif
                 result = EXIT_FAILURE;
               }
             }
           }
+# endif
         }
       }
       /* avoid drift between Gold and test-results */
       memcpy(c, gold, sizeof(OTYPE) * max_size_c);
+#if defined(GEMM)
       memcpy(d, gold, sizeof(OTYPE) * max_size_c);
+#endif
 #elif defined(_DEBUG)
       fprintf(stderr, "Warning: skipped the test due to missing BLAS support!\n");
 #endif
@@ -245,7 +268,9 @@ int main(void)
   libxsmm_free(a);
   libxsmm_free(b);
   libxsmm_free(c);
+#if defined(GEMM)
   libxsmm_free(d);
+#endif
 #if !defined(__BLAS) || (0 != __BLAS)
   libxsmm_free(gold);
 #endif
