@@ -170,6 +170,7 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
           ifm1 = (work_item%(Cb*R*S))/(R*S);
           kj = ((work_item%(Cb*R*S))%(R*S))/S;
           ki = ((work_item%(Cb*R*S))%(R*S))%S;
+
           for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
             LIBXSMM_PRAGMA_SIMD
               for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
@@ -185,6 +186,7 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
           ifm1 = (work_item%(Cb*R*S))/(R*S);
           kj = ((work_item%(Cb*R*S))%(R*S))/S;
           ki = ((work_item%(Cb*R*S))%(R*S))%S;
+
           oi = 0;
           oj = 0;
           ii = oi + ki;

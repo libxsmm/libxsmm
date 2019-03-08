@@ -629,10 +629,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
 
   if (handle->ofh == 14 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 1024) {
     handle->upd_ofh_rb = 14;
-    handle->upd_pack_input = 1;
-    handle->upd_linearized_tasklist = 1;
-    handle->weight_copies = 1;
-    handle->upd_use_batchreduce = 0;
+    handle->upd_pack_input = 0;
+    handle->upd_linearized_tasklist = 0;
+    handle->weight_copies = 7;
+    handle->upd_use_batchreduce = 1;
+    handle->upd_loop_order = 1;
   }
 
   if (handle->ofh == 14 && handle->desc.R == 3 && handle->desc.S == 3) {
@@ -670,6 +671,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     handle->upd_use_batchreduce = 1;
     handle->upd_avoid_rim_fmas = 1;
   }
+#if 0
+    handle->upd_ofh_rb = atoi(getenv("OFH"));
+    handle->upd_pack_input = atoi(getenv("PACK"));
+    handle->upd_linearized_tasklist = atoi(getenv("LIN"));
+    handle->weight_copies = atoi(getenv("COPIES"));
+    handle->upd_use_batchreduce = atoi(getenv("BR"));
+    handle->upd_loop_order = atoi(getenv("LOOP"));
+#endif
 
   while (handle->desc.threads % handle->weight_copies != 0) {
     handle->weight_copies = handle->weight_copies - 1;
