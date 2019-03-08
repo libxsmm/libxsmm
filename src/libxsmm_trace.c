@@ -145,51 +145,53 @@ int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxn
 LIBXSMM_API int libxsmm_trace_init(int filter_threadid, int filter_mindepth, int filter_maxnsyms)
 {
   int result = EXIT_SUCCESS;
-  if (0 <= filter_threadid) ++filter_threadid;
+  if (0 == internal_trace_initialized) {
+    if (0 <= filter_threadid) ++filter_threadid;
 #if defined(__TRACE)
-  { const char *const env = getenv("LIBXSMM_TRACE");
-    if (NULL != env && 0 != *env) {
-      char buffer[32] = { 0 };
-      if (1 == sscanf(env, "%32[^,],", buffer)) {
-        result = (0 <= sscanf(buffer, "%i", &filter_threadid) ? EXIT_SUCCESS : EXIT_FAILURE);
-      }
-      if (1 == sscanf(env, "%*[^,],%32[^,],", buffer)) {
-        result = (0 <= sscanf(buffer, "%i", &filter_mindepth) ? EXIT_SUCCESS : EXIT_FAILURE);
-      }
-      if (1 == sscanf(env, "%*[^,],%*[^,],%32s", buffer)) {
-        result = (0 <= sscanf(buffer, "%i", &filter_maxnsyms) ? EXIT_SUCCESS : EXIT_FAILURE);
-      }
-      else {
-        filter_maxnsyms = -1; /* all */
-      }
-      if (EXIT_SUCCESS == result) {
-        internal_trace_initialized = -1; /* auto */
+    { const char *const env = getenv("LIBXSMM_TRACE");
+      if (NULL != env && 0 != *env) {
+        char buffer[32] = { 0 };
+        if (1 == sscanf(env, "%32[^,],", buffer)) {
+          result = (0 <= sscanf(buffer, "%i", &filter_threadid) ? EXIT_SUCCESS : EXIT_FAILURE);
+        }
+        if (1 == sscanf(env, "%*[^,],%32[^,],", buffer)) {
+          result = (0 <= sscanf(buffer, "%i", &filter_mindepth) ? EXIT_SUCCESS : EXIT_FAILURE);
+        }
+        if (1 == sscanf(env, "%*[^,],%*[^,],%32s", buffer)) {
+          result = (0 <= sscanf(buffer, "%i", &filter_maxnsyms) ? EXIT_SUCCESS : EXIT_FAILURE);
+        }
+        else {
+          filter_maxnsyms = -1; /* all */
+        }
+        if (EXIT_SUCCESS == result) {
+          internal_trace_initialized = -1; /* auto */
+        }
       }
     }
-  }
-  if (EXIT_SUCCESS == result)
+    if (EXIT_SUCCESS == result)
 #endif
-  {
+    {
 #if defined(LIBXSMM_TRACE)
 # if defined(_WIN32) || defined(__CYGWIN__)
-    SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
-    result = (FALSE != SymInitialize(GetCurrentProcess(), NULL, TRUE) ? EXIT_SUCCESS : GetLastError());
+      SymSetOptions(SYMOPT_DEFERRED_LOADS | SYMOPT_UNDNAME);
+      result = (FALSE != SymInitialize(GetCurrentProcess(), NULL, TRUE) ? EXIT_SUCCESS : GetLastError());
 # elif (0 != LIBXSMM_SYNC) && !defined(LIBXSMM_TRACE_DLINFO)
-    result = pthread_key_create(&internal_trace_key, internal_delete);
+      result = pthread_key_create(&internal_trace_key, internal_delete);
 # endif
-    if (EXIT_SUCCESS == result) {
-      internal_trace_threadid = filter_threadid;
-      internal_trace_maxnsyms = filter_maxnsyms;
-      internal_trace_mindepth = filter_mindepth;
-      if (0 == internal_trace_initialized) {
-        internal_trace_initialized = 1;
+      if (EXIT_SUCCESS == result) {
+        internal_trace_threadid = filter_threadid;
+        internal_trace_maxnsyms = filter_maxnsyms;
+        internal_trace_mindepth = filter_mindepth;
+        if (0 == internal_trace_initialized) {
+          internal_trace_initialized = 1;
+        }
       }
-    }
 #else
-    LIBXSMM_UNUSED(filter_threadid);
-    LIBXSMM_UNUSED(filter_mindepth);
-    LIBXSMM_UNUSED(filter_maxnsyms);
+      LIBXSMM_UNUSED(filter_threadid);
+      LIBXSMM_UNUSED(filter_mindepth);
+      LIBXSMM_UNUSED(filter_maxnsyms);
 #endif
+    }
   }
   return result;
 }
@@ -355,6 +357,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
 #   endif
           int next = symbol + 1;
           if (NULL != filter_symbol) {
+            struct { size_t d; int s; } approx = { (size_t)-1, 0 };
             while (next < n && (filter_symbol == stacktrace[symbol] ||
 #   if defined(_WIN32) || defined(__CYGWIN__)
               (FALSE != SymFromAddr(process, (DWORD64)stacktrace[symbol], NULL, value) && 0 < value->NameLen)))
@@ -368,13 +371,19 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                 symbol = next++; /* determine the symbol after the match which is checked below */
                 break;
               }
+              { const size_t d = LIBXSMM_DIFF((const char*)filter_symbol, (const char*)stacktrace[symbol]);
+                if (d < approx.d) {
+                  approx.s = symbol + 1;
+                  approx.d = d;
+                }
+              }
               symbol = next++;
             }
-            symbol = (next != n ? LIBXSMM_CLMP(symbol + mindepth, 0, n - 1) : 0/*not found*/);
+            symbol = LIBXSMM_MAX((next != n ? symbol : approx.s/*not found*/) + mindepth/*shift*/, 0);
           }
           /* apply filters based on absolute symbol position */
           if ((NULL != filter_symbol || LIBXSMM_MAX(mindepth, 0) <= symbol) && (0 >= maxnsyms || symbol < maxnsyms)) {
-            if (symbol != next && filter_symbol != stacktrace[symbol] &&
+            if (symbol != next && symbol < n && filter_symbol != stacktrace[symbol] &&
 #   if defined(_WIN32) || defined(__CYGWIN__)
               FALSE != SymFromAddr(process, (DWORD64)stacktrace[symbol], NULL, value) && 0 < value->NameLen)
 #   else
@@ -476,6 +485,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
         if (NULL != value) {
           int next = symbol + 1;
           if (NULL != filter_symbol) {
+            struct { size_t d; int s; } approx = { (size_t)-1, 0 };
             while (next < n && (filter_symbol == stacktrace[symbol] ||
               NULL != internal_trace_get_symbolname(stacktrace[symbol], value, fd, fdoff)))
             {
@@ -483,13 +493,19 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                 symbol = next++; /* determine the symbol after the match which is checked below */
                 break;
               }
+              { const size_t d = LIBXSMM_DIFF((const char*)filter_symbol, (const char*)stacktrace[symbol]);
+                if (d < approx.d) {
+                  approx.s = symbol + 1;
+                  approx.d = d;
+                }
+              }
               symbol = next++;
             }
-            symbol = (next != n ? LIBXSMM_CLMP(symbol + mindepth, 0, n - 1) : 0/*not found*/);
+            symbol = LIBXSMM_MAX((next != n ? symbol : approx.s/*not found*/) + mindepth/*shift*/, 0);
           }
           /* apply filters based on absolute symbol position */
           if ((NULL != filter_symbol || LIBXSMM_MAX(mindepth, 0) <= symbol) && (0 >= maxnsyms || symbol < maxnsyms)) {
-            if (symbol != next && filter_symbol != stacktrace[symbol] &&
+            if (symbol != next && symbol < n && filter_symbol != stacktrace[symbol] &&
               NULL != internal_trace_get_symbolname(stacktrace[symbol], value, fd, fdoff))
             {
               /* disable fall-back allowing unresolved symbol names */
