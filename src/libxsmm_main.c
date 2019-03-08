@@ -171,8 +171,8 @@ LIBXSMM_APIVAR(const char* internal_build_state);
 
 
 #if (0 == LIBXSMM_SYNC)
-# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE)
-# define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX)
+# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) {
+# define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) }
 #elif (0 < INTERNAL_REGLOCK_MAXN)
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
   const unsigned int LOCKINDEX = (0 <= libxsmm_verbosity \
@@ -510,7 +510,13 @@ LIBXSMM_API_INLINE size_t internal_strlen(const char* cstr, size_t maxlen)
 }
 
 
-LIBXSMM_API_INLINE void internal_init(void)
+LIBXSMM_API_INTERN
+#if defined(__GNUC__)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+void internal_init(void);
+
+LIBXSMM_API_INTERN void internal_init(void)
 {
   int i;
   const libxsmm_malloc_function null_malloc_fn = { 0 };
@@ -699,6 +705,14 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         internal_reglock_count = (0 != atoi(env_trylock) ? 1 : (INTERNAL_REGLOCK_MAXN));
         internal_dispatch_trylock_locked = 1;
       }
+#if defined(LIBXSMM_TRACE)
+      { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
+        const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);
+        if (EXIT_SUCCESS != init_code && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+          fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
+        }
+      }
+#endif
 # if (0 < INTERNAL_REGLOCK_MAXN)
       LIBXSMM_ASSERT(1 <= internal_reglock_count);
       for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_REGNLOCK, &internal_reglock[i].state, &attr);
@@ -723,14 +737,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
     }
 #endif
     internal_init();
-#if defined(LIBXSMM_TRACE)
-    { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
-      const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);
-      if (EXIT_SUCCESS != init_code && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
-        fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
-      }
-    }
-#endif
   }
 }
 
@@ -1662,6 +1668,12 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
             }
             diff = 0; /* inside of locked region (do not use break!) */
           }
+#if 0
+          else { /* check if other thread fulfilled this request */
+            diff = libxsmm_diff(descriptor, &internal_registry_keys[i].xgemm, LIBXSMM_DESCRIPTOR_MAXSIZE);
+            if (0 == diff) flux_entry.pmm = internal_registry[i].pmm;
+          }
+#endif
           INTERNAL_FIND_CODE_UNLOCK(lock);
           if (0 != diff) { /* acquire registry slot */
             if (0 == mode) { /* initial condition */
