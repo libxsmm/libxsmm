@@ -432,6 +432,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     handle->fwd_ofw_rb = 7;
   }
 
+  if (handle->desc.N != handle->desc.threads) {
+    handle->fwd_ofh_rb = 1;
+    handle->pack_input = 0;
+  }
+
   if ( handle->desc.C < tmp_max_c_block ) {
     handle->ifmblock = handle->desc.C;
   } else {
