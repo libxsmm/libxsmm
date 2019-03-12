@@ -325,8 +325,6 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_gemm_auto_prefetch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_gemm_auto_prefetch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_dispatch_trylock
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_dispatch_trylock
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_archid
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_archid
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_arch
@@ -370,18 +368,6 @@
           SUBROUTINE libxsmm_set_gemm_auto_prefetch(strategy) BIND(C)
             IMPORT :: C_INT
             INTEGER(C_INT), INTENT(IN), VALUE :: strategy
-          END SUBROUTINE
-
-          ! Query the try-lock property of the code registry.
-          PURE FUNCTION libxsmm_get_dispatch_trylock() BIND(C)
-            IMPORT :: C_INT
-            INTEGER(C_INT) :: libxsmm_get_dispatch_trylock
-          END FUNCTION
-
-          ! Set the try-lock property of the code registry.
-          SUBROUTINE libxsmm_set_dispatch_trylock(trylock) BIND(C)
-            IMPORT :: C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: trylock
           END SUBROUTINE
 
           ! Returns the architecture and instruction set extension as determined
