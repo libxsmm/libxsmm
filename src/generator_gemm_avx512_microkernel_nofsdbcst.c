@@ -169,6 +169,18 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               i_micro_kernel_config->vector_name,
               l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
         }
+        if ( i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1 ) {
+          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb);
+          } else {
+            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset);
+          }
+          libxsmm_x86_instruction_prefetch(io_generated_code,
+              LIBXSMM_X86_INSTR_PREFETCHT0,
+              i_gp_reg_mapping->gp_reg_b,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              l_b_offset + 16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
+        }
       } else {
         for ( l_n = 0; l_n < 3; l_n++ ) {
           /* handle trans B */
@@ -186,6 +198,13 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               l_b_offset,
               i_micro_kernel_config->vector_name,
               l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+        }
+        if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
+          libxsmm_x86_instruction_prefetch(io_generated_code,
+            LIBXSMM_X86_INSTR_PREFETCHT0,
+            i_gp_reg_mapping->gp_reg_b,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
         }
       }
 
@@ -379,6 +398,18 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               i_micro_kernel_config->vector_name,
               l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
         }
+        if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
+          if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
+            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset * i_xgemm_desc->ldb);
+          } else {
+            l_b_offset = (i_micro_kernel_config->datatype_size * i_offset);
+          }
+          libxsmm_x86_instruction_prefetch(io_generated_code,
+              LIBXSMM_X86_INSTR_PREFETCHT0,
+              i_gp_reg_mapping->gp_reg_b,
+              LIBXSMM_X86_GP_REG_UNDEF, 0,
+              l_b_offset + 16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
+        }
       } else {
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
           /* handle trans B */
@@ -397,6 +428,14 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               i_micro_kernel_config->vector_name,
               l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
         }
+        if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
+          libxsmm_x86_instruction_prefetch(io_generated_code,
+            LIBXSMM_X86_INSTR_PREFETCHT0,
+            i_gp_reg_mapping->gp_reg_b,
+            LIBXSMM_X86_GP_REG_UNDEF, 0,
+            16 * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size);
+        }
+
         /* handle trans B */
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
           l_b_offset = i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size;

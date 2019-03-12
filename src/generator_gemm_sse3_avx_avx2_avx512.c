@@ -99,9 +99,6 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
         i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) {
       adjust_A_pf_ptrs = 1;
     }
-    if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
-      adjust_B_pf_ptrs = 1;
-    }
   }
 
   /* define gp register mapping */
