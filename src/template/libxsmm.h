@@ -152,10 +152,16 @@ LIBXSMM_API libxsmm_smmfunction_reducebatch libxsmm_smmdispatch_reducebatch(libx
 LIBXSMM_API libxsmm_bsmmfunction_reducebatch libxsmm_bsmmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
 
-/** Process a series of matrix multiplications (batch). */
-LIBXSMM_API void libxsmm_mmbatch(
-  /** Kernel (matches precision, transa, transb, beta, etc.). */
-  libxsmm_xmmfunction kernel,
+/**
+ * Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch/omp.
+ * The kind of matrix operands (a, b, c) depend on index_stride:
+ * index_stride==0: pointers to pointers of elements e.g., double** for the C matrices.
+ * index_stride!=0: pointer to elements e.g., const double* for the A and B matrices.
+ */
+LIBXSMM_API void libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+  const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc,
   /** Determines index-base (usually 0, 1 for one-based indexes); uses the same unit as the strides. */
   libxsmm_blasint index_base,
   /**
@@ -164,19 +170,11 @@ LIBXSMM_API void libxsmm_mmbatch(
    */
   libxsmm_blasint index_stride,
   /**
-   * index_stride==0: a single value (measured in Bytes) for stride_a, stride_b, and stride_c is expected,
-   * index_stride!=0: stride_a, stride_b, and stride_c are arrays of indexes (measured in elements);
-   *                  array size equals batchsize, and indexes are discovered using the index_stride.
-   * A stride of zero (NULL pointer, or zero-index) does not advance the corresponding matrix-operand.
-   * Note: accesses to the same C-matrix are internally synchronized.
+   * Depending on index_stride, the meaning of stride_a, stride_b, and stride_c is different.
+   * index_stride==0: stride_a, stride_b, and stride_c are pointers to scalar values.
+   * index_stride!=0: stride_* are indexes determining the position of a, b, and c operands.
    */
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
-  /**
-   * Arrays of matrix operands (a, b, c). Depending on index_stride, the arrays are:
-   * index_stride==0: pointers to pointers of elements e.g., double** for the C matrices.
-   * index_stride!=0: pointer to elements e.g., const double* for the A and B matrices.
-   */
-  const void* a, const void* b, void* c,
   /**
    * Number of matrix multiplications. If the size is given as a negative value,
    * then internal synchronization is omitted.
@@ -185,42 +183,19 @@ LIBXSMM_API void libxsmm_mmbatch(
   /** Thread-ID (TID), and number of threads. */
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 
-/** Process a series of matrix multiplications (batch) with OpenMP (libxsmmext). See also libxsmm_mmbatch. */
-LIBXSMM_APIEXT void libxsmm_mmbatch_omp(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
-  const void* a, const void* b, void* c, libxsmm_blasint batchsize);
-
-/** Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch2_omp, and libxsmm_mmbatch. */
-LIBXSMM_API void libxsmm_gemm_batch2(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+/** Process a series of matrix multiplications (batch). See also libxsmm_mmbatch. */
+LIBXSMM_APIEXT void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+  const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
                      const void* b, const libxsmm_blasint* ldb,
    const void* beta,       void* c, const libxsmm_blasint* ldc,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
-/** Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch_omp, and libxsmm_mmbatch. */
-LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision precision, const char* transa, const char* transb,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-  const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc,
-  libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
-  libxsmm_blasint batchsize);
 
-/** Process a series of matrix multiplications (batch) with OpenMP (libxsmmext) See also libxsmm_mmbatch. */
-LIBXSMM_APIEXT void libxsmm_gemm_batch2_omp(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-                     const void* b, const libxsmm_blasint* ldb,
-   const void* beta,       void* c, const libxsmm_blasint* ldc,
-  libxsmm_blasint index_base, libxsmm_blasint index_stride,
-  const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
-  libxsmm_blasint batchsize);
 /** Process a series of matrix multiplications (batch) with OpenMP (libxsmmext). See also libxsmm_mmbatch. */
-LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, const char* transa, const char* transb,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+  const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
                      const void* b, const libxsmm_blasint* ldb,
    const void* beta,       void* c, const libxsmm_blasint* ldc,
@@ -234,10 +209,6 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision precision, con
  * non-NULL values match. Otherwise (NULL) the respective argument is
  * considered a "free value" i.e., every value can match; libxsmmext required.
  */
-LIBXSMM_APIEXT void libxsmm_mmbatch_begin2(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const int* flags,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const void* alpha, const void* beta);
 LIBXSMM_APIEXT void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision, const int* flags,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,

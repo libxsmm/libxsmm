@@ -245,7 +245,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
   int gemm_flags, flags;
 };
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_mmbatch_item {
   struct {
     const void *a, *b;
     void *c;
@@ -256,17 +256,17 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_gemm_batchitem {
     const char* symbol;
   } stat;
   /* TODO: consider padding */
-} libxsmm_gemm_batchitem;
+} libxsmm_mmbatch_item;
 
 LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* descriptor, void* c, libxsmm_blasint index_stride,
   libxsmm_blasint batchsize, int multithreaded);
 
-LIBXSMM_API int libxsmm_mmbatch_internal(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
+LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   const void* a, const void* b, void* c, libxsmm_blasint batchsize, int tid, int nthreads,
   const libxsmm_gemm_descriptor* info);
 
-LIBXSMM_API int libxsmm_mmbatch_internal_blas(
+LIBXSMM_API int libxsmm_mmbatch_blas(
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb, const void* beta, void* c, const libxsmm_blasint* ldc,
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
@@ -275,15 +275,15 @@ LIBXSMM_API int libxsmm_mmbatch_internal_blas(
 LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
 
 /** auto-batch descriptor (filter). */
-LIBXSMM_APIVAR_ALIGNED(libxsmm_gemm_descriptor libxsmm_gemm_batchdesc);
+LIBXSMM_APIVAR_ALIGNED(libxsmm_gemm_descriptor libxsmm_mmbatch_desc);
 /** Records a batch of SMMs or is used for batch-reduce. */
-LIBXSMM_APIVAR_ALIGNED(void* libxsmm_gemm_batcharray);
+LIBXSMM_APIVAR_ALIGNED(void* libxsmm_mmbatch_array);
 /** Lock: libxsmm_mmbatch_begin, libxsmm_mmbatch_end, internal_mmbatch_flush. */
-LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_gemm_batchlock);
+LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_mmbatch_lock);
 /** Maximum size of the recorded batch. */
-LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_batchsize);
+LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_mmbatch_size);
 /** Minimum batchsize per thread/task. */
-LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_batchgrain);
+LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_mmbatch_grain);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_taskscale);
 
