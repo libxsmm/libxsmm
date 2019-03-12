@@ -202,7 +202,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_instruction_set requested instruction set to encode
  * @param i_vec_instr actual operation variant
- * @param i_use_broadcast if != 0 memory operand is interpreted as a scalar and broadcasted in fused fashion, only supported on AVX512 and IMCI
+ * @param i_use_broadcast if != 0 memory operand is interpreted as a scalar and broadcasted in fused fashion, only supported on AVX512
  * @param i_gp_reg_base base address register for memory broadcast
  * @param i_gp_reg_idx index register for memory broadcast, can be LIBXSMM_X86_GP_REG_UNDEF -> then regular displacement version is generated
  * @param i_scale scale of index register, ignored if i_gp_reg_idx is LIBXSMM_X86_GP_REG_UNDEF

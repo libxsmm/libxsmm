@@ -2,17 +2,16 @@ hfp <hans.pabst@intel.com> Hans Pabst
 hfp <hans.pabst@intel.com> <hf.pabst@gmail.com>
 hfp <hans.pabst@intel.com> <ec_sw_sl_git@intel.com>
 hfp <hans.pabst@intel.com> <hfp@users.noreply.github.com>
-alheinecke <alexander.heinecke@intel.com>
-alheinecke <heinecke.alex@gmail.com>
 alheinecke <alexander.heinecke@intel.com> Alexander Heinecke
-alheinecke <heinecke.alex@gmail.com> Alexander Heinecke
-alheinecke <alexander.heinecke@gmail.com> <heinecke.alex@gmail.com>
+alheinecke <alexander.heinecke@intel.com> <alexander.heinecke@gmail.com>
+alheinecke <alexander.heinecke@intel.com> <heinecke.alex@gmail.com>
 gmhenry <greg.henry@intel.com> <gmhenry@juniper.jf.intel.com>
 gmhenry <greg.henry@intel.com> <gmhenry@jflmkl025.jf.intel.com>
 gmhenry <greg.henry@intel.com> <gmhenry@mugwort.jf.intel.com>
 gmhenry <greg.henry@intel.com> <gmhenry@mkl-knl-05.jf.intel.com>
 gmhenry <greg.henry@intel.com> <gmhenry@mkl-knl-06.jf.intel.com>
 gmhenry <greg.henry@intel.com> <gmhenry@mkl-knl-12-01.jf.intel.com>
+gmhenry <greg.henry@intel.com> <gmhenry@jflmkl039.jf.intel.com>
 egeor <evangelos.georganas@intel.com> <egeorgan@egeorgan-mac01.sc.intel.com>
 egeor <evangelos.georganas@intel.com> <egeorgan@nkpatel-mobl1.amr.corp.intel.com>
 egeor <evangelos.georganas@intel.com> <egeorgan@abhewitt-mobl3.amr.corp.intel.com>
@@ -35,26 +34,31 @@ egeor <evangelos.georganas@intel.com> <egeor@eecs.berkeley.edu>
 egeor <evangelos.georganas@intel.com> egeorgan
 maxhutch <maxhutch@gmail.com> Max Hutchinson
 jewillco <jewillco@google.com> Jeremiah J. Willcock
-benoitsteiner <benoit.steiner.goog@gmail.com> <benoitsteiner@users.noreply.github.com>
 benoitsteiner <benoit.steiner.goog@gmail.com> Benoit Steiner
+benoitsteiner <benoit.steiner.goog@gmail.com> <benoitsteiner@users.noreply.github.com>
+nrsatish <nadathur.rajagopalan.satish@intel.com>
 nrsatish <nadathur.rajagopalan.satish@intel.com> <nrsatish@users.noreply.github.com>
+dmudiger <dheevatsa.mudigere@intel.com>
 dmudiger <dheevatsa.mudigere@intel.com> <dmudiger@users.noreply.github.com>
+taknevski <anand.venkat@intel.com>
 taknevski <anand.venkat@intel.com> <avenkat@ssr-nfs1.sc.intel.com>
+kunalbanerjee <kunal.banerjee@intel.com> Kunal Banerjee
 kunalbanerjee <kunal.banerjee@intel.com> <kunal.banerjee.cse@gmail.com>
-kunalbanerjee <kunal.banerjee@intel.com> Banerjee, Kunal
+savancha <sasikanth.avancha@intel.com> Sasikanth Avancha
+ankushmandal <ankush.mandal@intel.com>
 ankushmandal <ankush.mandal@intel.com> <ankushmandal19@gmail.com>
-rajbarik <rajkishore.barik@intel.com> <rajbarik@users.noreply.github.com>
 rajbarik <rajkishore.barik@intel.com> Raj Barik
-mdebski <maciejd@google.com> <md319428@students.mimuw.edu.pl>
+rajbarik <rajkishore.barik@intel.com> <rajbarik@users.noreply.github.com>
 mdebski <maciejd@google.com> Maciej DÄ™bski
-jspark1105 <jongsoo.park@gmail.com> <jongsoo.park@intel.com>
-jspark1105 <jongsoo.park@gmail.com> Jongsoo Park
+mdebski <maciejd@google.com> <md319428@students.mimuw.edu.pl>
+jspark1105 <jongsoo.park@intel.com> Jongsoo Park
+jspark1105 <jongsoo.park@intel.com> <jongsoo.park@gmail.com>
 jasonsewall-intel <jason.sewall@intel.com> Jason Sewall
-geoffreyQiu <juq005@ucsd.edu> <geoffrey0824@sjtu.edu.cn>
 geoffreyQiu <juq005@ucsd.edu> Junyi Qiu
+geoffreyQiu <juq005@ucsd.edu> <geoffrey0824@sjtu.edu.cn>
+dev-zero <tiziano.mueller@chem.uzh.ch> Tiziano Müller
 breuera <anbreuer@ucsd.edu> Alexander Nikolas Breuer
 Pennycook <john.pennycook@intel.com> John Pennycook
-jeffhammond <jeff.science@gmail.com>
 jeffhammond <jeff.science@gmail.com> Jeff Hammond
 danielpeter <daniel.peter22@gmail.com>
 alazzaro <alfio.lazzaro@gmail.com>

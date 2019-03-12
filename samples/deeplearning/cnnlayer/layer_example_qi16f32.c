@@ -104,9 +104,8 @@ int main(int argc, char* argv[])
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'L';
 
-  const char *const env_check = getenv("CHECK"), *const env_winograd = getenv("WINOGRAD");
+  const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
-  const int algo_winograd = (0 == env_winograd ? 0 : atoi(env_winograd));
 
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads(); /* number of threads */
@@ -409,7 +408,7 @@ int main(int argc, char* argv[])
     conv_desc.pad_h_out = pad_h_out;
     conv_desc.pad_w_out = pad_w_out;
     conv_desc.threads = nThreads;
-    conv_desc.algo = (0 == algo_winograd ? LIBXSMM_DNN_CONV_ALGO_DIRECT : LIBXSMM_DNN_CONV_ALGO_AUTO);
+    conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
     conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
     conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;

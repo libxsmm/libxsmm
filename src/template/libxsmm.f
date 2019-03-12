@@ -150,7 +150,6 @@
         INTEGER(C_INT), PARAMETER ::                                    &
      &    LIBXSMM_TARGET_ARCH_UNKNOWN = 0,                              &
      &    LIBXSMM_TARGET_ARCH_GENERIC = 1,                              &
-     &    LIBXSMM_X86_IMCI        = 1001,                               &
      &    LIBXSMM_X86_GENERIC     = 1002,                               &
      &    LIBXSMM_X86_SSE3        = 1003,                               &
      &    LIBXSMM_X86_SSE4        = 1004,                               &
@@ -326,8 +325,6 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_gemm_auto_prefetch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_gemm_auto_prefetch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_dispatch_trylock
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_dispatch_trylock
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_target_archid
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_archid
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_target_arch
@@ -343,12 +340,11 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_begin
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_mmbatch_end
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_cycles
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
@@ -371,18 +367,6 @@
           SUBROUTINE libxsmm_set_gemm_auto_prefetch(strategy) BIND(C)
             IMPORT :: C_INT
             INTEGER(C_INT), INTENT(IN), VALUE :: strategy
-          END SUBROUTINE
-
-          ! Query the try-lock property of the code registry.
-          PURE FUNCTION libxsmm_get_dispatch_trylock() BIND(C)
-            IMPORT :: C_INT
-            INTEGER(C_INT) :: libxsmm_get_dispatch_trylock
-          END FUNCTION
-
-          ! Set the try-lock property of the code registry.
-          SUBROUTINE libxsmm_set_dispatch_trylock(trylock) BIND(C)
-            IMPORT :: C_INT
-            INTEGER(C_INT), INTENT(IN), VALUE :: trylock
           END SUBROUTINE
 
           ! Returns the architecture and instruction set extension as determined
@@ -553,123 +537,96 @@
             REAL(C_FLOAT), INTENT(INOUT) :: c(ldc,*)
           END SUBROUTINE
 
-          ! Process a series of matrix multiplications (batch); sequential.
-          ! For the documentation of the call arguments have a look at libxsmm_mmbatch.
+          ! Process a series of matrix multiplications (batch). See also libxsmm_gemm_batch_omp.
+          ! The kind of matrix operands (a, b, c) depend on index_stride:
+          ! index_stride==0: pointers to pointers of elements e.g., double** for the C matrices.
+          ! index_stride!=0: pointer to elements e.g., const double* for the A and B matrices.
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4)   :: prec
+          ! INTEGER(4)   :: iprec, oprec
           ! REAL(4|8)    :: alpha, beta
           ! ARRAY        :: a, b, c
           ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
-          ! Otherwise arguments are similar to GEMM.
-          PURE SUBROUTINE libxsmm_gemm_batch(prec, transa, transb,      &
-     &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, index_base,     &
-     &    index_stride, stride_a, stride_b, stride_c, batchsize)        &
-     &    BIND(C, NAME="libxsmm_gemm_batch_")
-            IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
-            TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
-            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-            TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
-            TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
-            TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
-            INTEGER(C_INT), INTENT(IN) :: prec
-          END SUBROUTINE
-
-          ! Process a series of matrix multiplications (batch); MT via libxsmmext.
-          ! For the documentation of the call arguments have a look at libxsmm_mmbatch.
-          ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4)   :: prec
-          ! REAL(4|8)    :: alpha, beta
-          ! ARRAY        :: a, b, c
-          ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
-          ! INTEGER(4|8) :: index_base, index_stride, batchsize
-          ! Otherwise arguments are similar to GEMM.
-          PURE SUBROUTINE libxsmm_gemm_batch_omp(prec, transa, transb,  &
-     &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, index_base,     &
-     &    index_stride, stride_a, stride_b, stride_c, batchsize)        &
-     &    BIND(C, NAME="libxsmm_gemm_batch_omp_")
-            IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
-            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
-            TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
-            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-            TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
-            TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
-            TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
-            INTEGER(C_INT), INTENT(IN) :: prec
-          END SUBROUTINE
-
-          ! Process a series of matrix multiplications (batch).
-          ! Implicit FORTRAN 77 interface:
           ! INTEGER(4)   :: tid, nthreads
-          ! INTEGER(8)   :: kernel
-          ! ARRAY        :: a, b, c
-          ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
-          ! INTEGER(4|8) :: index_base, index_stride, batchsize
-          PURE SUBROUTINE libxsmm_mmbatch(kernel, index_base,           &
-     &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
-     &    batchsize, tid, nthreads) BIND(C, NAME="libxsmm_mmbatch_")
-            IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
-            ! Determines index-base (1 for one-based indexes);
-            ! uses the same unit as the strides.
+          ! Otherwise arguments are similar to GEMM.
+          PURE SUBROUTINE libxsmm_mmbatch(iprec, oprec, transa, transb, &
+     &    m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, index_base,     &
+     &    index_stride, stride_a, stride_b, stride_c, batchsize,        &
+     &    tid, nthreads) BIND(C, NAME="libxsmm_mmbatch_")
+            IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
+            ! Determines index-base (usually 0, 1 for one-based indexes).
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
-            ! Stride used to walk stride_a, stride_b, and stride_c;
-            ! zero turns stride_* into scalar values. The index_stride
-            ! is measured in Bytes (value of LIBXSMM_BLASINT_KIND
-            ! determines a packed array of indexes).
+            ! Stride (measured in Bytes) used to walk stride_*. In Fortran: index_stride!=0.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
-            ! The number of matrix multiplications. If the size is given as
-            ! a negative value, then internal synchronization is omitted.
+            ! Number of matrix multiplications. If the size is given as a negative value,
+            ! then internal synchronization is omitted.
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
-            ! Precision, Thread-ID (TID), and the number of threads.
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
+            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+            TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+            ! Arrays of indexes determining the position of a, b, and c operands.
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
+            INTEGER(C_INT), INTENT(IN) :: iprec, oprec
+            ! Thread-ID (TID), and number of threads.
             INTEGER(C_INT), INTENT(IN) :: tid, nthreads
-            ! Kernel (matches precision, transa, transb, beta, etc.).
-            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
-            ! index_stride==0: a single value (in Bytes) for stride_* is expected,
-            ! index_stride!=0: stride_* are arrays of indexes (measured in elements);
-            !                  array size equals batchsize, and indexes are discovered
-            !                  using the index_stride.
-            ! A stride of zero (zero-index) does not advance the matrix-operand.
-            ! Note: accesses to the same C-matrix are internally synchronized.
-            TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
-            TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
-            TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
-            ! Arrays of matrix operands (a, b, c). Depending on index_stride:
-            ! index_stride==0: pointers to pointers of elements.
-            ! index_stride!=0: pointer to elements.
-            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
           END SUBROUTINE
 
-          ! Process a series of matrix multiplications (batch)
-          ! similar to libxsmm_mmbatch; MT via libxsmmext.
+          ! Process a series of matrix multiplications (batch). See also libxsmm_mmbatch.
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4)   :: tid, nthreads
-          ! INTEGER(8)   :: kernel
+          ! INTEGER(4)   :: iprec, oprec
+          ! REAL(4|8)    :: alpha, beta
           ! ARRAY        :: a, b, c
           ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
           ! INTEGER(4|8) :: index_base, index_stride, batchsize
-          PURE SUBROUTINE libxsmm_mmbatch_omp(kernel, index_base,       &
-     &    index_stride, stride_a, stride_b, stride_c, a, b, c,          &
-     &    batchsize) BIND(C, NAME="libxsmm_mmbatch_omp_")
-            IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+          ! Otherwise arguments are similar to GEMM.
+          PURE SUBROUTINE libxsmm_gemm_batch(iprec, oprec,              &
+     &    transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, &
+     &    index_base, index_stride, stride_a, stride_b, stride_c,       &
+     &    batchsize) BIND(C, NAME="libxsmm_gemm_batch_")
+            IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
-            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
+            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+            TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
+            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
             TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
+            INTEGER(C_INT), INTENT(IN) :: iprec, oprec
+          END SUBROUTINE
+
+          ! Process a series of matrix multiplications (batch) with OpenMP (libxsmmext).
+          ! Implicit FORTRAN 77 interface:
+          ! INTEGER(4)   :: iprec, oprec
+          ! REAL(4|8)    :: alpha, beta
+          ! ARRAY        :: a, b, c
+          ! ARRAY/VALUE  :: stride_a, stride_b, stride_c
+          ! INTEGER(4|8) :: index_base, index_stride, batchsize
+          ! Otherwise arguments are similar to GEMM.
+          PURE SUBROUTINE libxsmm_gemm_batch_omp(iprec, oprec,          &
+     &    transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc, &
+     &    index_base, index_stride, stride_a, stride_b, stride_c,       &
+     &    batchsize) BIND(C, NAME="libxsmm_gemm_batch_omp_")
+            IMPORT C_PTR, C_CHAR, C_INT, LIBXSMM_BLASINT_KIND
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_base
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: index_stride
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: batchsize
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
+            INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
+            CHARACTER(C_CHAR), INTENT(IN) :: transa, transb
+            TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
             TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_a
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_b
+            TYPE(C_PTR), INTENT(IN), VALUE :: stride_c
+            INTEGER(C_INT), INTENT(IN) :: iprec, oprec
           END SUBROUTINE
 
           ! This function is a no-op unless LIBXSMM is built to intercept GEMM calls.

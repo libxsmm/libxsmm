@@ -463,7 +463,7 @@ LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void);
 # undef LIBXSMM_INIT
 # define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(0 != libxsmm_ninit, "LIBXSMM is not initialized");
 #else
-# define LIBXSMM_INIT libxsmm_init();
+# define LIBXSMM_INIT if (0 == libxsmm_ninit) libxsmm_init();
 # define LIBXSMM_GEMM_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemm)
 # define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemv)
 #endif

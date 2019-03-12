@@ -516,28 +516,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_upd
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_weight_update_descriptor;
 
-/**
- * Structure storing the convolution Winograd argument description.
- */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
-  /** alpha determines the tile size */
-  unsigned int alpha;
-  /** number of itiles */
-  unsigned int itiles;
-  /** number of jtiles */
-  unsigned int jtiles;
-  /** number of images in a block */
-  unsigned int bimg;
-  /** unroll factor */
-  unsigned int ur;
-  /** number of ifm blocks to unroll */
-  unsigned int ur_ifm;
-  /** number of ifm blocks. When ur_ifm equals to this, do additional optimizations */
-  unsigned int blocks_ifm;
-  /** prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
-  libxsmm_convolution_prefetch_type prefetch;
-} libxsmm_convolution_winograd_descriptor;
-
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */

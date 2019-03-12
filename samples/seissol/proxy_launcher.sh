@@ -83,16 +83,14 @@ case ${SIMARCH} in
   wsm_dp) ARCH_FLAGS="-msse3 -DALIGNMENT=16 -DDWSM -qopenmp -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_wsm.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dwsm.cpp ;;
   snb_dp) ARCH_FLAGS="-mavx -DALIGNMENT=32 -DDSNB -qopenmp -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_snb.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dsnb.cpp ;;
   hsw_dp) ARCH_FLAGS="-xCORE_AVX2 -fma -DALIGNMENT=32 -DDHSW -qopenmp -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_hsw.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dhsw.cpp ;;
-  knc_dp) ARCH_FLAGS="-mmic -DALIGNMENT=64 -DDKNC -qopt-threads-per-core=4 -qopenmp -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_knc.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dknc.cpp ;;
   wsm_sp) ARCH_FLAGS="-msse3 -DALIGNMENT=16 -DSWSM -qopenmp -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_wsm.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_swsm.cpp ;;
   snb_sp) ARCH_FLAGS="-mavx -DALIGNMENT=32 -DSSNB -qopenmp -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_snb.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_ssnb.cpp ;;
   hsw_sp) ARCH_FLAGS="-xCORE_AVX2 -fma -DALIGNMENT=32 -DSHSW -qopenmp -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_hsw.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_shsw.cpp ;;
-  knc_sp) ARCH_FLAGS="-mmic -DALIGNMENT=64 -DSKNC -qopt-threads-per-core=4 -qopenmp -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_knc.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_sknc.cpp ;;
   knl_dp) ARCH_FLAGS="-xMIC-AVX512 -fma -DALIGNMENT=64 -DDKNL -qopenmp -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_knl.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dknl.cpp ;;
   knl_sp) ARCH_FLAGS="-xMIC-AVX512 -fma -DALIGNMENT=64 -SDKNL -qopenmp -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_knl.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_sknl.cpp ;;
   noarch_dp) ARCH_FLAGS="-DALIGNMENT=16 -DDNOARCH -qopenmp -mkl=sequential -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=dgemm_noarch.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_dnoarch.cpp ;;
   noarch_sp) ARCH_FLAGS="-DALIGNMENT=16 -DDNOARCH -qopenmp -mkl=sequential -static-libgcc -static-libstdc++ -static-intel"; MATMUL_KERNEL_DENSE_FILE=sgemm_noarch.cpp; MATMUL_KERNEL_SPARSE_FILE=sparse_snoarch.cpp ;;
-  *) echo "Unsupported architecture -> Exit Launcher! Supported architectures are: wsm_dp, snb_dp, hsw_dp, knc_dp, wsm_sp, snb_sp, hsw_sp, knc_sp, knl_dp, knl_sp, noarch_dp, noarch_sp!"; exit ;;
+  *) echo "Unsupported architecture -> Exit Launcher! Supported architectures are: wsm_dp, snb_dp, hsw_dp, wsm_sp, snb_sp, hsw_sp, knl_dp, knl_sp, noarch_dp, noarch_sp!"; exit ;;
 esac
 
 case ${KERNEL} in
@@ -182,19 +180,14 @@ icpc -O3 -ip -ipo -DNDEBUG ${ARCH_FLAGS} -DCONVERGENCE_ORDER=${ORDER} -DNUMBER_O
 # run SeisSol Scenario converter
 #./proxy_extract_neigh_information_nc.sh ${SEISSOL_PROXY_SCENARIO}
 
-if [ "${SIMARCH}" == 'knc_dp' ]; then
-  scp driver_${SIMARCH}_${ORDER}.exe mic0:
-  ssh mic0 "export OMP_NUM_THREADS=${CORES}; export KMP_AFFINITY=proclist=[1-${CORES}],granularity=thread,explicit; export LD_LIBRARY_PATH=/swtools/intel/mkl/lib/mic/:/swtools/intel/composerxe/lib/mic; ./driver_${SIMARCH}_${ORDER}.exe ${NELEM} ${TIMESTEPS} ${KERNEL}"
+# running on regular CPU
+export OMP_NUM_THREADS=${CORES}
+NPROCS=`cat /proc/cpuinfo | grep "core id" | wc -l`
+if [ "${NPROCS}" = "${CORES}" ]; then
+  export KMP_AFFINITY=compact,granularity=thread,explicit,verbose
 else
-  # running on regular CPU
-  export OMP_NUM_THREADS=${CORES}
-  NPROCS=`cat /proc/cpuinfo | grep "core id" | wc -l`
-  if [ "${NPROCS}" = "${CORES}" ]; then
-    export KMP_AFFINITY=compact,granularity=thread,explicit,verbose
-  else
-    export KMP_AFFINITY=proclist=[0-$((CORES-1))],granularity=thread,explicit,verbose
-  fi
-  ./driver_${SIMARCH}_${ORDER}.exe ${NELEM} ${TIMESTEPS} ${KERNEL}
+  export KMP_AFFINITY=proclist=[0-$((CORES-1))],granularity=thread,explicit,verbose
 fi
+./driver_${SIMARCH}_${ORDER}.exe ${NELEM} ${TIMESTEPS} ${KERNEL}
 
 set +x

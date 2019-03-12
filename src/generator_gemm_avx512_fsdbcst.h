@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2019, Intel Corporation                                **
+** Copyright (c) 2015-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,82 +26,22 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Kunal Banerjee (Intel Corp.)
+/* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-LIBXSMM_VLA_DECL(6, float, output, wp, handle->blocksifm, 3, 3, TDVLEN, TDVLEN);
-LIBXSMM_VLA_DECL(5, float, input, twp, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN);
-float Fw[ALPHA][ALPHA][TDVLEN][TDVLEN];
-float F[3][3][TDVLEN][TDVLEN];
-unsigned int i, j;
-int k, l, v;
-float T[3][4][TDVLEN];
-float t0[TDVLEN];
-float M_[3][TDVLEN];
+#ifndef GENERATOR_GEMM_AVX512_FSDBCST_H
+#define GENERATOR_GEMM_AVX512_FSDBCST_H
 
-for (j = 0; j < ALPHA; j++) {
-  for (i = 0; i < ALPHA; i++) {
-    for (v = 0; v < TDVLEN; v++) {
-      LIBXSMM_PRAGMA_SIMD
-      for (k = 0; k < TDVLEN; k++) {
-        Fw[j][i][v][k] =
-          LIBXSMM_VLA_ACCESS(5, input, j, i, 0, v, k, ALPHA, handle->blocksifm*handle->blocksofm, TDVLEN, TDVLEN);
-      }
-    }
-  }
-}
-/*trans_O_3x3_2x2(TDVLEN, Fw, F);*/
+#include "generator_common.h"
 
-/* inline code start */
-for (j = 0; j < TDVLEN; j++) {
-  for (i = 0; i < 4; i++) {
-    LIBXSMM_PRAGMA_SIMD
-    for (k = 0; k < TDVLEN; k++) {
-      t0[k] = Fw[1][i][j][k] + Fw[2][i][j][k];
-      T[0][i][k] = t0[k] + Fw[0][i][j][k];
-      T[1][i][k] = Fw[1][i][j][k] - Fw[2][i][j][k];
-      T[2][i][k] = t0[k] + Fw[3][i][j][k];
-    }
-  }
+LIBXSMM_API_INTERN
+unsigned int libxsmm_generator_gemm_avx512_kernel_fsdbcst_get_max_n_blocking( const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                                              const char*                    i_arch );
 
-  for (i = 0; i < 3; i++) {
-    LIBXSMM_PRAGMA_SIMD
-    for (k = 0; k < TDVLEN; k++) {
-      t0[k] = T[i][1][k] + T[i][2][k];
-      M_[0][k] = t0[k] + T[i][0][k];
-      M_[1][k] = T[i][1][k] - T[i][2][k];
-      M_[2][k] = t0[k] + T[i][3][k];
+LIBXSMM_API_INTERN
+void libxsmm_generator_gemm_avx512_kernel_fsdbcst( libxsmm_generated_code*        io_generated_code,
+                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                                   const char*                    i_arch );
 
-      for (l = 0; l < 3; l++) {
-        F[i][l][j][k] = M_[l][k];
-      }
-    }
-  }
-}
-/* inline code end */
+#endif /* GENERATOR_GEMM_AVX512_FSDBCST_H */
 
-if ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
-  for (j = 0; j < 3; j++) {
-    for (i = 0; i < 3; i++) {
-      for (k = 0; k < TDVLEN; k++) {
-        LIBXSMM_PRAGMA_SIMD
-        for (l = 0; l < TDVLEN; l++) {
-          LIBXSMM_VLA_ACCESS(6, output, 0, 0, j, i, k, l, handle->blocksifm, 3, 3, TDVLEN, TDVLEN) =
-            F[j][i][k][l];
-        }
-      }
-    }
-  }
-} else {
-  for (j = 0; j < 3; j++) {
-    for (i = 0; i < 3; i++) {
-      for (k = 0; k < TDVLEN; k++) {
-        LIBXSMM_PRAGMA_SIMD
-        for (l = 0; l < TDVLEN; l++) {
-          LIBXSMM_VLA_ACCESS(6, output, 0, 0, j, i, k, l, handle->blocksifm, 3, 3, TDVLEN, TDVLEN) +=
-            F[j][i][k][l];
-        }
-      }
-    }
-  }
-}
