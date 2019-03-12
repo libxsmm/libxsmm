@@ -114,7 +114,7 @@ for (i = 0; i < nn; ++i) {
     else { /* NaN */
       info->m = j;
       info->n = i;
-      result_nan = 1;
+      result_nan = LIBXSMM_NOTNAN(ri) && inf > LIBXSMM_ABS(ri) ? 1 : 2;
       break;
     }
   }

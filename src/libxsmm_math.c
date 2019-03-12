@@ -69,9 +69,9 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst)
 {
   int result = EXIT_SUCCESS, result_swap = 0, result_nan = 0;
-  if (0 == ref && 0 != tst) { ref = tst; tst = NULL; result_swap = 1; }
-  if (0 != ref && 0 != info) {
-    libxsmm_blasint mm = m, nn = n, ldr = (0 == ldref ? m : *ldref), ldt = (0 == ldtst ? m : *ldtst);
+  if (NULL == ref && NULL != tst) { ref = tst; tst = NULL; result_swap = 1; }
+  if (NULL != ref && NULL != info) {
+    libxsmm_blasint mm = m, nn = n, ldr = (NULL == ldref ? m : *ldref), ldt = (NULL == ldtst ? m : *ldtst);
     double inf;
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
     libxsmm_matdiff_clear(info);
@@ -117,7 +117,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
     if (EXIT_SUCCESS == result) {
       const char *const env = getenv("LIBXSMM_DUMP");
       LIBXSMM_INIT
-      if (0 != env && 0 != *env && '0' != *env) {
+      if (NULL != env && 0 != *env && '0' != *env) {
         if ('-' != *env || (0 <= info->m && 0 <= info->n)) {
           const char *const defaultname = (('0' < *env && '9' >= *env) || '-' == *env) ? "libxsmm_dump" : env;
           const libxsmm_mhd_elemtype type_src = (libxsmm_mhd_elemtype)datatype;
@@ -164,7 +164,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
         info->l2_abs = libxsmm_dsqrt(info->l2_abs);
         info->l2_rel = libxsmm_dsqrt(info->l2_rel);
       }
-      else {
+      else if (1 == result_nan) {
         /* in case of NaN in test-set, statistics is not set to inf (ref/test) */
         info->norm1_abs = info->norm1_rel = info->normi_abs = info->normi_rel = info->normf_rel
                         = info->linf_abs = info->linf_rel = info->l2_abs = info->l2_rel
