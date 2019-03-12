@@ -64,6 +64,13 @@
 # define LIBXSMM_MALLOC_SCRATCH_INTERNAL ((const char*)(LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE))
 #endif
 
+#if !defined(LIBXSMM_VERBOSITY_HIGH)
+# define LIBXSMM_VERBOSITY_HIGH 3 /* secondary warning or info-verbosity */
+#endif
+#if !defined(LIBXSMM_VERBOSITY_WARN)
+# define LIBXSMM_VERBOSITY_WARN ((LIBXSMM_VERBOSITY_HIGH) - LIBXSMM_MIN(1, LIBXSMM_VERBOSITY_HIGH))
+#endif
+
 #if !defined(LIBXSMM_LOCK)
 # define LIBXSMM_LOCK LIBXSMM_LOCK_DEFAULT
 #endif
@@ -385,6 +392,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int use_nts_upd;
   int avoid_acc_load;
   int pack_input;
+  int pack_input_bwd;
+  int spread_input_bwd;
   int use_fwd_for_bwd;
   int exploit_duality;
   int qfma_input_pad;
@@ -418,7 +427,15 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int f32_bf16_cvt_rne;
   int fwd_img_par;
   int use_ofm_parallelization;
+  int use_ifm_parallelization;
   int avoid_fmas_in_rim;
+  int avoid_init_weights;
+  int upd_use_batchreduce;
+  int upd_pack_input;
+  int upd_img_br_block;
+  int upd_loop_order;
+  int upd_linearized_tasklist;
+  int upd_avoid_rim_fmas;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;

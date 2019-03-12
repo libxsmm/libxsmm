@@ -59,8 +59,11 @@
 #if !defined(LIBXSMM_GEMM_TASKSCALE)
 # define LIBXSMM_GEMM_TASKSCALE 2
 #endif
-#if !defined(LIBXSMM_GEMM_BATCHSCALE)
-# define LIBXSMM_GEMM_BATCHSCALE 1.5
+#if !defined(LIBXSMM_GEMM_MMBATCH_SCALE)
+# define LIBXSMM_GEMM_MMBATCH_SCALE 1.5
+#endif
+#if !defined(LIBXSMM_GEMM_MMBATCH_VERBOSITY)
+# define LIBXSMM_GEMM_MMBATCH_VERBOSITY ((LIBXSMM_VERBOSITY_HIGH) + 1)
 #endif
 
 #if !defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD) && \
@@ -145,7 +148,9 @@
         LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; \
       } libxsmm_blas_wrapper_dynamic_ /*= { 0 }*/; \
       dlerror(); /* clear an eventual error status */ \
-      libxsmm_blas_wrapper_dynamic_.pv = ((NULL == (NEXT)) ? dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, gemm))) : NULL); \
+      libxsmm_blas_wrapper_dynamic_.cf = NEXT; \
+      libxsmm_blas_wrapper_dynamic_.pv = ((NULL == libxsmm_blas_wrapper_dynamic_.pv) ? \
+        dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, gemm))) : NULL); \
       if (NULL == libxsmm_blas_wrapper_dynamic_.pf || NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.cf()) { \
         libxsmm_blas_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMM_SYMBOL_NAME(TYPE))); \
         /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_blas_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
@@ -160,7 +165,9 @@
         LIBXSMM_GEMVFUNCTION_TYPE(TYPE) pf; \
       } libxsmm_blas_wrapper_dynamic_ /*= { 0 }*/; \
       dlerror(); /* clear an eventual error status */ \
-      libxsmm_blas_wrapper_dynamic_.pv = ((NULL == (NEXT)) ? dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, gemv))) : NULL); \
+      libxsmm_blas_wrapper_dynamic_.cf = NEXT; \
+      libxsmm_blas_wrapper_dynamic_.pv = ((NULL == libxsmm_blas_wrapper_dynamic_.pv) ? \
+        dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, gemv))) : NULL); \
       if (NULL == libxsmm_blas_wrapper_dynamic_.pf || NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.cf()) { \
         libxsmm_blas_wrapper_dynamic_.pv = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_GEMV_SYMBOL_NAME(TYPE))); \
         /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_blas_wrapper_dynamic_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
@@ -269,8 +276,8 @@ LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
 
 /** auto-batch descriptor (filter). */
 LIBXSMM_APIVAR_ALIGNED(libxsmm_gemm_descriptor libxsmm_gemm_batchdesc);
-/** Records a batch of SMMs. */
-LIBXSMM_APIVAR_ALIGNED(libxsmm_gemm_batchitem* libxsmm_gemm_batcharray);
+/** Records a batch of SMMs or is used for batch-reduce. */
+LIBXSMM_APIVAR_ALIGNED(void* libxsmm_gemm_batcharray);
 /** Lock: libxsmm_mmbatch_begin, libxsmm_mmbatch_end, internal_mmbatch_flush. */
 LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_gemm_batchlock);
 /** Maximum size of the recorded batch. */

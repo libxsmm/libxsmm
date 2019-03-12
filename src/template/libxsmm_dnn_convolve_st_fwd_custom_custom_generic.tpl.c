@@ -431,6 +431,3 @@ if (handle->desc.N != handle->desc.threads) {
 
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-
-
-

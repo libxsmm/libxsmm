@@ -508,3 +508,49 @@ For example:
 ./build/bin/gxm train model_zoo/resnet/1_resnet50_dummy_56.prototxt model_zoo/resnet/solver.prototxt
 ```
 
+## Dispatch (Microbenchmark)
+
+This code sample benchmarks the performance of (1)&#160;the dispatch mechanism, and (2)&#160;the time needed to JIT-generate code for the first time. Both mechanisms are relevant when replacing GEMM calls (see [Call Wrapper](https://github.com/hfp/libxsmm#call-wrapper) section of the reference documentation), or in any case of calling LIBXSMM's native [GEMM functionality](https://libxsmm.readthedocs.io/libxsmm_mm/).
+
+**Command Line Interface (CLI)**
+
+* Optionally takes the number of dispatches/code-generations (default:&#160;10000).
+* Optionally takes the number of threads (default:&#160;1).
+
+
+**Measurements (Benchmark)**
+
+* Duration of an empty function call (serves as a reference timing).
+* Duration to find an already generated kernel (cached/non-cached).
+* Duration to JIT-generate a GEMM kernel.
+
+In case of a multi-threaded benchmark, the timings represent a highly contended request (worst case). For thread-scaling, it can be observed that read-only accesses (code dispatch) stay roughly with a constant duration whereas write-accesses (code generation) are serialized and hence the duration scales linearly with the number of threads.
+
+## MHD Image I/O
+
+This code sample aims to provide a simple piece of code, which takes an image and produces a visual result using LIBXSMM's MHD image file I/O. Performing a single convolution is *not* a showcase of LIBXSMM's Deeplearning as the code only runs over a single image with one channel.
+LIBXSMM's CNNs are vectorized over image channels (multiple images) according to the native vector-width of the processor and otherwise fall back to a high-level implementation.
+
+**NOTE**: For high-performance deep learning, please refer to the collection of [CNN layer samples](https://github.com/hfp/libxsmm/tree/master/samples/deeplaerning/cnnlayer).
+
+The executable can run with the following arguments (all arguments are optional):
+
+> mhd   [&lt;filename-in&gt;  [&lt;nrepeat&gt;  [&lt;kw&gt;  [&lt;kh&gt;]  [&lt;filename-out&gt;]]]]
+
+For stable timing (benchmark), the key operation (convolution) may be repeated (`nrepeat`). Further, `kw` and `kh` can specify the kernel-size of the convolution. The `filename-in` and `filename-out` name MHD-files used as input and output respectively. The `filename-in` may be a pseudo-file (that does not exist) but specify the image resolution of generated input (`w`[x`h`] where the file `wxh.mhd` stores the generated image data). To load an image from a familiar format (JPG, PNG, etc.), please have a look at [Meta Image File I/O](https://github.com/hfp/libxsmm/blob/master/documentation/libxsmm_aux.md#meta-image-file-io).
+
+## Scratch Memory Allocation (Microbenchmark)
+
+This code sample aims to benchmark the performance of the scratch memory allocation. This facility is a viable option to satisfy the need for temporary memory when using the DNN domain of LIBXSMM (small convolutions).  Although any kind of readable/writable buffer can be bound to a convolution handle, LIBXSMM's `libxsmm_aligned_scratch` features a thread-safe linear allocator mechanism which can help to lower allocation overhead.
+
+## Wrapped DGEMM
+
+This code sample is calling DGEMM and there is no dependency on the LIBXSMM API as it only relies on LAPACK/BLAS interface. Two variants are linked when building the source code: (1) code which is dynamically linked against LAPACK/BLAS, (2) code which is linked using `--wrap=`*symbol* as possible when using a GNU&#160;GCC compatible tool chain. For more information, see the [Call Wrapper](https://github.com/hfp/libxsmm#call-wrapper) section of the reference documentation.
+
+The code will execute in three flavors when running `dgemm-test.sh`: (1) code variant which is dynamically linked against the originally supplied LAPACK/BLAS library, (2) code variant which is linked using the wrapper mechanism of the GNU&#160;GCC tool chain, and (3) the first code but using the LD_PRELOAD mechanism (available under Linux).
+
+**Command Line Interface (CLI)**
+
+* Optionally takes the number of repeated DGEMM calls
+* Shows the performance of the workload (wall time)
+

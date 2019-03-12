@@ -403,7 +403,7 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
         }
       }
 #if defined(LIBXSMM_XCOPY_CHECK)
-      if ((1 < libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+      if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
         fprintf(stderr, "LIBXSMM WARNING: in-place transpose is not fully implemented!\n");
