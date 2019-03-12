@@ -1542,7 +1542,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
   unsigned int hash, i0, i = 0, mode = 0, diff = 1;
 #if !defined(NDEBUG)
   const libxsmm_gemm_descriptor* refdesc = 0;
+# if (0 != LIBXSMM_JIT)
   int build = EXIT_SUCCESS;
+# endif
 #endif
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
   static LIBXSMM_TLS struct {
