@@ -1588,7 +1588,7 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_prec
       kernel.xmm = NULL;
       desc = NULL;
     }
-    if (NULL == kernel.xmm && EXIT_SUCCESS != libxsmm_mmbatch_kernel(kernel, index_base, index_stride,
+    if (NULL == kernel.xmm || EXIT_SUCCESS != libxsmm_mmbatch_kernel(kernel, index_base, index_stride,
       stride_a, stride_b, stride_c, a, b, c, batchsize,
       tid, nthreads, desc))
     {
