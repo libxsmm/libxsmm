@@ -1734,7 +1734,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
   flux_entry.uval &= ~LIBXSMM_CODE_STATIC; /* clear non-JIT flag */
 #endif
 #if (0 != LIBXSMM_JIT)
-  LIBXSMM_ASSERT(LIBXSMM_BUILD_KIND_GEMM != descriptor->iflags || NULL != flux_entry.ptr_const || EXIT_SUCCESS != build || 1 == internal_reglock_count);
+  assert(LIBXSMM_BUILD_KIND_GEMM != descriptor->iflags || NULL != flux_entry.ptr_const || EXIT_SUCCESS != build || 1 == internal_reglock_count); /*!LIBXSMM_ASSERT*/
 #endif
   return flux_entry;
 }
