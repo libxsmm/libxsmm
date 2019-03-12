@@ -154,9 +154,6 @@ libxsmm_finalize_
 libxsmm_free
 libxsmm_gcd
 libxsmm_gemm_batch
-libxsmm_gemm_batch2
-libxsmm_gemm_batch2_omp
-libxsmm_gemm_batch2_omp_
 libxsmm_gemm_batch_
 libxsmm_gemm_batch_omp
 libxsmm_gemm_batch_omp_
@@ -192,7 +189,6 @@ libxsmm_generator_transpose_kernel
 libxsmm_generator_trmm_kernel
 libxsmm_generator_trsm_kernel
 libxsmm_get_default_allocator
-libxsmm_get_dispatch_trylock
 libxsmm_get_gemm_auto_prefetch
 libxsmm_get_gemm_prefetch
 libxsmm_get_gemm_xprefetch
@@ -250,15 +246,11 @@ libxsmm_mhd_write
 libxsmm_mmbatch
 libxsmm_mmbatch_
 libxsmm_mmbatch_begin
-libxsmm_mmbatch_begin2
-libxsmm_mmbatch_begin2_
 libxsmm_mmbatch_begin_
+libxsmm_mmbatch_blas
 libxsmm_mmbatch_end
 libxsmm_mmbatch_end_
-libxsmm_mmbatch_internal
-libxsmm_mmbatch_internal_blas
-libxsmm_mmbatch_omp
-libxsmm_mmbatch_omp_
+libxsmm_mmbatch_kernel
 libxsmm_mutex_acquire
 libxsmm_mutex_create
 libxsmm_mutex_destroy
@@ -317,7 +309,6 @@ libxsmm_rwlock_trylock
 libxsmm_rwlock_tryread
 libxsmm_scratch_malloc
 libxsmm_set_default_allocator
-libxsmm_set_dispatch_trylock
 libxsmm_set_gemm_auto_prefetch
 libxsmm_set_scratch_allocator
 libxsmm_set_scratch_limit
