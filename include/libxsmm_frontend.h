@@ -275,19 +275,15 @@
 
 /** Calculate problem size from M, N, and K using the correct integer type in order to cover the general case. */
 #define LIBXSMM_MNK_SIZE(M, N, K) (((unsigned long long)(M)) * ((unsigned long long)(N)) * ((unsigned long long)(K)))
-/** Calculate the total number of elements (S=1) and optionally emphasize C's size. */
-#define LIBXSMM_SIZE1(AVGDIM, S) (((S) + 2) * (AVGDIM) * (AVGDIM))
-#define LIBXSMM_SIZE3(M, N, K, S) ((M) * (K) + (K) * (N) + (S) * (M) * (N))
-/** Condition based on arithmetic intensity (DP) */
-#define LIBXSMM_SMM_AI1(M, N, K) ((LIBXSMM_MNK_SIZE(M, N, K) * LIBXSMM_SIZE1(LIBXSMM_MAX_DIM, 2)) \
-                                                        <= 4 * LIBXSMM_SIZE3(M, N, K, 2) * (LIBXSMM_MAX_MNK))
-#define LIBXSMM_SMM_AI3(M, N, K) ((LIBXSMM_MNK_SIZE(M, N, K) * LIBXSMM_SIZE3(LIBXSMM_MAX_M, LIBXSMM_MAX_N, LIBXSMM_MAX_K, 2)) \
-                                                        <= 4 * LIBXSMM_SIZE3(M, N, K, 2) * (LIBXSMM_MAX_MNK))
+/** Calculate total number of matrix-elements; matrices A, B, C are given per M, N, K, and emphasize (S) the C-size. */
+#define LIBXSMM_MEM_SIZE(M, N, K, S, TYPESIZE) ((M) * (K) + (K) * (N) + (S) * (M) * (N))
+/** Condition based on arithmetic intensity */
+#define LIBXSMM_SMM_AI(M, N, K, S, TYPESIZE) (2 * LIBXSMM_MNK_SIZE(M, N, K) <= 4 * LIBXSMM_MEM_SIZE(M, N, K, S, TYPESIZE))
 /** Determine whether an SMM is suitable i.e., small enough. */
 #if !defined(LIBXSMM_THRESHOLD_AI) /* traditional MNK-threshold */
-# define LIBXSMM_SMM(M, N, K) (LIBXSMM_MNK_SIZE(M, N, K) <= (LIBXSMM_MAX_MNK))
-#else /* threshold based on arithmetic intensity (DP) */
-# define LIBXSMM_SMM LIBXSMM_SMM_AI1
+# define LIBXSMM_SMM(M, N, K, S, TYPESIZE) (LIBXSMM_MNK_SIZE(M, N, K) <= (LIBXSMM_MAX_MNK))
+#else /* threshold based on arithmetic intensity */
+# define LIBXSMM_SMM LIBXSMM_SMM_AI
 #endif
 
 /** Fall-back code paths: LIBXSMM_XGEMM_FALLBACK0, and LIBXSMM_XGEMM_FALLBACK1 (macro template). */
@@ -314,7 +310,7 @@
   const libxsmm_blasint libxsmm_xgemm_ldb_ = LIBXSMM_MAX(NULL != ((void*)(LDB)) ? *(LDB) : \
     *(0 == (LIBXSMM_GEMM_FLAG_TRANS_B & libxsmm_xgemm_flags_) ? libxsmm_xgemm_k_ : libxsmm_xgemm_n_), 1); \
   const libxsmm_blasint libxsmm_xgemm_ldc_ = LIBXSMM_MAX(NULL != (LDC) ? *(LDC) : *(M), 1); \
-  if (LIBXSMM_SMM(*(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_)) { \
+  if (LIBXSMM_SMM(*(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, 2/*RFO*/, sizeof(OTYPE))) { \
     const LIBXSMM_MMFUNCTION_TYPE2(ITYPE, OTYPE) libxsmm_mmfunction_ = LIBXSMM_MMDISPATCH_SYMBOL2(ITYPE, OTYPE)( \
       *(M), *libxsmm_xgemm_n_, *libxsmm_xgemm_k_, &libxsmm_xgemm_lda_, &libxsmm_xgemm_ldb_, &libxsmm_xgemm_ldc_, \
       (const OTYPE*)(ALPHA), (const OTYPE*)(BETA), &libxsmm_xgemm_flags_, NULL); \
