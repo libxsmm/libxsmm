@@ -276,9 +276,9 @@
 /** Calculate problem size from M, N, and K using the correct integer type in order to cover the general case. */
 #define LIBXSMM_MNK_SIZE(M, N, K) (((unsigned long long)(M)) * ((unsigned long long)(N)) * ((unsigned long long)(K)))
 /** Calculate total number of matrix-elements; matrices A, B, C are given per M, N, K, and emphasize (S) the C-size. */
-#define LIBXSMM_MEM_SIZE(M, N, K, S, TYPESIZE) ((M) * (K) + (K) * (N) + (S) * (M) * (N))
-/** Condition based on arithmetic intensity */
-#define LIBXSMM_SMM_AI(M, N, K, S, TYPESIZE) (2 * LIBXSMM_MNK_SIZE(M, N, K) <= 4 * LIBXSMM_MEM_SIZE(M, N, K, S, TYPESIZE))
+#define LIBXSMM_SIZE(M, N, K, S) ((M) * (K) + (K) * (N) + (S) * (M) * (N))
+/** Condition based on arithmetic intensity (AI) */
+#define LIBXSMM_SMM_AI(M, N, K, S, TYPESIZE) ((2 * LIBXSMM_MNK_SIZE(M, N, K)) <= (3/*AI*/ * (TYPESIZE) * LIBXSMM_SIZE(M, N, K, S)))
 /** Determine whether an SMM is suitable i.e., small enough. */
 #if !defined(LIBXSMM_THRESHOLD_AI) /* traditional MNK-threshold */
 # define LIBXSMM_SMM(M, N, K, S, TYPESIZE) (LIBXSMM_MNK_SIZE(M, N, K) <= (LIBXSMM_MAX_MNK))
