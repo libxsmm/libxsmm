@@ -276,15 +276,18 @@
 /** Calculate problem size from M, N, and K using the correct integer type in order to cover the general case. */
 #define LIBXSMM_MNK_SIZE(M, N, K) (((unsigned long long)(M)) * ((unsigned long long)(N)) * ((unsigned long long)(K)))
 /** Calculate the total number of elements (S=1) and optionally emphasize C's size. */
-#define LIBXSMM_SIZE(M, N, K, S) ((M) * (K) + (K) * (N) + (S) * (M) * (N))
+#define LIBXSMM_SIZE1(AVGDIM, S) (((S) + 2) * (AVGDIM) * (AVGDIM))
+#define LIBXSMM_SIZE3(M, N, K, S) ((M) * (K) + (K) * (N) + (S) * (M) * (N))
 /** Condition based on arithmetic intensity (DP) */
-#define LIBXSMM_SMM_AI(M, N, K) ((LIBXSMM_MNK_SIZE(M, N, K) * LIBXSMM_SIZE(LIBXSMM_MAX_M, LIBXSMM_MAX_N, LIBXSMM_MAX_K, 2)) \
-                                                       <= 4 * LIBXSMM_SIZE(M, N, K, 2) * (LIBXSMM_MAX_MNK))
+#define LIBXSMM_SMM_AI1(M, N, K) ((LIBXSMM_MNK_SIZE(M, N, K) * LIBXSMM_SIZE1(LIBXSMM_MAX_DIM, 2)) \
+                                                        <= 4 * LIBXSMM_SIZE3(M, N, K, 2) * (LIBXSMM_MAX_MNK))
+#define LIBXSMM_SMM_AI3(M, N, K) ((LIBXSMM_MNK_SIZE(M, N, K) * LIBXSMM_SIZE3(LIBXSMM_MAX_M, LIBXSMM_MAX_N, LIBXSMM_MAX_K, 2)) \
+                                                        <= 4 * LIBXSMM_SIZE3(M, N, K, 2) * (LIBXSMM_MAX_MNK))
 /** Determine whether an SMM is suitable i.e., small enough. */
 #if !defined(LIBXSMM_THRESHOLD_AI) /* traditional MNK-threshold */
 # define LIBXSMM_SMM(M, N, K) (LIBXSMM_MNK_SIZE(M, N, K) <= (LIBXSMM_MAX_MNK))
 #else /* threshold based on arithmetic intensity (DP) */
-# define LIBXSMM_SMM LIBXSMM_SMM_AI
+# define LIBXSMM_SMM LIBXSMM_SMM_AI1
 #endif
 
 /** Fall-back code paths: LIBXSMM_XGEMM_FALLBACK0, and LIBXSMM_XGEMM_FALLBACK1 (macro template). */

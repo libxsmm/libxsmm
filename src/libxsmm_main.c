@@ -611,7 +611,7 @@ LIBXSMM_API_INTERN void internal_init(void)
     {
       libxsmm_nt = 4;
     }
-    internal_statistic_mnk = libxsmm_icbrt_u32(LIBXSMM_MAX_MNK);
+    internal_statistic_mnk = LIBXSMM_MAX_DIM;
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
 
