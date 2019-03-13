@@ -113,6 +113,7 @@ if __name__ == "__main__":
             "PREFETCH":   [-1, prefetch][0 <= prefetch],
             "MAX_MNK":    maxmnk,
             "MAX_DIM":    maxdim,
+            "AVG_DIM":    int((maxdim + 1) / 2),
             "MAX_M":      [maxdim, maxm][avgm < maxm],
             "MAX_N":      [maxdim, maxn][avgn < maxn],
             "MAX_K":      [maxdim, maxk][avgk < maxk],
