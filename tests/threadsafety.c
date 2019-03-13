@@ -157,35 +157,39 @@ int main(void)
 #endif
             }
           }
-          else if (0 != LIBXSMM_JIT && 0 == libxsmm_get_dispatch_trylock()) {
-#if defined(_DEBUG) || defined(USE_VERBOSE)
+#if (0 != LIBXSMM_JIT)
+          else {
+# if defined(_DEBUG) || defined(USE_VERBOSE)
             fprintf(stderr, "Error: no code generated for %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel!\n",
               (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
-#endif
-#if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
-# if (201107 <= _OPENMP)
-#           pragma omp atomic write
-# else
-#           pragma omp critical
 # endif
-#endif
+# if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
+#   if (201107 <= _OPENMP)
+#           pragma omp atomic write
+#   else
+#           pragma omp critical
+#   endif
+# endif
             result = EXIT_FAILURE;
           }
+#endif
         }
-        else if (0 != LIBXSMM_JIT && 0 == libxsmm_get_dispatch_trylock()) {
-#if defined(_DEBUG) || defined(USE_VERBOSE)
+#if (0 != LIBXSMM_JIT)
+        else {
+# if defined(_DEBUG) || defined(USE_VERBOSE)
           fprintf(stderr, "Error: cannot find %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel!\n",
             (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
-#endif
-#if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
-# if (201107 <= _OPENMP)
-#         pragma omp atomic write
-# else
-#         pragma omp critical
 # endif
-#endif
+# if defined(_OPENMP) && !defined(USE_PARALLEL_JIT)
+#   if (201107 <= _OPENMP)
+#         pragma omp atomic write
+#   else
+#         pragma omp critical
+#   endif
+# endif
           result = EXIT_FAILURE;
         }
+#endif
       }
     }
   }
