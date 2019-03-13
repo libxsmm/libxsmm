@@ -92,8 +92,8 @@ LIBXSMM_VLA_DECL(3, element_output_type, c, ct, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, f, ft, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, o, ot, N, K);
 /* define batch-reduce gemm kernels */
-const libxsmm_smmfunction_reducebatch batchreduce_kernela = libxsmm_smmdispatch_reducebatch( bk, bn, bc, &bk, &C, &K, NULL, NULL, NULL );
-const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL );
+const libxsmm_smmfunction_reducebatch batchreduce_kernela = libxsmm_smmdispatch_reducebatch( bk, bn, bc, &bk, &C, &K, NULL, NULL, NULL, NULL );
+const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL );
 /* define gemm kernels */
 const libxsmm_smmfunction gemmkernela = libxsmm_smmdispatch( bk, bn, bc, &K3, &C, &K, NULL, NULL, NULL, NULL );
 const libxsmm_smmfunction gemmkernelb = libxsmm_smmdispatch( bk, bn, bk, &K3, &K, &K, NULL, NULL, NULL, NULL );
