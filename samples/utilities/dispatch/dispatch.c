@@ -46,6 +46,9 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(MKLJIT) && defined(mkl_jit_create_dgemm)
+# define MKLJIT
+#endif
 #if !defined(MAXSIZE)
 # define MAXSIZE LIBXSMM_MAX_M
 #endif
@@ -118,7 +121,7 @@ int main(int argc, char* argv[])
     const double alpha = 1, beta = 1;
     int i;
 
-#if defined(mkl_jit_create_dgemm)
+#if defined(MKLJIT)
     void* *const jitter = malloc(size_total * sizeof(void*));
     if (NULL == jitter) exit(EXIT_FAILURE);
 #else
@@ -133,7 +136,7 @@ int main(int argc, char* argv[])
       rnd[i].m = (1 < range ? (LIBXSMM_MOD(r1, range) + minsize) : minsize);
       rnd[i].n = (1 < range ? (LIBXSMM_MOD(r2, range) + minsize) : minsize);
       rnd[i].k = (1 < range ? (LIBXSMM_MOD(r3, range) + minsize) : minsize);
-#if defined(mkl_jit_create_dgemm)
+#if defined(MKLJIT)
       jitter[i] = NULL;
 #endif
     }
@@ -159,7 +162,7 @@ int main(int argc, char* argv[])
 
     /* trigger code generation to subsequently measure only dispatch time */
     for (i = 0; i < size_local; ++i) {
-#if defined(mkl_jit_create_dgemm)
+#if defined(MKLJIT)
       mkl_cblas_jit_create_dgemm(jitter,
         MKL_COL_MAJOR, MKL_NOTRANS/*transa*/, MKL_NOTRANS/*transb*/,
         rnd[i].m, rnd[i].n, rnd[i].k, alpha, rnd[i].m, rnd[i].k, beta, rnd[i].m);
@@ -182,7 +185,7 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < size_total; ++i) {
         const int j = LIBXSMM_MOD(i, size_local);
-#if defined(mkl_jit_create_dgemm)
+#if defined(MKLJIT)
         mkl_jit_get_dgemm_ptr(jitter[j]); /* no "dispatch" just unwrapping the jitter */
 #else
         libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
@@ -203,7 +206,7 @@ int main(int argc, char* argv[])
       start = libxsmm_timer_tick();
 #endif
       for (i = size_local; i < size_total; ++i) {
-#if defined(mkl_jit_create_dgemm)
+#if defined(MKLJIT)
         mkl_cblas_jit_create_dgemm(jitter + i,
           MKL_COL_MAJOR, MKL_NOTRANS/*transa*/, MKL_NOTRANS/*transb*/,
           rnd[i].m, rnd[i].n, rnd[i].k, alpha, rnd[i].m, rnd[i].k, beta, rnd[i].m);
@@ -228,7 +231,7 @@ int main(int argc, char* argv[])
 #endif
       for (i = 0; i < size_total; ++i) {
         const int j = (int)LIBXSMM_MOD(shuffle * i, size_total);
-#if defined(mkl_jit_create_dgemm)
+#if defined(MKLJIT)
         mkl_jit_get_dgemm_ptr(jitter[j]);
 #else
         libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
@@ -242,7 +245,7 @@ int main(int argc, char* argv[])
       for (i = 0; i < size_total; ++i) {
         const int j = (int)LIBXSMM_MOD(shuffle * i, size_total);
         libxsmm_matdiff_info diff;
-#if defined(mkl_jit_create_dgemm)
+#if defined(MKLJIT)
         const dgemm_jit_kernel_t kernel = mkl_jit_get_dgemm_ptr(jitter[j]);
 #else
         const libxsmm_dmmfunction kernel = libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k,
@@ -250,7 +253,7 @@ int main(int argc, char* argv[])
 #endif
         libxsmm_matdiff_clear(&diff);
         if (NULL != kernel) {
-#if defined(mkl_jit_create_dgemm)
+#if defined(MKLJIT)
           kernel(jitter[j], a, b, c);
 #else
           if (LIBXSMM_GEMM_PREFETCH_NONE == prefetch) kernel(a, b, c); else kernel(a, b, c, a, b, c);
@@ -278,7 +281,7 @@ int main(int argc, char* argv[])
     }
 
     free(rnd); /* release random numbers */
-#if defined(mkl_jit_create_dgemm) /* release dispatched code */
+#if defined(MKLJIT) /* release dispatched code */
     for (i = 0; i < size_total; ++i) mkl_jit_destroy(jitter[i]);
     free(jitter); /* release array used to store dispatched code */
 #endif
