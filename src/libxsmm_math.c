@@ -54,11 +54,21 @@
 #define LIBXSMM_MATH_DIFF(DIFF, MOD, A, BN, ELEMSIZE, STRIDE, HINT, N) { \
   const char *const libxsmm_diff_b_ = (const char*)(BN); \
   unsigned int libxsmm_diff_i_; \
-  LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, 4) \
-  for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ != ((HINT) + (N)); ++libxsmm_diff_i_) { \
-    const unsigned int libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); /* wrap around index */ \
-    const unsigned int libxsmm_diff_k_ = libxsmm_diff_j_ * (STRIDE); \
-    if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_k_, ELEMSIZE)) return libxsmm_diff_j_; \
+  if (0 == (HINT)) { /* fast-path */ \
+    unsigned int libxsmm_diff_j_ = 0; \
+    LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, 4) \
+    for (libxsmm_diff_i_ = 0; libxsmm_diff_i_ < (N); ++libxsmm_diff_i_) { \
+      if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_j_, ELEMSIZE)) return libxsmm_diff_i_; \
+      libxsmm_diff_j_ += STRIDE; \
+    } \
+  } \
+  else { \
+    LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, 4) \
+    for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ < ((HINT) + (N)); ++libxsmm_diff_i_) { \
+      const unsigned int libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); /* wrap around index */ \
+      const unsigned int libxsmm_diff_k_ = libxsmm_diff_j_ * (STRIDE); \
+      if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_k_, ELEMSIZE)) return libxsmm_diff_j_; \
+    } \
   } \
   return N; \
 }
