@@ -86,10 +86,11 @@ int main(int argc, char* argv[])
   const int max_nthreads = 1;
 #endif
   const int default_minsize = 4, default_maxsize = 16;
-  int size = LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : 10000/*default*/, 1);
-  const int nthreads = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 1/*default*/, 1, max_nthreads);
-  const libxsmm_blasint maxsize = LIBXSMM_CLMP(3 < argc ? atoi(argv[3]) : default_maxsize, 1, MAXSIZE);
-  const libxsmm_blasint minsize = LIBXSMM_CLMP(4 < argc ? atoi(argv[4]) : default_minsize, 1, maxsize);
+  int size_total = LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : 10000/*default*/, 2);
+  const int size_local = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 1/*default*/, 1, size_total - 1);
+  const int nthreads = LIBXSMM_CLMP(3 < argc ? atoi(argv[3]) : 1/*default*/, 1, max_nthreads);
+  const libxsmm_blasint maxsize = LIBXSMM_CLMP(4 < argc ? atoi(argv[4]) : default_maxsize, 1, MAXSIZE);
+  const libxsmm_blasint minsize = LIBXSMM_CLMP(5 < argc ? atoi(argv[5]) : default_minsize, 1, maxsize);
   const libxsmm_blasint range = maxsize - minsize;
   double a[LIBXSMM_MAX_M*LIBXSMM_MAX_M];
   double b[LIBXSMM_MAX_M*LIBXSMM_MAX_M];
@@ -112,13 +113,13 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    triplet *const rnd = (triplet*)malloc(sizeof(triplet) * size);
-    const size_t shuffle = libxsmm_shuffle(size);
+    triplet *const rnd = (triplet*)malloc(sizeof(triplet) * size_total);
+    const size_t shuffle = libxsmm_shuffle(size_total);
     const double alpha = 1, beta = 1;
     int i;
 
 #if defined(mkl_jit_create_dgemm)
-    void* *const jitter = malloc(size * sizeof(void*));
+    void* *const jitter = malloc(size_total * sizeof(void*));
     if (NULL == jitter) exit(EXIT_FAILURE);
 #else
     const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
@@ -127,17 +128,18 @@ int main(int argc, char* argv[])
     if (NULL == rnd) exit(EXIT_FAILURE);
 
     /* generate a set of random numbers outside of any parallel region */
-    for (i = 0; i < size; ++i) {
-      rnd[i].m = (1 < range ? ((rand() % range) + minsize) : minsize);
-      rnd[i].n = (1 < range ? ((rand() % range) + minsize) : minsize);
-      rnd[i].k = (1 < range ? ((rand() % range) + minsize) : minsize);
+    for (i = 0; i < size_total; ++i) {
+      const int r1 = rand(), r2 = rand(), r3 = rand();
+      rnd[i].m = (1 < range ? (LIBXSMM_MOD(r1, range) + minsize) : minsize);
+      rnd[i].n = (1 < range ? (LIBXSMM_MOD(r2, range) + minsize) : minsize);
+      rnd[i].k = (1 < range ? (LIBXSMM_MOD(r3, range) + minsize) : minsize);
 #if defined(mkl_jit_create_dgemm)
       jitter[i] = NULL;
 #endif
     }
-    unique(rnd, &size);
+    unique(rnd, &size_total);
 
-    printf("Dispatching %i calls %s internal synchronization using %i thread%s...", size,
+    printf("Dispatching %i calls %s internal synchronization using %i thread%s...", size_total,
 #if (0 != LIBXSMM_SYNC)
       "with",
 #else
@@ -149,20 +151,21 @@ int main(int argc, char* argv[])
     /* first invocation may initialize some internals */
     libxsmm_init(); /* subsequent calls are not doing any work */
     start = libxsmm_timer_tick();
-    for (i = 0; i < size; ++i) {
+    for (i = 0; i < size_total; ++i) {
       /* measure call overhead of an "empty" function (not inlined) */
       libxsmm_init();
     }
     tcall = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
-    { /* trigger code generation to subsequently measure only dispatch time */
+    /* trigger code generation to subsequently measure only dispatch time */
+    for (i = 0; i < size_local; ++i) {
 #if defined(mkl_jit_create_dgemm)
       mkl_cblas_jit_create_dgemm(jitter,
         MKL_COL_MAJOR, MKL_NOTRANS/*transa*/, MKL_NOTRANS/*transb*/,
-        rnd[0].m, rnd[0].n, rnd[0].k, alpha, rnd[0].m, rnd[0].k, beta, rnd[0].m);
-      mkl_jit_get_dgemm_ptr(jitter[0]); /* to measure "cached" lookup time (below) */
+        rnd[i].m, rnd[i].n, rnd[i].k, alpha, rnd[i].m, rnd[i].k, beta, rnd[i].m);
+      mkl_jit_get_dgemm_ptr(jitter[i]); /* to measure "cached" lookup time (below) */
 #else
-      libxsmm_dmmdispatch(rnd[0].m, rnd[0].n, rnd[0].k, &rnd[0].m, &rnd[0].k, &rnd[0].m, &alpha, &beta, &flags, &prefetch);
+      libxsmm_dmmdispatch(rnd[i].m, rnd[i].n, rnd[i].k, &rnd[i].m, &rnd[i].k, &rnd[i].m, &alpha, &beta, &flags, &prefetch);
 #endif
     }
 
@@ -177,11 +180,12 @@ int main(int argc, char* argv[])
     {
       start = libxsmm_timer_tick();
 #endif
-      for (i = 0; i < size; ++i) {
+      for (i = 0; i < size_total; ++i) {
+        const int j = LIBXSMM_MOD(i, size_local);
 #if defined(mkl_jit_create_dgemm)
-        mkl_jit_get_dgemm_ptr(jitter[0]); /* no "dispatch" just unwrapping the jitter */
+        mkl_jit_get_dgemm_ptr(jitter[j]); /* no "dispatch" just unwrapping the jitter */
 #else
-        libxsmm_dmmdispatch(rnd[0].m, rnd[0].n, rnd[0].k, &rnd[0].m, &rnd[0].k, &rnd[0].m, &alpha, &beta, &flags, &prefetch);
+        libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
 #endif
       }
     }
@@ -198,7 +202,7 @@ int main(int argc, char* argv[])
     {
       start = libxsmm_timer_tick();
 #endif
-      for (i = 1; i < size; ++i) {
+      for (i = size_local; i < size_total; ++i) {
 #if defined(mkl_jit_create_dgemm)
         mkl_cblas_jit_create_dgemm(jitter + i,
           MKL_COL_MAJOR, MKL_NOTRANS/*transa*/, MKL_NOTRANS/*transb*/,
@@ -222,8 +226,8 @@ int main(int argc, char* argv[])
     {
       start = libxsmm_timer_tick();
 #endif
-      for (i = 0; i < size; ++i) {
-        const int j = (int)((shuffle * i) % size);
+      for (i = 0; i < size_total; ++i) {
+        const int j = (int)LIBXSMM_MOD(shuffle * i, size_total);
 #if defined(mkl_jit_create_dgemm)
         mkl_jit_get_dgemm_ptr(jitter[j]);
 #else
@@ -235,8 +239,8 @@ int main(int argc, char* argv[])
 
     { /* calculate l1-norm for manual validation */
       double check = 0;
-      for (i = 0; i < size; ++i) {
-        const int j = (int)((shuffle * i) % size);
+      for (i = 0; i < size_total; ++i) {
+        const int j = (int)LIBXSMM_MOD(shuffle * i, size_total);
         libxsmm_matdiff_info diff;
 #if defined(mkl_jit_create_dgemm)
         const dgemm_jit_kernel_t kernel = mkl_jit_get_dgemm_ptr(jitter[j]);
@@ -261,7 +265,7 @@ int main(int argc, char* argv[])
         }
         else {
           printf(" m=%u n=%u k=%u", (unsigned int)rnd[j].m, (unsigned int)rnd[j].n, (unsigned int)rnd[j].k);
-          i = size; /* break */
+          i = size_total; /* break */
           check = -1;
         }
       }
@@ -275,14 +279,14 @@ int main(int argc, char* argv[])
 
     free(rnd); /* release random numbers */
 #if defined(mkl_jit_create_dgemm) /* release dispatched code */
-    for (i = 0; i < size; ++i) mkl_jit_destroy(jitter[i]);
+    for (i = 0; i < size_total; ++i) mkl_jit_destroy(jitter[i]);
     free(jitter); /* release array used to store dispatched code */
 #endif
   }
 
-  if (1 < size) {
-    const int size1 = size - 1;
-    tcall /= size; tdsp0 /= size; tdsp1 /= size; tcgen /= size1;
+  if (1 < size_total) {
+    const int size1 = size_total - size_local;
+    tcall /= size_total; tdsp0 /= size_total; tdsp1 /= size_total; tcgen /= size1;
     if (0 < tcall && 0 < tdsp0 && 0 < tdsp1 && 0 < tcgen) {
       printf("\tfunction-call (empty): %.0f ns (%.0f MHz)\n", 1E9 * tcall, 1E-6 / tcall);
       printf("\tdispatch (ro/cached): %.0f ns (%.0f MHz)\n", 1E9 * tdsp1, 1E-6 / tdsp1);
