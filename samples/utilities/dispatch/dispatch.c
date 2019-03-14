@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
   const int max_nthreads = 1;
 #endif
   const int default_minsize = 4;
-#if defined(MKLJIT) && (20190003 <= INTEL_MKL_VERSION)
+#if !defined(INTEL_MKL_VERSION) || (20190003 <= INTEL_MKL_VERSION)
   const int default_maxsize = MAXSIZE;
 #else
   const int default_maxsize = 16;
