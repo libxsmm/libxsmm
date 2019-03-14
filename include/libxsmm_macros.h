@@ -562,8 +562,10 @@
 
 #if defined(__GNUC__) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32))
 # define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
+# define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
 #else
 # define LIBXSMM_ATTRIBUTE_UNUSED
+# define LIBXSMM_ATTRIBUTE_USED
 #endif
 #if defined(__GNUC__)
 # define LIBXSMM_MAY_ALIAS LIBXSMM_ATTRIBUTE(__may_alias__)
