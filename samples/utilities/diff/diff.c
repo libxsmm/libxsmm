@@ -70,7 +70,7 @@ int main(int argc, char* argv[])
       for (i = 0; i < nrpt; ++i) {
         j = libxsmm_diff_n(last, input, (unsigned char)size, (unsigned char)stride, 0/*hint*/, (unsigned int)npot);
       }
-      printf("libxsmm_diff_n:\t\t%.1f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      printf("libxsmm_diff_n:\t\t%.3f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
       result = ((npot == (j + 1) && 0 == memcmp(last, input + j * stride, size)) ? EXIT_SUCCESS : EXIT_FAILURE);
     }
 
@@ -79,7 +79,7 @@ int main(int argc, char* argv[])
       for (i = 0; i < nrpt; ++i) {
         j = libxsmm_diff_npot(last, input, (unsigned char)size, (unsigned char)stride, 0/*hint*/, (unsigned int)npot);
       }
-      printf("libxsmm_diff_npot:\t%.1f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      printf("libxsmm_diff_npot:\t%.3f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
       result = ((npot == (j + 1) && 0 == memcmp(last, input + j * stride, size)) ? EXIT_SUCCESS : EXIT_FAILURE);
     }
 
