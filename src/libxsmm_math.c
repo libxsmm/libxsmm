@@ -47,6 +47,9 @@
 #if !defined(LIBXSMM_MATH_DISPATCH1) && defined(__INTEL_COMPILER)
 # define LIBXSMM_MATH_DISPATCH1
 #endif
+#if !defined(LIBXSMM_MATH_DISPATCH) && 0
+# define LIBXSMM_MATH_DISPATCH
+#endif
 #if !defined(LIBXSMM_MATH_MEMCMP) && 0
 # define LIBXSMM_MATH_MEMCMP
 #endif
@@ -366,10 +369,13 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
 #if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD, a, bn, size, stride, hint, n);
 #else
+# if defined(LIBXSMM_MATH_DISPATCH)
   if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
     LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD, a, bn, size, stride, hint, n);
   }
-  else {
+  else
+# endif
+  {
     LIBXSMM_MATH_DIFF(libxsmm_diff_sw, LIBXSMM_MOD, a, bn, size, stride, hint, n);
   }
 #endif
@@ -386,10 +392,13 @@ LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsign
 #if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
   LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD2, a, bn, size, stride, hint, n);
 #else
+# if defined(LIBXSMM_MATH_DISPATCH)
   if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
     LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD2, a, bn, size, stride, hint, n);
   }
-  else {
+  else
+# endif
+  {
     LIBXSMM_MATH_DIFF(libxsmm_diff_sw, LIBXSMM_MOD2, a, bn, size, stride, hint, n);
   }
 #endif
