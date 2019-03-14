@@ -833,6 +833,9 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_gru_fwd_nc_ck_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_gru_bwdupd_nc_ck_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="..\include\libxsmm.f">
