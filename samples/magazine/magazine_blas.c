@@ -55,7 +55,7 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
 # define CONCATENATE(A, B) CONCATENATE_AUX(A, B)
 # define GEMM CONCATENATE(GEMM_, TYPE)
 #endif
-#if !defined(NOFALLBACK) && 0
+#if !defined(NOFALLBACK) && (20190003 <= INTEL_MKL_VERSION)
 # define NOFALLBACK
 #endif
 

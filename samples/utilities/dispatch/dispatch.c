@@ -40,7 +40,7 @@
 # include <omp.h>
 #endif
 #if defined(__MKL)
-# include <mkl_blas.h>
+# include <mkl.h>
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -88,7 +88,12 @@ int main(int argc, char* argv[])
 #else
   const int max_nthreads = 1;
 #endif
-  const int default_minsize = 4, default_maxsize = 16;
+  const int default_minsize = 4;
+#if defined(MKLJIT) && (20190003 <= INTEL_MKL_VERSION)
+  const int default_maxsize = MAXSIZE;
+#else
+  const int default_maxsize = 16;
+#endif
   int size_total = LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : 10000/*default*/, 2);
   const int size_local = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 1/*default*/, 1, size_total - 1);
   const int nthreads = LIBXSMM_CLMP(3 < argc ? atoi(argv[3]) : 1/*default*/, 1, max_nthreads);
