@@ -272,7 +272,7 @@ LIBXSMM_API_INLINE const char* internal_trace_get_symbolname(const void* address
   LIBXSMM_UNUSED(fd); LIBXSMM_UNUSED(fdoff);
   LIBXSMM_ASSERT(NULL != address && NULL != map);
   if (0 != dladdr(address, &info) && NULL != info.dli_sname) {
-    strncpy(map, info.dli_sname, LIBXSMM_TRACE_SYMBOLSIZE);
+    strncpy(map, info.dli_sname, LIBXSMM_TRACE_SYMBOLSIZE - 1);
     result = map;
   }
 #else
