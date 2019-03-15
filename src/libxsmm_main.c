@@ -71,7 +71,7 @@
 # define LIBXSMM_HASH_SEED2 151981
 #endif
 #if !defined(LIBXSMM_CAPACITY_CACHE)
-# define LIBXSMM_CAPACITY_CACHE 128
+# define LIBXSMM_CAPACITY_CACHE 0
 #endif
 #if !defined(LIBXSMM_ENABLE_DEREG) && 0
 # define LIBXSMM_ENABLE_DEREG
@@ -115,7 +115,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
     RESULT_INDEX = LIBXSMM_MOD((CACHE_HIT) + ((CACHE_SIZE) - 1), CACHE_SIZE)
 #else
 # define INTERNAL_FIND_CODE_CACHE_GROW(RESULT_INDEX, CACHE_SIZE) \
-    RESULT_INDEX = CACHE_SIZE; CACHE_SIZE <<= 1
+    RESULT_INDEX = CACHE_SIZE; CACHE_SIZE = (0 != (CACHE_SIZE) ? ((CACHE_SIZE) << 1) : 1)
 # define INTERNAL_FIND_CODE_CACHE_EVICT(RESULT_INDEX, CACHE_SIZE, CACHE_HIT) \
     RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((CACHE_SIZE) - 1), CACHE_SIZE)
 #endif
@@ -1551,7 +1551,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
     libxsmm_gemm_descriptor keys[LIBXSMM_CAPACITY_CACHE];
     libxsmm_code_pointer code[LIBXSMM_CAPACITY_CACHE];
     unsigned int id; /* to invalidate cache */
-    unsigned char hit, size;
+    unsigned char size, hit;
   } cache;
   unsigned char cache_index;
   LIBXSMM_ASSERT(0 != descriptor && cache.size <= LIBXSMM_CAPACITY_CACHE);
@@ -1718,7 +1718,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
       if (cache.id != libxsmm_ninit) { /* invalidate */
         memset(cache.keys, 0, sizeof(cache.keys));
         cache.id = libxsmm_ninit;
-        cache.hit = cache.size = 0;
+        cache.size = cache.hit = 0;
       }
       if (cache.size < (LIBXSMM_CAPACITY_CACHE)) { /* grow */
         INTERNAL_FIND_CODE_CACHE_GROW(cache_index, cache.size);
