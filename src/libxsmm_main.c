@@ -71,7 +71,7 @@
 # define LIBXSMM_HASH_SEED2 151981
 #endif
 #if !defined(LIBXSMM_CAPACITY_CACHE)
-# define LIBXSMM_CAPACITY_CACHE 4
+# define LIBXSMM_CAPACITY_CACHE 128
 #endif
 #if !defined(LIBXSMM_ENABLE_DEREG) && 0
 # define LIBXSMM_ENABLE_DEREG
@@ -109,13 +109,20 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #endif
 
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
-# define INTERNAL_FIND_CODE_CACHE_INDEX(CACHE_HIT, RESULT_INDEX) \
-    RESULT_INDEX = ((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1)) % (LIBXSMM_CAPACITY_CACHE)
+# define INTERNAL_FIND_CODE_CACHE_GROW(CACHE_SIZE, RESULT_INDEX) \
+    RESULT_INDEX = CACHE_SIZE; ++(CACHE_SIZE)
+# define INTERNAL_FIND_CODE_CACHE_EVICT(CACHE_HIT, RESULT_INDEX) \
+    RESULT_INDEX = LIBXSMM_MOD((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1), LIBXSMM_CAPACITY_CACHE)
 #elif defined(NDEBUG)
-# define INTERNAL_FIND_CODE_CACHE_INDEX(CACHE_HIT, RESULT_INDEX) \
+# define INTERNAL_FIND_CODE_CACHE_GROW(CACHE_SIZE, RESULT_INDEX) \
+    RESULT_INDEX = CACHE_SIZE; CACHE_SIZE <<= 1
+# define INTERNAL_FIND_CODE_CACHE_EVICT(CACHE_HIT, RESULT_INDEX) \
     RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1), LIBXSMM_CAPACITY_CACHE)
 #else
-# define INTERNAL_FIND_CODE_CACHE_INDEX(CACHE_HIT, RESULT_INDEX) \
+# define INTERNAL_FIND_CODE_CACHE_GROW(CACHE_SIZE, RESULT_INDEX) \
+    { const unsigned internal_capacity_cache_pot_ = LIBXSMM_UP2POT(LIBXSMM_CAPACITY_CACHE); LIBXSMM_ASSERT((LIBXSMM_CAPACITY_CACHE) == internal_capacity_cache_pot_); } \
+    RESULT_INDEX = CACHE_SIZE; CACHE_SIZE <<= 1
+# define INTERNAL_FIND_CODE_CACHE_EVICT(CACHE_HIT, RESULT_INDEX) \
     { const unsigned internal_capacity_cache_pot_ = LIBXSMM_UP2POT(LIBXSMM_CAPACITY_CACHE); LIBXSMM_ASSERT((LIBXSMM_CAPACITY_CACHE) == internal_capacity_cache_pot_); } \
     RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1), LIBXSMM_CAPACITY_CACHE)
 #endif
@@ -1550,13 +1557,16 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
   static LIBXSMM_TLS struct {
     libxsmm_gemm_descriptor keys[LIBXSMM_CAPACITY_CACHE];
     libxsmm_code_pointer code[LIBXSMM_CAPACITY_CACHE];
-    unsigned int hit, id;
+    unsigned int id; /* to invalidate cache */
+    unsigned char hit, size;
   } cache;
-  unsigned int cache_index;
-  LIBXSMM_ASSERT(0 != descriptor);
+  unsigned char cache_index;
+  LIBXSMM_ASSERT(0 != descriptor && cache.size <= LIBXSMM_CAPACITY_CACHE);
   /* search small cache starting with the last hit on record */
-  cache_index = libxsmm_diff_npot(descriptor, &cache.keys, LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, LIBXSMM_CAPACITY_CACHE);
-  if ((LIBXSMM_CAPACITY_CACHE) > cache_index && cache.id == libxsmm_ninit) { /* cache hit, and valid */
+  cache_index = (unsigned char)libxsmm_diff_npot(descriptor, &cache.keys,
+    LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_DESCRIPTOR_MAXSIZE,
+    cache.hit, cache.size);
+  if (cache_index < cache.size && cache.id == libxsmm_ninit) { /* valid hit */
     flux_entry = cache.code[cache_index];
     cache.hit = cache_index;
 #if !defined(NDEBUG)
@@ -1711,16 +1721,22 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
       }
     }
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
-    if (0 != flux_entry.ptr_const) { /* keep code version on record (cache) */
-      INTERNAL_FIND_CODE_CACHE_INDEX(cache.hit, cache_index);
+    if (NULL != flux_entry.ptr_const) { /* keep code version on record (cache) */
+      if (cache.id != libxsmm_ninit) { /* invalidate */
+        memset(cache.keys, 0, sizeof(cache.keys));
+        cache.id = libxsmm_ninit;
+        cache.hit = cache.size = 0;
+      }
+      if (cache.size < (LIBXSMM_CAPACITY_CACHE)) { /* grow */
+        INTERNAL_FIND_CODE_CACHE_GROW(cache.size, cache_index);
+      }
+      else { /* evict */
+        INTERNAL_FIND_CODE_CACHE_EVICT(cache.hit, cache_index);
+      }
       cache.keys[cache_index] = *descriptor;
       cache.code[cache_index] = flux_entry;
       cache.hit = cache_index;
       LIBXSMM_ASSERT(0 == diff);
-    }
-    if (cache.id != libxsmm_ninit) {
-      memset(cache.keys, 0, sizeof(cache.keys));
-      cache.id = libxsmm_ninit;
     }
 #endif
 #if !defined(NDEBUG)
