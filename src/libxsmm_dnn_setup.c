@@ -388,6 +388,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->bwd_ofw_rb = handle->ofw;
   handle->fm_lp_block = 1;
 
+  const libxsmm_trans_descriptor* tr_desc = 0;
+  libxsmm_descriptor_blob blob;
+  tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), 64, 64, 64);
+  handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
+
   /* Loop order tuning  */
   if (handle->desc.H >= 28 && handle->desc.R == 1) {
     loop_order = 1;

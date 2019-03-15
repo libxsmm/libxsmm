@@ -434,6 +434,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int upd_linearized_tasklist;
   int upd_avoid_rim_fmas;
 
+  libxsmm_xtransfunction tr_kernel;
+
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;
   libxsmm_dnn_tensor* reg_output;
