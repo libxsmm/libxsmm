@@ -44,7 +44,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_MATH_DISPATCH1) && defined(__INTEL_COMPILER)
+#if !defined(LIBXSMM_MATH_DISPATCH1) && 0
 # define LIBXSMM_MATH_DISPATCH1
 #endif
 #if !defined(LIBXSMM_MATH_DISPATCH) && 0
