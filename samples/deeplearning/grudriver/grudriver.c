@@ -365,7 +365,7 @@ void gru_ref_bwd_upd( int N, int C, int K, int t,
   LIBXSMM_VLA_DECL(2, float, delta, deltaD, K);
   for (j = t-1; j >= 0; j--) {
 #if defined(_OPENMP)
-# pragma omp parallel for private(l, p) collapse(2)
+#   pragma omp parallel for private(l, p) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
     for (l = 0; l < N; l++) {
       for (p = 0; p < K; p++) {
@@ -389,7 +389,7 @@ void gru_ref_bwd_upd( int N, int C, int K, int t,
     /* di = do . h_{t-1} . i_t . (1 - i_t) */
     if (0 == j) {
 #if defined(_OPENMP)
-# pragma omp parallel for private(l, p) collapse(2)
+#     pragma omp parallel for private(l, p) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
       for (l = 0; l < N; l++) {
         for (p = 0; p < K; p++) {
@@ -398,7 +398,7 @@ void gru_ref_bwd_upd( int N, int C, int K, int t,
       }
     } else {
 #if defined(_OPENMP)
-# pragma omp parallel for private(l, p) collapse(2)
+#     pragma omp parallel for private(l, p) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
       for (l = 0; l < N; l++) {
         for (p = 0; p < K; p++) {
@@ -424,7 +424,7 @@ void gru_ref_bwd_upd( int N, int C, int K, int t,
     /* dh_{t-1} += do * i_t + delta * c_t */
     if (0 == j) {
 #if defined(_OPENMP)
-# pragma omp parallel for private(l, p) collapse(2)
+#     pragma omp parallel for private(l, p) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
       for (l = 0; l < N; l++) {
         for (p = 0; p < K; p++) {
@@ -433,7 +433,7 @@ void gru_ref_bwd_upd( int N, int C, int K, int t,
       }
     } else {
 #if defined(_OPENMP)
-# pragma omp parallel for private(l, p) collapse(2)
+#     pragma omp parallel for private(l, p) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
       for (l = 0; l < N; l++) {
         for (p = 0; p < K; p++) {
@@ -459,7 +459,7 @@ void gru_ref_bwd_upd( int N, int C, int K, int t,
     }
     /* compute db */
 #if defined(_OPENMP)
-# pragma omp parallel for private(l, p)
+#   pragma omp parallel for private(l, p)
 #endif
     for (l = 0; l < K; l++) {
       for (p = 0; p < N; p++) {
