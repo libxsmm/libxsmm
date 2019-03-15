@@ -41,7 +41,7 @@ int main(/*int argc, char* argv[]*/)
 {
   int ni = 9, nj = 7, nk = 3, i, j, k, linear = 0, result = EXIT_SUCCESS;
   ELEM_TYPE* input = (ELEM_TYPE*)malloc(ni * nj * nk * sizeof(ELEM_TYPE));
-  LIBXSMM_VLA_DECL(1, const ELEM_TYPE, in1, input, nj, nk);
+  LIBXSMM_VLA_DECL(1, const ELEM_TYPE, in1, input);
   LIBXSMM_VLA_DECL(3, const ELEM_TYPE, in3, input, nj, nk);
 
   assert(NULL != input);
