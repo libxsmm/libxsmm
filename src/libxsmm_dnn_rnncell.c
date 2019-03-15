@@ -1404,8 +1404,8 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rn
           case LIBXSMM_DNN_COMPUTE_KIND_UPD:
           case LIBXSMM_DNN_COMPUTE_KIND_BWDUPD:
           case LIBXSMM_DNN_COMPUTE_KIND_ALL: {
-            handle->scratch_w  = 0;
-            handle->scratch_r  = 0;
+            handle->scratch_w = 0;
+            handle->scratch_r = 0;
             handle->scratch_wT = 0;
             handle->scratch_rT = 0;
             handle->scratch_xT = 0;
@@ -1421,20 +1421,20 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_release_scratch(libxsmm_dnn_rn
             handle->scratch_dciB = 0;
             handle->scratch_t1 = 0;
             handle->scratch_t2 = 0;
-            handle->csp_scratch  = 0;
-            handle->cst_scratch  = 0;
-            handle->ht_scratch  = 0;
-            handle->it_scratch  = 0;
-            handle->ft_scratch  = 0;
-            handle->ot_scratch  = 0;
-            handle->cit_scratch  = 0;
-            handle->cot_scratch  = 0;
+            handle->csp_scratch = 0;
+            handle->cst_scratch = 0;
+            handle->ht_scratch = 0;
+            handle->it_scratch = 0;
+            handle->ft_scratch = 0;
+            handle->ot_scratch = 0;
+            handle->cit_scratch = 0;
+            handle->cot_scratch = 0;
           } break;
           default: {
             status = LIBXSMM_DNN_ERR_INVALID_KIND;
           }
         }
-      }
+      } break;
       case LIBXSMM_DNN_RNNCELL_GRU: {
         switch (kind) {
           case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
