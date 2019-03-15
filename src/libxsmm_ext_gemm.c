@@ -175,7 +175,7 @@ LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void)
 #endif
 
 
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
+LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
@@ -312,7 +312,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
 }
 
 
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
+LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
