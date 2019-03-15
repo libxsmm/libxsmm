@@ -109,22 +109,15 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #endif
 
 #if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
-# define INTERNAL_FIND_CODE_CACHE_GROW(CACHE_SIZE, RESULT_INDEX) \
+# define INTERNAL_FIND_CODE_CACHE_GROW(RESULT_INDEX, CACHE_SIZE) \
     RESULT_INDEX = CACHE_SIZE; ++(CACHE_SIZE)
-# define INTERNAL_FIND_CODE_CACHE_EVICT(CACHE_HIT, RESULT_INDEX) \
-    RESULT_INDEX = LIBXSMM_MOD((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1), LIBXSMM_CAPACITY_CACHE)
-#elif defined(NDEBUG)
-# define INTERNAL_FIND_CODE_CACHE_GROW(CACHE_SIZE, RESULT_INDEX) \
-    RESULT_INDEX = CACHE_SIZE; CACHE_SIZE <<= 1
-# define INTERNAL_FIND_CODE_CACHE_EVICT(CACHE_HIT, RESULT_INDEX) \
-    RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1), LIBXSMM_CAPACITY_CACHE)
+# define INTERNAL_FIND_CODE_CACHE_EVICT(RESULT_INDEX, CACHE_SIZE, CACHE_HIT) \
+    RESULT_INDEX = LIBXSMM_MOD((CACHE_HIT) + ((CACHE_SIZE) - 1), CACHE_SIZE)
 #else
-# define INTERNAL_FIND_CODE_CACHE_GROW(CACHE_SIZE, RESULT_INDEX) \
-    { const unsigned internal_capacity_cache_pot_ = LIBXSMM_UP2POT(LIBXSMM_CAPACITY_CACHE); LIBXSMM_ASSERT((LIBXSMM_CAPACITY_CACHE) == internal_capacity_cache_pot_); } \
+# define INTERNAL_FIND_CODE_CACHE_GROW(RESULT_INDEX, CACHE_SIZE) \
     RESULT_INDEX = CACHE_SIZE; CACHE_SIZE <<= 1
-# define INTERNAL_FIND_CODE_CACHE_EVICT(CACHE_HIT, RESULT_INDEX) \
-    { const unsigned internal_capacity_cache_pot_ = LIBXSMM_UP2POT(LIBXSMM_CAPACITY_CACHE); LIBXSMM_ASSERT((LIBXSMM_CAPACITY_CACHE) == internal_capacity_cache_pot_); } \
-    RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((LIBXSMM_CAPACITY_CACHE) - 1), LIBXSMM_CAPACITY_CACHE)
+# define INTERNAL_FIND_CODE_CACHE_EVICT(RESULT_INDEX, CACHE_SIZE, CACHE_HIT) \
+    RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((CACHE_SIZE) - 1), CACHE_SIZE)
 #endif
 
 #if (0 != LIBXSMM_SYNC)
@@ -1728,10 +1721,10 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
         cache.hit = cache.size = 0;
       }
       if (cache.size < (LIBXSMM_CAPACITY_CACHE)) { /* grow */
-        INTERNAL_FIND_CODE_CACHE_GROW(cache.size, cache_index);
+        INTERNAL_FIND_CODE_CACHE_GROW(cache_index, cache.size);
       }
       else { /* evict */
-        INTERNAL_FIND_CODE_CACHE_EVICT(cache.hit, cache_index);
+        INTERNAL_FIND_CODE_CACHE_EVICT(cache_index, cache.size, cache.hit);
       }
       cache.keys[cache_index] = *descriptor;
       cache.code[cache_index] = flux_entry;
