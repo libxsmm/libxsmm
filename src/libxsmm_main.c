@@ -1998,7 +1998,7 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_b
     0 != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
     0 != ldc ? *ldc : m, 0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     gemm_flags, libxsmm_get_gemm_xprefetch(prefetch));
-  const libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
   return result.dmm;
 }
 
@@ -2014,7 +2014,7 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_smmdispatch(libxsmm_blasint m, libxsmm_b
     0 != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
     0 != ldc ? *ldc : m, 0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     gemm_flags, libxsmm_get_gemm_xprefetch(prefetch));
-  const libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
   return result.smm;
 }
 
@@ -2030,7 +2030,7 @@ LIBXSMM_API libxsmm_wimmfunction libxsmm_wimmdispatch(libxsmm_blasint m, libxsmm
     0 != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
     0 != ldc ? *ldc : m, 0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     gemm_flags, libxsmm_get_gemm_xprefetch(prefetch));
-  const libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
   return result.wimm;
 }
 
@@ -2046,7 +2046,7 @@ LIBXSMM_API libxsmm_wsmmfunction libxsmm_wsmmdispatch(libxsmm_blasint m, libxsmm
     0 != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
     0 != ldc ? *ldc : m, 0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     gemm_flags, libxsmm_get_gemm_xprefetch(prefetch));
-  const libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
   return result.wsmm;
 }
 
@@ -2062,7 +2062,7 @@ LIBXSMM_API libxsmm_bsmmfunction libxsmm_bsmmdispatch(libxsmm_blasint m, libxsmm
     0 != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
     0 != ldc ? *ldc : m, 0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     gemm_flags, libxsmm_get_gemm_xprefetch(prefetch));
-  const libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
   return result.bsmm;
 }
 
@@ -2076,7 +2076,7 @@ LIBXSMM_API libxsmm_dmmfunction_reducebatch libxsmm_dmmdispatch_reducebatch(libx
     m, n, k, 0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
     0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE, libxsmm_get_gemm_xprefetch(prefetch));
-  const libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
   return result.dmr;
 }
 
@@ -2090,7 +2090,7 @@ LIBXSMM_API libxsmm_smmfunction_reducebatch libxsmm_smmdispatch_reducebatch(libx
     m, n, k, 0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
     0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE, libxsmm_get_gemm_xprefetch(prefetch));
-  const libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
   return result.smr;
 }
 
@@ -2104,7 +2104,7 @@ LIBXSMM_API libxsmm_bsmmfunction_reducebatch libxsmm_bsmmdispatch_reducebatch(li
     m, n, k, 0 != lda ? *lda : m, 0 != ldb ? *ldb : k, 0 != ldc ? *ldc : m,
     0 != alpha ? *alpha : LIBXSMM_ALPHA, 0 != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE, libxsmm_get_gemm_xprefetch(prefetch));
-  const libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
   return result.bsmr;
 }
 
