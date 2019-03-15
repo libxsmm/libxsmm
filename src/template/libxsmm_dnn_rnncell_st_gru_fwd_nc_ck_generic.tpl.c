@@ -95,8 +95,10 @@ LIBXSMM_VLA_DECL(3, element_output_type, o, ot, N, K);
 const libxsmm_smmfunction_reducebatch batchreduce_kernela = libxsmm_smmdispatch_reducebatch( bk, bn, bc, &bk, &C, &K, NULL, NULL, NULL, NULL );
 const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL );
 /* define gemm kernels */
+#if 0
 const libxsmm_smmfunction gemmkernela = libxsmm_smmdispatch( bk, bn, bc, &K3, &C, &K, NULL, NULL, NULL, NULL );
 const libxsmm_smmfunction gemmkernelb = libxsmm_smmdispatch( bk, bn, bk, &K3, &K, &K, NULL, NULL, NULL, NULL );
+#endif
 /* Auxiliary arrays for batch-reduce gemms  */
 const element_filter_type *A_array[1024];
 const element_input_type  *B_array[1024];
@@ -127,9 +129,9 @@ const libxsmm_blasint chunksize_kk = (work_kk % (libxsmm_blasint)handle->desc.th
 /* compute thr_begin and thr_end */
 const libxsmm_blasint thr_begin_kk = (ltid * chunksize_kk < work_kk) ? (ltid * chunksize_kk) : work_kk;
 const libxsmm_blasint thr_end_kk = ((ltid + 1) * chunksize_kk < work_kk) ? ((ltid + 1) * chunksize_kk) : work_kk;
-
+#if 0
 const int use_fused_implementation = (C == 2048 && K == 2048) ? 1 : 0;
-
+#endif
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, (int)ltid);
 
