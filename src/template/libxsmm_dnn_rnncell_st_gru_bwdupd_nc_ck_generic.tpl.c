@@ -421,23 +421,18 @@ for (j = t-1; j >= 0; --j) {
     }
   }
 
-  /* dhp = do * i + dout * c */
-  for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
-    in = (inik % (N/bn))*bn;
-    ik = (inik / (N/bn))*bk;
-    dout_ptr = (j > 0) ? (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K) : (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dhp, in, ik, K);
-
-    libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dp,   in, ik, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K) );
-    libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, c, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
-    libxsmm_internal_matrix_add_ld(          bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K),      &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), dout_ptr );
-  }
-
   for (KB = 0; KB < BF; KB++) {
     for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
       in = (inik % (N/bn))*bn;
       ikb = inik / (N/bn);
       ik = ikb*bk;
       dout_ptr = (j > 0) ? (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K) : (element_output_type*) &LIBXSMM_VLA_ACCESS(2, dhp, in, ik, K);
+
+      if (0 == KB) {
+        libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dp,   in, ik, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K) );
+        libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, c, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
+        libxsmm_internal_matrix_add_ld(          bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K),      &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), dout_ptr );
+      }
 
       /* dhp += R^T * dic */
       for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
