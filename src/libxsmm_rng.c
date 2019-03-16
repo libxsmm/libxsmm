@@ -188,6 +188,9 @@ LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed)
 {
   LIBXSMM_INIT
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
+# if !defined(NDEBUG) /* used to track if seed is initialized */
+  internal_rng_f32_seq = internal_rng_f32_seq_avx512;
+# endif
   internal_rng_set_seed_avx512(seed);
 #elif defined(LIBXSMM_INTRINSICS_AVX512) /* __AVX512F__ */
   if (LIBXSMM_X86_AVX512 <= libxsmm_target_archid) {
@@ -199,6 +202,9 @@ LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed)
     internal_rng_set_seed_sw(seed);
   }
 #else
+# if !defined(NDEBUG) /* used to track if seed is initialized */
+  internal_rng_f32_seq = internal_rng_f32_seq_sw;
+# endif
   internal_rng_set_seed_sw(seed);
 #endif
 }
@@ -206,10 +212,10 @@ LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed)
 
 LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count)
 {
+  LIBXSMM_ASSERT_MSG(NULL != internal_rng_f32_seq, "RNG must be initialized");
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
   internal_rng_f32_seq_avx512(rngs, count);
 #elif defined(LIBXSMM_INTRINSICS_AVX512) /* __AVX512F__ */
-  LIBXSMM_ASSERT_MSG(NULL != internal_rng_f32_seq, "RNG must be initialized");
   internal_rng_f32_seq(rngs, count); /* pointer based function call */
 #else
   internal_rng_f32_seq_sw(rngs, count);
