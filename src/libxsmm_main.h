@@ -35,7 +35,7 @@
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
-# define LIBXSMM_CAPACITY_REGISTRY 524288 /* 524287: Mersenne Prime number (2^19-1) */
+# define LIBXSMM_CAPACITY_REGISTRY 524288
 #endif
 
 #if !defined(LIBXSMM_MAX_NTHREADS)
