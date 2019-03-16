@@ -103,36 +103,6 @@ int main(int argc, char* argv[])
       else printf("\n");
     }
 
-    { start = libxsmm_timer_tick();
-      for (j = 0; j < nrpt; ++j) {
-        for (i = 0; i < size; ++i) {
-          out[i] = libxsmm_sexp2_fast(inp[i], 13);
-        }
-      }
-      printf("libxsmm_sexp2_fast13:\t%.3f s", libxsmm_timer_duration(start, libxsmm_timer_tick()));
-      if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F32, 1/*m*/,
-        (libxsmm_blasint)size, gold, out, NULL/*ldref*/, NULL/*ldtst*/))
-      {
-        printf("\t\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-      }
-      else printf("\n");
-    }
-
-    { start = libxsmm_timer_tick();
-      for (j = 0; j < nrpt; ++j) {
-        for (i = 0; i < size; ++i) {
-          out[i] = libxsmm_sexp2_fast(inp[i], 0);
-        }
-      }
-      printf("libxsmm_sexp2_fast3:\t%.3f s", libxsmm_timer_duration(start, libxsmm_timer_tick()));
-      if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F32, 1/*m*/,
-        (libxsmm_blasint)size, gold, out, NULL/*ldref*/, NULL/*ldtst*/))
-      {
-        printf("\t\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-      }
-      else printf("\n");
-    }
-
     result = EXIT_SUCCESS;
   }
   else {

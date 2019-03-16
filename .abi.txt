@@ -316,7 +316,6 @@ libxsmm_set_target_arch
 libxsmm_set_target_archid
 libxsmm_set_verbosity
 libxsmm_sexp2
-libxsmm_sexp2_fast
 libxsmm_sexp2_i8
 libxsmm_sexp2_i8i
 libxsmm_sexp2_u8

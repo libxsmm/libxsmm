@@ -521,8 +521,10 @@ LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x)
   return y;
 }
 
-/* Implementation based on Claude Baumann's product (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm). */
-LIBXSMM_API float libxsmm_sexp2_fast(float x, int maxiter)
+/* Implementation based on Claude Baumann's product (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm).
+ * Exponential function, which exposes the number of iterations taken in the main case (1...22).
+ */
+LIBXSMM_API_INLINE float internal_math_sexp2(float x, int maxiter)
 {
   static const float lut[] = { /* tabulated powf(2.f, powf(2.f, -index)) */
     2.00000000f, 1.41421354f, 1.18920708f, 1.09050775f, 1.04427373f, 1.02189720f, 1.01088929f, 1.00542986f,
@@ -593,9 +595,9 @@ LIBXSMM_API float libxsmm_sexp2_fast(float x, int maxiter)
 LIBXSMM_API float libxsmm_sexp2(float x)
 {
 #if defined(LIBXSMM_NO_LIBM)
-  return libxsmm_sexp2_fast(x, 20/*compromise*/);
+  return internal_math_sexp2(x, 20/*compromise*/);
 #else
-  return LIBXSMM_POWF(2.f, x);
+  return LIBXSMM_EXP2F(x);
 #endif
 }
 
@@ -696,6 +698,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff_clear)(libxsmm_matdiff_info* in
 }
 
 
+/* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* /*coprime*/, const int* /*n*/);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* coprime, const int* n)
 {

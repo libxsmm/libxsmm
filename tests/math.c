@@ -40,22 +40,21 @@ LIBXSMM_INLINE unsigned int ref_ilog2_u32(unsigned int u32)
 }
 
 
-int main(int argc, char* argv[])
+int main(/*int argc, char* argv[]*/)
 {
-  const int exp_maxiter = (1 < argc ? atoi(argv[1]) : 20);
   const unsigned long long scale64 = ((unsigned long long)-1) / (RAND_MAX) - 1;
   const unsigned int scale32 = ((unsigned int)-1) / (RAND_MAX) - 1;
   int warn_dsqrt = 0, warn_ssqrt = 0, i;
 
   for (i = 0; i < 256; ++i) {
     const float a = libxsmm_sexp2_u8((unsigned char)i);
-    const float b = LIBXSMM_POWF(2, i);
+    const float b = LIBXSMM_EXP2F(i);
     if (LIBXSMM_NEQ(a, b)) exit(EXIT_FAILURE);
   }
 
   for (i = -128; i < 127; ++i) {
     const float a = libxsmm_sexp2_i8((signed char)i);
-    const float b = LIBXSMM_POWF(2, i);
+    const float b = LIBXSMM_EXP2F(i);
     if (LIBXSMM_NEQ(a, b)) exit(EXIT_FAILURE);
   }
 
@@ -79,8 +78,8 @@ int main(int argc, char* argv[])
     if (LIBXSMM_NEQ(LIBXSMM_ROUNDF(r2), LIBXSMM_ROUNDX(float, r2))) exit(EXIT_FAILURE);
     if (LIBXSMM_NEQ(LIBXSMM_ROUNDF(rd), LIBXSMM_ROUNDX(float, rd))) exit(EXIT_FAILURE);
 
-    d1 = libxsmm_sexp2_fast((float)rd, exp_maxiter);
-    d2 = LIBXSMM_POWF(2, rd);
+    d1 = libxsmm_sexp2((float)rd);
+    d2 = LIBXSMM_EXP2F(rd);
     e1 = fabs(d1 - d2); e2 = fabs(d2);
     e3 = 0 < e2 ? (e1 / e2) : 0.0;
     if (1E-4 < fmin(e1, e3)) exit(EXIT_FAILURE);
