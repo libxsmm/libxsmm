@@ -368,6 +368,11 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "diff", "..\samples\utilitie
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "math", "..\samples\utilities\math\math.vcxproj", "{87E8DB3A-EDDF-441F-81A5-27052DE316BB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		debug|Win32 = debug|Win32
@@ -1206,6 +1211,18 @@ Global
 		{7E730036-A678-4529-83F3-DFFB68CA278E}.symbols|Win32.Build.0 = symbols|Win32
 		{7E730036-A678-4529-83F3-DFFB68CA278E}.symbols|x64.ActiveCfg = symbols|x64
 		{7E730036-A678-4529-83F3-DFFB68CA278E}.symbols|x64.Build.0 = symbols|x64
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.debug|Win32.ActiveCfg = debug|Win32
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.debug|Win32.Build.0 = debug|Win32
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.debug|x64.ActiveCfg = debug|x64
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.debug|x64.Build.0 = debug|x64
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.release|Win32.ActiveCfg = release|Win32
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.release|Win32.Build.0 = release|Win32
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.release|x64.ActiveCfg = release|x64
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.release|x64.Build.0 = release|x64
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.symbols|Win32.ActiveCfg = symbols|Win32
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.symbols|Win32.Build.0 = symbols|Win32
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.symbols|x64.ActiveCfg = symbols|x64
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB}.symbols|x64.Build.0 = symbols|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -1289,6 +1306,7 @@ Global
 		{68BC613E-743B-45DE-B6AA-B9D04A3B7CAD} = {FD191424-DD79-4B60-B004-7B6224898031}
 		{A561000C-1143-4897-9F30-D6734CC9B293} = {3CB9C5CC-5235-45C4-868C-DDCCB22B482B}
 		{7E730036-A678-4529-83F3-DFFB68CA278E} = {FD191424-DD79-4B60-B004-7B6224898031}
+		{87E8DB3A-EDDF-441F-81A5-27052DE316BB} = {FD191424-DD79-4B60-B004-7B6224898031}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {DD13D8C2-5B0F-431B-897A-AA0FE5BDFCB2}

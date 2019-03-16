@@ -400,7 +400,11 @@
 # define LIBXSMM_ROUNDF(A) roundf(A)
 # define LIBXSMM_ROUND(A) round(A)
 # define LIBXSMM_TANHF(A) tanhf(A)
+# define LIBXSMM_EXP2F(A) exp2f(A)
+# define LIBXSMM_LOG2F(A) log2f(A)
+# define LIBXSMM_EXP2(A) exp2(A)
 # define LIBXSMM_LOG2(A) log2(A)
+# define LIBXSMM_EXPF(A) expf(A)
 # define LIBXSMM_LOGF(A) logf(A)
 #else
 # define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
@@ -408,8 +412,13 @@
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
 # define LIBXSMM_ROUND(A) LIBXSMM_ROUNDX(double, A)
 # define LIBXSMM_TANHF(A) ((float)tanh((double)(A)))
+# define LIBXSMM_EXP2F(A) LIBXSMM_POWF(2, A)
+# define LIBXSMM_LOG2F(A) ((float)LIBXSMM_LOG2((double)(A)))
+# define LIBXSMM_EXP2(A) pow(2.0, (double)(A))
 # define LIBXSMM_LOG2(A) (log(A) * (1.0 / (M_LN2)))
+# define LIBXSMM_EXPF(A) ((float)exp((double)(A)))
 # define LIBXSMM_LOGF(A) ((float)log((double)(A)))
+
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
