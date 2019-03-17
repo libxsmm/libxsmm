@@ -468,7 +468,9 @@ LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double 
 #if defined(LIBXSMM_INTRINSICS_X86)
   const __m128d a = LIBXSMM_INTRINSICS_MM_UNDEFINED_PD();
   const double result = _mm_cvtsd_f64(_mm_sqrt_sd(a, _mm_set_sd(x)));
-#else
+#elif !defined(LIBXSMM_NO_LIBM)
+  const double result = sqrt(x);
+#else /* fall-back */
   double result, y = x;
   if (LIBXSMM_NEQ(0, x)) {
     do {
@@ -486,7 +488,9 @@ LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) float libxsmm_ssqrt(float x)
 {
 #if defined(LIBXSMM_INTRINSICS_X86)
   const float result = _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(x)));
-#else
+#elif !defined(LIBXSMM_NO_LIBM)
+  const double result = LIBXSMM_SQRTF(x);
+#else /* fall-back */
   float result, y = x;
   if (LIBXSMM_NEQ(0, x)) {
     do {
@@ -594,10 +598,10 @@ LIBXSMM_API_INLINE float internal_math_sexp2(float x, int maxiter)
 
 LIBXSMM_API float libxsmm_sexp2(float x)
 {
-#if defined(LIBXSMM_NO_LIBM)
-  return internal_math_sexp2(x, 20/*compromise*/);
-#else
+#if !defined(LIBXSMM_NO_LIBM)
   return LIBXSMM_EXP2F(x);
+#else /* fall-back */
+  return internal_math_sexp2(x, 20/*compromise*/);
 #endif
 }
 

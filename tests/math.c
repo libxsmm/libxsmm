@@ -92,7 +92,7 @@ int main(/*int argc, char* argv[]*/)
     if (a != b) exit(EXIT_FAILURE);
     d1 = libxsmm_ssqrt((float)fabs(rd));
     e1 = fabs(d1 * d1 - fabs(rd));
-    d2 = sqrtf((float)fabs(rd));
+    d2 = LIBXSMM_SQRTF(fabs(rd));
     e2 = fabs(d2 * d2 - fabs(rd));
     if (e2 < e1) {
       e3 = 0 < e2 ? (e1 / e2) : 0.f;
@@ -145,13 +145,13 @@ int main(/*int argc, char* argv[]*/)
     b = ref_ilog2_u32(r32);
     if (0 != r32 && a != b) exit(EXIT_FAILURE);
 
-    a = LIBXSMM_SQRT2(i);
+    a = LIBXSMM_ISQRT2(i);
     b = libxsmm_isqrt_u32(i);
     if (a < LIBXSMM_DIFF(a, b)) exit(EXIT_FAILURE);
-    a = LIBXSMM_SQRT2(r32);
+    a = LIBXSMM_ISQRT2(r32);
     b = libxsmm_isqrt_u32(r32);
     if (a < LIBXSMM_DIFF(a, b)) exit(EXIT_FAILURE);
-    a = LIBXSMM_SQRT2(r64);
+    a = LIBXSMM_ISQRT2(r64);
     b = libxsmm_isqrt_u64(r64);
     if (0 != a/*u32-overflow*/ && a < LIBXSMM_DIFF(a, b)) exit(EXIT_FAILURE);
   }

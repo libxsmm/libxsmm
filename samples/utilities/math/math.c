@@ -64,22 +64,36 @@ int main(int argc, char* argv[])
     libxsmm_rng_set_seed(25071975);
     libxsmm_rng_f32_seq(inp, (libxsmm_blasint)size);
 
+    /* collect gold data for exp2 function */
     { start = libxsmm_timer_tick();
       for (j = 0; j < nrpt; ++j) {
         for (i = 0; i < size; ++i) {
-          gold[i] = (float)LIBXSMM_EXP2((double)inp[i]);
+          gold[i] = (float)LIBXSMM_EXP2(inp[i]);
         }
       }
-      printf("standard exp2:\t\t%.3f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      printf("standard exp2:\t%.3f s\t\tgold\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
     }
-
     { start = libxsmm_timer_tick();
       for (j = 0; j < nrpt; ++j) {
         for (i = 0; i < size; ++i) {
           out[i] = LIBXSMM_EXP2F(inp[i]);
         }
       }
-      printf("standard exp2f:\t\t%.3f s", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      printf("standard exp2f:\t%.3f s", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F32, 1/*m*/,
+        (libxsmm_blasint)size, gold, out, NULL/*ldref*/, NULL/*ldtst*/))
+      {
+        printf("\t\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+      }
+      else printf("\n");
+    }
+    { start = libxsmm_timer_tick();
+      for (j = 0; j < nrpt; ++j) {
+        for (i = 0; i < size; ++i) {
+          out[i] = libxsmm_sexp2(inp[i]);
+        }
+      }
+      printf("libxsmm_sexp2:\t%.3f s", libxsmm_timer_duration(start, libxsmm_timer_tick()));
       if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F32, 1/*m*/,
         (libxsmm_blasint)size, gold, out, NULL/*ldref*/, NULL/*ldtst*/))
       {
@@ -88,13 +102,50 @@ int main(int argc, char* argv[])
       else printf("\n");
     }
 
+    /* collect gold data for sqrt function */
     { start = libxsmm_timer_tick();
       for (j = 0; j < nrpt; ++j) {
         for (i = 0; i < size; ++i) {
-          out[i] = libxsmm_sexp2(inp[i]);
+          gold[i] = (float)sqrt(inp[i]);
         }
       }
-      printf("libxsmm_sexp2:\t\t%.3f s", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      printf("standard sqrt:\t%.3f s\t\tgold\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+    }
+    { start = libxsmm_timer_tick();
+      for (j = 0; j < nrpt; ++j) {
+        for (i = 0; i < size; ++i) {
+          out[i] = (float)libxsmm_dsqrt(inp[i]);
+        }
+      }
+      printf("libxsmm_dsqrt:\t%.3f s", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F32, 1/*m*/,
+        (libxsmm_blasint)size, gold, out, NULL/*ldref*/, NULL/*ldtst*/))
+      {
+        printf("\t\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+      }
+      else printf("\n");
+    }
+    { start = libxsmm_timer_tick();
+      for (j = 0; j < nrpt; ++j) {
+        for (i = 0; i < size; ++i) {
+          out[i] = LIBXSMM_SQRTF(inp[i]);
+        }
+      }
+      printf("standard sqrtf:\t%.3f s", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F32, 1/*m*/,
+        (libxsmm_blasint)size, gold, out, NULL/*ldref*/, NULL/*ldtst*/))
+      {
+        printf("\t\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+      }
+      else printf("\n");
+    }
+    { start = libxsmm_timer_tick();
+      for (j = 0; j < nrpt; ++j) {
+        for (i = 0; i < size; ++i) {
+          out[i] = libxsmm_ssqrt(inp[i]);
+        }
+      }
+      printf("libxsmm_ssqrt:\t%.3f s", libxsmm_timer_duration(start, libxsmm_timer_tick()));
       if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F32, 1/*m*/,
         (libxsmm_blasint)size, gold, out, NULL/*ldref*/, NULL/*ldtst*/))
       {
