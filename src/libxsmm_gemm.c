@@ -660,7 +660,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       return NULL;
     }
     result.ptr->flags = flags;
-    if (LIBXSMM_GEMM_HANDLE_FLAG_AUTO == flags && 0 == LIBXSMM_SMM(um, un, uk,
+    if (LIBXSMM_GEMM_HANDLE_FLAG_AUTO == flags && 0 == LIBXSMM_SMM_AI(um, un, uk,
       0 == (result.ptr->gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) ? 1 : 2/*RFO*/, result.ptr->otypesize))
     {
       result.ptr->flags |= LIBXSMM_GEMM_HANDLE_FLAG_COPY_C;
@@ -1577,7 +1577,7 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_prec
     libxsmm_descriptor_blob blob;
     libxsmm_xmmfunction kernel;
 
-    if (LIBXSMM_SMM(m, n, k, 2/*RFO*/, libxsmm_typesize((libxsmm_datatype)oprec))) { /* check if an SMM is suitable */
+    if (LIBXSMM_SMM_AI(m, n, k, 2/*RFO*/, libxsmm_typesize((libxsmm_datatype)oprec))) { /* check if an SMM is suitable */
       const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
       desc = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec, m, n, k,
         NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
