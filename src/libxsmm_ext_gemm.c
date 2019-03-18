@@ -700,7 +700,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm
             }
           }
           else
-# else
+# endif
           {
             libxsmm_gemm_internal_set_batchflag(desc, c, index_stride, batchsize, 0/*multithreaded*/);
             kernel = libxsmm_xmmdispatch(desc);
@@ -708,7 +708,6 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm
               stride_a, stride_b, stride_c, a, b, c, batchsize,
               0/*tid*/, 1/*nthreads*/, desc) : EXIT_FAILURE);
           }
-# endif
         }
       }
       else
