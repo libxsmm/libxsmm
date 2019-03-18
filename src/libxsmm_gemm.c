@@ -56,8 +56,8 @@
 #if !defined(LIBXSMM_GEMM_BATCHSIZE)
 # define LIBXSMM_GEMM_BATCHSIZE 1024
 #endif
-#if !defined(LIBXSMM_GEMM_BATCHGRAIN)
-# define LIBXSMM_GEMM_BATCHGRAIN 128
+#if !defined(LIBXSMM_GEMM_TASKGRAIN)
+# define LIBXSMM_GEMM_TASKGRAIN 128
 #endif
 #if !defined(LIBXSMM_GEMM_BATCHREDUCE) && !defined(_WIN32) && !defined(__CYGWIN__) /* not supported */
 # define LIBXSMM_GEMM_BATCHREDUCE
@@ -168,11 +168,8 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       if (EXIT_SUCCESS == libxsmm_xmalloc(&libxsmm_mmbatch_array, (size_t)batchsize * (LIBXSMM_GEMM_BATCHSCALE), 0/*auto-alignment*/,
         LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE, &extra, sizeof(extra)))
       {
-        const char *const env_g = getenv("LIBXSMM_GEMM_BATCHGRAIN");
-        const unsigned int batchgrain = ((NULL == env_g || 0 == *env_g || 0 >= atoi(env_g)) ? (LIBXSMM_GEMM_BATCHGRAIN) : atoi(env_g));
         LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &libxsmm_mmbatch_lock, &attr);
         LIBXSMM_ASSERT(NULL != libxsmm_mmbatch_array);
-        libxsmm_mmbatch_grain = batchgrain;
         libxsmm_mmbatch_size = batchsize;
       }
     }
@@ -230,8 +227,13 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     libxsmm_gemm_taskscale = ((NULL == env_t || 0 == *env_t)
       ? 0/*disabled*/ : (LIBXSMM_GEMM_TASKSCALE * atoi(env_t)));
   }
+  { /* determines grain-size of tasks (when available) */
+    const char *const env_g = getenv("LIBXSMM_GEMM_TASKGRAIN");
+    libxsmm_gemm_taskgrain = ((NULL == env_g || 0 == *env_g || 0 >= atoi(env_g))
+      ? (LIBXSMM_GEMM_TASKGRAIN) : atoi(env_g));
+  }
   LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_GEMM_LOCK, &attr);
-  /* determine BLAS functions */
+  /* determine BLAS function-pointers */
   libxsmm_original_dgemm();
   libxsmm_original_sgemm();
 }

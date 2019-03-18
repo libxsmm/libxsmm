@@ -626,7 +626,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm
       kernel = libxsmm_xmmdispatch(desc);
       if (NULL != kernel.xmm) {
 #if defined(_OPENMP)
-        const int nchunks = (int)((LIBXSMM_ABS(batchsize) + libxsmm_mmbatch_grain - 1) / libxsmm_mmbatch_grain);
+        const int nchunks = (int)((LIBXSMM_ABS(batchsize) + libxsmm_gemm_taskgrain - 1) / libxsmm_gemm_taskgrain);
         result = EXIT_SUCCESS;
         if (1 < nchunks) {
 # if defined(LIBXSMM_EXT_TASKS)

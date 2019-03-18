@@ -283,7 +283,7 @@ LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_mmbatch_lock
 /** Maximum size of the recorded batch. */
 LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_mmbatch_size);
 /** Minimum batchsize per thread/task. */
-LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_mmbatch_grain);
+LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_taskgrain);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_taskscale);
 
