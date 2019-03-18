@@ -446,6 +446,7 @@ LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x)
   return y;
 }
 
+
 LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x)
 {
   unsigned int b; unsigned int y = 0; int s;

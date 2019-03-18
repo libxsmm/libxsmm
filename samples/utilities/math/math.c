@@ -102,6 +102,32 @@ int main(int argc, char* argv[])
       else printf("\n");
     }
 
+    /* collect gold data for limited-range exp2 function */
+    { start = libxsmm_timer_tick();
+      for (j = 0; j < nrpt; ++j) {
+        for (i = 0; i < size; ++i) {
+          const unsigned char input = (unsigned char)(255.f * inp[i]);
+          gold[i] = (float)LIBXSMM_EXP2(input);
+        }
+      }
+      printf("low-range exp2:\t%.3f s\t\tgold\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+    }
+    { start = libxsmm_timer_tick();
+      for (j = 0; j < nrpt; ++j) {
+        for (i = 0; i < size; ++i) {
+          const unsigned char input = (unsigned char)(255.f * inp[i]);
+          out[i] = libxsmm_sexp2_u8(input);
+        }
+      }
+      printf("libxsmm_sexp2:\t%.3f s", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      if (EXIT_SUCCESS == libxsmm_matdiff(&diff, LIBXSMM_DATATYPE_F32, 1/*m*/,
+        (libxsmm_blasint)size, gold, out, NULL/*ldref*/, NULL/*ldtst*/))
+      {
+        printf("\t\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+      }
+      else printf("\n");
+    }
+
     /* collect gold data for sqrt function */
     { start = libxsmm_timer_tick();
       for (j = 0; j < nrpt; ++j) {
