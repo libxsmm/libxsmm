@@ -676,37 +676,32 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm
 # endif
         }
         else { /* assume external parallelization */
+          libxsmm_gemm_internal_set_batchflag(desc, c, index_stride, batchsize, 0/*multithreaded*/);
+          kernel = libxsmm_xmmdispatch(desc);
+          if (NULL != kernel.xmm) {
 # if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
-          const int ntasks = (0 == libxsmm_gemm_taskscale
-            ? (LIBXSMM_GEMM_TASKSCALE)
-            : libxsmm_gemm_taskscale) * omp_get_num_threads();
-          if (1 < ntasks) {
-            kernel = libxsmm_xmmdispatch(desc);
-            if (NULL != kernel.xmm) {
-              int tid;
-              for (tid = 0; tid < ntasks; ++tid) {
-#               pragma omp task
-                /*check*/libxsmm_mmbatch_kernel(kernel, index_base, index_stride,
-                  stride_a, stride_b, stride_c, a, b, c, batchsize,
-                  tid, ntasks, desc);
-              }
-              /* allow to omit synchronization */
-              if (0 == libxsmm_nosync) {
-#               pragma omp taskwait
-              }
+            const int ntasks = (0 == libxsmm_gemm_taskscale
+              ? (LIBXSMM_GEMM_TASKSCALE)
+              : libxsmm_gemm_taskscale) * omp_get_num_threads();
+            int tid;
+            for (tid = 0; tid < ntasks; ++tid) {
+#             pragma omp task
+              /*check*/libxsmm_mmbatch_kernel(kernel, index_base, index_stride,
+                stride_a, stride_b, stride_c, a, b, c, batchsize,
+                tid, ntasks, desc);
             }
-            else {
-              result = EXIT_FAILURE;
+            /* allow to omit synchronization */
+            if (0 == libxsmm_nosync) {
+#             pragma omp taskwait
             }
-          }
-          else
-# endif
-          {
-            libxsmm_gemm_internal_set_batchflag(desc, c, index_stride, batchsize, 0/*multithreaded*/);
-            kernel = libxsmm_xmmdispatch(desc);
-            result = (NULL != kernel.xmm ? libxsmm_mmbatch_kernel(kernel, index_base, index_stride,
+# else
+            result = libxsmm_mmbatch_kernel(kernel, index_base, index_stride,
               stride_a, stride_b, stride_c, a, b, c, batchsize,
-              0/*tid*/, 1/*nthreads*/, desc) : EXIT_FAILURE);
+              0/*tid*/, 1/*nthreads*/, desc);
+# endif
+          }
+          else {
+            result = EXIT_FAILURE;
           }
         }
       }
