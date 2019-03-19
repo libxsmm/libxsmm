@@ -79,11 +79,11 @@
 #if !defined(LIBXSMM_REGLOCK_TRY) && 0
 # define LIBXSMM_REGLOCK_TRY
 #endif
+#if !defined(LIBXSMM_DIFF_BURST) && 0
+# define LIBXSMM_DIFF_BURST 4
+#endif
 #if !defined(LIBXSMM_REGTWEAK) && 1
 # define LIBXSMM_REGTWEAK
-#endif
-#if !defined(LIBXSMM_DIFF_BURST) && 1
-# define LIBXSMM_DIFF_BURST 4
 #endif
 
 #if 0
