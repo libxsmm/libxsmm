@@ -82,6 +82,9 @@
 #if !defined(LIBXSMM_REGTWEAK) && 1
 # define LIBXSMM_REGTWEAK
 #endif
+#if !defined(LIBXSMM_DIFF_BURST) && 1
+# define LIBXSMM_DIFF_BURST 4
+#endif
 
 #if 0
 # define LIBXSMM_HASH_MOD(N, NGEN) ((N) % (NGEN))
@@ -1600,7 +1603,19 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
       LIBXSMM_LOCK_RELREAD(LIBXSMM_REG1LOCK, &internal_reglock);
 #endif
       if ((NULL != flux_entry.ptr_const || 1 == mode) && 2 > mode) { /* check existing entry further */
-        diff = (NULL != flux_entry.ptr_const ? libxsmm_diff(descriptor, &internal_registry_keys[i].xgemm, LIBXSMM_DESCRIPTOR_MAXSIZE) : 1);
+        if (NULL != flux_entry.ptr_const) {
+#if defined(LIBXSMM_DIFF_BURST) && (1 < (LIBXSMM_DIFF_BURST))
+          const unsigned int hit = libxsmm_diff_npot(descriptor, &internal_registry_keys[i].xgemm,
+            LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, 0/*hint*/, LIBXSMM_DIFF_BURST);
+          i = LIBXSMM_HASH_MOD(i + hit, LIBXSMM_CAPACITY_REGISTRY);
+          diff = (hit < (LIBXSMM_DIFF_BURST) ? 0 : 1);
+#else
+          diff = libxsmm_diff(descriptor, &internal_registry_keys[i].xgemm, LIBXSMM_DESCRIPTOR_MAXSIZE);
+#endif
+        }
+        else {
+          diff = 1;
+        }
         if (0 != diff) { /* search for code version */
           if (0 == mode) { /* transition to higher mode */
             i0 = i; /* keep current position on record */
