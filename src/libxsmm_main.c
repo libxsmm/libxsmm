@@ -70,9 +70,6 @@
 #if !defined(LIBXSMM_HASH_SEED2)
 # define LIBXSMM_HASH_SEED2 151981
 #endif
-#if !defined(LIBXSMM_CAPACITY_CACHE)
-# define LIBXSMM_CAPACITY_CACHE 0
-#endif
 #if !defined(LIBXSMM_ENABLE_DEREG) && 0
 # define LIBXSMM_ENABLE_DEREG
 #endif
@@ -111,20 +108,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 # define INTERNAL_PREFETCH ((libxsmm_gemm_prefetch_type)LIBXSMM_PREFETCH)
 #endif
 
-#if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
-# if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
-#   define INTERNAL_FIND_CODE_CACHE_GROW(RESULT_INDEX, CACHE_SIZE) \
-      RESULT_INDEX = CACHE_SIZE; ++(CACHE_SIZE)
-#   define INTERNAL_FIND_CODE_CACHE_EVICT(RESULT_INDEX, CACHE_SIZE, CACHE_HIT) \
-      RESULT_INDEX = LIBXSMM_MOD((CACHE_HIT) + ((CACHE_SIZE) - 1), CACHE_SIZE)
-# else
-#   define INTERNAL_FIND_CODE_CACHE_GROW(RESULT_INDEX, CACHE_SIZE) \
-      RESULT_INDEX = CACHE_SIZE; CACHE_SIZE = (0 != (CACHE_SIZE) ? ((CACHE_SIZE) << 1) : 1)
-#   define INTERNAL_FIND_CODE_CACHE_EVICT(RESULT_INDEX, CACHE_SIZE, CACHE_HIT) \
-      RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((CACHE_SIZE) - 1), CACHE_SIZE)
-# endif
-#endif
-
 #if (0 != LIBXSMM_SYNC)
 # if !defined(INTERNAL_REGLOCK_MAXN)
 #   if defined(_MSC_VER)
@@ -134,6 +117,9 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #   endif
 # endif
 # if (1 < INTERNAL_REGLOCK_MAXN)
+#   if !defined(LIBXSMM_CAPACITY_CACHE) && (8 > INTERNAL_REGLOCK_MAXN)
+#     define LIBXSMM_CAPACITY_CACHE 32
+#   endif
 #   if !defined(LIBXSMM_REGNLOCK)
 #     define LIBXSMM_REGNLOCK LIBXSMM_LOCK_DEFAULT
 #   endif
@@ -152,6 +138,9 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
 #   endif
 LIBXSMM_APIVAR_ARRAY(internal_reglocktype internal_reglock, INTERNAL_REGLOCK_MAXN);
 # else /* RW-lock */
+#   if !defined(LIBXSMM_CAPACITY_CACHE)
+#     define LIBXSMM_CAPACITY_CACHE 32
+#   endif
 #   if !defined(LIBXSMM_REG1LOCK)
 #     if defined(_MSC_VER)
 #       define LIBXSMM_REG1LOCK LIBXSMM_LOCK_MUTEX
@@ -160,6 +149,20 @@ LIBXSMM_APIVAR_ARRAY(internal_reglocktype internal_reglock, INTERNAL_REGLOCK_MAX
 #     endif
 #   endif
 LIBXSMM_APIVAR_PRIVATE(LIBXSMM_LOCK_TYPE(LIBXSMM_REG1LOCK) internal_reglock);
+# endif
+#endif
+
+#if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
+# if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
+#   define INTERNAL_FIND_CODE_CACHE_GROW(RESULT_INDEX, CACHE_SIZE) \
+      RESULT_INDEX = CACHE_SIZE; ++(CACHE_SIZE)
+#   define INTERNAL_FIND_CODE_CACHE_EVICT(RESULT_INDEX, CACHE_SIZE, CACHE_HIT) \
+      RESULT_INDEX = LIBXSMM_MOD((CACHE_HIT) + ((CACHE_SIZE) - 1), CACHE_SIZE)
+# else
+#   define INTERNAL_FIND_CODE_CACHE_GROW(RESULT_INDEX, CACHE_SIZE) \
+      RESULT_INDEX = CACHE_SIZE; CACHE_SIZE = (0 != (CACHE_SIZE) ? ((CACHE_SIZE) << 1) : 1)
+#   define INTERNAL_FIND_CODE_CACHE_EVICT(RESULT_INDEX, CACHE_SIZE, CACHE_HIT) \
+      RESULT_INDEX = LIBXSMM_MOD2((CACHE_HIT) + ((CACHE_SIZE) - 1), CACHE_SIZE)
 # endif
 #endif
 
