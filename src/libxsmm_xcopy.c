@@ -42,7 +42,7 @@
 #endif
 
 #if !defined(LIBXSMM_XCOPY_JIT)
-# if defined(_WIN32) || defined(__CYGWIN__)
+# if (defined(_WIN32) || defined(__CYGWIN__))
 /* only enable matcopy code generation (workaround issue with taking GP registers correctly) */
 #   define LIBXSMM_XCOPY_JIT 1
 # else
