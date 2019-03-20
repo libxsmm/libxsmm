@@ -1937,7 +1937,11 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
       memset(info, 0, sizeof(libxsmm_registry_info)); /* info->nstatic = 0; info->size = 0; */
       info->nbytes = (LIBXSMM_CAPACITY_REGISTRY) * (sizeof(libxsmm_code_pointer) + sizeof(libxsmm_kernel_info));
       info->capacity = LIBXSMM_CAPACITY_REGISTRY;
+#if defined(LIBXSMM_CAPACITY_CACHE)
       info->ncache = LIBXSMM_CAPACITY_CACHE;
+#else
+      info->ncache = 0;
+#endif
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         libxsmm_code_pointer code = internal_registry[i];
         if (0 != code.ptr_const && EXIT_SUCCESS == result) {

@@ -143,7 +143,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
             size[0] = (size_t)ldr; size[1] = (size_t)nn;
           }
           else { /* reshape */
-            const size_t x = mm * nn, y = libxsmm_isqrt2_u32((unsigned int)x);
+            const size_t x = (size_t)mm * nn, y = libxsmm_isqrt2_u32((unsigned int)x);
             shape[0] = x / y; shape[1] = y;
             size[0] = shape[0];
             size[1] = shape[1];
