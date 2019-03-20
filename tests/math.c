@@ -160,6 +160,17 @@ int main(/*int argc, char* argv[]*/)
     fprintf(stderr, "missed bitwise exact result in %.0f%% of the cases!\n", 100.0 * LIBXSMM_MAX(warn_ssqrt, warn_dsqrt) / N);
   }
 
+  { /* check LIBXSMM_UP2POT and LIBXSMM_LO2POT */
+    const size_t a[] = { 0, 1, 10, 100, 127, 128, 129 };
+    const size_t b[] = { 0, 1, 16, 128, 128, 128, 256 };
+    const size_t c[] = { 0, 1,  8,  64,  64, 128, 128 };
+    const int n = sizeof(a) / sizeof(*a);
+    for (i = 0; i < n; ++i) {
+      if (LIBXSMM_UP2POT(a[i]) != b[i]) exit(EXIT_FAILURE);
+      if (LIBXSMM_LO2POT(a[i]) != c[i]) exit(EXIT_FAILURE);
+    }
+  }
+
   { /* check GCD */
     const size_t a[] = { 0, 1, 0, 100, 10 };
     const size_t b[] = { 0, 0, 1, 10, 100 };
