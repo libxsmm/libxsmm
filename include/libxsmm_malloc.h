@@ -78,10 +78,10 @@ LIBXSMM_API int libxsmm_get_scratch_allocator(void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /** Allocate memory (malloc/free interface). */
-LIBXSMM_API void* libxsmm_malloc(size_t size);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_MALLOC void* libxsmm_malloc(size_t size);
 
 /** Allocate aligned default memory. */
-LIBXSMM_API void* libxsmm_aligned_malloc(size_t size,
+LIBXSMM_API LIBXSMM_ATTRIBUTE_MALLOC void* libxsmm_aligned_malloc(size_t size,
   /**
    * =0: align automatically according to the size
    * 0<: align according to the alignment value

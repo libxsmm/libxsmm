@@ -1102,7 +1102,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 }
 
 
-LIBXSMM_API void* libxsmm_aligned_malloc(size_t size, size_t alignment)
+LIBXSMM_API LIBXSMM_ATTRIBUTE_MALLOC void* libxsmm_aligned_malloc(size_t size, size_t alignment)
 {
   void* result = NULL;
   LIBXSMM_INIT
@@ -1317,7 +1317,7 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size, size_t alignment, const ch
 }
 
 
-LIBXSMM_API void* libxsmm_malloc(size_t size)
+LIBXSMM_API LIBXSMM_ATTRIBUTE_MALLOC void* libxsmm_malloc(size_t size)
 {
   return libxsmm_aligned_malloc(size, 0/*auto*/);
 }
