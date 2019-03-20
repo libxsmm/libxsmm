@@ -113,7 +113,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #   if defined(_MSC_VER)
 #     define INTERNAL_REGLOCK_MAXN 0
 #   else
-#     define INTERNAL_REGLOCK_MAXN 256
+#     define INTERNAL_REGLOCK_MAXN 0
 #   endif
 # endif
 # if (1 < INTERNAL_REGLOCK_MAXN)
@@ -144,8 +144,10 @@ LIBXSMM_APIVAR_ARRAY(internal_reglocktype internal_reglock, INTERNAL_REGLOCK_MAX
 #   if !defined(LIBXSMM_REG1LOCK)
 #     if defined(_MSC_VER)
 #       define LIBXSMM_REG1LOCK LIBXSMM_LOCK_MUTEX
-#     else
+#     elif 0
 #       define LIBXSMM_REG1LOCK LIBXSMM_LOCK_RWLOCK
+#     else
+#       define LIBXSMM_REG1LOCK LIBXSMM_LOCK_DEFAULT
 #     endif
 #   endif
 LIBXSMM_APIVAR_PRIVATE(LIBXSMM_LOCK_TYPE(LIBXSMM_REG1LOCK) internal_reglock);
@@ -194,8 +196,7 @@ LIBXSMM_APIVAR(const char* internal_build_state);
       continue; \
     } \
     else { /* exit dispatch and let client fall back */ \
-      DIFF = 0; CODE = 0; \
-      break; \
+      DIFF = 0; CODE = 0; break; \
     }
 # else
 #   define INTERNAL_REGLOCK_TRY(DIFF, CODE) \
@@ -203,18 +204,18 @@ LIBXSMM_APIVAR(const char* internal_build_state);
       continue
 # endif
 # if (1 < INTERNAL_REGLOCK_MAXN)
-# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
-  const unsigned int LOCKINDEX = (0 != internal_reglock_count ? LIBXSMM_MOD2(INDEX, internal_reglock_count) : 0); \
-  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REGNLOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REGNLOCK, &internal_reglock[LOCKINDEX].state)) { \
-    INTERNAL_REGLOCK_TRY(DIFF, CODE); \
-  }
-# define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGNLOCK, &internal_reglock[LOCKINDEX].state); }
-  #else /* RW-lock */
-# define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
-  if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REG1LOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REG1LOCK, &internal_reglock)) { \
-    INTERNAL_REGLOCK_TRY(DIFF, CODE); \
-  }
-# define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REG1LOCK, &internal_reglock); }
+#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
+      const unsigned int LOCKINDEX = (0 != internal_reglock_count ? LIBXSMM_MOD2(INDEX, internal_reglock_count) : 0); \
+      if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REGNLOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REGNLOCK, &internal_reglock[LOCKINDEX].state)) { \
+        INTERNAL_REGLOCK_TRY(DIFF, CODE); \
+      }
+#   define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REGNLOCK, &internal_reglock[LOCKINDEX].state); }
+# else /* RW-lock */
+#   define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) { \
+      if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_REG1LOCK) != LIBXSMM_LOCK_TRYLOCK(LIBXSMM_REG1LOCK, &internal_reglock)) { \
+        INTERNAL_REGLOCK_TRY(DIFF, CODE); \
+      }
+#   define INTERNAL_FIND_CODE_UNLOCK(LOCKINDEX) LIBXSMM_LOCK_RELEASE(LIBXSMM_REG1LOCK, &internal_reglock); }
 # endif
 #endif
 
