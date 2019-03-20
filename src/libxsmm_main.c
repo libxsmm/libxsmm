@@ -713,14 +713,23 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       { /* no LIBXSMM_TRYLOCK */
 # if defined(LIBXSMM_VTUNE)
         internal_reglock_count = 1; /* avoid duplicated kernels */
+# elif (1 < INTERNAL_REGLOCK_MAXN)
+        const char *const env_nlocks = getenv("LIBXSMM_NLOCKS");
+        const int reglock_count = (NULL == env_nlocks || 0 == *env_nlocks || 1 > atoi(env_nlocks))
+          ? (INTERNAL_REGLOCK_MAXN) : LIBXSMM_MIN(atoi(env_nlocks), INTERNAL_REGLOCK_MAXN);
+        internal_reglock_count = LIBXSMM_LO2POT(reglock_count);
 # else
-        internal_reglock_count = (1 < INTERNAL_REGLOCK_MAXN ? (INTERNAL_REGLOCK_MAXN) : 0);
+        internal_reglock_count = 0;
 # endif
       }
 # if defined(LIBXSMM_REGLOCK_TRY)
       else { /* LIBXSMM_TRYLOCK environment variable specified */
-        internal_reglock_count = (0 != atoi(env_trylock)
-          ? 1 : (1 < INTERNAL_REGLOCK_MAXN ? (INTERNAL_REGLOCK_MAXN) : 0));
+        internal_reglock_count = (0 != atoi(env_trylock) ? 1
+#   if (1 < INTERNAL_REGLOCK_MAXN)
+          : INTERNAL_REGLOCK_MAXN);
+#   else
+          : 0);
+#   endif
       }
 # endif
 # if defined(LIBXSMM_TRACE)
