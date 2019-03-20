@@ -82,7 +82,7 @@
 #if !defined(LIBXSMM_DIFF_BURST) && 0
 # define LIBXSMM_DIFF_BURST 4
 #endif
-#if !defined(LIBXSMM_REGTWEAK) && 1
+#if !defined(LIBXSMM_REGTWEAK) && 0
 # define LIBXSMM_REGTWEAK
 #endif
 
@@ -777,7 +777,7 @@ void libxsmm_finalize(void);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 {
   void *const regaddr = &internal_registry;
-  uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
+  uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_RELAXED);
   libxsmm_code_pointer* registry = (libxsmm_code_pointer*)regptr;
   if (0 != registry) {
     int i;
@@ -1600,7 +1600,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 
     while (0 != diff) {
 #if (1 < INTERNAL_REGLOCK_MAXN) || (0 == LIBXSMM_SYNC) /* read registered code */
-# if 0
+# if !defined(LIBXSMM_REGTWEAK)
       uintptr_t *const fluxaddr = &internal_registry[i].uval;
       flux_entry.uval = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(fluxaddr, LIBXSMM_ATOMIC_RELAXED);
 # else /* omitting an atomic load is safe at this point */
@@ -1676,7 +1676,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
             {
               internal_registry_keys[i].xgemm = *descriptor;
 # if (1 < INTERNAL_REGLOCK_MAXN)
-              LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&internal_registry[i].pmm, flux_entry.pmm, LIBXSMM_ATOMIC_RELAXED);
+              LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&internal_registry[i].pmm, flux_entry.pmm, LIBXSMM_ATOMIC_SEQ_CST);
 # else
               internal_registry[i].pmm = flux_entry.pmm;
 # endif

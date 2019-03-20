@@ -658,7 +658,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         }
         else { /* executable buffer requested */
           static /*LIBXSMM_TLS*/ int fallback = -1;
-          if (0 > fallback) { /* initialize fall-back allocation method */
+          if (0 > LIBXSMM_ATOMIC_LOAD(&fallback, LIBXSMM_ATOMIC_RELAXED)) { /* initialize fall-back allocation method */
             FILE *const selinux = fopen("/sys/fs/selinux/enforce", "rb");
             const char *const env = getenv("LIBXSMM_SE");
             if (NULL != selinux) {
@@ -670,12 +670,12 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
               }
               fclose(selinux);
             }
-            if (NULL == env) { /* internal_malloc_secured decides */
-              fallback = (0 == internal_malloc_secured ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK);
-            }
-            else { /* user's choice takes precedence */
-              fallback = ('0' != *env ? LIBXSMM_MALLOC_FALLBACK : LIBXSMM_MALLOC_FINAL);
-            }
+            LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&fallback, NULL == env
+              /* internal_malloc_secured decides */
+              ? (0 == internal_malloc_secured ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK)
+              /* user's choice takes precedence */
+              : ('0' != *env ? LIBXSMM_MALLOC_FALLBACK : LIBXSMM_MALLOC_FINAL),
+              LIBXSMM_ATOMIC_SEQ_CST);
             LIBXSMM_ASSERT(0 <= fallback);
           }
           if (0 == fallback) {
