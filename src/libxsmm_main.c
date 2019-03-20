@@ -1653,11 +1653,6 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
           }
           LIBXSMM_ASSERT(0 != diff); /* continue */
         }
-#if defined(LIBXSMM_REGTWEAK)
-        else {
-          flux_entry.pmm = internal_registry[i].pmm;
-        }
-#endif
       }
       else { /* enter code generation (there is no code version yet) */
         LIBXSMM_ASSERT(0 == mode || 1 < mode);
@@ -1712,7 +1707,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
           else { /* check if other thread fulfilled this request */
             diff = libxsmm_diff(descriptor, &internal_registry_keys[i].xgemm, LIBXSMM_DESCRIPTOR_MAXSIZE);
             flux_entry.pmm = (0 != diff ? NULL : internal_registry[i].pmm);
-        }
+          }
 # endif
           INTERNAL_FIND_CODE_UNLOCK(lock);
           if (0 != diff) { /* acquire registry slot */
