@@ -312,6 +312,7 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
               LIBXSMM_TCOPY_CALL(kernel, typesize, in, ldi, out, ldo);
               return; /* fast path */
             }
+            LIBXSMM_ASSERT(NULL == kernel);
             tm = (unsigned int)m; tn = (unsigned int)n;
           }
           else {
