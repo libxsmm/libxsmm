@@ -209,7 +209,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
-#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP)
+#if defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
 LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
   LIBXSMM_BLAS_WRAPPER(double, gemm, libxsmm_original_dgemm_function, libxsmm_original_dgemm/*self*/);
@@ -217,14 +217,13 @@ LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void)
   return libxsmm_original_dgemm_function;
 }
 
-
 LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
   LIBXSMM_BLAS_WRAPPER(float, gemm, libxsmm_original_sgemm_function, libxsmm_original_sgemm/*self*/);
   LIBXSMM_ASSERT(NULL != libxsmm_original_sgemm_function);
   return libxsmm_original_sgemm_function;
 }
-#endif
+#endif /*defined(LIBXSMM_BLAS_WRAP_DYNAMIC)*/
 
 
 LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm)(

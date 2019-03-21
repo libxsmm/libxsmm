@@ -108,6 +108,26 @@ LIBXSMM_APIVAR(float internal_gemm_kstretch);
 LIBXSMM_APIVAR(int internal_gemm_batchreduce);
 
 
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm)(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const double* alpha, const double* a, const libxsmm_blasint* lda,
+  const double* b, const libxsmm_blasint* ldb,
+  const double* beta, double* c, const libxsmm_blasint* ldc)
+{
+  LIBXSMM_FSYMBOL(dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm)(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const float* alpha, const float* a, const libxsmm_blasint* lda,
+  const float* b, const libxsmm_blasint* ldb,
+  const float* beta, float* c, const libxsmm_blasint* ldc)
+{
+  LIBXSMM_FSYMBOL(sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
+
+
 LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
   LIBXSMM_BLAS_WRAPPER(double, gemm, libxsmm_original_dgemm_function, NULL/*unknown*/);
@@ -127,7 +147,7 @@ LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
 LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 {
   /* determines if batch-wrap is considered */
-  const char *const env_w = getenv("LIBXSMM_GEMM_WRAP");
+  const char *const env_w = getenv("LIBXSMM_BLAS_WRAP_DYNAMIC");
   LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr;
   LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_GEMM_LOCK, &attr);
   /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */

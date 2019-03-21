@@ -36,13 +36,13 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if !defined(LIBXSMM_GEMM_WRAP) && defined(LIBXSMM_BUILD) && \
+#if !defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && defined(LIBXSMM_BUILD) && \
   (!defined(__BLAS) || (0 != __BLAS)) && defined(__GNUC__) && \
   !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
     LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) && \
   !defined(_WIN32) && !defined(__CYGWIN__)
 # include <dlfcn.h>
-# define LIBXSMM_GEMM_WRAP
+# define LIBXSMM_BLAS_WRAP_DYNAMIC
 #endif
 #include <limits.h>
 #include <stdio.h>
@@ -68,8 +68,7 @@
 
 #if !defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD) && \
     (defined(LIBXSMM_CONFIG_WRAP) && 0 != (LIBXSMM_CONFIG_WRAP)) && \
-    (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP) || \
-    !defined(NDEBUG) || defined(_WIN32)) /* debug purpose */
+    (defined(LIBXSMM_BLAS_WRAP_DYNAMIC) || !defined(NDEBUG) || defined(_WIN32)) /* debug */
 # define LIBXSMM_GEMM_MMBATCH
 #endif
 
@@ -93,7 +92,7 @@
 # define LIBXSMM_BLAS_WRAPPER_STATIC(TYPE, KIND, ORIGINAL, SYMBOL) if (LIBXSMM_BLAS_WRAPPER_STATIC_CONDITION(TYPE, KIND, ORIGINAL, SYMBOL)) { \
     union { LIBXSMM_BLAS_FNTYPE(TYPE, KIND) pfout; \
       void (*pfin)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(LIBXSMM_GEMM_CONST, TYPE, KIND)); \
-    } libxsmm_blas_wrapper_; libxsmm_blas_wrapper_.pfin = (SYMBOL); \
+    } libxsmm_blas_wrapper_; libxsmm_blas_wrapper_.pfin = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, KIND))); \
     /*LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&(ORIGINAL), libxsmm_blas_wrapper_.pfout, LIBXSMM_ATOMIC_RELAXED);*/ \
     ORIGINAL = libxsmm_blas_wrapper_.pfout; \
   }
@@ -101,7 +100,7 @@
 # define LIBXSMM_BLAS_WRAPPER_STATIC(TYPE, KIND, ORIGINAL, SYMBOL)
 #endif
 
-#if defined(LIBXSMM_GEMM_WRAP)
+#if defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
 # define LIBXSMM_BLAS_WRAPPER_DYNAMIC(TYPE, KIND, ORIGINAL, NEXT) { \
     union { const void* pfin; \
       LIBXSMM_BLAS_FNTYPE(TYPE, KIND) (*chain)(void); /* chain */ \
@@ -113,11 +112,6 @@
       dlsym(RTLD_NEXT, "libxsmm_original_" LIBXSMM_STRINGIFY(LIBXSMM_TPREFIX(TYPE, KIND))) : NULL); \
     if (NULL == libxsmm_blas_wrapper_dynamic_.pfout || NULL != dlerror() || NULL == libxsmm_blas_wrapper_dynamic_.chain()) { \
       libxsmm_blas_wrapper_dynamic_.pfin = dlsym(RTLD_NEXT, LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
-      /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_blas_wrapper_dynamic_.pfout, LIBXSMM_ATOMIC_RELAXED);*/ \
-      ORIGINAL = (NULL == dlerror() ? libxsmm_blas_wrapper_dynamic_.pfout : NULL); \
-    } \
-    if (NULL == (ORIGINAL)) { \
-      libxsmm_blas_wrapper_dynamic_.pfin = dlsym(RTLD_DEFAULT, "__real_" LIBXSMM_STRINGIFY(LIBXSMM_BLAS_SYMBOL(TYPE, KIND))); \
       /*LIBXSMM_ATOMIC_STORE(&(ORIGINAL), libxsmm_blas_wrapper_dynamic_.pfout, LIBXSMM_ATOMIC_RELAXED);*/ \
       ORIGINAL = (NULL == dlerror() ? libxsmm_blas_wrapper_dynamic_.pfout : NULL); \
     } \
@@ -152,15 +146,13 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void);
 LIBXSMM_API_INTERN int libxsmm_gemm_prefetch2uid(libxsmm_gemm_prefetch_type prefetch);
 LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid);
 
-#if defined(LIBXSMM_GEMM_WRAP_STATIC)
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, double, gemm));
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, float, gemm));
-#endif /*defined(LIBXSMM_GEMM_WRAP_STATIC)*/
-
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, double, gemm));
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, float, gemm));
 #endif
+
+LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, double, gemm));
+LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, float, gemm));
 
 LIBXSMM_BLAS_SYMBOL_DECL(LIBXSMM_GEMM_CONST, double, gemm)
 LIBXSMM_BLAS_SYMBOL_DECL(LIBXSMM_GEMM_CONST, float, gemm)
