@@ -1417,9 +1417,10 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
       }
 # endif
     }
-#else
-    LIBXSMM_UNUSED(batchsize); LIBXSMM_UNUSED(multithreaded);
 #endif /*defined(LIBXSMM_GEMM_BATCHREDUCE)*/
+#if !defined(LIBXSMM_GEMM_BATCHREDUCE) || (0 == LIBXSMM_SYNC)
+    LIBXSMM_UNUSED(batchsize); LIBXSMM_UNUSED(multithreaded);
+#endif
   }
 }
 

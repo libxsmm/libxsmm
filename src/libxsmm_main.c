@@ -1643,9 +1643,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
             }
             else
 #endif      /* search for an existing code version */
-            {
-              mode = 1;
-            }
+            mode = 1; /* else */
           }
           i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
           if (i == i0) { /* search finished, no code version exists */
