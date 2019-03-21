@@ -108,6 +108,7 @@ LIBXSMM_APIVAR(float internal_gemm_kstretch);
 LIBXSMM_APIVAR(int internal_gemm_batchreduce);
 
 
+#if defined(LIBXSMM_BUILD)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm)(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
@@ -146,6 +147,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm)(const char
   LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
 #endif
 }
+#endif /*defined(LIBXSMM_BUILD)*/
 
 
 LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
