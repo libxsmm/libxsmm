@@ -321,10 +321,9 @@ int main(int argc, char* argv[])
   if (argc > i) C     = atoi(argv[i++]);
   if (argc > i) K     = atoi(argv[i++]);
   if (argc > i) t     = atoi(argv[i++]);
-  j = i;
-  if (argc > j) bn    = atoi(argv[j++]);
-  if (argc > j) bc    = atoi(argv[j++]);
-  if (argc > j) bk    = atoi(argv[j++]);
+  if (argc > i) bn    = atoi(argv[i++]);
+  if (argc > i) bc    = atoi(argv[i++]);
+  if (argc > i) bk    = atoi(argv[i++]);
 
   if (t <= 0) {
     printf("time_steps %d should be greater than 0\n\n", t);
