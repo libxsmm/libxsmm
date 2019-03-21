@@ -49,8 +49,8 @@ const int nBlocks = N/bn;
 unsigned long long blocks;
 /* tensor raw pointers */
 element_input_type  *xt    = (element_input_type* )handle->xt->data;
-element_input_type *csp   = (element_input_type* )handle->csp->data;
-element_input_type *hpD   = (element_input_type* )handle->hp->data;
+element_input_type *csp    = (element_input_type* )handle->csp->data;
+element_input_type *hpD    = (element_input_type* )handle->hp->data;
 element_filter_type *w     = (element_filter_type*)handle->w->data;
 element_filter_type *r     = (element_filter_type*)handle->r->data;
 element_output_type *cst   = (element_output_type*)handle->cst->data;

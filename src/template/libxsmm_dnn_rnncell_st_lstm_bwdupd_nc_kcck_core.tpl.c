@@ -361,7 +361,7 @@ for (j = t-1; j >= 0; --j) {
         }
       } else {
         /* Interleave computation of dr = difoc * h^T and dw = difoc * x^T to take advantage of temporal locality */
-        /* Use blocked format for di, dci, df and db */
+        /* Use blocked format for di, dci, df and dp */
         for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
           icb = ikic / (K/bk);
           ic = icb*bk;

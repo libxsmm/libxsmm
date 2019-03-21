@@ -159,9 +159,11 @@ const libxsmm_smmfunction_reducebatch batchreduce_kerneld  = libxsmm_smmdispatch
 const element_filter_type *A_array[1024];
 const element_output_type *B_array[1024];
 
+#if 0
 LIBXSMM_VLA_DECL(4, element_output_type, diB, (element_output_type*)handle->scratch_diB,  kBlocks, bn, bk);
 LIBXSMM_VLA_DECL(4, element_output_type, dcB, (element_output_type*)handle->scratch_dciB, kBlocks, bn, bk);
 LIBXSMM_VLA_DECL(4, element_output_type, dfB, (element_output_type*)handle->scratch_dfB,  kBlocks, bn, bk);
+#endif
 
 /* computing first logical thread */
 const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_thread;
@@ -204,7 +206,8 @@ const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads =
 /* compute thr_begin and thr_end */
 const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
 const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
-int bcbk_multiples_of_16 = ((bc % 16 == 0) && (bk % 16 == 0)) ? 1 : 0;
+
+/* int bcbk_multiples_of_16 = ((bc % 16 == 0) && (bk % 16 == 0)) ? 1 : 0; */
 
 libxsmm_blasint ikic, inic, inik, icin, ikin;
 
@@ -453,8 +456,10 @@ for (j = t-1; j >= 0; --j) {
   }
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
-    if ((C == K) && (bc == bk) && (bcbk_multiples_of_16 == 1)) {
+    if ((C == K) && (bc == bk) /*&& (bcbk_multiples_of_16 == 1)*/) {
+#if 0
       if (K % 2048 != 0) {
+#endif
         /* Interleave computation of dr = dicf * o^T/h^T and dw = dicf * x^T to take advantage of temporal locality */
         for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
           icb = ikic / (K/bk);
@@ -499,6 +504,7 @@ for (j = t-1; j >= 0; --j) {
           }
           batchreduce_kernelc1(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwf, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
         }
+#if 0
       } else {
         /* Interleave computation of dr = dicf * o^T/h^T and dw = dicf * x^T to take advantage of temporal locality */
         /* Use blocked format for di, dc, df */
@@ -546,6 +552,7 @@ for (j = t-1; j >= 0; --j) {
           batchreduce_kernelc(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dwf, ikb, icb, 0, 0, cBlocks, bc, bk), &blocks);
         }
       }
+#endif
     } else {
       /* dr = dicf * o^T/h^T */
       for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
