@@ -110,7 +110,7 @@ LIBXSMM_APIVAR(int internal_gemm_batchreduce);
 
 LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
-  LIBXSMM_GEMM_WRAPPER(double, libxsmm_original_dgemm_function, NULL/*unknown*/);
+  LIBXSMM_BLAS_WRAPPER(double, gemm, libxsmm_original_dgemm_function, NULL/*unknown*/);
   LIBXSMM_ASSERT(NULL != libxsmm_original_dgemm_function);
   return libxsmm_original_dgemm_function;
 }
@@ -118,7 +118,7 @@ LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
 
 LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
-  LIBXSMM_GEMM_WRAPPER(float, libxsmm_original_sgemm_function, NULL/*unknown*/);
+  LIBXSMM_BLAS_WRAPPER(float, gemm, libxsmm_original_sgemm_function, NULL/*unknown*/);
   LIBXSMM_ASSERT(NULL != libxsmm_original_sgemm_function);
   return libxsmm_original_sgemm_function;
 }

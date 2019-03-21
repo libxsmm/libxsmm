@@ -101,10 +101,10 @@
 
 /** Construct symbol name from a given real type name (float, double and short). */
 #define LIBXSMM_USEOMP(FUNCTION)        LIBXSMM_CONCATENATE(FUNCTION, _omp)
-#define LIBXSMM_GEMM_SYMBOL_NAME(TYPE)  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemm))
-#define LIBXSMM_GEMV_SYMBOL_NAME(TYPE)  LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, gemv))
-#define LIBXSMM_GEMMFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemm_function))
-#define LIBXSMM_GEMVFUNCTION_TYPE(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, gemv_function))
+#define LIBXSMM_BLAS_SYMBOL(TYPE, KIND) LIBXSMM_FSYMBOL(LIBXSMM_TPREFIX(TYPE, KIND))
+#define LIBXSMM_GEMM_SYMBOL_NAME(TYPE)  LIBXSMM_BLAS_SYMBOL(TYPE, gemm))
+#define LIBXSMM_GEMV_SYMBOL_NAME(TYPE)  LIBXSMM_BLAS_SYMBOL(TYPE, gemv))
+#define LIBXSMM_BLAS_FNTYPE(TYPE, KIND) LIBXSMM_CONCATENATE2(libxsmm_, LIBXSMM_TPREFIX(TYPE, KIND), _function)
 #define LIBXSMM_MMFUNCTION_TYPE(TYPE)   LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmfunction))
 #define LIBXSMM_MMDISPATCH_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_, LIBXSMM_TPREFIX(TYPE, mmdispatch))
 #define LIBXSMM_XBLAS_SYMBOL(TYPE)      LIBXSMM_CONCATENATE(libxsmm_blas_, LIBXSMM_TPREFIX(TYPE, gemm))
@@ -152,14 +152,17 @@
 # define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
 #endif
 
-#define LIBXSMM_GEMM_SYMBOL_BLAS(CONST, TYPE) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
-  void LIBXSMM_GEMM_SYMBOL_NAME(TYPE)(CONST char*, CONST char*, \
-    CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
-    CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
-    CONST TYPE*, CONST libxsmm_blasint*, \
-    CONST TYPE*, TYPE*, CONST libxsmm_blasint*);
+#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm(CONST, TYPE) CONST char*, CONST char*, \
+  CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, \
+  CONST TYPE*, CONST libxsmm_blasint*, CONST TYPE*, TYPE*, CONST libxsmm_blasint*
+#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemv(CONST, TYPE) CONST char*, CONST libxsmm_blasint*, CONST libxsmm_blasint*, \
+  CONST TYPE*, CONST TYPE*, CONST libxsmm_blasint*, CONST TYPE*, CONST libxsmm_blasint*, \
+  CONST TYPE*, TYPE*, CONST libxsmm_blasint*
+#define LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST, TYPE, KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_SYMBOL_SIGNATURE_, KIND)(CONST, TYPE)
+#define LIBXSMM_BLAS_SYMBOL_DECL(CONST, TYPE, KIND) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
+  void LIBXSMM_BLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST, TYPE, KIND));
 #if (!defined(__BLAS) || (0 != __BLAS)) /* BLAS available */
-# define LIBXSMM_GEMM_SYMBOL_DECL LIBXSMM_GEMM_SYMBOL_BLAS
+# define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) LIBXSMM_BLAS_SYMBOL_DECL(CONST, TYPE, gemm)
 #else
 # define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE)
 #endif
@@ -428,24 +431,11 @@ LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
   libxsmm_xmmfunction kernel, const void* a, const void* b, void* c);
 
 /** GEMM: fall-back prototype functions served by any compliant LAPACK/BLAS. */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
-  const float*, float*, const libxsmm_blasint*);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(
-  const char*, const char*, const libxsmm_blasint*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
-  const double*, double*, const libxsmm_blasint*);
-
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, double, gemm));
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, float,  gemm));
 /** GEMV: fall-back prototype functions served by any compliant LAPACK/BLAS. */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemv_function)(
-  const char*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const float*, const float*, const libxsmm_blasint*, const float*, const libxsmm_blasint*,
-  const float*, float*, const libxsmm_blasint*);
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemv_function)(
-  const char*, const libxsmm_blasint*, const libxsmm_blasint*,
-  const double*, const double*, const libxsmm_blasint*, const double*, const libxsmm_blasint*,
-  const double*, double*, const libxsmm_blasint*);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, double, gemv));
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, float,  gemv));
 
 /** The original BLAS functions. */
 LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_dgemm_function libxsmm_original_dgemm_function);
