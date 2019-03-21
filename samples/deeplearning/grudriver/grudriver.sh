@@ -90,38 +90,32 @@ fi
 ITERS=100
 CHKVAL=1
 
-export OMP_NUM_THREADS=56
+export OMP_NUM_THREADS=28
 export KMP_AFFINITY=granularity=fine,compact,1,0
 
 
-echo "GRU FWD for inference only"
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  4096  1024  2048    8  1
+echo "GRU FWD"
+CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  168   256   256  50
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  3072    32  1024  512  1
+CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  168   512   512  50
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  4096  1024  1024    8  1
+CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  168  1024  1024  50
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  1024    32  1024  512  1
+CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  168  2048  2048  50
 wait
-
-echo "GRU FWD for training"
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  4096  1024  2048    8  0
-wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  3072    32  1024  512  0
-wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  4096  1024  1024    8  0
-wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  1024    32  1024  512  0
+CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  168  4096  4096  50
 wait
 
-echo "GRU BWD+UPD for training"
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  4096  1024  2048    8  0
+echo "GRU BWD+UPD"
+CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  168   256   256  50
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  3072    32  1024  512  0
+CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  168   512   512  50
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  4096  1024  1024    8  0
+CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  168  1024  1024  50
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  1024    32  1024  512  0
+CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  168  2048  2048  50
+wait
+CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  168  4096  4096  50
 wait
 
 echo "GRU performance done"
