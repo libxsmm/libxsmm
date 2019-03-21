@@ -709,14 +709,6 @@ $(1): $(2) $(3) $(dir $(1))/.make
 endef
 
 EXTCFLAGS = -DLIBXSMM_BUILD_EXT
-ifneq (0,$(STATIC))
-ifneq (0,$(WRAP))
-ifneq (,$(strip $(WRAP)))
-  EXTCFLAGS += -DLIBXSMM_GEMM_WRAP=$(WRAP)
-endif
-endif
-endif
-
 ifeq (0,$(OMP))
 ifeq (,$(filter environment% override command%,$(origin OMP)))
   EXTCFLAGS += $(OMPFLAG)

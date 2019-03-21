@@ -36,13 +36,13 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if !defined(LIBXSMM_GEMM_WRAP_DYNAMIC) && defined(LIBXSMM_BUILD) && \
+#if !defined(LIBXSMM_GEMM_WRAP) && defined(LIBXSMM_BUILD) && \
   (!defined(__BLAS) || (0 != __BLAS)) && defined(__GNUC__) && \
   !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
     LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) && \
   !defined(_WIN32) && !defined(__CYGWIN__)
 # include <dlfcn.h>
-# define LIBXSMM_GEMM_WRAP_DYNAMIC
+# define LIBXSMM_GEMM_WRAP
 #endif
 #include <limits.h>
 #include <stdio.h>
@@ -68,7 +68,7 @@
 
 #if !defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD) && \
     (defined(LIBXSMM_CONFIG_WRAP) && 0 != (LIBXSMM_CONFIG_WRAP)) && \
-    (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC) || \
+    (defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP) || \
     !defined(NDEBUG) || defined(_WIN32)) /* debug purpose */
 # define LIBXSMM_GEMM_MMBATCH
 #endif
@@ -84,7 +84,13 @@
 #endif
 
 #if (!defined(__BLAS) || (0 != __BLAS))
-# define LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, SYMBOL) if (NULL == (ORIGINAL)) { \
+# if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+#   define LIBXSMM_GEMM_WRAPPER_BLAS_CONDITION(TYPE, KIND, ORIGINAL, SYMBOL) (NULL == (ORIGINAL) && \
+      LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__wrap_, LIBXSMM_TPREFIX(TYPE, KIND))) != (SYMBOL))
+# else
+#   define LIBXSMM_GEMM_WRAPPER_BLAS_CONDITION(TYPE, KIND, ORIGINAL, SYMBOL) (NULL == (ORIGINAL))
+# endif
+# define LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, SYMBOL) if (LIBXSMM_GEMM_WRAPPER_BLAS_CONDITION(TYPE, gemm, ORIGINAL, SYMBOL)) { \
     union { LIBXSMM_GEMMFUNCTION_TYPE(TYPE) pf; \
       void (*sf)(LIBXSMM_GEMM_CONST char*, LIBXSMM_GEMM_CONST char*, \
         LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, \
@@ -94,12 +100,12 @@
         LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, \
         LIBXSMM_GEMM_CONST double*, LIBXSMM_GEMM_CONST double*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, LIBXSMM_GEMM_CONST double*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, \
         LIBXSMM_GEMM_CONST double*, double*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*); \
-    } libxsmm_gemm_wrapper_blas_; \
-    libxsmm_gemm_wrapper_blas_.LIBXSMM_TPREFIX(TYPE,f) = (SYMBOL); \
-    /*LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&(ORIGINAL), libxsmm_gemm_wrapper_blas_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
-    ORIGINAL = libxsmm_gemm_wrapper_blas_.pf; \
+    } libxsmm_blas_wrapper_; \
+    libxsmm_blas_wrapper_.LIBXSMM_TPREFIX(TYPE,f) = (SYMBOL); \
+    /*LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&(ORIGINAL), libxsmm_blas_wrapper_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
+    ORIGINAL = libxsmm_blas_wrapper_.pf; \
   }
-# define LIBXSMM_GEMV_WRAPPER_BLAS(TYPE, ORIGINAL, SYMBOL) if (NULL == (ORIGINAL)) { \
+# define LIBXSMM_GEMV_WRAPPER_BLAS(TYPE, ORIGINAL, SYMBOL) if (LIBXSMM_GEMM_WRAPPER_BLAS_CONDITION(TYPE, gemv, ORIGINAL, SYMBOL)) { \
     union { LIBXSMM_GEMVFUNCTION_TYPE(TYPE) pf; \
       void (*sf)(LIBXSMM_GEMM_CONST char*, \
         LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, \
@@ -109,38 +115,17 @@
         LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, \
         LIBXSMM_GEMM_CONST double*, LIBXSMM_GEMM_CONST double*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, LIBXSMM_GEMM_CONST double*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*, \
         LIBXSMM_GEMM_CONST double*, double*, LIBXSMM_GEMM_CONST LIBXSMM_BLASINT*); \
-    } libxsmm_gemv_wrapper_blas_; \
-    libxsmm_gemv_wrapper_blas_.LIBXSMM_TPREFIX(TYPE,f) = (SYMBOL); \
-    /*LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&(ORIGINAL), libxsmm_gemv_wrapper_blas_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
-    ORIGINAL = libxsmm_gemv_wrapper_blas_.pf; \
+    } libxsmm_blas_wrapper_; \
+    libxsmm_blas_wrapper_.LIBXSMM_TPREFIX(TYPE,f) = (SYMBOL); \
+    /*LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&(ORIGINAL), libxsmm_blas_wrapper_.pf, LIBXSMM_ATOMIC_RELAXED);*/ \
+    ORIGINAL = libxsmm_blas_wrapper_.pf; \
   }
 #else
 # define LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, SYMBOL)
 # define LIBXSMM_GEMV_WRAPPER_BLAS(TYPE, ORIGINAL, SYMBOL)
 #endif
 
-#if defined(LIBXSMM_GEMM_WRAP) && defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && \
-  !(defined(__APPLE__) && defined(__MACH__) /*&& defined(__clang__)*/) && !defined(__CYGWIN__)
-# if (2 != (LIBXSMM_GEMM_WRAP)) /* SGEMM and DGEMM */
-#   define LIBXSMM_GEMM_WRAPPER_STATIC(TYPE, ORIGINAL) LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, \
-      LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, gemm))))
-#   define LIBXSMM_GEMV_WRAPPER_STATIC(TYPE, ORIGINAL) LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, \
-      LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, gemv))))
-# else /* DGEMM only */
-#   define LIBXSMM_GEMM_WRAPPER_STATIC(TYPE, ORIGINAL) if (0 != LIBXSMM_EQUAL(TYPE, double)) { \
-      LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, LIBXSMM_FSYMBOL(__real_dgemm)) \
-    }
-#   define LIBXSMM_GEMV_WRAPPER_STATIC(TYPE, ORIGINAL) if (0 != LIBXSMM_EQUAL(TYPE, double)) { \
-      LIBXSMM_GEMM_WRAPPER_BLAS(TYPE, ORIGINAL, LIBXSMM_FSYMBOL(__real_dgemv)) \
-    }
-# endif
-# define LIBXSMM_GEMM_WRAP_STATIC
-#else
-# define LIBXSMM_GEMM_WRAPPER_STATIC(TYPE, ORIGINAL)
-# define LIBXSMM_GEMV_WRAPPER_STATIC(TYPE, ORIGINAL)
-#endif
-
-#if defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+#if defined(LIBXSMM_GEMM_WRAP)
 # define LIBXSMM_GEMM_WRAPPER_DYNAMIC(TYPE, ORIGINAL, NEXT) \
     if (NULL == (ORIGINAL)) { \
       union { const void* pv; \
@@ -184,18 +169,14 @@
 
 #if defined(NDEBUG) /* library code is expected to be mute */
 # define LIBXSMM_GEMM_WRAPPER(TYPE, ORIGINAL, NEXT) if (NULL == (ORIGINAL)) { \
-    LIBXSMM_GEMM_WRAPPER_STATIC(TYPE, ORIGINAL); \
     LIBXSMM_GEMM_WRAPPER_DYNAMIC(TYPE, ORIGINAL, NEXT); \
   }
 #else
 # define LIBXSMM_GEMM_WRAPPER(TYPE, ORIGINAL, NEXT) if (NULL == (ORIGINAL)) { \
-    LIBXSMM_GEMM_WRAPPER_STATIC(TYPE, ORIGINAL); \
+    static int libxsmm_gemm_wrapper_error_once_ = 0; \
     LIBXSMM_GEMM_WRAPPER_DYNAMIC(TYPE, ORIGINAL, NEXT); \
-    if (NULL == (ORIGINAL)) { \
-      static int libxsmm_gemm_wrapper_error_once_ = 0; \
-      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_gemm_wrapper_error_once_, 1, LIBXSMM_ATOMIC_RELAXED)) { \
-        fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS!\n"); \
-      } \
+    if (NULL == (ORIGINAL) && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_gemm_wrapper_error_once_, 1, LIBXSMM_ATOMIC_RELAXED)) { \
+      fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS!\n"); \
     } \
   }
 #endif

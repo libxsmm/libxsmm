@@ -209,7 +209,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
-#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP)
 LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
   LIBXSMM_GEMM_WRAPPER(double, libxsmm_original_dgemm_function, libxsmm_original_dgemm/*self*/);
