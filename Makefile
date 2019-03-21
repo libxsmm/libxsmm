@@ -938,12 +938,11 @@ endif
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 noblas_mic: $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)
+$(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(NOBLAS_MIC)
 ifeq (0,$(STATIC))
-$(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
 	$(LIB_LD) -mmic $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_MIC) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
+		$(NOBLAS_MIC) $(call abslib,$(OUTDIR)/mic/libxsmm.$(ILIBEXT)) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
 else # static
-$(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
 	$(AR) -rs $@ $(NOBLAS_MIC)
 endif
 endif
@@ -951,20 +950,19 @@ endif
 
 .PHONY: noblas_hst
 noblas_hst: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
+$(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/libxsmm.$(LIBEXT) $(NOBLAS_HST)
 ifeq (0,$(STATIC))
-$(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
 ifneq (Darwin,$(UNAME))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_HST) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
+		$(NOBLAS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
 else ifneq (0,$(INTEL)) # intel @ osx
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_HST) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
+		$(NOBLAS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
 else # osx
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_HST) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
+		$(NOBLAS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
 endif
 else # static
-$(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
 	$(AR) -rs $@ $(NOBLAS_HST)
 endif
 
