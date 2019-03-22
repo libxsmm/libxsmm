@@ -1615,16 +1615,19 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
       flux_entry.uval = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(fluxaddr, LIBXSMM_ATOMIC_RELAXED);
 #else
       LIBXSMM_LOCK_ACQREAD(LIBXSMM_REGLOCK, internal_reglock_ptr);
-      flux_entry.pmm = internal_registry[i].pmm; /* read registered code */
+      flux_entry = internal_registry[i]; /* read registered code */
       LIBXSMM_LOCK_RELREAD(LIBXSMM_REGLOCK, internal_reglock_ptr);
 #endif
       if ((NULL != flux_entry.ptr_const || 1 == mode) && 2 > mode) { /* check existing entry further */
         if (NULL != flux_entry.ptr_const) {
-#if defined(LIBXSMM_DIFF_BURST) && (1 < (LIBXSMM_DIFF_BURST))
+#if defined(LIBXSMM_DIFF_BURST) && (1 < (LIBXSMM_DIFF_BURST)) /* collision-counter (stats) will be incorrect */
           const unsigned int hit = libxsmm_diff_npot(descriptor, &internal_registry_keys[i].xgemm,
             LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, 0/*hint*/, LIBXSMM_DIFF_BURST);
           i = LIBXSMM_HASH_MOD(i + hit, LIBXSMM_CAPACITY_REGISTRY);
-          diff = (hit < (LIBXSMM_DIFF_BURST) ? 0 : 1);
+          if (hit < (LIBXSMM_DIFF_BURST)) {
+            diff = 0;
+          }
+          else continue;
 #else
           diff = libxsmm_diff(descriptor, &internal_registry_keys[i].xgemm, LIBXSMM_DESCRIPTOR_MAXSIZE);
 #endif
@@ -1683,7 +1686,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 # if (1 < INTERNAL_REGLOCK_MAXN)
               LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&internal_registry[i].pmm, flux_entry.pmm, LIBXSMM_ATOMIC_SEQ_CST);
 # else
-              internal_registry[i].pmm = flux_entry.pmm;
+              internal_registry[i] = flux_entry;
 # endif
 # if defined(LIBXSMM_HASH_COLLISION)
               if (2 < mode) { /* arrived from collision state; now mark as collision */
@@ -1691,7 +1694,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 #   if (1 < INTERNAL_REGLOCK_MAXN)
                 fix_entry.pmm = LIBXSMM_ATOMIC_LOAD(&internal_registry[i0].pmm, LIBXSMM_ATOMIC_RELAXED);
 #   else
-                fix_entry.pmm = internal_registry[i0].pmm;
+                fix_entry = internal_registry[i0];
 #   endif
                 LIBXSMM_ASSERT(NULL != fix_entry.ptr_const);
                 if (0 == (LIBXSMM_HASH_COLLISION & fix_entry.uval)) {
@@ -1699,7 +1702,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 #   if (1 < INTERNAL_REGLOCK_MAXN)
                   LIBXSMM_ATOMIC_STORE(&internal_registry[i0].pmm, fix_entry.pmm, LIBXSMM_ATOMIC_RELAXED);
 #   else
-                  internal_registry[i0].pmm = fix_entry.pmm;
+                  internal_registry[i0] = fix_entry;
 #   endif
                 }
               }
