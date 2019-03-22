@@ -1595,8 +1595,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 #endif
   {
     LIBXSMM_ASSERT(NULL != internal_registry);
-    i = i0 = LIBXSMM_CONCATENATE(libxsmm_crc32_b, LIBXSMM_DESCRIPTOR_MAXSIZE)(LIBXSMM_HASH_SEED, descriptor);
-
+    i = i0 = LIBXSMM_HASH_MOD(
+      LIBXSMM_CONCATENATE(libxsmm_crc32_b, LIBXSMM_DESCRIPTOR_MAXSIZE)(LIBXSMM_HASH_SEED, descriptor),
+      LIBXSMM_CAPACITY_REGISTRY);
     while (0 != diff) {
 #if (1 < INTERNAL_REGLOCK_MAXN) || !LIBXSMM_LOCK_TYPE_ISRW(LIBXSMM_REGLOCK) /* read registered code */
       /* omitting an atomic load is safe but avoids race-detectors to highlight this location */
