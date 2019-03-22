@@ -344,33 +344,31 @@ LIBXSMM_API_INLINE unsigned int internal_statistic_ntry(int precision)
 LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descriptor* desc,
   libxsmm_xmmfunction src, libxsmm_code_pointer* registry)
 {
-  unsigned int i = LIBXSMM_HASH_MOD(libxsmm_crc32(desc, LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED), LIBXSMM_CAPACITY_REGISTRY);
-  libxsmm_kernel_info* dst_key = internal_registry_keys + i;
+  unsigned int i = LIBXSMM_HASH_MOD(
+    libxsmm_crc32(desc, LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED),
+    LIBXSMM_CAPACITY_REGISTRY);
   libxsmm_code_pointer* dst_entry = registry + i;
 #if !defined(NDEBUG)
   libxsmm_code_pointer code; code.xgemm = src;
   LIBXSMM_ASSERT(NULL != desc && NULL != code.ptr_const && NULL != registry);
   LIBXSMM_ASSERT(0 == (LIBXSMM_CODE_STATIC & code.uval));
 #endif
-  if (NULL != dst_entry->ptr_const) { /* collision? */
+  if (NULL != dst_entry->ptr_const) { /* collision */
     const unsigned int i0 = i;
     do { /* continue to linearly search for an available slot */
       i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
-      if (NULL == internal_registry[i].ptr_const) break;
+      if (NULL == registry[i].ptr_const) break;
     } while (i != i0);
-#if defined(LIBXSMM_HASH_COLLISION)
-    /* mark current entry as a collision (this might be already the case) */
+#if defined(LIBXSMM_HASH_COLLISION) /* mark entry as a collision */
     dst_entry->uval |= LIBXSMM_HASH_COLLISION;
 #endif
-    /* calculate destinations */
-    dst_key = internal_registry_keys + i;
-    dst_entry = registry + i;
+    dst_entry = registry + i; /* update destination */
     internal_update_mmstatistic(desc, 0, 1/*collision*/);
     /* out of capacity (no registry slot available) */
     LIBXSMM_ASSERT(NULL == dst_entry->ptr_const || i == i0);
   }
-  if (NULL == dst_entry->ptr_const) { /* registry not (yet) exhausted */
-    dst_key->xgemm = *desc;
+  if (NULL == dst_entry->ptr_const) { /* registry not exhausted */
+    internal_registry_keys[i].xgemm = *desc;
     dst_entry->xgemm = src;
     /* mark current entry as static code (non-JIT) */
     dst_entry->uval |= LIBXSMM_CODE_STATIC;
@@ -629,7 +627,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 #endif
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) new_registry[i].pmm = 0;
 #if defined(LIBXSMM_BUILD)
-#       include <libxsmm_dispatch.h>
+#     include <libxsmm_dispatch.h>
 #endif
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
       libxsmm_gemm_auto_prefetch_default = INTERNAL_PREFETCH;
@@ -1396,7 +1394,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
             (unsigned int)request->descriptor.cfwd->ofh_rb/*register block ofh*/,
             (int)request->descriptor.cfwd->prefetch/*binary OR'd prefetch flags*/,
             (int)request->descriptor.cfwd->format/*binary OR'd format flags*/);
-
           }
         }
       }
