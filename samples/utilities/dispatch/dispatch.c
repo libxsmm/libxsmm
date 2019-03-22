@@ -49,6 +49,9 @@
 #if !defined(MKLJIT) && defined(mkl_jit_create_dgemm)
 # define MKLJIT
 #endif
+#if !defined(INTEL_MKL_VERSION) || (20190003 <= INTEL_MKL_VERSION)
+# define CHECK
+#endif
 #if !defined(MAXSIZE)
 # define MAXSIZE LIBXSMM_MAX_M
 #endif
@@ -244,47 +247,46 @@ int main(int argc, char* argv[])
       }
     }
     tdsp0 = libxsmm_timer_duration(start, libxsmm_timer_tick());
-
+#if defined(CHECK)
     { /* calculate l1-norm for manual validation */
-      double check = 0;
+      libxsmm_matdiff_info check;
+      libxsmm_matdiff_clear(&check);
       for (i = 0; i < size_total; ++i) {
         const int j = (int)LIBXSMM_MOD(shuffle * i, size_total);
         libxsmm_matdiff_info diff;
-#if defined(MKLJIT)
+# if defined(MKLJIT)
         const dgemm_jit_kernel_t kernel = mkl_jit_get_dgemm_ptr(jitter[j]);
-#else
+# else
         const libxsmm_dmmfunction kernel = libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k,
           &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
-#endif
-        libxsmm_matdiff_clear(&diff);
+# endif
         if (NULL != kernel) {
-#if defined(MKLJIT)
+# if defined(MKLJIT)
           kernel(jitter[j], a, b, c);
-#else
+# else
           if (LIBXSMM_GEMM_PREFETCH_NONE == prefetch) kernel(a, b, c); else kernel(a, b, c, a, b, c);
-#endif
-          result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(double), maxsize, maxsize, NULL, c, &rnd[j].m, &rnd[j].m);
+# endif
+          result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(double), rnd[j].m, rnd[j].n, NULL, c, &rnd[j].m, &rnd[j].m);
         }
         else {
           result = EXIT_FAILURE;
         }
         if (EXIT_SUCCESS == result) {
-          if (check < diff.l1_tst) check = diff.l1_tst;
+          libxsmm_matdiff_reduce(&check, &diff);
         }
         else {
           printf(" m=%u n=%u k=%u", (unsigned int)rnd[j].m, (unsigned int)rnd[j].n, (unsigned int)rnd[j].k);
           i = size_total; /* break */
-          check = -1;
         }
       }
-      if (0 < check) {
-        printf(" check=%f\n", check);
+      if (i < size_total) {
+        printf(" check=%f\n", check.l1_tst);
       }
       else {
         printf(" <- ERROR!\n");
       }
     }
-
+#endif /*defined(CHECK)*/
     free(rnd); /* release random numbers */
 #if defined(MKLJIT) /* release dispatched code */
     for (i = 0; i < size_total; ++i) mkl_jit_destroy(jitter[i]);
