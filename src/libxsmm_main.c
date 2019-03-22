@@ -1554,7 +1554,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_descriptor* descriptor)
 {
   libxsmm_code_pointer flux_entry = { 0 };
-  unsigned int i0, i = 0, mode = 0, diff = 1;
 #if !defined(NDEBUG)
   const libxsmm_gemm_descriptor* refdesc = NULL;
 # if (0 != LIBXSMM_JIT)
@@ -1594,11 +1593,12 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
   LIBXSMM_ASSERT(NULL != descriptor);
 #endif
   {
-    LIBXSMM_ASSERT(NULL != internal_registry);
-    i = i0 = LIBXSMM_HASH_MOD(
+    unsigned int i = LIBXSMM_HASH_MOD(
       LIBXSMM_CONCATENATE(libxsmm_crc32_b, LIBXSMM_DESCRIPTOR_MAXSIZE)(LIBXSMM_HASH_SEED, descriptor),
       LIBXSMM_CAPACITY_REGISTRY);
-    while (0 != diff) {
+    unsigned int i0 = i, mode = 0, diff = 1;
+    LIBXSMM_ASSERT(NULL != internal_registry);
+    do { /* use calculated location and check if the requested code is already JITted */
 #if (1 < INTERNAL_REGLOCK_MAXN) || !LIBXSMM_LOCK_TYPE_ISRW(LIBXSMM_REGLOCK) /* read registered code */
       /* omitting an atomic load is safe but avoids race-detectors to highlight this location */
       uintptr_t *const fluxaddr = &internal_registry[i].uval;
@@ -1717,7 +1717,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
           internal_update_mmstatistic(descriptor, 1/*try*/, 0);
         }
       }
-    }
+    } while (0 != diff);
 #if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
     if (NULL != flux_entry.ptr_const) { /* keep code version on record (cache) */
       if (cache.id != libxsmm_ninit) { /* invalidate */
