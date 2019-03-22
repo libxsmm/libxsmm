@@ -489,10 +489,10 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     }
     /* cleanup singleton */
 #if defined(_WIN32)
-    ReleaseMutex(singleton);
+    ReleaseMutex(handle);
 #else
     unlink(filename_global);
-    close(singleton);
+    close(handle);
 #endif
   }
 #if (0 != LIBXSMM_SYNC)
