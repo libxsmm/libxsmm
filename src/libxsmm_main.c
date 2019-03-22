@@ -382,7 +382,16 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   char *const env_dump_build = getenv("LIBXSMM_DUMP_BUILD");
   char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES")
     ? getenv("LIBXSMM_DUMP_FILES") : getenv("LIBXSMM_DUMP_FILE"));
-  libxsmm_finalize();
+#if defined(_WIN32)
+  const HANDLE handle = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
+  const char *const delims = ";,";
+  const int singleton = (NULL != handle ? 1 : 0);
+#else
+  const char *const delims = ";,:", *const filename_global = "/tmp/GlobalLIBXSMM";
+  const int handle = open(filename_global, O_CREAT | O_EXCL, S_IRUSR);
+  const int singleton = (0 <= handle ? 1 : 0);
+#endif
+    libxsmm_finalize();
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
@@ -390,8 +399,10 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       : NULL/*hidden*/;
     /* synchronize I/O */
     LIBXSMM_STDIO_ACQUIRE();
-    fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
-      LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
+    if (0 != singleton) {
+      fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
+        LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
+    }
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
       const double regsize = 1.0 * internal_registry_nbytes / (1ULL << 20);
@@ -400,7 +411,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET: %s", target_arch);
       }
-      fprintf(stderr, "\nRegistry: %.f MB", regsize);
+      fprintf(stderr, "Registry: %.f MB", regsize);
       if (0 != high_verbosity) {
         size_t ngemms = 0;
         int i; for (i = 0; i < 4; ++i) {
@@ -449,18 +460,8 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   libxsmm_release_scratch();
   /* release global services */
   libxsmm_hash_finalize();
-  /* dump per-node info */
-  if (NULL != env_dump_build || NULL != env_dump_files) {
-#if defined(_WIN32)
-    const HANDLE singleton = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
-    const char *const delims = ";,";
-    if (NULL != singleton) /* valid handle? */
-#else
-    const char *const delims = ";,:", *const filename_global = "/tmp/GlobalLIBXSMM";
-    const int singleton = open(filename_global, O_CREAT | O_EXCL, S_IRUSR);
-    if (0 <= singleton) /* valid descriptor? */
-#endif
-    {
+  if (0 != singleton) { /* dump per-node info */
+    if (NULL != env_dump_build || NULL != env_dump_files) {
       LIBXSMM_STDIO_ACQUIRE();
       if (NULL != env_dump_files && 0 != *env_dump_files) {
         const char *filename = strtok(env_dump_files, delims);
@@ -485,13 +486,14 @@ LIBXSMM_API_INLINE void internal_finalize(void)
         }
       }
       LIBXSMM_STDIO_RELEASE();
-#if defined(_WIN32)
-      ReleaseMutex(singleton);
-#else
-      unlink(filename_global);
-      close(singleton);
-#endif
     }
+    /* cleanup singleton */
+#if defined(_WIN32)
+    ReleaseMutex(singleton);
+#else
+    unlink(filename_global);
+    close(singleton);
+#endif
   }
 #if (0 != LIBXSMM_SYNC)
   { /* release locks */
