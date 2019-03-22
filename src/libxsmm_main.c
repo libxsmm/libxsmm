@@ -342,8 +342,9 @@ LIBXSMM_API_INLINE unsigned int internal_statistic_ntry(int precision)
 
 
 LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descriptor* desc,
-  unsigned int i, libxsmm_xmmfunction src, libxsmm_code_pointer* registry)
+  libxsmm_xmmfunction src, libxsmm_code_pointer* registry)
 {
+  unsigned int i = LIBXSMM_HASH_MOD(libxsmm_crc32(desc, LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED), LIBXSMM_CAPACITY_REGISTRY);
   libxsmm_kernel_info* dst_key = internal_registry_keys + i;
   libxsmm_code_pointer* dst_entry = registry + i;
 #if !defined(NDEBUG)
@@ -352,7 +353,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descrip
   LIBXSMM_ASSERT(0 == (LIBXSMM_CODE_STATIC & code.uval));
 #endif
   if (NULL != dst_entry->ptr_const) { /* collision? */
-    unsigned int i0 = i;
+    const unsigned int i0 = i;
     do { /* continue to linearly search for an available slot */
       i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
       if (NULL == internal_registry[i].ptr_const) break;
@@ -1594,8 +1595,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 #endif
   {
     LIBXSMM_ASSERT(NULL != internal_registry);
-    /* calculate registry location (and check if the requested code is already JITted) */
-    i = i0 = LIBXSMM_HASH_MOD(libxsmm_crc32(descriptor, LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED), LIBXSMM_CAPACITY_REGISTRY);
+    i = i0 = LIBXSMM_CONCATENATE(libxsmm_crc32_b, LIBXSMM_DESCRIPTOR_MAXSIZE)(LIBXSMM_HASH_SEED, descriptor);
 
     while (0 != diff) {
 #if (1 < INTERNAL_REGLOCK_MAXN) || !LIBXSMM_LOCK_TYPE_ISRW(LIBXSMM_REGLOCK) /* read registered code */
