@@ -82,9 +82,10 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
   const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst)
 {
   int result = EXIT_SUCCESS, result_swap = 0, result_nan = 0;
+  libxsmm_blasint ldr = (NULL == ldref ? m : *ldref), ldt = (NULL == ldtst ? m : *ldtst);
   if (NULL == ref && NULL != tst) { ref = tst; tst = NULL; result_swap = 1; }
-  if (NULL != ref && NULL != info) {
-    libxsmm_blasint mm = m, nn = n, ldr = (NULL == ldref ? m : *ldref), ldt = (NULL == ldtst ? m : *ldtst);
+  if (NULL != ref && NULL != info && m <= ldr && m <= ldt) {
+    libxsmm_blasint mm = m, nn = n;
     double inf;
     if (1 == n) { mm = ldr = ldt = 1; nn = m; } /* ensure row-vector shape to standardize results */
     libxsmm_matdiff_clear(info);
