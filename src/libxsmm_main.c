@@ -409,7 +409,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       libxsmm_scratch_info scratch_info;
       unsigned int linebreak = (0 == internal_print_statistic(stderr, target_arch, 1/*SP*/, 1, 0)) ? 1 : 0;
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
-        fprintf(stderr, "\nLIBXSMM_TARGET: %s", target_arch);
+        fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
       }
       fprintf(stderr, "Registry: %.f MB", regsize);
       if (0 != high_verbosity) {
@@ -1593,7 +1593,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_gemm_de
 #endif
   {
     unsigned int i = LIBXSMM_HASH_MOD(
-      LIBXSMM_CONCATENATE(libxsmm_crc32_b, LIBXSMM_DESCRIPTOR_MAXSIZE)(LIBXSMM_HASH_SEED, descriptor),
+      LIBXSMM_CONCATENATE(libxsmm_crc32_b, LIBXSMM_DESCRIPTOR_MAXSIZE)(descriptor, LIBXSMM_HASH_SEED),
       LIBXSMM_CAPACITY_REGISTRY);
     unsigned int i0 = i, mode = 0, diff = 1;
     LIBXSMM_ASSERT(NULL != internal_registry);
