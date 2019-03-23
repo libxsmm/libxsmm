@@ -718,10 +718,9 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
      {
         shiftvalue = 3;
         shiftmult = 8;
-        if ( avx512 ) { REGSIZE = 8; } else { 
+        if ( avx512 ) { REGSIZE = 8; } else {
            if ( m == 1 ) REGSIZE = 8; else REGSIZE = 4;
         }
-        
      } else {
         shiftvalue = 2;
         shiftmult = 4;
@@ -853,8 +852,8 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
 
      /* To prevent and disable looping, just set loopm and loopn to 0 */
 #ifdef PREVENT_TRANSPOSE_LOOPING
-     loopm = 0; 
-     loopn = 0; 
+     loopm = 0;
+     loopn = 0;
 #endif
 
      if ( loopn > 0 ) {
@@ -886,7 +885,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
            libxsmm_x86_instruction_register_jump_back_label ( io_generated_code,  &l_loop_label_tracker );
            i = io_generated_code->code_size;
         }
-            
+
         for ( k = 1; k <= (int)m; k += mjmp )
         {
            io_generated_code->code_size = i;
@@ -920,7 +919,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
               libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JG, &l_loop_label_tracker );
               i = io_generated_code->code_size;
            }
-       
+
         }
 
         if ( loopm > 0 ) {
@@ -929,7 +928,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
            libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, l_gp_reg_mapping.gp_reg_a, shiftmult*REGSIZE*loopm );
            i = io_generated_code->code_size;
         }
-       
+
         if ( j+REGSIZE <= (int)n )
         {
            io_generated_code->code_size = i;
