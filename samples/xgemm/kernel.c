@@ -57,7 +57,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    PRECISION: SP, DP, I16I32, I16F32, BF16F32\n");
   printf("    #repetitions\n");
   printf("\n\n");
-  printf("2. Usage (dense*dense=dense, performance only):\n");
+  printf("2. Usage (dense*dense=dense, performance only option available):\n");
   printf("    filename with space-sperated sizes (M N K LDA LDB LDC)\n");
   printf("    alpha: 1\n");
   printf("    beta: 0 or 1\n");
@@ -67,6 +67,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: B normal, 1: B trans\n");
   printf("    PRECISION: SP, DP, I16I32, I16F32, BF16F32\n");
   printf("    #repetitions\n");
+  printf("    0: no check, otherwise: run check\n");
   printf("\n\n");
 }
 
