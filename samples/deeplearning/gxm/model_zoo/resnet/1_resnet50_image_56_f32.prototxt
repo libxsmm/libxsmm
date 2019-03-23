@@ -6,10 +6,10 @@ node {
   propagate_down: false
   mode: TRAIN
   data_param {
-    train_source: "/scratch/savancha/jpegs_256resized"
-    train_list: "/scratch/savancha/jpegs_256resized/train_images_labels.list"
-    test_source: "/scratch/savancha/jpegs_256resized"
-    test_list: "/scratch/savancha/jpegs_256resized/val_images_labels.list"
+    train_source: "/scratch/savancha/jpegs_256resized_split/split_1"
+    train_list: "/scratch/savancha/jpegs_256resized_split/split_1/train_images_labels.list"
+    test_source: "/scratch/savancha/jpegs_256resized_split/split_1"
+    test_list: "/scratch/savancha/jpegs_256resized_split/split_1/val_images_labels.list"
     batch_size: 56
     num_train_files: 1281167
     num_test_files: 50000
@@ -52,6 +52,7 @@ node {
     engine: XSMM
     num_output: 64
     pad: 3
+    opad: 3
     bias_term: false
     physical_padding: true
     kernel_size: 7

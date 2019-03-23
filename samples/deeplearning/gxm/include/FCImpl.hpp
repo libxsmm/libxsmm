@@ -49,6 +49,7 @@ typedef struct {
   bool bias_term;
   int in_data_type, out_data_type;
   int algType;
+  int num_numa_nodes;
   int num_threads;
 } FCImplParams;
 

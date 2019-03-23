@@ -83,17 +83,7 @@ void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *mask, in
   void *input = inpb->getBuffer();
   void *output = outpb->getBuffer();
 
-  if(scratch != NULL)
-  {
-    if(updated_scratch && scratch != scratchp->getBuffer())
-    {
-      printf("Warning: updating scratch from %p to %p\n",scratch, scratchp->getBuffer());
-      scratch = scratchp->getBuffer();
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_scratch( libxsmm_handle, scratch ) );
-    }
-  }
-  else
-    scratch = scratchp->getBuffer();
+  void **sptrptr = scratchp->getBufferPtr();
 
   if(libxsmm_input == NULL && libxsmm_mask == NULL && libxsmm_output == NULL)
   {
@@ -115,18 +105,22 @@ void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *mask, in
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_tensor( libxsmm_handle, libxsmm_mask  ,    LIBXSMM_DNN_POOLING_MASK ) );
 
-    if(scratch == NULL)
+    if(sptrptr == NULL)
+    {
+      sptrptr = (void**)libxsmm_aligned_malloc(NUM_NUMA_NODES*sizeof(void*), 2097152);
+      scratchp->setBufferPtr(sptrptr);
+    }
+    if(sptrptr[0] == NULL)
     {
       long long mysize = libxsmm_dnn_pooling_get_scratch_size( libxsmm_handle, &status );
       CHKERR_LIBXSMM_DNN( status );
-      scratch = libxsmm_aligned_scratch( mysize, 2097152 );
-      scratchp->setBuffer(scratch);
+      sptrptr[0] = libxsmm_aligned_scratch( mysize, 2097152 );
       scratchp->setBufferSize(mysize);
 
 #ifdef USE_MLSL
       if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
 #endif
-        printf("%s allocated %lld bytes for scratch @ %p\n",nname.c_str(), mysize, scratch);
+        printf("%s allocated %lld bytes for scratch @ %p\n",nname.c_str(), mysize, sptrptr[0]);
     }
     else
     {
@@ -137,22 +131,21 @@ void PoolXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int *mask, in
 
       if(ssize < mysize)
       {
-        libxsmm_free(scratch);
-        scratch = (void*)libxsmm_aligned_malloc(mysize, 2097152);
-        scratchp->setBuffer(scratch);
+        libxsmm_free(sptrptr[0]);
+        sptrptr[0] = (void*)libxsmm_aligned_malloc(mysize, 2097152);
         scratchp->setBufferSize(mysize);
 #ifdef USE_MLSL
         if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
 #endif
-          printf("%s allocated %lld bytes for scratch @ %p, prev size was %lld bytes\n",nname.c_str(), mysize, scratch, ssize);
+          printf("%s allocated %lld bytes for scratch @ %p, prev size was %lld bytes\n",nname.c_str(), mysize, sptrptr[0], ssize);
       }
     }
   }
 
-  if(!updated_scratch)
+  if(!updated_scratch_fwd)
   {
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_scratch( libxsmm_handle, scratch ) );
-    updated_scratch = true;
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_scratch( libxsmm_handle, sptrptr[0] ) );
+    updated_scratch_fwd = true;
   }
 
 #if defined(_OPENMP)
@@ -173,10 +166,11 @@ void PoolXSMM::backPropagate(TensorBuf *deloutpb, int *mask, TensorBuf *delinpb,
   void *deloutput = deloutpb->getBuffer();
   void *delinput = delinpb->getBuffer();
 
-  if(scratch != scratchp->getBuffer())
+  void **sptrptr = scratchp->getBufferPtr();
+  if(!updated_scratch_bwd)
   {
-    scratch = scratchp->getBuffer();
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_scratch( libxsmm_handle, scratch ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_pooling_bind_scratch( libxsmm_handle, sptrptr[0] ) );
+    updated_scratch_bwd = true;
   }
 
   if(libxsmm_deloutput == NULL && libxsmm_delinput == NULL)

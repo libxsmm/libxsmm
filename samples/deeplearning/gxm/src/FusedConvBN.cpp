@@ -163,6 +163,7 @@ FusedConvBNNode::FusedConvBNNode(FusedConvBNParams* p, MLEngine* e): NNNode(p, e
   // size of master weights -- FP32.
   wsize = welem*sizeof(float);
 
+  gparams_.num_numa_nodes = NUM_NUMA_NODES;
   tenWeightData_->setBufferSize(wsize);
 
   wfiller_type_ = p->get_weight_filler_type();
@@ -236,6 +237,7 @@ FusedConvBNNode::FusedConvBNNode(FusedConvBNParams* p, MLEngine* e): NNNode(p, e
         tenBotDiff_[i]->setBufferType(DIFF);
 
         // Set the size of the input-gradient buffer
+        Shape *bs = tenBot_[i]->getShape();
         int botelem = bs->dims[0] * bs->dims[1] * (bs->dims[2] + 2*ivp[0]) * (bs->dims[3] + 2*ivp[1]);
         if(in_dtype == DT_FLOAT)
           tenBotDiff_[i]->setBufferSize((botelem + convelem)*sizeof(float));
@@ -423,23 +425,22 @@ void FusedConvBNNode::fillWeightBuffers(TensorBuf* tBuf, int buftype, long long 
   void *ptr = tBuf->getBuffer();
 
 #ifdef USE_MLSL
-    unsigned int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
+  unsigned int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
 #else
-    unsigned int node_id = 0;
+  unsigned int node_id = 0;
 #endif
+
+  int ic = gparams_.nInput[0];
+  int oc = gparams_.nOutput;
+  int kh = gparams_.kh;
+  int kw = gparams_.kw;
+  int g = gparams_.group;
+  int fanin = (ic * kh * kw)/g;
+  int fanout = (oc * kh * kw)/g;
+  int welem = ic * oc * kh * kw;
 
   if(buftype == DATA)
   {
-    int n = gparams_.batch_size;
-    int ic = gparams_.nInput[0];
-    int oc = gparams_.nOutput;
-    int kh = gparams_.kh;
-    int kw = gparams_.kw;
-    int g = gparams_.group;
-    int fanin = (ic * kh * kw)/g;
-    int fanout = (oc * kh * kw)/g;
-    int welem = ic * oc * kh * kw;
-
     initBuffer(ptr, dtype, variance_norm_, fanin, fanout, welem*sizeof(float), wfiller_type_, (unsigned int)(node_id+PRIME_SEED), std_);
 
 #ifdef USE_MLSL
@@ -447,7 +448,7 @@ void FusedConvBNNode::fillWeightBuffers(TensorBuf* tBuf, int buftype, long long 
       MPI_Bcast(ptr, welem, MPI_FLOAT, 0, MPI_COMM_WORLD);
 #endif
   }
-  else
+  else if(buftype == HISTORY || buftype == DIFF)
     memset(ptr, 0, size);
 }
 
@@ -893,6 +894,8 @@ void FusedConvBNNode::backPropagate()
       tenMidDiff_->setBuffer(tenBotDiff_[0]->getBuffer() + bsize0*sizeof(float));
       tenMidDiff_->setBufferSize(msize*sizeof(float));
       tenBotDiff_[0]->setBufferSize(bsize0*sizeof(float));
+      if(gparams_.eltwise)
+        tenBotDiff_[1]->setBufferSize(bsize1*sizeof(float));
 
       // NUMA initialize Conv delinp
 #ifdef _OPENMP
@@ -926,6 +929,8 @@ void FusedConvBNNode::backPropagate()
       tenMidDiff_->setBuffer(tenBotDiff_[0]->getBuffer() + bsize0*sizeof(libxsmm_bfloat16));
       tenMidDiff_->setBufferSize(msize*sizeof(libxsmm_bfloat16));
       tenBotDiff_[0]->setBufferSize(bsize0*sizeof(libxsmm_bfloat16));
+      if(gparams_.eltwise)
+        tenBotDiff_[1]->setBufferSize(bsize1*sizeof(libxsmm_bfloat16));
 
       // NUMA initialize Conv delinp
 #ifdef _OPENMP
@@ -1182,7 +1187,14 @@ void FusedConvBNNode::weightUpdate()
       MeanOfLayer((char*)s.c_str(), stptr, nImg*ofm*mfhp*mfwp);
 
       s = nname_ + "_delWt_Aft";
+#ifdef USE_MLSL
       MeanOfLayer((char*)s.c_str(), dwptr, ifm0*ofm*kh*kw);
+#else
+      ptr = (libxsmm_bfloat16*)tenWeightDiff_->getBuffer();
+      memset(stptr, 0, ifm0*ofm*kh*kw);
+      convert_bf16_f32(ptr, stptr, ifm0*ofm*kh*kw);
+      MeanOfLayer((char*)s.c_str(), stptr, ifm0*ofm*kh*kw);
+#endif
     }
   }
 #endif
@@ -1190,6 +1202,7 @@ void FusedConvBNNode::weightUpdate()
 
 void FusedConvBNNode::solverStep()
 {
+#ifdef USE_MLSL
   int ifm = gparams_.nInput[0];
   int ofm = gparams_.nOutput;
   int kh = gparams_.kh;
@@ -1203,7 +1216,6 @@ void FusedConvBNNode::solverStep()
 
   int wsize = ifm*ofm*kh*kw;
 
-#ifdef USE_MLSL
   void *mptr = op_->GetParameterSet(0)->WaitGradientComm();
   if(in_dtype == DT_FLOAT)
   {
@@ -1232,7 +1244,6 @@ void FusedConvBNNode::solverStep()
   mptr = op_->GetParameterSet(4)->WaitGradientComm();
   if(mptr != NULL && mptr != gvar_test)
     memcpy((void*)gvar_test, mptr, ofm*sizeof(float));
-#endif
 
 #ifdef CHECK_BLOWUP_FP32
   float* ptr = (float*)tenWeightDiff_->getBuffer();
@@ -1260,5 +1271,6 @@ void FusedConvBNNode::solverStep()
       exit(-1);
     }
   }
+#endif
 #endif
 }

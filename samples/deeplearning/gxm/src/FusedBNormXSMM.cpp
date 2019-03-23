@@ -202,18 +202,7 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
   __assume_aligned(gvar, 64);
   __assume_aligned(output,64);
 
-  if(scratch != NULL)
-  {
-    if(updated_scratch && scratch != scratchp->getBuffer())
-    {
-      printf("Warning: updating scratch from %p to %p\n",scratch, scratchp->getBuffer());
-      scratch = scratchp->getBuffer();
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_train, scratch ) );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_test, scratch ) );
-    }
-  }
-  else
-    scratch = scratchp->getBuffer();
+  void **sptrptr = scratchp->getBufferPtr();
 
   if(libxsmm_input_train == NULL && libxsmm_input_add_train == NULL && libxsmm_expectval_train == NULL &&
       libxsmm_stddev_train == NULL && libxsmm_variance_train == NULL && libxsmm_gamma_train == NULL &&
@@ -271,18 +260,22 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_tensor( libxsmm_handle_train, libxsmm_output_train, LIBXSMM_DNN_REGULAR_OUTPUT ) );
 
     /* let's allocate (if required) and bind scratch */
-    if(scratch == NULL)
+    if(sptrptr == NULL)
+    {
+      sptrptr = (void**)libxsmm_aligned_malloc(NUM_NUMA_NODES*sizeof(void*), 2097152);
+      scratchp->setBufferPtr(sptrptr);
+    }
+    if(sptrptr[0] == NULL)
     {
       long long int mysize = libxsmm_dnn_fusedbatchnorm_get_scratch_size( libxsmm_handle_train, &status );
       CHKERR_LIBXSMM_DNN( status );
-      scratch = (void*)libxsmm_aligned_malloc(mysize , 2097152);
-      scratchp->setBuffer(scratch);
+      sptrptr[0] = (void*)libxsmm_aligned_malloc(mysize , 2097152);
       scratchp->setBufferSize(mysize);
 
 #ifdef USE_MLSL
       if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
 #endif
-        printf("%s allocated %lld bytes for scratch @ %p\n",nname.c_str(), mysize, scratch);
+        printf("%s allocated %lld bytes for scratch @ %p\n",nname.c_str(), mysize, sptrptr[0]);
     }
     else
     {
@@ -293,14 +286,13 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
 
       if(ssize < mysize)
       {
-        libxsmm_free(scratch);
-        scratch = (void*)libxsmm_aligned_malloc(mysize, 2097152);
-        scratchp->setBuffer(scratch);
+        libxsmm_free(sptrptr[0]);
+        sptrptr[0] = (void*)libxsmm_aligned_malloc(mysize, 2097152);
         scratchp->setBufferSize(mysize);
 #ifdef USE_MLSL
         if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
 #endif
-          printf("%s allocated %lld bytes for scratch @ %p, prev size was %lld bytes\n",nname.c_str(), mysize, scratch, ssize);
+          printf("%s allocated %lld bytes for scratch @ %p, prev size was %lld bytes\n",nname.c_str(), mysize, sptrptr[0], ssize);
       }
     }
   }
@@ -361,11 +353,11 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_tensor( libxsmm_handle_test, libxsmm_output_test, LIBXSMM_DNN_REGULAR_OUTPUT ) );
   }
 
-  if(!updated_scratch)
+  if(!updated_scratch_fwd)
   {
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_train, scratch ) );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_test, scratch ) );
-    updated_scratch = true;
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_train, sptrptr[0] ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_test, sptrptr[0] ) );
+    updated_scratch_fwd = true;
   }
 
 #ifndef NDEBUG
@@ -627,10 +619,11 @@ void FusedBNormXSMM::backPropagate(vector<TensorBuf*> inpb, TensorBuf* outpb, Te
   }
 #endif
 
-  if(scratch != scratchp->getBuffer())
+  void **sptrptr = scratchp->getBufferPtr();
+  if(!updated_scratch_bwd)
   {
-    scratch = scratchp->getBuffer();
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_train, scratch ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_train, sptrptr[0] ) );
+    updated_scratch_bwd = true;
   }
 
   if(libxsmm_deloutput == NULL && libxsmm_delinput == NULL && libxsmm_delinput_add == NULL &&

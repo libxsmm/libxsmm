@@ -403,7 +403,8 @@ void MLEngine::read_checkpoint_file(TensorBuf* tBuf, string filename, string for
 
   if(data_type_ == BF16 && (filename.find("wt") != filename.npos))
     if(filename.find("history") == filename.npos)
-      convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)tBuf->getLPBuffer(), bytes/sizeof(float));
+      convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)tBuf->getLPBuffer(), bytes/sizeof(float), 0);
+
 }
 
 void MLEngine::load_checkpoint(TensorList L, int buftype, string format)
@@ -503,6 +504,33 @@ void MLEngine::run(int mode)
       load_checkpoint(biasTList_, DATA, checkpoint_format_);
       load_checkpoint(biasTList_, HISTORY, checkpoint_format_);
       load_checkpoint(statsTList_, DATA, checkpoint_format_);
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+      {
+        int tid = omp_get_thread_num();
+        int ntps = num_threads_/NUM_NUMA_NODES;
+        int n = tid/ntps;
+        int w = total_weights_;
+
+        if(n != 0 && tid % ntps == 0)
+        {
+          float *wptr = (float*)weight_buf_[n];
+
+#pragma omp simd
+          for(int i=0; i<w; i++)
+            wptr[i] = ((float*)weight_buf_[0])[i];
+
+          if(lpweight_buf_ != NULL)
+          {
+            libxsmm_bfloat16 *lwptr = (libxsmm_bfloat16*)lpweight_buf_[n];
+#pragma omp simd
+            for(int i=0; i<w; i++)
+              lwptr[i] = ((libxsmm_bfloat16*)lpweight_buf_[0])[i];
+          }
+        }
+      }
       load_from_checkpoint_ = false;
     }
 
@@ -556,17 +584,20 @@ void MLEngine::run(int mode)
 #ifdef TIMING
           gettimeofday(&tvis, NULL);
 #endif
+
+#ifdef DUMP_WT
           if(global_node_id_ == 0)
             if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
               if(current_batch_ == num_train_batches_-1)
                 checkpoint(wTList_, DIFF);
+#endif
 
-          solver_->applyUpdate((float*)weight_buf_, (float*)winc_buf_, wdiff_buf_, total_weights_, (float*)wt_lr_mult_, (float*)wt_decay_mult_, "WEIGHT");
+          solver_->applyUpdate((float**)weight_buf_, (float**)winc_buf_, wdiff_buf_, total_weights_, (float**)wt_lr_mult_, (float**)wt_decay_mult_, "WEIGHT");
 
           if(data_type_ == BF16)
-            convert_f32_bf16((float*)weight_buf_, (libxsmm_bfloat16*)lpweight_buf_, total_weights_);
+            convert_f32_bf16((float**)weight_buf_, (libxsmm_bfloat16**)lpweight_buf_, total_weights_);
 
-          solver_->applyUpdate((float*)bias_buf_, (float*)biinc_buf_, bidiff_buf_, total_biases_, (float*)bias_lr_mult_, (float*)bias_decay_mult_, "BIAS");
+          solver_->applyUpdate((float**)bias_buf_, (float**)biinc_buf_, bidiff_buf_, total_biases_, (float**)bias_lr_mult_, (float**)bias_decay_mult_, "BIAS");
 
 #ifdef TIMING
           gettimeofday(&tvie, NULL);
@@ -584,14 +615,7 @@ void MLEngine::run(int mode)
 #ifdef CANARY_CHECK
         canary_check(input_buf_, input_can_ptr, ic);
         canary_check(fact_buf_, fact_can_ptr, fac);
-        canary_check(weight_buf_, wt_can_ptr, wtc);
-        canary_check(bias_buf_, bias_can_ptr, bic);
-
         canary_check(bact_buf_, bact_can_ptr, bac);
-        canary_check(wdiff_buf_, wdiff_can_ptr, wdc);
-        canary_check(winc_buf_, winc_can_ptr, wic);
-        canary_check(bidiff_buf_, bidiff_can_ptr, bidc);
-        canary_check(biinc_buf_, biinc_can_ptr, biic);
 #endif
       }
 
@@ -682,17 +706,59 @@ void MLEngine::run(int mode)
   }
 }
 
-void MLEngine::convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len)
+void MLEngine::convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len, int numa_node)
 {
-  unsigned int i = 0;
-#pragma omp parallel for private(i)
-  for ( i = 0; i < len; i+=16 ) {
-    __m512  vfp32  = gxm_fp32_to_bfp16_rne_adjustment_avx512f( _mm512_loadu_ps( in+i ) );
-    __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f( vfp32 );
-    _mm256_storeu_si256( (__m256i*)(out+i), vbfp16 );
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  {
+    int tid = omp_get_thread_num();
+    int ntps = num_threads_/NUM_NUMA_NODES;
+    int n = tid/ntps;
+    int ltid = tid - numa_node*ntps;
+
+    if(n == numa_node)
+    {
+      int jobs = (len % ntps == 0) ? len/ntps : len/ntps + 1;
+      int tb = (ltid*jobs < len) ? ltid*jobs : len;
+      int te = ((ltid+1)*jobs < len) ? (ltid+1)*jobs : len;
+
+      for (int i = tb; i < te; i+=16 ) {
+        __m512  vfp32  = gxm_fp32_to_bfp16_rne_adjustment_avx512f( _mm512_loadu_ps( in+i ) );
+        __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f( vfp32 );
+        _mm256_storeu_si256( (__m256i*)(out+i), vbfp16 );
+      }
+    }
   }
 }
 
+void MLEngine::convert_f32_bf16(float** in, libxsmm_bfloat16** out, int len)
+{
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  {
+    int tid = omp_get_thread_num();
+    int ntps = num_threads_/NUM_NUMA_NODES;
+    int n = tid/ntps;
+    int ltid = tid - n*ntps;
+
+    float *inp = in[n];
+    libxsmm_bfloat16 *outp = out[n];
+
+    int jobs = (len % ntps == 0) ? len/ntps : len/ntps + 1;
+    int tb = (ltid*jobs < len) ? ltid*jobs : len;
+    int te = ((ltid+1)*jobs < len) ? (ltid+1)*jobs : len;
+
+    for (int i = tb; i < te; i+=16 ) {
+      __m512  vfp32  = gxm_fp32_to_bfp16_rne_adjustment_avx512f( _mm512_loadu_ps( inp+i ) );
+      __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f( vfp32 );
+      _mm256_storeu_si256( (__m256i*)(outp+i), vbfp16 );
+    }
+  }
+}
 void MLEngine::convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len)
 {
   int i;
@@ -707,9 +773,9 @@ void MLEngine::convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len)
   }
 }
 
-void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector<int>& can_ptr, int* nc, long long int* bufsize)
+void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector<int>& can_ptr, int* nc, long long int* bufsize)
 {
-  bool ttp = (tenType != "WEIGHT") & (tenType != "BIAS");
+  bool ttp = false; //(tenType != "WEIGHT") & (tenType != "BIAS");
 
   long long int s = ttp ? START_GUARD_BAND : 0;
   TensorBuf* tBuf;
@@ -758,12 +824,12 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       if(buftype == DIFF)
       {
         if(data_type_ == FLOAT)
-          total_weights_ = s / sizeof(float);
+          total_weights_ = s/sizeof(float);
         else if(data_type_ == BF16)
-          total_weights_ = s / sizeof(libxsmm_bfloat16);
+          total_weights_ = s/sizeof(libxsmm_bfloat16);
       }
       else
-        total_weights_ = s / sizeof(float);
+        total_weights_ = s/sizeof(float);
 
       int factor = num_threads_ * VLEN;
       int nwt = (total_weights_ + factor - 1)/factor;
@@ -779,7 +845,7 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       else
         s = total_weights_ * sizeof(float);
     }
-    else if(tenType == "BIAS")
+    else if(tenType == "BIAS" || tenType == "STATS")
     {
       total_biases_ = s / sizeof(float);
       int factor = num_threads_ * VLEN;
@@ -800,11 +866,87 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
   s = ALIGN_SIZE(s, 2097152);
   void* buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
   if(lp)
-      lpweight_buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s/sizeof(libxsmm_bfloat16), 2097152);
+    lpweight_buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s/sizeof(libxsmm_bfloat16), 2097152);
 #else
-  void* buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
-  if(lp)
-    lpweight_buf_ = (void*)libxsmm_aligned_malloc(s/sizeof(libxsmm_bfloat16), 2097152);
+  void *buf_;
+  void **ptrptr, **lptrptr=NULL;
+
+  if(tenType=="INPUT")
+  {
+    buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
+    input_buf_ = buf_;
+  }
+  else if(tenType == "FACT")
+  {
+    buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
+    fact_buf_ = buf_;
+  }
+  else if(tenType == "WEIGHT")
+  {
+    if(buftype == DATA)
+    {
+      for(int n=0; n<NUM_NUMA_NODES; n++)
+      {
+        weight_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+        if(lp)
+          lpweight_buf_[n] = (void*)libxsmm_aligned_malloc(s/sizeof(libxsmm_bfloat16), 2097152);
+      }
+      buf_ = weight_buf_[0];
+      ptrptr = weight_buf_;
+      if(lp)
+        lptrptr = lpweight_buf_;
+    }
+    else if(buftype == DIFF)
+    {
+      for(int n=0; n<NUM_NUMA_NODES; n++)
+        wdiff_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+      buf_ = wdiff_buf_[0];
+      ptrptr = wdiff_buf_;
+    }
+    else if(buftype == HISTORY)
+    {
+      for(int n=0; n<NUM_NUMA_NODES; n++)
+        winc_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+      buf_ = winc_buf_[0];
+      ptrptr = winc_buf_;
+    }
+  }
+  else if(tenType == "BACT")
+  {
+    buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
+    bact_buf_ = buf_;
+  }
+  else if(tenType == "STATS")
+  {
+    for(int n=0; n<NUM_NUMA_NODES; n++)
+      stats_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+    buf_ = stats_buf_[0];
+    ptrptr = stats_buf_;
+  }
+  else if(tenType == "BIAS")
+  {
+    if(buftype == DATA)
+    {
+      for(int n=0; n<NUM_NUMA_NODES; n++)
+        bias_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+      buf_ = bias_buf_[0];
+      ptrptr = bias_buf_;
+    }
+    else if(buftype == DIFF)
+    {
+      for(int n=0; n<NUM_NUMA_NODES; n++)
+        bidiff_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+      buf_ = bidiff_buf_[0];
+      ptrptr = bidiff_buf_;
+    }
+    else if(buftype == HISTORY)
+    {
+      for(int n=0; n<NUM_NUMA_NODES; n++)
+        biinc_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+      buf_ = biinc_buf_[0];
+      ptrptr = biinc_buf_;
+    }
+  }
 #endif
 
   // Total buffer size, including guard bands before and after each buffer (currntly 64 bytes long)
@@ -813,7 +955,6 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
 #if 0
   printf("Tensor with buffers %d @ %p with total size %lld\n",buftype, buf_, s);
   fflush(stdout);
-#endif
 
   if(buf_ != NULL)
   {
@@ -831,54 +972,95 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
     printf("could not allocate low precision weights memory.. exiting\n");
     exit(-1);
   }
+#endif
 
   if(solver_->getGlobalFlag())
   {
     if(tenType == "WEIGHT" && buftype == DIFF)
     {
-      wt_lr_mult_ = (float*)_mm_malloc(total_weights_*sizeof(float), 64);
-      wt_decay_mult_ = (float*)_mm_malloc(total_weights_*sizeof(float), 64);
-      if(wt_lr_mult_ != NULL)
+      for(int n=0; n<NUM_NUMA_NODES; n++)
       {
-        memset(wt_lr_mult_, 0, total_weights_*sizeof(float));
-        lrptr = wt_lr_mult_;
+        wt_lr_mult_[n] = (float*)libxsmm_aligned_malloc(total_weights_*sizeof(float), 2097152);
+        if(wt_lr_mult_[n] != NULL)
+        {
+          float *ptr = wt_lr_mult_[n];
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+          {
+            int tid = omp_get_thread_num();
+            int ntps = num_threads_/NUM_NUMA_NODES;
+            int s = tid/ntps;
+            if(s == n && tid % ntps == 0)
+              for(int i=0; i<total_weights_; i++)
+                ptr[i] = 0.0;
+          }
+        }
+
+        wt_decay_mult_[n] = (float*)libxsmm_aligned_malloc(total_weights_*sizeof(float), 2097152);
+        if(wt_decay_mult_[n] != NULL)
+        {
+          float *ptr = wt_decay_mult_[n];
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+          {
+            int tid = omp_get_thread_num();
+            int ntps = num_threads_/NUM_NUMA_NODES;
+            int s = tid/ntps;
+            if(s == n && tid % ntps == 0)
+              for(int i=0; i<total_weights_; i++)
+                ptr[i] = 0.0;
+          }
+        }
       }
-      else {
-        printf("could not allocate lr_wt memory.. exiting\n");
-        exit(-1);
-      }
-      if(wt_decay_mult_ != NULL)
-      {
-        memset(wt_decay_mult_, 0, total_weights_*sizeof(float));
-        decptr = wt_decay_mult_;
-      }
-      else {
-        printf("could not allocate decay_wt memory.. exiting\n");
-        exit(-1);
-      }
+      lrptr = wt_lr_mult_[0];
+      decptr = wt_decay_mult_[0];
     }
     else if(tenType == "BIAS" && buftype == DIFF)
     {
-      bias_lr_mult_ = (float*)_mm_malloc(s, 64);
-      bias_decay_mult_ = (float*)_mm_malloc(s, 64);
-      if(bias_lr_mult_ != NULL)
+      for(int n=0; n<NUM_NUMA_NODES; n++)
       {
-        memset(bias_lr_mult_, 0, s);
-        lrptr = bias_lr_mult_;
+        bias_lr_mult_[n] = (float*)_mm_malloc(total_biases_*sizeof(float), 64);
+        if(bias_lr_mult_[n] != NULL)
+        {
+          float *ptr = bias_lr_mult_[n];
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+          {
+            int tid = omp_get_thread_num();
+            int ntps = num_threads_/NUM_NUMA_NODES;
+            int s = tid/ntps;
+            if(s == n && tid % ntps == 0)
+              for(int i=0; i<total_biases_; i++)
+                ptr[i] = 0.0;
+          }
+        }
+
+        bias_decay_mult_[n] = (float*)_mm_malloc(total_biases_*sizeof(float), 64);
+        if(bias_decay_mult_[n] != NULL)
+        {
+          float *ptr = bias_decay_mult_[n];
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+          {
+            int tid = omp_get_thread_num();
+            int ntps = num_threads_/NUM_NUMA_NODES;
+            int s = tid/ntps;
+            if(s == n && tid % ntps == 0)
+              for(int i=0; i<total_biases_; i++)
+                ptr[i] = 0.0;
+          }
+        }
       }
-      else {
-        printf("could not allocate lr_bias memory.. exiting\n");
-        exit(-1);
-      }
-      if(bias_decay_mult_ != NULL)
-      {
-        memset(bias_decay_mult_, 0, s);
-        decptr = bias_decay_mult_;
-      }
-      else {
-        printf("could not allocate decay_bias memory.. exiting\n");
-        exit(-1);
-      }
+      lrptr = bias_lr_mult_[0];
+      decptr = bias_decay_mult_[0];
     }
   }
 
@@ -886,10 +1068,11 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
     memset(buf_, CANARY, START_GUARD_BAND);
 
   long long int bytes=0, lpbytes=0;
+  int offset=0, bias_offset=0;
 
   //Set up tensor buffer pointers
-  void* ptr = ttp ? (void*)buf_ + START_GUARD_BAND : (void*)buf_;
-  void* lptr = lpweight_buf_;
+  void* ptr = ttp ? buf_ + START_GUARD_BAND : buf_;
+  void* lptr = lp ? lpweight_buf_[0] : NULL;
 
   for(Iter it=L.begin(); it != L.end(); it++)
   {
@@ -913,9 +1096,9 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       continue;
 
     // Scrub or initialize buffers appropriately
-    //
     bytes = tBuf->getBufferSize();
     assert(ptr+bytes <= buf_+s);
+
     lpbytes = lp ? bytes/sizeof(libxsmm_bfloat16) : 0;
 
 #ifndef USE_NUMA
@@ -929,9 +1112,27 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
     int dtype = tBuf->getDataType();
 
     // Set each node's tensor buffer pointers to the appropritate location in the global buffer
-    tBuf->setBuffer(ptr);
-    if(lp)
-      tBuf->setLPBuffer(lptr);
+    if(tenType == "WEIGHT" || tenType == "BIAS" || tenType == "STATS")
+    {
+      if(buftype == DATA || buftype == DIFF)
+      {
+        tBuf->setBufferPtr(ptrptr);
+        tBuf->setOffset(offset);
+      }
+      tBuf->setBuffer(ptr);
+
+      if(lp)
+      {
+        tBuf->setLPBuffer(lptr);
+        tBuf->setLPBufferPtr(lptrptr);
+      }
+    }
+    else
+    {
+      tBuf->setBuffer(ptr);
+      if(lp)
+        tBuf->setLPBuffer(lptr);
+    }
 
     // If weight or bias tensor, call corresponding intialization function (for training only)
     if(!is_inference_only())
@@ -947,7 +1148,7 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
           {
             fcbn->fillWeightBuffers(tBuf, buftype, bytes);
             if(lp)
-              convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16));
+              convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16), 0);
           }
 
           if(solver_->getGlobalFlag())
@@ -965,7 +1166,7 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
           {
             cn->fillWeightBuffers(tBuf, buftype, bytes);
             if(lp)
-              convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16));
+              convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16), 0);
           }
 
           if(solver_->getGlobalFlag())
@@ -994,7 +1195,7 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
         {
           fn->fillWeightBuffers(tBuf, buftype, bytes);
           if(lp)
-            convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16));
+            convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16), 0);
         }
 
         if(solver_->getGlobalFlag())
@@ -1062,6 +1263,18 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
       if(lp)
         lptr += lpbytes;
 
+      if(tenType == "WEIGHT" && buftype == DATA)
+        offset += bytes/sizeof(float);
+      else if(tenType == "WEIGHT" && buftype == DIFF)
+      {
+        if(data_type_ == FLOAT)
+          offset += bytes/sizeof(float);
+        else if(data_type_ == BF16)
+          offset += bytes/sizeof(libxsmm_bfloat16);
+      }
+      else if((tenType == "BIAS" && (buftype == DATA || buftype == DIFF)) || tenType == "STATS")
+        offset += bytes/sizeof(float);
+
       if(solver_->getGlobalFlag())
       {
         if(tenType == "WEIGHT" && buftype == DIFF)
@@ -1102,7 +1315,231 @@ void* MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vecto
 #endif
   }
 
-  return buf_;
+  if(tenType=="WEIGHT" && buftype==DATA)
+  {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = num_threads_/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int w = total_weights_;
+      if(n != 0 && tid % ntps == 0)
+      {
+        float *wtptr = (float*)weight_buf_[n];
+
+#pragma omp simd
+        for(int i=0; i<w; i++)
+          wtptr[i] = ((float*)weight_buf_[0])[i];
+
+        if(lp)
+        {
+          libxsmm_bfloat16* lwptr = (libxsmm_bfloat16*)lpweight_buf_[n];
+#pragma omp simd
+          for(int i=0; i<w; i++)
+            lwptr[i] = ((libxsmm_bfloat16*)lpweight_buf_[0])[i];
+        }
+      }
+    }
+  }
+
+  if(tenType=="WEIGHT" && buftype==DIFF)
+  {
+    if(data_type_ == FLOAT)
+    {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+      {
+        int tid = omp_get_thread_num();
+        int ntps = num_threads_/NUM_NUMA_NODES;
+        int n = tid/ntps;
+        int w = total_weights_;
+        if(n != 0 && tid % ntps == 0)
+        {
+          float *wdiff = (float*)wdiff_buf_[n];
+
+#pragma omp simd
+          for(int i=0; i<w; i++)
+            wdiff[i] = ((float*)wdiff_buf_[0])[i];
+        }
+      }
+    }
+    else if(data_type_ == BF16)
+    {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+      {
+        int tid = omp_get_thread_num();
+        int ntps = num_threads_/NUM_NUMA_NODES;
+        int n = tid/ntps;
+        int w = total_weights_;
+        if(n != 0 && tid % ntps == 0)
+        {
+          libxsmm_bfloat16 *wdiff = (libxsmm_bfloat16*)wdiff_buf_[n];
+
+#pragma omp simd
+          for(int i=0; i<w; i++)
+            wdiff[i] = ((libxsmm_bfloat16*)wdiff_buf_[0])[i];
+        }
+      }
+    }
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = num_threads_/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int w = total_weights_;
+      if(n != 0 && tid % ntps == 0)
+      {
+        float *lrp = (float*)wt_lr_mult_[n];
+        float *dcp = (float*)wt_decay_mult_[n];
+
+#pragma omp simd
+        for(int i=0; i<w; i++)
+        {
+          lrp[i] = ((float*)wt_lr_mult_[0])[i];
+          dcp[i] = ((float*)wt_decay_mult_[0])[i];
+        }
+      }
+    }
+  }
+
+  if(tenType=="WEIGHT" && buftype==HISTORY)
+  {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = num_threads_/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int w = total_weights_;
+      if(n != 0 && tid % ntps == 0)
+      {
+        float *inc = (float*)winc_buf_[n];
+
+#pragma omp simd
+        for(int i=0; i<w; i++)
+          inc[i] = ((float*)winc_buf_[0])[i];
+      }
+    }
+  }
+
+  if(tenType == "BIAS" && buftype == DATA)
+  {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = num_threads_/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int b = total_biases_;
+
+      if(n != 0 && tid % ntps == 0)
+      {
+        float *bias = (float*)bias_buf_[n];
+
+#pragma omp simd
+        for(int i=0; i<b; i++)
+          bias[i] = ((float*)bias_buf_[0])[i];
+      }
+    }
+  }
+
+  if(tenType == "BIAS" && buftype == DIFF)
+  {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = num_threads_/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int b = total_biases_;
+
+      if(n != 0 && tid % ntps == 0)
+      {
+        float *bidiff = (float*)bidiff_buf_[n];
+
+#pragma omp simd
+        for(int i=0; i<b; i++)
+          bidiff[i] = ((float*)bidiff_buf_[0])[i];
+      }
+    }
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = num_threads_/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int b = total_biases_;
+      if(n != 0 && tid % ntps == 0)
+      {
+        float *lrp = (float*)bias_lr_mult_[n];
+        float *dcp = (float*)bias_decay_mult_[n];
+
+#pragma omp simd
+        for(int i=0; i<b; i++)
+        {
+          lrp[i] = ((float*)bias_lr_mult_[0])[i];
+          dcp[i] = ((float*)bias_decay_mult_[0])[i];
+        }
+      }
+    }
+  }
+
+  if(tenType == "BIAS" && buftype == HISTORY)
+  {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = num_threads_/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int b = total_biases_;
+
+      if(n != 0 && tid % ntps == 0)
+      {
+        float *biinc = (float*)biinc_buf_[n];
+
+#pragma omp simd
+        for(int i=0; i<b; i++)
+          biinc[i] = ((float*)biinc_buf_[0])[i];
+      }
+    }
+  }
+
+  if(tenType == "STATS")
+  {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = num_threads_/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int b = total_biases_;
+
+      if(n != 0 && tid % ntps == 0)
+      {
+        float *stats = (float*)stats_buf_[n];
+
+#pragma omp simd
+        for(int i=0; i<b; i++)
+          stats[i] = ((float*)stats_buf_[0])[i];
+      }
+    }
+  }
 }
 
 void* MLEngine::allocate_gradient_tensor(TensorList L, int buftype, int n, long long int size)
@@ -1300,6 +1737,8 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
   /*** Create a global tensor to hold scratch memory needed by Conv layers (LIBXSMM) ***/
   /*************************************************************************************/
   tenScratch_ = new Tensor("scratch");
+  tenScratchBuf_ = tenScratch_->getBuf(DATA);
+  tenScratchBuf_->setBufferPtr(scratch);
 
   NTGParameter split_ntgparam;
 
@@ -1406,7 +1845,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
   long long int total_input_size;
   long long int max_fwd_buffer_size=0;
 
-  input_buf_ = allocate_memory("INPUT", inTList_, DATA, input_can_ptr, &ic, &total_input_size);
+  allocate_memory("INPUT", inTList_, DATA, input_can_ptr, &ic, &total_input_size);
   if(global_node_id_ == 0)
     printf("Total input memory allocated %lld bytes\n", total_input_size);
 
@@ -1414,7 +1853,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
   /*** Allocate memory and set pointers for FORWARD ACTIVATION buffer ***/
   /**********************************************************************/
   long long int total_fact_size;
-  fact_buf_ = allocate_memory("FACT", outTList_, DATA, fact_can_ptr, &fac, &total_fact_size);
+  allocate_memory("FACT", outTList_, DATA, fact_can_ptr, &fac, &total_fact_size);
   if(global_node_id_ == 0)
     printf("Total forward activation memory allocated %lld bytes\n", total_fact_size);
 
@@ -1422,7 +1861,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
   /*** Allocate memory and set pointers for WEIGHTS buffer ***/
   /***********************************************************/
   long long int total_weight_size;
-  weight_buf_ = allocate_memory("WEIGHT", wTList_, DATA, wt_can_ptr, &wtc, &total_weight_size);
+  allocate_memory("WEIGHT", wTList_, DATA, wt_can_ptr, &wtc, &total_weight_size);
   if(global_node_id_ == 0)
     printf("Total weights memory allocated %lld bytes\n", total_weight_size);
 
@@ -1430,7 +1869,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
   /*** Allocate memory and set pointers for BIASES buffer ***/
   /***********************************************************/
   long long int total_bias_size;
-  bias_buf_ = allocate_memory("BIAS", biasTList_, DATA, bias_can_ptr, &bic, &total_bias_size);
+  allocate_memory("BIAS", biasTList_, DATA, bias_can_ptr, &bic, &total_bias_size);
   if(global_node_id_ == 0)
     printf("Total bias memory allocated %lld bytes\n", total_bias_size);
 
@@ -1438,7 +1877,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
   /*** Allocate memory and set pointers for STATS buffer ***/
   /***********************************************************/
   long long int total_stats_size;
-  stats_buf_ = allocate_memory("STATS", statsTList_, DATA, stats_can_ptr, &sic, &total_stats_size);
+  allocate_memory("STATS", statsTList_, DATA, stats_can_ptr, &sic, &total_stats_size);
   if(global_node_id_ == 0)
     printf("Total stats memory allocated %lld bytes\n", total_stats_size);
 
@@ -1451,12 +1890,12 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
     /***********************************************************************/
 #if !defined(USE_OPTBP_ALLOC)
     long long int total_bact_size;
-    bact_buf_ = allocate_memory("BACT", outTList_, DIFF, bact_can_ptr, &bac, &total_bact_size);
+    allocate_memory("BACT", outTList_, DIFF, bact_can_ptr, &bac, &total_bact_size);
     if(global_node_id_ == 0)
       printf("Total backward activation memory allocated %lld bytes\n", total_bact_size);
 #else
     long long int total_bact_size = NDIFFS * max_fwd_buffer_size;
-    bact_buf_ = allocate_gradient_tensor(outTList_, DIFF, NDIFFS, max_fwd_buffer_size);
+    allocate_gradient_tensor(outTList_, DIFF, NDIFFS, max_fwd_buffer_size);
     if(global_node_id_ == 0)
       printf("Total backward activation memory allocated %lld bytes\n", total_bact_size);
 #endif
@@ -1465,7 +1904,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
     /*** Allocate memory and set pointers for WEIGHT GRADIENTS buffer ***/
     /********************************************************************/
     long long int total_wdiff_size;
-    wdiff_buf_ = allocate_memory("WEIGHT", wTList_, DIFF, wdiff_can_ptr, &wdc, &total_wdiff_size);
+    allocate_memory("WEIGHT", wTList_, DIFF, wdiff_can_ptr, &wdc, &total_wdiff_size);
     if(global_node_id_ == 0)
       printf("Total weight gradient memory allocated %lld bytes\n", total_wdiff_size);
 
@@ -1473,7 +1912,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
     /*** Allocate memory and set pointers for WEIGHT INCREMENTS buffer ***/
     /*********************************************************************/
     long long int total_winc_size;
-    winc_buf_ = allocate_memory("WEIGHT", wTList_, HISTORY, winc_can_ptr, &wic, &total_winc_size);
+    allocate_memory("WEIGHT", wTList_, HISTORY, winc_can_ptr, &wic, &total_winc_size);
     if(global_node_id_ == 0)
       printf("Total weight increment memory allocated %lld bytes\n", total_winc_size);
 
@@ -1481,7 +1920,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
     /*** Allocate memory and set pointers for BIAS GRADIENTS buffer ***/
     /********************************************************************/
     long long int total_bidiff_size;
-    bidiff_buf_ = allocate_memory("BIAS", biasTList_, DIFF, bidiff_can_ptr, &bidc, &total_bidiff_size);
+    allocate_memory("BIAS", biasTList_, DIFF, bidiff_can_ptr, &bidc, &total_bidiff_size);
     if(global_node_id_ == 0)
       printf("Total bias gradient memory allocated %lld bytes\n", total_bidiff_size);
 
@@ -1489,7 +1928,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
     /*** Allocate memory and set pointers for BIAS INCREMENTS buffer ***/
     /*********************************************************************/
     long long int total_biinc_size;
-    biinc_buf_ = allocate_memory("BIAS", biasTList_, HISTORY, biinc_can_ptr, &biic, &total_biinc_size);
+    allocate_memory("BIAS", biasTList_, HISTORY, biinc_can_ptr, &biic, &total_biinc_size);
     if(global_node_id_ == 0)
       printf("Total bias increment memory allocated %lld bytes\n", total_biinc_size);
 

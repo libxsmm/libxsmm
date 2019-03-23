@@ -74,7 +74,7 @@ class FusedBNormXSMM : public FusedBNormImpl
 
     void *bexpect=NULL, *bstddev=NULL, *bvariance=NULL;
     void *scratch=NULL;
-    bool updated_scratch=false;
+    bool updated_scratch_fwd=false, updated_scratch_bwd=false;
 
   public:
     FusedBNormXSMM(FusedBNormImplParams* gp, int engine);

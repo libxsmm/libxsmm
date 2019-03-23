@@ -43,9 +43,9 @@
 #include "MLNode.fwd.hpp"
 #include "Config.hpp"
 #include "Task.hpp"
+#include "common.hpp"
 #include "Solver.hpp"
 #include "libxsmm.h"
-#include "common.hpp"
 #ifdef USE_MLSL
 #include "mpi.h"
 #endif
@@ -92,6 +92,7 @@ class MLEngine
     SolverParams *solverParams_;
     SolverNode* solver_;
     Tensor* tenScratch_;
+    TensorBuf* tenScratchBuf_;
 
     struct TensorPair
     {
@@ -112,15 +113,18 @@ class MLEngine
     int num_machines_, num_machine_groups_, num_threads_;
     int batch_size_, num_train_batches_, num_test_batches_, num_test_views_;
     int global_node_id_;
-    float lr_, *wt_lr_mult_, *wt_decay_mult_;
-    float *bias_lr_mult_, *bias_decay_mult_;
+    float lr_, *wt_lr_mult_[NUM_NUMA_NODES], *wt_decay_mult_[NUM_NUMA_NODES];
+    float *bias_lr_mult_[NUM_NUMA_NODES], *bias_decay_mult_[NUM_NUMA_NODES];
     float scf_=0;
 
     void *input_buf_=NULL;
     void *fact_buf_=NULL, *bact_buf_=NULL, *wbuf_=NULL;
-    void *weight_buf_=NULL, *wdiff_buf_=NULL, *winc_buf_=NULL, *lpweight_buf_=NULL;
-    void *bias_buf_=NULL, *bidiff_buf_=NULL, *biinc_buf_=NULL, *stats_buf_=NULL;
+    void *weight_buf_[NUM_NUMA_NODES]={NULL}, *wdiff_buf_[NUM_NUMA_NODES]={NULL};
+    void *winc_buf_[NUM_NUMA_NODES]={NULL}, *lpweight_buf_[NUM_NUMA_NODES]={NULL};
+    void *bias_buf_[NUM_NUMA_NODES]={NULL}, *bidiff_buf_[NUM_NUMA_NODES]={NULL};
+    void *biinc_buf_[NUM_NUMA_NODES]={NULL}, *stats_buf_[NUM_NUMA_NODES]={NULL};
     int total_weights_, total_biases_, orig_total_weights_;
+    void *scratch[NUM_NUMA_NODES]={NULL};
 
     vector<int> input_can_ptr;
     vector<int> fact_can_ptr, bact_can_ptr;
@@ -137,10 +141,11 @@ class MLEngine
     void read_checkpoint_file(TensorBuf*, string, string);
     void load_checkpoint(TensorList, int, string);
     void canary_check(void*, vector<int>&, int);
-    void* allocate_memory(string, TensorList, int, vector<int>&, int*, long long int*);
+    void allocate_memory(string, TensorList, int, vector<int>&, int*, long long int*);
     void* allocate_gradient_tensor(TensorList, int, int, long long int);
     void insertSplitNodes(NTGParameter& p, NTGParameter* ps);
-    void convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len);
+    void convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len, int numa_node);
+    void convert_f32_bf16(float** in, libxsmm_bfloat16** out, int len);
     void convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len);
 
   public:
@@ -155,7 +160,7 @@ class MLEngine
     void run(int mode);
 
     SolverNode* getSolver() { return solver_; }
-    TensorBuf* getScratchBuffer() { return tenScratch_->getBuf(DATA); }
+    TensorBuf* getScratchBuffer() { return tenScratchBuf_; }
 
     bool is_inference_only() { return inferenceOnly_; }
 

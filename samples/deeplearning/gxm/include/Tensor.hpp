@@ -53,8 +53,11 @@ class TensorBuf {
     void *lpbuf_; // Pointer to LP object
     void *prv_buf_;
     void *lp_prv_buf_;
+    void **bufptr_;
+    void **lpbufptr_;
     TensorLayoutType layout_type_;
     void *layout_;
+    int offset_;
     int dType_; // Data type for this buffer
     int bType_; // Type of buffer (DATA/DIFF/HISTORY)
     long long int size_; // Size of this buffer
@@ -65,8 +68,11 @@ class TensorBuf {
       lpbuf_ = NULL;
       prv_buf_ = NULL;
       lp_prv_buf_ = NULL;
+      bufptr_ = NULL;
+      lpbufptr_ = NULL;
       layout_type_ = NCHW;
       layout_ = NULL;
+      offset_ = 0;
       dType_ = dtype;
       size_ = size;
       bin_ = 0;
@@ -85,6 +91,9 @@ class TensorBuf {
     void setBufferSize(long long int size) { size_ = size; }
     long long int getBufferSize() { return size_; }
 
+    void setOffset(int offset) { offset_ = offset; }
+    int getOffset() { return offset_; }
+
     int getBin() { return bin_; }
 
     void setBuffer(void* bptr) { buf_ = bptr; }
@@ -98,6 +107,12 @@ class TensorBuf {
 
     void setLPPrivBuffer(void* bptr) { lp_prv_buf_ = bptr; }
     void* getLPPrivBuffer() { return lp_prv_buf_; }
+
+    void setBufferPtr(void** bptr) { bufptr_ = bptr; }
+    void** getBufferPtr() { return bufptr_; }
+
+    void setLPBufferPtr(void** bptr) { lpbufptr_ = bptr; }
+    void** getLPBufferPtr() { return lpbufptr_; }
 
     void setLayoutType(TensorLayoutType lt) { layout_type_ = lt; }
     TensorLayoutType getLayoutType() { return layout_type_; }

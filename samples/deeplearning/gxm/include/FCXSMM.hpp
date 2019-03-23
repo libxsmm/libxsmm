@@ -36,6 +36,8 @@
 #include "FCImpl.hpp"
 #include "libxsmm.h"
 
+#define VLEN 16
+
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS )\
 {\
   fprintf(stdout, "%s, %s\n", gp->node_name.c_str(), libxsmm_dnn_get_error(A) );\
@@ -47,18 +49,18 @@ class FCXSMM : public FCImpl
   protected:
     FCImpl *gp_;
     libxsmm_dnn_fullyconnected_desc fullyconnected_desc;
-    libxsmm_dnn_fullyconnected* libxsmm_handle;
-    libxsmm_dnn_tensor*  libxsmm_input=NULL;
-    libxsmm_dnn_tensor*  libxsmm_delinput=NULL;
-    libxsmm_dnn_tensor*  libxsmm_output=NULL;
-    libxsmm_dnn_tensor*  libxsmm_deloutput=NULL;
-    libxsmm_dnn_tensor*  libxsmm_filter=NULL;
-    libxsmm_dnn_tensor*  libxsmm_delfilter=NULL;
+    libxsmm_dnn_fullyconnected* libxsmm_handle[NUM_NUMA_NODES];
+    libxsmm_dnn_tensor*  libxsmm_input[NUM_NUMA_NODES]={NULL};
+    libxsmm_dnn_tensor*  libxsmm_delinput[NUM_NUMA_NODES]={NULL};
+    libxsmm_dnn_tensor*  libxsmm_output[NUM_NUMA_NODES]={NULL};
+    libxsmm_dnn_tensor*  libxsmm_deloutput[NUM_NUMA_NODES]={NULL};
+    libxsmm_dnn_tensor*  libxsmm_filter[NUM_NUMA_NODES]={NULL};
+    libxsmm_dnn_tensor*  libxsmm_delfilter[NUM_NUMA_NODES]={NULL};
     libxsmm_dnn_tensor_datalayout* libxsmm_layout;
     libxsmm_dnn_err_t status;
     libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
-    bool updated_scratch=false;
-    void *scratch=NULL;
+    bool updated_scratch_fwd=false, updated_scratch_bwd=false, updated_scratch_upd=false;
+    void *scratch[NUM_NUMA_NODES]={NULL};
 
   public:
     FCXSMM(FCImplParams* gp, int engine);

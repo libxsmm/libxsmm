@@ -619,8 +619,12 @@ void FusedBNormNode::backPropagate()
   int ifwp = ifw + 2*gparams_.ipad_w;
   int ofh = gparams_.oHeight;
   int ofw = gparams_.oWidth;
-  int ofhp = ofh + 2*gparams_.pad_h;
-  int ofwp = ofw + 2*gparams_.pad_w;
+  int oph = gparams_.pad_h;
+  int opw = gparams_.pad_w;
+  int ofhp = ofh + 2*oph;
+  int ofwp = ofw + 2*opw;
+  int sh = gparams_.stride_h;
+  int sw = gparams_.stride_w;
 
   tenTopDiff_ = tenTop_->getBuf(DIFF);
 
@@ -728,14 +732,14 @@ void FusedBNormNode::backPropagate()
     if(out_dtype == DT_FLOAT)
     {
       float *ptr = (float*)tenTopDiff_->getBuffer();
-      int size = nImg*ofm*ofhp*ofwp;
+      int size = nImg*ofm*(ofh/sh + 2*oph)*(ofw/sw + 2*opw);
       string s = nname_ + "_delOutp";
       MeanOfLayer((char*)s.c_str(), ptr, size);
     }
     else if(out_dtype == DT_BF16)
     {
       libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenTopDiff_->getBuffer();
-      int size = nImg*ofm*ofhp*ofwp;
+      int size = nImg*ofm*(ofh/sh + 2*oph)*(ofw/sw + 2*opw);
       convert_bf16_f32(ptr, stptr, size);
       string s = nname_ + "_delOutp";
       MeanOfLayer((char*)s.c_str(), stptr, size);
@@ -770,12 +774,12 @@ void FusedBNormNode::backPropagate()
 
 void FusedBNormNode::weightUpdate()
 {
+#ifdef USE_MLSL
   void* gexp = tenMeanData_->getBuffer();
   void* gvar = tenVarData_->getBuffer();
   void* gexp_test = tenMeanData_->getPrivBuffer();
   void* gvar_test = tenVarData_->getPrivBuffer();
 
-#ifdef USE_MLSL
   this->op_->GetParameterSet(0)->StartGradientComm(tenScaleDiff_->getBuffer());
   this->op_->GetParameterSet(1)->StartGradientComm(tenShiftDiff_->getBuffer());
 
@@ -791,10 +795,12 @@ void FusedBNormNode::weightUpdate()
 
 void FusedBNormNode::solverStep()
 {
+#if defined(USE_MLSL) || defined(CHECK_BLOWUP_FP32)
   float *delgamma = (float*)tenScaleDiff_->getBuffer();
   float *delbeta = (float*)tenShiftDiff_->getBuffer();
   void* gexp_test = tenMeanData_->getPrivBuffer();
   void* gvar_test = tenVarData_->getPrivBuffer();
+#endif
 
 #ifdef USE_MLSL
   void *mptr = op_->GetParameterSet(0)->WaitGradientComm();

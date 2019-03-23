@@ -55,7 +55,7 @@ class PoolXSMM : public PoolImpl
     libxsmm_dnn_tensor_datalayout* libxsmm_layout;
     libxsmm_dnn_err_t status;
     libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
-    bool updated_scratch=false;
+    bool updated_scratch_fwd=false, updated_scratch_bwd=false;
     void *scratch=NULL;
 
   public:

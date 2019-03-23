@@ -58,6 +58,7 @@ typedef struct {
   int bdims, tdims, wdims, bidims;
   int in_data_type, out_data_type;
   int num_threads;
+  int num_numa_nodes;
 } ConvImplParams;
 
 class ConvImpl

@@ -35,7 +35,7 @@ using namespace std;
 
 ConvXSMM::ConvXSMM(ConvImplParams* gp, int engine) : ConvImpl(gp, engine)
 {
-  conv_desc.N = gp->batch_size;
+  conv_desc.N = gp->batch_size/gp->num_numa_nodes;
   conv_desc.C = gp->nInput;
   conv_desc.H = gp->iHeight;
   conv_desc.W = gp->iWidth;
@@ -70,7 +70,7 @@ ConvXSMM::ConvXSMM(ConvImplParams* gp, int engine) : ConvImpl(gp, engine)
     conv_desc.pad_w_out = 0;
   }
 
-  conv_desc.threads = gp->num_threads;
+  conv_desc.threads = gp->num_threads/gp->num_numa_nodes;
   conv_desc.algo = LIBXSMM_DNN_CONV_ALGO_DIRECT;
   conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
   conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
@@ -107,8 +107,11 @@ ConvXSMM::ConvXSMM(ConvImplParams* gp, int engine) : ConvImpl(gp, engine)
     conv_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
   }
 
-  libxsmm_handle = libxsmm_dnn_create_conv_layer( conv_desc, &status );
-  CHKERR_LIBXSMM_DNN( status );
+  for(int i=0; i<gp->num_numa_nodes; i++)
+  {
+    libxsmm_handle[i] = libxsmm_dnn_create_conv_layer( conv_desc, &status );
+    CHKERR_LIBXSMM_DNN( status );
+  }
 
   top_layout_type = LIBXSMM_CUSTOM_LAYOUT;
   top_layout = libxsmm_handle;
@@ -118,207 +121,251 @@ ConvXSMM::ConvXSMM(ConvImplParams* gp, int engine) : ConvImpl(gp, engine)
 
 void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *hweightp, TensorBuf *biasp, TensorBuf *outp, int tid)
 {
+  int nIFM = gp->nInput;
+  int nOFM = gp->nOutput;
+  int nBIfm = nIFM/VLEN;
+  int nBOfm = nOFM/VLEN;
+  int ifh = gp->iHeight;
+  int ifw = gp->iWidth;
+  int ofh = gp->oHeight;
+  int ofw = gp->oWidth;
+  int iph = gp->ipad_h;
+  int ipw = gp->ipad_w;
+  int oph = gp->opad_h;
+  int opw = gp->opad_w;
+  int ifhp = ifh + 2*iph;
+  int ifwp = ifw + 2*ipw;
+  int ofhp = ofh + 2*oph;
+  int ofwp = ofw + 2*opw;
+
   // Conv input. LPBuffer is non-NULL if data layer output is BF16
-  if(inp->getLPBuffer() != NULL)
-    in_ptr = inp->getLPBuffer();
-  else
-    in_ptr = inp->getBuffer();
+  int imoff = conv_desc.N * conv_desc.C * ifhp * ifwp;
+  if(gp->in_data_type == DT_BF16)
+  {
+    if(inp->getLPBuffer() != NULL)
+      in_ptr[0] = inp->getLPBuffer();
+    else
+      in_ptr[0] = inp->getBuffer();
+    imoff = imoff * sizeof(libxsmm_bfloat16);
+  }
+  else if(gp->in_data_type == DT_FLOAT)
+  {
+    in_ptr[0] = inp->getBuffer();
+    imoff = imoff * sizeof(float);
+  }
+
+  for(int n=1; n<gp->num_numa_nodes; n++)
+    in_ptr[n] = in_ptr[n-1] + imoff;
 
   // Conv Weight
-  if(weightp->getLPBuffer() != NULL)
-    wt_ptr = weightp->getLPBuffer();
-  else
-    wt_ptr = weightp->getBuffer();
+  void **lptrptr = weightp->getLPBufferPtr();
+  void **ptrptr = weightp->getBufferPtr();
+  int offset = weightp->getOffset();
+
+  if(gp->in_data_type == DT_BF16)
+  {
+    if(lptrptr != NULL)
+      for(int n=0; n<gp->num_numa_nodes; n++)
+        wt_ptr[n] = lptrptr[n] + offset*sizeof(libxsmm_bfloat16);
+  }
+  else if(gp->in_data_type == DT_FLOAT)
+    for(int n=0; n<gp->num_numa_nodes; n++)
+      wt_ptr[n] = ptrptr[n] + offset*sizeof(float);
+
   void *wt_prv_ptr = NULL;
 
   // Conv weight history
   if(hweightp != NULL)
-  {
-    if(hweightp->getLPBuffer() != NULL)
-      hwt_ptr = hweightp->getLPBuffer();
-    else
-      hwt_ptr = hweightp->getBuffer();
-  }
+    hwt_ptr = hweightp->getBuffer();
+  else
+    hwt_ptr = NULL;
 
   // Conv output
-  out_ptr = outp->getBuffer();
+  out_ptr[0] = outp->getBuffer();
+  imoff = conv_desc.N * conv_desc.K * ofhp * ofwp;
+  if(gp->out_data_type == DT_FLOAT)
+    imoff = imoff * sizeof(float);
+  else if(gp->out_data_type == DT_BF16)
+    imoff = imoff * sizeof(libxsmm_bfloat16);
 
-  //Stats of output appended to output buffer
-  int offset = conv_desc.N * conv_desc.K * (gp->oHeight + 2*conv_desc.pad_h_out) * (gp->oWidth + 2*conv_desc.pad_w_out);
-  void *stats_ptr;
+  for(int n=1; n<gp->num_numa_nodes; n++)
+    out_ptr[n] = out_ptr[n-1] + imoff;
 
-  if(gp->compute_stats)
+  void **sptrptr = scratchp->getBufferPtr();
+
+  for(int n=0; n<gp->num_numa_nodes; n++)
   {
-    if(gp->out_data_type == DT_FLOAT)
-      stats_ptr = out_ptr + offset * sizeof(float);
-    else if(gp->out_data_type == DT_BF16)
-      stats_ptr = out_ptr + offset * sizeof(libxsmm_bfloat16);
-  }
-
-  if(scratch != NULL)
-  {
-    if(updated_scratch && scratch != scratchp->getBuffer())
+    if(libxsmm_input[n] == NULL && libxsmm_output[n] == NULL)
     {
-      printf("Warning: updating scratch from %p to %p\n",scratch, scratchp->getBuffer());
-      scratch = scratchp->getBuffer();
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
-    }
-  }
-  else
-    scratch = scratchp->getBuffer();
-
-  if(libxsmm_input == NULL && libxsmm_filter == NULL && libxsmm_output == NULL)
-  {
-    libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, &status );
-    CHKERR_LIBXSMM_DNN( status );
-    libxsmm_input = libxsmm_dnn_link_tensor( libxsmm_layout, in_ptr, &status );
-    CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-    CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_input, LIBXSMM_DNN_REGULAR_INPUT ) );
-
-    libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER, &status );
-    CHKERR_LIBXSMM_DNN( status );
-
-    int welem = gp->nInput * gp->nOutput * gp->kw * gp->kh;
-    if(gp->in_data_type == DT_FLOAT)
-    {
-      wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(float), 2097152);
-
-      // Transform weight layout
-      libxsmm_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle[n], LIBXSMM_DNN_REGULAR_INPUT, &status );
       CHKERR_LIBXSMM_DNN( status );
-
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)wt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-      memcpy(wt_ptr, wt_prv_ptr, welem*sizeof(float));
-
-      libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor(libxsmm_layout, wt_ptr, &status);
+      libxsmm_input[n] = libxsmm_dnn_link_tensor( libxsmm_layout, in_ptr[n], &status );
       CHKERR_LIBXSMM_DNN( status );
-
-      libxsmm_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_ptr, &status );
-      CHKERR_LIBXSMM_DNN( status );
-
-      // Transform weight history layout
-      if(hwt_ptr != NULL)
-      {
-        libxsmm_temp = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
-        CHKERR_LIBXSMM_DNN( status );
-
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_temp, (void*)hwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-        memcpy(hwt_ptr, wt_prv_ptr, welem*sizeof(float));
-
-        libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor(libxsmm_layout, hwt_ptr, &status);
-        CHKERR_LIBXSMM_DNN( status );
-      }
-
-      libxsmm_free(wt_prv_ptr);
-      wt_prv_ptr = NULL;
-      weightp->setPrivBuffer(NULL);
-    }
-    else if(gp->in_data_type == DT_BF16)
-    {
-      wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(libxsmm_bfloat16), 2097152);
-
-      // Transform BF16 weight layout
-      libxsmm_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
-      CHKERR_LIBXSMM_DNN( status );
-
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter, (void*)wt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-      memcpy(wt_ptr, wt_prv_ptr, welem*sizeof(libxsmm_bfloat16));
-      libxsmm_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_ptr, &status );
-      CHKERR_LIBXSMM_DNN( status );
-      libxsmm_free(wt_prv_ptr);
-
-      // Transform FP32 weight layout
-      libxsmm_layout->datatype = LIBXSMM_DNN_DATATYPE_F32;
-      wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(float), 2097152);
-      libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
-      CHKERR_LIBXSMM_DNN( status );
-      void *fwt_ptr = weightp->getBuffer();
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_checkpoint_filter, (void*)fwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-      memcpy(fwt_ptr, wt_prv_ptr, welem*sizeof(float));
-
-      libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor( libxsmm_layout, fwt_ptr, &status );
-      CHKERR_LIBXSMM_DNN( status );
-
-      // Transform FP32 weight history layout
-      if(hwt_ptr != NULL)
-      {
-        libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
-        CHKERR_LIBXSMM_DNN( status );
-
-        void *hfwt_ptr = hweightp->getBuffer();
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_checkpoint_history_filter, (void*)hfwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-        memcpy(hfwt_ptr, wt_prv_ptr, welem*sizeof(float));
-
-        libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor(libxsmm_layout, hfwt_ptr, &status);
-        CHKERR_LIBXSMM_DNN( status );
-      }
-
-      libxsmm_free(wt_prv_ptr);
-      wt_prv_ptr = NULL;
-      weightp->setPrivBuffer(NULL);
-    }
-
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-
-    CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_filter, LIBXSMM_DNN_REGULAR_FILTER ) );
-
-    // Conv Output
-    libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT, &status );
-    CHKERR_LIBXSMM_DNN(      status );
-    libxsmm_output = libxsmm_dnn_link_tensor( libxsmm_layout, out_ptr, &status );
-    CHKERR_LIBXSMM_DNN( status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-    CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_output, LIBXSMM_DNN_REGULAR_OUTPUT ) );
-
-    if(gp->compute_stats)
-    {
-      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_BATCH_STATS, &status );
-      CHKERR_LIBXSMM_DNN( status );
-      libxsmm_batchstats  = libxsmm_dnn_link_tensor( libxsmm_layout, stats_ptr, &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_batchstats, LIBXSMM_DNN_BATCH_STATS ) );
-    }
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle[n], libxsmm_input[n], LIBXSMM_DNN_REGULAR_INPUT ) );
 
-    /* let's allocate (if required) and bind scratch */
-    if(scratch == NULL)
-    {
-      long long int mysize = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
+      // Conv Output
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle[n], LIBXSMM_DNN_REGULAR_OUTPUT, &status );
+      CHKERR_LIBXSMM_DNN(      status );
+      libxsmm_output[n] = libxsmm_dnn_link_tensor( libxsmm_layout, out_ptr[n], &status );
       CHKERR_LIBXSMM_DNN( status );
-      scratch = (void*)libxsmm_aligned_malloc(mysize , 2097152);
-      scratchp->setBuffer(scratch);
-      scratchp->setBufferSize(mysize);
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle[n], libxsmm_output[n], LIBXSMM_DNN_REGULAR_OUTPUT ) );
+    }
+  }
+
+  for(int n=0; n<gp->num_numa_nodes; n++)
+  {
+    if(libxsmm_filter[n] == NULL)
+    {
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle[n], LIBXSMM_DNN_REGULAR_FILTER, &status );
+      CHKERR_LIBXSMM_DNN( status );
+
+      int welem = gp->nInput * gp->nOutput * gp->kw * gp->kh;
+      if(gp->in_data_type == DT_FLOAT)
+      {
+        int wsize = welem*sizeof(float);
+        wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(float), 2097152);
+
+        // Transform weight layout
+        libxsmm_filter[n] = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
+        CHKERR_LIBXSMM_DNN( status );
+
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter[n], wt_ptr[n], LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+        memcpy(wt_ptr[n], wt_prv_ptr, welem*sizeof(float));
+
+        if(n == 0)
+        {
+          libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor(libxsmm_layout, wt_ptr[n], &status);
+          CHKERR_LIBXSMM_DNN( status );
+        }
+
+        libxsmm_filter[n] = libxsmm_dnn_link_tensor( libxsmm_layout, wt_ptr[n], &status );
+        CHKERR_LIBXSMM_DNN( status );
+
+        // Transform weight history layout
+        if(n == 0)
+        {
+          if(hwt_ptr != NULL)
+          {
+            libxsmm_temp = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
+            CHKERR_LIBXSMM_DNN( status );
+
+            CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_temp, (void*)hwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
+            memcpy(hwt_ptr, wt_prv_ptr, welem*sizeof(float));
+
+            libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor(libxsmm_layout, hwt_ptr, &status);
+            CHKERR_LIBXSMM_DNN( status );
+          }
+        }
+        libxsmm_free(wt_prv_ptr);
+        wt_prv_ptr = NULL;
+        weightp->setPrivBuffer(NULL);
+      }
+      else if(gp->in_data_type == DT_BF16)
+      {
+        int wsize = welem*sizeof(libxsmm_bfloat16);
+        wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(libxsmm_bfloat16), 2097152);
+
+        // Transform BF16 weight layout
+        libxsmm_filter[n] = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
+        CHKERR_LIBXSMM_DNN( status );
+
+        CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_tensor(libxsmm_filter[n], wt_ptr[n], LIBXSMM_DNN_TENSOR_FORMAT_KCRS) );
+        memcpy(wt_ptr[n], wt_prv_ptr, welem*sizeof(libxsmm_bfloat16));
+
+        libxsmm_filter[n] = libxsmm_dnn_link_tensor( libxsmm_layout, wt_ptr[n], &status );
+        CHKERR_LIBXSMM_DNN( status );
+        libxsmm_free(wt_prv_ptr);
+
+        // Transform FP32 weight layout
+        if(n == 0)
+        {
+          libxsmm_layout->datatype = LIBXSMM_DNN_DATATYPE_F32;
+          wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(float), 2097152);
+          libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
+          CHKERR_LIBXSMM_DNN( status );
+          void *fwt_ptr = weightp->getBuffer();
+          CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_tensor(libxsmm_checkpoint_filter, fwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS));
+          memcpy(fwt_ptr, wt_prv_ptr, welem*sizeof(float));
+
+          libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor( libxsmm_layout, fwt_ptr, &status );
+          CHKERR_LIBXSMM_DNN( status );
+
+          // Transform FP32 weight history layout
+          if(hwt_ptr != NULL)
+          {
+            libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
+            CHKERR_LIBXSMM_DNN( status );
+
+            void *hfwt_ptr = hweightp->getBuffer();
+            CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_tensor(libxsmm_checkpoint_history_filter, hfwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS));
+            memcpy(hfwt_ptr, wt_prv_ptr, welem*sizeof(float));
+
+            libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor(libxsmm_layout, hfwt_ptr, &status);
+            CHKERR_LIBXSMM_DNN( status );
+          }
+          libxsmm_free(wt_prv_ptr);
+          wt_prv_ptr = NULL;
+          weightp->setPrivBuffer(NULL);
+        }
+      }
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle[n], libxsmm_filter[n], LIBXSMM_DNN_REGULAR_FILTER ) );
+    }
+  }
+
+  /* let's allocate (if required) and bind scratch */
+  if(sptrptr == NULL)
+  {
+    sptrptr = (void**)libxsmm_aligned_malloc(gp->num_numa_nodes*sizeof(void*), 2097152);
+    scratchp->setBufferPtr(sptrptr);
+  }
+
+  int max_size = 0;
+  for(int n=0; n<gp->num_numa_nodes; n++)
+  {
+    if(sptrptr[n] == NULL)
+    {
+      int mysize = libxsmm_dnn_get_scratch_size( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
+      CHKERR_LIBXSMM_DNN( status );
+      sptrptr[n] = (void*)libxsmm_aligned_malloc(mysize, 2097152);
+      max_size = mysize;
 
 #ifdef USE_MLSL
       if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
 #endif
-        printf("%s allocated %lld bytes for scratch @ %p\n",nname.c_str(), mysize, scratch);
+        printf("%s allocated %d bytes for scratch @ %p\n",nname.c_str(), mysize, sptrptr[n]);
     }
     else
     {
-      long long int ssize = scratchp->getBufferSize();
-      long long int mysize = libxsmm_dnn_get_scratch_size( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
+      int ssize = scratchp->getBufferSize();
+      int mysize = libxsmm_dnn_get_scratch_size( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
 
       CHKERR_LIBXSMM_DNN( status );
 
       if(ssize < mysize)
       {
-        libxsmm_free(scratch);
-        scratch = (void*)libxsmm_aligned_malloc(mysize, 2097152);
-        scratchp->setBuffer(scratch);
-        scratchp->setBufferSize(mysize);
+        libxsmm_free(sptrptr[n]);
+        sptrptr[n] = (void*)libxsmm_aligned_malloc(mysize, 2097152);
+        max_size = mysize;
+
 #ifdef USE_MLSL
         if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
 #endif
-          printf("%s allocated %lld bytes for scratch @ %p, prev size was %lld bytes\n",nname.c_str(), mysize, scratch, ssize);
+          printf("%s allocated %d bytes for scratch @ %p, prev size was %d bytes\n",nname.c_str(), mysize, sptrptr[n], ssize);
       }
+      else
+        max_size = ssize;
     }
   }
+  scratchp->setBufferSize(max_size);
 
-  if(!updated_scratch)
+  if(!updated_scratch_fwd)
   {
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
-    updated_scratch = true;
+    for(int n=0; n<gp->num_numa_nodes; n++)
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_ALL, sptrptr[n] ) );
+    updated_scratch_fwd = true;
   }
 
 #ifndef NDEBUG
@@ -330,14 +377,14 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
   }
 
   if(gp->in_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)in_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
+    check_physical_pad( nname.c_str(), (float*)in_ptr[0], conv_desc.N, nBIfm, ifh, ifw, VLEN, iph, ipw);
   else if(gp->in_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)in_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
+    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)in_ptr[0], conv_desc.N, nBIfm, ifh, ifw, VLEN, iph, ipw);
 
   if(gp->in_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)out_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
+    check_physical_pad( nname.c_str(), (float*)out_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
   else if(gp->in_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)out_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
+    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)out_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
 
 #endif
 
@@ -355,7 +402,9 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
       const int tid = 0;
 #endif
 
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_FWD, 0, tid ) );
+      int ntps = gp->num_threads/gp->num_numa_nodes;
+      int n = tid/ntps;
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_FWD, n*ntps, tid) );
     }
 #ifdef USE_XSMM_TIMING
   gettimeofday(&tvec, NULL);
@@ -382,44 +431,82 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
 #ifndef NDEBUG
   /* check physical padding */
   if(gp->in_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)in_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
+    check_physical_pad( nname.c_str(), (float*)in_ptr[0], conv_desc.N, nBIfm, ifh, ifw, VLEN, iph, ipw);
   else if(gp->in_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)in_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
+    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)in_ptr[0], conv_desc.N, nBIfm, ifh, ifw, VLEN, iph, ipw);
 
   if(gp->out_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)out_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
+    check_physical_pad( nname.c_str(), (float*)out_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
   else if(gp->out_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)out_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
+    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)out_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
 #endif
 }
 
 void ConvXSMM::backPropagate(TensorBuf* inp, TensorBuf* weightp, TensorBuf *deloutp, TensorBuf* delinp, int tid)
 {
-  dout_ptr = deloutp->getBuffer();
+  int nIFM = gp->nInput;
+  int nOFM = gp->nOutput;
+  int nBIfm = nIFM/VLEN;
+  int nBOfm = nOFM/VLEN;
+  int ifh = gp->iHeight;
+  int ifw = gp->iWidth;
+  int ofh = gp->oHeight;
+  int ofw = gp->oWidth;
+  int iph = gp->ipad_h;
+  int ipw = gp->ipad_w;
+  int oph = gp->opad_h;
+  int opw = gp->opad_w;
+  int ifhp = ifh + 2*iph;
+  int ifwp = ifw + 2*ipw;
+  int ofhp = ofh + 2*oph;
+  int ofwp = ofw + 2*opw;
 
-  din_ptr = delinp->getBuffer();
+  int imoff = conv_desc.N * conv_desc.K * ofhp * ofwp;
+  if(gp->out_data_type == DT_FLOAT)
+    imoff = imoff * sizeof(float);
+  else if(gp->out_data_type == DT_BF16)
+    imoff = imoff * sizeof(libxsmm_bfloat16);
 
-  if(scratch != scratchp->getBuffer())
+  dout_ptr[0] = deloutp->getBuffer();
+  for(int n=1; n<gp->num_numa_nodes; n++)
+    dout_ptr[n] = dout_ptr[n-1] + imoff;
+
+  imoff = conv_desc.N * conv_desc.C * ifhp * ifwp;
+  if(gp->in_data_type == DT_FLOAT)
+    imoff = imoff * sizeof(float);
+  else if(gp->in_data_type == DT_BF16)
+    imoff = imoff * sizeof(libxsmm_bfloat16);
+  din_ptr[0] = delinp->getBuffer();
+  for(int n=1; n<gp->num_numa_nodes; n++)
+    din_ptr[n] = din_ptr[n-1] + imoff;
+
+  void **sptrptr = scratchp->getBufferPtr();
+
+  if(!updated_scratch_bwd)
   {
-    scratch = scratchp->getBuffer();
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
+    for(int n=0; n<gp->num_numa_nodes; n++)
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_ALL, sptrptr[n] ) );
+    updated_scratch_bwd = true;
   }
 
-  if(libxsmm_delinput == NULL && libxsmm_deloutput == NULL)
+  for(int n=0; n<gp->num_numa_nodes; n++)
   {
-    libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT, &status );
-    CHKERR_LIBXSMM_DNN( status );
-    libxsmm_delinput = libxsmm_dnn_link_tensor(libxsmm_layout, din_ptr, &status );
-    CHKERR_LIBXSMM_DNN(status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_delinput, LIBXSMM_DNN_GRADIENT_INPUT ) );
+    if(libxsmm_delinput[n] == NULL && libxsmm_deloutput[n] == NULL)
+    {
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle[n], LIBXSMM_DNN_GRADIENT_INPUT, &status );
+      CHKERR_LIBXSMM_DNN( status );
+      libxsmm_delinput[n] = libxsmm_dnn_link_tensor(libxsmm_layout, din_ptr[n], &status );
+      CHKERR_LIBXSMM_DNN(status );
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle[n], libxsmm_delinput[n], LIBXSMM_DNN_GRADIENT_INPUT ) );
 
-    libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT, &status );
-    CHKERR_LIBXSMM_DNN(status );
-    libxsmm_deloutput = libxsmm_dnn_link_tensor( libxsmm_layout, dout_ptr, &status );
-    CHKERR_LIBXSMM_DNN(status );
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-    CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_deloutput, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle[n], LIBXSMM_DNN_GRADIENT_OUTPUT, &status );
+      CHKERR_LIBXSMM_DNN(status );
+      libxsmm_deloutput[n] = libxsmm_dnn_link_tensor( libxsmm_layout, dout_ptr[n], &status );
+      CHKERR_LIBXSMM_DNN(status );
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle[n], libxsmm_deloutput[n], LIBXSMM_DNN_GRADIENT_OUTPUT ) );
+    }
   }
 
 #ifndef NDEBUG
@@ -430,14 +517,14 @@ void ConvXSMM::backPropagate(TensorBuf* inp, TensorBuf* weightp, TensorBuf *delo
     printf("node %s: conv xsmm backward is partially padded which cannot be :-(\n", nname.c_str());
   }
   if(gp->out_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)din_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
+    check_physical_pad( nname.c_str(), (float*)din_ptr[0], conv_desc.N, nBIfm, ifh, ifw, VLEN, iph, ipw);
   else if(gp->out_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)din_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
+    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)din_ptr[0], conv_desc.N, nBIfm, ifh, ifw, VLEN, iph, ipw);
 
   if(gp->in_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)dout_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
+    check_physical_pad( nname.c_str(), (float*)dout_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
   else if(gp->in_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)dout_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
+    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)dout_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
 #endif
 
 #ifdef USE_XSMM_TIMING
@@ -455,7 +542,9 @@ void ConvXSMM::backPropagate(TensorBuf* inp, TensorBuf* weightp, TensorBuf *delo
       const int tid = 0;
 #endif
 
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_BWD, 0, tid ) );
+      int ntps = gp->num_threads/gp->num_numa_nodes;
+      int n = tid/ntps;
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_BWD, n*ntps, tid ) );
     }
 
 #ifdef USE_XSMM_TIMING
@@ -483,91 +572,84 @@ void ConvXSMM::backPropagate(TensorBuf* inp, TensorBuf* weightp, TensorBuf *delo
 #ifndef NDEBUG
   /* check physical padding */
   if(gp->out_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)din_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
+    check_physical_pad( nname.c_str(), (float*)din_ptr[0], conv_desc.N, nBIfm, ifh, ifw, VLEN, iph, ipw);
   else if(gp->out_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)din_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
+    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)din_ptr[0], conv_desc.N, nBIfm, ifh, ifw, VLEN, iph, ipw);
 
   if(gp->in_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)dout_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
+    check_physical_pad( nname.c_str(), (float*)dout_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
   else if(gp->in_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)dout_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
+    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)dout_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
 #endif
 }
 
 void ConvXSMM::weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf* delweightp, TensorBuf* delbiasp, int tid)
 {
-  void *dwt_ptr = delweightp->getBuffer();
+  int ifm = gp->nInput;
+  int ofm = gp->nOutput;
+  int ofh = gp->oHeight;
+  int ofw = gp->oWidth;
+  int oph = gp->opad_h;
+  int opw = gp->opad_w;
+  int ofhp = ofh + 2*oph;
+  int ofwp = ofw + 2*opw;
+  int kh = gp->kh;
+  int kw = gp->kw;
 
-  if(scratch != scratchp->getBuffer())
-  {
-    scratch = scratchp->getBuffer();
-    CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_ALL, scratch ) );
-  }
+  void *dwt_ptr[NUM_NUMA_NODES];
 
-  if(libxsmm_delfilter == NULL)
-  {
-    libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER, &status );
-    CHKERR_LIBXSMM_DNN(status );
-    libxsmm_delfilter = libxsmm_dnn_link_tensor( libxsmm_layout, dwt_ptr, &status );
-    CHKERR_LIBXSMM_DNN(status);
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-    CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_delfilter, LIBXSMM_DNN_GRADIENT_FILTER ) );
-  }
-
-  if(libxsmm_deloutput == NULL)
-  {
-    dout_ptr = deloutp->getBuffer();
-    libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT, &status );
-    CHKERR_LIBXSMM_DNN(      status );
-    libxsmm_deloutput = libxsmm_dnn_link_tensor(libxsmm_layout, dout_ptr, &status );
-    CHKERR_LIBXSMM_DNN(status);
-    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-    CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_deloutput, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
-  }
-
-#ifndef NDEBUG
-  /* check physical padding */
-  if ( (gp->ipad_h > 0 || gp->ipad_w > 0) && (gp->opad_h > 0 || gp->opad_w > 0) ) {
-  } else if ( (gp->ipad_h == 0 || gp->ipad_w == 0) && (gp->opad_h == 0 || gp->opad_w == 0) ) {
-  } else {
-    printf("node %s: conv xsmm backward is partially padded which cannot be :-(\n", nname.c_str());
-  }
-  if(gp->in_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)in_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
-  else if(gp->in_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)in_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
+  void **ptrptr = delweightp->getBufferPtr();
+  int offset = delweightp->getOffset();
 
   if(gp->in_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)dout_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
+    offset = offset*sizeof(float);
   else if(gp->in_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)dout_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
-#endif
+    offset = offset*sizeof(libxsmm_bfloat16);
 
-  if(gp->bias_term)
+  for(int n=0; n<gp->num_numa_nodes; n++)
+    dwt_ptr[n] = ptrptr[n] + offset;
+
+  int imoff = conv_desc.N * conv_desc.K * ofhp * ofwp;
+  if(gp->out_data_type == DT_FLOAT)
+    imoff = imoff * sizeof(float);
+  else if(gp->out_data_type == DT_BF16)
+    imoff = imoff * sizeof(libxsmm_bfloat16);
+  dout_ptr[0] = deloutp->getBuffer();
+  for(int n=1; n<gp->num_numa_nodes; n++)
+    dout_ptr[n] = dout_ptr[n-1] + imoff;
+
+  void **sptrptr = scratchp->getBufferPtr();
+  if(!updated_scratch_upd)
   {
-    /* Conv del-bias */
-    float* delbias = (float*)delbiasp->getBuffer();
+    for(int n=0; n<gp->num_numa_nodes; n++)
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_ALL, sptrptr[n] ) );
+    updated_scratch_upd = true;
+  }
 
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-    for(int i=0; i<gp->nOutput; i++)
-      delbias[i] = 0.0;
+  for(int n=0; n<gp->num_numa_nodes; n++)
+  {
+    if(libxsmm_delfilter[n] == NULL)
+    {
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle[n], LIBXSMM_DNN_GRADIENT_FILTER, &status );
+      CHKERR_LIBXSMM_DNN(status );
+      libxsmm_delfilter[n] = libxsmm_dnn_link_tensor( libxsmm_layout, dwt_ptr[n], &status );
+      CHKERR_LIBXSMM_DNN(status);
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle[n], libxsmm_delfilter[n], LIBXSMM_DNN_GRADIENT_FILTER ) );
+    }
+  }
 
-#ifdef _OPENMP
-#pragma omp parallel for collapse(2)
-#endif
-    for(int ofm1=0; ofm1<gp->nOutput/16; ofm1++)
-      for(int ofm2=0; ofm2<16; ofm2++)
-        for(int img=0; img<gp->batch_size; img++)
-          for(int ofh=0; ofh<gp->oHeight; ofh++)
-            for(int ofw=0; ofw<gp->oWidth; ofw++)
-            {
-              float* delout= (float*)dout_ptr;
-              int in_idx = img * gp->nOutput * gp->oHeight * gp->oWidth + ofm1 * gp->oHeight * gp->oWidth * 16 + ofh * gp->oWidth * 16 + ofw*16 + ofm2;
-              int out_idx = ofm1*16 + ofm2;
-              delbias[out_idx] += delout[in_idx];
-            }
+  for(int n=0; n<gp->num_numa_nodes; n++)
+  {
+    if(libxsmm_deloutput[n] == NULL)
+    {
+      libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle[n], LIBXSMM_DNN_GRADIENT_OUTPUT, &status );
+      CHKERR_LIBXSMM_DNN(      status );
+      libxsmm_deloutput[n] = libxsmm_dnn_link_tensor(libxsmm_layout, dout_ptr[n], &status );
+      CHKERR_LIBXSMM_DNN(status);
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle[n], libxsmm_deloutput[n], LIBXSMM_DNN_GRADIENT_OUTPUT ) );
+    }
   }
 
 #ifdef USE_XSMM_TIMING
@@ -584,8 +666,11 @@ void ConvXSMM::weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf* delwe
       const int tid = 0;
 #endif
 
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid ) );
+      int ntps = gp->num_threads/gp->num_numa_nodes;
+      int n = tid/ntps;
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_UPD, n*ntps, tid ) );
     }
+
 
 #ifdef USE_XSMM_TIMING
   gettimeofday(&tvec, NULL);
@@ -605,18 +690,6 @@ void ConvXSMM::weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf* delwe
   }
 #endif
 
-#ifndef NDEBUG
-  /* check physical padding */
-  if(gp->in_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)in_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
-  else if(gp->in_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)in_ptr, gp->batch_size, gp->nInput/16, gp->iHeight, gp->iWidth, 16, gp->ipad_h, gp->ipad_w );
-
-  if(gp->in_data_type == DT_FLOAT)
-    check_physical_pad( nname.c_str(), (float*)dout_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
-  else if(gp->in_data_type == DT_BF16)
-    check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)dout_ptr, gp->batch_size, gp->nOutput/16, gp->oHeight, gp->oWidth, 16, gp->opad_h, gp->opad_w );
-#endif
 }
 
 void ConvXSMM::dumpBuffer(TensorBuf* tBuf, void* wtemp)

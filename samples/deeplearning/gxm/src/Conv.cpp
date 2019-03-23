@@ -159,6 +159,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
   // size of master weights -- FP32
   wsize = welem*sizeof(float);
 
+  gparams_.num_numa_nodes = NUM_NUMA_NODES;
   tenWeightData_->setBufferSize(wsize);
 
   wfiller_type_ = p->get_weight_filler_type();
@@ -378,18 +379,17 @@ void ConvNode::fillWeightBuffers(TensorBuf* tBuf, int buftype, long long int siz
   unsigned int node_id = 0;
 #endif
 
+  int ic = gparams_.nInput;
+  int oc = gparams_.nOutput;
+  int kh = gparams_.kh;
+  int kw = gparams_.kw;
+  int g = gparams_.group;
+  int fanin = (ic * kh * kw)/g;
+  int fanout = (oc * kh * kw)/g;
+  int welem = ic * oc * kh * kw;
+
   if(buftype == DATA)
   {
-    int n = gparams_.batch_size;
-    int ic = gparams_.nInput;
-    int oc = gparams_.nOutput;
-    int kh = gparams_.kh;
-    int kw = gparams_.kw;
-    int g = gparams_.group;
-    int fanin = (ic * kh * kw)/g;
-    int fanout = (oc * kh * kw)/g;
-    int welem = ic * oc * kh * kw;
-
     initBuffer(ptr, dtype, variance_norm_, fanin, fanout, welem*sizeof(float), wfiller_type_, (unsigned int)(node_id+PRIME_SEED), std_);
 
 #ifdef USE_MLSL
@@ -397,7 +397,7 @@ void ConvNode::fillWeightBuffers(TensorBuf* tBuf, int buftype, long long int siz
       MPI_Bcast(ptr, welem, MPI_FLOAT, 0, MPI_COMM_WORLD);
 #endif
   }
-  else
+  else if(buftype == HISTORY || buftype == DIFF)
     memset(ptr, 0, size);
 }
 
@@ -670,7 +670,7 @@ void ConvNode::forwardPropagate()
       if(isnan(cbptr[i]) || isinf(cbptr[i]))
       {
         printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
-        exit(-1);
+  //      exit(-1);
       }
     }
   }
@@ -750,7 +750,8 @@ void ConvNode::forwardPropagate()
 
         s = nname_ + "_Wt";
         float *fptr = (float*)tenWeightData_->getBuffer();
-        MeanOfLayer((char*)s.c_str(), fptr, ifm*ofm*kh*kw);
+        int w = ifm*ofm*kh*kw;
+        MeanOfLayer((char*)s.c_str(), fptr, w);
 
         if(gparams_.bias_term)
         {
@@ -976,25 +977,25 @@ void ConvNode::weightUpdate()
 #ifdef CHECK_BLOWUP_FP32
   if(out_dtype == DT_FLOAT)
   {
-    for(int i=0; i<16; i++)
+    for(int i=0; i<10240; i++)
     {
       float v = ((float*)tenWeightDiff_->getBuffer())[i];
       if(isnan(v) || isinf(v))
       {
-        printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
+        printf("Warning! %s layer weight-gradients are NaN or Inf\n", nname_.c_str());
         exit(-1);
       }
     }
   }
   else if(out_dtype == DT_BF16)
   {
-    convert_bf16_f32((libxsmm_bfloat16*)tenWeightDiff_->getBuffer(), cbptr, 16);
-    for(int i=0; i<16; i++)
+    convert_bf16_f32((libxsmm_bfloat16*)tenWeightDiff_->getBuffer(), cbptr, 10240);
+    for(int i=0; i<10240; i++)
     {
       if(isnan(cbptr[i]) || isinf(cbptr[i]))
       {
-        printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
-        exit(-1);
+        printf("Warning! %s layer weight-gradients are NaN or Inf\n", nname_.c_str());
+//        exit(-1);
       }
     }
   }
@@ -1023,6 +1024,13 @@ void ConvNode::weightUpdate()
 #endif
 
 #ifdef GETSTATS
+  int node_id;
+
+#ifdef USE_MLSL
+  node_id = MLSL::Environment::GetEnv().GetProcessIdx();
+#else
+  node_id = 0;
+#endif
   if(node_id == 0)
   {
     if(in_dtype == DT_FLOAT)
@@ -1078,10 +1086,7 @@ void ConvNode::weightUpdate()
 
 void ConvNode::solverStep()
 {
-#ifdef RETURNALL
-  return;
-#endif
-
+#ifdef USE_MLSL
   int ifm = gparams_.nInput;
   int ofm = gparams_.nOutput;
   int kh = gparams_.kh;
@@ -1093,7 +1098,6 @@ void ConvNode::solverStep()
   if(gparams_.bias_term)
     gbias = (float*)(tenBiasDiff_->getBuffer());
 
-#ifdef USE_MLSL
   int wsize = ifm*ofm*kh*kw;
   void *mptr = op_->GetParameterSet(0)->WaitGradientComm();
   if(in_dtype == DT_FLOAT)

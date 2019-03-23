@@ -185,7 +185,7 @@ void SoftmaxLossNode::forwardPropagate()
   if(node_id_ == 0 && eptr_->get_current_batch() % LOSSFREQ == 0)
     printf("loss = %.15f (weighted loss = %.15f)\n", gparams_.loss/num_nodes_, (gparams_.loss)*(gparams_.loss_weight)/num_nodes_);
 #else
-  printf("loss = %f\n", gparams_.loss*gparams_.loss_weight);
+  printf("loss = %.15f\n", gparams_.loss*gparams_.loss_weight);
 #endif
 
 }

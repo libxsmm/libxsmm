@@ -191,6 +191,8 @@ class SolverNode : public MLNode
     virtual ~SolverNode(void) {}
 
     void applyUpdate(float*, float*, void*, int, float*, float*, string);
+    void applyUpdate(float**, float**, void**, int, float**, float**, string);
+    void convert_bf16_f32(libxsmm_bfloat16**, float**, int);
     void convert_bf16_f32(libxsmm_bfloat16*, float*, int);
     bool getGlobalFlag() { return global_; }
 
@@ -206,6 +208,6 @@ class SolverNode : public MLNode
     float base_lr_, lrval_, mval_, decayval_;
     float gamma_, power_, warmup_lr_;
     float mc_, mc1_, mc2_, prev_lrval_=-1, prev_lrval_1_=-1;
-    float *tmp_grad=NULL;
+    float *tmp_grad[NUM_NUMA_NODES]={NULL};
     MLEngine *eptr_;
 };

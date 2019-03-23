@@ -104,6 +104,8 @@ FCNode::FCNode(FCParams *p, MLEngine* e) : NNNode(p, e)
 
   tenTopData_->setBufferSize(tsize);
 
+  gparams_.num_numa_nodes = NUM_NUMA_NODES;
+
   // Create weight tensor
   weight_ = top_[0] + "_fp_wt";
   tenWeight_ = new Tensor(weight_);
@@ -202,7 +204,8 @@ FCNode::FCNode(FCParams *p, MLEngine* e) : NNNode(p, e)
       if(in_dtype == DT_BF16 || out_dtype == DT_BF16)
       {
         tenWeightDiff_->setDataType(DT_BF16);
-        tenWeightDiff_->setBufferSize(ws_.dims[0]*ws_.dims[1]*sizeof(libxsmm_bfloat16));
+        int welem = ws_.dims[0]*ws_.dims[1];
+        tenWeightDiff_->setBufferSize(welem*sizeof(libxsmm_bfloat16));
       }
       else
       {
@@ -315,28 +318,27 @@ void FCNode::fillWeightBuffers(TensorBuf* tBuf, int buftype, long long int size)
   int dtype = tBuf->getBufferType();
   void *ptr = tBuf->getBuffer();
 
-  int fanin = gparams_.nInput * gparams_.iHeight * gparams_.iWidth;
-  int fanout = gparams_.batch_size;
-
 #ifdef USE_MLSL
   unsigned int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
 #else
   unsigned int node_id = 0;
 #endif
 
+  int ic = gparams_.nInput;
+  int oc = gparams_.nOutput;
+  int welem = ic * oc;
+  int fanin = ic;
+  int fanout = oc;
+
   if(buftype == DATA)
   {
-      initBuffer(ptr, dtype, variance_norm_, fanin, fanout, size, wfiller_type_, (unsigned int)node_id+PRIME_SEED, std_);
+    initBuffer(ptr, dtype, variance_norm_, fanin, fanout, welem*sizeof(float), wfiller_type_, (unsigned int)node_id+PRIME_SEED, std_);
 
 #ifdef USE_MLSL
     MPI_Bcast(ptr, size, MPI_FLOAT, 0, MPI_COMM_WORLD);
 #endif
-
-    int ic = gparams_.nInput;
-    int oc = gparams_.nOutput;
-    int welem = ic * oc;
   }
-  else
+  else if(buftype == HISTORY || buftype == DIFF)
     memset(ptr, 0, size);
 }
 

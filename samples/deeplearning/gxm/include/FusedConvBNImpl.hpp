@@ -57,6 +57,7 @@ typedef struct {
   int algType;
   int bdims, mdims, tdims, wdims;
   int in_data_type, out_data_type;
+  int num_numa_nodes;
   int num_threads;
   string exec_mode;
 } FusedConvBNImplParams;
