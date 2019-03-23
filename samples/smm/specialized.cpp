@@ -42,7 +42,10 @@
 #include <vector>
 #include <cmath>
 #if defined(_OPENMP)
+# define USEOMP(FUNCTION) LIBXSMM_USEOMP(FUNCTION)
 # include <omp.h>
+#else
+# define USEOMP(FUNCTION) (FUNCTION)
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
@@ -203,7 +206,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-          libxsmm_gemm_batch2_omp(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
+          USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
             0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
         }
@@ -269,7 +272,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-          libxsmm_gemm_batch2_omp(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
+          USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
             0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
         }
@@ -333,7 +336,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-          libxsmm_gemm_batch2_omp(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
+          USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
             0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
         }
@@ -409,7 +412,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-          libxsmm_gemm_batch2_omp(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
+          USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
             0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
         }
@@ -471,7 +474,7 @@ int main(int argc, char* argv[])
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
-          libxsmm_gemm_batch2_omp(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
+          USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
             0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
         }

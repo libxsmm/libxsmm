@@ -261,7 +261,7 @@ LIBXSMM_INLINE void matrix_copy_f32_bfp16(int size, float *src, libxsmm_bfloat16
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    union libxsmm_bfloat16_hp t;
+    libxsmm_bfloat16_hp t;
     t.f = src[i];
     dst[i] = t.i[1];
   }
@@ -274,7 +274,7 @@ LIBXSMM_INLINE void matrix_copy_bfp16_f32(int size, libxsmm_bfloat16 *src, float
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; i++) {
-    union libxsmm_bfloat16_hp t;
+    libxsmm_bfloat16_hp t;
     t.i[1] = src[i];
     t.i[0] = 0;
     dst[i] = t.f;
@@ -381,7 +381,7 @@ LIBXSMM_INLINE void convert_ck_f32_to_c4k_bfp16(int C, int K, float *src, libxsm
 #endif
   for (y = 0; y < C; y++) {
     for (x = 0; x < K; x++) {
-      union libxsmm_bfloat16_hp t;
+      libxsmm_bfloat16_hp t;
       t.f = src[y*K + x];
       dst[y*4*K + x] = t.i[1];
     }
@@ -445,7 +445,7 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
   __m512 minus1 = _mm512_set1_ps (-1.0f);
   __m512 plus1  = _mm512_set1_ps (1.0f);
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = 0; l < rem; l+=16) {
@@ -489,7 +489,7 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
     }
   }
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = rem; l < K; l++) {
@@ -552,7 +552,7 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
   int rem = (K/16)*16;
   __m512 plus1  = _mm512_set1_ps (1.0f);
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = 0; l < rem; l+=16) {
@@ -613,7 +613,7 @@ LIBXSMM_INLINE void lstm_bwd_upd_eltwise_merged(int N, int K, float *i, float *c
     }
   }
 #if defined(_OPENMP)
-# pragma omp parallel for private(j, l) collapse(2)
+# pragma omp parallel for private(j, l) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
   for (j = 0; j < N; j++) {
     for (l = rem; l < K; l++) {

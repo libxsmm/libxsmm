@@ -77,9 +77,8 @@ int main(int argc, char* argv[])
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'L';
 
-  const char *const env_check = getenv("CHECK")/*, *const env_winograd = getenv("WINOGRAD")*/;
+  const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
-  /*const int algo_winograd = (0 == env_winograd ? 0 : atoi(env_winograd));*/
 
 #if defined(_OPENMP)
   int nThreads = omp_get_max_threads();       /* number of threads */
@@ -630,7 +629,7 @@ int main(int argc, char* argv[])
         norms_fwd.l2_abs, norms_fwd.l2_rel, norms_fwd.linf_abs, norms_fwd.linf_rel, norms_fwd.normf_rel);
   }
 
-  if ( (type == 'A') || (type == 'B') && (nIfm > 3) ) {
+  if ( (type == 'A') || ((type == 'B') && (nIfm > 3)) ) {
     printf("##########################################\n");
     printf("#   Performance - BWD (custom-Storage)   #\n");
     printf("##########################################\n");

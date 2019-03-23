@@ -909,7 +909,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
   }
 
   /* FIXME: SKX specific tuning for GooglenetV3 */
-  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && (handle->desc.K/16 <= 8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
+  if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX) && (handle->desc.K/16 <= 8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
     handle->use_nts_bwd = 0;
   }
 
@@ -1038,7 +1038,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
 
 
     /* TODO check JIT errors */
-    if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL ) {
+    if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ) {
       if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
         handle->code_bwd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
       } else {
@@ -1284,7 +1284,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
       if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
             libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
             libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) &&
+            libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX) &&
           !((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)) )
       {
         const unsigned int wu_each_iter_code_size = 10 * descriptor.ifm_block;
@@ -1349,14 +1349,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         descriptor.transpose_ofw_ifm = 0;
         handle->use_hybrid_wu_parallelism = 0;
 
-        if ( handle->use_lp_kernel == 1 && ((libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) ) ) {
+        if ( handle->use_lp_kernel == 1 && ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE) && (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) ) ) {
           handle->use_vperm_transposes = 1;
         } else {
           handle->use_vperm_transposes = 0;
         }
 
         if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
-          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) {
+          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX) {
             if (handle->ofwp % 2 == 0) {
               handle->avoid_output_trans = 1;
             } else {
@@ -1370,7 +1370,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
             }
           }
         } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
-          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL ) {
+          if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ) {
             handle->avoid_output_trans = 0;
             handle->avoid_input_trans = 0;
           }
@@ -1401,7 +1401,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
           int enforce_sfma_kernel = 0;
           handle->output_lp_padding = 0;
 
-          if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || ( (handle->desc.R!=1 || handle->desc.S!=1 || handle->desc.pad_h!=0 || handle->desc.pad_w!=0) && (handle->desc.u!=1 || handle->desc.v!=1) )) && (handle->use_lp_kernel == 0)  ) {
+          if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX || ( (handle->desc.R!=1 || handle->desc.S!=1 || handle->desc.pad_h!=0 || handle->desc.pad_w!=0) && (handle->desc.u!=1 || handle->desc.v!=1) )) && (handle->use_lp_kernel == 0)  ) {
             enforce_sfma_kernel = 1;
           }
 
@@ -1412,7 +1412,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
           } else {
             padding_target = 8;
             output_lp_padding = handle->ofwp%2;
-            if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) {
+            if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX) {
               if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 || handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
                 padding_target = 2;
               } else {
@@ -1423,7 +1423,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
             handle->output_lp_padding = output_lp_padding;
           }
 
-          if (handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.pad_h == 0 && handle->desc.pad_w == 0 && (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->use_lp_kernel == 1)) && (handle->desc.u != 1 || handle->desc.v != 1)) {
+          if (handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.pad_h == 0 && handle->desc.pad_w == 0 && (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX) && handle->use_lp_kernel == 1)) && (handle->desc.u != 1 || handle->desc.v != 1)) {
             handle->resize_input = 1;
             handle->trans_ofw_ifm = 1;
             handle->ifwp_resized = handle->ifwp/handle->desc.u;
@@ -1443,7 +1443,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
 
           if (libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && (enforce_sfma_kernel == 0) ) {
             qfma_padding = (handle->desc.W % padding_target == 0) ? 0 : padding_target - handle->desc.W % padding_target;
-          } else if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || enforce_sfma_kernel == 1) {
+          } else if (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || enforce_sfma_kernel == 1) {
             if (handle->use_lp_kernel == 1) {
               qfma_padding = (ifw_padded % padding_target == 0) ? 0 : padding_target - ifw_padded % padding_target;
             } else {
@@ -1493,7 +1493,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
             descriptor.ofh_rb--;
           }
 
-          if (handle->ofh == 14 && (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || enforce_sfma_kernel==1)) {
+          if (handle->ofh == 14 && (libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX || enforce_sfma_kernel==1)) {
             descriptor.ofh_rb = 2;
           }
 
@@ -1580,7 +1580,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
             }
           }
 
-          if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) &&  (handle->ofh == 7 || (handle->ofh == 14 && handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.u == 1 && handle->desc.v == 1)) ) {
+          if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) &&  (handle->ofh == 7 || (handle->ofh == 14 && handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.u == 1 && handle->desc.v == 1)) ) {
             descriptor.use_nts = 0;
             descriptor.blocks_h = handle->ofh / descriptor.ofh_rb;
             handle->upd_ofh_rb = descriptor.ofh_rb * descriptor.blocks_h;
@@ -1630,12 +1630,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
       /* Determine if we will be using thread private filters  */
       if ( (handle->blocksifm_lp * handle->blocksofm < handle->desc.threads) ) {
         /* determine if we will transpose input  */
-        if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0 ) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->use_lp_kernel == 1 && ( ((handle->desc.R !=1 || handle->desc.S != 1) && handle->padding_flag == 1) || handle->desc.u != 1 || handle->desc.v != 1 || handle->desc.W%2 != 0 )) ) ) {
+        if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0 ) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX) && handle->use_lp_kernel == 1 && ( ((handle->desc.R !=1 || handle->desc.S != 1) && handle->padding_flag == 1) || handle->desc.u != 1 || handle->desc.v != 1 || handle->desc.W%2 != 0 )) ) ) {
           handle->trans_ofw_ifm = 1;
         }
       } else {
         /* determine if we will transpose input  */
-        if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC)  || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->use_lp_kernel == 1 && (((handle->desc.R !=1 || handle->desc.S != 1) && handle->padding_flag == 1) || handle->desc.u != 1 || handle->desc.v != 1 ||  handle->desc.W%2 != 0 )) ) ) {
+        if ( ((libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM && handle->enforce_sfma_kernel == 0) && (handle->upd_ofw_rb%4 == 0)) || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC)  || ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX) && handle->use_lp_kernel == 1 && (((handle->desc.R !=1 || handle->desc.S != 1) && handle->padding_flag == 1) || handle->desc.u != 1 || handle->desc.v != 1 ||  handle->desc.W%2 != 0 )) ) ) {
           handle->trans_ofw_ifm = 1;
           if ( handle->desc.R !=1 && handle->desc.S != 1 && ( handle->desc.u !=1 || handle->desc.v != 1 )  ) {
             handle->trans_ofw_ifm = 0;
@@ -1643,7 +1643,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
         }
       }
 
-      if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL) && handle->use_lp_kernel == 1 && handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
+      if ((libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX) && handle->use_lp_kernel == 1 && handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) {
         handle->trans_ofw_ifm = 1;
       }
 

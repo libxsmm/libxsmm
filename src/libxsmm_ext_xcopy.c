@@ -41,8 +41,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define LIBXSMM_MCOPY_MT(MT, NT, M, N) ((MT) <= (M) && (NT) <= (N) && \
-  (((unsigned int)(LIBXSMM_AVG_M)) * LIBXSMM_AVG_N) <= (((unsigned int)(M)) * (N)))
+#define LIBXSMM_MCOPY_MT(MT, NT, M, N) ((MT) <= (M) && (NT) <= (N) && (64U * 64U) <= (((unsigned int)(M)) * (N)))
 
 
 LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,

@@ -43,12 +43,10 @@
 /** Parameters of GEMM domain (static kernels, etc). */
 #define LIBXSMM_PREFETCH LIBXSMM_CONFIG_PREFETCH
 #define LIBXSMM_MAX_MNK LIBXSMM_CONFIG_MAX_MNK
+#define LIBXSMM_MAX_DIM LIBXSMM_CONFIG_MAX_DIM
 #define LIBXSMM_MAX_M LIBXSMM_CONFIG_MAX_M
 #define LIBXSMM_MAX_N LIBXSMM_CONFIG_MAX_N
 #define LIBXSMM_MAX_K LIBXSMM_CONFIG_MAX_K
-#define LIBXSMM_AVG_M LIBXSMM_CONFIG_AVG_M
-#define LIBXSMM_AVG_N LIBXSMM_CONFIG_AVG_N
-#define LIBXSMM_AVG_K LIBXSMM_CONFIG_AVG_K
 #define LIBXSMM_FLAGS LIBXSMM_CONFIG_FLAGS
 #define LIBXSMM_ALPHA LIBXSMM_CONFIG_ALPHA
 #define LIBXSMM_BETA LIBXSMM_CONFIG_BETA
@@ -79,7 +77,12 @@
 
 #define LIBXSMM_VERSION2(MAJOR, MINOR) ((MAJOR) * 10000 + (MINOR) * 100)
 #define LIBXSMM_VERSION3(MAJOR, MINOR, UPDATE) (LIBXSMM_VERSION2(MAJOR, MINOR) + (UPDATE))
-#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) ((MAJOR) * 100000000 + (MINOR) * 1000000 + (UPDATE) * 10000 + (PATCH))
+#define LIBXSMM_VERSION4(MAJOR, MINOR, UPDATE, PATCH) \
+  (((MAJOR/*7b*/) << 24) | ((MINOR/*5b*/) << 19) | ((UPDATE/*5b*/) << 14) | (PATCH/*14b*/))
+#define LIBXSMM_VERSION41(VERSION) (((VERSION) >> 24))
+#define LIBXSMM_VERSION42(VERSION) (((VERSION) >> 19) & 0x1F)
+#define LIBXSMM_VERSION43(VERSION) (((VERSION) >> 14) & 0x1F)
+#define LIBXSMM_VERSION44(VERSION) (((VERSION)) & 0x3FFF)
 
 #if defined(__cplusplus)
 # define LIBXSMM_VARIADIC ...
@@ -167,12 +170,12 @@
 #endif
 #define LIBXSMM_RETARGETABLE LIBXSMM_OFFLOAD(LIBXSMM_OFFLOAD_TARGET)
 
-#if !defined(__STATIC) && !defined(_WINDLL) && !defined(__MINGW32__) && (defined(_WIN32) || defined(__CYGWIN__))
+#if !defined(__STATIC) && !defined(_WINDLL) && (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
 # define __STATIC
 #endif
 
 /* may include Clang and other compatible compilers */
-#if defined(__GNUC__) && !defined(_WIN32) && !defined(__CYGWIN__)
+#if defined(__GNUC__) && !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
 # define LIBXSMM_VISIBILITY_INTERNAL LIBXSMM_ATTRIBUTE(visibility("internal"))
 # define LIBXSMM_VISIBILITY_HIDDEN LIBXSMM_ATTRIBUTE(visibility("hidden"))
 # define LIBXSMM_VISIBILITY_PUBLIC LIBXSMM_ATTRIBUTE(visibility("default"))
@@ -191,7 +194,7 @@
 #endif
 
 /* Windows Dynamic Link Library (DLL) */
-#if !defined(__STATIC) && (defined(_WIN32) || defined(__CYGWIN__))
+#if !defined(__STATIC) && (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__))
 # define LIBXSMM_VISIBILITY_EXPORT LIBXSMM_ATTRIBUTE(dllexport)
 # define LIBXSMM_VISIBILITY_IMPORT LIBXSMM_ATTRIBUTE(dllimport)
 #endif
@@ -240,9 +243,11 @@
 # endif
 #endif
 #if !defined(_WIN32)
+# define LIBXSMM_APIVAR_PRIVATE(DECL) LIBXSMM_APIVAR(LIBXSMM_ALIGNED(DECL, LIBXSMM_CONFIG_CACHELINE))
 # define LIBXSMM_APIVAR_ALIGNED(DECL) LIBXSMM_APIVAR_PUBLIC(LIBXSMM_ALIGNED(DECL, LIBXSMM_CONFIG_CACHELINE))
 # define LIBXSMM_APIVAR_ARRAY(DECL, N) LIBXSMM_APIVAR(LIBXSMM_ALIGNED(DECL[N], LIBXSMM_CONFIG_CACHELINE))
 #else /* Windows */
+# define LIBXSMM_APIVAR_PRIVATE(DECL) LIBXSMM_APIVAR(DECL)
 # define LIBXSMM_APIVAR_ALIGNED(DECL) LIBXSMM_APIVAR_PUBLIC(DECL)
 # define LIBXSMM_APIVAR_ARRAY(DECL, N) LIBXSMM_APIVAR(DECL[N])
 #endif
@@ -321,8 +326,14 @@
 # define LIBXSMM_PRAGMA_FORCEINLINE
 # define LIBXSMM_PRAGMA_LOOP_COUNT(MIN, MAX, AVG)
 # define LIBXSMM_PRAGMA_UNROLL_AND_JAM(N)
-# define LIBXSMM_PRAGMA_UNROLL_N(N)
 # define LIBXSMM_PRAGMA_UNROLL
+#endif
+#if !defined(LIBXSMM_PRAGMA_UNROLL_N)
+# if defined(__GNUC__) && (LIBXSMM_VERSION3(8, 3, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
+#   define LIBXSMM_PRAGMA_UNROLL_N(N) LIBXSMM_PRAGMA(GCC unroll N)
+# else
+#   define LIBXSMM_PRAGMA_UNROLL_N(N)
+# endif
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
@@ -370,8 +381,7 @@
 #define LIBXSMM_MOD2(A, NPOT) ((A) & ((NPOT) - 1))
 #define LIBXSMM_DIFF(T0, T1) ((T0) < (T1) ? ((T1) - (T0)) : ((T0) - (T1)))
 #define LIBXSMM_CLMP(VALUE, LO, HI) ((LO) < (VALUE) ? ((VALUE) <= (HI) ? (VALUE) : LIBXSMM_MIN(VALUE, HI)) : LIBXSMM_MAX(LO, VALUE))
-#define LIBXSMM_SQRT2(N) ((unsigned int)((1ULL << (LIBXSMM_NBITS(N) >> 1)) /*+ LIBXSMM_MIN(1, N)*/))
-#define LIBXSMM_HASH2(N) ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) ^ ((((N) ^ ((N) >> 12)) ^ (((N) ^ ((N) >> 12)) << 25)) >> 27))
+#define LIBXSMM_ISQRT2(N) ((unsigned int)((1ULL << (LIBXSMM_NBITS(N) >> 1)) /*+ LIBXSMM_MIN(1, N)*/))
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
 #define LIBXSMM_FEQ(A, B) ((A) == (B))
 #define LIBXSMM_NEQ(A, B) ((A) != (B))
@@ -381,25 +391,40 @@
 
 /** Makes some functions available independent of C99 support. */
 #if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
+# if defined(__PGI)
+#   define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
+# else
+#   define LIBXSMM_POWF(A, B) powf(A, B)
+# endif
 # define LIBXSMM_FREXPF(A, B) frexpf(A, B)
-# define LIBXSMM_POWF(A, B) powf(A, B)
 # define LIBXSMM_ROUNDF(A) roundf(A)
 # define LIBXSMM_ROUND(A) round(A)
 # define LIBXSMM_TANHF(A) tanhf(A)
+# define LIBXSMM_SQRTF(A) sqrtf(A)
+# define LIBXSMM_EXP2F(A) exp2f(A)
+# define LIBXSMM_LOG2F(A) log2f(A)
+# define LIBXSMM_EXP2(A) exp2(A)
 # define LIBXSMM_LOG2(A) log2(A)
+# define LIBXSMM_EXPF(A) expf(A)
 # define LIBXSMM_LOGF(A) logf(A)
 #else
-# define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
 # define LIBXSMM_POWF(A, B) ((float)pow((double)(A), (double)(B)))
+# define LIBXSMM_FREXPF(A, B) ((float)frexp((double)(A), B))
 # define LIBXSMM_ROUNDF(A) LIBXSMM_ROUNDX(float, A)
 # define LIBXSMM_ROUND(A) LIBXSMM_ROUNDX(double, A)
 # define LIBXSMM_TANHF(A) ((float)tanh((double)(A)))
+# define LIBXSMM_SQRTF(A) ((float)sqrt((double)(A)))
+# define LIBXSMM_EXP2F(A) LIBXSMM_POWF(2, A)
+# define LIBXSMM_LOG2F(A) ((float)LIBXSMM_LOG2((double)(A)))
+# define LIBXSMM_EXP2(A) pow(2.0, (double)(A))
 # define LIBXSMM_LOG2(A) (log(A) * (1.0 / (M_LN2)))
+# define LIBXSMM_EXPF(A) ((float)exp((double)(A)))
 # define LIBXSMM_LOGF(A) ((float)log((double)(A)))
+
 #endif
 
 #if defined(LIBXSMM_INTEL_COMPILER)
-# if (1600 <= LIBXSMM_INTEL_COMPILER)
+# if (1700 <= LIBXSMM_INTEL_COMPILER)
 #   define LIBXSMM_ASSUME(EXPRESSION) __assume(EXPRESSION)
 # else
 #   define LIBXSMM_ASSUME(EXPRESSION) assert(EXPRESSION)
@@ -433,7 +458,8 @@
 #define LIBXSMM_SELECT_ELEMENT_6(E0, E1, E2, E3, E4, E5, E6, E7) E5
 #define LIBXSMM_SELECT_ELEMENT_7(E0, E1, E2, E3, E4, E5, E6, E7) E6
 #define LIBXSMM_SELECT_ELEMENT_8(E0, E1, E2, E3, E4, E5, E6, E7) E7
-#define LIBXSMM_SELECT_HEAD(A, ...) A
+#define LIBXSMM_SELECT_HEAD_AUX(A, ...) (A)
+#define LIBXSMM_SELECT_HEAD(...) LIBXSMM_EXPAND(LIBXSMM_SELECT_HEAD_AUX(__VA_ARGS__, 0/*dummy*/))
 #define LIBXSMM_SELECT_TAIL(A, ...) __VA_ARGS__
 
 /**
@@ -443,8 +469,8 @@
  * VLA-support is signaled by LIBXSMM_VLA.
  */
 #if !defined(LIBXSMM_VLA) && !defined(LIBXSMM_NO_VLA) && !defined(__PGI) && ((defined(__STDC_VERSION__) && (199901L/*C99*/ == __STDC_VERSION__ || \
-   (!defined(__STDC_NO_VLA__) && 199901L/*C99*/ < __STDC_VERSION__))) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32) && !defined(__cplusplus)) || \
-    (defined(__INTEL_COMPILER) && !defined(_WIN32)) || (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus))/*depends on prior C99-check*/)
+   (!defined(__STDC_NO_VLA__) && 199901L/*C99*/ < __STDC_VERSION__))) || (defined(__GNUC__) && !defined(__STRICT_ANSI__) && !defined(__cplusplus)) /*|| \
+    (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32) && !defined(__cplusplus)) || (defined(__INTEL_COMPILER) && !defined(_WIN32))*/)
 # define LIBXSMM_VLA
 #endif
 
@@ -459,7 +485,7 @@
 #else
 # define LIBXSMM_INDEX1(NDIMS, ...) LIBXSMM_CONCATENATE(LIBXSMM_INDEX1_, NDIMS)(__VA_ARGS__)
 #endif
-#define LIBXSMM_INDEX1_1(I0) ((size_t)I0)
+#define LIBXSMM_INDEX1_1(...) ((size_t)LIBXSMM_SELECT_HEAD(__VA_ARGS__))
 #define LIBXSMM_INDEX1_2(I0, I1, S1) (LIBXSMM_INDEX1_1(I0) * ((size_t)S1) + (size_t)I1)
 #define LIBXSMM_INDEX1_3(I0, I1, I2, S1, S2) (LIBXSMM_INDEX1_2(I0, I1, S1) * ((size_t)S2) + (size_t)I2)
 #define LIBXSMM_INDEX1_4(I0, I1, I2, I3, S1, S2, S3) (LIBXSMM_INDEX1_3(I0, I1, I2, S1, S2) * ((size_t)S3) + (size_t)I3)
@@ -487,7 +513,7 @@
 # define LIBXSMM_VLA_ACCESS_Y(...)
 # define LIBXSMM_VLA_ACCESS_Z(NDIMS, ARRAY, XY, ...) LIBXSMM_CONCATENATE(LIBXSMM_VLA_ACCESS_, NDIMS)(ARRAY, XY, __VA_ARGS__)
 # define LIBXSMM_VLA_ACCESS_0(ARRAY, XY, ...) (ARRAY)/*scalar*/
-# define LIBXSMM_VLA_ACCESS_1(ARRAY, XY, ...) ((ARRAY)[LIBXSMM_SELECT_HEAD(__VA_ARGS__, 0/*dummy*/)])
+# define LIBXSMM_VLA_ACCESS_1(ARRAY, XY, ...) ((ARRAY)[LIBXSMM_SELECT_HEAD(__VA_ARGS__)])
 # define LIBXSMM_VLA_ACCESS_2(ARRAY, XY, I0, I1, ...) (((ARRAY) XY(__VA_ARGS__))[I0][I1])
 # define LIBXSMM_VLA_ACCESS_3(ARRAY, XY, I0, I1, I2, S1, ...) (((ARRAY) XY(S1) XY(__VA_ARGS__))[I0][I1][I2])
 # define LIBXSMM_VLA_ACCESS_4(ARRAY, XY, I0, I1, I2, I3, S1, S2, ...) (((ARRAY) XY(S1) XY(S2) XY(__VA_ARGS__))[I0][I1][I2][I3])
@@ -495,13 +521,16 @@
 # define LIBXSMM_VLA_ACCESS_6(ARRAY, XY, I0, I1, I2, I3, I4, I5, S1, S2, S3, S4, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][I5])
 # define LIBXSMM_VLA_ACCESS_7(ARRAY, XY, I0, I1, I2, I3, I4, I5, I6, S1, S2, S3, S4, S5, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(S5) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][I5][I6])
 # define LIBXSMM_VLA_ACCESS_8(ARRAY, XY, I0, I1, I2, I3, I4, I5, I6, I7, S1, S2, S3, S4, S5, S6, ...) (((ARRAY) XY(S1) XY(S2) XY(S3) XY(S4) XY(S5) XY(S6) XY(__VA_ARGS__))[I0][I1][I2][I3][I4][I5][I6][I7])
-# define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, ARRAY_VAR, INIT_VALUE, .../*bounds*/) \
-    ELEMENT_TYPE LIBXSMM_VLA_ACCESS_Z(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *LIBXSMM_RESTRICT LIBXSMM_CONCATENATE(ARRAY_VAR, LIBXSMM_VLA_POSTFIX), LIBXSMM_VLA_ACCESS_Y, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/) = \
-   (ELEMENT_TYPE LIBXSMM_VLA_ACCESS_Z(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *, LIBXSMM_VLA_ACCESS_Y, __VA_ARGS__/*bounds*/, __VA_ARGS__/*dummy*/))(INIT_VALUE)
+# define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, ARRAY_VAR, .../*initial value, and bounds*/) \
+    ELEMENT_TYPE LIBXSMM_VLA_ACCESS_Z(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *LIBXSMM_RESTRICT LIBXSMM_CONCATENATE(ARRAY_VAR, LIBXSMM_VLA_POSTFIX), \
+      LIBXSMM_VLA_ACCESS_Y, LIBXSMM_SELECT_TAIL(__VA_ARGS__, 0)/*bounds*/, LIBXSMM_SELECT_TAIL(__VA_ARGS__, 0)/*dummy*/) = \
+   (ELEMENT_TYPE LIBXSMM_VLA_ACCESS_Z(LIBXSMM_SELECT_ELEMENT(NDIMS, 0, 1, 2, 3, 4, 5, 6, 7), *, \
+      LIBXSMM_VLA_ACCESS_Y, LIBXSMM_SELECT_TAIL(__VA_ARGS__, 0)/*bounds*/, LIBXSMM_SELECT_TAIL(__VA_ARGS__, 0)/*dummy*/))LIBXSMM_SELECT_HEAD(__VA_ARGS__)
 #else /* calculate linear index */
 # define LIBXSMM_VLA_ACCESS(NDIMS, ARRAY, ...) (LIBXSMM_CONCATENATE(ARRAY, LIBXSMM_VLA_POSTFIX)[LIBXSMM_INDEX1(NDIMS, __VA_ARGS__)])
-# define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, ARRAY_VAR, INIT_VALUE, .../*bounds*/) \
-    ELEMENT_TYPE *LIBXSMM_RESTRICT LIBXSMM_CONCATENATE(ARRAY_VAR, LIBXSMM_VLA_POSTFIX) = /*(ELEMENT_TYPE*)*/(INIT_VALUE)
+# define LIBXSMM_VLA_DECL(NDIMS, ELEMENT_TYPE, ARRAY_VAR, .../*initial value, and bounds*/) \
+    ELEMENT_TYPE *LIBXSMM_RESTRICT LIBXSMM_CONCATENATE(ARRAY_VAR, LIBXSMM_VLA_POSTFIX) = /*(ELEMENT_TYPE*)*/LIBXSMM_SELECT_HEAD(__VA_ARGS__) \
+    + 0 * LIBXSMM_INDEX1(NDIMS, LIBXSMM_SELECT_TAIL(__VA_ARGS__, LIBXSMM_SELECT_TAIL(__VA_ARGS__, 0))) /* dummy-shift to "sink" unused arguments */
 #endif
 
 /** Access an array of TYPE with Byte-measured stride. */
@@ -546,9 +575,13 @@
 #endif
 
 #if defined(__GNUC__) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32))
+# define LIBXSMM_ATTRIBUTE_MALLOC LIBXSMM_ATTRIBUTE(malloc)
 # define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
+# define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
 #else
+# define LIBXSMM_ATTRIBUTE_MALLOC
 # define LIBXSMM_ATTRIBUTE_UNUSED
+# define LIBXSMM_ATTRIBUTE_USED
 #endif
 #if defined(__GNUC__)
 # define LIBXSMM_MAY_ALIAS LIBXSMM_ATTRIBUTE(__may_alias__)
@@ -668,8 +701,10 @@
 #if !defined(_Float64x) && defined(LIBXSMM_GLIBC_FPTYPES)
 # define _Float64x _Float64
 #endif
-#if /* !LIBXSMM_INTEL_COMPILER */defined(__INTEL_COMPILER) && !defined(__clang__) /* TODO */
+#if !defined(__has_feature) && !defined(__clang__)
 # define __has_feature(A) 0
+#endif
+#if !defined(__has_builtin) && !defined(__clang__)
 # define __has_builtin(A) 0
 #endif
 

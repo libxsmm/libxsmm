@@ -35,7 +35,7 @@
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
-# define LIBXSMM_CAPACITY_REGISTRY 524288 /* 524287: Mersenne Prime number (2^19-1) */
+# define LIBXSMM_CAPACITY_REGISTRY 262144
 #endif
 
 #if !defined(LIBXSMM_MAX_NTHREADS)
@@ -64,6 +64,13 @@
 # define LIBXSMM_MALLOC_SCRATCH_INTERNAL ((const char*)(LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE))
 #endif
 
+#if !defined(LIBXSMM_VERBOSITY_HIGH)
+# define LIBXSMM_VERBOSITY_HIGH 3 /* secondary warning or info-verbosity */
+#endif
+#if !defined(LIBXSMM_VERBOSITY_WARN)
+# define LIBXSMM_VERBOSITY_WARN ((LIBXSMM_VERBOSITY_HIGH) - LIBXSMM_MIN(1, LIBXSMM_VERBOSITY_HIGH))
+#endif
+
 #if !defined(LIBXSMM_LOCK)
 # define LIBXSMM_LOCK LIBXSMM_LOCK_DEFAULT
 #endif
@@ -79,19 +86,6 @@
 #endif
 #if !defined(LIBXSMM_NOOP)
 # define LIBXSMM_NOOP
-#endif
-
-/* Helper macro to eventually (if defined) call libxsmm_init */
-#if !defined(LIBXSMM_INIT)
-# if !defined(LIBXSMM_CTOR)
-#   define LIBXSMM_INIT libxsmm_init();
-# elif !defined(NDEBUG)
-#   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG( \
-      0 != libxsmm_ninit, \
-      "LIBXSMM is not initialized");
-# else
-#   define LIBXSMM_INIT
-# endif
 #endif
 
 /** Check if M, N, K, or LDx fits into the descriptor. */
@@ -351,9 +345,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_tensor_format filter_format;
   libxsmm_dnn_conv_fuse_op fuse_ops;
   libxsmm_dnn_conv_option options;
-  libxsmm_convolution_winograd_descriptor cwino_fwd;
-  libxsmm_convolution_winograd_descriptor cwino_bwd;
-  libxsmm_convolution_winograd_descriptor cwino_upd;
   libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
   /* These are the batchnorm handles in case of fusion  */
@@ -720,10 +711,7 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_SCSOA,
   LIBXSMM_BUILD_KIND_SREG,
   LIBXSMM_BUILD_KIND_CFWD,
-  LIBXSMM_BUILD_KIND_CUPD,
-  LIBXSMM_BUILD_KIND_CWFWD,
-  LIBXSMM_BUILD_KIND_CWBWD,
-  LIBXSMM_BUILD_KIND_CWUPD
+  LIBXSMM_BUILD_KIND_CUPD
 } libxsmm_build_kind;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
@@ -735,7 +723,6 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
   const libxsmm_csr_reg_descriptor* sreg;
   const libxsmm_convolution_forward_descriptor* cfwd;
   const libxsmm_convolution_weight_update_descriptor* cupd;
-  const libxsmm_convolution_winograd_descriptor* cwino;
   const libxsmm_mcopy_descriptor* matcopy;
   const libxsmm_trans_descriptor* trans;
   const libxsmm_trsm_descriptor* trsm;
@@ -760,6 +747,18 @@ typedef enum libxsmm_malloc_flags {
   LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_RW
 } libxsmm_malloc_flags;
 
+/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
+LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+
+/** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
+LIBXSMM_API const char* libxsmm_typename(libxsmm_datatype datatype);
+
+/** Determines the generic value given in double-precision. */
+LIBXSMM_API int libxsmm_cast(libxsmm_datatype datatype, double dvalue, void* value);
+
+/** Retrieve internal information about a buffer (default memory domain). */
+LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra);
+
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment);
 
@@ -777,16 +776,6 @@ LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
 LIBXSMM_API_INTERN int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
-/** Retrieve internal information about a buffer (default memory domain). */
-LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra);
-
-/** Allocate memory of the requested size, which is aligned according to the given alignment. */
-LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
-  /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
-  const void* extra, size_t extra_size);
-/** Release memory, which was allocated using libxsmm_[*]malloc. */
-LIBXSMM_API_INTERN int libxsmm_xfree(const void* memory);
-
 /**
  * Attribute memory allocation and protect with only the necessary flags.
  * This procedure is expected to run only one time per buffer, and may
@@ -796,17 +785,15 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags,
   /** If a name is given, an executable buffer will be dumped into a file. */
   const char* name);
 
-/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
-LIBXSMM_API_INTERN unsigned char libxsmm_typesize(libxsmm_datatype datatype);
-
-/** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
-LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
+/** Allocate memory of the requested size, which is aligned according to the given alignment. */
+LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignment, int flags,
+  /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
+  const void* extra, size_t extra_size);
+/** Release memory, which was allocated using libxsmm_[*]malloc. */
+LIBXSMM_API_INTERN int libxsmm_xfree(const void* memory);
 
 /** Determines the given value in double-precision based on the given type. */
 LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
-
-/** Determines the generic value given in double-precision. */
-LIBXSMM_API_INTERN int libxsmm_cast(libxsmm_datatype datatype, double dvalue, void* value);
 
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
@@ -835,29 +822,14 @@ LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
 /** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
 LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
 
-/** Code generation routine for a backward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_backward(const libxsmm_convolution_backward_descriptor* descriptor);
-
 /** Code generation routine for a convolution kernel as specified by descriptor. */
 LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
 
 /** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
 LIBXSMM_API_INTERN void* libxsmm_create_xconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
 
-/** Code generation routine for a backward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_backward(const libxsmm_convolution_backward_descriptor* descriptor);
-
 /** Code generation routine for a convolution kernel as specified by descriptor. */
 LIBXSMM_API_INTERN void* libxsmm_create_xconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
-
-/** Code generation routine for a forward-convolution Winograd kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_forward(const libxsmm_convolution_winograd_descriptor* descriptor);
-
-/** Code generation routine for a backward-convolution Winograd kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_backward(const libxsmm_convolution_winograd_descriptor* descriptor);
-
-/** Code generation routine for a weight-update-convolution Winograd kernel as specified by descriptor. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_update_weights(const libxsmm_convolution_winograd_descriptor* descriptor);
 
 /** Global lock; create an own lock for an independent domain. */
 LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);

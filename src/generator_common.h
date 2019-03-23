@@ -32,6 +32,7 @@
 #define GENERATOR_COMMON_H
 
 #include <libxsmm_generator.h>
+#include <libxsmm_cpuid.h>
 
 /*@TODO check if we want to use enums here? Has this implications in the encoder? */
 /* defining register mappings */
@@ -57,7 +58,7 @@
    using this values as the third operand means SSE */
 #define LIBXSMM_X86_VEC_REG_UNDEF          255
 #define LIBXSMM_X86_MASK_REG_UNDEF         255
-#define LIBXSMM_X86_IMCI_AVX512_MASK         1  /* this specifies k1 */
+#define LIBXSMM_X86_AVX512_MASK              1  /* this specifies k1 */
 
 /* special value for undefined immediate */
 #define LIBXSMM_X86_IMM_UNDEF             1024
@@ -101,15 +102,6 @@
 #define LIBXSMM_X86_INSTR_MOVSS          10014
 #define LIBXSMM_X86_INSTR_MOVDDUP        10015
 #define LIBXSMM_X86_INSTR_SHUFPS         10016
-/* IMCI */
-#define LIBXSMM_X86_INSTR_VLOADUNPACKLPD 10017
-#define LIBXSMM_X86_INSTR_VLOADUNPACKHPD 10018
-#define LIBXSMM_X86_INSTR_VLOADUNPACKLPS 10019
-#define LIBXSMM_X86_INSTR_VLOADUNPACKHPS 10020
-#define LIBXSMM_X86_INSTR_VPACKSTORELPD  10021
-#define LIBXSMM_X86_INSTR_VPACKSTOREHPD  10022
-#define LIBXSMM_X86_INSTR_VPACKSTORELPS  10023
-#define LIBXSMM_X86_INSTR_VPACKSTOREHPS  10024
 
 /* Gather/Scatter instructions */
 #define LIBXSMM_X86_INSTR_VGATHERDPS     11000
@@ -176,7 +168,7 @@
 #define LIBXSMM_X86_INSTR_MULSS          20042
 #define LIBXSMM_X86_INSTR_ADDSS          20043
 #define LIBXSMM_X86_INSTR_SUBSS          20044
-/* AVX512, IMCI Integer XOR as there is no FP */
+/* AVX512F: Integer XOR as there is no FP */
 #define LIBXSMM_X86_INSTR_VPXORD         20045
 /* additional integer stuff */
 #define LIBXSMM_X86_INSTR_VPADDQ         20046
@@ -285,10 +277,8 @@
 #define LIBXSMM_ERR_N_BLOCK              90016
 #define LIBXSMM_ERR_M_BLOCK              90017
 #define LIBXSMM_ERR_K_BLOCK              90018
-#define LIBXSMM_ERR_NO_IMCI              90019
 #define LIBXSMM_ERR_REG_BLOCK            90020
-#define LIBXSMM_ERR_VEC_MOVE_IMCI        90021
-#define LIBXSMM_ERR_NO_IMCI_AVX512_BCAST 90022
+#define LIBXSMM_ERR_NO_AVX512_BCAST      90022
 #define LIBXSMM_ERR_NO_AVX512_QFMA       90023
 #define LIBXSMM_ERR_CALLEE_SAVE_A        90024
 #define LIBXSMM_ERR_CALLEE_SAVE_B        90025
@@ -321,6 +311,8 @@
 #define LIBXSMM_ERR_UNIQUE_VAL           90052
 #define LIBXSMM_ERR_VEC_REG_MUST_BE_UNDEF 90053
 #define LIBXSMM_ERR_JMPLBL_USED           90054
+#define LIBXSMM_ERR_TRANS_B               90055
+#define LIBXSMM_ERR_LDB_TRANS             90056
 
 #if defined(LIBXSMM_HANDLE_ERROR_QUIET)
 # define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE)

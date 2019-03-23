@@ -30,6 +30,7 @@
 # Hans Pabst (Intel Corp.)
 ###############################################################################
 from string import Template
+from datetime import date
 import libxsmm_utilities
 import fnmatch
 import sys
@@ -84,7 +85,7 @@ if __name__ == "__main__":
             libxsmm_utilities.version_numbers(version)
 
         if (0 == threshold):
-            threshold = 128 * 128 * 128
+            threshold = 48 * 48 * 48
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
         maxdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
         avgdim = int(0.5 * maxdim + 0.5)
@@ -107,15 +108,15 @@ if __name__ == "__main__":
             "MINOR":      minor,
             "UPDATE":     update,
             "PATCH":      patch,
+            "DATE":       date.today().strftime("%Y%m%d"),
             "CACHELINE":  cacheline,
             "PREFETCH":   [-1, prefetch][0 <= prefetch],
             "MAX_MNK":    maxmnk,
+            "MAX_DIM":    maxdim,
+            "AVG_DIM":    int((maxdim + 1) / 2),
             "MAX_M":      [maxdim, maxm][avgm < maxm],
             "MAX_N":      [maxdim, maxn][avgn < maxn],
             "MAX_K":      [maxdim, maxk][avgk < maxk],
-            "AVG_M":      avgm,
-            "AVG_N":      avgn,
-            "AVG_K":      avgk,
             "FLAGS":      flags,
             "ILP64":      [0, 1][0 != ilp64],
             "ALPHA":      alpha,

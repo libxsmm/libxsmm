@@ -197,10 +197,10 @@ LIBXSMM_VLA_DECL(5, element_filter_type, roT, scratch_roT, kBlocks, bk_lp, bk, l
 LIBXSMM_VLA_DECL(2, element_output_type, hT, scratch_hT, N);
 float *dout_ptr = NULL;
 /* define batch-reduce gemm kernels */
-const libxsmm_bsmmfunction_reducebatch batchreduce_kernela = libxsmm_bsmmdispatch_reducebatch( bc, bn, bk, &bc, &K, &C, NULL, NULL, NULL);
-const libxsmm_bsmmfunction_reducebatch batchreduce_kernelb = libxsmm_bsmmdispatch_reducebatch( bk, bk, bn, &bk, &N, &bk, NULL, NULL, NULL);
-const libxsmm_bsmmfunction_reducebatch batchreduce_kernelc = libxsmm_bsmmdispatch_reducebatch( bk, bc, bn, &bk, &N, &bk, NULL, NULL, NULL);
-const libxsmm_bsmmfunction_reducebatch batchreduce_kerneld = libxsmm_bsmmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL);
+const libxsmm_bsmmfunction_reducebatch batchreduce_kernela = libxsmm_bsmmdispatch_reducebatch( bc, bn, bk, &bc, &K, &C, NULL, NULL, NULL, NULL);
+const libxsmm_bsmmfunction_reducebatch batchreduce_kernelb = libxsmm_bsmmdispatch_reducebatch( bk, bk, bn, &bk, &N, &bk, NULL, NULL, NULL, NULL);
+const libxsmm_bsmmfunction_reducebatch batchreduce_kernelc = libxsmm_bsmmdispatch_reducebatch( bk, bc, bn, &bk, &N, &bk, NULL, NULL, NULL, NULL);
+const libxsmm_bsmmfunction_reducebatch batchreduce_kerneld = libxsmm_bsmmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL);
 
 /* Auxiliary arrays for batch-reduce gemm calls  */
 const element_filter_type *A_array[1024];

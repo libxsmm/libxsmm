@@ -122,7 +122,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_f32_f32(libxsmm_dn
   libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-     libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL);
+    libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c"
   } else {
     status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
@@ -147,7 +147,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_custom(li
 
   /* check if we are on an AVX512 platform */
   if ( libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL ||
+      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
       libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM                                                        ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fullyconnected_st_fwd_custom_f32_f32( handle, start_thread, tid);
@@ -217,7 +217,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck
 
   /* check if we are on an AVX512 platform */
   if ( libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_ICL ||
+      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
       libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM                                                        ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_f32_f32( handle, start_thread, tid);
@@ -237,7 +237,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck
       element_input_type alpha = (element_input_type)1;
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-        libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL);
+        libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c"
       } else {
         status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;

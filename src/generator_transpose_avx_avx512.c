@@ -591,13 +591,14 @@ LIBXSMM_API_INLINE void gen_one_trans(
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transpose_avx_avx512_kernel(
-                libxsmm_generated_code*             io_generated_code,
+                libxsmm_generated_code*         io_generated_code,
                 const libxsmm_trans_descriptor* i_trans_desc,
-                const char*                         i_arch )
+                int                             i_arch )
 {
   libxsmm_transpose_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker l_loop_label_tracker;
 
+  const char *const cpuid = libxsmm_cpuid_name( i_arch );
   /* avx512 just represents whether we want to use zmm registers or not     *
    *      A value of 0 says not, a value of 1 targets AVX512_CORE, a value  *
    *      of 2 targets AVX512_MIC                                           */
@@ -639,11 +640,11 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
    * Otherwise, we get by with registers that don't require pushing/popping */
 
   /* define transposition kernel config */
-  if (strcmp(i_arch, "skx") == 0  || strcmp(i_arch, "icl") == 0 ) {
+  if (LIBXSMM_X86_AVX512_CORE <= i_arch) {
     avx512 = 1;
-  } else if (strcmp(i_arch, "knl") == 0 || strcmp(i_arch, "knm") == 0) {
+  } else if (LIBXSMM_X86_AVX512 <= i_arch) {
     avx512 = 2;
-  } else if (strcmp(i_arch, "snb") == 0 || strcmp(i_arch, "hsw") == 0) {
+  } else if (LIBXSMM_X86_AVX <= i_arch) {
     avx512 = 0;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
@@ -656,7 +657,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
    *    is for the regular assembly coding?                                  */
   libxsmm_x86_instruction_open_stream_transpose( io_generated_code, l_gp_reg_mapping.gp_reg_a,
                                                  l_gp_reg_mapping.gp_reg_lda, l_gp_reg_mapping.gp_reg_b,
-                                                 l_gp_reg_mapping.gp_reg_ldb, i_arch );
+                                                 l_gp_reg_mapping.gp_reg_ldb, cpuid );
 
   if ( io_generated_code->code_type > 1 )
   {
@@ -895,7 +896,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
   }
 
   /* close asm: note that we really didn't need to push everything */
-  libxsmm_x86_instruction_close_stream_transpose( io_generated_code, i_arch );
+  libxsmm_x86_instruction_close_stream_transpose( io_generated_code, cpuid );
 #ifdef GENERATOR_TRANSPOSE_DEBUG
   printf("done with m=%d n=%d i=%d\n",i_trans_desc->m,i_trans_desc->n,io_generated_code->code_size);
 #endif

@@ -307,6 +307,7 @@
   /* Lock type, initialization, destruction, (try-)lock, unlock, etc */
 # define LIBXSMM_LOCK_ACQUIRED(KIND) LIBXSMM_CONCATENATE(LIBXSMM_LOCK_ACQUIRED_, KIND)
 # define LIBXSMM_LOCK_TYPE_ISPOD(KIND) LIBXSMM_CONCATENATE(LIBXSMM_LOCK_TYPE_ISPOD_, KIND)
+# define LIBXSMM_LOCK_TYPE_ISRW(KIND) LIBXSMM_CONCATENATE(LIBXSMM_LOCK_TYPE_ISRW_, KIND)
 # define LIBXSMM_LOCK_TYPE(KIND) LIBXSMM_CONCATENATE(LIBXSMM_LOCK_TYPE_, KIND)
 # define LIBXSMM_LOCK_INIT(KIND, LOCK, ATTR) LIBXSMM_CONCATENATE(LIBXSMM_LOCK_INIT_, KIND)(LOCK, ATTR)
 # define LIBXSMM_LOCK_DESTROY(KIND, LOCK) LIBXSMM_CONCATENATE(LIBXSMM_LOCK_DESTROY_, KIND)(LOCK)
@@ -363,6 +364,7 @@
 #   endif
 #   if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && !(defined(_OPENMP) && defined(LIBXSMM_OMP))
 #     define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
+#     define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
 #     define LIBXSMM_LOCK_TYPE_mutex HANDLE
 #     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) (*(LOCK) = CreateMutex(*(ATTR), FALSE, NULL))
 #     define LIBXSMM_LOCK_DESTROY_mutex(LOCK) CloseHandle(*(LOCK))
@@ -381,6 +383,7 @@
 #   endif
 #   if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && !(defined(_OPENMP) && defined(LIBXSMM_OMP))
 #     define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 1
+#     define LIBXSMM_LOCK_TYPE_ISRW_rwlock 1
 #     define LIBXSMM_LOCK_TYPE_rwlock SRWLOCK
 #     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); InitializeSRWLock(LOCK); }
 #     define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) LIBXSMM_UNUSED(LOCK)
@@ -417,6 +420,7 @@
 #   endif
 #   if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && !(defined(_OPENMP) && defined(LIBXSMM_OMP))
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 0
+#     define LIBXSMM_LOCK_TYPE_ISRW_spin 0
 #     define LIBXSMM_LOCK_TYPE_spin pthread_spinlock_t
 #     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) LIBXSMM_EXPECT(0, pthread_spin_init(LOCK, *(ATTR)))
 #     define LIBXSMM_LOCK_DESTROY_spin(LOCK) LIBXSMM_EXPECT(0, pthread_spin_destroy(LOCK))
@@ -435,6 +439,7 @@
 #   endif
 #   if defined(LIBXSMM_LOCK_SYSTEM_MUTEX) && !(defined(_OPENMP) && defined(LIBXSMM_OMP))
 #     define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
+#     define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
 #     define LIBXSMM_LOCK_TYPE_mutex pthread_mutex_t
 #     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) LIBXSMM_EXPECT(0, pthread_mutex_init(LOCK, ATTR))
 #     define LIBXSMM_LOCK_DESTROY_mutex(LOCK) LIBXSMM_EXPECT(0, pthread_mutex_destroy(LOCK))
@@ -459,6 +464,7 @@
 #   endif
 #   if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK) && !(defined(_OPENMP) && defined(LIBXSMM_OMP))
 #     define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 0
+#     define LIBXSMM_LOCK_TYPE_ISRW_rwlock 1
 #     define LIBXSMM_LOCK_TYPE_rwlock pthread_rwlock_t
 #     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) LIBXSMM_EXPECT(0, pthread_rwlock_init(LOCK, ATTR))
 #     define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) LIBXSMM_EXPECT(0, pthread_rwlock_destroy(LOCK))
@@ -482,6 +488,7 @@
 # if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
 #   if 1 /* directly based on atomic primitives */
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 1
+#     define LIBXSMM_LOCK_TYPE_ISRW_spin 0
 #     define LIBXSMM_LOCK_TYPE_spin volatile LIBXSMM_ATOMIC_LOCKTYPE
 #     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = 0); }
 #     define LIBXSMM_LOCK_DESTROY_spin(LOCK) LIBXSMM_UNUSED(LOCK)
@@ -496,6 +503,7 @@
 #     define LIBXSMM_LOCK_ATTR_DESTROY_spin(ATTR) LIBXSMM_UNUSED(ATTR)
 #   else /* rely on LIBXSMM's portable locks */
 #     define LIBXSMM_LOCK_TYPE_ISPOD_spin 0
+#     define LIBXSMM_LOCK_TYPE_ISRW_spin 0
 #     define LIBXSMM_LOCK_TYPE_spin libxsmm_spinlock*
 #     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = libxsmm_spinlock_create()); }
 #     define LIBXSMM_LOCK_DESTROY_spin(LOCK) libxsmm_spinlock_destroy(*(LOCK))
@@ -512,6 +520,7 @@
 # elif defined(_OPENMP) && defined(LIBXSMM_OMP)
 #   define LIBXSMM_LOCK_ACQUIRED_spin 1
 #   define LIBXSMM_LOCK_TYPE_ISPOD_spin 0
+#   define LIBXSMM_LOCK_TYPE_ISRW_spin 0
 #   define LIBXSMM_LOCK_TYPE_spin omp_lock_t
 #   define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
 #   define LIBXSMM_LOCK_DESTROY_spin(LOCK) omp_destroy_lock(LOCK)
@@ -527,6 +536,7 @@
 # endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
 #   define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
+#   define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
 #   define LIBXSMM_LOCK_TYPE_mutex libxsmm_mutex*
 #   define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = libxsmm_mutex_create()); }
 #   define LIBXSMM_LOCK_DESTROY_mutex(LOCK) libxsmm_mutex_destroy(*(LOCK))
@@ -542,6 +552,7 @@
 # elif defined(_OPENMP) && defined(LIBXSMM_OMP)
 #   define LIBXSMM_LOCK_ACQUIRED_mutex 1
 #   define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
+#   define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
 #   define LIBXSMM_LOCK_TYPE_mutex omp_lock_t
 #   define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
 #   define LIBXSMM_LOCK_DESTROY_mutex(LOCK) omp_destroy_lock(LOCK)
@@ -557,6 +568,7 @@
 # endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
 #   define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 0
+#   define LIBXSMM_LOCK_TYPE_ISRW_rwlock 1
 #   define LIBXSMM_LOCK_TYPE_rwlock libxsmm_rwlock*
 #   define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); (*(LOCK) = libxsmm_rwlock_create()); }
 #   define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) libxsmm_rwlock_destroy(*(LOCK))
@@ -572,6 +584,7 @@
 # elif defined(_OPENMP) && defined(LIBXSMM_OMP)
 #   define LIBXSMM_LOCK_ACQUIRED_rwlock 1
 #   define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 0
+#   define LIBXSMM_LOCK_TYPE_ISRW_rwlock 0
 #   define LIBXSMM_LOCK_TYPE_rwlock omp_lock_t
 #   define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
 #   define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) omp_destroy_lock(LOCK)
@@ -590,6 +603,8 @@
 # define LIBXSMM_LOCK_MUTEX
 # define LIBXSMM_LOCK_RWLOCK
 # define LIBXSMM_LOCK_ACQUIRED(KIND) 0
+# define LIBXSMM_LOCK_TYPE_ISPOD(KIND) 1
+# define LIBXSMM_LOCK_TYPE_ISRW(KIND) 0
 # define LIBXSMM_LOCK_ATTR_TYPE(KIND) int
 # define LIBXSMM_LOCK_ATTR_INIT(KIND, ATTR) LIBXSMM_UNUSED(ATTR)
 # define LIBXSMM_LOCK_ATTR_DESTROY(KIND, ATTR) LIBXSMM_UNUSED(ATTR)

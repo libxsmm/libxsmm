@@ -63,11 +63,11 @@
 /** Helper macro for type information: INFO := { FP }. */
 #define LIBXSMM_TYPEINFO(TYPE, INFO) LIBXSMM_CONCATENATE3(LIBXSMM_TYPEINFO_, INFO, _, TYPE)
 #define LIBXSMM_TYPEINFO_FP_double 1
-#define LIBXSMM_TYPENAME_FP_float 1
-#define LIBXSMM_TYPENAME_FP_libxsmm_bfloat16 1
-#define LIBXSMM_TYPENAME_FP_int 0
-#define LIBXSMM_TYPENAME_FP_short 0
-#define LIBXSMM_TYPENAME_FP_char 0
+#define LIBXSMM_TYPEINFO_FP_float 1
+#define LIBXSMM_TYPEINFO_FP_libxsmm_bfloat16 1
+#define LIBXSMM_TYPEINFO_FP_int 0
+#define LIBXSMM_TYPEINFO_FP_short 0
+#define LIBXSMM_TYPEINFO_FP_char 0
 
 /** Helper macro for type postfixes. */
 #define LIBXSMM_TYPESYMBOL(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_TYPESYMBOL_, TYPE)
@@ -102,8 +102,8 @@
 /* Construct an enumerator (libxsmm_gemm_precision) from a built-in type (float, double, etc.). */
 #define LIBXSMM_GEMM_PRECISION(TYPE) LIBXSMM_CONCATENATE(LIBXSMM_GEMM_PRECISION_, LIBXSMM_TYPESYMBOL(TYPE))
 /* Construct GEMM-precision from built-in input/output types (float, double, etc.). */
-#define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) LIBXSMM_GETENUM(LIBXSMM_GEMM_PRECISION(ITYPE), \
-                                                              LIBXSMM_GEMM_PRECISION(OTYPE))
+#define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) (libxsmm_gemm_precision)LIBXSMM_GETENUM( \
+  LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE))
 
 /** Necessary size to store a descriptor/blob (GEMM, MCOPY, TRANS). */
 #define LIBXSMM_DESCRIPTOR_MAXSIZE 32
@@ -516,28 +516,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_upd
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_weight_update_descriptor;
 
-/**
- * Structure storing the convolution Winograd argument description.
- */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
-  /** alpha determines the tile size */
-  unsigned int alpha;
-  /** number of itiles */
-  unsigned int itiles;
-  /** number of jtiles */
-  unsigned int jtiles;
-  /** number of images in a block */
-  unsigned int bimg;
-  /** unroll factor */
-  unsigned int ur;
-  /** number of ifm blocks to unroll */
-  unsigned int ur_ifm;
-  /** number of ifm blocks. When ur_ifm equals to this, do additional optimizations */
-  unsigned int blocks_ifm;
-  /** prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
-  libxsmm_convolution_prefetch_type prefetch;
-} libxsmm_convolution_winograd_descriptor;
-
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (single-precision). */
@@ -556,6 +534,7 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction_reduce
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   void (*xmm)(const void* a, const void* b, void* c, ...);
+  void (*xbm)(const void** a, const void** b, void* c, const unsigned long long* count, ...);
   libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wimmfunction wimm; libxsmm_wsmmfunction wsmm; libxsmm_bsmmfunction bsmm;
   libxsmm_dmmfunction_reducebatch dmr; libxsmm_smmfunction_reducebatch smr; libxsmm_bsmmfunction_reducebatch bsmr;
 } libxsmm_xmmfunction;

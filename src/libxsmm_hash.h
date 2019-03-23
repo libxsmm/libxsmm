@@ -45,28 +45,41 @@
 # define LIBXSMM_HASH_API_DEFINITION LIBXSMM_API
 #endif
 
+/* Map number of Bytes to number of bits. */
+#define libxsmm_crc32_b32 libxsmm_crc32_u256
+#define libxsmm_crc32_b64 libxsmm_crc32_u512
 
-/** Function type representing the CRC32 functionality (elemental form; 32-bit). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_u32_function)(
-  unsigned int, unsigned int);
-/** Function type representing the CRC32 functionality (elemental form; 64-bit). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_u64_function)(
-  unsigned int, unsigned long long);
+
+/** Function type representing the CRC32 functionality (elemental/value form). */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_value_function)(
+  const void* /*value*/, unsigned int /*seed*/);
 /** Function type representing the CRC32 functionality (taking an entire buffer). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(
-  const void*, size_t, unsigned int);
+  const void* /*data*/, size_t /*size*/, unsigned int /*seed*/);
 
 /** Initialize hash function module; not thread-safe. */
 LIBXSMM_HASH_API void libxsmm_hash_init(int target_arch);
 LIBXSMM_HASH_API void libxsmm_hash_finalize(void);
 
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u32(unsigned int seed, unsigned int value);
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u32_sw(unsigned int seed, unsigned int value);
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u32_sse4(unsigned int seed, unsigned int value);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u32(const void* value, unsigned int seed);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u32_sw(const void* value, unsigned int seed);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u32_sse4(const void* value, unsigned int seed);
 
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u64(unsigned int seed, unsigned long long value);
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u64_sw(unsigned int seed, unsigned long long value);
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u64_sse4(unsigned int seed, unsigned long long value);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u64(const void* value, unsigned int seed);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u64_sw(const void* value, unsigned int seed);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u64_sse4(const void* value, unsigned int seed);
+
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u128(const void* value, unsigned int seed);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u128_sw(const void* value, unsigned int seed);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u128_sse4(const void* value, unsigned int seed);
+
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u256(const void* value, unsigned int seed);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u256_sw(const void* value, unsigned int seed);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u256_sse4(const void* value, unsigned int seed);
+
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u512(const void* value, unsigned int seed);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u512_sw(const void* value, unsigned int seed);
+LIBXSMM_HASH_API unsigned int libxsmm_crc32_u512_sse4(const void* value, unsigned int seed);
 
 /** Dispatched implementation which may (or may not) use a SIMD extension. */
 LIBXSMM_HASH_API unsigned int libxsmm_crc32(const void* data, size_t size, unsigned int seed);

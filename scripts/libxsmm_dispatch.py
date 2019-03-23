@@ -73,7 +73,6 @@ if __name__ == "__main__":
             print("{")
             print("  libxsmm_gemm_descriptor desc;")
             print("  libxsmm_xmmfunction func;")
-            print("  unsigned int hash, indx;")
             print("# if defined(_MSC_VER)")
             print("#   pragma warning(push)")
             print("#   pragma warning(disable: 4127)")
@@ -93,14 +92,10 @@ if __name__ == "__main__":
                           "LIBXSMM_GEMM_PRECISION_F64, LIBXSMM_FLAGS,")
                     print("      " + mnksig + ", " + ldxsig + ", " +
                           "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                    print("    hash = libxsmm_crc32(&desc, " +
-                          "LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED);")
-                    print("    indx = LIBXSMM_HASH_MOD(hash, " +
-                          "LIBXSMM_CAPACITY_REGISTRY);")
                     print("    func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" +
                           mnkstr + ";")
                     print("    internal_register_static_code(" +
-                          "&desc, indx, hash, func, new_registry);")
+                          "&desc, func, new_registry);")
                     print("  }")
             for mnk in mnklist:
                 mstr, nstr, kstr, mnkstr = \
@@ -117,14 +112,10 @@ if __name__ == "__main__":
                           "LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_FLAGS,")
                     print("      " + mnksig + ", " + ldxsig + ", " +
                           "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                    print("    hash = libxsmm_crc32(&desc, " +
-                          "LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED);")
-                    print("    indx = LIBXSMM_HASH_MOD(hash, " +
-                          "LIBXSMM_CAPACITY_REGISTRY);")
                     print("    func.smm = (libxsmm_smmfunction)libxsmm_smm_" +
                           mnkstr + ";")
                     print("    internal_register_static_code(" +
-                          "&desc, indx, hash, func, new_registry);")
+                          "&desc, func, new_registry);")
                     print("  }")
             print("# if defined(_MSC_VER)")
             print("#   pragma warning(pop)")

@@ -154,18 +154,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmm_generator_gemm_driv
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
 	EndProjectSection
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmm_generator_convolution_driver", "libxsmm_generator_convolution_driver.vcxproj", "{19039CFD-697A-4736-B747-C03E70735737}"
-	ProjectSection(ProjectDependencies) = postProject
-		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-	EndProjectSection
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "libxsmm_generator_convolution_winograd_driver", "libxsmm_generator_convolution_winograd_driver.vcxproj", "{45E6E950-40C4-435B-A374-78496C8D60AC}"
-	ProjectSection(ProjectDependencies) = postProject
-		{7C7D5D58-A367-414E-87B4-C23B8A578EC5} = {7C7D5D58-A367-414E-87B4-C23B8A578EC5}
-		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}
-	EndProjectSection
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "math", "..\tests\math.vcxproj", "{2EE779F4-1C04-4FC8-93A3-A721B4C1F095}"
 	ProjectSection(ProjectDependencies) = postProject
 		{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC} = {01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}

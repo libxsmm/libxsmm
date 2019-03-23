@@ -32,31 +32,19 @@
 #include "generator_common.h"
 #include "generator_transpose_avx_avx512.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
-#include <stdio.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
 
 /* @TODO change int based architecture value */
 LIBXSMM_API
-void libxsmm_generator_transpose_kernel( libxsmm_generated_code*                        io_generated_code,
-                                         const libxsmm_trans_descriptor*            i_trans_desc,
-                                         const char*                                    i_arch ) {
+void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_generated_code,
+                                         const libxsmm_trans_descriptor*  i_trans_desc,
+                                         int                              i_arch ) {
+  const char *const cpuid = libxsmm_cpuid_name( i_arch );
+
   /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, i_arch );
+  libxsmm_generator_isa_check_header( io_generated_code, cpuid );
 
   /* generate kernel */
-  if ( (strcmp(i_arch, "skx") == 0) ||
-       (strcmp(i_arch, "knm") == 0) ||
-       (strcmp(i_arch, "knl") == 0) ||
-       (strcmp(i_arch, "hsw") == 0) ||
-       (strcmp(i_arch, "snb") == 0)    ) {
+  if ( LIBXSMM_X86_AVX <= i_arch ) {
     libxsmm_generator_transpose_avx_avx512_kernel( io_generated_code, i_trans_desc, i_arch );
   } else {
     /* TODO fix this error */
@@ -65,6 +53,6 @@ void libxsmm_generator_transpose_kernel( libxsmm_generated_code*                
   }
 
   /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
+  libxsmm_generator_isa_check_footer( io_generated_code, cpuid );
 }
 

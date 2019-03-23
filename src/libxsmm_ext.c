@@ -36,17 +36,7 @@
 #if defined(LIBXSMM_BUILD)
 #if defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC) /* no-BLAS library */
 
-LIBXSMM_GEMM_SYMBOL_VISIBILITY void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
-  LIBXSMM_GEMM_CONST libxsmm_blasint* m, LIBXSMM_GEMM_CONST libxsmm_blasint* n, LIBXSMM_GEMM_CONST libxsmm_blasint* k,
-  LIBXSMM_GEMM_CONST float* alpha, LIBXSMM_GEMM_CONST float* a, LIBXSMM_GEMM_CONST libxsmm_blasint* lda,
-  LIBXSMM_GEMM_CONST float* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
-  LIBXSMM_GEMM_CONST float* beta, float* c, LIBXSMM_GEMM_CONST libxsmm_blasint* ldc)
-{
-  LIBXSMM_FSYMBOL(__wrap_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-}
-
-
-LIBXSMM_GEMM_SYMBOL_VISIBILITY void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
+LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
   LIBXSMM_GEMM_CONST libxsmm_blasint* m, LIBXSMM_GEMM_CONST libxsmm_blasint* n, LIBXSMM_GEMM_CONST libxsmm_blasint* k,
   LIBXSMM_GEMM_CONST double* alpha, LIBXSMM_GEMM_CONST double* a, LIBXSMM_GEMM_CONST libxsmm_blasint* lda,
   LIBXSMM_GEMM_CONST double* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
@@ -55,29 +45,16 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST ch
   LIBXSMM_FSYMBOL(__wrap_dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
-#elif (1 == LIBXSMM_NO_BLAS)
-
-LIBXSMM_GEMM_SYMBOL_VISIBILITY
-#if defined(__GNUC__) && !defined(__PGI)
-LIBXSMM_ATTRIBUTE(no_instrument_function)
-#endif
-void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
+LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
   LIBXSMM_GEMM_CONST libxsmm_blasint* m, LIBXSMM_GEMM_CONST libxsmm_blasint* n, LIBXSMM_GEMM_CONST libxsmm_blasint* k,
   LIBXSMM_GEMM_CONST float* alpha, LIBXSMM_GEMM_CONST float* a, LIBXSMM_GEMM_CONST libxsmm_blasint* lda,
   LIBXSMM_GEMM_CONST float* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
   LIBXSMM_GEMM_CONST float* beta, float* c, LIBXSMM_GEMM_CONST libxsmm_blasint* ldc)
 {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-  static int error_once = 0;
-  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-    fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS!\n");
-  }
-#endif
-  LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
-  LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
-  LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
+  LIBXSMM_FSYMBOL(__wrap_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
+#elif (1 == LIBXSMM_NO_BLAS)
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY
 #if defined(__GNUC__) && !defined(__PGI)
@@ -89,17 +66,22 @@ void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST 
   LIBXSMM_GEMM_CONST double* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
   LIBXSMM_GEMM_CONST double* beta, double* c, LIBXSMM_GEMM_CONST libxsmm_blasint* ldc)
 {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-  static int error_once = 0;
-  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-    fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS!\n");
-  }
-#endif
-  LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
-  LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
-  LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
+  LIBXSMM_FSYMBOL(__real_dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
+
+LIBXSMM_GEMM_SYMBOL_VISIBILITY
+#if defined(__GNUC__) && !defined(__PGI)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
+  LIBXSMM_GEMM_CONST libxsmm_blasint* m, LIBXSMM_GEMM_CONST libxsmm_blasint* n, LIBXSMM_GEMM_CONST libxsmm_blasint* k,
+  LIBXSMM_GEMM_CONST float* alpha, LIBXSMM_GEMM_CONST float* a, LIBXSMM_GEMM_CONST libxsmm_blasint* lda,
+  LIBXSMM_GEMM_CONST float* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
+  LIBXSMM_GEMM_CONST float* beta, float* c, LIBXSMM_GEMM_CONST libxsmm_blasint* ldc)
+{
+  LIBXSMM_FSYMBOL(__real_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+}
 #endif
 #endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)*/
 
