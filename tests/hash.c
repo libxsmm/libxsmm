@@ -60,15 +60,15 @@ int main(void)
     result = EXIT_FAILURE;
   }
 
-  size >>= 3;
+  size >>= 4;
   value = data;
   h1 = h2 = seed;
   for (i = 0; i < size; ++i) {
-    h1 = libxsmm_crc32_u256(h1, value);
-    h2 = libxsmm_crc32_u256_sw(h2, value);
-    value += 8;
+    h1 = libxsmm_crc32_u512(value, h1);
+    h2 = libxsmm_crc32_u512_sw(value, h2);
+    value += 16;
   }
-  if (h1 != h2 || h1 != libxsmm_crc32(data, sizeof(int) * 8 * size, seed)) {
+  if (h1 != h2 || h1 != libxsmm_crc32(data, sizeof(int) * 16 * size, seed)) {
 #if defined(_DEBUG)
     fprintf(stderr, "(crc32=%u) != (crc32_sw=%u)\n", h1, h2);
 #endif
