@@ -66,68 +66,68 @@ int d_ymm_or_zmm(
          const int i_avx512
          )
 {
-       double dm, dn, dtmp;
-       int l_retval;
+  double dm, dn, dtmp;
+  int l_retval;
 
-       if ( !i_avx512 ) return 1;
+  if ( !i_avx512 ) return 1;
 
-       dm = (double) i_m;
-       dn = (double) i_n;
+  dm = (double) i_m;
+  dn = (double) i_n;
 
-       if ( i_avx512 == 1 )
-       {
-          /* Skylake dispatching logic */
-          if  (  dn <=     4.00000)
+  if ( i_avx512 == 1 )
+  {
+    /* Skylake dispatching logic */
+    if ( dn <= 4.00000 )
+    {
+      dtmp = 1.00000;
+    } else {
+      if ( dn <= 12.00000 )
+      {
+        if ( dm <= 5.00000)
+        {
+          dtmp = 1.00000;
+        } else {
+          dtmp = 0.00916*dm - 0.16182*dn + 2.66904;
+        }
+      } else {
+        dtmp = 0.02409*dm + 0.00486*dn + 1.25085;
+      }
+    }
+  } else {
+    /* Knights Landing dispatching logic */
+    if ( -2.30000*dm + 2.00000*dn <= -6.00000 )
+    {
+      if ( dn <= 2.00000 )
+      {
+        dtmp = 1.00000;
+      } else {
+        if ( dn <= 4.00000 )
+        {
+          dtmp = 0.00032*dm - 0.69532*dn + 4.00575;
+        } else {
+          if ( -2.50000*dm - 1.50000*dn <= -32.00000)
           {
-             dtmp =     1.00000;
+            if ( dm <= 17.00000 )
+            {
+              dtmp = -0.07867*dm - 0.01862*dn + 2.97591;
+            } else {
+              dtmp = 2.00000;
+            }
           } else {
-             if  (  dn <=    12.00000)
-             {
-                if  (  dm <=     5.00000)
-                {
-                   dtmp =     1.00000;
-                } else {
-                   dtmp =     0.00916*dm    -0.16182*dn +     2.66904;
-                }
-             } else {
-                dtmp =     0.02409*dm +     0.00486*dn +     1.25085;
-             }
+            dtmp = -0.40000*dm - 0.46667*dn + 7.20000;
           }
-       } else {
-          /* Knights Landing dispatching logic */
-          if  (     -2.30000*dm +     2.00000*dn <=    -6.00000)
-          {
-             if  (  dn <=     2.00000)
-             {
-                dtmp =     1.00000;
-             } else {
-                if  (  dn <=     4.00000)
-                {
-                   dtmp =     0.00032*dm    -0.69532*dn +     4.00575;
-                } else {
-                   if  (     -2.50000*dm    -1.50000*dn <=   -32.00000)
-                   {
-                      if  (  dm <=    17.00000)
-                      {
-                         dtmp =    -0.07867*dm    -0.01862*dn +     2.97591;
-                      } else {
-                         dtmp =     2.00000;
-                      }
-                   } else {
-                      dtmp =    -0.40000*dm    -0.46667*dn +     7.20000;
-                   }
-                }
-             }
-          } else {
-             dtmp =     0.01791*dm +     0.00141*dn +     1.43536;
-          }
-       }
-       /* Now turn it into an integer */
-       l_retval = (int) dtmp;
-       l_retval = LIBXSMM_MAX(l_retval,1);
-       if ( dtmp - ((double) l_retval) >= 0.5 ) ++l_retval;
-       l_retval = LIBXSMM_MIN(l_retval,2);
-       return ( l_retval );
+        }
+      }
+    } else {
+      dtmp = 0.01791*dm + 0.00141*dn + 1.43536;
+    }
+  }
+  /* Now turn it into an integer */
+  l_retval = (int) dtmp;
+  l_retval = LIBXSMM_MAX(l_retval,1);
+  if ( dtmp - ((double) l_retval) >= 0.5 ) ++l_retval;
+  l_retval = LIBXSMM_MIN(l_retval,2);
+  return ( l_retval );
 }
 
 
@@ -395,8 +395,7 @@ LIBXSMM_API_INLINE void gen_one_trans(
       }
     }
     else { /* avx512 */
-
-           /* vshuff64x2 $0xEE, %zmm3 , %zmm1 , %zmm9  */
+      /* vshuff64x2 $0xEE, %zmm3 , %zmm1 , %zmm9  */
       io_generated_code->code_size = i;
       if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 3, 1, 9, 0xEE);
       /* vshuff64x2 $0x44, %zmm3 , %zmm1 , %zmm1  */
@@ -919,7 +918,6 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
               libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JG, &l_loop_label_tracker );
               i = io_generated_code->code_size;
            }
-
         }
 
         if ( loopm > 0 ) {
@@ -929,7 +927,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
            i = io_generated_code->code_size;
         }
 
-        if ( j+REGSIZE <= (int)n )
+        if ( j+REGSIZE <= n )
         {
            io_generated_code->code_size = i;
            /* addq %r8, %rdi: */
@@ -941,7 +939,6 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
            i = io_generated_code->code_size;
         }
         offsetB = oldB + shiftmult*REGSIZE;
-
      }
 
      if ( loopn > 0 ) {
@@ -963,5 +960,5 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
 #ifdef GENERATOR_TRANSPOSE_DEBUG
   printf("done with m=%d n=%d i=%d\n",i_trans_desc->m,i_trans_desc->n,io_generated_code->code_size);
 #endif
-
 }
+
