@@ -1178,26 +1178,24 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   /* large enough temporary buffer for generated code */
 #if defined(NDEBUG)
   char jit_buffer[LIBXSMM_CODE_MAXSIZE];
-# if 0 /* avoid warning "maybe used uninitialized" */
-  memset(&generated_code, 0, sizeof(generated_code));
-# endif
+  memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
   generated_code.generated_code = jit_buffer;
   generated_code.buffer_size = sizeof(jit_buffer);
 #else
   memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
   generated_code.generated_code = malloc(LIBXSMM_CODE_MAXSIZE);
-  generated_code.buffer_size = (NULL != generated_code.generated_code ? LIBXSMM_CODE_MAXSIZE : 0);
+  generated_code.buffer_size = (0 != generated_code.generated_code ? LIBXSMM_CODE_MAXSIZE : 0);
 #endif
   /* setup code generation */
   generated_code.code_type = 2;
 
-  LIBXSMM_ASSERT(NULL != generated_code.generated_code || 0 == generated_code.buffer_size);
-  LIBXSMM_ASSERT(NULL != request && 0 != libxsmm_target_archid);
-  LIBXSMM_ASSERT(NULL != code && NULL == code->ptr_const);
+  LIBXSMM_ASSERT(0 != generated_code.generated_code || 0 == generated_code.buffer_size);
+  LIBXSMM_ASSERT(0 != request && 0 != libxsmm_target_archid);
+  LIBXSMM_ASSERT(0 != code && 0 == code->ptr_const);
 
   switch (request->kind) { /* generate kernel */
     case LIBXSMM_BUILD_KIND_GEMM: { /* small MxM kernel */
-      LIBXSMM_ASSERT(NULL != request->descriptor.gemm);
+      LIBXSMM_ASSERT(0 != request->descriptor.gemm);
       if (0 < request->descriptor.gemm->m   && 0 < request->descriptor.gemm->n   && 0 < request->descriptor.gemm->k &&
           0 < request->descriptor.gemm->lda && 0 < request->descriptor.gemm->ldb && 0 < request->descriptor.gemm->ldc)
       {
@@ -1511,7 +1509,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 
   /* handle an eventual error in the else-branch */
   if (0 < generated_code.code_size) {
-    LIBXSMM_ASSERT(NULL != generated_code.generated_code);
     if (0 == generated_code.last_error) { /* no error raised */
       void* code_buffer = NULL;
       /* attempt to create executable buffer */
@@ -1536,13 +1533,13 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     else {
       result = generated_code.last_error;
     }
+# if !defined(NDEBUG)
+    free(generated_code.generated_code); /* free temporary/initial code buffer */
+# endif
   }
   else {
     result = EXIT_FAILURE;
   }
-# if !defined(NDEBUG)
-  free(generated_code.generated_code); /* free temporary/initial code buffer */
-# endif
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
   /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
