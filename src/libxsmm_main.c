@@ -2142,10 +2142,7 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_de
 LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_descriptor* descriptor)
 {
   libxsmm_xtransfunction result;
-  if (0 != descriptor
-    /* no need to double-check since initializing the descriptor was successful
-    && 0 != LIBXSMM_TRANS_NO_BYPASS(descriptor->m, descriptor->n)*/)
-  {
+  if (NULL != descriptor) {
     libxsmm_kernel_info query;
     LIBXSMM_ASSERT(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
     LIBXSMM_INIT
@@ -2155,7 +2152,7 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_de
     result = internal_find_code(&query.xgemm).xtrans;
   }
   else {
-    result = 0;
+    result = NULL;
   }
   return result;
 }

@@ -175,7 +175,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 #if defined(_OPENMP)
       const unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
       const unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
-      if (0 == LIBXSMM_TRANS_NO_BYPASS(m, n) && tm <= (unsigned int)m && tn <= (unsigned int)n) { /* consider problem-size */
+      if (tm <= (unsigned int)m && tn <= (unsigned int)n) { /* consider problem-size */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         if (0 == omp_get_active_level())
 # else
