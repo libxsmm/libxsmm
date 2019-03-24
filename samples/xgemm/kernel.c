@@ -57,7 +57,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    PRECISION: SP, DP, I16I32, I16F32, BF16F32\n");
   printf("    #repetitions\n");
   printf("\n\n");
-  printf("2. Usage (dense*dense=dense, performance only):\n");
+  printf("2. Usage (dense*dense=dense, performance only option available):\n");
   printf("    filename with space-sperated sizes (M N K LDA LDB LDC)\n");
   printf("    alpha: 1\n");
   printf("    beta: 0 or 1\n");
@@ -67,6 +67,7 @@ LIBXSMM_INLINE void print_help(void) {
   printf("    0: B normal, 1: B trans\n");
   printf("    PRECISION: SP, DP, I16I32, I16F32, BF16F32\n");
   printf("    #repetitions\n");
+  printf("    0: no check, otherwise: run check\n");
   printf("\n\n");
 }
 
@@ -343,13 +344,13 @@ int main(int argc, char* argv []) {
   const libxsmm_gemm_descriptor* l_xgemm_desc = 0;
   libxsmm_descriptor_blob l_xgemm_blob;
   libxsmm_matdiff_info l_diff;
-  int l_i, l_j, l_s, l_t;
-  double l_runtime_c;
-  double l_runtime_libxsmm;
+  int l_i = 0, l_j = 0, l_s = 0, l_t = 0;
+  double l_runtime_c = 0;
+  double l_runtime_libxsmm = 0;
   libxsmm_timer_tickint l_start;
   int l_file_input = 0;
-  char* l_file_name;
-  FILE *l_file_handle;
+  char* l_file_name = NULL;
+  FILE *l_file_handle = NULL;
   int l_run_check = 0;
 
   /* input data */
