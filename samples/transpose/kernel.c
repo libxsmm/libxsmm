@@ -156,7 +156,7 @@ double residual_dtranspose ( double *A, unsigned int lda, unsigned int m, unsign
 
 int main(int argc, char* argv[])
 {
-  unsigned int m = 16, n = 16, ld_in = 16, ld_out = 16, nerrs, i;
+  unsigned int m = 16, n = 16, ld_in = 16, ld_out = 16, nerrs;
   const unsigned char* cptr;
   double *dinp, *dout, dtmp;
   float  *sinp, *sout;
@@ -164,6 +164,7 @@ int main(int argc, char* argv[])
   FILE *fp;
   char buffer[80];
   int stop_dumping = 0;
+  unsigned int i;
 #endif
 #ifdef COMPARE_TO_AN_ASSEMBLY_CODE
   unsigned int nbest, istop;

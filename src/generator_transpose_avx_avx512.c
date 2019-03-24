@@ -221,7 +221,7 @@ LIBXSMM_API_INLINE void gen_one_trans(
   int n_fits_in_xmm = 0;
   int m_fits_in_xmm = 0;
   int m_fits_in_ymm = 0;
-  int REGSIZE = 4;
+  unsigned int REGSIZE = 4;
   unsigned int l_instr;
   char cval = 'x';
 
@@ -680,7 +680,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
       *           4 for double on ymm (unless m=1, then it's 8),
       *           8 for single on ymm or double on zmm,
       *           16 for single on zmm */
-     int REGSIZE;
+     unsigned int REGSIZE;
      int maskvar = 0;
      int datasize = i_trans_desc->typesize;
 
@@ -898,8 +898,8 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
            /* This routine just does a single transpose at a time. */
            assert(k <= (int)(m + 1) && j <= (int)(n + 1));
            gen_one_trans(io_generated_code, &l_gp_reg_mapping,
-                         LIBXSMM_MIN(REGSIZE,((int)m)-k+1),
-                         LIBXSMM_MIN(REGSIZE,((int)n)-j+1),
+                         LIBXSMM_MIN(REGSIZE,m-k+1),
+                         LIBXSMM_MIN(REGSIZE,n-j+1),
                          ldb, offsetA, offsetB, datasize,
                          avx512, maskvar);
            if (0 != io_generated_code->last_error) return;
