@@ -119,9 +119,10 @@
   (DESCRIPTOR).flags = (unsigned short)((FLAGS) \
     /*| (LIBXSMM_NEQ(0, ALPHA) ? 0 : LIBXSMM_GEMM_FLAG_ALPHA_0)*/ \
     | (LIBXSMM_NEQ(0, BETA)  ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
-  LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH); \
-  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).iflags = 0; \
-  memset((DESCRIPTOR).pad, 0, sizeof((DESCRIPTOR).pad))
+  LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH); (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); \
+  for ((DESCRIPTOR).iflags = 0; (DESCRIPTOR).iflags < sizeof((DESCRIPTOR).pad); ++((DESCRIPTOR).iflags)) \
+  (DESCRIPTOR).pad[(DESCRIPTOR).iflags] = 0; \
+  (DESCRIPTOR).iflags = 0
 
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
@@ -152,10 +153,8 @@
   unsigned char iflags
 
 
-/* auxiliary structure to determine size of its members */
-LIBXSMM_PACKED(typedef struct {
-  LIBXSMM_GEMM_DESCRIPTOR_STRUCT;
-} libxsmm_gemm_descriptor_struct);
+/** Auxiliary structure to determine the (packed) size of its members. */
+LIBXSMM_PACKED(struct libxsmm_gemm_descriptor_struct { LIBXSMM_GEMM_DESCRIPTOR_STRUCT; });
 
 /**
 * Structure, which stores the argument description of GEMM routines.
@@ -163,7 +162,7 @@ LIBXSMM_PACKED(typedef struct {
 */
 LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
   LIBXSMM_GEMM_DESCRIPTOR_STRUCT; /** structure member documentation: see macro definition. */
-  unsigned char pad[LIBXSMM_DESCRIPTOR_MAXSIZE-sizeof(libxsmm_gemm_descriptor_struct)];
+  unsigned char pad[LIBXSMM_DESCRIPTOR_MAXSIZE-sizeof(struct libxsmm_gemm_descriptor_struct)];
 });
 
 /** Structure storing the matcopy argument description. */
