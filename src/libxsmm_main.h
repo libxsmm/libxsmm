@@ -154,19 +154,19 @@
 
 
 /** Auxiliary structure to determine the (packed) size of its members. */
-LIBXSMM_PACKED(struct libxsmm_gemm_descriptor_struct { LIBXSMM_GEMM_DESCRIPTOR_STRUCT; });
+LIBXSMM_PACKED(struct, libxsmm_gemm_descriptor_struct) { LIBXSMM_GEMM_DESCRIPTOR_STRUCT; };
 
 /**
-* Structure, which stores the argument description of GEMM routines.
+* Packed structure, which stores the argument description of GEMM routines.
 * The size of the structure is padded to LIBXSMM_DESCRIPTOR_MAXSIZE.
 */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_gemm_descriptor) {
   LIBXSMM_GEMM_DESCRIPTOR_STRUCT; /** structure member documentation: see macro definition. */
-  unsigned char pad[LIBXSMM_DESCRIPTOR_MAXSIZE-sizeof(struct libxsmm_gemm_descriptor_struct)];
-});
+  unsigned char pad[LIBXSMM_DESCRIPTOR_MAXSIZE - sizeof(struct libxsmm_gemm_descriptor_struct)];
+};
 
-/** Structure storing the matcopy argument description. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor { /* 20 Byte */
+/** Packed structure storing the matcopy argument description. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_mcopy_descriptor) {
   /** LDx, M, and N. */
   unsigned int m, n, ldi, ldo;
   /** Size of data element. */
@@ -179,16 +179,16 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor { /* 20 By
   unsigned char flags;
 };
 
-/** Structure storing the transpose argument description. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor { /* 13 Byte */
+/** Packed structure storing the transpose argument description. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trans_descriptor) {
   /** LD, M, and N. */
   unsigned int m, n, ldo;
   /** Size of data element. */
   unsigned char typesize;
 };
 
-/** Structure storing arguments of packed TRSM. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor { /* 30 Byte */
+/** Packed structure storing arguments of packed TRSM. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trsm_descriptor) {
   union { double d; float s; } alpha;
   unsigned int m, n, lda, ldb;
   unsigned char typesize;
@@ -197,8 +197,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor { /* 30 Byt
   char transa;
 };
 
-/** Structure storing arguments of packed GEMM. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_pgemm_descriptor { /* 30 Byte */
+/** Packed structure storing arguments of packed GEMM. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_pgemm_descriptor) {
   unsigned int m, n, k, lda, ldb, ldc;
   unsigned char typesize;
   unsigned char layout;
@@ -206,8 +206,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_pgemm_descriptor { /* 30 By
   char alpha_val;
 };
 
-/** Structure storing arguments of packed TRSM. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor { /* 30 Byte */
+/** Packed structure storing arguments of packed TRSM. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trmm_descriptor) {
   union { double d; float s; } alpha;
   unsigned int m, n, lda, ldb;
   unsigned char typesize;
@@ -216,8 +216,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor { /* 30 Byt
   char transa;
 };
 
-/** Structure storing arguments of packed GETRF. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_getrf_descriptor { /* 30 Byte */
+/** Packed structure storing arguments of packed GETRF. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_getrf_descriptor) {
   unsigned int m, n, lda;
   unsigned char typesize;
   unsigned char layout;
