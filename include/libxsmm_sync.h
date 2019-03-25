@@ -294,7 +294,7 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #if (0 != LIBXSMM_SYNC) /** Default lock-kind */
-# define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
+# define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_MUTEX
 # if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
 #   define LIBXSMM_LOCK_SYSTEM_SPINLOCK
 # endif

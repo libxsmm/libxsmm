@@ -72,7 +72,7 @@
 #endif
 
 #if !defined(LIBXSMM_LOCK)
-# define LIBXSMM_LOCK LIBXSMM_LOCK_MUTEX
+# define LIBXSMM_LOCK LIBXSMM_LOCK_DEFAULT
 #endif
 
 #if !defined(LIBXSMM_EXT_MIN_NTASKS)
