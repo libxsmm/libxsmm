@@ -116,11 +116,13 @@
   LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K); LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(LDA, LDB, LDC); \
   (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
-  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).iflags = 0; (DESCRIPTOR).pad0 = 0; (DESCRIPTOR).pad1 = 0; \
   (DESCRIPTOR).flags = (unsigned short)((FLAGS) \
     /*| (LIBXSMM_NEQ(0, ALPHA) ? 0 : LIBXSMM_GEMM_FLAG_ALPHA_0)*/ \
     | (LIBXSMM_NEQ(0, BETA)  ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
-    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH)
+  LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH); \
+  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).iflags = 0; \
+  memset((DESCRIPTOR).pad, 0, sizeof((DESCRIPTOR).pad))
+
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, LIBXSMM_GETENUM(IPREC, OPREC), FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
@@ -129,32 +131,40 @@
 #define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, DATA_TYPE, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   libxsmm_gemm_descriptor DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE, \
     FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
+
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR_TYPE, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2_TYPE(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, LIBXSMM_GETENUM(IPREC, OPREC), FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
 
+/** This structure must be ordered by the size of the members(packed). */
+#define LIBXSMM_GEMM_DESCRIPTOR_STRUCT \
+  /** Leading dimensions are general offsets. */ \
+  unsigned int lda, ldb, ldc; \
+  /** Extents of the matrix. */ \
+  unsigned int m, n, k; \
+  /** Set of flags. */ \
+  unsigned short flags; \
+  /** Prefetch strategy enumeration. */ \
+  unsigned short prefetch; \
+  /** Denotes the data-type. */ \
+  unsigned char datatype; \
+  /** INTERNAL (last member!) */ \
+  unsigned char iflags
+
+
+/* auxiliary structure to determine size of its members */
+LIBXSMM_PACKED(typedef struct {
+  LIBXSMM_GEMM_DESCRIPTOR_STRUCT;
+} libxsmm_gemm_descriptor_struct);
 
 /**
 * Structure, which stores the argument description of GEMM routines.
-* This structure must be ordered by the size of the members (packed).
-* The size of the structure matches LIBXSMM_DESCRIPTOR_MAXSIZE.
+* The size of the structure is padded to LIBXSMM_DESCRIPTOR_MAXSIZE.
 */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
-  /** Leading dimensions are general offsets. */
-  unsigned int lda, ldb, ldc;
-  /** Extents of the matrix. */
-  unsigned int m, n, k;
-  /** Set of flags. */
-  unsigned short flags;
-  /** Prefetch strategy enumeration. */
-  unsigned short prefetch;
-  /** Denotes the data-type. */
-  unsigned char datatype;
-  /** LIBXSMM_DESCRIPTOR_MAXSIZE. */
-  unsigned char pad0, pad1;
-  /** INTERNAL (last member!) */
-  unsigned char iflags;
-};
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
+  LIBXSMM_GEMM_DESCRIPTOR_STRUCT; /** structure member documentation: see macro definition. */
+  unsigned char pad[LIBXSMM_DESCRIPTOR_MAXSIZE-sizeof(libxsmm_gemm_descriptor_struct)];
+});
 
 /** Structure storing the matcopy argument description. */
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor { /* 20 Byte */
