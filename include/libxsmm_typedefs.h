@@ -105,8 +105,10 @@
 #define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) (libxsmm_gemm_precision)LIBXSMM_GETENUM( \
   LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE))
 
-/** Necessary size to store a descriptor/blob (GEMM, MCOPY, TRANS, TRSM, TRMM). */
+/** Maximum size available to store a descriptor/blob (GEMM, MCOPY, TRANS, TRSM, TRMM). */
 #define LIBXSMM_DESCRIPTOR_MAXSIZE 32
+/** Minimum size allowed to perform comparison */
+#define LIBXSMM_DESCRIPTOR_MINSIZE 16
 
 
 /* Support for Bfloat16 */
