@@ -391,7 +391,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   const int handle = open(filename_global, O_CREAT | O_EXCL, S_IRUSR);
   const int singleton = (0 <= handle ? 1 : 0);
 #endif
-    libxsmm_finalize();
+  libxsmm_finalize();
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
