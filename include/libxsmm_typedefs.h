@@ -107,8 +107,6 @@
 
 /** Maximum size available to store a descriptor/blob (GEMM, MCOPY, TRANS, TRSM, TRMM). */
 #define LIBXSMM_DESCRIPTOR_MAXSIZE 32
-/** Minimum size allowed to perform comparison */
-#define LIBXSMM_DESCRIPTOR_MINSIZE 16
 
 
 /* Support for Bfloat16 */

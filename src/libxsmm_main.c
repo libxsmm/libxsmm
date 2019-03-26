@@ -64,6 +64,12 @@
 #if !defined(LIBXSMM_CODE_MAXSIZE)
 # define LIBXSMM_CODE_MAXSIZE 131072
 #endif
+#if !defined(LIBXSMM_DIFF_SIZE)
+# define LIBXSMM_DIFF_SIZE LIBXSMM_DESCRIPTOR_MAXSIZE
+#endif
+#if !defined(LIBXSMM_HASH_SIZE)
+# define LIBXSMM_HASH_SIZE LIBXSMM_DESCRIPTOR_MAXSIZE
+#endif
 #if !defined(LIBXSMM_HASH_SEED)
 # define LIBXSMM_HASH_SEED 25071975
 #endif
@@ -346,7 +352,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(const libxsmm_gemm_descrip
   libxsmm_xmmfunction src, libxsmm_code_pointer* registry)
 {
   unsigned int i = LIBXSMM_HASH_MOD(
-    libxsmm_crc32(desc, LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED),
+    libxsmm_crc32(desc, LIBXSMM_HASH_SIZE, LIBXSMM_HASH_SEED),
     LIBXSMM_CAPACITY_REGISTRY);
   libxsmm_code_pointer* dst_entry = registry + i;
 #if !defined(NDEBUG)
@@ -621,35 +627,36 @@ LIBXSMM_API_INTERN void internal_init(void)
     new_registry = (libxsmm_code_pointer*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer));
     internal_registry_keys = (libxsmm_kernel_info*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_kernel_info));
     if (NULL != new_registry && NULL != internal_registry_keys) {
-      const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
       libxsmm_trans_init(libxsmm_target_archid);
       libxsmm_hash_init(libxsmm_target_archid);
       libxsmm_dnn_init(libxsmm_target_archid);
 #if defined(LIBXSMM_PERF)
       libxsmm_perf_init();
 #endif
-      for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) new_registry[i].pmm = 0;
+      { const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
+#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
+        libxsmm_gemm_auto_prefetch_default = INTERNAL_PREFETCH;
+#else
+        libxsmm_gemm_auto_prefetch_default = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
+          /* avoid special prefetch if static code is present, since such code uses INTERNAL_PREFETCH */
+          ? (((LIBXSMM_X86_AVX512 >= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid))
+            ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C)
+          : INTERNAL_PREFETCH;
+#endif
+        libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
+        if (NULL != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
+          const int uid = atoi(env);
+          if (0 <= uid) {
+            libxsmm_gemm_auto_prefetch_default = libxsmm_gemm_uid2prefetch(uid);
+            libxsmm_gemm_auto_prefetch = libxsmm_gemm_auto_prefetch_default;
+            internal_gemm_auto_prefetch_locked = 1;
+          }
+        }
+      }
+      for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) new_registry[i].pmm = NULL;
 #if defined(LIBXSMM_BUILD)
 #     include <libxsmm_dispatch.h>
 #endif
-#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
-      libxsmm_gemm_auto_prefetch_default = INTERNAL_PREFETCH;
-#else
-      libxsmm_gemm_auto_prefetch_default = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
-        /* avoid special prefetch if static code is present, since such code uses INTERNAL_PREFETCH */
-        ? (((LIBXSMM_X86_AVX512 >= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid))
-          ? LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C : LIBXSMM_GEMM_PREFETCH_BL2_VIA_C)
-        : INTERNAL_PREFETCH;
-#endif
-      libxsmm_gemm_auto_prefetch = INTERNAL_PREFETCH;
-      if (NULL != env && 0 != *env) { /* user input beyond auto-prefetch is always considered */
-        const int uid = atoi(env);
-        if (0 <= uid) {
-          libxsmm_gemm_auto_prefetch_default = libxsmm_gemm_uid2prefetch(uid);
-          libxsmm_gemm_auto_prefetch = libxsmm_gemm_auto_prefetch_default;
-          internal_gemm_auto_prefetch_locked = 1;
-        }
-      }
       libxsmm_gemm_init(libxsmm_target_archid);
       if (0 == libxsmm_ninit) {
         atexit(internal_finalize);
@@ -1572,8 +1579,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_kernel_
   LIBXSMM_ASSERT(NULL != info && cache.size <= LIBXSMM_CAPACITY_CACHE);
   /* search small cache starting with the last hit on record */
   cache_index = (unsigned char)libxsmm_diff_npot(info, &cache.keys,
-    LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_DESCRIPTOR_MAXSIZE,
-    cache.hit, cache.size);
+    LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
   if (cache_index < cache.size && cache.id == libxsmm_ninit) { /* valid hit */
     flux_entry = cache.code[cache_index];
     cache.hit = cache_index;
@@ -1595,7 +1601,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_kernel_
 #endif
   {
     unsigned int i = LIBXSMM_HASH_MOD(
-      LIBXSMM_CONCATENATE(libxsmm_crc32_b, LIBXSMM_DESCRIPTOR_MAXSIZE)(info, LIBXSMM_HASH_SEED),
+      LIBXSMM_CONCATENATE(libxsmm_crc32_b, LIBXSMM_HASH_SIZE)(info, LIBXSMM_HASH_SEED),
       LIBXSMM_CAPACITY_REGISTRY);
     unsigned int i0 = i, mode = 0, diff = 1;
     LIBXSMM_ASSERT(NULL != internal_registry);
@@ -1611,7 +1617,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_kernel_
 #endif
       if ((NULL != flux_entry.ptr_const || 1 == mode) && 2 > mode) { /* check existing entry further */
         if (NULL != flux_entry.ptr_const) {
-          diff = libxsmm_diff(info, internal_registry_keys + i, LIBXSMM_DESCRIPTOR_MAXSIZE);
+          diff = LIBXSMM_CONCATENATE(libxsmm_diff_, LIBXSMM_DIFF_SIZE)(info, internal_registry_keys + i);
         }
 #if !defined(NDEBUG)
         else LIBXSMM_ASSERT(0 != diff);
@@ -1742,7 +1748,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_kernel_
     refinfo = internal_registry_keys + i;
 #endif
   }
-  assert(NULL == flux_entry.ptr_const || NULL == refinfo || 0 == memcmp(refinfo, info, LIBXSMM_DESCRIPTOR_MAXSIZE)); /* !LIBXSMM_ASSERT */
+  assert(NULL == flux_entry.ptr_const || NULL == refinfo || 0 == memcmp(refinfo, info, LIBXSMM_DIFF_SIZE)); /* !LIBXSMM_ASSERT */
 #if defined(LIBXSMM_HASH_COLLISION)
   flux_entry.uval &= ~(LIBXSMM_CODE_STATIC | LIBXSMM_HASH_COLLISION); /* clear non-JIT and collision flag */
 #else
