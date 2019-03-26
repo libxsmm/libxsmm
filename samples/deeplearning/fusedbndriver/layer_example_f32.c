@@ -345,6 +345,7 @@ int main(int argc, char* argv[])
 
     /* setup LIBXSMM buffers */
     libxsmm_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
+    printf("inner activation blocking: %i\n", libxsmm_layout->dim_size[0] );
     libxsmm_input  = libxsmm_dnn_link_tensor( libxsmm_layout, input_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
