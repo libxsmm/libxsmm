@@ -735,24 +735,17 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_descriptor {
   libxsmm_trmm_descriptor trmm;
 } libxsmm_descriptor;
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
-  const libxsmm_gemm_descriptor* gemm;
-  const libxsmm_csr_soa_descriptor* srsoa;
-  const libxsmm_csc_soa_descriptor* scsoa;
-  const libxsmm_rm_ac_soa_descriptor* rmacsoa;
-  const libxsmm_rm_bc_soa_descriptor* rmbcsoa;
-  const libxsmm_csr_reg_descriptor* sreg;
-  const libxsmm_convolution_forward_descriptor* cfwd;
-  const libxsmm_convolution_weight_update_descriptor* cupd;
-  const libxsmm_mcopy_descriptor* matcopy;
-  const libxsmm_trans_descriptor* trans;
-  const libxsmm_trsm_descriptor* trsm;
-  const libxsmm_trmm_descriptor* trmm;
-  const libxsmm_descriptor* value;
-} libxsmm_build_descriptor;
-
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
-  libxsmm_build_descriptor descriptor;
+  union {
+    const libxsmm_descriptor* value; /* with support for code-registry */
+    const libxsmm_csr_soa_descriptor* srsoa;
+    const libxsmm_csc_soa_descriptor* scsoa;
+    const libxsmm_rm_ac_soa_descriptor* rmacsoa;
+    const libxsmm_rm_bc_soa_descriptor* rmbcsoa;
+    const libxsmm_csr_reg_descriptor* sreg;
+    const libxsmm_convolution_forward_descriptor* cfwd;
+    const libxsmm_convolution_weight_update_descriptor* cupd;
+  } descriptor;
   libxsmm_build_kind kind;
 } libxsmm_build_request;
 
@@ -826,7 +819,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_kernel_info {
 } libxsmm_kernel_info;
 
 /** Attempts to receive information about JIT-generated code. */
-LIBXSMM_API const libxsmm_kernel_info* libxsmm_get_kernel_info(libxsmm_code_pointer code, libxsmm_kernel_kind* kind, size_t* size);
+LIBXSMM_API const libxsmm_kernel_info* libxsmm_get_kernel_info(libxsmm_code_pointer code, size_t* size);
 
 /** Updates counters of the statistic, which is shown at program termination. */
 LIBXSMM_API_INTERN unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision precision,
