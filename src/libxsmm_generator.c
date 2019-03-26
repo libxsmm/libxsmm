@@ -319,7 +319,7 @@ LIBXSMM_API libxsmm_trans_descriptor* libxsmm_trans_descriptor_init(libxsmm_desc
     libxsmm_descriptor_blob* blob;
   } result;
   /* limit the amount of (unrolled) code by rejecting larger kernels */
-  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  signed char i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
   result.blob = blob;
   result.ptr->typesize = (unsigned char)typesize;
   result.ptr->ldo = ldo;
@@ -339,7 +339,7 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
   } result;
   if (0 == LIBXSMM_MOD2(typesize, 4)) { /* TODO: more general kernel */
     const unsigned int typescale = typesize / 4;
-    int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+    signed char i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
     result.blob = blob;
     result.ptr->unroll_level = (unsigned char)((0 == unroll || 0 >= *unroll) ? 2/*default*/ : LIBXSMM_MIN(*unroll, 64));
     result.ptr->typesize = (unsigned char)/*typesize*/4;
@@ -364,7 +364,7 @@ LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descri
     libxsmm_trsm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  signed char i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
   result.blob = blob;
   result.ptr->typesize = (unsigned char)typesize;
   result.ptr->lda = (unsigned char)lda;
@@ -398,7 +398,7 @@ LIBXSMM_API libxsmm_trmm_descriptor* libxsmm_trmm_descriptor_init(libxsmm_descri
     libxsmm_trmm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  signed char i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
   result.blob = blob;
   result.ptr->typesize = (unsigned char)typesize;
   result.ptr->lda = (unsigned char)lda;
@@ -432,7 +432,7 @@ LIBXSMM_API libxsmm_pgemm_descriptor* libxsmm_pgemm_descriptor_init(libxsmm_desc
     libxsmm_pgemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  signed char i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
   result.blob = blob;
   result.ptr->typesize = (unsigned char)typesize;
   result.ptr->lda = (unsigned char)lda;
@@ -472,7 +472,7 @@ LIBXSMM_API libxsmm_getrf_descriptor* libxsmm_getrf_descriptor_init(libxsmm_desc
     libxsmm_getrf_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  signed char i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
   result.blob = blob;
   result.ptr->typesize = (unsigned char)typesize;
   result.ptr->lda = (unsigned char)lda;
