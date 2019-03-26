@@ -326,11 +326,11 @@ LIBXSMM_API unsigned char libxsmm_diff_32(const void* a, const void* b)
 {
   unsigned char result;
 #if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
-  result = libxsmm_diff_32_avx(a, b);
+  result = libxsmm_diff_32_avx2(a, b);
 #else
 # if defined(LIBXSMM_MATH_DIFF_DISPATCH) /* !LIBXSMM_MATH_DIFF_DISPATCH1 */
   if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
-    result = libxsmm_diff_32_avx(a, b);
+    result = libxsmm_diff_32_avx2(a, b);
   }
   else
 # endif
