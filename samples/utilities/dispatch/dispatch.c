@@ -276,10 +276,10 @@ int main(int argc, char* argv[])
         }
         else {
           printf(" m=%u n=%u k=%u", (unsigned int)rnd[j].m, (unsigned int)rnd[j].n, (unsigned int)rnd[j].k);
-          i = size_total; /* break */
+          i = size_total + 1; /* break */
         }
       }
-      if (i < size_total) {
+      if (i <= size_total) {
         printf(" check=%f\n", check.l1_tst);
       }
       else {
