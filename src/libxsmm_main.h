@@ -396,6 +396,10 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int use_nts_fwd;
   int use_nts_bwd;
   int use_nts_upd;
+  int avoid_acc_load;
+  int pack_input;
+  int pack_input_bwd;
+  int spread_input_bwd;
   int use_fwd_for_bwd;
   int exploit_duality;
   int qfma_input_pad;
@@ -428,6 +432,18 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int loop_order;
   int f32_bf16_cvt_rne;
   int fwd_img_par;
+  int use_ofm_parallelization;
+  int use_ifm_parallelization;
+  int avoid_fmas_in_rim;
+  int avoid_init_weights;
+  int upd_use_batchreduce;
+  int upd_pack_input;
+  int upd_img_br_block;
+  int upd_loop_order;
+  int upd_linearized_tasklist;
+  int upd_avoid_rim_fmas;
+
+  libxsmm_xtransfunction tr_kernel;
 
   /* internal data representation */
   libxsmm_dnn_tensor* reg_input;

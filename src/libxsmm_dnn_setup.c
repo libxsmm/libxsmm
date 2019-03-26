@@ -204,14 +204,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
   LIBXSMM_UNUSED(K);
 
   if ( (datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
-    ifmblock = (C >=16) ? 16 : C;
-    ofmblock = 16;
+    ifmblock = (C >=64) ? 64 : C;
+    ofmblock = 64;
     lp_block = 1;
     ifmblock_hp = ifmblock * lp_block;
     ofmblock_lp = ofmblock / lp_block;
   } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
-    ifmblock = (C >=16) ? 8 : C/2;
-    ofmblock = 16;
+    ifmblock = (C >=64) ? 32 : C/2;
+    ofmblock = 64;
     lp_block = 2;
     if (C == 3) {
       ifmblock = C;
@@ -220,8 +220,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
     ifmblock_hp = ifmblock * lp_block;
     ofmblock_lp = ofmblock / lp_block;
   } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_I16) && ((datatype_out == LIBXSMM_DNN_DATATYPE_I32) || (datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ) {
-    ifmblock = (C >=16) ? 8 : (C/2);
-    ofmblock = 16;
+    ifmblock = (C >=64) ? 32 : (C/2);
+    ofmblock = 64;
     lp_block = 2;
     ifmblock_hp = ifmblock * lp_block;
     ofmblock_lp = ofmblock / lp_block;
@@ -229,8 +229,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, 
       *noarch = 1;
     }
   } else if ( (datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (datatype_out == LIBXSMM_DNN_DATATYPE_I32)) {
-    ifmblock = (C >=16) ? 4 : (C/4);
-    ofmblock = 16;
+    ifmblock = (C >=64) ? 16 : (C/4);
+    ofmblock = 64;
     lp_block = 4;
     ifmblock_hp = ifmblock * lp_block;
     ofmblock_lp = ofmblock / lp_block;
@@ -368,9 +368,83 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_layer* handle ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  int tmp_max_c_block = 16;
-  int tmp_max_k_block = 16;
+  int tmp_max_c_block = 64;
+  int tmp_max_k_block = 64;
   int tmp_block = 0;
+  int blockifm = 8;
+  int blockofm = 8;
+  int block_j = 14;
+  int loop_order = 0;
+  handle->pack_input = 0;
+  handle->pack_input_bwd = 0;
+  handle->use_ofm_parallelization = 0;
+  handle->avoid_fmas_in_rim = 0;
+  handle->block_upd_ofm = 1;
+  handle->block_upd_ifm = 1;
+
+  handle->fwd_ofh_rb = 1;
+  handle->fwd_ofw_rb = handle->ofw;
+  handle->bwd_ofh_rb = 1;
+  handle->bwd_ofw_rb = handle->ofw;
+  handle->fm_lp_block = 1;
+
+  const libxsmm_trans_descriptor* tr_desc = 0;
+  libxsmm_descriptor_blob blob;
+  tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), 64, 16, 64);
+  handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
+
+  /* Loop order tuning  */
+  if (handle->desc.H >= 28 && handle->desc.R == 1) {
+    loop_order = 1;
+  }
+  handle->loop_order = loop_order;
+
+  if (handle->ofw == 112) {
+    handle->fwd_ofh_rb = 1;
+    handle->fwd_ofw_rb = 112;
+  }
+
+  if (handle->ofw == 56) {
+    handle->fwd_ofh_rb = 1;
+    handle->fwd_ofw_rb = 28;
+  }
+
+  if (handle->ofw == 28) {
+    handle->fwd_ofh_rb = 1;
+    handle->fwd_ofw_rb = 28;
+  }
+
+  if (handle->ofw == 14) {
+    handle->fwd_ofh_rb = 14;
+    handle->fwd_ofw_rb = 14;
+    if (handle->desc.u != 1 || handle->desc.v != 1) {
+      handle->pack_input = 1;
+    }
+    if ((handle->desc.u != 1 || handle->desc.v != 1) && handle->desc.K == 256) {
+      handle->pack_input = 0;
+      handle->fwd_ofh_rb = 1;
+    }
+    if (handle->desc.R != 1 || handle->desc.S != 1) {
+      handle->fwd_ofh_rb = 1;
+    }
+  }
+
+  if (handle->ofw == 7) {
+    handle->fwd_ofh_rb = 1;
+    if (handle->desc.u == 1 && handle->desc.v == 1 && handle->desc.R == 1 && handle->desc.S == 1) {
+      handle->fwd_ofh_rb = 7;
+    }
+    if (handle->desc.u == 2 && handle->desc.v ==2 && handle->ifhp == 14 && handle->ifwp == 14 && handle->desc.R == 1 && handle->desc.S == 1) {
+      handle->fwd_ofh_rb = 7;
+      handle->pack_input = 1;
+    }
+    handle->fwd_ofw_rb = 7;
+  }
+
+  if (handle->desc.N != handle->desc.threads) {
+    handle->fwd_ofh_rb = 1;
+    handle->pack_input = 0;
+  }
 
   if ( handle->desc.C < tmp_max_c_block ) {
     handle->ifmblock = handle->desc.C;
@@ -390,11 +464,54 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   }
   handle->blocksofm = handle->desc.K / handle->ofmblock;
 
-  handle->fwd_ofh_rb = 1;
-  handle->fwd_ofw_rb = handle->ofw;
-  handle->bwd_ofh_rb = 1;
-  handle->bwd_ofw_rb = handle->ofw;
-  handle->fm_lp_block = 1;
+  if (handle->desc.R == 1 && handle->desc.S == 1) {
+    handle->blocksifm_blocking = handle->blocksifm;
+    handle->blocksofm_blocking = handle->blocksofm;
+    if ( (handle->desc.C == 1024 && handle->desc.K == 256) || (handle->desc.C == 2048 && handle->desc.K == 512) ) {
+      /*handle->blocksifm_blocking = 2;*/
+    }
+  } else {
+    handle->blocksifm_blocking = 1;
+    handle->blocksofm_blocking = 1;
+    if (handle->desc.R == 3 && handle->desc.S == 3 && handle->ofh == 7 && handle->ofw == 7) {
+      handle->blocksifm_blocking = 2;
+      handle->blocksofm_blocking = 2;
+      handle->avoid_fmas_in_rim = 1;
+    }
+  }
+
+  if (handle->blocksifm_blocking == handle->blocksifm && (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
+    handle->avoid_acc_load = 1;
+  }
+
+  if (handle->desc.R == 3 && handle->desc.S == 3 && handle->desc.H <= 28) {
+    handle->avoid_fmas_in_rim = 1;
+    handle->avoid_acc_load = 0;
+  }
+
+  if (handle->desc.R == 3 && handle->desc.S == 3 && handle->ofh == 7 && handle->ofw == 7) {
+    handle->avoid_acc_load = 0;
+  }
+
+  if (handle->desc.R == 3 && handle->desc.S == 3 && handle->desc.W == 7 && handle->desc.H == 7 && handle->desc.threads == 56) {
+    handle->use_ofm_parallelization = 1;
+  }
+
+  /* Feature map block tuning */
+  while (blockifm % handle->blocksifm_blocking != 0) {
+    blockifm++;
+  }
+  handle->block_fwd_ofm = LIBXSMM_MIN(handle->blocksofm, 16);
+  handle->block_fwd_ifm = blockifm;
+
+  /* Spatial dimension block tuning  */
+  if ( handle->ofh == 27 || (handle->ofh == 28 && handle->desc.R == 1) || handle->ofh == 48 || handle->ofh == 54 || handle->ofh == 56 || handle->ofh == 112 ) {
+    block_j = 4;
+  }
+  while ( block_j % handle->fwd_ofh_rb != 0 ) {
+    block_j--;
+  }
+  handle->block_fwd_oj = block_j;
 
   /* here we need to handle BF16 again */
   if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.C % 2 == 0) && (handle->desc.K % 2 == 0) ) {
@@ -451,7 +568,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   /* backward transpose filters, as we want to call small GEMMs we need that scratch */
   handle->scratch1 = 0;
   handle->scratch1_size = (size_t)handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
-    * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_in);
+    * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_in) + (size_t)handle->desc.N * handle->ofwp * handle->ofhp * handle->desc.C;
   if (handle->fm_lp_block > 1) {
     /* If low precision, we need extra buffer to store intermediate weight tensor */
     handle->scratch1_size *= 2;
@@ -461,6 +578,138 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->scratch3_size = 0;
   handle->scratch4 = 0;
   handle->scratch4_size = 0;
+
+  /* Setup bwd parameters based on duality */
+  handle->bwd_ofh_rb = handle->fwd_ofh_rb;
+  handle->bwd_ofw_rb = handle->fwd_ofw_rb;
+  handle->use_ifm_parallelization = handle->use_ofm_parallelization;
+  /* Feature map block tuning */
+  while (blockofm % handle->blocksofm_blocking != 0) {
+    blockofm++;
+  }
+
+  handle->pack_input_bwd = (handle->desc.u != 1 && handle->bwd_ofh_rb != 1) ? 1 : 0;
+  handle->spread_input_bwd = ((handle->desc.u != 1 || handle->desc.v != 1) && handle->bwd_ofh_rb == 1) ? 1 : 0;
+  handle->block_bwd_ifm = LIBXSMM_MIN(handle->blocksifm, 16);
+  handle->block_bwd_ofm = blockofm;
+  handle->block_bwd_oj = handle->block_fwd_oj;
+
+  /* Setup upd parameters and use algorithms on a per layer basis */
+  handle->upd_ofh_rb = 1;
+  handle->upd_img_br_block = 1;
+  handle->upd_use_batchreduce = 0;
+  handle->weight_copies = 1;
+  handle->upd_loop_order = 0;
+  handle->upd_pack_input = 0;
+  handle->upd_linearized_tasklist = 0;
+  handle->upd_avoid_rim_fmas = 0;
+  handle->upd_ofw_rb = handle->ofw;
+
+  if (handle->ofh == 112 || handle->ofh == 56 || (handle->desc.H == 56 && handle->desc.u == 2)) {
+    handle->upd_ofh_rb = 1;
+    handle->upd_use_batchreduce = 0;
+    handle->weight_copies = handle->desc.threads;
+    if (handle->desc.H == 56 && handle->desc.u == 2 && handle->desc.C == 512) {
+      handle->upd_loop_order = 0;
+    } else {
+      handle->upd_loop_order = 1;
+    }
+  }
+
+  if (handle->ofh == 28 && handle->desc.u == 1 && handle->desc.R == 1 && handle->desc.S == 1) {
+    handle->upd_ofh_rb = 28;
+    handle->upd_use_batchreduce = 1;
+    handle->weight_copies = handle->desc.threads;
+    if (handle->desc.K == 512) {
+      handle->upd_loop_order = 0;
+    } else {
+      handle->upd_loop_order = 1;
+    }
+  }
+
+  if (handle->ofh == 28 && handle->desc.R == 3 && handle->desc.S == 3) {
+    handle->upd_ofh_rb = 28;
+    handle->upd_use_batchreduce = 1;
+    handle->weight_copies = handle->desc.threads;
+  }
+
+  if (handle->ofh == 14 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 256) {
+    handle->upd_ofh_rb = 14;
+    handle->upd_use_batchreduce = 1;
+    handle->weight_copies = handle->desc.threads;
+  }
+
+  if (handle->ofh == 14 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 1024) {
+    handle->upd_ofh_rb = 14;
+    handle->upd_pack_input = 0;
+    handle->upd_linearized_tasklist = 0;
+    handle->weight_copies = 7;
+    handle->upd_use_batchreduce = 1;
+    handle->upd_loop_order = 1;
+  }
+
+  if (handle->ofh == 14 && handle->desc.R == 3 && handle->desc.S == 3) {
+    handle->upd_ofh_rb = 14;
+    handle->upd_use_batchreduce = 1;
+    handle->weight_copies = 7;
+  }
+
+  if (handle->ofh == 14 && handle->desc.u == 1 && handle->desc.v == 1) {
+    handle->upd_ofh_rb = 14;
+    handle->upd_use_batchreduce = 1;
+    handle->weight_copies = 7;
+  }
+
+  if (handle->ofh == 7 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 2048 ) {
+    handle->upd_ofh_rb = 7;
+    handle->upd_pack_input = 1;
+    handle->upd_linearized_tasklist = 1;
+    handle->weight_copies = 1;
+    handle->upd_use_batchreduce = 0;
+  }
+
+  if (handle->ofh == 7 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 512 ) {
+    handle->upd_ofh_rb = 7;
+    handle->upd_pack_input = 0;
+    handle->upd_linearized_tasklist = 0;
+    handle->weight_copies = 7;
+    handle->upd_use_batchreduce = 1;
+    handle->upd_loop_order = 0;
+  }
+
+  if (handle->ofh == 7 && handle->desc.u == 1 && handle->desc.v == 1) {
+    handle->upd_ofh_rb = 7;
+    handle->upd_pack_input = 0;
+    handle->upd_linearized_tasklist = 1;
+    handle->weight_copies = 1;
+    handle->upd_use_batchreduce = 0;
+  }
+
+  if (handle->ofh == 7 && handle->desc.R == 3 && handle->desc.S == 3) {
+    handle->upd_ofh_rb = 7;
+    handle->upd_linearized_tasklist = 1;
+    handle->weight_copies = 1;
+    handle->upd_use_batchreduce = 1;
+    handle->upd_avoid_rim_fmas = 1;
+  }
+
+#if 0
+    handle->upd_ofh_rb = atoi(getenv("OFH"));
+    handle->upd_pack_input = atoi(getenv("PACK"));
+    handle->upd_linearized_tasklist = atoi(getenv("LIN"));
+    handle->weight_copies = atoi(getenv("COPIES"));
+    handle->upd_use_batchreduce = atoi(getenv("BR"));
+    handle->upd_loop_order = atoi(getenv("LOOP"));
+    handle->block_upd_ofm = atoi(getenv("OFM"));
+   handle->block_upd_ifm = atoi(getenv("IFM"));
+#endif
+
+  while (handle->desc.threads % handle->weight_copies != 0) {
+    handle->weight_copies = handle->weight_copies - 1;
+  }
+
+  /* handle->avoid_init_weights = ((handle->upd_ofw_rb*handle->upd_ofh_rb == handle->ofw*handle->ofh) && (handle->weight_copies == handle->desc.threads)) ? 1 : 0;*/
+
   return status;
 }
 
@@ -746,7 +995,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_fwd( libxsmm_dnn_layer* h
     /* TODO: proper error handling */
     LIBXSMM_ASSERT(NULL != handle->n_entries_fwd && NULL != handle->compute_fwd_indices_ptrs);
     LIBXSMM_ASSERT(NULL != handle->bn_stats_indices_ptrs && NULL != handle->bn_aux_stats_indices_ptrs && NULL != handle->bn_aux_input_indices_ptrs && NULL != handle->kernel_fwd_variant_ptrs);
-  LIBXSMM_ASSERT(NULL != handle->n_fwd_code_segments && NULL != handle->fwd_code_segments);
+    LIBXSMM_ASSERT(NULL != handle->n_fwd_code_segments && NULL != handle->fwd_code_segments);
     LIBXSMM_ASSERT(NULL != handle->ofh_fwd_start && NULL != handle->ofh_fwd_end);
 
     memset( handle->n_entries_fwd, 0, handle->desc.threads * sizeof(int) );

@@ -76,7 +76,11 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
   /* @TODO: take M blocking into account */
   if ( (strcmp(i_arch, "skx") == 0) ||
        (strcmp(i_arch, "clx") == 0)   ) {
-    libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 6, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
+    if (i_xgemm_desc->n == 7) {
+      libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 7, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
+    } else {
+      libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 6, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
+    }
   } else {
     libxsmm_compute_equalized_blocking( i_xgemm_desc->n, 3, &(l_n_N[0]), &(l_n_n[0]), &(l_n_N[1]), &(l_n_n[1]) );
   }
@@ -94,9 +98,6 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
         i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2 ||
         i_xgemm_desc->prefetch == LIBXSMM_GEMM_PREFETCH_AL2BL2_VIA_C) {
       adjust_A_pf_ptrs = 1;
-    }
-    if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
-      adjust_B_pf_ptrs = 1;
     }
   }
 

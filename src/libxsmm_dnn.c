@@ -1829,7 +1829,14 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_scratch(libxsmm_dnn_layer* handle
       switch (kind) {
         case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
                                              if (handle->use_fwd_generic != 0) {
-                                               if (address % 64 == 0) {
+                                              if (address % 64 == 0) {
+                                                 handle->scratch1 = (void*)address;
+                                              } else {
+                                                 offset = (64 - address % 64);
+                                                handle->scratch1 = (void*)(address+offset);
+                                              }
+                                              address += handle->scratch1_size + 64;
+                                              if (address % 64 == 0) {
                                                  handle->scratch5 = (void*)address;
                                                } else {
                                                  offset = (64 - address % 64);
