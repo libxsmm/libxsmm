@@ -50,21 +50,42 @@
 #if !defined(LIBXSMM_MATH_DIFF_DISPATCH) && 0
 # define LIBXSMM_MATH_DIFF_DISPATCH
 #endif
+#if !defined(LIBXSMM_MATH_DIFF_NAVG)
+# define LIBXSMM_MATH_DIFF_NAVG LIBXSMM_CAPACITY_CACHE
+#endif
 
-#define LIBXSMM_MATH_DIFF(DIFF, MOD, A, BN, ELEMSIZE, STRIDE, HINT, N) { \
+#define LIBXSMM_MATH_DIFF(DIFF, MOD, A, BN, ELEMSIZE, STRIDE, HINT, N, NAVG) { \
   const char *const libxsmm_diff_b_ = (const char*)(BN); \
   unsigned int libxsmm_diff_i_; \
   if (0 != (HINT)) { \
-    LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, 4) \
-    for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ < ((HINT) + (N)); ++libxsmm_diff_i_) { \
-      const unsigned int libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); /* wrap around index */ \
-      const unsigned int libxsmm_diff_k_ = libxsmm_diff_j_ * (STRIDE); \
-      if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_k_, ELEMSIZE)) return libxsmm_diff_j_; \
+    if ((NAVG) == (ELEMSIZE)) { \
+      LIBXSMM_PRAGMA_LOOP_COUNT(NAVG, NAVG, NAVG) \
+      for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ < ((HINT) + (N)); ++libxsmm_diff_i_) { \
+        const unsigned int libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); /* wrap around index */ \
+        const unsigned int libxsmm_diff_k_ = libxsmm_diff_j_ * (STRIDE); \
+        if (0 == LIBXSMM_CONCATENATE(libxsmm_diff_, NAVG)(A, libxsmm_diff_b_ + libxsmm_diff_k_)) return libxsmm_diff_j_; \
+      } \
+    } \
+    else { \
+      LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, NAVG) \
+      for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ < ((HINT) + (N)); ++libxsmm_diff_i_) { \
+        const unsigned int libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); /* wrap around index */ \
+        const unsigned int libxsmm_diff_k_ = libxsmm_diff_j_ * (STRIDE); \
+        if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_k_, ELEMSIZE)) return libxsmm_diff_j_; \
+      } \
+    } \
+  } \
+  else if ((NAVG) == (ELEMSIZE)) { /* fastest path */ \
+    unsigned int libxsmm_diff_j_ = 0; \
+    LIBXSMM_PRAGMA_LOOP_COUNT(NAVG, NAVG, NAVG) \
+    for (libxsmm_diff_i_ = 0; libxsmm_diff_i_ < (N); ++libxsmm_diff_i_) { \
+      if (0 == LIBXSMM_CONCATENATE(libxsmm_diff_, NAVG)(A, libxsmm_diff_b_ + libxsmm_diff_j_)) return libxsmm_diff_i_; \
+      libxsmm_diff_j_ += STRIDE; \
     } \
   } \
   else { /* fast-path */ \
     unsigned int libxsmm_diff_j_ = 0; \
-    LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, 4) \
+    LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, NAVG) \
     for (libxsmm_diff_i_ = 0; libxsmm_diff_i_ < (N); ++libxsmm_diff_i_) { \
       if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_j_, ELEMSIZE)) return libxsmm_diff_i_; \
       libxsmm_diff_j_ += STRIDE; \
@@ -390,16 +411,16 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
 {
   LIBXSMM_ASSERT(size <= stride);
 #if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
-  LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD, a, bn, size, stride, hint, n);
+  LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
 #else
 # if defined(LIBXSMM_MATH_DIFF_DISPATCH)
   if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
-    LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD, a, bn, size, stride, hint, n);
+    LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
   }
   else
 # endif
   {
-    LIBXSMM_MATH_DIFF(libxsmm_diff_sw, LIBXSMM_MOD, a, bn, size, stride, hint, n);
+    LIBXSMM_MATH_DIFF(libxsmm_diff_sw, LIBXSMM_MOD, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
   }
 #endif
 }
@@ -413,16 +434,16 @@ LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsign
   assert(size <= stride && n == npot); /* !LIBXSMM_ASSERT */
 #endif
 #if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
-  LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD2, a, bn, size, stride, hint, n);
+  LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD2, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
 #else
 # if defined(LIBXSMM_MATH_DIFF_DISPATCH)
   if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
-    LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD2, a, bn, size, stride, hint, n);
+    LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD2, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
   }
   else
 # endif
   {
-    LIBXSMM_MATH_DIFF(libxsmm_diff_sw, LIBXSMM_MOD2, a, bn, size, stride, hint, n);
+    LIBXSMM_MATH_DIFF(libxsmm_diff_sw, LIBXSMM_MOD2, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
   }
 #endif
 }

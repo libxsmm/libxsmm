@@ -117,8 +117,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 #   endif
 # endif
 # if (1 < INTERNAL_REGLOCK_MAXN)
-#   if !defined(LIBXSMM_CAPACITY_CACHE) && (8 > INTERNAL_REGLOCK_MAXN)
-#     define LIBXSMM_CAPACITY_CACHE 32
+#   if !defined(LIBXSMM_CACHE_MAXSIZE) && (8 > INTERNAL_REGLOCK_MAXN)
+#     define LIBXSMM_CACHE_MAXSIZE LIBXSMM_CAPACITY_CACHE
 #   endif
 #   if !defined(LIBXSMM_REGLOCK)
 #     define LIBXSMM_REGLOCK LIBXSMM_LOCK_DEFAULT
@@ -138,8 +138,8 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_reglocktype {
 #   endif
 LIBXSMM_APIVAR_ARRAY(internal_reglocktype internal_reglock, INTERNAL_REGLOCK_MAXN);
 # else /* RW-lock */
-#   if !defined(LIBXSMM_CAPACITY_CACHE)
-#     define LIBXSMM_CAPACITY_CACHE 32
+#   if !defined(LIBXSMM_CACHE_MAXSIZE)
+#     define LIBXSMM_CACHE_MAXSIZE LIBXSMM_CAPACITY_CACHE
 #   endif
 #   if !defined(LIBXSMM_REGLOCK)
 #     if defined(LIBXSMM_UNIFY_LOCKS)
@@ -156,7 +156,7 @@ LIBXSMM_APIVAR(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
 # endif
 #endif
 
-#if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
+#if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
 # if defined(LIBXSMM_GEMM_DIFF_SW) && (2 == (LIBXSMM_GEMM_DIFF_SW)) /* most general implementation */
 #   define INTERNAL_FIND_CODE_CACHE_GROW(RESULT_INDEX, CACHE_SIZE) \
       RESULT_INDEX = CACHE_SIZE; ++(CACHE_SIZE)
@@ -1568,15 +1568,15 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_kernel_
   int build = EXIT_SUCCESS;
 # endif
 #endif
-#if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
+#if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
   static LIBXSMM_TLS struct {
-    libxsmm_kernel_info keys[LIBXSMM_CAPACITY_CACHE];
-    libxsmm_code_pointer code[LIBXSMM_CAPACITY_CACHE];
+    libxsmm_kernel_info keys[LIBXSMM_CACHE_MAXSIZE];
+    libxsmm_code_pointer code[LIBXSMM_CACHE_MAXSIZE];
     unsigned int id; /* to invalidate cache */
     unsigned char size, hit;
   } cache;
   unsigned char cache_index;
-  LIBXSMM_ASSERT(NULL != info && cache.size <= LIBXSMM_CAPACITY_CACHE);
+  LIBXSMM_ASSERT(NULL != info && cache.size <= LIBXSMM_CACHE_MAXSIZE);
   /* search small cache starting with the last hit on record */
   cache_index = (unsigned char)libxsmm_diff_npot(info, &cache.keys,
     LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
@@ -1725,14 +1725,14 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(const libxsmm_kernel_
         }
       }
     } while (0 != diff);
-#if defined(LIBXSMM_CAPACITY_CACHE) && (0 < (LIBXSMM_CAPACITY_CACHE))
+#if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
     if (NULL != flux_entry.ptr_const) { /* keep code version on record (cache) */
       if (cache.id != libxsmm_ninit) { /* invalidate */
         memset(cache.keys, 0, sizeof(cache.keys));
         cache.id = libxsmm_ninit;
         cache.size = cache.hit = 0;
       }
-      if (cache.size < (LIBXSMM_CAPACITY_CACHE)) { /* grow */
+      if (cache.size < (LIBXSMM_CACHE_MAXSIZE)) { /* grow */
         INTERNAL_FIND_CODE_CACHE_GROW(cache_index, cache.size);
       }
       else { /* evict */
@@ -1928,8 +1928,8 @@ LIBXSMM_API int libxsmm_get_registry_info(libxsmm_registry_info* info)
       memset(info, 0, sizeof(libxsmm_registry_info)); /* info->nstatic = 0; info->size = 0; */
       info->nbytes = (LIBXSMM_CAPACITY_REGISTRY) * (sizeof(libxsmm_code_pointer) + sizeof(libxsmm_kernel_info));
       info->capacity = LIBXSMM_CAPACITY_REGISTRY;
-#if defined(LIBXSMM_CAPACITY_CACHE)
-      info->ncache = LIBXSMM_CAPACITY_CACHE;
+#if defined(LIBXSMM_CACHE_MAXSIZE)
+      info->ncache = LIBXSMM_CACHE_MAXSIZE;
 #else
       info->ncache = 0;
 #endif
