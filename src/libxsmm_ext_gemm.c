@@ -81,13 +81,65 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
       if (NULL != kernel.xmm) {
 #if defined(_OPENMP)
         if (0 == (LIBXSMM_MMBATCH_FLAG_SEQUENTIAL & batchdesc->flags)) { /* parallelized */
-          const int nthreads = omp_get_num_threads();
-#         pragma omp parallel
-          /*check*/libxsmm_mmbatch_kernel(
-            kernel, 0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
-            &batcharray->value.a, &batcharray->value.b, &batcharray->value.c,
-            0 == (LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED & batchdesc->flags) ? batchsize : -batchsize,
-            omp_get_thread_num(), nthreads, batchdesc);
+# if defined(LIBXSMM_EXT_TASKS)
+          if (0 == omp_get_active_level()) {
+            const int nthreads = omp_get_max_threads();
+            if (0 >= libxsmm_gemm_taskscale)
+# else
+          if (0 == omp_in_parallel()) {
+            const int nthreads = omp_get_max_threads();
+# endif
+            { /* classic internal parallelization */
+#             pragma omp parallel num_threads(nthreads)
+              /*check*/libxsmm_mmbatch_kernel(
+                kernel, 0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
+                &batcharray->value.a, &batcharray->value.b, &batcharray->value.c,
+                0 == (LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED & batchdesc->flags) ? batchsize : -batchsize,
+                omp_get_thread_num(), nthreads, batchdesc);
+            }
+# if defined(LIBXSMM_EXT_TASKS)
+            else { /* internal parallelization with tasks */
+              const int ntasks = nthreads * libxsmm_gemm_taskscale;
+#             pragma omp parallel num_threads(nthreads)
+              { /* first thread discovering work will launch all tasks */
+#               pragma omp single nowait /* anyone is good */
+                { int tid;
+                  for (tid = 0; tid < ntasks; ++tid) {
+#                   pragma omp task untied
+                    /*check*/libxsmm_mmbatch_kernel(
+                      kernel, 0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
+                      &batcharray->value.a, &batcharray->value.b, &batcharray->value.c,
+                      0 == (LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED & batchdesc->flags) ? batchsize : -batchsize,
+                      tid, ntasks, batchdesc);
+                  }
+                }
+              } /* implicit synchronization (barrier) */
+            }
+# endif
+          }
+          else { /* assume external parallelization */
+# if defined(LIBXSMM_EXT_TASKS)
+            const int ntasks = omp_get_num_threads() * (0 == libxsmm_gemm_taskscale ? (LIBXSMM_GEMM_TASKSCALE) : libxsmm_gemm_taskscale);
+            int tid;
+            for (tid = 0; tid < ntasks; ++tid) {
+#             pragma omp task untied
+              /*check*/libxsmm_mmbatch_kernel(
+                kernel, 0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
+                &batcharray->value.a, &batcharray->value.b, &batcharray->value.c,
+                0 == (LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED & batchdesc->flags) ? batchsize : -batchsize,
+                tid, ntasks, batchdesc);
+            }
+            if (0 == libxsmm_nosync) { /* allow to omit synchronization */
+#             pragma omp taskwait
+            }
+# else
+            /*check*/libxsmm_mmbatch_kernel(
+              kernel, 0/*index_base*/, 0/*index_stride*/, &itemsize, &itemsize, &itemsize,
+              &batcharray->value.a, &batcharray->value.b, &batcharray->value.c,
+              0 == (LIBXSMM_MMBATCH_FLAG_SYNCHRONIZED & batchdesc->flags) ? batchsize : -batchsize,
+              0/*tid*/, 1/*nthreads*/, batchdesc);
+# endif
+          }
         }
         else
 #endif
@@ -157,25 +209,24 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
 
 #if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
 
-#if defined(LIBXSMM_GEMM_WRAP_STATIC) || defined(LIBXSMM_GEMM_WRAP_DYNAMIC)
+#if defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
 LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void)
 {
-  LIBXSMM_GEMM_WRAPPER(double, libxsmm_original_dgemm_function, libxsmm_original_dgemm/*self*/);
+  LIBXSMM_BLAS_WRAPPER(double, gemm, libxsmm_original_dgemm_function, libxsmm_original_dgemm/*self*/);
   LIBXSMM_ASSERT(NULL != libxsmm_original_dgemm_function);
   return libxsmm_original_dgemm_function;
 }
 
-
 LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void)
 {
-  LIBXSMM_GEMM_WRAPPER(float, libxsmm_original_sgemm_function, libxsmm_original_sgemm/*self*/);
+  LIBXSMM_BLAS_WRAPPER(float, gemm, libxsmm_original_sgemm_function, libxsmm_original_sgemm/*self*/);
   LIBXSMM_ASSERT(NULL != libxsmm_original_sgemm_function);
   return libxsmm_original_sgemm_function;
 }
-#endif
+#endif /*defined(LIBXSMM_BLAS_WRAP_DYNAMIC)*/
 
 
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
+LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
@@ -312,7 +363,7 @@ LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(
 }
 
 
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(
+LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
   const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const float* alpha, const float* a, const libxsmm_blasint* lda,
@@ -562,7 +613,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm
 #endif
   {
     int result;
-    if (LIBXSMM_SMM(m, n, k)) { /* check if an SMM is suitable */
+    if (LIBXSMM_SMM_AI(m, n, k, 2/*RFO*/, libxsmm_typesize((libxsmm_datatype)oprec))) { /* check if an SMM is suitable */
       libxsmm_xmmfunction kernel;
       libxsmm_descriptor_blob blob;
       const int gemm_flags = LIBXSMM_GEMM_PFLAGS(transa, transb, LIBXSMM_FLAGS);
@@ -570,49 +621,63 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm
         NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? m : k),
         NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? k : n),
         NULL != ldc ? *ldc : m, alpha, beta, gemm_flags, libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
-      libxsmm_gemm_internal_set_batchflag(desc, c, index_stride, batchsize, 0/*multi-threaded*/);
-      kernel = libxsmm_xmmdispatch(desc);
-      if (NULL != kernel.xmm) {
 #if defined(_OPENMP)
-        const int nchunks = (int)((LIBXSMM_ABS(batchsize) + libxsmm_mmbatch_grain - 1) / libxsmm_mmbatch_grain);
-        result = EXIT_SUCCESS;
-        if (1 < nchunks) {
+      const int nchunks = (int)((LIBXSMM_ABS(batchsize) + libxsmm_gemm_taskgrain - 1) / libxsmm_gemm_taskgrain);
+      result = EXIT_SUCCESS;
+      if (1 < nchunks) {
 # if defined(LIBXSMM_EXT_TASKS)
-          if (0 == omp_get_active_level())
+        if (0 == omp_get_active_level())
 # else
-          if (0 == omp_in_parallel())
+        if (0 == omp_in_parallel())
 # endif
-          { /* enable internal parallelization */
-            const int max_nthreads = omp_get_max_threads();
-            const int nthreads = LIBXSMM_MIN(max_nthreads, nchunks);
+        { /* enable internal parallelization */
+          const int max_nthreads = omp_get_max_threads();
+          const int nthreads = LIBXSMM_MIN(max_nthreads, nchunks);
 # if defined(LIBXSMM_EXT_TASKS)
-            if (0 >= libxsmm_gemm_taskscale)
+          if (0 >= libxsmm_gemm_taskscale)
 # endif
-            {
+          {
+            libxsmm_gemm_internal_set_batchflag(desc, c, index_stride, batchsize, 1 != nthreads);
+            kernel = libxsmm_xmmdispatch(desc);
+            if (NULL != kernel.xmm) {
 #             pragma omp parallel num_threads(nthreads)
               /*check*/libxsmm_mmbatch_kernel(kernel, index_base, index_stride,
                 stride_a, stride_b, stride_c, a, b, c, batchsize,
                 omp_get_thread_num(), nthreads, desc);
             }
+            else {
+              result = EXIT_FAILURE;
+            }
+          }
 # if defined(LIBXSMM_EXT_TASKS)
-            else { /* tasks requested */
-              const int ntasks = nthreads * libxsmm_gemm_taskscale;
+          else { /* tasks requested */
+            const int ntasks = nthreads * libxsmm_gemm_taskscale;
+            libxsmm_gemm_internal_set_batchflag(desc, c, index_stride, batchsize, 1 != ntasks);
+            kernel = libxsmm_xmmdispatch(desc);
+            if (NULL != kernel.xmm) {
 #             pragma omp parallel num_threads(nthreads)
               { /* first thread discovering work will launch all tasks */
 #               pragma omp single nowait /* anyone is good */
                 { int tid;
-                  for (tid = 0; tid < ntasks; ++tid) {
-#                   pragma omp task
-                    /*check*/libxsmm_mmbatch_kernel(kernel, index_base, index_stride,
-                      stride_a, stride_b, stride_c, a, b, c, batchsize,
-                      tid, ntasks, desc);
-                  }
+                for (tid = 0; tid < ntasks; ++tid) {
+#                 pragma omp task
+                  /*check*/libxsmm_mmbatch_kernel(kernel, index_base, index_stride,
+                    stride_a, stride_b, stride_c, a, b, c, batchsize,
+                    tid, ntasks, desc);
+                }
                 }
               } /* implicit synchronization (barrier) */
             }
-# endif
+            else {
+              result = EXIT_FAILURE;
+            }
           }
-          else { /* assume external parallelization */
+# endif
+        }
+        else { /* assume external parallelization */
+          libxsmm_gemm_internal_set_batchflag(desc, c, index_stride, batchsize, 0/*multithreaded*/);
+          kernel = libxsmm_xmmdispatch(desc);
+          if (NULL != kernel.xmm) {
 # if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
             const int ntasks = (0 == libxsmm_gemm_taskscale
               ? (LIBXSMM_GEMM_TASKSCALE)
@@ -634,17 +699,19 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm
               0/*tid*/, 1/*nthreads*/, desc);
 # endif
           }
-        }
-        else
-#endif /*defined(_OPENMP)*/
-        { /* sequential */
-          result = libxsmm_mmbatch_kernel(kernel, index_base, index_stride,
-            stride_a, stride_b, stride_c, a, b, c, batchsize,
-            0/*tid*/, 1/*nthreads*/, desc);
+          else {
+            result = EXIT_FAILURE;
+          }
         }
       }
-      else {
-        result = EXIT_FAILURE;
+      else
+#endif /*defined(_OPENMP)*/
+      { /* sequential */
+        libxsmm_gemm_internal_set_batchflag(desc, c, index_stride, batchsize, 0/*multithreaded*/);
+        kernel = libxsmm_xmmdispatch(desc);
+        result = (NULL != kernel.xmm ? libxsmm_mmbatch_kernel(kernel, index_base, index_stride,
+          stride_a, stride_b, stride_c, a, b, c, batchsize,
+          0/*tid*/, 1/*nthreads*/, desc) : EXIT_FAILURE);
       }
     }
     else {

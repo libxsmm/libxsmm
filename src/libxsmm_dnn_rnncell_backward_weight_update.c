@@ -72,6 +72,8 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck_f32_f32(libxsmm_dnn_rnncel
 # undef LIBXSMM_DNN_RNN_TANH_BWDUPD
   } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
 # include "template/libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_ck_generic.tpl.c"
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_GRU ) {
+# include "template/libxsmm_dnn_rnncell_st_gru_bwdupd_nc_ck_generic.tpl.c"
   } else {
     /* should not happen */
   }
@@ -100,6 +102,8 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck_bf16_bf16(libxsmm_dnn_rnnc
     status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
   } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
 # include "template/libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_ck_generic_bf16.tpl.c"
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_GRU ) {
+    status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
   } else {
     /* should not happen */
   }
@@ -134,6 +138,8 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_kcck_f32_f32(libxsmm_dnn_rnnc
 # undef LIBXSMM_DNN_RNN_TANH_BWDUPD
   } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
 # include "template/libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck.tpl.c"
+  } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_GRU ) {
+    status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
   } else {
     /* should not happen */
   }
@@ -200,6 +206,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck(libxsmm
 #undef LIBXSMM_DNN_RNN_TANH_BWDUPD
       } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
 # include "template/libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_ck_generic.tpl.c"
+      } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_GRU ) {
+# include "template/libxsmm_dnn_rnncell_st_gru_bwdupd_nc_ck_generic.tpl.c"
       } else {
         /* should not happen */
       }
@@ -254,6 +262,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_kcck(libxs
 #undef LIBXSMM_DNN_RNN_TANH_BWDUPD
       } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
 # include "template/libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck.tpl.c"
+      } else if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_GRU ) {
+        status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
       } else {
         /* should not happen */
       }

@@ -216,9 +216,6 @@
     <ClInclude Include="..\src\libxsmm_blocked_gemm_types.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_dnn_grucell.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_dnn_fusedbatchnorm_backward.h">
       <Filter>src</Filter>
     </ClInclude>
@@ -829,6 +826,12 @@
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_avx512_microkernel_fsdbcst.c">
       <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_gru_fwd_nc_ck_generic.tpl.c">
+      <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_gru_bwdupd_nc_ck_generic.tpl.c">
+      <Filter>src\template</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

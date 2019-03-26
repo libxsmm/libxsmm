@@ -73,7 +73,7 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info);
  * Calculate whether there is a difference between two (short) buffers.
  * Returns zero if there is no difference; otherwise non-zero.
  */
-LIBXSMM_API unsigned int libxsmm_diff(const void* a, const void* b, unsigned char size);
+LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned char size);
 
 /**
  * Calculate whether there is a difference between two series of items.
@@ -110,29 +110,23 @@ LIBXSMM_API size_t libxsmm_shuffle(unsigned int n);
  */
 LIBXSMM_API unsigned int libxsmm_product_limit(unsigned int product, unsigned int limit, int is_lower);
 
-/* SQRT with Newton's method using integer arithmetic. */
+/** SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u64(unsigned long long x);
-/* SQRT with Newton's method using integer arithmetic. */
+/** SQRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_isqrt_u32(unsigned int x);
-/* Based on libxsmm_isqrt_u32, but actual factor of x. */
+/** Based on libxsmm_isqrt_u32, but actual factor of x. */
 LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x);
-/* SQRT with Newton's method using double-precision. */
+/** SQRT with Newton's method using double-precision. */
 LIBXSMM_API double libxsmm_dsqrt(double x);
-/* SQRT with Newton's method using single-precision. */
+/** SQRT with Newton's method using single-precision. */
 LIBXSMM_API float libxsmm_ssqrt(float x);
 
-/* CBRT with Newton's method using integer arithmetic. */
+/** CBRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_icbrt_u64(unsigned long long x);
-/* CBRT with Newton's method using integer arithmetic. */
+/** CBRT with Newton's method using integer arithmetic. */
 LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x);
 
-/**
- * Exponential function, which exposes the number of iterations taken in the main case (1...22). For example,
- * a value of maxiter=13 yields fast (but reasonable results), whereas maxiter=20 yields more accurate results.
- */
-LIBXSMM_API float libxsmm_sexp2_fast(float x, int maxiter);
-
-/* A wrapper around libxsmm_sexp2_fast (or powf), which aims for accuracy. */
+/** Single-precision approximation of exponential function (base 2). */
 LIBXSMM_API float libxsmm_sexp2(float x);
 
 /**

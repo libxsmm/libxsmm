@@ -27,7 +27,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        #
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              #
 #############################################################################
-# Hans Pabst (Intel Corp.), Kunal Banerjee (Intel Corp.)
+# Hans Pabst (Intel Corp.)
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
@@ -87,83 +87,3 @@ else
     -e "MIC_KMP_HW_SUBSET=$((MICCORES-1))${MICTPERC}t"
 fi
 
-ITERS=10
-CHKVAL=1
-export OMP_NUM_THREADS=28
-export KMP_AFFINITY=granularity=fine,compact,1,0
-
-
-echo "RNN ReLU FWD"
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  1  168   256   256  10
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  1  168   512   512  10
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  1  168  1024  1024  10
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  1  168  2048  2048  10
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  1  168  4096  4096  10
-wait
-
-echo "RNN ReLU BWD+UPD"
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  1  168   256   256  10
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  1  168   512   512  10
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  1  168  1024  1024  10
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  1  168  2048  2048  10
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  1  168  4096  4096  10
-wait
-
-echo "RNN sigmoid FWD"
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  2  168   256   256  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  2  168   512   512  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  2  168  1024  1024  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  2  168  2048  2048  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  2  168  4096  4096  50
-wait
-
-echo "RNN sigmoid BWD+UPD"
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  2  168   256   256  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  2  168   512   512  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  2  168  1024  1024  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  2  168  2048  2048  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  2  168  4096  4096  50
-wait
-
-echo "RNN tanh FWD"
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  3  168   256   256  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  3  168   512   512  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  3  168  1024  1024  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  3  168  2048  2048  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  3  168  4096  4096  50
-wait
-
-echo "RNN tanh BWD+UPD"
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  3  168   256   256  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  3  168   512   512  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  3  168  1024  1024  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  3  168  2048  2048  50
-wait
-CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  3  168  4096  4096  50
-wait
-
-echo "RNN performance done"
-echo ""

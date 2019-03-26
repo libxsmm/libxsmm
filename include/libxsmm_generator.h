@@ -38,9 +38,6 @@
         (LIBXSMM_FEQ(1, ALPHA) /*|| LIBXSMM_FEQ(-1, ALPHA)*/) && \
         (LIBXSMM_FEQ(1, BETA) || LIBXSMM_FEQ(0, BETA)))
 
-#define LIBXSMM_TRANS_NO_BYPASS(M, N) ( \
-  (((unsigned int)(M)) * (N)) <= ((unsigned int)(LIBXSMM_AVG_M) * (LIBXSMM_AVG_N)))
-
 
 /** Initialize GEMM descriptor as used by low-level routines (type-specific). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descriptor_blob* blob,
