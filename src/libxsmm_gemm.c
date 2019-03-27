@@ -302,25 +302,29 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
 }
 
 
-LIBXSMM_API_INLINE libxsmm_gemm_prefetch_type internal_get_gemm_prefetch(int prefetch)
-{
-  const int result = (0 > prefetch ? ((int)libxsmm_gemm_auto_prefetch_default) : prefetch);
-  LIBXSMM_ASSERT_MSG(0 <= result, "LIBXSMM_PREFETCH_AUTO is not translated");
-  return (libxsmm_gemm_prefetch_type)result;
-}
-
-
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch)
 {
   LIBXSMM_INIT /* load configuration */
-  return internal_get_gemm_prefetch(NULL == prefetch ? ((int)libxsmm_gemm_auto_prefetch) : *prefetch);
+  return libxsmm_get_gemm_prefetch(NULL == prefetch ? ((int)libxsmm_gemm_auto_prefetch) : *prefetch);
 }
 
 
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch)
 {
-  LIBXSMM_INIT /* load configuration */
-  return internal_get_gemm_prefetch(prefetch);
+  libxsmm_gemm_prefetch_type result;
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
+  if (0 > prefetch) {
+    LIBXSMM_INIT /* load configuration */
+    result = libxsmm_gemm_auto_prefetch_default;
+  }
+  else {
+    result = (libxsmm_gemm_prefetch_type)prefetch;
+  }
+#else /* TODO: full support for Windows calling convention */
+  result = LIBXSMM_GEMM_PREFETCH_NONE;
+  LIBXSMM_UNUSED(prefetch);
+#endif
+  return result;
 }
 
 
