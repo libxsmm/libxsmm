@@ -154,10 +154,10 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
           } else {
             const element_input_type*      input_ptr  = &LIBXSMM_VLA_ACCESS(5, input,      img, fm, hi+kh+iph, wi+kw+ipw, 0, nBlocksFm, ifhp, ifwp, 64);
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
-            __m512i lcl_vnewmask  = _mm512_add_epi32( lcl_viadd, _mm512_set1_epi32((hi+kh)*ifw*64 + (wi+kw)*64) );
-            __m512i lcl_vnewmask2 = _mm512_add_epi32( lcl_viadd, _mm512_set1_epi32((hi+kh)*ifw*64 + (wi+kw)*64 + 16) );
-            __m512i lcl_vnewmask3 = _mm512_add_epi32( lcl_viadd, _mm512_set1_epi32((hi+kh)*ifw*64 + (wi+kw)*64 + 32) );
-            __m512i lcl_vnewmask4 = _mm512_add_epi32( lcl_viadd, _mm512_set1_epi32((hi+kh)*ifw*64 + (wi+kw)*64 + 48) );
+            __m512i lcl_vnewmask   = _mm512_add_epi32( lcl_viadd, _mm512_set1_epi32((hi+kh)*ifw*16 + (wi+kw)*16) );
+            __m512i lcl_vnewmask2  = _mm512_add_epi32( lcl_viadd, _mm512_set1_epi32((hi+kh)*ifw*16 + (wi+kw)*16) );
+            __m512i lcl_vnewmask3  = _mm512_add_epi32( lcl_viadd, _mm512_set1_epi32((hi+kh)*ifw*16 + (wi+kw)*16) );
+            __m512i lcl_vnewmask4  = _mm512_add_epi32( lcl_viadd, _mm512_set1_epi32((hi+kh)*ifw*16 + (wi+kw)*16) );
             __m512 lcl_vinput  = _mm512_load_act( input_ptr );
             __m512 lcl_vinput2 = _mm512_load_act( input_ptr+16 );
             __m512 lcl_vinput3 = _mm512_load_act( input_ptr+32 );
