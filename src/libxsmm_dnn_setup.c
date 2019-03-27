@@ -382,6 +382,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->block_upd_ofm = 1;
   handle->block_upd_ifm = 1;
   handle->fwd_flags = 0;
+  handle->shuffle_filter_accesses = 0;
 
   handle->fwd_ofh_rb = 1;
   handle->fwd_ofw_rb = handle->ofw;
@@ -478,6 +479,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
       handle->blocksifm_blocking = 2;
       handle->blocksofm_blocking = 2;
       handle->avoid_fmas_in_rim = 1;
+      handle->shuffle_filter_accesses = 1;
     }
   }
 

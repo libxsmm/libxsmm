@@ -29,7 +29,7 @@
 /* Evangelos Georganas, Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-int img, ofm1, ofm2, ifm1, ifm2, oj, ij, oi, ii, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myOfmId, nOfmBlocks, ind;
+int img, ofm1, ofm2, ifm1, ifm2, oj, ij, oi, ii, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myOfmId, nOfmBlocks, ind, ofm11, ki1, kj1;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -243,8 +243,8 @@ if (handle->desc.N != handle->desc.threads) {
         for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
           for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
             for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
-              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-
+              for (ofm11 = ofmb; ofm11 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm11++ ) {
+                ofm1 = (handle->shuffle_filter_accesses == 1) ? (ofm11+ltid)%handle->blocksofm : ofm11;
                 if ( (ifmb == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && handle->avoid_acc_load == 0 && ojb == 0) {
                   /* set output feature map to zero */
                   for (oj = 0; oj < handle->ofh; ++oj) {
@@ -262,8 +262,8 @@ if (handle->desc.N != handle->desc.threads) {
                 for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
                   for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
                     for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
-                      for (kj = 0; kj < handle->desc.R; kj++) {
-                        for (ki = 0; ki < handle->desc.S; ki++) {
+                      for (kj1 = 0; kj1 < handle->desc.R; kj1++) {
+                        for (ki1 = 0; ki1 < handle->desc.S; ki1++) {
                           /* Prepare batch-reduce kernel arguments */
                           if (handle->pack_input == 1) {
                             ij_use = oj;
@@ -274,6 +274,9 @@ if (handle->desc.N != handle->desc.threads) {
                           }
                           oi_use = oi;
                           oj_use = oj;
+
+                          ki = (handle->shuffle_filter_accesses == 1) ?  (ki1+ltid)%handle->desc.S : ki1;
+                          kj = (handle->shuffle_filter_accesses == 1) ?  (kj1+ltid)%handle->desc.R : kj1;
 
                           if (kj == 0 && oj == 0) {
                             /* Do no FLOPS  */
