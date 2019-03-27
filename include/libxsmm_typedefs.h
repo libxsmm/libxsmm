@@ -106,7 +106,7 @@
   LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE))
 
 /** Maximum size available to store a descriptor/blob (GEMM, MCOPY, TRANS, TRSM, TRMM). */
-#define LIBXSMM_DESCRIPTOR_MAXSIZE 32
+#define LIBXSMM_DESCRIPTOR_MAXSIZE 64
 
 
 /* Support for Bfloat16 */
