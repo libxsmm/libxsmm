@@ -381,6 +381,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->avoid_fmas_in_rim = 0;
   handle->block_upd_ofm = 1;
   handle->block_upd_ifm = 1;
+  handle->fwd_flags = 0;
 
   handle->fwd_ofh_rb = 1;
   handle->fwd_ofw_rb = handle->ofw;
@@ -480,6 +481,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     }
   }
 
+  if (handle->ofw == 7 && handle->desc.C == 2048 && handle->desc.K == 512) {
+    handle->blocksifm_blocking = 1;
+    blockifm = 4;
+  }
+
   if (handle->blocksifm_blocking == handle->blocksifm && (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
     handle->avoid_acc_load = 1;
   }
@@ -551,6 +557,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     }
   }
 
+  /* Finally decide on streaming stores for fwd convolutions */
+  if ( handle->ofw == 56 && handle->avoid_acc_load == 1 && handle->desc.R == 1 && handle->desc.S == 1 ) {
+    handle->fwd_flags = LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
+  }
+
   handle->code_fwd[0].xconv.sconv = 0;
   handle->code_fwd[1].xconv.sconv = 0;
   handle->code_fwd[2].xconv.sconv = 0;
@@ -583,6 +594,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->bwd_ofh_rb = handle->fwd_ofh_rb;
   handle->bwd_ofw_rb = handle->fwd_ofw_rb;
   handle->use_ifm_parallelization = handle->use_ofm_parallelization;
+  if (handle->ofw == 7) {
+    handle->use_ifm_parallelization = 1;
+  }
+  if (handle->ofw == 7 && handle->desc.C == 1024 && handle->desc.K == 512) {
+    handle->use_ofm_parallelization = 1;
+  }
   /* Feature map block tuning */
   while (blockofm % handle->blocksofm_blocking != 0) {
     blockofm++;

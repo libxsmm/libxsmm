@@ -442,6 +442,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int upd_loop_order;
   int upd_linearized_tasklist;
   int upd_avoid_rim_fmas;
+  int fwd_flags;
 
   libxsmm_xtransfunction tr_kernel;
 
