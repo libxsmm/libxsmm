@@ -56,7 +56,7 @@ int main(void)
   union { LIBXSMM_MMFUNCTION_TYPE(ITYPE) f; void* p; } f[MAX_NKERNELS];
   const char *const target_arch = libxsmm_get_target_arch();
   const ITYPE alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
-  const int prefetch = LIBXSMM_GEMM_PREFETCH_NONE;
+  const int prefetch = LIBXSMM_PREFETCH_AUTO;
   libxsmm_generated_code generated_code;
   libxsmm_registry_info registry_info;
   const int max_shape = LIBXSMM_MAX_M;
@@ -120,9 +120,7 @@ int main(void)
       union { libxsmm_xmmfunction x; void* p; } fi;
       libxsmm_descriptor_blob blob;
       const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_GEMM_PRECISION(ITYPE),
-        m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, &alpha, &beta, flags,
-        /* translate an eventual LIBXSMM_PREFETCH_AUTO */
-        libxsmm_get_gemm_prefetch(prefetch));
+        m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, &alpha, &beta, flags, prefetch);
 
       fi.x = libxsmm_xmmdispatch(desc);
       if (fi.p != f[i].p) {
