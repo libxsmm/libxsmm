@@ -248,13 +248,13 @@ endif
 
 ifneq (Darwin,$(UNAME))
   GENGEMM = @$(ENV) \
-    LD_LIBRARY_PATH=$(OUTDIR):$${LD_LIBRARY_PATH} \
-    PATH=$(OUTDIR):$${PATH} \
+    LD_LIBRARY_PATH="$(OUTDIR):$${LD_LIBRARY_PATH}" \
+    PATH="$(OUTDIR):$${PATH}" \
   $(BINDIR)/libxsmm_gemm_generator
 else # osx
   GENGEMM = @$(ENV) \
-    DYLD_LIBRARY_PATH=$(OUTDIR):$${DYLD_LIBRARY_PATH} \
-    PATH=$(OUTDIR):$${PATH} \
+    DYLD_LIBRARY_PATH="$(OUTDIR):$${DYLD_LIBRARY_PATH}" \
+    PATH="$(OUTDIR):$${PATH}" \
   $(BINDIR)/libxsmm_gemm_generator
 endif
 
