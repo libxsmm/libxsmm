@@ -394,11 +394,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), 64, 16, 64);
   handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
 
-  /* Tune here flags for fwd streaming stores */
-  if (handle->ofw == 56 && handle->desc.C == 64 && handle->desc.K == 256) {
-    handle->fwd_flags = LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
-  }
-
   /* Loop order tuning  */
   if (handle->desc.H >= 28 && handle->desc.R == 1) {
     loop_order = 1;
@@ -560,6 +555,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
       /* Fallback to custom_1 format, for now custom_2 format is supported only for float */
       handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
     }
+  }
+
+  /* Finally decide on streaming stores for fwd convolutions */
+  if ( handle->ofw == 56 && handle->avoid_acc_load == 1 && handle->desc.R == 1 && handle->desc.S == 1 ) {
+    handle->fwd_flags = LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
   }
 
   handle->code_fwd[0].xconv.sconv = 0;
