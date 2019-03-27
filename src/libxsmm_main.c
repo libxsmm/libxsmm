@@ -1779,7 +1779,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 }
 
 
-LIBXSMM_API const libxsmm_descriptor* libxsmm_get_descriptor(libxsmm_code_pointer code, size_t* size)
+LIBXSMM_API const libxsmm_descriptor* libxsmm_get_kernel_info(libxsmm_code_pointer code, size_t* size)
 {
   const libxsmm_descriptor* result;
   void* extra = NULL;
@@ -1804,7 +1804,7 @@ LIBXSMM_API int libxsmm_get_kernel_kind(const void* kernel, libxsmm_kernel_kind*
   libxsmm_code_pointer code;
   int result;
   code.ptr_const = kernel;
-  info = libxsmm_get_descriptor(code, NULL/*code_size*/);
+  info = libxsmm_get_kernel_info(code, NULL/*code_size*/);
   if (NULL != info && NULL != kind) {
     *kind = (libxsmm_kernel_kind)info->kind;
     result = EXIT_SUCCESS;
@@ -1823,7 +1823,7 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
   int result;
   code.xgemm = kernel;
   if (NULL != info || 0 != code_size) {
-    const libxsmm_descriptor *const kernel_info = libxsmm_get_descriptor(code, code_size);
+    const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(code, code_size);
     if (NULL != kernel_info && LIBXSMM_KERNEL_KIND_MATMUL == kernel_info->kind) {
       if (NULL != info) {
         info->iprecision = (libxsmm_gemm_precision)LIBXSMM_GETENUM_INP(kernel_info->value.gemm.datatype);
@@ -1867,7 +1867,7 @@ LIBXSMM_API int libxsmm_get_transkernel_info(libxsmm_xtransfunction kernel, libx
   int result;
   code.xtrans = kernel;
   if (NULL != info || 0 != code_size) {
-    const libxsmm_descriptor *const kernel_info = libxsmm_get_descriptor(code, code_size);
+    const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(code, code_size);
     if (NULL != kernel_info && LIBXSMM_KERNEL_KIND_TRANS == kernel_info->kind) {
       if (NULL != info) {
         info->typesize = kernel_info->value.trans.typesize;
@@ -1905,7 +1905,7 @@ LIBXSMM_API int libxsmm_get_mcopykernel_info(libxsmm_xmcopyfunction kernel, libx
   int result;
   code.xmatcopy = kernel;
   if (NULL != info || 0 != code_size) {
-    const libxsmm_descriptor *const kernel_info = libxsmm_get_descriptor(code, code_size);
+    const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(code, code_size);
     if (NULL != kernel_info && LIBXSMM_KERNEL_KIND_MCOPY == kernel_info->kind) {
       if (NULL != info) {
         info->typesize = kernel_info->value.mcopy.typesize;

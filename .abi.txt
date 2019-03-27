@@ -51,6 +51,9 @@ libxsmm_dgemm_
 libxsmm_dgemm_descriptor_init
 libxsmm_dgemm_omp_
 libxsmm_diff
+libxsmm_diff_16
+libxsmm_diff_32
+libxsmm_diff_64
 libxsmm_diff_n
 libxsmm_diff_npot
 libxsmm_dispatch_mcopy
@@ -365,7 +368,6 @@ libxsmm_trsm_descriptor_init
 libxsmm_truncate_convert_f32_bf16
 libxsmm_typename
 libxsmm_typesize
-libxsmm_update_mmstatistic
 libxsmm_wigemm
 libxsmm_wigemm0
 libxsmm_wigemm1

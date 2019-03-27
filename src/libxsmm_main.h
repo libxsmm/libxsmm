@@ -806,7 +806,7 @@ LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* val
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
 /** Attempts to receive information about JIT-generated code. */
-LIBXSMM_API const libxsmm_descriptor* libxsmm_get_descriptor(libxsmm_code_pointer code, size_t* size);
+LIBXSMM_API const libxsmm_descriptor* libxsmm_get_kernel_info(libxsmm_code_pointer code, size_t* size);
 
 /** Updates counters of the statistic, which is shown at program termination. */
 LIBXSMM_API_INTERN unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision precision,
