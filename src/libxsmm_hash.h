@@ -46,6 +46,7 @@
 #endif
 
 /* Map number of Bytes to number of bits. */
+#define libxsmm_crc32_b16 libxsmm_crc32_u128
 #define libxsmm_crc32_b32 libxsmm_crc32_u256
 #define libxsmm_crc32_b64 libxsmm_crc32_u512
 
@@ -94,3 +95,4 @@ LIBXSMM_HASH_API unsigned int libxsmm_crc32_sse4(const void* data, size_t size, 
 #endif
 
 #endif /*LIBXSMM_HASH_H*/
+
