@@ -161,6 +161,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(l
       typedef float element_filter_type;
       typedef libxsmm_smmfunction_reducebatch gemm_br_function;
       int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+      if (handle->ofw == 56 && handle->desc.C == 64 && handle->desc.K == 256) {
+        l_flags = l_flags | LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
+      }
       /* let's do a ofmblock x ofw_rb x ifmblock GEMM :-) or in other words M=nbOfm, N=ofw, K=nbIfm (col-major) */
       gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch(handle->ofmblock, handle->fwd_ofh_rb*handle->fwd_ofw_rb, handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
       gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch(handle->ofmblock, handle->fwd_ofh_rb*(handle->fwd_ofw_rb-1), handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
