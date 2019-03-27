@@ -134,7 +134,7 @@
 #endif
 
 #if !defined(LIBXSMM_NO_BLAS)
-# if !defined(__BLAS) || (0 != __BLAS)
+# if (!defined(__BLAS) || (0 != __BLAS))
 #   define LIBXSMM_NO_BLAS 0
 # else
 #   define LIBXSMM_NO_BLAS 1
@@ -161,7 +161,7 @@
 #define LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST, TYPE, KIND) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_SYMBOL_SIGNATURE_, KIND)(CONST, TYPE)
 #define LIBXSMM_BLAS_SYMBOL_DECL(CONST, TYPE, KIND) LIBXSMM_GEMM_SYMBOL_VISIBILITY \
   void LIBXSMM_BLAS_SYMBOL(TYPE, KIND)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(CONST, TYPE, KIND));
-#if (!defined(__BLAS) || (0 != __BLAS)) /* BLAS available */
+#if (0 == LIBXSMM_NO_BLAS) /* BLAS available */
 # define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE) LIBXSMM_BLAS_SYMBOL_DECL(CONST, TYPE, gemm)
 #else
 # define LIBXSMM_GEMM_SYMBOL_DECL(CONST, TYPE)
@@ -215,7 +215,7 @@
 
 /** Map to appropriate BLAS function (or fall-back). The mapping is used e.g., inside of LIBXSMM_BLAS_XGEMM. */
 #define LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
-#if !defined(__BLAS) || (0 != __BLAS)
+#if (0 == LIBXSMM_NO_BLAS)
 # define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm()
 # define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm()
 #else /* no BLAS */

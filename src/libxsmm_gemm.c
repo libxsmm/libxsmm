@@ -115,7 +115,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm)(const char
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-#if (!defined(__BLAS) || (0 != __BLAS))
+#if (0 == LIBXSMM_NO_BLAS)
   LIBXSMM_FSYMBOL(dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 #else
   static int error_once = 0;
@@ -135,7 +135,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm)(const char
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-#if (!defined(__BLAS) || (0 != __BLAS))
+#if (0 == LIBXSMM_NO_BLAS)
   LIBXSMM_FSYMBOL(sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 #else
   static int error_once = 0;

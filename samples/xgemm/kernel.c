@@ -931,7 +931,7 @@ int main(int argc, char* argv []) {
       l_runtime_libxsmm = run_jit_short_float(l_xgemm_desc, l_a_w, l_b_w, l_c_w_f, &l_scf, l_file_input );
 
       if ( l_run_check == 1 ) {
-        libxsmm_timer_tickint l_start = libxsmm_timer_tick();
+        l_start = libxsmm_timer_tick();
         for (l_t = 0; l_t < g_reps; l_t++) {
           for (l_j = 0; l_j < l_n; l_j++) {
             for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
@@ -1024,7 +1024,7 @@ int main(int argc, char* argv []) {
       l_runtime_libxsmm = run_jit_bfloat16_float(l_xgemm_desc, l_a_bf, l_b_bf, l_c_w_f, l_file_input );
 
       if ( l_run_check == 1 ) {
-        libxsmm_timer_tickint l_start = libxsmm_timer_tick();
+        l_start = libxsmm_timer_tick();
         for (l_t = 0; l_t < g_reps; l_t++) {
           for (l_j = 0; l_j < l_n; l_j++) {
             for (l_s = 0; l_s < (l_k / l_k_block); l_s++) {
