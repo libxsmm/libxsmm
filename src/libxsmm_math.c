@@ -44,51 +44,60 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(LIBXSMM_MATH_DIFF_DISPATCH1) && 0
-# define LIBXSMM_MATH_DIFF_DISPATCH1
-#endif
-#if !defined(LIBXSMM_MATH_DIFF_DISPATCH) && 0
-# define LIBXSMM_MATH_DIFF_DISPATCH
-#endif
 #if !defined(LIBXSMM_MATH_DIFF_NAVG)
 # define LIBXSMM_MATH_DIFF_NAVG LIBXSMM_CAPACITY_CACHE
 #endif
 
+#if (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
+# define LIBXSMM_MATH_DIFF_16(RESULT, A, B) { \
+    const __m128i libxsmm_math_diff_16_a128_ = _mm_loadu_si128((const __m128i*)(A)); \
+    const __m128i libxsmm_math_diff_16_b128_ = _mm_loadu_si128((const __m128i*)(B)); \
+    RESULT = (0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8( \
+      libxsmm_math_diff_16_a128_, libxsmm_math_diff_16_b128_))); \
+  }
+#else
+# define LIBXSMM_MATH_DIFF_16(RESULT, A, B) { \
+    const uint64_t *const libxsmm_math_diff_16_a64_ = (const uint64_t*)(A); \
+    const uint64_t *const libxsmm_math_diff_16_b64_ = (const uint64_t*)(B); \
+    RESULT = (0 != ((libxsmm_math_diff_16_a64_[0] ^ libxsmm_math_diff_16_b64_[0]) \
+                  | (libxsmm_math_diff_16_a64_[1] ^ libxsmm_math_diff_16_b64_[1]))); \
+  }
+#endif
+#if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
+# define LIBXSMM_MATH_DIFF_32(RESULT, A, B) { \
+    const __m256i libxsmm_math_diff_32_a256_ = _mm256_loadu_si256((const __m256i*)(A)); \
+    const __m256i libxsmm_math_diff_32_b256_ = _mm256_loadu_si256((const __m256i*)(B)); \
+    RESULT = (-1 != _mm256_movemask_epi8(_mm256_cmpeq_epi8( \
+      libxsmm_math_diff_32_a256_, libxsmm_math_diff_32_b256_))); \
+  }
+#else
+# define LIBXSMM_MATH_DIFF_32(RESULT, A, B) { \
+    unsigned char libxsmm_math_diff_32_r1_, libxsmm_math_diff_32_r2_; \
+    LIBXSMM_MATH_DIFF_16(libxsmm_math_diff_32_r1_, A, B); \
+    LIBXSMM_MATH_DIFF_16(libxsmm_math_diff_32_r2_, \
+      (const uint8_t*)(A) + 16, (const uint8_t*)(B) + 16); \
+    RESULT = libxsmm_math_diff_32_r1_ | libxsmm_math_diff_32_r2_; \
+  }
+#endif
+
 #define LIBXSMM_MATH_DIFF(DIFF, MOD, A, BN, ELEMSIZE, STRIDE, HINT, N, NAVG) { \
   const char *const libxsmm_diff_b_ = (const char*)(BN); \
-  unsigned int libxsmm_diff_i_; \
-  if (0 != (HINT)) { \
-    if ((NAVG) == (ELEMSIZE)) { \
-      LIBXSMM_PRAGMA_LOOP_COUNT(NAVG, NAVG, NAVG) \
-      for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ < ((HINT) + (N)); ++libxsmm_diff_i_) { \
-        const unsigned int libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); /* wrap around index */ \
-        const unsigned int libxsmm_diff_k_ = libxsmm_diff_j_ * (STRIDE); \
-        if (0 == LIBXSMM_CONCATENATE(libxsmm_diff_, NAVG)(A, libxsmm_diff_b_ + libxsmm_diff_k_)) return libxsmm_diff_j_; \
-      } \
-    } \
-    else { \
-      LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, NAVG) \
-      for (libxsmm_diff_i_ = HINT; libxsmm_diff_i_ < ((HINT) + (N)); ++libxsmm_diff_i_) { \
-        const unsigned int libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); /* wrap around index */ \
-        const unsigned int libxsmm_diff_k_ = libxsmm_diff_j_ * (STRIDE); \
-        if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_k_, ELEMSIZE)) return libxsmm_diff_j_; \
-      } \
-    } \
-  } \
-  else if ((NAVG) == (ELEMSIZE)) { /* fastest path */ \
-    unsigned int libxsmm_diff_j_ = 0; \
-    LIBXSMM_PRAGMA_LOOP_COUNT(NAVG, NAVG, NAVG) \
-    for (libxsmm_diff_i_ = 0; libxsmm_diff_i_ < (N); ++libxsmm_diff_i_) { \
-      if (0 == LIBXSMM_CONCATENATE(libxsmm_diff_, NAVG)(A, libxsmm_diff_b_ + libxsmm_diff_j_)) return libxsmm_diff_i_; \
-      libxsmm_diff_j_ += STRIDE; \
-    } \
-  } \
-  else { /* fast-path */ \
+  unsigned int libxsmm_diff_i_ = HINT; \
+  if (0 == (HINT)) { /* fast-path */ \
     unsigned int libxsmm_diff_j_ = 0; \
     LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, NAVG) \
-    for (libxsmm_diff_i_ = 0; libxsmm_diff_i_ < (N); ++libxsmm_diff_i_) { \
+    for (; libxsmm_diff_i_ < (N); ++libxsmm_diff_i_) { \
       if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_j_, ELEMSIZE)) return libxsmm_diff_i_; \
       libxsmm_diff_j_ += STRIDE; \
+    } \
+  } \
+  else { /* wrap around index */ \
+    LIBXSMM_ASSERT(0 != (HINT)); \
+    LIBXSMM_PRAGMA_LOOP_COUNT(4, 1024, NAVG) \
+    for (; libxsmm_diff_i_ < ((HINT) + (N)); ++libxsmm_diff_i_) { \
+      const unsigned int libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); \
+      const unsigned int libxsmm_diff_k_ = libxsmm_diff_j_ * (STRIDE); \
+      if (0 == (DIFF)(A, libxsmm_diff_b_ + libxsmm_diff_k_, ELEMSIZE)) return libxsmm_diff_j_; \
     } \
   } \
   return N; \
@@ -306,103 +315,42 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 }
 
 
-LIBXSMM_API unsigned char libxsmm_diff_16(const void* a, const void* b)
+LIBXSMM_API unsigned char libxsmm_diff_16(const void* a, const void* b, ...)
 {
   unsigned char result;
-#if (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
-  const __m128i a128 = _mm_loadu_si128((const __m128i*)a);
-  const __m128i b128 = _mm_loadu_si128((const __m128i*)b);
-  result = (0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8(a128, b128)));
-#else
-  const uint64_t *const a64 = (const uint64_t*)a;
-  const uint64_t *const b64 = (const uint64_t*)b;
-  result = (((a64[0] ^ b64[0]) | (a64[1] ^ b64[1])) ? 1 : 0);
-#endif
-  assert(result ? (0 != memcmp(a, b, 16)) : (0 == memcmp(a, b, 16))); /* !LIBXSMM_ASSERT */
+  LIBXSMM_MATH_DIFF_16(result, a, b);
   return result;
 }
 
 
-LIBXSMM_API_INLINE unsigned char libxsmm_diff_32_sw(const void* a, const void* b)
-{
-  const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
-  return libxsmm_diff_16(a8, b8) || libxsmm_diff_16(a8 + 16, b8 + 16);
-}
-
-
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
-unsigned char libxsmm_diff_32_avx2(const void* a, const void* b)
-{
-#if defined(LIBXSMM_INTRINSICS_AVX2)
-  const __m256i a256 = _mm256_loadu_si256((const __m256i*)a);
-  const __m256i b256 = _mm256_loadu_si256((const __m256i*)b);
-  return (-1 != _mm256_movemask_epi8(_mm256_cmpeq_epi8(a256, b256)));
-#else
-  return libxsmm_diff_32_sw(a, b);
-#endif
-}
-
-
-LIBXSMM_API unsigned char libxsmm_diff_32(const void* a, const void* b)
+LIBXSMM_API unsigned char libxsmm_diff_32(const void* a, const void* b, ...)
 {
   unsigned char result;
-#if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
-  result = libxsmm_diff_32_avx2(a, b);
-#else
-# if defined(LIBXSMM_MATH_DIFF_DISPATCH) /* !LIBXSMM_MATH_DIFF_DISPATCH1 */
-  if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
-    result = libxsmm_diff_32_avx2(a, b);
-  }
-  else
-# endif
-  {
-    result = libxsmm_diff_32_sw(a, b);
-  }
-#endif
-  assert(result ? (0 != memcmp(a, b, 32)) : (0 == memcmp(a, b, 32))); /* !LIBXSMM_ASSERT */
+  LIBXSMM_MATH_DIFF_32(result, a, b);
   return result;
 }
 
 
-LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX2)
-unsigned char libxsmm_diff_avx2(const void* a, const void* b, unsigned char size)
+LIBXSMM_API unsigned char libxsmm_diff_64(const void* a, const void* b, ...)
 {
-  const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
-  unsigned char i;
-  for (i = 0; i < (size & 0xE0); i += 32) if (libxsmm_diff_32_avx2(a8 + i, b8 + i)) return 1;
-  for (; i < size; ++i) if (a8[i] ^ b8[i]) return 1;
-  return 0;
-}
-
-
-LIBXSMM_API_INLINE unsigned char libxsmm_diff_sw(const void* a, const void* b, unsigned char size)
-{
-  const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
-  unsigned char i;
-  for (i = 0; i < (size & 0xF0); i += 16) if (libxsmm_diff_16(a8 + i, b8 + i)) return 1;
-  for (; i < size; ++i) if (a8[i] ^ b8[i]) return 1;
-  return 0;
+  unsigned char r1, r2;
+  LIBXSMM_MATH_DIFF_32(r1, a, b);
+  LIBXSMM_MATH_DIFF_32(r2, (const uint8_t*)a + 32, (const uint8_t*)b + 32);
+  return r1 | r2;
 }
 
 
 LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned char size)
 {
-  unsigned char result;
-#if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
-  result = libxsmm_diff_avx2(a, b, size);
-#else
-# if defined(LIBXSMM_MATH_DIFF_DISPATCH1)
-  if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
-    result = libxsmm_diff_avx2(a, b, size);
+  const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
+  unsigned char i;
+  for (i = 0; i < (size & 0xF0); i += 16) {
+    unsigned char r;
+    LIBXSMM_MATH_DIFF_16(r, a8 + i, b8 + i);
+    if (r) return 1;
   }
-  else
-# endif
-  {
-    result = libxsmm_diff_sw(a, b, size);
-  }
-#endif
-  assert(result ? (0 != memcmp(a, b, size)) : (0 == memcmp(a, b, size))); /* !LIBXSMM_ASSERT */
-  return result;
+  for (; i < size; ++i) if (a8[i] ^ b8[i]) return 1;
+  return 0;
 }
 
 
@@ -410,19 +358,20 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
   unsigned char stride, unsigned int hint, unsigned int n)
 {
   LIBXSMM_ASSERT(size <= stride);
-#if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
-  LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
-#else
-# if defined(LIBXSMM_MATH_DIFF_DISPATCH)
-  if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
-    LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
+  switch (size) {
+    case 64: {
+      LIBXSMM_MATH_DIFF(libxsmm_diff_64, LIBXSMM_MOD, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
+    } break;
+    case 32: {
+      LIBXSMM_MATH_DIFF(libxsmm_diff_32, LIBXSMM_MOD, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
+    } break;
+    case 16: {
+      LIBXSMM_MATH_DIFF(libxsmm_diff_16, LIBXSMM_MOD, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
+    } break;
+    default: {
+      LIBXSMM_MATH_DIFF(libxsmm_diff, LIBXSMM_MOD, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
+    }
   }
-  else
-# endif
-  {
-    LIBXSMM_MATH_DIFF(libxsmm_diff_sw, LIBXSMM_MOD, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
-  }
-#endif
 }
 
 
@@ -433,19 +382,20 @@ LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsign
   const unsigned int npot = LIBXSMM_UP2POT(n);
   assert(size <= stride && n == npot); /* !LIBXSMM_ASSERT */
 #endif
-#if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
-  LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD2, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
-#else
-# if defined(LIBXSMM_MATH_DIFF_DISPATCH)
-  if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid) {
-    LIBXSMM_MATH_DIFF(libxsmm_diff_avx2, LIBXSMM_MOD2, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
+  switch (size) {
+    case 64: {
+      LIBXSMM_MATH_DIFF(libxsmm_diff_64, LIBXSMM_MOD2, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
+    } break;
+    case 32: {
+      LIBXSMM_MATH_DIFF(libxsmm_diff_32, LIBXSMM_MOD2, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
+    } break;
+    case 16: {
+      LIBXSMM_MATH_DIFF(libxsmm_diff_16, LIBXSMM_MOD2, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
+    } break;
+    default: {
+      LIBXSMM_MATH_DIFF(libxsmm_diff, LIBXSMM_MOD2, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
+    }
   }
-  else
-# endif
-  {
-    LIBXSMM_MATH_DIFF(libxsmm_diff_sw, LIBXSMM_MOD2, a, bn, size, stride, hint, n, LIBXSMM_MATH_DIFF_NAVG);
-  }
-#endif
 }
 
 

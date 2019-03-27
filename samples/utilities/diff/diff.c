@@ -46,9 +46,9 @@ int main(int argc, char* argv[])
   const int elsize = (0 >= insize ? LIBXSMM_DESCRIPTOR_MAXSIZE : insize);
   const int stride = LIBXSMM_MAX(incrmt, elsize);
   const size_t n = (0 >= nelems ? (((size_t)2 << 30/*2 GB*/) / stride) : ((size_t)nelems));
-  unsigned char* input;
+  int result = EXIT_SUCCESS;
   size_t size, npot, nrpt;
-  int result;
+  unsigned char* input;
 
   if (0 < niters) {
     npot = LIBXSMM_UP2POT(n);

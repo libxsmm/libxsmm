@@ -70,11 +70,11 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info);
 
 /** Compare two data blocks of 16 Byte each. */
-LIBXSMM_API unsigned char libxsmm_diff_16(const void* a, const void* b);
+LIBXSMM_API unsigned char libxsmm_diff_16(const void* a, const void* b, ...);
 /** Compare two data blocks of 32 Byte each. */
-LIBXSMM_API unsigned char libxsmm_diff_32(const void* a, const void* b);
+LIBXSMM_API unsigned char libxsmm_diff_32(const void* a, const void* b, ...);
 /** Compare two data blocks of 64 Byte each. */
-LIBXSMM_API unsigned char libxsmm_diff_64(const void* a, const void* b);
+LIBXSMM_API unsigned char libxsmm_diff_64(const void* a, const void* b, ...);
 
 /**
  * Calculate whether there is a difference between two (short) buffers.
