@@ -486,6 +486,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     }
   }
 
+  if (handle->ofw == 7 && handle->desc.C == 2048 && handle->desc.K == 512) {
+    handle->blocksifm_blocking = 1;
+    blockifm = 4;
+  }
+
   if (handle->blocksifm_blocking == handle->blocksifm && (handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) {
     handle->avoid_acc_load = 1;
   }
@@ -591,6 +596,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->use_ifm_parallelization = handle->use_ofm_parallelization;
   if (handle->ofw == 7) {
     handle->use_ifm_parallelization = 1;
+  }
+  if (handle->ofw == 7 && handle->desc.C == 1024 && handle->desc.K == 512) {
+    handle->use_ofm_parallelization = 1;
   }
   /* Feature map block tuning */
   while (blockofm % handle->blocksofm_blocking != 0) {
