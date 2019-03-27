@@ -604,6 +604,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     handle->use_ofm_parallelization = 1;
     handle->shuffle_filter_accesses = 0;
   }
+  if (handle->ofw == 7 && handle->use_ofm_parallelization == 0) {
+    handle->shuffle_filter_accesses = 1;
+  }
   /* Feature map block tuning */
   while (blockofm % handle->blocksofm_blocking != 0) {
     blockofm++;

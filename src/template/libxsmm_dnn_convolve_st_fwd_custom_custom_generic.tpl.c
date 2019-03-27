@@ -325,8 +325,8 @@ if (handle->desc.N != handle->desc.threads) {
         for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += handle->block_fwd_ofm) {
           for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
             for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
-              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-
+              for (ofm11 = ofmb; ofm11 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm11++ ) {
+                ofm1 = (handle->shuffle_filter_accesses == 1) ? (ofm11+ltid)%handle->blocksofm : ofm11;
                 if ( (ifmb == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && handle->avoid_acc_load == 0 && ojb == 0) {
                   /* set output feature map to zero */
                   for (oj = 0; oj < handle->ofh; ++oj) {
@@ -356,8 +356,10 @@ if (handle->desc.N != handle->desc.threads) {
                       oj_use = oj;
                       ind = 0;
                       for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
-                        for (kj = 0; kj < handle->desc.R; kj++) {
-                          for (ki = 0; ki < handle->desc.S; ki++) {
+                        for (kj1 = 0; kj1 < handle->desc.R; kj1++) {
+                          for (ki1 = 0; ki1 < handle->desc.S; ki1++) {
+                            ki = (handle->shuffle_filter_accesses == 1) ?  (ki1+ltid)%handle->desc.S : ki1;
+                            kj = (handle->shuffle_filter_accesses == 1) ?  (kj1+ltid)%handle->desc.R : kj1;
                             A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(6, weight, ofm1, ifm2, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
                             B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                             ind++;
