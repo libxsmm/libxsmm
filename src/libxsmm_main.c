@@ -362,7 +362,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_dinit(&blob, precision,
       m, n, k, lda, ldb, ldc, LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_FLAGS, INTERNAL_PREFETCH);
     unsigned int i = LIBXSMM_HASH_MOD(
-      libxsmm_crc32(desc, LIBXSMM_MIN(sizeof(libxsmm_gemm_descriptor), size), LIBXSMM_HASH_SEED),
+      libxsmm_crc32(LIBXSMM_HASH_SEED, desc, LIBXSMM_MIN(sizeof(libxsmm_gemm_descriptor), size)),
       LIBXSMM_CAPACITY_REGISTRY);
     libxsmm_code_pointer* dst_entry = registry + i;
 #if !defined(NDEBUG)
@@ -1617,9 +1617,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 #endif
   {
 #if defined(LIBXSMM_PAD_DESC)
-    unsigned int i = LIBXSMM_CONCATENATE(libxsmm_crc32_b, LIBXSMM_HASH_SIZE)(desc, LIBXSMM_HASH_SEED);
+    unsigned int i = LIBXSMM_CONCATENATE(libxsmm_crc32_b, LIBXSMM_HASH_SIZE)(LIBXSMM_HASH_SEED, desc);
 #else
-    unsigned int i = libxsmm_crc32(desc, LIBXSMM_MIN(size, LIBXSMM_HASH_SIZE), LIBXSMM_HASH_SEED);
+    unsigned int i = libxsmm_crc32(LIBXSMM_HASH_SEED, desc, LIBXSMM_MIN(size, LIBXSMM_HASH_SIZE));
 #endif
     unsigned int i0 = i = LIBXSMM_HASH_MOD(i, LIBXSMM_CAPACITY_REGISTRY), mode = 0, diff = 1;
     LIBXSMM_ASSERT(NULL != internal_registry);

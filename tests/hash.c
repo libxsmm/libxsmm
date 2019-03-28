@@ -34,6 +34,10 @@
 # include <stdio.h>
 #endif
 
+#if !defined(ELEM_TYPE)
+# define ELEM_TYPE int
+#endif
+
 
 /**
  * This test case is NOT an example of how to use LIBXSMM
@@ -42,33 +46,22 @@
  */
 int main(void)
 {
-  const unsigned int seed = 1975;
-  unsigned int size = 2507, i, h1, h2;
+  const unsigned int seed = 1975, size = 2507;
+  const unsigned int n512 = 512 / (8 * sizeof(ELEM_TYPE));
+  unsigned int s = LIBXSMM_UP(size, n512), i, h1, h2;
   int result = EXIT_SUCCESS;
   const int* value;
 
-  int *const data = (int*)libxsmm_malloc(sizeof(int) * size);
-  if (NULL == data) size = 0;
-  for (i = 0; i < size; ++i) data[i] = (rand() - ((RAND_MAX) >> 1));
+  ELEM_TYPE *const data = (ELEM_TYPE*)libxsmm_malloc(sizeof(ELEM_TYPE) * s);
+  if (NULL == data) s = 0;
+  for (i = 0; i < s; ++i) data[i] = (rand() - ((RAND_MAX) >> 1));
 
-  h1 = libxsmm_crc32(data, sizeof(int) * size, seed);
-  h2 = libxsmm_crc32_sw(data, sizeof(int) * size, seed);
+  h1 = libxsmm_crc32(seed, data, sizeof(ELEM_TYPE) * s);
+  h2 = seed; value = data;
+  for (i = 0; i < s; i += n512) {
+    h2 = libxsmm_crc32_u512(h2, value + i);
+  }
   if (h1 != h2) {
-#if defined(_DEBUG)
-    fprintf(stderr, "(crc32=%u) != (crc32_sw=%u)\n", h1, h2);
-#endif
-    result = EXIT_FAILURE;
-  }
-
-  size >>= 4;
-  value = data;
-  h1 = h2 = seed;
-  for (i = 0; i < size; ++i) {
-    h1 = libxsmm_crc32_u512(value, h1);
-    h2 = libxsmm_crc32_u512_sw(value, h2);
-    value += 16;
-  }
-  if (h1 != h2 || h1 != libxsmm_crc32(data, sizeof(int) * 16 * size, seed)) {
 #if defined(_DEBUG)
     fprintf(stderr, "(crc32=%u) != (crc32_sw=%u)\n", h1, h2);
 #endif

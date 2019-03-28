@@ -288,8 +288,8 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
-          libxsmm_main.c libxsmm_malloc.c libxsmm_math.c libxsmm_sync.c \
-          libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
+          libxsmm_main.c libxsmm_malloc.c libxsmm_hash.c libxsmm_math.c \
+          libxsmm_sync.c libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_xcopy.c libxsmm_blocked_gemm.c libxsmm_spmdm.c libxsmm_fsspmdm.c libxsmm_rng.c\
           libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c libxsmm_dnn_elementwise.c \
           libxsmm_dnn_rnncell.c libxsmm_dnn_rnncell_forward.c libxsmm_dnn_rnncell_backward_weight_update.c \
@@ -573,10 +573,9 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template
 	fi
 	@$(CP) $(ROOTDIR)/include/libxsmm_blocked_gemm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2>/dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_rng.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2>/dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_fusedbatchnorm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_fullyconnected.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_fusedbatchnorm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_pooling.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_rnncell.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2>/dev/null || true
@@ -587,6 +586,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template
 	@$(CP) $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_math.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_mhd.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_rng.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_spmdm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2>/dev/null || true

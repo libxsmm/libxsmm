@@ -402,7 +402,7 @@ LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsign
 LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed)
 {
   LIBXSMM_INIT
-  return libxsmm_crc32(data, size, seed);
+  return libxsmm_crc32(seed, data, size);
 }
 
 

@@ -72,8 +72,8 @@
 #endif
 
 #if (0 != LIBXSMM_SYNC) /** Locks for the batch interface (duplicated C indexes). */
-# define LIBXSMM_GEMM_LOCKIDX(IDX, NPOT) LIBXSMM_MOD2(LIBXSMM_CONCATENATE(libxsmm_crc32_u,LIBXSMM_BLASINT_NBITS)(&(IDX), 2507/*seed*/), NPOT)
-# define LIBXSMM_GEMM_LOCKPTR(PTR, NPOT) LIBXSMM_MOD2(libxsmm_crc32_u64(&(PTR), 1975/*seed*/), NPOT)
+# define LIBXSMM_GEMM_LOCKIDX(IDX, NPOT) LIBXSMM_MOD2(LIBXSMM_CONCATENATE(libxsmm_crc32_u,LIBXSMM_BLASINT_NBITS)(2507/*seed*/, &(IDX)), NPOT)
+# define LIBXSMM_GEMM_LOCKPTR(PTR, NPOT) LIBXSMM_MOD2(libxsmm_crc32_u64(1975/*seed*/, &(PTR)), NPOT)
 # if !defined(LIBXSMM_GEMM_MAXNLOCKS)
 #   define LIBXSMM_GEMM_MAXNLOCKS 1024
 # endif
