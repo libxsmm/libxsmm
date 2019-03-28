@@ -50,7 +50,7 @@ int main(void)
   const unsigned int n512 = 512 / (8 * sizeof(ELEM_TYPE));
   unsigned int s = LIBXSMM_UP(size, n512), i, h1, h2;
   int result = EXIT_SUCCESS;
-  const int* value;
+  const ELEM_TYPE* value;
 
   ELEM_TYPE *const data = (ELEM_TYPE*)libxsmm_malloc(sizeof(ELEM_TYPE) * s);
   if (NULL == data) s = 0;

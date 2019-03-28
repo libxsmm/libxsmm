@@ -488,7 +488,7 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
 LIBXSMM_API_INLINE unsigned int LIBXSMM_ILOG2(unsigned long long n) {
   unsigned int result = 0; if (1 < n) {
     const unsigned int m = LIBXSMM_INTRINSICS_BITSCANBWD64(n);
-    result = m + (LIBXSMM_INTRINSICS_BITSCANBWD64(n - 1) == m);
+    result = m + ((unsigned int)LIBXSMM_INTRINSICS_BITSCANBWD64(n - 1) == m);
   } return result;
 }
 
