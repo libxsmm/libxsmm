@@ -953,7 +953,7 @@ endif
 endif
 
 .PHONY: noblas_hst
-noblas_hst: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
+noblas_hst: $(OUTDIR)/libxsmmnoblas.pc
 $(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/libxsmm.$(LIBEXT) $(NOBLAS_HST)
 ifeq (0,$(STATIC))
 ifneq (Darwin,$(UNAME))
@@ -1756,7 +1756,7 @@ endif
 
 $(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 	@echo "Name: libxsmm/noblas" > $@
-	@echo "Description: LIBXSMM to remove LAPACK/BLAS dependency" >> $@
+	@echo "Description: LIBXSMM substituted LAPACK/BLAS dependency" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION)" >> $@
 	@echo >> $@
