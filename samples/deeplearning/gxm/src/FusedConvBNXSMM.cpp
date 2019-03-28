@@ -854,6 +854,10 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
 
   if(!use_global_stats)
   {
+#ifdef USE_XSMM_TIMING
+  struct timeval tvsc, tvec;
+  gettimeofday(&tvsc, NULL);
+#endif
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -869,6 +873,24 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
       CHKERR_LIBXSMM_DNN(libxsmm_dnn_execute_st( libxsmm_handle_conv[n], LIBXSMM_DNN_COMPUTE_KIND_FWD, n*ntps, tid) );
       CHKERR_LIBXSMM_DNN(libxsmm_dnn_fusedbatchnorm_execute_st(libxsmm_handle_bn_train[n], LIBXSMM_DNN_COMPUTE_KIND_FWD, n*ntps, tid ) );
     }
+
+#ifdef USE_XSMM_TIMING
+  gettimeofday(&tvec, NULL);
+  double fp_time = (tvec.tv_sec + tvec.tv_usec*1e-6) - (tvsc.tv_sec + tvsc.tv_usec*1e-6);
+
+#ifdef USE_MLSL
+  if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
+#endif
+  {
+    double gf = (double)gp->batch_size * (double)gp->nInput[0] * (double)gp->nOutput * (double)gp->mHeight * (double)gp->mWidth * (double)gp->kh * (double)gp->kw * 2;
+    if(gp->c_stride_h == 1 && gp->mpad_h == 0)
+      printf("%s XSMM-CONV-FP mb%dic%dih%doc%doh%dkh%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,fp_time*1000.0, gf/fp_time/1e9);
+    else if(gp->c_stride_h == 2)
+      printf("%s XSMM-CONV-FP mb%dic%dih%doc%doh%dkh%dsh%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->c_stride_h,fp_time*1000.0, gf/fp_time/1e9);
+    else if(gp->mpad_h == 1)
+      printf("%s XSMM-CONV-FP mb%dic%dih%doc%doh%dkh%dph%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->mpad_h,fp_time*1000.0, gf/fp_time/1e9);
+  }
+#endif
 
 #ifndef NDEBUG
     /* check physical padding */
@@ -1322,6 +1344,10 @@ void FusedConvBNXSMM::backPropagate(TensorBuf *deloutp, TensorBuf* weightp, Tens
     check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)delmiddle[0], conv_desc.N, nBOfm, mfh, mfw, 16, mph, mpw );
 #endif
 
+#ifdef USE_XSMM_TIMING
+  struct timeval tvsc, tvec;
+  gettimeofday(&tvsc, NULL);
+#endif
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -1337,6 +1363,24 @@ void FusedConvBNXSMM::backPropagate(TensorBuf *deloutp, TensorBuf* weightp, Tens
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_execute_st( libxsmm_handle_bn_train[n], LIBXSMM_DNN_COMPUTE_KIND_BWD, n*ntps, tid ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle_conv[n], LIBXSMM_DNN_COMPUTE_KIND_BWD, n*ntps, tid ) );
     }
+
+#ifdef USE_XSMM_TIMING
+  gettimeofday(&tvec, NULL);
+  double bp_time = (tvec.tv_sec + tvec.tv_usec*1e-6) - (tvsc.tv_sec + tvsc.tv_usec*1e-6);
+
+#ifdef USE_MLSL
+  if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
+#endif
+  {
+    double gf = (double)gp->batch_size * (double)gp->nInput[0] * (double)gp->nOutput * (double)gp->mHeight * (double)gp->mWidth * (double)gp->kh * (double)gp->kw * 2;
+    if(gp->c_stride_h == 1 && gp->mpad_h == 0)
+      printf("%s XSMM-CONV-BP mb%dic%dih%doc%doh%dkh%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size, gp->nInput[0], gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,bp_time*1000.0, gf/bp_time/1e9);
+    else if(gp->c_stride_h == 2)
+      printf("%s XSMM-CONV-BP mb%dic%dih%doc%doh%dkh%dsh%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->c_stride_h,bp_time*1000.0, gf/bp_time/1e9);
+    else if(gp->mpad_h == 1)
+      printf("%s XSMM-CONV-BP mb%dic%dih%doc%doh%dkh%dph%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->mpad_h,bp_time*1000.0, gf/bp_time/1e9);
+  }
+#endif
 
 #ifndef NDEBUG
   /* check physical padding */
@@ -1466,13 +1510,13 @@ void FusedConvBNXSMM::weightUpdate(TensorBuf *inp, TensorBuf *delmidp, TensorBuf
   if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
 #endif
   {
-    double gf = (double)gp->batch_size * (double)gp->nInput * (double)gp->nOutput * (double)gp->mHeight * (double)gp->mWidth * (double)gp->kh * (double)gp->kw * 2;
-    if(gp->stride_h == 1 && gp->pad_h == 0)
-      printf("XSMM-CONV-WU mb%dic%dih%doc%doh%dkh%dn time = %g ms, GFLOPS = %.1f\n",gp->batch_size,gp->nInput,gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,wu_time*1000.0, gf/wu_time/1e9);
-    else if(gp->stride_h == 2)
-      printf("XSMM-CONV-WU mb%dic%dih%doc%doh%dkh%dsh%dn time = %g ms, GFLOPS = %.1f\n",gp->batch_size,gp->nInput,gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->c_stride_h,wu_time*1000.0, gf/wu_time/1e9);
-    else if(gp->pad_h == 1)
-      printf("XSMM-CONV-WU mb%dic%dih%doc%doh%dkh%dph%dn time = %g ms, GFLOPS = %.1f\n",gp->batch_size,gp->nInput,gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->mpad_h,wu_time*1000.0, gf/wu_time/1e9);
+    double gf = (double)gp->batch_size * (double)gp->nInput[0] * (double)gp->nOutput * (double)gp->mHeight * (double)gp->mWidth * (double)gp->kh * (double)gp->kw * 2;
+    if(gp->c_stride_h == 1 && gp->mpad_h == 0)
+      printf("%s XSMM-CONV-WU mb%dic%dih%doc%doh%dkh%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,wu_time*1000.0, gf/wu_time/1e9);
+    else if(gp->c_stride_h == 2)
+      printf("%s XSMM-CONV-WU mb%dic%dih%doc%doh%dkh%dsh%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->c_stride_h,wu_time*1000.0, gf/wu_time/1e9);
+    else if(gp->mpad_h == 1)
+      printf("%s XSMM-CONV-WU mb%dic%dih%doc%doh%dkh%dph%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->mpad_h,wu_time*1000.0, gf/wu_time/1e9);
   }
 #endif
 
