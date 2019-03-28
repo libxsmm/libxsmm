@@ -37,7 +37,7 @@
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
 # define LIBXSMM_CAPACITY_REGISTRY 131072
 #endif
-#if !defined(LIBXSMM_CAPACITY_CACHE)
+#if !defined(LIBXSMM_CAPACITY_CACHE) /* must be POT */
 # define LIBXSMM_CAPACITY_CACHE 32
 #endif
 
@@ -719,10 +719,10 @@ typedef enum libxsmm_build_kind {
 typedef unsigned char libxsmm_descriptor_kind;
 
 /** All descriptor types, which are valid for code-registration. */
-LIBXSMM_EXTERN_C typedef LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_descriptor) {
-  libxsmm_descriptor_kind kind; /* must be the first member */
-  union {
-    char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
+LIBXSMM_EXTERN_C typedef LIBXSMM_PACKED(union LIBXSMM_RETARGETABLE, libxsmm_descriptor) {
+  char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
+  struct {
+    libxsmm_descriptor_kind kind; /* must be the first member */
     LIBXSMM_REGDESC(LIBXSMM_REGDESC_DEFAULT);
   } value;
 } libxsmm_descriptor;
