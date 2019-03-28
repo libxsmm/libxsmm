@@ -6,7 +6,7 @@ node {
   mode: TRAIN
   propagate_down: false
   dummy_data_param {
-    shape: { dim: 5600 dim: 28 dim: 3 dim: 224 dim: 224 }
+    shape: { dim: 2800 dim: 28 dim: 3 dim: 224 dim: 224 }
     pad_h: 3
     pad_w: 3
     data_filler {
@@ -32,6 +32,7 @@ node {
     engine: XSMM
     num_output: 64
     pad: 3
+    opad: 3
     bias_term: false
     physical_padding: true
     kernel_size: 7

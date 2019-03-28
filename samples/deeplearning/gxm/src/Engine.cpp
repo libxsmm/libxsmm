@@ -592,12 +592,19 @@ void MLEngine::run(int mode)
                 checkpoint(wTList_, DIFF);
 #endif
 
+#if 0
           solver_->applyUpdate((float**)weight_buf_, (float**)winc_buf_, wdiff_buf_, total_weights_, (float**)wt_lr_mult_, (float**)wt_decay_mult_, "WEIGHT");
+#else
+          solver_->applyUpdate((float**)weight_buf_, (float**)winc_buf_, wdiff_buf_, total_weights_, 1.0, 1.0, "WEIGHT");
+#endif
 
           if(data_type_ == BF16)
             convert_f32_bf16((float**)weight_buf_, (libxsmm_bfloat16**)lpweight_buf_, total_weights_);
-
+#if 0
           solver_->applyUpdate((float**)bias_buf_, (float**)biinc_buf_, bidiff_buf_, total_biases_, (float**)bias_lr_mult_, (float**)bias_decay_mult_, "BIAS");
+#else
+          solver_->applyUpdate((float**)bias_buf_, (float**)biinc_buf_, bidiff_buf_, total_biases_, 1.0, 0.0, "BIAS");
+#endif
 
 #ifdef TIMING
           gettimeofday(&tvie, NULL);

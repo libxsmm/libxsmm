@@ -319,6 +319,210 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
   }
 }
 
+void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, float lr_mult, float decay_mult, string tensorType)
+{
+  int iter = eptr_->get_current_batch() + eptr_->get_num_train_batches() * eptr_->get_current_epoch();
+  int warmup_max_iter = eptr_->get_num_train_batches() * warmup_max_epoch_; // Warm-up
+
+  if(eptr_->get_current_epoch() < warmup_max_epoch_)
+    lrval_ = (iter*base_lr_ + (warmup_max_iter - iter) * warmup_lr_)/warmup_max_iter;
+  else if(lr_policy_.compare("fixed") == 0)
+    lrval_ = base_lr_;
+  else if(lr_policy_.compare("step") == 0)
+    lrval_ = base_lr_ * pow(gamma_, floor((double)iter/(double)step_size_));
+  else if(lr_policy_.compare("poly") == 0)
+    lrval_ = base_lr_ * pow(((float)1. - ((float)iter/(float)max_iter_)), power_);
+  else if(lr_policy_.compare("inv") == 0)
+    lrval_ = base_lr_ * pow((1 + gamma_ * iter), (-power_));
+  else if(lr_policy_.compare("multistep") == 0)
+  {
+    if(stepidx_ < stepvalues_.size() && iter > stepvalues_[stepidx_])
+      stepidx_++;
+    lrval_ = base_lr_ * pow(gamma_, (float)stepidx_);
+  }
+
+  eptr_->set_learning_rate(lrval_);
+
+  if(tensorType=="WEIGHT" && data_type_ == BF16)
+  {
+    for(int n=0; n<NUM_NUMA_NODES; n++)
+      if(tmp_grad[n] == NULL)
+        tmp_grad[n] = (float*)libxsmm_aligned_malloc(s*sizeof(float), 2097152);
+
+    convert_bf16_f32((libxsmm_bfloat16**)grad, tmp_grad, s);
+  }
+
+  int sn = s/NUM_NUMA_NODES;
+  float **wgrad_ptr = (tensorType == "WEIGHT" && data_type_ == BF16) ? tmp_grad : (float**)grad;
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  {
+    int tid = omp_get_thread_num();
+    int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+    int n = tid/ntps;
+    int ltid = tid - n*ntps;
+
+    int jobs = (sn % ntps == 0) ? (sn/ntps) : (sn/ntps) + 1;
+    int tb = (ltid * jobs < sn) ? (ltid * jobs) : sn;
+    int te = (ltid + 1)*jobs < sn ? (ltid + 1)*jobs : sn;
+
+    float *wgp = (wgrad_ptr[n]+n*sn);
+
+    for(int nn=0; nn<NUM_NUMA_NODES; nn++)
+    {
+      if(n == nn) continue;
+
+      float *rgp = (wgrad_ptr[nn]+n*sn);
+
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+        wgp[i] += rgp[i];
+    }
+  }
+
+  if(solver_type_.compare("SGD") == 0)
+  {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int ltid = tid - n*ntps;
+
+      float *blobp = blob[n] + n*sn;
+      float *incp = inc[n] + n*sn;
+
+      int jobs = (sn % ntps == 0) ? (sn / ntps) : (sn / ntps) + 1;
+      int tb = (ltid * jobs < sn) ? (ltid * jobs) : sn;
+      int te = (ltid + 1)*jobs < sn ? (ltid + 1)*jobs : sn;
+
+#pragma omp barrier
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        incp[i] = mval_*incp[i] + lrval_ * lr_mult * ((wgrad_ptr[n]+n*sn)[i] + decayval_ * decay_mult * blobp[i]);
+        blobp[i] = blobp[i] - incp[i];
+      }
+    }
+  }
+  else if(solver_type_ == "SGD_MC")
+  {
+    mc_ = 1;
+    if(eptr_->get_current_epoch() < warmup_max_epoch_)
+    {
+      if(prev_lrval_ != -1)
+      {
+        mc_ = lrval_/prev_lrval_;
+        prev_lrval_ = lrval_;
+      }
+      else
+        prev_lrval_ = lrval_;
+    }
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int ltid = tid - n*ntps;
+
+      float *blobp = blob[n] + n*sn;
+      float *incp = inc[n] + n*sn;
+
+      int jobs = (sn % ntps == 0) ? (sn / ntps) : (sn / ntps) + 1;
+      int tb = (ltid * jobs < sn) ? (ltid * jobs) : sn;
+      int te = (ltid + 1)*jobs < sn ? (ltid + 1)*jobs : sn;
+
+#pragma omp barrier
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        incp[i] = mval_*mc_*incp[i] + lrval_ * lr_mult * ((wgrad_ptr[n]+n*sn)[i] + decayval_ * decay_mult * blobp[i]);
+        blobp[i] = blobp[i] - incp[i];
+      }
+    }
+  }
+  else if(solver_type_ == "NESTEROV")
+  {
+    mc1_ = 1;
+    mc2_ = 1;
+    if(eptr_->get_current_epoch() < warmup_max_epoch_)
+    {
+      if(prev_lrval_ != -1)
+      {
+        mc1_ = lrval_/prev_lrval_;
+        if(prev_lrval_1_ != -1)
+          mc2_ = prev_lrval_/prev_lrval_1_;
+      }
+      prev_lrval_1_ = prev_lrval_;
+      prev_lrval_ = lrval_;
+    }
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int ltid = tid - n*ntps;
+
+      int jobs = (sn % ntps == 0) ? (sn / ntps) : (sn / ntps) + 1;
+      int tb = (ltid * jobs < sn) ? (ltid * jobs) : sn;
+      int te = (ltid + 1)*jobs < sn ? (ltid + 1)*jobs : sn;
+
+      float *incp = (inc[n]+n*sn);
+      float *wgp = (wgrad_ptr[n]+n*sn);
+      float *bp = (blob[n]+n*sn);
+
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        float tinc = incp[i];
+        incp[i] = mval_*mc1_*tinc + lrval_ * lr_mult * (wgp[i] + decayval_ * decay_mult * bp[i]);
+        tinc = (1 + mval_*mc1_) * incp[i] - mval_*mc2_*tinc;
+        bp[i] = bp[i] - tinc;
+      }
+    }
+  }
+  else if(solver_type_.compare("ADAGRAD") == 0)
+  {
+  }
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  {
+    int tid = omp_get_thread_num();
+    int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+    int n = tid/ntps;
+    int ltid = tid - n*ntps;
+
+    int jobs = (sn % ntps == 0) ? (sn / ntps) : (sn / ntps) + 1;
+    int tb = (ltid * jobs < sn) ? (ltid * jobs) : sn;
+    int te = (ltid + 1)*jobs < sn ? (ltid + 1)*jobs : sn;
+
+    for(int nn=0; nn<NUM_NUMA_NODES; nn++)
+    {
+      if(n == nn) continue;
+
+      float *wgp = (wgrad_ptr[n]+nn*sn);
+      float *bp = (blob[n]+nn*sn);
+      float *rbp = (blob[nn]+nn*sn);
+
+#pragma vector nontemporal
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+        bp[i] = rbp[i];
+    }
+  }
+}
 void SolverNode::applyUpdate(float *blob, float *inc, void *grad, int s, float* lr_mult, float* decay_mult, string tensorType)
 {
   int iter = eptr_->get_current_batch() + eptr_->get_num_train_batches() * eptr_->get_current_epoch();
