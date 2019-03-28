@@ -82,7 +82,7 @@
 #if !defined(LIBXSMM_REGLOCK_TRY) && 0
 # define LIBXSMM_REGLOCK_TRY
 #endif
-#if !defined(LIBXSMM_PAD_DESC) && 0
+#if !defined(LIBXSMM_PAD_DESC) && 1
 # define LIBXSMM_PAD_DESC
 #endif
 
