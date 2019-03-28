@@ -360,12 +360,6 @@
 # define LIBXSMM_OPENMP_COLLAPSE(N)
 #endif
 
-/** LIBXSMM_NBITS determines the minimum number of bits needed to represent N. */
-#define LIBXSMM_NBITS(N) (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + LIBXSMM_MIN(1, N))
-/** LIBXSMM_ILOG2 definition matches ceil(log2(N)). */
-#define LIBXSMM_ILOG2(N) (1 < (N) ? (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + \
-  (LIBXSMM_INTRINSICS_BITSCANBWD64((N) - 1) != LIBXSMM_INTRINSICS_BITSCANBWD64(N) ? 0 : 1)) : 0)
-
 /** LIBXSMM_UP2POT rounds up to the next power of two (POT). */
 #define LIBXSMM_UP2POT_01(N) ((N) | ((N) >> 1))
 #define LIBXSMM_UP2POT_02(N) (LIBXSMM_UP2POT_01(N) | (LIBXSMM_UP2POT_01(N) >> 2))
@@ -385,7 +379,6 @@
 #define LIBXSMM_MOD2(A, NPOT) ((A) & ((NPOT) - 1))
 #define LIBXSMM_DIFF(T0, T1) ((T0) < (T1) ? ((T1) - (T0)) : ((T0) - (T1)))
 #define LIBXSMM_CLMP(VALUE, LO, HI) ((LO) < (VALUE) ? ((VALUE) <= (HI) ? (VALUE) : LIBXSMM_MIN(VALUE, HI)) : LIBXSMM_MAX(LO, VALUE))
-#define LIBXSMM_ISQRT2(N) ((unsigned int)((1ULL << (LIBXSMM_NBITS(N) >> 1)) /*+ LIBXSMM_MIN(1, N)*/))
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
 #define LIBXSMM_FEQ(A, B) ((A) == (B))
 #define LIBXSMM_NEQ(A, B) ((A) != (B))

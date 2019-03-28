@@ -52,22 +52,22 @@
 # define LIBXSMM_MATH_DIFF_16(RESULT, A, B) { \
     const __m128i libxsmm_math_diff_16_a128_ = _mm_loadu_si128((const __m128i*)(A)); \
     const __m128i libxsmm_math_diff_16_b128_ = _mm_loadu_si128((const __m128i*)(B)); \
-    RESULT = (0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8( \
+    RESULT = (unsigned char)(0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8( \
       libxsmm_math_diff_16_a128_, libxsmm_math_diff_16_b128_))); \
   }
 #else
 # define LIBXSMM_MATH_DIFF_16(RESULT, A, B) { \
     const uint64_t *const libxsmm_math_diff_16_a64_ = (const uint64_t*)(A); \
     const uint64_t *const libxsmm_math_diff_16_b64_ = (const uint64_t*)(B); \
-    RESULT = (0 != ((libxsmm_math_diff_16_a64_[0] ^ libxsmm_math_diff_16_b64_[0]) \
-                  | (libxsmm_math_diff_16_a64_[1] ^ libxsmm_math_diff_16_b64_[1]))); \
+    RESULT = (unsigned char)(0 != ((libxsmm_math_diff_16_a64_[0] ^ libxsmm_math_diff_16_b64_[0]) | \
+      (libxsmm_math_diff_16_a64_[1] ^ libxsmm_math_diff_16_b64_[1]))); \
   }
 #endif
 #if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
 # define LIBXSMM_MATH_DIFF_32(RESULT, A, B) { \
     const __m256i libxsmm_math_diff_32_a256_ = _mm256_loadu_si256((const __m256i*)(A)); \
     const __m256i libxsmm_math_diff_32_b256_ = _mm256_loadu_si256((const __m256i*)(B)); \
-    RESULT = (-1 != _mm256_movemask_epi8(_mm256_cmpeq_epi8( \
+    RESULT = (unsigned char)(-1 != _mm256_movemask_epi8(_mm256_cmpeq_epi8( \
       libxsmm_math_diff_32_a256_, libxsmm_math_diff_32_b256_))); \
   }
 #else
@@ -336,7 +336,7 @@ LIBXSMM_API unsigned char libxsmm_diff_64(const void* a, const void* b, ...)
   unsigned char r1, r2;
   LIBXSMM_MATH_DIFF_32(r1, a, b);
   LIBXSMM_MATH_DIFF_32(r2, (const uint8_t*)a + 32, (const uint8_t*)b + 32);
-  return r1 | r2;
+  return (unsigned char)(r1 | r2);
 }
 
 
