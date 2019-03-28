@@ -65,10 +65,10 @@
 # define LIBXSMM_CODE_MAXSIZE 131072
 #endif
 #if !defined(LIBXSMM_DIFF_SIZE)
-# define LIBXSMM_DIFF_SIZE LIBXSMM_DESCRIPTOR_MAXSIZE
+# define LIBXSMM_DIFF_SIZE LIBXSMM_DESCRIPTOR_SIGSIZE
 #endif
 #if !defined(LIBXSMM_HASH_SIZE)
-# define LIBXSMM_HASH_SIZE LIBXSMM_DESCRIPTOR_MAXSIZE
+# define LIBXSMM_HASH_SIZE LIBXSMM_DESCRIPTOR_SIGSIZE
 #endif
 #if !defined(LIBXSMM_HASH_SEED)
 # define LIBXSMM_HASH_SEED 25071975
@@ -1573,7 +1573,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 LIBXSMM_API_INLINE void internal_pad_descriptor(libxsmm_descriptor* desc, signed char size)
 {
   signed char i = size;
-  for (; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) desc->data[i] = 0;
+  size = LIBXSMM_MAX(LIBXSMM_DIFF_SIZE, LIBXSMM_HASH_SIZE);
+  LIBXSMM_ASSERT(i <= size && size <= LIBXSMM_DESCRIPTOR_MAXSIZE);
+  for (; i < size; ++i) desc->data[i] = 0;
 }
 #endif
 

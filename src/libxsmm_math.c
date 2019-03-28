@@ -28,8 +28,8 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_math.h>
 #include <libxsmm_mhd.h>
+#include "libxsmm_main.h"
 #include "libxsmm_hash.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
