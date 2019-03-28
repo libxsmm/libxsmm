@@ -1573,6 +1573,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo "LIBXSMM installing libraries..."
 	@$(CP) -va $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v  $(OUTDIR)/libxsmmnoblas.pc          $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmgen.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
@@ -1752,6 +1753,20 @@ ifneq (,$(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE))
 else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmmext" >> $@
 endif
+
+$(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
+	@echo "Name: libxsmm/noblas" > $@
+	@echo "Description: LIBXSMM to remove LAPACK/BLAS dependency" >> $@
+	@echo "URL: https://github.com/hfp/libxsmm" >> $@
+	@echo "Version: $(VERSION)" >> $@
+	@echo >> $@
+	@echo "prefix=$(INSTALL_ROOT)" >> $@
+	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
+	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
+	@echo >> $@
+	@echo "Requires: libxsmm" >> $@
+	@echo "Cflags: -I\$${includedir}" >> $@
+	@echo "Libs: -L\$${libdir} -lxsmmnoblas" >> $@
 
 .PHONY: deb
 deb:
