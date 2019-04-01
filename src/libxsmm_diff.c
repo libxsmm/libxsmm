@@ -64,7 +64,7 @@
     LIBXSMM_DIFF_16(libxsmm_math_diff_32_r1_, A, B); \
     LIBXSMM_DIFF_16(libxsmm_math_diff_32_r2_, \
       (const uint8_t*)(A) + 16, (const uint8_t*)(B) + 16); \
-    RESULT = libxsmm_math_diff_32_r1_ | libxsmm_math_diff_32_r2_; \
+    RESULT = (unsigned char)(libxsmm_math_diff_32_r1_ | libxsmm_math_diff_32_r2_); \
   }
 #endif
 
