@@ -868,14 +868,16 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
               ++rest;
             }
           }
-          if (0 != errors) {
-            fprintf(stderr, "LIBXSMM ERROR: code registry is corrupted!\n");
-          }
-          if (LIBXSMM_CAPACITY_REGISTRY == (rest + errors +
-            internal_statistic_num_mcopy + internal_statistic_num_tcopy +
-            internal_statistic_num_trsm + internal_statistic_num_trmm))
-          {
-            fprintf(stderr, "LIBXSMM WARNING: code registry was exhausted!\n");
+          if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+            if (0 != errors) {
+              fprintf(stderr, "LIBXSMM ERROR: code registry is corrupted!\n");
+            }
+            if (LIBXSMM_CAPACITY_REGISTRY == (rest + errors +
+              internal_statistic_num_mcopy + internal_statistic_num_tcopy +
+              internal_statistic_num_trsm + internal_statistic_num_trmm))
+            {
+              fprintf(stderr, "LIBXSMM WARNING: code registry was exhausted!\n");
+            }
           }
           if (0 == (LIBXSMM_CODE_STATIC & code.uval)) { /* check for allocated/generated JIT-code */
             void* buffer = NULL;
