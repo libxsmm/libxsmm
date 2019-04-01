@@ -373,6 +373,8 @@ int main(int argc, char* argv []) {
   /*l_scf = 1000;*/
   int* l_c_gold_w_i = 0;
 
+  libxsmm_matdiff_clear(&l_diff);
+
   /* check argument count for a valid range */
   if ( argc != 16 && argc != 11 ) {
     print_help();
