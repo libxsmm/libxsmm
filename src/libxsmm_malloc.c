@@ -778,10 +778,17 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 #endif
       }
       if (alloc_failed != buffer && /*fall-back*/NULL != buffer) {
-        char *const aligned = LIBXSMM_ALIGN(((char*)buffer) + extra_size + sizeof(internal_malloc_info_type), alloc_alignment);
+        char *const cbuffer = (char*)buffer, *const aligned = LIBXSMM_ALIGN(cbuffer + extra_size + sizeof(internal_malloc_info_type), alloc_alignment);
         internal_malloc_info_type *const info = (internal_malloc_info_type*)(aligned - sizeof(internal_malloc_info_type));
-        LIBXSMM_ASSERT((aligned + size) <= (((char*)buffer) + alloc_size));
-        if (NULL != extra) memcpy(buffer, extra, extra_size);
+        LIBXSMM_ASSERT((aligned + size) <= (cbuffer + alloc_size));
+        if (NULL != extra) {
+#if defined(NDEBUG)
+          const char *const src = (const char*)extra;
+          int i; for (i = 0; i < extra_size; ++i) cbuffer[i] = src[i];
+#else
+          memcpy(buffer, extra, extra_size);
+#endif
+        }
 #if !defined(NDEBUG)
         else if (NULL == extra && 0 != extra_size) {
           result = EXIT_FAILURE;

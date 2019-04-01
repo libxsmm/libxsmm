@@ -92,8 +92,6 @@
 }
 
 
-
-
 LIBXSMM_API unsigned char libxsmm_diff_16(const void* a, const void* b, ...)
 {
   unsigned char result;

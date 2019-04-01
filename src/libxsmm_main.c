@@ -1540,17 +1540,23 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   if (0 < generated_code.code_size) {
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
     if (0 == generated_code.last_error) { /* no error raised */
-      void* code_buffer = NULL;
+      char* code_buffer = NULL;
       /* attempt to create executable buffer */
-      result = libxsmm_xmalloc(&code_buffer, generated_code.code_size, 0/*auto*/,
+      result = libxsmm_xmalloc((void**)&code_buffer, generated_code.code_size, 0/*auto*/,
         /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
         LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
       if (EXIT_SUCCESS == result) { /* check for success */
         LIBXSMM_ASSERT(NULL != code_buffer);
         /* copy temporary buffer into the prepared executable buffer */
+#if defined(NDEBUG)
+        { int i; LIBXSMM_ASSERT(code_buffer == generated_code.generated_code);
+          for (i = 0; i < (int)generated_code.code_size; ++i) code_buffer[i] = jit_buffer[i];
+        }
+#else
         memcpy(code_buffer, generated_code.generated_code, generated_code.code_size);
+#endif
         /* attribute/protect buffer and revoke unnecessary flags */
-        result = libxsmm_malloc_attrib(&code_buffer, LIBXSMM_MALLOC_FLAG_X, jit_name);
+        result = libxsmm_malloc_attrib((void**)&code_buffer, LIBXSMM_MALLOC_FLAG_X, jit_name);
         if (EXIT_SUCCESS == result) { /* check for success */
           code->pmm = code_buffer; /* commit buffer */
           LIBXSMM_ASSERT(NULL != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->uval));
