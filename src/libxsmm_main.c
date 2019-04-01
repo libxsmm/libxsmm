@@ -86,12 +86,6 @@
 # define LIBXSMM_PAD_DESC
 #endif
 
-#if 0
-# define LIBXSMM_HASH_MOD(N, NGEN) ((N) % (NGEN))
-#else /* LIBXSMM_CAPACITY_REGISTRY is POT */
-# define LIBXSMM_HASH_MOD(N, NPOT) LIBXSMM_MOD2(N, NPOT)
-#endif
-
 /* flag fused into the memory address of a code version in case of non-JIT */
 #define LIBXSMM_CODE_STATIC (1ULL << (8 * sizeof(void*) - 1))
 /* flag fused into the memory address of a code version in case of collision */
@@ -354,7 +348,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(
     libxsmm_descriptor_blob blob;
     const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_dinit(&blob, precision,
       m, n, k, lda, ldb, ldc, LIBXSMM_ALPHA, LIBXSMM_BETA, LIBXSMM_FLAGS, INTERNAL_PREFETCH);
-    unsigned int i = LIBXSMM_HASH_MOD(
+    unsigned int i = LIBXSMM_MOD2(
       libxsmm_crc32(LIBXSMM_HASH_SEED, desc, LIBXSMM_MIN(sizeof(libxsmm_gemm_descriptor), size)),
       LIBXSMM_CAPACITY_REGISTRY);
     libxsmm_code_pointer* dst_entry = registry + i;
@@ -366,7 +360,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(
     if (NULL != dst_entry->ptr_const) { /* collision */
       const unsigned int i0 = i;
       do { /* continue to linearly search for an available slot */
-        i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
+        i = LIBXSMM_MOD2(i + 1, LIBXSMM_CAPACITY_REGISTRY);
         if (NULL == registry[i].ptr_const) break;
       } while (i != i0);
 #if defined(LIBXSMM_HASH_COLLISION) /* mark entry as a collision */
@@ -569,40 +563,40 @@ LIBXSMM_API_INTERN void internal_init(void)
     libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
     { const char *const env = getenv("LIBXSMM_SCRATCH_POOLS");
-      if (NULL == env || 0 == *env) {
-        libxsmm_scratch_pools = LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS;
-      }
-      else {
-        libxsmm_scratch_pools = LIBXSMM_CLMP(atoi(env), 0, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
-        /*libxsmm_scratch_pools_locked = 1;*/
-      }
-      LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
+    if (NULL == env || 0 == *env) {
+      libxsmm_scratch_pools = LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS;
+    }
+    else {
+      libxsmm_scratch_pools = LIBXSMM_CLMP(atoi(env), 0, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
+      /*libxsmm_scratch_pools_locked = 1;*/
+    }
+    LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
     }
     { const char *const env = getenv("LIBXSMM_SCRATCH_LIMIT");
-      if (NULL == env || 0 == *env) {
-        /*const*/ unsigned long long limit = LIBXSMM_MALLOC_SCRATCH_LIMIT;
-        libxsmm_scratch_limit = (size_t)limit;
+    if (NULL == env || 0 == *env) {
+      /*const*/ unsigned long long limit = LIBXSMM_MALLOC_SCRATCH_LIMIT;
+      libxsmm_scratch_limit = (size_t)limit;
+    }
+    else {
+      size_t u = internal_strlen(env, 32) - 1;
+      const char *const unit = "kmgKMG", *const hit = strchr(unit, env[u]);
+      libxsmm_scratch_limit = (size_t)strtoul(env, 0, 10);
+      u = (0 != hit ? ((hit - unit) % 3) : 3);
+      if (u < 3) {
+        libxsmm_scratch_limit <<= (u + 1) * 10;
       }
-      else {
-        size_t u = internal_strlen(env, 32) - 1;
-        const char *const unit = "kmgKMG", *const hit = strchr(unit, env[u]);
-        libxsmm_scratch_limit = (size_t)strtoul(env, 0, 10);
-        u = (0 != hit ? ((hit - unit) % 3) : 3);
-        if (u < 3) {
-          libxsmm_scratch_limit <<= (u + 1) * 10;
-        }
-        /*libxsmm_scratch_limit_locked = 1;*/
-      }
+      /*libxsmm_scratch_limit_locked = 1;*/
+    }
     }
     { const char *const env = getenv("LIBXSMM_SCRATCH_SCALE");
-      if (NULL == env || 0 == *env) {
-        libxsmm_scratch_scale = LIBXSMM_MALLOC_SCRATCH_SCALE;
-      }
-      else {
-        libxsmm_scratch_scale = LIBXSMM_CLMP(atof(env), 1.1, 3.0);
-        /*libxsmm_scratch_scale_locked = 1;*/
-      }
-      LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
+    if (NULL == env || 0 == *env) {
+      libxsmm_scratch_scale = LIBXSMM_MALLOC_SCRATCH_SCALE;
+    }
+    else {
+      libxsmm_scratch_scale = LIBXSMM_CLMP(atof(env), 1.1, 3.0);
+      /*libxsmm_scratch_scale_locked = 1;*/
+    }
+    LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
     }
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
 #if defined(LIBXSMM_MAXTARGET)
@@ -611,7 +605,7 @@ LIBXSMM_API_INTERN void internal_init(void)
     libxsmm_set_target_arch(getenv("LIBXSMM_TARGET"));
 #endif
     { const char *const env = getenv("LIBXSMM_SYNC");
-      libxsmm_nosync = (NULL == env || 0 == *env) ? 0/*default*/ : atoi(env);
+    libxsmm_nosync = (NULL == env || 0 == *env) ? 0/*default*/ : atoi(env);
     }
     /* clear internal counters/statistic */
     for (i = 0; i < 4/*sml/med/big/xxx*/; ++i) {
@@ -628,6 +622,11 @@ LIBXSMM_API_INTERN void internal_init(void)
     internal_statistic_mnk = LIBXSMM_MAX_DIM;
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
+#if !defined(NDEBUG) /* LIBXSMM_CAPACITY_REGISTRY: power of two */
+    { const unsigned int npot = LIBXSMM_UP2POT(LIBXSMM_CAPACITY_REGISTRY);
+      assert(LIBXSMM_CAPACITY_REGISTRY == npot); /* !LIBXSMM_ASSERT */
+    }
+#endif
     new_registry = (libxsmm_code_pointer*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer));
     internal_registry_keys = (libxsmm_descriptor*)malloc((LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_descriptor));
     if (NULL != new_registry && NULL != internal_registry_keys) {
@@ -1614,7 +1613,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 #else
     unsigned int i = libxsmm_crc32(LIBXSMM_HASH_SEED, desc, LIBXSMM_MIN(size, LIBXSMM_HASH_SIZE));
 #endif
-    unsigned int i0 = i = LIBXSMM_HASH_MOD(i, LIBXSMM_CAPACITY_REGISTRY), mode = 0, diff = 1;
+    unsigned int i0 = i = LIBXSMM_MOD2(i, LIBXSMM_CAPACITY_REGISTRY), mode = 0, diff = 1;
     LIBXSMM_ASSERT(NULL != internal_registry);
     do { /* use calculated location and check if the requested code is already JITted */
 #if (1 < INTERNAL_REGLOCK_MAXN) || !LIBXSMM_LOCK_TYPE_ISRW(LIBXSMM_REGLOCK) /* read registered code */
@@ -1650,7 +1649,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 #endif      /* search for an existing code version */
             mode = 1; /* else */
           }
-          i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
+          i = LIBXSMM_MOD2(i + 1, LIBXSMM_CAPACITY_REGISTRY);
           if (i == i0) { /* search finished, no code version exists */
 #if defined(LIBXSMM_HASH_COLLISION)
             mode = 3; /* enter code generation, and collision fix-up */
@@ -1720,7 +1719,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
               i0 = i; /* keep current position on record */
             }
             do { /* continue to linearly search for an available slot */
-              i = LIBXSMM_HASH_MOD(i + 1, LIBXSMM_CAPACITY_REGISTRY);
+              i = LIBXSMM_MOD2(i + 1, LIBXSMM_CAPACITY_REGISTRY);
               if (NULL == internal_registry[i].ptr_const) break;
             } while (i != i0);
             if (i == i0) { /* out of capacity (no registry slot available) */
@@ -1732,6 +1731,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
         else /* JIT-code generation not available */
 #endif
         { /* leave the dispatch loop */
+#if !defined(NDEBUG) && (0 != LIBXSMM_JIT)
+          build = EXIT_FAILURE;
+#endif
           flux_entry.pmm = NULL;
           diff = 0;
         }
