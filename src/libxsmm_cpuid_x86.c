@@ -29,6 +29,15 @@
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_intrinsics_x86.h>
+#include <libxsmm_generator.h>
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <stdio.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
 
 /** Execute CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
 #if defined(__GNUC__) || defined(__PGI)
@@ -78,12 +87,13 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
   if (1 <= eax) { /* CPUID */
     LIBXSMM_CPUID_X86(1, eax, ebx, ecx, edx);
 
+    /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
+    if (0x00100000 == (0x00100000 & ecx)) {
+      target_arch = LIBXSMM_X86_SSE4;
+    }
+
     /* XSAVE/XGETBV(0x04000000), OSXSAVE(0x08000000) */
     if (0x0C000000 == (0x0C000000 & ecx)) {
-      /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
-      if (0x00100000 == (0x00100000 & ecx)) {
-        target_arch = LIBXSMM_X86_SSE4;
-      }
       LIBXSMM_XGETBV(0, eax, edx);
 
       if (0x00000006 == (0x00000006 & eax)) { /* OS XSAVE 256-bit */
@@ -125,10 +135,15 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
         }
       }
     }
+    else if (LIBXSMM_STATIC_TARGET_ARCH < target_arch &&
+      0 != libxsmm_verbosity) /* library code is expected to be mute */
+    {
+      fprintf(stderr, "LIBXSMM WARNING: detected CPU features are not permitted by the OS!\n");
+    }
   }
 
   /* check if procedure obviously failed to detect the highest available instruction set extension */
-  assert(LIBXSMM_STATIC_TARGET_ARCH <= target_arch);
+  LIBXSMM_ASSERT(LIBXSMM_STATIC_TARGET_ARCH <= target_arch);
 
   return LIBXSMM_MAX(target_arch, LIBXSMM_STATIC_TARGET_ARCH);
 }
