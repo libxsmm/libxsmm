@@ -323,6 +323,13 @@
           MODULE PROCEDURE libxsmm_blas_sgemm2
         END INTERFACE
 
+        ! Overloaded variants of libxsmm_hash.
+        INTERFACE libxsmm_hash
+          MODULE PROCEDURE libxsmm_hash_char
+          MODULE PROCEDURE libxsmm_hash_i32
+          MODULE PROCEDURE libxsmm_hash_i64
+        END INTERFACE
+
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_gemm_auto_prefetch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_gemm_auto_prefetch
@@ -1598,50 +1605,77 @@
 
         ! Calculate a hash value for a given key value (blob of integers).
         ! Implicit FORTRAN 77 interface:
-        ! INTEGER(4) :: hash (OUT)
-        ! INTEGER(4) :: key(:), keysize, seed
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash
-        PURE FUNCTION libxsmm_hash(key, seed)
-          INTEGER(C_INT), DIMENSION(:), INTENT(IN) :: key
+        ! INTEGER(4) :: hash_seed (INOUT)
+        ! CHARACTER  :: key(:)
+        ! INTEGER(4) :: keysize
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_char
+        PURE FUNCTION libxsmm_hash_char(key, seed)
+          INTEGER(C_CHAR), DIMENSION(:), INTENT(IN) :: key
           INTEGER(C_INT), INTENT(IN) :: seed
-          INTEGER(C_INT) :: libxsmm_hash
+          INTEGER(C_INT) :: libxsmm_hash_char
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
           INTERFACE
-            PURE SUBROUTINE internal_hash(hash, key, keysize, seed)     &
+            PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
      &      BIND(C, NAME="libxsmm_hash_")
               IMPORT C_INT
-              INTEGER(C_INT), INTENT(OUT) :: hash
-              INTEGER(C_INT), INTENT(IN)  :: key
-              INTEGER(C_INT), INTENT(IN)  :: keysize
-              INTEGER(C_INT), INTENT(IN)  :: seed
+              INTEGER(C_INT), INTENT(INOUT) :: hash_seed
+              INTEGER(C_CHAR), INTENT(IN)    :: key ! PURE: C_PTR avoided
+              INTEGER(C_INT), INTENT(IN)    :: keysize
             END SUBROUTINE
           END INTERFACE
-          CALL internal_hash(libxsmm_hash,                              &
-     &      key(LBOUND(key,1)), SIZE(key) * 4, seed)
+          libxsmm_hash_char = seed
+          CALL internal_hash(libxsmm_hash_char,                         &
+     &      key(LBOUND(key,1)), SIZE(key))
         END FUNCTION
 
         ! Calculate a hash value for a given key value (blob of integers).
         ! Implicit FORTRAN 77 interface:
-        ! INTEGER(8) :: hash (OUT)
-        ! INTEGER(8) :: key(:), keysize, seed
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash2
-        PURE FUNCTION libxsmm_hash2(key, seed)
-          INTEGER(C_LONG_LONG), DIMENSION(:), INTENT(IN) :: key
-          INTEGER(C_LONG_LONG), INTENT(IN) :: seed
-          INTEGER(C_LONG_LONG) :: libxsmm_hash2
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash2
+        ! INTEGER(4) :: hash_seed (INOUT)
+        ! INTEGER(4) :: key(:)
+        ! INTEGER(4) :: keysize
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i32
+        PURE FUNCTION libxsmm_hash_i32(key, seed)
+          INTEGER(C_INT), DIMENSION(:), INTENT(IN) :: key
+          INTEGER(C_INT), INTENT(IN) :: seed
+          INTEGER(C_INT) :: libxsmm_hash_i32
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
           INTERFACE
-            PURE SUBROUTINE internal_hash2(hash, key, keysize, seed)    &
-     &      BIND(C, NAME="libxsmm_hash2_")
-              IMPORT C_LONG_LONG
-              INTEGER(C_LONG_LONG), INTENT(OUT) :: hash
-              INTEGER(C_LONG_LONG), INTENT(IN)  :: key
-              INTEGER(C_LONG_LONG), INTENT(IN)  :: keysize
-              INTEGER(C_LONG_LONG), INTENT(IN)  :: seed
+            PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
+     &      BIND(C, NAME="libxsmm_hash_")
+              IMPORT C_INT
+              INTEGER(C_INT), INTENT(INOUT) :: hash_seed
+              INTEGER(C_INT), INTENT(IN)    :: key ! PURE: C_PTR avoided
+              INTEGER(C_INT), INTENT(IN)    :: keysize
             END SUBROUTINE
           END INTERFACE
-          CALL internal_hash2(libxsmm_hash2,                            &
-     &      key(LBOUND(key,1,8)), SIZE(key,1,8) * 8, seed)
+          libxsmm_hash_i32 = seed
+          CALL internal_hash(libxsmm_hash_i32,                          &
+     &      key(LBOUND(key,1)), SIZE(key) * 4)
         END FUNCTION
-      END MODULE
+
+
+        ! Calculate a hash value for a given key value (blob of integers).
+        ! Implicit FORTRAN 77 interface:
+        ! INTEGER(4) :: hash_seed (INOUT)
+        ! INTEGER(8) :: key(:)
+        ! INTEGER(4) :: keysize
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i64
+        PURE FUNCTION libxsmm_hash_i64(key, seed)
+          INTEGER(C_LONG_LONG), DIMENSION(:), INTENT(IN) :: key
+          INTEGER(C_INT), INTENT(IN) :: seed
+          INTEGER(C_INT) :: libxsmm_hash_i64
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
+          INTERFACE
+            PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
+     &      BIND(C, NAME="libxsmm_hash_")
+              IMPORT C_INT
+              INTEGER(C_INT), INTENT(INOUT)     :: hash_seed
+              INTEGER(C_LONG_LONG), INTENT(IN)  :: key ! PURE: C_PTR avoided
+              INTEGER(C_INT), INTENT(IN)        :: keysize
+            END SUBROUTINE
+          END INTERFACE
+          libxsmm_hash_i64 = seed
+          CALL internal_hash(libxsmm_hash_i64,                          &
+     &      key(LBOUND(key,1)), SIZE(key) * 8)
+        END FUNCTION
 

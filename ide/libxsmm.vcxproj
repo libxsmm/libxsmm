@@ -61,6 +61,7 @@
     <ClInclude Include="..\src\generator_packed_trsm_dmacros.h" />
     <ClInclude Include="..\src\generator_packed_xct_avx2_lln.h" />
     <ClInclude Include="..\src\libxsmm_blocked_gemm_types.h" />
+    <ClInclude Include="..\src\libxsmm_diff.h" />
     <ClInclude Include="..\src\libxsmm_dnn_elementwise.h" />
     <ClInclude Include="..\src\generator_common.h" />
     <ClInclude Include="..\src\generator_packed_trsm_avx_avx512.h" />
@@ -156,6 +157,7 @@
     <ClCompile Include="..\src\generator_transpose_avx_avx512.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
     <ClCompile Include="..\src\libxsmm_blocked_gemm.c" />
+    <ClCompile Include="..\src\libxsmm_diff.c" />
     <ClCompile Include="..\src\libxsmm_dnn.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_backward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_forward.c" />

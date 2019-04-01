@@ -69,13 +69,6 @@ LIBXSMM_API void libxsmm_matdiff_reduce(libxsmm_matdiff_info* output, const libx
 /** Clears the given info-structure e.g., for the initial reduction-value (libxsmm_matdiff_reduce). */
 LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info);
 
-/** Compare two data blocks of 16 Byte each. */
-LIBXSMM_API unsigned char libxsmm_diff_16(const void* a, const void* b, ...);
-/** Compare two data blocks of 32 Byte each. */
-LIBXSMM_API unsigned char libxsmm_diff_32(const void* a, const void* b, ...);
-/** Compare two data blocks of 64 Byte each. */
-LIBXSMM_API unsigned char libxsmm_diff_64(const void* a, const void* b, ...);
-
 /**
  * Calculate whether there is a difference between two (short) buffers.
  * Returns zero if there is no difference; otherwise non-zero.
@@ -94,7 +87,7 @@ LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsign
   unsigned char stride, unsigned int hint, unsigned int n);
 
 /** Calculate a hash value for a given buffer. */
-LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed);
+LIBXSMM_API unsigned int libxsmm_hash(unsigned int seed, const void* data, unsigned int size);
 
 /** Greatest common divisor (corner case: the GCD of 0 and 0 is 1). */
 LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b);
