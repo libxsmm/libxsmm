@@ -1610,16 +1610,16 @@
         ! INTEGER(4) :: keysize
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_char
         PURE FUNCTION libxsmm_hash_char(key, seed)
-          INTEGER(C_CHAR), DIMENSION(:), INTENT(IN) :: key
+          CHARACTER(C_CHAR), DIMENSION(:), INTENT(IN) :: key
           INTEGER(C_INT), INTENT(IN) :: seed
           INTEGER(C_INT) :: libxsmm_hash_char
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
           INTERFACE
             PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
      &      BIND(C, NAME="libxsmm_hash_")
-              IMPORT C_INT
+              IMPORT C_INT, C_CHAR
               INTEGER(C_INT), INTENT(INOUT) :: hash_seed
-              INTEGER(C_CHAR), INTENT(IN)    :: key ! PURE: C_PTR avoided
+              CHARACTER(C_CHAR), INTENT(IN) :: key ! PURE: C_PTR avoided
               INTEGER(C_INT), INTENT(IN)    :: keysize
             END SUBROUTINE
           END INTERFACE
@@ -1668,7 +1668,7 @@
           INTERFACE
             PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
      &      BIND(C, NAME="libxsmm_hash_")
-              IMPORT C_INT
+              IMPORT C_INT, C_LONG_LONG
               INTEGER(C_INT), INTENT(INOUT)     :: hash_seed
               INTEGER(C_LONG_LONG), INTENT(IN)  :: key ! PURE: C_PTR avoided
               INTEGER(C_INT), INTENT(IN)        :: keysize
@@ -1678,4 +1678,5 @@
           CALL internal_hash(libxsmm_hash_i64,                          &
      &      key(LBOUND(key,1)), SIZE(key) * 8)
         END FUNCTION
+      END MODULE
 
