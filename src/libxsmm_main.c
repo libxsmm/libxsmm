@@ -792,7 +792,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
   void *const regaddr = &internal_registry;
   uintptr_t regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_RELAXED);
   libxsmm_code_pointer* registry = (libxsmm_code_pointer*)regptr;
-  if (0 != registry) {
+  if (NULL != registry) {
     int i;
 #if (0 != LIBXSMM_SYNC)
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, &libxsmm_lock_global);
@@ -813,8 +813,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
     regptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_RELAXED);
     registry = (libxsmm_code_pointer*)regptr;
 
-    if (0 != registry) {
+    if (NULL != registry) {
       libxsmm_descriptor *const registry_keys = internal_registry_keys;
+      unsigned int rest = 0, errors = 0;
       internal_registry_nbytes = (LIBXSMM_CAPACITY_REGISTRY) * (sizeof(libxsmm_code_pointer) + sizeof(libxsmm_descriptor));
 
       /* serves as an ID to invalidate the thread-local cache; never decremented */
@@ -822,47 +823,62 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         /*const*/ libxsmm_code_pointer code = registry[i];
-        if (0 != code.ptr_const) {
+        if (NULL != code.ptr_const) {
           /* check if the registered entity is a GEMM kernel */
-          if (LIBXSMM_KERNEL_KIND_MATMUL == registry_keys[i].kind) {
-            const libxsmm_gemm_descriptor *const desc = &registry_keys[i].gemm.desc;
-            const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
-            const int precision = (LIBXSMM_GEMM_PRECISION_F64 == desc->datatype ? 0 : 1);
-            int bucket = 3/*huge*/;
-            LIBXSMM_ASSERT(0 < kernel_size);
-            if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= kernel_size) {
-              bucket = 0;
-            }
-            else if (LIBXSMM_MNK_SIZE(internal_statistic_med, internal_statistic_med, internal_statistic_med) >= kernel_size) {
-              bucket = 1;
-            }
-            else if (LIBXSMM_MNK_SIZE(internal_statistic_mnk, internal_statistic_mnk, internal_statistic_mnk) >= kernel_size) {
-              bucket = 2;
-            }
-            if (0 == (LIBXSMM_CODE_STATIC & code.uval)) { /* count whether kernel is static or JIT-code */
-              ++internal_statistic[precision][bucket].njit;
+          switch (registry_keys[i].kind) {
+            case LIBXSMM_KERNEL_KIND_MATMUL: {
+              const libxsmm_gemm_descriptor *const desc = &registry_keys[i].gemm.desc;
+              const unsigned long long kernel_size = LIBXSMM_MNK_SIZE(desc->m, desc->n, desc->k);
+              const int precision = (LIBXSMM_GEMM_PRECISION_F64 == desc->datatype ? 0 : 1);
+              int bucket = 3/*huge*/;
+              LIBXSMM_ASSERT(0 < kernel_size);
+              if (LIBXSMM_MNK_SIZE(internal_statistic_sml, internal_statistic_sml, internal_statistic_sml) >= kernel_size) {
+                bucket = 0;
+              }
+              else if (LIBXSMM_MNK_SIZE(internal_statistic_med, internal_statistic_med, internal_statistic_med) >= kernel_size) {
+                bucket = 1;
+              }
+              else if (LIBXSMM_MNK_SIZE(internal_statistic_mnk, internal_statistic_mnk, internal_statistic_mnk) >= kernel_size) {
+                bucket = 2;
+              }
+              if (0 == (LIBXSMM_CODE_STATIC & code.uval)) { /* count whether kernel is static or JIT-code */
+                ++internal_statistic[precision][bucket].njit;
+              }
+              else {
+                ++internal_statistic[precision][bucket].nsta;
+              }
+              ++rest;
+            } break;
+            case LIBXSMM_KERNEL_KIND_MCOPY: {
+              ++internal_statistic_num_mcopy;
+            } break;
+            case LIBXSMM_KERNEL_KIND_TRANS: {
+              ++internal_statistic_num_tcopy;
+            } break;
+            case LIBXSMM_KERNEL_KIND_TRSM: {
+              ++internal_statistic_num_trsm;
+            } break;
+            case LIBXSMM_KERNEL_KIND_TRMM: {
+              ++internal_statistic_num_trmm;
+            } break;
+            default: if (LIBXSMM_KERNEL_KIND_INVALID <= registry_keys[i].kind) {
+              ++errors;
             }
             else {
-              ++internal_statistic[precision][bucket].nsta;
+              ++rest;
             }
           }
-          else if (LIBXSMM_KERNEL_KIND_MCOPY == registry_keys[i].kind) {
-            ++internal_statistic_num_mcopy;
-          }
-          else if (LIBXSMM_KERNEL_KIND_TRANS == registry_keys[i].kind) {
-            ++internal_statistic_num_tcopy;
-          }
-          else if (LIBXSMM_KERNEL_KIND_TRSM == registry_keys[i].kind) {
-            ++internal_statistic_num_trsm;
-          }
-          else if (LIBXSMM_KERNEL_KIND_TRMM == registry_keys[i].kind) {
-            ++internal_statistic_num_trmm;
-          }
-          else {
+          if (0 != errors) {
             fprintf(stderr, "LIBXSMM ERROR: code registry is corrupted!\n");
           }
+          if (LIBXSMM_CAPACITY_REGISTRY == (rest + errors +
+            internal_statistic_num_mcopy + internal_statistic_num_tcopy +
+            internal_statistic_num_trsm + internal_statistic_num_trmm))
+          {
+            fprintf(stderr, "LIBXSMM WARNING: code registry was exhausted!\n");
+          }
           if (0 == (LIBXSMM_CODE_STATIC & code.uval)) { /* check for allocated/generated JIT-code */
-            void* buffer = 0;
+            void* buffer = NULL;
             size_t size = 0;
 #if defined(LIBXSMM_HASH_COLLISION)
             code.uval &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
@@ -966,7 +982,7 @@ LIBXSMM_API const char* libxsmmf_get_target_arch(int* length)
 {
   const char *const arch = libxsmm_get_target_arch();
   /* valid here since function is not in the public interface */
-  LIBXSMM_ASSERT(0 != arch && 0 != length);
+  LIBXSMM_ASSERT(NULL != arch && 0 != length);
   *length = (int)strlen(arch);
   return arch;
 }
@@ -976,7 +992,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
 {
   const int cpuid = libxsmm_cpuid();
   int target_archid;
-  if (0 != arch && 0 != *arch) {
+  if (NULL != arch && 0 != *arch) {
     const int jit = atoi(arch);
     if (0 == strcmp("0", arch)) {
       target_archid = LIBXSMM_X86_SSE3;
