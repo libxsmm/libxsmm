@@ -78,7 +78,7 @@ const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
 /* number of tasks that could be run in parallel, delta gamma and beta reduction */
-const int work2 = nBlocksFm * 4;
+const int work2 = nBlocksFm;
 /* compute chunk size */
 const int chunksize2 = (work2 % handle->desc.threads == 0) ? (work2 / handle->desc.threads) : ((work2 / handle->desc.threads) + 1);
 /* compute thr_begin and thr_end */
@@ -229,20 +229,38 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 
   /* now we need to reduce the del_gamm and del_beta */
   for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
-    element_stats_type* del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, (fm/4), 0, ((fm%4)*16), nImg, 64);
-    element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  (fm/4), 0, ((fm%4)*16), nImg, 64);
+    element_stats_type* del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, 0, 0, nImg, 64);
+    element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, 0, 0, nImg, 64);
     __m512 lcl_vdgamma  = _mm512_setzero_ps();
     __m512 lcl_vdbeta   = _mm512_setzero_ps();
+    __m512 lcl_vdgamma2 = _mm512_setzero_ps();
+    __m512 lcl_vdbeta2  = _mm512_setzero_ps();
+    __m512 lcl_vdgamma3 = _mm512_setzero_ps();
+    __m512 lcl_vdbeta3  = _mm512_setzero_ps();
+    __m512 lcl_vdgamma4 = _mm512_setzero_ps();
+    __m512 lcl_vdbeta4  = _mm512_setzero_ps();
 
     for ( img=0; img < nImg; img++ ) {
       lcl_vdgamma  = _mm512_add_ps( lcl_vdgamma,  _mm512_loadu_ps( del_gamma_img_ptr ) );
       lcl_vdbeta   = _mm512_add_ps( lcl_vdbeta,   _mm512_loadu_ps( del_beta_img_ptr  ) );
+      lcl_vdgamma2 = _mm512_add_ps( lcl_vdgamma2, _mm512_loadu_ps( del_gamma_img_ptr+16 ) );
+      lcl_vdbeta2  = _mm512_add_ps( lcl_vdbeta2,  _mm512_loadu_ps( del_beta_img_ptr+16  ) );
+      lcl_vdgamma3 = _mm512_add_ps( lcl_vdgamma3, _mm512_loadu_ps( del_gamma_img_ptr+32 ) );
+      lcl_vdbeta3  = _mm512_add_ps( lcl_vdbeta3,  _mm512_loadu_ps( del_beta_img_ptr+32  ) );
+      lcl_vdgamma4 = _mm512_add_ps( lcl_vdgamma4, _mm512_loadu_ps( del_gamma_img_ptr+48 ) );
+      lcl_vdbeta4  = _mm512_add_ps( lcl_vdbeta4,  _mm512_loadu_ps( del_beta_img_ptr+48  ) );
       del_gamma_img_ptr += 64;
       del_beta_img_ptr  += 64;
     }
 
-    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dgamma, (fm/4), ((fm%4)*16),  64), lcl_vdgamma );
-    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dbeta,  (fm/4), ((fm%4)*16),  64), lcl_vdbeta  );
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 0,  64), lcl_vdgamma );
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 0,  64), lcl_vdbeta  );
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 16, 64), lcl_vdgamma2 );
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 16, 64), lcl_vdbeta2  );
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 32, 64), lcl_vdgamma3 );
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 32, 64), lcl_vdbeta3  );
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dgamma, fm, 48, 64), lcl_vdgamma4 );
+    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, dbeta,  fm, 48, 64), lcl_vdbeta4  );
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
