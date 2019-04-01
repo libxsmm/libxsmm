@@ -85,6 +85,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
 
   LIBXSMM_CPUID_X86(0, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID */
+    static int error_once = 0;
     LIBXSMM_CPUID_X86(1, eax, ebx, ecx, edx);
 
     /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
@@ -136,7 +137,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
       }
     }
     else if (LIBXSMM_STATIC_TARGET_ARCH < target_arch &&
-      0 != libxsmm_verbosity) /* library code is expected to be mute */
+      0 != libxsmm_verbosity && 1 == ++error_once) /* library code is expected to be mute */
     {
       fprintf(stderr, "LIBXSMM WARNING: detected CPU features are not permitted by the OS!\n");
     }
