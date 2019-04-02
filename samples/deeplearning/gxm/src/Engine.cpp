@@ -617,7 +617,9 @@ void MLEngine::run(int mode)
         fbtime = (tve.tv_sec + tve.tv_usec*1e-6) - (tvs.tv_sec + tvs.tv_usec*1e-6);
         if(global_node_id_ == 0)
           printf("Fwd-Bwd time: %f ms\n",fbtime*1000);
-        runtime += fbtime;
+
+        if ( current_batch_ > 1 )
+          runtime += fbtime;
 
 #ifdef CANARY_CHECK
         canary_check(input_buf_, input_can_ptr, ic);
@@ -628,9 +630,11 @@ void MLEngine::run(int mode)
 
       current_batch_ = 0;
 
-      printf("Average Training time = %f seconds\n",runtime/num_train_batches_);
-      if(runtime > 0)
-        printf("Training throughput = %f images/s\n",(float)(batch_size_*num_train_batches_)/runtime);
+      if ( num_train_batches_ > 1 ) {
+        printf("Average Training time = %f seconds\n",runtime/(num_train_batches_-2));
+        if(runtime > 0)
+          printf("Average Training throughput = %f images/s\n",(float)(batch_size_*(num_train_batches_-2))/runtime);
+      }
 
       // Checkpoint weights and biases
       if(global_node_id_ == 0)
