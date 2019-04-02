@@ -1677,7 +1677,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
           LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
           LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
 # endif
-          diff = LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE)(xdesc, internal_registry_keys + i);
+          diff = LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE)(xdesc, internal_registry_keys + i, 0/*dummy*/);
 #else
           diff = libxsmm_diff(desc, internal_registry_keys + i, LIBXSMM_MIN(size, LIBXSMM_DIFF_SIZE));
 #endif
