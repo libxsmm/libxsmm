@@ -60,11 +60,9 @@
   }
 #else
 # define LIBXSMM_DIFF_32(RESULT, A, B) { \
-    unsigned char libxsmm_math_diff_32_r1_, libxsmm_math_diff_32_r2_; \
-    LIBXSMM_DIFF_16(libxsmm_math_diff_32_r1_, A, B); \
-    LIBXSMM_DIFF_16(libxsmm_math_diff_32_r2_, \
+    LIBXSMM_DIFF_16(RESULT, A, B); \
+    if (0 == RESULT) LIBXSMM_DIFF_16(RESULT, \
       (const uint8_t*)(A) + 16, (const uint8_t*)(B) + 16); \
-    RESULT = (unsigned char)(libxsmm_math_diff_32_r1_ | libxsmm_math_diff_32_r2_); \
   }
 #endif
 
@@ -119,10 +117,10 @@ LIBXSMM_API unsigned char libxsmm_diff_48(const void* a, const void* b, ...)
 
 LIBXSMM_API unsigned char libxsmm_diff_64(const void* a, const void* b, ...)
 {
-  unsigned char r1, r2;
-  LIBXSMM_DIFF_32(r1, a, b);
-  LIBXSMM_DIFF_32(r2, (const uint8_t*)a + 32, (const uint8_t*)b + 32);
-  return (unsigned char)(r1 | r2);
+  unsigned char result;
+  LIBXSMM_DIFF_32(result, a, b);
+  if (0 == result) LIBXSMM_DIFF_32(result, (const uint8_t*)a + 32, (const uint8_t*)b + 32);
+  return result;
 }
 
 
