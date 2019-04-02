@@ -784,7 +784,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         if (NULL != extra) {
 #if defined(NDEBUG)
           const char *const src = (const char*)extra;
-          int i; for (i = 0; i < extra_size; ++i) cbuffer[i] = src[i];
+          int i; for (i = 0; i < (int)extra_size; ++i) cbuffer[i] = src[i];
 #else
           memcpy(buffer, extra, extra_size);
 #endif

@@ -1642,9 +1642,12 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
     LIBXSMM_ASSERT(NULL != internal_registry);
     do { /* use calculated location and check if the requested code is already JITted */
 #if (1 < INTERNAL_REGLOCK_MAXN) || !LIBXSMM_LOCK_TYPE_ISRW(LIBXSMM_REGLOCK) /* read registered code */
-      /* omitting an atomic load is safe but avoids race-detectors to highlight this location */
+# if 1 /* omitting an atomic load is safe but avoids race-detectors to highlight this location */
       uintptr_t *const fluxaddr = &internal_registry[i].uval;
       flux_entry.uval = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(fluxaddr, LIBXSMM_ATOMIC_RELAXED);
+# else
+      flux_entry = internal_registry[i];
+# endif
 #else
       LIBXSMM_LOCK_ACQREAD(LIBXSMM_REGLOCK, internal_reglock_ptr);
       flux_entry = internal_registry[i]; /* read registered code */
