@@ -147,13 +147,13 @@ int main(/*int argc, char* argv[]*/)
 
     a = LIBXSMM_ISQRT2(i);
     b = libxsmm_isqrt_u32(i);
-    if (a < LIBXSMM_DIFF(a, b)) exit(EXIT_FAILURE);
+    if (a < LIBXSMM_DELTA(a, b)) exit(EXIT_FAILURE);
     a = LIBXSMM_ISQRT2(r32);
     b = libxsmm_isqrt_u32(r32);
-    if (a < LIBXSMM_DIFF(a, b)) exit(EXIT_FAILURE);
+    if (a < LIBXSMM_DELTA(a, b)) exit(EXIT_FAILURE);
     a = LIBXSMM_ISQRT2(r64);
     b = libxsmm_isqrt_u64(r64);
-    if (0 != a/*u32-overflow*/ && a < LIBXSMM_DIFF(a, b)) exit(EXIT_FAILURE);
+    if (0 != a/*u32-overflow*/ && a < LIBXSMM_DELTA(a, b)) exit(EXIT_FAILURE);
   }
 
   if (0 < warn_ssqrt || 0 < warn_dsqrt) {

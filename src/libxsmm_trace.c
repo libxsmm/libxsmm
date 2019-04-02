@@ -376,7 +376,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                 symbol = next++; /* determine the symbol after the match which is checked below */
                 break;
               }
-              { const size_t d = LIBXSMM_DIFF((const char*)filter_symbol, (const char*)stacktrace[symbol]);
+              { const size_t d = LIBXSMM_DELTA((const char*)filter_symbol, (const char*)stacktrace[symbol]);
                 if (d < approx.d) {
                   approx.s = symbol + 1;
                   approx.d = d;
@@ -498,7 +498,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                 symbol = next++; /* determine the symbol after the match which is checked below */
                 break;
               }
-              { const size_t d = LIBXSMM_DIFF((const char*)filter_symbol, (const char*)stacktrace[symbol]);
+              { const size_t d = LIBXSMM_DELTA((const char*)filter_symbol, (const char*)stacktrace[symbol]);
                 if (d < approx.d) {
                   approx.s = symbol + 1;
                   approx.d = d;
