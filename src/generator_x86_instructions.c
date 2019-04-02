@@ -989,6 +989,13 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
           l_vec1 = i_vec_reg_src;
           l_vec0 = i_vec_reg_dst;
           break;
+       case LIBXSMM_X86_INSTR_VPMOVSXWD:
+          l_second = 1;
+          l_third = 1;
+          l_fifth = 0x10;
+          l_vec0 = i_vec_reg_src;
+          l_vec1 = i_vec_reg_dst;
+          break;
        default:
           fprintf(stderr, "libxsmm_instruction_vec_compute_convert: Unknown instruction type: %u\n", i_vec_instr);
           break;
@@ -2183,6 +2190,13 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           l_fpadj -= 0x26;
           l_sizereg = 32;
           break;
+       case LIBXSMM_X86_INSTR_VPMOVSXWD:
+          l_bytes = 5;
+          l_second += 0x21;
+          l_fpadj -= 0x36;
+          l_fpadj2 -= 0x0;
+          l_sizereg = 1;
+          break;
        case LIBXSMM_X86_INSTR_VXORPS:
           l_fpadj2 = -1;
           l_fpadj = -2;
@@ -2572,6 +2586,28 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
        l_vec_1 = l_vec_0;
        l_vec_0 = 0;
     }
+    if ( i_vec_instr == LIBXSMM_X86_INSTR_VPMOVSXWD )
+    {
+       /* We only have 1 vector register input and this is a special case */
+       l_reg2 = i_vec_reg_number_0 % 8;
+       l_reg1 = 0;
+       l_vec_0 = 0;
+       l_vec_1 = i_vec_reg_number_0;
+       if ((i_gp_reg_base >= 8) && (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF))
+       {
+          if ((i_gp_reg_idx < 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF))
+          {
+             l_second -= 0x20;
+          }
+       }
+       if ((i_gp_reg_base < 8) && (i_gp_reg_base != LIBXSMM_X86_GP_REG_UNDEF))
+       {
+          if ((i_gp_reg_idx >= 8) && (i_gp_reg_idx  != LIBXSMM_X86_GP_REG_UNDEF))
+          {
+             l_second -= 0x20;
+          }
+       }
+    }
     if ( l_vec_0 >= 8 ) { l_third  -= 0x40; }
     if ( l_vec_1 >= 8 ) { l_second -= 0x80; }
     if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
@@ -2582,7 +2618,8 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
         if ( l_bytes < 5 ) l_bytes = 5;
      }
 #endif
-    } else l_bytes = 6;
+    /* If VPMOVSXWD then FORCE 5 bytes even though it uses ymm */
+    } else if ( i_vec_instr != LIBXSMM_X86_INSTR_VPMOVSXWD) l_bytes = 6;
 
 
     if ( l_bytes == 4 )
