@@ -111,7 +111,7 @@
 #endif
 /** Size of the descriptor considered as unique signature. */
 #if !defined(LIBXSMM_DESCRIPTOR_SIGSIZE)
-# define LIBXSMM_DESCRIPTOR_SIGSIZE 32
+# define LIBXSMM_DESCRIPTOR_SIGSIZE LIBXSMM_DESCRIPTOR_MAXSIZE
 #endif
 
 
