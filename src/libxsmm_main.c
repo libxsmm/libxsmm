@@ -1591,7 +1591,7 @@ LIBXSMM_API_INLINE void internal_pad_descriptor(libxsmm_descriptor* desc, size_t
 {
   size_t i = size;
   size = LIBXSMM_MAX(LIBXSMM_DIFF_SIZE, LIBXSMM_HASH_SIZE);
-  LIBXSMM_ASSERT(i <= size && size <= LIBXSMM_DESCRIPTOR_MAXSIZE);
+  LIBXSMM_ASSERT(NULL != desc && i <= size && size <= LIBXSMM_DESCRIPTOR_MAXSIZE);
   for (; i < size; ++i) desc->data[i] = 0;
 }
 #endif
@@ -1612,12 +1612,15 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
     unsigned char size, hit;
   } cache;
   unsigned char cache_index;
-  LIBXSMM_ASSERT(NULL != desc && cache.size <= LIBXSMM_CACHE_MAXSIZE);
 # if defined(LIBXSMM_PAD_DESC)
+  LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
+  LIBXSMM_ASSERT(cache.size <= LIBXSMM_CACHE_MAXSIZE);
   internal_pad_descriptor(desc, size);
-  cache_index = (unsigned char)libxsmm_diff_npot(desc, &cache.keys,
-    LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
+  LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
+  LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE), LIBXSMM_MOD2,
+    xdesc, &cache.keys, LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
 # else
+  LIBXSMM_ASSERT(NULL != desc && cache.size <= LIBXSMM_CACHE_MAXSIZE);
   cache_index = (unsigned char)libxsmm_diff_npot(desc, &cache.keys,
     LIBXSMM_MIN(size, LIBXSMM_DIFF_SIZE), LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
 # endif
