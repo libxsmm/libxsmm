@@ -38,33 +38,33 @@
 
 #if (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
 # define LIBXSMM_DIFF_16_DECL(A) __m128i A
-# define LIBXSMM_DIFF_16_LOAD(DST, A) DST = _mm_loadu_si128((const __m128i*)(A))
+# define LIBXSMM_DIFF_16_LOAD(A, SRC) A = _mm_loadu_si128((const __m128i*)(SRC))
 # define LIBXSMM_DIFF_16(A, B, ...) ((unsigned char)(0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8( \
     A, _mm_loadu_si128((const __m128i*)(B))))))
 #else
 # define LIBXSMM_DIFF_16_DECL(A) const uint64_t */*const*/ A
-# define LIBXSMM_DIFF_16_LOAD(DST, A) DST = (const uint64_t*)(A)
+# define LIBXSMM_DIFF_16_LOAD(A, SRC) A = (const uint64_t*)(SRC)
 # define LIBXSMM_DIFF_16(A, B, ...) ((unsigned char)(0 != (((A)[0] ^ (*(const uint64_t*)(B))) | \
     ((A)[1] ^ ((const uint64_t*)(B))[1]))))
 #endif
 #if (LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH)
 # define LIBXSMM_DIFF_32_DECL(A) __m256i A
-# define LIBXSMM_DIFF_32_LOAD(DST, A) DST = _mm256_loadu_si256((const __m256i*)(A))
+# define LIBXSMM_DIFF_32_LOAD(A, SRC) A = _mm256_loadu_si256((const __m256i*)(SRC))
 # define LIBXSMM_DIFF_32(A, B, ...) ((unsigned char)(-1 != _mm256_movemask_epi8(_mm256_cmpeq_epi8( \
     A, _mm256_loadu_si256((const __m256i*)(B))))))
 #else
-# define LIBXSMM_DIFF_32_DECL LIBXSMM_DIFF_16_DECL
-# define LIBXSMM_DIFF_32_LOAD LIBXSMM_DIFF_16_LOAD
-# define LIBXSMM_DIFF_32(A, B, ...) (0 != LIBXSMM_DIFF_16(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_16((A) + 2, (const uint64_t*)(B) + 2, __VA_ARGS__))
+# define LIBXSMM_DIFF_32_DECL(A) LIBXSMM_DIFF_16_DECL(A); LIBXSMM_DIFF_16_DECL(LIBXSMM_CONCATENATE2(libxsmm_diff_32_, A, _))
+# define LIBXSMM_DIFF_32_LOAD(A, SRC) LIBXSMM_DIFF_16_LOAD(A, SRC); LIBXSMM_DIFF_16_LOAD(LIBXSMM_CONCATENATE2(libxsmm_diff_32_, A, _), (const uint64_t*)(SRC) + 2)
+# define LIBXSMM_DIFF_32(A, B, ...) (0 != LIBXSMM_DIFF_16(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_16(LIBXSMM_CONCATENATE2(libxsmm_diff_32_, A, _), (const uint64_t*)(B) + 2, __VA_ARGS__))
 #endif
 
-#define LIBXSMM_DIFF_48_DECL(A) LIBXSMM_DIFF_16_DECL(A); LIBXSMM_DIFF_32_DECL(libxsmm_diff_48_a_)
-#define LIBXSMM_DIFF_48_LOAD(DST, A) LIBXSMM_DIFF_16_LOAD(DST, A); LIBXSMM_DIFF_32_LOAD(libxsmm_diff_48_a_, (const uint64_t*)(A) + 2)
-#define LIBXSMM_DIFF_48(A, B, ...) (0 != LIBXSMM_DIFF_16(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_32(libxsmm_diff_48_a_, (const uint64_t*)(B) + 2, __VA_ARGS__))
+#define LIBXSMM_DIFF_48_DECL(A) LIBXSMM_DIFF_16_DECL(A); LIBXSMM_DIFF_32_DECL(LIBXSMM_CONCATENATE2(libxsmm_diff_48_, A, _))
+#define LIBXSMM_DIFF_48_LOAD(A, SRC) LIBXSMM_DIFF_16_LOAD(A, SRC); LIBXSMM_DIFF_32_LOAD(LIBXSMM_CONCATENATE2(libxsmm_diff_48_, A, _), (const uint64_t*)(SRC) + 2)
+#define LIBXSMM_DIFF_48(A, B, ...) (0 != LIBXSMM_DIFF_16(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_32(LIBXSMM_CONCATENATE2(libxsmm_diff_48_, A, _), (const uint64_t*)(B) + 2, __VA_ARGS__))
 
-#define LIBXSMM_DIFF_64_DECL(A) LIBXSMM_DIFF_32_DECL(A); LIBXSMM_DIFF_32_DECL(libxsmm_diff_64_a_)
-#define LIBXSMM_DIFF_64_LOAD(DST, A) LIBXSMM_DIFF_32_LOAD(DST, A); LIBXSMM_DIFF_32_LOAD(libxsmm_diff_64_a_, (const uint64_t*)(A) + 4)
-#define LIBXSMM_DIFF_64(A, B, ...) (0 != LIBXSMM_DIFF_32(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_32(libxsmm_diff_64_a_, (const uint64_t*)(B) + 4, __VA_ARGS__))
+#define LIBXSMM_DIFF_64_DECL(A) LIBXSMM_DIFF_32_DECL(A); LIBXSMM_DIFF_32_DECL(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _))
+#define LIBXSMM_DIFF_64_LOAD(A, SRC) LIBXSMM_DIFF_32_LOAD(A, SRC); LIBXSMM_DIFF_32_LOAD(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _), (const uint64_t*)(SRC) + 4)
+#define LIBXSMM_DIFF_64(A, B, ...) (0 != LIBXSMM_DIFF_32(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_32(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _), (const uint64_t*)(B) + 4, __VA_ARGS__))
 
 #define LIBXSMM_DIFF(DIFF, MOD, A, BN, ELEMSIZE, STRIDE, HINT, N, NAVG) { \
   const char *const libxsmm_diff_b_ = (const char*)(BN); \
