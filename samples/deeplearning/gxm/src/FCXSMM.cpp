@@ -334,5 +334,18 @@ void FCXSMM::weightUpdate(TensorBuf *deloutpb, TensorBuf *inpb, TensorBuf *delwe
     int ntps = gp->num_threads/gp->num_numa_nodes;
     int n = tid/ntps;
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_execute_st( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_UPD, n*ntps, tid ) );
+
+#ifdef USE_MLSL
+#pragma omp barrier
+
+      if(gp->in_data_type == DT_FLOAT)
+      {
+#include "reduce_weight_grads.c"
+      }
+      else if(gp->in_data_type == DT_BF16)
+      {
+#include "reduce_weight_grads_bf16.c"
+      }
+#endif
   }
 }

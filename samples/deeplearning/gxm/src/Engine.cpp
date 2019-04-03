@@ -592,12 +592,19 @@ void MLEngine::run(int mode)
                 checkpoint(wTList_, DIFF);
 #endif
 
+#if 0
           solver_->applyUpdate((float**)weight_buf_, (float**)winc_buf_, wdiff_buf_, total_weights_, (float**)wt_lr_mult_, (float**)wt_decay_mult_, "WEIGHT");
-
+#else
+          solver_->applyUpdate((float**)weight_buf_, (float**)winc_buf_, wdiff_buf_, total_weights_, 1.0, 1.0, "WEIGHT");
+#endif
           if(data_type_ == BF16)
             convert_f32_bf16((float**)weight_buf_, (libxsmm_bfloat16**)lpweight_buf_, total_weights_);
 
+#if 0
           solver_->applyUpdate((float**)bias_buf_, (float**)biinc_buf_, bidiff_buf_, total_biases_, (float**)bias_lr_mult_, (float**)bias_decay_mult_, "BIAS");
+#else
+          solver_->applyUpdate((float*)bias_buf_[0], (float*)biinc_buf_[0], bidiff_buf_[0], total_biases_, 1.0, 0.0, "BIAS");
+#endif
 
 #ifdef TIMING
           gettimeofday(&tvie, NULL);
@@ -856,29 +863,35 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     }
   }
 
-
   // Number of guard bands in tensor; used for canary checking
   *nc = num_canaries;
 
   // Allocate memory
   bool lp = (data_type_ == BF16) && (tenType=="WEIGHT") && (buftype == DATA);
-#ifdef USE_MLSL
-  s = ALIGN_SIZE(s, 2097152);
-  void* buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
-  if(lp)
-    lpweight_buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s/sizeof(libxsmm_bfloat16), 2097152);
-#else
+
   void *buf_;
   void **ptrptr, **lptrptr=NULL;
 
+#ifdef USE_MLSL
+  s = ALIGN_SIZE(s, 2097152);
+#endif
+
   if(tenType=="INPUT")
   {
+#ifdef USE_MLSL
+    buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
     buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
     input_buf_ = buf_;
   }
   else if(tenType == "FACT")
   {
+#ifdef USE_MLSL
+    buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
     buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
     fact_buf_ = buf_;
   }
   else if(tenType == "WEIGHT")
@@ -887,9 +900,17 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     {
       for(int n=0; n<NUM_NUMA_NODES; n++)
       {
+#ifdef USE_MLSL
+        weight_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
         weight_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
         if(lp)
+#ifdef USE_MLSL
+          lpweight_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s/sizeof(libxsmm_bfloat16), 2097152);
+#else
           lpweight_buf_[n] = (void*)libxsmm_aligned_malloc(s/sizeof(libxsmm_bfloat16), 2097152);
+#endif
       }
       buf_ = weight_buf_[0];
       ptrptr = weight_buf_;
@@ -899,27 +920,43 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     else if(buftype == DIFF)
     {
       for(int n=0; n<NUM_NUMA_NODES; n++)
+#ifdef USE_MLSL
+        wdiff_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
         wdiff_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
       buf_ = wdiff_buf_[0];
       ptrptr = wdiff_buf_;
     }
     else if(buftype == HISTORY)
     {
       for(int n=0; n<NUM_NUMA_NODES; n++)
+#ifdef USE_MLSL
+        winc_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
         winc_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
       buf_ = winc_buf_[0];
       ptrptr = winc_buf_;
     }
   }
   else if(tenType == "BACT")
   {
+#ifdef USE_MLSL
+    buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
     buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
     bact_buf_ = buf_;
   }
   else if(tenType == "STATS")
   {
     for(int n=0; n<NUM_NUMA_NODES; n++)
+#ifdef USE_MLSL
+      stats_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
       stats_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
     buf_ = stats_buf_[0];
     ptrptr = stats_buf_;
   }
@@ -928,26 +965,37 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     if(buftype == DATA)
     {
       for(int n=0; n<NUM_NUMA_NODES; n++)
+#ifdef USE_MLSL
+        bias_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
         bias_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
       buf_ = bias_buf_[0];
       ptrptr = bias_buf_;
     }
     else if(buftype == DIFF)
     {
       for(int n=0; n<NUM_NUMA_NODES; n++)
+#ifdef USE_MLSL
+        bidiff_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
         bidiff_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
       buf_ = bidiff_buf_[0];
       ptrptr = bidiff_buf_;
     }
     else if(buftype == HISTORY)
     {
       for(int n=0; n<NUM_NUMA_NODES; n++)
+#ifdef USE_MLSL
+        biinc_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
         biinc_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
       buf_ = biinc_buf_[0];
       ptrptr = biinc_buf_;
     }
   }
-#endif
 
   // Total buffer size, including guard bands before and after each buffer (currntly 64 bytes long)
   *bufsize = s + (lp ? s/sizeof(libxsmm_bfloat16) : 0);
