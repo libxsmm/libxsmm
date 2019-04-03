@@ -191,6 +191,7 @@ class SolverNode : public MLNode
     virtual ~SolverNode(void) {}
 
     void applyUpdate(float**, float**, void**, int, float, float, string);
+    void applyUpdate(float*, float*, void*, int, float, float, string);
     void applyUpdate(float*, float*, void*, int, float*, float*, string);
     void applyUpdate(float**, float**, void**, int, float**, float**, string);
     void convert_bf16_f32(libxsmm_bfloat16**, float**, int);

@@ -138,6 +138,8 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
   int sn = s/NUM_NUMA_NODES;
   float **wgrad_ptr = (tensorType == "WEIGHT" && data_type_ == BF16) ? tmp_grad : (float**)grad;
 
+#ifndef USE_MLSL
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -164,9 +166,34 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
         wgp[i] += rgp[i];
     }
   }
+#else
+  float *wgp = wgrad_ptr[0];
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  {
+    int tid = omp_get_thread_num();
+    int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+    int n = tid/ntps;
+    int ltid = tid - n*ntps;
+
+    int jobs = (s % ntps == 0) ? (s/ntps) : (s/ntps) + 1;
+    int tb = (ltid * jobs < s) ? (ltid * jobs) : s;
+    int te = (ltid + 1)*jobs < s ? (ltid + 1)*jobs : s;
+
+    float *rgp = wgrad_ptr[n];
+
+#pragma omp simd
+    for(int i=tb; i<te; i++)
+      rgp[i] = wgp[i];
+  }
+#endif
 
   if(solver_type_.compare("SGD") == 0)
   {
+#ifndef USE_MLSL
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -191,9 +218,38 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
       {
         incp[i] = mval_*incp[i] + lrval_ * lrp[i] * ((wgrad_ptr[n]+n*sn)[i] + decayval_ * dcp[i] * blobp[i]);
         blobp[i] = blobp[i] - incp[i];
-        (wgrad_ptr[n]+n*sn)[i] = 0.0;
       }
     }
+#else
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int ltid = tid - n*ntps;
+
+      float *blobp = blob[n];
+      float *incp = inc[n];
+      float *lrp = lr_mult[n];
+      float *dcp = decay_mult[n];
+      float *wgp = wgrad_ptr[n];
+
+      int jobs = (s % ntps == 0) ? (s / ntps) : (s / ntps) + 1;
+      int tb = (ltid * jobs < s) ? (ltid * jobs) : s;
+      int te = (ltid + 1)*jobs < s ? (ltid + 1)*jobs : s;
+
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        incp[i] = mval_*incp[i] + lrval_ * lrp[i] * (wgp[i] + decayval_ * dcp[i] * blobp[i]);
+        blobp[i] = blobp[i] - incp[i];
+      }
+    }
+
+#endif
   }
   else if(solver_type_ == "SGD_MC")
   {
@@ -208,6 +264,8 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
       else
         prev_lrval_ = lrval_;
     }
+
+#ifndef USE_MLSL
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -233,9 +291,36 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
       {
         incp[i] = mval_*mc_*incp[i] + lrval_ * lrp[i] * ((wgrad_ptr[n]+n*sn)[i] + decayval_ * dcp[i] * blobp[i]);
         blobp[i] = blobp[i] - incp[i];
-        (wgrad_ptr[n]+n*sn)[i] = 0.0;
       }
     }
+#else
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int ltid = tid - n*ntps;
+
+      float *blobp = blob[n];
+      float *incp = inc[n];
+      float *lrp = lr_mult[n];
+      float *dcp = decay_mult[n];
+      float *wgp = wgrad_ptr[n];
+
+      int jobs = (s % ntps == 0) ? (s / ntps) : (s / ntps) + 1;
+      int tb = (ltid * jobs < s) ? (ltid * jobs) : s;
+      int te = (ltid + 1)*jobs < s ? (ltid + 1)*jobs : s;
+
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        incp[i] = mval_*mc_*incp[i] + lrval_ * lrp[i] * (wgp[i] + decayval_ * dcp[i] * blobp[i]);
+        blobp[i] = blobp[i] - incp[i];
+      }
+    }
+#endif
   }
   else if(solver_type_ == "NESTEROV")
   {
@@ -253,6 +338,8 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
       prev_lrval_ = lrval_;
     }
 
+#ifndef USE_MLSL
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -266,11 +353,11 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
       int tb = (ltid * jobs < sn) ? (ltid * jobs) : sn;
       int te = (ltid + 1)*jobs < sn ? (ltid + 1)*jobs : sn;
 
-      float *incp = (inc[n]+n*sn);
-      float *lrp = (lr_mult[n]+n*sn);
-      float *wgp = (wgrad_ptr[n]+n*sn);
-      float *dcp = (decay_mult[n]+n*sn);
-      float *bp = (blob[n]+n*sn);
+      float *bp = blob[n] + n*sn;
+      float *incp = inc[n] + n*sn;
+      float *lrp = lr_mult[n] + n*sn;
+      float *dcp = decay_mult[n] + n*sn;
+      float *wgp = wgrad_ptr[n] + n*sn;
 
 #pragma omp simd
       for(int i=tb; i<te; i++)
@@ -279,13 +366,44 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
         incp[i] = mval_*mc1_*tinc + lrval_ * lrp[i] * (wgp[i] + decayval_ * dcp[i] * bp[i]);
         tinc = (1 + mval_*mc1_) * incp[i] - mval_*mc2_*tinc;
         bp[i] = bp[i] - tinc;
-        wgp[i] = 0.0;
       }
     }
+#else
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int ltid = tid - n*ntps;
+
+      int jobs = (s % ntps == 0) ? (s / ntps) : (s / ntps) + 1;
+      int tb = (ltid * jobs < s) ? (ltid * jobs) : s;
+      int te = (ltid + 1)*jobs < s ? (ltid + 1)*jobs : s;
+
+      float *bp = blob[n];
+      float *incp = inc[n];
+      float *lrp = lr_mult[n];
+      float *dcp = decay_mult[n];
+      float *wgp = wgrad_ptr[n];
+
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        float tinc = incp[i];
+        incp[i] = mval_*mc1_*tinc + lrval_ * lrp[i] * (wgp[i] + decayval_ * dcp[i] * bp[i]);
+        tinc = (1 + mval_*mc1_) * incp[i] - mval_*mc2_*tinc;
+        bp[i] = bp[i] - tinc;
+      }
+    }
+#endif
   }
   else if(solver_type_.compare("ADAGRAD") == 0)
   {
   }
+
+#ifndef USE_MLSL
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -317,6 +435,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
       }
     }
   }
+#endif
 }
 
 void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, float lr_mult, float decay_mult, string tensorType)
@@ -355,6 +474,8 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
   int sn = s/NUM_NUMA_NODES;
   float **wgrad_ptr = (tensorType == "WEIGHT" && data_type_ == BF16) ? tmp_grad : (float**)grad;
 
+#ifndef USE_MLSL
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -381,9 +502,38 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
         wgp[i] += rgp[i];
     }
   }
+#else
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  {
+    int tid = omp_get_thread_num();
+    int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+    int n = tid/ntps;
+    if(n != 0)
+    {
+      int ltid = tid - n*ntps;
+
+      int jobs = (s % ntps == 0) ? (s/ntps) : (s/ntps) + 1;
+      int tb = (ltid * jobs < s) ? (ltid * jobs) : s;
+      int te = (ltid + 1)*jobs < s ? (ltid + 1)*jobs : s;
+
+      float *wgp = wgrad_ptr[0];
+      float *rgp = wgrad_ptr[n];
+
+#pragma vector nontemporal
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+        rgp[i] = wgp[i];
+    }
+  }
+#endif
 
   if(solver_type_.compare("SGD") == 0)
   {
+#ifndef USE_MLSL
+
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -408,6 +558,34 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
         blobp[i] = blobp[i] - incp[i];
       }
     }
+#else
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int ltid = tid - n*ntps;
+
+      float *blobp = blob[n];
+      float *incp = inc[n];
+      float *wgp = wgrad_ptr[n];
+
+      int jobs = (s % ntps == 0) ? (s / ntps) : (s / ntps) + 1;
+      int tb = (ltid * jobs < s) ? (ltid * jobs) : s;
+      int te = (ltid + 1)*jobs < s ? (ltid + 1)*jobs : s;
+
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        incp[i] = mval_*incp[i] + lrval_ * lr_mult * (wgp[i] + decayval_ * decay_mult * blobp[i]);
+        blobp[i] = blobp[i] - incp[i];
+      }
+    }
+
+#endif
   }
   else if(solver_type_ == "SGD_MC")
   {
@@ -422,6 +600,8 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
       else
         prev_lrval_ = lrval_;
     }
+
+#ifndef USE_MLSL
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -447,6 +627,32 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
         blobp[i] = blobp[i] - incp[i];
       }
     }
+#else
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int ltid = tid - n*ntps;
+
+      float *blobp = blob[n];
+      float *incp = inc[n];
+      float *wgp = wgrad_ptr[n];
+
+      int jobs = (s % ntps == 0) ? (s / ntps) : (s / ntps) + 1;
+      int tb = (ltid * jobs < s) ? (ltid * jobs) : s;
+      int te = (ltid + 1)*jobs < s ? (ltid + 1)*jobs : s;
+
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        incp[i] = mval_*mc_*incp[i] + lrval_ * lr_mult * (wgp[i] + decayval_ * decay_mult * blobp[i]);
+        blobp[i] = blobp[i] - incp[i];
+      }
+    }
+#endif
   }
   else if(solver_type_ == "NESTEROV")
   {
@@ -463,6 +669,8 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
       prev_lrval_1_ = prev_lrval_;
       prev_lrval_ = lrval_;
     }
+
+#ifndef USE_MLSL
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -490,10 +698,41 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
         bp[i] = bp[i] - tinc;
       }
     }
+#else
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int ltid = tid - n*ntps;
+
+      int jobs = (s % ntps == 0) ? (s / ntps) : (s / ntps) + 1;
+      int tb = (ltid * jobs < s) ? (ltid * jobs) : s;
+      int te = (ltid + 1)*jobs < s ? (ltid + 1)*jobs : s;
+
+      float *bp = blob[n];
+      float *incp = inc[n];
+      float *wgp = wgrad_ptr[n];
+
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        float tinc = incp[i];
+        incp[i] = mval_*mc1_*tinc + lrval_ * lr_mult * (wgp[i] + decayval_ * decay_mult * bp[i]);
+        tinc = (1 + mval_*mc1_) * incp[i] - mval_*mc2_*tinc;
+        bp[i] = bp[i] - tinc;
+      }
+    }
+#endif
   }
   else if(solver_type_.compare("ADAGRAD") == 0)
   {
   }
+
+#ifndef USE_MLSL
 
 #ifdef _OPENMP
 #pragma omp parallel
@@ -522,6 +761,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
         bp[i] = rbp[i];
     }
   }
+#endif
 }
 void SolverNode::applyUpdate(float *blob, float *inc, void *grad, int s, float* lr_mult, float* decay_mult, string tensorType)
 {
@@ -653,6 +893,146 @@ void SolverNode::applyUpdate(float *blob, float *inc, void *grad, int s, float* 
       {
         float tinc = inc[i];
         inc[i] = mval_*mc1_*tinc + lrval_ * lr_mult[i] * (wgrad_ptr[i] + decayval_ * decay_mult[i] * blob[i]);
+        tinc = (1 + mval_*mc1_) * inc[i] - mval_*mc2_*tinc;
+        blob[i] = blob[i] - tinc;
+        wgrad_ptr[i] = 0.0;
+      }
+    }
+  }
+  else if(solver_type_.compare("ADAGRAD") == 0)
+  {}
+}
+
+void SolverNode::applyUpdate(float *blob, float *inc, void *grad, int s, float lr_mult, float decay_mult, string tensorType)
+{
+  int iter = eptr_->get_current_batch() + eptr_->get_num_train_batches() * eptr_->get_current_epoch();
+  int warmup_max_iter = eptr_->get_num_train_batches() * warmup_max_epoch_; // Warm-up
+
+  if(eptr_->get_current_epoch() < warmup_max_epoch_)
+    lrval_ = (iter*base_lr_ + (warmup_max_iter - iter) * warmup_lr_)/warmup_max_iter;
+  else if(lr_policy_.compare("fixed") == 0)
+    lrval_ = base_lr_;
+  else if(lr_policy_.compare("step") == 0)
+    lrval_ = base_lr_ * pow(gamma_, floor((double)iter/(double)step_size_));
+  else if(lr_policy_.compare("poly") == 0)
+    lrval_ = base_lr_ * pow(((float)1. - ((float)iter/(float)max_iter_)), power_);
+  else if(lr_policy_.compare("inv") == 0)
+    lrval_ = base_lr_ * pow((1 + gamma_ * iter), (-power_));
+  else if(lr_policy_.compare("multistep") == 0)
+  {
+    if(stepidx_ < stepvalues_.size() && iter > stepvalues_[stepidx_])
+      stepidx_++;
+    lrval_ = base_lr_ * pow(gamma_, (float)stepidx_);
+  }
+
+  eptr_->set_learning_rate(lrval_);
+
+  float *wgrad_ptr;
+  if(tensorType=="WEIGHT" && data_type_ == BF16)
+  {
+    if(tmp_grad[0] == NULL)
+      tmp_grad[0] = (float*)libxsmm_aligned_malloc(s*sizeof(float), 2097152);
+    convert_bf16_f32((libxsmm_bfloat16*)grad, tmp_grad[0], s);
+
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+    for(int i=0; i<s/16; i++)
+#pragma omp simd
+      for(int j=0; j<16; j++)
+        ((libxsmm_bfloat16*)grad)[i*16+j] = 0;
+
+    wgrad_ptr = tmp_grad[0];
+  }
+  else if(tensorType=="WEIGHT" && data_type_ == FLOAT || tensorType=="BIAS")
+    wgrad_ptr = (float*)grad;
+
+  if(solver_type_.compare("SGD") == 0)
+  {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int threads = omp_get_num_threads();
+      int jobs = (s % threads == 0) ? (s / threads) : (s / threads) + 1;
+      int tb = (tid * jobs < s) ? (tid * jobs) : s;
+      int te = (tid + 1)*jobs < s ? (tid + 1)*jobs : s;
+
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        inc[i] = mval_*inc[i] + lrval_ * lr_mult * (wgrad_ptr[i] + decayval_ * decay_mult * blob[i]);
+        blob[i] = blob[i] - inc[i];
+        wgrad_ptr[i] = 0.0;
+      }
+    }
+  }
+  else if(solver_type_ == "SGD_MC")
+  {
+    mc_ = 1;
+    if(eptr_->get_current_epoch() < warmup_max_epoch_)
+    {
+      if(prev_lrval_ != -1)
+      {
+        mc_ = lrval_/prev_lrval_;
+        prev_lrval_ = lrval_;
+      }
+      else
+        prev_lrval_ = lrval_;
+    }
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int threads = omp_get_num_threads();
+      int jobs = (s % threads == 0) ? (s / threads) : (s / threads) + 1;
+      int tb = (tid * jobs < s) ? (tid * jobs) : s;
+      int te = (tid + 1)*jobs < s ? (tid + 1)*jobs : s;
+
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        inc[i] = mval_*mc_*inc[i] + lrval_ * lr_mult * (wgrad_ptr[i] + decayval_ * decay_mult * blob[i]);
+        blob[i] = blob[i] - inc[i];
+        wgrad_ptr[i] = 0.0;
+      }
+    }
+  }
+  else if(solver_type_ == "NESTEROV")
+  {
+    mc1_ = 1;
+    mc2_ = 1;
+    if(eptr_->get_current_epoch() < warmup_max_epoch_)
+    {
+      if(prev_lrval_ != -1)
+      {
+        mc1_ = lrval_/prev_lrval_;
+        if(prev_lrval_1_ != -1)
+          mc2_ = prev_lrval_/prev_lrval_1_;
+      }
+      prev_lrval_1_ = prev_lrval_;
+      prev_lrval_ = lrval_;
+    }
+
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int threads = omp_get_num_threads();
+      int jobs = (s % threads == 0) ? (s / threads) : (s / threads) + 1;
+      int tb = (tid * jobs < s) ? (tid * jobs) : s;
+      int te = (tid + 1)*jobs < s ? (tid + 1)*jobs : s;
+
+#pragma omp simd
+      for(int i=tb; i<te; i++)
+      {
+        float tinc = inc[i];
+        inc[i] = mval_*mc1_*tinc + lrval_ * lr_mult * (wgrad_ptr[i] + decayval_ * decay_mult * blob[i]);
         tinc = (1 + mval_*mc1_) * inc[i] - mval_*mc2_*tinc;
         blob[i] = blob[i] - tinc;
         wgrad_ptr[i] = 0.0;
