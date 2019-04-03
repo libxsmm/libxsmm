@@ -276,15 +276,23 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     }
   } else {
     /* Here we are using batch-reduce kernel and hybrid minibatch/FM parallelization */
-    int group_size = handle->desc.threads/handle->weight_copies;
+    int group_size = (handle->desc.threads+handle->weight_copies-1)/handle->weight_copies;
     int tile_id = ltid/group_size;
+    /* FIXME: Hardcoed logic for N=27  */
+    if (handle->desc.threads == 27 && handle->desc.N == 27 && handle->ofw == 14 && handle->desc.R == 1 && handle->desc.u == 1) {
+      if (ltid >=24) {
+        group_size = 3;
+      }
+    }
     int tiles = handle->weight_copies;
-    int img_per_tile = handle->desc.N/tiles;
+    int img_per_tile = (handle->desc.N+tiles-1)/tiles;
     int my_in_tile_id = ltid % group_size;
     int ifms_per_thread = (handle->blocksifm+group_size-1)/group_size;
+    int ofms_per_thread = (handle->blocksofm+group_size-1)/group_size;
+    int my_R_start = 0;
+    int my_R_end = handle->desc.R;
     const float beta = ((handle->upd_ofh_rb == handle->ofh) && (handle->upd_ofw_rb == handle->ofw)) ? 0.0 : 1.0;
     gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch(handle->ofmblock, handle->ifmblock, handle->upd_ofw_rb, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
-
     element_filter_type *weight_ptr_group = (handle->weight_copies > 1) ? (element_filter_type*)handle->scratch7 + tile_id * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S : (element_filter_type*)handle->grad_filter->data;
     LIBXSMM_VLA_DECL(6, element_filter_type, weight_private_group, (element_filter_type*)weight_ptr_group, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
     my_img_start = LIBXSMM_MIN( tile_id * img_per_tile, handle->desc.N);
@@ -293,6 +301,22 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     my_ifm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ifms_per_thread, handle->blocksifm  );
     my_ofm_start = 0;
     my_ofm_end = handle->blocksofm;
+    /* FIXME: Hardcoed logic for N=27  */
+    if (handle->desc.threads == 27 && handle->desc.N == 27 && handle->desc.C == 256 && handle->desc.K == 1024 && handle->ofh == 14 && handle->desc.u == 1) {
+      my_ofm_start = LIBXSMM_MIN( my_in_tile_id * ofms_per_thread, handle->blocksofm  );
+      my_ofm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ofms_per_thread, handle->blocksofm  );
+      my_ifm_start = 0;
+      my_ifm_end = handle->blocksifm;
+    }
+    if (handle->desc.threads == 27 && handle->desc.N == 27 && handle->desc.R == 3 && handle->desc.S == 3 && handle->ofh == 14) {
+      int r_per_tile = (handle->desc.R+group_size-1)/group_size;
+      my_ifm_start = 0;
+      my_ifm_end = handle->blocksifm;
+      my_ofm_start = 0;
+      my_ofm_end = handle->blocksofm;
+      my_R_start = LIBXSMM_MIN( my_in_tile_id * r_per_tile, handle->desc.R );
+      my_R_end = LIBXSMM_MIN( (my_in_tile_id+1) * r_per_tile, handle->desc.R );
+    }
     block_ofm = my_ofm_end-my_ofm_start+1;
     block_ifm = my_ifm_end-my_ifm_start+1;
     //block_ofm = handle->block_upd_ofm;
@@ -308,7 +332,7 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
                 for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
                   for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj+= handle->upd_ofh_rb) {
                     for (oi = 0; oi < handle->ofw; oi += handle->upd_ofw_rb) {
-                      for (kj = 0; kj < handle->desc.R; ++kj) {
+                      for (kj = my_R_start; kj < my_R_end; ++kj) {
                         for (ki = 0; ki < handle->desc.S; ++ki) {
                           ii = oi * handle->desc.u + ki;
                           ij = oj * handle->desc.v + kj;
@@ -341,7 +365,7 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
                 for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+block_ofm, my_ofm_end); ofm1++ ) {
                   for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj+= handle->upd_ofh_rb) {
                     for (oi = 0; oi < handle->ofw; oi += handle->upd_ofw_rb) {
-                      for (kj = 0; kj < handle->desc.R; ++kj) {
+                      for (kj = my_R_start; kj < my_R_end; ++kj) {
                         for (ki = 0; ki < handle->desc.S; ++ki) {
                           ii = oi * handle->desc.u + ki;
                           ij = oj * handle->desc.v + kj;

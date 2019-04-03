@@ -73,6 +73,8 @@ if ( handle->use_ofm_parallelization == 1 ) {
     spread_out = 4;
   } else if (handle->desc.N % 2 == 0) {
     spread_out = 2;
+  } else if (handle->desc.N % 3 == 0) {
+    spread_out = 3;
   } else {
     spread_out = 1;
   }
