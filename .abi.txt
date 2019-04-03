@@ -53,6 +53,7 @@ libxsmm_dgemm_omp_
 libxsmm_diff
 libxsmm_diff_16
 libxsmm_diff_32
+libxsmm_diff_48
 libxsmm_diff_64
 libxsmm_diff_n
 libxsmm_diff_npot
@@ -213,9 +214,10 @@ libxsmm_get_transkernel_info
 libxsmm_get_verbosity
 libxsmm_getrf_descriptor_init
 libxsmm_hash
-libxsmm_hash2
-libxsmm_hash2_
 libxsmm_hash_
+libxsmm_hash_char
+libxsmm_hash_i32
+libxsmm_hash_i64
 libxsmm_icbrt_u32
 libxsmm_icbrt_u64
 libxsmm_init

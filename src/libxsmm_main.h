@@ -38,7 +38,7 @@
 # define LIBXSMM_CAPACITY_REGISTRY 131072
 #endif
 #if !defined(LIBXSMM_CAPACITY_CACHE) /* must be POT */
-# define LIBXSMM_CAPACITY_CACHE 32
+# define LIBXSMM_CAPACITY_CACHE 16
 #endif
 
 #if !defined(LIBXSMM_MAX_NTHREADS)
