@@ -319,17 +319,12 @@ LIBXSMM_API libxsmm_trans_descriptor* libxsmm_trans_descriptor_init(libxsmm_desc
     libxsmm_descriptor_blob* blob;
   } result;
   /* limit the amount of (unrolled) code by rejecting larger kernels */
-  if (LIBXSMM_TRANS_NO_BYPASS(m, n)) {
-    int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
-    result.blob = blob;
-    result.ptr->typesize = (unsigned char)typesize;
-    result.ptr->ldo = ldo;
-    result.ptr->m = m;
-    result.ptr->n = n;
-  }
-  else {
-    result.ptr = 0;
-  }
+  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  result.blob = blob;
+  result.ptr->typesize = (unsigned char)typesize;
+  result.ptr->ldo = ldo;
+  result.ptr->m = m;
+  result.ptr->n = n;
   return result.ptr;
 }
 

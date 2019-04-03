@@ -391,7 +391,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   const int handle = open(filename_global, O_CREAT | O_EXCL, S_IRUSR);
   const int singleton = (0 <= handle ? 1 : 0);
 #endif
-    libxsmm_finalize();
+  libxsmm_finalize();
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
@@ -1178,24 +1178,24 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   /* large enough temporary buffer for generated code */
 #if defined(NDEBUG)
   char jit_buffer[LIBXSMM_CODE_MAXSIZE];
-  memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
+  memset(&generated_code, 0, sizeof(generated_code));
   generated_code.generated_code = jit_buffer;
   generated_code.buffer_size = sizeof(jit_buffer);
 #else
-  memset(&generated_code, 0, sizeof(generated_code)); /* avoid warning "maybe used uninitialized" */
+  memset(&generated_code, 0, sizeof(generated_code));
   generated_code.generated_code = malloc(LIBXSMM_CODE_MAXSIZE);
-  generated_code.buffer_size = (0 != generated_code.generated_code ? LIBXSMM_CODE_MAXSIZE : 0);
+  generated_code.buffer_size = (NULL != generated_code.generated_code ? LIBXSMM_CODE_MAXSIZE : 0);
 #endif
   /* setup code generation */
   generated_code.code_type = 2;
 
-  LIBXSMM_ASSERT(0 != generated_code.generated_code || 0 == generated_code.buffer_size);
-  LIBXSMM_ASSERT(0 != request && 0 != libxsmm_target_archid);
-  LIBXSMM_ASSERT(0 != code && 0 == code->ptr_const);
+  LIBXSMM_ASSERT(NULL != generated_code.generated_code || 0 == generated_code.buffer_size);
+  LIBXSMM_ASSERT(NULL != request && 0 != libxsmm_target_archid);
+  LIBXSMM_ASSERT(NULL != code && NULL == code->ptr_const);
 
   switch (request->kind) { /* generate kernel */
     case LIBXSMM_BUILD_KIND_GEMM: { /* small MxM kernel */
-      LIBXSMM_ASSERT(0 != request->descriptor.gemm);
+      LIBXSMM_ASSERT(NULL != request->descriptor.gemm);
       if (0 < request->descriptor.gemm->m   && 0 < request->descriptor.gemm->n   && 0 < request->descriptor.gemm->k &&
           0 < request->descriptor.gemm->lda && 0 < request->descriptor.gemm->ldb && 0 < request->descriptor.gemm->ldc)
       {
@@ -1509,6 +1509,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 
   /* handle an eventual error in the else-branch */
   if (0 < generated_code.code_size) {
+    LIBXSMM_ASSERT(NULL != generated_code.generated_code);
     if (0 == generated_code.last_error) { /* no error raised */
       void* code_buffer = NULL;
       /* attempt to create executable buffer */
@@ -1533,13 +1534,13 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     else {
       result = generated_code.last_error;
     }
-# if !defined(NDEBUG)
-    free(generated_code.generated_code); /* free temporary/initial code buffer */
-# endif
   }
   else {
     result = EXIT_FAILURE;
   }
+# if !defined(NDEBUG)
+  free(generated_code.generated_code); /* free temporary/initial code buffer */
+# endif
 #else /* unsupported platform */
   LIBXSMM_UNUSED(request); LIBXSMM_UNUSED(regindex); LIBXSMM_UNUSED(code);
   /* libxsmm_get_target_arch also serves as a runtime check whether JIT is available or not */
@@ -2142,10 +2143,7 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_de
 LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_descriptor* descriptor)
 {
   libxsmm_xtransfunction result;
-  if (0 != descriptor
-    /* no need to double-check since initializing the descriptor was successful
-    && 0 != LIBXSMM_TRANS_NO_BYPASS(descriptor->m, descriptor->n)*/)
-  {
+  if (NULL != descriptor) {
     libxsmm_kernel_info query;
     LIBXSMM_ASSERT(LIBXSMM_SIZEOF(descriptor, &descriptor->typesize) < sizeof(query));
     LIBXSMM_INIT
@@ -2155,7 +2153,7 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_de
     result = internal_find_code(&query.xgemm).xtrans;
   }
   else {
-    result = 0;
+    result = NULL;
   }
   return result;
 }

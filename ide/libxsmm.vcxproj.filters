@@ -216,9 +216,6 @@
     <ClInclude Include="..\src\libxsmm_blocked_gemm_types.h">
       <Filter>src</Filter>
     </ClInclude>
-    <ClInclude Include="..\include\libxsmm_dnn_grucell.h">
-      <Filter>include</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\libxsmm_dnn_fusedbatchnorm_backward.h">
       <Filter>src</Filter>
     </ClInclude>

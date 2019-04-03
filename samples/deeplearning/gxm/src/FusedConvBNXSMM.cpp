@@ -1439,7 +1439,7 @@ void FusedConvBNXSMM::weightUpdate(TensorBuf *inp, TensorBuf *delmidp, TensorBuf
     check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)delmiddle[0], conv_desc.N, nBOfm, mfh, mfw, 16, mph, mpw);
 #endif
 
-#ifdef USE_XSMM_TIMING
+#ifdef USE_XSMM_TIMING__
   struct timeval tvsc, tvec;
   gettimeofday(&tvsc, NULL);
 #endif
@@ -1458,7 +1458,7 @@ void FusedConvBNXSMM::weightUpdate(TensorBuf *inp, TensorBuf *delmidp, TensorBuf
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle_conv[n], LIBXSMM_DNN_COMPUTE_KIND_UPD, n*ntps, tid ) );
     }
 
-#ifdef USE_XSMM_TIMING
+#ifdef USE_XSMM_TIMING__
   gettimeofday(&tvec, NULL);
   double wu_time = (tvec.tv_sec + tvec.tv_usec*1e-6) - (tvsc.tv_sec + tvsc.tv_usec*1e-6);
 
