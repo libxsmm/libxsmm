@@ -681,6 +681,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     handle->upd_ofh_rb = 14;
     handle->upd_use_batchreduce = 1;
     handle->weight_copies = 9;
+    if (handle->desc.N == 26) {
+      handle->weight_copies = 13;
+    }
   }
 
   if (handle->ofh == 14 && handle->desc.u == 1 && handle->desc.v == 1) {
@@ -688,6 +691,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     handle->upd_use_batchreduce = 1;
     handle->weight_copies = 9;
     /* FIXME: Add better logic */
+    if (handle->desc.N == 26) {
+      handle->weight_copies = 13;
+    }
     if (handle->desc.C == 1024 && handle->desc.K == 256 && handle->desc.threads == 27 && handle->desc.N == 27) {
       handle->upd_loop_order = 1;
     }
