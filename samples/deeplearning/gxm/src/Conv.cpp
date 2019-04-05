@@ -363,6 +363,7 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
   size_t opIdx = s->AddOperation(myRegInfo, e->get_distribution());
   this->op_ = s->GetOperation(opIdx);
   s->DeleteOperationRegInfo(myRegInfo);
+  e->get_wtgrad_comms_vec().push_back(op_);
 #endif
 
   configure(p->get_compute_engine());
