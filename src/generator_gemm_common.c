@@ -1014,7 +1014,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
   l_vec_reg_acc_start = i_micro_kernel_config->vector_reg_count - (i_n_blocking * l_m_blocking);
 
 #if !defined(NDEBUG)
-  /* Do some test if it's possible to generated the requested code.
+  /* Do some test if it is possible to generate the requested code.
      This is not done in release mode and therefore bad
      things might happen.... HUAAH */
   if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_SSE3 ||
@@ -1025,12 +1025,12 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
       return;
     }
   } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
-      ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) && (i_m_blocking == i_micro_kernel_config->vector_length) ) ) {
+      ( (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE) && (i_m_blocking == i_micro_kernel_config->vector_length) ) ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
-  } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ) {
+  } else if ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE ) {
     if ( (i_n_blocking > 6) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
@@ -1040,7 +1040,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
     return;
   }
-#endif /*NDEBUG*/
+#endif /*!defined(NDEBUG)*/
 
   /* load C accumulator */
   if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=1 */
@@ -1161,11 +1161,10 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   }
 #endif
 
-  /* in case of IGEMM just do some potentail conversion to FP */
+  /* in case of IGEMM just do some potential conversion to FP */
   /* let convert the int32 accumulator into a FP32 values */
-  if ( ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) ||
-       (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX) ) &&
-       ( (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
+  if ( ( i_micro_kernel_config->instruction_set <= LIBXSMM_X86_AVX512_KNM ) &&
+       ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) && LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) {
     /* load address of scaling factor from stack */
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,
