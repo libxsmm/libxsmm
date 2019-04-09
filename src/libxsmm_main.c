@@ -943,6 +943,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
+    case LIBXSMM_X86_AVX512_CPX:
     case LIBXSMM_X86_AVX512_CLX:
     case LIBXSMM_X86_AVX512_CORE:
     case LIBXSMM_X86_AVX512_KNM:
@@ -1005,6 +1006,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     else if (0 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
     }
+    else if (0 == strcmp("cpx", arch)) {
+      target_archid = LIBXSMM_X86_AVX512_CPX;
+    }
     else if (0 == strcmp("clx", arch)) {
       target_archid = LIBXSMM_X86_AVX512_CLX;
     }
@@ -1050,6 +1054,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
   else {
     target_archid = cpuid;
   }
+#if 0
   if (cpuid < target_archid) { /* limit code path to what was identified per CPUID */
     if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
       const char *const target_arch = libxsmm_cpuid_name(target_archid);
@@ -1060,6 +1065,7 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     target_archid = cpuid;
 #endif
   }
+#endif
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 }
 

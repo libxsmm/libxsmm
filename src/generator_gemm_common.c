@@ -191,15 +191,20 @@ void libxsmm_generator_gemm_init_micro_kernel_config_fullvector( libxsmm_micro_k
   } else if ( (strcmp( i_arch, "knl" ) == 0) ||
       (strcmp( i_arch, "knm" ) == 0) ||
       (strcmp( i_arch, "skx" ) == 0) ||
-      (strcmp( i_arch, "clx" ) == 0)   ) {
+      (strcmp( i_arch, "clx" ) == 0) ||
+      (strcmp( i_arch, "cpx" ) == 0)   ) {
     if ((strcmp( i_arch, "knl" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_MIC;
     } else if ((strcmp( i_arch, "knm" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_KNM;
     } else if ((strcmp( i_arch, "skx" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_CORE;
-    } else {
+    } else if ((strcmp( i_arch, "clx" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_CLX;
+    } else if ((strcmp( i_arch, "cpx" ) == 0)) {
+      io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_CPX;
+    } else {
+      /* shouldn't happen */
     }
     io_micro_kernel_config->vector_reg_count = 32;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
@@ -447,7 +452,8 @@ void libxsmm_generator_gemm_init_micro_kernel_config_halfvector( libxsmm_micro_k
   } else if ( (strcmp( i_arch, "knl" ) == 0) ||
       (strcmp( i_arch, "knm" ) == 0) ||
       (strcmp( i_arch, "skx" ) == 0) ||
-      (strcmp( i_arch, "clx" ) == 0)   ) {
+      (strcmp( i_arch, "clx" ) == 0) ||
+      (strcmp( i_arch, "cpx" ) == 0)   ) {
 #if !defined(NDEBUG)
     fprintf(stderr, "LIBXSMM WARNING, libxsmm_generator_gemm_init_micro_kernel_config_halfvector, AVX512 redirecting to fullvector!\n");
 #endif
@@ -568,15 +574,20 @@ void libxsmm_generator_gemm_init_micro_kernel_config_scalar( libxsmm_micro_kerne
   } else if ( (strcmp( i_arch, "knl" ) == 0) ||
       (strcmp( i_arch, "knm" ) == 0) ||
       (strcmp( i_arch, "skx" ) == 0) ||
-      (strcmp( i_arch, "clx" ) == 0) ) {
+      (strcmp( i_arch, "clx" ) == 0) ||
+      (strcmp( i_arch, "cpx" ) == 0)   ) {
     if ((strcmp( i_arch, "knl" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_MIC;
     } else if ((strcmp( i_arch, "knm" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_KNM;
     } else if ((strcmp( i_arch, "skx" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_CORE;
-    } else {
+    } else if ((strcmp( i_arch, "clx" ) == 0)) {
       io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_CLX;
+    } else if ((strcmp( i_arch, "cpx" ) == 0)) {
+      io_micro_kernel_config->instruction_set = LIBXSMM_X86_AVX512_CPX;
+    } else {
+      /* shouldn't happen */
     }
     io_micro_kernel_config->vector_reg_count = 16;
     io_micro_kernel_config->use_masking_a_c = i_use_masking_a_c;
@@ -1035,8 +1046,8 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
   if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=1 */
     /* let convert the int32 accumulator into a FP32 values */
     if ( ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) ||
-          (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX) ) &&
-        ( (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
+         (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX) ) &&
+         ( (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
       /* we add when scaling during conversion to FP32 */
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
         for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
@@ -1132,8 +1143,8 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
-  } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
-      ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) && (i_m_blocking == i_micro_kernel_config->vector_length) ) ) {
+  } else if (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
+             ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE || i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX || i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX) && (i_m_blocking == i_micro_kernel_config->vector_length) ) ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
@@ -1153,8 +1164,8 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
   /* in case of IGEMM just do some potentail conversion to FP */
   /* let convert the int32 accumulator into a FP32 values */
   if ( ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) ||
-        (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX) ) &&
-      ( (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
+       (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX) ) &&
+       ( (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
     /* load address of scaling factor from stack */
     libxsmm_x86_instruction_alu_mem( io_generated_code,
         i_micro_kernel_config->alu_mov_instruction,

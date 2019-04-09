@@ -160,7 +160,8 @@
      &    LIBXSMM_X86_AVX512_MIC  = 1010,                               &
      &    LIBXSMM_X86_AVX512_KNM  = 1011,                               &
      &    LIBXSMM_X86_AVX512_CORE = 1020,                               &
-     &    LIBXSMM_X86_AVX512_CLX  = 1021
+     &    LIBXSMM_X86_AVX512_CLX  = 1021,                               &
+     &    LIBXSMM_X86_AVX512_CPX  = 1022
 
         ! Generic function type (double-precision).
         TYPE :: LIBXSMM_DMMFUNCTION

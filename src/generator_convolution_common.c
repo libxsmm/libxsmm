@@ -449,7 +449,8 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
 #if 0
     unsigned short mask_array[32];
     if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ||
-        i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX    ) {
+         i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX  ||
+         i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX    ) {
       unsigned int i;
       for ( i = 0; i < 16; ++i ) {
         mask_array[i] = (unsigned short)((i*2)+1);
@@ -659,7 +660,8 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
         /* down convert to 16bit */
 #if 0
         if ( i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE ||
-            i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX    ) {
+             i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX  ||
+             i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX    ) {
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
               i_conv_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VPERMW,
@@ -682,7 +684,7 @@ void libxsmm_generator_convolution_forward_store_output_bf16( libxsmm_generated_
               i_conv_kernel_config->instruction_set,
               LIBXSMM_X86_INSTR_VPMOVDW,
               i_conv_kernel_config->vector_name,
-              reg_X,
+              reg_X, LIBXSMM_X86_VEC_REG_UNDEF,
               0,
               LIBXSMM_X86_VEC_REG_UNDEF);
 #if 0

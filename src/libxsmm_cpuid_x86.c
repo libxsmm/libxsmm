@@ -160,6 +160,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
 {
   const char* target_arch = NULL;
   switch (id) {
+    case LIBXSMM_X86_AVX512_CPX: {
+      target_arch = "cpx";
+    } break;
     case LIBXSMM_X86_AVX512_CLX: {
       target_arch = "clx";
     } break;

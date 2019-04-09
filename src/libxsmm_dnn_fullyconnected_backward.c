@@ -147,8 +147,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_custom(li
 
   /* check if we are on an AVX512 platform */
   if ( libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM                                                        ) {
+       libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
+       libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM  || libxsmm_target_archid == LIBXSMM_X86_AVX512_CPX    ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fullyconnected_st_bwd_custom_f32_f32( handle, start_thread, tid);
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -217,8 +217,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck
 
   /* check if we are on an AVX512 platform */
   if ( libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM                                                        ) {
+       libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
+       libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM  || libxsmm_target_archid == LIBXSMM_X86_AVX512_CPX    ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fullyconnected_st_bwd_ncnc_kcck_f32_f32( handle, start_thread, tid);
     } else {
