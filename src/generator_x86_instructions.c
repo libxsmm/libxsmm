@@ -994,6 +994,13 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
           l_vec1 = i_vec_reg_src_0;
           l_vec0 = i_vec_reg_dst;
           break;
+       case LIBXSMM_X86_INSTR_VPMOVSXWD:
+          l_second = 1;
+          l_third = 1;
+          l_fifth = 0x10;
+          l_vec0 = i_vec_reg_src_0;
+          l_vec1 = i_vec_reg_dst;
+          break;
        case LIBXSMM_X86_INSTR_VCVTNEPS2BF16:
           l_second = 1;
           l_third = 2;
