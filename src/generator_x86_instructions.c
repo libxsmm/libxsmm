@@ -884,11 +884,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
       }
     }
 
-    if ( (i_instruction_set == LIBXSMM_X86_AVX512_MIC   ||
-          i_instruction_set == LIBXSMM_X86_AVX512_CORE  ||
-          i_instruction_set == LIBXSMM_X86_AVX512_KNM   ||
-          i_instruction_set == LIBXSMM_X86_AVX512_CLX   ||
-          i_instruction_set == LIBXSMM_X86_AVX512_CPX  ) &&
+    if ( (i_instruction_set >= LIBXSMM_X86_AVX512) &&
          (i_mask_reg_number != 0) ) {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
@@ -1930,10 +1926,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
     else l_masking[0] = (char)0; /* no mask */
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
-    if ( i_instruction_set == LIBXSMM_X86_AVX512_CORE ||
-         i_instruction_set == LIBXSMM_X86_AVX512_MIC  ||
-         i_instruction_set == LIBXSMM_X86_AVX512_CLX  ||
-         i_instruction_set == LIBXSMM_X86_AVX512_KNM ) {
+    if ( i_instruction_set >= LIBXSMM_X86_AVX512 ) {
       if ( io_generated_code->code_type == 0 ) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %%%%%cmm%u, %%%%%cmm%u%s\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2, l_masking );
       } else {

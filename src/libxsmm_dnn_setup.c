@@ -1036,9 +1036,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_bwd( libxsmm_dnn_layer* h
       }
     }
 
-
-    /* TODO check JIT errors */
-    if (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  || libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX || libxsmm_target_archid == LIBXSMM_X86_AVX512_CPX ) {
+    /* check if we are on an AVX512 platform */
+    if (libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) {
       if ( (handle->buffer_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM) && (handle->custom_format_type == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) ) {
         handle->code_bwd[0].xgemm.smm = libxsmm_smmdispatch(16, 16, 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
       } else {
@@ -1281,11 +1280,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_upd( libxsmm_dnn_layer* h
       descriptor.ncopies = handle->desc.threads;
 
       /* TODO check JIT errors */
-      if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC  ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
-            libxsmm_target_archid == LIBXSMM_X86_AVX512_CPX ) &&
+      if ( (libxsmm_target_archid >= LIBXSMM_X86_AVX512) /* check if we are on an AVX512 platform */ &&
           !((handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32)) )
       {
         const unsigned int wu_each_iter_code_size = 10 * descriptor.ifm_block;
