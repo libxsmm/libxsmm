@@ -263,10 +263,10 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
 
 LIBXSMM_API
-void libxsmm_generator_gemm_inlineasm(const char*                     i_file_out,
-                                       const char*                     i_routine_name,
+void libxsmm_generator_gemm_inlineasm( const char*                    i_file_out,
+                                       const char*                    i_routine_name,
                                        const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                       const char*                     i_arch ) {
+                                       const char*                    i_arch ) {
   /* init generated code object */
   libxsmm_generated_code l_generated_code;
   l_generated_code.generated_code = NULL;

@@ -1046,7 +1046,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
   if (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & i_xgemm_desc->flags)) { /* Beta=1 */
     /* let convert the int32 accumulator into a FP32 values */
     if ( ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) ||
-         (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX) ) &&
+           (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX) ) &&
          ( (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
       /* we add when scaling during conversion to FP32 */
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
