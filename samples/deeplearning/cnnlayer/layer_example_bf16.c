@@ -261,7 +261,7 @@ int main(int argc, char* argv[])
   }
 
 #if defined(USE_FUSED_RELU_BWD)
-  /* Initialize some entries with zeros  */
+  /* Initialize some entries with zeros */
   for (i = 0; i < nImg*nIfm*ifhp*ifwp; i++ ) {
     if ( ((i%16) == 2) || ((i%16) == 3) || ((i%16) == 7) || ((i%16) == 14) ) {
       naive_input[i] = 0.0;
