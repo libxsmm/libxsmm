@@ -106,8 +106,9 @@ void libxsmm_generator_spgemm_csr_asparse( libxsmm_generated_code*         io_ge
 
   } else if ( ( strcmp( i_arch, "knl" ) == 0 ) ||
               ( strcmp( i_arch, "knm" ) == 0 ) ||
+              ( strcmp( i_arch, "skx" ) == 0 ) ||
               ( strcmp( i_arch, "clx" ) == 0 ) ||
-              ( strcmp( i_arch, "skx" ) == 0 ) ) {
+              ( strcmp( i_arch, "cpx" ) == 0 ) ) {
     if ( (i_xgemm_desc->n > 1) ) {
       l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  #pragma simd vectorlength(16)\n");
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );

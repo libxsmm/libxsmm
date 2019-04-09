@@ -884,11 +884,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
       }
     }
 
-    if ( (i_instruction_set == LIBXSMM_X86_AVX512_MIC   ||
-          i_instruction_set == LIBXSMM_X86_AVX512_CORE  ||
-          i_instruction_set == LIBXSMM_X86_AVX512_KNM   ||
-          i_instruction_set == LIBXSMM_X86_AVX512_CLX   ||
-          i_instruction_set == LIBXSMM_X86_AVX512_CPX  ) &&
+    if ( (i_instruction_set >= LIBXSMM_X86_AVX512) &&
          (i_mask_reg_number != 0) ) {
       /* build vmovpd/ps/sd/ss instruction, load use */
       if ( i_is_store == 0 ) {
@@ -939,7 +935,7 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size; /* i = *loc; */
     unsigned int l_maxsize = io_generated_code->buffer_size;
-    int l_vec0=0, l_vec1=0, l_second=0, l_third=0, l_fourth=0, l_fifth=0;
+    int l_vec0 = 0, l_vec1 = 0, l_second = 0, l_third = 0, l_fourth = 0, l_fifth = 0;
     int l_vecval0, l_vecgrp0, l_oddgrp0, l_2or3grp0;
     int l_vecval1, l_vecgrp1, l_oddgrp1, l_2or3grp1;
     /* these defines are for LIBXSMM_X86_INSTR_VCVTNE2PS2BF16 only: */
@@ -963,7 +959,7 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
     }
 
     if ( (i_vec_instr == LIBXSMM_X86_INSTR_VCVTNE2PS2BF16) && (i_vec_reg_src_1 == LIBXSMM_X86_VEC_REG_UNDEF) ) {
-      fprintf(stderr, "libxsmm_instruction_vec_compute_convert: VCVTNE2PS2BF16 needs to inputs\n");
+      fprintf(stderr, "libxsmm_instruction_vec_compute_convert: VCVTNE2PS2BF16 needs two inputs\n");
       exit(-1);
     }
 
@@ -1937,10 +1933,7 @@ void libxsmm_x86_instruction_vec_compute_reg_mask( libxsmm_generated_code* io_ge
     else l_masking[0] = (char)0; /* no mask */
 
     /* build vXYZpd/ps/sd/ss instruction pure register use*/
-    if ( i_instruction_set == LIBXSMM_X86_AVX512_CORE ||
-         i_instruction_set == LIBXSMM_X86_AVX512_MIC  ||
-         i_instruction_set == LIBXSMM_X86_AVX512_CLX  ||
-         i_instruction_set == LIBXSMM_X86_AVX512_KNM ) {
+    if ( i_instruction_set >= LIBXSMM_X86_AVX512 ) {
       if ( io_generated_code->code_type == 0 ) {
         l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %%%%%cmm%u, %%%%%cmm%u, %%%%%cmm%u%s\\n\\t\"\n", l_instr_name, i_vector_name, i_vec_reg_number_0, i_vector_name, i_vec_reg_number_1, i_vector_name, i_vec_reg_number_2, l_masking );
       } else {
@@ -3631,7 +3624,7 @@ void libxsmm_x86_instruction_vec_move_gathscat( libxsmm_generated_code* io_gener
       fprintf(stderr, "LIBXSMM ERROR: libxsmm_x86_instruction_vec_move_gathscat yet needs to be implemented for scatters!\n");
       exit(-1);
     } else {
-      if ( i_instruction_set == LIBXSMM_X86_AVX512_MIC || i_instruction_set == LIBXSMM_X86_AVX512_CORE || i_instruction_set == LIBXSMM_X86_AVX512_CLX || i_instruction_set == LIBXSMM_X86_AVX512_CPX ) {
+      if ( i_instruction_set >= LIBXSMM_X86_AVX512 ) {
         if ( io_generated_code->code_type == 0 ) {
           l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "                       \"%s %i(%%%%%s,%%%%zmm%u,%u), %%%%zmm%u%%{%%%%k%u%%}\\n\\t\"\n", l_instr_name, i_displacement, l_gp_reg_base_name, i_vec_reg_idx, i_scale, i_vec_reg_number, i_mask_reg_number);
         } else {

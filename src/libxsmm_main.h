@@ -330,7 +330,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor {
   unsigned char scf;                               /* fix point scaling factor for this tensor */
 };
 
-/* Structure to record segment in stream of code  */
+/* Structure to record segment in stream of code */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE segment_t {
   int segment_type;
   int n_convs;
@@ -348,7 +348,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_conv_option options;
   libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
-  /* These are the batchnorm handles in case of fusion  */
+  /* These are the batchnorm handles in case of fusion */
   libxsmm_dnn_fusedbatchnorm* pre_bn;
   libxsmm_dnn_fusedbatchnorm* post_bn;
 
@@ -609,7 +609,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_rnncell_desc desc;
-  libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts  */
+  libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts */
   libxsmm_blasint T;                              /* sequnece length, must be smaller than max sequence length in desc */
   libxsmm_blasint bk;
   libxsmm_blasint bn;
