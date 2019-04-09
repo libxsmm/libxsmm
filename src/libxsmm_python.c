@@ -144,7 +144,6 @@ PyMODINIT_FUNC initlibxsmm(void)
   PyModule_AddStringConstant(pymod, "BRANCH", LIBXSMM_BRANCH);
   PyModule_AddIntConstant(pymod, "TARGET_ARCH_UNKNOWN", LIBXSMM_TARGET_ARCH_UNKNOWN);
   PyModule_AddIntConstant(pymod, "TARGET_ARCH_GENERIC", LIBXSMM_TARGET_ARCH_GENERIC);
-  PyModule_AddIntConstant(pymod, "X86_IMCI", LIBXSMM_X86_IMCI);
   PyModule_AddIntConstant(pymod, "X86_GENERIC", LIBXSMM_X86_GENERIC);
   PyModule_AddIntConstant(pymod, "X86_SSE3", LIBXSMM_X86_SSE3);
   PyModule_AddIntConstant(pymod, "X86_SSE4", LIBXSMM_X86_SSE4);

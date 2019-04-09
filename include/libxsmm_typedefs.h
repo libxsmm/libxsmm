@@ -105,8 +105,14 @@
 #define LIBXSMM_GEMM_PRECISION2(ITYPE, OTYPE) (libxsmm_gemm_precision)LIBXSMM_GETENUM( \
   LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE))
 
-/** Necessary size to store a descriptor/blob (GEMM, MCOPY, TRANS). */
-#define LIBXSMM_DESCRIPTOR_MAXSIZE 32
+/** Maximum size available to store a descriptor/blob (GEMM, MCOPY, TRANS, TRSM, TRMM). */
+#if !defined(LIBXSMM_DESCRIPTOR_MAXSIZE)
+# define LIBXSMM_DESCRIPTOR_MAXSIZE 64
+#endif
+/** Size of the descriptor considered as unique signature. */
+#if !defined(LIBXSMM_DESCRIPTOR_SIGSIZE)
+# define LIBXSMM_DESCRIPTOR_SIGSIZE LIBXSMM_DESCRIPTOR_MAXSIZE
+#endif
 
 
 /* Support for Bfloat16 */
@@ -515,28 +521,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_weight_upd
   libxsmm_dnn_datatype datatype_itm;
   libxsmm_convolution_prefetch_type prefetch;   /* prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
 } libxsmm_convolution_weight_update_descriptor;
-
-/**
- * Structure storing the convolution Winograd argument description.
- */
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_MAY_ALIAS libxsmm_convolution_winograd_descriptor {
-  /** alpha determines the tile size */
-  unsigned int alpha;
-  /** number of itiles */
-  unsigned int itiles;
-  /** number of jtiles */
-  unsigned int jtiles;
-  /** number of images in a block */
-  unsigned int bimg;
-  /** unroll factor */
-  unsigned int ur;
-  /** number of ifm blocks to unroll */
-  unsigned int ur_ifm;
-  /** number of ifm blocks. When ur_ifm equals to this, do additional optimizations */
-  unsigned int blocks_ifm;
-  /** prefetch type, can be ORed vales of libxsmm_convolution_prefetch_type */
-  libxsmm_convolution_prefetch_type prefetch;
-} libxsmm_convolution_winograd_descriptor;
 
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (double-precision). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction)(const double* a, const double* b, double* c, ...);

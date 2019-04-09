@@ -69,7 +69,7 @@ HEADER_ONLY = $(basename $(notdir $(shell grep -H libxsmm_source *.c | cut -d: -
 define DEFINE_LINK_LD_RULE
 ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
-$(1): $(2) $(call objname, $(CPPSRCS) $(CXXSRCS) $(CCXSRCS) $(CSOURCS)) $(dir $(1))/.make \
+$(1): $(2) $(OBJECTS) $(dir $(1))/.make \
       $(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(LIBDEP) $(EXTDEP))
 	$(LD) $(SLDFLAGS) -o $(1) $(2) \
 		$(if $(filter $(1),$(HEADER_ONLY)),$(NULL),$(EXTLIB) $(call abslib, $(LIBDEP)) $(XBLASLIB)) \
@@ -87,7 +87,7 @@ ifneq (,$(strip $(FC)))
 ifneq (,$(wildcard $(LIBDEP)))
 ifneq (,$(wildcard $(FORTDEP)))
 ifneq (,$(wildcard $(EXTDEP)))
-$(1): $(2) $(call objname, $(FXXSRCS) $(F77SRCS) $(F90SRCS)) $(FORTDEP) $(LIBDEP) $(EXTDEP) $(dir $(1))/.make
+$(1): $(2) $(FTNOBJS) $(FORTDEP) $(LIBDEP) $(EXTDEP) $(dir $(1))/.make
 	$(FC) $(SLDFLAGS) -o $(1) $(2) $(call abslib, $(FORTDEP)) $(EXTLIB) \
 		$(call abslib, $(LIBDEP)) $(XBLASLIB) $(FCMTFLAGS) $(LDFLAGS) $(FLDFLAGS) $(ELDFLAGS)
 else
@@ -104,11 +104,11 @@ else
 endif
 endef
 
-$(foreach SRC, $(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX),$(eval $(call DEFINE_LINK_LD_RULE, \
-  $(basename $(notdir $(SRC))), $(call objname, $(SRC)))))
+$(foreach SRC, $(filter-out $(SRCDIR)/headeronly.c,$(CPPSRCX) $(CXXSRCX) $(CCXSRCX) $(CSOURCX)), \
+  $(eval $(call DEFINE_LINK_LD_RULE, $(basename $(notdir $(SRC))), $(call objname, $(SRC)))))
 
-$(foreach SRC, $(FXXSRCX) $(F77SRCX) $(F90SRCX),$(eval $(call DEFINE_LINK_FC_RULE, \
-  $(basename $(notdir $(SRC))), $(call objname, $(SRC)))))
+$(foreach SRC, $(FXXSRCX) $(F77SRCX) $(F90SRCX), \
+  $(eval $(call DEFINE_LINK_FC_RULE, $(basename $(notdir $(SRC))), $(call objname, $(SRC)))))
 
 ifeq (0,$(MIX))
 $(OUTDIR)/headeronly: $(OUTDIR)/.make $(BLDDIR)/headeronly-c.o $(BLDDIR)/headeronly_aux-c.o

@@ -1856,7 +1856,7 @@ IFLAGS  := $(subst //,/,$(IFLAGS))
 
 # derives the extension of a filename
 extname = $(subst .,,$(suffix $(1)))
-# derives the name of an object files from a given source file
+# derives the name of an object files for a given source file
 objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG)),%-$(call extname,$(ARG)).o,$(notdir $(ARG)))))
 
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \

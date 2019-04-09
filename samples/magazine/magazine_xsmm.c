@@ -74,7 +74,7 @@ int main(int argc, char* argv[])
 
   /**
    * LIBXSMM's C interface really is type-specific, and the helper macros (such as LIBXSMM_MMFUNCTION_TYPE)
-   * are only for "entertainment". The C++ interface on the other hand is provides overloaded functions
+   * are only for "entertainment". The C++ interface on the other hand provides overloaded functions
    * and some helpers for more type-generic programming tasks (e.g., libxsmm_mmfunction<T>).
    */
 #if !defined(AUTO) /* explicitly dispatch a kernel according to parameters */

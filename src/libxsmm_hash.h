@@ -33,51 +33,30 @@
 
 #include <libxsmm.h>
 
-#if !defined(LIBXSMM_HASH_SW) && 0
-# define LIBXSMM_HASH_SW
-#endif
-
-#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)
-# define LIBXSMM_HASH_API LIBXSMM_API_INLINE
-# define LIBXSMM_HASH_API_DEFINITION LIBXSMM_HASH_API LIBXSMM_ATTRIBUTE_UNUSED
-#else
-# define LIBXSMM_HASH_API LIBXSMM_API
-# define LIBXSMM_HASH_API_DEFINITION LIBXSMM_API
-#endif
+/* Map number of Bytes to number of bits. */
+#define libxsmm_crc32_b16 libxsmm_crc32_u128
+#define libxsmm_crc32_b32 libxsmm_crc32_u256
+#define libxsmm_crc32_b48 libxsmm_crc32_u384
+#define libxsmm_crc32_b64 libxsmm_crc32_u512
 
 
-/** Function type representing the CRC32 functionality (elemental form; 32-bit). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_u32_function)(
-  unsigned int, unsigned int);
-/** Function type representing the CRC32 functionality (elemental form; 64-bit). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_u64_function)(
-  unsigned int, unsigned long long);
-/** Function type representing the CRC32 functionality (taking an entire buffer). */
+/** Function type representing the CRC32 functionality. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE unsigned int (*libxsmm_hash_function)(
-  const void*, size_t, unsigned int);
+  unsigned int /*seed*/, const void* /*data*/, ... /*size*/);
 
 /** Initialize hash function module; not thread-safe. */
-LIBXSMM_HASH_API void libxsmm_hash_init(int target_arch);
-LIBXSMM_HASH_API void libxsmm_hash_finalize(void);
+LIBXSMM_API_INTERN void libxsmm_hash_init(int target_arch);
+LIBXSMM_API_INTERN void libxsmm_hash_finalize(void);
 
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u32(unsigned int seed, unsigned int value);
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u32_sw(unsigned int seed, unsigned int value);
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u32_sse4(unsigned int seed, unsigned int value);
+LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u32(unsigned int seed, const void* value, ...);
+LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u64(unsigned int seed, const void* value, ...);
+LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u128(unsigned int seed, const void* value, ...);
+LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u256(unsigned int seed, const void* value, ...);
+LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u384(unsigned int seed, const void* value, ...);
+LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u512(unsigned int seed, const void* value, ...);
 
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u64(unsigned int seed, unsigned long long value);
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u64_sw(unsigned int seed, unsigned long long value);
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_u64_sse4(unsigned int seed, unsigned long long value);
-
-/** Dispatched implementation which may (or may not) use a SIMD extension. */
-LIBXSMM_HASH_API unsigned int libxsmm_crc32(const void* data, size_t size, unsigned int seed);
 /** Calculate the CRC32 for a given quantity (size) of raw data according to the seed. */
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_sw(const void* data, size_t size, unsigned int seed);
-/** Similar to libxsmm_crc32_sw (uses CRC32 instructions available since SSE4.2). */
-LIBXSMM_HASH_API unsigned int libxsmm_crc32_sse4(const void* data, size_t size, unsigned int seed);
-
-
-#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_HASH_NOINLINE)
-# include "libxsmm_hash.c"
-#endif
+LIBXSMM_API_INTERN unsigned int libxsmm_crc32(unsigned int seed, const void* data, size_t size);
 
 #endif /*LIBXSMM_HASH_H*/
+

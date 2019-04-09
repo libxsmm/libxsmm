@@ -35,7 +35,10 @@
 
 /** Allow external definition to enable testing corner cases (exhausted registry space). */
 #if !defined(LIBXSMM_CAPACITY_REGISTRY) /* must be POT */
-# define LIBXSMM_CAPACITY_REGISTRY 524288 /* 524287: Mersenne Prime number (2^19-1) */
+# define LIBXSMM_CAPACITY_REGISTRY 131072
+#endif
+#if !defined(LIBXSMM_CAPACITY_CACHE) /* must be POT */
+# define LIBXSMM_CAPACITY_CACHE 16
 #endif
 
 #if !defined(LIBXSMM_MAX_NTHREADS)
@@ -62,6 +65,13 @@
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_INTERNAL)
 # define LIBXSMM_MALLOC_SCRATCH_INTERNAL ((const char*)(LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE))
+#endif
+
+#if !defined(LIBXSMM_VERBOSITY_HIGH)
+# define LIBXSMM_VERBOSITY_HIGH 3 /* secondary warning or info-verbosity */
+#endif
+#if !defined(LIBXSMM_VERBOSITY_WARN)
+# define LIBXSMM_VERBOSITY_WARN ((LIBXSMM_VERBOSITY_HIGH) - LIBXSMM_MIN(1, LIBXSMM_VERBOSITY_HIGH))
 #endif
 
 #if !defined(LIBXSMM_LOCK)
@@ -97,23 +107,17 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K)
 #endif
 
-#if (defined(_WIN32) || defined(__CYGWIN__) || defined(__MINGW32__)) /* TODO: full support for Windows calling convention */
-# define LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH) LIBXSMM_UNUSED(PREFETCH); \
-            (DESCRIPTOR).prefetch = (unsigned short)(LIBXSMM_GEMM_PREFETCH_NONE)
-#else
-# define LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH) (DESCRIPTOR).prefetch = (unsigned short)(PREFETCH)
-#endif
-
 /** Low-level/internal GEMM descriptor initialization. */
 #define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K); LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(LDA, LDB, LDC); \
-  (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
-  (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
-  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).iflags = 0; (DESCRIPTOR).pad0 = 0; (DESCRIPTOR).pad1 = 0; \
+  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); \
   (DESCRIPTOR).flags = (unsigned short)((FLAGS) \
     /*| (LIBXSMM_NEQ(0, ALPHA) ? 0 : LIBXSMM_GEMM_FLAG_ALPHA_0)*/ \
-    | (LIBXSMM_NEQ(0, BETA)  ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
-    LIBXSMM_GEMM_DESCRIPTOR_PREFETCH(DESCRIPTOR, PREFETCH)
+    | (LIBXSMM_NEQ(0, BETA) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
+  (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
+  (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
+  (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH)
+
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, LIBXSMM_GETENUM(IPREC, OPREC), FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
@@ -122,35 +126,39 @@
 #define LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, DATA_TYPE, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   libxsmm_gemm_descriptor DESCRIPTOR; LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE, \
     FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
+
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR_TYPE, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2_TYPE(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
   LIBXSMM_GEMM_DESCRIPTOR_TYPE(DESCRIPTOR, LIBXSMM_GETENUM(IPREC, OPREC), FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH)
 
+#define LIBXSMM_REGDESC_DEFAULT
+#define LIBXSMM_REGDESC(START, MODIFIER) \
+  START libxsmm_gemm_descriptor MODIFIER gemm; \
+  START libxsmm_mcopy_descriptor MODIFIER mcopy; \
+  START libxsmm_trans_descriptor MODIFIER trans; \
+  START libxsmm_trsm_descriptor MODIFIER trsm; \
+  START libxsmm_trmm_descriptor MODIFIER trmm
+
 
 /**
-* Structure, which stores the argument description of GEMM routines.
-* This structure must be ordered by the size of the members (packed).
-* The size of the structure matches LIBXSMM_DESCRIPTOR_MAXSIZE.
+* Packed structure, which stores the argument description of GEMM routines.
+* The size of the structure is padded to LIBXSMM_DESCRIPTOR_MAXSIZE.
 */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_descriptor {
-  /** Leading dimensions are general offsets. */
-  unsigned int lda, ldb, ldc;
-  /** Extents of the matrix. */
-  unsigned int m, n, k;
-  /** Set of flags. */
-  unsigned short flags;
-  /** Prefetch strategy enumeration. */
-  unsigned short prefetch;
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_gemm_descriptor) {
   /** Denotes the data-type. */
   unsigned char datatype;
-  /** LIBXSMM_DESCRIPTOR_MAXSIZE. */
-  unsigned char pad0, pad1;
-  /** INTERNAL (last member!) */
-  unsigned char iflags;
+  /** Set of flags. */
+  unsigned short flags;
+  /** Extents of the matrix. */
+  unsigned int m, n, k;
+  /** Leading dimensions. */
+  unsigned int lda, ldb, ldc;
+  /** Prefetch strategy. */
+  unsigned char prefetch;
 };
 
-/** Structure storing the matcopy argument description. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor { /* 20 Byte */
+/** Packed structure storing the matcopy argument description. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_mcopy_descriptor) {
   /** LDx, M, and N. */
   unsigned int m, n, ldi, ldo;
   /** Size of data element. */
@@ -163,16 +171,16 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_mcopy_descriptor { /* 20 By
   unsigned char flags;
 };
 
-/** Structure storing the transpose argument description. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trans_descriptor { /* 13 Byte */
+/** Packed structure storing the transpose argument description. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trans_descriptor) {
   /** LD, M, and N. */
   unsigned int m, n, ldo;
   /** Size of data element. */
   unsigned char typesize;
 };
 
-/** Structure storing arguments of packed TRSM. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor { /* 30 Byte */
+/** Packed structure storing arguments of packed TRSM. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trsm_descriptor) {
   union { double d; float s; } alpha;
   unsigned int m, n, lda, ldb;
   unsigned char typesize;
@@ -181,8 +189,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trsm_descriptor { /* 30 Byt
   char transa;
 };
 
-/** Structure storing arguments of packed GEMM. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_pgemm_descriptor { /* 30 Byte */
+/** Packed structure storing arguments of packed GEMM. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_pgemm_descriptor) {
   unsigned int m, n, k, lda, ldb, ldc;
   unsigned char typesize;
   unsigned char layout;
@@ -190,8 +198,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_pgemm_descriptor { /* 30 By
   char alpha_val;
 };
 
-/** Structure storing arguments of packed TRSM. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor { /* 30 Byte */
+/** Packed structure storing arguments of packed TRSM. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trmm_descriptor) {
   union { double d; float s; } alpha;
   unsigned int m, n, lda, ldb;
   unsigned char typesize;
@@ -200,8 +208,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_trmm_descriptor { /* 30 Byt
   char transa;
 };
 
-/** Structure storing arguments of packed GETRF. */
-LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_getrf_descriptor { /* 30 Byte */
+/** Packed structure storing arguments of packed GETRF. */
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_getrf_descriptor) {
   unsigned int m, n, lda;
   unsigned char typesize;
   unsigned char layout;
@@ -338,9 +346,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_tensor_format filter_format;
   libxsmm_dnn_conv_fuse_op fuse_ops;
   libxsmm_dnn_conv_option options;
-  libxsmm_convolution_winograd_descriptor cwino_fwd;
-  libxsmm_convolution_winograd_descriptor cwino_bwd;
-  libxsmm_convolution_winograd_descriptor cwino_upd;
   libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
   /* These are the batchnorm handles in case of fusion  */
@@ -707,30 +712,31 @@ typedef enum libxsmm_build_kind {
   LIBXSMM_BUILD_KIND_SCSOA,
   LIBXSMM_BUILD_KIND_SREG,
   LIBXSMM_BUILD_KIND_CFWD,
-  LIBXSMM_BUILD_KIND_CUPD,
-  LIBXSMM_BUILD_KIND_CWFWD,
-  LIBXSMM_BUILD_KIND_CWBWD,
-  LIBXSMM_BUILD_KIND_CWUPD
+  LIBXSMM_BUILD_KIND_CUPD
 } libxsmm_build_kind;
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_build_descriptor {
-  const libxsmm_gemm_descriptor* gemm;
-  const libxsmm_csr_soa_descriptor* srsoa;
-  const libxsmm_csc_soa_descriptor* scsoa;
-  const libxsmm_rm_ac_soa_descriptor* rmacsoa;
-  const libxsmm_rm_bc_soa_descriptor* rmbcsoa;
-  const libxsmm_csr_reg_descriptor* sreg;
-  const libxsmm_convolution_forward_descriptor* cfwd;
-  const libxsmm_convolution_weight_update_descriptor* cupd;
-  const libxsmm_convolution_winograd_descriptor* cwino;
-  const libxsmm_mcopy_descriptor* matcopy;
-  const libxsmm_trans_descriptor* trans;
-  const libxsmm_trsm_descriptor* trsm;
-  const libxsmm_trmm_descriptor* trmm;
-} libxsmm_build_descriptor;
+/** Integral type (libxsmm_kernel_kind, libxsmm_build_kind). */
+typedef unsigned char libxsmm_descriptor_kind;
+
+/** All descriptor types, which are valid for code-registration. */
+LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_descriptor {
+  char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
+  libxsmm_descriptor_kind kind; /* kind: must be the first member */
+  LIBXSMM_REGDESC(LIBXSMM_PACKED(struct, LIBXSMM_PACKED_ANON) { libxsmm_descriptor_kind /*repeated kind*/ pad; , desc; });
+} libxsmm_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
-  libxsmm_build_descriptor descriptor;
+  union {
+    const char* data; /* raw content */
+    LIBXSMM_REGDESC(LIBXSMM_REGDESC_DEFAULT, const*);
+    const libxsmm_csr_soa_descriptor* srsoa;
+    const libxsmm_csc_soa_descriptor* scsoa;
+    const libxsmm_rm_ac_soa_descriptor* rmacsoa;
+    const libxsmm_rm_bc_soa_descriptor* rmbcsoa;
+    const libxsmm_csr_reg_descriptor* sreg;
+    const libxsmm_convolution_forward_descriptor* cfwd;
+    const libxsmm_convolution_weight_update_descriptor* cupd;
+  } descriptor;
   libxsmm_build_kind kind;
 } libxsmm_build_request;
 
@@ -798,19 +804,11 @@ LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* val
 /** Services a build request, and (optionally) registers the code (use regindex=LIBXSMM_CAPACITY_REGISTRY for unmanaged code). */
 LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsigned int regindex, libxsmm_code_pointer* code);
 
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_kernel_info {
-  libxsmm_gemm_descriptor xgemm;
-  libxsmm_mcopy_descriptor mcopy;
-  libxsmm_trans_descriptor trans;
-  libxsmm_trsm_descriptor trsm;
-  libxsmm_trmm_descriptor trmm;
-} libxsmm_kernel_info;
-
 /** Attempts to receive information about JIT-generated code. */
-LIBXSMM_API const libxsmm_kernel_info* libxsmm_get_kernel_info(libxsmm_code_pointer code, libxsmm_kernel_kind* kind, size_t* size);
+LIBXSMM_API const libxsmm_descriptor* libxsmm_get_kernel_info(libxsmm_code_pointer code, size_t* size);
 
 /** Updates counters of the statistic, which is shown at program termination. */
-LIBXSMM_API unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision precision,
+LIBXSMM_API_INTERN unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision precision,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, unsigned int ntry, unsigned int ncol);
 
 /** Returns the current tick of a (monotonic) platform-specific counter; not necessarily CPU cycles. */
@@ -822,29 +820,14 @@ LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
 /** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
 LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
 
-/** Code generation routine for a backward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_backward(const libxsmm_convolution_backward_descriptor* descriptor);
-
 /** Code generation routine for a convolution kernel as specified by descriptor. */
 LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
 
 /** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
 LIBXSMM_API_INTERN void* libxsmm_create_xconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
 
-/** Code generation routine for a backward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_backward(const libxsmm_convolution_backward_descriptor* descriptor);
-
 /** Code generation routine for a convolution kernel as specified by descriptor. */
 LIBXSMM_API_INTERN void* libxsmm_create_xconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
-
-/** Code generation routine for a forward-convolution Winograd kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_forward(const libxsmm_convolution_winograd_descriptor* descriptor);
-
-/** Code generation routine for a backward-convolution Winograd kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_backward(const libxsmm_convolution_winograd_descriptor* descriptor);
-
-/** Code generation routine for a weight-update-convolution Winograd kernel as specified by descriptor. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_wino_update_weights(const libxsmm_convolution_winograd_descriptor* descriptor);
 
 /** Global lock; create an own lock for an independent domain. */
 LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);

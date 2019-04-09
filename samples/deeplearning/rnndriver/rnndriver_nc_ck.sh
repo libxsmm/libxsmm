@@ -89,24 +89,81 @@ fi
 
 ITERS=10
 CHKVAL=1
+export OMP_NUM_THREADS=28
+export KMP_AFFINITY=granularity=fine,compact,1,0
 
-echo "RNN FWD for inference only"
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  0  4096  1024  2048    8  1
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  0  3072    32  1024  512  1
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  0  4096  1024  1024    8  1
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  0  1024    32  1024  512  1
 
-echo "RNN FWD for training"
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  0  4096  1024  2048    8  0
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  0  3072    32  1024  512  0
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  0  4096  1024  1024    8  0
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  0  1024    32  1024  512  0
+echo "RNN ReLU FWD"
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  1  168   256   256  10
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  1  168   512   512  10
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  1  168  1024  1024  10
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  1  168  2048  2048  10
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  1  168  4096  4096  10
+wait
 
-echo "RNN BWD+UPD for training"
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  3  4096  1024  2048    8  0
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  3  3072    32  1024  512  0
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  3  4096  1024  1024    8  0
-CHECK=${CHKVAL} ./rnndriver  ${ITERS}  3  1024    32  1024  512  0
+echo "RNN ReLU BWD+UPD"
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  1  168   256   256  10
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  1  168   512   512  10
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  1  168  1024  1024  10
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  1  168  2048  2048  10
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  1  168  4096  4096  10
+wait
 
-echo "LSTM performance done"
+echo "RNN sigmoid FWD"
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  2  168   256   256  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  2  168   512   512  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  2  168  1024  1024  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  2  168  2048  2048  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  2  168  4096  4096  50
+wait
+
+echo "RNN sigmoid BWD+UPD"
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  2  168   256   256  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  2  168   512   512  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  2  168  1024  1024  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  2  168  2048  2048  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  2  168  4096  4096  50
+wait
+
+echo "RNN tanh FWD"
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  3  168   256   256  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  3  168   512   512  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  3  168  1024  1024  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  3  168  2048  2048  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  0  3  168  4096  4096  50
+wait
+
+echo "RNN tanh BWD+UPD"
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  3  168   256   256  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  3  168   512   512  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  3  168  1024  1024  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  3  168  2048  2048  50
+wait
+CHECK=${CHKVAL} ./rnndriver_nc_ck  ${ITERS}  3  3  168  4096  4096  50
+wait
+
+echo "RNN performance done"
 echo ""

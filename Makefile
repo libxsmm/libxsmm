@@ -248,18 +248,22 @@ endif
 
 ifneq (Darwin,$(UNAME))
   GENGEMM = @$(ENV) \
-    LD_LIBRARY_PATH=$(OUTDIR):$${LD_LIBRARY_PATH} \
-    PATH=$(OUTDIR):$${PATH} \
+    LD_LIBRARY_PATH="$(OUTDIR):$${LD_LIBRARY_PATH}" \
+    PATH="$(OUTDIR):$${PATH}" \
   $(BINDIR)/libxsmm_gemm_generator
 else # osx
   GENGEMM = @$(ENV) \
-    DYLD_LIBRARY_PATH=$(OUTDIR):$${DYLD_LIBRARY_PATH} \
-    PATH=$(OUTDIR):$${PATH} \
+    DYLD_LIBRARY_PATH="$(OUTDIR):$${DYLD_LIBRARY_PATH}" \
+    PATH="$(OUTDIR):$${PATH}" \
   $(BINDIR)/libxsmm_gemm_generator
 endif
 
 INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
 NINDICES = $(words $(INDICES))
+
+SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
+KRNOBJS_HST = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
+KRNOBJS_MIC = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 
 HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(SRCDIR)/*.h) \
           $(ROOTDIR)/$(SRCDIR)/libxsmm_hash.c \
@@ -284,30 +288,23 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
-          libxsmm_main.c libxsmm_cpuid_x86.c libxsmm_malloc.c libxsmm_math.c libxsmm_sync.c \
-          libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
+          libxsmm_main.c libxsmm_malloc.c libxsmm_hash.c libxsmm_diff.c libxsmm_math.c \
+          libxsmm_sync.c libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_xcopy.c libxsmm_blocked_gemm.c libxsmm_spmdm.c libxsmm_fsspmdm.c libxsmm_rng.c\
           libxsmm_dnn.c libxsmm_dnn_dryruns.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c libxsmm_dnn_elementwise.c \
           libxsmm_dnn_rnncell.c libxsmm_dnn_rnncell_forward.c libxsmm_dnn_rnncell_backward_weight_update.c \
           libxsmm_dnn_fusedbatchnorm.c libxsmm_dnn_fusedbatchnorm_forward.c libxsmm_dnn_fusedbatchnorm_backward.c \
           libxsmm_dnn_pooling.c libxsmm_dnn_pooling_forward.c libxsmm_dnn_pooling_backward.c libxsmm_dnn_convolution_forward.c \
           libxsmm_dnn_fullyconnected.c libxsmm_dnn_fullyconnected_forward.c libxsmm_dnn_fullyconnected_backward.c \
-          libxsmm_dnn_fullyconnected_weight_update.c libxsmm_dnn_convolution_backward.c libxsmm_dnn_convolution_weight_update.c \
-          libxsmm_dnn_convolution_winograd_forward.c libxsmm_dnn_convolution_winograd_backward.c libxsmm_dnn_convolution_winograd_weight_update.c)
+          libxsmm_dnn_fullyconnected_weight_update.c libxsmm_dnn_convolution_backward.c libxsmm_dnn_convolution_weight_update.c)
+SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c) \
+          libxsmm_cpuid_x86.c libxsmm_generator.c libxsmm_trace.c)
 
-SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
-SRCFILES_GEN_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,$(wildcard $(ROOTDIR)/$(SRCDIR)/generator_*.c) libxsmm_generator.c libxsmm_trace.c)
 SRCFILES_GEN_GEMM_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_gemm_driver.c)
-SRCFILES_GEN_CONVWINO_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_convolution_winograd_driver.c)
-SRCFILES_GEN_CONV_BIN = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%,libxsmm_generator_convolution_driver.c)
 OBJFILES_GEN_LIB = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_LIB))))
 OBJFILES_GEN_GEMM_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_GEMM_BIN))))
-OBJFILES_GEN_CONVWINO_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_CONVWINO_BIN))))
-OBJFILES_GEN_CONV_BIN = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_GEN_CONV_BIN))))
 OBJFILES_HST = $(patsubst %,$(BLDDIR)/intel64/%.o,$(basename $(notdir $(SRCFILES_LIB))))
 OBJFILES_MIC = $(patsubst %,$(BLDDIR)/mic/%.o,$(basename $(notdir $(SRCFILES_LIB)))) $(BLDDIR)/mic/generator_common.o
-KRNOBJS_HST  = $(patsubst %,$(BLDDIR)/intel64/mm_%.o,$(INDICES))
-KRNOBJS_MIC  = $(patsubst %,$(BLDDIR)/mic/mm_%.o,$(INDICES))
 EXTOBJS_HST  = $(BLDDIR)/intel64/libxsmm_ext.o \
                $(BLDDIR)/intel64/libxsmm_ext_xcopy.o \
                $(BLDDIR)/intel64/libxsmm_ext_blocked_gemm.o \
@@ -320,7 +317,7 @@ NOBLAS_HST   = $(BLDDIR)/intel64/libxsmm_noblas.o
 NOBLAS_MIC   = $(BLDDIR)/mic/libxsmm_noblas.o
 
 # list of object might be "incomplete" if not all code gen. FLAGS are supplied with clean target!
-OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_GEN_CONV_BIN) $(OBJFILES_GEN_CONVWINO_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \
+OBJECTS = $(OBJFILES_GEN_LIB) $(OBJFILES_GEN_GEMM_BIN) $(OBJFILES_GEN_CONV_BIN) $(OBJFILES_HST) $(OBJFILES_MIC) \
           $(KRNOBJS_HST) $(KRNOBJS_MIC) $(EXTOBJS_HST) $(EXTOBJS_MIC) $(NOBLAS_HST) $(NOBLAS_MIC)
 ifneq (,$(strip $(FC)))
   FTNOBJS = $(BLDDIR)/intel64/libxsmm-mod.o $(BLDDIR)/mic/libxsmm-mod.o
@@ -576,10 +573,9 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template
 	fi
 	@$(CP) $(ROOTDIR)/include/libxsmm_blocked_gemm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_cpuid.h $(INCDIR) 2>/dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_rng.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn.h $(INCDIR) 2>/dev/null || true
-	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_fusedbatchnorm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_fullyconnected.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_fusedbatchnorm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_pooling.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_dnn_rnncell.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_frontend.h $(INCDIR) 2>/dev/null || true
@@ -590,6 +586,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template
 	@$(CP) $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_math.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_mhd.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_rng.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_spmdm.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2>/dev/null || true
@@ -641,16 +638,6 @@ ifneq (,$(strip $(SRCFILES_KERNELS)))
 	$(eval NMVALUE := $(NVALUE))
 	@echo "#include <libxsmm.h>" > $@
 	@echo >> $@
-ifneq (0,$(MIC))
-ifneq (0,$(MPSS))
-ifneq (2,$(PRECISION))
-	@echo "#define LIBXSMM_GENTARGET_knc_sp" >> $@
-endif
-ifneq (1,$(PRECISION))
-	@echo "#define LIBXSMM_GENTARGET_knc_dp" >> $@
-endif
-endif
-endif
 ifeq (noarch,$(GENTARGET))
 ifneq (,$(CTARGET))
 ifneq (2,$(PRECISION))
@@ -696,16 +683,6 @@ ifneq (1,$(PRECISION))
 	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_$(GENTARGET) $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 $(GENTARGET) $(PREFETCH_SCHEME) DP
 endif
 endif # noarch
-ifneq (0,$(MIC))
-ifneq (0,$(MPSS))
-ifneq (2,$(PRECISION))
-	$(GENGEMM) dense $@ libxsmm_s$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knc $(PREFETCH_SCHEME_MIC) SP
-endif
-ifneq (1,$(PRECISION))
-	$(GENGEMM) dense $@ libxsmm_d$(basename $(notdir $@))_knc $(MNVALUE) $(NMVALUE) $(KVALUE) $(MNVALUE) $(KVALUE) $(MNVALUE) $(ALPHA) $(BETA) 0 0 knc $(PREFETCH_SCHEME_MIC) DP
-endif
-endif
-endif
 	$(eval TMPFILE = $(shell $(MKTEMP) /tmp/.libxsmm_XXXXXX.mak))
 	@cat $@ | sed \
 		-e "s/void libxsmm_/LIBXSMM_INLINE LIBXSMM_RETARGETABLE void libxsmm_/" \
@@ -732,14 +709,6 @@ $(1): $(2) $(3) $(dir $(1))/.make
 endef
 
 EXTCFLAGS = -DLIBXSMM_BUILD_EXT
-ifneq (0,$(STATIC))
-ifneq (0,$(WRAP))
-ifneq (,$(strip $(WRAP)))
-  EXTCFLAGS += -DLIBXSMM_GEMM_WRAP=$(WRAP)
-endif
-endif
-endif
-
 ifeq (0,$(OMP))
 ifeq (,$(filter environment% override command%,$(origin OMP)))
   EXTCFLAGS += $(OMPFLAG)
@@ -791,14 +760,6 @@ $(foreach OBJ,$(OBJFILES_GEN_LIB),$(eval $(call DEFINE_COMPILE_RULE, \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(TGT_FLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
 $(foreach OBJ,$(OBJFILES_GEN_GEMM_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
-  $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  $(TGT_FLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
-$(foreach OBJ,$(OBJFILES_GEN_CONVWINO_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
-  $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  $(TGT_FLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
-$(foreach OBJ,$(OBJFILES_GEN_CONV_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
   $(TGT_FLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
@@ -869,17 +830,14 @@ ifeq (0,$(STATIC))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(OBJFILES_GEN_LIB) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS) $(LIBRT)
 else # static
+	@rm -f $@
 	$(AR) -rs $@ $(OBJFILES_GEN_LIB)
 endif
 
 .PHONY: generator
-generator: $(BINDIR)/libxsmm_gemm_generator $(BINDIR)/libxsmm_conv_generator $(BINDIR)/libxsmm_convwino_generator
+generator: $(BINDIR)/libxsmm_gemm_generator
 $(BINDIR)/libxsmm_gemm_generator: $(BINDIR)/.make $(OBJFILES_GEN_GEMM_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT)
 	$(LD) -o $@ $(OBJFILES_GEN_GEMM_BIN) $(call abslib,$(OUTDIR)/libxsmmgen.$(ILIBEXT)) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
-$(BINDIR)/libxsmm_conv_generator: $(BINDIR)/.make $(OBJFILES_GEN_CONV_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT)
-	$(LD) -o $@ $(OBJFILES_GEN_CONV_BIN) $(call abslib,$(OUTDIR)/libxsmmgen.$(ILIBEXT)) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
-$(BINDIR)/libxsmm_convwino_generator: $(BINDIR)/.make $(OBJFILES_GEN_CONVWINO_BIN) $(OUTDIR)/libxsmmgen.$(LIBEXT)
-	$(LD) -o $@ $(OBJFILES_GEN_CONVWINO_BIN) $(call abslib,$(OUTDIR)/libxsmmgen.$(ILIBEXT)) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
 
 ifneq (,$(strip $(LIBJITPROFILING)))
 $(LIBJITPROFILING): $(BLDDIR)/jitprofiling/.make
@@ -895,6 +853,7 @@ $(OUTDIR)/mic/libxsmm.$(LIBEXT): $(OUTDIR)/mic/.make $(OBJFILES_MIC) $(KRNOBJS_M
 ifeq (0,$(STATIC))
 	$(LIB_LD) -mmic $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_MIC) $(KRNOBJS_MIC) $(LDFLAGS) $(CLDFLAGS)
 else # static
+	@rm -f $@
 	$(AR) -rs $@ $(OBJFILES_MIC) $(KRNOBJS_MIC)
 endif
 endif
@@ -906,6 +865,7 @@ $(OUTDIR)/libxsmm.$(LIBEXT): $(OUTDIR)/.make $(OBJFILES_HST) $(OBJFILES_GEN_LIB)
 ifeq (0,$(STATIC))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(LIBJITPROFILING) $(LDFLAGS) $(CLDFLAGS)
 else # static
+	@rm -f $@
 	$(AR) -rs $@ $(OBJFILES_HST) $(OBJFILES_GEN_LIB) $(KRNOBJS_HST) $(OBJJITPROFILING)
 endif
 
@@ -914,12 +874,12 @@ ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
 flib_mic: $(OUTDIR)/mic/libxsmmf.$(LIBEXT)
-ifeq (0,$(STATIC))
 $(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/libxsmm.$(LIBEXT)
+ifeq (0,$(STATIC))
 	$(LIB_FLD) -mmic $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/mic/libxsmm-mod.o $(call abslib,$(OUTDIR)/mic/libxsmm.$(ILIBEXT)) $(LDFLAGS) $(FLDFLAGS)
 else # static
-$(OUTDIR)/mic/libxsmmf.$(LIBEXT): $(INCDIR)/mic/libxsmm.mod $(OUTDIR)/mic/.make
+	@rm -f $@
 	$(AR) -rs $@ $(BLDDIR)/mic/libxsmm-mod.o
 endif
 else
@@ -931,12 +891,12 @@ endif
 .PHONY: flib_hst
 ifneq (,$(strip $(FC)))
 flib_hst: $(OUTDIR)/libxsmmf.pc
-ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod $(OUTDIR)/libxsmm.$(LIBEXT)
+ifeq (0,$(STATIC))
 	$(LIB_FLD) $(FCMTFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(BLDDIR)/intel64/libxsmm-mod.o $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(LDFLAGS) $(FLDFLAGS)
 else # static
-$(OUTDIR)/libxsmmf.$(LIBEXT): $(INCDIR)/libxsmm.mod
+	@rm -f $@
 	$(AR) -rs $@ $(BLDDIR)/intel64/libxsmm-mod.o
 endif
 else
@@ -947,12 +907,12 @@ endif
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 ext_mic: $(OUTDIR)/mic/libxsmmext.$(LIBEXT)
+$(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(EXTOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 ifeq (0,$(STATIC))
-$(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC) $(OUTDIR)/mic/libxsmm.$(LIBEXT)
 	$(LIB_LD) -mmic $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_MIC) $(call abslib,$(OUTDIR)/mic/libxsmm.$(ILIBEXT)) $(LDFLAGS) $(CLDFLAGS)
 else # static
-$(OUTDIR)/mic/libxsmmext.$(LIBEXT): $(OUTDIR)/mic/.make $(EXTOBJS_MIC)
+	@rm -f $@
 	$(AR) -rs $@ $(EXTOBJS_MIC)
 endif
 endif
@@ -960,8 +920,8 @@ endif
 
 .PHONY: ext_hst
 ext_hst: $(OUTDIR)/libxsmmext.pc
-ifeq (0,$(STATIC))
 $(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/libxsmm.$(LIBEXT) $(EXTOBJS_HST)
+ifeq (0,$(STATIC))
 ifneq (Darwin,$(UNAME))
 	$(LIB_LD) $(EXTLDFLAGS) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
 		$(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(LDFLAGS) $(CLDFLAGS)
@@ -973,7 +933,7 @@ else # osx
 			$(EXTOBJS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(LDFLAGS) $(CLDFLAGS)
 endif
 else # static
-$(OUTDIR)/libxsmmext.$(LIBEXT): $(OUTDIR)/.make $(EXTOBJS_HST)
+	@rm -f $@
 	$(AR) -rs $@ $(EXTOBJS_HST)
 endif
 
@@ -981,33 +941,33 @@ endif
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 noblas_mic: $(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT)
+$(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/libxsmm.$(LIBEXT) $(NOBLAS_MIC)
 ifeq (0,$(STATIC))
-$(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
 	$(LIB_LD) -mmic $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_MIC) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
+		$(NOBLAS_MIC) $(call abslib,$(OUTDIR)/mic/libxsmm.$(ILIBEXT)) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
 else # static
-$(OUTDIR)/mic/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/mic/.make $(NOBLAS_MIC)
+	@rm -f $@
 	$(AR) -rs $@ $(NOBLAS_MIC)
 endif
 endif
 endif
 
 .PHONY: noblas_hst
-noblas_hst: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
+noblas_hst: $(OUTDIR)/libxsmmnoblas.pc
+$(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/libxsmm.$(LIBEXT) $(NOBLAS_HST)
 ifeq (0,$(STATIC))
-$(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
 ifneq (Darwin,$(UNAME))
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_HST) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
+		$(NOBLAS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
 else ifneq (0,$(INTEL)) # intel @ osx
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_HST) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
+		$(NOBLAS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
 else # osx
 	$(LIB_LD) $(call solink,$@,$(VERSION_MAJOR),$(VERSION_MINOR),$(VERSION_UPDATE),$(VERSION_API)) \
-		$(NOBLAS_HST) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
+		$(NOBLAS_HST) $(call abslib,$(OUTDIR)/libxsmm.$(ILIBEXT)) $(NOBLAS_LDFLAGS) $(NOBLAS_CLDFLAGS)
 endif
 else # static
-$(OUTDIR)/libxsmmnoblas.$(LIBEXT): $(OUTDIR)/.make $(NOBLAS_HST)
+	@rm -f $@
 	$(AR) -rs $@ $(NOBLAS_HST)
 endif
 
@@ -1407,8 +1367,8 @@ $(ROOTDIR)/documentation/libxsmm_prof.md $(ROOTDIR)/documentation/libxsmm_tune.m
 		-o $(notdir $@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(SPLDIR)/packed/*/README.md
-	@cat $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(SPLDIR)/packed/*/README.md \
+$(DOCDIR)/libxsmm_samples.md: $(ROOTDIR)/Makefile $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(SPLDIR)/utilities/*/README.md
+	@cat $(ROOTDIR)/$(SPLDIR)/*/README.md $(ROOTDIR)/$(SPLDIR)/deeplearning/*/README.md $(ROOTDIR)/$(SPLDIR)/utilities/*/README.md \
 	| sed \
 		-e 's/^#/##/' \
 		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
@@ -1613,6 +1573,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo "LIBXSMM installing libraries..."
 	@$(CP) -va $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@$(CP) -v  $(OUTDIR)/libxsmmnoblas.pc          $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmgen.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
@@ -1792,6 +1753,20 @@ ifneq (,$(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE))
 else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmmext" >> $@
 endif
+
+$(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
+	@echo "Name: libxsmm/noblas" > $@
+	@echo "Description: LIBXSMM substituted LAPACK/BLAS dependency" >> $@
+	@echo "URL: https://github.com/hfp/libxsmm" >> $@
+	@echo "Version: $(VERSION)" >> $@
+	@echo >> $@
+	@echo "prefix=$(INSTALL_ROOT)" >> $@
+	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
+	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
+	@echo >> $@
+	@echo "Requires: libxsmm" >> $@
+	@echo "Cflags: -I\$${includedir}" >> $@
+	@echo "Libs: -L\$${libdir} -lxsmmnoblas" >> $@
 
 .PHONY: deb
 deb:

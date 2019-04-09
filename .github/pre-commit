@@ -63,7 +63,7 @@ if [ "" != "${GIT}" ]; then
       IFS="${IFS_BACKUP}"
       # determine the filename of the patch snippet
       MATCH=$(echo "${LINE}" | ${SED} -n "s/^diff --git a\/\(..*\) b..*$/\1/p" 2>/dev/null)
-      if [ "" != "${MATCH}" ]; then
+      if [ "" != "${MATCH}" ] && [ -e ${MATCH} ]; then # file must exist i.e., not a deletion
         # check if problem is with a permitted file type
         for PATTERN in ${PATTERNS}; do
           MATCHOK=$(echo "${MATCH}" | ${GREP} -e "${PATTERN}" 2>/dev/null)

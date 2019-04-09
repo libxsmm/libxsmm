@@ -16,9 +16,8 @@ extra_css:
 theme:
     name: readthedocs
     custom_dir: .theme
-theme_dir: .theme
 
-pages:
+nav:
 - Overview: index.md
 - Domains:
   - "MM: Matrix Multiplication": libxsmm_mm.md

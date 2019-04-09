@@ -49,8 +49,8 @@ const int nBlocks = N/bn;
 unsigned long long blocks;
 /* tensor raw pointers */
 element_input_type  *xt    = (element_input_type* )handle->xt->data;
-element_input_type *csp   = (element_input_type* )handle->csp->data;
-element_input_type *hpD   = (element_input_type* )handle->hp->data;
+element_input_type *csp    = (element_input_type* )handle->csp->data;
+element_input_type *hpD    = (element_input_type* )handle->hp->data;
 element_filter_type *w     = (element_filter_type*)handle->w->data;
 element_filter_type *r     = (element_filter_type*)handle->r->data;
 element_output_type *cst   = (element_output_type*)handle->cst->data;
@@ -176,12 +176,12 @@ LIBXSMM_VLA_DECL(4, element_filter_type, roT, scratch_roT, kBlocks, bk, bk);
 LIBXSMM_VLA_DECL(2, element_output_type, hT, scratch_hT, N);
 element_output_type *dout_ptr = NULL;
 /* define batch-reduce gemm kernels */
-const libxsmm_smmfunction_reducebatch batchreduce_kernela = libxsmm_smmdispatch_reducebatch( bc, bn, bk, &bc, &K, &C, NULL, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_reducebatch( bk, bk, bn, &bk, &N, &bk, NULL, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kernelc = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &bk, &N, &bk, NULL, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kernelb1 = libxsmm_smmdispatch_reducebatch( bk, bk, bn, &K, &N, &bk, NULL, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kernelc1 = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &K, &N, &bk, NULL, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kerneld = libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernela = libxsmm_smmdispatch_reducebatch( bc, bn, bk, &bc, &K, &C, NULL, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_reducebatch( bk, bk, bn, &bk, &N, &bk, NULL, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernelc = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &bk, &N, &bk, NULL, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernelb1 = libxsmm_smmdispatch_reducebatch( bk, bk, bn, &K, &N, &bk, NULL, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kernelc1 = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &K, &N, &bk, NULL, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch batchreduce_kerneld = libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL);
 
 /* Auxiliary arrays for batch-reduce gemm calls  */
 const element_filter_type *A_array[1024];

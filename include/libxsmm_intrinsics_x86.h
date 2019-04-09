@@ -54,7 +54,7 @@
 #endif
 
 #if defined(__MIC__) && !defined(LIBXSMM_INTRINSICS_NONE)
-# define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_IMCI
+# define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_TARGET_ARCH_GENERIC
 # define LIBXSMM_INTRINSICS(TARGET)
 # define LIBXSMM_INTRINSICS_INCLUDE
 #elif !defined(LIBXSMM_INTRINSICS_NONE) /*!defined(__MIC__)*/
@@ -488,6 +488,17 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
 # define LIBXSMM_INTRINSICS_BITSCANBWD32 LIBXSMM_INTRINSICS_BITSCANBWD32_SW
 # define LIBXSMM_INTRINSICS_BITSCANBWD64 LIBXSMM_INTRINSICS_BITSCANBWD64_SW
 #endif
+
+/** LIBXSMM_NBITS determines the minimum number of bits needed to represent N. */
+#define LIBXSMM_NBITS(N) (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + LIBXSMM_MIN(1, N))
+#define LIBXSMM_ISQRT2(N) ((unsigned int)((1ULL << (LIBXSMM_NBITS(N) >> 1)) /*+ LIBXSMM_MIN(1, N)*/))
+/** LIBXSMM_ILOG2 definition matches ceil(log2(N)). */
+LIBXSMM_API_INLINE unsigned int LIBXSMM_ILOG2(unsigned long long n) {
+  unsigned int result = 0; if (1 < n) {
+    const unsigned int m = LIBXSMM_INTRINSICS_BITSCANBWD64(n);
+    result = m + ((unsigned int)LIBXSMM_INTRINSICS_BITSCANBWD64(n - 1) == m);
+  } return result;
+}
 
 /**
  * Target attribution
