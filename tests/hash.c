@@ -34,6 +34,10 @@
 # include <stdio.h>
 #endif
 
+#if !defined(ELEM_TYPE)
+# define ELEM_TYPE int
+#endif
+
 
 /**
  * This test case is NOT an example of how to use LIBXSMM
@@ -42,37 +46,29 @@
  */
 int main(void)
 {
-  const unsigned int size = 2507, seed = 1975;
-  const unsigned int nbytes = size * sizeof(int);
-  unsigned int hash1, hash2, hash3, i;
+  const unsigned int seed = 1975, size = 2507;
+  const unsigned int n512 = 512 / (8 * sizeof(ELEM_TYPE));
+  unsigned int s = LIBXSMM_UP(size, n512), i, h1, h2;
   int result = EXIT_SUCCESS;
+  const ELEM_TYPE* value;
 
-  int *const data = (int*)libxsmm_malloc(nbytes);
-  assert(0 != data);
+  ELEM_TYPE *const data = (ELEM_TYPE*)libxsmm_malloc(sizeof(ELEM_TYPE) * s);
+  if (NULL == data) s = 0;
+  for (i = 0; i < s; ++i) data[i] = (rand() - ((RAND_MAX) >> 1));
 
-  for (i = 0; i < size; ++i) {
-    data[i] = rand() - ((RAND_MAX) >> 1);
+  h1 = libxsmm_crc32(seed, data, sizeof(ELEM_TYPE) * s);
+  h2 = seed; value = data;
+  for (i = 0; i < s; i += n512) {
+    h2 = libxsmm_crc32_u512(h2, value + i);
   }
-
-  hash1 = libxsmm_crc32(data, nbytes, seed);
-  hash2 = libxsmm_crc32_sw(data, nbytes, seed);
-  hash3 = libxsmm_hash(data, nbytes, seed);
+  if (h1 != h2) {
+#if defined(_DEBUG)
+    fprintf(stderr, "(crc32=%u) != (crc32_sw=%u)\n", h1, h2);
+#endif
+    result = EXIT_FAILURE;
+  }
 
   libxsmm_free(data);
-
-  if (hash1 != hash2) {
-#if defined(_DEBUG)
-    fprintf(stderr, "(crc32=%u) != (crc32_sw=%u)\n", hash1, hash2);
-#endif
-    result = EXIT_FAILURE;
-  }
-
-  if (hash1 != hash3) {
-#if defined(_DEBUG)
-    fprintf(stderr, "(crc32=%u) != (hash=%u)\n", hash1, hash3);
-#endif
-    result = EXIT_FAILURE;
-  }
 
   return result;
 }

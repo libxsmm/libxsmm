@@ -41,8 +41,7 @@
 # pragma offload_attribute(pop)
 #endif
 
-#define LIBXSMM_MCOPY_MT(MT, NT, M, N) ((MT) <= (M) && (NT) <= (N) && \
-  (((unsigned int)(LIBXSMM_AVG_M)) * LIBXSMM_AVG_N) <= (((unsigned int)(M)) * (N)))
+#define LIBXSMM_MCOPY_MT(MT, NT, M, N) ((MT) <= (M) && (NT) <= (N) && (64U * 64U) <= (((unsigned int)(M)) * (N)))
 
 
 LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int typesize,
@@ -176,7 +175,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 #if defined(_OPENMP)
       const unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
       const unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
-      if (0 == LIBXSMM_TRANS_NO_BYPASS(m, n) && tm <= (unsigned int)m && tn <= (unsigned int)n) { /* consider problem-size */
+      if (tm <= (unsigned int)m && tn <= (unsigned int)n) { /* consider problem-size */
 # if defined(LIBXSMM_EXT_TASKS) /* implies _OPENMP */
         if (0 == omp_get_active_level())
 # else

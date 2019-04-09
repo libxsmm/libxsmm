@@ -55,6 +55,9 @@
 #endif
 
 
+LIBXSMM_APIVAR(int internal_timer_init_rtc);
+
+
 LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
 {
   libxsmm_timer_tickint result;
@@ -71,6 +74,7 @@ LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
   gettimeofday(&t, 0);
   result = 1000000ULL * t.tv_sec + t.tv_usec;
 #endif
+  LIBXSMM_ATOMIC_ADD_FETCH(&internal_timer_init_rtc, 1, LIBXSMM_ATOMIC_RELAXED);
   return result;
 }
 
@@ -90,14 +94,19 @@ libxsmm_timer_tickint libxsmm_timer_tick(void)
 
 LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_cycles(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
 {
-  return LIBXSMM_DIFF(tick0, tick1);
+  return LIBXSMM_DELTA(tick0, tick1);
 }
 
 
 LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
 {
-  double result = (double)LIBXSMM_DIFF(tick0, tick1);
+  double result = (double)LIBXSMM_DELTA(tick0, tick1);
 #if defined(LIBXSMM_TIMER_RDTSC)
+# if defined(LIBXSMM_INIT_COMPLETED)
+  LIBXSMM_ASSERT_MSG(0 != internal_timer_init_rtc, "LIBXSMM is not initialized");
+# else
+  if (0 == internal_timer_init_rtc) libxsmm_init();
+# endif
   if (0 < libxsmm_timer_scale) {
     result *= libxsmm_timer_scale;
   }

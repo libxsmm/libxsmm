@@ -33,9 +33,9 @@
 PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.sh *.py *.yml *.txt"
 BANNED_CHARS="\t"
 
-PATBAN="s/[${BANNED_CHARS}]//"
-PATEOL="s/\r$//"
-PATSPC="s/\s\s*$//"
+PATBAN="s/[${BANNED_CHARS}]/"
+PATEOL="s/\r$/"
+PATSPC="s/\s\s*$/"
 
 HERE=$(cd $(dirname $0); pwd -P)
 REPO=${HERE}/..
@@ -44,7 +44,6 @@ MKTEMP=${REPO}/.mktmp.sh
 
 FLAKE8=$(command -v flake8)
 ICONV=$(command -v iconv)
-ECHO=$(command -v echo)
 GIT=$(command -v git)
 SED=$(command -v sed)
 TR=$(command -v tr)
@@ -55,15 +54,14 @@ if [ -e ${CODEFILE} ]; then
   PATTERNS="$(cat ${CODEFILE})"
 fi
 
-if [ "" != "${FLAKE8}" ] && [ "0" = "$(${FLAKE8} 2>&1 >/dev/null; ${ECHO} $?)" ] && \
-   [ "0" != "$(${FLAKE8} ${HERE}/*.py 2>&1 >/dev/null; ${ECHO} $?)" ];
+if [ "" != "${FLAKE8}" ] && [ "0" = "$(${FLAKE8} 2>&1 >/dev/null; echo $?)" ] && \
+   [ "0" != "$(${FLAKE8} ${HERE}/*.py 2>&1 >/dev/null; echo $?)" ];
 then
-  ${ECHO} "Warning: some Python scripts do not pass flake8 check (${HERE})!"
+  echo "Warning: some Python scripts do not pass flake8 check (${HERE})!"
 fi
 
-if [ "" != "${ECHO}" ] && [ "" != "${GIT}" ] && \
-   [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
-   [ "" != "${CP}" ] && [ "" != "${RM}" ];
+if [ "" != "${GIT}" ] && [ "" != "${CP}" ] && [ "" != "${RM}" ] && \
+   [ "" != "${SED}" ] && [ "" != "${TR}" ];
 then
   if [ "" != "${ICONV}" ]; then
     CAT="${ICONV} -t ASCII"
@@ -76,29 +74,26 @@ then
     set -f
     # Search the content of the diffs matching the given file types
     for PATTERN in ${PATTERNS}; do
-      for FILE in $("${GIT}" ls-files ${PATTERN}); do
-        BANNED=$(${SED} -n "${PATBAN}p" ${FILE} 2>/dev/null)
-        DOSEOL=$(${SED} -n "${PATEOL}p" ${FILE} 2>/dev/null | ${TR} -d "\n")
-        TRAILS=$(${SED} -n "${PATSPC}p" ${FILE} 2>/dev/null)
-        if [ "" != "${BANNED}" ]; then
-          ${ECHO} "Warning: ${FILE} contains banned characters!"
+      for FILE in $(${GIT} ls-files ${PATTERN}); do
+        if [ "" != "$(${SED} -n "${PATBAN}x/p" ${FILE} 2>/dev/null)" ]; then
+          echo "Warning: ${FILE} contains banned characters!"
         fi
-        if [ "" != "${DOSEOL}" ]; then
-          ${ECHO} "Warning: ${FILE} uses non-UNIX line endings!"
+        if [ "" != "$(${SED} -n "${PATEOL}x/p" ${FILE} 2>/dev/null | ${TR} -d "\n")" ]; then
+          echo "Warning: ${FILE} uses non-UNIX line endings!"
         fi
-        if [ "" != "${TRAILS}" ]; then
-          ${CAT} ${FILE} | ${SED} -e "${PATSPC}" > ${TMPF}
+        if [ "" != "$(${SED} -n "${PATSPC}x/p" ${FILE})" ]; then
+          ${CAT} ${FILE} | ${SED} -e "${PATSPC}/" > ${TMPF}
           ${CP} ${TMPF} ${FILE}
-          ${ECHO} "${FILE}: removed trailing white spaces."
+          echo "${FILE}: removed trailing white spaces."
         fi
       done
     done
     ${RM} ${TMPF}
-    ${ECHO} "Successfully Completed."
+    echo "Successfully Completed."
     exit 0
   fi
 fi
 
-${ECHO} "Error: missing prerequisites!"
+echo "Error: missing prerequisites!"
 exit 1
 

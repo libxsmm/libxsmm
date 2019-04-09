@@ -15,10 +15,10 @@ matrix:
     env: OPT=1 PYTHON=python3
   - os: linux
     compiler: gcc
-    env: DBG=1 LIBXSMM_TARGET=sse
+    env: DBG=1 LIBXSMM_TARGET=0
   - os: linux
     compiler: clang
-    env: DBG=1 LIBXSMM_TARGET=0 LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
+    env: DBG=1 LIBXSMM_TARGET=sse LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
   - os: osx
     #osx_image: xcode9.1
     compiler: clang
@@ -70,7 +70,6 @@ script:
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
       make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} TRACE=1 STATIC=0 ABSLIBS=1 EFLAGS="-DITYPE=double" install-artifacts tests &&
       if [ "${CXX}" != "g++" ] && [ "${TRAVIS_OS_NAME}" != "osx" ]; then
-        env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/blas 2> blas-trace-${COVID}.txt;
         env LIBXSMM_TRACE=1 ${TRAVIS_BUILD_DIR}/tests/malloc 2> malloc-trace-${COVID}.txt;
       fi
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}

@@ -40,9 +40,6 @@
 #if 0 /* process batch of A, B, and C in "random" order */
 # define SHUFFLE
 #endif
-#if 0 /* manually dispatch SMM kernel */
-# define KERNEL
-#endif
 #if 0 /* synchronization among C matrices */
 # define SYNC
 #endif
@@ -89,19 +86,6 @@ int main(int argc, char* argv[])
 #endif
   int i;
 
-  /**
-   * LIBXSMM's C interface really is type-specific, and the helper macros (such as LIBXSMM_MMFUNCTION_TYPE)
-   * are only for "entertainment". The C++ interface on the other hand is provides overloaded functions
-   * and some helpers for more type-generic programming tasks (e.g., libxsmm_mmfunction<TYPE>).
-   */
-#if defined(KERNEL) /* explicitly dispatch a kernel according to parameters */
-  libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init(&blob, LIBXSMM_GEMM_PRECISION(TYPE),
-    m, n, k, lda, ldb, ldc, &alpha, &beta, LIBXSMM_GEMM_FLAGS(transa, transb),
-    libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO));
-  const libxsmm_xmmfunction xmm = libxsmm_xmmdispatch(desc);
-#endif
-
   /* initialize data according to touch-first policy */
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
@@ -123,17 +107,9 @@ int main(int argc, char* argv[])
   }
 
   start = libxsmm_timer_tick();
-#if defined(KERNEL) /* explicitly dispatch a kernel according to parameters */
-# if defined(_OPENMP)
-  libxsmm_mmbatch_omp(xmm, 0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, a, b, c, xsize);
-# else
-  libxsmm_mmbatch(xmm, 0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, a, b, c, xsize, 0/*tid*/, 1/*nthreads*/);
-# endif
-#else
-  USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(TYPE),
+  USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(TYPE), LIBXSMM_GEMM_PRECISION(TYPE),
     &transa, &transb, m, n, k, &alpha, a, &lda, b, &ldb, &beta, c, &ldc,
     0/*index_base*/, sizeof(int)/*index_stride*/, ia, ib, ic, xsize);
-#endif
   duration = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
   if (0 < duration) {

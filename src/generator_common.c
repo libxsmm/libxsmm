@@ -275,37 +275,6 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_SHUFPS:
       libxsmm_strncpy(o_instr_name, "shufps", i_instr_name_max_length, 6 );
       break;
-    /* IMCI special */
-    case LIBXSMM_X86_INSTR_VLOADUNPACKLPD:
-      libxsmm_strncpy(o_instr_name, "vloadunpacklpd", i_instr_name_max_length, 14 );
-      break;
-    case LIBXSMM_X86_INSTR_VLOADUNPACKHPD:
-      libxsmm_strncpy(o_instr_name, "vloadunpackhpd", i_instr_name_max_length, 14 );
-      break;
-    case LIBXSMM_X86_INSTR_VLOADUNPACKLPS:
-      libxsmm_strncpy(o_instr_name, "vloadunpacklps", i_instr_name_max_length, 14 );
-      break;
-    case LIBXSMM_X86_INSTR_VLOADUNPACKHPS:
-      libxsmm_strncpy(o_instr_name, "vloadunpackhps", i_instr_name_max_length, 14 );
-      break;
-    case LIBXSMM_X86_INSTR_VPACKSTORELPD:
-      libxsmm_strncpy(o_instr_name, "vpackstorelpd", i_instr_name_max_length, 13 );
-      break;
-    case LIBXSMM_X86_INSTR_VPACKSTOREHPD:
-      libxsmm_strncpy(o_instr_name, "vpackstorehpd", i_instr_name_max_length, 13 );
-      break;
-    case LIBXSMM_X86_INSTR_VPACKSTORELPS:
-      libxsmm_strncpy(o_instr_name, "vpackstorelps", i_instr_name_max_length, 13 );
-      break;
-    case LIBXSMM_X86_INSTR_VPACKSTOREHPS:
-      libxsmm_strncpy(o_instr_name, "vpackstorehps", i_instr_name_max_length, 13 );
-      break;
-    case LIBXSMM_X86_INSTR_VPREFETCH1:
-      libxsmm_strncpy(o_instr_name, "vprefetch1", i_instr_name_max_length, 10 );
-      break;
-    case LIBXSMM_X86_INSTR_VPREFETCH0:
-      libxsmm_strncpy(o_instr_name, "vprefetch0", i_instr_name_max_length, 10 );
-      break;
     /* Gather/scatter single precision */
     case LIBXSMM_X86_INSTR_VGATHERDPS:
       libxsmm_strncpy(o_instr_name, "vgatherdps", i_instr_name_max_length, 10 );
@@ -408,7 +377,7 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
     case LIBXSMM_X86_INSTR_ADDSS:
       libxsmm_strncpy(o_instr_name, "addss", i_instr_name_max_length, 5 );
       break;
-    /* XOR AVX512,IMCI */
+    /* XOR AVX512F */
     case LIBXSMM_X86_INSTR_VPXORD:
       libxsmm_strncpy(o_instr_name, "vpxord", i_instr_name_max_length, 6 );
       break;
@@ -622,31 +591,6 @@ unsigned int libxsmm_is_x86_vec_instr_single_precision( const unsigned int i_ins
       l_return = 1;
       break;
     case LIBXSMM_X86_INSTR_SHUFPS:
-      l_return = 1;
-      break;
-    /* IMCI special */
-    case LIBXSMM_X86_INSTR_VLOADUNPACKLPD:
-      l_return = 0;
-      break;
-    case LIBXSMM_X86_INSTR_VLOADUNPACKHPD:
-      l_return = 0;
-      break;
-    case LIBXSMM_X86_INSTR_VLOADUNPACKLPS:
-      l_return = 1;
-      break;
-    case LIBXSMM_X86_INSTR_VLOADUNPACKHPS:
-      l_return = 1;
-      break;
-    case LIBXSMM_X86_INSTR_VPACKSTORELPD:
-      l_return = 0;
-      break;
-    case LIBXSMM_X86_INSTR_VPACKSTOREHPD:
-      l_return = 0;
-      break;
-    case LIBXSMM_X86_INSTR_VPACKSTORELPS:
-      l_return = 1;
-      break;
-    case LIBXSMM_X86_INSTR_VPACKSTOREHPS:
       l_return = 1;
       break;
     /* Gather/Scatter single precision */
@@ -884,11 +828,9 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else if ( (strcmp( i_arch, "knl" ) == 0) ||
                 (strcmp( i_arch, "knm" ) == 0) ||
-                (strcmp( i_arch, "skx" ) == 0) ) {
+                (strcmp( i_arch, "skx" ) == 0) ||
+                (strcmp( i_arch, "clx" ) == 0)    ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
-      libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( (strcmp( i_arch, "knc" ) == 0) ) {
-      l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __MIC__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling arch-independent gemm kernel in: \" __FILE__)\n" );
@@ -911,10 +853,10 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
     if ( (strcmp( i_arch, "wsm" ) == 0) ||
          (strcmp( i_arch, "snb" ) == 0) ||
          (strcmp( i_arch, "hsw" ) == 0) ||
-         (strcmp( i_arch, "knc" ) == 0) ||
          (strcmp( i_arch, "knl" ) == 0) ||
          (strcmp( i_arch, "knm" ) == 0) ||
-         (strcmp( i_arch, "skx" ) == 0))
+         (strcmp( i_arch, "skx" ) == 0) ||
+         (strcmp( i_arch, "clx" ) == 0)    )
     {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#else\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -1035,21 +977,13 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "invalid K blocking in microkernel (error #%u)!", i_error_code );
       break;
-    case LIBXSMM_ERR_NO_IMCI:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "IMCI architecture requested but called for a different one (error #%u)!", i_error_code );
-      break;
     case LIBXSMM_ERR_REG_BLOCK:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "invalid MxN register blocking was specified (error #%u)!", i_error_code );
       break;
-    case LIBXSMM_ERR_VEC_MOVE_IMCI:
+    case LIBXSMM_ERR_NO_AVX512_BCAST:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "invalid vec move instruction for IMCI instruction replacement (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_NO_IMCI_AVX512_BCAST:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "fused memory broadcast is not supported on other platforms than AVX512/IMCI (error #%u)!", i_error_code );
+        "fused memory broadcast is not supported on other platforms than AVX512 (error #%u)!", i_error_code );
       break;
     case LIBXSMM_ERR_NO_AVX512_QFMA:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,

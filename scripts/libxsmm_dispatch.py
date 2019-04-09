@@ -71,64 +71,33 @@ if __name__ == "__main__":
                   " == libxsmm_target_archid))")
             print("#endif")
             print("{")
-            print("  libxsmm_gemm_descriptor desc;")
             print("  libxsmm_xmmfunction func;")
-            print("  unsigned int hash, indx;")
-            print("# if defined(_MSC_VER)")
-            print("#   pragma warning(push)")
-            print("#   pragma warning(disable: 4127)")
-            print("# endif")
             for mnk in mnklist:
                 mstr, nstr, kstr, mnkstr = \
                     str(mnk[0]), str(mnk[1]), str(mnk[2]), \
                     "_".join(map(str, mnk))
                 mnksig = mstr + ", " + nstr + ", " + kstr
-                ldxsig = mstr + ", " + kstr + ", " + mstr
                 # prefer registering double-precision kernels
                 # when approaching an exhausted registry
                 if (1 != precision):  # only double-precision
-                    print("  if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ")" +
-                          " && LIBXSMM_GEMM_NO_BYPASS_DIMS(" + ldxsig + ")) {")
-                    print("    LIBXSMM_GEMM_DESCRIPTOR(desc, " +
-                          "LIBXSMM_GEMM_PRECISION_F64, LIBXSMM_FLAGS,")
-                    print("      " + mnksig + ", " + ldxsig + ", " +
-                          "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                    print("    hash = libxsmm_crc32(&desc, " +
-                          "LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED);")
-                    print("    indx = LIBXSMM_HASH_MOD(hash, " +
-                          "LIBXSMM_CAPACITY_REGISTRY);")
-                    print("    func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" +
+                    print("  func.dmm = (libxsmm_dmmfunction)libxsmm_dmm_" +
                           mnkstr + ";")
-                    print("    internal_register_static_code(" +
-                          "&desc, indx, hash, func, new_registry);")
-                    print("  }")
+                    print("  internal_register_static_code(" +
+                          "LIBXSMM_GEMM_PRECISION_F64, " + mnksig +
+                          ", func, new_registry);")
             for mnk in mnklist:
                 mstr, nstr, kstr, mnkstr = \
                     str(mnk[0]), str(mnk[1]), str(mnk[2]), \
                     "_".join(map(str, mnk))
                 mnksig = mstr + ", " + nstr + ", " + kstr
-                ldxsig = mstr + ", " + kstr + ", " + mstr
                 # prefer registering double-precision kernels
                 # when approaching an exhausted registry
                 if (2 != precision):  # only single-precision
-                    print("  if (LIBXSMM_GEMM_NO_BYPASS_DIMS(" + mnksig + ")" +
-                          " && LIBXSMM_GEMM_NO_BYPASS_DIMS(" + ldxsig + ")) {")
-                    print("    LIBXSMM_GEMM_DESCRIPTOR(desc, " +
-                          "LIBXSMM_GEMM_PRECISION_F32, LIBXSMM_FLAGS,")
-                    print("      " + mnksig + ", " + ldxsig + ", " +
-                          "LIBXSMM_ALPHA, LIBXSMM_BETA, INTERNAL_PREFETCH);")
-                    print("    hash = libxsmm_crc32(&desc, " +
-                          "LIBXSMM_DESCRIPTOR_MAXSIZE, LIBXSMM_HASH_SEED);")
-                    print("    indx = LIBXSMM_HASH_MOD(hash, " +
-                          "LIBXSMM_CAPACITY_REGISTRY);")
-                    print("    func.smm = (libxsmm_smmfunction)libxsmm_smm_" +
+                    print("  func.smm = (libxsmm_smmfunction)libxsmm_smm_" +
                           mnkstr + ";")
-                    print("    internal_register_static_code(" +
-                          "&desc, indx, hash, func, new_registry);")
-                    print("  }")
-            print("# if defined(_MSC_VER)")
-            print("#   pragma warning(pop)")
-            print("# endif")
+                    print("  internal_register_static_code(" +
+                          "LIBXSMM_GEMM_PRECISION_F32, " + mnksig +
+                          ", func, new_registry);")
             print("}")
     else:
         sys.tracebacklimit = 0

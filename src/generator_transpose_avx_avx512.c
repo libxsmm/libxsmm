@@ -44,7 +44,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* #define GENERATOR_TRANSPOSE_DEBUG */
+/*
+#define GENERATOR_TRANSPOSE_DEBUG
+*/
 
 
 /* d_ymm_or_zmm is automatically generated dispatching code
@@ -64,68 +66,68 @@ int d_ymm_or_zmm(
          const int i_avx512
          )
 {
-       double dm, dn, dtmp;
-       int l_retval;
+  double dm, dn, dtmp;
+  int l_retval;
 
-       if ( !i_avx512 ) return 1;
+  if ( !i_avx512 ) return 1;
 
-       dm = (double) i_m;
-       dn = (double) i_n;
+  dm = (double) i_m;
+  dn = (double) i_n;
 
-       if ( i_avx512 == 1 )
-       {
-          /* Skylake dispatching logic */
-          if  (  dn <=     4.00000)
+  if ( i_avx512 == 1 )
+  {
+    /* Skylake dispatching logic */
+    if ( dn <= 4.00000 )
+    {
+      dtmp = 1.00000;
+    } else {
+      if ( dn <= 12.00000 )
+      {
+        if ( dm <= 5.00000)
+        {
+          dtmp = 1.00000;
+        } else {
+          dtmp = 0.00916*dm - 0.16182*dn + 2.66904;
+        }
+      } else {
+        dtmp = 0.02409*dm + 0.00486*dn + 1.25085;
+      }
+    }
+  } else {
+    /* Knights Landing dispatching logic */
+    if ( -2.30000*dm + 2.00000*dn <= -6.00000 )
+    {
+      if ( dn <= 2.00000 )
+      {
+        dtmp = 1.00000;
+      } else {
+        if ( dn <= 4.00000 )
+        {
+          dtmp = 0.00032*dm - 0.69532*dn + 4.00575;
+        } else {
+          if ( -2.50000*dm - 1.50000*dn <= -32.00000)
           {
-             dtmp =     1.00000;
+            if ( dm <= 17.00000 )
+            {
+              dtmp = -0.07867*dm - 0.01862*dn + 2.97591;
+            } else {
+              dtmp = 2.00000;
+            }
           } else {
-             if  (  dn <=    12.00000)
-             {
-                if  (  dm <=     5.00000)
-                {
-                   dtmp =     1.00000;
-                } else {
-                   dtmp =     0.00916*dm    -0.16182*dn +     2.66904;
-                }
-             } else {
-                dtmp =     0.02409*dm +     0.00486*dn +     1.25085;
-             }
+            dtmp = -0.40000*dm - 0.46667*dn + 7.20000;
           }
-       } else {
-          /* Knights Landing dispatching logic */
-          if  (     -2.30000*dm +     2.00000*dn <=    -6.00000)
-          {
-             if  (  dn <=     2.00000)
-             {
-                dtmp =     1.00000;
-             } else {
-                if  (  dn <=     4.00000)
-                {
-                   dtmp =     0.00032*dm    -0.69532*dn +     4.00575;
-                } else {
-                   if  (     -2.50000*dm    -1.50000*dn <=   -32.00000)
-                   {
-                      if  (  dm <=    17.00000)
-                      {
-                         dtmp =    -0.07867*dm    -0.01862*dn +     2.97591;
-                      } else {
-                         dtmp =     2.00000;
-                      }
-                   } else {
-                      dtmp =    -0.40000*dm    -0.46667*dn +     7.20000;
-                   }
-                }
-             }
-          } else {
-             dtmp =     0.01791*dm +     0.00141*dn +     1.43536;
-          }
-       }
-       /* Now turn it into an integer */
-       l_retval = (int) dtmp;
-       l_retval = LIBXSMM_MAX(l_retval,1);
-       if ( dtmp - ((double) l_retval) >= 0.5 ) ++l_retval;
-       l_retval = LIBXSMM_MIN(l_retval,2);
-       return ( l_retval );
+        }
+      }
+    } else {
+      dtmp = 0.01791*dm + 0.00141*dn + 1.43536;
+    }
+  }
+  /* Now turn it into an integer */
+  l_retval = (int) dtmp;
+  l_retval = LIBXSMM_MAX(l_retval,1);
+  if ( dtmp - ((double) l_retval) >= 0.5 ) ++l_retval;
+  l_retval = LIBXSMM_MIN(l_retval,2);
+  return ( l_retval );
 }
 
 
@@ -219,7 +221,7 @@ LIBXSMM_API_INLINE void gen_one_trans(
   int n_fits_in_xmm = 0;
   int m_fits_in_xmm = 0;
   int m_fits_in_ymm = 0;
-  int REGSIZE = 4;
+  unsigned int REGSIZE = 4;
   unsigned int l_instr;
   char cval = 'x';
 
@@ -393,8 +395,7 @@ LIBXSMM_API_INLINE void gen_one_trans(
       }
     }
     else { /* avx512 */
-
-           /* vshuff64x2 $0xEE, %zmm3 , %zmm1 , %zmm9  */
+      /* vshuff64x2 $0xEE, %zmm3 , %zmm1 , %zmm9  */
       io_generated_code->code_size = i;
       if (m>0) libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code, LIBXSMM_X86_SSE3, LIBXSMM_X86_INSTR_VSHUFF64X2, 'z', 3, 1, 9, 0xEE);
       /* vshuff64x2 $0x44, %zmm3 , %zmm1 , %zmm1  */
@@ -591,13 +592,14 @@ LIBXSMM_API_INLINE void gen_one_trans(
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_transpose_avx_avx512_kernel(
-                libxsmm_generated_code*             io_generated_code,
+                libxsmm_generated_code*         io_generated_code,
                 const libxsmm_trans_descriptor* i_trans_desc,
-                const char*                         i_arch )
+                int                             i_arch )
 {
   libxsmm_transpose_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker l_loop_label_tracker;
 
+  const char *const cpuid = libxsmm_cpuid_name( i_arch );
   /* avx512 just represents whether we want to use zmm registers or not     *
    *      A value of 0 says not, a value of 1 targets AVX512_CORE, a value  *
    *      of 2 targets AVX512_MIC                                           */
@@ -639,11 +641,11 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
    * Otherwise, we get by with registers that don't require pushing/popping */
 
   /* define transposition kernel config */
-  if (strcmp(i_arch, "skx") == 0  || strcmp(i_arch, "clx") == 0  || strcmp(i_arch, "cpx") == 0 ) {
+  if (LIBXSMM_X86_AVX512_CORE <= i_arch) {
     avx512 = 1;
-  } else if (strcmp(i_arch, "knl") == 0 || strcmp(i_arch, "knm") == 0) {
+  } else if (LIBXSMM_X86_AVX512 <= i_arch) {
     avx512 = 2;
-  } else if (strcmp(i_arch, "snb") == 0 || strcmp(i_arch, "hsw") == 0) {
+  } else if (LIBXSMM_X86_AVX <= i_arch) {
     avx512 = 0;
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_UNSUP_ARCH );
@@ -656,7 +658,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
    *    is for the regular assembly coding?                                  */
   libxsmm_x86_instruction_open_stream_transpose( io_generated_code, l_gp_reg_mapping.gp_reg_a,
                                                  l_gp_reg_mapping.gp_reg_lda, l_gp_reg_mapping.gp_reg_b,
-                                                 l_gp_reg_mapping.gp_reg_ldb, i_arch );
+                                                 l_gp_reg_mapping.gp_reg_ldb, cpuid );
 
   if ( io_generated_code->code_type > 1 )
   {
@@ -664,6 +666,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
      int i = io_generated_code->code_size;
      unsigned int m = i_trans_desc->m;
      unsigned int n = i_trans_desc->n;
+     int loopm = 0, loopn= 0, mjmp, njmp;
      int imask = 0;
      int offsetA, offsetB, oldB;
      int j, k, m0, n0, shiftvalue, shiftmult;
@@ -673,10 +676,10 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
      unsigned int ldo = i_trans_desc->ldo;
      unsigned int ldb;
      /* REGSIZE is used for masking. REGSIZE is just:
-      *           4 for double on ymm,
+      *           4 for double on ymm (unless m=1, then it's 8),
       *           8 for single on ymm or double on zmm,
       *           16 for single on zmm */
-     int REGSIZE;
+     unsigned int REGSIZE;
      int maskvar = 0;
      int datasize = i_trans_desc->typesize;
 
@@ -714,7 +717,9 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
      {
         shiftvalue = 3;
         shiftmult = 8;
-        if ( avx512 ) REGSIZE = 8; else REGSIZE = 4;
+        if ( avx512 ) { REGSIZE = 8; } else {
+           if ( m == 1 ) REGSIZE = 8; else REGSIZE = 4;
+        }
      } else {
         shiftvalue = 2;
         shiftmult = 4;
@@ -776,7 +781,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
         libxsmm_x86_instruction_alu_reg ( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_RSI, LIBXSMM_X86_GP_REG_R8 );
         libxsmm_x86_instruction_alu_imm ( io_generated_code, LIBXSMM_X86_INSTR_IMUL, LIBXSMM_X86_GP_REG_R8, 3 );
         i = io_generated_code->code_size;
-        if ( n >= 6 )
+        if ( LIBXSMM_MIN(n,REGSIZE) >= 6 )
         {
            /* movq %rsi, %rbx and imul $5, %rbx : */
            io_generated_code->code_size = i;
@@ -784,7 +789,7 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
            libxsmm_x86_instruction_alu_imm ( io_generated_code, LIBXSMM_X86_INSTR_IMUL, LIBXSMM_X86_GP_REG_RBX, 5 );
            i = io_generated_code->code_size;
         }
-        if ( n >= 8 )
+        if ( LIBXSMM_MIN(n,REGSIZE) >= 8 )
         {
            /* movq %rsi, %rbp and imul $7, %rbp: */
            io_generated_code->code_size = i;
@@ -840,41 +845,89 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
         }
      }
 
+     /* Determine whether to use loops or not */
+     if ( (n / REGSIZE) >= 2 ) loopn = n / REGSIZE; else loopn = 0;
+     if ( (m / REGSIZE) >= 2 ) loopm = m / REGSIZE; else loopm = 0;
+
+     /* To prevent and disable looping, just set loopm and loopn to 0 */
+#ifdef PREVENT_TRANSPOSE_LOOPING
+     loopm = 0;
+     loopn = 0;
+#endif
+
+     if ( loopn > 0 ) {
+        io_generated_code->code_size = i;
+        libxsmm_x86_instruction_alu_imm ( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, l_gp_reg_mapping.gp_reg_ldb, loopn );
+        libxsmm_x86_instruction_register_jump_back_label ( io_generated_code,  &l_loop_label_tracker );
+        i = io_generated_code->code_size;
+     }
+
      /* Here is the main loop and it's logic is simple. We just "stamp" a bunch
       * of smaller transpositions using the routine "get_one_trans()".
       * Eventually, incorporate loops into this for smaller footprints */
      offsetA = 0;
      offsetB = 0;
      oldB = 0;
-     for (j = 1; j <= (int)n; j += REGSIZE )
+     njmp = REGSIZE;
+     if ( loopn > 0 ) njmp = REGSIZE*loopn;
+     mjmp = REGSIZE;
+     if ( loopm > 0 ) mjmp = REGSIZE*loopm;
+
+     for (j = 1; j <= (int)n; j += njmp )
      {
         offsetA = 0;
         oldB = offsetB;
-        for ( k = 1; k <= (int)m; k += REGSIZE )
+
+        if ( loopm > 0 ) {
+           io_generated_code->code_size = i;
+           libxsmm_x86_instruction_alu_imm ( io_generated_code, LIBXSMM_X86_INSTR_MOVQ, LIBXSMM_X86_GP_REG_R15, loopm );
+           libxsmm_x86_instruction_register_jump_back_label ( io_generated_code,  &l_loop_label_tracker );
+           i = io_generated_code->code_size;
+        }
+
+        for ( k = 1; k <= (int)m; k += mjmp )
         {
            io_generated_code->code_size = i;
            /* Note that the m, n parameters aren't the original m, n;
               which is why we also pass in this phony "ldb". Make certain this
               routine is never called with values in excess of REGSIZE */
 #ifdef GENERATOR_TRANSPOSE_DEBUG
-           printf("calling gen_one_trans m=%d n=%d i=%d datasize=%d\n",m,n,i,datasize);
+           printf("calling gen_one_trans mxn=%dx%d using %dx%d offsetA=%d offsetB=%d i=%d datasize=%d maskvar=%d\n",m,n,LIBXSMM_MIN(REGSIZE,((int)m)-k+1),LIBXSMM_MIN(REGSIZE,((int)n)-j+1),offsetA,offsetB,i,datasize,maskvar);
 #endif
            /* This routine just does a single transpose at a time. */
            assert(k <= (int)(m + 1) && j <= (int)(n + 1));
            gen_one_trans(io_generated_code, &l_gp_reg_mapping,
-                         LIBXSMM_MIN(REGSIZE,((int)m)-k+1),
-                         LIBXSMM_MIN(REGSIZE,((int)n)-j+1),
+                         LIBXSMM_MIN(REGSIZE,m-k+1),
+                         LIBXSMM_MIN(REGSIZE,n-j+1),
                          ldb, offsetA, offsetB, datasize,
                          avx512, maskvar);
            if (0 != io_generated_code->last_error) return;
            i = io_generated_code->code_size;
 #ifdef GENERATOR_TRANSPOSE_DEBUG
-           printf("done calling gen_one_trans m=%d n=%d i=%d datasize=%d\n",m,n,i,datasize);
+           printf("done calling gen_one_trans mxn=%dx%d using %dx%d offsetA=%d offsetB=%d i=%d datasize=%d maskvar=%d\n",m,n,LIBXSMM_MIN(REGSIZE,((int)m)-k+1),LIBXSMM_MIN(REGSIZE,((int)n)-j+1),offsetA,offsetB,i,datasize,maskvar);
 #endif
-           offsetA += shiftmult*REGSIZE;
-           offsetB += shiftmult*REGSIZE*ldb;
+
+           if ( loopm == 0 ) {
+              offsetA += shiftmult*mjmp;
+              offsetB += shiftmult*mjmp*ldb;
+           } else if ( k==1 ) {
+              io_generated_code->code_size = i;
+              libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_reg_mapping.gp_reg_a, shiftmult*REGSIZE );
+              libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_reg_mapping.gp_reg_b, shiftmult*REGSIZE*ldb );
+              libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, LIBXSMM_X86_GP_REG_R15, 1 );
+              libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JG, &l_loop_label_tracker );
+              i = io_generated_code->code_size;
+           }
         }
-        if ( j+REGSIZE <= (int)n )
+
+        if ( loopm > 0 ) {
+           io_generated_code->code_size = i;
+           libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, l_gp_reg_mapping.gp_reg_b, shiftmult*REGSIZE*ldb*loopm );
+           libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, l_gp_reg_mapping.gp_reg_a, shiftmult*REGSIZE*loopm );
+           i = io_generated_code->code_size;
+        }
+
+        if ( j+REGSIZE <= n )
         {
            io_generated_code->code_size = i;
            /* addq %r8, %rdi: */
@@ -888,6 +941,14 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
         offsetB = oldB + shiftmult*REGSIZE;
      }
 
+     if ( loopn > 0 ) {
+        io_generated_code->code_size = i;
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_ADDQ, l_gp_reg_mapping.gp_reg_b, shiftmult*REGSIZE );
+        libxsmm_x86_instruction_alu_imm( io_generated_code, LIBXSMM_X86_INSTR_SUBQ, l_gp_reg_mapping.gp_reg_ldb, 1 );
+        libxsmm_x86_instruction_jump_back_to_label( io_generated_code, LIBXSMM_X86_INSTR_JG, &l_loop_label_tracker );
+        i = io_generated_code->code_size;
+     }
+
      io_generated_code->code_size = i;
 #ifdef GENERATOR_TRANSPOSE_DEBUG
   printf("almost done with m=%d n=%d i=%d datasize=%d\n",m,n,i,datasize);
@@ -895,10 +956,9 @@ void libxsmm_generator_transpose_avx_avx512_kernel(
   }
 
   /* close asm: note that we really didn't need to push everything */
-  libxsmm_x86_instruction_close_stream_transpose( io_generated_code, i_arch );
+  libxsmm_x86_instruction_close_stream_transpose( io_generated_code, cpuid );
 #ifdef GENERATOR_TRANSPOSE_DEBUG
   printf("done with m=%d n=%d i=%d\n",i_trans_desc->m,i_trans_desc->n,io_generated_code->code_size);
 #endif
-
 }
 

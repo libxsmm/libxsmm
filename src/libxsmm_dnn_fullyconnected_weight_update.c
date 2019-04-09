@@ -116,13 +116,14 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_f32_f32(libxsmm_dn
   typedef float element_output_type;
   typedef float element_filter_type;
   libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
-  libxsmm_blasint ldb = (libxsmm_blasint)handle->bn;
+  libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
   libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
   element_input_type alpha = (element_input_type)1;
   element_input_type beta = (element_input_type)0;
+  libxsmm_blasint l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-     libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, NULL);
+    libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c"
   } else {
     status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
@@ -232,13 +233,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck
       typedef float element_output_type;
       typedef float element_filter_type;
       libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
-      libxsmm_blasint ldb = (libxsmm_blasint)handle->bn;
+      libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
       libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
       element_input_type alpha = (element_input_type)1;
       element_input_type beta = (element_input_type)0;
+      libxsmm_blasint l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-        libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, NULL);
+        libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
 # include "template/libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_generic.tpl.c"
       } else {
         status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;

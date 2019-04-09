@@ -34,6 +34,8 @@
     <None Include="kernel_appsizes.sh" />
     <None Include="Makefile" />
     <None Include="README.md" />
+    <None Include="test_dgemm.sh" />
+    <None Include="test_sgemm.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectName>kernel</ProjectName>

@@ -257,10 +257,13 @@ int main(int argc, char* argv[])
   int iters = 10; /* repetitions of benchmark */
   int pass = 0;   /* pass: 0--FWD, 1--BWD, 2--UPD, 3--BWD+UPD */
   int nonlin = 2; /* nonlin=1 denotes ReLU, 2 denotes sigmoid, 3 denotes tanh */
-  int N = 128;    /* size of mini-batch */
+  int N = 168;    /* size of mini-batch */
   int C = 512;    /* number of inputs */
   int K = 256;    /* number of outputs */
-  int t = 4;      /* number of time steps (> 1) */
+  int t = 4;      /* number of time steps (>= 1) */
+  int bn = 24;
+  int bc = 64;
+  int bk = 64;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1/*enable by default*/ : atof(env_check));
@@ -318,6 +321,9 @@ int main(int argc, char* argv[])
   if (argc > i) C     = atoi(argv[i++]);
   if (argc > i) K     = atoi(argv[i++]);
   if (argc > i) t     = atoi(argv[i++]);
+  if (argc > i) bn    = atoi(argv[i++]);
+  if (argc > i) bc    = atoi(argv[i++]);
+  if (argc > i) bk    = atoi(argv[i++]);
 
   if (t <= 0) {
     printf("time_steps %d should be greater than 0\n\n", t);
@@ -520,14 +526,24 @@ int main(int argc, char* argv[])
     printf("#      Setting Up  (custom-Storage)      #\n");
     printf("##########################################\n");
 
+    if ( N % bn != 0 ) {
+      bn = N;
+    }
+    if ( C % bc != 0 ) {
+      bc = C;
+    }
+    if ( K % bk != 0 ) {
+      bk = K;
+    }
+
     /* setup LIBXSMM handle */
     rnncell_desc.threads = nThreads;
     rnncell_desc.N = N;
     rnncell_desc.C = C;
     rnncell_desc.K = K;
-    rnncell_desc.bn = 64;
-    rnncell_desc.bk = 64;
-    rnncell_desc.bc = 64;
+    rnncell_desc.bn = bn;
+    rnncell_desc.bk = bk;
+    rnncell_desc.bc = bc;
     rnncell_desc.max_T = t;
 
     if ( nonlin == 1 ) {

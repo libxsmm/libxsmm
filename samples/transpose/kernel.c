@@ -114,6 +114,7 @@ double residual_dtranspose ( double *A, unsigned int lda, unsigned int m, unsign
 {
   unsigned int i, j;
   double dtmp, derror;
+  static int ntimes = 0;
 
   *nerrs = 0;
   derror = 0.0;
@@ -123,7 +124,10 @@ double residual_dtranspose ( double *A, unsigned int lda, unsigned int m, unsign
      {
          dtmp = A[ (j-1)*lda + (i-1) ] - out [ (i-1)*ld_out + (j-1) ];
          if ( dtmp < 0.0 ) dtmp = -dtmp;
-         if ( dtmp > 0.0 ) *nerrs = *nerrs + 1;
+         if ( dtmp > 0.0 ) {
+            if ( ++ntimes < 5 ) printf("FP64 Position (%d,%d) is %g and not %g\n",i,j,out [ (i-1)*ld_out + (j-1) ], A[ (j-1)*lda + (i-1) ]);
+            *nerrs = *nerrs + 1;
+         }
          derror += dtmp;
      }
   }
@@ -132,18 +136,23 @@ double residual_dtranspose ( double *A, unsigned int lda, unsigned int m, unsign
 
 
 /* Comment 1 of the following lines to compare to an ass. code byte-for-byte */
-/* #define COMPARE_TO_A_R32_ASSEMBLY_CODE */
-/* #define COMPARE_TO_A_R64_ASSEMBLY_CODE */
+/* #define COMPARE_TO_A_FP32_ASSEMBLY_CODE */
+/* #define COMPARE_TO_A_FP64_ASSEMBLY_CODE */
 
-#if defined(COMPARE_TO_A_R32_ASSEMBLY_CODE) || defined(COMPARE_TO_A_R64_ASSEMBLY_CODE)
+#if defined(COMPARE_TO_A_FP32_ASSEMBLY_CODE) || defined(COMPARE_TO_A_FP64_ASSEMBLY_CODE)
 # ifndef COMPARE_TO_AN_ASSEMBLY_CODE
 #   define COMPARE_TO_AN_ASSEMBLY_CODE
 # endif
 #endif
-#if defined(COMPARE_TO_A_R32_ASSEMBLY_CODE) && defined(COMPARE_TO_A_R64_ASSEMBLY_CODE)
-# error Define a comparison to either R32 or R64 code, not both at once
+#if defined(COMPARE_TO_A_FP32_ASSEMBLY_CODE) && defined(COMPARE_TO_A_FP64_ASSEMBLY_CODE)
+# error Define a comparison to either FP32 or FP64 code, not both at once
 #endif
 
+/* Use these lines to dump the real*4 or real*8 assembly files for the kernel */
+/*
+#define DUMP_FP32_ASSEMBLY_FILE
+#define DUMP_FP64_ASSEMBLY_FILE
+*/
 
 int main(int argc, char* argv[])
 {
@@ -151,8 +160,14 @@ int main(int argc, char* argv[])
   const unsigned char* cptr;
   double *dinp, *dout, dtmp;
   float  *sinp, *sout;
+#if defined(DUMP_FP32_ASSEMBLY_FILE) || defined(DUMP_FP64_ASSEMBLY_FILE)
+  FILE *fp;
+  char buffer[80];
+  int stop_dumping = 0;
+  unsigned int i;
+#endif
 #ifdef COMPARE_TO_AN_ASSEMBLY_CODE
-  unsigned int nbest, istop, i;
+  unsigned int nbest, istop;
   unsigned char *cptr2;
   extern void myro_();
 #endif
@@ -185,15 +200,72 @@ int main(int argc, char* argv[])
   desc = libxsmm_trans_descriptor_init(&blob, sizeof(double), m, n, ld_out);
   dkernel.f = libxsmm_dispatch_trans(desc);
 
-  printf("address of F32 kernel: %p\n", skernel.p);
-  printf("address of F64 kernel: %p\n", dkernel.p);
+  printf("address of FP32 kernel: %p\n", skernel.p);
+  printf("address of FP64 kernel: %p\n", dkernel.p);
 
+#ifndef DUMP_FP64_ASSEMBLY_FILE
   cptr = (const unsigned char*)dkernel.p;
   printf("First few bytes/opcodes: 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x 0x%02x\n",cptr[0],cptr[1],cptr[2],cptr[3],cptr[4],cptr[5]);
-  printf("cptr[9:11]=0x%02x 0x%02x 0x%02x\n",cptr[9],cptr[10],cptr[11]);
-  printf("cptr[12:14]=0x%02x 0x%02x 0x%02x\n",cptr[12],cptr[13],cptr[14]);
+#else
+  printf("Dumping FP64 assembly file\n");
+  cptr = (const unsigned char*)dkernel.p;
+  fp = fopen("foo.s","w");
+  fputs("\t.text\n",fp);
+  fputs("\t.align 256\n",fp);
+  fputs("\t.globl trans_\n",fp);
+  fputs("trans_:\n",fp);
+  i = 0;
+  stop_dumping = 0;
+  while ( (i < 7000) && (stop_dumping == 0) ) {
+     if ( (i >= 0) && (cptr[i  ]==0x5c) && (cptr[i+1]==0x5d) && (cptr[i+2]==0x5b) && (cptr[i+3]==0xc3) ) stop_dumping = 1;
+     if ( (i >= 1) && (cptr[i-1]==0x5c) && (cptr[i  ]==0x5d) && (cptr[i+1]==0x5b) && (cptr[i+2]==0xc3) ) stop_dumping = 1;
+     if ( (i >= 2) && (cptr[i-2]==0x5c) && (cptr[i-1]==0x5d) && (cptr[i  ]==0x5b) && (cptr[i+1]==0xc3) ) stop_dumping = 1;
+     if ( (i >= 3) && (cptr[i-3]==0x5c) && (cptr[i-2]==0x5d) && (cptr[i-1]==0x5b) && (cptr[i  ]==0xc3) ) stop_dumping = 1;
+
+     sprintf(buffer,".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",cptr[i],cptr[i+1],cptr[i+2],cptr[i+3]);
+     fputs(buffer,fp);
+     i += 4;
+  }
+  fputs("\tretq\n",fp);
+  fputs("\t.type trans_,@function\n",fp);
+  fputs("\t.size trans_,.-trans_\n",fp);
+  fclose(fp);
+  printf("Dumped FP64 %d bytes\n",i);
+#endif
+
+#ifdef DUMP_FP32_ASSEMBLY_FILE
+  printf("Dumping FP32 assembly file\n");
+  cptr = (const unsigned char*)skernel.p;
+  fp = fopen("soo.s","w");
+  fputs("\t.text\n",fp);
+  fputs("\t.align 256\n",fp);
+  fputs("\t.globl strans_\n",fp);
+  fputs("strans_:\n",fp);
+  i = 0;
+  stop_dumping = 0;
+  while ( (i < 7000) && (stop_dumping == 0) ) {
+     if ( (i >= 0) && (cptr[i  ]==0x5c) && (cptr[i+1]==0x5d) && (cptr[i+2]==0x5b) && (cptr[i+3]==0xc3) ) stop_dumping = 1;
+     if ( (i >= 1) && (cptr[i-1]==0x5c) && (cptr[i  ]==0x5d) && (cptr[i+1]==0x5b) && (cptr[i+2]==0xc3) ) stop_dumping = 1;
+     if ( (i >= 2) && (cptr[i-2]==0x5c) && (cptr[i-1]==0x5d) && (cptr[i  ]==0x5b) && (cptr[i+1]==0xc3) ) stop_dumping = 1;
+     if ( (i >= 3) && (cptr[i-3]==0x5c) && (cptr[i-2]==0x5d) && (cptr[i-1]==0x5b) && (cptr[i  ]==0xc3) ) stop_dumping = 1;
+
+     sprintf(buffer,".byte 0x%02x, 0x%02x, 0x%02x, 0x%02x\n",cptr[i],cptr[i+1],cptr[i+2],cptr[i+3]);
+     fputs(buffer,fp);
+     i += 4;
+  }
+  fputs("\tretq\n",fp);
+  fputs("\t.type strans_,@function\n",fp);
+  fputs("\t.size strans_,.-strans_\n",fp);
+  fclose(fp);
+  printf("Dumped FP32 %d bytes\n",i);
+#endif
 
 #ifdef COMPARE_TO_AN_ASSEMBLY_CODE
+  #ifdef COMPARE_TO_A_FP64_ASSEMBLY_CODE
+     cptr = (const unsigned char*)dkernel.p;
+  #else
+     cptr = (const unsigned char*)skernel.p;
+  #endif
   cptr2 = (unsigned char *) &myro_;
   i = 0;
   nbest = 0;
@@ -240,18 +312,18 @@ int main(int argc, char* argv[])
   }
 */
 
-#ifdef COMPARE_TO_A_R64_ASSEMBLY_CODE
+#ifdef COMPARE_TO_A_FP64_ASSEMBLY_CODE
   printf("Calling myro_: \n");
   myro_ ( dinp, &ld_in, dout, &ld_out );
   dtmp = residual_dtranspose ( dinp, ld_in, m, n, dout, ld_out, &nerrs );
-  printf("Myro_ R64 error: %g number of errors: %u\n",dtmp,nerrs);
+  printf("Myro_ FP64 error: %g number of errors: %u\n",dtmp,nerrs);
   dfill_matrix ( dout, ld_out, n, m );
 #endif
-#ifdef COMPARE_TO_A_R32_ASSEMBLY_CODE
+#ifdef COMPARE_TO_A_FP32_ASSEMBLY_CODE
   printf("Calling myro_: \n");
   myro_ ( sinp, &ld_in, sout, &ld_out );
   dtmp = residual_stranspose ( sinp, ld_in, m, n, sout, ld_out, &nerrs );
-  printf("Myro_ R32 error: %g number of errors: %u\n",dtmp,nerrs);
+  printf("Myro_ FP32 error: %g number of errors: %u\n",dtmp,nerrs);
   sfill_matrix ( sout, ld_out, n, m );
 #endif
 
