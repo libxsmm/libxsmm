@@ -82,10 +82,6 @@ LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned ch
 LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char size,
   unsigned char stride, unsigned int hint, unsigned int n);
 
-/** Similar to libxsmm_diff_n but expects n to be power of two. */
-LIBXSMM_API unsigned int libxsmm_diff_npot(const void* a, const void* bn, unsigned char size,
-  unsigned char stride, unsigned int hint, unsigned int n);
-
 /** Calculate a hash value for a given buffer. */
 LIBXSMM_API unsigned int libxsmm_hash(unsigned int seed, const void* data, unsigned int size);
 

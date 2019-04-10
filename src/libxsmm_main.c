@@ -943,6 +943,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
 {
   int target_archid = LIBXSMM_TARGET_ARCH_UNKNOWN;
   switch (id) {
+    case LIBXSMM_X86_AVX512_CPX:
     case LIBXSMM_X86_AVX512_CLX:
     case LIBXSMM_X86_AVX512_CORE:
     case LIBXSMM_X86_AVX512_KNM:
@@ -967,7 +968,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     const int cpuid = libxsmm_cpuid();
     if (cpuid < target_archid) {
       const char *const target_arch = libxsmm_cpuid_name(target_archid);
-      fprintf(stderr, "LIBXSMM WARNING: \"%s\" code will fail to run on \"%s\"!\n",
+      fprintf(stderr, "LIBXSMM WARNING: \"%s\" code may fail to run on \"%s\"!\n",
         target_arch, libxsmm_cpuid_name(cpuid));
     }
   }
@@ -1004,6 +1005,9 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     }
     else if (0 < jit) {
       target_archid = LIBXSMM_X86_GENERIC + jit;
+    }
+    else if (0 == strcmp("cpx", arch)) {
+      target_archid = LIBXSMM_X86_AVX512_CPX;
     }
     else if (0 == strcmp("clx", arch)) {
       target_archid = LIBXSMM_X86_AVX512_CLX;
@@ -1050,13 +1054,13 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
   else {
     target_archid = cpuid;
   }
-  if (cpuid < target_archid) { /* limit code path to what was identified per CPUID */
+  if (cpuid < target_archid) { /* warn about code path if beyond CPUID */
     if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
       const char *const target_arch = libxsmm_cpuid_name(target_archid);
       fprintf(stderr, "LIBXSMM WARNING: \"%s\" code will fail to run on \"%s\"!\n",
         target_arch, libxsmm_cpuid_name(cpuid));
     }
-#if defined(NDEBUG) /* allow to debug with higher code path */
+#if 0 /* limit code path to confirmed features */
     target_archid = cpuid;
 #endif
   }
@@ -1620,16 +1624,16 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
   internal_pad_descriptor(desc, size);
   LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
-  LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE), LIBXSMM_MOD2,
+  LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE),
     xdesc, &cache.keys, LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
 # else
   internal_pad_descriptor(desc, size);
-  cache_index = (unsigned char)libxsmm_diff_npot(desc, &cache.keys,
+  cache_index = (unsigned char)libxsmm_diff_n(desc, &cache.keys,
     LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
 # endif
 # else
   LIBXSMM_ASSERT(NULL != desc);
-  cache_index = (unsigned char)libxsmm_diff_npot(desc, &cache.keys,
+  cache_index = (unsigned char)libxsmm_diff_n(desc, &cache.keys,
     LIBXSMM_MIN(size, LIBXSMM_DIFF_SIZE), LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
 # endif
   if (cache_index < cache.size && cache.id == libxsmm_ninit) { /* valid hit */

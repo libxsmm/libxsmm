@@ -43,23 +43,27 @@
 #if defined(__GNUC__) || defined(__PGI)
 # if (64 > (LIBXSMM_BITS))
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int*);
-#   define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) __get_cpuid(FUNCTION, &(EAX), &(EBX), &(ECX), &(EDX))
+#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) \
+      EAX = (EBX) = (EDX) = 0; ECX = (SUBFN); \
+      __get_cpuid(FUNCTION, &(EAX), &(EBX), &(ECX), &(EDX))
 # else
-#   define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) __asm__ __volatile__ ( \
-      ".byte 0x0f, 0xa2" /*cpuid*/ : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) : "a"(FUNCTION), "c"(0) \
+#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) \
+      __asm__ __volatile__ (".byte 0x0f, 0xa2" /*cpuid*/ \
+      : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) \
+      : "a"(FUNCTION), "b"(0), "c"(SUBFN), "d"(0) \
     )
 # endif
 #elif !defined(_CRAYC)
-# define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) { \
-    int libxsmm_cpuid_x86_[4]; \
-    __cpuid(libxsmm_cpuid_x86_, FUNCTION); \
+# define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) { \
+    int libxsmm_cpuid_x86_[/*4*/] = { 0, 0, 0, 0 }; \
+    __cpuidex(libxsmm_cpuid_x86_, FUNCTION, SUBFN); \
     EAX = (unsigned int)libxsmm_cpuid_x86_[0]; \
     EBX = (unsigned int)libxsmm_cpuid_x86_[1]; \
     ECX = (unsigned int)libxsmm_cpuid_x86_[2]; \
     EDX = (unsigned int)libxsmm_cpuid_x86_[3]; \
   }
 #else
-# define LIBXSMM_CPUID_X86(FUNCTION, EAX, EBX, ECX, EDX) LIBXSMM_X86_AVX
+# define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) LIBXSMM_X86_AVX
 #endif
 
 /** Execute the XGETBV (x86), and receive results (EAX, EDX) for req. eXtended Control Register (XCR). */
@@ -81,53 +85,60 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*,
 LIBXSMM_API int libxsmm_cpuid_x86(void)
 {
   int target_arch = LIBXSMM_STATIC_TARGET_ARCH;
-  unsigned int eax = 0, ebx = 0, ecx = 0, edx = 0;
+  unsigned int eax, ebx, ecx, edx;
 
-  LIBXSMM_CPUID_X86(0, eax, ebx, ecx, edx);
+  LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID */
     static int error_once = 0;
-    LIBXSMM_CPUID_X86(1, eax, ebx, ecx, edx);
+    LIBXSMM_CPUID_X86(1, 0/*ecx*/, eax, ebx, ecx, edx);
 
     /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
-    if (0x00100000 == (0x00100000 & ecx)) {
+    if (0 != (0x00100000 & ecx)) {
       target_arch = LIBXSMM_X86_SSE4;
     }
 
     /* XSAVE/XGETBV(0x04000000), OSXSAVE(0x08000000) */
-    if (0x0C000000 == (0x0C000000 & ecx)) {
+    if (0 != (0x0C000000 & ecx)) {
       LIBXSMM_XGETBV(0, eax, edx);
 
-      if (0x00000006 == (0x00000006 & eax)) { /* OS XSAVE 256-bit */
-        if (0x000000E0 == (0x000000E0 & eax)) { /* OS XSAVE 512-bit */
-          LIBXSMM_CPUID_X86(7, eax, ebx, ecx, edx);
+      if (0 != (0x00000006 & eax)) { /* OS XSAVE 256-bit */
+        if (0 != (0x000000E0 & eax)) { /* OS XSAVE 512-bit */
+          LIBXSMM_CPUID_X86(7, 0/*ecx*/, eax, ebx, ecx, edx);
 
           /* AVX512F(0x00010000), AVX512CD(0x10000000) */
-          if (0x10010000 == (0x10010000 & ebx)) { /* Common */
+          if (0 != (0x10010000 & ebx)) { /* Common */
             /* AVX512DQ(0x00020000), AVX512BW(0x40000000), AVX512VL(0x80000000) */
-            if (0xC0020000 == (0xC0020000 & ebx)) { /* SKX (Core) */
-              if (0x00000800 == (0x00000800 & ecx)) { /* CLX (CORE) */
-                target_arch = LIBXSMM_X86_AVX512_CLX;
+            if (0 != (0xC0020000 & ebx)) { /* AVX512-Core */
+              if (0 != (0x00000800 & ecx)) { /* VNNI */
+                LIBXSMM_CPUID_X86(7, 1/*ecx*/, eax, ebx, ecx, edx);
+
+                if (0 != (0x00000020 & eax)) { /* BF16 */
+                  target_arch = LIBXSMM_X86_AVX512_CPX;
+                }
+                else { /* CLX */
+                  target_arch = LIBXSMM_X86_AVX512_CLX;
+                }
               }
-              else { /* SKX (CORE) */
+              else { /* SKX */
                 target_arch = LIBXSMM_X86_AVX512_CORE;
               }
             }
             /* AVX512PF(0x04000000), AVX512ER(0x08000000) */
-            else if (0x0C000000 == (0x0C000000 & ebx)) {
-              if (0x0000000C == (0x0000000C & edx)) { /* KNM (MIC) */
+            else if (0 != (0x0C000000 & ebx)) { /* AVX512-MIC */
+              if (0 != (0x0000000C & edx)) { /* KNM */
                 target_arch = LIBXSMM_X86_AVX512_KNM;
               }
-              else { /* KNL (MIC) */
+              else { /* KNL */
                 target_arch = LIBXSMM_X86_AVX512_MIC;
               }
             }
-            else { /* Common */
+            else { /* AVX512-Common */
               target_arch = LIBXSMM_X86_AVX512;
             }
           }
         }
-        else if (0x10000000 == (0x10000000 & ecx)) { /* AVX(0x10000000) */
-          if (0x00001000 == (0x00001000 & ecx)) { /* FMA(0x00001000) */
+        else if (0 != (0x10000000 & ecx)) { /* AVX(0x10000000) */
+          if (0 != (0x00001000 & ecx)) { /* FMA(0x00001000) */
             target_arch = LIBXSMM_X86_AVX2;
           }
           else {
@@ -160,6 +171,9 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
 {
   const char* target_arch = NULL;
   switch (id) {
+    case LIBXSMM_X86_AVX512_CPX: {
+      target_arch = "cpx";
+    } break;
     case LIBXSMM_X86_AVX512_CLX: {
       target_arch = "clx";
     } break;
