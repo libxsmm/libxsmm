@@ -68,19 +68,19 @@
 #define LIBXSMM_DIFF(N) LIBXSMM_CONCATENATE(LIBXSMM_DIFF_, N)
 
 #define LIBXSMM_DIFF_N(TYPE, RESULT, DIFF, MOD, A, BN, ELEMSIZE, STRIDE, HINT, N) { \
-  const char *const libxsmm_diff_b_ = (const char*)(BN); \
-  TYPE libxsmm_diff_i_ = HINT; \
+  const char* libxsmm_diff_b_ = (const char*)(BN); \
   if (0 == (HINT)) { /* fast-path */ \
     for (RESULT = 0; (RESULT) < (N); ++(RESULT)) { \
-      if (0 == DIFF(A, libxsmm_diff_b_ + libxsmm_diff_i_, ELEMSIZE)) break; \
-      libxsmm_diff_i_ += STRIDE; \
+      if (0 == DIFF(A, libxsmm_diff_b_, ELEMSIZE)) break; \
+      libxsmm_diff_b_ += STRIDE; \
     } \
   } \
   else { /* wrap around index */ \
+    TYPE libxsmm_diff_i_ = HINT; \
     RESULT = (N); \
-    for (; libxsmm_diff_i_ < ((HINT) + (N)); ++libxsmm_diff_i_) { \
-      TYPE libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); \
-      if (0 == DIFF(A, libxsmm_diff_b_ + libxsmm_diff_j_ * (STRIDE), ELEMSIZE)) { \
+    for (; libxsmm_diff_i_ < ((N) + (HINT)); ++libxsmm_diff_i_) { \
+      const TYPE libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); \
+      if (0 == DIFF(A, libxsmm_diff_b_ + ((size_t)libxsmm_diff_j_ * (STRIDE)), ELEMSIZE)) { \
         RESULT = libxsmm_diff_j_; \
         break; \
       } \
