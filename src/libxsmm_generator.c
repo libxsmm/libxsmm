@@ -163,6 +163,30 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bsgemm_descriptor_init(libxsmm_desc
 }
 
 
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+  float alpha, float beta, int flags, int prefetch)
+{
+  union {
+    libxsmm_gemm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
+  {
+    LIBXSMM_ASSERT(blob);
+    result.blob = blob;
+    LIBXSMM_GEMM_DESCRIPTOR2(*result.ptr, LIBXSMM_GEMM_PRECISION(libxsmm_bfloat16), LIBXSMM_GEMM_PRECISION(libxsmm_bfloat16),
+      flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+  }
+  else { /* unsupported */
+    result.ptr = NULL;
+  }
+  return result.ptr;
+}
+
+
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, double alpha, double beta,
@@ -204,6 +228,9 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_desc
     case LIBXSMM_GEMM_PRECISION_BF16: {
       if (LIBXSMM_GEMM_PRECISION_F32 == oprec) {
         result = libxsmm_bsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
+          (float)alpha, (float)beta, flags, prefetch);
+      } else if (LIBXSMM_GEMM_PRECISION_BF16 == oprec) {
+        result = libxsmm_bgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
           (float)alpha, (float)beta, flags, prefetch);
       }
     } break;
@@ -291,6 +318,12 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
         const float aa = (NULL != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
         const float bb = (NULL != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
         result = libxsmm_bsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
+        if (NULL != dalpha) *dalpha = (double)aa;
+        if (NULL != dbeta) *dbeta = (double)bb;
+      } else if (LIBXSMM_GEMM_PRECISION_BF16 == oprec) {
+        const float aa = (NULL != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
+        const float bb = (NULL != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
+        result = libxsmm_bgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
         if (NULL != dalpha) *dalpha = (double)aa;
         if (NULL != dbeta) *dbeta = (double)bb;
       }
