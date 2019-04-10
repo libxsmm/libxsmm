@@ -76,7 +76,8 @@ int main(int argc, char* argv[])
     { /* benchmark libxsmm_diff_n */
       start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
-        j = libxsmm_diff_n(ref, input, (unsigned char)elsize, (unsigned char)stride, 0/*hint*/, (unsigned int)npot);
+        j = libxsmm_diff_n(ref, input, (unsigned char)elsize, (unsigned char)stride,
+          (unsigned int)LIBXSMM_MIN(i, npot)/*hint*/, (unsigned int)npot);
       }
       printf("libxsmm_diff_n:\t\t%.3f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
       result = ((npot == (j + 1) && 0 == memcmp(ref, input + j * stride, elsize)) ? EXIT_SUCCESS : EXIT_FAILURE);
@@ -89,7 +90,8 @@ int main(int argc, char* argv[])
       start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
 #if !defined(USE_HASH)
-        j = libxsmm_diff_npot(ref, input, (unsigned char)elsize, (unsigned char)stride, 0/*hint*/, (unsigned int)npot);
+        j = libxsmm_diff_npot(ref, input, (unsigned char)elsize, (unsigned char)stride,
+          (unsigned int)LIBXSMM_MIN(i, npot)/*hint*/, (unsigned int)npot);
 #else
         const unsigned char* tst = input;
         for (j = 0; j < npot; ++j) {
