@@ -968,7 +968,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id)
     const int cpuid = libxsmm_cpuid();
     if (cpuid < target_archid) {
       const char *const target_arch = libxsmm_cpuid_name(target_archid);
-      fprintf(stderr, "LIBXSMM WARNING: \"%s\" code will fail to run on \"%s\"!\n",
+      fprintf(stderr, "LIBXSMM WARNING: \"%s\" code may fail to run on \"%s\"!\n",
         target_arch, libxsmm_cpuid_name(cpuid));
     }
   }
