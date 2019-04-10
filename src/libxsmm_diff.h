@@ -67,23 +67,26 @@
 #define LIBXSMM_DIFF_LOAD(N, A, SRC) LIBXSMM_CONCATENATE2(LIBXSMM_DIFF_, N, _LOAD)(A, SRC)
 #define LIBXSMM_DIFF(N) LIBXSMM_CONCATENATE(LIBXSMM_DIFF_, N)
 
-#define LIBXSMM_DIFF_N(TYPE, RESULT, DIFF, MOD, A, BN, ELEMSIZE, STRIDE, HINT, N) { \
+#define LIBXSMM_DIFF_N(TYPE, RESULT, DIFF, A, BN, ELEMSIZE, STRIDE, HINT, N) { \
   const char* libxsmm_diff_b_ = (const char*)(BN); \
   if (0 == (HINT)) { /* fast-path */ \
     for (RESULT = 0; (RESULT) < (N); ++(RESULT)) { \
       if (0 == DIFF(A, libxsmm_diff_b_, ELEMSIZE)) break; \
-      libxsmm_diff_b_ += STRIDE; \
+      libxsmm_diff_b_ += (STRIDE); \
     } \
   } \
   else { /* wrap around index */ \
-    TYPE libxsmm_diff_i_ = HINT; \
+    TYPE libxsmm_diff_i_ = (HINT); \
+    const size_t libxsmm_diff_end_ = (size_t)(N) * (STRIDE); \
+    libxsmm_diff_b_ += (size_t)(HINT) * (STRIDE); \
     RESULT = (N); \
     for (; libxsmm_diff_i_ < ((N) + (HINT)); ++libxsmm_diff_i_) { \
-      const TYPE libxsmm_diff_j_ = MOD(libxsmm_diff_i_, N); \
-      if (0 == DIFF(A, libxsmm_diff_b_ + ((size_t)libxsmm_diff_j_ * (STRIDE)), ELEMSIZE)) { \
-        RESULT = libxsmm_diff_j_; \
+      const char *const libxsmm_diff_c_ = (libxsmm_diff_i_ < (N) ? libxsmm_diff_b_ : (libxsmm_diff_b_ - libxsmm_diff_end_)); \
+      if (0 == DIFF(A, libxsmm_diff_c_, ELEMSIZE)) { \
+        RESULT = (libxsmm_diff_i_ < (N) ? libxsmm_diff_i_ : (libxsmm_diff_i_ - (N))); \
         break; \
       } \
+      libxsmm_diff_b_ += (STRIDE); \
     } \
   } \
 }

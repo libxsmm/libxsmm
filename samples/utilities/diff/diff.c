@@ -32,9 +32,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#if !defined(USE_NONPOT) && 0
-# define USE_NONPOT
-#endif
 #if !defined(USE_HASH) && 0
 # define USE_HASH
 #endif
@@ -50,52 +47,41 @@ int main(int argc, char* argv[])
   const int stride = (0 >= incrmt ? LIBXSMM_MAX(LIBXSMM_DESCRIPTOR_MAXSIZE, elsize) : LIBXSMM_MAX(incrmt, elsize));
   const size_t n = (0 >= nelems ? (((size_t)2 << 30/*2 GB*/) / stride) : ((size_t)nelems));
   int result = EXIT_SUCCESS;
-  size_t size, npot, nrpt;
+  size_t nbytes, size, nrpt;
   unsigned char* input;
 
   if (0 < niters) {
-    npot = LIBXSMM_UP2POT(n);
+    size = n;
     nrpt = niters;
   }
   else {
-    npot = LIBXSMM_UP2POT(LIBXSMM_MAX(LIBXSMM_ABS(niters), 1));
+    size = LIBXSMM_MAX(LIBXSMM_ABS(niters), 1);
     nrpt = n;
   }
-  size = npot * stride;
-  input = (unsigned char*)(0 != size ? malloc(size) : NULL);
+  nbytes = size * stride;
+  input = (unsigned char*)(0 != nbytes ? malloc(nbytes) : NULL);
 
   if (NULL != input) {
-    unsigned char *const ref = input + (npot - 1) * stride; /* last item */
+    unsigned char *const ref = input + (size - 1) * stride; /* last item */
     libxsmm_timer_tickint start;
     size_t i, j = 0;
 
     /* initialize the input data */
-    for (i = 0; i < size; ++i) input[i] = LIBXSMM_MOD2(i, 128);
+    for (i = 0; i < nbytes; ++i) input[i] = LIBXSMM_MOD2(i, 128);
     for (i = 0; i < (size_t)elsize; ++i) ref[i] = 255;
-#if defined(USE_NONPOT)
     { /* benchmark libxsmm_diff_n */
-      start = libxsmm_timer_tick();
-      for (i = 0; i < nrpt; ++i) {
-        j = libxsmm_diff_n(ref, input, (unsigned char)elsize, (unsigned char)stride,
-          (unsigned int)LIBXSMM_MIN(i, npot)/*hint*/, (unsigned int)npot);
-      }
-      printf("libxsmm_diff_n:\t\t%.3f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
-      result = ((npot == (j + 1) && 0 == memcmp(ref, input + j * stride, elsize)) ? EXIT_SUCCESS : EXIT_FAILURE);
-    }
-#endif
-    if (EXIT_SUCCESS == result) { /* benchmark libxsmm_diff_npot */
 #if defined(USE_HASH)
-      const unsigned int hashref = libxsmm_hash(ref, elsize, 0/*seed*/);
+      const unsigned int hashref = libxsmm_hash(0/*seed*/, ref, elsize);
 #endif
       start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
 #if !defined(USE_HASH)
-        j = libxsmm_diff_npot(ref, input, (unsigned char)elsize, (unsigned char)stride,
-          (unsigned int)LIBXSMM_MIN(i, npot)/*hint*/, (unsigned int)npot);
+        j = libxsmm_diff_n(ref, input, (unsigned char)elsize, (unsigned char)stride,
+          (unsigned int)LIBXSMM_MIN(i, size)/*hint*/, (unsigned int)size);
 #else
         const unsigned char* tst = input;
-        for (j = 0; j < npot; ++j) {
-          const unsigned int hashtst = libxsmm_hash(tst, elsize, 0/*seed*/);
+        for (j = 0; j < size; ++j) {
+          const unsigned int hashtst = libxsmm_hash(0/*seed*/, tst, elsize);
           if (hashref == hashtst && 0 == libxsmm_diff(ref, tst, (unsigned char)elsize)) {
             break;
           }
@@ -103,8 +89,8 @@ int main(int argc, char* argv[])
         }
 #endif
       }
-      printf("libxsmm_diff_npot:\t%.3f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
-      result = ((npot == (j + 1) && 0 == memcmp(ref, input + j * stride, elsize)) ? EXIT_SUCCESS : EXIT_FAILURE);
+      printf("libxsmm_diff_n:\t\t%.3f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      result = ((size == (j + 1) && 0 == memcmp(ref, input + j * stride, elsize)) ? EXIT_SUCCESS : EXIT_FAILURE);
     }
 
     free(input);
