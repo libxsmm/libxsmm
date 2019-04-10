@@ -34,6 +34,6 @@ HERE=$(cd $(dirname $0); pwd -P)
 
 ${HERE}/benchmark-plot.sh eigen "$@"
 ${HERE}/benchmark-plot.sh blaze "$@"
-${HERE}/benchmark-plot.sh blas "$@"
+#${HERE}/benchmark-plot.sh blas "$@"
 ${HERE}/benchmark-plot.sh xsmm "$@"
 
