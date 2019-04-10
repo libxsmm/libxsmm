@@ -1054,18 +1054,16 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
   else {
     target_archid = cpuid;
   }
-#if 0
-  if (cpuid < target_archid) { /* limit code path to what was identified per CPUID */
+  if (cpuid < target_archid) { /* warn about code path if beyond CPUID */
     if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
       const char *const target_arch = libxsmm_cpuid_name(target_archid);
       fprintf(stderr, "LIBXSMM WARNING: \"%s\" code will fail to run on \"%s\"!\n",
         target_arch, libxsmm_cpuid_name(cpuid));
     }
-#if defined(NDEBUG) /* allow to debug with higher code path */
+#if 0 /* limit code path to confirmed features */
     target_archid = cpuid;
 #endif
   }
-#endif
   LIBXSMM_ATOMIC_STORE(&libxsmm_target_archid, target_archid, LIBXSMM_ATOMIC_RELAXED);
 }
 
