@@ -1,6 +1,9 @@
+diff/diff
+math/math
 dispatch/dispatch
 dispatch/dispatchf
 mhd/mhd
+rng/rng
 scratch/scratch
 sync/sync_barrier
 sync/sync_lock
