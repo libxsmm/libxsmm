@@ -53,6 +53,12 @@
 # define STREAM_C(EXPR) 0
 #endif
 
+#if 1 /* PAD (alignment) must be power of two */
+# define PAD 64
+#else
+# define PAD 1
+#endif
+
 
 void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
   const double seed1 = scale * seed + scale;
