@@ -136,7 +136,7 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
  * @param i_vec_instr actual operation variant
  * @param i_vector_name the vector register name prefix (x,y or z)
  * @param i_vec_reg_src_0 the first source vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_src_1 the seconf source vector register number (xmm/ymm: 0-15, zmm: 0-31)
+ * @param i_vec_reg_src_1 the second source vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_vec_reg_dst the destination vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_shuffle_operand is an immediate (only looked at when needed)
  */
