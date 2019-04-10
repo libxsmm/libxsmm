@@ -56,7 +56,6 @@ libxsmm_diff_32
 libxsmm_diff_48
 libxsmm_diff_64
 libxsmm_diff_n
-libxsmm_diff_npot
 libxsmm_dispatch_mcopy
 libxsmm_dispatch_trans
 libxsmm_dispatch_trmm
