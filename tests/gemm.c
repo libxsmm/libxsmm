@@ -104,6 +104,7 @@ int main(void)
   unsigned int fpstate = 0;
   _MM_SET_EXCEPTION_MASK(fpemask & ~fpcheck);
 #endif
+  LIBXSMM_BLAS_INIT
   for (test = begin; test < end; ++test) {
     m[test] = LIBXSMM_UP(m[test], block);
     n[test] = LIBXSMM_UP(n[test], block);
