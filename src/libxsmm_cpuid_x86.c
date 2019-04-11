@@ -39,8 +39,26 @@
 # pragma offload_attribute(pop)
 #endif
 
-/** Execute CPUID, and receive results (EAX, EBX, ECX, EDX) for requested FUNCTION. */
-#if defined(__GNUC__) || defined(__PGI)
+/* XGETBV: receive results (EAX, EDX) for eXtended Control Register (XCR). */
+/* CPUID, receive results (EAX, EBX, ECX, EDX) for requested FUNCTION/SUBFN. */
+#if defined(_WIN32)
+# define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
+    unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
+    EAX = (int)libxsmm_xgetbv_; \
+    EDX = (int)(libxsmm_xgetbv_ >> 32); \
+  }
+# define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) { \
+    int libxsmm_cpuid_x86_[/*4*/] = { 0, 0, 0, 0 }; \
+    __cpuidex(libxsmm_cpuid_x86_, FUNCTION, SUBFN); \
+    EAX = (unsigned int)libxsmm_cpuid_x86_[0]; \
+    EBX = (unsigned int)libxsmm_cpuid_x86_[1]; \
+    ECX = (unsigned int)libxsmm_cpuid_x86_[2]; \
+    EDX = (unsigned int)libxsmm_cpuid_x86_[3]; \
+  }
+#else
+# define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
+    ".byte 0x0f, 0x01, 0xd0" /*xgetbv*/ : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
+  )
 # if (64 > (LIBXSMM_BITS))
 LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int*);
 #   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) \
@@ -53,32 +71,6 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*,
       : "a"(FUNCTION), "b"(0), "c"(SUBFN), "d"(0) \
     )
 # endif
-#elif !defined(_CRAYC)
-# define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) { \
-    int libxsmm_cpuid_x86_[/*4*/] = { 0, 0, 0, 0 }; \
-    __cpuidex(libxsmm_cpuid_x86_, FUNCTION, SUBFN); \
-    EAX = (unsigned int)libxsmm_cpuid_x86_[0]; \
-    EBX = (unsigned int)libxsmm_cpuid_x86_[1]; \
-    ECX = (unsigned int)libxsmm_cpuid_x86_[2]; \
-    EDX = (unsigned int)libxsmm_cpuid_x86_[3]; \
-  }
-#else
-# define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) LIBXSMM_X86_AVX
-#endif
-
-/** Execute the XGETBV (x86), and receive results (EAX, EDX) for req. eXtended Control Register (XCR). */
-#if defined(__GNUC__) || defined(__PGI)
-# define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
-    ".byte 0x0f, 0x01, 0xd0" /*xgetbv*/ : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
-  )
-#elif !defined(_CRAYC)
-# define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
-    unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
-    EAX = (int)libxsmm_xgetbv_; \
-    EDX = (int)(libxsmm_xgetbv_ >> 32); \
-  }
-#else
-# define LIBXSMM_XGETBV(XCR, EAX, EDX)
 #endif
 
 
