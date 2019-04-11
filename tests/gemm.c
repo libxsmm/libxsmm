@@ -78,7 +78,7 @@ int main(void)
   libxsmm_blasint ldc[] = { 1, 1, 1, 1, 1, 1, 2, 3, 3, 1, 8, 4096, 240,    16, 80, 80, 80, 80,    16, 260, 260, 260, 260, 350, 350, 350, 350, 350,  5, 22, 12, 20, 2048,    9, 13, 5 };
   OTYPE alpha[]         = { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,    1,   1,     1,  1,  1,  1,  1,     1,   1,   1,   1,   1,   1,   1,   1,   1,   1,  1,  1,  1,  1,    1,    1,  1, 1 };
   OTYPE beta[]          = { 0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0,    0,   1,     0,  0,  0,  0,  0,     1,   0,   0,   0,   0,   0,   0,   1,   0,   0,  1,  0,  1,  0,    1,    0,  1, 1 };
-#if !defined(__BLAS) || (0 != __BLAS)
+#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
   char transa[] = "NNNTT";
 #else
   char transa[] = "NN";
@@ -94,7 +94,7 @@ int main(void)
 #if defined(GEMM)
   OTYPE *d = NULL;
 #endif
-#if !defined(__BLAS) || (0 != __BLAS)
+#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
   OTYPE *gold = NULL;
 #endif
   int result = EXIT_SUCCESS, test, i;
@@ -126,7 +126,7 @@ int main(void)
   d = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
   LIBXSMM_ASSERT(NULL != d);
 #endif
-#if !defined(__BLAS) || (0 != __BLAS)
+#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
   gold = (OTYPE*)libxsmm_malloc((size_t)(max_size_c * sizeof(OTYPE)));
   LIBXSMM_ASSERT(NULL != gold);
 #endif
@@ -155,7 +155,7 @@ int main(void)
         mi = ni = ki = LIBXSMM_MIN(ti, ki);
       }
       if (LIBXSMM_FEQ(0, beta[test])) {
-#if !defined(__BLAS) || (0 != __BLAS)
+#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
         memset(gold, -1, sizeof(OTYPE) * max_size_c);
 #endif
         memset(c, -1, sizeof(OTYPE) * max_size_c);
@@ -164,7 +164,7 @@ int main(void)
 #endif
       }
       else {
-#if !defined(__BLAS) || (0 != __BLAS)
+#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
         memset(gold, 0, sizeof(OTYPE) * max_size_c);
 #endif
         memset(c, 0, sizeof(OTYPE) * max_size_c);
@@ -194,26 +194,27 @@ int main(void)
           0 != (_MM_MASK_OVERFLOW & fpstate) ? "true" : "false");
 # endif
       }
-# if !defined(__BLAS) || (0 != __BLAS)
+# if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
       else
 # endif
 #endif
-#if !defined(__BLAS) || (0 != __BLAS)
+#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
 # if !defined(GEMM)
       if (0 != smm)
 # endif
       {
+# if defined(GEMM_GOLD)
         libxsmm_matdiff_info diff_test;
         GEMM_GOLD(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, gold, ldc + test);
 
         result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(OTYPE), mi, ni, gold, c, ldc + test, ldc + test);
         if (EXIT_SUCCESS == result) {
-# if defined(_DEBUG)
+#   if defined(_DEBUG)
           libxsmm_matdiff_reduce(&diff, &diff_test);
-# endif
+#   endif
           if (1.0 < (1000.0 * diff_test.normf_rel)) {
-# if defined(_DEBUG)
+#   if defined(_DEBUG)
             if (0 != smm) {
               fprintf(stderr, "\nERROR: SMM test %i.%i failed!\n\t", test + 1, i + 1);
             }
@@ -223,35 +224,38 @@ int main(void)
             libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
               alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
             fprintf(stderr, "\n");
-# endif
+#   endif
             result = EXIT_FAILURE;
           }
-# if defined(GEMM)
+#   if defined(GEMM)
           else {
             result = libxsmm_matdiff(&diff_test, LIBXSMM_DATATYPE(OTYPE), mi, ni, gold, d, ldc + test, ldc + test);
             if (EXIT_SUCCESS == result) {
-#   if defined(_DEBUG)
+#     if defined(_DEBUG)
               libxsmm_matdiff_reduce(&diff, &diff_test);
-#   endif
+#     endif
               if (1.0 < (1000.0 * diff_test.normf_rel)) {
-#   if defined(_DEBUG)
+#     if defined(_DEBUG)
                 fprintf(stderr, "\nERROR: test %i.%i failed!\n\t", test + 1, i + 1);
                 libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
                   alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
                 fprintf(stderr, "\n");
-#   endif
+#     endif
                 result = EXIT_FAILURE;
               }
             }
           }
-# endif
+#   endif
         }
+# endif
       }
+# if defined(GEMM_GOLD)
       /* avoid drift between Gold and test-results */
       memcpy(c, gold, sizeof(OTYPE) * max_size_c);
-#if defined(GEMM)
+#   if defined(GEMM)
       memcpy(d, gold, sizeof(OTYPE) * max_size_c);
-#endif
+#   endif
+# endif
 #elif defined(_DEBUG)
       fprintf(stderr, "Warning: skipped the test due to missing BLAS support!\n");
 #endif
@@ -271,7 +275,7 @@ int main(void)
 #if defined(GEMM)
   libxsmm_free(d);
 #endif
-#if !defined(__BLAS) || (0 != __BLAS)
+#if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
   libxsmm_free(gold);
 #endif
   return result;
