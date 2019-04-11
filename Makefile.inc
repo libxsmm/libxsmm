@@ -1807,6 +1807,9 @@ else ifneq (0,$(BLAS)) # generic
     endif
   else # BLAS library is specified via BLASLIB
     BLAS_FLAGS += -D__BLAS=$(BLAS)
+    ifneq (,$(findstring openblas,$(notdir $(BLASLIB))))
+      BLAS_FLAGS += -D__CBLAS -D__OPENBLAS
+    endif
     ifneq (./,$(BLASDIR)$(dir $(BLASLIB)))
       ifeq (./,$(dir $(BLASLIB)))
         BLAS_LDFLAGS += $(call abslib,$(BLASDIR)/$(if $(suffix $(BLASLIB)),$(BLASLIB),lib$(BLASLIB).$(BLASLIBEXT)))
