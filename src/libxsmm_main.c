@@ -1728,7 +1728,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
             libxsmm_build_request request; /* setup the code build request */
             LIBXSMM_ASSERT(desc->kind < LIBXSMM_KERNEL_KIND_INVALID);
             request.kind = (libxsmm_build_kind)desc->kind;
-            request.descriptor.data = desc->data + sizeof(libxsmm_descriptor_kind);
+            request.descriptor.data = (const char*)&desc->gemm.desc;
 #if defined(NDEBUG)
             if (EXIT_SUCCESS == libxsmm_build(&request, i, &flux_entry) && NULL != flux_entry.ptr_const)
 #else
