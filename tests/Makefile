@@ -23,7 +23,8 @@ include $(DEPDIR)/Makefile.inc
 
 OUTNAME := $(shell basename $(ROOTDIR))
 HEADERS := $(wildcard $(INCDIR)/*.h) $(wildcard $(INCDIR)/*.hpp) $(wildcard $(INCDIR)/*.hxx) $(wildcard $(INCDIR)/*.hh) \
-           $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh)
+           $(wildcard $(SRCDIR)/*.h) $(wildcard $(SRCDIR)/*.hpp) $(wildcard $(SRCDIR)/*.hxx) $(wildcard $(SRCDIR)/*.hh) \
+           $(DEPDIR)/include/libxsmm_source.h
 CPPSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cpp 2>/dev/null | tr "\n" " ")
 CPPSRCX := $(shell grep -l $(CMAIN) $(SRCDIR)/*.cpp 2>/dev/null | tr "\n" " ")
 CXXSRCS := $(shell grep -L $(CMAIN) $(SRCDIR)/*.cxx 2>/dev/null | tr "\n" " ")
