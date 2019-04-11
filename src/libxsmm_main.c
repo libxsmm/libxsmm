@@ -1545,6 +1545,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 
   /* handle an eventual error in the else-branch */
   if (0 < generated_code.code_size) {
+    LIBXSMM_ASSERT(generated_code.code_size <= LIBXSMM_CODE_MAXSIZE);
     LIBXSMM_ASSERT(NULL != generated_code.generated_code);
     if (0 == generated_code.last_error) { /* no error raised */
       char* code_buffer = NULL;
@@ -1556,7 +1557,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         LIBXSMM_ASSERT(NULL != code_buffer);
         /* copy temporary buffer into the prepared executable buffer */
 #if defined(NDEBUG)
-        { int i; LIBXSMM_ASSERT(code_buffer == generated_code.generated_code);
+        { int i; /* precondition: jit_buffer == generated_code.generated_code */
           for (i = 0; i < (int)generated_code.code_size; ++i) code_buffer[i] = jit_buffer[i];
         }
 #else
@@ -1661,6 +1662,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 #endif
     unsigned int i0 = i = LIBXSMM_MOD2(i, LIBXSMM_CAPACITY_REGISTRY), mode = 0, diff = 1;
     LIBXSMM_ASSERT(NULL != internal_registry);
+    LIBXSMM_ASSERT(&desc->kind == &desc->gemm.pad && desc->kind == desc->gemm.pad);
     do { /* use calculated location and check if the requested code is already JITted */
 #if (1 < INTERNAL_REGLOCK_MAXN) || !LIBXSMM_LOCK_TYPE_ISRW(LIBXSMM_REGLOCK) /* read registered code */
 # if 1 /* omitting an atomic load is safe but avoids race-detectors to highlight this location */
@@ -1728,7 +1730,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
             libxsmm_build_request request; /* setup the code build request */
             LIBXSMM_ASSERT(desc->kind < LIBXSMM_KERNEL_KIND_INVALID);
             request.kind = (libxsmm_build_kind)desc->kind;
-            request.descriptor.data = (const char*)&desc->gemm.desc;
+            request.descriptor.ptr = &desc->gemm.desc;
 #if defined(NDEBUG)
             if (EXIT_SUCCESS == libxsmm_build(&request, i, &flux_entry) && NULL != flux_entry.ptr_const)
 #else

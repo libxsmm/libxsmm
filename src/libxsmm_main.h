@@ -727,7 +727,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_descriptor {
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
   union {
-    const char* data; /* raw content */
+    const void* ptr; /* raw content */
     LIBXSMM_REGDESC(LIBXSMM_REGDESC_DEFAULT, const*);
     const libxsmm_csr_soa_descriptor* srsoa;
     const libxsmm_csc_soa_descriptor* scsoa;
