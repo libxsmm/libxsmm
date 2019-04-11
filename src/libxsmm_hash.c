@@ -28,9 +28,6 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_HASH_C
-#define LIBXSMM_HASH_C
-
 #include "libxsmm_hash.h"
 #include "libxsmm_main.h"
 
@@ -128,14 +125,14 @@
 #endif
 
 typedef uint32_t internal_crc32_entry_type[256];
-LIBXSMM_APIVAR(const internal_crc32_entry_type* internal_crc32_table);
-LIBXSMM_APIVAR(libxsmm_hash_function internal_hash_u32_function);
-LIBXSMM_APIVAR(libxsmm_hash_function internal_hash_u64_function);
-LIBXSMM_APIVAR(libxsmm_hash_function internal_hash_u128_function);
-LIBXSMM_APIVAR(libxsmm_hash_function internal_hash_u256_function);
-LIBXSMM_APIVAR(libxsmm_hash_function internal_hash_u384_function);
-LIBXSMM_APIVAR(libxsmm_hash_function internal_hash_u512_function);
-LIBXSMM_APIVAR(libxsmm_hash_function internal_hash_function);
+LIBXSMM_APIVAR_PRIVATE(const internal_crc32_entry_type* internal_crc32_table);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_hash_function internal_hash_u32_function);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_hash_function internal_hash_u64_function);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_hash_function internal_hash_u128_function);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_hash_function internal_hash_u256_function);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_hash_function internal_hash_u384_function);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_hash_function internal_hash_u512_function);
+LIBXSMM_APIVAR_PRIVATE(libxsmm_hash_function internal_hash_function);
 
 
 LIBXSMM_API_INLINE unsigned int internal_crc32_u8(unsigned int seed, const void* value)
@@ -574,6 +571,4 @@ LIBXSMM_API_INTERN unsigned int libxsmm_crc32(unsigned int seed, const void* dat
   return internal_hash_function(seed, data, size);
 #endif
 }
-
-#endif /* LIBXSMM_HASH_C */
 
