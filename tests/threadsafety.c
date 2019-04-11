@@ -35,7 +35,7 @@
 #include <stdio.h>
 
 #if !defined(MAX_NKERNELS)
-# define MAX_NKERNELS 1000
+# define MAX_NKERNELS 800
 #endif
 #if !defined(CHECK_PARALLEL_INIT)
 # define CHECK_PARALLEL_INIT
@@ -53,25 +53,19 @@
 
 int main(void)
 {
-  union { LIBXSMM_MMFUNCTION_TYPE(ITYPE) f; void* p; } f[MAX_NKERNELS];
-  const char *const target_arch = libxsmm_get_target_arch();
+  union { libxsmm_xmmfunction x; void* p; } f[MAX_NKERNELS];
   const ITYPE alpha = LIBXSMM_ALPHA, beta = LIBXSMM_BETA;
   const int prefetch = LIBXSMM_PREFETCH_AUTO;
-  libxsmm_generated_code generated_code;
   libxsmm_registry_info registry_info;
   const int max_shape = LIBXSMM_MAX_M;
   const int flags = LIBXSMM_FLAGS;
   int nkernels = MAX_NKERNELS;
   int result = EXIT_SUCCESS;
   int r[3*MAX_NKERNELS], i;
-
-  memset(&generated_code, 0, sizeof(generated_code));
-  generated_code.generated_code = malloc(131072);
-  generated_code.buffer_size = 0 != generated_code.generated_code ? 131072 : 0;
-  generated_code.code_type = 2;
+  int ndup = 0;
 
   /* generate set of random number for parallel region */
-  for (i = 0; i < (3 * MAX_NKERNELS); i += 3) {
+  for (i = 0; i < (3 * nkernels); i += 3) {
     r[i+0] = rand();
     r[i+1] = rand();
     r[i+2] = rand();
@@ -81,7 +75,7 @@ int main(void)
 # if defined(_OPENMP)
 # pragma omp parallel for default(none) private(i)
 # endif
-  for (i = 0; i < MAX_NKERNELS; ++i) {
+  for (i = 0; i < nkernels; ++i) {
     if (0 == (i % 2)) {
       libxsmm_init();
     }
@@ -100,11 +94,11 @@ int main(void)
 #if defined(_OPENMP) && defined(CHECK_PARALLEL_JIT)
 # pragma omp parallel for private(i)
 #endif
-  for (i = 0; i < MAX_NKERNELS; ++i) {
+  for (i = 0; i < nkernels; ++i) {
     const libxsmm_blasint m = r[3*i+0] % max_shape + 1;
     const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
     const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
-    f[i].f = LIBXSMM_MMDISPATCH_SYMBOL(ITYPE)(m, n, k,
+    f[i].x.LIBXSMM_TPREFIX(ITYPE,mm) = LIBXSMM_MMDISPATCH_SYMBOL(ITYPE)(m, n, k,
       &m/*lda*/, &k/*ldb*/, &m/*ldc*/, &alpha, &beta,
       &flags, &prefetch);
   }
@@ -123,92 +117,72 @@ int main(void)
         m, n, k, m/*lda*/, k/*ldb*/, m/*ldc*/, &alpha, &beta, flags, prefetch);
 
       fi.x = libxsmm_xmmdispatch(desc);
-      if (fi.p != f[i].p) {
-        if (NULL != fi.p) {
-          if (NULL != f[i].p) {
-            generated_code.code_size = 0; /* reset size; avoid stitching code */
-            libxsmm_generator_gemm_kernel(&generated_code, desc, target_arch);
+      if (NULL != fi.p && NULL != f[i].p) {
+        if (fi.p != f[i].p) {
+          libxsmm_mmkernel_info a_info, b_info;
+          size_t a_size, b_size;
+          const int ra = libxsmm_get_mmkernel_info(f[i].x, &a_info, &a_size);
+          const int rb = libxsmm_get_mmkernel_info(fi.x, &b_info, &b_size);
 
-            if (0 == generated_code.last_error && 0 < generated_code.code_size) {
-              /* perform deeper check based on another code generation (used as reference) */
-              if  (0 == registry_info.nstatic &&
-                  (0 != memcmp(generated_code.generated_code, fi.p, generated_code.code_size)
-                || 0 != memcmp(generated_code.generated_code, f[i].p, generated_code.code_size)))
-              {
+          /* perform deeper check based on another code generation (used as reference) */
+          if (EXIT_SUCCESS == ra && EXIT_SUCCESS == rb && (a_size != b_size ||
+            0 != memcmp(f[i].p, fi.p, a_size)))
+          {
 #if defined(_DEBUG) || defined(USE_VERBOSE)
-                fprintf(stderr, "Error: the %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel does not match!\n",
-                  (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
+            fprintf(stderr, "Error: the %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel does not match!\n",
+              (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
 #endif
 #if defined(_OPENMP) && !defined(CHECK_PARALLEL_JIT)
 # if (201107 <= _OPENMP)
-#               pragma omp atomic write
-# else
-#               pragma omp critical
-# endif
-#endif
-                result = EXIT_FAILURE;
-              }
-#if defined(_DEBUG) /* warning or an info message is not part of USE_VERBOSE */
-              else if (0 != registry_info.nstatic) {
-                fprintf(stderr, "Warning: the %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel may not match!\n",
-                  (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
-              }
-              else {
-                fprintf(stderr, "(%" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel is duplicated)\n",
-                  (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
-              }
-#endif
-            }
-          }
-#if (0 != LIBXSMM_JIT)
-          else {
-# if defined(_DEBUG) || defined(USE_VERBOSE)
-            fprintf(stderr, "Error: no code generated for %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel!\n",
-              (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
-# endif
-# if defined(_OPENMP) && !defined(CHECK_PARALLEL_JIT)
-#   if (201107 <= _OPENMP)
 #           pragma omp atomic write
-#   else
+# else
 #           pragma omp critical
-#   endif
 # endif
+#endif
             result = EXIT_FAILURE;
           }
+#if defined(_OPENMP) && !defined(CHECK_PARALLEL_JIT)
+# if (201107 <= _OPENMP)
+#         pragma omp atomic write
+# else
+#         pragma omp critical
+# endif
 #endif
+          ++ndup;
         }
+      }
 #if (0 != LIBXSMM_JIT)
-        else {
+      else {
 # if defined(_DEBUG) || defined(USE_VERBOSE)
-          fprintf(stderr, "Error: cannot find %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel!\n",
-            (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
+        fprintf(stderr, "Error: no code generated for %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel!\n",
+          (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
 # endif
 # if defined(_OPENMP) && !defined(CHECK_PARALLEL_JIT)
 #   if (201107 <= _OPENMP)
-#         pragma omp atomic write
+#       pragma omp atomic write
 #   else
-#         pragma omp critical
+#       pragma omp critical
 #   endif
 # endif
-          result = EXIT_FAILURE;
-        }
-#endif
+        result = EXIT_FAILURE;
       }
+#endif
     }
   }
+#if defined(_DEBUG) || defined(USE_VERBOSE)
+  if (0 != ndup) fprintf(stderr, "Info: %i kernels duplicated.\n", ndup);
+#endif
 
   /* test unregistering and freeing kernels */
-  for (i = 0; i < MAX_NKERNELS; ++i) {
+  for (i = 0; i < nkernels; ++i) {
     int j = i + 1;
     /* avoid to double-release kernels */
-    for (; j < MAX_NKERNELS; ++j) {
+    for (; j < nkernels; ++j) {
       if (f[i].p == f[j].p) f[j].p = NULL;
     }
     libxsmm_release_kernel(f[i].p);
   }
 
-  /* release buffer of eventually generated code (deep comparison) */
-  free(generated_code.generated_code);
   libxsmm_finalize();
 
   return result;
