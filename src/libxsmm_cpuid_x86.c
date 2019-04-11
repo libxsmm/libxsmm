@@ -41,7 +41,7 @@
 
 /* XGETBV: receive results (EAX, EDX) for eXtended Control Register (XCR). */
 /* CPUID, receive results (EAX, EBX, ECX, EDX) for requested FUNCTION/SUBFN. */
-#if defined(_WIN32)
+#if defined(_MSC_VER) /*defined(_WIN32) && !defined(__GNUC__)*/
 # define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
     unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
     EAX = (int)libxsmm_xgetbv_; \
