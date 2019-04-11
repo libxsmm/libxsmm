@@ -199,12 +199,12 @@ LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
 LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
 
 /**
-* Intercepted GEMM
-* - odd: sequential and non-tiled (small problem sizes only)
-* - even (or negative): parallelized and tiled (all problem sizes)
-* - 3: GEMV is intercepted; small problem sizes
-* - 4: GEMV is intercepted; all problem sizes
-*/
+ * Intercepted GEMM
+ * - odd: sequential and non-tiled (small problem sizes only)
+ * - even (or negative): parallelized and tiled (all problem sizes)
+ * - 3: GEMV is intercepted; small problem sizes
+ * - 4: GEMV is intercepted; all problem sizes
+ */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_wrap);
 
 #endif /*LIBXSMM_GEMM_H*/
