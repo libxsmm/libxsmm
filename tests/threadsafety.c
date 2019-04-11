@@ -73,7 +73,7 @@ int main(void)
 
 #if defined(CHECK_PARALLEL_INIT)
 # if defined(_OPENMP)
-# pragma omp parallel for default(none) private(i)
+# pragma omp parallel for default(none) private(i) shared(nkernels)
 # endif
   for (i = 0; i < nkernels; ++i) {
     if (0 == (i % 2)) {
@@ -170,7 +170,7 @@ int main(void)
     }
   }
 #if defined(_DEBUG) || defined(USE_VERBOSE)
-  if (0 != ndup) fprintf(stderr, "Info: %i kernels duplicated.\n", ndup);
+  if (0 != ndup) fprintf(stderr, "Info: %i kernel%s duplicated.\n", ndup, 1 != ndup ? "s" : "");
 #endif
 
   /* test unregistering and freeing kernels */
