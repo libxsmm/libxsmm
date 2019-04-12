@@ -1838,7 +1838,11 @@ LIBXSMM_API const libxsmm_descriptor* libxsmm_get_kernel_info(libxsmm_code_point
   if (NULL != code.ptr_const && NULL != internal_registry && NULL != internal_registry_keys
     && EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, size, NULL/*flags*/, &extra)
     && NULL != extra && *((const unsigned int*)extra) < (LIBXSMM_CAPACITY_REGISTRY)
+#if defined(LIBXSMM_HASH_COLLISION)
+    && code.uval == (~LIBXSMM_HASH_COLLISION & internal_registry[*((const unsigned int*)extra)].uval)
+#else
     && code.ptr_const == internal_registry[*((const unsigned int*)extra)].ptr_const
+#endif
     && internal_registry_keys[*((const unsigned int*)extra)].kind < LIBXSMM_KERNEL_KIND_INVALID)
   {
     result = internal_registry_keys + *((const unsigned int*)extra);
