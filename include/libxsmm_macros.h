@@ -138,20 +138,27 @@
 #   define LIBXSMM_INLINE_ALWAYS static __forceinline
 # endif
 # define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
-# define LIBXSMM_PACKED(TYPE, NAME) LIBXSMM_PRAGMA(pack(1)) TYPE NAME
+# if !defined(LIBXSMM_UNPACKED)
+#   define LIBXSMM_PACKED(TYPE, NAME) LIBXSMM_PRAGMA(pack(1)) TYPE NAME
+# endif
 # define LIBXSMM_CDECL __cdecl
-#elif defined(__GNUC__)
+#elif (defined(__GNUC__) || defined(__clang__))
 # define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
-# define LIBXSMM_PACKED(TYPE, NAME) TYPE LIBXSMM_ATTRIBUTE(__packed__) NAME
+# if !defined(LIBXSMM_UNPACKED)
+#   define LIBXSMM_PACKED(TYPE, NAME) TYPE LIBXSMM_ATTRIBUTE(__packed__) NAME
+# endif
 # define LIBXSMM_CDECL LIBXSMM_ATTRIBUTE(cdecl)
 #else
 # define LIBXSMM_ATTRIBUTE(A)
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N) DECL
-# define LIBXSMM_PACKED(TYPE, NAME) TYPE, NAME
 # define LIBXSMM_CDECL
+#endif
+#if !defined(LIBXSMM_PACKED)
+# define LIBXSMM_PACKED(TYPE, NAME) TYPE, NAME
+# define LIBXSMM_UNPACKED
 #endif
 #define LIBXSMM_PACKED_ANON
 
