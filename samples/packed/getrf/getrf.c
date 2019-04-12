@@ -26,9 +26,28 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Greg Henry (Intel Corp.)
+/* Greg Henry, Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm.h>
+#if 0
+#define USE_KERNEL_GENERATION_DIRECTLY
+#endif
+#if 0
+#define USE_PREDEFINED_ASSEMBLY
+#define USE_XSMM_GENERATED
+#define TIME_MKL
+#endif
+
+#if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(TIME_MKL) && \
+   (!defined(__linux__) || !defined(USE_KERNEL_GENERATION_DIRECTLY))
+# define USE_XSMM_GENERATED
+# include <libxsmm.h>
+#else
+# include <libxsmm_source.h>
+# include <unistd.h>
+# include <signal.h>
+# include <malloc.h>
+# include <sys/mman.h>
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -476,19 +495,6 @@ double residual_d ( unsigned int layout, double *A,
    return ( derror );
 }
 
-#if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(USE_KERNEL_GENERATION_DIRECTLY) && !defined(TIME_MKL) && defined(__linux__)
-  #define USE_KERNEL_GENERATION_DIRECTLY
-//#define USE_XSMM_GENERATED
-//#define TIME_MKL
-#endif
-
-#if 0
-  #define USE_PREDEFINED_ASSEMBLY
-  #define USE_XSMM_GENERATED
-  #define USE_KERNEL_GENERATION_DIRECTLY
-  #define TIME_MKL
-#endif
-
 #ifdef USE_PREDEFINED_ASSEMBLY
 extern void getrf_();
 #endif
@@ -542,20 +548,15 @@ int main(int argc, char* argv[])
   const libxsmm_getrf_descriptor* desc4 = NULL;
 #endif
   libxsmm_descriptor_blob blob;
+#ifdef USE_XSMM_GENERATED
   union {
     libxsmm_xtrsmfunction dp;
     libxsmm_xtrsmfunction sp;
     const void* pv;
   } mykernel = { 0 };
-#ifdef USE_KERNEL_GENERATION_DIRECTLY
-  void (*opcode_routine)();
 #endif
-#ifdef USE_KERNEL_GENERATION_DIRECTLY
-  #include <unistd.h>
-  #include <signal.h>
-  #include <malloc.h>
-  #include <sys/mman.h>
-  /* #include "../../src/generator_packed_trsm_avx_avx512.h" */
+#if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
+  void (*opcode_routine)();
   unsigned char *routine_output;
   libxsmm_generated_code io_generated_code;
   int pagesize = sysconf(_SC_PAGE_SIZE);
@@ -615,7 +616,7 @@ int main(int argc, char* argv[])
 #ifdef USE_PREDEFINED_ASSEMBLY
   printf("This code tests some predefined assembly kenrel\n");
 #endif
-#ifdef USE_KERNEL_GENERATION_DIRECTLY
+#if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
   printf("This code tests kernel generation directly\n");
 #endif
 #ifdef TIME_MKL
@@ -643,7 +644,7 @@ int main(int argc, char* argv[])
 #endif
 #endif
 
-#ifdef USE_KERNEL_GENERATION_DIRECTLY
+#if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
   libxsmm_generator_getrf_kernel( &io_generated_code, desc8, arch );
 #endif
 
@@ -692,13 +693,13 @@ int main(int argc, char* argv[])
 #ifdef USE_PREDEFINED_ASSEMBLY
   cptr = (const unsigned char*) getrf_;
 #endif
-#ifdef USE_KERNEL_GENERATION_DIRECTLY
+#if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
   cptr = (const unsigned char*) &routine_output[0];
   opcode_routine = (void *) &cptr[0];
 #endif
 
 #ifndef TIME_MKL
-  #define DUMP_ASSEMBLY_FILE
+# define DUMP_ASSEMBLY_FILE
 #endif
 
 #ifdef DUMP_ASSEMBLY_FILE
@@ -722,7 +723,7 @@ int main(int argc, char* argv[])
 #endif
 
 #if defined(USE_MKL_FOR_REFERENCE) || defined(TIME_MKL)
-  #include "mkl.h"
+# include <mkl.h>
   int info;
   MKL_LAYOUT CLAYOUT = (layout == 101) ? MKL_ROW_MAJOR : MKL_COL_MAJOR;
   MKL_SIDE SIDE = (side == 'R' || side == 'r') ? MKL_RIGHT : MKL_LEFT;
@@ -913,3 +914,4 @@ int main(int argc, char* argv[])
 
   return 0;
 }
+
