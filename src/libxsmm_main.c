@@ -609,7 +609,7 @@ LIBXSMM_API_INTERN void internal_init(void)
     libxsmm_set_target_arch(getenv("LIBXSMM_TARGET"));
 #endif
     { const char *const env = getenv("LIBXSMM_SYNC");
-    libxsmm_nosync = (NULL == env || 0 == *env) ? 0/*default*/ : atoi(env);
+      libxsmm_nosync = (NULL == env || 0 == *env) ? 0/*default*/ : atoi(env);
     }
     /* clear internal counters/statistic */
     for (i = 0; i < 4/*sml/med/big/xxx*/; ++i) {
@@ -2695,4 +2695,3 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
 }
 
 #endif /*defined(LIBXSMM_BUILD)*/
-
