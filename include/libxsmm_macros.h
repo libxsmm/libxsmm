@@ -354,7 +354,8 @@
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-#if defined(_OPENMP) && (200805 <= _OPENMP) /*OpenMP 3.0*/
+#if defined(_OPENMP) && (200805 <= _OPENMP) /*OpenMP 3.0*/ \
+ && defined(NDEBUG) /* CCE complains for debug builds */
 # define LIBXSMM_OPENMP_COLLAPSE(N) collapse(N)
 #else
 # define LIBXSMM_OPENMP_COLLAPSE(N)
