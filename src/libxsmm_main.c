@@ -776,7 +776,14 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       once = 1;
     }
     else while (1) {
-      if (0 != once) break; else { LIBXSMM_SYNC_PAUSE; }
+      if (0 != LIBXSMM_ATOMIC_LOAD(&once, LIBXSMM_ATOMIC_RELAXED)) {
+        break;
+      }
+#if 1
+      else LIBXSMM_SYNC_YIELD();
+#else
+      else LIBXSMM_SYNC_PAUSE;
+#endif
     }
 #endif
     internal_init();
