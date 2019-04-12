@@ -228,16 +228,21 @@ LIBXSMM_API void libxsmm_generator_gemm_rm_bc_soa( libxsmm_generated_code*      
 LIBXSMM_API
 void libxsmm_generator_pgemm_kernel( libxsmm_generated_code*          io_generated_code,
                                      const libxsmm_pgemm_descriptor*  i_packed_pgemm_desc,
-                                     int                              i_arch, ...);
+                                     int                              i_arch, ... );
 
 LIBXSMM_API
-void libxsmm_generator_trsm_kernel( libxsmm_generated_code*         io_generated_code,
-                                    const libxsmm_trsm_descriptor*  i_packed_trsm_desc,
-                                    const char*                     i_arch );
+void libxsmm_generator_getrf_kernel( libxsmm_generated_code*          io_generated_code,
+                                     const libxsmm_getrf_descriptor*  i_packed_pgemm_desc,
+                                     int                              i_arch );
 
 LIBXSMM_API
 void libxsmm_generator_trmm_kernel( libxsmm_generated_code*         io_generated_code,
                                     const libxsmm_trmm_descriptor*  i_packed_trmm_desc,
+                                    const char*                     i_arch );
+
+LIBXSMM_API
+void libxsmm_generator_trsm_kernel( libxsmm_generated_code*         io_generated_code,
+                                    const libxsmm_trsm_descriptor*  i_packed_trsm_desc,
                                     const char*                     i_arch );
 
 /* @TODO change int based architecture value */

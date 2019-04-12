@@ -519,10 +519,10 @@ int main(int argc, char* argv[])
   unsigned int layout, asize, bsize;
 #ifdef AVX512_TESTING
   unsigned int VLEND=8, VLENS=16;
-  char arch[4]="skx";
+  int arch=LIBXSMM_X86_AVX512_CORE;
 #else
   unsigned int VLEND=4, VLENS=8;
-  char arch[4]="hsw";
+  int arch=LIBXSMM_X86_AVX2;
 #endif
   unsigned int ncorr;
   int i, j, large_entry;
@@ -644,7 +644,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
-  libxsmm_generator_packed_getrf_avx_avx512_kernel ( &io_generated_code, desc8, arch );
+  libxsmm_generator_getrf_kernel( &io_generated_code, desc8, arch );
 #endif
 
 #ifndef NO_ACCURACY_CHECK
