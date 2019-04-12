@@ -484,10 +484,10 @@ int main(int argc, char* argv[])
   unsigned int layout, asize, bsize, ntest, ncorr;
 #ifdef AVX512_TESTING
   unsigned int VLEND=8, VLENS=16;
-  char arch[4]="skx";
+  int arch=LIBXSMM_X86_AVX512_CORE;
 #else
   unsigned int VLEND=4, VLENS=8;
-  char arch[4]="hsw";
+  int arch=LIBXSMM_X86_AVX2;
 #endif
   int nmats, nmatd;
   int i, j, l, iunroll, junroll, loopi, loopj;
@@ -642,7 +642,7 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
 #endif
 
 #ifdef USE_KERNEL_GENERATION_DIRECTLY
-  libxsmm_generator_packed_gemm_avx_avx512_kernel ( &io_generated_code, desc8, arch, iunroll, junroll, loopi, loopj );
+  libxsmm_generator_pgemm_kernel( &io_generated_code, desc8, arch, iunroll, junroll, loopi, loopj );
 #endif
 
 #ifndef NO_ACCURACY_CHECK

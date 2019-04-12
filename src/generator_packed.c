@@ -29,6 +29,7 @@
 /* Alexander Heinecke, Greg Henry, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm_generator.h>
+#include "generator_packed_gemm_avx_avx512.h"
 #include "generator_packed_trsm_avx_avx512.h"
 #include "generator_packed_trmm_avx_avx512.h"
 
@@ -38,10 +39,45 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <stdarg.h>
 #include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
+
+
+LIBXSMM_API
+void libxsmm_generator_pgemm_kernel( libxsmm_generated_code*          io_generated_code,
+                                     const libxsmm_pgemm_descriptor*  i_packed_pgemm_desc,
+                                     int                              i_arch, ... ) {
+  const char *const cpuid = libxsmm_cpuid_name( i_arch );
+
+  /* add instruction set mismatch check to code, header */
+  libxsmm_generator_isa_check_header( io_generated_code, cpuid );
+
+  /* generate kernel */
+  if ( LIBXSMM_X86_AVX <= i_arch ) {
+#if defined(GARBAGE_PARAMETERS)
+    unsigned int iunroll, junroll, loopi, loopj;
+    va_list args;
+    va_start(args, i_arch);
+    iunroll = va_arg(args, unsigned int);
+    junroll = va_arg(args, unsigned int);
+    loopi = va_arg(args, unsigned int);
+    loopj = va_arg(args, unsigned int);
+    va_end(args);
+    libxsmm_generator_packed_gemm_avx_avx512_kernel( io_generated_code, i_packed_pgemm_desc, cpuid, iunroll, junroll, loopi, loopj );
+#else
+    libxsmm_generator_packed_gemm_avx_avx512_kernel( io_generated_code, i_packed_pgemm_desc, cpuid );
+#endif
+  } else { /* TODO fix this error */
+    LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_ARCH);
+    return;
+  }
+
+  /* add instruction set mismatch check to code, footer */
+  libxsmm_generator_isa_check_footer( io_generated_code, cpuid );
+}
 
 
 /* @TODO change int based architecture value */

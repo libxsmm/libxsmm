@@ -36,14 +36,14 @@
 #define GARBAGE_PARAMETERS
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*                 io_generated_code,
+void libxsmm_generator_packed_gemm_avx_avx512_kernel( libxsmm_generated_code*           io_generated_code,
                                                        const libxsmm_pgemm_descriptor*  i_packed_pgemm_desc,
-                                                       const char*                             i_arch
+                                                       const char*                      i_arch
 #ifdef GARBAGE_PARAMETERS
-                                                   ,   unsigned int                            iunroll,
-                                                       unsigned int                            junroll,
-                                                       unsigned int                            loopi,
-                                                       unsigned int                            loopj
+                                                   ,   unsigned int                     iunroll,
+                                                       unsigned int                     junroll,
+                                                       unsigned int                     loopi,
+                                                       unsigned int                     loopj
 #endif
  );
 
