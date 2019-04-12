@@ -4,6 +4,7 @@ libxsmm_barrier_create
 libxsmm_barrier_destroy
 libxsmm_barrier_init
 libxsmm_barrier_wait
+libxsmm_bgemm_descriptor_init
 libxsmm_blas_dgemm0
 libxsmm_blas_dgemm1
 libxsmm_blas_dgemm2
@@ -24,6 +25,8 @@ libxsmm_blocked_gemm_handle_destroy
 libxsmm_blocked_gemm_omp
 libxsmm_blocked_gemm_st
 libxsmm_blocked_gemm_transpose_b
+libxsmm_bmmdispatch
+libxsmm_bmmdispatch_reducebatch
 libxsmm_bsgemm
 libxsmm_bsgemm_
 libxsmm_bsgemm_descriptor_init
@@ -181,7 +184,9 @@ libxsmm_generator_gemm_inlineasm
 libxsmm_generator_gemm_kernel
 libxsmm_generator_gemm_rm_ac_soa
 libxsmm_generator_gemm_rm_bc_soa
+libxsmm_generator_getrf_kernel
 libxsmm_generator_matcopy_kernel
+libxsmm_generator_pgemm_kernel
 libxsmm_generator_spgemm
 libxsmm_generator_spgemm_csc_kernel
 libxsmm_generator_spgemm_csc_soa_kernel
@@ -272,6 +277,9 @@ libxsmm_otrans_thread_internal
 libxsmm_pgemm_descriptor_init
 libxsmm_primes_u32
 libxsmm_product_limit
+libxsmm_ptr_b0
+libxsmm_ptr_b1
+libxsmm_ptr_b2
 libxsmm_ptr_c0
 libxsmm_ptr_c1
 libxsmm_ptr_c2
@@ -281,6 +289,9 @@ libxsmm_ptr_d2
 libxsmm_ptr_i0
 libxsmm_ptr_i1
 libxsmm_ptr_i2
+libxsmm_ptr_l0
+libxsmm_ptr_l1
+libxsmm_ptr_l2
 libxsmm_ptr_s0
 libxsmm_ptr_s1
 libxsmm_ptr_s2
