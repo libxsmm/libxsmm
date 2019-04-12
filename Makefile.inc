@@ -1177,9 +1177,18 @@ else # GCC assumed
       LDFLAGS := -g $(LDFLAGS) -fsanitize=thread -ltsan -fno-omit-frame-pointer
       #ELDFLAGS := -pie
     else
-      CXXFLAGS := -g3 $(CXXFLAGS)
-      CFLAGS := -g3 $(CFLAGS)
-      FCFLAGS := -g $(FCFLAGS)
+      ifneq (,$(filter 2 3,$(GCC)))
+        CXXFLAGS := -g3 $(CXXFLAGS)
+        CFLAGS := -g3 $(CFLAGS)
+      else
+        CXXFLAGS := -g $(CXXFLAGS)
+        CFLAGS := -g $(CFLAGS)
+      endif
+      ifeq (3,$(GCC))
+        FCFLAGS := -g3 $(FCFLAGS)
+      else
+        FCFLAGS := -g $(FCFLAGS)
+      endif
     endif
   endif
   ifeq (0,$(COMPATIBLE))
