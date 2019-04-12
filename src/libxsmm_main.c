@@ -1834,6 +1834,7 @@ LIBXSMM_API const libxsmm_descriptor* libxsmm_get_kernel_info(libxsmm_code_point
 {
   const libxsmm_descriptor* result;
   void* extra = NULL;
+  if (NULL != size) *size = 0;
   if (NULL != code.ptr_const && NULL != internal_registry && NULL != internal_registry_keys
     && EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, size, NULL/*flags*/, &extra)
     && NULL != extra && *((const unsigned int*)extra) < (LIBXSMM_CAPACITY_REGISTRY)
@@ -1861,6 +1862,7 @@ LIBXSMM_API int libxsmm_get_kernel_kind(const void* kernel, libxsmm_kernel_kind*
     result = EXIT_SUCCESS;
   }
   else {
+    if (NULL != kind) *kind = LIBXSMM_KERNEL_KIND_INVALID;
     result = EXIT_FAILURE;
   }
   return result;
@@ -1873,7 +1875,7 @@ LIBXSMM_API int libxsmm_get_mmkernel_info(libxsmm_xmmfunction kernel, libxsmm_mm
   static int error_once = 0;
   int result;
   code.xgemm = kernel;
-  if (NULL != info || 0 != code_size) {
+  if (NULL != info || NULL != code_size) {
     const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(code, code_size);
     if (NULL != kernel_info && LIBXSMM_KERNEL_KIND_MATMUL == kernel_info->kind) {
       if (NULL != info) {
