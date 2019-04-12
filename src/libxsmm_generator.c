@@ -370,7 +370,7 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
     const unsigned int typescale = typesize / 4;
     LIBXSMM_ASSERT(blob);
     result.blob = blob;
-    result.ptr->unroll_level = (unsigned char)((0 == unroll || 0 >= *unroll) ? 2/*default*/ : LIBXSMM_MIN(*unroll, 64));
+    result.ptr->unroll_level = (unsigned char)((NULL == unroll || 0 >= *unroll) ? 2/*default*/ : LIBXSMM_MIN(*unroll, 64));
     result.ptr->typesize = (unsigned char)/*typesize*/4;
     result.ptr->prefetch = (unsigned char)prefetch;
     result.ptr->flags = (unsigned char)flags;

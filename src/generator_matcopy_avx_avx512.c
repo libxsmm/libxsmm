@@ -88,9 +88,9 @@ void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_genera
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*             io_generated_code,
-                                                  const libxsmm_mcopy_descriptor*   i_matcopy_desc,
-                                                  const char*                         i_arch ) {
+void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*         io_generated_code,
+                                                  const libxsmm_mcopy_descriptor* i_matcopy_desc,
+                                                  const char*                     i_arch ) {
   libxsmm_matcopy_kernel_config l_kernel_config;
   libxsmm_matcopy_gp_reg_mapping l_gp_reg_mapping;
   libxsmm_loop_label_tracker l_loop_label_tracker;
@@ -222,6 +222,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
   l_kernel_config.prefetch_instruction = LIBXSMM_X86_INSTR_PREFETCHT2;
 
   /* Calculate the trips in the m dimension (perform unrolling if requested) */
+  assert(0 != i_matcopy_desc->unroll_level);
   m_trips = i_matcopy_desc->m / (l_kernel_config.vector_length * i_matcopy_desc->unroll_level);
   remaining_unrolled = (i_matcopy_desc->m % (l_kernel_config.vector_length * i_matcopy_desc->unroll_level)) / l_kernel_config.vector_length;
   remaining = (i_matcopy_desc->m % (l_kernel_config.vector_length * i_matcopy_desc->unroll_level)) % l_kernel_config.vector_length;
