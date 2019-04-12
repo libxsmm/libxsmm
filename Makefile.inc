@@ -722,6 +722,14 @@ else # fallback
 endif
 endif
 
+ifneq (,$(strip $(LIB_FLD)))
+ifeq (,$(strip $(GFC)))
+ifneq (0,$(INTEL))
+  LIB_FLD += -nofor-main
+endif
+endif
+endif
+
 ifneq (0,$(DEPSTATIC))
   ifeq (0,$(COMPATIBLE))
   ifneq (Darwin,$(UNAME))
