@@ -175,10 +175,6 @@ endif
 # always agnostic wrt the threading runtime
 OMP ?= 0
 
-ifneq (0,$(OMP))
-  DFLAGS += -DLIBXSMM_OMP
-endif
-
 ifneq (,$(MKL))
 ifneq (0,$(MKL))
   BLAS = $(MKL)
@@ -711,9 +707,11 @@ endef
 EXTCFLAGS = -DLIBXSMM_BUILD_EXT
 ifeq (0,$(OMP))
 ifeq (,$(filter environment% override command%,$(origin OMP)))
-  EXTCFLAGS += $(OMPFLAG)
+  EXTCFLAGS += $(OMPFLAG) -DLIBXSMM_OMP
   EXTLDFLAGS += $(OMPFLAG)
 endif
+else # OpenMP
+  DFLAGS += -DLIBXSMM_OMP
 endif
 
 ifneq (0,$(MIC))
@@ -721,15 +719,15 @@ ifneq (0,$(MPSS))
 $(foreach OBJ,$(OBJFILES_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
-  -mmic $(CFLAGS) $(DFLAGS) $(IFLAGS))))
+  -mmic $(DFLAGS) $(IFLAGS) $(CFLAGS))))
 $(foreach OBJ,$(KRNOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  -mmic $(CFLAGS) $(DFLAGS) $(IFLAGS))))
+  -mmic $(DFLAGS) $(IFLAGS) $(CFLAGS))))
 $(foreach OBJ,$(EXTOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  -mmic $(EXTCFLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
+  -mmic $(DFLAGS) $(IFLAGS) $(EXTCFLAGS) $(CFLAGS))))
 $(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_MIC),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
   -mmic $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 endif
@@ -741,15 +739,15 @@ $(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext
 $(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
-  $(CTARGET) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
+  $(DFLAGS) $(IFLAGS) $(CTARGET) $(CFLAGS))))
 $(foreach OBJ,$(KRNOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  $(CTARGET) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
+  $(DFLAGS) $(IFLAGS) $(CTARGET) $(CFLAGS))))
 $(foreach OBJ,$(EXTOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  $(CTARGET) $(EXTCFLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
+  $(DFLAGS) $(IFLAGS) $(CTARGET) $(EXTCFLAGS) $(CFLAGS))))
 
 # build rules that by default include no target flags
 ifneq (0,$(TGT))
@@ -758,25 +756,25 @@ endif
 $(foreach OBJ,$(OBJFILES_GEN_LIB),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  $(TGT_FLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
+  $(DFLAGS) $(IFLAGS) $(TGT_FLAGS) $(CFLAGS))))
 $(foreach OBJ,$(OBJFILES_GEN_GEMM_BIN),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  $(TGT_FLAGS) $(CFLAGS) $(DFLAGS) $(IFLAGS))))
+  $(DFLAGS) $(IFLAGS) $(TGT_FLAGS) $(CFLAGS))))
 
 .PHONY: compile_mic
 ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 compile_mic:
 $(BLDDIR)/mic/%.o: $(BLDDIR)/%.c $(BLDDIR)/mic/.make $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $< -o $@
+	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) -mmic -c $< -o $@
 endif
 endif
 
 .PHONY: compile_hst
 compile_hst:
 $(BLDDIR)/intel64/%.o: $(BLDDIR)/%.c $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
+	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
 .PHONY: module_mic
 ifneq (0,$(MIC))
@@ -784,7 +782,7 @@ ifneq (0,$(MPSS))
 ifneq (,$(strip $(FC)))
 module_mic: $(INCDIR)/mic/libxsmm.mod
 $(BLDDIR)/mic/libxsmm-mod.o: $(BLDDIR)/mic/.make $(INCDIR)/mic/.make $(INCDIR)/libxsmm.f
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)/mic
+	$(FC) $(DFLAGS) $(IFLAGS) $(FCMTFLAGS) $(FCFLAGS) -mmic -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)/mic
 $(INCDIR)/mic/libxsmm.mod: $(BLDDIR)/mic/libxsmm-mod.o
 	@if [ -e $(BLDDIR)/mic/LIBXSMM.mod ]; then $(CP) $(BLDDIR)/mic/LIBXSMM.mod $(INCDIR); fi
 	@if [ -e $(BLDDIR)/mic/libxsmm.mod ]; then $(CP) $(BLDDIR)/mic/libxsmm.mod $(INCDIR); fi
@@ -808,7 +806,7 @@ endif
 ifneq (,$(strip $(FC)))
 module_hst: $(INCDIR)/libxsmm.mod
 $(BLDDIR)/intel64/libxsmm-mod.o: $(BLDDIR)/intel64/.make $(INCDIR)/libxsmm.f
-	$(FC) $(FCMTFLAGS) $(FCFLAGS) $(DFLAGS) $(IFLAGS) $(FTARGET) -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
+	$(FC) $(DFLAGS) $(IFLAGS) $(FCMTFLAGS) $(FCFLAGS) $(FTARGET) -c $(INCDIR)/libxsmm.f -o $@ $(FMFLAGS) $(INCDIR)
 $(INCDIR)/libxsmm.mod: $(BLDDIR)/intel64/libxsmm-mod.o
 	@if [ -e $(BLDDIR)/intel64/LIBXSMM.mod ]; then $(CP) $(BLDDIR)/intel64/LIBXSMM.mod $(INCDIR); fi
 	@if [ -e $(BLDDIR)/intel64/libxsmm.mod ]; then $(CP) $(BLDDIR)/intel64/libxsmm.mod $(INCDIR); fi
