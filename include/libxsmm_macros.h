@@ -139,7 +139,7 @@
 # endif
 # define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
 # if !defined(LIBXSMM_UNPACKED)
-#   define LIBXSMM_PACKED(TYPE, NAME) LIBXSMM_PRAGMA(pack(1)) TYPE NAME
+#   define LIBXSMM_PACKED(TYPE) LIBXSMM_PRAGMA(pack(1)) TYPE
 # endif
 # define LIBXSMM_CDECL __cdecl
 #elif (defined(__GNUC__) || defined(__clang__) || defined(__PGI))
@@ -147,7 +147,7 @@
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
 # if !defined(LIBXSMM_UNPACKED)
-#   define LIBXSMM_PACKED(TYPE, NAME) TYPE LIBXSMM_ATTRIBUTE(__packed__) NAME
+#   define LIBXSMM_PACKED(TYPE) TYPE LIBXSMM_ATTRIBUTE(__packed__)
 # endif
 # define LIBXSMM_CDECL LIBXSMM_ATTRIBUTE(cdecl)
 #else
@@ -157,10 +157,11 @@
 # define LIBXSMM_CDECL
 #endif
 #if !defined(LIBXSMM_PACKED)
-# define LIBXSMM_PACKED(TYPE, NAME) TYPE NAME
-# define LIBXSMM_UNPACKED
+# define LIBXSMM_PACKED(TYPE) TYPE
+# if !defined(LIBXSMM_PACKED)
+#   define LIBXSMM_UNPACKED
+# endif
 #endif
-#define LIBXSMM_PACKED_ANON
 
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_INTEL_COMPILER __INTEL_COMPILER
