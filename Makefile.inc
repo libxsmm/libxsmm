@@ -1415,18 +1415,6 @@ else # revoke target flags
   FTARGET = $(NULL)
 endif
 
-ifneq (,$(OMPFLAG))
-ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
-  echo "\#if defined(_OPENMP)" > $${CINFILE}; \
-  echo "\# include <omp.h>" >> $${CINFILE}; \
-  echo "\#endif" >> $${CINFILE}; \
-  CTEST=$$($(CC) $(OMPFLAG) -c $${CINFILE} 2>&1); \
-  if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-  rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
-    OMPFLAG = $(NULL)
-endif
-endif
-
 ifeq (0,$(COMPATIBLE))
   ifneq (0,$(OPT))
   ifeq (0,$(INTEL))
@@ -1599,6 +1587,18 @@ endif
 OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG) -L/usr/local/lib,$(OMPRT))
 ifneq (,$(strip $(OMPLIBFILE)))
   OMPLIB = $(call abslib,$(OMPLIBFILE))
+endif
+
+ifneq (,$(OMPFLAG))
+ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
+  echo "\#if defined(_OPENMP)" > $${CINFILE}; \
+  echo "\# include <omp.h>" >> $${CINFILE}; \
+  echo "\#endif" >> $${CINFILE}; \
+  CTEST=$$($(CC) $(OMPFLAG) -c $${CINFILE} 2>&1); \
+  if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
+  rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
+    OMPFLAG := $(NULL)
+endif
 endif
 
 ifeq (0,$(OMP))
