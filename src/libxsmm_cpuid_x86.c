@@ -73,6 +73,8 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*,
 # endif
 #endif
 
+#define LIBXSMM_CPUID_CHECK(VALUE, CHECK) ((CHECK) == ((CHECK) & (VALUE)))
+
 
 LIBXSMM_API int libxsmm_cpuid_x86(void)
 {
@@ -85,26 +87,26 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
     LIBXSMM_CPUID_X86(1, 0/*ecx*/, eax, ebx, ecx, edx);
 
     /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
-    if (0 != (0x00100000 & ecx)) {
+    if (LIBXSMM_CPUID_CHECK(ecx, 0x00100000)) {
       target_arch = LIBXSMM_X86_SSE4;
     }
 
     /* XSAVE/XGETBV(0x04000000), OSXSAVE(0x08000000) */
-    if (0 != (0x0C000000 & ecx)) {
+    if (LIBXSMM_CPUID_CHECK(ecx, 0x0C000000)) {
       LIBXSMM_XGETBV(0, eax, edx);
 
-      if (0 != (0x00000006 & eax)) { /* OS XSAVE 256-bit */
-        if (0 != (0x000000E0 & eax)) { /* OS XSAVE 512-bit */
+      if (LIBXSMM_CPUID_CHECK(eax, 0x00000006)) { /* OS XSAVE 256-bit */
+        if (LIBXSMM_CPUID_CHECK(eax, 0x000000E0)) { /* OS XSAVE 512-bit */
           LIBXSMM_CPUID_X86(7, 0/*ecx*/, eax, ebx, ecx, edx);
 
           /* AVX512F(0x00010000), AVX512CD(0x10000000) */
-          if (0 != (0x10010000 & ebx)) { /* Common */
+          if (LIBXSMM_CPUID_CHECK(ebx, 0x10010000)) { /* Common */
             /* AVX512DQ(0x00020000), AVX512BW(0x40000000), AVX512VL(0x80000000) */
-            if (0 != (0xC0020000 & ebx)) { /* AVX512-Core */
-              if (0 != (0x00000800 & ecx)) { /* VNNI */
+            if (LIBXSMM_CPUID_CHECK(ebx, 0xC0020000)) { /* AVX512-Core */
+              if (LIBXSMM_CPUID_CHECK(ecx, 0x00000800)) { /* VNNI */
                 LIBXSMM_CPUID_X86(7, 1/*ecx*/, eax, ebx, ecx, edx);
 
-                if (0 != (0x00000020 & eax)) { /* BF16 */
+                if (LIBXSMM_CPUID_CHECK(eax, 0x00000020)) { /* BF16 */
                   target_arch = LIBXSMM_X86_AVX512_CPX;
                 }
                 else { /* CLX */
@@ -116,8 +118,8 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
               }
             }
             /* AVX512PF(0x04000000), AVX512ER(0x08000000) */
-            else if (0 != (0x0C000000 & ebx)) { /* AVX512-MIC */
-              if (0 != (0x0000000C & edx)) { /* KNM */
+            else if (LIBXSMM_CPUID_CHECK(ebx, 0x0C000000)) { /* AVX512-MIC */
+              if (LIBXSMM_CPUID_CHECK(edx, 0x0000000C)) { /* KNM */
                 target_arch = LIBXSMM_X86_AVX512_KNM;
               }
               else { /* KNL */
@@ -129,8 +131,8 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
             }
           }
         }
-        else if (0 != (0x10000000 & ecx)) { /* AVX(0x10000000) */
-          if (0 != (0x00001000 & ecx)) { /* FMA(0x00001000) */
+        else if (LIBXSMM_CPUID_CHECK(ecx, 0x10000000)) { /* AVX(0x10000000) */
+          if (LIBXSMM_CPUID_CHECK(ecx, 0x00001000)) { /* FMA(0x00001000) */
             target_arch = LIBXSMM_X86_AVX2;
           }
           else {
@@ -212,3 +214,4 @@ LIBXSMM_API const char* libxsmm_cpuid_name(int id)
   LIBXSMM_ASSERT(NULL != target_arch);
   return target_arch;
 }
+
