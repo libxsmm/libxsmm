@@ -1214,6 +1214,7 @@ else # GCC assumed
       OMPFLAG = -fopenmp
     endif
   else ifeq (FreeBSD,$(UNAME))
+    # avoid include path at begin of compile line
     OMPFLAG += -I/usr/local/include
   endif
   # account for missing TLS/OMP
@@ -1412,6 +1413,18 @@ ifeq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"
 else # revoke target flags
   CTARGET = $(NULL)
   FTARGET = $(NULL)
+endif
+
+ifneq (,$(OMPFLAG))
+ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
+  echo "\#if defined(_OPENMP)" > $${CINFILE}; \
+  echo "\# include <omp.h>" >> $${CINFILE}; \
+  echo "\#endif" >> $${CINFILE}; \
+  CTEST=$$($(CC) $(OMPFLAG) -c $${CINFILE} 2>&1); \
+  if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
+  rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
+    OMPFLAG = $(NULL)
+endif
 endif
 
 ifeq (0,$(COMPATIBLE))
