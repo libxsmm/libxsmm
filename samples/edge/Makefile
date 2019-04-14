@@ -93,16 +93,16 @@ $(OUTDIR)/dense_rmbcsoa_f32: $(OUTDIR)/.make $(BLDDIR)/dense_rmbcsoa-c-f32.o $(L
 	$(LD) -o $@ $(BLDDIR)/dense_rmbcsoa-c-f32.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
+	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
 
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(CC) $(CFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
+	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
 $(BLDDIR)/%-cpp-f32.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(CXX) $(CXXFLAGS) $(DFLAGS) -D__EDGE_EXECUTE_F32__ $(IFLAGS) $(CTARGET) -c $< -o $@
+	$(CXX) -D__EDGE_EXECUTE_F32__ $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
 
 $(BLDDIR)/%-c-f32.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(CC) $(CFLAGS) $(DFLAGS) -D__EDGE_EXECUTE_F32__ $(IFLAGS) $(CTARGET) -c $< -o $@
+	$(CC) -D__EDGE_EXECUTE_F32__ $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
 .PHONY: clean
 clean:

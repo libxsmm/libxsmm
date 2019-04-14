@@ -131,7 +131,7 @@ $(OUTDIR)/test_combine_$(EDGE_CONFIG): $(OUTDIR)/.make $(BLDDIR)/edge_combine.te
 # 	$(XLD) -o $@ $(BLDDIR)/edge_helper.test.o $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%_$(EDGE_CONFIG).o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
-	$(CXX) $(CXXFLAGS) $(DFLAGS) $(IFLAGS) $(CTARGET) -c $< -o $@
+	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
 
 .PHONY: clean
 clean:
