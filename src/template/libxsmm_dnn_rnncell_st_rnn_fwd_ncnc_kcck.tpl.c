@@ -111,49 +111,49 @@ if (perform_2d_decomp) {
         /* Prepare arrays for the call */
         for (ic = 0; ic < cBlocks; ic++) {
           /* this is a small matmul */
-          A_array[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, w, ik, ic, 0, 0, cBlocks, bc, bk);
-          B_array[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, x, i, in, ic, 0, 0, nBlocks, cBlocks, bn, bc);
+          A_array[ii][jj][ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(4, w, ik, ic, 0, 0, cBlocks, bc, bk);
+          B_array[ii][jj][ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(5, x, i, in, ic, 0, 0, nBlocks, cBlocks, bn, bc);
         }
         /* z += U.h */
         if (0 == i) {
           /* Prepare arrays for the call */
           for (ic = 0; ic < kBlocks; ic++) {
-            A_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
-            B_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, hp, in, ic, 0, 0, kBlocks, bn, bk);
+            A_array2[ii][jj][ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
+            B_array2[ii][jj][ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(4, hp, in, ic, 0, 0, kBlocks, bn, bk);
           }
         } else {
           /* Prepare arrays for the call */
           for (ic = 0; ic < kBlocks; ic++) {
-            A_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
-            B_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, h, i-1, in, ic, 0, 0, nBlocks, kBlocks, bn, bk);
+            A_array2[ii][jj][ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
+            B_array2[ii][jj][ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(5, h, i-1, in, ic, 0, 0, nBlocks, kBlocks, bn, bk);
           }
         }
       }
     }
 
     if (prefetch_mode != LIBXSMM_GEMM_PREFETCH_NONE) {
-      /* Prepare addition prefetch arrays that are shifted images of regular ones when external prefetching is requested  */
+      /* Prepare additional prefetch arrays that are shifted images of regular ones when external prefetching is requested  */
       int pf_dist_A = 2;
       int pf_dist_B = 4;
       int total_blocks = in_tasks_per_thread*ik_tasks_per_thread*cBlocks;
-      element_input_type *src_ptr = (element_input_type*) &A_array[0][0][0];
-      element_input_type *dst_ptr = (element_input_type*) &A_array_pf[0][0][0];
+      const element_input_type **src_ptr = &A_array[0][0][0];
+      const element_input_type **dst_ptr = &A_array_pf[0][0][0];
       for (ii = 0 ; ii < total_blocks - pf_dist_A; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_A];
       }
-      src_ptr = (element_input_type*) &B_array[0][0][0];
-      dst_ptr = (element_input_type*) &B_array_pf[0][0][0];
+      src_ptr = &B_array[0][0][0];
+      dst_ptr = &B_array_pf[0][0][0];
       for (ii = 0 ; ii < total_blocks - pf_dist_B; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_B];
       }
       total_blocks = in_tasks_per_thread*ik_tasks_per_thread*kBlocks;
-      src_ptr = (element_input_type*) &A_array2[0][0][0];
-      dst_ptr = (element_input_type*) &A_array2_pf[0][0][0];
+      src_ptr = &A_array2[0][0][0];
+      dst_ptr = &A_array2_pf[0][0][0];
       for (ii = 0 ; ii < total_blocks - pf_dist_A; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_A];
       }
-      src_ptr = (element_input_type*) &B_array2[0][0][0];
-      dst_ptr = (element_input_type*) &B_array2_pf[0][0][0];
+      src_ptr = &B_array2[0][0][0];
+      dst_ptr = &B_array2_pf[0][0][0];
       for (ii = 0 ; ii < total_blocks - pf_dist_B; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_B];
       }
@@ -210,8 +210,8 @@ if (perform_2d_decomp) {
       /* Prepare arrays for the call */
       for (ic = 0; ic < cBlocks; ic++) {
         /* this is a small matmul */
-        A_array[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, w, ik, ic, 0, 0, cBlocks, bc, bk);
-        B_array[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, x, i, in, ic, 0, 0, nBlocks, cBlocks, bn, bc);
+        A_array[ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(4, w, ik, ic, 0, 0, cBlocks, bc, bk);
+        B_array[ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(5, x, i, in, ic, 0, 0, nBlocks, cBlocks, bn, bc);
       }
       /* Reduce batch gemm call  */
       blocks = cBlocks;
@@ -221,8 +221,8 @@ if (perform_2d_decomp) {
       if (0 == i) {
         /* Prepare arrays for the call */
         for (ic = 0; ic < kBlocks; ic++) {
-          A_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
-          B_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, hp, in, ic, 0, 0, kBlocks, bn, bk);
+          A_array2[ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
+          B_array2[ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(4, hp, in, ic, 0, 0, kBlocks, bn, bk);
         }
         /* Reduce batch gemm call  */
         blocks = kBlocks;
@@ -230,8 +230,8 @@ if (perform_2d_decomp) {
       } else {
         /* Prepare arrays for the call */
         for (ic = 0; ic < kBlocks; ic++) {
-          A_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
-          B_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, h, i-1, in, ic, 0, 0, nBlocks, kBlocks, bn, bk);
+          A_array2[ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
+          B_array2[ic] = (const element_input_type*) &LIBXSMM_VLA_ACCESS(5, h, i-1, in, ic, 0, 0, nBlocks, kBlocks, bn, bk);
         }
         /* Reduce batch gemm call  */
         blocks = kBlocks;
