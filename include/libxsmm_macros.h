@@ -158,7 +158,7 @@
 #endif
 #if !defined(LIBXSMM_PACKED)
 # define LIBXSMM_PACKED(TYPE) TYPE
-# if !defined(LIBXSMM_PACKED)
+# if !defined(LIBXSMM_UNPACKED)
 #   define LIBXSMM_UNPACKED
 # endif
 #endif
