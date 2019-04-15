@@ -130,6 +130,7 @@ class MLEngine
     vector<int> fact_can_ptr, bact_can_ptr;
     vector<int> wt_can_ptr, wdiff_can_ptr, winc_can_ptr;
     vector<int> bias_can_ptr, stats_can_ptr, bidiff_can_ptr, biinc_can_ptr;
+    vector<MLSL::Operation*> wtgrad_comms_vec, bias_grad_comms_vec;
     int ic, fac, bac, wtc, wdc, wic, bic, sic, bidc, biic;
 
     void create_schedule(int);
@@ -147,6 +148,7 @@ class MLEngine
     void convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len, int numa_node);
     void convert_f32_bf16(float** in, libxsmm_bfloat16** out, int len);
     void convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len);
+    void waitForComms(string);
 
   public:
     MLEngine() {}
@@ -177,6 +179,8 @@ class MLEngine
     int get_num_test_views() {return num_test_views_; }
     int get_batch_size() { return batch_size_; }
     float get_scaling_factor() { return scf_; }
+    vector<MLSL::Operation*>& get_wtgrad_comms_vec() { return wtgrad_comms_vec; }
+    vector<MLSL::Operation*>& get_bias_grad_comms_vec() { return bias_grad_comms_vec; }
 
     void set_batch_size(int b) {batch_size_ = b; }
     void set_num_train_batches(int ntrainb) {num_train_batches_ = ntrainb; }

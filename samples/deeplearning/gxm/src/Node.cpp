@@ -46,10 +46,13 @@ void NNNode::createNNGraph(int mode)
     Task *fTask = this->getBasicTask(BASIC_TASK_FORW);
     Task *bTask = this->getBasicTask(BASIC_TASK_BACK);
     Task *wTask = this->getBasicTask(BASIC_TASK_WGRAD);
+#if 0
     Task *sTask = this->getBasicTask(BASIC_TASK_SOLVE);
+#endif
 
     string s = dynamic_cast<NNNode*>(fTask->getNode())->nname_;
 
+#if 0
     if(wTask != NULL)
     {
       addedFD = wTask->addForwDep(sTask);
@@ -61,6 +64,7 @@ void NNNode::createNNGraph(int mode)
         printf("forward task (node %s) %p depends on solver task (node %s) %p\n",s.c_str(), fTask, s.c_str(), sTask);
 #endif
     }
+#endif
 
     for(auto it=nextNodes_.begin(); it != nextNodes_.end(); it++)
     {

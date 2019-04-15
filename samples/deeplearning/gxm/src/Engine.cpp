@@ -482,6 +482,23 @@ void MLEngine::canary_check(void* ptr, vector<int>& cp, int nc)
   }
 }
 
+void MLEngine:: waitForComms(string tenType)
+{
+  if(tenType=="WEIGHT")
+    for(int i=0; i<wtgrad_comms_vec.size(); i++)
+      wtgrad_comms_vec[i]->GetParameterSet(0)->WaitGradientComm();
+  else if(tenType=="BIAS")
+  {
+    for(int i=0; i<bias_grad_comms_vec.size(); i++)
+    {
+      bias_grad_comms_vec[i]->GetParameterSet(0)->WaitGradientComm();
+      bias_grad_comms_vec[i]->GetParameterSet(1)->WaitGradientComm();
+      bias_grad_comms_vec[i]->GetParameterSet(2)->WaitGradientComm();
+      bias_grad_comms_vec[i]->GetParameterSet(3)->WaitGradientComm();
+    }
+  }
+}
+
 void MLEngine::run(int mode)
 {
   if(mode == TRAIN)
@@ -590,6 +607,11 @@ void MLEngine::run(int mode)
             if(current_epoch_ == 30 || current_epoch_ == 60 || current_epoch_ == 80)
               if(current_batch_ == num_train_batches_-1)
                 checkpoint(wTList_, DIFF);
+#endif
+
+#ifdef USE_MLSL
+          waitForComms("WEIGHT");
+          waitForComms("BIAS");
 #endif
 
 #if 0
