@@ -1004,18 +1004,18 @@ ifneq (0,$(INTEL))
       FCFLAGS := -g -traceback $(FCFLAGS)
     endif
   endif
-  OMPFLAG = -fopenmp
+  OMPFLAG_FORCE = -fopenmp
   ifeq (,$(strip $(OMPRT)))
     OMPRT = iomp5
   endif
   ifneq (0,$(OMP))
-    CXXFLAGS += $(OMPFLAG)
-    CFLAGS += $(OMPFLAG)
+    CXXFLAGS += $(OMPFLAG_FORCE)
+    CFLAGS += $(OMPFLAG_FORCE)
     ifeq (,$(strip $(GFC)))
       BLAS_LDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
-      FCFLAGS += $(OMPFLAG)
+      FCFLAGS += $(OMPFLAG_FORCE)
     else
-      BLAS_LDFLAGS += $(OMPFLAG)
+      BLAS_LDFLAGS += $(OMPFLAG_FORCE)
     endif
   endif
   ifneq (0,$(SIMD))
@@ -1201,50 +1201,50 @@ else # GCC assumed
   endif
   ifeq (0,$(COMPATIBLE))
     ifneq (0,$(GCC))
-      OMPFLAG = -fopenmp
+      OMPFLAG_FORCE = -fopenmp
     else ifneq (Darwin,$(UNAME))
       ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION)))"))
-        OMPFLAG = -fopenmp
+        OMPFLAG_FORCE = -fopenmp
         OMPRT = omp
       endif
     endif
   endif
-  ifeq (,$(OMPFLAG))
+  ifeq (,$(OMPFLAG_FORCE))
     ifneq (,$(filter environment% override command%,$(origin OMP)))
-      OMPFLAG = -fopenmp
+      OMPFLAG_FORCE = -fopenmp
     endif
   else ifeq (FreeBSD,$(UNAME))
     # avoid include path at begin of compile line
-    OMPFLAG += -I/usr/local/include
+    OMPFLAG_FORCE += -I/usr/local/include
   endif
   # account for missing TLS/OMP
-  ifeq (,$(OMPFLAG))
+  ifeq (,$(OMPFLAG_FORCE))
     THREADS ?= 0
     OMP = 0
   endif
   ifeq (,$(strip $(OMPRT)))
     OMPRT = gomp
   endif
-  OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG) -L/usr/local/lib,$(OMPRT))
-  ifneq (,$(OMPFLAG))
+  OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
+  ifneq (,$(OMPFLAG_FORCE))
     ifneq (0,$(OMP))
       # clang: OMP=libomp
       ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
         # omit passing special OMP into Fortran compiler
-        FCFLAGS += $(OMPFLAG)
-        CLDFLAGS += $(OMPFLAG)=$(OMP)
-        CXXFLAGS += $(OMPFLAG)=$(OMP)
-        CFLAGS += $(OMPFLAG)=$(OMP)
+        FCFLAGS += $(OMPFLAG_FORCE)
+        CLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+        CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+        CFLAGS += $(OMPFLAG_FORCE)=$(OMP)
       else
         ifeq (3,$(GCC))
-          LDFLAGS += $(OMPFLAG)
+          LDFLAGS += $(OMPFLAG_FORCE)
         else ifneq (,$(strip $(OMPLIBFILE)))
           BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
         endif
         ifneq (Darwin,$(UNAME))
-          CXXFLAGS += $(OMPFLAG)
-          FCFLAGS += $(OMPFLAG)
-          CFLAGS += $(OMPFLAG)
+          CXXFLAGS += $(OMPFLAG_FORCE)
+          FCFLAGS += $(OMPFLAG_FORCE)
+          CFLAGS += $(OMPFLAG_FORCE)
         endif
       endif
     endif
@@ -1584,21 +1584,22 @@ ifeq (Darwin,$(UNAME))
   FCFLAGS += -Wa,-q
 endif
 
-OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG) -L/usr/local/lib,$(OMPRT))
+OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
 ifneq (,$(strip $(OMPLIBFILE)))
   OMPLIB = $(call abslib,$(OMPLIBFILE))
 endif
 
-ifneq (,$(OMPFLAG))
-ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
-  echo "\#if defined(_OPENMP)" > $${CINFILE}; \
-  echo "\# include <omp.h>" >> $${CINFILE}; \
-  echo "\#endif" >> $${CINFILE}; \
-  CTEST=$$($(CC) $(OMPFLAG) -c $${CINFILE} 2>&1); \
-  if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-  rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
-    OMPFLAG := $(NULL)
-endif
+ifneq (,$(OMPFLAG_FORCE))
+  OMPFLAG = $(OMPFLAG_FORCE)
+  ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
+    echo "\#if defined(_OPENMP)" > $${CINFILE}; \
+    echo "\# include <omp.h>" >> $${CINFILE}; \
+    echo "\#endif" >> $${CINFILE}; \
+    CTEST=$$($(CC) $(OMPFLAG_FORCE) -c $${CINFILE} 2>&1); \
+    if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
+      OMPFLAG = $(NULL)
+  endif
 endif
 
 ifeq (0,$(OMP))
@@ -1895,12 +1896,11 @@ objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
   $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_STATE .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION \
-    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING FSTD \
-    DEPDIR DLIBEXT ENV EXTDEP FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO \
-    ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION_INT MKL_INCFILE MV ROOTDIR SLIBEXT SUITE XLNKOPT TESTSIZE \
-    BRACE_OPEN BRACE_CLOSE FLOCK MKTEMP SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB \
-    SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPLIBFILE NOBLASLIB NOBLAS_% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB \
-    FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 CCAR \
+    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING FSTD DEPDIR \
+    DLIBEXT ENV EXTDEP FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE FLOCK SUITE \
+    ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION_INT MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP CCAR \
+    SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE OMPLIBFILE \
+    NOBLASLIB NOBLAS_% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 \
     which cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V),$V=$($V)?)))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
