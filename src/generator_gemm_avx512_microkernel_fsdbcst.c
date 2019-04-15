@@ -272,7 +272,8 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
     }
 
     /* in case of bfloat16 "prepare" A matrix in registers zmm l_k%2 and zmm3 using FP32 numbers */
-    if ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
+    if ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
+         (i_micro_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX)                ) {
       /* we put "0" elements of A matrix into zmm3 */
       libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
           i_micro_kernel_config->instruction_set,
@@ -389,7 +390,7 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
                                               3,
                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n,
                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
-          } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX ) {
+          } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX || i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX ) {
             libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                      i_micro_kernel_config->instruction_set,
                                                      LIBXSMM_X86_INSTR_VPDPWSSDS,
@@ -405,9 +406,7 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
             /* shouldn't happen */
           }
         } else if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-#if 0
-          if ( 1 == 1 ) {
-#endif
+          if ( i_micro_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX ) {
             /* broadcast pair of B matrix values into zmm2 */
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                               i_micro_kernel_config->instruction_set,
@@ -473,11 +472,19 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
                                               3,
                                               2,
                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
-#if 0
           } else {
-            /* shouldn't happen */
+            libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                     i_micro_kernel_config->instruction_set,
+                                                     LIBXSMM_X86_INSTR_VDPBF16PS,
+                                                     1,
+                                                     l_b_reg,
+                                                     l_b_idx,
+                                                     l_scale,
+                                                     l_disp,
+                                                     i_micro_kernel_config->vector_name,
+                                                     l_k%2,
+                                                     i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
           }
-#endif
         } else {
           /* shoudn't happen */
         }
@@ -769,7 +776,7 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
                                               3,
                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n,
                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
-          } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX ) {
+          } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX || i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX ) {
             libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                      i_micro_kernel_config->instruction_set,
                                                      LIBXSMM_X86_INSTR_VPDPWSSDS,
@@ -785,7 +792,7 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
             /* shouldn't happen */
           }
         } else if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-          if ( 1 == 1 ) {
+          if ( i_micro_kernel_config->instruction_set != LIBXSMM_X86_AVX512_CPX ) {
             /* broadcast pair of B matrix values into zmm2 */
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                               i_micro_kernel_config->instruction_set,
@@ -852,7 +859,17 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
                                               2,
                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
           } else {
-            /* shouldn't happen */
+            libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
+                                                     i_micro_kernel_config->instruction_set,
+                                                     LIBXSMM_X86_INSTR_VDPBF16PS,
+                                                     1,
+                                                     l_b_reg,
+                                                     l_b_idx,
+                                                     l_scale,
+                                                     l_disp,
+                                                     i_micro_kernel_config->vector_name,
+                                                     l_k%2,
+                                                     i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
           }
         } else {
           /* shoudn't happen */

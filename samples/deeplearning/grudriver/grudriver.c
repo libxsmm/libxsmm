@@ -242,6 +242,7 @@ LIBXSMM_INLINE void convert_ck_c3k(int C, int K, float *src, float *dst)
 {
   int x, y;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(x);
 # pragma omp parallel for private(x, y)
 #endif
   for (y = 0; y < C; y++) {
@@ -365,6 +366,7 @@ void gru_ref_bwd_upd( int N, int C, int K, int t,
   LIBXSMM_VLA_DECL(2, float, delta, deltaD, K);
   for (j = t-1; j >= 0; j--) {
 #if defined(_OPENMP)
+    LIBXSMM_OMP_VAR(p);
 #   pragma omp parallel for private(l, p) LIBXSMM_OPENMP_COLLAPSE(2)
 #endif
     for (l = 0; l < N; l++) {
@@ -630,12 +632,12 @@ int main(int argc, char* argv[])
   drtest     = (float*)libxsmm_aligned_malloc(K*K*3*sizeof(float), 2097152);
   LIBXSMM_VLA_DECL(2, float, xgold, xgoldt, N * C);
   LIBXSMM_VLA_DECL(2, float, hgold, hgoldt, N * K);
-  LIBXSMM_VLA_DECL(2, float, igold, igoldt, N * K);
-  LIBXSMM_VLA_DECL(2, float, cgold, cgoldt, N * K);
-  LIBXSMM_VLA_DECL(2, float, fgold, fgoldt, N * K);
-  LIBXSMM_VLA_DECL(2, float, ogold, ogoldt, N * K);
+  /*LIBXSMM_VLA_DECL(2, float, igold, igoldt, N * K);*/
+  /*LIBXSMM_VLA_DECL(2, float, cgold, cgoldt, N * K);*/
+  /*LIBXSMM_VLA_DECL(2, float, fgold, fgoldt, N * K);*/
+  /*LIBXSMM_VLA_DECL(2, float, ogold, ogoldt, N * K);*/
+  /*LIBXSMM_VLA_DECL(2, float, dxgold, dxgoldt, N * C);*/
   LIBXSMM_VLA_DECL(2, float, dhgold, dhgoldt, N * K);
-  LIBXSMM_VLA_DECL(2, float, dxgold, dxgoldt, N * C);
   LIBXSMM_VLA_DECL(2, float, h, ht, N * K);
 
   /* initialize data */

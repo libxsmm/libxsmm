@@ -61,7 +61,11 @@ int main(void)
     libxsmm_release_kernel(kernel.p);
   }
   else {
-    result = EXIT_FAILURE;
+    libxsmm_registry_info registry_info;
+    result = libxsmm_get_registry_info(&registry_info);
+    if (EXIT_SUCCESS == result && 2 != registry_info.size) {
+      result = EXIT_FAILURE;
+    }
   }
   return result;
 }

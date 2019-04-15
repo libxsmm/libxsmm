@@ -45,10 +45,11 @@
 #define LIBXSMM_X86_AVX          1005
 #define LIBXSMM_X86_AVX2         1006
 #define LIBXSMM_X86_AVX512       1007
-#define LIBXSMM_X86_AVX512_MIC   1010
+#define LIBXSMM_X86_AVX512_MIC   1010 /* KNL */
 #define LIBXSMM_X86_AVX512_KNM   1011
-#define LIBXSMM_X86_AVX512_CORE  1020
+#define LIBXSMM_X86_AVX512_CORE  1020 /* SKX */
 #define LIBXSMM_X86_AVX512_CLX   1021
+#define LIBXSMM_X86_AVX512_CPX   1022
 
 /**
  * Returns the target architecture and instruction set extensions, but *not* necessarily the

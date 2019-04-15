@@ -112,7 +112,7 @@ int main(/*int argc, char* argv[]*/)
           ++num_even;
         }
       }
-      if (num_rngs < 4 * LIBXSMM_DIFF(num_odd, num_even)) result = EXIT_FAILURE;
+      if (num_rngs < 4 * LIBXSMM_DELTA(num_odd, num_even)) result = EXIT_FAILURE;
     }
 #if !defined(USE_EXPECTED)
   }}
@@ -120,12 +120,12 @@ int main(/*int argc, char* argv[]*/)
 
   if (EXIT_SUCCESS == result) {
     const double range = info.max_tst - info.min_tst, expected = 0.5;
-    if (expected < 5 * LIBXSMM_DIFF(info.avg_tst, expected)) result = EXIT_FAILURE;
-    if (expected < 5 * LIBXSMM_DIFF(0.5 * range, expected)) result = EXIT_FAILURE;
+    if (expected < 5 * LIBXSMM_DELTA(info.avg_tst, expected)) result = EXIT_FAILURE;
+    if (expected < 5 * LIBXSMM_DELTA(0.5 * range, expected)) result = EXIT_FAILURE;
   }
   if (EXIT_SUCCESS == result) {
     const double expected = 1.0 / 12.0;
-    if (expected < 5 * LIBXSMM_DIFF(info.var_tst, expected)) result = EXIT_FAILURE;
+    if (expected < 5 * LIBXSMM_DELTA(info.var_tst, expected)) result = EXIT_FAILURE;
   }
 
   free(rngs);

@@ -62,7 +62,6 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
 
 int main(int argc, char* argv[])
 {
-  const int alignment = 64; /* must be power of two */
   /* batch-size is used to stream matrix-operands from memory */
   const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
   /* default: M, N, and K are 13, 5, and 7 respectively */
@@ -70,26 +69,26 @@ int main(int argc, char* argv[])
   const int n = (3 < argc ? atoi(argv[3]) : 5);
   const int k = (4 < argc ? atoi(argv[4]) : 7);
   /* leading dimensions are made multiples of the size of a cache-line */
-  const int lda = (5 < argc ? (m < atoi(argv[5]) ? atoi(argv[5]) : m) : (int)(((sizeof(TYPE) * m + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE)));
-  const int ldb = (6 < argc ? (k < atoi(argv[6]) ? atoi(argv[6]) : k) : (int)(((sizeof(TYPE) * k + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE)));
-  const int ldc = (7 < argc ? (m < atoi(argv[7]) ? atoi(argv[7]) : m) : (int)(((sizeof(TYPE) * m + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE)));
+  const int lda = (5 < argc ? (m < atoi(argv[5]) ? atoi(argv[5]) : m) : (int)(((sizeof(TYPE) * m + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE)));
+  const int ldb = (6 < argc ? (k < atoi(argv[6]) ? atoi(argv[6]) : k) : (int)(((sizeof(TYPE) * k + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE)));
+  const int ldc = (7 < argc ? (m < atoi(argv[7]) ? atoi(argv[7]) : m) : (int)(((sizeof(TYPE) * m + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE)));
   /* micro-kernels are limited to certain alpha- and beta-values */
   const char transa = 'n', transb = 'n';
   const TYPE alpha = 1, beta = 1;
   /* calculate matrix sizes incl. padded elements */
-  const size_t na = ((sizeof(TYPE) * lda * k + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE);
-  const size_t nb = ((sizeof(TYPE) * ldb * n + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE);
-  const size_t nc = ((sizeof(TYPE) * ldc * n + alignment - 1) & ~(alignment - 1)) / sizeof(TYPE);
+  const size_t na = ((sizeof(TYPE) * lda * k + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE);
+  const size_t nb = ((sizeof(TYPE) * ldb * n + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE);
+  const size_t nc = ((sizeof(TYPE) * ldc * n + PAD - 1) & ~(PAD - 1)) / sizeof(TYPE);
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? (int)((2ULL << 30/*2 GB*/) / (sizeof(TYPE) * (na + nb + nc))) : batchsize);
   /* allocate A, B, and C matrix buffers */
-  void *const va = malloc(sizeof(TYPE) * na * size + alignment - 1);
-  void *const vb = malloc(sizeof(TYPE) * nb * size + alignment - 1);
-  void *const vc = malloc(sizeof(TYPE) * nc * size + alignment - 1);
-  /* align memory according to alignment */
-  TYPE *const a = (TYPE*)(((uintptr_t)va + alignment - 1) & ~(alignment - 1));
-  TYPE *const b = (TYPE*)(((uintptr_t)vb + alignment - 1) & ~(alignment - 1));
-  TYPE *const c = (TYPE*)(((uintptr_t)vc + alignment - 1) & ~(alignment - 1));
+  void *const va = malloc(sizeof(TYPE) * na * size + PAD - 1);
+  void *const vb = malloc(sizeof(TYPE) * nb * size + PAD - 1);
+  void *const vc = malloc(sizeof(TYPE) * nc * size + PAD - 1);
+  /* align memory according to PAD */
+  TYPE *const a = (TYPE*)(((uintptr_t)va + PAD - 1) & ~(PAD - 1));
+  TYPE *const b = (TYPE*)(((uintptr_t)vb + PAD - 1) & ~(PAD - 1));
+  TYPE *const c = (TYPE*)(((uintptr_t)vc + PAD - 1) & ~(PAD - 1));
   const double scale = 1.0 / size;
   double duration = 0;
   int i;
