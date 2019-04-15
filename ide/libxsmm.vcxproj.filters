@@ -285,6 +285,9 @@
     <ClInclude Include="..\src\generator_gemm_avx512_microkernel_fsdbcst.h">
       <Filter>src\generator</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\libxsmm_diff.h">
+      <Filter>src</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -832,6 +835,9 @@
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_gru_bwdupd_nc_ck_generic.tpl.c">
       <Filter>src\template</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_diff.c">
+      <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>

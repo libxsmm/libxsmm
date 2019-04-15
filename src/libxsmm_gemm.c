@@ -72,8 +72,8 @@
 #endif
 
 #if (0 != LIBXSMM_SYNC) /** Locks for the batch interface (duplicated C indexes). */
-# define LIBXSMM_GEMM_LOCKIDX(IDX, NPOT) LIBXSMM_MOD2(LIBXSMM_CONCATENATE(libxsmm_crc32_u,LIBXSMM_BLASINT_NBITS)(&(IDX), 2507/*seed*/), NPOT)
-# define LIBXSMM_GEMM_LOCKPTR(PTR, NPOT) LIBXSMM_MOD2(libxsmm_crc32_u64(&(PTR), 1975/*seed*/), NPOT)
+# define LIBXSMM_GEMM_LOCKIDX(IDX, NPOT) LIBXSMM_MOD2(LIBXSMM_CONCATENATE(libxsmm_crc32_u,LIBXSMM_BLASINT_NBITS)(2507/*seed*/, &(IDX)), NPOT)
+# define LIBXSMM_GEMM_LOCKPTR(PTR, NPOT) LIBXSMM_MOD2(libxsmm_crc32_u64(1975/*seed*/, &(PTR)), NPOT)
 # if !defined(LIBXSMM_GEMM_MAXNLOCKS)
 #   define LIBXSMM_GEMM_MAXNLOCKS 1024
 # endif
@@ -115,7 +115,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm)(const char
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-#if (!defined(__BLAS) || (0 != __BLAS))
+#if (0 == LIBXSMM_NO_BLAS)
   LIBXSMM_FSYMBOL(dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 #else
   static int error_once = 0;
@@ -135,7 +135,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm)(const char
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-#if (!defined(__BLAS) || (0 != __BLAS))
+#if (0 == LIBXSMM_NO_BLAS)
   LIBXSMM_FSYMBOL(sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 #else
   static int error_once = 0;
@@ -302,25 +302,29 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
 }
 
 
-LIBXSMM_API_INLINE libxsmm_gemm_prefetch_type internal_get_gemm_prefetch(int prefetch)
-{
-  const int result = (0 > prefetch ? ((int)libxsmm_gemm_auto_prefetch_default) : prefetch);
-  LIBXSMM_ASSERT_MSG(0 <= result, "LIBXSMM_PREFETCH_AUTO is not translated");
-  return (libxsmm_gemm_prefetch_type)result;
-}
-
-
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_xprefetch(const int* prefetch)
 {
   LIBXSMM_INIT /* load configuration */
-  return internal_get_gemm_prefetch(NULL == prefetch ? ((int)libxsmm_gemm_auto_prefetch) : *prefetch);
+  return libxsmm_get_gemm_prefetch(NULL == prefetch ? ((int)libxsmm_gemm_auto_prefetch) : *prefetch);
 }
 
 
 LIBXSMM_API libxsmm_gemm_prefetch_type libxsmm_get_gemm_prefetch(int prefetch)
 {
-  LIBXSMM_INIT /* load configuration */
-  return internal_get_gemm_prefetch(prefetch);
+  libxsmm_gemm_prefetch_type result;
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(__MINGW32__)
+  if (0 > prefetch) {
+    LIBXSMM_INIT /* load configuration */
+    result = libxsmm_gemm_auto_prefetch_default;
+  }
+  else {
+    result = (libxsmm_gemm_prefetch_type)prefetch;
+  }
+#else /* TODO: full support for Windows calling convention */
+  result = LIBXSMM_GEMM_PREFETCH_NONE;
+  LIBXSMM_UNUSED(prefetch);
+#endif
+  return result;
 }
 
 

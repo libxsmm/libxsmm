@@ -54,6 +54,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         i
        strcmp(i_arch, "knm") == 0 ||
        strcmp(i_arch, "skx") == 0 ||
        strcmp(i_arch, "clx") == 0 ||
+       strcmp(i_arch, "cpx") == 0 ||
        strcmp(i_arch, "snb") == 0 ||
        strcmp(i_arch, "hsw") == 0 ) {
     libxsmm_generator_spgemm_csr_asparse_soa_n_loop( io_generated_code,
@@ -125,8 +126,9 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     if ( strcmp(i_arch, "knl") == 0 ||
          strcmp(i_arch, "knm") == 0 ||
+         strcmp(i_arch, "skx") == 0 ||
          strcmp(i_arch, "clx") == 0 ||
-         strcmp(i_arch, "skx") == 0 ) {
+         strcmp(i_arch, "cpx") == 0 ) {
       l_soa_width = 8;
       l_n_max_block = 28;
     } else {
@@ -137,8 +139,9 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   } else {
     if ( strcmp(i_arch, "knl") == 0 ||
          strcmp(i_arch, "knm") == 0 ||
+         strcmp(i_arch, "skx") == 0 ||
          strcmp(i_arch, "clx") == 0 ||
-         strcmp(i_arch, "skx") == 0 ) {
+         strcmp(i_arch, "cpx") == 0 ) {
       l_soa_width = 16;
       l_n_max_block = 28;
     } else {
@@ -290,6 +293,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_m_loop( libxsmm_generated_code*   
                strcmp(i_arch, "knm") == 0 ||
                strcmp(i_arch, "skx") == 0 ||
                strcmp(i_arch, "clx") == 0 ||
+               strcmp(i_arch, "cpx") == 0 ||
                strcmp(i_arch, "hsw") == 0 ) {
             if (l_b_offset >= 8192) {
               l_b_total_offset += l_b_offset;

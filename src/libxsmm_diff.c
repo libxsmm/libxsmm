@@ -28,48 +28,86 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_source.h>
-#include <stdlib.h>
-#if defined(_DEBUG)
-# include <stdio.h>
-#endif
-
-#if !defined(ELEM_TYPE)
-# define ELEM_TYPE int
-#endif
+#include <libxsmm_math.h>
+#include "libxsmm_diff.h"
 
 
-/**
- * This test case is NOT an example of how to use LIBXSMM
- * since INTERNAL functions are tested which are not part
- * of the LIBXSMM API.
- */
-int main(void)
+LIBXSMM_API unsigned char libxsmm_diff_16(const void* a, const void* b, ...)
 {
-  const unsigned int seed = 1975, size = 2507;
-  const unsigned int n512 = 512 / (8 * sizeof(ELEM_TYPE));
-  unsigned int s = LIBXSMM_UP(size, n512), i, h1, h2;
-  int result = EXIT_SUCCESS;
-  const ELEM_TYPE* value;
+  LIBXSMM_DIFF_16_DECL(a16);
+  LIBXSMM_DIFF_16_LOAD(a16, a);
+  return LIBXSMM_DIFF_16(a16, b, 0/*dummy*/);
+}
 
-  ELEM_TYPE *const data = (ELEM_TYPE*)libxsmm_malloc(sizeof(ELEM_TYPE) * s);
-  if (NULL == data) s = 0;
-  for (i = 0; i < s; ++i) data[i] = (rand() - ((RAND_MAX) >> 1));
 
-  h1 = libxsmm_crc32(seed, data, sizeof(ELEM_TYPE) * s);
-  h2 = seed; value = data;
-  for (i = 0; i < s; i += n512) {
-    h2 = libxsmm_crc32_u512(h2, value + i);
+LIBXSMM_API unsigned char libxsmm_diff_32(const void* a, const void* b, ...)
+{
+  LIBXSMM_DIFF_32_DECL(a32);
+  LIBXSMM_DIFF_32_LOAD(a32, a);
+  return LIBXSMM_DIFF_32(a32, b, 0/*dummy*/);
+}
+
+
+LIBXSMM_API unsigned char libxsmm_diff_48(const void* a, const void* b, ...)
+{
+  LIBXSMM_DIFF_48_DECL(a48);
+  LIBXSMM_DIFF_48_LOAD(a48, a);
+  return LIBXSMM_DIFF_48(a48, b, 0/*dummy*/);
+}
+
+
+LIBXSMM_API unsigned char libxsmm_diff_64(const void* a, const void* b, ...)
+{
+  LIBXSMM_DIFF_64_DECL(a64);
+  LIBXSMM_DIFF_64_LOAD(a64, a);
+  return LIBXSMM_DIFF_64(a64, b, 0/*dummy*/);
+}
+
+
+LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned char size)
+{
+  const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
+  unsigned char i;
+  for (i = 0; i < (size & 0xF0); i += 16) {
+    LIBXSMM_DIFF_16_DECL(a16);
+    LIBXSMM_DIFF_16_LOAD(a16, a8 + i);
+    if (LIBXSMM_DIFF_16(a16, b8 + i, 0/*dummy*/)) return 1;
   }
-  if (h1 != h2) {
-#if defined(_DEBUG)
-    fprintf(stderr, "(crc32=%u) != (crc32_sw=%u)\n", h1, h2);
-#endif
-    result = EXIT_FAILURE;
+  for (; i < size; ++i) if (a8[i] ^ b8[i]) return 1;
+  return 0;
+}
+
+
+LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char size,
+  unsigned char stride, unsigned int hint, unsigned int n)
+{
+  unsigned int result;
+  LIBXSMM_ASSERT(size <= stride);
+  switch (size) {
+    case 64: {
+      LIBXSMM_DIFF_64_DECL(a64);
+      LIBXSMM_DIFF_64_LOAD(a64, a);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_64, a64, bn, size, stride, hint, n);
+    } break;
+    case 48: {
+      LIBXSMM_DIFF_48_DECL(a48);
+      LIBXSMM_DIFF_48_LOAD(a48, a);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_48, a48, bn, size, stride, hint, n);
+    } break;
+    case 32: {
+      LIBXSMM_DIFF_32_DECL(a32);
+      LIBXSMM_DIFF_32_LOAD(a32, a);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_32, a32, bn, size, stride, hint, n);
+    } break;
+    case 16: {
+      LIBXSMM_DIFF_16_DECL(a16);
+      LIBXSMM_DIFF_16_LOAD(a16, a);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_16, a16, bn, size, stride, hint, n);
+    } break;
+    default: {
+      LIBXSMM_DIFF_N(unsigned int, result, libxsmm_diff, a, bn, size, stride, hint, n);
+    }
   }
-
-  libxsmm_free(data);
-
   return result;
 }
 

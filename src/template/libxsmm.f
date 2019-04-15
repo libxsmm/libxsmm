@@ -160,7 +160,8 @@
      &    LIBXSMM_X86_AVX512_MIC  = 1010,                               &
      &    LIBXSMM_X86_AVX512_KNM  = 1011,                               &
      &    LIBXSMM_X86_AVX512_CORE = 1020,                               &
-     &    LIBXSMM_X86_AVX512_CLX  = 1021
+     &    LIBXSMM_X86_AVX512_CLX  = 1021,                               &
+     &    LIBXSMM_X86_AVX512_CPX  = 1022
 
         ! Generic function type (double-precision).
         TYPE :: LIBXSMM_DMMFUNCTION
@@ -203,18 +204,24 @@
           MODULE PROCEDURE libxsmm_ptr_z0, libxsmm_ptr_c0
           MODULE PROCEDURE libxsmm_ptr_d0, libxsmm_ptr_s0
           MODULE PROCEDURE libxsmm_ptr_i0, libxsmm_ptr_w0
+          MODULE PROCEDURE libxsmm_ptr_b0 ! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_l0 ! long long
         END INTERFACE
 
         INTERFACE libxsmm_ptr1
           MODULE PROCEDURE libxsmm_ptr_z1, libxsmm_ptr_c1
           MODULE PROCEDURE libxsmm_ptr_d1, libxsmm_ptr_s1
           MODULE PROCEDURE libxsmm_ptr_i1, libxsmm_ptr_w1
+          MODULE PROCEDURE libxsmm_ptr_b1 ! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_l1 ! long long
         END INTERFACE
 
         INTERFACE libxsmm_ptr2
           MODULE PROCEDURE libxsmm_ptr_z2, libxsmm_ptr_c2
           MODULE PROCEDURE libxsmm_ptr_d2, libxsmm_ptr_s2
           MODULE PROCEDURE libxsmm_ptr_i2, libxsmm_ptr_w2
+          MODULE PROCEDURE libxsmm_ptr_b2 ! Byte/char
+          MODULE PROCEDURE libxsmm_ptr_l2 ! long long
         END INTERFACE
 
         ! Deallocates JIT'ted code, or unregisters/releases code from registry.
@@ -323,6 +330,13 @@
           MODULE PROCEDURE libxsmm_blas_sgemm2
         END INTERFACE
 
+        ! Overloaded variants of libxsmm_hash.
+        INTERFACE libxsmm_hash
+          MODULE PROCEDURE libxsmm_hash_char
+          MODULE PROCEDURE libxsmm_hash_i32
+          MODULE PROCEDURE libxsmm_hash_i64
+        END INTERFACE
+
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_get_gemm_auto_prefetch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_set_gemm_auto_prefetch
@@ -385,7 +399,7 @@
             INTEGER(C_INT), INTENT(IN), VALUE :: id
           END SUBROUTINE
 
-          ! Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|clx", "0": CPUID)
+          ! Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|clx|cpx", "0": CPUID)
           ! for subsequent code generation (JIT).
           SUBROUTINE libxsmm_set_target_arch(arch) BIND(C)
             IMPORT :: C_CHAR
@@ -825,6 +839,50 @@
           INTEGER(C_SHORT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_w2
           libxsmm_ptr_w2 = libxsmm_ptr_w0(a(LBOUND(a,1),LBOUND(a,2)))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b0
+        FUNCTION libxsmm_ptr_b0(a)
+          CHARACTER(C_CHAR), INTENT(IN), TARGET :: a
+          CHARACTER(C_CHAR), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_b0
+          fptr => a; libxsmm_ptr_b0 = C_LOC(fptr)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b1
+        FUNCTION libxsmm_ptr_b1(a)
+          CHARACTER(C_CHAR), INTENT(IN) :: a(:)
+          TYPE(C_PTR) :: libxsmm_ptr_b1
+          libxsmm_ptr_b1 = libxsmm_ptr_b0(a(LBOUND(a,1)))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b2
+        FUNCTION libxsmm_ptr_b2(a)
+          CHARACTER(C_CHAR), INTENT(IN) :: a(:,:)
+          TYPE(C_PTR) :: libxsmm_ptr_b2
+          libxsmm_ptr_b2 = libxsmm_ptr_b0(a(LBOUND(a,1),LBOUND(a,2)))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_l0
+        FUNCTION libxsmm_ptr_l0(a)
+          INTEGER(C_LONG_LONG), INTENT(IN), TARGET :: a
+          INTEGER(C_LONG_LONG), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_l0
+          fptr => a; libxsmm_ptr_l0 = C_LOC(fptr)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_l1
+        FUNCTION libxsmm_ptr_l1(a)
+          INTEGER(C_LONG_LONG), INTENT(IN) :: a(:)
+          TYPE(C_PTR) :: libxsmm_ptr_l1
+          libxsmm_ptr_l1 = libxsmm_ptr_l0(a(LBOUND(a,1)))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_l2
+        FUNCTION libxsmm_ptr_l2(a)
+          INTEGER(C_LONG_LONG), INTENT(IN) :: a(:,:)
+          TYPE(C_PTR) :: libxsmm_ptr_l2
+          libxsmm_ptr_l2 = libxsmm_ptr_l0(a(LBOUND(a,1),LBOUND(a,2)))
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_dmmkernel
@@ -1597,51 +1655,82 @@
         END FUNCTION
 
         ! Calculate a hash value for a given key value (blob of integers).
+        ! Conceptually pure, but C_LOC may be (incorrectly) marked impure.
         ! Implicit FORTRAN 77 interface:
-        ! INTEGER(4) :: hash (OUT)
-        ! INTEGER(4) :: key(:), keysize, seed
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash
-        PURE FUNCTION libxsmm_hash(key, seed)
-          INTEGER(C_INT), DIMENSION(:), INTENT(IN) :: key
+        ! INTEGER(4) :: hash_seed (INOUT)
+        ! CHARACTER  :: key(:)
+        ! INTEGER(4) :: keysize
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_char
+        FUNCTION libxsmm_hash_char(key, seed)
+          CHARACTER(C_CHAR), DIMENSION(:), INTENT(IN) :: key
           INTEGER(C_INT), INTENT(IN) :: seed
-          INTEGER(C_INT) :: libxsmm_hash
+          INTEGER(C_INT) :: libxsmm_hash_char
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
           INTERFACE
-            PURE SUBROUTINE internal_hash(hash, key, keysize, seed)     &
+            PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
      &      BIND(C, NAME="libxsmm_hash_")
-              IMPORT C_INT
-              INTEGER(C_INT), INTENT(OUT) :: hash
-              INTEGER(C_INT), INTENT(IN)  :: key
-              INTEGER(C_INT), INTENT(IN)  :: keysize
-              INTEGER(C_INT), INTENT(IN)  :: seed
+              IMPORT C_INT, C_PTR
+              INTEGER(C_INT), INTENT(INOUT)   :: hash_seed
+              INTEGER(C_INT), INTENT(IN)      :: keysize
+              TYPE(C_PTR), INTENT(IN), VALUE  :: key
             END SUBROUTINE
           END INTERFACE
-          CALL internal_hash(libxsmm_hash,                              &
-     &      key(LBOUND(key,1)), SIZE(key) * 4, seed)
+          libxsmm_hash_char = seed
+          CALL internal_hash(libxsmm_hash_char,                         &
+     &      libxsmm_ptr1(key), SIZE(key))
         END FUNCTION
 
         ! Calculate a hash value for a given key value (blob of integers).
+        ! Conceptually pure, but C_LOC may be (incorrectly) marked impure.
         ! Implicit FORTRAN 77 interface:
-        ! INTEGER(8) :: hash (OUT)
-        ! INTEGER(8) :: key(:), keysize, seed
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash2
-        PURE FUNCTION libxsmm_hash2(key, seed)
-          INTEGER(C_LONG_LONG), DIMENSION(:), INTENT(IN) :: key
-          INTEGER(C_LONG_LONG), INTENT(IN) :: seed
-          INTEGER(C_LONG_LONG) :: libxsmm_hash2
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash2
+        ! INTEGER(4) :: hash_seed (INOUT)
+        ! INTEGER(4) :: key(:)
+        ! INTEGER(4) :: keysize
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i32
+        FUNCTION libxsmm_hash_i32(key, seed)
+          INTEGER(C_INT), DIMENSION(:), INTENT(IN) :: key
+          INTEGER(C_INT), INTENT(IN) :: seed
+          INTEGER(C_INT) :: libxsmm_hash_i32
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
           INTERFACE
-            PURE SUBROUTINE internal_hash2(hash, key, keysize, seed)    &
-     &      BIND(C, NAME="libxsmm_hash2_")
-              IMPORT C_LONG_LONG
-              INTEGER(C_LONG_LONG), INTENT(OUT) :: hash
-              INTEGER(C_LONG_LONG), INTENT(IN)  :: key
-              INTEGER(C_LONG_LONG), INTENT(IN)  :: keysize
-              INTEGER(C_LONG_LONG), INTENT(IN)  :: seed
+            PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
+     &      BIND(C, NAME="libxsmm_hash_")
+              IMPORT C_INT, C_PTR
+              INTEGER(C_INT), INTENT(INOUT)   :: hash_seed
+              INTEGER(C_INT), INTENT(IN)      :: keysize
+              TYPE(C_PTR), INTENT(IN), VALUE  :: key
             END SUBROUTINE
           END INTERFACE
-          CALL internal_hash2(libxsmm_hash2,                            &
-     &      key(LBOUND(key,1,8)), SIZE(key,1,8) * 8, seed)
+          libxsmm_hash_i32 = seed
+          CALL internal_hash(libxsmm_hash_i32,                          &
+     &      libxsmm_ptr1(key), SIZE(key) * 4)
+        END FUNCTION
+
+
+        ! Calculate a hash value for a given key value (blob of integers).
+        ! Conceptually pure, but C_LOC may be (incorrectly) marked impure.
+        ! Implicit FORTRAN 77 interface:
+        ! INTEGER(4) :: hash_seed (INOUT)
+        ! INTEGER(8) :: key(:)
+        ! INTEGER(4) :: keysize
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i64
+        FUNCTION libxsmm_hash_i64(key, seed)
+          INTEGER(C_LONG_LONG), DIMENSION(:), INTENT(IN) :: key
+          INTEGER(C_INT), INTENT(IN) :: seed
+          INTEGER(C_INT) :: libxsmm_hash_i64
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
+          INTERFACE
+            PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
+     &      BIND(C, NAME="libxsmm_hash_")
+              IMPORT C_INT, C_PTR
+              INTEGER(C_INT), INTENT(INOUT)   :: hash_seed
+              INTEGER(C_INT), INTENT(IN)      :: keysize
+              TYPE(C_PTR), INTENT(IN), VALUE  :: key
+            END SUBROUTINE
+          END INTERFACE
+          libxsmm_hash_i64 = seed
+          CALL internal_hash(libxsmm_hash_i64,                          &
+     &      libxsmm_ptr1(key), SIZE(key) * 8)
         END FUNCTION
       END MODULE
 

@@ -300,7 +300,7 @@ int main(int argc, char* argv[])
     copy_internal_nchw( naive_input , naive_input_tmp, nImg, nIfm, ifh, ifw, pad_h, pad_w);
   }
 #if defined(USE_FUSED_RELU_BWD)
-  /* Initialize some entries with zeros  */
+  /* Initialize some entries with zeros */
   {
     int i;
     for (i = 0; i < nImg*nIfm*ifhp*ifwp; i++ ) {

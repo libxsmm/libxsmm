@@ -363,7 +363,7 @@ int main(int argc, char *argv[])
   printf("Time = %f Time/rep = %f, TFlops/s = %f\n", duration, duration*1.0/reps, flops/1000./1000./1000./1000./duration*reps);
 
   /*----------------------------------------------------------------------------------------------------------------------*/
-  /* Step 6: Test transpose B  */
+  /* Step 6: Test transpose B */
   transA = 'N'; transB = 'T'; transC = 'N';
   printf(" running with: M=%i, N=%i, K=%i, bm=%i, bn=%i, bk=%i, mb=%i, nb=%i, kb=%i, reps=%i, transB = Y -- backprop\n", handle2.m, handle2.n, handle2.k, handle2.bm, handle2.bn, handle2.bk, handle2.mb, handle2.nb, handle2.kb, reps );
   B_gold2 = (REAL_TYPE*)libxsmm_aligned_malloc( K*N*sizeof(REAL_TYPE), 64 );

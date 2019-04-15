@@ -169,7 +169,7 @@ g(x) = (x - a) / b
 x50 = 0.5 * (100 + MAX(0, g(0)))
 h(x) = d * x + c
 dx = 100.0 / FREQN
-fit [x50-2.0*dx:x50+2.0*dx] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
+fit [x50-3.0*dx:x50+3.0*dx] h(x) BASENAME."-cdf.dat" using (("".strcol(3)."" eq "i")?(100*$2/FREQSUM):(1/0)):1 via c, d
 set arrow from x50, second h(x50) to x50, second 0 front
 set arrow from x50, second h(x50) to 100, second h(x50) front
 set label sprintf("%.0f%%", x50) at x50, second 0.5 * h(x50) left offset 1 front
@@ -239,14 +239,11 @@ if (0!=system("sh -c \"if [ -e ".BASENAME."-".KIND.".join ]; then echo 1; else e
   plot BASENAME."-".KIND.".join" using FLOPS:xtic("(".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")") notitle
   if (0!=system("sh -c \"if [ -e ".BASENAME."-eigen.join ]; then echo 1; else echo 0; fi\"")) {
     if (0!=system("sh -c \"if [ -e ".BASENAME."-blaze.join ]; then echo 1; else echo 0; fi\"")) {
-      if (0!=system("sh -c \"if [ -e ".BASENAME."-blas.join ]; then echo 1; else echo 0; fi\"")) {
-        if (0!=system("sh -c \"if [ -e ".BASENAME."-xsmm.join ]; then echo 1; else echo 0; fi\"")) {
-          set output BASENAME.".".FILEEXT
-          plot BASENAME."-eigen.join" using FLOPS:xtic("{/=8 (".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")}") title "Eigen", \
-               BASENAME."-blaze.join" using FLOPS title "Blaze", \
-               BASENAME."-blas.join"  using FLOPS title "BLAS", \
-               BASENAME."-xsmm.join"  using FLOPS title "xsmm"
-        }
+      if (0!=system("sh -c \"if [ -e ".BASENAME."-xsmm.join ]; then echo 1; else echo 0; fi\"")) {
+        set output BASENAME.".".FILEEXT
+        plot BASENAME."-eigen.join" using FLOPS:xtic("{/=8 (".strcol(MPARM).",".strcol(NPARM).",".strcol(KPARM).")}") title "Eigen", \
+             BASENAME."-blaze.join" using FLOPS title "Blaze", \
+             BASENAME."-xsmm.join"  using FLOPS title "xsmm"
       }
     }
   }

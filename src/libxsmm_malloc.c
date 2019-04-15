@@ -430,9 +430,8 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
 #if defined(LIBXSMM_MALLOC_NOCRC)
   return result;
 #else /* calculate checksum over info */
-  return (NULL != result && result->hash == libxsmm_crc32(
-    result, ((const char*)&result->hash) - ((const char*)result),
-    LIBXSMM_MALLOC_SEED)) ? result : NULL;
+  return (NULL != result && result->hash == libxsmm_crc32(LIBXSMM_MALLOC_SEED, result,
+    ((const char*)&result->hash) - ((const char*)result)) ? result : NULL);
 #endif
 }
 
@@ -779,10 +778,17 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 #endif
       }
       if (alloc_failed != buffer && /*fall-back*/NULL != buffer) {
-        char *const aligned = LIBXSMM_ALIGN(((char*)buffer) + extra_size + sizeof(internal_malloc_info_type), alloc_alignment);
+        char *const cbuffer = (char*)buffer, *const aligned = LIBXSMM_ALIGN(cbuffer + extra_size + sizeof(internal_malloc_info_type), alloc_alignment);
         internal_malloc_info_type *const info = (internal_malloc_info_type*)(aligned - sizeof(internal_malloc_info_type));
-        LIBXSMM_ASSERT((aligned + size) <= (((char*)buffer) + alloc_size));
-        if (NULL != extra) memcpy(buffer, extra, extra_size);
+        LIBXSMM_ASSERT((aligned + size) <= (cbuffer + alloc_size));
+        if (NULL != extra) {
+#if defined(NDEBUG)
+          const char *const src = (const char*)extra;
+          int i; for (i = 0; i < (int)extra_size; ++i) cbuffer[i] = src[i];
+#else
+          memcpy(buffer, extra, extra_size);
+#endif
+        }
 #if !defined(NDEBUG)
         else if (NULL == extra && 0 != extra_size) {
           result = EXIT_FAILURE;
@@ -811,8 +817,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         info->size = size;
         info->flags = flags;
 #if !defined(LIBXSMM_MALLOC_NOCRC) /* calculate checksum over info */
-        info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
-          (unsigned int)(((char*)&info->hash) - ((char*)info)), LIBXSMM_MALLOC_SEED);
+        info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, info,
+          /* info size minus actual hash value */
+          (unsigned int)(((char*)&info->hash) - ((char*)info)));
 #endif
         *memory = aligned;
       }
@@ -1048,8 +1055,9 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
           info->pointer = info->reloc;
           info->reloc = NULL;
 # if !defined(LIBXSMM_MALLOC_NOCRC) /* update checksum */
-          info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
-            (unsigned int)(((char*)&info->hash) - ((char*)info)), LIBXSMM_MALLOC_SEED);
+          info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, info,
+            /* info size minus actual hash value */
+            (unsigned int)(((char*)&info->hash) - ((char*)info)));
 # endif   /* treat memory protection errors as soft error; ignore return value */
           munmap(buffer, alloc_size);
 #endif
@@ -1058,8 +1066,9 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
         else { /* malloc-based fall-back */
           int mprotect_result;
 # if !defined(LIBXSMM_MALLOC_NOCRC) && defined(LIBXSMM_VTUNE) /* update checksum */
-          info->hash = libxsmm_crc32(info, /* info size minus actual hash value */
-            (unsigned int)(((char*)&info->hash) - ((char*)info)), LIBXSMM_MALLOC_SEED);
+          info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, info,
+            /* info size minus actual hash value */
+            (unsigned int)(((char*)&info->hash) - ((char*)info)));
 # endif   /* treat memory protection errors as soft error; ignore return value */
           mprotect_result = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
           if (EXIT_SUCCESS != mprotect_result) {
@@ -1117,7 +1126,7 @@ LIBXSMM_API_INLINE const void* internal_malloc_site(const char* site)
   if (NULL != site) {
 #if !defined(LIBXSMM_STRING_POOLING)
     if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != site) {
-      const uintptr_t hash = libxsmm_crc32(site, strlen(site), LIBXSMM_MALLOC_SEED);
+      const uintptr_t hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, site, strlen(site));
       result = (const void*)((LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE) != hash ? hash : (hash - 1));
       LIBXSMM_ASSERT((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != result);
     }

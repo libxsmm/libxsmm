@@ -45,9 +45,9 @@
 
 /* @TODO change int based architecture value */
 LIBXSMM_API
-void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*                        io_generated_code,
-                                       const libxsmm_mcopy_descriptor*              i_matcopy_desc,
-                                       const char*                                    i_arch ) {
+void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*          io_generated_code,
+                                       const libxsmm_mcopy_descriptor*  i_matcopy_desc,
+                                       const char*                      i_arch ) {
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
@@ -57,7 +57,8 @@ void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*                  
        (strcmp(i_arch, "knl") == 0) ||
        (strcmp(i_arch, "hsw") == 0) ||
        (strcmp(i_arch, "snb") == 0) ||
-       (strcmp(i_arch, "clx") == 0)    ) {
+       (strcmp(i_arch, "clx") == 0) ||
+       (strcmp(i_arch, "cpx") == 0)    ) {
     libxsmm_generator_matcopy_avx_avx512_kernel( io_generated_code, i_matcopy_desc, i_arch );
   } else {
     /* TODO fix this error */
