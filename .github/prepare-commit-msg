@@ -54,7 +54,7 @@ if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no 
      [ "message" = "${MSG_KIND}" ] && [ "" != "${MSG_FILE}" ] && \
      [ "0" != "$(${GREP} -qs -F "${MSG_NOCI}" ${MSG_FILE}; ${ECHO} $?)" ];
   then
-    set -o noglob # disable wildcard expansion
+    set -o noglob # disable wild-card expansion
 
     if [ -e ${CODEFILE} ]; then
       PATTERNS="$(${CAT} ${CODEFILE} 2>/dev/null)"
@@ -62,18 +62,20 @@ if [ "" != "${GIT}" ] && ! ${GIT} diff --cached --quiet; then # real commit (no 
     PATTERNS+=$(${ECHO} -e "\nMakefile*")
 
     for FILENAME in $(${GIT} diff --cached --name-only); do
-      if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e '^.github/..*' 2>/dev/null)" ]; then
-        exit 0
-      fi
-      if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e 'version.txt' 2>/dev/null)" ]; then
-        exit 0
-      fi
-      BASENAME=$(basename ${FILENAME})
-      for PATTERN in ${PATTERNS}; do
-        if [[ ${BASENAME} = ${PATTERN} ]]; then # must use double-braces
+      if [ -e "${FILENAME}" ]; then # file must exist i.e., not a deletion
+        if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e '^.github/..*' 2>/dev/null)" ]; then
           exit 0
         fi
-      done
+        if [ "" != "$(${ECHO} "${FILENAME}" | ${GREP} -e 'version.txt' 2>/dev/null)" ]; then
+          exit 0
+        fi
+        BASENAME=$(basename ${FILENAME})
+        for PATTERN in ${PATTERNS}; do
+          if [[ ${BASENAME} = ${PATTERN} ]]; then # must use double-braces
+            exit 0
+          fi
+        done
+      fi
     done
     ${ECHO} "${MSG_NOCI}" >> ${MSG_FILE}
   fi

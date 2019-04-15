@@ -1,6 +1,5 @@
 atomics
-blas
-diff
+gemm
 gemmflags
 hash
 headeronly
@@ -10,6 +9,6 @@ matdiff
 math
 mhd
 otrans
+rng
 threadsafety
 vla
-

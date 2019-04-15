@@ -55,6 +55,7 @@ void libxsmm_generator_spgemm_csr_bsparse_soa( libxsmm_generated_code*         i
        strcmp(i_arch, "knm") == 0 ||
        strcmp(i_arch, "skx") == 0 ||
        strcmp(i_arch, "clx") == 0 ||
+       strcmp(i_arch, "cpx") == 0 ||
        strcmp(i_arch, "hsw") == 0 ||
        strcmp(i_arch, "snb") == 0 ) {
     libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( io_generated_code,
@@ -100,8 +101,9 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
   if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     if ( strcmp(i_arch, "knl") == 0 ||
          strcmp(i_arch, "knm") == 0 ||
+         strcmp(i_arch, "skx") == 0 ||
          strcmp(i_arch, "clx") == 0 ||
-         strcmp(i_arch, "skx") == 0 ) {
+         strcmp(i_arch, "cpx") == 0 ) {
       l_soa_width = 8;
       l_max_reg_block = 28;
     } else {
@@ -111,8 +113,9 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
   } else {
     if ( strcmp(i_arch, "knl") == 0 ||
          strcmp(i_arch, "knm") == 0 ||
+         strcmp(i_arch, "skx") == 0 ||
          strcmp(i_arch, "clx") == 0 ||
-         strcmp(i_arch, "skx") == 0 ) {
+         strcmp(i_arch, "cpx") == 0 ) {
       l_soa_width = 16;
       l_max_reg_block = 28;
     } else {
@@ -233,8 +236,9 @@ void libxsmm_generator_spgemm_csr_bsparse_soa_avx256_512( libxsmm_generated_code
              (i_column_idx[i_row_idx[l_k] + l_z] < l_n_limit) )                        {
           if ( strcmp(i_arch, "knl") == 0 ||
                strcmp(i_arch, "knm") == 0 ||
+               strcmp(i_arch, "skx") == 0 ||
                strcmp(i_arch, "clx") == 0 ||
-               strcmp(i_arch, "skx") == 0 ) {
+               strcmp(i_arch, "cpx") == 0 ) {
             libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                        l_micro_kernel_config.instruction_set,
                                                        l_micro_kernel_config.vmul_instruction,

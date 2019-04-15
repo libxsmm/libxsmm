@@ -81,19 +81,22 @@
 #if !defined(LIBXSMM_ATOMIC_ZERO_STORE) && defined(_CRAYC)
 # define LIBXSMM_ATOMIC_ZERO_STORE
 #endif
-#if defined(__ATOMIC_RELAXED)
-# define LIBXSMM_ATOMIC_RELAXED __ATOMIC_RELAXED
-#else
-# define LIBXSMM_ATOMIC_RELAXED 0
-#endif
-#if defined(__ATOMIC_SEQ_CST)
-# define LIBXSMM_ATOMIC_SEQ_CST __ATOMIC_SEQ_CST
-#else
-# define LIBXSMM_ATOMIC_SEQ_CST 0
-#endif
 #if !defined(LIBXSMM_ATOMIC_LOCKTYPE)
 # define LIBXSMM_ATOMIC_LOCKTYPE char
 #endif
+
+typedef enum libxsmm_atomic_kind {
+#if defined(__ATOMIC_SEQ_CST)
+  LIBXSMM_ATOMIC_SEQ_CST = __ATOMIC_SEQ_CST,
+#else
+  LIBXSMM_ATOMIC_SEQ_CST = 0,
+#endif
+#if defined(__ATOMIC_RELAXED)
+  LIBXSMM_ATOMIC_RELAXED = __ATOMIC_RELAXED
+#else
+  LIBXSMM_ATOMIC_RELAXED = LIBXSMM_ATOMIC_SEQ_CST
+#endif
+} libxsmm_atomic_kind;
 
 #define LIBXSMM_NONATOMIC_LOCKTYPE LIBXSMM_ATOMIC_LOCKTYPE
 #define LIBXSMM_NONATOMIC_LOAD(SRC_PTR, KIND) (*(SRC_PTR))

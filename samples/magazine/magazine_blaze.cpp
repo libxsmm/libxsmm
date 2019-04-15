@@ -52,8 +52,6 @@ int main(int argc, char* argv[])
 #if defined(__BLAZE)
   typedef TYPE T;
   typedef blaze::CustomMatrix<T,blaze::unaligned,blaze::unpadded,blaze::columnMajor> matrix_type;
-  const size_t alignment = 64; /* must be power of two */
-
   /* batch-size is used to stream matrix-operands from memory */
   const int batchsize = (1 < argc ? atoi(argv[1]) : 0/*auto*/);
   /* default: M, N, and K are 13, 5, and 7 respectively */
@@ -61,28 +59,28 @@ int main(int argc, char* argv[])
   const int n = (3 < argc ? atoi(argv[3]) : 5);
   const int k = (4 < argc ? atoi(argv[4]) : 7);
   /* leading dimensions are used to each pad (row-major!) */
-  const int lda = (5 < argc ? (m < atoi(argv[5]) ? atoi(argv[5]) : m) : static_cast<int>(((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T)));
-  const int ldb = (6 < argc ? (k < atoi(argv[6]) ? atoi(argv[6]) : k) : static_cast<int>(((sizeof(T) * k + alignment - 1) & ~(alignment - 1)) / sizeof(T)));
-  const int ldc = (7 < argc ? (m < atoi(argv[7]) ? atoi(argv[7]) : m) : static_cast<int>(((sizeof(T) * m + alignment - 1) & ~(alignment - 1)) / sizeof(T)));
+  const int lda = (5 < argc ? (m < atoi(argv[5]) ? atoi(argv[5]) : m) : static_cast<int>(((sizeof(T) * m + PAD - 1) & ~(PAD - 1)) / sizeof(T)));
+  const int ldb = (6 < argc ? (k < atoi(argv[6]) ? atoi(argv[6]) : k) : static_cast<int>(((sizeof(T) * k + PAD - 1) & ~(PAD - 1)) / sizeof(T)));
+  const int ldc = (7 < argc ? (m < atoi(argv[7]) ? atoi(argv[7]) : m) : static_cast<int>(((sizeof(T) * m + PAD - 1) & ~(PAD - 1)) / sizeof(T)));
 #if 0
   const char transa = 'n', transb = 'n';
 #endif
   const T alpha = 1, beta = 1;
   /* calculate matrix sizes incl. padded elements */
-  const size_t na = ((sizeof(T) * lda * k + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const size_t nb = ((sizeof(T) * ldb * n + alignment - 1) & ~(alignment - 1)) / sizeof(T);
-  const size_t nc = ((sizeof(T) * ldc * n + alignment - 1) & ~(alignment - 1)) / sizeof(T);
+  const size_t na = ((sizeof(T) * lda * k + PAD - 1) & ~(PAD - 1)) / sizeof(T);
+  const size_t nb = ((sizeof(T) * ldb * n + PAD - 1) & ~(PAD - 1)) / sizeof(T);
+  const size_t nc = ((sizeof(T) * ldc * n + PAD - 1) & ~(PAD - 1)) / sizeof(T);
   /* calculate default batch-size to hit work-set size of approx. 2 GB */
   const int size = (0 >= batchsize ? static_cast<int>((2ULL << 30/*2 GB*/) / (sizeof(T) * (na + nb + nc))) : batchsize);
-  size_t sa = sizeof(T) * na * size + alignment - 1;
-  size_t sb = sizeof(T) * nb * size + alignment - 1;
-  size_t sc = sizeof(T) * nc * size + alignment - 1;
+  size_t sa = sizeof(T) * na * size + PAD - 1;
+  size_t sb = sizeof(T) * nb * size + PAD - 1;
+  size_t sc = sizeof(T) * nc * size + PAD - 1;
   /* allocate A, B, and C matrix buffers */
   void *const va = malloc(sa), *const vb = malloc(sb), *const vc = malloc(sc), *wa = va, *wb = vb, *wc = vc;
-  /* align memory according to alignment */
-  T *const pa = static_cast<T*>(std::align(alignment, sa - alignment + 1, wa, sa));
-  T *const pb = static_cast<T*>(std::align(alignment, sb - alignment + 1, wb, sb));
-  T *const pc = static_cast<T*>(std::align(alignment, sc - alignment + 1, wc, sc));
+  /* align memory according to PAD */
+  T *const pa = static_cast<T*>(std::align(PAD, sa - PAD + 1, wa, sa));
+  T *const pb = static_cast<T*>(std::align(PAD, sb - PAD + 1, wb, sb));
+  T *const pc = static_cast<T*>(std::align(PAD, sc - PAD + 1, wc, sc));
   const double scale = 1.0 / size;
   blaze::timing::WcTimer timer;
 

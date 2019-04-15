@@ -287,10 +287,17 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( libxsmm_generated_code*
 
     /* adjust pointers as we don't have a m-loop body */
     /* C */
-    libxsmm_x86_instruction_alu_imm( io_generated_code,
-        l_micro_kernel_config_mask.alu_add_instruction,
-        i_gp_reg_mapping->gp_reg_c,
-        (i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size );
+    if ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
+      libxsmm_x86_instruction_alu_imm( io_generated_code,
+          l_micro_kernel_config_mask.alu_add_instruction,
+          i_gp_reg_mapping->gp_reg_c,
+          (i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size/2 );
+    } else {
+      libxsmm_x86_instruction_alu_imm( io_generated_code,
+          l_micro_kernel_config_mask.alu_add_instruction,
+          i_gp_reg_mapping->gp_reg_c,
+          (i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size );
+    }
     /* A */
     if (l_k_unrolled == 0) {
       if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {

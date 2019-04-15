@@ -353,6 +353,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
         }
         LIBXSMM_ASSERT(0 < abs_tid);
         if (0 > filter || filter == abs_tid) {
+          int next = symbol + 1;
 #   if defined(_WIN32) || defined(__CYGWIN__)
           const HANDLE process = GetCurrentProcess();
           PSYMBOL_INFO value = (PSYMBOL_INFO)info.buffer;
@@ -360,7 +361,6 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
           value->MaxNameLen = LIBXSMM_TRACE_SYMBOLSIZE - 1;
           value->NameLen = 0;
 #   endif
-          int next = symbol + 1;
           if (NULL != filter_symbol) {
             struct { size_t d; int s; } approx = { (size_t)-1, 0 };
             while (next < n && (filter_symbol == stacktrace[symbol] ||
@@ -376,7 +376,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                 symbol = next++; /* determine the symbol after the match which is checked below */
                 break;
               }
-              { const size_t d = LIBXSMM_DIFF((const char*)filter_symbol, (const char*)stacktrace[symbol]);
+              { const size_t d = LIBXSMM_DELTA((const char*)filter_symbol, (const char*)stacktrace[symbol]);
                 if (d < approx.d) {
                   approx.s = symbol + 1;
                   approx.d = d;
@@ -498,7 +498,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
                 symbol = next++; /* determine the symbol after the match which is checked below */
                 break;
               }
-              { const size_t d = LIBXSMM_DIFF((const char*)filter_symbol, (const char*)stacktrace[symbol]);
+              { const size_t d = LIBXSMM_DELTA((const char*)filter_symbol, (const char*)stacktrace[symbol]);
                 if (d < approx.d) {
                   approx.s = symbol + 1;
                   approx.d = d;

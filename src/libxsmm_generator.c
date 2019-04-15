@@ -45,7 +45,7 @@
 
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
-  double alpha, double beta, int flags, libxsmm_gemm_prefetch_type prefetch)
+  double alpha, double beta, int flags, int prefetch)
 {
   union {
     libxsmm_gemm_descriptor* ptr;
@@ -53,15 +53,15 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descr
   } result;
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
-    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k)
-    && 0 != blob)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
   {
+    LIBXSMM_ASSERT(blob);
     result.blob = blob;
     LIBXSMM_GEMM_DESCRIPTOR(*result.ptr, LIBXSMM_GEMM_PRECISION(double),
       flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
   }
   else { /* quiet error (unsupported) */
-    result.ptr = 0;
+    result.ptr = NULL;
   }
   return result.ptr;
 }
@@ -69,7 +69,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_dgemm_descriptor_init(libxsmm_descr
 
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_sgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
-  float alpha, float beta, int flags, libxsmm_gemm_prefetch_type prefetch)
+  float alpha, float beta, int flags, int prefetch)
 {
   union {
     libxsmm_gemm_descriptor* ptr;
@@ -77,15 +77,15 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_sgemm_descriptor_init(libxsmm_descr
   } result;
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
-    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k)
-    && 0 != blob)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
   {
+    LIBXSMM_ASSERT(blob);
     result.blob = blob;
     LIBXSMM_GEMM_DESCRIPTOR(*result.ptr, LIBXSMM_GEMM_PRECISION(float),
       flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
   }
   else { /* unsupported */
-    result.ptr = 0;
+    result.ptr = NULL;
   }
   return result.ptr;
 }
@@ -93,7 +93,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_sgemm_descriptor_init(libxsmm_descr
 
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_wigemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
-  int alpha, int beta, int flags, libxsmm_gemm_prefetch_type prefetch)
+  int alpha, int beta, int flags, int prefetch)
 {
   union {
     libxsmm_gemm_descriptor* ptr;
@@ -101,15 +101,15 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_wigemm_descriptor_init(libxsmm_desc
   } result;
   if  (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
-    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k)
-    && 0 != blob)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
   {
+    LIBXSMM_ASSERT(blob);
     result.blob = blob;
     LIBXSMM_GEMM_DESCRIPTOR2(*result.ptr, LIBXSMM_GEMM_PRECISION(short), LIBXSMM_GEMM_PRECISION(int),
       flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
   }
   else { /* unsupported */
-    result.ptr = 0;
+    result.ptr = NULL;
   }
   return result.ptr;
 }
@@ -117,7 +117,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_wigemm_descriptor_init(libxsmm_desc
 
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_wsgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
-  float alpha, float beta, int flags, libxsmm_gemm_prefetch_type prefetch)
+  float alpha, float beta, int flags, int prefetch)
 {
   union {
     libxsmm_gemm_descriptor* ptr;
@@ -125,15 +125,15 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_wsgemm_descriptor_init(libxsmm_desc
   } result;
   if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
-    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k)
-    && 0 != blob)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
   {
+    LIBXSMM_ASSERT(blob);
     result.blob = blob;
     LIBXSMM_GEMM_DESCRIPTOR2(*result.ptr, LIBXSMM_GEMM_PRECISION(short), LIBXSMM_GEMM_PRECISION(float),
       flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
   }
   else { /* unsupported */
-    result.ptr = 0;
+    result.ptr = NULL;
   }
   return result.ptr;
 }
@@ -141,7 +141,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_wsgemm_descriptor_init(libxsmm_desc
 
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bsgemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
-  float alpha, float beta, int flags, libxsmm_gemm_prefetch_type prefetch)
+  float alpha, float beta, int flags, int prefetch)
 {
   union {
     libxsmm_gemm_descriptor* ptr;
@@ -149,15 +149,39 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bsgemm_descriptor_init(libxsmm_desc
   } result;
   if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
     && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
-    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k)
-    && 0 != blob)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
   {
+    LIBXSMM_ASSERT(blob);
     result.blob = blob;
     LIBXSMM_GEMM_DESCRIPTOR2(*result.ptr, LIBXSMM_GEMM_PRECISION(libxsmm_bfloat16), LIBXSMM_GEMM_PRECISION(float),
       flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
   }
   else { /* unsupported */
-    result.ptr = 0;
+    result.ptr = NULL;
+  }
+  return result.ptr;
+}
+
+
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+  float alpha, float beta, int flags, int prefetch)
+{
+  union {
+    libxsmm_gemm_descriptor* ptr;
+    libxsmm_descriptor_blob* blob;
+  } result;
+  if (LIBXSMM_GEMM_NO_BYPASS(flags, alpha, beta)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc)
+    && LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k))
+  {
+    LIBXSMM_ASSERT(blob);
+    result.blob = blob;
+    LIBXSMM_GEMM_DESCRIPTOR2(*result.ptr, LIBXSMM_GEMM_PRECISION(libxsmm_bfloat16), LIBXSMM_GEMM_PRECISION(libxsmm_bfloat16),
+      flags, m, n, k, lda, ldb, ldc, alpha, beta, prefetch);
+  }
+  else { /* unsupported */
+    result.ptr = NULL;
   }
   return result.ptr;
 }
@@ -166,7 +190,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bsgemm_descriptor_init(libxsmm_desc
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, double alpha, double beta,
-  int flags, libxsmm_gemm_prefetch_type prefetch)
+  int flags, int prefetch)
 {
   return libxsmm_gemm_descriptor_dinit2(blob, precision, precision, m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch);
 }
@@ -175,10 +199,10 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit(libxsmm_descr
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, double alpha, double beta,
-  int flags, libxsmm_gemm_prefetch_type prefetch)
+  int flags, int prefetch)
 {
   /* avoid warning about potentially uninitialized variable (initialize outside of control flow) */
-  libxsmm_gemm_descriptor* result = 0;
+  libxsmm_gemm_descriptor* result = NULL;
   switch (iprec) {
     case LIBXSMM_GEMM_PRECISION_F64: {
       LIBXSMM_ASSERT(iprec == oprec);
@@ -205,6 +229,9 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_desc
       if (LIBXSMM_GEMM_PRECISION_F32 == oprec) {
         result = libxsmm_bsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
           (float)alpha, (float)beta, flags, prefetch);
+      } else if (LIBXSMM_GEMM_PRECISION_BF16 == oprec) {
+        result = libxsmm_bgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc,
+          (float)alpha, (float)beta, flags, prefetch);
       }
     } break;
     default: {
@@ -214,7 +241,6 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_desc
       {
         fprintf(stderr, "LIBXSMM ERROR: GEMM precision is not supported!\n");
       }
-      /*result = 0;*/
     }
   }
   return result;
@@ -224,7 +250,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit2(libxsmm_desc
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
-  int flags, libxsmm_gemm_prefetch_type prefetch)
+  int flags, int prefetch)
 {
   return libxsmm_gemm_descriptor_init2(blob, precision, precision, m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch);
 }
@@ -233,7 +259,7 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init(libxsmm_descri
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init2(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
-  int flags, libxsmm_gemm_prefetch_type prefetch)
+  int flags, int prefetch)
 {
   return libxsmm_gemm_descriptor_init3(blob, iprec, oprec, m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch,
     NULL/*dalpha*/, NULL/*dbeta*/);
@@ -243,11 +269,10 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init2(libxsmm_descr
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descriptor_blob* blob,
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc, const void* alpha, const void* beta,
-  int flags, libxsmm_gemm_prefetch_type prefetch,
-  double* dalpha, double* dbeta)
+  int flags, int prefetch, double* dalpha, double* dbeta)
 {
   /* avoid warning about potentially uninitialized variable (initialize outside of control flow) */
-  libxsmm_gemm_descriptor* result = 0;
+  libxsmm_gemm_descriptor* result = NULL;
   switch (iprec) {
     case LIBXSMM_GEMM_PRECISION_F64: {
       const double aa = (NULL != alpha ? *((const double*)alpha) : (LIBXSMM_ALPHA));
@@ -258,8 +283,8 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
       if (NULL != dbeta) *dbeta = bb;
     } break;
     case LIBXSMM_GEMM_PRECISION_F32: {
-      const float aa = (0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
-      const float bb = (0 != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
+      const float aa = (NULL != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
+      const float bb = (NULL != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
       LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_F32 == oprec);
       result = libxsmm_sgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
       if (NULL != dalpha) *dalpha = (double)aa;
@@ -273,15 +298,15 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
          * and the call-side may not distinct different input and output types
          * (integer/short), hence it is safer to only read short data.
          */
-        const short aa = (short)(0 != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA));
-        const short bb = (short)(0 != beta  ? *((const short*)beta)  : (LIBXSMM_BETA));
+        const short aa = (short)(NULL != alpha ? *((const short*)alpha) : (LIBXSMM_ALPHA));
+        const short bb = (short)(NULL != beta  ? *((const short*)beta)  : (LIBXSMM_BETA));
         result = libxsmm_wigemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
         if (NULL != dalpha) *dalpha = (double)aa;
         if (NULL != dbeta) *dbeta = (double)bb;
       }
       else {
-        const float aa = (0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
-        const float bb = (0 != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
+        const float aa = (NULL != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
+        const float bb = (NULL != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
         LIBXSMM_ASSERT(LIBXSMM_GEMM_PRECISION_F32 == oprec);
         result = libxsmm_wsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
         if (NULL != dalpha) *dalpha = (double)aa;
@@ -290,9 +315,15 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
     } break;
     case LIBXSMM_GEMM_PRECISION_BF16: {
       if (LIBXSMM_GEMM_PRECISION_F32 == oprec) {
-        const float aa = (0 != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
-        const float bb = (0 != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
+        const float aa = (NULL != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
+        const float bb = (NULL != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
         result = libxsmm_bsgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
+        if (NULL != dalpha) *dalpha = (double)aa;
+        if (NULL != dbeta) *dbeta = (double)bb;
+      } else if (LIBXSMM_GEMM_PRECISION_BF16 == oprec) {
+        const float aa = (NULL != alpha ? *((const float*)alpha) : (LIBXSMM_ALPHA));
+        const float bb = (NULL != beta  ? *((const float*)beta)  : (LIBXSMM_BETA));
+        result = libxsmm_bgemm_descriptor_init(blob, m, n, k, lda, ldb, ldc, aa, bb, flags, prefetch);
         if (NULL != dalpha) *dalpha = (double)aa;
         if (NULL != dbeta) *dbeta = (double)bb;
       }
@@ -304,7 +335,6 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_init3(libxsmm_descr
       {
         fprintf(stderr, "LIBXSMM ERROR: GEMM precision is not supported!\n");
       }
-      /*result = 0;*/
     }
   }
   return result;
@@ -318,8 +348,7 @@ LIBXSMM_API libxsmm_trans_descriptor* libxsmm_trans_descriptor_init(libxsmm_desc
     libxsmm_trans_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  /* limit the amount of (unrolled) code by rejecting larger kernels */
-  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  LIBXSMM_ASSERT(blob);
   result.blob = blob;
   result.ptr->typesize = (unsigned char)typesize;
   result.ptr->ldo = ldo;
@@ -339,9 +368,9 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
   } result;
   if (0 == LIBXSMM_MOD2(typesize, 4)) { /* TODO: more general kernel */
     const unsigned int typescale = typesize / 4;
-    int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+    LIBXSMM_ASSERT(blob);
     result.blob = blob;
-    result.ptr->unroll_level = (unsigned char)((0 == unroll || 0 >= *unroll) ? 2/*default*/ : LIBXSMM_MIN(*unroll, 64));
+    result.ptr->unroll_level = (unsigned char)((NULL == unroll || 0 >= *unroll) ? 2/*default*/ : LIBXSMM_MIN(*unroll, 64));
     result.ptr->typesize = (unsigned char)/*typesize*/4;
     result.ptr->prefetch = (unsigned char)prefetch;
     result.ptr->flags = (unsigned char)flags;
@@ -351,7 +380,7 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
     result.ptr->n = n;
   }
   else {
-    result.ptr = 0;
+    result.ptr = NULL;
   }
   return result.ptr;
 }
@@ -364,7 +393,7 @@ LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descri
     libxsmm_trsm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  LIBXSMM_ASSERT(blob);
   result.blob = blob;
   result.ptr->typesize = (unsigned char)typesize;
   result.ptr->lda = (unsigned char)lda;
@@ -377,14 +406,13 @@ LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descri
   result.ptr->uplo = uplo;
   result.ptr->layout = (unsigned char)layout;
   switch (typesize) {
-  case 4: {
-    result.ptr->alpha.s = (0 != alpha ? (*(const float*)alpha) : ((float)LIBXSMM_ALPHA));
-  } break;
-  case 8: {
-    result.ptr->alpha.d = (0 != alpha ? (*(const double*)alpha) : ((double)LIBXSMM_ALPHA));
-  } break;
-  default: /* TODO: generate warning */
-    ;
+    case 4: {
+      result.ptr->alpha.s = (NULL != alpha ? (*(const float*)alpha) : ((float)LIBXSMM_ALPHA));
+    } break;
+    case 8: {
+      result.ptr->alpha.d = (NULL != alpha ? (*(const double*)alpha) : ((double)LIBXSMM_ALPHA));
+    } break;
+    default: /* TODO: generate warning */;
   }
   return result.ptr;
 }
@@ -398,7 +426,7 @@ LIBXSMM_API libxsmm_trmm_descriptor* libxsmm_trmm_descriptor_init(libxsmm_descri
     libxsmm_trmm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  LIBXSMM_ASSERT(blob);
   result.blob = blob;
   result.ptr->typesize = (unsigned char)typesize;
   result.ptr->lda = (unsigned char)lda;
@@ -411,14 +439,13 @@ LIBXSMM_API libxsmm_trmm_descriptor* libxsmm_trmm_descriptor_init(libxsmm_descri
   result.ptr->uplo = uplo;
   result.ptr->layout = (unsigned char)layout;
   switch (typesize) {
-  case 4: {
-    result.ptr->alpha.s = (0 != alpha ? (*(const float*)alpha) : ((float)LIBXSMM_ALPHA));
-  } break;
-  case 8: {
-    result.ptr->alpha.d = (0 != alpha ? (*(const double*)alpha) : ((double)LIBXSMM_ALPHA));
-  } break;
-  default: /* TODO: generate warning */
-    ;
+    case 4: {
+      result.ptr->alpha.s = (NULL != alpha ? (*(const float*)alpha) : ((float)LIBXSMM_ALPHA));
+    } break;
+    case 8: {
+      result.ptr->alpha.d = (NULL != alpha ? (*(const double*)alpha) : ((double)LIBXSMM_ALPHA));
+    } break;
+    default: /* TODO: generate warning */;
   }
   return result.ptr;
 }
@@ -432,7 +459,7 @@ LIBXSMM_API libxsmm_pgemm_descriptor* libxsmm_pgemm_descriptor_init(libxsmm_desc
     libxsmm_pgemm_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  LIBXSMM_ASSERT(blob);
   result.blob = blob;
   result.ptr->typesize = (unsigned char)typesize;
   result.ptr->lda = (unsigned char)lda;
@@ -445,20 +472,20 @@ LIBXSMM_API libxsmm_pgemm_descriptor* libxsmm_pgemm_descriptor_init(libxsmm_desc
   result.ptr->transb = transb;
   result.ptr->layout = (unsigned char)layout;
   if ( typesize == 4 ) {
-    float *alpha_val = (float *)alpha;
+    float *alpha_val = (float*)alpha;
     if ( *alpha_val == 1.0 ) result.ptr->alpha_val = 0;
     else if ( *alpha_val == -1.0 ) result.ptr->alpha_val = 1;
     else {
-       printf("Warning: real*4 alpha value should be 1.0 or -1.0\n");
-       exit(-1);
+      printf("Warning: real*4 alpha value should be 1.0 or -1.0\n");
+      exit(-1);
     }
   } else {
-    double *alpha_val = (double *)alpha;
+    double *alpha_val = (double*)alpha;
     if ( *alpha_val == 1.0 ) result.ptr->alpha_val = 0;
     else if ( *alpha_val == -1.0 ) result.ptr->alpha_val = 1;
     else {
-       printf("Warning: real*8 alpha value should be 1.0 or -1.0\n");
-       exit(-1);
+      printf("Warning: real*8 alpha value should be 1.0 or -1.0\n");
+      exit(-1);
     }
   }
   return result.ptr;
@@ -472,7 +499,7 @@ LIBXSMM_API libxsmm_getrf_descriptor* libxsmm_getrf_descriptor_init(libxsmm_desc
     libxsmm_getrf_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  int i; LIBXSMM_ASSERT(blob); for (i = 0; i < LIBXSMM_DESCRIPTOR_MAXSIZE; ++i) blob->data[i] = 0;
+  LIBXSMM_ASSERT(blob);
   result.blob = blob;
   result.ptr->typesize = (unsigned char)typesize;
   result.ptr->lda = (unsigned char)lda;
@@ -481,6 +508,7 @@ LIBXSMM_API libxsmm_getrf_descriptor* libxsmm_getrf_descriptor_init(libxsmm_desc
   result.ptr->layout = (unsigned char)layout;
   return result.ptr;
 }
+
 
 LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b)
 {
