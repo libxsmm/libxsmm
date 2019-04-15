@@ -60,6 +60,10 @@ LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bsgemm_descriptor_init(libxsmm_desc
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
   float alpha, float beta, int flags, int prefetch);
+LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_bgemm_descriptor_init(libxsmm_descriptor_blob* blob,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  libxsmm_blasint lda, libxsmm_blasint ldb, libxsmm_blasint ldc,
+  float alpha, float beta, int flags, int prefetch);
 
 /** Initialize GEMM descriptor (generic: double-precision alpha/beta). */
 LIBXSMM_API libxsmm_gemm_descriptor* libxsmm_gemm_descriptor_dinit(libxsmm_descriptor_blob* blob,
@@ -222,14 +226,24 @@ LIBXSMM_API void libxsmm_generator_gemm_rm_bc_soa( libxsmm_generated_code*      
                                                    const char*                     i_arch );
 
 LIBXSMM_API
-void libxsmm_generator_trsm_kernel ( libxsmm_generated_code*        io_generated_code,
-                                     const libxsmm_trsm_descriptor* i_packed_trsm_desc,
-                                     const char*                    i_arch );
+void libxsmm_generator_pgemm_kernel( libxsmm_generated_code*          io_generated_code,
+                                     const libxsmm_pgemm_descriptor*  i_packed_pgemm_desc,
+                                     int                              i_arch, ... );
 
 LIBXSMM_API
-void libxsmm_generator_trmm_kernel ( libxsmm_generated_code*        io_generated_code,
-                                     const libxsmm_trmm_descriptor* i_packed_trmm_desc,
-                                     const char*                    i_arch );
+void libxsmm_generator_getrf_kernel( libxsmm_generated_code*          io_generated_code,
+                                     const libxsmm_getrf_descriptor*  i_packed_pgemm_desc,
+                                     int                              i_arch );
+
+LIBXSMM_API
+void libxsmm_generator_trmm_kernel( libxsmm_generated_code*         io_generated_code,
+                                    const libxsmm_trmm_descriptor*  i_packed_trmm_desc,
+                                    const char*                     i_arch );
+
+LIBXSMM_API
+void libxsmm_generator_trsm_kernel( libxsmm_generated_code*         io_generated_code,
+                                    const libxsmm_trsm_descriptor*  i_packed_trsm_desc,
+                                    const char*                     i_arch );
 
 /* @TODO change int based architecture value */
 LIBXSMM_API

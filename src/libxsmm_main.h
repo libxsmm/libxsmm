@@ -144,7 +144,7 @@
 * Packed structure, which stores the argument description of GEMM routines.
 * The size of the structure is padded to LIBXSMM_DESCRIPTOR_MAXSIZE.
 */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_gemm_descriptor) {
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descriptor {
   /** Denotes the data-type. */
   unsigned char datatype;
   /** Set of flags. */
@@ -158,7 +158,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_gemm_descri
 };
 
 /** Packed structure storing the matcopy argument description. */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_mcopy_descriptor) {
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_mcopy_descriptor {
   /** LDx, M, and N. */
   unsigned int m, n, ldi, ldo;
   /** Size of data element. */
@@ -172,7 +172,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_mcopy_descr
 };
 
 /** Packed structure storing the transpose argument description. */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trans_descriptor) {
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_trans_descriptor {
   /** LD, M, and N. */
   unsigned int m, n, ldo;
   /** Size of data element. */
@@ -180,7 +180,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trans_descr
 };
 
 /** Packed structure storing arguments of packed TRSM. */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trsm_descriptor) {
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_trsm_descriptor {
   union { double d; float s; } alpha;
   unsigned int m, n, lda, ldb;
   unsigned char typesize;
@@ -190,7 +190,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trsm_descri
 };
 
 /** Packed structure storing arguments of packed GEMM. */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_pgemm_descriptor) {
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_pgemm_descriptor {
   unsigned int m, n, k, lda, ldb, ldc;
   unsigned char typesize;
   unsigned char layout;
@@ -199,7 +199,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_pgemm_descr
 };
 
 /** Packed structure storing arguments of packed TRSM. */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trmm_descriptor) {
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_trmm_descriptor {
   union { double d; float s; } alpha;
   unsigned int m, n, lda, ldb;
   unsigned char typesize;
@@ -209,7 +209,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_trmm_descri
 };
 
 /** Packed structure storing arguments of packed GETRF. */
-LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE, libxsmm_getrf_descriptor) {
+LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_getrf_descriptor {
   unsigned int m, n, lda;
   unsigned char typesize;
   unsigned char layout;
@@ -330,7 +330,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor {
   unsigned char scf;                               /* fix point scaling factor for this tensor */
 };
 
-/* Structure to record segment in stream of code  */
+/* Structure to record segment in stream of code */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE segment_t {
   int segment_type;
   int n_convs;
@@ -348,7 +348,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_conv_option options;
   libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
-  /* These are the batchnorm handles in case of fusion  */
+  /* These are the batchnorm handles in case of fusion */
   libxsmm_dnn_fusedbatchnorm* pre_bn;
   libxsmm_dnn_fusedbatchnorm* post_bn;
 
@@ -609,7 +609,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_rnncell_desc desc;
-  libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts  */
+  libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts */
   libxsmm_blasint T;                              /* sequnece length, must be smaller than max sequence length in desc */
   libxsmm_blasint bk;
   libxsmm_blasint bn;
@@ -716,18 +716,22 @@ typedef enum libxsmm_build_kind {
 } libxsmm_build_kind;
 
 /** Integral type (libxsmm_kernel_kind, libxsmm_build_kind). */
+#if defined(LIBXSMM_UNPACKED) || defined(_CRAYC)
+typedef int libxsmm_descriptor_kind;
+#else
 typedef unsigned char libxsmm_descriptor_kind;
+#endif
 
 /** All descriptor types, which are valid for code-registration. */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_descriptor {
   char data[LIBXSMM_DESCRIPTOR_MAXSIZE];
   libxsmm_descriptor_kind kind; /* kind: must be the first member */
-  LIBXSMM_REGDESC(LIBXSMM_PACKED(struct, LIBXSMM_PACKED_ANON) { libxsmm_descriptor_kind /*repeated kind*/ pad; , desc; });
+  LIBXSMM_REGDESC(LIBXSMM_PACKED(struct) { libxsmm_descriptor_kind /*repeated kind*/ pad; , desc; });
 } libxsmm_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
   union {
-    const char* data; /* raw content */
+    const void* ptr; /* raw content */
     LIBXSMM_REGDESC(LIBXSMM_REGDESC_DEFAULT, const*);
     const libxsmm_csr_soa_descriptor* srsoa;
     const libxsmm_csc_soa_descriptor* scsoa;

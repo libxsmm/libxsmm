@@ -609,7 +609,7 @@ void libxsmm_generator_convolution_forward_avx512_kernel(
 }
 
 
-  LIBXSMM_API_INTERN
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_forward_avx512_ifmloop( libxsmm_generated_code*                           io_generated_code,
     const libxsmm_convolution_forward_gp_reg_mapping* i_gp_reg_mapping,
     const libxsmm_convolution_kernel_config*          i_conv_kernel_config,

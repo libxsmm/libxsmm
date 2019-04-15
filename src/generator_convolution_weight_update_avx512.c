@@ -202,7 +202,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   }
 
   /* Load scratch lines for transpose */
-  if (((i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) || i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_BF16) && (l_conv_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CLX || l_conv_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CORE || l_conv_kernel_config.instruction_set == LIBXSMM_X86_AVX512_CPX ) ) {
+  if (((i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) || i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_BF16) && (l_conv_kernel_config.instruction_set >= LIBXSMM_X86_AVX512_CORE) ) {
     unsigned int rsp_offset = 56;
 
     libxsmm_x86_instruction_alu_reg( io_generated_code, l_conv_kernel_config.alu_mov_instruction, LIBXSMM_X86_GP_REG_RSP, l_gp_reg_mapping.gp_reg_help_5);
@@ -370,7 +370,7 @@ void libxsmm_generator_convolution_weight_update_avx512_kernel( libxsmm_generate
   libxsmm_x86_instruction_close_stream_convolution( io_generated_code, i_arch );
 }
 
-  LIBXSMM_API_INTERN
+LIBXSMM_API_INTERN
 void libxsmm_generator_convolution_weight_update_avx512_ofwloop( libxsmm_generated_code* io_generated_code,
     const libxsmm_convolution_weight_update_gp_reg_mapping* i_gp_reg_mapping,
     const libxsmm_convolution_kernel_config*                i_conv_kernel_config,
@@ -1518,7 +1518,7 @@ void libxsmm_generator_convolution_weight_update_avx512_ofwloop_all_pixels_insid
   }
 
   for ( l_k_1 = 0; l_k_1 < i_conv_desc->ofh_rb; l_k_1++) {
-    unsigned int pipeline_vperms = (use_lp_kernel == 1 && (i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX || i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE || i_conv_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX )) ? 1 : 0;
+    unsigned int pipeline_vperms = (use_lp_kernel == 1 && (i_conv_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE)) ? 1 : 0;
     unsigned int input_reg_to_use;
 
     /* Load+per to buf0  */

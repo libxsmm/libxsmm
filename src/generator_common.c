@@ -829,7 +829,8 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
     } else if ( (strcmp( i_arch, "knl" ) == 0) ||
                 (strcmp( i_arch, "knm" ) == 0) ||
                 (strcmp( i_arch, "skx" ) == 0) ||
-                (strcmp( i_arch, "clx" ) == 0)    ) {
+                (strcmp( i_arch, "clx" ) == 0) ||
+                (strcmp( i_arch, "cpx" ) == 0)    ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
@@ -856,7 +857,8 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
          (strcmp( i_arch, "knl" ) == 0) ||
          (strcmp( i_arch, "knm" ) == 0) ||
          (strcmp( i_arch, "skx" ) == 0) ||
-         (strcmp( i_arch, "clx" ) == 0)    )
+         (strcmp( i_arch, "clx" ) == 0) ||
+         (strcmp( i_arch, "cpx" ) == 0)    )
     {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#else\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );

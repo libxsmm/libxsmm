@@ -45,9 +45,9 @@
 
 /* @TODO change int based architecture value */
 LIBXSMM_API
-void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*                        io_generated_code,
-                                       const libxsmm_mcopy_descriptor*              i_matcopy_desc,
-                                       const char*                                    i_arch ) {
+void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*          io_generated_code,
+                                       const libxsmm_mcopy_descriptor*  i_matcopy_desc,
+                                       const char*                      i_arch ) {
   /* add instruction set mismatch check to code, header */
   libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 

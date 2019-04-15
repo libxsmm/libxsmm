@@ -61,6 +61,7 @@ LIBXSMM_APIVAR(int internal_timer_init_rtc);
 LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
 {
   libxsmm_timer_tickint result;
+  int dummy;
 #if defined(_WIN32)
   LARGE_INTEGER t;
   QueryPerformanceCounter(&t);
@@ -74,7 +75,8 @@ LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
   gettimeofday(&t, 0);
   result = 1000000ULL * t.tv_sec + t.tv_usec;
 #endif
-  LIBXSMM_ATOMIC_ADD_FETCH(&internal_timer_init_rtc, 1, LIBXSMM_ATOMIC_RELAXED);
+  dummy = LIBXSMM_ATOMIC_ADD_FETCH(&internal_timer_init_rtc, 1, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_UNUSED(dummy);
   return result;
 }
 

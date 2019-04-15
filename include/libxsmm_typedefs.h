@@ -316,7 +316,7 @@ typedef enum libxsmm_dnn_tensor_format {
   LIBXSMM_DNN_TENSOR_FORMAT_NHWC     = 2,
   /* use NCHW format internally, this will include shadow copies, not preferred */
   LIBXSMM_DNN_TENSOR_FORMAT_NCHW     = 4,
-  /* use RSCK format internally, this allows no-copy operations  */
+  /* use RSCK format internally, this allows no-copy operations */
   LIBXSMM_DNN_TENSOR_FORMAT_RSCK     = 8,
   /* use KCRS format internally, this will include shadow copies, not preferred */
   LIBXSMM_DNN_TENSOR_FORMAT_KCRS     = 16,
@@ -532,17 +532,20 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wimmfunction)(const
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wsmmfunction)(const short* a, const short* b, float* c, ...);
 /** Specialized function with fused alpha and beta arguments, and optional prefetch locations (bf16, fp32-accumulate). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, float* c, ...);
+/** Specialized function with fused alpha and beta arguments, and optional prefetch locations (bf16, fp32-accumulate). */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmmfunction)(const libxsmm_bfloat16* a, const libxsmm_bfloat16* b, libxsmm_bfloat16* c, ...);
 
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dmmfunction_reducebatch)(const double** a, const double** b, double* c, const unsigned long long* count, ...);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_smmfunction_reducebatch)(const float** a, const float** b, float* c, const unsigned long long* count, ...);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bsmmfunction_reducebatch)(const libxsmm_bfloat16** a, const libxsmm_bfloat16** b, float* c, const unsigned long long* count, ...);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bmmfunction_reducebatch)(const libxsmm_bfloat16** a, const libxsmm_bfloat16** b, libxsmm_bfloat16* c, const unsigned long long* count, ...);
 
 /** Function type which is either libxsmm_smmfunction or libxsmm_dmmfunction (weak-typed). */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xmmfunction {
   void (*xmm)(const void* a, const void* b, void* c, ...);
   void (*xbm)(const void** a, const void** b, void* c, const unsigned long long* count, ...);
-  libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wimmfunction wimm; libxsmm_wsmmfunction wsmm; libxsmm_bsmmfunction bsmm;
-  libxsmm_dmmfunction_reducebatch dmr; libxsmm_smmfunction_reducebatch smr; libxsmm_bsmmfunction_reducebatch bsmr;
+  libxsmm_dmmfunction dmm; libxsmm_smmfunction smm; libxsmm_wimmfunction wimm; libxsmm_wsmmfunction wsmm; libxsmm_bsmmfunction bsmm; libxsmm_bmmfunction bmm;
+  libxsmm_dmmfunction_reducebatch dmr; libxsmm_smmfunction_reducebatch smr; libxsmm_bsmmfunction_reducebatch bsmr; libxsmm_bmmfunction_reducebatch bmr;
 } libxsmm_xmmfunction;
 
 /** Determines the kernel kind. */

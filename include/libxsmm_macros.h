@@ -138,22 +138,30 @@
 #   define LIBXSMM_INLINE_ALWAYS static __forceinline
 # endif
 # define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
-# define LIBXSMM_PACKED(TYPE, NAME) LIBXSMM_PRAGMA(pack(1)) TYPE NAME
+# if !defined(LIBXSMM_UNPACKED)
+#   define LIBXSMM_PACKED(TYPE) LIBXSMM_PRAGMA(pack(1)) TYPE
+# endif
 # define LIBXSMM_CDECL __cdecl
-#elif defined(__GNUC__)
+#elif (defined(__GNUC__) || defined(__clang__) || defined(__PGI))
 # define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
-# define LIBXSMM_PACKED(TYPE, NAME) TYPE LIBXSMM_ATTRIBUTE(__packed__) NAME
+# if !defined(LIBXSMM_UNPACKED)
+#   define LIBXSMM_PACKED(TYPE) TYPE LIBXSMM_ATTRIBUTE(__packed__)
+# endif
 # define LIBXSMM_CDECL LIBXSMM_ATTRIBUTE(cdecl)
 #else
 # define LIBXSMM_ATTRIBUTE(A)
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N) DECL
-# define LIBXSMM_PACKED(TYPE, NAME) TYPE, NAME
 # define LIBXSMM_CDECL
 #endif
-#define LIBXSMM_PACKED_ANON
+#if !defined(LIBXSMM_PACKED)
+# define LIBXSMM_PACKED(TYPE) TYPE
+# if !defined(LIBXSMM_UNPACKED)
+#   define LIBXSMM_UNPACKED
+# endif
+#endif
 
 #if defined(__INTEL_COMPILER)
 # define LIBXSMM_INTEL_COMPILER __INTEL_COMPILER
@@ -354,7 +362,8 @@
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-#if defined(_OPENMP) && (200805 <= _OPENMP) /*OpenMP 3.0*/
+#if defined(_OPENMP) && (200805 <= _OPENMP) /*OpenMP 3.0*/ \
+ && defined(NDEBUG) /* CCE complains for debug builds */
 # define LIBXSMM_OPENMP_COLLAPSE(N) collapse(N)
 #else
 # define LIBXSMM_OPENMP_COLLAPSE(N)
@@ -651,7 +660,7 @@
 #   endif
 # endif
 #endif
-#if defined(__GNUC__) && !defined(_GNU_SOURCE)
+#if !defined(_GNU_SOURCE) /*&& defined(__GNUC__)*/
 # define _GNU_SOURCE
 #endif
 #if !defined(__STDC_FORMAT_MACROS)
