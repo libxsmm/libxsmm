@@ -52,16 +52,16 @@
 #else
 # define LIBXSMM_DIFF_32_DECL(A) LIBXSMM_DIFF_16_DECL(A); LIBXSMM_DIFF_16_DECL(LIBXSMM_CONCATENATE2(libxsmm_diff_32_, A, _))
 # define LIBXSMM_DIFF_32_LOAD(A, SRC) LIBXSMM_DIFF_16_LOAD(A, SRC); LIBXSMM_DIFF_16_LOAD(LIBXSMM_CONCATENATE2(libxsmm_diff_32_, A, _), (const uint64_t*)(SRC) + 2)
-# define LIBXSMM_DIFF_32(A, B, ...) (0 != LIBXSMM_DIFF_16(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_16(LIBXSMM_CONCATENATE2(libxsmm_diff_32_, A, _), (const uint64_t*)(B) + 2, __VA_ARGS__))
+# define LIBXSMM_DIFF_32(A, B, ...) ((unsigned char)(0 != LIBXSMM_DIFF_16(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_16(LIBXSMM_CONCATENATE2(libxsmm_diff_32_, A, _), (const uint64_t*)(B) + 2, __VA_ARGS__)))
 #endif
 
 #define LIBXSMM_DIFF_48_DECL(A) LIBXSMM_DIFF_16_DECL(A); LIBXSMM_DIFF_32_DECL(LIBXSMM_CONCATENATE2(libxsmm_diff_48_, A, _))
 #define LIBXSMM_DIFF_48_LOAD(A, SRC) LIBXSMM_DIFF_16_LOAD(A, SRC); LIBXSMM_DIFF_32_LOAD(LIBXSMM_CONCATENATE2(libxsmm_diff_48_, A, _), (const uint64_t*)(SRC) + 2)
-#define LIBXSMM_DIFF_48(A, B, ...) (0 != LIBXSMM_DIFF_16(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_32(LIBXSMM_CONCATENATE2(libxsmm_diff_48_, A, _), (const uint64_t*)(B) + 2, __VA_ARGS__))
+#define LIBXSMM_DIFF_48(A, B, ...) ((unsigned char)(0 != LIBXSMM_DIFF_16(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_32(LIBXSMM_CONCATENATE2(libxsmm_diff_48_, A, _), (const uint64_t*)(B) + 2, __VA_ARGS__)))
 
 #define LIBXSMM_DIFF_64_DECL(A) LIBXSMM_DIFF_32_DECL(A); LIBXSMM_DIFF_32_DECL(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _))
 #define LIBXSMM_DIFF_64_LOAD(A, SRC) LIBXSMM_DIFF_32_LOAD(A, SRC); LIBXSMM_DIFF_32_LOAD(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _), (const uint64_t*)(SRC) + 4)
-#define LIBXSMM_DIFF_64(A, B, ...) (0 != LIBXSMM_DIFF_32(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_32(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _), (const uint64_t*)(B) + 4, __VA_ARGS__))
+#define LIBXSMM_DIFF_64(A, B, ...) ((unsigned char)(0 != LIBXSMM_DIFF_32(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_32(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _), (const uint64_t*)(B) + 4, __VA_ARGS__)))
 
 #define LIBXSMM_DIFF_DECL(N, A) LIBXSMM_CONCATENATE2(LIBXSMM_DIFF_, N, _DECL)(A)
 #define LIBXSMM_DIFF_LOAD(N, A, SRC) LIBXSMM_CONCATENATE2(LIBXSMM_DIFF_, N, _LOAD)(A, SRC)
