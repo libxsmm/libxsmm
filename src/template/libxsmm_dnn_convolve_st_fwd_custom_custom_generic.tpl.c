@@ -108,7 +108,7 @@ if (handle->pack_input == 1) {
   }
 }
 
-if ( (handle->desc.N % handle->desc.threads) != 0 ) {
+if (handle->use_generic_fwd_loops == 1) {
   /* number of tasks that could be run in parallel */
   const int work = handle->desc.N * handle->blocksofm * handle->ofh;
   /* compute chunk size */
