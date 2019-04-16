@@ -407,7 +407,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   singleton_flock.l_len = 0/*all*/;
   singleton_flock.l_type = F_RDLCK;
   singleton_flock.l_whence = SEEK_SET;
-  handle = ((0 < result && sizeof(singleton_fname) > result) ? fcntl(open( /* attempt to lock file */
+  handle = ((0 < result && (int)sizeof(singleton_fname) > result) ? fcntl(open( /* attempt to lock file */
     singleton_fname, O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR), F_SETLK, &singleton_flock) : -1);
   singleton = (0 <= handle ? 1 : 0);
 #endif
