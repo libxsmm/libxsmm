@@ -53,6 +53,7 @@
 #if defined(_WIN32)
 # include <Windows.h>
 #else
+# include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
 # include <unistd.h>
@@ -397,9 +398,18 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   const char *const delims = ";,";
   const int singleton = (NULL != handle ? 1 : 0);
 #else
-  const char *const delims = ";,:", *const filename_global = "/tmp/GlobalLIBXSMM";
-  const int handle = open(filename_global, O_CREAT | O_EXCL, S_IRUSR);
-  const int singleton = (0 <= handle ? 1 : 0);
+  const char *const delims = ";,:";
+  char singleton_fname[64];
+  const int result = LIBXSMM_SNPRINTF(singleton_fname, sizeof(singleton_fname), "/tmp/.libxsmm.%u", (unsigned int)getuid());
+  int handle, singleton;
+  struct flock singleton_flock;
+  singleton_flock.l_start = 0;
+  singleton_flock.l_len = 0/*all*/;
+  singleton_flock.l_type = F_RDLCK;
+  singleton_flock.l_whence = SEEK_SET;
+  handle = ((0 < result && sizeof(singleton_fname) > result) ? fcntl(open( /* attempt to lock file */
+    singleton_fname, O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR), F_SETLK, &singleton_flock) : -1);
+  singleton = (0 <= handle ? 1 : 0);
 #endif
   libxsmm_finalize();
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
@@ -501,7 +511,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
 #if defined(_WIN32)
     ReleaseMutex(handle);
 #else
-    unlink(filename_global);
+    unlink(singleton_fname);
     close(handle);
 #endif
   }
@@ -2696,3 +2706,4 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
 }
 
 #endif /*defined(LIBXSMM_BUILD)*/
+
