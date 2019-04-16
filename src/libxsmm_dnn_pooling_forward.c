@@ -257,7 +257,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_pooling_st_fwd_custom(libxsmm_d
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
-  } else if ( (libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) &&
+  } else if ( ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) &&
        (handle->ofmblock == 64) ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_pooling_st_fwd_custom_f32_f32_c64( handle, start_thread, tid);
