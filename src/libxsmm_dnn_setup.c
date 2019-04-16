@@ -366,6 +366,258 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
 
 }
 
+/**********************************************************/
+/* Helper functions for convolutions' general param setup */
+/**********************************************************/
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_c_block( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_k_block( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fm_lp_block( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fallback_loops_fwd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksifm( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksofm( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+/**********************************************************/
+/* Helper functions for FWD convolutions' parameter setup */
+/**********************************************************/
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fwd_ofw_rb( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fwd_ofh_rb( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_loop_order_fwd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_fwd_IFM( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_fwd_OFM( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_pack_input_fwd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_use_ofm_parallelization( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_avoid_rim_fmas_fwd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_shuffle_filter_accesses( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_avoid_acc_load( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksifm_blocking( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_fwd_gemm_flags( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+/**********************************************************/
+/* Helper functions for BWD convolutions' parameter setup */
+/**********************************************************/
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_bwd_ofw_rb( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_bwd_ofh_rb( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_loop_order_bwd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_bwd_IFM( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_bwd_OFM( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_pack_input_bwd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_use_ifm_parallelization( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_avoid_rim_fmas_bwd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksofm_blocking( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_bwd_gemm_flags( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_spread_input_bwd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+/**********************************************************/
+/* Helper functions for UPD convolutions' parameter setup */
+/**********************************************************/
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_loop_order_upd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_pack_input_upd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_avoid_rim_fmas_upd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_upd_ofw_rb( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_upd_ofh_rb( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_img_batchreduce_block( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_use_batchreduce_upd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_weight_copies_upd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_linearized_tasklist_upd( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_upd_gemm_flags( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+
+  return result;
+}
+
+
+
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_layer* handle ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   int tmp_max_c_block = 64;
