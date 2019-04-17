@@ -481,6 +481,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksifm_blocking( libxsmm_dnn
     if ((handle->desc.C >= 2048) && (handle->desc.K >= 512)) {
       result = 1;
     }
+    if ((libxsmm_target_archid < LIBXSMM_X86_AVX512) && (handle->desc.C >= 512) && (handle->desc.K >= 512) ) {
+      result = 2;
+    }
   } else {
     result = 1;
     /* If small image can bring in more IFMS even if NOT 1x1 convolution */
