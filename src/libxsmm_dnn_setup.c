@@ -567,7 +567,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_avoid_acc_load( libxsmm_dnn_lay
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_fwd_gemm_flags( libxsmm_dnn_layer* handle ) {
   int result = 0;
   /* If large image and NOT already loaded in accumulators, tnen use streaming stores */
-  if ((handle->ofw >= 56) && (handle->avoid_acc_load == 1)) {
+  if ((handle->ofw >= 56) && (handle->avoid_acc_load == 1) && (handle->desc.R == 1) && (handle->desc.S == 1)) {
     result = LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
   }
   return result;
