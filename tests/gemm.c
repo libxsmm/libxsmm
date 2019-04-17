@@ -50,11 +50,10 @@
 # define GEMM_GOLD LIBXSMM_GEMM_SYMBOL
 #endif
 #if !defined(GEMM)
-# if 1
-#   define GEMM LIBXSMM_XGEMM_SYMBOL
-# else
-#   define GEMM LIBXSMM_YGEMM_SYMBOL
-# endif
+# define GEMM LIBXSMM_XGEMM_SYMBOL
+#endif
+#if !defined(GEMM2)
+# define GEMM2 LIBXSMM_YGEMM_SYMBOL
 #endif
 #if !defined(SMM)
 # define SMM LIBXSMM_XGEMM_SYMBOL
@@ -182,8 +181,13 @@ int main(void)
         GEMM(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
           alpha + test, a, lda + test, b, ldb + test, beta + test, c, ldc + test);
       }
+# if defined(GEMM2)
+      GEMM2(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
+        alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
+# else
       GEMM(ITYPE)(transa + i, transb + i, &mi, &ni, &ki,
         alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
+# endif
 #endif
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
       fpstate = _MM_GET_EXCEPTION_STATE() & fpcheck;

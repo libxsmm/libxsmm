@@ -150,9 +150,13 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
   libxsmm_code_pointer copy_a, copy_b, copy_i, copy_o;
   libxsmm_xmmfunction kernel[2];
   unsigned int m, n, k, lda, ldb, ldc;
-  unsigned int tm, tn, tk, dm, dn, dk;
+  /* kernel size (tile) */
+  unsigned int km, kn, kk;
+  /* tile size per task */
+  unsigned int dm, dn, dk;
   unsigned int itypesize, otypesize;
-  unsigned int nthreads, mt, nt, kt;
+  /* number of tasks per direction */
+  unsigned int mt, nt, kt;
   int gemm_flags, flags;
 };
 
