@@ -461,7 +461,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fwd_ofh_rb( libxsmm_dnn_layer* 
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fwd_block_H( libxsmm_dnn_layer* handle ) {
-  int result = handle->fwd_ofh_rb;
+  int result = 14;
   /* Block H only for large images  */
   if (handle->ofh >= 28) {
     result = 4;
@@ -479,7 +479,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksifm_blocking( libxsmm_dnn
   if ((handle->desc.R == 1) && (handle->desc.S == 1) ) {
     result = handle->blocksifm;
     if ((handle->desc.C >= 1024) && (handle->desc.K >= 256)) {
-      result = 2;
+      /* result = 2; */
     }
   } else {
     result = 1;
@@ -493,15 +493,15 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksifm_blocking( libxsmm_dnn
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_loop_order_fwd( libxsmm_dnn_layer* handle ) {
   int result = 0;
-  /* Switch to loop order 1 only if 1x1 convolution with "large" image */
-  if ((handle->ofw >= 28) && (handle->desc.R == 1) && (handle->desc.S == 1)) {
+  /* Switch to loop order 1 only if 1x1 convolution with "large" input image and "small" K */
+  if ((handle->desc.H >= 28) && (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.C >=512) && (handle->desc.K <=512)) {
     result = 1;
   }
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_fwd_IFM( libxsmm_dnn_layer* handle ) {
-  int result = 4;
+  int result = 8;
   /* Make sure it is divisible by ifms in the kernel  */
   while (result % handle->blocksifm_blocking != 0) {
     result++;
@@ -567,7 +567,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_avoid_acc_load( libxsmm_dnn_lay
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_fwd_gemm_flags( libxsmm_dnn_layer* handle ) {
   int result = 0;
   /* If large image and NOT already loaded in accumulators, tnen use streaming stores */
-  if ((handle->ofw >= 56) && (handle->avoid_acc_load == 1) && (handle->desc.R == 1) && (handle->desc.S == 1)) {
+  if ((handle->ofw >= 56) && (handle->desc.K >= 256) && (handle->avoid_acc_load == 1) && (handle->desc.R == 1) && (handle->desc.S == 1)) {
     result = LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
   }
   return result;
