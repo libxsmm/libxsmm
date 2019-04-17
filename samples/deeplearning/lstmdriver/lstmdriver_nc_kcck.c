@@ -792,12 +792,31 @@ int main(int argc, char* argv[])
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdogold, j, 0, K * N), &K, hgoldTp, &N, &beta, djdrogold, &K);
         LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &K, &N, &alpha, &LIBXSMM_VLA_ACCESS(2, djdcgold, j, 0, K * N), &K, hgoldTp, &N, &beta, djdrcgold, &K);
 
+#if defined(_OPENMP)
+#     pragma omp parallel for private(l, p)
+#endif
         /* compute djdbgold */
+<<<<<<< HEAD:samples/deeplearning/lstmdriver/lstmdriver_nc_kcck.c
         for (l = 0; l < K*N; l++) {
           djdbigold[l%K] += LIBXSMM_VLA_ACCESS(2, djdigold, j, l, K * N);
           djdbfgold[l%K] += LIBXSMM_VLA_ACCESS(2, djdfgold, j, l, K * N);
           djdbogold[l%K] += LIBXSMM_VLA_ACCESS(2, djdogold, j, l, K * N);
           djdbcgold[l%K] += LIBXSMM_VLA_ACCESS(2, djdcgold, j, l, K * N);
+=======
+<<<<<<< HEAD
+=======
+#if defined(_OPENMP)
+# pragma omp parallel for private(l, p)
+#endif
+>>>>>>> 4ef919ce5cf537ecccec60abfd9f2085a0b047dc
+        for (l = 0; l < K; l++) {
+          for (p = 0; p < N; p++) {
+            djdb4gold[l]       += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l,       N, 4 * K);
+            djdb4gold[l + K]   += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + K,   N, 4 * K);
+            djdb4gold[l + 2*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + 2*K, N, 4 * K);
+            djdb4gold[l + 3*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + 3*K, N, 4 * K);
+          }
+>>>>>>> 02ed2c12fb6d6bff06e4c732bdb1f13e15b2e71e:samples/deeplearning/lstmdriver/lstmdriver.c
         }
       }
     }
