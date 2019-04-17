@@ -587,70 +587,86 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_fwd_gemm_flags( libxsmm_dn
 /**********************************************************/
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_bwd_ofw_rb( libxsmm_dnn_layer* handle ) {
-  int result = 0;
-
-  result = handle->ofw;
-
+  int result = libxsmm_dnn_setup_generic_fwd_ofw_rb(handle);
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_bwd_ofh_rb( libxsmm_dnn_layer* handle ) {
-  int result = 0;
+  int result = libxsmm_dnn_setup_generic_fwd_ofh_rb(handle);
+  return result;
+}
 
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_bwd_block_H( libxsmm_dnn_layer* handle ) {
+  int result = 0;
+  result = libxsmm_dnn_setup_generic_fwd_block_H(handle);
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_loop_order_bwd( libxsmm_dnn_layer* handle ) {
   int result = 0;
-
+  result = libxsmm_dnn_setup_generic_loop_order_fwd(handle);
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_bwd_IFM( libxsmm_dnn_layer* handle ) {
   int result = 0;
-
+  result = LIBXSMM_MIN(handle->blocksifm, 16);
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_bwd_OFM( libxsmm_dnn_layer* handle ) {
-  int result = 0;
-
+  int result = 8;
+  while (result % handle->blocksofm_blocking != 0) {
+    result++;
+  }
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_pack_input_bwd( libxsmm_dnn_layer* handle ) {
   int result = 0;
-
+  if ((handle->desc.u != 1) && (handle->bwd_ofh_rb != 1)) {
+    result = 1;
+  }
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_use_ifm_parallelization( libxsmm_dnn_layer* handle ) {
   int result = 0;
-
+  if (handle->ofw <= 7) {
+    result = 1;
+  }
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_avoid_rim_fmas_bwd( libxsmm_dnn_layer* handle ) {
-  int result = 0;
-
+  int result = libxsmm_dnn_setup_generic_avoid_rim_fmas_fwd(handle);
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksofm_blocking( libxsmm_dnn_layer* handle ) {
   int result = 0;
-
+  if (handle->desc.R == 1 && handle->desc.S == 1) {
+    result = handle->blocksofm;
+  } else {
+    result = 1;
+    if (handle->desc.R == 3 && handle->desc.S == 3 && handle->ofh == 7 && handle->ofw == 7) {
+      result = 2;
+    }
+  }
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_bwd_gemm_flags( libxsmm_dnn_layer* handle ) {
   int result = 0;
-
+  /* TODO: May want to experiment with streaming stores */
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_spread_input_bwd( libxsmm_dnn_layer* handle ) {
   int result = 0;
-
+  if (((handle->desc.u != 1) || (handle->desc.v != 1)) && (handle->bwd_ofh_rb == 1)) {
+    result = 1;
+  }
   return result;
 }
 
@@ -723,10 +739,8 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_upd_gemm_flags( libxsmm_dn
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_layer* handle ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   /* Initialize all the setup values  */
-  handle->pack_input_bwd = 0;
   handle->block_upd_ofm = 1;
   handle->block_upd_ifm = 1;
-  int blockofm = 8;
 
   /* Generic parameter setup  */
   handle->ifmblock = libxsmm_dnn_setup_generic_ifmblock(handle);
@@ -756,17 +770,17 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
 
   /* BWD parameter setup  */
   handle->bwd_ofw_rb = libxsmm_dnn_setup_generic_bwd_ofw_rb(handle);
-  handle->pack_input_bwd = libxsmm_dnn_setup_generic_pack_input_bwd(handle);
   handle->bwd_ofh_rb = libxsmm_dnn_setup_generic_bwd_ofh_rb(handle);
-
-  if (handle->desc.R == 1 && handle->desc.S == 1) {
-    handle->blocksofm_blocking = handle->blocksofm;
-  } else {
-    handle->blocksofm_blocking = 1;
-    if (handle->desc.R == 3 && handle->desc.S == 3 && handle->ofh == 7 && handle->ofw == 7) {
-      handle->blocksofm_blocking = 2;
-    }
-  }
+  handle->pack_input_bwd = libxsmm_dnn_setup_generic_pack_input_bwd(handle);
+  handle->spread_input_bwd = libxsmm_dnn_setup_generic_spread_input_bwd(handle);
+  handle->blocksofm_blocking = libxsmm_dnn_setup_generic_blocksofm_blocking(handle);
+  handle->use_ifm_parallelization = libxsmm_dnn_setup_generic_use_ifm_parallelization(handle);
+  handle->block_bwd_ofm = libxsmm_dnn_setup_generic_block_bwd_OFM(handle);
+  handle->block_bwd_ifm = libxsmm_dnn_setup_generic_block_bwd_IFM(handle);
+  handle->block_bwd_oj = libxsmm_dnn_setup_generic_bwd_block_H(handle);
+  handle->code_bwd[0].xconv.sconv = 0;
+  handle->code_bwd[1].xconv.sconv = 0;
+  handle->code_bwd[2].xconv.sconv = 0;
 
   /* Transpose kernel used for filter transpose in bwd pass  */
   const libxsmm_trans_descriptor* tr_desc = 0;
@@ -774,18 +788,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), 64, 16, 64);
   handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
 
-  /* Backward path */
-  handle->code_bwd[0].xconv.sconv = 0;
-  handle->code_bwd[1].xconv.sconv = 0;
-  handle->code_bwd[2].xconv.sconv = 0;
-  /* weight update path */
-  handle->code_upd[0].xconv.sconv = 0;
-  handle->code_upd[1].xconv.sconv = 0;
-
+  /*****************************/
+  /* Barrier and scratch setup */
+  /*****************************/
   /* prepare barrier */
   handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
-
-  /* backward transpose filters, as we want to call small GEMMs we need that scratch */
+  /* backward transpose filters, as we want to call small GEMMs we need that scratch AND also scratch to potentially pack input if requested*/
   handle->scratch1 = 0;
   handle->scratch1_size = (size_t)handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
     * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_in) + (size_t)handle->desc.N * handle->ofwp * handle->ofhp * handle->desc.C;
@@ -793,30 +801,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     /* If low precision, we need extra buffer to store intermediate weight tensor */
     handle->scratch1_size *= 2;
   }
-
   handle->scratch3 = 0;
   handle->scratch3_size = 0;
   handle->scratch4 = 0;
   handle->scratch4_size = 0;
-
-  /* Setup bwd parameters based on duality */
-  handle->bwd_ofh_rb = handle->fwd_ofh_rb;
-  handle->bwd_ofw_rb = handle->fwd_ofw_rb;
-  handle->use_ifm_parallelization = handle->use_ofm_parallelization;
-  if (handle->ofw == 7) {
-    handle->use_ifm_parallelization = 1;
-  }
-
-  /* Feature map block tuning */
-  while (blockofm % handle->blocksofm_blocking != 0) {
-    blockofm++;
-  }
-
-  handle->pack_input_bwd = (handle->desc.u != 1 && handle->bwd_ofh_rb != 1) ? 1 : 0;
-  handle->spread_input_bwd = ((handle->desc.u != 1 || handle->desc.v != 1) && handle->bwd_ofh_rb == 1) ? 1 : 0;
-  handle->block_bwd_ifm = LIBXSMM_MIN(handle->blocksifm, 16);
-  handle->block_bwd_ofm = blockofm;
-  handle->block_bwd_oj = handle->block_fwd_oj;
 
   /* Setup upd parameters and use algorithms on a per layer basis */
   handle->upd_ofh_rb = 1;
@@ -940,6 +928,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   if (handle->desc.N == 27 && handle->desc.threads == 27 && handle->desc.R == 1 && handle->ofw == 14 && handle->desc.u == 1) {
     handle->weight_copies = 7;
   }
+
+  /* weight update path */
+  handle->code_upd[0].xconv.sconv = 0;
+  handle->code_upd[1].xconv.sconv = 0;
 
   return status;
 }
