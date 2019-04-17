@@ -438,7 +438,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_pack_input_fwd( libxsmm_dnn_lay
   int result = 0;
   /* Pack only for small images and when having large K to amortize */
   if ((handle->ofw <= 14) && (handle->desc.K > 256) && (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.u == 2) && (handle->desc.v == 2)) {
-    result = 1; /* FIXME!! */
+    result = 1;
   }
   /* Make sure we don't pack when minibatch is not divisible by number of threads since H is used potentially for parallelism */
   if (handle->desc.N != handle->desc.threads) {
@@ -461,7 +461,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fwd_ofh_rb( libxsmm_dnn_layer* 
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fwd_block_H( libxsmm_dnn_layer* handle ) {
-  int result = 1;
+  int result = handle->fwd_ofh_rb;
   /* Block H only for large images  */
   if (handle->ofh >= 28) {
     result = 4;
