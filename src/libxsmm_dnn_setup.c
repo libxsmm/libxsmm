@@ -437,7 +437,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fwd_ofw_rb( libxsmm_dnn_layer* 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_pack_input_fwd( libxsmm_dnn_layer* handle ) {
   int result = 0;
   /* Pack only for small images and when having large K to amortize */
-  if ((handle->ofw <= 14) && (handle->desc.K > 256) && (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.u == 2) && (handle->desc.v == 2)) {
+  if ((handle->ofw <= 14) && (handle->desc.K > 512) && (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.u == 2) && (handle->desc.v == 2)) {
     result = 1;
   }
   /* Make sure we don't pack when minibatch is not divisible by number of threads since H is used potentially for parallelism */
@@ -478,8 +478,8 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksifm_blocking( libxsmm_dnn
   /* For 1x1 Convolutions bring in kernel all IFMs unless filters are huge*/
   if ((handle->desc.R == 1) && (handle->desc.S == 1) ) {
     result = handle->blocksifm;
-    if ((handle->desc.C >= 1024) && (handle->desc.K >= 256)) {
-      /* result = 2; */
+    if ((handle->desc.C >= 2048) && (handle->desc.K >= 512)) {
+      result = 1;
     }
   } else {
     result = 1;
@@ -518,11 +518,13 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_fwd_OFM( libxsmm_dnn_laye
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_use_ofm_parallelization( libxsmm_dnn_layer* handle ) {
   int result = 0;
+#if 0
   /* Use "hybrid" minibatch/ofm parallelization if we have huge filters */
   if ((handle->desc.R >= 3) && (handle->desc.S >= 3) && (handle->desc.C >= 512) && (handle->desc.K >= 512)) {
     result = 1;
   }
-  if ((handle->desc.C >= 1024) && (handle->desc.K >= 512)) {
+#endif
+  if ((handle->ofw <= 7) && (handle->desc.C == 1024) && (handle->desc.K == 512)) {
     result = 1;
   }
   return result;
@@ -542,7 +544,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_avoid_rim_fmas_fwd( libxsmm_dnn
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_shuffle_filter_accesses( libxsmm_dnn_layer* handle ) {
   int result = 0;
   /* Shuffle filter accesses only if "pure minibatch" parallelization and large filters are involved */
-  if ((handle->use_ofm_parallelization == 0) && (handle->desc.C >= 512) && (handle->desc.K >= 512)) {
+  if ((handle->use_ofm_parallelization == 0) && (handle->desc.C > 512) && (handle->desc.K > 512)) {
     result = 1;
   }
   return result;
