@@ -703,9 +703,12 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_avoid_acc_load_bwd( libxsmm_dnn
 /* Helper functions for UPD convolutions' parameter setup */
 /**********************************************************/
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_loop_order_upd( libxsmm_dnn_layer* handle ) {
-  int result = 0;
-  if (handle->ofh >= 28) {
-    result = 1;
+  int result = 1;
+  if (handle->ofh == 28 && handle->desc.R == 1 && handle->desc.u == 1 && handle->desc.C == 128 && handle->desc.K == 512) {
+    result = 0;
+  }
+  if (handle->ofh == 28 && handle->desc.R == 3 && handle->desc.u == 1 && handle->desc.C == 128 && handle->desc.K == 128) {
+    result = 0;
   }
   return result;
 }
@@ -747,9 +750,21 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_upd_ofh_rb( libxsmm_dnn_layer* 
   return result;
 }
 
-LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_img_batchreduce_block( libxsmm_dnn_layer* handle ) {
-  int result = 0;
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_upd_IFM( libxsmm_dnn_layer* handle ) {
+  int result = 1;
+  if (handle->ofh == 56 && handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.u == 1 && handle->desc.v == 1) {
+    result = 4;
+  }
+  return result;
+}
 
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_upd_OFM( libxsmm_dnn_layer* handle ) {
+  int result = 1;
+  return result;
+}
+
+LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_img_batchreduce_block( libxsmm_dnn_layer* handle ) {
+  int result = 1;
   return result;
 }
 
@@ -864,17 +879,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->upd_use_batchreduce = libxsmm_dnn_setup_generic_use_batchreduce_upd(handle);
   handle->upd_ofw_rb = libxsmm_dnn_setup_generic_upd_ofw_rb(handle);
   handle->upd_ofh_rb = libxsmm_dnn_setup_generic_upd_ofh_rb(handle);
-  /* More work on the loop ordering */
   handle->upd_loop_order = libxsmm_dnn_setup_generic_loop_order_upd(handle);
   handle->weight_copies = libxsmm_dnn_setup_generic_weight_copies_upd(handle);
-
-  handle->block_upd_ofm = 1;
-  handle->block_upd_ifm = 1;
+  handle->block_upd_ofm = libxsmm_dnn_setup_generic_block_upd_OFM(handle);
+  handle->block_upd_ifm = libxsmm_dnn_setup_generic_block_upd_IFM(handle);
+  handle->upd_loop_order = libxsmm_dnn_setup_generic_loop_order_upd(handle);
   handle->code_upd[0].xconv.sconv = 0;
   handle->code_upd[1].xconv.sconv = 0;
-
-  /* TODO: Add function to validate the configurations */
-
 
   /*****************************/
   /* Barrier and scratch setup */
@@ -893,45 +904,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->scratch3_size = 0;
   handle->scratch4 = 0;
   handle->scratch4_size = 0;
-
-  /* Setup upd parameters and use algorithms on a per layer basis */
-  handle->upd_img_br_block = 1;
-  handle->upd_loop_order = 0;
-
-  if (handle->ofh == 112 || handle->ofh == 56 || (handle->desc.H == 56 && handle->desc.u == 2)) {
-    if (handle->desc.H == 56 && handle->desc.u == 2 && handle->desc.C == 512) {
-      handle->upd_loop_order = 0;
-    } else {
-      handle->upd_loop_order = 1;
-    }
-    if (handle->ofh == 56 && handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.u == 1 && handle->desc.v == 1) {
-      handle->block_upd_ofm = 1;
-      handle->block_upd_ifm = 4;
-    }
-  }
-
-  if (handle->ofh == 28 && handle->desc.u == 1 && handle->desc.R == 1 && handle->desc.S == 1) {
-    if (handle->desc.K == 512) {
-      handle->upd_loop_order = 0;
-    } else {
-      handle->upd_loop_order = 1;
-    }
-  }
-
-
-  if (handle->ofh == 14 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 1024) {
-    handle->upd_loop_order = 1;
-  }
-  if (handle->ofh == 14 && handle->desc.u == 1 && handle->desc.v == 1) {
-    if (handle->desc.C == 1024 && handle->desc.K == 256 && handle->desc.threads == 27 && handle->desc.N == 27) {
-      handle->upd_loop_order = 1;
-    }
-  }
-
-  if (handle->ofh == 7 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 512 ) {
-    handle->upd_loop_order = 0;
-  }
-
 
   return status;
 }
