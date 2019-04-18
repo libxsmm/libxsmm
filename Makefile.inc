@@ -753,7 +753,7 @@ DYNAMIC ?= 0
 
 # CCE: resolve linker issue
 ifneq (0,$(DYNAMIC))
-ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
+ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
   echo "int main(void) { return 0; }" > $${INFILE}; \
   RESULT=$$($(CC) -dynamic $${INFILE} -o $${INFILE}.exe 2>&1); \
   if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
@@ -1397,18 +1397,19 @@ endif
 
 ifeq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"))
   # check target flags by feeding an ad-hoc C program into the compiler
-  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
+  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
     echo "int main(void) { return 0; }" > $${INFILE}; \
-    RESULT=$$($(CC) $(CTARGET) -c $${INFILE} 2>&1); \
+    RESULT=$$($(CC) $(CTARGET) -c $${INFILE} -o $${INFILE}.o 2>&1); \
     if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
     rm -f /tmp/$$(basename $${INFILE} .c).* 2>/dev/null))
       CTARGET = $(NULL)
   endif
   ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
-  ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/libxsmm_XXXXXX-f.f); \
+  # INFILE cannot start with a leading dot when used with certain compiler
+  ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/libxsmm_XXXXXX.f); \
     echo "      PROGRAM test" > $${INFILE}; \
     echo "      END PROGRAM" >> $${INFILE}; \
-    RESULT=$$($(FC) $(CTARGET) -c $${INFILE} 2>&1); \
+    RESULT=$$($(FC) $(CTARGET) -c $${INFILE} -o $${INFILE}.o 2>&1); \
     if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
     rm -f /tmp/$$(basename $${INFILE} .f).* 2>/dev/null))
       # inherit CTARGET flags
@@ -1596,11 +1597,11 @@ endif
 
 ifneq (,$(OMPFLAG_FORCE))
   OMPFLAG = $(OMPFLAG_FORCE)
-  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
+  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
     echo "\#if defined(_OPENMP)" > $${INFILE}; \
     echo "\# include <omp.h>" >> $${INFILE}; \
     echo "\#endif" >> $${INFILE}; \
-    RESULT=$$($(CC) $(OMPFLAG_FORCE) -c $${INFILE} 2>&1); \
+    RESULT=$$($(CC) $(OMPFLAG_FORCE) -c $${INFILE} -o $${INFILE}.o 2>&1); \
     if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
     rm -f /tmp/$$(basename $${INFILE} .c).* 2>/dev/null))
       OMPFLAG = $(NULL)
