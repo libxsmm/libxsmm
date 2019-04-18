@@ -256,7 +256,7 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 }
 
 
-LIBXSMM_API unsigned int libxsmm_hash(unsigned int seed, const void* data, unsigned int size)
+LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed)
 {
   LIBXSMM_INIT
   return libxsmm_crc32(seed, data, size);
@@ -585,7 +585,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* hash_seed, const void* data
 #endif
   {
     unsigned int *const hash_seed_ui32 = (unsigned int*)hash_seed;
-    *hash_seed_ui32 = (libxsmm_hash(*hash_seed_ui32, data, (unsigned int)(*size)) & 0x7FFFFFFF/*sign-bit*/);
+    *hash_seed_ui32 = (libxsmm_hash(data, (unsigned int)*size, *hash_seed_ui32) & 0x7FFFFFFF/*sign-bit*/);
   }
 #if !defined(NDEBUG)
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
