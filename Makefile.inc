@@ -751,11 +751,16 @@ else
 endif
 DYNAMIC ?= 0
 
-ifneq (0,$(CRAY))
+# CCE: resolve linker issue
 ifneq (0,$(DYNAMIC))
-  XLD := $(XLD) -dynamic
-  FLD := $(FLD) -dynamic
-  LD := $(LD) -dynamic
+ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
+  echo "int main(void) { return 0; }" > $${INFILE}; \
+  RESULT=$$($(CC) -dynamic $${INFILE} -o $${INFILE}.exe 2>&1); \
+  if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+  rm -f $${INFILE}* 2>/dev/null))
+    XLD := $(XLD) -dynamic
+    FLD := $(FLD) -dynamic
+    LD := $(LD) -dynamic
 endif
 endif
 
@@ -1392,20 +1397,20 @@ endif
 
 ifeq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"))
   # check target flags by feeding an ad-hoc C program into the compiler
-  ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
-    echo "int main(void) { return 0; }" > $${CINFILE}; \
-    CTEST=$$($(CC) $(CTARGET) -c $${CINFILE} 2>&1); \
-    if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-    rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
+  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
+    echo "int main(void) { return 0; }" > $${INFILE}; \
+    RESULT=$$($(CC) $(CTARGET) -c $${INFILE} 2>&1); \
+    if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/$$(basename $${INFILE} .c).* 2>/dev/null))
       CTARGET = $(NULL)
   endif
   ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
-  ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/libxsmm_XXXXXX-f.f); \
-    echo "      PROGRAM test" > $${FINFILE}; \
-    echo "      END PROGRAM" >> $${FINFILE}; \
-    FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
-    if [ "" = "$${FTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-    rm -f /tmp/libxsmm_??????-f.f libxsmm_??????-f.o* 2>/dev/null))
+  ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/libxsmm_XXXXXX-f.f); \
+    echo "      PROGRAM test" > $${INFILE}; \
+    echo "      END PROGRAM" >> $${INFILE}; \
+    RESULT=$$($(FC) $(CTARGET) -c $${INFILE} 2>&1); \
+    if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/$$(basename $${INFILE} .f).* 2>/dev/null))
       # inherit CTARGET flags
       FTARGET = $(CTARGET)
   endif
@@ -1591,13 +1596,13 @@ endif
 
 ifneq (,$(OMPFLAG_FORCE))
   OMPFLAG = $(OMPFLAG_FORCE)
-  ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
-    echo "\#if defined(_OPENMP)" > $${CINFILE}; \
-    echo "\# include <omp.h>" >> $${CINFILE}; \
-    echo "\#endif" >> $${CINFILE}; \
-    CTEST=$$($(CC) $(OMPFLAG_FORCE) -c $${CINFILE} 2>&1); \
-    if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-    rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
+  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
+    echo "\#if defined(_OPENMP)" > $${INFILE}; \
+    echo "\# include <omp.h>" >> $${INFILE}; \
+    echo "\#endif" >> $${INFILE}; \
+    RESULT=$$($(CC) $(OMPFLAG_FORCE) -c $${INFILE} 2>&1); \
+    if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/$$(basename $${INFILE} .c).* 2>/dev/null))
       OMPFLAG = $(NULL)
   endif
 endif
