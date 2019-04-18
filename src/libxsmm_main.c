@@ -2090,10 +2090,6 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
 }
 
 
-#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__) && defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER)
-LIBXSMM_PRAGMA_OPTIMIZE_OFF
-#endif
-
 LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const double* alpha, const double* beta, const int* flags, const int* prefetch)
@@ -2245,10 +2241,6 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch libxsmm_bmmdispatch_reducebatch(libx
   return result.bmr;
 }
 
-
-#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__) && defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER)
-LIBXSMM_PRAGMA_OPTIMIZE_ON
-#endif
 
 LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_descriptor* descriptor)
 {
