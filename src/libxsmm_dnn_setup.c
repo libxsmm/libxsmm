@@ -767,8 +767,26 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_use_batchreduce_upd( libxsmm_dn
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_weight_copies_upd( libxsmm_dnn_layer* handle ) {
-  int result = 0;
-
+  int result = handle->desc.threads;
+  if (handle->ofw <= 14) {
+    result = 9;
+  }
+  while (handle->desc.threads % result != 0) {
+    result--;
+  }
+  /* FIXME: Hardcoded logic for N=27, N=26 */
+  if (handle->desc.N == 27 && handle->desc.threads == 27 && handle->desc.R == 1 && handle->ofw == 14 && handle->desc.u == 1) {
+    result = 7;
+  }
+  if (handle->ofh == 14 && handle->desc.R == 3 && handle->desc.S == 3) {
+    if (handle->desc.N == 26) {
+      result = 13;
+    }
+  }
+  /* Make sure a single copy when we use linearized-task view */
+  if (handle->upd_linearized_tasklist == 1) {
+    result = 1;
+  }
   return result;
 }
 
@@ -848,6 +866,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->upd_ofh_rb = libxsmm_dnn_setup_generic_upd_ofh_rb(handle);
   /* More work on the loop ordering */
   handle->upd_loop_order = libxsmm_dnn_setup_generic_loop_order_upd(handle);
+  handle->weight_copies = libxsmm_dnn_setup_generic_weight_copies_upd(handle);
 
   handle->block_upd_ofm = 1;
   handle->block_upd_ifm = 1;
@@ -877,11 +896,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
 
   /* Setup upd parameters and use algorithms on a per layer basis */
   handle->upd_img_br_block = 1;
-  handle->weight_copies = 1;
   handle->upd_loop_order = 0;
 
   if (handle->ofh == 112 || handle->ofh == 56 || (handle->desc.H == 56 && handle->desc.u == 2)) {
-    handle->weight_copies = handle->desc.threads;
     if (handle->desc.H == 56 && handle->desc.u == 2 && handle->desc.C == 512) {
       handle->upd_loop_order = 0;
     } else {
@@ -894,7 +911,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   }
 
   if (handle->ofh == 28 && handle->desc.u == 1 && handle->desc.R == 1 && handle->desc.S == 1) {
-    handle->weight_copies = handle->desc.threads;
     if (handle->desc.K == 512) {
       handle->upd_loop_order = 0;
     } else {
@@ -902,62 +918,20 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     }
   }
 
-  if (handle->ofh == 28 && handle->desc.R == 3 && handle->desc.S == 3) {
-    handle->weight_copies = handle->desc.threads;
-  }
-
-  if (handle->ofh == 14 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 256) {
-    handle->weight_copies = handle->desc.threads;
-  }
 
   if (handle->ofh == 14 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 1024) {
-    handle->weight_copies = 7;
     handle->upd_loop_order = 1;
   }
-
-  if (handle->ofh == 14 && handle->desc.R == 3 && handle->desc.S == 3) {
-    handle->weight_copies = 9;
-    if (handle->desc.N == 26) {
-      handle->weight_copies = 13;
-    }
-  }
-
   if (handle->ofh == 14 && handle->desc.u == 1 && handle->desc.v == 1) {
-    handle->weight_copies = 9;
-    /* FIXME: Add better logic */
-    if (handle->desc.N == 26) {
-      handle->weight_copies = 13;
-    }
     if (handle->desc.C == 1024 && handle->desc.K == 256 && handle->desc.threads == 27 && handle->desc.N == 27) {
       handle->upd_loop_order = 1;
     }
   }
 
-  if (handle->ofh == 7 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 2048 ) {
-    handle->weight_copies = 1;
-  }
-
   if (handle->ofh == 7 && handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 512 ) {
-    handle->weight_copies = 7;
     handle->upd_loop_order = 0;
   }
 
-  if (handle->ofh == 7 && handle->desc.u == 1 && handle->desc.v == 1) {
-    handle->weight_copies = 1;
-  }
-
-  if (handle->ofh == 7 && handle->desc.R == 3 && handle->desc.S == 3) {
-    handle->weight_copies = 1;
-  }
-
-  while (handle->desc.threads % handle->weight_copies != 0) {
-    handle->weight_copies = handle->weight_copies - 1;
-  }
-
-  /* FIXME: Hardcoded logic for N=27  */
-  if (handle->desc.N == 27 && handle->desc.threads == 27 && handle->desc.R == 1 && handle->ofw == 14 && handle->desc.u == 1) {
-    handle->weight_copies = 7;
-  }
 
   return status;
 }
