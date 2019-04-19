@@ -1089,8 +1089,7 @@ int main(int argc, char* argv []) {
                   tmp_a_f.i[0] = 0;
                   tmp_b_f.i[1] = l_b_bf[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
                   tmp_b_f.i[0] = 0;
-                  const float fprod = (float)(tmp_a_f.f * tmp_b_f.f);
-                  l_c_gold_w_f[(l_j * l_ldc) + l_i] += fprod;
+                  l_c_gold_w_f[(l_j * l_ldc) + l_i] += (float)(tmp_a_f.f * tmp_b_f.f);
                 }
               }
             }
