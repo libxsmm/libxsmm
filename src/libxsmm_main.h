@@ -107,9 +107,17 @@
 # define LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K)
 #endif
 
+#if defined(LIBXSMM_UNPACKED)
+# define LIBXSMM_DESCRIPTOR_CLEAR(BLOB) memset(BLOB, 0, LIBXSMM_DESCRIPTOR_MAXSIZE)
+#else
+# define LIBXSMM_DESCRIPTOR_CLEAR(BLOB) LIBXSMM_ASSERT(BLOB)
+#endif
+
 /** Low-level/internal GEMM descriptor initialization. */
 #define LIBXSMM_GEMM_DESCRIPTOR(DESCRIPTOR, DATA_TYPE, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
-  LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K); LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(LDA, LDB, LDC); \
+  LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(LDA, LDB, LDC); \
+  LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K); \
+  LIBXSMM_DESCRIPTOR_CLEAR(&(DESCRIPTOR)); \
   (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); \
   (DESCRIPTOR).flags = (unsigned short)((FLAGS) \
     /*| (LIBXSMM_NEQ(0, ALPHA) ? 0 : LIBXSMM_GEMM_FLAG_ALPHA_0)*/ \
@@ -610,11 +618,11 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_rnncell_desc desc;
   libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts */
-  libxsmm_blasint T;                              /* sequnece length, must be smaller than max sequence length in desc */
+  libxsmm_blasint T;                              /* sequence length, must be smaller than max sequence length in desc */
   libxsmm_blasint bk;
   libxsmm_blasint bn;
   libxsmm_blasint bc;
-  /* extrenal tensors */
+  /* external tensors */
   libxsmm_dnn_tensor* xt;
   libxsmm_dnn_tensor* csp;
   libxsmm_dnn_tensor* hp;
@@ -716,11 +724,7 @@ typedef enum libxsmm_build_kind {
 } libxsmm_build_kind;
 
 /** Integral type (libxsmm_kernel_kind, libxsmm_build_kind). */
-#if defined(LIBXSMM_UNPACKED) || defined(_CRAYC)
-typedef int libxsmm_descriptor_kind;
-#else
 typedef unsigned char libxsmm_descriptor_kind;
-#endif
 
 /** All descriptor types, which are valid for code-registration. */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_descriptor {

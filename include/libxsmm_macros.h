@@ -142,7 +142,7 @@
 #   define LIBXSMM_PACKED(TYPE) LIBXSMM_PRAGMA(pack(1)) TYPE
 # endif
 # define LIBXSMM_CDECL __cdecl
-#elif (defined(__GNUC__) || defined(__clang__) || defined(__PGI))
+#elif (defined(__GNUC__) || defined(__clang__) || defined(__PGI)) && !defined(_CRAYC)
 # define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
