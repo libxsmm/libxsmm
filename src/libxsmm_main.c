@@ -2205,8 +2205,6 @@ LIBXSMM_API libxsmm_smmfunction_reducebatch libxsmm_smmdispatch_reducebatch(libx
 {
   const int gemm_flags = (NULL == flags ? LIBXSMM_FLAGS : *flags);
   libxsmm_descriptor_blob blob;
-  const int br_flags = (*flags) | LIBXSMM_GEMM_FLAG_BATCH_REDUCE;
-
   const libxsmm_gemm_descriptor *const desc = libxsmm_sgemm_descriptor_init(&blob,
     m, n, k, NULL != lda ? *lda : m, NULL != ldb ? *ldb : k, NULL != ldc ? *ldc : m,
     NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,

@@ -375,6 +375,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   int blockofm = 8;
   int block_j = 14;
   int loop_order = 0;
+  const libxsmm_trans_descriptor* tr_desc = 0;
+
   handle->pack_input = 0;
   handle->pack_input_bwd = 0;
   handle->use_ofm_parallelization = 0;
@@ -390,7 +392,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->bwd_ofw_rb = handle->ofw;
   handle->fm_lp_block = 1;
 
-  const libxsmm_trans_descriptor* tr_desc = 0;
   libxsmm_descriptor_blob blob;
   tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), 64, 16, 64);
   handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
