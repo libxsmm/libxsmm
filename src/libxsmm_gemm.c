@@ -665,7 +665,7 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
         const double si = (double)(LIBXSMM_CONFIG_MAX_MNK) / ((size_t)tmi * tmi * tmi), s = (s2 <= si ? 1 : (s2 / si));
         unsigned int tni = libxsmm_product_limit(un, LIBXSMM_MAX((unsigned int)(tmi * (s * internal_gemm_nstretch)), 1), 0);
         unsigned int tki = libxsmm_product_limit(uk, LIBXSMM_MAX((unsigned int)(tmi * (s * internal_gemm_kstretch)), 1), 0);
-        unsigned int ntmi, ntni, ntki, mti = 1, nti, kti;
+        unsigned int ntmi, ntni, ntki, mti = 1, nti = 1, kti = 1;
         LIBXSMM_ASSERT(tmi <= um && tni <= un && tki <= uk);
         if (LIBXSMM_GEMM_FLAG_TRANS_AB == (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags)) {
           const unsigned int ttm = (unsigned int)libxsmm_product_limit(tmi, (unsigned int)ntasks, 0);
