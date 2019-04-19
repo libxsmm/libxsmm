@@ -111,7 +111,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   fm = imgfm % nBlocksFm;
 
   LIBXSMM_PRAGMA_SIMD
-  for( v = 0; v < ifh*ifw*nFmBlock; v++ ) {
+  for ( v = 0; v < ifh*ifw*nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
     lcl_buffer_ptr[v] = (float)0;
 #else
@@ -120,15 +120,15 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   }
 
 #if defined(LIBXSMM_DNN_POOLING_BWD_MAX)
-  for( ho = oph; ho < (ofh+oph); ho++ ) {
-    for( wo = opw; wo < (ofw+opw); wo++ ) {
+  for ( ho = oph; ho < (ofh+oph); ho++ ) {
+    for ( wo = opw; wo < (ofw+opw); wo++ ) {
       const element_output_type* doutput_ptr = &LIBXSMM_VLA_ACCESS(5, doutput, img, fm,     ho,     wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
       const element_mask_type*      mask_ptr = &LIBXSMM_VLA_ACCESS(5, mask,    img, fm, ho-oph, wo-opw, 0, nBlocksFm,  ofh,  ofw, nFmBlock);
 
 #if !defined(LIBXSMM_DNN_POOLING_BWD_BF16)
       LIBXSMM_PRAGMA_SIMD
 #endif
-      for( v = 0; v < nFmBlock; v++ ) {
+      for ( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
         del_output_f32.i[1] = doutput_ptr[v];
         lcl_buffer_ptr[mask_ptr[v]] += del_output_f32.f;
@@ -140,13 +140,13 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   }
 #endif
 #if defined(LIBXSMM_DNN_POOLING_BWD_AVG)
-  for( ho = oph; ho < (ofh+oph); ho++ ) {
+  for ( ho = oph; ho < (ofh+oph); ho++ ) {
     hi = ((ho-oph) * sh) - handle->desc.pad_h;
-    for( wo = opw; wo < (ofw+opw); wo++ ) {
+    for ( wo = opw; wo < (ofw+opw); wo++ ) {
       wi = ((wo-opw) * sw) - handle->desc.pad_w;
-      for( kh = 0; kh < handle->desc.R; kh++ ) {
+      for ( kh = 0; kh < handle->desc.R; kh++ ) {
         if(hi+kh < 0 || hi+kh >= ifh) continue;
-        for( kw = 0; kw < handle->desc.S; kw++ ) {
+        for ( kw = 0; kw < handle->desc.S; kw++ ) {
           if(wi+kw < 0 || wi+kw >= ifw) {
             continue;
           } else {
@@ -160,7 +160,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #if !defined(LIBXSMM_DNN_POOLING_BWD_BF16)
             LIBXSMM_PRAGMA_SIMD
 #endif
-            for( v = 0; v < nFmBlock; v++ ) {
+            for ( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
               del_output_f32.i[1] = doutput_ptr[v];
               lcl_dinput_ptr[v] += (del_output_f32.f * recp_pool_size);
@@ -176,8 +176,8 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #endif
 
   /* copy the local buffer into dinput activations */
-  for( hi = iph; hi < (ifh+iph); hi++ ) {
-    for( wi = ipw; wi < (ifw+ipw); wi++ ) {
+  for ( hi = iph; hi < (ifh+iph); hi++ ) {
+    for ( wi = ipw; wi < (ifw+ipw); wi++ ) {
       element_input_type*     dinput_ptr = &LIBXSMM_VLA_ACCESS(5, dinput,     img, fm,        hi,        wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
       float*              lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,             hi-iph,    wi-ipw, 0,                   ifw, nFmBlock);
@@ -188,7 +188,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #if !defined(LIBXSMM_DNN_POOLING_BWD_BF16)
       LIBXSMM_PRAGMA_SIMD
 #endif
-      for( v = 0; v < nFmBlock; v++ ) {
+      for ( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
         del_input_f32.f = lcl_dinput_ptr[v];
         dinput_ptr[v] = del_input_f32.i[1];
