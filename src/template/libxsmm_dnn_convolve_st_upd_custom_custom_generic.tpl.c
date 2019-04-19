@@ -128,7 +128,9 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     const int work_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
     int work_item;
     int Cb = handle->blocksifm;
+#if 0
     int Kb = handle->blocksofm;
+#endif
     int R = handle->desc.R;
     int S = handle->desc.S;
 
@@ -276,14 +278,9 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     }
   } else {
     /* Here we are using batch-reduce kernel and hybrid minibatch/FM parallelization */
-    int group_size = (handle->desc.threads+handle->weight_copies-1)/handle->weight_copies;
-    int tile_id = ltid/group_size;
     /* FIXME: Hardcoed logic for N=27  */
-    if (handle->desc.threads == 27 && handle->desc.N == 27 && handle->ofw == 14 && handle->desc.R == 1 && handle->desc.u == 1) {
-      if (ltid >=24) {
-        group_size = 3;
-      }
-    }
+    int group_size = (handle->desc.threads == 27 && handle->desc.N == 27 && handle->ofw == 14 && handle->desc.R == 1 && handle->desc.u == 1 && ltid >= 24) ? 3 : ((handle->desc.threads+handle->weight_copies-1)/handle->weight_copies);
+    int tile_id = ltid/( (handle->desc.threads+handle->weight_copies-1)/handle->weight_copies );
     int tiles = handle->weight_copies;
     int img_per_tile = (handle->desc.N+tiles-1)/tiles;
     int my_in_tile_id = ltid % group_size;
