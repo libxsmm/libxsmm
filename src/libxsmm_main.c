@@ -84,6 +84,9 @@
 #if !defined(LIBXSMM_REGLOCK_TRY) && 0
 # define LIBXSMM_REGLOCK_TRY
 #endif
+#if !defined(LIBXSMM_DIFF_INLINE) && 1
+# define LIBXSMM_DIFF_INLINE
+#endif
 #if !defined(LIBXSMM_DESC_INLINE) && 0
 # define LIBXSMM_DESC_INLINE
 #endif
@@ -1640,17 +1643,17 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   } cache;
   unsigned char cache_index;
 # if defined(LIBXSMM_DESC_PAD)
-# if defined(LIBXSMM_DESC_INLINE)
+#   if defined(LIBXSMM_DESC_INLINE)
   LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
   internal_pad_descriptor(desc, size);
   LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
   LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE),
     xdesc, &cache.keys, LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
-# else
+#   else
   internal_pad_descriptor(desc, size);
   cache_index = (unsigned char)libxsmm_diff_n(desc, &cache.keys,
     LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
-# endif
+#   endif
 # else
   LIBXSMM_ASSERT(NULL != desc);
   cache_index = (unsigned char)libxsmm_diff_n(desc, &cache.keys,
@@ -1698,11 +1701,15 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
       if ((NULL != flux_entry.ptr_const || 1 == mode) && 2 > mode) { /* check existing entry further */
         if (NULL != flux_entry.ptr_const) {
 #if defined(LIBXSMM_DESC_PAD)
-# if !defined(LIBXSMM_DESC_INLINE)
+# if defined(LIBXSMM_DIFF_INLINE)
+#   if !defined(LIBXSMM_DESC_INLINE)
           LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
           LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
-# endif
+#   endif
           diff = LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE)(xdesc, internal_registry_keys + i, 0/*dummy*/);
+# else
+          diff = libxsmm_diff(desc, internal_registry_keys + i, LIBXSMM_DIFF_SIZE);
+# endif
 #else
           diff = libxsmm_diff(desc, internal_registry_keys + i, LIBXSMM_MIN(size, LIBXSMM_DIFF_SIZE));
 #endif
