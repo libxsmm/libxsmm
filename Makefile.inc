@@ -77,7 +77,7 @@ which = $(shell which $1 2>/dev/null)
 which ?= $(shell command -v $1)
 
 # Command line utilities
-PKGCFG ?= $(call which,pkg-config)
+#PKGCFG ?= $(call which,pkg-config)
 CP ?= $(call which,cp)
 MV ?= $(call which,mv)
 UNAME ?= $(shell uname)
@@ -751,11 +751,16 @@ else
 endif
 DYNAMIC ?= 0
 
-ifneq (0,$(CRAY))
+# CCE: resolve linker issue
 ifneq (0,$(DYNAMIC))
-  XLD := $(XLD) -dynamic
-  FLD := $(FLD) -dynamic
-  LD := $(LD) -dynamic
+ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
+  echo "int main(void) { return 0; }" > $${INFILE}; \
+  RESULT=$$($(CC) -dynamic $${INFILE} -o $${INFILE}.exe 2>&1); \
+  if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
+    XLD := $(XLD) -dynamic
+    FLD := $(FLD) -dynamic
+    LD := $(LD) -dynamic
 endif
 endif
 
@@ -1392,20 +1397,21 @@ endif
 
 ifeq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"))
   # check target flags by feeding an ad-hoc C program into the compiler
-  ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
-    echo "int main(void) { return 0; }" > $${CINFILE}; \
-    CTEST=$$($(CC) $(CTARGET) -c $${CINFILE} 2>&1); \
-    if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-    rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
+  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
+    echo "int main(void) { return 0; }" > $${INFILE}; \
+    RESULT=$$($(CC) $(CTARGET) -c $${INFILE} -o $${INFILE}.o 2>&1); \
+    if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
       CTARGET = $(NULL)
   endif
   ifneq (,$(strip $(FC))) # check target flags by feeding an ad-hoc Fortran program into the compiler
-  ifeq (0,$(shell FINFILE=$$($(MKTEMP) /tmp/libxsmm_XXXXXX-f.f); \
-    echo "      PROGRAM test" > $${FINFILE}; \
-    echo "      END PROGRAM" >> $${FINFILE}; \
-    FTEST=$$($(FC) $(CTARGET) -c $${FINFILE} 2>&1); \
-    if [ "" = "$${FTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-    rm -f /tmp/libxsmm_??????-f.f libxsmm_??????-f.o* 2>/dev/null))
+  # INFILE cannot start with a leading dot when used with certain compiler
+  ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/_libxsmm_XXXXXX.f); \
+    echo "      PROGRAM test" > $${INFILE}; \
+    echo "      END PROGRAM" >> $${INFILE}; \
+    RESULT=$$($(FC) $(CTARGET) -c $${INFILE} -o $${INFILE}.o 2>&1); \
+    if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/$$(basename $${INFILE} .f).* _libxsmm_??????.* 2>/dev/null))
       # inherit CTARGET flags
       FTARGET = $(CTARGET)
   endif
@@ -1591,13 +1597,13 @@ endif
 
 ifneq (,$(OMPFLAG_FORCE))
   OMPFLAG = $(OMPFLAG_FORCE)
-  ifneq (0,$(shell CINFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX-c.c); \
-    echo "\#if defined(_OPENMP)" > $${CINFILE}; \
-    echo "\# include <omp.h>" >> $${CINFILE}; \
-    echo "\#endif" >> $${CINFILE}; \
-    CTEST=$$($(CC) $(OMPFLAG_FORCE) -c $${CINFILE} 2>&1); \
-    if [ "" = "$${CTEST}" ]; then echo "$$?"; else echo "1"; fi; \
-    rm -f /tmp/.libxsmm_??????-c.c .libxsmm_??????-c.o* 2>/dev/null))
+  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
+    echo "\#if defined(_OPENMP)" > $${INFILE}; \
+    echo "\# include <omp.h>" >> $${INFILE}; \
+    echo "\#endif" >> $${INFILE}; \
+    RESULT=$$($(CC) $(OMPFLAG_FORCE) -c $${INFILE} -o $${INFILE}.o 2>&1); \
+    if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+    rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
       OMPFLAG = $(NULL)
   endif
 endif
@@ -1872,6 +1878,7 @@ LDFLAGS := $(call cleanup,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
 CLDFLAGS := $(call cleanup,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
 DFLAGS := $(call cleanup,$(NOBLAS_FLAGS) $(BLAS_FLAGS))
 IFLAGS := $(call cleanup,$(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
+CXXLDFLAGS := $(call cleanup,$(CXXLDFLAGS))
 # cleanup eventually duplicated flags
 LDFLAGS := $(subst $(NULL) $(XLIB_BEGIN) $(XLIB_END),$(NULL),$(LDFLAGS))
 LDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(LDFLAGS))
@@ -1898,10 +1905,12 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_STATE .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION \
     CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING FSTD DEPDIR \
     DLIBEXT ENV EXTDEP FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE FLOCK SUITE \
-    ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION_INT MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP CCAR \
+    ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION% MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP CCAR \
     SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE OMPLIBFILE \
-    NOBLASLIB NOBLAS_% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 \
-    which cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V),$V=$($V)?)))
+    NOBLASLIB NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 PYMOD CSTD \
+    MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GFC AVX SSE \
+    which cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V), \
+    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
 %/.make:
