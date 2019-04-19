@@ -130,6 +130,10 @@
 # define LIBXSMM_CALLER LIBXSMM_CALLER_ID
 #endif
 
+#if !defined(LIBXSMM_UNPACKED) && defined(_CRAYC)
+# define LIBXSMM_UNPACKED
+#endif
+
 #if defined(_WIN32) && !defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE(A) __declspec(A)
 # if defined(__cplusplus)
@@ -142,7 +146,7 @@
 #   define LIBXSMM_PACKED(TYPE) LIBXSMM_PRAGMA(pack(1)) TYPE
 # endif
 # define LIBXSMM_CDECL __cdecl
-#elif (defined(__GNUC__) || defined(__clang__) || defined(__PGI)) && !defined(_CRAYC)
+#elif (defined(__GNUC__) || defined(__clang__) || defined(__PGI))
 # define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
