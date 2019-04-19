@@ -725,7 +725,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_pack_input_upd( libxsmm_dnn_lay
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_avoid_rim_fmas_upd( libxsmm_dnn_layer* handle ) {
   int result = 0;
   /* Avoid rim FMAs only for small images  */
-  if ( (handle->ofh <= 7) && (handle->desc.R == 3) && (handle->desc.S == 3)) {
+  if ( (handle->ofh <= 7) && (handle->desc.R == 3) && (handle->desc.S == 3) && (handle->desc.pad_w == 1) && (handle->desc.pad_h == 1)) {
     result = 1;
   }
   return result;
