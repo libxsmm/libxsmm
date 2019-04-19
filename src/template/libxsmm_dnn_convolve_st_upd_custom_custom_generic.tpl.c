@@ -316,8 +316,10 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     }
     block_ofm = my_ofm_end-my_ofm_start+1;
     block_ifm = my_ifm_end-my_ifm_start+1;
-    //block_ofm = handle->block_upd_ofm;
-    //block_ifm = handle->block_upd_ifm;
+#if 0
+    block_ofm = handle->block_upd_ofm;
+    block_ifm = handle->block_upd_ifm;
+#endif
     img_block_size = my_img_end - my_img_start;
 
     if (handle->upd_loop_order == 0) {
@@ -401,13 +403,36 @@ if (handle->weight_copies > 1) {
   libxsmm_barrier_wait(handle->barrier, ltid);
 
   for ( ij = reduce_thr_begin; ij < reduce_thr_end; ij++ ) {
-    element_filter_type *weight_ptr = (element_filter_type*) handle->grad_filter->data;
+    element_filter_type *weight_ptr_glb = (element_filter_type*) handle->grad_filter->data;
+#if 1
+    float weight_sum[16];
+    unsigned int wtcnt = 0;
+
+    LIBXSMM_PRAGMA_SIMD
+    for ( wtcnt = 0; wtcnt < 16; ++wtcnt ) {
+      weight_sum[wtcnt] = 0.0f;
+    }
+
+    for ( ii = 0; ii < handle->weight_copies; ii++ ) {
+      element_filter_type *weight_ptr_src = (element_filter_type*)handle->scratch7 + ii * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S + ij * 16;
+      LIBXSMM_PRAGMA_SIMD
+      for ( wtcnt = 0; wtcnt < 16; ++wtcnt ) {
+        weight_sum[wtcnt] += weight_ptr_src[wtcnt];
+      }
+    }
+
+    LIBXSMM_PRAGMA_SIMD
+    for ( wtcnt = 0; wtcnt < 16; ++wtcnt ) {
+      weight_ptr_glb[(ij*16) + wtcnt] = weight_sum[wtcnt];
+    }
+#else
     __m512 weight_sum = _mm512_setzero_ps();
     for ( ii = 0; ii < handle->weight_copies; ii++ ) {
       element_filter_type *weight_ptr_src = (element_filter_type*)handle->scratch7 + ii * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S + ij * 16;
       weight_sum = _mm512_add_ps(weight_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(weight_ptr_src));
     }
-    _mm512_store_ps(&weight_ptr[ij*16], weight_sum);
+    _mm512_store_ps(&weight_ptr_glb[ij*16], weight_sum);
+#endif
   }
 }
 
