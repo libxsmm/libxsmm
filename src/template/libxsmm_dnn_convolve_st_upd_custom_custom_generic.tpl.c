@@ -133,8 +133,8 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     int S = handle->desc.S;
 
     if (handle->upd_avoid_rim_fmas == 0) {
-      const int IFH = handle->ifhp/handle->desc.u;
-      const int IFW = handle->ifwp/handle->desc.v;
+      const int IFH = (handle->upd_pack_input == 1) ? handle->ifhp/handle->desc.u : handle->ifhp;
+      const int IFW = (handle->upd_pack_input == 1) ? handle->ifwp/handle->desc.v : handle->ifwp;
       element_input_type *input_ptr_base = (handle->upd_pack_input == 1) ? (element_input_type*)handle->scratch1 + handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock * handle->desc.R * handle->desc.S : (element_input_type*)handle->reg_input->data;
       LIBXSMM_VLA_DECL(5, element_input_type, input_use, (element_input_type*)input_ptr_base, handle->blocksifm, IFH, IFW, handle->ifmblock);
       const float beta = ((handle->desc.N == 1) && (handle->upd_ofh_rb == handle->ofh) && (handle->upd_ofw_rb == handle->ofw)) ? 0.0 : 1.0;
@@ -187,14 +187,14 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
           ifm1 = (work_item%(Cb*R*S))/(R*S);
           kj = ((work_item%(Cb*R*S))%(R*S))/S;
           ki = ((work_item%(Cb*R*S))%(R*S))%S;
-
           oi = 0;
-          oj = 0;
-          ii = oi + ki;
-          ij = oj + kj;
-          gemm_kernel( &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-              &LIBXSMM_VLA_ACCESS(5, input_use, img, ifm1, ij, ii, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
-              &LIBXSMM_VLA_ACCESS(6, weight_global, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) );
+          ii = ki;
+          for (oj = 0; oj < handle->ofh; oj += handle->upd_ofh_rb) {
+            ij = oj * handle->desc.u + kj;
+            gemm_kernel( &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                &LIBXSMM_VLA_ACCESS(5, input_use, img, ifm1, ij, ii, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                &LIBXSMM_VLA_ACCESS(6, weight_global, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) );
+          }
         }
       }
     } else {

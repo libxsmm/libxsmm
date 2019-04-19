@@ -747,6 +747,13 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_upd_ofh_rb( libxsmm_dnn_layer* 
   if ((handle->desc.u != 1) && (handle->desc.v != 1) && (handle->upd_use_batchreduce == 0) && (handle->upd_pack_input == 0)) {
     result = 1;
   }
+  /* If using linearized taskview and have strided convs, make sure ofh_rb is 1.. */
+  if (handle->upd_linearized_tasklist == 1 && handle->upd_avoid_rim_fmas == 0 && handle->upd_pack_input == 0 && handle->desc.u != 1) {
+    result = 1;
+  }
+  if (handle->upd_linearized_tasklist == 1 && handle->upd_use_batchreduce == 0 && (handle->desc.R != 1 || handle->desc.S != 1)) {
+    result = 1;
+  }
   return result;
 }
 
@@ -776,6 +783,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_use_batchreduce_upd( libxsmm_dn
   }
   /* If we have packed the input, then disable batch-reduce GEMM */
   if (handle->upd_pack_input == 1) {
+    result = 0;
+  }
+  if (handle->upd_linearized_tasklist == 1 && handle->upd_avoid_rim_fmas == 0) {
     result = 0;
   }
   return result;
@@ -808,7 +818,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_weight_copies_upd( libxsmm_dnn_
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_linearized_tasklist_upd( libxsmm_dnn_layer* handle ) {
   int result = 0;
   /* Use linearized task-list (i.e. no reduction) only if small images and large filters */
-  if (handle->ofh <= 7) {
+  if (handle->ofh <= 10) {
     result = 1;
   }
   if (handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 512) {
