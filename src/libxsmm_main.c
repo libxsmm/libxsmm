@@ -2070,7 +2070,6 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     wrap.gemm.desc = *descriptor;
     wrap.kind = LIBXSMM_KERNEL_KIND_MATMUL;
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
-      wrap.gemm.desc = *descriptor;
       wrap.gemm.desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
     }
     result = internal_find_code(&wrap, sizeof(*descriptor)).xgemm;
