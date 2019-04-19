@@ -821,6 +821,11 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_linearized_tasklist_upd( libxsm
   if (handle->ofh <= 10) {
     result = 1;
   }
+#if 0
+  if ((handle->blocksofm * handle->blocksifm * handle->desc.R * handle->desc.S > (handle->desc.threads * 4)) && (handle->ofh <= 56)) {
+    result = 1;
+  }
+#endif
   if (handle->desc.u == 2 && handle->desc.v == 2 && handle->desc.K == 512) {
     result = 0;
   }
