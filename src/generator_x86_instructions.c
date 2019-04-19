@@ -632,6 +632,24 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
           l_sizereg = 64;
           l_ivectype2 += 0x81;
           break;
+       case LIBXSMM_X86_INSTR_VPMOVDW:
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 32;
+          l_ivectype2 += 0x02;
+          l_num2 += 1;
+          l_penultimate += 0x22;
+          break;
+       case LIBXSMM_X86_INSTR_VPMOVSXWD:
+          if ( i_vector_name=='x' ) l_ivectype += 1;
+          if ( l_num == 1 ) l_ivectype3 -= 0x80;
+          l_sizereg = 64;
+          l_ivectype2 += 0x81;
+          l_num3 += 1;
+          l_penultimate += 0x13;
+          l_bytes = 5;
+          l_wow += 0x20;
+          break;
        case LIBXSMM_X86_INSTR_VMOVUPS:
           if ( l_num == 1 ) l_ivectype3 -= 0x80;
           if ( i_vector_name!='x' ) l_ivectype -= 1; /* single */
@@ -739,7 +757,7 @@ void libxsmm_x86_instruction_vec_move( libxsmm_generated_code* io_generated_code
        l_wow -= 0x20;
     }
 
-    if ( i_mask_reg_number != 0 ) {
+    if ( (i_mask_reg_number > 0) && (i_mask_reg_number <= 127) ) {
       l_maskingoff = i_mask_reg_number;
       if ( i_use_zero_masking != 0 && i_is_store == 0 ) l_maskingoff += 0x80;
     }
