@@ -84,7 +84,7 @@
 #if !defined(LIBXSMM_REGLOCK_TRY) && 0
 # define LIBXSMM_REGLOCK_TRY
 #endif
-#if !defined(LIBXSMM_DIFF_INLINE) && 1
+#if !defined(LIBXSMM_DIFF_INLINE) && 0
 # define LIBXSMM_DIFF_INLINE
 #endif
 #if !defined(LIBXSMM_DESC_INLINE) && 0
