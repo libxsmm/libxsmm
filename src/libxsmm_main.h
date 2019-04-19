@@ -724,7 +724,11 @@ typedef enum libxsmm_build_kind {
 } libxsmm_build_kind;
 
 /** Integral type (libxsmm_kernel_kind, libxsmm_build_kind). */
+#if defined(LIBXSMM_UNPACKED)
+typedef unsigned int libxsmm_descriptor_kind;
+#else
 typedef unsigned char libxsmm_descriptor_kind;
+#endif
 
 /** All descriptor types, which are valid for code-registration. */
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_descriptor {
