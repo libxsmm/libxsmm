@@ -789,17 +789,17 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         }
       }
 #if (0 != LIBXSMM_SYNC)
-      once = 1;
+      LIBXSMM_ATOMIC_STORE(&once, 1, LIBXSMM_ATOMIC_RELAXED); /* inc? */
     }
     else while (1) {
       if (0 != LIBXSMM_ATOMIC_LOAD(&once, LIBXSMM_ATOMIC_RELAXED)) {
         break;
       }
-#if 1
+# if 1
       else LIBXSMM_SYNC_YIELD();
-#else
+# else
       else LIBXSMM_SYNC_PAUSE;
-#endif
+# endif
     }
 #endif
     internal_init();
