@@ -128,7 +128,9 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     const int work_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
     int work_item;
     int Cb = handle->blocksifm;
+#if 0
     int Kb = handle->blocksofm;
+#endif
     int R = handle->desc.R;
     int S = handle->desc.S;
 
@@ -276,14 +278,9 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     }
   } else {
     /* Here we are using batch-reduce kernel and hybrid minibatch/FM parallelization */
-    int group_size = (handle->desc.threads+handle->weight_copies-1)/handle->weight_copies;
-    int tile_id = ltid/group_size;
     /* FIXME: Hardcoed logic for N=27  */
-    if (handle->desc.threads == 27 && handle->desc.N == 27 && handle->ofw == 14 && handle->desc.R == 1 && handle->desc.u == 1) {
-      if (ltid >=24) {
-        group_size = 3;
-      }
-    }
+    int group_size = (handle->desc.threads == 27 && handle->desc.N == 27 && handle->ofw == 14 && handle->desc.R == 1 && handle->desc.u == 1 && ltid >= 24) ? 3 : ((handle->desc.threads+handle->weight_copies-1)/handle->weight_copies);
+    int tile_id = ltid/( (handle->desc.threads+handle->weight_copies-1)/handle->weight_copies );
     int tiles = handle->weight_copies;
     int img_per_tile = (handle->desc.N+tiles-1)/tiles;
     int my_in_tile_id = ltid % group_size;
@@ -419,13 +416,36 @@ if (handle->weight_copies > 1) {
   libxsmm_barrier_wait(handle->barrier, ltid);
 
   for ( ij = reduce_thr_begin; ij < reduce_thr_end; ij++ ) {
-    element_filter_type *weight_ptr = (element_filter_type*) handle->grad_filter->data;
+    element_filter_type *weight_ptr_glb = (element_filter_type*) handle->grad_filter->data;
+#if 1
+    float weight_sum[16];
+    unsigned int wtcnt = 0;
+
+    LIBXSMM_PRAGMA_SIMD
+    for ( wtcnt = 0; wtcnt < 16; ++wtcnt ) {
+      weight_sum[wtcnt] = 0.0f;
+    }
+
+    for ( ii = 0; ii < handle->weight_copies; ii++ ) {
+      element_filter_type *weight_ptr_src = (element_filter_type*)handle->scratch7 + ii * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S + ij * 16;
+      LIBXSMM_PRAGMA_SIMD
+      for ( wtcnt = 0; wtcnt < 16; ++wtcnt ) {
+        weight_sum[wtcnt] += weight_ptr_src[wtcnt];
+      }
+    }
+
+    LIBXSMM_PRAGMA_SIMD
+    for ( wtcnt = 0; wtcnt < 16; ++wtcnt ) {
+      weight_ptr_glb[(ij*16) + wtcnt] = weight_sum[wtcnt];
+    }
+#else
     __m512 weight_sum = _mm512_setzero_ps();
     for ( ii = 0; ii < handle->weight_copies; ii++ ) {
       element_filter_type *weight_ptr_src = (element_filter_type*)handle->scratch7 + ii * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S + ij * 16;
       weight_sum = _mm512_add_ps(weight_sum, LIBXSMM_INTRINSICS_MM512_LOAD_PS(weight_ptr_src));
     }
-    _mm512_store_ps(&weight_ptr[ij*16], weight_sum);
+    _mm512_store_ps(&weight_ptr_glb[ij*16], weight_sum);
+#endif
   }
 }
 

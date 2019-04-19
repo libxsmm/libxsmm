@@ -71,7 +71,7 @@ int main(int argc, char* argv[])
     for (i = 0; i < (size_t)elsize; ++i) ref[i] = 255;
     { /* benchmark libxsmm_diff_n */
 #if defined(USE_HASH)
-      const unsigned int hashref = libxsmm_hash(0/*seed*/, ref, elsize);
+      const unsigned int hashref = libxsmm_hash(ref, elsize, 0/*seed*/);
 #endif
       start = libxsmm_timer_tick();
       for (i = 0; i < nrpt; ++i) {
@@ -81,7 +81,7 @@ int main(int argc, char* argv[])
 #else
         const unsigned char* tst = input;
         for (j = 0; j < size; ++j) {
-          const unsigned int hashtst = libxsmm_hash(0/*seed*/, tst, elsize);
+          const unsigned int hashtst = libxsmm_hash(tst, elsize, 0/*seed*/);
           if (hashref == hashtst && 0 == libxsmm_diff(ref, tst, (unsigned char)elsize)) {
             break;
           }

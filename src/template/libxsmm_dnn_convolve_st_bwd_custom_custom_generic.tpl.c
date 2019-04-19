@@ -28,7 +28,6 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-
 int img, ofm1, ofm2, ifm1, ifm2, oj, ij, oi, ii, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myIfmId, nIfmBlocks, ind, task, ifm1ofm1;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -151,7 +150,7 @@ if ( handle->use_ifm_parallelization == 1 ) {
   }
 }
 
-if (handle->loop_order == 0) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
+if (handle->loop_order == 0) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) {*/
   if ( handle->avoid_fmas_in_rim == 1) {
     for (img = my_img_start; img < my_img_end; img++) {
       for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
@@ -278,7 +277,7 @@ if (handle->loop_order == 0) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
   }
 }
 
-if (handle->loop_order == 1) { // (loop_order == N_Kb_Cb_Hb_k_c_h_w) {
+if (handle->loop_order == 1) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) { */
   for (img = my_img_start; img < my_img_end; img++) {
     for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
       for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {

@@ -135,6 +135,7 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_generated_code {
                                *  0: no error occurred
                                * >0: error code
                                */
+  unsigned int arch;          /* target arch for the current code generation task */
 } libxsmm_generated_code;
 
 /** function to translate LIBXSMM Generator error codes to error messages */

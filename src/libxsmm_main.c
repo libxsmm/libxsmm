@@ -53,6 +53,7 @@
 #if defined(_WIN32)
 # include <Windows.h>
 #else
+# include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
 # include <unistd.h>
@@ -397,9 +398,18 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   const char *const delims = ";,";
   const int singleton = (NULL != handle ? 1 : 0);
 #else
-  const char *const delims = ";,:", *const filename_global = "/tmp/GlobalLIBXSMM";
-  const int handle = open(filename_global, O_CREAT | O_EXCL, S_IRUSR);
-  const int singleton = (0 <= handle ? 1 : 0);
+  const char *const delims = ";,:";
+  char singleton_fname[64];
+  const int result = LIBXSMM_SNPRINTF(singleton_fname, sizeof(singleton_fname), "/tmp/.libxsmm.%u", (unsigned int)getuid());
+  int handle, singleton;
+  struct flock singleton_flock;
+  singleton_flock.l_start = 0;
+  singleton_flock.l_len = 0/*all*/;
+  singleton_flock.l_type = F_RDLCK;
+  singleton_flock.l_whence = SEEK_SET;
+  handle = ((0 < result && (int)sizeof(singleton_fname) > result) ? fcntl(open( /* attempt to lock file */
+    singleton_fname, O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR), F_SETLK, &singleton_flock) : -1);
+  singleton = (0 <= handle ? 1 : 0);
 #endif
   libxsmm_finalize();
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
@@ -409,6 +419,9 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       : NULL/*hidden*/;
     /* synchronize I/O */
     LIBXSMM_STDIO_ACQUIRE();
+#if !defined(NDEBUG) && defined(__OPTIMIZE__)
+    fprintf(stderr, "LIBXSMM WARNING: library was built without -DNDEBUG and contains debug code!\n");
+#endif
     if (0 != singleton) {
       fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
         LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
@@ -501,7 +514,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
 #if defined(_WIN32)
     ReleaseMutex(handle);
 #else
-    unlink(filename_global);
+    unlink(singleton_fname);
     close(handle);
 #endif
   }
@@ -748,19 +761,19 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 #   endif
       }
 # endif
-# if defined(LIBXSMM_TRACE)
+# if (1 < INTERNAL_REGLOCK_MAXN)
+      LIBXSMM_ASSERT(1 <= internal_reglock_count);
+      for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_REGLOCK, &internal_reglock[i].state, &attr);
+      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGLOCK, &attr);
+# endif
+#endif
+#if defined(LIBXSMM_TRACE)
       { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
         const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);
         if (EXIT_SUCCESS != init_code && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
           fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
         }
       }
-# endif
-# if (1 < INTERNAL_REGLOCK_MAXN)
-      LIBXSMM_ASSERT(1 <= internal_reglock_count);
-      for (i = 0; i < internal_reglock_count; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_REGLOCK, &internal_reglock[i].state, &attr);
-      LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGLOCK, &attr);
-# endif
 #endif
       { /* calibrate timer */
         libxsmm_timer_tickint s0, t0, s1, t1;
@@ -903,7 +916,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
           }
         }
       }
-
 #if defined(LIBXSMM_TRACE)
       i = libxsmm_trace_finalize();
       if (EXIT_SUCCESS != i && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
@@ -916,7 +928,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       libxsmm_gemm_finalize();
       libxsmm_trans_finalize();
       libxsmm_dnn_finalize();
-
       /* make internal registry globally unavailable */
       LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
       internal_registry_keys = NULL;
@@ -2079,10 +2090,6 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
 }
 
 
-#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__) && defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER)
-LIBXSMM_PRAGMA_OPTIMIZE_OFF
-#endif
-
 LIBXSMM_API libxsmm_dmmfunction libxsmm_dmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const double* alpha, const double* beta, const int* flags, const int* prefetch)
@@ -2198,8 +2205,6 @@ LIBXSMM_API libxsmm_smmfunction_reducebatch libxsmm_smmdispatch_reducebatch(libx
 {
   const int gemm_flags = (NULL == flags ? LIBXSMM_FLAGS : *flags);
   libxsmm_descriptor_blob blob;
-  const int br_flags = (*flags) | LIBXSMM_GEMM_FLAG_BATCH_REDUCE;
-
   const libxsmm_gemm_descriptor *const desc = libxsmm_sgemm_descriptor_init(&blob,
     m, n, k, NULL != lda ? *lda : m, NULL != ldb ? *ldb : k, NULL != ldc ? *ldc : m,
     NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
@@ -2236,10 +2241,6 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch libxsmm_bmmdispatch_reducebatch(libx
   return result.bmr;
 }
 
-
-#if !defined(LIBXSMM_BUILD) && defined(__APPLE__) && defined(__MACH__) && defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER)
-LIBXSMM_PRAGMA_OPTIMIZE_ON
-#endif
 
 LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_descriptor* descriptor)
 {
@@ -2698,3 +2699,4 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
 }
 
 #endif /*defined(LIBXSMM_BUILD)*/
+
