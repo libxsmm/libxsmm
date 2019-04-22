@@ -556,7 +556,7 @@ LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u512(unsigned int seed, const void
 #if (LIBXSMM_X86_SSE4 <= LIBXSMM_STATIC_TARGET_ARCH)
   return internal_crc32_u512_sse4(seed, value);
 #else /* pointer based function call */
-  LIBXSMM_ASSERT(NULL != internal_hash_u256_function);
+  LIBXSMM_ASSERT(NULL != internal_hash_u512_function);
   return internal_hash_u512_function(seed, value);
 #endif
 }

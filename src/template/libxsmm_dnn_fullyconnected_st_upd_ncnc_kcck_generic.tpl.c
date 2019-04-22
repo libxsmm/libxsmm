@@ -65,8 +65,8 @@ for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {
   ifm1 = ifm1ofm1 % nBlocksIFm;
   /* prepare arguments for batch-reduce call  */
   for ( mb1 = 0; mb1 < nBlocksMB; ++mb1 ) {
-    A_array[mb1] = (element_output_type*) &LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1,  0, 0, nBlocksOFm, bn, bk);
-    B_array[mb1] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, input, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc);
+    A_array[mb1] = &LIBXSMM_VLA_ACCESS(4, doutput,  mb1, ofm1,  0, 0, nBlocksOFm, bn, bk);
+    B_array[mb1] = &LIBXSMM_VLA_ACCESS(4, input, mb1, ifm1, 0, 0, nBlocksIFm, bn, bc);
   }
   batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, dfilter, ofm1, ifm1, 0, 0, nBlocksIFm, bc, bk), &blocks);
 }

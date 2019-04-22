@@ -134,7 +134,7 @@ LIBXSMM_VLA_DECL(3, element_output_type, co_out, cot_bf16, N, K);
 /* define batch-reduce gemm kernels */
 const libxsmm_bsmmfunction_reducebatch batchreduce_kernela = libxsmm_bsmmdispatch_reducebatch( bk, bn, bc, &bk, &C, &K, NULL, NULL, NULL, NULL );
 const libxsmm_bsmmfunction_reducebatch batchreduce_kernelb = libxsmm_bsmmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL );
-/* Auxiliary arrays for batch-reduce gemms  */
+/* Auxiliary arrays for batch-reduce gemms */
 const element_filter_type *A_array[1024];
 const element_input_type  *B_array[1024];
 float *cps_ptr = NULL;
@@ -198,7 +198,7 @@ if (C == 2048 && K == 1024) {
 CB_BLOCKS = cBlocks/BF;
 KB_BLOCKS = kBlocks/BF;
 
-/* Upfront reformating of W and R */
+/* Upfront reformatting of W and R */
 /* reformat W */
 #ifdef PROFILE
 if (ltid == 0) reformat_start = _rdtsc();

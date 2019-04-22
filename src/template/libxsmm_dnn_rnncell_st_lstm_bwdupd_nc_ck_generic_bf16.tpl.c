@@ -202,7 +202,7 @@ const libxsmm_bsmmfunction_reducebatch batchreduce_kernelb = libxsmm_bsmmdispatc
 const libxsmm_bsmmfunction_reducebatch batchreduce_kernelc = libxsmm_bsmmdispatch_reducebatch( bk, bc, bn, &bk, &N, &bk, NULL, NULL, NULL, NULL);
 const libxsmm_bsmmfunction_reducebatch batchreduce_kerneld = libxsmm_bsmmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL);
 
-/* Auxiliary arrays for batch-reduce gemm calls  */
+/* Auxiliary arrays for batch-reduce gemm calls */
 const element_filter_type *A_array[1024];
 const element_output_type *B_array[1024];
 

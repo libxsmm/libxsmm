@@ -84,6 +84,9 @@
 #if !defined(LIBXSMM_REGLOCK_TRY) && 0
 # define LIBXSMM_REGLOCK_TRY
 #endif
+#if !defined(LIBXSMM_DIFF_INLINE) && 0
+# define LIBXSMM_DIFF_INLINE
+#endif
 #if !defined(LIBXSMM_DESC_INLINE) && 0
 # define LIBXSMM_DESC_INLINE
 #endif
@@ -180,6 +183,14 @@ LIBXSMM_APIVAR(unsigned int internal_statistic_num_trmm);
 LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
 LIBXSMM_APIVAR(const char* internal_build_state);
 
+#if defined(_WIN32)
+LIBXSMM_APIVAR(const char* internal_delims);
+LIBXSMM_APIVAR(HANDLE internal_singleton_handle);
+#else
+LIBXSMM_APIVAR(const char* internal_delims);
+LIBXSMM_APIVAR_ARRAY(char internal_singleton_fname, 64);
+LIBXSMM_APIVAR(int internal_singleton_handle);
+#endif
 
 #if (0 == LIBXSMM_SYNC)
 # define INTERNAL_FIND_CODE_LOCK(LOCKINDEX, INDEX, DIFF, CODE) {
@@ -393,24 +404,6 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   char *const env_dump_build = getenv("LIBXSMM_DUMP_BUILD");
   char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES")
     ? getenv("LIBXSMM_DUMP_FILES") : getenv("LIBXSMM_DUMP_FILE"));
-#if defined(_WIN32)
-  const HANDLE handle = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
-  const char *const delims = ";,";
-  const int singleton = (NULL != handle ? 1 : 0);
-#else
-  const char *const delims = ";,:";
-  char singleton_fname[64];
-  const int result = LIBXSMM_SNPRINTF(singleton_fname, sizeof(singleton_fname), "/tmp/.libxsmm.%u", (unsigned int)getuid());
-  int handle, singleton;
-  struct flock singleton_flock;
-  singleton_flock.l_start = 0;
-  singleton_flock.l_len = 0/*all*/;
-  singleton_flock.l_type = F_RDLCK;
-  singleton_flock.l_whence = SEEK_SET;
-  handle = ((0 < result && (int)sizeof(singleton_fname) > result) ? fcntl(open( /* attempt to lock file */
-    singleton_fname, O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR), F_SETLK, &singleton_flock) : -1);
-  singleton = (0 <= handle ? 1 : 0);
-#endif
   libxsmm_finalize();
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
@@ -422,7 +415,12 @@ LIBXSMM_API_INLINE void internal_finalize(void)
 #if !defined(NDEBUG) && defined(__OPTIMIZE__)
     fprintf(stderr, "LIBXSMM WARNING: library was built without -DNDEBUG and contains debug code!\n");
 #endif
-    if (0 != singleton) {
+#if defined(_WIN32)
+    if (NULL != internal_singleton_handle)
+#else
+    if (0 <= internal_singleton_handle && 0 != *internal_singleton_fname)
+#endif
+    {
       fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
         LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
     }
@@ -483,12 +481,18 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   libxsmm_release_scratch();
   /* release global services */
   libxsmm_hash_finalize();
-  if (0 != singleton) { /* dump per-node info */
+#if defined(_WIN32)
+  if (NULL != internal_singleton_handle)
+#else
+  if (0 <= internal_singleton_handle && 0 != *internal_singleton_fname)
+#endif
+  { /* dump per-node info */
+    LIBXSMM_ASSERT(NULL != internal_delims);
     if (NULL != env_dump_build || NULL != env_dump_files) {
       LIBXSMM_STDIO_ACQUIRE();
       if (NULL != env_dump_files && 0 != *env_dump_files) {
-        const char *filename = strtok(env_dump_files, delims);
-        for (; NULL != filename; filename = strtok(NULL, delims)) {
+        const char *filename = strtok(env_dump_files, internal_delims);
+        for (; NULL != filename; filename = strtok(NULL, internal_delims)) {
           FILE *const file = fopen(filename, "r");
           if (NULL != file) {
             int c = fgetc(file);
@@ -512,10 +516,10 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     }
     /* cleanup singleton */
 #if defined(_WIN32)
-    ReleaseMutex(handle);
+    ReleaseMutex(internal_singleton_handle);
 #else
-    unlink(singleton_fname);
-    close(handle);
+    unlink(internal_singleton_fname);
+    close(internal_singleton_handle);
 #endif
   }
 #if (0 != LIBXSMM_SYNC)
@@ -580,40 +584,40 @@ LIBXSMM_API_INTERN void internal_init(void)
     libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
     { const char *const env = getenv("LIBXSMM_SCRATCH_POOLS");
-    if (NULL == env || 0 == *env) {
-      libxsmm_scratch_pools = LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS;
-    }
-    else {
-      libxsmm_scratch_pools = LIBXSMM_CLMP(atoi(env), 0, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
-      /*libxsmm_scratch_pools_locked = 1;*/
-    }
-    LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
+      if (NULL == env || 0 == *env) {
+        libxsmm_scratch_pools = LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS;
+      }
+      else {
+        libxsmm_scratch_pools = LIBXSMM_CLMP(atoi(env), 0, LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
+        /*libxsmm_scratch_pools_locked = 1;*/
+      }
+      LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
     }
     { const char *const env = getenv("LIBXSMM_SCRATCH_LIMIT");
-    if (NULL == env || 0 == *env) {
-      /*const*/ unsigned long long limit = LIBXSMM_MALLOC_SCRATCH_LIMIT;
-      libxsmm_scratch_limit = (size_t)limit;
-    }
-    else {
-      size_t u = internal_strlen(env, 32) - 1;
-      const char *const unit = "kmgKMG", *const hit = strchr(unit, env[u]);
-      libxsmm_scratch_limit = (size_t)strtoul(env, 0, 10);
-      u = (0 != hit ? ((hit - unit) % 3) : 3);
-      if (u < 3) {
-        libxsmm_scratch_limit <<= (u + 1) * 10;
+      if (NULL == env || 0 == *env) {
+        /*const*/ unsigned long long limit = LIBXSMM_MALLOC_SCRATCH_LIMIT;
+        libxsmm_scratch_limit = (size_t)limit;
       }
-      /*libxsmm_scratch_limit_locked = 1;*/
-    }
+      else {
+        size_t u = internal_strlen(env, 32) - 1;
+        const char *const unit = "kmgKMG", *const hit = strchr(unit, env[u]);
+        libxsmm_scratch_limit = (size_t)strtoul(env, 0, 10);
+        u = (0 != hit ? ((hit - unit) % 3) : 3);
+        if (u < 3) {
+          libxsmm_scratch_limit <<= (u + 1) * 10;
+        }
+        /*libxsmm_scratch_limit_locked = 1;*/
+      }
     }
     { const char *const env = getenv("LIBXSMM_SCRATCH_SCALE");
-    if (NULL == env || 0 == *env) {
-      libxsmm_scratch_scale = LIBXSMM_MALLOC_SCRATCH_SCALE;
-    }
-    else {
-      libxsmm_scratch_scale = LIBXSMM_CLMP(atof(env), 1.1, 3.0);
-      /*libxsmm_scratch_scale_locked = 1;*/
-    }
-    LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
+      if (NULL == env || 0 == *env) {
+        libxsmm_scratch_scale = LIBXSMM_MALLOC_SCRATCH_SCALE;
+      }
+      else {
+        libxsmm_scratch_scale = LIBXSMM_CLMP(atof(env), 1.1, 3.0);
+        /*libxsmm_scratch_scale_locked = 1;*/
+      }
+      LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
     }
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
 #if defined(LIBXSMM_MAXTARGET)
@@ -682,8 +686,7 @@ LIBXSMM_API_INTERN void internal_init(void)
         atexit(internal_finalize);
         ++libxsmm_ninit;
       }
-      {
-        void *const pv_registry = &internal_registry;
+      { void *const pv_registry = &internal_registry;
         LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)((void**)pv_registry, (void*)new_registry, LIBXSMM_ATOMIC_SEQ_CST);
       }
     }
@@ -712,8 +715,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 #if (0 != LIBXSMM_SYNC)
     static int counter = 0, once = 0;
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
-#endif
-#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_REGLOCK_TRY)
       const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
 # endif
@@ -767,6 +768,25 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGLOCK, &attr);
 # endif
 #endif
+#if defined(_WIN32)
+      internal_delims = ";,";
+#else
+      internal_delims = ";,:";
+#endif
+      { /* determine whether this instance is unique or not */
+#if defined(_WIN32)
+        internal_singleton_handle = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
+#else
+        const int result = LIBXSMM_SNPRINTF(internal_singleton_fname, sizeof(internal_singleton_fname), "/tmp/.libxsmm.%u", (unsigned int)getuid());
+        struct flock singleton_flock;
+        singleton_flock.l_start = 0;
+        singleton_flock.l_len = 0/*all*/;
+        singleton_flock.l_type = F_RDLCK;
+        singleton_flock.l_whence = SEEK_SET;
+        internal_singleton_handle = ((0 < result && (int)sizeof(internal_singleton_fname) > result) ? fcntl(open( /* attempt to lock file */
+          internal_singleton_fname, O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR), F_SETLK, &singleton_flock) : -1);
+#endif
+      }
 #if defined(LIBXSMM_TRACE)
       { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
         const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);
@@ -786,17 +806,17 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         }
       }
 #if (0 != LIBXSMM_SYNC)
-      once = 1;
+      LIBXSMM_ATOMIC_STORE(&once, 1, LIBXSMM_ATOMIC_RELAXED); /* inc? */
     }
     else while (1) {
       if (0 != LIBXSMM_ATOMIC_LOAD(&once, LIBXSMM_ATOMIC_RELAXED)) {
         break;
       }
-#if 1
+# if 1
       else LIBXSMM_SYNC_YIELD();
-#else
+# else
       else LIBXSMM_SYNC_PAUSE;
-#endif
+# endif
     }
 #endif
     internal_init();
@@ -1640,17 +1660,17 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   } cache;
   unsigned char cache_index;
 # if defined(LIBXSMM_DESC_PAD)
-# if defined(LIBXSMM_DESC_INLINE)
+#   if defined(LIBXSMM_DESC_INLINE)
   LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
   internal_pad_descriptor(desc, size);
   LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
   LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE),
     xdesc, &cache.keys, LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
-# else
+#   else
   internal_pad_descriptor(desc, size);
   cache_index = (unsigned char)libxsmm_diff_n(desc, &cache.keys,
     LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache.hit, cache.size);
-# endif
+#   endif
 # else
   LIBXSMM_ASSERT(NULL != desc);
   cache_index = (unsigned char)libxsmm_diff_n(desc, &cache.keys,
@@ -1698,11 +1718,15 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
       if ((NULL != flux_entry.ptr_const || 1 == mode) && 2 > mode) { /* check existing entry further */
         if (NULL != flux_entry.ptr_const) {
 #if defined(LIBXSMM_DESC_PAD)
-# if !defined(LIBXSMM_DESC_INLINE)
+# if defined(LIBXSMM_DIFF_INLINE)
+#   if !defined(LIBXSMM_DESC_INLINE)
           LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
           LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
-# endif
+#   endif
           diff = LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE)(xdesc, internal_registry_keys + i, 0/*dummy*/);
+# else
+          diff = libxsmm_diff(desc, internal_registry_keys + i, LIBXSMM_DIFF_SIZE);
+# endif
 #else
           diff = libxsmm_diff(desc, internal_registry_keys + i, LIBXSMM_MIN(size, LIBXSMM_DIFF_SIZE));
 #endif
@@ -2070,7 +2094,6 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
     wrap.gemm.desc = *descriptor;
     wrap.kind = LIBXSMM_KERNEL_KIND_MATMUL;
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
-      wrap.gemm.desc = *descriptor;
       wrap.gemm.desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
     }
     result = internal_find_code(&wrap, sizeof(*descriptor)).xgemm;

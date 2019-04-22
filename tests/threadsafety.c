@@ -99,8 +99,7 @@ int main(void)
     const libxsmm_blasint n = r[3*i+1] % max_shape + 1;
     const libxsmm_blasint k = r[3*i+2] % max_shape + 1;
     f[i].x.LIBXSMM_TPREFIX(ITYPE,mm) = LIBXSMM_MMDISPATCH_SYMBOL(ITYPE)(m, n, k,
-      &m/*lda*/, &k/*ldb*/, &m/*ldc*/, &alpha, &beta,
-      &flags, &prefetch);
+      &m/*lda*/, &k/*ldb*/, &m/*ldc*/, &alpha, &beta, &flags, &prefetch);
   }
 
 #if defined(_OPENMP) && !defined(CHECK_PARALLEL_JIT)

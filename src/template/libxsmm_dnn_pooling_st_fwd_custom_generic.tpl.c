@@ -109,7 +109,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   fm = imgfm % nBlocksFm;
 
   LIBXSMM_PRAGMA_SIMD
-  for( v = 0; v < ofh*ofw*nFmBlock; v++ ) {
+  for ( v = 0; v < ofh*ofw*nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
     lcl_buffer_ptr[v] = -FLT_MAX;
 #endif
@@ -122,13 +122,13 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #endif
   }
 
-  for( ho = oph; ho < (ofh+oph); ho++ ) {
+  for ( ho = oph; ho < (ofh+oph); ho++ ) {
     hi = ((ho-oph) * sh) - handle->desc.pad_h;
-    for( wo = opw; wo < (ofw+opw); wo++ ) {
+    for ( wo = opw; wo < (ofw+opw); wo++ ) {
       wi = ((wo-opw) * sw) - handle->desc.pad_w;
-      for( kh = 0; kh < handle->desc.R; kh++ ) {
+      for ( kh = 0; kh < handle->desc.R; kh++ ) {
         if(hi+kh < 0 || hi+kh >= ifh) continue;
-        for( kw = 0; kw < handle->desc.S; kw++ ) {
+        for ( kw = 0; kw < handle->desc.S; kw++ ) {
           if(wi+kw < 0 || wi+kw >= ifw) {
             continue;
           } else {
@@ -143,7 +143,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
                   element_mask_type*         mask_ptr = &LIBXSMM_VLA_ACCESS(5, mask,       img, fm,    ho-oph,    wo-opw, 0, nBlocksFm,  ofh,  ofw, nFmBlock);
 #endif
 #if defined(LIBXSMM_DNN_POOLING_FWD_BF16)
-            for( v = 0; v < nFmBlock; v++ ) {
+            for ( v = 0; v < nFmBlock; v++ ) {
               input_f32.i[1] = input_ptr[v];
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
               if ( input_f32.f > lcl_output_ptr[v] ) {
@@ -157,7 +157,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
             }
 #else
             LIBXSMM_PRAGMA_SIMD
-            for( v = 0; v < nFmBlock; v++ ) {
+            for ( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
               if ( input_ptr[v] > lcl_output_ptr[v] ) {
                 lcl_output_ptr[v] =  input_ptr[v];
@@ -176,8 +176,8 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   }
 
   /* copy the local buffer into output activations */
-  for( ho = oph; ho < (ofh+oph); ho++ ) {
-    for( wo = opw; wo < (ofw+opw); wo++ ) {
+  for ( ho = oph; ho < (ofh+oph); ho++ ) {
+    for ( wo = opw; wo < (ofw+opw); wo++ ) {
       element_output_type*     output_ptr = &LIBXSMM_VLA_ACCESS(5, output,     img, fm,        ho,        wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
 #if defined(LIBXSMM_DNN_POOLING_FWD_BF16)
       float*               lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output,             ho-oph,    wo-opw, 0,                   ofw, nFmBlock);
@@ -186,7 +186,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #endif
 
 #if defined(LIBXSMM_DNN_POOLING_FWD_BF16)
-      for( v = 0; v < nFmBlock; v++ ) {
+      for ( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
         output_f32.f = lcl_output_ptr[v];
 #endif
@@ -197,7 +197,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
       }
 #else
       LIBXSMM_PRAGMA_SIMD
-      for( v = 0; v < nFmBlock; v++ ) {
+      for ( v = 0; v < nFmBlock; v++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
         output_ptr[v] = lcl_output_ptr[v];
 #endif

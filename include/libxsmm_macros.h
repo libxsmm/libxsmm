@@ -130,6 +130,10 @@
 # define LIBXSMM_CALLER LIBXSMM_CALLER_ID
 #endif
 
+#if !defined(LIBXSMM_UNPACKED) && defined(_CRAYC)
+# define LIBXSMM_UNPACKED
+#endif
+
 #if defined(_WIN32) && !defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE(A) __declspec(A)
 # if defined(__cplusplus)
