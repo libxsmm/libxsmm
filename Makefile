@@ -362,10 +362,10 @@ information = \
 	$(info $(CINFO)) \
 	$(if $(strip $(FC)),$(info $(FINFO)),$(NULL)) \
 	$(if $(strip $(FC)),$(NULL), \
-	$(info --------------------------------------------------------------------------------) \
 	$(if $(strip $(FC_VERSION_STRING)), \
 	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!), \
-	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!)))
+	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
+	$(info --------------------------------------------------------------------------------)
 
 ifneq (,$(strip $(TEST)))
 .PHONY: run-tests
@@ -388,20 +388,22 @@ endif
 endif
 	$(information)
 ifneq (,$(filter _0_,_$(LNKSOFT)_))
-	$(info --------------------------------------------------------------------------------)
 	$(info Building a shared library requires to link against BLAS)
 	$(info since a deferred choice is not implemented for this OS.)
+	$(info --------------------------------------------------------------------------------)
 endif
 ifneq (,$(filter _0_,_$(BLAS)_))
 ifeq (,$(filter _0_,_$(NOBLAS)_))
-	$(info BLAS dependency and fallback is removed!))
+	$(info BLAS dependency and fallback is removed!)
+	$(info --------------------------------------------------------------------------------)
 endif
 else ifeq (, $(filter _0_,_$(LNKSOFT)_))
 	$(info LIBXSMM is link-time agnostic with respect to a BLAS library!)
 	$(info Forcing a specific library can take away a user's choice.)
-endif
-ifneq (2,$(INTRINSICS))
 	$(info --------------------------------------------------------------------------------)
+endif
+
+ifneq (2,$(INTRINSICS))
 ifeq (0,$(AVX))
 	$(info INTRINSICS=$(INTRINSICS) without setting AVX can reduce performance of certain code paths.)
 else
@@ -412,16 +414,16 @@ ifeq (0,$(INTEL))
 else # Intel Compiler
 	$(info Intel Compiler does not require adjusting INTRINSICS.)
 endif
+	$(info --------------------------------------------------------------------------------)
 endif
 ifneq (0,$(MSGJITPROFILING))
-	$(info --------------------------------------------------------------------------------)
 ifneq (,$(strip $(LIBJITPROFILING)))
 	$(info Intel VTune Amplifier support has been incorporated.)
 else
 	$(info Intel VTune Amplifier support has been detected (enable with SYM=1).)
 endif
-endif
 	$(info --------------------------------------------------------------------------------)
+endif
 
 .PHONY: lib
 lib: headers drytest lib_hst lib_mic
@@ -577,7 +579,6 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template
                             $(wildcard $(ROOTDIR)/.github/*) \
                             $(ROOTDIR)/version.txt
 	$(information)
-	$(info --------------------------------------------------------------------------------)
 	$(info --- LIBXSMM build log)
 	@if [ -e $(ROOTDIR)/.github/install.sh ]; then \
 		$(ROOTDIR)/.github/install.sh; \
