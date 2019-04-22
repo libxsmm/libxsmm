@@ -365,24 +365,7 @@ information = \
 	$(info --------------------------------------------------------------------------------) \
 	$(if $(strip $(FC_VERSION_STRING)), \
 	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!), \
-	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
-	$(if $(filter Windows_NT0,$(UNAME)$(STATIC)), \
-	$(info --------------------------------------------------------------------------------) \
-	$(info The shared link-time wrapper (libxsmmext) is not supported under Windows/Cygwin!), \
-	$(NULL)) \
-	$(if $(filter _0_,_$(LNKSOFT)_), \
-	$(info --------------------------------------------------------------------------------) \
-	$(info Building a shared library requires to link against BLAS since there is) \
-	$(info no runtime resolution/search for weak symbols implemented for this OS.),$(NULL)) \
-	$(if $(filter _0_,_$(BLAS)_), \
-	$(if $(filter _0_,_$(NOBLAS)_),$(NULL), \
-	$(info LIBXSMM's link-time BLAS dependency is removed (fallback might be unavailable!))), \
-	$(if $(filter _0_,_$(LNKSOFT)_),$(NULL), \
-	$(info LIBXSMM is link-time agnostic with respect to BLAS/GEMM!) \
-	$(info Linking a certain BLAS library may prevent users to decide.)) \
-	$(if $(filter _1_,_$(BLAS)_), \
-	$(info A parallelized BLAS should be linked with LIBXSMM.), \
-	$(NULL)))
+	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!)))
 
 ifneq (,$(strip $(TEST)))
 .PHONY: run-tests
@@ -404,6 +387,32 @@ libxsmm: libs
 endif
 endif
 	$(information)
+ifneq (,$(filter _0_,_$(LNKSOFT)_))
+	$(info --------------------------------------------------------------------------------)
+	$(info Building a shared library requires to link against BLAS)
+	$(info since a deferred choice is not implemented for this OS.)
+endif
+ifneq (,$(filter _0_,_$(BLAS)_))
+ifeq (,$(filter _0_,_$(NOBLAS)_))
+	$(info BLAS dependency and fallback is removed!))
+endif
+else ifeq (, $(filter _0_,_$(LNKSOFT)_))
+	$(info LIBXSMM is link-time agnostic with respect to a BLAS library!)
+	$(info Forcing a specific library can take away a user's choice.)
+endif
+ifneq (2,$(INTRINSICS))
+	$(info --------------------------------------------------------------------------------)
+ifeq (0,$(AVX))
+	$(info INTRINSICS=$(INTRINSICS) without setting AVX can reduce performance of certain code paths.)
+else
+	$(info INTRINSICS=$(INTRINSICS) limits LIBXSMM to AVX$(AVX) (and beyond).)
+endif
+ifeq (0,$(INTEL))
+	$(info Prefer an updated tool chain rather than adjusting INTRINSICS.)
+else # Intel Compiler
+	$(info Intel Compiler does not require adjusting INTRINSICS.)
+endif
+endif
 ifneq (0,$(MSGJITPROFILING))
 	$(info --------------------------------------------------------------------------------)
 ifneq (,$(strip $(LIBJITPROFILING)))
