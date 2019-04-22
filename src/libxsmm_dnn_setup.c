@@ -370,7 +370,7 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
 /* Helper functions for convolutions' general param setup */
 /**********************************************************/
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_ifmblock( libxsmm_dnn_layer* handle ) {
-  int result, tmp_max_c_block = 32, tmp_block;
+  int result = 1, tmp_max_c_block = 32, tmp_block;
   if (libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE) {
     tmp_max_c_block = 64;
   }
@@ -385,7 +385,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_ifmblock( libxsmm_dnn_layer* ha
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_ofmblock( libxsmm_dnn_layer* handle ) {
-  int result, tmp_max_k_block = 32, tmp_block;
+  int result = 1, tmp_max_k_block = 32, tmp_block;
   if (libxsmm_target_archid >= LIBXSMM_X86_AVX512_CORE) {
     tmp_max_k_block = 64;
   }
@@ -402,6 +402,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_ofmblock( libxsmm_dnn_layer* ha
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fm_lp_block( libxsmm_dnn_layer* handle ) {
   int result = 1;
   /* FIXME: Fix this when requesting BF16 convolutions */
+  LIBXSMM_UNUSED(handle);
   return result;
 }
 
@@ -677,6 +678,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_bwd_gemm_flags( libxsmm_dn
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_spread_input_bwd( libxsmm_dnn_layer* handle ) {
   int result = 0;
+  LIBXSMM_UNUSED(handle);
   if (((handle->desc.u != 1) || (handle->desc.v != 1)) && (handle->bwd_ofh_rb == 1)) {
     result = 1;
   }
@@ -767,11 +769,13 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_upd_IFM( libxsmm_dnn_laye
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_upd_OFM( libxsmm_dnn_layer* handle ) {
   int result = 1;
+  LIBXSMM_UNUSED(handle);
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_img_batchreduce_block( libxsmm_dnn_layer* handle ) {
   int result = 1;
+  LIBXSMM_UNUSED(handle);
   return result;
 }
 
@@ -834,11 +838,14 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_linearized_tasklist_upd( libxsm
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_upd_gemm_flags( libxsmm_dnn_layer* handle ) {
   int result = 0;
+  LIBXSMM_UNUSED(handle);
   return result;
 }
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_layer* handle ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  const libxsmm_trans_descriptor* tr_desc = 0;
+  libxsmm_descriptor_blob blob;
 
   /* Generic parameter setup  */
   handle->ifmblock = libxsmm_dnn_setup_generic_ifmblock(handle);
@@ -882,8 +889,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->code_bwd[1].xconv.sconv = 0;
   handle->code_bwd[2].xconv.sconv = 0;
   /* Transpose kernel used for filter transpose in bwd pass  */
-  const libxsmm_trans_descriptor* tr_desc = 0;
-  libxsmm_descriptor_blob blob;
   tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), 64, 16, 64);
   handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
 
