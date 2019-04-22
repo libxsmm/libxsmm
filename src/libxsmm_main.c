@@ -432,7 +432,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
       }
-      fprintf(stderr, "Registry: %.f MB", regsize);
+      fprintf(stderr, "Registry (%u): %.f MB", libxsmm_get_pid(), regsize);
       if (0 != high_verbosity) {
         size_t ngemms = 0;
         int i; for (i = 0; i < 4; ++i) {
@@ -776,14 +776,14 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 #if defined(_WIN32)
         internal_singleton_handle = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
 #else
-        const int result = LIBXSMM_SNPRINTF(internal_singleton_fname, sizeof(internal_singleton_fname), "/tmp/.libxsmm.%u", (unsigned int)getuid());
+        const int result = LIBXSMM_SNPRINTF(internal_singleton_fname, sizeof(internal_singleton_fname), "/tmp/.libxsmm.%u", (unsigned int)getppid());
         struct flock singleton_flock;
         singleton_flock.l_start = 0;
         singleton_flock.l_len = 0; /* entire file */
         singleton_flock.l_type = F_WRLCK; /* exclusive across PIDs */
         singleton_flock.l_whence = SEEK_SET;
         internal_singleton_handle = ((0 < result && (int)sizeof(internal_singleton_fname) > result) ? fcntl(open( /* attempt to lock file */
-          internal_singleton_fname, O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR), F_SETLK, &singleton_flock) : -1);
+          internal_singleton_fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR), F_SETLK, &singleton_flock) : -1);
 #endif
       }
       { /* calibrate timer */
