@@ -78,7 +78,6 @@ void libxsmm_generator_spgemm_csc_bsparse_soa( libxsmm_generated_code*         i
 
     libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( io_generated_code,
                                                          i_xgemm_desc,
-                                                         i_arch,
                                                          i_row_idx,
                                                          i_column_idx,
                                                          i_values );
@@ -91,7 +90,6 @@ void libxsmm_generator_spgemm_csc_bsparse_soa( libxsmm_generated_code*         i
 LIBXSMM_API_INTERN
 void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code*         io_generated_code,
                                                           const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                          const char*                     i_arch,
                                                           const unsigned int*             i_row_idx,
                                                           const unsigned int*             i_column_idx,
                                                           const void*                     i_values ) {
@@ -114,11 +112,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
 
   /* select soa width */
   if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
-    if ( strcmp(i_arch, "knl") == 0 ||
-         strcmp(i_arch, "knm") == 0 ||
-         strcmp(i_arch, "skx") == 0 ||
-         strcmp(i_arch, "clx") == 0 ||
-         strcmp(i_arch, "cpx") == 0 ) {
+    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_soa_width = 8;
       l_max_reg_block = 28;
     } else {
@@ -126,11 +120,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
       l_max_reg_block = 14;
     }
   } else {
-    if ( strcmp(i_arch, "knl") == 0 ||
-         strcmp(i_arch, "knm") == 0 ||
-         strcmp(i_arch, "skx") == 0 ||
-         strcmp(i_arch, "clx") == 0 ||
-         strcmp(i_arch, "cpx") == 0 ) {
+    if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_soa_width = 16;
       l_max_reg_block = 28;
     } else {
@@ -355,11 +345,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
         /* loop over the columns of B/C */
         for ( l_n = 0; l_n < l_n_limit - l_n_processed; l_n++ ) {
           if ( l_nnz_idx[l_n][0] != -1 ) {
-            if ( strcmp(i_arch, "knl") == 0 ||
-                 strcmp(i_arch, "knm") == 0 ||
-                 strcmp(i_arch, "skx") == 0 ||
-                 strcmp(i_arch, "clx") == 0 ||
-                 strcmp(i_arch, "cpx") == 0 ) {
+            if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
               libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                        l_micro_kernel_config.instruction_set,
                                                        l_micro_kernel_config.vmul_instruction,
@@ -371,7 +357,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
                                                        l_micro_kernel_config.vector_name,
                                                        l_max_reg_block,
                                                        l_n );
-            } else if ( strcmp(i_arch, "hsw") == 0 ) {
+            } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                                 l_micro_kernel_config.instruction_set,
                                                 l_micro_kernel_config.b_vmove_instruction,
@@ -387,7 +373,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
                                                        l_max_reg_block,
                                                        15,
                                                        l_n );
-            } else {
+            } else if ( io_generated_code->arch == LIBXSMM_X86_AVX ) {
               libxsmm_x86_instruction_vec_move( io_generated_code,
                                                 l_micro_kernel_config.instruction_set,
                                                 l_micro_kernel_config.b_vmove_instruction,
@@ -410,6 +396,7 @@ void libxsmm_generator_spgemm_csc_bsparse_soa_avx256_512( libxsmm_generated_code
                                                        15,
                                                        l_n,
                                                        l_n );
+            } else {
             }
           }
         }
