@@ -36,12 +36,11 @@
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_gemm_avx512_fsdbcst_get_max_n_blocking( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                       const char*                    i_arch );
+                                                                       const unsigned int             i_arch );
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_avx512_kernel_fsdbcst( libxsmm_generated_code*        io_generated_code,
-                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                   const char*                    i_arch );
+                                                   const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 #endif /* GENERATOR_GEMM_AVX512_FSDBCST_H */
 
