@@ -184,10 +184,10 @@ LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
 LIBXSMM_APIVAR(const char* internal_build_state);
 
 #if defined(_WIN32)
-LIBXSMM_APIVAR(const char* internal_delims);
+# define INTERNAL_DELIMS ";,"
 LIBXSMM_APIVAR(HANDLE internal_singleton_handle);
 #else
-LIBXSMM_APIVAR(const char* internal_delims);
+# define INTERNAL_DELIMS ";,:"
 LIBXSMM_APIVAR_ARRAY(char internal_singleton_fname, 64);
 LIBXSMM_APIVAR(int internal_singleton_handle);
 #endif
@@ -487,12 +487,11 @@ LIBXSMM_API_INLINE void internal_finalize(void)
   if (0 <= internal_singleton_handle && 0 != *internal_singleton_fname)
 #endif
   { /* dump per-node info */
-    LIBXSMM_ASSERT(NULL != internal_delims);
     if (NULL != env_dump_build || NULL != env_dump_files) {
       LIBXSMM_STDIO_ACQUIRE();
       if (NULL != env_dump_files && 0 != *env_dump_files) {
-        const char *filename = strtok(env_dump_files, internal_delims);
-        for (; NULL != filename; filename = strtok(NULL, internal_delims)) {
+        const char *filename = strtok(env_dump_files, INTERNAL_DELIMS);
+        for (; NULL != filename; filename = strtok(NULL, INTERNAL_DELIMS)) {
           FILE *const file = fopen(filename, "r");
           if (NULL != file) {
             int c = fgetc(file);
@@ -682,10 +681,14 @@ LIBXSMM_API_INTERN void internal_init(void)
 #     include <libxsmm_dispatch.h>
 #endif
       libxsmm_gemm_init(libxsmm_target_archid);
-      if (0 == libxsmm_ninit) {
-        atexit(internal_finalize);
-        ++libxsmm_ninit;
+#if defined(LIBXSMM_TRACE)
+      { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
+        const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);
+        if (EXIT_SUCCESS != init_code && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
+          fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
+        }
       }
+#endif
       { void *const pv_registry = &internal_registry;
         LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)((void**)pv_registry, (void*)new_registry, LIBXSMM_ATOMIC_SEQ_CST);
       }
@@ -713,8 +716,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
 #if (0 != LIBXSMM_SYNC)
-    static int counter = 0, once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
+    static int once = 0;
+    /* libxsmm_ninit: serves as an ID to invalidate the thread-local cache; never decremented */
+    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
 # if defined(LIBXSMM_REGLOCK_TRY)
       const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
 # endif
@@ -768,11 +772,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_REGLOCK, &attr);
 # endif
 #endif
-#if defined(_WIN32)
-      internal_delims = ";,";
-#else
-      internal_delims = ";,:";
-#endif
       { /* determine whether this instance is unique or not */
 #if defined(_WIN32)
         internal_singleton_handle = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
@@ -787,19 +786,12 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           internal_singleton_fname, O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR), F_SETLK, &singleton_flock) : -1);
 #endif
       }
-#if defined(LIBXSMM_TRACE)
-      { int filter_threadid = 0/*only main-thread*/, filter_mindepth = 0, filter_maxnsyms = 0;
-        const int init_code = libxsmm_trace_init(filter_threadid, filter_mindepth, filter_maxnsyms);
-        if (EXIT_SUCCESS != init_code && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
-          fprintf(stderr, "LIBXSMM ERROR: failed to initialize TRACE (error #%i)!\n", init_code);
-        }
-      }
-#endif
       { /* calibrate timer */
         libxsmm_timer_tickint s0, t0, s1, t1;
         libxsmm_timer_tick_rtc(); libxsmm_timer_tick(); /* warm-up */
         s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick(); /* start timing */
         internal_init();
+        atexit(internal_finalize); /* once */
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick(); /* final timing */
         if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && s0 != s1 && t0 != t1) {
           libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / (t0 < t1 ? (t1 - t0) : (t0 - t1));
@@ -860,10 +852,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       libxsmm_descriptor *const registry_keys = internal_registry_keys;
       unsigned int rest = 0, errors = 0;
       internal_registry_nbytes = (LIBXSMM_CAPACITY_REGISTRY) * (sizeof(libxsmm_code_pointer) + sizeof(libxsmm_descriptor));
-
-      /* serves as an ID to invalidate the thread-local cache; never decremented */
-      ++libxsmm_ninit;
-
       for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) {
         /*const*/ libxsmm_code_pointer code = registry[i];
         if (NULL != code.ptr_const) {
