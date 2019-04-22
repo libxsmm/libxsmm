@@ -39,13 +39,11 @@
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for initialization
- * @param i_arch architecture code was generated for (needed to build clobber)
  * @param i_prefetch prefetch mode which may result in additional gp reg inits
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          const char*                   i_arch,
                                           unsigned int                  i_prefetch );
 
 /**
@@ -53,13 +51,11 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for clobbering
- * @param i_arch architecture code was generated for (needed to build clobber)
  * @param i_prefetch prefetch mode which may result in additional gp reg clobbers
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
                                            const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                           const char*                   i_arch,
                                            unsigned int                  i_prefetch );
 
 /**

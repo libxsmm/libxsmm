@@ -57,6 +57,24 @@ void libxsmm_generator_spgemm_csr_asparse_soa( libxsmm_generated_code*         i
        strcmp(i_arch, "cpx") == 0 ||
        strcmp(i_arch, "snb") == 0 ||
        strcmp(i_arch, "hsw") == 0 ) {
+    if ( strcmp(i_arch, "snb") == 0 ) {
+      io_generated_code->arch = LIBXSMM_X86_AVX;
+    } else if ( strcmp(i_arch, "hsw") == 0 ) {
+      io_generated_code->arch = LIBXSMM_X86_AVX2;
+    } else if ( strcmp(i_arch, "knl") == 0 ) {
+      io_generated_code->arch = LIBXSMM_X86_AVX512_MIC;
+    } else if ( strcmp(i_arch, "knm") == 0 ) {
+      io_generated_code->arch = LIBXSMM_X86_AVX512_KNM;
+    } else if ( strcmp(i_arch, "skx") == 0 ) {
+      io_generated_code->arch = LIBXSMM_X86_AVX512_CORE;
+    } else if ( strcmp(i_arch, "clx") == 0 ) {
+      io_generated_code->arch = LIBXSMM_X86_AVX512_CLX;
+    } else if ( strcmp(i_arch, "cpx") == 0 ) {
+      io_generated_code->arch = LIBXSMM_X86_AVX512_CPX;
+    } else {
+      /* cannot happen */
+    }
+
     libxsmm_generator_spgemm_csr_asparse_soa_n_loop( io_generated_code,
                                                      i_xgemm_desc,
                                                      i_arch,
@@ -120,7 +138,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define the micro kernel code gen properties */
-  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   /* select soa width */
   if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
@@ -152,7 +170,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   }
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
   /* test if we should generate a dense version */
   if ( i_row_idx[i_xgemm_desc->m] == (unsigned int)(i_xgemm_desc->m*i_xgemm_desc->k) ) {
@@ -205,7 +223,7 @@ void libxsmm_generator_spgemm_csr_asparse_soa_n_loop( libxsmm_generated_code*   
   }
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 }
 
 LIBXSMM_API_INTERN

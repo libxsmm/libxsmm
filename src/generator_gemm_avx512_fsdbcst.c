@@ -201,7 +201,7 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( libxsmm_generated_code*
   if ( l_m_done != (unsigned int)i_xgemm_desc->m ) {
     /* request masking support, @TODO performance penalty here, as a new object is created */
     libxsmm_micro_kernel_config l_micro_kernel_config_mask;
-    libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config_mask, i_xgemm_desc, i_arch, 1 );
+    libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config_mask, io_generated_code->arch, i_xgemm_desc, 1 );
 
     /* initialize k1 register */
     libxsmm_generator_gemm_avx512_kernel_fsdbcst_initialize_mask (  io_generated_code,
@@ -454,7 +454,7 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst( libxsmm_generated_code*      
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define the micro kernel code gen properties */
-  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   if (l_n1 > l_max_n_rb_block) l_n1 = l_max_n_rb_block; /* this just the case if i_xgemm_desc->n/l_number_of_chunks has no remainder */
   for (l_chunk = 0; l_chunk < l_number_of_chunks; l_chunk++) {
@@ -468,7 +468,7 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst( libxsmm_generated_code*      
   /* printf("N splitting of DP AVX512 Kernel: %i %i %i %i\n", l_N1, l_N2, l_n1, l_n2); */
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
   /* Load the actual batch-reduce trip count */
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
@@ -504,6 +504,6 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst( libxsmm_generated_code*      
   }
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 }
 

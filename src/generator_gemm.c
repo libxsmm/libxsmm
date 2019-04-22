@@ -173,22 +173,22 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   if ( io_generated_code->arch <= LIBXSMM_X86_GENERIC ) {
     /* call actual kernel generation with revised parameters */
-    libxsmm_generator_gemm_noarch_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+    libxsmm_generator_gemm_noarch_kernel( io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( io_generated_code->arch <= LIBXSMM_X86_AVX2 ) {
     /* call actual kernel generation with revised parameters */
-    libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+    libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else if ( io_generated_code->arch <= LIBXSMM_X86_AVX512_KNM ) {
     /* call actual kernel generation with revised parameters */
-    libxsmm_generator_gemm_avx512_kernel_fsdbcst(io_generated_code, &l_xgemm_desc_mod, i_arch );
+    libxsmm_generator_gemm_avx512_kernel_fsdbcst( io_generated_code, &l_xgemm_desc_mod, i_arch );
   } else if ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT  ) {
     /* call actual kernel generation with revised parameters */
     if ( ( LIBXSMM_GEMM_PRECISION_I16  != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype )   &&
            LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
          ( (l_vector_length == 16  && (l_xgemm_desc_mod.m == 32 || l_xgemm_desc_mod.m == 48 || l_xgemm_desc_mod.m == 64)) ||
            (l_vector_length == 8   && (l_xgemm_desc_mod.m == 16 || l_xgemm_desc_mod.m == 24 || l_xgemm_desc_mod.m == 32))    ) ) {
-      libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel(io_generated_code, &l_xgemm_desc_mod, i_arch );
+      libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( io_generated_code, &l_xgemm_desc_mod );
     } else {
-      libxsmm_generator_gemm_avx512_kernel_fsdbcst(io_generated_code, &l_xgemm_desc_mod, i_arch );
+      libxsmm_generator_gemm_avx512_kernel_fsdbcst( io_generated_code, &l_xgemm_desc_mod, i_arch );
     }
   } else {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
