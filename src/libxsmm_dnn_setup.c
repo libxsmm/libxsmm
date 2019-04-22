@@ -672,7 +672,10 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksofm_blocking( libxsmm_dnn
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_bwd_gemm_flags( libxsmm_dnn_layer* handle ) {
   int result = 0;
+
   /* TODO: May want to experiment with streaming stores */
+  LIBXSMM_UNUSED( handle );
+
   return result;
 }
 
