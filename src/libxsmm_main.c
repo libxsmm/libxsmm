@@ -779,8 +779,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         const int result = LIBXSMM_SNPRINTF(internal_singleton_fname, sizeof(internal_singleton_fname), "/tmp/.libxsmm.%u", (unsigned int)getuid());
         struct flock singleton_flock;
         singleton_flock.l_start = 0;
-        singleton_flock.l_len = 0/*all*/;
-        singleton_flock.l_type = F_RDLCK;
+        singleton_flock.l_len = 0; /* entire file */
+        singleton_flock.l_type = F_WRLCK; /* exclusive across PIDs */
         singleton_flock.l_whence = SEEK_SET;
         internal_singleton_handle = ((0 < result && (int)sizeof(internal_singleton_fname) > result) ? fcntl(open( /* attempt to lock file */
           internal_singleton_fname, O_RDONLY | O_CREAT, S_IRUSR | S_IWUSR), F_SETLK, &singleton_flock) : -1);
