@@ -156,11 +156,9 @@ void libxsmm_generator_gemm_directasm(const char*                    i_file_out,
                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
                                       const char*                    i_arch );
 
-/* @TODO change int based architecture value */
 LIBXSMM_API
 void libxsmm_generator_gemm_kernel(libxsmm_generated_code*        io_generated_code,
-                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                   const char*                    i_arch );
+                                   const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 /* @TODO change int based architecture value */
 LIBXSMM_API

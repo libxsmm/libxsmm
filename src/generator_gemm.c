@@ -46,38 +46,12 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* @TODO change int based architecture value */
 LIBXSMM_API
 void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_code,
-                                    const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                    const char*                    i_arch ) {
+                                    const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   /* apply the alignment override */
   libxsmm_gemm_descriptor l_xgemm_desc_mod = *i_xgemm_desc;
   unsigned int l_vector_length = 1;
-
-  /* @TODO move that check one level up */
-  if ( strcmp(i_arch, "wsm") == 0  ) {
-    io_generated_code->arch = LIBXSMM_X86_SSE4;
-  } else if ( strcmp(i_arch, "snb") == 0  ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX;
-  } else if ( strcmp(i_arch, "hsw") == 0  ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX2;
-  } else if ( strcmp(i_arch, "knl") == 0  ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX512_MIC;
-  } else if ( strcmp(i_arch, "knm") == 0  ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX512_KNM;
-  } else if ( strcmp(i_arch, "skx") == 0  ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX512_CORE;
-  } else if ( strcmp(i_arch, "clx") == 0  ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX512_CLX;
-  } else if ( strcmp(i_arch, "cpx") == 0  ) {
-    io_generated_code->arch = LIBXSMM_X86_AVX512_CPX;
-  } else {
-    io_generated_code->arch = LIBXSMM_X86_GENERIC;
-  }
-
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, i_arch );
 
   /* determining vector length depending on architecture and precision */
   /* @TODO fix me */
@@ -173,7 +147,7 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
 
   if ( io_generated_code->arch <= LIBXSMM_X86_GENERIC ) {
     /* call actual kernel generation with revised parameters */
-    libxsmm_generator_gemm_noarch_kernel( io_generated_code, &l_xgemm_desc_mod, i_arch );
+    libxsmm_generator_gemm_noarch_kernel( io_generated_code, &l_xgemm_desc_mod );
   } else if ( io_generated_code->arch <= LIBXSMM_X86_AVX2 ) {
     /* call actual kernel generation with revised parameters */
     libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( io_generated_code, &l_xgemm_desc_mod );
@@ -194,12 +168,6 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
-
-  /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
-
-  /* add flop counter for debug compilation */
-  libxsmm_generator_gemm_add_flop_counter( io_generated_code, i_xgemm_desc );
 }
 
 
@@ -241,8 +209,17 @@ void libxsmm_generator_gemm_inlineasm( const char*                    i_file_out
   /* add signature to code string */
   libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
+  /* add instruction set mismatch check to code, header */
+  libxsmm_generator_isa_check_header( &l_generated_code );
+
   /* generate the actual kernel code for current description depending on the architecture */
-  libxsmm_generator_gemm_kernel( &l_generated_code, i_xgemm_desc, i_arch );
+  libxsmm_generator_gemm_kernel( &l_generated_code, i_xgemm_desc );
+
+  /* add instruction set mismatch check to code, footer */
+  libxsmm_generator_isa_check_footer( &l_generated_code );
+
+  /* add flop counter for debug compilation */
+  libxsmm_generator_gemm_add_flop_counter( &l_generated_code, i_xgemm_desc );
 
   /* close current function */
   libxsmm_close_function( &l_generated_code );
@@ -273,9 +250,9 @@ void libxsmm_generator_gemm_inlineasm( const char*                    i_file_out
 
 LIBXSMM_API
 void libxsmm_generator_gemm_directasm(const char*                     i_file_out,
-                                       const char*                     i_routine_name,
-                                       const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                       const char*                     i_arch ) {
+                                      const char*                     i_routine_name,
+                                      const libxsmm_gemm_descriptor* i_xgemm_desc,
+                                      const char*                     i_arch ) {
   /* init generated code object */
   libxsmm_generated_code l_generated_code;
   l_generated_code.generated_code = NULL;
@@ -316,7 +293,7 @@ void libxsmm_generator_gemm_directasm(const char*                     i_file_out
   libxsmm_mmfunction_signature( &l_generated_code, i_routine_name, i_xgemm_desc );
 
   /* generate the actual kernel code for current description depending on the architecture */
-  libxsmm_generator_gemm_kernel( &l_generated_code, i_xgemm_desc, i_arch );
+  libxsmm_generator_gemm_kernel( &l_generated_code, i_xgemm_desc );
 
   /* check for errors during code generation */
   if ( l_generated_code.last_error != 0 ) {

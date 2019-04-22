@@ -48,9 +48,6 @@ LIBXSMM_API
 void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*          io_generated_code,
                                        const libxsmm_mcopy_descriptor*  i_matcopy_desc,
                                        const char*                      i_arch ) {
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, i_arch );
-
   /* generate kernel */
   if ( (strcmp(i_arch, "skx") == 0) ||
        (strcmp(i_arch, "knm") == 0) ||
@@ -65,8 +62,5 @@ void libxsmm_generator_matcopy_kernel( libxsmm_generated_code*          io_gener
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
-
-  /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
 }
 

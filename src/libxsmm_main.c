@@ -1251,6 +1251,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 #endif
   /* setup code generation */
   generated_code.code_type = 2;
+  generated_code.arch = libxsmm_target_archid;
 
   LIBXSMM_ASSERT(NULL != generated_code.generated_code || 0 == generated_code.buffer_size);
   LIBXSMM_ASSERT(NULL != request && 0 != libxsmm_target_archid);
@@ -1268,10 +1269,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
            (LIBXSMM_GEMM_PRECISION_F64 == request->descriptor.gemm->datatype || LIBXSMM_GEMM_PRECISION_F32 == request->descriptor.gemm->datatype) &&
            (16 >= (m * k) || 16 >= (k * n) || 16 >= (m * n)))
         {
-          target_arch = "hsw";
+          generated_code.arch = LIBXSMM_X86_AVX2;
         }
 # endif
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_gemm_kernel, &generated_code, request->descriptor.gemm, target_arch);
+        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_gemm_kernel, &generated_code, request->descriptor.gemm);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
 # endif

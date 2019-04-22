@@ -53,9 +53,6 @@ void libxsmm_generator_pgemm_kernel( libxsmm_generated_code*          io_generat
                                      int                              i_arch, ... ) {
   const char *const cpuid = libxsmm_cpuid_name( i_arch );
 
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, cpuid );
-
   /* generate kernel */
   if ( LIBXSMM_X86_AVX <= i_arch ) {
 #if defined(GARBAGE_PARAMETERS)
@@ -75,9 +72,6 @@ void libxsmm_generator_pgemm_kernel( libxsmm_generated_code*          io_generat
     LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_ARCH);
     return;
   }
-
-  /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, cpuid );
 }
 
 
@@ -87,9 +81,6 @@ void libxsmm_generator_getrf_kernel( libxsmm_generated_code*          io_generat
                                      int                              i_arch ) {
   const char *const cpuid = libxsmm_cpuid_name( i_arch );
 
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, cpuid );
-
   /* generate kernel */
   if ( LIBXSMM_X86_AVX <= i_arch ) {
     libxsmm_generator_packed_getrf_avx_avx512_kernel( io_generated_code, i_packed_getrf_desc, cpuid );
@@ -97,9 +88,6 @@ void libxsmm_generator_getrf_kernel( libxsmm_generated_code*          io_generat
     LIBXSMM_HANDLE_ERROR(io_generated_code, LIBXSMM_ERR_ARCH);
     return;
   }
-
-  /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, cpuid );
 }
 
 
@@ -108,9 +96,6 @@ LIBXSMM_API
 void libxsmm_generator_trsm_kernel( libxsmm_generated_code*         io_generated_code,
                                     const libxsmm_trsm_descriptor*  i_packed_trsm_desc,
                                     const char*                     i_arch ) {
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, i_arch );
-
   /* generate kernel */
   if ( (strcmp(i_arch, "skx") == 0) ||
        (strcmp(i_arch, "knm") == 0) ||
@@ -123,9 +108,6 @@ void libxsmm_generator_trsm_kernel( libxsmm_generated_code*         io_generated
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
-
-  /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
 }
 
 
@@ -134,9 +116,6 @@ LIBXSMM_API
 void libxsmm_generator_trmm_kernel(libxsmm_generated_code*         io_generated_code,
                                    const libxsmm_trmm_descriptor*  i_packed_trmm_desc,
                                    const char*                     i_arch) {
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, i_arch );
-
   /* generate kernel */
   if ( (strcmp(i_arch, "skx") == 0) ||
        (strcmp(i_arch, "knm") == 0) ||
@@ -149,8 +128,5 @@ void libxsmm_generator_trmm_kernel(libxsmm_generated_code*         io_generated_
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
-
-  /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
 }
 

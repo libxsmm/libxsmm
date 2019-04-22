@@ -38,11 +38,6 @@ LIBXSMM_API
 void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_generated_code,
                                          const libxsmm_trans_descriptor*  i_trans_desc,
                                          int                              i_arch ) {
-  const char *const cpuid = libxsmm_cpuid_name( i_arch );
-
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, cpuid );
-
   /* generate kernel */
   if ( LIBXSMM_X86_AVX <= i_arch ) {
     libxsmm_generator_transpose_avx_avx512_kernel( io_generated_code, i_trans_desc, i_arch );
@@ -51,8 +46,5 @@ void libxsmm_generator_transpose_kernel( libxsmm_generated_code*          io_gen
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
-
-  /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, cpuid );
 }
 

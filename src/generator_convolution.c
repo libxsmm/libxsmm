@@ -51,9 +51,6 @@ LIBXSMM_API
 void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*                        io_generated_code,
                                                    const libxsmm_convolution_forward_descriptor*  i_conv_desc,
                                                    const char*                                    i_arch ) {
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, i_arch );
-
   /* select datatype */
   if ( i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32 ) {
     if ( (strcmp(i_arch, "knl") == 0) ||
@@ -113,9 +110,6 @@ void libxsmm_generator_convolution_forward_kernel( libxsmm_generated_code*      
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
-
-  /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
 }
 
 
@@ -124,9 +118,6 @@ LIBXSMM_API
 void libxsmm_generator_convolution_weight_update_kernel( libxsmm_generated_code*                        io_generated_code,
                                                    const libxsmm_convolution_weight_update_descriptor*  i_conv_desc,
                                                    const char*                                          i_arch ) {
-  /* add instruction set mismatch check to code, header */
-  libxsmm_generator_isa_check_header( io_generated_code, i_arch );
-
   /* select datatype */
   if ( (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_F32 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) ||
        (i_conv_desc->datatype == LIBXSMM_DNN_DATATYPE_I16 && i_conv_desc->datatype_itm == LIBXSMM_DNN_DATATYPE_F32) ||
@@ -149,8 +140,5 @@ void libxsmm_generator_convolution_weight_update_kernel( libxsmm_generated_code*
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
     return;
   }
-
-  /* add instruction set mismatch check to code, footer */
-  libxsmm_generator_isa_check_footer( io_generated_code, i_arch );
 }
 

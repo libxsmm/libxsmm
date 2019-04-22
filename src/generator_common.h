@@ -558,12 +558,10 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*       io_generated_co
                                   const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_code,
-                                         const char*             i_arch );
+void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_code );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_code,
-                                         const char*             i_arch );
+void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_code );
 
 LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
