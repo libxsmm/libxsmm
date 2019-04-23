@@ -273,7 +273,7 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
 
     /* in case of bfloat16 "prepare" A matrix in registers zmm l_k%2 and zmm3 using FP32 numbers */
     if ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) &&
-         (io_generated_code->arch != LIBXSMM_X86_AVX512_CPX)                ) {
+         (io_generated_code->arch < LIBXSMM_X86_AVX512_CPX)                ) {
       /* we put "0" elements of A matrix into zmm3 */
       libxsmm_x86_instruction_vec_shuffle_reg(io_generated_code,
           io_generated_code->arch,
@@ -390,7 +390,7 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
                                               3,
                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n,
                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
-          } else if ( io_generated_code->arch == LIBXSMM_X86_AVX512_CLX || io_generated_code->arch == LIBXSMM_X86_AVX512_CPX ) {
+          } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CLX ) || ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
             libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                      io_generated_code->arch,
                                                      LIBXSMM_X86_INSTR_VPDPWSSDS,
@@ -406,7 +406,7 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
             /* shouldn't happen */
           }
         } else if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-          if ( io_generated_code->arch != LIBXSMM_X86_AVX512_CPX ) {
+          if ( io_generated_code->arch < LIBXSMM_X86_AVX512_CPX ) {
             /* broadcast pair of B matrix values into zmm2 */
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                               io_generated_code->arch,
@@ -776,7 +776,7 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
                                               3,
                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n,
                                               i_micro_kernel_config->vector_reg_count - (i_n_blocking*((l_k%l_n_accs)+1)) + l_n );
-          } else if ( io_generated_code->arch == LIBXSMM_X86_AVX512_CLX || io_generated_code->arch == LIBXSMM_X86_AVX512_CPX ) {
+          } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512_CLX ) || ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
             libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                      io_generated_code->arch,
                                                      LIBXSMM_X86_INSTR_VPDPWSSDS,
@@ -792,7 +792,7 @@ void libxsmm_generator_gemm_avx512_microkernel_fsdbcst( libxsmm_generated_code* 
             /* shouldn't happen */
           }
         } else if (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) {
-          if ( io_generated_code->arch != LIBXSMM_X86_AVX512_CPX ) {
+          if ( io_generated_code->arch < LIBXSMM_X86_AVX512_CPX ) {
             /* broadcast pair of B matrix values into zmm2 */
             libxsmm_x86_instruction_vec_move( io_generated_code,
                                               io_generated_code->arch,
