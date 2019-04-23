@@ -695,7 +695,7 @@ else
       CRAY ?= 1
     else
       PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
-	  SUITE = $(if $(filter 0,$(PGI)),PGI $(NULL),$(NULL))Compiler
+      SUITE = $(if $(filter-out 0,$(PGI)),PGI $(NULL),$(NULL))Compiler
       MKL_OMPRTL = pgi
     endif
   else
