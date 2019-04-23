@@ -47,9 +47,9 @@ element_filter_type *rD = (element_filter_type*)handle->r->data;
 element_output_type *b  = (element_output_type*)handle->b->data;
 element_output_type *ht = (element_output_type*)handle->ht->data;
 element_output_type *zt = (element_output_type*)handle->internal_z;
-/*int nBlocks = N/bn;*/
-int cBlocks = C/bc;
-int kBlocks = K/bk;
+/*libxsmm_blasint nBlocks = N/bn;*/
+libxsmm_blasint cBlocks = C/bc;
+libxsmm_blasint kBlocks = K/bk;
 unsigned long long blocks;
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
@@ -76,16 +76,16 @@ libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunks
 /* TODO: For now 2D decomposition targets single socket SKX */
 int row_teams = 7;
 int column_teams = 4;
-int my_col_id = ltid % column_teams;
-int my_row_id = ltid / column_teams;
-int in_tasks = N/bn;
-int ik_tasks = K/bk;
+libxsmm_blasint my_col_id = ltid % column_teams;
+libxsmm_blasint my_row_id = ltid / column_teams;
+int in_tasks = (int)(N/bn);
+int ik_tasks = (int)(K/bk);
 int in_tasks_per_thread = in_tasks/row_teams;
 int ik_tasks_per_thread = ik_tasks/column_teams;
-int my_in_start = my_row_id * in_tasks_per_thread;
-int my_in_end = (my_row_id+1) * in_tasks_per_thread;
-int my_ik_start = my_col_id * ik_tasks_per_thread;
-int my_ik_end = (my_col_id+1) * ik_tasks_per_thread;
+libxsmm_blasint my_in_start = my_row_id * in_tasks_per_thread;
+libxsmm_blasint my_in_end = (my_row_id+1) * in_tasks_per_thread;
+libxsmm_blasint my_ik_start = my_col_id * ik_tasks_per_thread;
+libxsmm_blasint my_ik_end = (my_col_id+1) * ik_tasks_per_thread;
 int perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads && cBlocks <= 32 && kBlocks <= 32 && ik_tasks_per_thread <= 16 && in_tasks_per_thread <= 2 ) ? 1 : 0;
 
 if (perform_2d_decomp) {
@@ -135,7 +135,7 @@ if (perform_2d_decomp) {
       /* Prepare additional prefetch arrays that are shifted images of regular ones when external prefetching is requested  */
       int pf_dist_A = 2;
       int pf_dist_B = 4;
-      int total_blocks = in_tasks_per_thread*ik_tasks_per_thread*cBlocks;
+      libxsmm_blasint total_blocks = in_tasks_per_thread*ik_tasks_per_thread*cBlocks;
       const element_input_type **src_ptr = &A_array[0][0][0];
       const element_input_type **dst_ptr = &A_array_pf[0][0][0];
       for (ii = 0 ; ii < total_blocks - pf_dist_A; ii++) {

@@ -40,8 +40,8 @@ const libxsmm_blasint bk = handle->bk;
 const libxsmm_blasint bn = handle->bn;
 const libxsmm_blasint bc = handle->bc;
 const libxsmm_blasint K3 = K * 3;
-const int cBlocks = C/bc;
-const int kBlocks = K/bk;
+const libxsmm_blasint cBlocks = C/bc;
+const libxsmm_blasint kBlocks = K/bk;
 unsigned long long blocks;
 
 /* define tensors */

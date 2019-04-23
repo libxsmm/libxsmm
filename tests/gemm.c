@@ -156,20 +156,20 @@ int main(void)
       }
       if (LIBXSMM_FEQ(0, beta[test])) {
 #if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
-        memset(gold, -1, sizeof(OTYPE) * max_size_c);
+        memset(gold, -1, (size_t)(sizeof(OTYPE) * max_size_c));
 #endif
-        memset(c, -1, sizeof(OTYPE) * max_size_c);
+        memset(c, -1, (size_t)(sizeof(OTYPE) * max_size_c));
 #if defined(GEMM)
-        memset(d, -1, sizeof(OTYPE) * max_size_c);
+        memset(d, -1, (size_t)(sizeof(OTYPE) * max_size_c));
 #endif
       }
       else {
 #if (!defined(__BLAS) || (0 != __BLAS)) && defined(GEMM_GOLD)
-        memset(gold, 0, sizeof(OTYPE) * max_size_c);
+        memset(gold, 0, (size_t)(sizeof(OTYPE) * max_size_c));
 #endif
-        memset(c, 0, sizeof(OTYPE) * max_size_c);
+        memset(c, 0, (size_t)(sizeof(OTYPE) * max_size_c));
 #if defined(GEMM)
-        memset(d, 0, sizeof(OTYPE) * max_size_c);
+        memset(d, 0, (size_t)(sizeof(OTYPE) * max_size_c));
 #endif
       }
       if (0 != smm) {
@@ -256,9 +256,9 @@ int main(void)
       }
 # if defined(GEMM_GOLD)
       /* avoid drift between Gold and test-results */
-      memcpy(c, gold, sizeof(OTYPE) * max_size_c);
+      memcpy(c, gold, (size_t)(sizeof(OTYPE) * max_size_c));
 #   if defined(GEMM)
-      memcpy(d, gold, sizeof(OTYPE) * max_size_c);
+      memcpy(d, gold, (size_t)(sizeof(OTYPE) * max_size_c));
 #   endif
 # endif
 #elif defined(_DEBUG)

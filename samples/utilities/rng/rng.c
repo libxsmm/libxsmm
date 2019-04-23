@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
   num_rngs = (1 < argc ? atoi(argv[1]) : 1000);
   assert(num_rngs >= 1);
 
-  rngs = (float*)malloc( num_rngs*sizeof(float) );
+  rngs = (float*)malloc((size_t)(sizeof(float) * num_rngs));
   if (NULL == rngs) num_rngs = 0;
 
   libxsmm_rng_set_seed( (uint32_t)(time(0)));
@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
     libxsmm_timer_cycles(start, libxsmm_timer_tick()) / ((size_t)num_rngs*16));
 
   /* let's compute some values of the random numbers */
-  printf("\nWe have generated %i random numbers uniformly distributed in [0,1(\n", num_rngs);
+  printf("\nWe have generated %lli random numbers uniformly distributed in [0,1(\n", (long long)num_rngs);
   printf("We expect the following values E=0.5, Var=0.083333, Stddev=0.288675\n\n");
   printf("minimum random number is:            %f\n", info.min_tst);
   printf("maximum random number is:            %f\n", info.max_tst);

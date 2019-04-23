@@ -58,9 +58,9 @@ element_filter_type *scratch_rT = (element_filter_type*)handle->scratch_rT;
 #endif
 element_output_type *scratch_hT = (element_output_type*)handle->scratch_hT;
 /* Auxiliary variables for bact-reduce calls  */
-int nBlocks = N/bn;
-int cBlocks = C/bc;
-int kBlocks = K/bk;
+libxsmm_blasint nBlocks = N/bn;
+libxsmm_blasint cBlocks = C/bc;
+libxsmm_blasint kBlocks = K/bk;
 unsigned long long blocks;
 const float beta = 0.0;
 /* multidimensional arrays */

@@ -112,7 +112,8 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
             size[0] = (size_t)ldr; size[1] = (size_t)nn;
           }
           else { /* reshape */
-            const size_t x = (size_t)mm * nn, y = libxsmm_isqrt2_u32((unsigned int)x);
+            const size_t x = (size_t)(mm * nn);
+            const size_t y = (size_t)libxsmm_isqrt2_u32((unsigned int)x);
             shape[0] = x / y; shape[1] = y;
             size[0] = shape[0];
             size[1] = shape[1];
@@ -131,14 +132,14 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
               type_src, &type_dst, tst, NULL/*header_size*/, NULL/*extension_header*/,
               NULL/*extension*/, 0/*extension_size*/);
             if ('-' == *env && '1' < env[1]) {
-              printf("LIBXSMM MATDIFF (%s): m=%i n=%i ldi=%i ldo=%i failed.\n",
-                libxsmm_typename(datatype), m, n, ldr, ldt);
+              printf("LIBXSMM MATDIFF (%s): m=%lli n=%lli ldi=%lli ldo=%lli failed.\n",
+                libxsmm_typename(datatype), (long long)m, (long long)n, (long long)ldr, (long long)ldt);
             }
           }
         }
         else if ('-' == *env && '1' < env[1] && NULL != tst) {
-          printf("LIBXSMM MATDIFF (%s): m=%i n=%i ldi=%i ldo=%i passed.\n",
-            libxsmm_typename(datatype), m, n, ldr, ldt);
+          printf("LIBXSMM MATDIFF (%s): m=%lli n=%lli ldi=%lli ldo=%lli passed.\n",
+            libxsmm_typename(datatype), (long long)m, (long long)n, (long long)ldr, (long long)ldt);
         }
       }
       if (0 == result_nan) {
