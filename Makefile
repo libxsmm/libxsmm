@@ -128,12 +128,6 @@ JIT ?= 1
 # TRACE facility
 INSTRUMENT ?= $(TRACE)
 
-# explicitly target all objects
-ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
-  TGT ?= 1
-endif
-TGT ?= 0
-
 # target library for a broad range of systems
 ifneq (0,$(JIT))
   SSE ?= 1
@@ -219,6 +213,12 @@ VERSION ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
 VERSION_API ?= $(shell $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION))
 VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
+
+# explicitly target all objects
+ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
+  TGT ?= 1
+endif
+TGT ?= 0
 
 # target library for a broad range of systems
 ifneq (0,$(JIT))
