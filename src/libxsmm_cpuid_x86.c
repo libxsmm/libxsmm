@@ -39,37 +39,39 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if defined(LIBXSMM_PLATFORM_SUPPORTED)
 /* XGETBV: receive results (EAX, EDX) for eXtended Control Register (XCR). */
 /* CPUID, receive results (EAX, EBX, ECX, EDX) for requested FUNCTION/SUBFN. */
-#if defined(_MSC_VER) /*defined(_WIN32) && !defined(__GNUC__)*/
-# define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
-    unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
-    EAX = (int)libxsmm_xgetbv_; \
-    EDX = (int)(libxsmm_xgetbv_ >> 32); \
-  }
-# define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) { \
-    int libxsmm_cpuid_x86_[/*4*/] = { 0, 0, 0, 0 }; \
-    __cpuidex(libxsmm_cpuid_x86_, FUNCTION, SUBFN); \
-    EAX = (unsigned int)libxsmm_cpuid_x86_[0]; \
-    EBX = (unsigned int)libxsmm_cpuid_x86_[1]; \
-    ECX = (unsigned int)libxsmm_cpuid_x86_[2]; \
-    EDX = (unsigned int)libxsmm_cpuid_x86_[3]; \
-  }
-#else
-# define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
-    ".byte 0x0f, 0x01, 0xd0" /*xgetbv*/ : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
-  )
-# if (64 > (LIBXSMM_BITS))
-LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int*);
-#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) \
-      EAX = (EBX) = (EDX) = 0; ECX = (SUBFN); \
-      __get_cpuid(FUNCTION, &(EAX), &(EBX), &(ECX), &(EDX))
+  #if defined(_MSC_VER) /*defined(_WIN32) && !defined(__GNUC__)*/
+#   define LIBXSMM_XGETBV(XCR, EAX, EDX) { \
+      unsigned long long libxsmm_xgetbv_ = _xgetbv(XCR); \
+      EAX = (int)libxsmm_xgetbv_; \
+      EDX = (int)(libxsmm_xgetbv_ >> 32); \
+    }
+#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) { \
+      int libxsmm_cpuid_x86_[/*4*/] = { 0, 0, 0, 0 }; \
+      __cpuidex(libxsmm_cpuid_x86_, FUNCTION, SUBFN); \
+      EAX = (unsigned int)libxsmm_cpuid_x86_[0]; \
+      EBX = (unsigned int)libxsmm_cpuid_x86_[1]; \
+      ECX = (unsigned int)libxsmm_cpuid_x86_[2]; \
+      EDX = (unsigned int)libxsmm_cpuid_x86_[3]; \
+    }
 # else
-#   define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) \
-      __asm__ __volatile__ (".byte 0x0f, 0xa2" /*cpuid*/ \
-      : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) \
-      : "a"(FUNCTION), "b"(0), "c"(SUBFN), "d"(0) \
+#   define LIBXSMM_XGETBV(XCR, EAX, EDX) __asm__ __volatile__( \
+      ".byte 0x0f, 0x01, 0xd0" /*xgetbv*/ : "=a"(EAX), "=d"(EDX) : "c"(XCR) \
     )
+#   if (64 > (LIBXSMM_BITS))
+      LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*, unsigned int*, unsigned int*, unsigned int*);
+#     define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) \
+        EAX = (EBX) = (EDX) = 0; ECX = (SUBFN); \
+        __get_cpuid(FUNCTION, &(EAX), &(EBX), &(ECX), &(EDX))
+#   else
+#     define LIBXSMM_CPUID_X86(FUNCTION, SUBFN, EAX, EBX, ECX, EDX) \
+        __asm__ __volatile__ (".byte 0x0f, 0xa2" /*cpuid*/ \
+        : "=a"(EAX), "=b"(EBX), "=c"(ECX), "=d"(EDX) \
+        : "a"(FUNCTION), "b"(0), "c"(SUBFN), "d"(0) \
+      )
+#   endif
 # endif
 #endif
 
@@ -79,8 +81,8 @@ LIBXSMM_EXTERN LIBXSMM_RETARGETABLE int __get_cpuid(unsigned int, unsigned int*,
 LIBXSMM_API int libxsmm_cpuid_x86(void)
 {
   int target_arch = LIBXSMM_STATIC_TARGET_ARCH;
+#if defined(LIBXSMM_PLATFORM_SUPPORTED)
   unsigned int eax, ebx, ecx, edx;
-
   LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
   if (1 <= eax) { /* CPUID */
     static int error_once = 0;
@@ -147,10 +149,9 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
       fprintf(stderr, "LIBXSMM WARNING: detected CPU features are not permitted by the OS!\n");
     }
   }
-
   /* check if procedure obviously failed to detect the highest available instruction set extension */
   LIBXSMM_ASSERT(LIBXSMM_STATIC_TARGET_ARCH <= target_arch);
-
+#endif
   return LIBXSMM_MAX(target_arch, LIBXSMM_STATIC_TARGET_ARCH);
 }
 

@@ -52,15 +52,25 @@
 #define LIBXSMM_BETA LIBXSMM_CONFIG_BETA
 #define LIBXSMM_WRAP LIBXSMM_CONFIG_WRAP
 
-#if (defined(__SIZEOF_PTRDIFF_T__) && 4 < (__SIZEOF_PTRDIFF_T__)) || \
-    (defined(__SIZE_MAX__) && (4294967295U < (__SIZE_MAX__))) || \
-    (defined(__GNUC__) && defined(_CRAYC)) || defined(_WIN64) || \
-    (defined(__x86_64__) && 0 != (__x86_64__))
-# define LIBXSMM_BITS 64
-#elif defined(NDEBUG) /* not for production use! */
-# error LIBXSMM is only supported on a 64-bit platform!
-#else /* JIT-generated code (among other issues) is not supported! */
-# define LIBXSMM_BITS 32
+#if !defined(LIBXSMM_BITS)
+# if (defined(__SIZEOF_PTRDIFF_T__) && 4 < (__SIZEOF_PTRDIFF_T__)) || \
+      (defined(__SIZE_MAX__) && (4294967295U < (__SIZE_MAX__))) || \
+      (defined(_WIN64))
+#   define LIBXSMM_BITS 64
+# elif defined(NDEBUG) /* not for production use! */
+#   error LIBXSMM is only supported on a 64-bit platform!
+# else /* JIT-generated code (among other issues) is not supported! */
+#   define LIBXSMM_BITS 32
+# endif
+#endif
+#if !defined(LIBXSMM_PLATFORM_SUPPORTED)
+# if  (defined(__x86_64__) && 0 != (__x86_64__)) || \
+      (defined(__amd64__) && 0 != (__amd64__)) || \
+      (defined(_M_X64) || defined(_M_AMD64))
+#   define LIBXSMM_PLATFORM_SUPPORTED
+# else /* JIT-generated code (among other issues) is not supported! */
+#   error Intel Architecture or compatible CPU required!
+# endif
 #endif
 
 #define LIBXSMM_STRINGIFY2(SYMBOL) #SYMBOL
