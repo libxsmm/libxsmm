@@ -685,18 +685,21 @@ else ifneq (0,$(GCC))
   SUITE = GNU Compiler Collection
   MKL_OMPRTL = gnu
 else
-  SUITE = Compiler
   ifeq (0,$(CLANG))
     COMPATIBLE = 1
   endif
   ifneq (0,$(COMPATIBLE))
     ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
+      SUITE = Cray Compiler
       LDFLAGS += -hsystem_alloc
       CRAY ?= 1
     else
       PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
+	  SUITE = $(if $(filter 0,$(PGI)),PGI $(NULL),$(NULL))Compiler
       MKL_OMPRTL = pgi
     endif
+  else
+    SUITE = Compiler
   endif
 endif
 MKL_OMPRTL ?= gnu
