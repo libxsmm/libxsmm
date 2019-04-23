@@ -52,7 +52,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
                                                           const int                          i_offset )
 {
   /* deriving register blocking from kernel config */
-  unsigned int l_m_blocking = i_m_blocking/i_micro_kernel_config->vector_length;
+  unsigned int l_m_blocking = ( i_m_blocking % i_micro_kernel_config->vector_length  == 0 ) ? i_m_blocking/i_micro_kernel_config->vector_length : (i_m_blocking/i_micro_kernel_config->vector_length)+1;
   /* register blocking counter in n */
   unsigned int l_n = 0;
   /* register blocking counter in m */
@@ -108,7 +108,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             l_b_offset,
             i_micro_kernel_config->vector_name,
-            l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+            l_n, 0, 1, 0 );
       } else {
         /* handle trans B */
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -124,7 +124,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             l_b_offset,
             i_micro_kernel_config->vector_name,
-            l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+            l_n, 0, 1, 0 );
         if ( l_n == (i_n_blocking -1) ) {
           /* handle trans B */
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -167,7 +167,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               l_b_offset,
               i_micro_kernel_config->vector_name,
-              l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+              l_n, 0, 1, 0 );
         }
         if ( i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1 ) {
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -197,7 +197,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               l_b_offset,
               i_micro_kernel_config->vector_name,
-              l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+              l_n, 0, 1, 0 );
         }
         if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
           libxsmm_x86_instruction_prefetch(io_generated_code,
@@ -217,7 +217,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
             i_micro_kernel_config->vector_name,
-            3, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+            3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
 
         /* In case of batch reduce try to prefetch a few more columns ahead...  */
         if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
@@ -260,7 +260,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               l_b_offset,
               i_micro_kernel_config->vector_name,
-              l_n-3, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+              l_n-3, 0, 1, 0 );
         }
       } else {
         for ( l_n = 3; l_n < 6; l_n++ ) {
@@ -278,7 +278,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               l_b_offset,
               i_micro_kernel_config->vector_name,
-              l_n-3, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+              l_n-3, 0, 1, 0 );
         }
       }
 
@@ -290,7 +290,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
             i_micro_kernel_config->vector_name,
-            3, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+            3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
         for ( l_n = 3; l_n < 6; l_n++ ) {
           /* issue fma */
           libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -318,7 +318,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               l_b_offset,
               i_micro_kernel_config->vector_name,
-              l_n-6, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+              l_n-6, 0, 1, 0 );
         }
       } else {
         for ( l_n = 6; l_n < 7; l_n++ ) {
@@ -335,7 +335,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               l_b_offset,
               i_micro_kernel_config->vector_name,
-              l_n-6, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+              l_n-6, 0, 1, 0 );
         }
         /* handle trans B */
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -358,7 +358,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
             LIBXSMM_X86_GP_REG_UNDEF, 0,
             (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
             i_micro_kernel_config->vector_name,
-            3, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+            3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
 
         for ( l_n = 6; l_n < 7; l_n++ ) {
           /* post increment early */
@@ -396,7 +396,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               l_b_offset,
               i_micro_kernel_config->vector_name,
-              l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+              l_n, 0, 1, 0 );
         }
         if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -426,7 +426,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               l_b_offset,
               i_micro_kernel_config->vector_name,
-              l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+              l_n, 0, 1, 0 );
         }
         if (i_xgemm_desc->prefetch & LIBXSMM_GEMM_PREFETCH_BL1) {
           libxsmm_x86_instruction_prefetch(io_generated_code,
@@ -459,7 +459,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
               i_micro_kernel_config->vector_name,
-              i_n_blocking, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+              i_n_blocking, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
 
           /* In case of batch reduce try to prefetch a few more columns ahead...  */
           if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
@@ -503,7 +503,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               LIBXSMM_X86_GP_REG_UNDEF, 0,
               (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
               i_micro_kernel_config->vector_name,
-              i_n_blocking+l_m, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+              i_n_blocking+l_m, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
         }
         for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
           for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {

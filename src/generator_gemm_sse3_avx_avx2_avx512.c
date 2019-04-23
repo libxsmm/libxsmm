@@ -126,6 +126,7 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
     l_gp_reg_mapping.gp_reg_help_0 = LIBXSMM_X86_GP_REG_R12;
   }
 #endif
+  l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_R11;
   l_gp_reg_mapping.gp_reg_mloop = LIBXSMM_X86_GP_REG_R12;
   l_gp_reg_mapping.gp_reg_nloop = LIBXSMM_X86_GP_REG_R13;
   l_gp_reg_mapping.gp_reg_kloop = LIBXSMM_X86_GP_REG_R14;
@@ -208,6 +209,23 @@ void libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( libxsmm_generated_code*
       }
 
       if ( (l_m_done != l_m_done_old) && (l_m_done > 0) ) {
+        /* when on AVX512, load mask, if needed */
+        if ( ( l_micro_kernel_config.use_masking_a_c != 0 ) && ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
+          unsigned int l_mask_count;
+          unsigned int l_corrected_vlen;
+
+          /* compute the mask count, depends on vlen as block in M */
+          if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+            l_corrected_vlen = l_micro_kernel_config.vector_length;
+          } else {
+            l_corrected_vlen = l_micro_kernel_config.vector_length;
+          }
+
+          l_mask_count = l_corrected_vlen - ( l_m_blocking % l_corrected_vlen );
+
+          libxsmm_generator_gemm_initialize_avx512_mask( io_generated_code, l_gp_reg_mapping.gp_reg_help_5, i_xgemm_desc, l_mask_count );
+        }
+
         libxsmm_generator_gemm_header_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_m_blocking );
         libxsmm_generator_gemm_load_C( io_generated_code, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_m_blocking, l_n_blocking );
 
@@ -382,6 +400,7 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking(
     const unsigned int             i_arch,
     const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   unsigned int l_m_blocking = 0;
+  unsigned int l_use_masking_a_c = 0;
 
   if ( ( i_arch <= LIBXSMM_X86_SSE4 )           && ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     l_m_blocking = 12;
@@ -396,12 +415,30 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_get_initial_m_blocking(
   } else if ( ( i_arch == LIBXSMM_X86_AVX2 )    && ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     l_m_blocking = 16;
   } else if ( ( i_arch <= LIBXSMM_X86_ALLFEAT ) && ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    l_m_blocking = 64;
+    /* @TODO check if there is a better blocking strategy */
+    if ( i_xgemm_desc->m >= 64 ) {
+      l_m_blocking = 64;
+    } else {
+      l_m_blocking = i_xgemm_desc->m;
+      /* in case we don't have a full vector length, we use masking */
+      if ( l_m_blocking % 16 != 0 ) {
+        l_use_masking_a_c = 1;
+      }
+    }
   } else if ( ( i_arch <= LIBXSMM_X86_ALLFEAT ) && ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    l_m_blocking = 32;
+    /* @TODO check if there is a better blocking strategy */
+    if ( i_xgemm_desc->m >= 32 ) {
+      l_m_blocking = 32;
+    } else {
+      l_m_blocking = i_xgemm_desc->m;
+      /* in case we don't have a full vector length, we use masking */
+      if ( l_m_blocking % 8 != 0 ) {
+        l_use_masking_a_c = 1;
+      }
+    }
   } else { }
 
-  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_arch, i_xgemm_desc, 0 );
+  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_arch, i_xgemm_desc, l_use_masking_a_c );
 
   return l_m_blocking;
 }
@@ -412,6 +449,7 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_update_m_blocking( libx
     const libxsmm_gemm_descriptor* i_xgemm_desc,
     const unsigned int             i_current_m_blocking ) {
   unsigned int l_m_blocking = 0;
+  unsigned int l_use_masking_a_c = 0;
 
   if ( ( i_arch <= LIBXSMM_X86_SSE4 ) && ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     if (i_current_m_blocking == 4) {
@@ -496,28 +534,22 @@ unsigned int libxsmm_generator_gemm_sse3_avx_avx2_avx512_update_m_blocking( libx
       /* we are done with m_blocking */
     }
   } else if ( ( i_arch <= LIBXSMM_X86_ALLFEAT ) && ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    if (i_current_m_blocking == 16) {
-      l_m_blocking = 1;
-      libxsmm_generator_gemm_init_micro_kernel_config_scalar( io_micro_kernel_config, i_arch, i_xgemm_desc, 0 );
-    } else if (i_current_m_blocking == 32) {
-      l_m_blocking = 16;
-    } else if (i_current_m_blocking == 48) {
-      l_m_blocking = 32;
-    } else if (i_current_m_blocking == 64) {
-      l_m_blocking = 48;
+    if (i_current_m_blocking == 64) {
+      l_m_blocking = i_xgemm_desc->m % 64;
+      if ( l_m_blocking % 16 != 0 ) {
+        l_use_masking_a_c = 1;
+      }
+      libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_arch, i_xgemm_desc, l_use_masking_a_c );
     } else {
       /* we are done with m_blocking */
     }
   } else if ( ( i_arch <= LIBXSMM_X86_ALLFEAT ) && ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
-    if (i_current_m_blocking == 8) {
-      l_m_blocking = 1;
-      libxsmm_generator_gemm_init_micro_kernel_config_scalar( io_micro_kernel_config, i_arch, i_xgemm_desc, 0 );
-    } else if (i_current_m_blocking == 16) {
-      l_m_blocking = 8;
-    } else if (i_current_m_blocking == 24) {
-      l_m_blocking = 16;
-    } else if (i_current_m_blocking == 32) {
-      l_m_blocking = 24;
+    if (i_current_m_blocking == 32) {
+      l_m_blocking = i_xgemm_desc->m % 32;
+      if ( l_m_blocking % 8 != 0 ) {
+        l_use_masking_a_c = 1;
+      }
+      libxsmm_generator_gemm_init_micro_kernel_config_fullvector( io_micro_kernel_config, i_arch, i_xgemm_desc, l_use_masking_a_c );
     } else {
       /* we are done with m_blocking */
     }
