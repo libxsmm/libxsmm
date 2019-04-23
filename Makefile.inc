@@ -1859,6 +1859,9 @@ else ifneq (0,$(BLAS)) # generic
   endif
 endif
 
+# adopt extra flags from C if not set individually
+ECXXFLAGS ?= $(ECFLAGS)
+
 cleanup = $(foreach flag,$1,$(flag))
 
 # no-BLAS flags: cleanup and extra flags
