@@ -358,7 +358,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(
   libxsmm_xmmfunction xgemm, libxsmm_code_pointer* registry)
 {
   const libxsmm_blasint lda = m, ldb = k, ldc = m;
-  /*const*/ int precondition = LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k) && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, lc);
+  /*const*/ int precondition = LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k) && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc);
   if (precondition) {
     const size_t size = (LIBXSMM_HASH_SIZE)-sizeof(libxsmm_descriptor_kind);
     libxsmm_descriptor_blob blob;
