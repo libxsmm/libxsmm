@@ -74,7 +74,9 @@
 # define LIBXSMM_SYNC_PAUSE
 #endif
 
-#if !defined(LIBXSMM_SYNC_SYSTEM) && (defined(__MINGW32__) || defined(__PGI))
+#if !defined(LIBXSMM_SYNC_SYSTEM) && \
+  (defined(__MINGW32__) || defined(__PGI) || \
+  (defined(_CRAYC) && !defined(__GNUC__)))
 # define LIBXSMM_SYNC_SYSTEM
 #endif
 #if !defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP) && 0

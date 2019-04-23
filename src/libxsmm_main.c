@@ -358,7 +358,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(
   libxsmm_xmmfunction xgemm, libxsmm_code_pointer* registry)
 {
   const libxsmm_blasint lda = m, ldb = k, ldc = m;
-  /*const*/ int precondition = LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k) && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, lc);
+  /*const*/ int precondition = LIBXSMM_GEMM_NO_BYPASS_DIMS(m, n, k) && LIBXSMM_GEMM_NO_BYPASS_DIMS(lda, ldb, ldc);
   if (precondition) {
     const size_t size = (LIBXSMM_HASH_SIZE)-sizeof(libxsmm_descriptor_kind);
     libxsmm_descriptor_blob blob;
@@ -415,15 +415,8 @@ LIBXSMM_API_INLINE void internal_finalize(void)
 #if !defined(NDEBUG) && defined(__OPTIMIZE__)
     fprintf(stderr, "LIBXSMM WARNING: library was built without -DNDEBUG and contains debug code!\n");
 #endif
-#if defined(_WIN32)
-    if (NULL != internal_singleton_handle)
-#else
-    if (0 <= internal_singleton_handle && 0 != *internal_singleton_fname)
-#endif
-    {
-      fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
-        LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
-    }
+    fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
+      LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
     if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
       const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
       const double regsize = 1.0 * internal_registry_nbytes / (1ULL << 20);
@@ -432,7 +425,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
       if (0 == internal_print_statistic(stderr, target_arch, 0/*DP*/, linebreak, 0) && 0 != linebreak && NULL != target_arch) {
         fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
       }
-      fprintf(stderr, "Registry (%u): %.f MB", libxsmm_get_pid(), regsize);
+      fprintf(stderr, "Registry: %.f MB", regsize);
       if (0 != high_verbosity) {
         size_t ngemms = 0;
         int i; for (i = 0; i < 4; ++i) {
@@ -776,7 +769,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 #if defined(_WIN32)
         internal_singleton_handle = CreateMutex(NULL, TRUE, "GlobalLIBXSMM");
 #else
-        const int result = LIBXSMM_SNPRINTF(internal_singleton_fname, sizeof(internal_singleton_fname), "/tmp/.libxsmm.%u", (unsigned int)getppid());
+        const int result = LIBXSMM_SNPRINTF(internal_singleton_fname, sizeof(internal_singleton_fname), "/tmp/.libxsmm.%u",
+          /*rely on user id to avoid permission issues in case of left-over files*/(unsigned int)getuid());
         struct flock singleton_flock;
         singleton_flock.l_start = 0;
         singleton_flock.l_len = 0; /* entire file */

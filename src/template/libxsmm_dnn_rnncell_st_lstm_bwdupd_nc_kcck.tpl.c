@@ -42,9 +42,9 @@ libxsmm_blasint t = handle->T;
 libxsmm_blasint bk = handle->bk;
 libxsmm_blasint bn = handle->bn;
 libxsmm_blasint bc = handle->bc;
-const int cBlocks = C/bc;
-const int kBlocks = K/bk;
-const int nBlocks = N/bn;
+const libxsmm_blasint cBlocks = C/bc;
+const libxsmm_blasint kBlocks = K/bk;
+const libxsmm_blasint nBlocks = N/bn;
 unsigned long long blocks;
 /* tensor raw pointers */
 element_input_type  *xt    = (element_input_type* )handle->xt->data;

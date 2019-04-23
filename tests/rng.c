@@ -51,7 +51,7 @@ int main(/*int argc, char* argv[]*/)
   libxsmm_matdiff_info info;
   int result = EXIT_SUCCESS;
 
-  float *const rngs = (float*)malloc(num_rngs * sizeof(float));
+  float *const rngs = (float*)malloc((size_t)(sizeof(float) * num_rngs));
   if (NULL == rngs) num_rngs = 0;
 
   /* mute warning about potentially uninitialized variable */

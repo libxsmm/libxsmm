@@ -320,7 +320,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
   if (0 == cerberus) {
     int init;
     ++cerberus;
-# if defined(__GNUC__)
+# if defined(__GNUC__) && !defined(_CRAYC)
     __asm__("");
 # endif
     init = LIBXSMM_ATOMIC_LOAD(&internal_trace_initialized, LIBXSMM_ATOMIC_RELAXED);

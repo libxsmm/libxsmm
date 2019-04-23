@@ -233,7 +233,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck
       libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
       element_input_type alpha = (element_input_type)1;
       element_input_type beta = (element_input_type)0;
-      libxsmm_blasint l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
+      int l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
         libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);
