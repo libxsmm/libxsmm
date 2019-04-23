@@ -316,11 +316,6 @@ else
   BLAS ?= 2
 endif
 
-COMPILER_VERSION_FLAG ?= --version
-CC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
-FC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
-CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
-
 # Automatically pickup the environment (make -e is not required),
 # or pickup the Intel Compiler (if available).
 GNU ?= 0
@@ -342,13 +337,13 @@ endif
 
 # check if the Intel Development Tools are available
 INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
-  $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | cut -d' ' -f1) \
-  $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . | cut -d' ' -f1)))))")
+  $(shell $(CXX) --version 2>/dev/null | grep -m1 . | cut -d' ' -f1) \
+  $(shell $(CC) --version 2>/dev/null | grep -m1 . | cut -d' ' -f1)))))")
 
 ifeq (0,$(INTEL))
   ifeq (,$(call which,$(CXX)))
     CXX = g++
-  else ifneq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
+  else ifneq (0,$(shell $(CXX) --version >/dev/null 2>/dev/null; echo "$$?"))
     CXX = g++
   else ifneq (gcc,$(notdir $(call which,$(CC))))
     ifeq (g++,$(notdir $(call which,$(CXX))))
@@ -357,12 +352,20 @@ ifeq (0,$(INTEL))
   endif
   ifeq (,$(call which,$(CC)))
     CC = gcc
-  else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
+  else ifneq (0,$(shell $(CC) --version >/dev/null 2>/dev/null; echo "$$?"))
     CC = gcc
+  endif
+  ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
+    COMPILER_VERSION_FLAG ?= -V 2>&1
   endif
 endif
 
-CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed $(REVERSION))
+COMPILER_VERSION_FLAG ?= --version 2>/dev/null
+CC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
+FC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
+CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
+
+CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) | grep -m1 . | sed $(REVERSION))
 CXX_VERSION_MAJOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f1)
 CXX_VERSION_MINOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f2)
 CXX_VERSION_PATCH = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f3)
@@ -376,7 +379,7 @@ else
   CXX_VERSION = 0
 endif
 
-CC_VERSION_STRING = $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed $(REVERSION))
+CC_VERSION_STRING = $(shell $(CC) $(CC_VERSION_FLAG) | grep -m1 . | sed $(REVERSION))
 CC_VERSION_MAJOR = $(shell echo "$(CC_VERSION_STRING)" | cut -d"." -f1)
 CC_VERSION_MINOR = $(shell echo "$(CC_VERSION_STRING)" | cut -d"." -f2)
 CC_VERSION_PATCH = $(shell echo "$(CC_VERSION_STRING)" | cut -d"." -f3)
@@ -419,7 +422,7 @@ ifneq (,$(strip $(FC)))
 endif
 
 ifneq (,$(strip $(FC)))
-  FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed $(REVERSION))
+  FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | grep -m1 . | sed $(REVERSION))
   FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
   FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
   FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
@@ -432,11 +435,11 @@ ifneq (,$(strip $(FC)))
     FC_VERSION_STRING = $(NULL)
     FC_VERSION = 0
   endif
-  ifeq (GNU,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -m1 . | cut -d" " -f1))
+  ifeq (GNU,$(shell $(FC) $(FC_VERSION_FLAG) | grep -m1 . | cut -d" " -f1))
     ifneq (0,$(shell echo "$$((40500>$(FC_VERSION)))"))
       ifneq (gfortran,$(notdir $(FC)))
         FC = gfortran
-        FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed $(REVERSION))
+        FC_VERSION_STRING := $(shell $(FC) $(FC_VERSION_FLAG) | grep -m1 . | sed $(REVERSION))
         FC_VERSION_MAJOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f1)
         FC_VERSION_MINOR = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f2)
         FC_VERSION_PATCH = $(shell echo "$(FC_VERSION_STRING)" | cut -d"." -f3)
@@ -471,15 +474,15 @@ ifeq (,$(strip $(FC)))
 endif
 
 # compiler names
-CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . \
-           | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" -e "s/ [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
-           | rev | cut -d" " -f1 | rev))
+CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) | grep -m1 . \
+           | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ [Vv]ersion//" -e "s/ $(BRACE_OPEN)..*//" -e "s/ [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
+           | tr -d [:punct:] | rev | cut -d" " -f1 | rev))
 ifeq (,$(strip $(CXX_NAME)))
   CXX_NAME = $(basename $(notdir $(CXX)))
 endif
-CC_NAME = $(basename $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . \
-          | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ version//" -e "s/ $(BRACE_OPEN)..*//" -e "s/ [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
-          | rev | cut -d" " -f1 | rev))
+CC_NAME = $(basename $(shell $(CC) $(CC_VERSION_FLAG) | grep -m1 . \
+          | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/ [Vv]ersion//" -e "s/ $(BRACE_OPEN)..*//" -e "s/ [0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
+          | tr -d [:punct:] | rev | cut -d" " -f1 | rev))
 ifeq (,$(strip $(CC_NAME)))
   CC_NAME = $(basename $(notdir $(CC)))
 endif
@@ -493,9 +496,9 @@ endif
 ifneq (0,$(FORTRAN))
   ifeq (,$(strip $(GFC)))
     ifneq (,$(strip $(FC)))
-      ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/.* (\(..*\)) .*/\1/"))
+      ifeq (GCC,$(shell $(FC) $(FC_VERSION_FLAG) | grep -m1 . | sed "s/.* (\(..*\)) .*/\1/"))
         GFC = $(FC)
-      else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
+      else ifeq (0,$(shell $(FC) $(FC_VERSION_FLAG) | grep -q "Free Software Foundation"; echo "$$?"))
         GFC = $(FC)
       else ifneq (pgfortran,$(CC_NAME))
         ifneq (,$(findstring gfortran,$(FC_NAME)))
@@ -515,9 +518,9 @@ endif
 
 # native GCC?
 GCC ?= 0
-ifeq (0,$(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
+ifeq (0,$(shell $(CC) $(CC_VERSION_FLAG) | grep -q "Free Software Foundation"; echo "$$?"))
   GCC = 1
-else ifeq (GCC,$(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/.* (\(..*\)) .*/\1/"))
+else ifeq (GCC,$(shell $(CC) $(CC_VERSION_FLAG) | grep -m1 . | sed "s/.* (\(..*\)) .*/\1/"))
   GCC = 1
 else ifneq (pgcc,$(CC_NAME))
   ifneq (,$(findstring pgcc,$(CC_NAME)))
@@ -525,9 +528,9 @@ else ifneq (pgcc,$(CC_NAME))
   endif
 endif
 ifeq (1,$(GCC))
-  ifeq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -q "Free Software Foundation"; echo "$$?"))
+  ifeq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) | grep -q "Free Software Foundation"; echo "$$?"))
     GCC = 2
-  else ifeq (GCC,$(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed "s/.* (\(..*\)) .*/\1/"))
+  else ifeq (GCC,$(shell $(CXX) $(CXX_VERSION_FLAG) | grep -m1 . | sed "s/.* (\(..*\)) .*/\1/"))
     GCC = 2
   else ifneq (,$(findstring g++,$(CXX_NAME)))
     GCC = 2
@@ -615,7 +618,7 @@ ifneq (0,$(GCC))
 else ifeq (0,$(CLANG))
   GCCBIN = $(notdir $(call which,gcc))
   ifneq (,$(strip $(GCCBIN)))
-    GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | sed $(REVERSION))
+    GCC_VERSION_STRING = $(shell $(GCCBIN) $(CXX_VERSION_FLAG) | grep -m1 . | sed $(REVERSION))
     GCC_VERSION_MAJOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f1)
     GCC_VERSION_MINOR = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f2)
     GCC_VERSION_PATCH = $(shell echo "$(GCC_VERSION_STRING)" | cut -d"." -f3)
@@ -687,7 +690,7 @@ else
       LDFLAGS += -hsystem_alloc
       CRAY ?= 1
     else
-      PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) 2>/dev/null | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
+      PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
       MKL_OMPRTL = pgi
     endif
   endif
