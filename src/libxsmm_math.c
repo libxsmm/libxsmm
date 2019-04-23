@@ -242,8 +242,8 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 {
   if (NULL != info) {
     union { int raw; float value; } inf;
-#if defined(INFINITY)
-    inf.value = INFINITY;
+#if defined(INFINITY) && /*overflow warning*/!defined(_CRAYC)
+    inf.value = (float)(INFINITY);
 #else
     inf.raw = 0x7F800000;
 #endif
@@ -428,8 +428,8 @@ LIBXSMM_API_INLINE float internal_math_sexp2(float x, int maxiter)
         }
       }
       else { /* out of range */
-#if defined(INFINITY)
-        result.s = (0 == sign ? (INFINITY) : 0.f);
+#if defined(INFINITY) && /*overflow warning*/!defined(_CRAYC)
+        result.s = (0 == sign ? ((float)(INFINITY)) : 0.f);
 #else
         result.i = (0 == sign ? 0x7F800000 : 0);
 #endif
@@ -476,8 +476,8 @@ LIBXSMM_API float libxsmm_sexp2_u8(unsigned char x)
     }
   }
   else {
-#if defined(INFINITY)
-    result.s = INFINITY;
+#if defined(INFINITY) && /*overflow warning*/!defined(_CRAYC)
+    result.s = (float)(INFINITY);
 #else
     result.i = 0x7F800000;
 #endif

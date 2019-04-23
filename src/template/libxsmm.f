@@ -1651,6 +1651,7 @@
               INTEGER(C_INT), INTENT(IN) :: n
             END SUBROUTINE
           END INTERFACE
+          libxsmm_shuffle = 0 ! avoids warning (older CRAY FTN)
           CALL internal_shuffle(libxsmm_shuffle, n)
         END FUNCTION
 
