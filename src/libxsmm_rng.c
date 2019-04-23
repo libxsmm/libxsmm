@@ -41,8 +41,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-/* dispatched RNG functions */
-LIBXSMM_APIVAR(void (*internal_rng_f32_seq)(float*, libxsmm_blasint));
+/* dispatched RNG functions (separate typedef for legacy Cray C++ needed) */
+typedef void (*internal_rng_f32_seq_fn)(float*, libxsmm_blasint);
+LIBXSMM_APIVAR(internal_rng_f32_seq_fn internal_rng_f32_seq);
 /* 2048-bit state for RNG */
 LIBXSMM_APIVAR_ARRAY(unsigned int internal_rng_state0, 16);
 LIBXSMM_APIVAR_ARRAY(unsigned int internal_rng_state1, 16);

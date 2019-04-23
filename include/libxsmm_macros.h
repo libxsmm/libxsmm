@@ -106,7 +106,7 @@
 # define LIBXSMM_EXTERN_C LIBXSMM_EXTERN_KEYWORD
 # define LIBXSMM_INLINE_KEYWORD inline
 # define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
-# if defined(__GNUC__)
+# if defined(__GNUC__) || defined(_CRAYC)
 #   define LIBXSMM_CALLER_ID __PRETTY_FUNCTION__
 # elif defined(_MSC_VER)
 #   define LIBXSMM_CALLER_ID __FUNCDNAME__
