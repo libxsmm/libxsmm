@@ -17,6 +17,9 @@ BLAS = 1
 SYM = 1
 OMP = 0
 
+# explore AVX/ARCH=native
+SSE = 0
+
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 
