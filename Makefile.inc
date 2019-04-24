@@ -180,7 +180,11 @@ PIC ?= pic
 INTRINSICS ?= 2
 ifneq (0,$(INTRINSICS))
   ifeq (1,$(INTRINSICS))
-    DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    ifeq (0,$(INTEL))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    else ifneq (,$(CTARGET))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    endif
   endif
 else # disabled
   DFLAGS += -DLIBXSMM_INTRINSICS_NONE
