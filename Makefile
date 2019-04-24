@@ -402,7 +402,6 @@ else ifeq (, $(filter _0_,_$(LNKSOFT)_))
 	$(info Forcing a specific library can take away a user's choice.)
 	$(info --------------------------------------------------------------------------------)
 endif
-
 ifneq (2,$(INTRINSICS))
 ifeq (0,$(AVX))
 	$(info INTRINSICS=$(INTRINSICS) without setting AVX can reduce performance of certain code paths.)
