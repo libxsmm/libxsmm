@@ -50,7 +50,8 @@
 # define __EIGEN
 #endif
 
-#if !defined(EIGEN_USE_THREADS) && defined(__EIGEN) && (defined(_OPENMP) || !defined(__BLAS) || (defined(__BLAS) && 1 < (__BLAS)))
+#if !defined(EIGEN_USE_THREADS) && defined(__EIGEN) && (defined(_OPENMP) \
+ || !defined(__BLAS) || (defined(__BLAS) && 1 < (__BLAS)))
 # define EIGEN_USE_THREADS
 #endif
 
@@ -74,9 +75,10 @@
 # define ITYPE float
 #endif
 
-#if !defined(CHECK) && (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double)) \
- && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
+#if !defined(CHECK) && (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double))
+# if !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
 LIBXSMM_BLAS_SYMBOL_DECL(ITYPE, gemm)
+# endif
 # define CHECK
 #endif
 
