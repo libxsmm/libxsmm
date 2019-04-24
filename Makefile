@@ -190,8 +190,8 @@ DOCEXT = pdf
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE = \
   DESTDIR INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR \
-  PBINDIR PINCDIR PREFIX POUTDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR \
-  SRCDIR VERSION TEST TSTDIR DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC
+  PBINDIR PINCDIR PREFIX POUTDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR \
+  VERSION TEST TSTDIR DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC
 
 ifeq (,$(M)$(N)$(K))
 ifneq (,$(filter 0,$(MNK) 0))
@@ -1626,12 +1626,10 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 		$(CP) -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
-	@echo
-	@echo "LIBXSMM installing package configuration files..."
-	@sed "s/^prefix=..*$$/prefix=$(INSTALL_ROOT)/" $(OUTDIR)/libxsmmnoblas.pc > $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(INSTALL_ROOT)/" $(OUTDIR)/libxsmmext.pc > $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(INSTALL_ROOT)/" $(OUTDIR)/libxsmmf.pc > $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(INSTALL_ROOT)/" $(OUTDIR)/libxsmm.pc > $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmmnoblas.pc > $(INSTALL_ROOT)/$(POUTDIR)/libxsmmnoblas.pc 2>/dev/null || true
+	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmmext.pc > $(INSTALL_ROOT)/$(POUTDIR)/libxsmmext.pc 2>/dev/null || true
+	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmmf.pc > $(INSTALL_ROOT)/$(POUTDIR)/libxsmmf.pc 2>/dev/null || true
+	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmm.pc > $(INSTALL_ROOT)/$(POUTDIR)/libxsmm.pc 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
