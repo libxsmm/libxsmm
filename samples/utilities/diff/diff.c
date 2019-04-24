@@ -99,9 +99,10 @@ int main(int argc, char* argv[])
         memcpy(icopy, input, nbytes);
         start = libxsmm_timer_tick();
         for (i = 0; i < nrpt; ++i) {
-          j = memcmp(input, icopy, nbytes); /* ignore result */
+          j = memcmp(input, icopy, nbytes);
         }
         printf("stdlib memcmp:\t\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+        result += (int)j * ((int)stride / ((int)stride + 1)); /* ignore result */
         free(icopy);
       }
     }
