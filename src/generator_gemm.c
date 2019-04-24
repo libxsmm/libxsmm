@@ -156,10 +156,8 @@ void libxsmm_generator_gemm_kernel( libxsmm_generated_code*        io_generated_
     libxsmm_generator_gemm_avx512_kernel_fsdbcst( io_generated_code, &l_xgemm_desc_mod );
   } else if ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT  ) {
     /* call actual kernel generation with revised parameters */
-    if ( ( LIBXSMM_GEMM_PRECISION_I16  != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
-         ( LIBXSMM_GEMM_PRECISION_BF16 != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) &&
-         ( ( LIBXSMM_GEMM_PRECISION_F32  != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) && ( l_xgemm_desc_mod.m > 16 ) ) &&
-         ( ( LIBXSMM_GEMM_PRECISION_F64  != LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) && ( l_xgemm_desc_mod.m > 8  ) )     ) {
+    if ( ( ( LIBXSMM_GEMM_PRECISION_F32  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) && ( l_xgemm_desc_mod.m > 16 ) ) ||
+         ( ( LIBXSMM_GEMM_PRECISION_F64  == LIBXSMM_GETENUM_INP( l_xgemm_desc_mod.datatype ) ) && ( l_xgemm_desc_mod.m > 8  ) )     ) {
       libxsmm_generator_gemm_sse3_avx_avx2_avx512_kernel( io_generated_code, &l_xgemm_desc_mod );
     } else {
       libxsmm_generator_gemm_avx512_kernel_fsdbcst( io_generated_code, &l_xgemm_desc_mod );
