@@ -69,6 +69,7 @@ int main(int argc, char* argv[])
     /* initialize the input data */
     for (i = 0; i < nbytes; ++i) input[i] = LIBXSMM_MOD2(i, 128);
     for (i = 0; i < (size_t)elsize; ++i) ref[i] = 255;
+
     { /* benchmark libxsmm_diff_n */
 #if defined(USE_HASH)
       const unsigned int hashref = libxsmm_hash(ref, elsize, 0/*seed*/);
@@ -90,7 +91,19 @@ int main(int argc, char* argv[])
 #endif
       }
       printf("libxsmm_diff_n:\t\t%.3f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
-      result = ((size == (j + 1) && 0 == memcmp(ref, input + j * stride, elsize)) ? EXIT_SUCCESS : EXIT_FAILURE);
+    }
+
+    if (size == (j + 1) && 0 == memcmp(ref, input + j * stride, elsize)) { /* benchmark memcmp */
+      if (elsize == stride) {
+        start = libxsmm_timer_tick();
+        for (i = 0; i < nrpt; ++i) {
+          j = memcmp(ref, input, nbytes); /* ignore result */
+        }
+        printf("stdlib memcmp:\t\t%.3f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      }
+    }
+    else {
+      result = EXIT_FAILURE;
     }
 
     free(input);
