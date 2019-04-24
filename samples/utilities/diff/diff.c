@@ -90,16 +90,19 @@ int main(int argc, char* argv[])
         }
 #endif
       }
-      printf("libxsmm_diff_n:\t\t%.3f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      printf("libxsmm_diff_n:\t\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
     }
 
     if (size == (j + 1) && 0 == memcmp(ref, input + j * stride, elsize)) { /* benchmark memcmp */
-      if (elsize == stride) {
+      void *const icopy = (elsize == stride ? malloc(nbytes) : NULL);
+      if (NULL != icopy) {
+        memcpy(icopy, input, nbytes);
         start = libxsmm_timer_tick();
         for (i = 0; i < nrpt; ++i) {
-          j = memcmp(ref, input, nbytes); /* ignore result */
+          j = memcmp(input, icopy, nbytes); /* ignore result */
         }
-        printf("stdlib memcmp:\t\t%.3f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+        printf("stdlib memcmp:\t\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+        free(icopy);
       }
     }
     else {
