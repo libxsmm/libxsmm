@@ -1586,18 +1586,14 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo "LIBXSMM installing libraries..."
 	@$(CP) -va $(OUTDIR)/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmnoblas.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v  $(OUTDIR)/libxsmmnoblas.pc          $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmmgen.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmgen.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmmext.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmext.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v  $(OUTDIR)/libxsmmext.pc          $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmmf.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmmf.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v  $(OUTDIR)/libxsmmf.pc          $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -va $(OUTDIR)/libxsmm.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@$(CP) -v  $(OUTDIR)/libxsmm.$(SLIBEXT)  $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
-	@$(CP) -v  $(OUTDIR)/libxsmm.pc          $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@if [ -e $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT) ]; then \
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 		$(CP) -va $(OUTDIR)/mic/libxsmmnoblas.$(DLIBEXT)* $(INSTALL_ROOT)/$(POUTDIR)/mic; \
@@ -1630,6 +1626,12 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 		$(CP) -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
+	@echo
+	@echo "LIBXSMM installing package configuration files..."
+	@sed "s/^prefix=..*$$/prefix=$(INSTALL_ROOT)/" $(OUTDIR)/libxsmmnoblas.pc > $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@sed "s/^prefix=..*$$/prefix=$(INSTALL_ROOT)/" $(OUTDIR)/libxsmmext.pc > $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@sed "s/^prefix=..*$$/prefix=$(INSTALL_ROOT)/" $(OUTDIR)/libxsmmf.pc > $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
+	@sed "s/^prefix=..*$$/prefix=$(INSTALL_ROOT)/" $(OUTDIR)/libxsmm.pc > $(INSTALL_ROOT)/$(POUTDIR) 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
@@ -1714,7 +1716,7 @@ $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION)" >> $@
 	@echo >> $@
-	@echo "prefix=$(INSTALL_ROOT)" >> $@
+	@echo "prefix=$(abspath .)" >> $@
 	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
 	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
 	@echo >> $@
@@ -1736,7 +1738,7 @@ $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION)" >> $@
 	@echo >> $@
-	@echo "prefix=$(INSTALL_ROOT)" >> $@
+	@echo "prefix=$(abspath .)" >> $@
 	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
 	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
 	@echo >> $@
@@ -1750,7 +1752,7 @@ $(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmmext.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION)" >> $@
 	@echo >> $@
-	@echo "prefix=$(INSTALL_ROOT)" >> $@
+	@echo "prefix=$(abspath .)" >> $@
 	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
 	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
 	@echo >> $@
@@ -1773,7 +1775,7 @@ $(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION)" >> $@
 	@echo >> $@
-	@echo "prefix=$(INSTALL_ROOT)" >> $@
+	@echo "prefix=$(abspath .)" >> $@
 	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
 	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
 	@echo >> $@
