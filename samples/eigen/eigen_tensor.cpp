@@ -74,7 +74,8 @@
 # define ITYPE float
 #endif
 
-#if !defined(CHECK) && (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double))
+#if !defined(CHECK) && (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double)) \
+ && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
 LIBXSMM_BLAS_SYMBOL_DECL(ITYPE, gemm)
 # define CHECK
 #endif
@@ -92,8 +93,10 @@ int main(int argc, char* argv[])
     LIBXSMM_GEMM_CONST libxsmm_blasint k = (3 < argc ? atoi(argv[3]) : m);
     LIBXSMM_GEMM_CONST libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k);
     const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 13 / LIBXSMM_MAX(1, libxsmm_icbrt_u64(1ULL * m * n * k) >> 10), 3);
+# if defined(CHECK) && (!defined(__BLAS) || (0 != __BLAS))
     const double env_check = (0 == getenv("CHECK") ? 1.0 : atof(getenv("CHECK")));
     const double check = LIBXSMM_ABS(env_check);
+# endif
     const double gflops = 2.0 * m * n * k * 1E-9;
     const int max_nthreads = Eigen::nbThreads();
     const int env_nthreads = 0 == getenv("NTHREADS") ? max_nthreads : atoi(getenv("NTHREADS"));

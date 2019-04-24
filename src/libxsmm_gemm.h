@@ -75,7 +75,7 @@
 #endif
 
 /** Undefine (disarm) MKL's DIRECT_CALL macros. */
-#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#if (defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL))
 # if defined(sgemm_)
 #   undef sgemm_
 # endif
