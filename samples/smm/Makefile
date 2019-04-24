@@ -25,6 +25,9 @@ else
   BLAS = 1
 endif
 
+# explore AVX/ARCH=native
+SSE = 0
+
 # include common Makefile artifacts
 include $(DEPDIR)/Makefile.inc
 

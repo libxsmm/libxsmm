@@ -31,6 +31,18 @@
 #include <libxsmm_math.h>
 #include "libxsmm_diff.h"
 
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#include <string.h>
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
+#endif
+
+#if !defined(LIBXSMM_DIFF_MEMCMP) && 0
+# define LIBXSMM_DIFF_MEMCMP
+#endif
+
 
 LIBXSMM_API unsigned char libxsmm_diff_16(const void* a, const void* b, ...)
 {
@@ -83,6 +95,9 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
 {
   unsigned int result;
   LIBXSMM_ASSERT(size <= stride);
+#if defined(LIBXSMM_DIFF_MEMCMP)
+  LIBXSMM_DIFF_N(unsigned int, result, memcmp, a, bn, size, stride, hint, n);
+#else
   switch (size) {
     case 64: {
       LIBXSMM_DIFF_64_DECL(a64);
@@ -108,6 +123,7 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
       LIBXSMM_DIFF_N(unsigned int, result, libxsmm_diff, a, bn, size, stride, hint, n);
     }
   }
+#endif
   return result;
 }
 

@@ -69,7 +69,8 @@
 # define OTYPE ITYPE
 #endif
 
-#if (LIBXSMM_VERSION3(11, 2, 0) > INTEL_MKL_VERSION) || !(defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL))
+#if (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double)) \
+  && !defined(MKL_DIRECT_CALL_SEQ) && !defined(MKL_DIRECT_CALL)
 LIBXSMM_BLAS_SYMBOL_DECL(ITYPE, gemm)
 #endif
 

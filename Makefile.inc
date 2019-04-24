@@ -180,7 +180,11 @@ PIC ?= pic
 INTRINSICS ?= 2
 ifneq (0,$(INTRINSICS))
   ifeq (1,$(INTRINSICS))
-    DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    ifeq (0,$(INTEL))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    else ifneq (,$(CTARGET))
+      DFLAGS += -DLIBXSMM_INTRINSICS_STATIC
+    endif
   endif
 else # disabled
   DFLAGS += -DLIBXSMM_INTRINSICS_NONE
@@ -651,7 +655,6 @@ SSE ?= 1
 ifeq (0,$(SSE)) # discover AVX
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
-    SSE = 0
     ifeq (2,$(words $(filter avx512pf avx512er,$(CPUFLAGS)))) # KNL
       MIC ?= 1
     else # SKX
@@ -663,7 +666,6 @@ ifeq (0,$(SSE)) # discover AVX
     else
       AVX ?= 1
     endif
-    SSE = 0
   endif
 else ifeq (1,$(SSE)) # discover SSE
   ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
@@ -1289,6 +1291,11 @@ else # GCC assumed
 endif
 
 ifeq (undefined,$(origin TARGET))
+  ifneq (,$(CTARGET))
+  ifneq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"))
+    undefine CTARGET
+  endif
+  endif
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     # prevents Clang BE error (CRC32 and others)
@@ -1334,7 +1341,7 @@ ifeq (undefined,$(origin TARGET))
       ifneq (0,$(PGI))
         #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
         CTARGET = -tp=haswell
-      else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40800<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
+      else ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || 40800<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
         CTARGET ?= -march=core-avx2
       endif
     endif
@@ -1344,7 +1351,7 @@ ifeq (undefined,$(origin TARGET))
       ifneq (0,$(PGI))
         #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
         CTARGET = -tp=sandybridge
-      else ifneq (0,$(shell echo "$$((0!=$(CLANG) || 40400<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
+      else ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || 40400<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
         CTARGET ?= -mavx
       endif
     endif
@@ -1399,8 +1406,8 @@ ifeq (undefined,$(origin TARGET))
     else ifneq (0,$(AVX))
       CTARGET = -march=native
     endif
-  endif
-  endif
+  endif # CTARGET
+  endif # DBG
 else # take user's TARGET into account
   CTARGET = $(TARGET)
 endif
