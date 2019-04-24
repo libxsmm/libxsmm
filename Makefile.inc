@@ -651,7 +651,6 @@ SSE ?= 1
 ifeq (0,$(SSE)) # discover AVX
   ifeq (1,$(words $(filter avx512f,$(CPUFLAGS))))
     AVX ?= 3
-    SSE = 0
     ifeq (2,$(words $(filter avx512pf avx512er,$(CPUFLAGS)))) # KNL
       MIC ?= 1
     else # SKX
@@ -663,7 +662,6 @@ ifeq (0,$(SSE)) # discover AVX
     else
       AVX ?= 1
     endif
-    SSE = 0
   endif
 else ifeq (1,$(SSE)) # discover SSE
   ifeq (1,$(words $(filter sse4_2 sse4.2,$(CPUFLAGS))))
