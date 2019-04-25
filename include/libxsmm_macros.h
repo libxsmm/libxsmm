@@ -145,7 +145,7 @@
 # define LIBXSMM_CALLER LIBXSMM_CALLER_ID
 #endif
 
-#if !defined(LIBXSMM_UNPACKED) && defined(_CRAYC)
+#if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD))
 # define LIBXSMM_UNPACKED
 #endif
 
