@@ -32,7 +32,7 @@
       MODULE LIBXSMM
         USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
      &    C_FLOAT, C_DOUBLE, C_CHAR, C_SHORT, C_INT, C_LONG_LONG,       &
-     &    C_INTPTR_T, C_F_POINTER, C_LOC, C_PTR
+     &    C_INT8_T, C_INTPTR_T, C_F_POINTER, C_LOC, C_PTR
         IMPLICIT NONE
 
         ! Name of the version (stringized set of version numbers).
@@ -204,6 +204,7 @@
           MODULE PROCEDURE libxsmm_ptr_z0, libxsmm_ptr_c0
           MODULE PROCEDURE libxsmm_ptr_d0, libxsmm_ptr_s0
           MODULE PROCEDURE libxsmm_ptr_i0, libxsmm_ptr_w0
+          MODULE PROCEDURE libxsmm_ptr_j0 ! Byte/char
           MODULE PROCEDURE libxsmm_ptr_b0 ! Byte/char
           MODULE PROCEDURE libxsmm_ptr_l0 ! long long
         END INTERFACE
@@ -212,6 +213,7 @@
           MODULE PROCEDURE libxsmm_ptr_z1, libxsmm_ptr_c1
           MODULE PROCEDURE libxsmm_ptr_d1, libxsmm_ptr_s1
           MODULE PROCEDURE libxsmm_ptr_i1, libxsmm_ptr_w1
+          MODULE PROCEDURE libxsmm_ptr_j1 ! Byte/char
           MODULE PROCEDURE libxsmm_ptr_b1 ! Byte/char
           MODULE PROCEDURE libxsmm_ptr_l1 ! long long
         END INTERFACE
@@ -220,6 +222,7 @@
           MODULE PROCEDURE libxsmm_ptr_z2, libxsmm_ptr_c2
           MODULE PROCEDURE libxsmm_ptr_d2, libxsmm_ptr_s2
           MODULE PROCEDURE libxsmm_ptr_i2, libxsmm_ptr_w2
+          MODULE PROCEDURE libxsmm_ptr_j2 ! Byte/char
           MODULE PROCEDURE libxsmm_ptr_b2 ! Byte/char
           MODULE PROCEDURE libxsmm_ptr_l2 ! long long
         END INTERFACE
@@ -850,6 +853,28 @@
           INTEGER(C_SHORT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_w2
           libxsmm_ptr_w2 = libxsmm_ptr_w0(a(LBOUND(a,1),LBOUND(a,2)))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_j0
+        FUNCTION libxsmm_ptr_j0(a)
+          INTEGER(C_INT8_T), INTENT(IN), TARGET :: a
+          INTEGER(C_INT8_T), POINTER :: fptr
+          TYPE(C_PTR) :: libxsmm_ptr_j0
+          fptr => a; libxsmm_ptr_j0 = C_LOC(fptr)
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_j1
+        FUNCTION libxsmm_ptr_j1(a)
+          INTEGER(C_INT8_T), INTENT(IN) :: a(:)
+          TYPE(C_PTR) :: libxsmm_ptr_j1
+          libxsmm_ptr_j1 = libxsmm_ptr_j0(a(LBOUND(a,1)))
+        END FUNCTION
+
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_j2
+        FUNCTION libxsmm_ptr_j2(a)
+          INTEGER(C_INT8_T), INTENT(IN) :: a(:,:)
+          TYPE(C_PTR) :: libxsmm_ptr_j2
+          libxsmm_ptr_j2 = libxsmm_ptr_j0(a(LBOUND(a,1),LBOUND(a,2)))
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b0
@@ -1781,11 +1806,12 @@
               INTEGER(C_INT), INTENT(OUT)       :: memcmp
             END SUBROUTINE
           END INTERFACE
-          IF (SIZE(a, C_LONG_LONG) .EQ. SIZE(b, C_LONG_LONG))
+          IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
+     &    THEN
             CALL internal_diff(memcmp,                                  &
      &        libxsmm_ptr1(a), libxsmm_ptr1(b),                         &
-     &        SIZE(a, C_LONG_LONG) * 4)
-            libxsmm_diff_char = 0.NEQ.memcmp
+     &        SIZE(a, KIND=C_LONG_LONG) * 4)
+            libxsmm_diff_char = 0.NE.memcmp
           ELSE
             libxsmm_diff_char = .TRUE.
           END IF
@@ -1796,9 +1822,8 @@
         ! INTEGER(1) :: a(:), b(:)
         ! INTEGER(8) :: nbytes
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i8
-        FUNCTION libxsmm_diff_i8(key, seed)
-          INTEGER(C_INT8_T), DIMENSION(:), INTENT(IN) :: key
-          INTEGER(C_INT), INTENT(IN) :: seed
+        FUNCTION libxsmm_diff_i8(a, b)
+          INTEGER(C_INT8_T), DIMENSION(:), INTENT(IN) :: a, b
           LOGICAL :: libxsmm_diff_i8
           INTEGER(C_INT) :: memcmp
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_diff
@@ -1811,13 +1836,14 @@
               INTEGER(C_INT), INTENT(OUT)       :: memcmp
             END SUBROUTINE
           END INTERFACE
-          IF (SIZE(a, C_LONG_LONG) .EQ. SIZE(b, C_LONG_LONG))
+          IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
+     &    THEN
             CALL internal_diff(memcmp,                                  &
      &        libxsmm_ptr1(a), libxsmm_ptr1(b),                         &
-     &        SIZE(a, C_LONG_LONG))
-            libxsmm_diff_char = 0.NEQ.memcmp
+     &        SIZE(a, KIND=C_LONG_LONG))
+            libxsmm_diff_i8 = 0.NE.memcmp
           ELSE
-            libxsmm_diff_char = .TRUE.
+            libxsmm_diff_i8 = .TRUE.
           END IF
         END FUNCTION
 
@@ -1826,9 +1852,8 @@
         ! INTEGER(4) :: a(:), b(:)
         ! INTEGER(8) :: nbytes
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i32
-        FUNCTION libxsmm_diff_i32(key, seed)
-          INTEGER(C_INT), DIMENSION(:), INTENT(IN) :: key
-          INTEGER(C_INT), INTENT(IN) :: seed
+        FUNCTION libxsmm_diff_i32(a, b)
+          INTEGER(C_INT), DIMENSION(:), INTENT(IN) :: a, b
           LOGICAL :: libxsmm_diff_i32
           INTEGER(C_INT) :: memcmp
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_diff
@@ -1841,13 +1866,14 @@
               INTEGER(C_INT), INTENT(OUT)       :: memcmp
             END SUBROUTINE
           END INTERFACE
-          IF (SIZE(a, C_LONG_LONG) .EQ. SIZE(b, C_LONG_LONG))
+          IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
+     &    THEN
             CALL internal_diff(memcmp,                                  &
      &        libxsmm_ptr1(a), libxsmm_ptr1(b),                         &
-     &        SIZE(a, C_LONG_LONG) * 4)
-            libxsmm_diff_char = 0.NEQ.memcmp
+     &        SIZE(a, KIND=C_LONG_LONG) * 4)
+            libxsmm_diff_i32 = 0.NE.memcmp
           ELSE
-            libxsmm_diff_char = .TRUE.
+            libxsmm_diff_i32 = .TRUE.
           END IF
         END FUNCTION
 
@@ -1856,9 +1882,8 @@
         ! INTEGER(8) :: a(:), b(:)
         ! INTEGER(8) :: nbytes
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i64
-        FUNCTION libxsmm_diff_i64(key, seed)
-          INTEGER(C_LONG_LONG), DIMENSION(:), INTENT(IN) :: key
-          INTEGER(C_INT), INTENT(IN) :: seed
+        FUNCTION libxsmm_diff_i64(a, b)
+          INTEGER(C_LONG_LONG), DIMENSION(:), INTENT(IN) :: a, b
           LOGICAL :: libxsmm_diff_i64
           INTEGER(C_INT) :: memcmp
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_diff
@@ -1871,13 +1896,14 @@
               INTEGER(C_INT), INTENT(OUT)       :: memcmp
             END SUBROUTINE
           END INTERFACE
-          IF (SIZE(a, C_LONG_LONG) .EQ. SIZE(b, C_LONG_LONG))
+          IF (SIZE(a, KIND=C_LONG_LONG) .EQ. SIZE(b, KIND=C_LONG_LONG)) &
+     &    THEN
             CALL internal_diff(memcmp,                                  &
      &        libxsmm_ptr1(a), libxsmm_ptr1(b),                         &
-     &        SIZE(a, C_LONG_LONG) * 8)
-            libxsmm_diff_char = 0.NEQ.memcmp
+     &        SIZE(a, KIND=C_LONG_LONG) * 8)
+            libxsmm_diff_i64 = 0.NE.memcmp
           ELSE
-            libxsmm_diff_char = .TRUE.
+            libxsmm_diff_i64 = .TRUE.
           END IF
         END FUNCTION
       END MODULE
