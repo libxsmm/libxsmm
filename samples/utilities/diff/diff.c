@@ -96,10 +96,13 @@ int main(int argc, char* argv[])
     if (size == (j + 1) && 0 == memcmp(ref, input + j * stride, elsize)) { /* benchmark memcmp */
       void *const icopy = (elsize == stride ? malloc(nbytes) : NULL);
       if (NULL != icopy) {
+        unsigned char *const last = (unsigned char*)icopy + (size - 1) * stride; /* last item */
         memcpy(icopy, input, nbytes);
         start = libxsmm_timer_tick();
         for (i = 0; i < nrpt; ++i) {
-          j = memcmp(input, icopy, nbytes);
+          j += memcmp(input, icopy, nbytes); /* take result of every execution */
+          /* memcmp is pure and without touching input it is not repeated (nrpt) */
+          last[i%elsize] = 255;
         }
         printf("stdlib memcmp:\t\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
         result += (int)j * ((int)stride / ((int)stride + 1)); /* ignore result */
