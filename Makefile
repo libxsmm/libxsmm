@@ -409,7 +409,7 @@ else
 	$(info INTRINSICS=$(INTRINSICS) limits LIBXSMM to AVX$(AVX) (and beyond).)
 endif
 ifeq (0,$(INTEL))
-	$(info Prefer an updated tool chain rather than adjusting INTRINSICS.)
+	$(info If adjusting INTRINSICS was necessary, reconsider an updated tool chain.)
 else # Intel Compiler
 	$(info Intel Compiler does not require adjusting INTRINSICS.)
 endif
