@@ -342,7 +342,7 @@ LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) float libxsmm_ssqrt(float x)
 #if defined(LIBXSMM_INTRINSICS_X86)
   const float result = _mm_cvtss_f32(_mm_sqrt_ss(_mm_set_ss(x)));
 #elif !defined(LIBXSMM_NO_LIBM)
-  const double result = LIBXSMM_SQRTF(x);
+  const float result = LIBXSMM_SQRTF(x);
 #else /* fall-back */
   float result, y = x;
   if (LIBXSMM_NEQ(0, x)) {
