@@ -112,7 +112,7 @@ LIBXSMM_API int libxsmm_matdiff(libxsmm_matdiff_info* info,
             size[0] = (size_t)ldr; size[1] = (size_t)nn;
           }
           else { /* reshape */
-            const size_t x = (size_t)(mm * nn);
+            const size_t x = (size_t)mm * (size_t)nn;
             const size_t y = (size_t)libxsmm_isqrt2_u32((unsigned int)x);
             shape[0] = x / y; shape[1] = y;
             size[0] = shape[0];
@@ -561,7 +561,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* coprime, const int*
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
-  if (NULL != coprime && NULL != n)
+  if (NULL != coprime && NULL != n && 0 <= *n)
 #endif
   {
     *coprime = (long long)(libxsmm_shuffle((unsigned int)(*n)) & 0x7FFFFFFF);
@@ -582,7 +582,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* hash_seed, const void* data
 {
 #if !defined(NDEBUG)
   static int error_once = 0;
-  if (NULL != hash_seed && NULL != data && NULL != size)
+  if (NULL != hash_seed && NULL != data && NULL != size && 0 <= *size)
 #endif
   {
     unsigned int *const hash_seed_ui32 = (unsigned int*)hash_seed;
@@ -593,6 +593,27 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* hash_seed, const void* data
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_hash specified!\n");
+  }
+#endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* result, const void* a, const void* b, const long long* size)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != result && NULL != a && NULL != b && NULL != size && 0 <= *size)
+#endif
+  {
+    *result = libxsmm_memcmp(a, b, (size_t)*size);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_memcmp specified!\n");
   }
 #endif
 }

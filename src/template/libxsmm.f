@@ -330,11 +330,22 @@
           MODULE PROCEDURE libxsmm_blas_sgemm2
         END INTERFACE
 
-        ! Overloaded variants of libxsmm_hash.
+        ! Calculate a hash value for a given key value (binary blob).
+        ! Conceptually pure, but C_LOC may be (incorrectly) impure.
         INTERFACE libxsmm_hash
           MODULE PROCEDURE libxsmm_hash_char
+          MODULE PROCEDURE libxsmm_hash_i8
           MODULE PROCEDURE libxsmm_hash_i32
           MODULE PROCEDURE libxsmm_hash_i64
+        END INTERFACE
+
+        ! Calculate whether there is a difference between two series of items.
+        ! Conceptually pure, but C_LOC may be (incorrectly) impure.
+        INTERFACE libxsmm_diff
+          MODULE PROCEDURE libxsmm_diff_char
+          MODULE PROCEDURE libxsmm_diff_i8
+          MODULE PROCEDURE libxsmm_diff_i32
+          MODULE PROCEDURE libxsmm_diff_i64
         END INTERFACE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_init, libxsmm_finalize
@@ -1655,8 +1666,6 @@
           CALL internal_shuffle(libxsmm_shuffle, n)
         END FUNCTION
 
-        ! Calculate a hash value for a given key value (blob of integers).
-        ! Conceptually pure, but C_LOC may be (incorrectly) marked impure.
         ! Implicit FORTRAN 77 interface:
         ! INTEGER(4) :: hash_seed (INOUT)
         ! CHARACTER  :: key(:)
@@ -1681,8 +1690,30 @@
      &      libxsmm_ptr1(key), SIZE(key))
         END FUNCTION
 
-        ! Calculate a hash value for a given key value (blob of integers).
-        ! Conceptually pure, but C_LOC may be (incorrectly) marked impure.
+        ! Implicit FORTRAN 77 interface:
+        ! INTEGER(4) :: hash_seed (INOUT)
+        ! INTEGER(1) :: key(:)
+        ! INTEGER(4) :: keysize
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_hash_i8
+        FUNCTION libxsmm_hash_i8(key, seed)
+          INTEGER(C_INT8_T), DIMENSION(:), INTENT(IN) :: key
+          INTEGER(C_INT), INTENT(IN) :: seed
+          INTEGER(C_INT) :: libxsmm_hash_i8
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_hash
+          INTERFACE
+            PURE SUBROUTINE internal_hash(hash_seed, key, keysize)      &
+     &      BIND(C, NAME="libxsmm_hash_")
+              IMPORT C_INT, C_PTR
+              INTEGER(C_INT), INTENT(INOUT)   :: hash_seed
+              INTEGER(C_INT), INTENT(IN)      :: keysize
+              TYPE(C_PTR), INTENT(IN), VALUE  :: key
+            END SUBROUTINE
+          END INTERFACE
+          libxsmm_hash_i8 = seed
+          CALL internal_hash(libxsmm_hash_i8,                           &
+     &      libxsmm_ptr1(key), SIZE(key))
+        END FUNCTION
+
         ! Implicit FORTRAN 77 interface:
         ! INTEGER(4) :: hash_seed (INOUT)
         ! INTEGER(4) :: key(:)
@@ -1707,9 +1738,6 @@
      &      libxsmm_ptr1(key), SIZE(key) * 4)
         END FUNCTION
 
-
-        ! Calculate a hash value for a given key value (blob of integers).
-        ! Conceptually pure, but C_LOC may be (incorrectly) marked impure.
         ! Implicit FORTRAN 77 interface:
         ! INTEGER(4) :: hash_seed (INOUT)
         ! INTEGER(8) :: key(:)
@@ -1732,6 +1760,125 @@
           libxsmm_hash_i64 = seed
           CALL internal_hash(libxsmm_hash_i64,                          &
      &      libxsmm_ptr1(key), SIZE(key) * 8)
+        END FUNCTION
+
+        ! Implicit FORTRAN 77 interface:
+        ! INTEGER(4) :: memcmp (OUT)
+        ! CHARACTER  :: a(:), b(:)
+        ! INTEGER(8) :: nbytes
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_char
+        FUNCTION libxsmm_diff_char(a, b)
+          CHARACTER(C_CHAR), DIMENSION(:), INTENT(IN) :: a, b
+          LOGICAL :: libxsmm_diff_char
+          INTEGER(C_INT) :: memcmp
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_diff
+          INTERFACE
+            PURE SUBROUTINE internal_diff(memcmp, a, b, nbytes)         &
+     &      BIND(C, NAME="libxsmm_diff_")
+              IMPORT C_LONG_LONG, C_INT, C_PTR
+              TYPE(C_PTR), INTENT(IN), VALUE    :: a, b
+              INTEGER(C_LONG_LONG), INTENT(IN)  :: nbytes
+              INTEGER(C_INT), INTENT(OUT)       :: memcmp
+            END SUBROUTINE
+          END INTERFACE
+          IF (SIZE(a, C_LONG_LONG) .EQ. SIZE(b, C_LONG_LONG))
+            CALL internal_diff(memcmp,                                  &
+     &        libxsmm_ptr1(a), libxsmm_ptr1(b),                         &
+     &        SIZE(a, C_LONG_LONG) * 4)
+            libxsmm_diff_char = 0.NEQ.memcmp
+          ELSE
+            libxsmm_diff_char = .TRUE.
+          END IF
+        END FUNCTION
+
+        ! Implicit FORTRAN 77 interface:
+        ! INTEGER(4) :: memcmp (OUT)
+        ! INTEGER(1) :: a(:), b(:)
+        ! INTEGER(8) :: nbytes
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i8
+        FUNCTION libxsmm_diff_i8(key, seed)
+          INTEGER(C_INT8_T), DIMENSION(:), INTENT(IN) :: key
+          INTEGER(C_INT), INTENT(IN) :: seed
+          LOGICAL :: libxsmm_diff_i8
+          INTEGER(C_INT) :: memcmp
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_diff
+          INTERFACE
+            PURE SUBROUTINE internal_diff(memcmp, a, b, nbytes)         &
+     &      BIND(C, NAME="libxsmm_diff_")
+              IMPORT C_LONG_LONG, C_INT, C_PTR
+              TYPE(C_PTR), INTENT(IN), VALUE    :: a, b
+              INTEGER(C_LONG_LONG), INTENT(IN)  :: nbytes
+              INTEGER(C_INT), INTENT(OUT)       :: memcmp
+            END SUBROUTINE
+          END INTERFACE
+          IF (SIZE(a, C_LONG_LONG) .EQ. SIZE(b, C_LONG_LONG))
+            CALL internal_diff(memcmp,                                  &
+     &        libxsmm_ptr1(a), libxsmm_ptr1(b),                         &
+     &        SIZE(a, C_LONG_LONG))
+            libxsmm_diff_char = 0.NEQ.memcmp
+          ELSE
+            libxsmm_diff_char = .TRUE.
+          END IF
+        END FUNCTION
+
+        ! Implicit FORTRAN 77 interface:
+        ! INTEGER(4) :: memcmp (OUT)
+        ! INTEGER(4) :: a(:), b(:)
+        ! INTEGER(8) :: nbytes
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i32
+        FUNCTION libxsmm_diff_i32(key, seed)
+          INTEGER(C_INT), DIMENSION(:), INTENT(IN) :: key
+          INTEGER(C_INT), INTENT(IN) :: seed
+          LOGICAL :: libxsmm_diff_i32
+          INTEGER(C_INT) :: memcmp
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_diff
+          INTERFACE
+            PURE SUBROUTINE internal_diff(memcmp, a, b, nbytes)         &
+     &      BIND(C, NAME="libxsmm_diff_")
+              IMPORT C_LONG_LONG, C_INT, C_PTR
+              TYPE(C_PTR), INTENT(IN), VALUE    :: a, b
+              INTEGER(C_LONG_LONG), INTENT(IN)  :: nbytes
+              INTEGER(C_INT), INTENT(OUT)       :: memcmp
+            END SUBROUTINE
+          END INTERFACE
+          IF (SIZE(a, C_LONG_LONG) .EQ. SIZE(b, C_LONG_LONG))
+            CALL internal_diff(memcmp,                                  &
+     &        libxsmm_ptr1(a), libxsmm_ptr1(b),                         &
+     &        SIZE(a, C_LONG_LONG) * 4)
+            libxsmm_diff_char = 0.NEQ.memcmp
+          ELSE
+            libxsmm_diff_char = .TRUE.
+          END IF
+        END FUNCTION
+
+        ! Implicit FORTRAN 77 interface:
+        ! INTEGER(4) :: memcmp (OUT)
+        ! INTEGER(8) :: a(:), b(:)
+        ! INTEGER(8) :: nbytes
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_diff_i64
+        FUNCTION libxsmm_diff_i64(key, seed)
+          INTEGER(C_LONG_LONG), DIMENSION(:), INTENT(IN) :: key
+          INTEGER(C_INT), INTENT(IN) :: seed
+          LOGICAL :: libxsmm_diff_i64
+          INTEGER(C_INT) :: memcmp
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_diff
+          INTERFACE
+            PURE SUBROUTINE internal_diff(memcmp, a, b, nbytes)         &
+     &      BIND(C, NAME="libxsmm_diff_")
+              IMPORT C_LONG_LONG, C_INT, C_PTR
+              TYPE(C_PTR), INTENT(IN), VALUE    :: a, b
+              INTEGER(C_LONG_LONG), INTENT(IN)  :: nbytes
+              INTEGER(C_INT), INTENT(OUT)       :: memcmp
+            END SUBROUTINE
+          END INTERFACE
+          IF (SIZE(a, C_LONG_LONG) .EQ. SIZE(b, C_LONG_LONG))
+            CALL internal_diff(memcmp,                                  &
+     &        libxsmm_ptr1(a), libxsmm_ptr1(b),                         &
+     &        SIZE(a, C_LONG_LONG) * 8)
+            libxsmm_diff_char = 0.NEQ.memcmp
+          ELSE
+            libxsmm_diff_char = .TRUE.
+          END IF
         END FUNCTION
       END MODULE
 
