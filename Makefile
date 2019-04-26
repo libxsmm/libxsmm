@@ -191,9 +191,7 @@ DOCEXT = pdf
 EXCLUDE_STATE = \
   DESTDIR INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR \
   PBINDIR PINCDIR PREFIX POUTDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR \
-  VERSION_STRING TEST TSTDIR DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC \
-  PKG_CONFIG_PRIVLIBS_EXT PKG_CONFIG_PRIVLIBS \
-  PKG_CONFIG_LIBDIR PKG_CONFIG_INCLUDEDIR
+  VERSION_STRING TEST TSTDIR DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC PKG_CONFIG_%
 
 ifeq (,$(M)$(N)$(K))
 ifneq (,$(filter 0,$(MNK) 0))
@@ -1710,8 +1708,9 @@ ifneq (Darwin,$(UNAME))
   PKG_CONFIG_PRIVLIBS_EXT = -fopenmp
 endif
 
-PKG_CONFIG_INCLUDEDIR = $(subst $$$$,,$(subst $$$$$(abspath .),\$${prefix},$$$$$(PINCDIR)))
-PKG_CONFIG_LIBDIR = $(subst $$$$,,$(subst $$$$$(abspath .),\$${prefix},$$$$$(POUTDIR)))
+PKG_CONFIG_PREFIX = $(abspath .)
+PKG_CONFIG_INCLUDEDIR = $(subst $$$$,,$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(PINCDIR)))
+PKG_CONFIG_LIBDIR = $(subst $$$$,,$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
 $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" > $@
@@ -1719,7 +1718,7 @@ $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(abspath .)" >> $@
+	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
 	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
 	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
@@ -1741,7 +1740,7 @@ $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(abspath .)" >> $@
+	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
 	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
 	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
@@ -1755,7 +1754,7 @@ $(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmmext.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(abspath .)" >> $@
+	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
 	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
 	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
@@ -1778,7 +1777,7 @@ $(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
 	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(abspath .)" >> $@
+	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
 	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
 	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
