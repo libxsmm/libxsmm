@@ -1710,8 +1710,8 @@ ifneq (Darwin,$(UNAME))
   PKG_CONFIG_PRIVLIBS_EXT = -fopenmp
 endif
 
-PKG_CONFIG_INCLUDEDIR = $(subst $$,,$(subst $$$(abspath .),\$${prefix},$$$(PINCDIR)))
-PKG_CONFIG_LIBDIR = $(subst $$,,$(subst $$$(abspath .),\$${prefix},$$$(POUTDIR)))
+PKG_CONFIG_INCLUDEDIR = $(subst $$$$,,$(subst $$$$$(abspath .),\$${prefix},$$$$$(PINCDIR)))
+PKG_CONFIG_LIBDIR = $(subst $$$$,,$(subst $$$$$(abspath .),\$${prefix},$$$$$(POUTDIR)))
 
 $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" > $@
