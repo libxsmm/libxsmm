@@ -36,6 +36,9 @@
 #define USE_XSMM_GENERATED
 #define TIME_MKL
 #endif
+#if 0
+#define TEST_SINGLE
+#endif
 
 #if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(TIME_MKL) && \
    (!defined(__linux__) || !defined(USE_KERNEL_GENERATION_DIRECTLY))
@@ -462,7 +465,7 @@ int main(int argc, char* argv[])
   unsigned int m=8, n=8, lda=8, ldb=8, nerrs, num, nmat, nmats, nmatd, ntest;
   unsigned int layout, asize, VLEND=4, VLENS=8, bsize;
   unsigned int ncorr;
-  int i, j;
+  unsigned int i, j;
   char side, uplo, trans, diag;
   float  *sa, *sb, *sc, *sd;
   double *da, *db, *dc, *dd, *tmpbuf;
@@ -477,12 +480,10 @@ int main(int argc, char* argv[])
   unsigned int typesize4 = 4;
   const libxsmm_trmm_descriptor* desc4 = NULL;
 #endif
+#ifdef USE_XSMM_GENERATED
   libxsmm_descriptor_blob blob;
-  union {
-    libxsmm_xtrsmfunction dp;
-    libxsmm_xtrsmfunction sp;
-    const void* pv;
-  } mykernel = { 0 };
+  libxsmm_trmm_xfunction mykernel = NULL;
+#endif
 #if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
   void (*opcode_routine)();
   unsigned char *routine_output;
@@ -551,7 +552,7 @@ int main(int argc, char* argv[])
   printf("This code tests the LIBXSMM generated kernels\n");
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
-  printf("This code tests some predefined assembly kenrel\n");
+  printf("This code tests some predefined assembly kernel\n");
 #endif
 #if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
   printf("This code tests kernel generation directly\n");
@@ -566,12 +567,12 @@ int main(int argc, char* argv[])
 #endif
 #ifdef USE_XSMM_GENERATED
   printf("calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
-  mykernel.dp = libxsmm_dispatch_trmm(desc8);
+  mykernel = libxsmm_dispatch_trmm(desc8);
   printf("done calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
-  if ( mykernel.dp == NULL ) printf("R8 Kernel after the create call is null\n");
+  if ( mykernel == NULL ) printf("R8 Kernel after the create call is null\n");
 #ifdef TEST_SINGLE
-  mykernel.sp = libxsmm_dispatch_trmm(desc4);
-  if ( mykernel.sp == NULL ) printf("R4 kernel after the create call is null\n");
+  mykernel = libxsmm_dispatch_trmm(desc4);
+  if ( mykernel == NULL ) printf("R4 kernel after the create call is null\n");
 #endif
 #endif
 
@@ -614,7 +615,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef USE_XSMM_GENERATED
-  cptr = (const unsigned char*) mykernel.pv;
+  cptr = (const unsigned char*)mykernel;
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
   cptr = (const unsigned char*) trmm_;
@@ -691,7 +692,7 @@ int main(int argc, char* argv[])
 #endif
 
 #ifdef USE_XSMM_GENERATED
-     mykernel.dp ( Ap, Bp, tmpbuf );
+     mykernel ( Ap, Bp, tmpbuf );
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
      trmm_ ( Ap, Bp, &one );
@@ -733,7 +734,7 @@ int main(int argc, char* argv[])
      float *Ap = &sa[num*lda*asize*VLENS];
      float *Bp = &sb[num*bsize*VLENS];
 #ifdef USE_XSMM_GENERATED
-     mykernel.sp ( Ap, Bp, NULL );
+     mykernel ( Ap, Bp, NULL );
 #endif
   }
   printf("after r4 routine, new      B(1,1)=%g B]256]=%g\n",db[0],db[256]);

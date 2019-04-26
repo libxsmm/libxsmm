@@ -556,12 +556,16 @@ typedef enum libxsmm_kernel_kind {
   LIBXSMM_KERNEL_KIND_MCOPY   = 1,
   /** Transpose kernel kind */
   LIBXSMM_KERNEL_KIND_TRANS   = 2,
-  /** TRSM kernel kind */
-  LIBXSMM_KERNEL_KIND_TRSM    = 3,
+  /** GEMM/packed kernel kind */
+  LIBXSMM_KERNEL_KIND_PGEMM   = 3,
+  /** GEMM/packed kernel kind */
+  LIBXSMM_KERNEL_KIND_GETRF   = 4,
   /** TRMM kernel kind */
-  LIBXSMM_KERNEL_KIND_TRMM    = 4,
+  LIBXSMM_KERNEL_KIND_TRMM    = 5,
+  /** TRSM kernel kind */
+  LIBXSMM_KERNEL_KIND_TRSM    = 6,
   /** Not a JIT kernel */
-  LIBXSMM_KERNEL_KIND_INVALID = 5
+  LIBXSMM_KERNEL_KIND_INVALID = 7
 } libxsmm_kernel_kind;
 
 /** Specialized function for matrix-copy (weak-typed). */
@@ -572,12 +576,20 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xmcopyfunction)(
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtransfunction)(
   const void* in, const unsigned int* ldi, void* out, const unsigned int* ldo);
 
-/** Specialized function for TRSM (weak-typed). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_xtrsmfunction)(
+/** Specialized function for packed GEMM (weak-typed). */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_pgemm_xfunction)(
+  const void* a, const void* b, void* c);
+
+/** Specialized function for packed GEMM (weak-typed). */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_getrf_xfunction)(
   const void* a, const void* b, void* c);
 
 /** Specialized function for TRMM (weak-typed). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void(*libxsmm_xtrmmfunction)(
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_trmm_xfunction)(
+  const void* a, const void* b, void* c);
+
+/** Specialized function for TRSM (weak-typed). */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_trsm_xfunction)(
   const void* a, const void* b, void* c);
 
 /** Structure to receive information about GEMM-kernels (libxsmm_get_mmkernel_info). */
