@@ -191,7 +191,9 @@ DOCEXT = pdf
 EXCLUDE_STATE = \
   DESTDIR INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR \
   PBINDIR PINCDIR PREFIX POUTDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR \
-  VERSION TEST TSTDIR DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC
+  VERSION TEST TSTDIR DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC \
+  PKG_CONFIG_PRIVLIBS_EXT PKG_CONFIG_PRIVLIBS \
+  PKG_CONFIG_LIBDIR PKG_CONFIG_INCLUDEDIR
 
 ifeq (,$(M)$(N)$(K))
 ifneq (,$(filter 0,$(MNK) 0))
@@ -1696,17 +1698,20 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 endif
 
 ifeq (Windows_NT,$(UNAME))
-  XSMM_PKG_CONFIG_LIBS_PRIVATE = -ldbghelp
+  PKG_CONFIG_PRIVLIBS = -ldbghelp
 else ifneq (Darwin,$(UNAME))
   ifneq (FreeBSD,$(UNAME))
-    XSMM_PKG_CONFIG_LIBS_PRIVATE = -lpthread -lrt -ldl -lm -lc
+    PKG_CONFIG_PRIVLIBS = -lpthread -lrt -ldl -lm -lc
   else
-    XSMM_PKG_CONFIG_LIBS_PRIVATE = -ldl -lm -lc
+    PKG_CONFIG_PRIVLIBS = -ldl -lm -lc
   endif
 endif
 ifneq (Darwin,$(UNAME))
-  XSMMEXT_PKG_CONFIG_LIBS_PRIVATE = -fopenmp
+  PKG_CONFIG_PRIVLIBS_EXT = -fopenmp
 endif
+
+PKG_CONFIG_INCLUDEDIR = $(subst $$,,$(subst $$$(abspath .),\$${prefix},$$$(PINCDIR)))
+PKG_CONFIG_LIBDIR = $(subst $$,,$(subst $$$(abspath .),\$${prefix},$$$(POUTDIR)))
 
 $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" > $@
@@ -1715,16 +1720,16 @@ $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Version: $(VERSION)" >> $@
 	@echo >> $@
 	@echo "prefix=$(abspath .)" >> $@
-	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
-	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
+	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
+	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
-ifneq (,$(XSMM_PKG_CONFIG_LIBS_PRIVATE))
+ifneq (,$(PKG_CONFIG_PRIVLIBS))
 	@if [ -e $(OUTDIR)/libxsmm.$(DLIBEXT) ]; then \
 		echo "Libs: -L\$${libdir} -lxsmm" >> $@; \
-		echo "Libs.private: $(XSMM_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+		echo "Libs.private: $(PKG_CONFIG_PRIVLIBS)" >> $@; \
 	else \
-		echo "Libs: -L\$${libdir} -lxsmm $(XSMM_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+		echo "Libs: -L\$${libdir} -lxsmm $(PKG_CONFIG_PRIVLIBS)" >> $@; \
 	fi
 else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmm" >> $@
@@ -1737,8 +1742,8 @@ $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 	@echo "Version: $(VERSION)" >> $@
 	@echo >> $@
 	@echo "prefix=$(abspath .)" >> $@
-	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
-	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
+	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
+	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Requires: libxsmm" >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
@@ -1751,17 +1756,17 @@ $(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmmext.$(LIBEXT)
 	@echo "Version: $(VERSION)" >> $@
 	@echo >> $@
 	@echo "prefix=$(abspath .)" >> $@
-	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
-	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
+	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
+	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Requires: libxsmm" >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
-ifneq (,$(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE))
+ifneq (,$(PKG_CONFIG_PRIVLIBS_EXT))
 	@if [ -e $(OUTDIR)/libxsmmext.$(DLIBEXT) ]; then \
 		echo "Libs: -L\$${libdir} -lxsmmext" >> $@; \
-		echo "Libs.private: $(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+		echo "Libs.private: $(PKG_CONFIG_PRIVLIBS_EXT)" >> $@; \
 	else \
-		echo "Libs: -L\$${libdir} -lxsmmext $(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+		echo "Libs: -L\$${libdir} -lxsmmext $(PKG_CONFIG_PRIVLIBS_EXT)" >> $@; \
 	fi
 else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmmext" >> $@
@@ -1774,8 +1779,8 @@ $(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 	@echo "Version: $(VERSION)" >> $@
 	@echo >> $@
 	@echo "prefix=$(abspath .)" >> $@
-	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
-	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
+	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
+	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Requires: libxsmm" >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
