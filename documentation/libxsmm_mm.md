@@ -139,6 +139,8 @@ if (0 < n) { /* check that n is at least 1 */
 
 To process a batch of matrix multiplications and to prefetch the operands of the next multiplication ahead of time, the code presented in the [Overview](#overview) section may be modified as shown above. The last multiplication is peeled off from the batch to avoid prefetching out-of-bounds (OOB). Prefetching from an invalid address does not trap an exception, but an (unnecessary) page fault can be avoided as shown above.
 
+<a name="explicit-batch-interface"></a>
+
 ```C
 /** Batched matrix multiplications (explicit data representation). */
 int libxsmm_mmbatch(libxsmm_xmmfunction kernel,
