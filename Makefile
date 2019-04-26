@@ -191,7 +191,7 @@ DOCEXT = pdf
 EXCLUDE_STATE = \
   DESTDIR INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR \
   PBINDIR PINCDIR PREFIX POUTDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR \
-  VERSION TEST TSTDIR DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC \
+  VERSION_STRING TEST TSTDIR DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC \
   PKG_CONFIG_PRIVLIBS_EXT PKG_CONFIG_PRIVLIBS \
   PKG_CONFIG_LIBDIR PKG_CONFIG_INCLUDEDIR
 
@@ -211,8 +211,8 @@ include $(ROOTDIR)/Makefile.inc
 VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1)
 VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 2)
 VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
-VERSION ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
-VERSION_API ?= $(shell $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION))
+VERSION_STRING ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
+VERSION_API ?= $(shell $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_STRING))
 VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
 
@@ -1717,7 +1717,7 @@ $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" > $@
 	@echo "Description: Matrix operations and deep learning primitives" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
-	@echo "Version: $(VERSION)" >> $@
+	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
 	@echo "prefix=$(abspath .)" >> $@
 	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
@@ -1739,7 +1739,7 @@ $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 	@echo "Name: libxsmm/f" > $@
 	@echo "Description: LIBXSMM for Fortran" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
-	@echo "Version: $(VERSION)" >> $@
+	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
 	@echo "prefix=$(abspath .)" >> $@
 	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
@@ -1753,7 +1753,7 @@ $(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmmext.$(LIBEXT)
 	@echo "Name: libxsmm/ext" > $@
 	@echo "Description: LIBXSMM/multithreaded for OpenMP" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
-	@echo "Version: $(VERSION)" >> $@
+	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
 	@echo "prefix=$(abspath .)" >> $@
 	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
@@ -1776,7 +1776,7 @@ $(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 	@echo "Name: libxsmm/noblas" > $@
 	@echo "Description: LIBXSMM substituted LAPACK/BLAS dependency" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
-	@echo "Version: $(VERSION)" >> $@
+	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
 	@echo "prefix=$(abspath .)" >> $@
 	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
