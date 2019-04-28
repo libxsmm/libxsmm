@@ -720,10 +720,18 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm
         transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
         index_base, index_stride, stride_a, stride_b, stride_c, batchsize))
       {
-        if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
-          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-        {
-          fprintf(stderr, "LIBXSMM WARNING: batched GEMM was falling back to BLAS!\n");
+        if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
+          const size_t threshold = LIBXSMM_MNK_SIZE(m, n, m);
+          static size_t threshold_max = 0;
+          if (threshold_max <= threshold) {
+            LIBXSMM_STDIO_ACQUIRE();
+            fprintf(stderr, "LIBXSMM WARNING: ");
+            libxsmm_gemm_print2(stderr, iprec, oprec, transa, transb, &m, &n, &k,
+              alpha, NULL/*a*/, lda, NULL/*b*/, ldb, beta, NULL/*c*/, ldc);
+            fprintf(stderr, " => batched GEMM/omp was falling back to BLAS!\n");
+            LIBXSMM_STDIO_RELEASE();
+            threshold_max = threshold;
+          }
         }
       }
       else if (0 != libxsmm_verbosity /* library code is expected to be mute */
