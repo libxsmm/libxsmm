@@ -776,8 +776,10 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         singleton_flock.l_len = 0; /* entire file */
         singleton_flock.l_type = F_WRLCK; /* exclusive across PIDs */
         singleton_flock.l_whence = SEEK_SET;
-        internal_singleton_handle = ((0 < result && (int)sizeof(internal_singleton_fname) > result) ? fcntl(open( /* attempt to lock file */
-          internal_singleton_fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR), F_SETLK, &singleton_flock) : -1);
+        internal_singleton_handle = ((0 < result && (int)sizeof(internal_singleton_fname) > result) ? open(
+          internal_singleton_fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR) : -1);
+        internal_singleton_handle = (0 <= internal_singleton_handle ? fcntl(/* attempt to lock file */
+          internal_singleton_handle, F_SETLK, &singleton_flock) : -1);
 #endif
       }
       { /* calibrate timer */
@@ -1134,7 +1136,8 @@ LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype)
       }
     } break;
   }
-  return 0;
+  LIBXSMM_ASSERT_MSG(0, "unsupported data type");
+  return 1; /* avoid to return 0 to avoid div-by-zero in static analysis of depending code */
 }
 
 
