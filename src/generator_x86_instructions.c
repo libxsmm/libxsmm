@@ -3690,9 +3690,7 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
 
     int l_regbas0 = i_gp_reg_base % 8;
     int l_gp8 = ((i_gp_reg_base > 7) && (i_gp_reg_base <= 15) ? 1 : 0);
-    int l_regidx = i_gp_reg_idx % 8;
     int l_ix8 = ((i_gp_reg_idx > 7) && (i_gp_reg_idx <= 15) ? 1 : 0);
-    int l_sca = 0;
     int l_sse_preamble = 64;
     int l_place1 = i + 2;
 
@@ -3734,10 +3732,6 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
           exit(-1);
     }
 
-    if (i_scale==2) l_sca=0x40;
-    else if (i_scale==4) l_sca=0x80;
-    else if (i_scale==8) l_sca=0xc0;
-
     if ( l_gp8 || l_ix8 )
     {
         if (l_gp8) l_sse_preamble += 1;
@@ -3761,6 +3755,11 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     }
 #if !defined(NDEBUG)
     else {
+        const int l_regidx = i_gp_reg_idx % 8;
+        int l_sca = 0;
+        if (i_scale == 2) l_sca = 0x40;
+        else if (i_scale == 4) l_sca = 0x80;
+        else if (i_scale == 8) l_sca = 0xc0;
         buf[i++] = 0x0f;
         buf[i++] = 0x18;
         buf[i++] = (unsigned char)(0x14 + l_instype);
