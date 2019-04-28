@@ -303,7 +303,7 @@
 /** Calculate total number of matrix-elements; matrices A, B, C are given per M, N, K, and emphasize (S) the C-size. */
 #define LIBXSMM_SIZE(M, N, K, S) (((size_t)(M) * (K)) + ((size_t)(K) * (N)) + ((size_t)(S) * (M) * (N)))
 /** Condition based on arithmetic intensity (AI) */
-#define LIBXSMM_SMM_AI(M, N, K, S, TYPESIZE) ((LIBXSMM_MNK_SIZE(M, N, K) * 2) <= ((size_t)(TYPESIZE) * 3/*AI*/ * LIBXSMM_SIZE(M, N, K, S)))
+#define LIBXSMM_SMM_AI(M, N, K, S, TYPESIZE) ((LIBXSMM_MNK_SIZE(M, N, K) * 2) <= ((size_t)(TYPESIZE) * 4/*AI*/ * LIBXSMM_SIZE(M, N, K, S)))
 /** Determine whether an SMM is suitable i.e., small enough. */
 #if !defined(LIBXSMM_THRESHOLD_AI) /* traditional MNK-threshold */
 # define LIBXSMM_SMM(M, N, K, S, TYPESIZE) (LIBXSMM_MNK_SIZE(M, N, K) <= (LIBXSMM_MAX_MNK))

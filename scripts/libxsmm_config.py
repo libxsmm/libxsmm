@@ -85,7 +85,7 @@ if __name__ == "__main__":
             libxsmm_utilities.version_numbers(version)
 
         if (0 == threshold):
-            threshold = 48 * 48 * 48
+            threshold = 64 * 64 * 64
         maxmnk = libxsmm_utilities.max_mnk(mnklist, threshold)
         maxdim = int(maxmnk ** (1.0 / 3.0) + 0.5)
         avgdim = int(0.5 * maxdim + 0.5)
