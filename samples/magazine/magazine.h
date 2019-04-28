@@ -47,7 +47,7 @@
 #else
 # define STREAM_B(EXPR) 0
 #endif
-#if 1
+#if 0
 # define STREAM_C(EXPR) (EXPR)
 #else
 # define STREAM_C(EXPR) 0
