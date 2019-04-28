@@ -235,7 +235,11 @@ printf("Extra parameters: iunroll=%d junroll=%d loopi=%d loopj=%d\n",iunroll,jun
      if ( layout == 101 ) { /* Row-major swaps tra/trb/trc */
         if ( tra ) tra = 0; else tra = 1;
         if ( trb ) trb = 0; else trb = 1;
-        if ( trc ) trc = 0; else trc = 1;
+#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
+        LIBXSMM_ASSERT(0 == trc);
+        if ( trc ) trc = 0; else
+#endif
+        trc = 1;
      }
 
      /* Change which registers to use for windows builds */
