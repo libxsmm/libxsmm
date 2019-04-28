@@ -82,7 +82,7 @@ pip install /tmp/tensorflow_pkg/<package-name-build-above.whl>
 
 To use MKL and MKL-DNN effectively, the environment shall be setup with at least `KMP_BLOCKTIME=1` (perhaps more environment settings such as `KMP_AFFINITY=compact,1,granularity=fine`, `KMP_HW_SUBSET=1T`, and `OMP_NUM_THREADS=<number-of-physical-cores-not-threads>` are beneficial). The `KMP_BLOCKTIME` shall be set to a "low number of Milliseconds" (if not zero) to allow OpenMP workers to quickly transition between MKL's and TF's (Eigen) thread-pool. Please note that LIBXSMM uses the native TensorFlow (Eigen) thread-pool.
 
-It can be very beneficial to scale TensorFlow even on a per-socket basis (in case of multi-socket systems). Generally, this may involve (1)&#160;real MPI-based communication, or (2)&#160;just trivially running multiple instances of TensorFlow separately (without tight communication). For example, [Horovod](https://github.com/uber/horovod) can be used to perform an almost "trivial" instancing of TensorFlow, and to add an intermittent averaging scheme for exchanging weights between independently learning instances (Horovod is out of scope for this document). Similarly, for inference all incoming requests may be dispatched (in batches) to independent instances of TensorFlow. For the latter, the [TensorFlow Serving](tfserving.md) framework may be used to serve for inference-requests with an easy to use web-based client/server infrastructure.
+It can be very beneficial to scale TensorFlow even on a per-socket basis (in case of multi-socket systems). Generally, this may involve (1)&#160;real MPI-based communication, or (2)&#160;just trivially running multiple instances of TensorFlow separately (without tight communication). For example, [Horovod](https://github.com/uber/horovod) can be used to perform an almost "trivial" instancing of TensorFlow, and to add an intermittent averaging scheme for exchanging weights between independently learning instances (Horovod is out of scope for this document). Similarly, for inference all incoming requests may be dispatched (in batches) to independent instances of TensorFlow. For the latter, the web-based client/server infrastructure TensorFlow Serving may be used to serve inference-requests.
 
 However, to quickly check the benefits of scaling TensorFlow, one may simply use `numactl` to run on a single socket only; multiplying the achieved performance according to the number of sockets yields a quick estimate of scaling performance. Here is an example for a single dual-socket Skylake server system with HT enabled and sub-NUMA clustering disabled (2x24 cores, 96 threads in two memory-domains/sockets).
 
@@ -236,9 +236,9 @@ Please verify recall and accuracy as follows:
 2017-07-13 21:21:27.438104: I tensorflow/core/kernels/logging_ops.cc:79] eval/Accuracy[0.77981138]
 ```
 
-## Development and Regression Tests<a name="regression-tests"></a>
+## Development and Tests<a name="regression-tests"></a>
 
-This section focuses on LIBXSMM's integration with TensorFlow, which has two aspects: (1)&#160;sparse CNN, and (2)&#160;CNN. To build and test the sparse routines:
+This section focuses on LIBXSMM's integration with TensorFlow, which has two aspects: (1)&#160;sparse CNN, and (2)&#160;CNN. To build and run the regression tests for the sparse routines:
 
 ```bash
 bazel build <all-build-flags-used-to-build-the-wheel> //tensorflow/core/kernels:sparse_matmul_op_test
