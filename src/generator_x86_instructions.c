@@ -2256,9 +2256,15 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
           if ( i_vector_name=='y' ) { l_sizereg = 32; l_fourth -= 0x20; }
           if ( i_vector_name=='x' ) { l_sizereg = 16; l_fourth -= 0x40; }
           if ( l_broadcast == 1 ) l_sizereg = 4;
-          if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) )
+#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is identical in both branches */
+          if ( (i_vector_name!='z') && (l_vec_0<=15) && (l_vec_1<=15) ) {
                l_fpadj2 = -0x81;
-          else l_fpadj2 = -0x81;
+          }
+          else
+#endif
+          {
+               l_fpadj2 = -0x81;
+          }
           l_fpadj2 += 0x02;
           l_fpadj = -7;
           l_second += 1;
@@ -2766,7 +2772,7 @@ void libxsmm_x86_instruction_vec_compute_mem( libxsmm_generated_code* io_generat
         int l_regbas0 = i_gp_reg_base % 8;
         int l_regidx =  i_gp_reg_idx % 8;
         int l_gp8 = ((i_gp_reg_base > 7)&&(i_gp_reg_base<=15)?1:0);
-        assert(0 == l_forced_offset);
+        LIBXSMM_ASSERT(0 == l_forced_offset);
         if ( (i_vec_reg_number_0>=8) && (i_vec_reg_number_0<=15) ) l_vecgrp0=1;
         if ( l_insert_extra_byte != 0 )
         {
@@ -3735,23 +3741,32 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
     if ( l_gp8 || l_ix8 )
     {
         if (l_gp8) l_sse_preamble += 1;
+#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
+        LIBXSMM_ASSERT(0 == l_ix8);
         if (l_ix8) l_sse_preamble += 2;
+#endif
         buf[i++] = (unsigned char)l_sse_preamble;
         ++l_place1;
     }
 
+#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
     if (i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF )
+#endif
     {
+        LIBXSMM_ASSERT(i_gp_reg_idx == LIBXSMM_X86_GP_REG_UNDEF);
         buf[i++] = 0x0f;
         buf[i++] = 0x18;
         buf[i++] = (unsigned char)(0x10 + l_instype + l_regbas0);
         if ( l_regbas0 == 4 ) buf[i++]=0x24;
-    } else {
+    }
+#if !defined(NDEBUG)
+    else {
         buf[i++] = 0x0f;
         buf[i++] = 0x18;
         buf[i++] = (unsigned char)(0x14 + l_instype);
         buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
     }
+#endif
 
     if ( ( l_regbas0 == 5) && (i_displacement==0) )
     {
