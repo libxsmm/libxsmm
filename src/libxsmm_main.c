@@ -413,7 +413,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     /* synchronize I/O */
     LIBXSMM_STDIO_ACQUIRE();
 #if !defined(NDEBUG) && defined(__OPTIMIZE__)
-    fprintf(stderr, "LIBXSMM WARNING: library was built without -DNDEBUG and contains debug code!\n");
+    fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
 #endif
     fprintf(stderr, "\nLIBXSMM_VERSION: %s-%s (%i)", LIBXSMM_BRANCH, LIBXSMM_VERSION, LIBXSMM_VERSION4(
       LIBXSMM_VERSION_MAJOR, LIBXSMM_VERSION_MINOR, LIBXSMM_VERSION_UPDATE, LIBXSMM_VERSION_PATCH));
