@@ -3765,6 +3765,8 @@ void libxsmm_x86_instruction_prefetch( libxsmm_generated_code* io_generated_code
         buf[i++] = (unsigned char)(0x14 + l_instype);
         buf[i++] = (unsigned char)(0x00 + l_sca + l_regbas0 + l_regidx*8);
     }
+#else
+    LIBXSMM_UNUSED(i_scale);
 #endif
 
     if ( ( l_regbas0 == 5) && (i_displacement==0) )
