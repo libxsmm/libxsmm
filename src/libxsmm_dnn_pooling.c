@@ -206,19 +206,27 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_pooling_create_tensor_dat
                 layout->dim_size[3] = (handle->ofh) + (2*handle->desc.pad_h_out);
                 layout->dim_size[4] = handle->blocksofm;
                 layout->dim_size[5] = handle->desc.N;
-              } else if ( (type == LIBXSMM_DNN_POOLING_MASK) ) {
+              } else
+#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
+                if ( (type == LIBXSMM_DNN_POOLING_MASK) )
+#endif
+              {
+                LIBXSMM_ASSERT(type == LIBXSMM_DNN_POOLING_MASK);
                 layout->dim_size[0] = handle->ofmblock;
                 layout->dim_size[1] = handle->ofw;
                 layout->dim_size[2] = handle->ofh;
                 layout->dim_size[3] = handle->blocksofm;
                 layout->dim_size[4] = handle->desc.N;
-              } else {
+              }
+#if !defined(NDEBUG)
+              else {
                 free(layout->dim_type);
                 free(layout->dim_size);
                 free(layout);
                 layout = 0; /* make sure a NULL is returned */
                 *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
               }
+#endif
             } else {
               free(layout);
               layout = 0; /* make sure a NULL is returned */

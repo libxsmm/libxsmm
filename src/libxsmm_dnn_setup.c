@@ -274,12 +274,15 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_feature_map_blocks( libxs
 
   /* Let's calculate how many blocks we need for the feature maps */
   if (handle->use_lp_kernel == 1) {
+#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is identical in both branches */
     if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
       handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
       handle->blocksofm = handle->desc.K / handle->ofmblock;
       handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
       handle->blocksofm_lp = handle->desc.K / handle->ofmblock;
-    } else {
+    } else
+#endif
+    {
       handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
       handle->blocksofm = handle->desc.K / handle->ofmblock;
       handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
@@ -366,8 +369,9 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
 
 }
 
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_layer* handle ) {
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_layer** handle_ptr ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  libxsmm_dnn_layer *const handle = *handle_ptr;
   int tmp_max_c_block = 16;
   int tmp_max_k_block = 16;
   int tmp_block = 0;
@@ -416,7 +420,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
       if ( ((handle->desc.pad_h > 0) && ((handle->desc.pad_h_in != 0) || (handle->desc.pad_h_out != 0))) || ((handle->desc.pad_w > 0) && ((handle->desc.pad_w_in != 0) || (handle->desc.pad_w_out !=0))) ) {
         status = LIBXSMM_DNN_ERR_INVALID_PADDING;
         free(handle);
-        handle = 0;
+        *handle_ptr = 0;
         return status;
       }
       if ( (handle->desc.N % 16 == 0) && (handle->desc.C % 16 == 0) && (handle->desc.K % 16 == 0) ) {

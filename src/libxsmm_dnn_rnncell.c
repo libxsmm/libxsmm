@@ -584,7 +584,11 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
             if (0 != layout->dim_type && 0 != layout->dim_size) { /* TODO: handle the error */
               layout->num_dims = 1;
 
-              if ( (type == LIBXSMM_DNN_RNN_REGULAR_BIAS) || (type == LIBXSMM_DNN_RNN_GRADIENT_BIAS) ) {
+#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
+              if ( (type == LIBXSMM_DNN_RNN_REGULAR_BIAS) || (type == LIBXSMM_DNN_RNN_GRADIENT_BIAS) )
+#endif
+              {
+                LIBXSMM_ASSERT(type == LIBXSMM_DNN_RNN_REGULAR_BIAS || type == LIBXSMM_DNN_RNN_GRADIENT_BIAS);
                 layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_LSTM ) {
                   layout->dim_size[0] = (unsigned int)(handle->desc.K * 4);
@@ -593,13 +597,16 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
                 } else {
                   layout->dim_size[0] = (unsigned int)handle->desc.K;
                 }
-              } else {
+              }
+#if !defined(NDEBUG)
+              else {
                 free(layout->dim_type);
                 free(layout->dim_size);
                 free(layout);
                 layout = 0; /* make sure a NULL is returned */
                 *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
               }
+#endif
             } else {
               free(layout);
               layout = 0; /* make sure a NULL is returned */
@@ -633,10 +640,10 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_rnncell_create_tensor_dat
 LIBXSMM_API size_t libxsmm_dnn_rnncell_get_scratch_size(const libxsmm_dnn_rnncell* handle, const libxsmm_dnn_compute_kind kind, libxsmm_dnn_err_t* status)
 {
   size_t size = 0;
-  size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in) ;
   *status = LIBXSMM_DNN_SUCCESS;
 
   if (0 != handle) {
+    const size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in);
     switch (handle->desc.cell_type) {
       case LIBXSMM_DNN_RNNCELL_RNN_RELU:
       case LIBXSMM_DNN_RNNCELL_RNN_SIGMOID:
@@ -769,10 +776,10 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_rnncell_bind_scratch(libxsmm_dnn_rnnce
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   uintptr_t address = (uintptr_t)scratch;
-  size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in) ;
   size_t offset = 0;
 
   if (0 != handle) {
+    const size_t dwdr_typesize = (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ? sizeof(float) : libxsmm_dnn_typesize(handle->desc.datatype_in);
     switch (handle->desc.cell_type) {
       case LIBXSMM_DNN_RNNCELL_RNN_RELU:
       case LIBXSMM_DNN_RNNCELL_RNN_SIGMOID:

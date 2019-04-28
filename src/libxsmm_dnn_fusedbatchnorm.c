@@ -222,18 +222,26 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fusedbatchnorm_create_ten
                 layout->dim_size[1] = handle->desc.W + (2*handle->desc.pad_w_in);
                 layout->dim_size[2] = handle->desc.H + (2*handle->desc.pad_h_in);
                 layout->dim_size[3] = handle->desc.N;
-              } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) )   {
+              } else
+#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
+                if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) )
+#endif
+              {
+                LIBXSMM_ASSERT((type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT));
                 layout->dim_size[0] = handle->desc.C;
                 layout->dim_size[1] = (handle->desc.W/handle->desc.v) + (2*handle->desc.pad_w_out);
                 layout->dim_size[2] = (handle->desc.H/handle->desc.u) + (2*handle->desc.pad_h_out);
                 layout->dim_size[3] = handle->desc.N;
-              } else {
+              }
+#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
+              else {
                 free(layout->dim_type);
                 free(layout->dim_size);
                 free(layout);
                 layout = 0; /* make sure a NULL is returned */
                 *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
               }
+#endif
             }
           } else {
             free(layout);
