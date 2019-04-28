@@ -772,14 +772,15 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         const int result = LIBXSMM_SNPRINTF(internal_singleton_fname, sizeof(internal_singleton_fname), "/tmp/.libxsmm.%u",
           /*rely on user id to avoid permission issues in case of left-over files*/(unsigned int)getuid());
         struct flock singleton_flock;
+        int singleton_handle;
         singleton_flock.l_start = 0;
         singleton_flock.l_len = 0; /* entire file */
         singleton_flock.l_type = F_WRLCK; /* exclusive across PIDs */
         singleton_flock.l_whence = SEEK_SET;
-        internal_singleton_handle = ((0 < result && (int)sizeof(internal_singleton_fname) > result) ? open(
+        singleton_handle = ((0 < result && (int)sizeof(internal_singleton_fname) > result) ? open(
           internal_singleton_fname, O_WRONLY | O_CREAT, S_IRUSR | S_IWUSR) : -1);
-        internal_singleton_handle = (0 <= internal_singleton_handle ? fcntl(/* attempt to lock file */
-          internal_singleton_handle, F_SETLK, &singleton_flock) : -1);
+        internal_singleton_handle = fcntl(singleton_handle, F_SETLK, &singleton_flock);
+        if (0 > internal_singleton_handle && 0 <= singleton_handle) close(singleton_handle);
 #endif
       }
       { /* calibrate timer */
