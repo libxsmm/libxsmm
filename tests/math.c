@@ -15,7 +15,11 @@ LIBXSMM_INLINE unsigned int ref_isqrt_u32(unsigned int u32)
 
 LIBXSMM_INLINE unsigned int ref_isqrt_u64(unsigned long long u64)
 {
+#if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
   const unsigned long long r = (unsigned long long)(sqrtl((long double)u64) + 0.5);
+#else
+  const unsigned long long r = (unsigned long long)(sqrt((double)u64) + 0.5);
+#endif
   return (unsigned int)(((long double)r * r) <= u64 ? r : (r - 1));
 }
 
@@ -29,7 +33,11 @@ LIBXSMM_INLINE unsigned int ref_icbrt_u32(unsigned int u32)
 
 LIBXSMM_INLINE unsigned int ref_icbrt_u64(unsigned long long u64)
 {
+#if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
   const unsigned long long r = (unsigned long long)(powl((long double)u64, 1.0 / 3.0) + 0.5);
+#else
+  const unsigned long long r = (unsigned long long)(pow((double)u64, 1.0 / 3.0) + 0.5);
+#endif
   return (unsigned int)(((long double)r * r * r) <= u64 ? r : (r - 1));
 }
 
@@ -82,7 +90,7 @@ int main(/*int argc, char* argv[]*/)
     d2 = LIBXSMM_EXP2F(rd);
     e1 = fabs(d1 - d2); e2 = fabs(d2);
     e3 = 0 < e2 ? (e1 / e2) : 0.0;
-    if (1E-4 < fmin(e1, e3)) exit(EXIT_FAILURE);
+    if (1E-4 < LIBXSMM_MIN(e1, e3)) exit(EXIT_FAILURE);
 
     a = libxsmm_isqrt_u32(r32);
     b = ref_isqrt_u32(r32);
@@ -96,7 +104,7 @@ int main(/*int argc, char* argv[]*/)
     e2 = fabs(d2 * d2 - fabs(rd));
     if (e2 < e1) {
       e3 = 0 < e2 ? (e1 / e2) : 0.f;
-      if (1E-2 > fmin(fabs(e1 - e2), e3)) {
+      if (1E-2 > LIBXSMM_MIN(fabs(e1 - e2), e3)) {
         ++warn_ssqrt;
       }
       else {
@@ -109,7 +117,7 @@ int main(/*int argc, char* argv[]*/)
     e2 = fabs(d2 * d2 - fabs(rd));
     if (e2 < e1) {
       e3 = 0 < e2 ? (e1 / e2) : 0.f;
-      if (1E-11 > fmin(fabs(e1 - e2), e3)) {
+      if (1E-11 > LIBXSMM_MIN(fabs(e1 - e2), e3)) {
         ++warn_dsqrt;
       }
       else {

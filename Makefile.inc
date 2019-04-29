@@ -802,9 +802,16 @@ endif
 absliblpath = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
   $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
   $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1)))
-abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
-  $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
-    -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
+
+ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
+  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
+    $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
+       -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
+else # Cygwin/MinGW (static)
+  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
+    $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
+       -l$(basename $(notdir $1)),$(NULL)),$1))
+endif
 
 LIBDEP = $(LIBNAME).$(LIBEXT)
 MAINLIB = $(call abslib,$(LIBDEP))
