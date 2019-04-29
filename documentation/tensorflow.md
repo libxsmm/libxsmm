@@ -238,7 +238,7 @@ Please verify recall and accuracy as follows:
 
 ## Development and Tests<a name="regression-tests"></a>
 
-This section focuses on LIBXSMM's integration with TensorFlow, which has two aspects: (1)&#160;sparse CNN, and (2)&#160;CNN. To build and run the regression tests for the sparse routines:
+This section focuses on LIBXSMM's integration with TensorFlow, which has two aspects: (1)&#160;sparse CNN using SpMDM routines, and (2)&#160;CNN using direct convolutions. To build and run the regression tests for the sparse routines (SpMDM):
 
 ```bash
 bazel build <all-build-flags-used-to-build-the-wheel> //tensorflow/core/kernels:sparse_matmul_op_test
@@ -249,7 +249,7 @@ bazel-bin/tensorflow/core/kernels/sparse_matmul_op_test
 bazel run <all-build-flags-used-to-build-the-wheel> //tensorflow/python/kernel_tests:sparse_matmul_op_test
 ```
 
-To build and test the regular CNN routines (note that below `bazel run...` may be deadlocking during the test):
+As suggested in the overview, it is still possible to exercise TensorFlow with LIBXSMM as a compute engine for a very limited set of operators (2d forward/backward direct convolutions), which may be desired for testing and development purpose. To enable LIBXSMM's convolutions, the flags `--define tensorflow_xsmm_convolutions=1` and/or `--define tensorflow_xsmm_backward_convolutions=1` are supplied in addition to `--define tensorflow_xsmm=1`. It might be even possible to `--define eigen_xsmm=1` if not implied by the afore mentioned flags. To build and test the CNN routines:
 
 ```bash
 bazel build <all-build-flags-used-to-build-the-wheel> //tensorflow/core/kernels:conv_ops_test
@@ -258,13 +258,11 @@ bazel-bin/tensorflow/core/kernels/conv_ops_test
 bazel run <all-build-flags-used-to-build-the-wheel> //tensorflow/python/kernel_tests:conv_ops_test
 ```
 
-For development and experiments, one may clone a [fork](https://github.com/hfp/tensorflow) of the [original](https://github.com/tensorflow/tensorflow/) TensorFlow repository.
+For development and experiments, one may clone a [fork](https://github.com/hfp/tensorflow) of the [original](https://github.com/tensorflow/tensorflow/) TensorFlow repository:
 
 ```bash
 git clone https://github.com/hfp/tensorflow.git
 ```
-
-As suggested in the overview, it is still possible to exercise TensorFlow with LIBXSMM as a compute engine for a very limited set of operators (2d forward/backward direct convolutions), which may be desired for testing and development purpose. To enable LIBXSMM's convolutions, the flags `--define tensorflow_xsmm_convolutions=1` and/or `--define tensorflow_xsmm_backward_convolutions=1` are supplied in addition to `--define tensorflow_xsmm=1`. It might be even possible to `--define eigen_xsmm=1` if not implied by the afore mentioned flags.
 
 To get nicely named JIT-kernels when profiling a workload, LIBXSMM's support for [JIT-profiling](libxsmm_prof.md) can be leveraged. In case of TensorFlow, the following flags can be added to Bazel's build line (Intel VTune Amplifier 2018):
 

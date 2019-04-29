@@ -30,8 +30,10 @@ nav:
 - Applications:
   - CP2K Molecular Dynamics: cp2k.md
   - GxM Deeplearning: gxm.md
-  - TensorFlow Serving: tfserving.md
   - TensorFlow: tensorflow.md
+  - SeisSol: https://seissol.readthedocs.io/en/latest/compilation.html#installing-libxsmm
+  - EDGE: http://usr.dial3343.org/en/master/chapters/install/edge.html#libxsmm
+  - PyFR: http://pyfr.org/user_guide.php
 - About:
   - Contributing: CONTRIBUTING.md
   - License: LICENSE.md
