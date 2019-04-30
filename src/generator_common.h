@@ -207,6 +207,7 @@
 #define LIBXSMM_X86_INSTR_VPORD          20078
 #define LIBXSMM_X86_INSTR_VPSRLD         20079
 #define LIBXSMM_X86_INSTR_VPERMT2W       20080
+#define LIBXSMM_X86_INSTR_VPMOVSXWD      20081
 
 /* AVX512, QUAD MADD, QUAD VNNI and VNNI */
 #define LIBXSMM_X86_INSTR_V4FMADDPS      26000
@@ -219,6 +220,11 @@
 #define LIBXSMM_X86_INSTR_VPDPWSSDS      26007
 #define LIBXSMM_X86_INSTR_VPDPBUSD       26008
 #define LIBXSMM_X86_INSTR_VPDPBUSDS      26009
+
+/* AVX512 BF16 */
+#define LIBXSMM_X86_INSTR_VDPBF16PS      27000
+#define LIBXSMM_X86_INSTR_VCVTNEPS2BF16  27001
+#define LIBXSMM_X86_INSTR_VCVTNE2PS2BF16 27002
 
 /* GP instructions */
 #define LIBXSMM_X86_INSTR_ADDQ           30000
@@ -552,12 +558,10 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*       io_generated_co
                                   const libxsmm_gemm_descriptor* i_xgemm_desc );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_code,
-                                         const char*             i_arch );
+void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_code );
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_code,
-                                         const char*             i_arch );
+void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_code );
 
 LIBXSMM_API_INTERN
 void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,

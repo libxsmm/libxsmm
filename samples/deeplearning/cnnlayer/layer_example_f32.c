@@ -41,7 +41,7 @@
 #endif
 
 # define USE_OVERWRITE
-//# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE
+/*# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE*/
 /*# define USE_FUSED_BATCH_STATS_FWD*/
 /*# define USE_FUSED_BATCH_STATS_BWD*/
 /*# define USE_FUSED_RELU_BWD*/
@@ -325,7 +325,7 @@ int main(int argc, char* argv[])
     libxsmm_free(naive_input_tmp);
   }
 #if (defined(USE_FUSED_RELU_BWD) || defined(USE_FUSED_BATCH_STATS_BWD))
-  /* Initialize some entries with zeros  */
+  /* Initialize some entries with zeros */
   for (i = 0; i < nImg*nIfm*ifhp*ifwp; i++ ) {
     if ( ((i%16) == 2) || ((i%16) == 3) || ((i%16) == 7) || ((i%16) == 14) ) {
       naive_input[i] = 0.0;

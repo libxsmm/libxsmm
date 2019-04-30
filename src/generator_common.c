@@ -425,10 +425,10 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
       libxsmm_strncpy(o_instr_name, "v4fnmaddss", i_instr_name_max_length, 10 );
       break;
     case LIBXSMM_X86_INSTR_VP4DPWSSD:
-      libxsmm_strncpy(o_instr_name, "vp4dpwssd", i_instr_name_max_length, 13 );
+      libxsmm_strncpy(o_instr_name, "vp4dpwssd", i_instr_name_max_length, 9 );
       break;
     case LIBXSMM_X86_INSTR_VP4DPWSSDS:
-      libxsmm_strncpy(o_instr_name, "vp4dpwssds", i_instr_name_max_length, 15 );
+      libxsmm_strncpy(o_instr_name, "vp4dpwssds", i_instr_name_max_length, 10 );
       break;
     /* AVX512, VNNI */
     case LIBXSMM_X86_INSTR_VPDPWSSD:
@@ -442,6 +442,16 @@ void libxsmm_get_x86_instr_name( const unsigned int i_instr_number,
       break;
     case LIBXSMM_X86_INSTR_VPDPBUSDS:
       libxsmm_strncpy(o_instr_name, "vpdpbusds", i_instr_name_max_length, 9 );
+      break;
+    /* AVX512, BF16 */
+    case LIBXSMM_X86_INSTR_VDPBF16PS:
+      libxsmm_strncpy(o_instr_name, "vdpbf16ps", i_instr_name_max_length, 9 );
+      break;
+    case LIBXSMM_X86_INSTR_VCVTNEPS2BF16:
+      libxsmm_strncpy(o_instr_name, "vcvtneps2bf16", i_instr_name_max_length, 13 );
+      break;
+    case LIBXSMM_X86_INSTR_VCVTNE2PS2BF16:
+      libxsmm_strncpy(o_instr_name, "vcvtne2ps2bf16", i_instr_name_max_length, 14 );
       break;
     /* GP instructions */
     case LIBXSMM_X86_INSTR_ADDQ:
@@ -782,14 +792,13 @@ void libxsmm_mmfunction_signature( libxsmm_generated_code*         io_generated_
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_code,
-                                         const char*             i_arch ) {
+void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_code ) {
   if ( io_generated_code->code_type == 0 ) {
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
 
-    if ( (strcmp( i_arch, "wsm" ) == 0) ) {
+    if ( io_generated_code->arch <= LIBXSMM_X86_SSE4 ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __SSE3__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX__\n" );
@@ -798,7 +807,7 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( (strcmp( i_arch, "snb" ) == 0) ) {
+    } else if ( io_generated_code->arch == LIBXSMM_X86_AVX ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX2__\n" );
@@ -807,7 +816,7 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( (strcmp( i_arch, "hsw" ) == 0) ) {
+    } else if ( io_generated_code->arch == LIBXSMM_X86_AVX2 ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX2__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
@@ -816,13 +825,10 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( (strcmp( i_arch, "knl" ) == 0) ||
-                (strcmp( i_arch, "knm" ) == 0) ||
-                (strcmp( i_arch, "skx" ) == 0) ||
-                (strcmp( i_arch, "clx" ) == 0)    ) {
+    } else if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#ifdef __AVX512F__\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
+    } else if ( io_generated_code->arch < LIBXSMM_X86_SSE3 ) {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#pragma message (\"LIBXSMM KERNEL COMPILATION WARNING: compiling arch-independent gemm kernel in: \" __FILE__)\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
     } else {
@@ -833,20 +839,13 @@ void libxsmm_generator_isa_check_header( libxsmm_generated_code* io_generated_co
 }
 
 LIBXSMM_API_INTERN
-void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_code,
-                                         const char*             i_arch ) {
+void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_code ) {
   if ( io_generated_code->code_type == 0 ) {
     char l_new_code[512];
     int l_max_code_length = 511;
     int l_code_length = 0;
 
-    if ( (strcmp( i_arch, "wsm" ) == 0) ||
-         (strcmp( i_arch, "snb" ) == 0) ||
-         (strcmp( i_arch, "hsw" ) == 0) ||
-         (strcmp( i_arch, "knl" ) == 0) ||
-         (strcmp( i_arch, "knm" ) == 0) ||
-         (strcmp( i_arch, "skx" ) == 0) ||
-         (strcmp( i_arch, "clx" ) == 0)    )
+    if ( ( io_generated_code->arch >= LIBXSMM_X86_SSE3 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT )  )
     {
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#else\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
@@ -856,7 +855,7 @@ void libxsmm_generator_isa_check_footer( libxsmm_generated_code* io_generated_co
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
       l_code_length = LIBXSMM_SNPRINTF( l_new_code, l_max_code_length, "#endif\n\n" );
       libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-    } else if ( (strcmp( i_arch, "noarch" ) == 0) ) {
+    } else if ( io_generated_code->arch < LIBXSMM_X86_SSE3 ) {
     } else {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
       return;

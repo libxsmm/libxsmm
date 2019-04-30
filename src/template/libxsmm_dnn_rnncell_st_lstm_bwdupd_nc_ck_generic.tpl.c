@@ -43,9 +43,9 @@ libxsmm_blasint bk = handle->bk;
 libxsmm_blasint bn = handle->bn;
 libxsmm_blasint bc = handle->bc;
 libxsmm_blasint K4 = K * 4;
-const int cBlocks = C/bc;
-const int kBlocks = K/bk;
-const int nBlocks = N/bn;
+const libxsmm_blasint cBlocks = C/bc;
+const libxsmm_blasint kBlocks = K/bk;
+const libxsmm_blasint nBlocks = N/bn;
 unsigned long long blocks;
 /* tensor raw pointers */
 element_input_type  *xt    = (element_input_type* )handle->xt->data;
@@ -183,7 +183,7 @@ const libxsmm_smmfunction_reducebatch batchreduce_kernelb1 = libxsmm_smmdispatch
 const libxsmm_smmfunction_reducebatch batchreduce_kernelc1 = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &K, &N, &bk, NULL, NULL, NULL, NULL);
 const libxsmm_smmfunction_reducebatch batchreduce_kerneld = libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL);
 
-/* Auxiliary arrays for batch-reduce gemm calls  */
+/* Auxiliary arrays for batch-reduce gemm calls */
 const element_filter_type *A_array[1024];
 const element_output_type *B_array[1024];
 

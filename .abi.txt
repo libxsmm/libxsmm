@@ -4,6 +4,7 @@ libxsmm_barrier_create
 libxsmm_barrier_destroy
 libxsmm_barrier_init
 libxsmm_barrier_wait
+libxsmm_bgemm_descriptor_init
 libxsmm_blas_dgemm0
 libxsmm_blas_dgemm1
 libxsmm_blas_dgemm2
@@ -24,6 +25,8 @@ libxsmm_blocked_gemm_handle_destroy
 libxsmm_blocked_gemm_omp
 libxsmm_blocked_gemm_st
 libxsmm_blocked_gemm_transpose_b
+libxsmm_bmmdispatch
+libxsmm_bmmdispatch_reducebatch
 libxsmm_bsgemm
 libxsmm_bsgemm_
 libxsmm_bsgemm_descriptor_init
@@ -51,8 +54,11 @@ libxsmm_dgemm_
 libxsmm_dgemm_descriptor_init
 libxsmm_dgemm_omp_
 libxsmm_diff
+libxsmm_diff_16
+libxsmm_diff_32
+libxsmm_diff_48
+libxsmm_diff_64
 libxsmm_diff_n
-libxsmm_diff_npot
 libxsmm_dispatch_mcopy
 libxsmm_dispatch_trans
 libxsmm_dispatch_trmm
@@ -178,7 +184,9 @@ libxsmm_generator_gemm_inlineasm
 libxsmm_generator_gemm_kernel
 libxsmm_generator_gemm_rm_ac_soa
 libxsmm_generator_gemm_rm_bc_soa
+libxsmm_generator_getrf_kernel
 libxsmm_generator_matcopy_kernel
+libxsmm_generator_pgemm_kernel
 libxsmm_generator_spgemm
 libxsmm_generator_spgemm_csc_kernel
 libxsmm_generator_spgemm_csc_soa_kernel
@@ -210,13 +218,15 @@ libxsmm_get_transkernel_info
 libxsmm_get_verbosity
 libxsmm_getrf_descriptor_init
 libxsmm_hash
-libxsmm_hash2
-libxsmm_hash2_
 libxsmm_hash_
+libxsmm_hash_char
+libxsmm_hash_i32
+libxsmm_hash_i64
 libxsmm_icbrt_u32
 libxsmm_icbrt_u64
 libxsmm_init
 libxsmm_init_
+libxsmm_internal_gemm_error
 libxsmm_isqrt2_u32
 libxsmm_isqrt_u32
 libxsmm_isqrt_u64
@@ -268,6 +278,9 @@ libxsmm_otrans_thread_internal
 libxsmm_pgemm_descriptor_init
 libxsmm_primes_u32
 libxsmm_product_limit
+libxsmm_ptr_b0
+libxsmm_ptr_b1
+libxsmm_ptr_b2
 libxsmm_ptr_c0
 libxsmm_ptr_c1
 libxsmm_ptr_c2
@@ -277,6 +290,9 @@ libxsmm_ptr_d2
 libxsmm_ptr_i0
 libxsmm_ptr_i1
 libxsmm_ptr_i2
+libxsmm_ptr_l0
+libxsmm_ptr_l1
+libxsmm_ptr_l2
 libxsmm_ptr_s0
 libxsmm_ptr_s1
 libxsmm_ptr_s2
@@ -365,7 +381,6 @@ libxsmm_trsm_descriptor_init
 libxsmm_truncate_convert_f32_bf16
 libxsmm_typename
 libxsmm_typesize
-libxsmm_update_mmstatistic
 libxsmm_wigemm
 libxsmm_wigemm0
 libxsmm_wigemm1

@@ -42,8 +42,8 @@ const libxsmm_blasint t =  handle->T;
 const libxsmm_blasint bk = handle->bk;
 const libxsmm_blasint bn = handle->bn;
 const libxsmm_blasint bc = handle->bc;
-const int cBlocks = C/bc;
-const int kBlocks = K/bk;
+const libxsmm_blasint cBlocks = C/bc;
+const libxsmm_blasint kBlocks = K/bk;
 unsigned long long blocks;
 
 /* define tensors */
@@ -93,7 +93,7 @@ LIBXSMM_VLA_DECL(3, element_output_type, co, cot, N, K);
 /* define batch-reduce gemm kernels */
 const libxsmm_smmfunction_reducebatch batchreduce_kernela = libxsmm_smmdispatch_reducebatch( bk, bn, bc, &bk, &C, &K, NULL, NULL, NULL, NULL );
 const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL );
-/* Auxiliary arrays for batch-reduce gemms  */
+/* Auxiliary arrays for batch-reduce gemms */
 const element_filter_type *A_array[1024];
 const element_input_type  *B_array[1024];
 element_output_type *cps_ptr = NULL;

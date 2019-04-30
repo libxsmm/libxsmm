@@ -58,9 +58,9 @@ element_filter_type *scratch_rT = (element_filter_type*)handle->scratch_rT;
 #endif
 element_output_type *scratch_hT = (element_output_type*)handle->scratch_hT;
 /* Auxiliary variables for bact-reduce calls  */
-int nBlocks = N/bn;
-int cBlocks = C/bc;
-int kBlocks = K/bk;
+libxsmm_blasint nBlocks = N/bn;
+libxsmm_blasint cBlocks = C/bc;
+libxsmm_blasint kBlocks = K/bk;
 unsigned long long blocks;
 const float beta = 0.0;
 /* multidimensional arrays */
@@ -146,7 +146,7 @@ const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) *
 
 libxsmm_blasint ikic, inic, inik, icin, ikin;
 
-/* Auxiliary arrays for batch-reduce gemm calls  */
+/* Auxiliary arrays for batch-reduce gemm calls */
 const element_filter_type *A_array[1024];
 const element_output_type *B_array[1024];
 
@@ -236,8 +236,8 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
     ic = icb * bc;
     /* Prepare arguments for batch-reduce call  */
     for (ik = 0; ik < kBlocks; ik++) {
-      A_array[ik] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, wT, icb, ik, 0, 0, kBlocks, bk, bc);
-      B_array[ik] = (element_output_type*) &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik*bk, N, K);
+      A_array[ik] = &LIBXSMM_VLA_ACCESS(4, wT, icb, ik, 0, 0, kBlocks, bk, bc);
+      B_array[ik] = &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik*bk, N, K);
     }
     /* Reduce batch gemm call  */
     blocks = kBlocks;
@@ -288,8 +288,8 @@ for (i = t-2; i >= 0; --i) {
 
     /* delta += R^T * delta+1 */
     for (ic = 0; ic < kBlocks; ic++) {
-      A_array[ic] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rT, ikb, ic, 0, 0, kBlocks, bk, bk);
-      B_array[ic] = (element_output_type*) &LIBXSMM_VLA_ACCESS(3, delta, i+1, in, ic*bk, N, K);
+      A_array[ic] = &LIBXSMM_VLA_ACCESS(4, rT, ikb, ic, 0, 0, kBlocks, bk, bk);
+      B_array[ic] = &LIBXSMM_VLA_ACCESS(3, delta, i+1, in, ic*bk, N, K);
     }
     /* Reduce batch gemm call  */
     blocks = kBlocks;
@@ -361,8 +361,8 @@ for (i = t-2; i >= 0; --i) {
       ic = icb * bc;
       /* Prepare arguments for batch-reduce call  */
       for (ik = 0; ik < kBlocks; ik++) {
-        A_array[ik] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, wT, icb, ik, 0, 0, kBlocks, bk, bc);
-        B_array[ik] = (element_output_type*) &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik*bk, N, K);
+        A_array[ik] = &LIBXSMM_VLA_ACCESS(4, wT, icb, ik, 0, 0, kBlocks, bk, bc);
+        B_array[ik] = &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik*bk, N, K);
       }
       /* Reduce batch gemm call  */
       blocks = kBlocks;

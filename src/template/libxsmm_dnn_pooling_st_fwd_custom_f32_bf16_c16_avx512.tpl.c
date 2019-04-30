@@ -117,7 +117,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   img = imgfm / nBlocksFm;
   fm = imgfm % nBlocksFm;
 
-  for( v = 0; v < ofh*ofw*16; v+=16 ) {
+  for ( v = 0; v < ofh*ofw*16; v+=16 ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
     _mm512_storeu_ps( &(lcl_buffer_ptr[v]), _mm512_set1_ps(-FLT_MAX) );
 #endif
@@ -126,9 +126,9 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #endif
   }
 
-  for( ho = oph; ho < (ofh+oph); ho++ ) {
+  for ( ho = oph; ho < (ofh+oph); ho++ ) {
     hi = ((ho-oph) * sh) - handle->desc.pad_h;
-    for( wo = opw; wo < (ofw+opw); wo++ ) {
+    for ( wo = opw; wo < (ofw+opw); wo++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_BF16)
       float*               lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output, ho-oph, wo-opw, 0, ofw, 16);
 #else
@@ -140,9 +140,9 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
       __m512 lcl_voutput = _mm512_loadu_ps( lcl_output_ptr );
 
       wi = ((wo-opw) * sw) - handle->desc.pad_w;
-      for( kh = 0; kh < handle->desc.R; kh++ ) {
+      for ( kh = 0; kh < handle->desc.R; kh++ ) {
         if(hi+kh < 0 || hi+kh >= ifh) continue;
-        for( kw = 0; kw < handle->desc.S; kw++ ) {
+        for ( kw = 0; kw < handle->desc.S; kw++ ) {
           if(wi+kw < 0 || wi+kw >= ifw) {
             continue;
           } else {
@@ -168,14 +168,14 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   }
 
   /* copy the local buffer into output activations */
-  for( ho = oph; ho < (ofh+oph); ho++ ) {
+  for ( ho = oph; ho < (ofh+oph); ho++ ) {
     element_output_type*     output_ptr = &LIBXSMM_VLA_ACCESS(5, output,     img, fm,     ho, opw, 0, nBlocksFm, ofhp, ofwp, 16);
 #if defined(LIBXSMM_DNN_POOLING_FWD_BF16)
     float*               lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output,          ho-oph,   0, 0,                   ofw, 16);
 #else
     element_output_type* lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output,          ho-oph,   0, 0,                   ofw, 16);
 #endif
-    for( wo = opw; wo < (ofw+opw); wo++ ) {
+    for ( wo = opw; wo < (ofw+opw); wo++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_AVG)
       const __m512 recp_pool_size_ps = _mm512_set1_ps( recp_pool_size );
 #endif

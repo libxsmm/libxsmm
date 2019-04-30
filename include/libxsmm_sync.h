@@ -64,15 +64,19 @@
 
 #if defined(__MIC__)
 # define LIBXSMM_SYNC_PAUSE _mm_delay_32(8/*delay*/)
-#elif !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_STATIC)
-# define LIBXSMM_SYNC_PAUSE _mm_pause()
-#elif defined(LIBXSMM_GCC_BASELINE) && !defined(__PGI)
-# define LIBXSMM_SYNC_PAUSE __builtin_ia32_pause()
+#elif !defined(LIBXSMM_INTRINSICS_NONE)
+# if defined(LIBXSMM_GCC_BASELINE) && !defined(__INTEL_COMPILER)
+#   define LIBXSMM_SYNC_PAUSE __builtin_ia32_pause()
+# else
+#   define LIBXSMM_SYNC_PAUSE _mm_pause()
+# endif
 #else
 # define LIBXSMM_SYNC_PAUSE
 #endif
 
-#if !defined(LIBXSMM_SYNC_SYSTEM) && (defined(__MINGW32__) || defined(__PGI))
+#if !defined(LIBXSMM_SYNC_SYSTEM) && \
+  (defined(__MINGW32__) || defined(__PGI) || \
+  (defined(_CRAYC) && !defined(__GNUC__)))
 # define LIBXSMM_SYNC_SYSTEM
 #endif
 #if !defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP) && 0
@@ -81,19 +85,22 @@
 #if !defined(LIBXSMM_ATOMIC_ZERO_STORE) && defined(_CRAYC)
 # define LIBXSMM_ATOMIC_ZERO_STORE
 #endif
-#if defined(__ATOMIC_RELAXED)
-# define LIBXSMM_ATOMIC_RELAXED __ATOMIC_RELAXED
-#else
-# define LIBXSMM_ATOMIC_RELAXED 0
-#endif
-#if defined(__ATOMIC_SEQ_CST)
-# define LIBXSMM_ATOMIC_SEQ_CST __ATOMIC_SEQ_CST
-#else
-# define LIBXSMM_ATOMIC_SEQ_CST 0
-#endif
 #if !defined(LIBXSMM_ATOMIC_LOCKTYPE)
 # define LIBXSMM_ATOMIC_LOCKTYPE char
 #endif
+
+typedef enum libxsmm_atomic_kind {
+#if defined(__ATOMIC_SEQ_CST)
+  LIBXSMM_ATOMIC_SEQ_CST = __ATOMIC_SEQ_CST,
+#else
+  LIBXSMM_ATOMIC_SEQ_CST = 0,
+#endif
+#if defined(__ATOMIC_RELAXED)
+  LIBXSMM_ATOMIC_RELAXED = __ATOMIC_RELAXED
+#else
+  LIBXSMM_ATOMIC_RELAXED = LIBXSMM_ATOMIC_SEQ_CST
+#endif
+} libxsmm_atomic_kind;
 
 #define LIBXSMM_NONATOMIC_LOCKTYPE LIBXSMM_ATOMIC_LOCKTYPE
 #define LIBXSMM_NONATOMIC_LOAD(SRC_PTR, KIND) (*(SRC_PTR))

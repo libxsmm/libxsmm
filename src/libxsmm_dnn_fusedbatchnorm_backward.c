@@ -328,9 +328,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_custom(li
   }
 
   /* check if we are on an AVX512 platform */
-  if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-        libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
-        libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM                                                        ) &&
+  if ( ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) &&
        (handle->ofmblock == 16) ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_f32_c16( handle, start_thread, tid );
@@ -340,9 +338,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_custom(li
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
-  } else if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-        libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
-        libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM                                                        ) &&
+  } else if ( ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) &&
        (handle->ofmblock == 32) ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_f32_c32( handle, start_thread, tid );
@@ -352,9 +348,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_custom(li
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
-  } else if ( (libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-        libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
-        libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM                                                        ) &&
+  } else if ( ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) &&
        (handle->ofmblock == 64) ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fusedbatchnorm_st_bwd_custom_f32_f32_c64( handle, start_thread, tid );

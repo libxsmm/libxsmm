@@ -69,9 +69,9 @@ int main(void)
     max_size_a = LIBXSMM_MAX(max_size_a, size_a);
     max_size_b = LIBXSMM_MAX(max_size_b, size_b);
   }
-  a = (ELEM_TYPE*)libxsmm_malloc(sizeof(ELEM_TYPE) * max_size_a);
-  b = (ELEM_TYPE*)libxsmm_malloc(sizeof(ELEM_TYPE) * max_size_b);
-  c = (ELEM_TYPE*)libxsmm_malloc(sizeof(ELEM_TYPE) * max_size_b);
+  a = (ELEM_TYPE*)libxsmm_malloc((size_t)(sizeof(ELEM_TYPE) * max_size_a));
+  b = (ELEM_TYPE*)libxsmm_malloc((size_t)(sizeof(ELEM_TYPE) * max_size_b));
+  c = (ELEM_TYPE*)libxsmm_malloc((size_t)(sizeof(ELEM_TYPE) * max_size_b));
   LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c);
 
   /* initialize data */
@@ -83,7 +83,7 @@ int main(void)
     { /* validation */
       unsigned int testerrors = 0;
       libxsmm_blasint i, j;
-      memcpy(c, b, sizeof(ELEM_TYPE) * max_size_b);
+      memcpy(c, b, (size_t)(sizeof(ELEM_TYPE) * max_size_b));
       for (i = 0; i < n[test]; ++i) {
         for (j = 0; j < m[test]; ++j) {
           const libxsmm_blasint u = i * ldi[test] + j;

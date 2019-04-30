@@ -54,15 +54,15 @@
 #endif
 
 
-/* function pointer for the CPUID-dispatched implementation */
-LIBXSMM_APIVAR(void (*internal_spmdm_createSparseSlice_fp32_thread)(const libxsmm_spmdm_handle*, char,
-  const float*, libxsmm_CSR_sparseslice*, int, int, int));
-LIBXSMM_APIVAR(void (*internal_spmdm_createSparseSlice_bfloat16_thread)(const libxsmm_spmdm_handle*, char,
-  const libxsmm_bfloat16*, libxsmm_CSR_sparseslice*, int, int, int));
-LIBXSMM_APIVAR(void (*internal_spmdm_compute_fp32_thread)(const libxsmm_spmdm_handle*, char, char,
-  const float*, libxsmm_CSR_sparseslice*, const float*, char, const float*, float*, int, int, int));
-LIBXSMM_APIVAR(void (*internal_spmdm_compute_bfloat16_thread)(const libxsmm_spmdm_handle*, char, char,
-  const libxsmm_bfloat16*, libxsmm_CSR_sparseslice*, const libxsmm_bfloat16*, char, const libxsmm_bfloat16*, float*, int, int, int));
+/* function pointer for the CPUID-dispatched implementation (separate typedef for legacy Cray C++ needed) */
+typedef void (*internal_spmdm_createSparseSlice_fp32_thread_fn)(const libxsmm_spmdm_handle*, char, const float*, libxsmm_CSR_sparseslice*, int, int, int);
+LIBXSMM_APIVAR(internal_spmdm_createSparseSlice_fp32_thread_fn internal_spmdm_createSparseSlice_fp32_thread);
+typedef void (*internal_spmdm_createSparseSlice_bfloat16_thread_fn)(const libxsmm_spmdm_handle*, char, const libxsmm_bfloat16*, libxsmm_CSR_sparseslice*, int, int, int);
+LIBXSMM_APIVAR(internal_spmdm_createSparseSlice_bfloat16_thread_fn internal_spmdm_createSparseSlice_bfloat16_thread);
+typedef void (*internal_spmdm_compute_fp32_thread_fn)(const libxsmm_spmdm_handle*, char, char, const float*, libxsmm_CSR_sparseslice*, const float*, char, const float*, float*, int, int, int);
+LIBXSMM_APIVAR(internal_spmdm_compute_fp32_thread_fn internal_spmdm_compute_fp32_thread);
+typedef void (*internal_spmdm_compute_bfloat16_thread_fn)(const libxsmm_spmdm_handle*, char, char, const libxsmm_bfloat16*, libxsmm_CSR_sparseslice*, const libxsmm_bfloat16*, char, const libxsmm_bfloat16*, float*, int, int, int);
+LIBXSMM_APIVAR(internal_spmdm_compute_bfloat16_thread_fn internal_spmdm_compute_bfloat16_thread);
 
 #if defined(LIBXSMM_SPMDM_AVX)
 LIBXSMM_APIVAR(__m256i* internal_spmdm_shufmasks_32);
@@ -537,17 +537,6 @@ void libxsmm_spmdm_compute_bfloat16_thread(
 }
 
 
-LIBXSMM_API_INLINE void internal_spmdm_init_check(int archid)
-{
-  if (archid < libxsmm_target_archid && 0 != libxsmm_verbosity) { /* library code is expected to be mute */
-    static int error_once = 0;
-    if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-      fprintf(stderr, "LIBXSMM ERROR: missed to enter \"%s\" code path due to the compiler used!\n", libxsmm_get_target_arch());
-    }
-  }
-}
-
-
 LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
   libxsmm_spmdm_handle* handle, libxsmm_CSR_sparseslice** libxsmm_output_csr)
 {
@@ -567,7 +556,6 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
 
 #if defined(LIBXSMM_SPMDM_AVX512_CORE)
   if (LIBXSMM_X86_AVX512_CORE <= libxsmm_target_archid || LIBXSMM_X86_AVX512_CORE <= LIBXSMM_STATIC_TARGET_ARCH) {
-    internal_spmdm_init_check(LIBXSMM_X86_AVX512_CORE);
     internal_spmdm_createSparseSlice_fp32_thread = internal_spmdm_createSparseSlice_fp32_thread_avx512_core;
     internal_spmdm_createSparseSlice_bfloat16_thread = internal_spmdm_createSparseSlice_bfloat16_thread_avx512_core;
     internal_spmdm_compute_fp32_thread = internal_spmdm_compute_fp32_thread_avx512_core;
@@ -578,7 +566,6 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
 #endif
 #if defined(LIBXSMM_SPMDM_AVX2)
   if (LIBXSMM_X86_AVX2 <= libxsmm_target_archid || LIBXSMM_X86_AVX2 <= LIBXSMM_STATIC_TARGET_ARCH) {
-    internal_spmdm_init_check(LIBXSMM_X86_AVX512_MIC);
     internal_spmdm_createSparseSlice_fp32_thread = internal_spmdm_createSparseSlice_fp32_thread_avx2;
     internal_spmdm_createSparseSlice_bfloat16_thread = internal_spmdm_createSparseSlice_bfloat16_thread_avx2;
     internal_spmdm_compute_fp32_thread = internal_spmdm_compute_fp32_thread_avx2;
@@ -588,7 +575,6 @@ LIBXSMM_API void libxsmm_spmdm_init(int M, int N, int K, int max_threads,
   else
 #endif
   {
-    internal_spmdm_init_check(LIBXSMM_X86_AVX);
     internal_spmdm_createSparseSlice_fp32_thread = internal_spmdm_createSparseSlice_fp32_thread_sw;
     internal_spmdm_createSparseSlice_bfloat16_thread = internal_spmdm_createSparseSlice_bfloat16_thread_sw;
     internal_spmdm_compute_fp32_thread = internal_spmdm_compute_fp32_thread_sw;

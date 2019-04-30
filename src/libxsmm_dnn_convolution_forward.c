@@ -152,7 +152,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(l
   /* check if we have a kernel JITed */
   if ( handle->use_fwd_generic != 0 ) {
     if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      const libxsmm_blasint ldx = (handle->pack_input == 0) ? (libxsmm_blasint)handle->desc.v*handle->ifmblock: (libxsmm_blasint)handle->ifmblock;
+      const libxsmm_blasint ldx = (handle->pack_input == 1) ? (libxsmm_blasint)handle->ifmblock : (libxsmm_blasint)handle->desc.v*handle->ifmblock;
       const libxsmm_blasint ldA = handle->ofmblock;
       const libxsmm_blasint ldC = handle->ofmblock;
       const float  beta = (handle->avoid_acc_load) ? 0.0 : 1.0;
@@ -160,8 +160,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(l
       typedef float element_output_type;
       typedef float element_filter_type;
       typedef libxsmm_smmfunction_reducebatch gemm_br_function;
-      int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-      l_flags = l_flags | handle->fwd_flags;
+      int l_flags = ( LIBXSMM_GEMM_FLAGS('N', 'N') ) | handle->fwd_flags;
       /* let's do a ofmblock x ofw_rb x ifmblock GEMM :-) or in other words M=nbOfm, N=ofw, K=nbIfm (col-major) */
       gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch(handle->ofmblock, handle->fwd_ofh_rb*handle->fwd_ofw_rb, handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
       gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch(handle->ofmblock, handle->fwd_ofh_rb*(handle->fwd_ofw_rb-1), handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);

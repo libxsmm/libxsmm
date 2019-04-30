@@ -37,12 +37,14 @@
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #if !defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && defined(LIBXSMM_BUILD) && \
-  (!defined(__BLAS) || (0 != __BLAS)) && defined(__GNUC__) && \
+  (!defined(__BLAS) || (0 != __BLAS)) && (defined(__GNUC__) || defined(_CRAYC)) && \
   !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
     LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) && \
   !defined(_WIN32) && !defined(__CYGWIN__)
-# include <dlfcn.h>
 # define LIBXSMM_BLAS_WRAP_DYNAMIC
+#endif
+#if defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
+# include <dlfcn.h>
 #endif
 #include <limits.h>
 #include <stdio.h>
@@ -73,7 +75,7 @@
 #endif
 
 /** Undefine (disarm) MKL's DIRECT_CALL macros. */
-#if defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
+#if (defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL))
 # if defined(sgemm_)
 #   undef sgemm_
 # endif
@@ -131,23 +133,32 @@ LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid)
 
 #if defined(LIBXSMM_BUILD)
 #if defined(LIBXSMM_BUILD_EXT)
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, double, gemm));
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, float, gemm));
+LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
+LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm));
 #endif
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, double, gemm));
-LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const, float, gemm));
+LIBXSMM_API void libxsmm_internal_gemm_error(const char* transa, const char* transb,
+  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+  const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc);
+LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
+LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm));
 #endif
 
-LIBXSMM_BLAS_SYMBOL_DECL(LIBXSMM_GEMM_CONST, double, gemm)
-LIBXSMM_BLAS_SYMBOL_DECL(LIBXSMM_GEMM_CONST, float, gemm)
+LIBXSMM_BLAS_SYMBOL_XDECL(const*, *, double, gemm);
+LIBXSMM_BLAS_SYMBOL_XDECL(const*, *, float, gemm);
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
   libxsmm_code_pointer copy_a, copy_b, copy_i, copy_o;
   libxsmm_xmmfunction kernel[2];
   unsigned int m, n, k, lda, ldb, ldc;
-  unsigned int tm, tn, tk, dm, dn, dk;
+  /* kernel size (tile) */
+  unsigned int km, kn, kk;
+  /* tile size per task */
+  unsigned int dm, dn, dk;
   unsigned int itypesize, otypesize;
-  unsigned int nthreads, mt, nt, kt;
+  /* number of tasks per direction */
+  unsigned int mt, nt, kt;
   int gemm_flags, flags;
 };
 
@@ -199,12 +210,12 @@ LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
 LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
 
 /**
-* Intercepted GEMM
-* - odd: sequential and non-tiled (small problem sizes only)
-* - even (or negative): parallelized and tiled (all problem sizes)
-* - 3: GEMV is intercepted; small problem sizes
-* - 4: GEMV is intercepted; all problem sizes
-*/
+ * Intercepted GEMM
+ * - odd: sequential and non-tiled (small problem sizes only)
+ * - even (or negative): parallelized and tiled (all problem sizes)
+ * - 3: GEMV is intercepted; small problem sizes
+ * - 4: GEMV is intercepted; all problem sizes
+ */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_wrap);
 
 #endif /*LIBXSMM_GEMM_H*/

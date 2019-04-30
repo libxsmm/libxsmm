@@ -148,9 +148,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_custom(li
   }
 
   /* check if we are on an AVX512 platform */
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM                                                        ) {
+  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512 ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fullyconnected_st_upd_custom_f32_f32( handle, start_thread, tid);
     } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
@@ -218,9 +216,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck
   }
 
   /* check if we are on an AVX512 platform */
-  if ( libxsmm_target_archid == LIBXSMM_X86_AVX512      || libxsmm_target_archid == LIBXSMM_X86_AVX512_MIC ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_CORE || libxsmm_target_archid == LIBXSMM_X86_AVX512_CLX ||
-      libxsmm_target_archid == LIBXSMM_X86_AVX512_KNM                                                        ) {
+  if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck_f32_f32( handle, start_thread, tid);
     } else {
@@ -237,7 +233,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_upd_ncnc_kcck
       libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
       element_input_type alpha = (element_input_type)1;
       element_input_type beta = (element_input_type)0;
-      libxsmm_blasint l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
+      int l_flags = LIBXSMM_GEMM_FLAGS('N', 'T');
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
         libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bc, handle->bn, &lda, &ldb, &ldc, &alpha, &beta, &l_flags, NULL);

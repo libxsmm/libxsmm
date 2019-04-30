@@ -47,51 +47,15 @@
 #endif
 
 LIBXSMM_API_INLINE
-void libxsmm_generator_gemm_avx512_kernel_fsdbcst_initialize_mask( libxsmm_generated_code*            io_generated_code,
-                                                                   const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                                   const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                   const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                   unsigned int                       i_m_done ) {
-  unsigned int l_mask;
-
-  /* init full mask */
-  if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
-    l_mask = 0xff;
-  } else {
-    l_mask = 0xffff;
-  }
-  /* shift right by "inverse" remainder */
-  l_mask = l_mask >> ( i_micro_kernel_config->vector_length - (i_xgemm_desc->m - i_m_done) );
-
-  /* move mask to GP register */
-  libxsmm_x86_instruction_alu_imm( io_generated_code,
-                               i_micro_kernel_config->alu_mov_instruction,
-                               i_gp_reg_mapping->gp_reg_help_5,
-                               l_mask );
-
-  if ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512 ) {
-    libxsmm_x86_instruction_mask_move( io_generated_code,
-                                       LIBXSMM_X86_INSTR_KMOVW,
-                                       i_gp_reg_mapping->gp_reg_help_5,
-                                       LIBXSMM_X86_AVX512_MASK );
-  } else {
-    /* shouldn't happen */
-    LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_ARCH );
-    return;
-  }
-}
-
-LIBXSMM_API_INLINE
 void libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( libxsmm_generated_code*            io_generated_code,
                                                          libxsmm_loop_label_tracker*        io_loop_label_tracker,
                                                          const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
                                                          const libxsmm_micro_kernel_config* i_micro_kernel_config,
                                                          const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                         const char*                        i_arch,
                                                          unsigned int                       i_n_blocking ) {
   /* set function pointers for AVX512 kernels */
   unsigned int (*l_generator_microkernel_kloop)( libxsmm_generated_code*, libxsmm_loop_label_tracker*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
-                                                 const libxsmm_gemm_descriptor*, const char*, unsigned int ) = 0;
+                                                 const libxsmm_gemm_descriptor*, unsigned int ) = 0;
   void (*l_generator_load)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
                             const libxsmm_gemm_descriptor*, const unsigned int, const unsigned int ) = 0;
   void (*l_generator_store)( libxsmm_generated_code*, const libxsmm_gp_reg_mapping*, const libxsmm_micro_kernel_config*,
@@ -154,7 +118,6 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( libxsmm_generated_code*
         i_gp_reg_mapping,
         i_micro_kernel_config,
         i_xgemm_desc,
-        i_arch,
         i_n_blocking );
 
     if (0 != io_generated_code->last_error) {
@@ -201,14 +164,13 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( libxsmm_generated_code*
   if ( l_m_done != (unsigned int)i_xgemm_desc->m ) {
     /* request masking support, @TODO performance penalty here, as a new object is created */
     libxsmm_micro_kernel_config l_micro_kernel_config_mask;
-    libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config_mask, i_xgemm_desc, i_arch, 1 );
+    libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config_mask, io_generated_code->arch, i_xgemm_desc, 1 );
 
     /* initialize k1 register */
-    libxsmm_generator_gemm_avx512_kernel_fsdbcst_initialize_mask (  io_generated_code,
-                                                                    i_gp_reg_mapping,
-                                                                   &l_micro_kernel_config_mask,
-                                                                    i_xgemm_desc,
-                                                                    l_m_done );
+    libxsmm_generator_gemm_initialize_avx512_mask( io_generated_code,
+                                                   i_gp_reg_mapping->gp_reg_help_5,
+                                                   i_xgemm_desc,
+                                                   l_micro_kernel_config_mask.vector_length - ( i_xgemm_desc->m - l_m_done ) );
 
     /* run masked micro kernel */
     l_generator_load( io_generated_code, i_gp_reg_mapping, &l_micro_kernel_config_mask,
@@ -249,7 +211,6 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( libxsmm_generated_code*
         i_gp_reg_mapping,
         &l_micro_kernel_config_mask,
         i_xgemm_desc,
-        i_arch,
         i_n_blocking );
 
     /* i_n_blocking is greater 18  -> push prefetch gpr for more register space */
@@ -287,10 +248,17 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( libxsmm_generated_code*
 
     /* adjust pointers as we don't have a m-loop body */
     /* C */
-    libxsmm_x86_instruction_alu_imm( io_generated_code,
-        l_micro_kernel_config_mask.alu_add_instruction,
-        i_gp_reg_mapping->gp_reg_c,
-        (i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size );
+    if ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) {
+      libxsmm_x86_instruction_alu_imm( io_generated_code,
+          l_micro_kernel_config_mask.alu_add_instruction,
+          i_gp_reg_mapping->gp_reg_c,
+          (i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size/2 );
+    } else {
+      libxsmm_x86_instruction_alu_imm( io_generated_code,
+          l_micro_kernel_config_mask.alu_add_instruction,
+          i_gp_reg_mapping->gp_reg_c,
+          (i_xgemm_desc->m - l_m_done) * l_micro_kernel_config_mask.datatype_size );
+    }
     /* A */
     if (l_k_unrolled == 0) {
       if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
@@ -368,19 +336,19 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( libxsmm_generated_code*
 
 LIBXSMM_API_INTERN
 unsigned int libxsmm_generator_gemm_avx512_fsdbcst_get_max_n_blocking( const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                                       const char*                    i_arch ) {
+                                                                       const unsigned int             i_arch ) {
   /* handle KNM qmadd */
-  if ( (strcmp(i_arch, "knm") == 0) && (LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) {
+  if ( ( i_arch == LIBXSMM_X86_AVX512_KNM ) && ( LIBXSMM_GEMM_PRECISION_F32 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     return 28;
   }
 
   /* handle int16 on SKX */
-  if ( (strcmp(i_arch, "skx") == 0) && (LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) {
+  if ( ( i_arch == LIBXSMM_X86_AVX512_CORE ) && ( LIBXSMM_GEMM_PRECISION_I16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     return 28;
   }
 
   /* handle bf16 */
-  if ( /*(strcmp(i_arch, "skx") == 0) &&*/ (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )) ) {
+  if ( ( i_arch < LIBXSMM_X86_AVX512_CPX ) && ( LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) ) {
     return 28;
   }
 
@@ -389,13 +357,12 @@ unsigned int libxsmm_generator_gemm_avx512_fsdbcst_get_max_n_blocking( const lib
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_avx512_kernel_fsdbcst( libxsmm_generated_code*        io_generated_code,
-                                                   const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                                   const char*                    i_arch ) {
+                                                   const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   libxsmm_micro_kernel_config l_micro_kernel_config;
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
-  unsigned int l_max_n_rb_block = libxsmm_generator_gemm_avx512_fsdbcst_get_max_n_blocking( i_xgemm_desc, i_arch );
+  unsigned int l_max_n_rb_block = libxsmm_generator_gemm_avx512_fsdbcst_get_max_n_blocking( i_xgemm_desc, io_generated_code->arch );
   unsigned int l_number_of_chunks = 1+((i_xgemm_desc->n-1)/l_max_n_rb_block);
   unsigned int l_modulo = i_xgemm_desc->n%l_number_of_chunks;
   unsigned int l_n2 = i_xgemm_desc->n/l_number_of_chunks;
@@ -447,7 +414,7 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst( libxsmm_generated_code*      
   libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
 
   /* define the micro kernel code gen properties */
-  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, i_xgemm_desc, i_arch, 0 );
+  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
 
   if (l_n1 > l_max_n_rb_block) l_n1 = l_max_n_rb_block; /* this just the case if i_xgemm_desc->n/l_number_of_chunks has no remainder */
   for (l_chunk = 0; l_chunk < l_number_of_chunks; l_chunk++) {
@@ -461,7 +428,7 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst( libxsmm_generated_code*      
   /* printf("N splitting of DP AVX512 Kernel: %i %i %i %i\n", l_N1, l_N2, l_n1, l_n2); */
 
   /* open asm */
-  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_open_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 
   /* Load the actual batch-reduce trip count */
   if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE) {
@@ -476,27 +443,27 @@ void libxsmm_generator_gemm_avx512_kernel_fsdbcst( libxsmm_generated_code*      
 
   if (l_number_of_chunks == 1) {
     libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config,
-        i_xgemm_desc, i_arch, i_xgemm_desc->n);
+        i_xgemm_desc, i_xgemm_desc->n);
   } else {
     if ((l_N2 > 0) && (l_N1 > 0)) {
       libxsmm_generator_gemm_header_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_n1 );
       libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config,
-          i_xgemm_desc, i_arch, l_n1);
+          i_xgemm_desc, l_n1);
       libxsmm_generator_gemm_footer_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n1, l_N1 );
 
       libxsmm_generator_gemm_header_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_n2 );
       libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config,
-          i_xgemm_desc, i_arch, l_n2);
+          i_xgemm_desc, l_n2);
       libxsmm_generator_gemm_footer_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n2, i_xgemm_desc->n );
     } else if ((l_N2 > 0) && (l_N1 == 0)) {
       libxsmm_generator_gemm_header_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, l_n2 );
       libxsmm_generator_gemm_avx512_kernel_fsdbcst_mloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config,
-          i_xgemm_desc, i_arch, l_n2);
+          i_xgemm_desc, l_n2);
       libxsmm_generator_gemm_footer_nloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc, l_n2, i_xgemm_desc->n );
     } else {}
   }
 
   /* close asm */
-  libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_arch, i_xgemm_desc->prefetch );
+  libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 }
 

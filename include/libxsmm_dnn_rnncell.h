@@ -51,7 +51,7 @@ typedef enum libxsmm_dnn_rnncell_type {
 } libxsmm_dnn_rnncell_type;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell_desc {
-  libxsmm_blasint threads;
+  int threads;
   libxsmm_blasint K;         /* number of outputs */
   libxsmm_blasint N;         /* size of the minibatch */
   libxsmm_blasint C;         /* number of inputs */

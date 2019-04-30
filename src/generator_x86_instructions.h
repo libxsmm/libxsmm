@@ -39,13 +39,11 @@
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for initialization
- * @param i_arch architecture code was generated for (needed to build clobber)
  * @param i_prefetch prefetch mode which may result in additional gp reg inits
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_generated_code,
                                           const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                          const char*                   i_arch,
                                           unsigned int                  i_prefetch );
 
 /**
@@ -53,13 +51,11 @@ void libxsmm_x86_instruction_open_stream( libxsmm_generated_code*       io_gener
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
  * @param i_gp_reg_mapping gp register mapping for clobbering
- * @param i_arch architecture code was generated for (needed to build clobber)
  * @param i_prefetch prefetch mode which may result in additional gp reg clobbers
  */
 LIBXSMM_API_INTERN
 void libxsmm_x86_instruction_close_stream( libxsmm_generated_code*       io_generated_code,
                                            const libxsmm_gp_reg_mapping* i_gp_reg_mapping,
-                                           const char*                   i_arch,
                                            unsigned int                  i_prefetch );
 
 /**
@@ -135,8 +131,9 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
  * @param i_instruction_set requested instruction set to encode
  * @param i_vec_instr actual operation variant
  * @param i_vector_name the vector register name prefix (x,y or z)
- * @param i_vec_reg_src the first/source vector register number (xmm/ymm: 0-15, zmm: 0-31)
- * @param i_vec_reg_dst the second/destination vector register number (xmm/ymm: 0-15, zmm: 0-31)
+ * @param i_vec_reg_src_0 the first source vector register number (xmm/ymm: 0-15, zmm: 0-31)
+ * @param i_vec_reg_src_1 the second source vector register number (xmm/ymm: 0-15, zmm: 0-31)
+ * @param i_vec_reg_dst the destination vector register number (xmm/ymm: 0-15, zmm: 0-31)
  * @param i_shuffle_operand is an immediate (only looked at when needed)
  */
 LIBXSMM_API_INTERN
@@ -144,7 +141,8 @@ void libxsmm_x86_instruction_vec_compute_convert ( libxsmm_generated_code* io_ge
                                               const unsigned int      i_instruction_set,
                                               const unsigned int      i_vec_instr,
                                               const char              i_vector_name,
-                                              const unsigned int      i_vec_reg_src,
+                                              const unsigned int      i_vec_reg_src_0,
+                                              const unsigned int      i_vec_reg_src_1,
                                               const unsigned int      i_vec_reg_dst,
                                               const unsigned int      i_shuffle_operand );
 
@@ -241,7 +239,7 @@ void libxsmm_x86_instruction_vec_compute_mem_mask( libxsmm_generated_code* io_ge
   * @param i_scale scale of index register, ignored if i_gp_reg_idx is LIBXSMM_X86_GP_REG_UNDEF
   * @param i_displacement displacement to SIB address
   * @param i_vector_name the vector register name prefix (z)
-  * @param i_vec_reg_number_src the second vector register number (zmm: 0-31), this define a implicit regsiter range
+  * @param i_vec_reg_number_src the second vector register number (zmm: 0-31), this define a implicit register range
   * @param i_vec_reg_number_dest the first vector register number (zmm: 0-31)
   */
 LIBXSMM_API_INTERN
@@ -418,7 +416,7 @@ void libxsmm_x86_instruction_mask_move( libxsmm_generated_code* io_generated_cod
  * Allows for mask move instructions in AVX512
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_mask_instr actual mask compute instruction instruction
+ * @param i_mask_instr actual mask compute instruction
  * @param i_mask_reg_number_src_0 the first operand register number (att syntax) (k1=1...k7=7)
  * @param i_mask_reg_number_src_1 the second operand register number (att syntax) (k1=1...k7=7)
  * @param i_mask_reg_number_dest the third operand register number (att syntax) (k1=1...k7=7)
@@ -483,7 +481,7 @@ void libxsmm_x86_instruction_jump_to_label( libxsmm_generated_code*     io_gener
  * into a vector register
  *
  * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_data pointer to an array of bytes that should be be loaded, length needs to match registerlength specified in i_vector_name (x=16, y=32, z=64)
+ * @param i_data pointer to an array of bytes that should be loaded, length needs to match registerlength specified in i_vector_name (x=16, y=32, z=64)
  * @param i_id global identifier of constants to load.
  * @param i_vector_name the vector register name prefix (x,y or z)
  * @param i_vec_reg_number the destination(gather)/source(scatter) vec register (xmm/ymm: 0-15, zmm: 0-31)

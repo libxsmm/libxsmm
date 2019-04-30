@@ -47,9 +47,9 @@ libxsmm_blasint bk = handle->bk;
 libxsmm_blasint bn = handle->bn;
 libxsmm_blasint bc = handle->bc;
 libxsmm_blasint K4 = K * 4;
-const int cBlocks = C/bc;
-const int kBlocks = K/bk;
-const int nBlocks = N/bn;
+const libxsmm_blasint cBlocks = C/bc;
+const libxsmm_blasint kBlocks = K/bk;
+const libxsmm_blasint nBlocks = N/bn;
 const int lpb = 2;
 /*const int bc_lp = bc/lpb;*/
 const int bk_lp = bk/lpb;
@@ -202,7 +202,7 @@ const libxsmm_bsmmfunction_reducebatch batchreduce_kernelb = libxsmm_bsmmdispatc
 const libxsmm_bsmmfunction_reducebatch batchreduce_kernelc = libxsmm_bsmmdispatch_reducebatch( bk, bc, bn, &bk, &N, &bk, NULL, NULL, NULL, NULL);
 const libxsmm_bsmmfunction_reducebatch batchreduce_kerneld = libxsmm_bsmmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL);
 
-/* Auxiliary arrays for batch-reduce gemm calls  */
+/* Auxiliary arrays for batch-reduce gemm calls */
 const element_filter_type *A_array[1024];
 const element_output_type *B_array[1024];
 

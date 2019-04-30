@@ -63,7 +63,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
   /* temp variable for b-offset to handle no-trans/trans B */
   int l_b_offset = 0;
 
-#if !defined(NDEBUG)
+  /* check that m_blocking is a multiple of vlen and that n_blocking is valid */
   if ( (i_n_blocking > 3) || (i_n_blocking < 1) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
     return;
@@ -72,7 +72,6 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_M_BLOCK );
     return;
   }
-#endif
 
   if (l_m_blocking == 1) {
     /* load column vectors of A */
@@ -83,7 +82,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                   LIBXSMM_X86_GP_REG_UNDEF, 0,
                                   0,
                                   i_micro_kernel_config->vector_name,
-                                  i_n_blocking, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+                                  i_n_blocking, 0, 1, 0 );
     /* loop over columns of B */
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
       /* post increment of a pointer early */
@@ -109,7 +108,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       l_b_offset,
                                       i_micro_kernel_config->vector_name,
-                                      l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+                                      l_n, 0, 1, 0 );
       } else {
         /* handle trans B */
         if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -125,7 +124,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       l_b_offset,
                                       i_micro_kernel_config->vector_name,
-                                      l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+                                      l_n, 0, 1, 0 );
         if ( l_n == (i_n_blocking -1) ) {
           /* handle trans B */
           if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -167,7 +166,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       l_b_offset,
                                       i_micro_kernel_config->vector_name,
-                                      l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+                                      l_n, 0, 1, 0 );
       }
     } else {
       for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
@@ -185,7 +184,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       l_b_offset,
                                       i_micro_kernel_config->vector_name,
-                                      l_n, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+                                      l_n, 0, 1, 0 );
       }
       /* handle trans B */
       if ( (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_TRANS_B) > 0 ) {
@@ -210,7 +209,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
                                       i_micro_kernel_config->vector_name,
-                                      i_n_blocking, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+                                      i_n_blocking, 0, 1, 0 );
 
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
           /* post increment early */
@@ -240,7 +239,7 @@ void libxsmm_generator_gemm_avx2_microkernel( libxsmm_generated_code*           
                                       LIBXSMM_X86_GP_REG_UNDEF, 0,
                                       (i_micro_kernel_config->datatype_size) * (i_micro_kernel_config->vector_length) * l_m,
                                       i_micro_kernel_config->vector_name,
-                                      i_n_blocking+l_m, i_micro_kernel_config->use_masking_a_c, 1, 0 );
+                                      i_n_blocking+l_m, 0, 1, 0 );
       }
       for ( l_m = 0; l_m < l_m_blocking; l_m++ ) {
         for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {

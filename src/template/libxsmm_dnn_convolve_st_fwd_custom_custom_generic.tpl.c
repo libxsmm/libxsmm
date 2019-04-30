@@ -29,7 +29,7 @@
 /* Evangelos Georganas, Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-int img, ofm1, ofm2, ifm1, ifm2, oj, ij, oi, ii, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myOfmId, nOfmBlocks, ind, ofm11, ki1, kj1;
+int img, ofm1, ofm2, ifm1, ifm2, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myOfmId, nOfmBlocks, ind, ofm11, ki1, kj1, ojj, oii;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -108,7 +108,7 @@ if (handle->pack_input == 1) {
   }
 }
 
-if ( (handle->desc.N % handle->desc.threads) != 0 ) {
+if (handle->use_fallback_fwd_loops == 1) {
   /* number of tasks that could be run in parallel */
   const int work = handle->desc.N * handle->blocksofm * handle->ofh;
   /* compute chunk size */
@@ -388,20 +388,20 @@ if ( (handle->desc.N % handle->desc.threads) != 0 ) {
           for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_fwd_oj,handle->ofh); oj += handle->fwd_ofh_rb) {
             for (oi = 0; oi < handle->ofw; oi += handle->fwd_ofw_rb) {
               for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_fwd_ofm, my_ofm_end); ofm1++ ) {
-                for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
-                  if ( (ifmb == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && handle->avoid_acc_load == 0 && ojb == 0 && oj == 0 && oi == 0) {
-                    /* set output feature map to zero */
-                    for (oj = 0; oj < handle->ofh; ++oj) {
-                      element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
-                      for (oi = 0; oi < handle->ofw; ++oi) {
-                        LIBXSMM_PRAGMA_SIMD
-                          for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
-                            temp_ptr[ofm2] = (element_output_type)0;
-                          }
-                        temp_ptr += handle->ofmblock;
-                      }
+                if (((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && handle->avoid_acc_load == 0 && oj == 0 && oi == 0) {
+                  /* set output feature map to zero */
+                  for (ojj = 0; ojj < handle->ofh; ++ojj) {
+                    element_output_type* temp_ptr   = &(LIBXSMM_VLA_ACCESS(  5, output, img, ofm1, ojj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock));
+                    for (oii = 0; oii < handle->ofw; ++oii) {
+                      LIBXSMM_PRAGMA_SIMD
+                        for (ofm2 = 0; ofm2 < handle->ofmblock; ++ofm2) {
+                          temp_ptr[ofm2] = (element_output_type)0;
+                        }
+                      temp_ptr += handle->ofmblock;
                     }
                   }
+                }
+                for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
                   for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_fwd_ifm, handle->blocksifm); ifm1 += handle->blocksifm_blocking) {
                     /* Prepare batch-reduce kernel arguments */
                     if (handle->pack_input == 1) {

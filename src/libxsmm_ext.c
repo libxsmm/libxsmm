@@ -42,7 +42,12 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(d
   LIBXSMM_GEMM_CONST double* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
   LIBXSMM_GEMM_CONST double* beta, double* c, LIBXSMM_GEMM_CONST libxsmm_blasint* ldc)
 {
-  LIBXSMM_FSYMBOL(__wrap_dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  if (LIBXSMM_FSYMBOL(__real_dgemm) != libxsmm_original_dgemm_function) {
+    LIBXSMM_FSYMBOL(__wrap_dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+  else {
+    libxsmm_internal_gemm_error(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
 }
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST char* transb,
@@ -51,7 +56,12 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(s
   LIBXSMM_GEMM_CONST float* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
   LIBXSMM_GEMM_CONST float* beta, float* c, LIBXSMM_GEMM_CONST libxsmm_blasint* ldc)
 {
-  LIBXSMM_FSYMBOL(__wrap_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  if (LIBXSMM_FSYMBOL(__real_sgemm) != libxsmm_original_sgemm_function) {
+    LIBXSMM_FSYMBOL(__wrap_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+  else {
+    libxsmm_internal_gemm_error(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
 }
 
 #elif (1 == LIBXSMM_NO_BLAS)
@@ -66,7 +76,7 @@ void LIBXSMM_FSYMBOL(dgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST 
   LIBXSMM_GEMM_CONST double* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
   LIBXSMM_GEMM_CONST double* beta, double* c, LIBXSMM_GEMM_CONST libxsmm_blasint* ldc)
 {
-  LIBXSMM_FSYMBOL(__real_dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  libxsmm_internal_gemm_error(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 
 
@@ -80,7 +90,7 @@ void LIBXSMM_FSYMBOL(sgemm)(LIBXSMM_GEMM_CONST char* transa, LIBXSMM_GEMM_CONST 
   LIBXSMM_GEMM_CONST float* b, LIBXSMM_GEMM_CONST libxsmm_blasint* ldb,
   LIBXSMM_GEMM_CONST float* beta, float* c, LIBXSMM_GEMM_CONST libxsmm_blasint* ldc)
 {
-  LIBXSMM_FSYMBOL(__real_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  libxsmm_internal_gemm_error(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 }
 #endif
 #endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)*/

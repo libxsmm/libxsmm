@@ -47,9 +47,9 @@ element_filter_type *rD = (element_filter_type*)handle->r->data;
 element_output_type *b  = (element_output_type*)handle->b->data;
 element_output_type *ht = (element_output_type*)handle->ht->data;
 element_output_type *zt = (element_output_type*)handle->internal_z;
-/*int nBlocks = N/bn;*/
-int cBlocks = C/bc;
-int kBlocks = K/bk;
+/*libxsmm_blasint nBlocks = N/bn;*/
+libxsmm_blasint cBlocks = C/bc;
+libxsmm_blasint kBlocks = K/bk;
 unsigned long long blocks;
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
@@ -76,16 +76,16 @@ libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunks
 /* TODO: For now 2D decomposition targets single socket SKX */
 int row_teams = 7;
 int column_teams = 4;
-int my_col_id = ltid % column_teams;
-int my_row_id = ltid / column_teams;
-int in_tasks = N/bn;
-int ik_tasks = K/bk;
+libxsmm_blasint my_col_id = ltid % column_teams;
+libxsmm_blasint my_row_id = ltid / column_teams;
+int in_tasks = (int)(N/bn);
+int ik_tasks = (int)(K/bk);
 int in_tasks_per_thread = in_tasks/row_teams;
 int ik_tasks_per_thread = ik_tasks/column_teams;
-int my_in_start = my_row_id * in_tasks_per_thread;
-int my_in_end = (my_row_id+1) * in_tasks_per_thread;
-int my_ik_start = my_col_id * ik_tasks_per_thread;
-int my_ik_end = (my_col_id+1) * ik_tasks_per_thread;
+libxsmm_blasint my_in_start = my_row_id * in_tasks_per_thread;
+libxsmm_blasint my_in_end = (my_row_id+1) * in_tasks_per_thread;
+libxsmm_blasint my_ik_start = my_col_id * ik_tasks_per_thread;
+libxsmm_blasint my_ik_end = (my_col_id+1) * ik_tasks_per_thread;
 int perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads && cBlocks <= 32 && kBlocks <= 32 && ik_tasks_per_thread <= 16 && in_tasks_per_thread <= 2 ) ? 1 : 0;
 
 if (perform_2d_decomp) {
@@ -111,49 +111,49 @@ if (perform_2d_decomp) {
         /* Prepare arrays for the call */
         for (ic = 0; ic < cBlocks; ic++) {
           /* this is a small matmul */
-          A_array[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, w, ik, ic, 0, 0, cBlocks, bc, bk);
-          B_array[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, x, i, in*bn, ic*bc, N, C);
+          A_array[ii][jj][ic] = &LIBXSMM_VLA_ACCESS(4, w, ik, ic, 0, 0, cBlocks, bc, bk);
+          B_array[ii][jj][ic] = &LIBXSMM_VLA_ACCESS(3, x, i, in*bn, ic*bc, N, C);
         }
         /* z += U.h */
         if (0 == i) {
           /* Prepare arrays for the call */
           for (ic = 0; ic < kBlocks; ic++) {
-            A_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
-            B_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(2, hp, in*bn, ic*bk, K);
+            A_array2[ii][jj][ic] = &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
+            B_array2[ii][jj][ic] = &LIBXSMM_VLA_ACCESS(2, hp, in*bn, ic*bk, K);
           }
         } else {
           /* Prepare arrays for the call */
           for (ic = 0; ic < kBlocks; ic++) {
-            A_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
-            B_array2[ii][jj][ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, h, i-1, in*bn, ic*bk, N, K);
+            A_array2[ii][jj][ic] = &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
+            B_array2[ii][jj][ic] = &LIBXSMM_VLA_ACCESS(3, h, i-1, in*bn, ic*bk, N, K);
           }
         }
       }
     }
 
     if (prefetch_mode != LIBXSMM_GEMM_PREFETCH_NONE) {
-      /* Prepare addition prefetch arrays that are shifted images of regular ones when external prefetching is requested  */
+      /* Prepare additional prefetch arrays that are shifted images of regular ones when external prefetching is requested  */
       int pf_dist_A = 2;
       int pf_dist_B = 4;
-      int total_blocks = in_tasks_per_thread*ik_tasks_per_thread*cBlocks;
-      element_input_type *src_ptr = (element_input_type*) &A_array[0][0][0];
-      element_input_type *dst_ptr = (element_input_type*) &A_array_pf[0][0][0];
+      libxsmm_blasint total_blocks = in_tasks_per_thread*ik_tasks_per_thread*cBlocks;
+      const element_input_type **src_ptr = &A_array[0][0][0];
+      const element_input_type **dst_ptr = &A_array_pf[0][0][0];
       for (ii = 0 ; ii < total_blocks - pf_dist_A; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_A];
       }
-      src_ptr = (element_input_type*) &B_array[0][0][0];
-      dst_ptr = (element_input_type*) &B_array_pf[0][0][0];
+      src_ptr = &B_array[0][0][0];
+      dst_ptr = &B_array_pf[0][0][0];
       for (ii = 0 ; ii < total_blocks - pf_dist_B; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_B];
       }
       total_blocks = in_tasks_per_thread*ik_tasks_per_thread*kBlocks;
-      src_ptr = (element_input_type*) &A_array2[0][0][0];
-      dst_ptr = (element_input_type*) &A_array2_pf[0][0][0];
+      src_ptr = &A_array2[0][0][0];
+      dst_ptr = &A_array2_pf[0][0][0];
       for (ii = 0 ; ii < total_blocks - pf_dist_A; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_A];
       }
-      src_ptr = (element_input_type*) &B_array2[0][0][0];
-      dst_ptr = (element_input_type*) &B_array2_pf[0][0][0];
+      src_ptr = &B_array2[0][0][0];
+      dst_ptr = &B_array2_pf[0][0][0];
       for (ii = 0 ; ii < total_blocks - pf_dist_B; ii++) {
         dst_ptr[ii] = src_ptr[ii+pf_dist_B];
       }
@@ -184,7 +184,7 @@ if (perform_2d_decomp) {
     libxsmm_barrier_wait(handle->barrier, (int)ltid);
   }
 } else {
-  /* Auxiliary arrays for batch-reduce gemms  */
+  /* Auxiliary arrays for batch-reduce gemms */
   const element_input_type *A_array[1024];
   const element_input_type *B_array[1024];
   const element_input_type *A_array2[1024];
@@ -209,8 +209,8 @@ if (perform_2d_decomp) {
       /* Prepare arrays for the call */
       for (ic = 0; ic < cBlocks; ic++) {
         /* this is a small matmul */
-        A_array[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, w, ik, ic, 0, 0, cBlocks, bc, bk);
-        B_array[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, x, i, in*bn, ic*bc, N, C);
+        A_array[ic] = &LIBXSMM_VLA_ACCESS(4, w, ik, ic, 0, 0, cBlocks, bc, bk);
+        B_array[ic] = &LIBXSMM_VLA_ACCESS(3, x, i, in*bn, ic*bc, N, C);
       }
       /* Reduce batch gemm call  */
       blocks = cBlocks;
@@ -220,8 +220,8 @@ if (perform_2d_decomp) {
       if (0 == i) {
         /* Prepare arrays for the call */
         for (ic = 0; ic < kBlocks; ic++) {
-          A_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
-          B_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(2, hp, in*bn, ic*bk, K);
+          A_array2[ic] = &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
+          B_array2[ic] = &LIBXSMM_VLA_ACCESS(2, hp, in*bn, ic*bk, K);
         }
         /* Reduce batch gemm call  */
         blocks = kBlocks;
@@ -229,8 +229,8 @@ if (perform_2d_decomp) {
       } else {
         /* Prepare arrays for the call */
         for (ic = 0; ic < kBlocks; ic++) {
-          A_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
-          B_array2[ic] = (element_input_type*) &LIBXSMM_VLA_ACCESS(3, h, i-1, in*bn, ic*bk, N, K);
+          A_array2[ic] = &LIBXSMM_VLA_ACCESS(4, r, ik, ic, 0, 0, kBlocks, bk, bk);
+          B_array2[ic] = &LIBXSMM_VLA_ACCESS(3, h, i-1, in*bn, ic*bk, N, K);
         }
         /* Reduce batch gemm call  */
         blocks = kBlocks;

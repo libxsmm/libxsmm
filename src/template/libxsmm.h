@@ -87,7 +87,7 @@ LIBXSMM_API void libxsmm_set_target_archid(int id);
  * libxsmm_get_target_arch* functions, or as set by the LIBXSMM_TARGET environment variable.
  */
 LIBXSMM_API const char* libxsmm_get_target_arch(void);
-/** Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|clx", NULL/"0": CPUID) for subsequent code generation (JIT). */
+/** Set target architecture (arch="0|sse|snb|hsw|knl|knm|skx|clx|cpx", NULL/"0": CPUID). */
 LIBXSMM_API void libxsmm_set_target_arch(const char* arch);
 
 /** Get the level of verbosity. */
@@ -141,6 +141,10 @@ LIBXSMM_API libxsmm_wsmmfunction libxsmm_wsmmdispatch(libxsmm_blasint m, libxsmm
 LIBXSMM_API libxsmm_bsmmfunction libxsmm_bsmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
   const float* alpha, const float* beta, const int* flags, const int* prefetch);
+/** Query or JIT-generate SMM-kernel; returns NULL if it does not exist or if JIT is not supported (bf16 inputs, fp32-accumulate internally, bf16 outputs) */
+LIBXSMM_API libxsmm_bmmfunction libxsmm_bmmdispatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
+  const float* alpha, const float* beta, const int* flags, const int* prefetch);
 
 /** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (double-precision). */
 LIBXSMM_API libxsmm_dmmfunction_reducebatch libxsmm_dmmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
@@ -150,6 +154,9 @@ LIBXSMM_API libxsmm_smmfunction_reducebatch libxsmm_smmdispatch_reducebatch(libx
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
 /** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate). */
 LIBXSMM_API libxsmm_bsmmfunction_reducebatch libxsmm_bsmmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
+/** Query or JIT-generate reduction kernel; returns NULL if JIT is not supported (bf16 inputs, fp32-accumulate internally, bf16 outputs). */
+LIBXSMM_API libxsmm_bmmfunction_reducebatch libxsmm_bmmdispatch_reducebatch(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch);
 
 /**
@@ -322,14 +329,14 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
   libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec, const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc,
-  const void* alpha, const void* beta, int flags, /*unsigned*/int nthreads);
+  const void* alpha, const void* beta, int flags, /*unsigned*/int ntasks);
 
 /** Calculate required scratch buffer size needed to perform libxsmm_gemm_thread. */
 LIBXSMM_API size_t libxsmm_gemm_handle_get_scratch_size(const libxsmm_gemm_handle* handle);
 
 /** Low-level type-agnostic GEMM suitable for external threads or tasks. */
 LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* scratch,
-  const void* a, const void* b, void* c, /*unsigned*/int tid);
+  const void* a, const void* b, void* c, /*unsigned*/int tid, /*unsigned*/int nthreads);
 
 /** General dense matrix multiplication (libxsmmext); available as xgemm (generic), dgemm (DP), and sgemm (SP). */
 LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,

@@ -46,10 +46,11 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(MKLJIT) && defined(mkl_jit_create_dgemm)
+#if !defined(MKLJIT) && defined(mkl_jit_create_dgemm) && 1
 # define MKLJIT
 #endif
-#if !defined(INTEL_MKL_VERSION) || (20190003 <= INTEL_MKL_VERSION)
+#if (!defined(INTEL_MKL_VERSION) || (20190003 <= INTEL_MKL_VERSION)) && \
+  !defined(_WIN32) /* TODO: Windows calling convention */
 # define CHECK
 #endif
 #if !defined(MAXSIZE)
@@ -97,16 +98,17 @@ int main(int argc, char* argv[])
 #else
   const int default_maxsize = 16;
 #endif
-  int size_total = LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : 10000/*default*/, 2);
+  int size_total = LIBXSMM_MAX((1 < argc && 0 < atoi(argv[1])) ? atoi(argv[1]) : 10000/*default*/, 2);
   const int size_local = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 1/*default*/, 1, size_total - 1);
   const int nthreads = LIBXSMM_CLMP(3 < argc ? atoi(argv[3]) : 1/*default*/, 1, max_nthreads);
-  const libxsmm_blasint maxsize = LIBXSMM_CLMP(4 < argc ? atoi(argv[4]) : default_maxsize, 1, MAXSIZE);
-  const libxsmm_blasint minsize = LIBXSMM_CLMP(5 < argc ? atoi(argv[5]) : default_minsize, 1, maxsize);
+  const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 1/*default*/, 1);
+  const libxsmm_blasint maxsize = LIBXSMM_CLMP(5 < argc ? atoi(argv[5]) : default_maxsize, 1, MAXSIZE);
+  const libxsmm_blasint minsize = LIBXSMM_CLMP(6 < argc ? atoi(argv[6]) : default_minsize, 1, maxsize);
   const libxsmm_blasint range = maxsize - minsize;
   double a[LIBXSMM_MAX_M*LIBXSMM_MAX_M];
   double b[LIBXSMM_MAX_M*LIBXSMM_MAX_M];
   double c[LIBXSMM_MAX_M*LIBXSMM_MAX_M];
-  double tcall, tdsp0, tdsp1, tcgen;
+  double tcall, tcgen, tdsp0 = 0, tdsp1 = 0;
   libxsmm_timer_tickint start;
   int result = EXIT_SUCCESS;
 
@@ -124,10 +126,10 @@ int main(int argc, char* argv[])
 # pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 #endif
   {
-    triplet *const rnd = (triplet*)malloc(sizeof(triplet) * size_total);
+    triplet *const rnd = (triplet*)(0 < size_total ? malloc(sizeof(triplet) * size_total) : NULL);
     const size_t shuffle = libxsmm_shuffle(size_total);
     const double alpha = 1, beta = 1;
-    int i;
+    int i, n;
 
 #if defined(MKLJIT)
     void* *const jitter = malloc(size_total * sizeof(void*));
@@ -181,26 +183,28 @@ int main(int argc, char* argv[])
     }
 
     /* measure duration for dispatching (cached) kernel */
+    for (n = 0; n < nrepeat; ++n) {
 #if defined(_OPENMP)
-#   pragma omp parallel num_threads(nthreads) private(i)
-    {
-#     pragma omp single
-      start = libxsmm_timer_tick();
-#     pragma omp for
+#     pragma omp parallel num_threads(nthreads) private(i)
+      {
+#       pragma omp single
+        start = libxsmm_timer_tick();
+#       pragma omp for
 #else
-    {
-      start = libxsmm_timer_tick();
+      {
+        start = libxsmm_timer_tick();
 #endif
-      for (i = 0; i < size_total; ++i) {
-        const int j = LIBXSMM_MOD(i, size_local);
+        for (i = 0; i < size_total; ++i) {
+          const int j = LIBXSMM_MOD(i, size_local);
 #if defined(MKLJIT)
-        mkl_jit_get_dgemm_ptr(jitter[j]); /* no "dispatch" just unwrapping the jitter */
+          mkl_jit_get_dgemm_ptr(jitter[j]); /* no "dispatch" just unwrapping the jitter */
 #else
-        libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
+          libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
 #endif
+        }
       }
+      tdsp1 += libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
-    tdsp1 = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
     /* measure duration for code-generation */
 #if defined(_OPENMP)
@@ -227,26 +231,29 @@ int main(int argc, char* argv[])
     tcgen = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
     /* measure dispatching previously generated kernel (likely non-cached) */
+    for (n = 0; n < nrepeat; ++n) {
 #if defined(_OPENMP)
-#   pragma omp parallel num_threads(nthreads) private(i)
-    {
-#     pragma omp single
-      start = libxsmm_timer_tick();
-#     pragma omp for
+#     pragma omp parallel num_threads(nthreads) private(i)
+      {
+#       pragma omp single
+        start = libxsmm_timer_tick();
+#       pragma omp for
 #else
-    {
-      start = libxsmm_timer_tick();
+      {
+        start = libxsmm_timer_tick();
 #endif
-      for (i = 0; i < size_total; ++i) {
-        const int j = (int)LIBXSMM_MOD(shuffle * i, size_total);
+        for (i = 0; i < size_total; ++i) {
+          const int j = (int)LIBXSMM_MOD(shuffle * i, size_total);
 #if defined(MKLJIT)
-        mkl_jit_get_dgemm_ptr(jitter[j]);
+          mkl_jit_get_dgemm_ptr(jitter[j]);
 #else
-        libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
+          libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
 #endif
+        }
       }
+      tdsp0 += libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
-    tdsp0 = libxsmm_timer_duration(start, libxsmm_timer_tick());
+
 #if defined(CHECK)
     { /* calculate l1-norm for manual validation */
       libxsmm_matdiff_info check;
@@ -286,6 +293,8 @@ int main(int argc, char* argv[])
         printf(" <- ERROR!\n");
       }
     }
+#else
+    printf("\n");
 #endif /*defined(CHECK)*/
     free(rnd); /* release random numbers */
 #if defined(MKLJIT) /* release dispatched code */
@@ -295,8 +304,10 @@ int main(int argc, char* argv[])
   }
 
   if (1 < size_total) {
-    const int size1 = size_total - size_local;
-    tcall /= size_total; tdsp0 /= size_total; tdsp1 /= size_total; tcgen /= size1;
+    tcall /= size_total;
+    tdsp0 /= size_total * nrepeat;
+    tdsp1 /= size_total * nrepeat;
+    tcgen /= size_total - size_local;
     if (0 < tcall && 0 < tdsp0 && 0 < tdsp1 && 0 < tcgen) {
       printf("\tfunction-call (empty): %.0f ns (%.0f MHz)\n", 1E9 * tcall, 1E-6 / tcall);
       printf("\tdispatch (ro/cached): %.0f ns (%.0f MHz)\n", 1E9 * tdsp1, 1E-6 / tdsp1);

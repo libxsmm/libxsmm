@@ -529,7 +529,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
 # endif
       {
 #       pragma omp parallel num_threads(nthreads)
-        libxsmm_gemm_thread(handle, scratch, a, b, c, omp_get_thread_num());
+        libxsmm_gemm_thread(handle, scratch, a, b, c, omp_get_thread_num(), nthreads);
       }
 # if defined(LIBXSMM_EXT_TASKS)
       else { /* tasks requested */
@@ -540,7 +540,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
           { int tid;
             for (tid = 0; tid < ntasks; ++tid) {
 #             pragma omp task untied
-              libxsmm_gemm_thread(handle, scratch, a, b, c, tid);
+              libxsmm_gemm_thread(handle, scratch, a, b, c, tid, ntasks);
             }
           }
         } /* implicit synchronization (barrier) */
@@ -555,29 +555,27 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
       int tid;
       for (tid = 0; tid < ntasks; ++tid) {
 #       pragma omp task untied
-        libxsmm_gemm_thread(handle, scratch, a, b, c, tid);
+        libxsmm_gemm_thread(handle, scratch, a, b, c, tid, ntasks);
       }
       if (0 == libxsmm_nosync) { /* allow to omit synchronization */
 #       pragma omp taskwait
       }
 # else
-      LIBXSMM_ASSERT(1 == handle->nthreads);
-      libxsmm_gemm_thread(handle, scratch, a, b, c, 0/*tid*/);
+      libxsmm_gemm_thread(handle, scratch, a, b, c, 0/*tid*/, 1/*nthreads*/);
 # endif
     }
     if (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
       const unsigned int ntasks = handle->mt * handle->nt * handle->kt;
-      const double imbalance = 100.0 * (handle->nthreads - ntasks) / handle->nthreads;
+      const double imbalance = 100.0 * LIBXSMM_DELTA((unsigned int)nthreads, ntasks) / nthreads;
       static double max_imbalance = 50.0;
       if (max_imbalance < imbalance) {
-        fprintf(stderr, "LIBXSMM WARNING (XGEMM): %.0f%% imbalance (%u of %u workers utilized)!\n",
-          imbalance, ntasks, handle->nthreads);
+        fprintf(stderr, "LIBXSMM WARNING (XGEMM): %.0f%% imbalance (%u of %i workers utilized)!\n",
+          imbalance, ntasks, nthreads);
         max_imbalance = imbalance;
       }
     }
 #else
-    LIBXSMM_ASSERT(1 == handle->nthreads);
-    libxsmm_gemm_thread(handle, scratch, a, b, c, 0/*tid*/);
+    libxsmm_gemm_thread(handle, scratch, a, b, c, 0/*tid*/, 1/*nthreads*/);
 #endif /*defined(_OPENMP)*/
     libxsmm_free(scratch);
   }

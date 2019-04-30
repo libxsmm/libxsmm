@@ -116,13 +116,13 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   img = imgfm / nBlocksFm;
   fm = imgfm % nBlocksFm;
 
-  for( v = 0; v < ifh*ifw*16; v += 16 ) {
+  for ( v = 0; v < ifh*ifw*16; v += 16 ) {
     _mm512_storeu_ps( &(lcl_buffer_ptr[v]), _mm512_setzero_ps() );
   }
 
 #if defined(LIBXSMM_DNN_POOLING_BWD_MAX)
-  for( ho = oph; ho < (ofh+oph); ho++ ) {
-    for( wo = opw; wo < (ofw+opw); wo++ ) {
+  for ( ho = oph; ho < (ofh+oph); ho++ ) {
+    for ( wo = opw; wo < (ofw+opw); wo++ ) {
       const element_output_type* doutput_ptr = &LIBXSMM_VLA_ACCESS(5, doutput, img, fm,     ho,     wo, 0, nBlocksFm, ofhp, ofwp, 16);
       const element_mask_type*      mask_ptr = &LIBXSMM_VLA_ACCESS(5, mask,    img, fm, ho-oph, wo-opw, 0, nBlocksFm,  ofh,  ofw, 16);
 
@@ -133,13 +133,13 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   }
 #endif
 #if defined(LIBXSMM_DNN_POOLING_BWD_AVG)
-  for( ho = oph; ho < (ofh+oph); ho++ ) {
+  for ( ho = oph; ho < (ofh+oph); ho++ ) {
     hi = ((ho-oph) * sh) - handle->desc.pad_h;
-    for( wo = opw; wo < (ofw+opw); wo++ ) {
+    for ( wo = opw; wo < (ofw+opw); wo++ ) {
       wi = ((wo-opw) * sw) - handle->desc.pad_w;
-      for( kh = 0; kh < handle->desc.R; kh++ ) {
+      for ( kh = 0; kh < handle->desc.R; kh++ ) {
         if(hi+kh < 0 || hi+kh >= ifh) continue;
-        for( kw = 0; kw < handle->desc.S; kw++ ) {
+        for ( kw = 0; kw < handle->desc.S; kw++ ) {
           if(wi+kw < 0 || wi+kw >= ifw) {
             continue;
           } else {
@@ -160,8 +160,8 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #endif
 
   /* copy the local buffer into dinput activations */
-  for( hi = iph; hi < (ifh+iph); hi++ ) {
-    for( wi = ipw; wi < (ifw+ipw); wi++ ) {
+  for ( hi = iph; hi < (ifh+iph); hi++ ) {
+    for ( wi = ipw; wi < (ifw+ipw); wi++ ) {
       element_input_type*     dinput_ptr = &LIBXSMM_VLA_ACCESS(5, dinput,     img, fm,        hi,        wi, 0, nBlocksFm, ifhp, ifwp, 16);
 #if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
       float*              lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,             hi-iph,    wi-ipw, 0,                   ifw, 16);

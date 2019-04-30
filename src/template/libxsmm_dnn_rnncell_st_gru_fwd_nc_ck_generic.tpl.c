@@ -40,8 +40,8 @@ const libxsmm_blasint bk = handle->bk;
 const libxsmm_blasint bn = handle->bn;
 const libxsmm_blasint bc = handle->bc;
 const libxsmm_blasint K3 = K * 3;
-const int cBlocks = C/bc;
-const int kBlocks = K/bk;
+const libxsmm_blasint cBlocks = C/bc;
+const libxsmm_blasint kBlocks = K/bk;
 unsigned long long blocks;
 
 /* define tensors */
@@ -95,7 +95,7 @@ LIBXSMM_VLA_DECL(3, element_output_type, o, ot, N, K);
 const libxsmm_smmfunction_reducebatch batchreduce_kernela = libxsmm_smmdispatch_reducebatch( bk, bn, bc, &bk, &C, &K, NULL, NULL, NULL, NULL );
 const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL );
 /* define gemm kernels */
-/* Auxiliary arrays for batch-reduce gemms  */
+/* Auxiliary arrays for batch-reduce gemms */
 const element_filter_type *A_array[1024];
 const element_input_type  *B_array[1024];
 
@@ -153,7 +153,7 @@ if (C == 2048 && K == 1024) {
 CB_BLOCKS = cBlocks/BF;
 KB_BLOCKS = kBlocks/BF;
 
-/* Upfront reformating of W and R */
+/* Upfront reformatting of W and R */
 /* reformat W */
 for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
   ic = (ikic / (K/bk));
@@ -198,8 +198,8 @@ for (j = 0; j < t; ++j) {
       if (CB == 0) libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &bi[ik] );
       /* i += W.x */
       for (icb = 0, ic = 0; icb < CB_BLOCKS; ic += bc, icb++) {
-        A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, wi, ikb, icb + CB*CB_BLOCKS, 0, 0, cBlocks, bc, bk);
-        B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, x, j, in, ic + CB*CB_BLOCKS*bc, N, C);
+        A_array[icb] = &LIBXSMM_VLA_ACCESS(4, wi, ikb, icb + CB*CB_BLOCKS, 0, 0, cBlocks, bc, bk);
+        B_array[icb] = &LIBXSMM_VLA_ACCESS(3, x, j, in, ic + CB*CB_BLOCKS*bc, N, C);
       }
       /* Reduce batch gemm call  */
       blocks = CB_BLOCKS;
@@ -207,13 +207,13 @@ for (j = 0; j < t; ++j) {
       /* i += R.hp */
       if (0 == j) {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
-          A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, ri, ikb, icb + CB*KB_BLOCKS, 0, 0, kBlocks, bk, bk);
-          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(2, hp, in, ic + CB*KB_BLOCKS*bk, K);
+          A_array[icb] = &LIBXSMM_VLA_ACCESS(4, ri, ikb, icb + CB*KB_BLOCKS, 0, 0, kBlocks, bk, bk);
+          B_array[icb] = &LIBXSMM_VLA_ACCESS(2, hp, in, ic + CB*KB_BLOCKS*bk, K);
         }
       } else {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
-          A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, ri, ikb, icb + CB*KB_BLOCKS, 0, 0, kBlocks, bk, bk);
-          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
+          A_array[icb] = &LIBXSMM_VLA_ACCESS(4, ri, ikb, icb + CB*KB_BLOCKS, 0, 0, kBlocks, bk, bk);
+          B_array[icb] = &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
         }
       }
       /* Reduce batch gemm call  */
@@ -223,8 +223,8 @@ for (j = 0; j < t; ++j) {
       if (CB == 0) libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, c, j, in, ik, N, K), &bd[ik] );
       /* c += W.x */
       for (icb = 0, ic = 0; icb < CB_BLOCKS; ic += bc, icb++) {
-        A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, wc, ikb, icb + CB*CB_BLOCKS, 0, 0, cBlocks, bc, bk);
-        B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, x, j, in, ic + CB*CB_BLOCKS*bc, N, C);
+        A_array[icb] = &LIBXSMM_VLA_ACCESS(4, wc, ikb, icb + CB*CB_BLOCKS, 0, 0, cBlocks, bc, bk);
+        B_array[icb] = &LIBXSMM_VLA_ACCESS(3, x, j, in, ic + CB*CB_BLOCKS*bc, N, C);
       }
       /* Reduce batch gemm call  */
       blocks = CB_BLOCKS;
@@ -232,13 +232,13 @@ for (j = 0; j < t; ++j) {
       /* c += R.hp */
       if (0 == j) {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
-          A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rc, ikb, icb + CB*KB_BLOCKS, 0, 0, kBlocks, bk, bk);
-          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(2, hp, in, ic + CB*KB_BLOCKS*bk, K);
+          A_array[icb] = &LIBXSMM_VLA_ACCESS(4, rc, ikb, icb + CB*KB_BLOCKS, 0, 0, kBlocks, bk, bk);
+          B_array[icb] = &LIBXSMM_VLA_ACCESS(2, hp, in, ic + CB*KB_BLOCKS*bk, K);
         }
       } else {
         for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
-          A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rc, ikb, icb + CB*KB_BLOCKS, 0, 0, kBlocks, bk, bk);
-          B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
+          A_array[icb] = &LIBXSMM_VLA_ACCESS(4, rc, ikb, icb + CB*KB_BLOCKS, 0, 0, kBlocks, bk, bk);
+          B_array[icb] = &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ic + CB*KB_BLOCKS*bk, N, K);
         }
       }
       /* Reduce batch gemm call  */
@@ -268,16 +268,16 @@ for (j = 0; j < t; ++j) {
       if (CB == 0) libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &bf[ik] );
       /* f += W.x */
       for (icb = 0, ic = 0; icb < CB_BLOCKS; ic += bc, icb++) {
-        A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, wf, ikb, icb + CB*CB_BLOCKS, 0, 0, cBlocks, bc, bk);
-        B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, x, j, in, ic + CB*CB_BLOCKS*bc, N, C);
+        A_array[icb] = &LIBXSMM_VLA_ACCESS(4, wf, ikb, icb + CB*CB_BLOCKS, 0, 0, cBlocks, bc, bk);
+        B_array[icb] = &LIBXSMM_VLA_ACCESS(3, x, j, in, ic + CB*CB_BLOCKS*bc, N, C);
       }
       /* Reduce batch gemm call  */
       blocks = CB_BLOCKS;
       batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &blocks);
       /* f += R.o */
       for (ic = 0, icb = 0; icb < KB_BLOCKS; ic += bk, icb++) {
-        A_array[icb] = (element_filter_type*) &LIBXSMM_VLA_ACCESS(4, rf, ikb, icb + CB*KB_BLOCKS, 0, 0, kBlocks, bk, bk);
-        B_array[icb] = (element_input_type*)  &LIBXSMM_VLA_ACCESS(3, o, j, in, ic + CB*KB_BLOCKS*bk, N, K);
+        A_array[icb] = &LIBXSMM_VLA_ACCESS(4, rf, ikb, icb + CB*KB_BLOCKS, 0, 0, kBlocks, bk, bk);
+        B_array[icb] = &LIBXSMM_VLA_ACCESS(3, o, j, in, ic + CB*KB_BLOCKS*bk, N, K);
       }
       /* Reduce batch gemm call  */
       blocks = KB_BLOCKS;

@@ -52,15 +52,30 @@
 #define LIBXSMM_BETA LIBXSMM_CONFIG_BETA
 #define LIBXSMM_WRAP LIBXSMM_CONFIG_WRAP
 
-#if (defined(__SIZEOF_PTRDIFF_T__) && 4 < (__SIZEOF_PTRDIFF_T__)) || \
-    (defined(__SIZE_MAX__) && (4294967295U < (__SIZE_MAX__))) || \
-    (defined(__GNUC__) && defined(_CRAYC)) || defined(_WIN64) || \
-    (defined(__x86_64__) && 0 != (__x86_64__))
-# define LIBXSMM_BITS 64
-#elif defined(NDEBUG) /* not for production use! */
-# error LIBXSMM is only supported on a 64-bit platform!
-#else /* JIT-generated code (among other issues) is not supported! */
-# define LIBXSMM_BITS 32
+#if !defined(LIBXSMM_PLATFORM_SUPPORTED)
+# if  (defined(__x86_64__) && 0 != (__x86_64__)) || \
+      (defined(__amd64__) && 0 != (__amd64__)) || \
+      (defined(_M_X64) || defined(_M_AMD64)) || \
+      (defined(__i386__) && 0 != (__i386__)) || \
+      (defined(_M_IX86))
+#   define LIBXSMM_PLATFORM_SUPPORTED
+# else /* JIT-generated code (among other issues) is not supported! */
+#   error Intel Architecture or compatible CPU required!
+# endif
+#endif
+#if !defined(LIBXSMM_BITS)
+# if  (defined(__SIZEOF_PTRDIFF_T__) && 4 < (__SIZEOF_PTRDIFF_T__)) || \
+      (defined(__SIZE_MAX__) && (4294967295U < (__SIZE_MAX__))) || \
+      (defined(__x86_64__) && 0 != (__x86_64__)) || \
+      (defined(__amd64__) && 0 != (__amd64__)) || \
+      (defined(_M_X64) || defined(_M_AMD64)) || \
+      (defined(_WIN64))
+#   define LIBXSMM_BITS 64
+# elif defined(NDEBUG) /* not for production use! */
+#   error LIBXSMM is only supported on a 64-bit platform!
+# else /* JIT-generated code (among other issues) is not supported! */
+#   define LIBXSMM_BITS 32
+# endif
 #endif
 
 #define LIBXSMM_STRINGIFY2(SYMBOL) #SYMBOL
@@ -91,7 +106,7 @@
 # define LIBXSMM_EXTERN_C LIBXSMM_EXTERN_KEYWORD
 # define LIBXSMM_INLINE_KEYWORD inline
 # define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
-# if defined(__GNUC__)
+# if defined(__GNUC__) || defined(_CRAYC)
 #   define LIBXSMM_CALLER_ID __PRETTY_FUNCTION__
 # elif defined(_MSC_VER)
 #   define LIBXSMM_CALLER_ID __FUNCDNAME__
@@ -130,6 +145,10 @@
 # define LIBXSMM_CALLER LIBXSMM_CALLER_ID
 #endif
 
+#if !defined(LIBXSMM_UNPACKED) && defined(_CRAYC)
+# define LIBXSMM_UNPACKED
+#endif
+
 #if defined(_WIN32) && !defined(__GNUC__)
 # define LIBXSMM_ATTRIBUTE(A) __declspec(A)
 # if defined(__cplusplus)
@@ -138,20 +157,29 @@
 #   define LIBXSMM_INLINE_ALWAYS static __forceinline
 # endif
 # define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
-# define LIBXSMM_PACKED(TYPE, NAME) LIBXSMM_PRAGMA(pack(1)) TYPE NAME
+# if !defined(LIBXSMM_UNPACKED)
+#   define LIBXSMM_PACKED(TYPE) LIBXSMM_PRAGMA(pack(1)) TYPE
+# endif
 # define LIBXSMM_CDECL __cdecl
-#elif defined(__GNUC__)
+#elif (defined(__GNUC__) || defined(__clang__) || defined(__PGI))
 # define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
-# define LIBXSMM_PACKED(TYPE, NAME) TYPE LIBXSMM_ATTRIBUTE(__packed__) NAME
+# if !defined(LIBXSMM_UNPACKED)
+#   define LIBXSMM_PACKED(TYPE) TYPE LIBXSMM_ATTRIBUTE(__packed__)
+# endif
 # define LIBXSMM_CDECL LIBXSMM_ATTRIBUTE(cdecl)
 #else
 # define LIBXSMM_ATTRIBUTE(A)
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_INLINE
 # define LIBXSMM_ALIGNED(DECL, N) DECL
-# define LIBXSMM_PACKED(TYPE, NAME) TYPE NAME
 # define LIBXSMM_CDECL
+#endif
+#if !defined(LIBXSMM_PACKED)
+# define LIBXSMM_PACKED(TYPE) TYPE
+# if !defined(LIBXSMM_UNPACKED)
+#   define LIBXSMM_UNPACKED
+# endif
 #endif
 
 #if defined(__INTEL_COMPILER)
@@ -353,17 +381,12 @@
 # define LIBXSMM_PRAGMA_OPTIMIZE_ON
 #endif
 
-#if defined(_OPENMP) && (200805 <= _OPENMP) /*OpenMP 3.0*/
+#if defined(_OPENMP) && (200805 <= _OPENMP) /*OpenMP 3.0*/ \
+ && defined(NDEBUG) /* CCE complains for debug builds */
 # define LIBXSMM_OPENMP_COLLAPSE(N) collapse(N)
 #else
 # define LIBXSMM_OPENMP_COLLAPSE(N)
 #endif
-
-/** LIBXSMM_NBITS determines the minimum number of bits needed to represent N. */
-#define LIBXSMM_NBITS(N) (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + LIBXSMM_MIN(1, N))
-/** LIBXSMM_ILOG2 definition matches ceil(log2(N)). */
-#define LIBXSMM_ILOG2(N) (1 < (N) ? (LIBXSMM_INTRINSICS_BITSCANBWD64(N) + \
-  (LIBXSMM_INTRINSICS_BITSCANBWD64((N) - 1) != LIBXSMM_INTRINSICS_BITSCANBWD64(N) ? 0 : 1)) : 0)
 
 /** LIBXSMM_UP2POT rounds up to the next power of two (POT). */
 #define LIBXSMM_UP2POT_01(N) ((N) | ((N) >> 1))
@@ -382,9 +405,8 @@
 #define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
 #define LIBXSMM_MOD(A, N) ((A) % (N))
 #define LIBXSMM_MOD2(A, NPOT) ((A) & ((NPOT) - 1))
-#define LIBXSMM_DIFF(T0, T1) ((T0) < (T1) ? ((T1) - (T0)) : ((T0) - (T1)))
+#define LIBXSMM_DELTA(T0, T1) ((T0) < (T1) ? ((T1) - (T0)) : ((T0) - (T1)))
 #define LIBXSMM_CLMP(VALUE, LO, HI) ((LO) < (VALUE) ? ((VALUE) <= (HI) ? (VALUE) : LIBXSMM_MIN(VALUE, HI)) : LIBXSMM_MAX(LO, VALUE))
-#define LIBXSMM_ISQRT2(N) ((unsigned int)((1ULL << (LIBXSMM_NBITS(N) >> 1)) /*+ LIBXSMM_MIN(1, N)*/))
 #define LIBXSMM_SIZEOF(START, LAST) (((const char*)(LAST)) - ((const char*)(START)) + sizeof(*LAST))
 #define LIBXSMM_FEQ(A, B) ((A) == (B))
 #define LIBXSMM_NEQ(A, B) ((A) != (B))
@@ -601,7 +623,7 @@
 #elif defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__ || defined(__GNUC__))
 # define LIBXSMM_SNPRINTF(S, N, ...) snprintf(S, N, __VA_ARGS__)
 #else
-# define LIBXSMM_SNPRINTF(S, N, ...) sprintf(S, __VA_ARGS__); LIBXSMM_UNUSED(N)
+# define LIBXSMM_SNPRINTF(S, N, ...) sprintf((S) + /*unused*/(N) * 0, __VA_ARGS__)
 #endif
 #if (0 == LIBXSMM_SYNC)
 # define LIBXSMM_FLOCK(FILE)
@@ -657,7 +679,7 @@
 #   endif
 # endif
 #endif
-#if defined(__GNUC__) && !defined(_GNU_SOURCE)
+#if !defined(_GNU_SOURCE) /*&& defined(__GNUC__)*/
 # define _GNU_SOURCE
 #endif
 #if !defined(__STDC_FORMAT_MACROS)

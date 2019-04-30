@@ -43,12 +43,10 @@
 
 LIBXSMM_API_INTERN
 void libxsmm_generator_gemm_noarch_kernel( libxsmm_generated_code*        io_generated_code,
-                                           const libxsmm_gemm_descriptor* i_xgemm_desc,
-                                           const char*                    i_arch ) {
+                                           const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;
-  LIBXSMM_UNUSED(i_arch);
 
   l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "  unsigned int l_m = 0;\n");
   libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );

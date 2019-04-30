@@ -91,7 +91,7 @@ script:
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" install-artifacts tests
+      make ${MAKEJ} -e PREFIX=${UPLOAD_DIR} ${PEDANTIC_HIGH} SYM=1 EFLAGS="-DELEM_TYPE=char -DUSE_EXPECTED" INTRINSICS=1 install-artifacts tests
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
@@ -99,7 +99,7 @@ script:
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}; eval ${UPLOAD}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
-      make ${MAKEJ} -e ${PEDANTIC_TEST} VLA=0 WRAP=1 test-wrap
+      make ${MAKEJ} -e ${PEDANTIC_TEST} VLA=0 WRAP=1 INTRINSICS=0 test-wrap
     ) 2>&1 | tee .test.log && eval ${POSTPROC} && eval ${RUNXCOV}
 
   - source ${TRAVIS_BUILD_DIR}/.env/codecov.env $(if [ "${CC}" != "clang" ]; then echo 1; else echo 0; fi) && make -e clean && (
