@@ -478,7 +478,7 @@ class FusedConvBNNode : public NNNode
     FusedConvBNImplParams gparams_;
     vector<TensorBuf *> tenBotDiff_, tenBotData_; // Data & Gradients with respect to input
     TensorBuf *tenMidData_, *tenTopData_;
-    TensorBuf *tenMidDiff_, *tenTopDiff_;
+    TensorBuf *tenMidDiff_=NULL, *tenTopDiff_;
     TensorBuf *tenWeightDiff_, *tenWeightData_, *tenWeightInc_; // Weight gradients, data, increments
     TensorBuf *tenScaleData_, *tenScaleDiff_, *tenScaleInc_; // Gamma data, gradients, increments
     TensorBuf *tenShiftData_, *tenShiftDiff_, *tenShiftInc_; // Beta data, gradients, increments
@@ -496,7 +496,7 @@ class FusedConvBNNode : public NNNode
     int bot_cengine_;
     int count_;
     vector<float> lr_mult_, decay_mult_;
-    bool first_fp = true, first_bp=true;
+    bool first_fp = true, first_bp=true, first_upd=true;
 
     FusedConvBNImpl *impl=NULL;
 

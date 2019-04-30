@@ -51,7 +51,7 @@ typedef struct {
   int kh, kw, kd;
   int group;
   float eps, mmf;
-  bool use_global_stats, eltwise, split;
+  bool use_global_stats, eltwise, split, bprop;
   bool relu_fwd, relu_bwd;
   bool physical_padding;
   int algType;
@@ -89,7 +89,7 @@ class FusedConvBNImpl
     virtual void forwardPropagate(vector<TensorBuf *>& inp, TensorBuf* weightp, TensorBuf *hweightp, TensorBuf* midp, TensorBuf* gammap, TensorBuf* betap, TensorBuf *gmeanp, TensorBuf *gvarp, TensorBuf *outp, int tid) = 0;
     virtual void backPropagate(TensorBuf *deloutp, TensorBuf* weightp, TensorBuf* delgammap, TensorBuf* delbetap, TensorBuf *delmidp, vector<TensorBuf *>& delinp, int tid) = 0;
 
-    virtual void weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf *delweightp, int tid) = 0;
+    virtual void weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf *delmidp, TensorBuf *delweightp, TensorBuf *delgammap, TensorBuf *delbetap, int tid) = 0;
 
     virtual void dumpBuffer(TensorBuf*, void*) {}
 
@@ -113,12 +113,12 @@ class FusedConvBNImpl
       }
     }
 
-    virtual void weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf *delweightp)
+    virtual void weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf *delmidp, TensorBuf *delweightp, TensorBuf *delgammap, TensorBuf *delbetap)
     {
       switch(engine)
       {
         case XSMM:
-          weightUpdate(inp, deloutp, delweightp, 0);
+          weightUpdate(inp, delmidp, deloutp, delweightp, delgammap, delbetap, 0);
           break;
       }
     }

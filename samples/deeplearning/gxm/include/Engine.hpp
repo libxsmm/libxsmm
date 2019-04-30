@@ -38,6 +38,7 @@
 #include <set>
 #include <omp.h>
 #include <sys/time.h>
+#include <stdlib.h>
 #include "proto/gxm.pb.h"
 #include "Engine.fwd.hpp"
 #include "MLNode.fwd.hpp"
@@ -130,7 +131,9 @@ class MLEngine
     vector<int> fact_can_ptr, bact_can_ptr;
     vector<int> wt_can_ptr, wdiff_can_ptr, winc_can_ptr;
     vector<int> bias_can_ptr, stats_can_ptr, bidiff_can_ptr, biinc_can_ptr;
-    vector<MLSL::Operation*> wtgrad_comms_vec, bias_grad_comms_vec;
+#ifdef USE_MLSL
+    vector<MLSL::Operation*> wtgrad_comms_vec, bias_grad_comms_vec, combo_grad_comms_vec;
+#endif
     int ic, fac, bac, wtc, wdc, wic, bic, sic, bidc, biic;
 
     void create_schedule(int);
@@ -179,8 +182,11 @@ class MLEngine
     int get_num_test_views() {return num_test_views_; }
     int get_batch_size() { return batch_size_; }
     float get_scaling_factor() { return scf_; }
+#ifdef USE_MLSL
     vector<MLSL::Operation*>& get_wtgrad_comms_vec() { return wtgrad_comms_vec; }
     vector<MLSL::Operation*>& get_bias_grad_comms_vec() { return bias_grad_comms_vec; }
+    vector<MLSL::Operation*>& get_combo_grad_comms_vec() { return combo_grad_comms_vec; }
+#endif
 
     void set_batch_size(int b) {batch_size_ = b; }
     void set_num_train_batches(int ntrainb) {num_train_batches_ = ntrainb; }

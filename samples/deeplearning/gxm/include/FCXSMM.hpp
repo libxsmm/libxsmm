@@ -61,6 +61,7 @@ class FCXSMM : public FCImpl
     libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
     bool updated_scratch_fwd=false, updated_scratch_bwd=false, updated_scratch_upd=false;
     void *scratch[NUM_NUMA_NODES]={NULL};
+    int prev_scratch_size = 0;
 
   public:
     FCXSMM(FCImplParams* gp, int engine);

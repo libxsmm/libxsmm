@@ -57,6 +57,7 @@ typedef struct {
   int algType;
   int in_data_type, out_data_type;
   int num_threads;
+  int num_numa_nodes;
 }FusedBNormImplParams;
 
 class FusedBNormImpl
@@ -94,12 +95,12 @@ class FusedBNormImpl
       }
     }
 
-    virtual void backPropagate(vector<TensorBuf*> inp, TensorBuf* outp, TensorBuf* gammap, TensorBuf *deloutp, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf*> delinp, int tid)
+    virtual void backPropagate(TensorBuf *deloutp, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf*> delinp, int tid)
     {
       switch(engine)
       {
         case XSMM:
-          backPropagate(inp, outp, gammap, deloutp, delgammap, delbetap, delinp, tid);
+          backPropagate(deloutp, delgammap, delbetap, delinp, tid);
           break;
       }
     }
