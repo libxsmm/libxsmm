@@ -128,12 +128,23 @@ export I_MPI_DEBUG=6
 
 export MKL_CBWR=AUTO
 
+# Produce the configuration file for mpiexec. Each line of the config file contains a # host, enviornment, binary name.
+rm -f $cfile
+node_id=0
+numnodes=( `cat ${cpuhostfile} | grep -v ^$ | wc -l` )
+max_ppn=$((numprocs/numnodes))
+numthreads_per_proc=$((numthreads/max_ppn))
+#MPIEXECARGS=" -np ${numnodes} -ppn $max_ppn -genv MLSL_NUM_SERVERS ${numservers} -genv MLSL_SERVER_AFFINITY \"${listep}\" -genv OMP_NUM_THREADS ${numthreads_per_proc} -genv KMP_AFFINITY \"$affinitystr\" "
+
 # OMP configuration
 if [ "$threadspercore" == "1" ]; then
   if [ "$numservers" == "0" ]; then
     affinitystr="proclist=[0-$((ntps-1)),$((ntps+1))-$((numthreads))],granularity=thread,explicit"
   elif [ "$numservers" == "2" ]; then
     affinitystr="proclist=[0-5,7-33,35-55],granularity=thread,explicit"
+  elif [ "$numservers" == "1" ]; then
+    numthreads_per_proc=$((ntps/max_ppn))
+    affinitystr="proclist=[0-5,7-27],granularity=thread,explicit"
   fi
 else
     affinitystr="proclist=[0-5,$((5+numservers+1))-$((maxcores-1)),$((maxcores))-$((maxcores+5)),$((maxcores+5+numservers+1))-$((2*maxcores-1))],granularity=thread,explicit"
@@ -142,14 +153,6 @@ export KMP_AFFINITY=$affinitystr
 
 echo THREAD SETTINGS: Affinity $affinitystr Threads $numthreads Placement $KMP_PLACE_THREADS
 
-
-# Produce the configuration file for mpiexec. Each line of the config file contains a # host, enviornment, binary name.
-rm -f $cfile
-node_id=0
-numnodes=( `cat ${cpuhostfile} | grep -v ^$ | wc -l` )
-max_ppn=$((numprocs/numnodes))
-numthreads_per_proc=$((numthreads/max_ppn))
-#MPIEXECARGS=" -np ${numnodes} -ppn $max_ppn -genv MLSL_NUM_SERVERS ${numservers} -genv MLSL_SERVER_AFFINITY \"${listep}\" -genv OMP_NUM_THREADS ${numthreads_per_proc} -genv KMP_AFFINITY \"$affinitystr\" "
 MPIEXECARGS=" -np ${numnodes} -ppn $max_ppn -genv OMP_NUM_THREADS ${numthreads_per_proc} -genv KMP_AFFINITY \"$affinitystr\" "
 mkdir -p ${WORK_DIR}/${arch_}_${numprocs}_${topo}
 if [ ${arch_} == skx ]; then

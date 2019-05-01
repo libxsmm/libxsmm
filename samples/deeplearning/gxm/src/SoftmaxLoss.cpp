@@ -151,6 +151,9 @@ SoftmaxLossNode::SoftmaxLossNode(SoftmaxLossParams* p, MLEngine* e) : NNNode(p, 
 #ifdef USE_MLSL
   node_id_ = MLSL::Environment::GetEnv().GetProcessIdx();
   num_nodes_ = MLSL::Environment::GetEnv().GetProcessCount();
+#else
+  node_id_ = 0;
+  num_nodes_ = 1;
 #endif
 
   test_loss_ = 0;
@@ -168,7 +171,7 @@ void SoftmaxLossNode::forwardPropagate()
   int* label = (int*)(tenBotData_[1]->getBuffer());
   float* top = (float*)(tenTopData_->getBuffer());
 
-  impl->forwardPropagate(bot, label, top);
+  impl->forwardPropagate(tenBotData_[0], tenBotData_[1], tenTopData_);
 
 #ifdef GETSTATS
   if(node_id_ == 0)
@@ -180,14 +183,18 @@ void SoftmaxLossNode::forwardPropagate()
 #endif
 
 #ifdef USE_MLSL
-  MPI_Allreduce(MPI_IN_PLACE, &gparams_.loss, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
-
-  if(node_id_ == 0 && eptr_->get_current_batch() % LOSSFREQ == 0)
-    printf("loss = %.15f (weighted loss = %.15f)\n", gparams_.loss/num_nodes_, (gparams_.loss)*(gparams_.loss_weight)/num_nodes_);
-#else
-  printf("loss = %.15f\n", gparams_.loss*gparams_.loss_weight);
+  for(int n=0; n<NUM_NUMA_NODES; n++)
+    MPI_Allreduce(MPI_IN_PLACE, &gparams_.loss[n], 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
+  if(node_id_ == 0 && eptr_->get_current_batch() % LOSSFREQ == 0)
+  {
+    float loss = gparams_.loss[0];
+    for(int n=1; n<NUM_NUMA_NODES; n++)
+      loss += gparams_.loss[n];
+    loss = (loss/num_nodes_)/NUM_NUMA_NODES;
+    printf("loss = %.15f (weighted loss = %.15f)\n", loss, loss*(gparams_.loss_weight));
+  }
 }
 
 void SoftmaxLossNode::backPropagate()
@@ -208,7 +215,7 @@ void SoftmaxLossNode::backPropagate()
 #endif
 
   impl->set_num_nodes(num_nodes_);
-  impl->backPropagate(top, label, gbot);
+  impl->backPropagate(tenTopData_, tenBotData_[1], tenBotDiff_);
 
 #ifdef GETSTATS
   if(node_id_ == 0)

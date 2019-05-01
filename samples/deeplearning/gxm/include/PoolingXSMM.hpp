@@ -46,18 +46,18 @@ class PoolXSMM : public PoolImpl
   protected:
     PoolImpl *gp_;
     libxsmm_dnn_pooling_desc pooling_desc;
-    libxsmm_dnn_pooling* libxsmm_handle;
-    libxsmm_dnn_tensor*  libxsmm_input = NULL;
-    libxsmm_dnn_tensor*  libxsmm_delinput=NULL;
-    libxsmm_dnn_tensor*  libxsmm_output=NULL;
-    libxsmm_dnn_tensor*  libxsmm_deloutput=NULL;
-    libxsmm_dnn_tensor*  libxsmm_mask=NULL;
+    libxsmm_dnn_pooling* libxsmm_handle[NUM_NUMA_NODES];
+    libxsmm_dnn_tensor*  libxsmm_input[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor*  libxsmm_delinput[NUM_NUMA_NODES]={NULL};
+    libxsmm_dnn_tensor*  libxsmm_output[NUM_NUMA_NODES]={NULL};
+    libxsmm_dnn_tensor*  libxsmm_deloutput[NUM_NUMA_NODES]={NULL};
+    libxsmm_dnn_tensor*  libxsmm_mask[NUM_NUMA_NODES]={NULL};
     libxsmm_dnn_tensor_datalayout* libxsmm_layout;
     libxsmm_dnn_err_t status;
     libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
     bool updated_scratch_fwd=false, updated_scratch_bwd=false;
     void *scratch=NULL;
-
+    int prev_scratch_size = 0;
   public:
     PoolXSMM(PoolImplParams* gp, int engine);
     virtual ~PoolXSMM(void) {}

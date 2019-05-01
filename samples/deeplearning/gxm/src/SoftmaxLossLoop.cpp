@@ -36,24 +36,39 @@
 #include <math.h>
 #include <stdio.h>
 
-void SMaxLossLoop::forwardPropagate(float *inp, int* label, float *outp)
+void SMaxLossLoop::forwardPropagate(TensorBuf* inpb, TensorBuf* labelb, TensorBuf* outpb)
 {
-  int nImg  = gp->batch_size;
+  int nImg  = gp->batch_size/NUM_NUMA_NODES;
   int nIfm = gp->nInput;
   int nOfm = gp->nOutput;
 
-  int threads = gp->num_threads;
+  float* inp[NUM_NUMA_NODES], *outp[NUM_NUMA_NODES];
+  int *label[NUM_NUMA_NODES];
 
-  __assume_aligned(inp,64);
-  __assume_aligned(outp,64);
+  label[0] = (int*)labelb->getBuffer();
+  for(int n=1; n<NUM_NUMA_NODES; n++)
+    label[n] = label[n-1] + nImg;
 
-  float (* __restrict input )[nIfm] = (float (*)[*])inp;
-  float (* __restrict output)[nOfm] = (float (*)[*])outp;
+
+  inp[0] = (float*)inpb->getBuffer();
+  for(int n=1; n<NUM_NUMA_NODES; n++)
+    inp[n] = inp[n-1] + nImg*nIfm;
+
+  outp[0] = (float*)outpb->getBuffer();
+  for(int n=1; n<NUM_NUMA_NODES; n++)
+    outp[n] = outp[n-1] + nImg*nOfm;
 
 #ifdef _OPENMP
-#pragma omp parallel for
+#pragma omp parallel
 #endif
-  for(int img = 0; img < nImg; img++) {
+  {
+    int tid = omp_get_thread_num();
+    int ntps = gp->num_threads/NUM_NUMA_NODES;
+    int n = tid/ntps;
+    int img = tid - n*ntps;
+
+    float (* __restrict input )[nIfm] = (float (*)[*])inp[n];
+    float (* __restrict output)[nOfm] = (float (*)[*])outp[n];
 
     float max = input[img][0];
     output[img][0] = input[img][0];
@@ -78,27 +93,43 @@ void SMaxLossLoop::forwardPropagate(float *inp, int* label, float *outp)
       output[img][ofm] = output[img][ofm]*recp_soe;
   }
 
-  float loss = 0.0;
+  for(int n=0; n<NUM_NUMA_NODES; n++)
+  {
+    float (* __restrict output)[nOfm] = (float (*)[*])outp[n];
+    int* lab = label[n];
 
-  for(int img = 0; img < nImg; img++) {
-    float val = output[img][label[img]] > FLT_MIN ? output[img][label[img]] : FLT_MIN;
-    loss += log(val);
+    float loss = 0.0;
+
+    for(int img = 0; img < nImg; img++)
+    {
+      float val = output[img][lab[img]] > FLT_MIN ? output[img][lab[img]] : FLT_MIN;
+      loss += log(val);
+    }
+
+    gp->loss[n] = -loss/nImg;
   }
-
-  gp->loss = -loss/nImg;
 }
 
-void SMaxLossLoop::backPropagate(float *outp, int* label, float *delinp)
+void SMaxLossLoop::backPropagate(TensorBuf *outpb, TensorBuf* labelb, TensorBuf *delinpb)
 {
-  int nImg  = gp->batch_size;
+  int nImg  = gp->batch_size/NUM_NUMA_NODES;
   int nIfm = gp->nInput;
 
-  int threads = gp->num_threads;
+  float *outp[NUM_NUMA_NODES], *delinp[NUM_NUMA_NODES];
+  int* label[NUM_NUMA_NODES];
 
-  __assume_aligned(delinp,64);
+  label[0] = (int*)labelb->getBuffer();
+  for(int n=1; n<NUM_NUMA_NODES; n++)
+    label[n] = label[n-1] + nImg;
 
-  float (* __restrict del_input )[nIfm] = (float (*)[*])delinp;
-  float (* __restrict output )[nIfm] = (float (*)[*])outp;
+
+  delinp[0] = (float*)delinpb->getBuffer();
+  for(int n=1; n<NUM_NUMA_NODES; n++)
+    delinp[n] = delinp[n-1] + nImg*nIfm;
+
+  outp[0] = (float*)outpb->getBuffer();
+  for(int n=1; n<NUM_NUMA_NODES; n++)
+    outp[n] = outp[n-1] + nImg*nIfm;
 
 #ifdef USE_MLSL
   float recp_mb = 1.0/(nImg * num_nodes);
@@ -107,11 +138,20 @@ void SMaxLossLoop::backPropagate(float *outp, int* label, float *delinp)
 #endif
 
 #ifdef _OPENMP
-#pragma omp parallel for
+#pragma omp parallel
 #endif
-  for(int img = 0; img < nImg; img++) {
+  {
+    int tid = omp_get_thread_num();
+    int ntps = gp->num_threads/NUM_NUMA_NODES;
+    int n = tid/ntps;
+    int img = tid - n*ntps;
+
+    float (* __restrict output )[nIfm] = (float (*)[*])outp[n];
+    float (* __restrict del_input )[nIfm] = (float (*)[*])delinp[n];
+    int* lab = label[n];
+
     for(int fm = 0; fm < nIfm; fm++) {
-      if(fm == label[img])
+      if(fm == lab[img])
         del_input[img][fm] = (output[img][fm] - 1) * recp_mb * gp->loss_weight;
       else
         del_input[img][fm] = output[img][fm] * recp_mb * gp->loss_weight;

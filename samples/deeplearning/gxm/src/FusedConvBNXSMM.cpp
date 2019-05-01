@@ -807,7 +807,10 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
 
   scratchp->setBufferSize(max_size);
 
-  if(!updated_scratch_fwd)
+  if(prev_scratch_size == 0)
+    prev_scratch_size = scratchp->getBufferSize();
+
+  if(!updated_scratch_fwd || prev_scratch_size != scratchp->getBufferSize())
   {
     for(int n=0; n<gp->num_numa_nodes; n++)
     {
@@ -816,6 +819,7 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_scratch( libxsmm_handle_bn_test[n], sptrptr[n] ) );
     }
     updated_scratch_fwd = true;
+    prev_scratch_size = scratchp->getBufferSize();
   }
 
 #ifndef NDEBUG
@@ -855,8 +859,8 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
   if(!use_global_stats)
   {
 #ifdef USE_XSMM_TIMING
-  struct timeval tvsc, tvec;
-  gettimeofday(&tvsc, NULL);
+    struct timeval tvsc, tvec;
+    gettimeofday(&tvsc, NULL);
 #endif
 #ifdef _OPENMP
 #pragma omp parallel
@@ -875,21 +879,21 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
     }
 
 #ifdef USE_XSMM_TIMING
-  gettimeofday(&tvec, NULL);
-  double fp_time = (tvec.tv_sec + tvec.tv_usec*1e-6) - (tvsc.tv_sec + tvsc.tv_usec*1e-6);
+    gettimeofday(&tvec, NULL);
+    double fp_time = (tvec.tv_sec + tvec.tv_usec*1e-6) - (tvsc.tv_sec + tvsc.tv_usec*1e-6);
 
 #ifdef USE_MLSL
-  if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
+    if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
 #endif
-  {
-    double gf = (double)gp->batch_size * (double)gp->nInput[0] * (double)gp->nOutput * (double)gp->mHeight * (double)gp->mWidth * (double)gp->kh * (double)gp->kw * 2;
-    if(gp->c_stride_h == 1 && gp->mpad_h == 0)
-      printf("%s XSMM-CONV-FP mb%dic%dih%doc%doh%dkh%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,fp_time*1000.0, gf/fp_time/1e9);
-    else if(gp->c_stride_h == 2)
-      printf("%s XSMM-CONV-FP mb%dic%dih%doc%doh%dkh%dsh%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->c_stride_h,fp_time*1000.0, gf/fp_time/1e9);
-    else if(gp->mpad_h == 1)
-      printf("%s XSMM-CONV-FP mb%dic%dih%doc%doh%dkh%dph%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->mpad_h,fp_time*1000.0, gf/fp_time/1e9);
-  }
+    {
+      double gf = (double)gp->batch_size * (double)gp->nInput[0] * (double)gp->nOutput * (double)gp->mHeight * (double)gp->mWidth * (double)gp->kh * (double)gp->kw * 2;
+      if(gp->c_stride_h == 1 && gp->mpad_h == 0)
+        printf("%s XSMM-CONV-FP mb%dic%dih%doc%doh%dkh%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,fp_time*1000.0, gf/fp_time/1e9);
+      else if(gp->c_stride_h == 2)
+        printf("%s XSMM-CONV-FP mb%dic%dih%doc%doh%dkh%dsh%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->c_stride_h,fp_time*1000.0, gf/fp_time/1e9);
+      else if(gp->mpad_h == 1)
+        printf("%s XSMM-CONV-FP mb%dic%dih%doc%doh%dkh%dph%dn time = %g ms, GFLOPS = %.1f\n",gp->node_name.c_str(),gp->batch_size,gp->nInput[0],gp->iHeight,gp->nOutput,gp->mHeight,gp->kh,gp->mpad_h,fp_time*1000.0, gf/fp_time/1e9);
+    }
 #endif
 
 #ifndef NDEBUG
@@ -925,16 +929,16 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
     }
 #endif
 
-    for(int n=0; n<gp->num_numa_nodes; n++)
+    if(gp->exec_mode == "TRAIN")
     {
-      float *gexp = gexpect[n];
-      float *gv = gvar[n];
-
-      if(gp->exec_mode == "TRAIN")
+      for(int n=0; n<gp->num_numa_nodes; n++)
       {
+        float *gexp = gexpect[n];
+        float *gv = gvar[n];
+
         float (* __restrict bmean)[VLEN] = (float (*)[VLEN])bexpect[n];
         float (* __restrict bvar)[VLEN] = (float (*)[VLEN])bvariance[n];
-        float nhw_ratio = float(nImg*ofh*ofw)/float(nImg*ofh*ofw - 1);
+        float nhw_ratio = float(fusedbn_desc_train.N*mfh*mfw)/float(fusedbn_desc_train.N*mfh*mfw - 1);
 
 #ifdef __AVX512F__
         __m512  vmmf       = _mm512_set1_ps(gp->mmf);
@@ -972,9 +976,9 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
           }
         }
 #endif
-        scaling_factor_ *= gp->mmf;
-        scaling_factor_ += 1.;
       }
+      scaling_factor_ *= gp->mmf;
+      scaling_factor_ += 1.;
     }
   }
   else
@@ -998,22 +1002,22 @@ void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weig
         float tmp = ((float*)gvar[s])[i]/scaling_factor_;
         ((float*)bstddev[s])[i] = 1./sqrt(tmp + gp->eps);
       }
+    }
 
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
-      {
+    {
 #ifdef _OPENMP
-        const int tid = omp_get_thread_num();
+      const int tid = omp_get_thread_num();
 #else
-        const int tid = 0;
+      const int tid = 0;
 #endif
 
-        int ntps = gp->num_threads/gp->num_numa_nodes;
-        int n = tid/ntps;
-        CHKERR_LIBXSMM_DNN(libxsmm_dnn_execute_st(libxsmm_handle_conv[n], LIBXSMM_DNN_COMPUTE_KIND_FWD, n*ntps, tid));
-        CHKERR_LIBXSMM_DNN(libxsmm_dnn_fusedbatchnorm_execute_st(libxsmm_handle_bn_test[n], LIBXSMM_DNN_COMPUTE_KIND_FWD, n*ntps, tid));
-      }
+      int ntps = gp->num_threads/gp->num_numa_nodes;
+      int n = tid/ntps;
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_execute_st(libxsmm_handle_conv[n], LIBXSMM_DNN_COMPUTE_KIND_FWD, n*ntps, tid));
+      CHKERR_LIBXSMM_DNN(libxsmm_dnn_fusedbatchnorm_execute_st(libxsmm_handle_bn_test[n], LIBXSMM_DNN_COMPUTE_KIND_FWD, n*ntps, tid));
     }
   }
 }
@@ -1027,7 +1031,7 @@ void FusedConvBNXSMM::backPropagate(TensorBuf *deloutp, TensorBuf* weightp, Tens
   void *delgamma[NUM_NUMA_NODES];
   void *delbeta[NUM_NUMA_NODES];
 
-  int nImg  = gp->batch_size;
+  int nImg  = fusedbn_desc_train.N;
   int nIFM = gp->nInput[0];
   int nOFM = gp->nOutput;
   int nBIfm = nIFM/VLEN;
@@ -1362,6 +1366,41 @@ void FusedConvBNXSMM::backPropagate(TensorBuf *deloutp, TensorBuf* weightp, Tens
       int n = tid/ntps;
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_execute_st( libxsmm_handle_bn_train[n], LIBXSMM_DNN_COMPUTE_KIND_BWD, n*ntps, tid ) );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle_conv[n], LIBXSMM_DNN_COMPUTE_KIND_BWD, n*ntps, tid ) );
+
+#ifdef USE_MLSL
+#pragma omp barrier
+
+      if(tid == 0)
+      {
+        float *dgp = (float*)delgamma[0];
+        float *dbp = (float*)delbeta[0];
+        for(int nn=1; nn<gp->num_numa_nodes; nn++)
+        {
+          float *rdgp = (float*)delgamma[nn];
+          float *rdbp = (float*)delbeta[nn];
+
+#pragma omp simd
+          for(int i=0; i<nOFM; i++)
+          {
+            dgp[i] += rdgp[i];
+            dbp[i] += rdbp[i];
+          }
+        }
+
+        for(int nn=1; nn<gp->num_numa_nodes; nn++)
+        {
+          float *rdgp = (float*)delgamma[nn];
+          float *rdbp = (float*)delbeta[nn];
+#pragma vector nontemporal
+#pragma omp simd
+          for(int i=0; i<nOFM; i++)
+          {
+            rdgp[i] = dgp[i];
+            rdbp[i] = dbp[i];
+          }
+        }
+      }
+#endif
     }
 
 #ifdef USE_XSMM_TIMING
@@ -1401,10 +1440,20 @@ void FusedConvBNXSMM::backPropagate(TensorBuf *deloutp, TensorBuf* weightp, Tens
 #endif
 }
 
-void FusedConvBNXSMM::weightUpdate(TensorBuf *inp, TensorBuf *delmidp, TensorBuf* delweightp, int tid)
+void FusedConvBNXSMM::weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf *delmidp, TensorBuf* delweightp, TensorBuf *delgammap, TensorBuf* delbetap, int tid)
 {
   int nOFM = gp->nOutput;
+  int ofm = gp->nOutput;
+  int ifm = gp->nInput[0];
+  int kh = gp->kh;
+  int kw = gp->kw;
   int nBOfm = nOFM/VLEN;
+  int ofh = gp->oHeight;
+  int ofw = gp->oWidth;
+  int oph = gp->opad_h;
+  int opw = gp->opad_w;
+  int ofhp = ofh + 2*oph;
+  int ofwp = ofw + 2*opw;
   int mfh = gp->mHeight;
   int mfw = gp->mWidth;
   int mph = gp->mpad_h;
@@ -1412,8 +1461,25 @@ void FusedConvBNXSMM::weightUpdate(TensorBuf *inp, TensorBuf *delmidp, TensorBuf
   int fhm = mfh + 2*mph;
   int fwm = mfw + 2*mpw;
 
+  void *deloutput[NUM_NUMA_NODES];
+  void *delgamma[NUM_NUMA_NODES];
+  void *delbeta[NUM_NUMA_NODES];
   void *dwt_ptr[NUM_NUMA_NODES];
   void *delmiddle[NUM_NUMA_NODES];
+
+  if(!gp->bprop)
+  {
+    deloutput[0] = deloutp->getBuffer();
+
+    int imoff = fusedbn_desc_train.N * fusedbn_desc_train.C * ofhp * ofwp;
+    if(gp->out_data_type == DT_FLOAT)
+      imoff = imoff * sizeof(float);
+    else if(gp->out_data_type == DT_BF16)
+      imoff = imoff * sizeof(libxsmm_bfloat16);
+
+    for(int n=1; n<gp->num_numa_nodes; n++)
+      deloutput[n] = deloutput[n-1] + imoff;
+  }
 
   void **ptrptr = delweightp->getBufferPtr();
   int offset = delweightp->getOffset();
@@ -1425,6 +1491,20 @@ void FusedConvBNXSMM::weightUpdate(TensorBuf *inp, TensorBuf *delmidp, TensorBuf
 
   for(int n=0; n<gp->num_numa_nodes; n++)
     dwt_ptr[n] = ptrptr[n] + offset;
+
+  if(!gp->bprop)
+  {
+    void **gptrptr = delgammap->getBufferPtr();
+    void **bptrptr = delbetap->getBufferPtr();
+    int goffset = delgammap->getOffset() * sizeof(float);
+    int boffset = delbetap->getOffset() * sizeof(float);
+
+    for(int n=0; n<gp->num_numa_nodes; n++)
+    {
+      delgamma[n] = gptrptr[n] + goffset;
+      delbeta[n] = bptrptr[n] + boffset;
+    }
+  }
 
   delmiddle[0] = delmidp->getBuffer();
   int imoff = conv_desc.N * conv_desc.K * fhm * fwm;
@@ -1470,6 +1550,46 @@ void FusedConvBNXSMM::weightUpdate(TensorBuf *inp, TensorBuf *delmidp, TensorBuf
     }
   }
 
+  if(!gp->bprop)
+  {
+    for(int n=0; n<gp->num_numa_nodes; n++)
+    {
+      if(libxsmm_deloutput[n] == NULL && libxsmm_delmiddle_bn[n] == NULL)
+      {
+        libxsmm_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout( libxsmm_handle_bn_train[n], LIBXSMM_DNN_GRADIENT_OUTPUT, &status );
+        CHKERR_LIBXSMM_DNN( status );
+        libxsmm_deloutput[n] = libxsmm_dnn_link_tensor( libxsmm_layout, deloutput[n], &status );
+        CHKERR_LIBXSMM_DNN( status );
+        libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_tensor( libxsmm_handle_bn_train[n], libxsmm_deloutput[n], LIBXSMM_DNN_GRADIENT_OUTPUT ) );
+
+        libxsmm_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout( libxsmm_handle_bn_train[n], LIBXSMM_DNN_GRADIENT_INPUT, &status );
+        CHKERR_LIBXSMM_DNN( status );
+        libxsmm_delmiddle_bn[n]  = libxsmm_dnn_link_tensor( libxsmm_layout, delmiddle[n], &status );
+        CHKERR_LIBXSMM_DNN( status );
+        libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_tensor( libxsmm_handle_bn_train[n], libxsmm_delmiddle_bn[n], LIBXSMM_DNN_GRADIENT_INPUT ) );
+      }
+
+      if(libxsmm_delgamma[n] == NULL && libxsmm_delbeta[n] == NULL)
+      {
+        libxsmm_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout(libxsmm_handle_bn_train[n], LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA, &status);
+        CHKERR_LIBXSMM_DNN( status );
+        libxsmm_delgamma[n]  = libxsmm_dnn_link_tensor( libxsmm_layout, delgamma[n], &status );
+        CHKERR_LIBXSMM_DNN( status );
+        libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_tensor( libxsmm_handle_bn_train[n], libxsmm_delgamma[n], LIBXSMM_DNN_GRADIENT_CHANNEL_GAMMA ) );
+
+        libxsmm_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout(libxsmm_handle_bn_train[n], LIBXSMM_DNN_GRADIENT_CHANNEL_BETA, &status);
+        CHKERR_LIBXSMM_DNN( status );
+        libxsmm_delbeta[n]  = libxsmm_dnn_link_tensor( libxsmm_layout, delbeta[n], &status );
+        CHKERR_LIBXSMM_DNN( status );
+        libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+        CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_tensor( libxsmm_handle_bn_train[n], libxsmm_delbeta[n], LIBXSMM_DNN_GRADIENT_CHANNEL_BETA ) );
+      }
+    }
+  }
+
 #ifndef NDEBUG
   /* check physical padding */
   if ( (gp->ipad_h > 0 || gp->ipad_w > 0) && (gp->mpad_h > 0 || gp->mpad_w > 0) ) {
@@ -1487,6 +1607,67 @@ void FusedConvBNXSMM::weightUpdate(TensorBuf *inp, TensorBuf *delmidp, TensorBuf
   struct timeval tvsc, tvec;
   gettimeofday(&tvsc, NULL);
 #endif
+
+  if(!gp->bprop)
+  {
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+#ifdef _OPENMP
+      const int tid = omp_get_thread_num();
+#else
+      const int tid = 0;
+#endif
+
+      int ntps = gp->num_threads/gp->num_numa_nodes;
+      int n = tid/ntps;
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_execute_st( libxsmm_handle_bn_train[n], LIBXSMM_DNN_COMPUTE_KIND_BWD, n*ntps, tid ) );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle_conv[n], LIBXSMM_DNN_COMPUTE_KIND_UPD, n*ntps, tid ) );
+
+#ifdef USE_MLSL
+#pragma omp barrier
+
+      if(gp->in_data_type == DT_FLOAT)
+      {
+#include "reduce_weight_grads.c"
+      }
+      else if(gp->in_data_type == DT_BF16)
+      {
+#include "reduce_weight_grads_bf16.c"
+      }
+
+#pragma omp barrier
+      if(tid == 0)
+      {
+        float *dgp = (float*)delgamma[0];
+        float *dbp = (float*)delbeta[0];
+        for(int nn=1; nn<gp->num_numa_nodes; nn++)
+        {
+          float *rdgp = (float*)delgamma[nn];
+          float *rdbp = (float*)delbeta[nn];
+
+#pragma omp simd
+          for(int i=0; i<nOFM; i++)
+          {
+            dgp[i] += rdgp[i];
+            dbp[i] += rdbp[i];
+          }
+
+#pragma vector nontemporal
+#pragma omp simd
+          for(int i=0; i<nOFM; i++)
+          {
+            rdgp[i] = dgp[i];
+            rdbp[i] = dbp[i];
+          }
+        }
+      }
+#endif
+    }
+  }
+  else
+  {
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -1500,7 +1681,21 @@ void FusedConvBNXSMM::weightUpdate(TensorBuf *inp, TensorBuf *delmidp, TensorBuf
       int ntps = gp->num_threads/gp->num_numa_nodes;
       int n = tid/ntps;
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_execute_st( libxsmm_handle_conv[n], LIBXSMM_DNN_COMPUTE_KIND_UPD, n*ntps, tid ) );
+
+#ifdef USE_MLSL
+#pragma omp barrier
+
+      if(gp->in_data_type == DT_FLOAT)
+      {
+#include "reduce_weight_grads.c"
+      }
+      else if(gp->in_data_type == DT_BF16)
+      {
+#include "reduce_weight_grads_bf16.c"
+      }
+#endif
     }
+  }
 
 #ifdef USE_XSMM_TIMING__
   gettimeofday(&tvec, NULL);

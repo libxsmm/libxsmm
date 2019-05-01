@@ -112,12 +112,13 @@ class FusedConvBNXSMM : public FusedConvBNImpl
     bool updated_scratch_fwd=false, updated_scratch_bwd=false, updated_scratch_upd=false;
     void *bexpect[NUM_NUMA_NODES]={NULL}, *bstddev[NUM_NUMA_NODES]={NULL}, *bvariance[NUM_NUMA_NODES]={NULL};
     void *gexp_test=NULL, *gvar_test=NULL;
+    int prev_scratch_size = 0;
 
   public:
     FusedConvBNXSMM(FusedConvBNImplParams *gp, int engine);
     virtual ~FusedConvBNXSMM(void) {}
     void forwardPropagate(vector<TensorBuf*>& inp, TensorBuf* weightp, TensorBuf *hweightp, TensorBuf* midp, TensorBuf* gammap, TensorBuf* betap, TensorBuf* gmeanp, TensorBuf* gvarp, TensorBuf* outp, int tid);
     void backPropagate(TensorBuf* deloutp, TensorBuf* weightp, TensorBuf* delgammap, TensorBuf* delbetap, TensorBuf* delmidp, vector<TensorBuf *>& delinp, int tid);
-    void weightUpdate(TensorBuf*, TensorBuf*, TensorBuf*, int tid);
+    void weightUpdate(TensorBuf*, TensorBuf*, TensorBuf*, TensorBuf*, TensorBuf*, TensorBuf*, int tid);
     void dumpBuffer(TensorBuf *wt, void* temp);
 };

@@ -185,11 +185,15 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* b
   }
   scratchp->setBufferSize(max_size);
 
-  if(!updated_scratch_fwd)
+  if(prev_scratch_size == 0)
+    prev_scratch_size = scratchp->getBufferSize();
+
+  if(!updated_scratch_fwd || prev_scratch_size != scratchp->getBufferSize())
   {
     for(int n=0; n<gp->num_numa_nodes; n++)
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_scratch( libxsmm_handle[n], sptrptr[n] ) );
     updated_scratch_fwd = true;
+    prev_scratch_size = scratchp->getBufferSize();
   }
 
 #if defined(_OPENMP)

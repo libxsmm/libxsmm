@@ -322,50 +322,54 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
     scratchp->setBufferPtr(sptrptr);
   }
 
-  int max_size = 0;
-  for(int n=0; n<gp->num_numa_nodes; n++)
+  if(prev_scratch_size == 0)
+    prev_scratch_size = scratchp->getBufferSize();
+
+  if(!updated_scratch_fwd || prev_scratch_size != scratchp->getBufferSize())
   {
-    if(sptrptr[n] == NULL)
+    int max_size = 0;
+    for(int n=0; n<gp->num_numa_nodes; n++)
     {
-      int mysize = libxsmm_dnn_get_scratch_size( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
-      CHKERR_LIBXSMM_DNN( status );
-      sptrptr[n] = (void*)libxsmm_aligned_malloc(mysize, 2097152);
-      max_size = mysize;
-
-#ifdef USE_MLSL
-      if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
-#endif
-        printf("%s allocated %d bytes for scratch @ %p\n",nname.c_str(), mysize, sptrptr[n]);
-    }
-    else
-    {
-      int ssize = scratchp->getBufferSize();
-      int mysize = libxsmm_dnn_get_scratch_size( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
-
-      CHKERR_LIBXSMM_DNN( status );
-
-      if(ssize < mysize)
+      if(sptrptr[n] == NULL)
       {
-        libxsmm_free(sptrptr[n]);
+        int mysize = libxsmm_dnn_get_scratch_size( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
+        CHKERR_LIBXSMM_DNN( status );
         sptrptr[n] = (void*)libxsmm_aligned_malloc(mysize, 2097152);
         max_size = mysize;
 
 #ifdef USE_MLSL
         if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
 #endif
-          printf("%s allocated %d bytes for scratch @ %p, prev size was %d bytes\n",nname.c_str(), mysize, sptrptr[n], ssize);
+          printf("%s allocated %d bytes for scratch @ %p\n",nname.c_str(), mysize, sptrptr[n]);
       }
       else
-        max_size = ssize;
-    }
-  }
-  scratchp->setBufferSize(max_size);
+      {
+        int ssize = scratchp->getBufferSize();
+        int mysize = libxsmm_dnn_get_scratch_size( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_ALL, &status );
 
-  if(!updated_scratch_fwd)
-  {
+        CHKERR_LIBXSMM_DNN( status );
+
+        if(ssize < mysize)
+        {
+          libxsmm_free(sptrptr[n]);
+          sptrptr[n] = (void*)libxsmm_aligned_malloc(mysize, 2097152);
+          max_size = mysize;
+
+#ifdef USE_MLSL
+          if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
+#endif
+            printf("%s allocated %d bytes for scratch @ %p, prev size was %d bytes\n",nname.c_str(), mysize, sptrptr[n], ssize);
+        }
+        else
+          max_size = ssize;
+      }
+    }
+    scratchp->setBufferSize(max_size);
+
     for(int n=0; n<gp->num_numa_nodes; n++)
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_scratch( libxsmm_handle[n], LIBXSMM_DNN_COMPUTE_KIND_ALL, sptrptr[n] ) );
     updated_scratch_fwd = true;
+    prev_scratch_size = scratchp->getBufferSize();
   }
 
 #ifndef NDEBUG

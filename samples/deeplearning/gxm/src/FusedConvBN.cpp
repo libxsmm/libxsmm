@@ -251,6 +251,17 @@ FusedConvBNNode::FusedConvBNNode(FusedConvBNParams* p, MLEngine* e): NNNode(p, e
 
     if(has_weights_)
     {
+      if(tenMidDiff_ == NULL)
+      {
+        tenMidDiff_ = tenMid_->addBuf(); // DIFF type and index
+        tenMidDiff_->setDataType(in_dtype);
+        tenMidDiff_->setBufferType(DIFF);
+        if(in_dtype == DT_FLOAT)
+          tenMidDiff_->setBufferSize(convelem*sizeof(float));
+        else if(in_dtype == DT_BF16)
+          tenMidDiff_->setBufferSize(convelem*sizeof(libxsmm_bfloat16));
+      }
+
       tenWeightDiff_ = tenWeight_->addBuf(); // DIFF type and index
       tenWeightDiff_->setBufferType(DIFF);
 
@@ -306,6 +317,11 @@ FusedConvBNNode::FusedConvBNNode(FusedConvBNParams* p, MLEngine* e): NNNode(p, e
   bool inserted = e->register_tensor(top_[0], ACT, tenTop_);
   if(!inserted)
     printf("Warning: Tensor %s already registered\n",top_[0].c_str());
+
+  string m = "mid_"+top_[0];
+  inserted = e->register_tensor(m, ACT, tenMid_);
+  if(!inserted)
+    printf("Warning: Tensor %s already registered\n",m.c_str());
 
   // Register weight tensor in weight tensor map
   inserted = e->register_tensor(weight_, CONVWEIGHT, tenWeight_);
@@ -373,6 +389,7 @@ FusedConvBNNode::FusedConvBNNode(FusedConvBNParams* p, MLEngine* e): NNNode(p, e
   gparams_.eps = p->get_eps();
   gparams_.use_global_stats = p->get_global_stats_flag();
   gparams_.eltwise = p->get_eltwise();
+  gparams_.bprop = bp_flag_;
 
   gparams_.in_data_type = in_dtype;
   gparams_.out_data_type = out_dtype;
@@ -404,6 +421,7 @@ FusedConvBNNode::FusedConvBNNode(FusedConvBNParams* p, MLEngine* e): NNNode(p, e
   size_t opIdx = s->AddOperation(myRegInfo, e->get_distribution());
   this->op_ = s->GetOperation(opIdx);
   s->DeleteOperationRegInfo(myRegInfo);
+  e->get_combo_grad_comms_vec().push_back(op_);
 #endif
 
   configure(p->get_compute_engine());
@@ -708,6 +726,14 @@ void FusedConvBNNode::forwardPropagate()
   }
 
   impl->forwardPropagate(tenBotData_, tenWeightData_, tenWeightInc_, tenMidData_, tenScaleData_, tenShiftData_, tenMeanData_, tenVarData_, tenTopData_, 0);
+
+  if(eptr_->get_execution_mode() != TEST && eptr_->get_execution_mode() != VAL)
+  {
+    scf_ *= gparams_.mmf;
+    scf_ += 1.;
+
+    eptr_->set_scaling_factor(scf_);
+  }
 
 #ifdef CHECK_BLOWUP_FP32
   if(out_dtype == DT_FLOAT)
@@ -1083,7 +1109,39 @@ void FusedConvBNNode::weightUpdate()
   }
 #endif
 
-  impl->weightUpdate(tenBotData_[0], tenMidDiff_, tenWeightDiff_, 0);
+  if(!bp_flag_ && first_upd)
+  {
+    int msize = nImg*ofm*mfhp*mfwp;
+
+    if(in_dtype == DT_FLOAT)
+    {
+      float *ptr = (float*)tenMidDiff_->getBuffer();
+
+      // NUMA initialize Conv delmidp
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+      for(int i=0; i<msize; i++)
+        ptr[i] = 0;
+    }
+    else if(in_dtype == DT_BF16)
+    {
+      libxsmm_bfloat16* ptr = (libxsmm_bfloat16*)tenMidDiff_->getBuffer();
+
+      // NUMA initialize = Conv delmidp
+      ptr = (libxsmm_bfloat16*)tenMidDiff_->getBuffer();
+
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+      for(int i=0; i<msize; i++)
+        ptr[i] = 0;
+    }
+    first_upd = false;
+  }
+
+  tenTopDiff_ = tenTop_->getBuf(DIFF);
+  impl->weightUpdate(tenBotData_[0], tenTopDiff_, tenMidDiff_, tenWeightDiff_, tenScaleDiff_, tenShiftDiff_, 0);
 
 #ifdef CHECK_BLOWUP_FP32
   if(out_dtype == DT_FLOAT)
@@ -1112,10 +1170,21 @@ void FusedConvBNNode::weightUpdate()
   }
 #endif
 
-  void* gexp = tenMeanData_->getBuffer();
-  void* gvar = tenVarData_->getBuffer();
+  void* gexp[NUM_NUMA_NODES];
+  void* gvar[NUM_NUMA_NODES];
   void* gexp_test = tenMeanData_->getPrivBuffer();
   void* gvar_test = tenVarData_->getPrivBuffer();
+
+  void **mptrptr = tenMeanData_->getBufferPtr();
+  void **vptrptr = tenVarData_->getBufferPtr();
+  int offset = tenMeanData_->getOffset();
+
+  for(int n=0; n<NUM_NUMA_NODES; n++)
+    gexp[n] = mptrptr[n] + offset*sizeof(float);
+
+  offset = tenVarData_->getOffset();
+  for(int n=0; n<NUM_NUMA_NODES; n++)
+    gvar[n] = vptrptr[n] + offset*sizeof(float);
 
 #ifdef USE_MLSL
   void *mptr = tenWeightDiff_->getBuffer();
@@ -1136,13 +1205,23 @@ void FusedConvBNNode::weightUpdate()
   op_->GetParameterSet(1)->StartGradientComm(tenScaleDiff_->getBuffer());
   op_->GetParameterSet(2)->StartGradientComm(tenShiftDiff_->getBuffer());
 
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
+  int num_nodes = eptr_->get_num_machines();
   for(int i=0; i<ofm; i++)
   {
-    ((float*)gexp_test)[i] = ((float*)gexp)[i]/eptr_->get_num_machines();
-    ((float*)gvar_test)[i] = ((float*)gvar)[i]/eptr_->get_num_machines();
+    float mtmp = 0.0;
+    float vtmp = 0.0;
+
+    for(int n=0; n<NUM_NUMA_NODES; n++)
+    {
+      mtmp += ((float*)gexp[n])[i];
+      vtmp += ((float*)gvar[n])[i];
+    }
+
+    mtmp = mtmp/NUM_NUMA_NODES;
+    vtmp = vtmp/NUM_NUMA_NODES;
+
+    ((float*)gexp_test)[i] = mtmp/num_nodes;
+    ((float*)gvar_test)[i] = vtmp/num_nodes;
   }
   this->op_->GetParameterSet(3)->StartGradientComm(gexp_test);
   this->op_->GetParameterSet(4)->StartGradientComm(gvar_test);

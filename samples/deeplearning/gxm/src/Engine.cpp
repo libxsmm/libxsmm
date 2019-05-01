@@ -484,19 +484,43 @@ void MLEngine::canary_check(void* ptr, vector<int>& cp, int nc)
 
 void MLEngine:: waitForComms(string tenType)
 {
+#ifdef USE_MLSL
   if(tenType=="WEIGHT")
-    for(int i=0; i<wtgrad_comms_vec.size(); i++)
-      wtgrad_comms_vec[i]->GetParameterSet(0)->WaitGradientComm();
-  else if(tenType=="BIAS")
   {
-    for(int i=0; i<bias_grad_comms_vec.size(); i++)
+    if(!wtgrad_comms_vec.empty())
     {
-      bias_grad_comms_vec[i]->GetParameterSet(0)->WaitGradientComm();
-      bias_grad_comms_vec[i]->GetParameterSet(1)->WaitGradientComm();
-      bias_grad_comms_vec[i]->GetParameterSet(2)->WaitGradientComm();
-      bias_grad_comms_vec[i]->GetParameterSet(3)->WaitGradientComm();
+      for(int i=0; i<wtgrad_comms_vec.size(); i++)
+        wtgrad_comms_vec[i]->GetParameterSet(0)->WaitGradientComm();
     }
   }
+  else if(tenType=="BIAS")
+  {
+    if(!bias_grad_comms_vec.empty())
+    {
+      for(int i=0; i<bias_grad_comms_vec.size(); i++)
+      {
+        bias_grad_comms_vec[i]->GetParameterSet(0)->WaitGradientComm();
+        bias_grad_comms_vec[i]->GetParameterSet(1)->WaitGradientComm();
+        bias_grad_comms_vec[i]->GetParameterSet(2)->WaitGradientComm();
+        bias_grad_comms_vec[i]->GetParameterSet(3)->WaitGradientComm();
+      }
+    }
+  }
+  else if(tenType=="COMBO")
+  {
+    if(!combo_grad_comms_vec.empty())
+    {
+      for(int i=0; i<combo_grad_comms_vec.size(); i++)
+      {
+        combo_grad_comms_vec[i]->GetParameterSet(0)->WaitGradientComm();
+        combo_grad_comms_vec[i]->GetParameterSet(1)->WaitGradientComm();
+        combo_grad_comms_vec[i]->GetParameterSet(2)->WaitGradientComm();
+        combo_grad_comms_vec[i]->GetParameterSet(3)->WaitGradientComm();
+        combo_grad_comms_vec[i]->GetParameterSet(4)->WaitGradientComm();
+      }
+    }
+  }
+#endif
 }
 
 void MLEngine::run(int mode)
@@ -530,16 +554,26 @@ void MLEngine::run(int mode)
         int ntps = num_threads_/NUM_NUMA_NODES;
         int n = tid/ntps;
         int w = total_weights_;
+        int b = total_biases_;
 
         if(n != 0 && tid % ntps == 0)
         {
           float *wptr = (float*)weight_buf_[n];
+          float *bptr = (float*)bias_buf_[n];
+          float *sptr = (float*)stats_buf_[n];
 
 #pragma omp simd
           for(int i=0; i<w; i++)
             wptr[i] = ((float*)weight_buf_[0])[i];
 
-          if(lpweight_buf_ != NULL)
+#pragma omp simd
+          for(int i=0; i<b; i++)
+          {
+            bptr[i] = ((float*)bias_buf_[0])[i];
+            sptr[i] = ((float*)stats_buf_[0])[i];
+          }
+
+          if(lpweight_buf_[0] != NULL)
           {
             libxsmm_bfloat16 *lwptr = (libxsmm_bfloat16*)lpweight_buf_[n];
 #pragma omp simd
@@ -612,6 +646,7 @@ void MLEngine::run(int mode)
 #ifdef USE_MLSL
           waitForComms("WEIGHT");
           waitForComms("BIAS");
+          waitForComms("COMBO");
 #endif
 
 #if 0
@@ -625,7 +660,7 @@ void MLEngine::run(int mode)
 #if 0
           solver_->applyUpdate((float**)bias_buf_, (float**)biinc_buf_, bidiff_buf_, total_biases_, (float**)bias_lr_mult_, (float**)bias_decay_mult_, "BIAS");
 #else
-          solver_->applyUpdate((float*)bias_buf_[0], (float*)biinc_buf_[0], bidiff_buf_[0], total_biases_, 1.0, 0.0, "BIAS");
+          solver_->applyUpdate((float**)bias_buf_, (float**)biinc_buf_, bidiff_buf_, total_biases_, 1.0, 0.0, "BIAS");
 #endif
 
 #ifdef TIMING
@@ -729,6 +764,43 @@ void MLEngine::run(int mode)
     load_checkpoint(wTList_, DATA, checkpoint_format_);
     load_checkpoint(biasTList_, DATA, checkpoint_format_);
     load_checkpoint(statsTList_, DATA, checkpoint_format_);
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+    {
+      int tid = omp_get_thread_num();
+      int ntps = num_threads_/NUM_NUMA_NODES;
+      int n = tid/ntps;
+      int w = total_weights_;
+      int b = total_biases_;
+
+      if(n != 0 && tid % ntps == 0)
+      {
+        float *wptr = (float*)weight_buf_[n];
+        float *bptr = (float*)bias_buf_[n];
+        float *sptr = (float*)stats_buf_[n];
+
+#pragma omp simd
+        for(int i=0; i<w; i++)
+          wptr[i] = ((float*)weight_buf_[0])[i];
+
+#pragma omp simd
+        for(int i=0; i<b; i++)
+        {
+          bptr[i] = ((float*)bias_buf_[0])[i];
+          sptr[i] = ((float*)stats_buf_[0])[i];
+        }
+
+        if(lpweight_buf_[0] != NULL)
+        {
+          libxsmm_bfloat16 *lwptr = (libxsmm_bfloat16*)lpweight_buf_[n];
+#pragma omp simd
+          for(int i=0; i<w; i++)
+            lwptr[i] = ((libxsmm_bfloat16*)lpweight_buf_[0])[i];
+        }
+      }
+    }
 
     // Run test network when command-line mode is set to "test"
     for(int b=0; b<num_test_batches_; b++)
@@ -1527,6 +1599,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     }
   }
 
+
   if(tenType == "BIAS" && buftype == DIFF)
   {
 #ifdef _OPENMP
@@ -1541,29 +1614,13 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
       if(n != 0 && tid % ntps == 0)
       {
         float *bidiff = (float*)bidiff_buf_[n];
-
-#pragma omp simd
-        for(int i=0; i<b; i++)
-          bidiff[i] = ((float*)bidiff_buf_[0])[i];
-      }
-    }
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
-    {
-      int tid = omp_get_thread_num();
-      int ntps = num_threads_/NUM_NUMA_NODES;
-      int n = tid/ntps;
-      int b = total_biases_;
-      if(n != 0 && tid % ntps == 0)
-      {
         float *lrp = (float*)bias_lr_mult_[n];
         float *dcp = (float*)bias_decay_mult_[n];
 
 #pragma omp simd
         for(int i=0; i<b; i++)
         {
+          bidiff[i] = ((float*)bidiff_buf_[0])[i];
           lrp[i] = ((float*)bias_lr_mult_[0])[i];
           dcp[i] = ((float*)bias_decay_mult_[0])[i];
         }

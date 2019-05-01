@@ -69,7 +69,7 @@ void SolverNode::convert_bf16_f32(libxsmm_bfloat16 **in, float** out, int len)
 #endif
   {
     int tid = omp_get_thread_num();
-    int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+    int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
     int n = tid/ntps;
     int ltid = tid - n*ntps;
 
@@ -145,7 +145,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
   {
     int tid = omp_get_thread_num();
-    int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+    int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
     int n = tid/ntps;
     int ltid = tid - n*ntps;
 
@@ -173,7 +173,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
   {
     int tid = omp_get_thread_num();
-    int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+    int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
     int n = tid/ntps;
     if(n != 0)
     {
@@ -200,7 +200,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
     {
       int tid = omp_get_thread_num();
-      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
       int n = tid/ntps;
       int ltid = tid - n*ntps;
 
@@ -241,7 +241,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
     {
       int tid = omp_get_thread_num();
-      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
       int n = tid/ntps;
       int ltid = tid - n*ntps;
 
@@ -284,7 +284,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
     {
       int tid = omp_get_thread_num();
-      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
       int n = tid/ntps;
       int ltid = tid - n*ntps;
 
@@ -317,7 +317,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
   {
     int tid = omp_get_thread_num();
-    int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+    int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
     int n = tid/ntps;
     int ltid = tid - n*ntps;
 
@@ -384,7 +384,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
   {
     int tid = omp_get_thread_num();
-    int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+    int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
     int n = tid/ntps;
     int ltid = tid - n*ntps;
 
@@ -412,7 +412,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
   {
     int tid = omp_get_thread_num();
-    int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+    int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
     int n = tid/ntps;
     if(n != 0)
     {
@@ -440,7 +440,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
     {
       int tid = omp_get_thread_num();
-      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
       int n = tid/ntps;
       int ltid = tid - n*ntps;
 
@@ -479,7 +479,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
     {
       int tid = omp_get_thread_num();
-      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
       int n = tid/ntps;
       int ltid = tid - n*ntps;
 
@@ -520,7 +520,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
     {
       int tid = omp_get_thread_num();
-      int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+      int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
       int n = tid/ntps;
       int ltid = tid - n*ntps;
 
@@ -551,7 +551,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 #endif
   {
     int tid = omp_get_thread_num();
-    int ntps = omp_get_num_threads()/NUM_NUMA_NODES;
+    int ntps = eptr_->get_num_threads()/NUM_NUMA_NODES;
     int n = tid/ntps;
     int ltid = tid - n*ntps;
 

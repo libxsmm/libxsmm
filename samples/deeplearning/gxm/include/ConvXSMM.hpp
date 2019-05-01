@@ -72,6 +72,7 @@ class ConvXSMM : public ConvImpl
     void *out_ptr[NUM_NUMA_NODES] = {NULL};
     void *din_ptr[NUM_NUMA_NODES] = {NULL}, *dout_ptr[NUM_NUMA_NODES] = {NULL};
     void *scratch[NUM_NUMA_NODES]={NULL};
+    int prev_scratch_size = 0;
 
   public:
     ConvXSMM(ConvImplParams *gp, int engine);

@@ -37,6 +37,7 @@
 #include <sys/time.h>
 #include <limits.h>
 #include "check.hpp"
+#include "Tensor.hpp"
 #include "common.hpp"
 
 using namespace std;
@@ -47,7 +48,7 @@ typedef struct {
   int batch_size;
   int nBInput, nBOutput;
   int iBlock, oBlock;
-  float loss;
+  float loss[NUM_NUMA_NODES];
   float loss_weight;
   int num_threads;
 } SMaxLossImplParams;
@@ -62,6 +63,6 @@ class SMaxLossImpl
     void set_num_nodes(size_t n) { num_nodes = n; }
     size_t get_num_nodes() { return num_nodes; }
 
-    virtual void forwardPropagate(float *inp, int *label, float *outp) = 0;
-    virtual void backPropagate(float *outp, int *label, float *delinp) = 0;
+    virtual void forwardPropagate(TensorBuf *inp, TensorBuf *label, TensorBuf *outp) = 0;
+    virtual void backPropagate(TensorBuf *outp, TensorBuf *label, TensorBuf *delinp) = 0;
 };

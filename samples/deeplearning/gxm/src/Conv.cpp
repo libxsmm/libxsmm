@@ -940,8 +940,9 @@ void ConvNode::weightUpdate()
 #endif
 
 #ifdef GETSTATS
+  int node_id = 0;
 #ifdef USE_MLSL
-  unsigned int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
+  node_id = MLSL::Environment::GetEnv().GetProcessIdx();
   if(node_id == 0 && eptr_->get_current_batch() % STATFREQ == 0)
 #else
   if(eptr_->get_current_batch() % STATFREQ == 0)
@@ -1025,8 +1026,6 @@ void ConvNode::weightUpdate()
 #endif
 
 #ifdef GETSTATS
-  int node_id;
-
 #ifdef USE_MLSL
   node_id = MLSL::Environment::GetEnv().GetProcessIdx();
 #else

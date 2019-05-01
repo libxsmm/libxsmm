@@ -38,54 +38,41 @@ node {
   }
 }
 node {
-  name: "conv1"
-  type: "Convolution"
+  name: "convbn1"
+  type: "FusedConvBN"
   bottom: "data"
-  top: "conv1"
+  top: "convbn1"
   propagate_down: false
   param {
     lr_mult: 1.0
     decay_mult: 1.0
   }
-  convolution_param {
+  param {
+    lr_mult: 1.0
+    decay_mult: 0.0
+  }
+  fused_conv_bn_param {
     data_type: FLOAT
     engine: XSMM
     num_output: 64
-    pad: 3
-    opad: 3
-    bias_term: false
+    ipad: 3
+    mpad: 3
+    opad: 0
     physical_padding: true
     kernel_size: 7
-    stride: 2
+    c_stride: 2
+    bn_stride: 1
     weight_filler {
       type: "msra"
       variance_norm: FAN_OUT
     }
-    bias_filler {
-      type: "constant"
-      value: 0.0
-    }
   }
 }
 node {
-  name: "bn1"
-  type: "FusedBatchNorm"
-  fused_bnorm_param {
-    data_type: FLOAT
-    use_global_stats: false
-    ipad: 3
-    pad: 0
-    stride: 1
-    engine: XSMM
-  }
-  bottom: "conv1"
-  top: "bn1"
-}
-node {
-  name: "conv1_pool"
+  name: "pool1"
   type: "Pooling"
-  bottom: "bn1"
-  top: "conv1_pool"
+  bottom: "convbn1"
+  top: "pool1"
   pooling_param {
     data_type: FLOAT
     pool: MAX
@@ -98,7 +85,7 @@ node {
 node {
   name: "node_64_1_convbn4"
   type: "FusedConvBN"
-  bottom: "conv1_pool"
+  bottom: "pool1"
   top: "node_64_1_convbn4"
   param {
     lr_mult: 1.0
@@ -129,7 +116,7 @@ node {
 node {
   name: "node_64_1_convbn1"
   type: "FusedConvBN"
-  bottom: "conv1_pool"
+  bottom: "pool1"
   top: "node_64_1_convbn1"
   param {
     lr_mult: 1.0

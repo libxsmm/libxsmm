@@ -116,7 +116,7 @@ SplitNode::SplitNode(SplitParams *p, MLEngine *e) : NNNode(p, e)
       tenBotDiff_->setDataType(in_dtype);
       tenBotDiff_->setBufferType(DIFF);
       int elem = bs->dims[0]*bs->dims[1]*bs->dims[2]*bs->dims[3];
-      printf("%s: elem = %d\n",nname_.c_str(),elem);
+      //printf("%s: elem = %d\n",nname_.c_str(),elem);
       if(in_dtype == DT_FLOAT)
         elem = elem*sizeof(float);
       else if(in_dtype == DT_BF16)

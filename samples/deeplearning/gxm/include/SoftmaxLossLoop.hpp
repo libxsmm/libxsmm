@@ -39,6 +39,6 @@ class SMaxLossLoop : public SMaxLossImpl
     SMaxLossLoop(SMaxLossImplParams* gp) : SMaxLossImpl(gp) {}
 
     // Assume external threading, e.g., #pragma omp
-    void forwardPropagate(float *inp, int* label, float *outp);
-    void backPropagate(float *outp, int* label, float *delinp);
+    void forwardPropagate(TensorBuf *inp, TensorBuf* label, TensorBuf *outp);
+    void backPropagate(TensorBuf *outp, TensorBuf* label, TensorBuf *delinp);
 };
