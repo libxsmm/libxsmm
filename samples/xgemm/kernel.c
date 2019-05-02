@@ -554,7 +554,7 @@ int main(int argc, char* argv []) {
         } else {
           l_keep_going = 1;
         }
-        sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc );
+        if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F64,
         l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags,
@@ -632,7 +632,7 @@ int main(int argc, char* argv []) {
         } else {
           l_keep_going = 1;
         }
-        sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc );
+        if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F64,
         l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags,
@@ -710,7 +710,7 @@ int main(int argc, char* argv []) {
         } else {
           l_keep_going = 1;
         }
-        sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc );
+        if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F32,
         l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
@@ -786,7 +786,7 @@ int main(int argc, char* argv []) {
         } else {
           l_keep_going = 1;
         }
-        sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc );
+        if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit(&l_xgemm_blob, LIBXSMM_GEMM_PRECISION_F32,
         l_m, l_n, l_k, l_lda, l_ldb, l_ldc, l_alpha, l_beta, l_flags, l_prefetch);
@@ -864,7 +864,7 @@ int main(int argc, char* argv []) {
         } else {
           l_keep_going = 1;
         }
-        sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc );
+        if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
         LIBXSMM_GEMM_PRECISION_I16, LIBXSMM_GEMM_PRECISION_I32,
@@ -952,7 +952,7 @@ int main(int argc, char* argv []) {
         } else {
           l_keep_going = 1;
         }
-        sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc );
+        if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
         LIBXSMM_GEMM_PRECISION_I16, LIBXSMM_GEMM_PRECISION_F32,
@@ -1041,7 +1041,7 @@ int main(int argc, char* argv []) {
         } else {
           l_keep_going = 1;
         }
-        sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc );
+        if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
         LIBXSMM_GEMM_PRECISION_BF16, LIBXSMM_GEMM_PRECISION_F32,
@@ -1085,11 +1085,12 @@ int main(int argc, char* argv []) {
                 for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
                   union libxsmm_bfloat16_hp tmp_a_f;
                   union libxsmm_bfloat16_hp tmp_b_f;
+                  float fprod;
                   tmp_a_f.i[1] = l_a_bf[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2];
                   tmp_a_f.i[0] = 0;
                   tmp_b_f.i[1] = l_b_bf[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
                   tmp_b_f.i[0] = 0;
-                  const float fprod = (float)(tmp_a_f.f * tmp_b_f.f);
+                  fprod = (float)(tmp_a_f.f * tmp_b_f.f);
                   l_c_gold_w_f[(l_j * l_ldc) + l_i] += fprod;
                 }
               }
@@ -1139,7 +1140,7 @@ int main(int argc, char* argv []) {
         } else {
           l_keep_going = 1;
         }
-        sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc );
+        if ( 6 != sscanf( l_line, "%i %i %i %i %i %i", &l_m, &l_n, &l_k, &l_lda, &l_ldb, &l_ldc ) ) exit(EXIT_FAILURE);
       }
       l_xgemm_desc = libxsmm_gemm_descriptor_dinit2(&l_xgemm_blob,
         LIBXSMM_GEMM_PRECISION_BF16, LIBXSMM_GEMM_PRECISION_BF16,
