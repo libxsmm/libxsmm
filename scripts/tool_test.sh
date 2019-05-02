@@ -188,7 +188,7 @@ then
   fi
 
   # setup batch execution
-  if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ]; then
+  if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "" != "${BUILDKITE_LABEL}" ]; then
       LABEL=$(${ECHO} "${BUILDKITE_LABEL}" | ${TR} -s [:punct:][:space:] - | ${SED} -e "s/^-//" -e "s/-$//")
     fi
