@@ -223,6 +223,20 @@ LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void)
   LIBXSMM_ASSERT(NULL != libxsmm_original_sgemm_function);
   return libxsmm_original_sgemm_function;
 }
+
+LIBXSMM_API_EXPORT libxsmm_dgemv_function libxsmm_original_dgemv(void)
+{
+  LIBXSMM_BLAS_WRAPPER(double, gemv, libxsmm_original_dgemv_function, libxsmm_original_dgemv/*self*/);
+  LIBXSMM_ASSERT(NULL != libxsmm_original_dgemv_function);
+  return libxsmm_original_dgemv_function;
+}
+
+LIBXSMM_API_EXPORT libxsmm_sgemv_function libxsmm_original_sgemv(void)
+{
+  LIBXSMM_BLAS_WRAPPER(float, gemv, libxsmm_original_sgemv_function, libxsmm_original_sgemv/*self*/);
+  LIBXSMM_ASSERT(NULL != libxsmm_original_sgemv_function);
+  return libxsmm_original_sgemv_function;
+}
 #endif /*defined(LIBXSMM_BLAS_WRAP_DYNAMIC)*/
 
 
@@ -244,7 +258,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm)(
     int result = EXIT_SUCCESS;
 # endif
     LIBXSMM_INIT
-    if (NULL == libxsmm_mmbatch_array
+    if (0 != libxsmm_gemm_wrap && (NULL == libxsmm_mmbatch_array
       || LIBXSMM_GEMM_PRECISION_F64 != libxsmm_mmbatch_desc.datatype
       || ((unsigned int)*lda) != libxsmm_mmbatch_desc.lda
       || ((unsigned int)*ldb) != libxsmm_mmbatch_desc.ldb
@@ -254,7 +268,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       || ((unsigned int)*k) != libxsmm_mmbatch_desc.k
       || (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)) != (LIBXSMM_GEMM_FLAG_TRANS_AB & libxsmm_mmbatch_desc.flags)
       || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_mmbatch_desc.flags) ? 0 : */1, *alpha)
-      || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, *beta))
+      || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, *beta)))
 #endif
     {
 #if defined(_DEBUG)
@@ -267,11 +281,11 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm)(
         if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
       }
 #endif
-      if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
-        libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-      }
-      else { /* small problem size */
+      if (0 < libxsmm_gemm_wrap && 0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
         libxsmm_dgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+      }
+      else { /* parallelized */
+        libxsmm_dgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
       }
 #if defined(_DEBUG)
       if (NULL != d) {
@@ -381,7 +395,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
     int result = EXIT_SUCCESS;
 # endif
     LIBXSMM_INIT
-    if (NULL == libxsmm_mmbatch_array
+    if (0 != libxsmm_gemm_wrap && (NULL == libxsmm_mmbatch_array
       || LIBXSMM_GEMM_PRECISION_F32 != libxsmm_mmbatch_desc.datatype
       || ((unsigned int)*lda) != libxsmm_mmbatch_desc.lda
       || ((unsigned int)*ldb) != libxsmm_mmbatch_desc.ldb
@@ -391,7 +405,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       || ((unsigned int)*k) != libxsmm_mmbatch_desc.k
       || (flags = LIBXSMM_GEMM_FLAGS(*transa, *transb)) != (LIBXSMM_GEMM_FLAG_TRANS_AB & libxsmm_mmbatch_desc.flags)
       || LIBXSMM_NEQ(/*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & libxsmm_mmbatch_desc.flags) ? 0 : */1, *alpha)
-      || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, *beta))
+      || LIBXSMM_NEQ(0 != (LIBXSMM_GEMM_FLAG_BETA_0 & libxsmm_mmbatch_desc.flags) ? 0 : 1, *beta)))
 #endif
     {
 #if defined(_DEBUG)
@@ -404,11 +418,11 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
         if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
       }
 #endif
-      if (0 == (libxsmm_gemm_wrap % 2) || 0 > libxsmm_gemm_wrap) { /* parallelized/tiled */
-        libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
-      }
-      else { /* small problem size */
+      if (0 < libxsmm_gemm_wrap && 0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
         libxsmm_sgemm(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+      }
+      else { /* parallelized */
+        libxsmm_sgemm_omp(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
       }
 #if defined(_DEBUG)
       if (NULL != d) {
@@ -496,6 +510,58 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
     }
 # endif
 #endif
+  }
+}
+
+
+LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* x, const libxsmm_blasint* incx,
+  const double* beta, double* y, const libxsmm_blasint* incy)
+{
+  LIBXSMM_ASSERT(NULL != trans && NULL != m && NULL != n && NULL != lda && NULL != incx && NULL != incy && NULL != alpha && NULL != beta);
+  if (2 < libxsmm_gemm_wrap && LIBXSMM_SMM(*m, 1, *n, 2/*RFO*/, sizeof(double))) {
+    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
+      const int flags = LIBXSMM_GEMM_FLAGS(*trans, 'N');
+      const libxsmm_dmmfunction xgemv = libxsmm_dmmdispatch(*m, 1, *n, lda, incx, incy, alpha, beta, &flags, NULL);
+      if (NULL != xgemv) {
+        LIBXSMM_MMCALL_LDX(xgemv, a, x, y, *m, 1, *n, *lda, *incx, *incy);
+      }
+      else {
+        LIBXSMM_GEMV_SYMBOL(double)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+      }
+    }
+    else { /* TODO: parallelized */
+      LIBXSMM_GEMV_SYMBOL(double)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+    }
+  }
+  else {
+    LIBXSMM_GEMV_SYMBOL(double)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+  }
+}
+
+
+LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const float* x, const libxsmm_blasint* incx,
+  const float* beta, float* y, const libxsmm_blasint* incy)
+{
+  LIBXSMM_ASSERT(NULL != trans && NULL != m && NULL != n && NULL != lda && NULL != incx && NULL != incy && NULL != alpha && NULL != beta);
+  if (2 < libxsmm_gemm_wrap && LIBXSMM_SMM(*m, 1, *n, 2/*RFO*/, sizeof(float))) {
+    if (0 != (libxsmm_gemm_wrap & 1)) { /* sequential */
+      const int flags = LIBXSMM_GEMM_FLAGS(*trans, 'N');
+      const libxsmm_smmfunction xgemv = libxsmm_smmdispatch(*m, 1, *n, lda, incx, incy, alpha, beta, &flags, NULL);
+      if (NULL != xgemv) {
+        LIBXSMM_MMCALL_LDX(xgemv, a, x, y, *m, 1, *n, *lda, *incx, *incy);
+      }
+      else {
+        LIBXSMM_GEMV_SYMBOL(float)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+      }
+    }
+    else { /* TODO: parallelized */
+      LIBXSMM_GEMV_SYMBOL(float)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+    }
+  }
+  else {
+    LIBXSMM_GEMV_SYMBOL(float)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
   }
 }
 

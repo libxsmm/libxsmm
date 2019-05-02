@@ -46,7 +46,10 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(d
     LIBXSMM_FSYMBOL(__wrap_dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
   else {
-    libxsmm_internal_gemm_error(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
+    LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
+    LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
+    libxsmm_internal_wrap_error("dgemm");
   }
 }
 
@@ -61,7 +64,40 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(s
     LIBXSMM_FSYMBOL(__wrap_sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
   }
   else {
-    libxsmm_internal_gemm_error(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
+    LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
+    LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
+    libxsmm_internal_wrap_error("sgemm");
+  }
+}
+
+
+LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(dgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* x, const libxsmm_blasint* incx,
+  const double* beta, double* y, const libxsmm_blasint* incy)
+{
+  if (LIBXSMM_FSYMBOL(__real_dgemv) != libxsmm_original_dgemv_function) {
+    LIBXSMM_FSYMBOL(__wrap_dgemv)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+  else {
+    LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
+    LIBXSMM_UNUSED(x); LIBXSMM_UNUSED(incx); LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(y); LIBXSMM_UNUSED(incy);
+    libxsmm_internal_wrap_error("dgemv");
+  }
+}
+
+
+LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(sgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const float* x, const libxsmm_blasint* incx,
+  const float* beta, float* y, const libxsmm_blasint* incy)
+{
+  if (LIBXSMM_FSYMBOL(__real_sgemv) != libxsmm_original_sgemv_function) {
+    LIBXSMM_FSYMBOL(__wrap_sgemv)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+  else {
+    LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
+    LIBXSMM_UNUSED(x); LIBXSMM_UNUSED(incx); LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(y); LIBXSMM_UNUSED(incy);
+    libxsmm_internal_wrap_error("sgemv");
   }
 }
 
@@ -77,7 +113,10 @@ void LIBXSMM_FSYMBOL(dgemm)(const char* transa, const char* transb,
   const double* b, const libxsmm_blasint* ldb,
   const double* beta, double* c, const libxsmm_blasint* ldc)
 {
-  libxsmm_internal_gemm_error(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
+  LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
+  LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
+  libxsmm_internal_wrap_error("dgemm");
 }
 
 
@@ -91,7 +130,38 @@ void LIBXSMM_FSYMBOL(sgemm)(const char* transa, const char* transb,
   const float* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc)
 {
-  libxsmm_internal_gemm_error(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
+  LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
+  LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
+  libxsmm_internal_wrap_error("sgemm");
+}
+
+
+LIBXSMM_GEMM_SYMBOL_VISIBILITY
+#if defined(__GNUC__) && !defined(__PGI)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+void LIBXSMM_FSYMBOL(dgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* x, const libxsmm_blasint* incx,
+  const double* beta, double* y, const libxsmm_blasint* incy)
+{
+  LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
+  LIBXSMM_UNUSED(x); LIBXSMM_UNUSED(incx); LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(y); LIBXSMM_UNUSED(incy);
+  libxsmm_internal_wrap_error("dgemv");
+}
+
+
+LIBXSMM_GEMM_SYMBOL_VISIBILITY
+#if defined(__GNUC__) && !defined(__PGI)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+void LIBXSMM_FSYMBOL(sgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const float* x, const libxsmm_blasint* incx,
+  const float* beta, float* y, const libxsmm_blasint* incy)
+{
+  LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
+  LIBXSMM_UNUSED(x); LIBXSMM_UNUSED(incx); LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(y); LIBXSMM_UNUSED(incy);
+  libxsmm_internal_wrap_error("sgemv");
 }
 #endif
 #endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)*/

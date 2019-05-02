@@ -240,20 +240,40 @@
 /** Map to appropriate BLAS function (or fall-back). The mapping is used e.g., inside of LIBXSMM_BLAS_XGEMM. */
 #define LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
 #if (0 == LIBXSMM_NO_BLAS)
-# define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm()
-# define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm()
+/* Helper macro to eventually (if defined) call libxsmm_init */
+# if defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR)
+#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_dgemm_function
+#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_sgemm_function
+#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_dgemv_function
+#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_sgemv_function
+#   undef LIBXSMM_INIT
+#   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(0 != libxsmm_ninit, "LIBXSMM is not initialized");
+#   define LIBXSMM_INIT_COMPLETED
+# else
+#   define LIBXSMM_INIT if (0 == libxsmm_ninit) libxsmm_init();
+#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm()
+#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm()
+#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv()
+#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv()
+# endif
 #else /* no BLAS */
 # define LIBXSMM_BLAS_FUNCTION_dgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
     LIBXSMM_INLINE_XGEMM(double, double, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 # define LIBXSMM_BLAS_FUNCTION_sgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
     LIBXSMM_INLINE_XGEMM(float, float, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #endif
+/** Low-precision (BLAS-like) function symbols. */
 #define LIBXSMM_BLAS_FUNCTION_wigemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
   LIBXSMM_INLINE_XGEMM(short, int, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #define LIBXSMM_BLAS_FUNCTION_wsgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
   LIBXSMM_INLINE_XGEMM(short, float, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 #define LIBXSMM_BLAS_FUNCTION_bsgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
   LIBXSMM_INLINE_XGEMM(libxsmm_bfloat16, float, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+
+/** Short-cut macros to construct desired BLAS function symbol. */
+#define LIBXSMM_BLAS_FUNCTION1(TYPE, FUNCTION) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, FUNCTION)
+#define LIBXSMM_GEMM_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION1(TYPE, gemm)
+#define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION1(TYPE, gemv)
 
 /** BLAS-based GEMM supplied by the linked LAPACK/BLAS library (macro template). */
 #define LIBXSMM_BLAS_XGEMM(ITYPE, OTYPE, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) { \
@@ -469,19 +489,8 @@ LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_dgemv_function libxsmm_original_dgemv
 LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_sgemv_function libxsmm_original_sgemv_function);
 LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void);
 LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void);
-
-/* Helper macro to eventually (if defined) call libxsmm_init */
-#if defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR)
-# define LIBXSMM_GEMM_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemm_function))
-# define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_CONCATENATE(libxsmm_original_, LIBXSMM_TPREFIX(TYPE, gemv_function))
-# undef LIBXSMM_INIT
-# define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(0 != libxsmm_ninit, "LIBXSMM is not initialized");
-# define LIBXSMM_INIT_COMPLETED
-#else
-# define LIBXSMM_INIT if (0 == libxsmm_ninit) libxsmm_init();
-# define LIBXSMM_GEMM_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemm)
-# define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, gemv)
-#endif
+LIBXSMM_API_EXPORT libxsmm_dgemv_function libxsmm_original_dgemv(void);
+LIBXSMM_API_EXPORT libxsmm_sgemv_function libxsmm_original_sgemv(void);
 
 /**
  * General dense matrix multiplication, which re-exposes LAPACK/BLAS
