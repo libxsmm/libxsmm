@@ -411,6 +411,8 @@ endif
 else ifeq (, $(filter _0_,_$(LNKSOFT)_))
 	$(info LIBXSMM is link-time agnostic with respect to a BLAS library!)
 	$(info Forcing a specific library can take away a user's choice.)
+	$(info If this was to solve linker errors (dgemm_, sgemm_, etc.),)
+	$(info the BLAS library should go after LIBXSMM (link-line).)
 	$(info --------------------------------------------------------------------------------)
 endif
 ifneq (2,$(INTRINSICS))
