@@ -62,7 +62,7 @@
 #if !defined(LIBXSMM_GEMM_BATCHREDUCE) && !defined(_WIN32) && !defined(__CYGWIN__) /* not supported */
 # define LIBXSMM_GEMM_BATCHREDUCE
 #endif
-#if !defined(LIBXSMM_GEMM_BATCHSCALE) && (defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_GEMM_MMBATCH))
+#if !defined(LIBXSMM_GEMM_BATCHSCALE) && (defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_WRAP))
 #define LIBXSMM_GEMM_BATCHSCALE ((unsigned int)LIBXSMM_ROUND(sizeof(libxsmm_mmbatch_item) * (LIBXSMM_GEMM_MMBATCH_SCALE)))
 #endif
 #if defined(LIBXSMM_BUILD)
@@ -215,12 +215,19 @@ LIBXSMM_GEMM_WEAK libxsmm_sgemv_function libxsmm_original_sgemv(void)
 
 LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 {
-  /* determines if batch-wrap is considered */
-  const char *const env_w = getenv("LIBXSMM_BLAS_WRAP_DYNAMIC");
+  const char* env_w = getenv("LIBXSMM_GEMM_WRAP");
   LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr;
   LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_GEMM_LOCK, &attr);
-  /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
-  libxsmm_gemm_wrap = ((NULL == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
+#if defined(LIBXSMM_WRAP) /* determines if wrap is considered */
+  { /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
+# if defined(__STATIC) /* with static library the user controls interceptor already */
+    libxsmm_gemm_wrap = ((NULL == env_w || 0 == *env_w) /* LIBXSMM_WRAP=0: no promotion */
+      ? (0 < (LIBXSMM_WRAP) ? (LIBXSMM_WRAP + 2) : (LIBXSMM_WRAP)) : atoi(env_w));
+# else
+    libxsmm_gemm_wrap = ((NULL == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
+# endif
+  }
+#endif
   { /* setup prefetch strategy for tiled GEMMs */
     const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH");
     const libxsmm_gemm_prefetch_type tiled_prefetch_default = LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;
@@ -236,7 +243,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state, &attr);
   }
 #endif
-#if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_GEMM_MMBATCH)
+#if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_WRAP)
   { /* determines if batch-reduce kernel or batch-wrap is considered */
     const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE");
     internal_gemm_batchreduce = (NULL == env_r || 0 == *env_r) ? 0 : atoi(env_r);
@@ -263,6 +270,8 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       }
     }
   }
+#else
+  LIBXSMM_UNUSED(env_w);
 #endif
   if (LIBXSMM_X86_AVX512_CORE <= archid) {
     internal_gemm_vwidth = 64;
@@ -335,7 +344,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
 #if (0 != LIBXSMM_SYNC)
   unsigned int i; for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_DESTROY(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state);
 #endif
-#if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_GEMM_MMBATCH)
+#if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_WRAP)
   if (NULL != libxsmm_mmbatch_array) {
     void* extra = NULL;
     if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_mmbatch_array, NULL/*size*/, NULL/*flags*/, &extra) && NULL != extra) {

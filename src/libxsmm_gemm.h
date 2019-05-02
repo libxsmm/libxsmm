@@ -68,10 +68,10 @@
 # define LIBXSMM_GEMM_MMBATCH_VERBOSITY ((LIBXSMM_VERBOSITY_HIGH) + 1)
 #endif
 
-#if !defined(LIBXSMM_GEMM_MMBATCH) && defined(LIBXSMM_BUILD) && \
+#if !defined(LIBXSMM_WRAP) && defined(LIBXSMM_BUILD) && \
     (defined(LIBXSMM_CONFIG_WRAP) && 0 != (LIBXSMM_CONFIG_WRAP)) && \
     (defined(LIBXSMM_BLAS_WRAP_DYNAMIC) || !defined(NDEBUG) || defined(_WIN32)) /* debug */
-# define LIBXSMM_GEMM_MMBATCH
+# define LIBXSMM_WRAP LIBXSMM_CONFIG_WRAP
 #endif
 
 /** Undefine (disarm) MKL's DIRECT_CALL macros. */
