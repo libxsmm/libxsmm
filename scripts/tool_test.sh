@@ -205,6 +205,7 @@ then
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
   else # avoid temporary script in case of non-batch execution
+    SHOW_PARTITION=0
     LAUNCH=\${TEST}
   fi
   if [ "" != "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
