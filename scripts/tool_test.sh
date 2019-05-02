@@ -207,7 +207,7 @@ then
   else # avoid temporary script in case of non-batch execution
     LAUNCH=\${TEST}
   fi
-  if [ "" != "${LAUNCH_USER}" ]; then
+  if [ "" != "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
     LAUNCH="su ${LAUNCH_USER} -p ${RUN_CMD} \'${LAUNCH}\'"
   fi
 
