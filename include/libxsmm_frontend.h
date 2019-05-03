@@ -256,6 +256,13 @@
 #   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv()
 # endif
 #else /* no BLAS */
+# if (defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR))
+#   undef LIBXSMM_INIT
+#   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(0 != libxsmm_ninit, "LIBXSMM is not initialized");
+#   define LIBXSMM_INIT_COMPLETED
+# else
+#   define LIBXSMM_INIT if (0 == libxsmm_ninit) libxsmm_init();
+# endif
 # define LIBXSMM_BLAS_FUNCTION_dgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
     LIBXSMM_INLINE_XGEMM(double, double, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
 # define LIBXSMM_BLAS_FUNCTION_sgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \

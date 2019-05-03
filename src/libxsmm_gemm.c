@@ -335,6 +335,8 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
   /* determine BLAS function-pointers */
   libxsmm_original_dgemm();
   libxsmm_original_sgemm();
+  libxsmm_original_dgemv();
+  libxsmm_original_sgemv();
 #endif
 }
 
