@@ -1710,8 +1710,8 @@ ifneq (Darwin,$(UNAME))
 endif
 
 PKG_CONFIG_PREFIX = $(abspath .)
-PKG_CONFIG_INCLUDEDIR = $(subst $$$$,,$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(PINCDIR)))
-PKG_CONFIG_LIBDIR = $(subst $$$$,,$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(POUTDIR)))
+PKG_CONFIG_INCLUDEDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(PINCDIR)))
+PKG_CONFIG_LIBDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
 $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" > $@
