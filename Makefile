@@ -191,9 +191,16 @@ DOCEXT = pdf
 
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE = \
-  DESTDIR INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR \
-  PBINDIR PINCDIR PREFIX POUTDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR \
-  VERSION_STRING TEST TSTDIR DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC PKG_CONFIG_%
+  PREFIX INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR \
+  PBINDIR PINCDIR POUTDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR TEST \
+  VERSION_STRING DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC PKG_CONFIG_%
+
+ifneq (,$(strip $(DESTDIR))) # in contrast to PREFIX, DESTDIR matters at this point
+  PKG_CONFIG_PREFIX = $(DESTDIR)
+else
+  PKG_CONFIG_PREFIX = $(abspath .)
+  EXCLUDE_STATE += DESTDIR
+endif
 
 ifeq (,$(M)$(N)$(K))
 ifneq (,$(filter 0,$(MNK) 0))
@@ -1707,12 +1714,6 @@ else ifneq (Darwin,$(UNAME))
 endif
 ifneq (Darwin,$(UNAME))
   PKG_CONFIG_PRIVLIBS_EXT = -fopenmp
-endif
-
-ifneq (,$(strip $(DESTDIR))) # in contrast to PREFIX, DESTDIR matters at this point
-PKG_CONFIG_PREFIX = $(DESTDIR)
-else
-PKG_CONFIG_PREFIX = $(abspath .)
 endif
 
 PKG_CONFIG_INCLUDEDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(PINCDIR)))
