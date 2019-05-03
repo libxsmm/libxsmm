@@ -33,14 +33,6 @@
 
 #include "libxsmm_typedefs.h"
 
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
-#endif
-#include <stdint.h>
-#if defined(LIBXSMM_OFFLOAD_TARGET)
-# pragma offload_attribute(pop)
-#endif
-
 
 /** Set the seed of libxsmm_rng_* (similar to srand). */
 LIBXSMM_API void libxsmm_rng_set_seed(unsigned int/*uint32_t*/ seed);
