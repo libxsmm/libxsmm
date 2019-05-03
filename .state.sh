@@ -30,27 +30,28 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
-NAME=$(basename $0)
-
 TOUCH=$(command -v touch)
-ECHO=$(command -v echo)
+DIFF=$(command -v diff)
 SED=$(command -v sed)
 TR=$(command -v tr)
 
-DEST=$1
-if [ "$1" = "" ]; then
-  DEST=.
-fi
-
-STATEFILE=${DEST}/.state
-STATE=$(${TR} '?' '\n' | ${SED} -e 's/^ */\"/' -e 's/   */ /g' -e 's/ *$/\\n\"/')
-
-if [ ! -e ${STATEFILE} ] || [ "0" != "$(${ECHO} "${STATE}" | diff -q ${STATEFILE} - >/dev/null; ${ECHO} "$?")" ]; then
-  if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
-    printf "%s\n" "${STATE}" > ${STATEFILE}
+if [ "" != "${TOUCH}" ] && [ "" != "${DIFF}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ]; then
+  if [ "$1" = "" ]; then
+    STATEFILE=./.state
+  else
+    STATEFILE=$1/.state
   fi
-  ${ECHO} "$0"
-  ${TOUCH} $0
+
+  STATE=$(${TR} '?' '\n' | ${SED} -e 's/^ */\"/' -e 's/   */ /g' -e 's/ *$/\\n\"/')
+  if [ ! -e ${STATEFILE} ] || [ "0" != "$(echo "${STATE}" | ${DIFF} -q ${STATEFILE} - >/dev/null; echo "$?")" ]; then
+    if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
+      printf "%s\n" "${STATE}" > ${STATEFILE}
+    fi
+    echo "$0"
+    ${TOUCH} $0
+  fi
+else
+  echo "Error: missing prerequisites!"
+  exit 1
 fi
 
