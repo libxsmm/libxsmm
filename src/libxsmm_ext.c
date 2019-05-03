@@ -77,7 +77,7 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(d
   const double* beta, double* y, const libxsmm_blasint* incy)
 {
   if (LIBXSMM_FSYMBOL(__real_dgemv) != libxsmm_original_dgemv_function) {
-    LIBXSMM_FSYMBOL(__wrap_dgemv)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_FSYMBOL(__wrap_dgemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
   }
   else {
     LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
@@ -92,7 +92,7 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(s
   const float* beta, float* y, const libxsmm_blasint* incy)
 {
   if (LIBXSMM_FSYMBOL(__real_sgemv) != libxsmm_original_sgemv_function) {
-    LIBXSMM_FSYMBOL(__wrap_sgemv)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+    LIBXSMM_FSYMBOL(__wrap_sgemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
   }
   else {
     LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
