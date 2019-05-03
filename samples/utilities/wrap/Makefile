@@ -99,6 +99,7 @@ else
 .PHONY: $(OUTDIR)/dgemm-blas
 endif
 
+ifeq (0,$(NOBLAS))
 $(OUTDIR)/dgemv-blas: $(BLDDIR)/dgemv-c.o $(OUTDIR)/.make
 	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 ifeq (Darwin,$(UNAME))
@@ -107,6 +108,9 @@ ifneq (0,$(XWRAP))
 	$(info The static link-time wrapper mechanism is not supported under OS X!)
 	$(info ================================================================================)
 endif
+endif
+else
+.PHONY: $(OUTDIR)/dgemv-blas
 endif
 
 ifneq (0,$(XWRAP))
@@ -138,11 +142,15 @@ else
 endif
 
 .PHONY: test
-test: $(OUTDIR)/.make $(OUTDIR)/dgemm-test.sh $(XFILES)
-	@bash $(OUTDIR)/dgemm-test.sh $(shell echo $$(($(TESTSIZE) * 1000)))
-	@bash $(OUTDIR)/dgemm-test.sh 350 16 20 350 35 350 1 0
-	@bash $(OUTDIR)/dgemm-test.sh 200 200 200 256 256 256 1 0
-	@bash $(OUTDIR)/dgemm-test.sh 24 23 21 32 32 32 -1 0.5
+test: $(OUTDIR)/.make $(OUTDIR)/wrap-test.sh $(XFILES)
+	@bash $(OUTDIR)/wrap-test.sh dgemm $(shell echo $$(($(TESTSIZE) * 1000)))
+	@bash $(OUTDIR)/wrap-test.sh dgemm 350  16  20 350  35 350  1 0.0
+	@bash $(OUTDIR)/wrap-test.sh dgemm 200 200 200 256 256 256  1 0.0
+	@bash $(OUTDIR)/wrap-test.sh dgemm  24  23  21  32  32  32 -1 0.5
+	@bash $(OUTDIR)/wrap-test.sh dgemv $(shell echo $$(($(TESTSIZE) * 1000)))
+	@bash $(OUTDIR)/wrap-test.sh dgemv 350  20 350 1 1 1 0
+	@bash $(OUTDIR)/wrap-test.sh dgemv 200 200 256 1 1 1 0
+	@bash $(OUTDIR)/wrap-test.sh dgemv  24  21  32 2 2 1 1
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

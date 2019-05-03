@@ -35,68 +35,77 @@ DEPDIR=${HERE}/../../..
 
 TMPF=$(${DEPDIR}/.mktmp.sh /tmp/.libxsmm_XXXXXX.out)
 UNAME=$(command -v uname)
-ECHO=$(command -v echo)
 GREP=$(command -v grep)
 SORT=$(command -v sort)
 RM=$(command -v rm)
+TR=$(command -v tr)
 
 if [ "Darwin" != "$(${UNAME})" ]; then
   LIBEXT=so
 else
   LIBEXT=dylib
 fi
+if [ "" != "$1" ]; then
+  TEST=$1
+  shift
+else
+  TEST=dgemm
+fi
 
-if [ -e ${HERE}/dgemm-blas ]; then
-  ${ECHO} "============================="
-  ${ECHO} "Running DGEMM (ORIGINAL BLAS)"
-  ${ECHO} "============================="
-  { time ${HERE}/dgemm-blas.sh "$@" 2>${TMPF}; } 2>&1 | ${GREP} real
+if [ -e ${HERE}/${TEST}-blas ]; then
+  NAME=$(echo ${TEST} | ${TR} [:lower:] [:upper:])
+  echo "============================="
+  echo "Running ${NAME} (ORIGINAL BLAS)"
+  echo "============================="
+  { time ${HERE}/${TEST}-blas.sh "$@" 2>${TMPF}; } 2>&1 | ${GREP} real
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
-    ${ECHO} -n "FAILED(${RESULT}) "; ${SORT} -u ${TMPF}
+    echo -n "FAILED(${RESULT}) "; ${SORT} -u ${TMPF}
     ${RM} -f ${TMPF}
     exit ${RESULT}
   else
-    ${ECHO} -n "OK "; ${SORT} -u ${TMPF}
+    echo -n "OK "; ${SORT} -u ${TMPF}
   fi
-  ${ECHO}
+  echo
 
   if [ -e ${DEPDIR}/lib/libxsmmext.${LIBEXT} ]; then
-    ${ECHO}
-    ${ECHO} "============================="
-    ${ECHO} "Running DGEMM (LD_PRELOAD)"
-    ${ECHO} "============================="
+    echo
+    echo "============================="
+    echo "Running ${NAME} (LD_PRELOAD)"
+    echo "============================="
     { time \
       LD_LIBRARY_PATH=${DEPDIR}/lib:${LD_LIBRARY_PATH} LD_PRELOAD=${DEPDIR}/lib/libxsmmext.${LIBEXT} \
       DYLD_LIBRARY_PATH=${DEPDIR}/lib:${DYLD_LIBRARY_PATH} DYLD_INSERT_LIBRARIES=${DEPDIR}/lib/libxsmmext.${LIBEXT} \
-      ${HERE}/dgemm-blas.sh "$@" 2>${TMPF}; } 2>&1 | ${GREP} real
+      ${HERE}/${TEST}-blas.sh "$@" 2>${TMPF}; } 2>&1 | ${GREP} real
     RESULT=$?
     if [ 0 != ${RESULT} ]; then
-      ${ECHO} -n "FAILED(${RESULT}) "; ${SORT} -u ${TMPF}
+      echo -n "FAILED(${RESULT}) "; ${SORT} -u ${TMPF}
       ${RM} -f ${TMPF}
       exit ${RESULT}
     else
-      ${ECHO} -n "OK "; ${SORT} -u ${TMPF}
+      echo -n "OK "; ${SORT} -u ${TMPF}
     fi
-    ${ECHO}
+    echo
   fi
 fi
 
-if [ -e ${HERE}/dgemm-wrap ]; then
-  ${ECHO}
-  ${ECHO} "============================="
-  ${ECHO} "Running DGEMM (STATIC WRAP)"
-  ${ECHO} "============================="
-  { time ${HERE}/dgemm-wrap.sh "$@" 2>${TMPF}; } 2>&1 | ${GREP} real
+if [ -e ${HERE}/${TEST}-wrap ] && [ -e .state ] && \
+   [ "" = "$(${GREP} 'BLAS=0' .state)" ];
+then
+  echo
+  echo "============================="
+  echo "Running ${NAME} (STATIC WRAP)"
+  echo "============================="
+  { time ${HERE}/${TEST}-wrap.sh "$@" 2>${TMPF}; } 2>&1 | ${GREP} real
   RESULT=$?
   if [ 0 != ${RESULT} ]; then
-    ${ECHO} -n "FAILED(${RESULT}) "; ${SORT} -u ${TMPF}
+    echo -n "FAILED(${RESULT}) "; ${SORT} -u ${TMPF}
     ${RM} -f ${TMPF}
     exit ${RESULT}
   else
-    ${ECHO} -n "OK "; ${SORT} -u ${TMPF}
+    echo -n "OK "; ${SORT} -u ${TMPF}
   fi
-  ${ECHO}
+  echo
 fi
 
 ${RM} -f ${TMPF}
