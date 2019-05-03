@@ -73,13 +73,13 @@ else
 endif
 
 $(OUTDIR)/blas: $(BLDDIR)/blas-cpp.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
-	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/dispatched: $(BLDDIR)/dispatched-cpp.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/inlined: $(BLDDIR)/inlined-cpp.o $(OUTDIR)/.make $(LIBDEP)
-	$(LD) -o $@ $< $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+	$(LD) -o $@ $< $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(OUTDIR)/specialized: $(BLDDIR)/specialized-cpp.o $(OUTDIR)/.make $(EXTDEP) $(LIBDEP)
 	$(LD) -o $@ $< $(EXTLIB) $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
