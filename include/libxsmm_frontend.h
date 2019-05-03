@@ -175,6 +175,10 @@
 # define LIBXSMM_GEMM_SYMBOL_VISIBILITY LIBXSMM_VISIBILITY_IMPORT LIBXSMM_RETARGETABLE
 #endif
 
+#define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm_batch(CONST_STAR, STAR, TYPE) char CONST_STAR, char CONST_STAR, \
+  libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, \
+  TYPE CONST_STAR, TYPE CONST_STAR STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR STAR, libxsmm_blasint CONST_STAR, \
+  TYPE CONST_STAR, TYPE STAR STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR
 #define LIBXSMM_BLAS_SYMBOL_SIGNATURE_gemm(CONST_STAR, STAR, TYPE) char CONST_STAR, char CONST_STAR, \
   libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR, TYPE CONST_STAR, libxsmm_blasint CONST_STAR, \
   TYPE CONST_STAR, libxsmm_blasint CONST_STAR, TYPE CONST_STAR, TYPE STAR, libxsmm_blasint CONST_STAR
@@ -241,6 +245,8 @@
 #define LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
 #if (0 == LIBXSMM_NO_BLAS) /* Helper macro to eventually (if defined) call libxsmm_init */
 # if (defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR))
+#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch_function
+#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch_function
 #   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm_function
 #   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm_function
 #   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv_function
@@ -250,6 +256,8 @@
 #   define LIBXSMM_INIT_COMPLETED
 # else
 #   define LIBXSMM_INIT if (0 == libxsmm_ninit) libxsmm_init();
+#   define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_original_dgemm_batch()
+#   define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_original_sgemm_batch()
 #   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm()
 #   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm()
 #   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv()
@@ -263,6 +271,8 @@
 # else
 #   define LIBXSMM_INIT if (0 == libxsmm_ninit) libxsmm_init();
 # endif
+# define LIBXSMM_BLAS_FUNCTION_dgemm_batch libxsmm_blas_error("dgemm_batch")
+# define LIBXSMM_BLAS_FUNCTION_sgemm_batch libxsmm_blas_error("sgemm_batch")
 # define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_blas_error("dgemm")
 # define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_blas_error("sgemm")
 # define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_blas_error("dgemv")
@@ -278,6 +288,7 @@
 
 /** Short-cut macros to construct desired BLAS function symbol. */
 #define LIBXSMM_BLAS_FUNCTION1(TYPE, FUNCTION) LIBXSMM_BLAS_FUNCTION(TYPE, TYPE, FUNCTION)
+#define LIBXSMM_GEMM_BATCH_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION1(TYPE, gemm_batch)
 #define LIBXSMM_GEMM_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION1(TYPE, gemm)
 #define LIBXSMM_GEMV_SYMBOL(TYPE) LIBXSMM_BLAS_FUNCTION1(TYPE, gemv)
 
@@ -481,6 +492,9 @@ LIBXSMM_API void libxsmm_gemm_dprint2(void* ostream,
 LIBXSMM_API void libxsmm_gemm_xprint(void* ostream,
   libxsmm_xmmfunction kernel, const void* a, const void* b, void* c);
 
+/** GEMM_BATCH: fall-back prototype functions served by any compliant LAPACK/BLAS. */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_batch_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_batch_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
 /** GEMM: fall-back prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float,  gemm));
@@ -491,10 +505,14 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemv_function)(LIB
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sink_function)(LIBXSMM_VARIADIC);
 
 /** The original BLAS functions. */
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch_function);
+LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch_function);
 LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_dgemm_function libxsmm_original_dgemm_function);
 LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_sgemm_function libxsmm_original_sgemm_function);
 LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_dgemv_function libxsmm_original_dgemv_function);
 LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_sgemv_function libxsmm_original_sgemv_function);
+LIBXSMM_API_EXPORT libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch(void);
+LIBXSMM_API_EXPORT libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch(void);
 LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void);
 LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void);
 LIBXSMM_API_EXPORT libxsmm_dgemv_function libxsmm_original_dgemv(void);
