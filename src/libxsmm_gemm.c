@@ -115,7 +115,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm_batch)(cons
   const double* beta_array, double** c_array, const libxsmm_blasint* ldc_array,
   const libxsmm_blasint* group_count, const libxsmm_blasint* group_size)
 {
-#if (0 == LIBXSMM_NO_BLAS)
+#if (0 == LIBXSMM_NO_BLAS) && defined(LIBXSMM_BLAS_BATCH)
   LIBXSMM_FSYMBOL(dgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
     alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
     group_count, group_size);
@@ -133,7 +133,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm_batch)(cons
   const float* beta_array, float** c_array, const libxsmm_blasint* ldc_array,
   const libxsmm_blasint* group_count, const libxsmm_blasint* group_size)
 {
-#if (0 == LIBXSMM_NO_BLAS)
+#if (0 == LIBXSMM_NO_BLAS) && defined(LIBXSMM_BLAS_BATCH)
   LIBXSMM_FSYMBOL(sgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
     alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
     group_count, group_size);
