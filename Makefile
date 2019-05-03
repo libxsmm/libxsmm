@@ -195,9 +195,13 @@ EXCLUDE_STATE = \
   PBINDIR PINCDIR POUTDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR TEST \
   VERSION_STRING DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC PKG_CONFIG_%
 
-ifneq (,$(strip $(DESTDIR))) # in contrast to PREFIX, DESTDIR matters at this point
+# in contrast to PREFIX, DESTDIR matters at this point
+ifneq (,$(strip $(DESTDIR)))
+ifneq ($(abspath .),$(abspath $(DESTDIR)))
   PKG_CONFIG_PREFIX = $(DESTDIR)
-else
+endif
+endif
+ifeq (,$(strip $(PKG_CONFIG_PREFIX)))
   PKG_CONFIG_PREFIX = $(abspath .)
   EXCLUDE_STATE += DESTDIR
 endif
