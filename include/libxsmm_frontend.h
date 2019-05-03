@@ -239,13 +239,12 @@
 
 /** Map to appropriate BLAS function (or fall-back). The mapping is used e.g., inside of LIBXSMM_BLAS_XGEMM. */
 #define LIBXSMM_BLAS_FUNCTION(ITYPE, OTYPE, FUNCTION) LIBXSMM_CONCATENATE(LIBXSMM_BLAS_FUNCTION_, LIBXSMM_TPREFIX2(ITYPE, OTYPE, FUNCTION))
-#if (0 == LIBXSMM_NO_BLAS)
-/* Helper macro to eventually (if defined) call libxsmm_init */
-# if defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR)
-#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_dgemm_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_sgemm_function
-#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_dgemv_function
-#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_sgemv_function
+#if (0 == LIBXSMM_NO_BLAS) /* Helper macro to eventually (if defined) call libxsmm_init */
+# if (defined(LIBXSMM_INIT) || defined(LIBXSMM_CTOR))
+#   define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_original_dgemm_function
+#   define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_original_sgemm_function
+#   define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_original_dgemv_function
+#   define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_original_sgemv_function
 #   undef LIBXSMM_INIT
 #   define LIBXSMM_INIT LIBXSMM_ASSERT_MSG(0 != libxsmm_ninit, "LIBXSMM is not initialized");
 #   define LIBXSMM_INIT_COMPLETED
