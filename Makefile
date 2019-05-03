@@ -1709,7 +1709,12 @@ ifneq (Darwin,$(UNAME))
   PKG_CONFIG_PRIVLIBS_EXT = -fopenmp
 endif
 
+ifneq (,$(strip $(DESTDIR))) # in contrast to PREFIX, DESTDIR matters at this point
+PKG_CONFIG_PREFIX = $(DESTDIR)
+else
 PKG_CONFIG_PREFIX = $(abspath .)
+endif
+
 PKG_CONFIG_INCLUDEDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(PINCDIR)))
 PKG_CONFIG_LIBDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
