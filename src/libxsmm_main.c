@@ -951,6 +951,13 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 }
 
 
+
+LIBXSMM_API void libxsmm_sink(LIBXSMM_VARIADIC)
+{
+  /* does nothing else but sink the given arguments */
+}
+
+
 LIBXSMM_API int libxsmm_get_target_archid(void)
 {
   LIBXSMM_INIT

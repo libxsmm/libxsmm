@@ -109,15 +109,6 @@ LIBXSMM_APIVAR(int internal_gemm_batchreduce);
 
 
 #if defined(LIBXSMM_BUILD)
-LIBXSMM_API void libxsmm_internal_wrap_error(const char* symbol)
-{
-  static int error_once = 0;
-  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-    fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS %s!\n", symbol);
-  }
-}
-
-
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm)(const char* transa, const char* transb,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
   const double* alpha, const double* a, const libxsmm_blasint* lda,
@@ -130,7 +121,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm)(const char
   LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
   LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
   LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
-  libxsmm_internal_wrap_error("dgemm");
+  libxsmm_blas_error("dgemm");
 #endif
 }
 
@@ -147,7 +138,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm)(const char
   LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
   LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
   LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
-  libxsmm_internal_wrap_error("sgemm");
+  libxsmm_blas_error("sgemm");
 #endif
 }
 
@@ -161,7 +152,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemv)(const char
 #else
   LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
   LIBXSMM_UNUSED(x); LIBXSMM_UNUSED(incx); LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(y); LIBXSMM_UNUSED(incy);
-  libxsmm_internal_wrap_error("dgemv");
+  libxsmm_blas_error("dgemv");
 #endif
 }
 
@@ -175,7 +166,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemv)(const char
 #else
   LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
   LIBXSMM_UNUSED(x); LIBXSMM_UNUSED(incx); LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(y); LIBXSMM_UNUSED(incy);
-  libxsmm_internal_wrap_error("sgemv");
+  libxsmm_blas_error("sgemv");
 #endif
 }
 #endif /*defined(LIBXSMM_BUILD)*/
@@ -210,6 +201,16 @@ LIBXSMM_GEMM_WEAK libxsmm_sgemv_function libxsmm_original_sgemv(void)
   LIBXSMM_BLAS_WRAPPER(float, gemv, libxsmm_original_sgemv_function, NULL/*unknown*/);
   LIBXSMM_ASSERT(NULL != libxsmm_original_sgemv_function);
   return libxsmm_original_sgemv_function;
+}
+
+
+LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol)
+{
+  static int error_once = 0;
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS %s!\n", symbol);
+  }
+  return libxsmm_sink;
 }
 
 

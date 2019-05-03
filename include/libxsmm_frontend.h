@@ -263,10 +263,10 @@
 # else
 #   define LIBXSMM_INIT if (0 == libxsmm_ninit) libxsmm_init();
 # endif
-# define LIBXSMM_BLAS_FUNCTION_dgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-    LIBXSMM_INLINE_XGEMM(double, double, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
-# define LIBXSMM_BLAS_FUNCTION_sgemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-    LIBXSMM_INLINE_XGEMM(float, float, TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+# define LIBXSMM_BLAS_FUNCTION_dgemm libxsmm_blas_error("dgemm")
+# define LIBXSMM_BLAS_FUNCTION_sgemm libxsmm_blas_error("sgemm")
+# define LIBXSMM_BLAS_FUNCTION_dgemv libxsmm_blas_error("dgemv")
+# define LIBXSMM_BLAS_FUNCTION_sgemv libxsmm_blas_error("sgemv")
 #endif
 /** Low-precision (BLAS-like) function symbols. */
 #define LIBXSMM_BLAS_FUNCTION_wigemm(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
@@ -487,6 +487,8 @@ LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemm_function)(LIB
 /** GEMV: fall-back prototype functions served by any compliant LAPACK/BLAS. */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_dgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemv));
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sgemv_function)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float,  gemv));
+/** Helper function to consume arguments when called. */
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sink_function)(LIBXSMM_VARIADIC);
 
 /** The original BLAS functions. */
 LIBXSMM_APIVAR_ALIGNED(/*volatile*/libxsmm_dgemm_function libxsmm_original_dgemm_function);
@@ -497,6 +499,8 @@ LIBXSMM_API_EXPORT libxsmm_dgemm_function libxsmm_original_dgemm(void);
 LIBXSMM_API_EXPORT libxsmm_sgemm_function libxsmm_original_sgemm(void);
 LIBXSMM_API_EXPORT libxsmm_dgemv_function libxsmm_original_dgemv(void);
 LIBXSMM_API_EXPORT libxsmm_sgemv_function libxsmm_original_sgemv(void);
+LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol);
+LIBXSMM_API void libxsmm_sink(LIBXSMM_VARIADIC);
 
 /**
  * General dense matrix multiplication, which re-exposes LAPACK/BLAS

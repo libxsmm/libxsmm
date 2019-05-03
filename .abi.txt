@@ -9,6 +9,7 @@ libxsmm_blas_dgemm0
 libxsmm_blas_dgemm1
 libxsmm_blas_dgemm2
 libxsmm_blas_dgemm_
+libxsmm_blas_error
 libxsmm_blas_sgemm0
 libxsmm_blas_sgemm1
 libxsmm_blas_sgemm2
@@ -234,7 +235,6 @@ libxsmm_icbrt_u32
 libxsmm_icbrt_u64
 libxsmm_init
 libxsmm_init_
-libxsmm_internal_gemm_error
 libxsmm_isqrt2_u32
 libxsmm_isqrt_u32
 libxsmm_isqrt_u64
@@ -277,7 +277,9 @@ libxsmm_mutex_release
 libxsmm_mutex_trylock
 libxsmm_offset
 libxsmm_original_dgemm
+libxsmm_original_dgemv
 libxsmm_original_sgemm
+libxsmm_original_sgemv
 libxsmm_otrans
 libxsmm_otrans_
 libxsmm_otrans_omp
@@ -359,6 +361,7 @@ libxsmm_sgemm_descriptor_init
 libxsmm_sgemm_omp_
 libxsmm_shuffle
 libxsmm_shuffle_
+libxsmm_sink
 libxsmm_smmavailable
 libxsmm_smmcall
 libxsmm_smmcall_abc

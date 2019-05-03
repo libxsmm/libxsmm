@@ -49,7 +49,7 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(d
     LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
     LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
     LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
-    libxsmm_internal_wrap_error("dgemm");
+    libxsmm_blas_error("dgemm");
   }
 }
 
@@ -67,7 +67,7 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(s
     LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
     LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
     LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
-    libxsmm_internal_wrap_error("sgemm");
+    libxsmm_blas_error("sgemm");
   }
 }
 
@@ -82,7 +82,7 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(d
   else {
     LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
     LIBXSMM_UNUSED(x); LIBXSMM_UNUSED(incx); LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(y); LIBXSMM_UNUSED(incy);
-    libxsmm_internal_wrap_error("dgemv");
+    libxsmm_blas_error("dgemv");
   }
 }
 
@@ -97,7 +97,7 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(s
   else {
     LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
     LIBXSMM_UNUSED(x); LIBXSMM_UNUSED(incx); LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(y); LIBXSMM_UNUSED(incy);
-    libxsmm_internal_wrap_error("sgemv");
+    libxsmm_blas_error("sgemv");
   }
 }
 
@@ -116,7 +116,7 @@ void LIBXSMM_FSYMBOL(dgemm)(const char* transa, const char* transb,
   LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
   LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
   LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
-  libxsmm_internal_wrap_error("dgemm");
+  libxsmm_blas_error("dgemm");
 }
 
 
@@ -133,7 +133,7 @@ void LIBXSMM_FSYMBOL(sgemm)(const char* transa, const char* transb,
   LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
   LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
   LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
-  libxsmm_internal_wrap_error("sgemm");
+  libxsmm_blas_error("sgemm");
 }
 
 
@@ -147,7 +147,7 @@ void LIBXSMM_FSYMBOL(dgemv)(const char* trans, const libxsmm_blasint* m, const l
 {
   LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
   LIBXSMM_UNUSED(x); LIBXSMM_UNUSED(incx); LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(y); LIBXSMM_UNUSED(incy);
-  libxsmm_internal_wrap_error("dgemv");
+  libxsmm_blas_error("dgemv");
 }
 
 
@@ -161,7 +161,7 @@ void LIBXSMM_FSYMBOL(sgemv)(const char* trans, const libxsmm_blasint* m, const l
 {
   LIBXSMM_UNUSED(trans); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda);
   LIBXSMM_UNUSED(x); LIBXSMM_UNUSED(incx); LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(y); LIBXSMM_UNUSED(incy);
-  libxsmm_internal_wrap_error("sgemv");
+  libxsmm_blas_error("sgemv");
 }
 #endif
 #endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)*/
