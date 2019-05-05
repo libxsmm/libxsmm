@@ -456,13 +456,12 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_bcst_colvector_ld(libxsmm_blasin
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_bcst_cvt_bf16_fp32_colvector_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *srcdst, libxsmm_bfloat16 *colv) {
   libxsmm_blasint i, j;
-  libxsmm_bfloat16_hp t;
-  libxsmm_bfloat16 *const ti1 = t.i + 1;
+  union libxsmm_bfloat16_hp t;
   t.i[0] = 0;
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
     for ( i = 0; i < m; ++i ) {
-      *ti1 = colv[i];
+      t.i[1] = colv[i];
       srcdst[(j*ld)+i] = t.f;
     }
   }
@@ -481,13 +480,12 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_bcst_colvector_const_ld(libxsmm_
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_bcst_cvt_bf16_fp32_colvector_const_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, LIBXSMM_DNN_ELTWISE_FTYPE *srcdst, libxsmm_bfloat16 *colv, LIBXSMM_DNN_ELTWISE_FTYPE const_bias) {
   libxsmm_blasint i, j;
-  libxsmm_bfloat16_hp t;
-  libxsmm_bfloat16 *const ti1 = t.i + 1;
+  union libxsmm_bfloat16_hp t;
   t.i[0] = 0;
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
     for ( i = 0; i < m; ++i ) {
-      *ti1 = colv[i];
+      t.i[1] = colv[i];
       srcdst[(j*ld)+i] = t.f + const_bias;
     }
   }
@@ -498,10 +496,10 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_ld(libxsmm_blasint m, li
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      const LIBXSMM_DNN_ELTWISE_FTYPE mid_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[(j*ld)+i]);
-      dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 / ((LIBXSMM_DNN_ELTWISE_FTYPE)1 + mid_value);
-    }
+      for ( i = 0; i < m; ++i ) {
+        const LIBXSMM_DNN_ELTWISE_FTYPE mid_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[(j*ld)+i]);
+        dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 / ((LIBXSMM_DNN_ELTWISE_FTYPE)1 + mid_value);
+      }
   }
 }
 
@@ -510,9 +508,9 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_ld(libxsmm_blasint m, libxs
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double) src[(j*ld)+i]);
-    }
+      for ( i = 0; i < m; ++i ) {
+        dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double) src[(j*ld)+i]);
+      }
   }
 }
 
@@ -521,9 +519,9 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_ld(libxsmm_blasint m, libxs
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      dst[(j*ld)+i] = (src[(j*ld)+i] < 0) ? (LIBXSMM_DNN_ELTWISE_FTYPE)0 : src[(j*ld)+i];
-    }
+      for ( i = 0; i < m; ++i ) {
+        dst[(j*ld)+i] = (src[(j*ld)+i] < 0) ? (LIBXSMM_DNN_ELTWISE_FTYPE)0 : src[(j*ld)+i];
+      }
   }
 }
 
@@ -532,11 +530,11 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_inverse_ld(libxsmm_blasi
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      LIBXSMM_DNN_ELTWISE_FTYPE exp_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[(j*ld)+i]);
-      LIBXSMM_DNN_ELTWISE_FTYPE mid_value = (LIBXSMM_DNN_ELTWISE_FTYPE)1 / ((LIBXSMM_DNN_ELTWISE_FTYPE)1 + exp_value);
-      dst[(j*ld)+i] = ((LIBXSMM_DNN_ELTWISE_FTYPE)1 - mid_value) * mid_value;
-    }
+      for ( i = 0; i < m; ++i ) {
+        LIBXSMM_DNN_ELTWISE_FTYPE exp_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[(j*ld)+i]);
+        LIBXSMM_DNN_ELTWISE_FTYPE mid_value = (LIBXSMM_DNN_ELTWISE_FTYPE)1 / ((LIBXSMM_DNN_ELTWISE_FTYPE)1 + exp_value);
+        dst[(j*ld)+i] = ((LIBXSMM_DNN_ELTWISE_FTYPE)1 - mid_value) * mid_value;
+      }
   }
 }
 
@@ -545,10 +543,10 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse_ld(libxsmm_blasint 
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      LIBXSMM_DNN_ELTWISE_FTYPE tanh_value = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double) src[(j*ld)+i]);
-      dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 - (tanh_value * tanh_value);
-    }
+      for ( i = 0; i < m; ++i ) {
+        LIBXSMM_DNN_ELTWISE_FTYPE tanh_value = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double) src[(j*ld)+i]);
+        dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 - (tanh_value * tanh_value);
+      }
   }
 }
 
@@ -557,9 +555,9 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse_ld(libxsmm_blasint 
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      dst[(j*ld)+i] = (src[(j*ld)+i] < 0) ? (LIBXSMM_DNN_ELTWISE_FTYPE)0 : (LIBXSMM_DNN_ELTWISE_FTYPE)1;
-    }
+      for ( i = 0; i < m; ++i ) {
+        dst[(j*ld)+i] = (src[(j*ld)+i] < 0) ? (LIBXSMM_DNN_ELTWISE_FTYPE)0 : (LIBXSMM_DNN_ELTWISE_FTYPE)1;
+      }
   }
 }
 
@@ -568,11 +566,11 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_sigmoid_inverse_inplace_eltwise_
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      LIBXSMM_DNN_ELTWISE_FTYPE exp_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[(j*ld)+i]);
-      LIBXSMM_DNN_ELTWISE_FTYPE mid_value = (LIBXSMM_DNN_ELTWISE_FTYPE)1 / ((LIBXSMM_DNN_ELTWISE_FTYPE)1 + exp_value);
-      dst[(j*ld)+i] *= ((LIBXSMM_DNN_ELTWISE_FTYPE)1 - mid_value) * mid_value;
-    }
+      for ( i = 0; i < m; ++i ) {
+        LIBXSMM_DNN_ELTWISE_FTYPE exp_value = (LIBXSMM_DNN_ELTWISE_FTYPE)exp((double) -src[(j*ld)+i]);
+        LIBXSMM_DNN_ELTWISE_FTYPE mid_value = (LIBXSMM_DNN_ELTWISE_FTYPE)1 / ((LIBXSMM_DNN_ELTWISE_FTYPE)1 + exp_value);
+        dst[(j*ld)+i] *= ((LIBXSMM_DNN_ELTWISE_FTYPE)1 - mid_value) * mid_value;
+      }
   }
 }
 
@@ -581,10 +579,10 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_tanh_inverse_inplace_eltwise_mul
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      LIBXSMM_DNN_ELTWISE_FTYPE tanh_value = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double) src[(j*ld)+i]);
-      dst[(j*ld)+i] *= (LIBXSMM_DNN_ELTWISE_FTYPE)1 - (tanh_value * tanh_value);
-    }
+      for ( i = 0; i < m; ++i ) {
+        LIBXSMM_DNN_ELTWISE_FTYPE tanh_value = (LIBXSMM_DNN_ELTWISE_FTYPE)tanh((double) src[(j*ld)+i]);
+        dst[(j*ld)+i] *= (LIBXSMM_DNN_ELTWISE_FTYPE)1 - (tanh_value * tanh_value);
+      }
   }
 }
 
@@ -593,9 +591,9 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_relu_inverse_inplace_eltwise_mul
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      dst[(j*ld)+i] *= (src[(j*ld)+i] < 0) ? (LIBXSMM_DNN_ELTWISE_FTYPE)0 : (LIBXSMM_DNN_ELTWISE_FTYPE)1;
-    }
+      for ( i = 0; i < m; ++i ) {
+        dst[(j*ld)+i] *= (src[(j*ld)+i] < 0) ? (LIBXSMM_DNN_ELTWISE_FTYPE)0 : (LIBXSMM_DNN_ELTWISE_FTYPE)1;
+      }
   }
 }
 
@@ -604,9 +602,9 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_ld(libxsmm_blasint m,
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 - src[(j*ld)+i];
-    }
+      for ( i = 0; i < m; ++i ) {
+        dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 - src[(j*ld)+i];
+      }
   }
 }
 
@@ -615,9 +613,9 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_complement_square_ld(libxsmm_bla
 
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 - (src[(j*ld)+i] * src[(j*ld)+i]);
-    }
+      for ( i = 0; i < m; ++i ) {
+        dst[(j*ld)+i] = (LIBXSMM_DNN_ELTWISE_FTYPE)1 - (src[(j*ld)+i] * src[(j*ld)+i]);
+      }
   }
 }
 
@@ -679,14 +677,13 @@ LIBXSMM_API_INTERN void libxsmm_internal_matrix_rne_cvt_fp32_bfp16_ld(libxsmm_bl
 
 LIBXSMM_API_INTERN void libxsmm_internal_matrix_cvt_bf16_fp32_ld(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint ld, libxsmm_bfloat16 *src, LIBXSMM_DNN_ELTWISE_FTYPE *dst) {
   libxsmm_blasint i, j;
-  libxsmm_bfloat16_hp t;
-  libxsmm_bfloat16 *const ti1 = t.i + 1;
+  union libxsmm_bfloat16_hp t;
   t.i[0] = 0;
   for ( j = 0; j < n; ++j ) {
     LIBXSMM_PRAGMA_SIMD
-    for ( i = 0; i < m; ++i ) {
-      *ti1 = src[(j*ld)+i];
-      dst[(j*ld)+i] = t.f;
-    }
+      for ( i = 0; i < m; ++i ) {
+        t.i[1] = src[(j*ld)+i];
+        dst[(j*ld)+i] = t.f;
+      }
   }
 }
