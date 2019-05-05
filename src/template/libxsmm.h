@@ -210,6 +210,38 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm
   const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
+/** Unlike libxsmm_gemm_batch, groups of homogeneous batches are possible (double-precision). */
+LIBXSMM_API void libxsmm_dgemm_batch(const char transa_array[], const char transb_array[],
+  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[],
+                              const double* b_array[], const libxsmm_blasint ldb_array[],
+   const double beta_array[],       double* c_array[], const libxsmm_blasint ldc_array[],
+  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
+
+/** Unlike libxsmm_gemm_batch, groups of homogeneous batches are possible (single-precision). */
+LIBXSMM_API void libxsmm_sgemm_batch(const char transa_array[], const char transb_array[],
+  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const float alpha_array[], const float* a_array[], const libxsmm_blasint lda_array[],
+                             const float* b_array[], const libxsmm_blasint ldb_array[],
+   const float beta_array[],       float* c_array[], const libxsmm_blasint ldc_array[],
+  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
+
+/** Unlike libxsmm_gemm_batch, groups of homogeneous batches are possible (double-precision). */
+LIBXSMM_APIEXT void libxsmm_dgemm_batch_omp(const char transa_array[], const char transb_array[],
+  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[],
+                              const double* b_array[], const libxsmm_blasint ldb_array[],
+   const double beta_array[],       double* c_array[], const libxsmm_blasint ldc_array[],
+  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
+
+/** Unlike libxsmm_gemm_batch, groups of homogeneous batches are possible (single-precision). */
+LIBXSMM_APIEXT void libxsmm_sgemm_batch_omp(const char transa_array[], const char transb_array[],
+  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const float alpha_array[], const float* a_array[], const libxsmm_blasint lda_array[],
+                             const float* b_array[], const libxsmm_blasint ldb_array[],
+   const float beta_array[],       float* c_array[], const libxsmm_blasint ldc_array[],
+  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
+
 /**
  * This function is a no-op unless LIBXSMM is built to intercept GEMM calls.
  * Pointer arguments are used to filter intercepted GEMM calls such that
