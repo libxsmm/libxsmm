@@ -929,7 +929,7 @@ LIBXSMM_APIEXT void libxsmm_gemm_batch_omp(libxsmm_gemm_precision iprec, libxsmm
   libxsmm_blasint batchsize)
 {
   internal_gemm_batch_omp(iprec, oprec, transa, transb, &m, &n, &k,
-    alpha, &a, lda, &b, ldb, beta, &c, ldc, index_base, index_stride,
+    alpha, a, lda, b, ldb, beta, c, ldc, index_base, index_stride,
     stride_a, stride_b, stride_c, &batchsize, 1);
 }
 
