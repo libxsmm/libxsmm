@@ -1844,14 +1844,14 @@ deb:
 		echo "Description: Matrix operations and deep learning primitives" >> control; \
 		wget -qO- https://api.github.com/repos/hfp/libxsmm \
 		| sed -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
-		| fold -s -w 79 | sed -e 's/^/ /' -e 's/\s\s*$$//' >> control; \
+		| fold -s -w 79 | sed -e 's/^/ /' -e 's/[[:space:]][[:space:]]*$$//' >> control; \
 		echo "$${ARCHIVE_NAME} ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
 		echo >> changelog; \
 		wget -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
 		| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
 		| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
 		| sed -n 's/^\* \(..*\)/\* \1/p' \
-		| fold -s -w 78 | sed -e 's/^/  /g' -e 's/^  \* /\* /' -e 's/^/  /' -e 's/\s\s*$$//' >> changelog; \
+		| fold -s -w 78 | sed -e 's/^/  /g' -e 's/^  \* /\* /' -e 's/^/  /' -e 's/[[:space:]][[:space:]]*$$//' >> changelog; \
 		echo >> changelog; \
 		echo " -- $${ARCHIVE_AUTHOR}  $${ARCHIVE_DATE}" >> changelog; \
 		echo "#!/usr/bin/make -f" > rules; \

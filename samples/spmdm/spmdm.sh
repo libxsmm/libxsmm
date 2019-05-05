@@ -54,7 +54,7 @@ fi
 
 MICINFO=$(command -v micinfo)
 if [ "" != "${MICINFO}" ]; then
-  MICCORES=$(${MICINFO} 2>/dev/null | sed -n "0,/\s\+Total No of Active Cores :\s\+\([0-9]\+\)/s//\1/p")
+  MICCORES=$(${MICINFO} 2>/dev/null | sed -n "0,/[[:space:]]\+Total No of Active Cores :[[:space:]]\+\([0-9]\+\)/s//\1/p")
 fi
 if [ "" = "${MICCORES}" ]; then
   MICCORES=61
