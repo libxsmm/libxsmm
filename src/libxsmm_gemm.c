@@ -62,7 +62,7 @@
 #if !defined(LIBXSMM_GEMM_BATCHREDUCE) && !defined(_WIN32) && !defined(__CYGWIN__) /* not supported */
 # define LIBXSMM_GEMM_BATCHREDUCE
 #endif
-#if !defined(LIBXSMM_GEMM_BATCHSCALE) && (defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_GEMM_MMBATCH))
+#if !defined(LIBXSMM_GEMM_BATCHSCALE) && (defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_WRAP))
 #define LIBXSMM_GEMM_BATCHSCALE ((unsigned int)LIBXSMM_ROUND(sizeof(libxsmm_mmbatch_item) * (LIBXSMM_GEMM_MMBATCH_SCALE)))
 #endif
 #if defined(LIBXSMM_BUILD)
@@ -109,19 +109,39 @@ LIBXSMM_APIVAR(int internal_gemm_batchreduce);
 
 
 #if defined(LIBXSMM_BUILD)
-LIBXSMM_API void libxsmm_internal_gemm_error(const char* transa, const char* transb,
-  const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
-  const void* alpha, const void* a, const libxsmm_blasint* lda,
-  const void* b, const libxsmm_blasint* ldb,
-  const void* beta, void* c, const libxsmm_blasint* ldc)
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm_batch)(const char* transa_array, const char* transb_array,
+  const libxsmm_blasint* m_array, const libxsmm_blasint* n_array, const libxsmm_blasint* k_array,
+  const double* alpha_array, const double** a_array, const libxsmm_blasint* lda_array, const double** b_array, const libxsmm_blasint* ldb_array,
+  const double* beta_array, double** c_array, const libxsmm_blasint* ldc_array,
+  const libxsmm_blasint* group_count, const libxsmm_blasint* group_size)
 {
-  static int error_once = 0;
-  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
-    fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS/GEMM!\n"); \
-  }
-  LIBXSMM_UNUSED(transa); LIBXSMM_UNUSED(transb); LIBXSMM_UNUSED(m); LIBXSMM_UNUSED(n); LIBXSMM_UNUSED(k);
-  LIBXSMM_UNUSED(alpha); LIBXSMM_UNUSED(a); LIBXSMM_UNUSED(lda); LIBXSMM_UNUSED(b); LIBXSMM_UNUSED(ldb);
-  LIBXSMM_UNUSED(beta); LIBXSMM_UNUSED(c); LIBXSMM_UNUSED(ldc);
+#if (0 == LIBXSMM_NO_BLAS) && defined(LIBXSMM_BLAS_BATCH)
+  LIBXSMM_FSYMBOL(dgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
+    alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
+    group_count, group_size);
+#else
+  libxsmm_blas_error("dgemm_batch")(transa_array, transb_array, m_array, n_array, k_array,
+    alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
+    group_count, group_size);
+#endif
+}
+
+
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm_batch)(const char* transa_array, const char* transb_array,
+  const libxsmm_blasint* m_array, const libxsmm_blasint* n_array, const libxsmm_blasint* k_array,
+  const float* alpha_array, const float** a_array, const libxsmm_blasint* lda_array, const float** b_array, const libxsmm_blasint* ldb_array,
+  const float* beta_array, float** c_array, const libxsmm_blasint* ldc_array,
+  const libxsmm_blasint* group_count, const libxsmm_blasint* group_size)
+{
+#if (0 == LIBXSMM_NO_BLAS) && defined(LIBXSMM_BLAS_BATCH)
+  LIBXSMM_FSYMBOL(sgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
+    alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
+    group_count, group_size);
+#else
+  libxsmm_blas_error("sgemm_batch")(transa_array, transb_array, m_array, n_array, k_array,
+    alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
+    group_count, group_size);
+#endif
 }
 
 
@@ -134,7 +154,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemm)(const char
 #if (0 == LIBXSMM_NO_BLAS)
   LIBXSMM_FSYMBOL(dgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 #else
-  libxsmm_internal_gemm_error(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  libxsmm_blas_error("dgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 #endif
 }
 
@@ -148,10 +168,50 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemm)(const char
 #if (0 == LIBXSMM_NO_BLAS)
   LIBXSMM_FSYMBOL(sgemm)(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
 #else
-  libxsmm_internal_gemm_error(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  libxsmm_blas_error("sgemm")(transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+#endif
+}
+
+
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_dgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
+  const double* alpha, const double* a, const libxsmm_blasint* lda, const double* x, const libxsmm_blasint* incx,
+  const double* beta, double* y, const libxsmm_blasint* incy)
+{
+#if (0 == LIBXSMM_NO_BLAS)
+  LIBXSMM_FSYMBOL(dgemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+#else
+  libxsmm_blas_error("dgemv")(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+#endif
+}
+
+
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void LIBXSMM_FSYMBOL(__real_sgemv)(const char* trans, const libxsmm_blasint* m, const libxsmm_blasint* n,
+  const float* alpha, const float* a, const libxsmm_blasint* lda, const float* x, const libxsmm_blasint* incx,
+  const float* beta, float* y, const libxsmm_blasint* incy)
+{
+#if (0 == LIBXSMM_NO_BLAS)
+  LIBXSMM_FSYMBOL(sgemv)(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+#else
+  libxsmm_blas_error("sgemv")(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
 #endif
 }
 #endif /*defined(LIBXSMM_BUILD)*/
+
+
+LIBXSMM_GEMM_WEAK libxsmm_dgemm_batch_function libxsmm_original_dgemm_batch(void)
+{
+  LIBXSMM_BLAS_WRAPPER(double, gemm_batch, libxsmm_original_dgemm_batch_function, NULL/*unknown*/);
+  LIBXSMM_ASSERT(NULL != libxsmm_original_dgemm_batch_function);
+  return libxsmm_original_dgemm_batch_function;
+}
+
+
+LIBXSMM_GEMM_WEAK libxsmm_sgemm_batch_function libxsmm_original_sgemm_batch(void)
+{
+  LIBXSMM_BLAS_WRAPPER(float, gemm_batch, libxsmm_original_sgemm_batch_function, NULL/*unknown*/);
+  LIBXSMM_ASSERT(NULL != libxsmm_original_sgemm_batch_function);
+  return libxsmm_original_sgemm_batch_function;
+}
 
 
 LIBXSMM_GEMM_WEAK libxsmm_dgemm_function libxsmm_original_dgemm(void)
@@ -170,14 +230,47 @@ LIBXSMM_GEMM_WEAK libxsmm_sgemm_function libxsmm_original_sgemm(void)
 }
 
 
+LIBXSMM_GEMM_WEAK libxsmm_dgemv_function libxsmm_original_dgemv(void)
+{
+  LIBXSMM_BLAS_WRAPPER(double, gemv, libxsmm_original_dgemv_function, NULL/*unknown*/);
+  LIBXSMM_ASSERT(NULL != libxsmm_original_dgemv_function);
+  return libxsmm_original_dgemv_function;
+}
+
+
+LIBXSMM_GEMM_WEAK libxsmm_sgemv_function libxsmm_original_sgemv(void)
+{
+  LIBXSMM_BLAS_WRAPPER(float, gemv, libxsmm_original_sgemv_function, NULL/*unknown*/);
+  LIBXSMM_ASSERT(NULL != libxsmm_original_sgemv_function);
+  return libxsmm_original_sgemv_function;
+}
+
+
+LIBXSMM_API libxsmm_sink_function libxsmm_blas_error(const char* symbol)
+{
+  static int error_once = 0;
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    fprintf(stderr, "LIBXSMM ERROR: application must be linked against LAPACK/BLAS %s!\n", symbol);
+  }
+  return libxsmm_sink;
+}
+
+
 LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
 {
-  /* determines if batch-wrap is considered */
-  const char *const env_w = getenv("LIBXSMM_BLAS_WRAP_DYNAMIC");
+  const char* env_w = getenv("LIBXSMM_GEMM_WRAP");
   LIBXSMM_LOCK_ATTR_TYPE(LIBXSMM_GEMM_LOCK) attr;
   LIBXSMM_LOCK_ATTR_INIT(LIBXSMM_GEMM_LOCK, &attr);
-  /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
-  libxsmm_gemm_wrap = ((NULL == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
+#if defined(LIBXSMM_WRAP) /* determines if wrap is considered */
+  { /* intercepted GEMMs (1: sequential and non-tiled, 2: parallelized and tiled) */
+# if defined(__STATIC) /* with static library the user controls interceptor already */
+    libxsmm_gemm_wrap = ((NULL == env_w || 0 == *env_w) /* LIBXSMM_WRAP=0: no promotion */
+      ? (0 < (LIBXSMM_WRAP) ? (LIBXSMM_WRAP + 2) : (LIBXSMM_WRAP)) : atoi(env_w));
+# else
+    libxsmm_gemm_wrap = ((NULL == env_w || 0 == *env_w) ? (LIBXSMM_WRAP) : atoi(env_w));
+# endif
+  }
+#endif
   { /* setup prefetch strategy for tiled GEMMs */
     const char *const env_p = getenv("LIBXSMM_TGEMM_PREFETCH");
     const libxsmm_gemm_prefetch_type tiled_prefetch_default = LIBXSMM_GEMM_PREFETCH_AL2_AHEAD;
@@ -193,7 +286,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
     for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state, &attr);
   }
 #endif
-#if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_GEMM_MMBATCH)
+#if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_WRAP)
   { /* determines if batch-reduce kernel or batch-wrap is considered */
     const char *const env_r = getenv("LIBXSMM_GEMM_BATCHREDUCE");
     internal_gemm_batchreduce = (NULL == env_r || 0 == *env_r) ? 0 : atoi(env_r);
@@ -220,6 +313,8 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       }
     }
   }
+#else
+  LIBXSMM_UNUSED(env_w);
 #endif
   if (LIBXSMM_X86_AVX512_CORE <= archid) {
     internal_gemm_vwidth = 64;
@@ -281,8 +376,12 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
   LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_GEMM_LOCK, &attr);
 #if defined(LIBXSMM_INIT_COMPLETED) /* perform only if not lazy */
   /* determine BLAS function-pointers */
+  libxsmm_original_dgemm_batch();
+  libxsmm_original_sgemm_batch();
   libxsmm_original_dgemm();
   libxsmm_original_sgemm();
+  libxsmm_original_dgemv();
+  libxsmm_original_sgemv();
 #endif
 }
 
@@ -292,7 +391,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
 #if (0 != LIBXSMM_SYNC)
   unsigned int i; for (i = 0; i < internal_gemm_nlocks; ++i) LIBXSMM_LOCK_DESTROY(LIBXSMM_GEMM_LOCK, &internal_gemm_lock[i].state);
 #endif
-#if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_GEMM_MMBATCH)
+#if defined(LIBXSMM_GEMM_BATCHREDUCE) || defined(LIBXSMM_WRAP)
   if (NULL != libxsmm_mmbatch_array) {
     void* extra = NULL;
     if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(libxsmm_mmbatch_array, NULL/*size*/, NULL/*flags*/, &extra) && NULL != extra) {
@@ -1658,10 +1757,18 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_prec
         transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc,
         index_base, index_stride, stride_a, stride_b, stride_c, batchsize))
       {
-        if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
-          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-        {
-          fprintf(stderr, "LIBXSMM WARNING: batched GEMM was falling back to BLAS!\n");
+        if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
+          const size_t threshold = LIBXSMM_MNK_SIZE(m, n, m);
+          static size_t threshold_max = 0;
+          if (threshold_max < threshold) {
+            LIBXSMM_STDIO_ACQUIRE();
+            fprintf(stderr, "LIBXSMM WARNING: ");
+            libxsmm_gemm_print2(stderr, iprec, oprec, transa, transb, &m, &n, &k,
+              alpha, NULL/*a*/, lda, NULL/*b*/, ldb, beta, NULL/*c*/, ldc);
+            fprintf(stderr, " => batched GEMM was falling back to BLAS!\n");
+            LIBXSMM_STDIO_RELEASE();
+            threshold_max = threshold;
+          }
         }
       }
       else if (0 != libxsmm_verbosity /* library code is expected to be mute */

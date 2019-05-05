@@ -46,9 +46,9 @@ int main(int argc, char* argv[])
   const int elsize = (0 >= insize ? LIBXSMM_DESCRIPTOR_SIGSIZE : insize);
   const int stride = (0 >= incrmt ? LIBXSMM_MAX(LIBXSMM_DESCRIPTOR_MAXSIZE, elsize) : LIBXSMM_MAX(incrmt, elsize));
   const size_t n = (0 >= nelems ? (((size_t)2 << 30/*2 GB*/) / stride) : ((size_t)nelems));
+  unsigned char *input, *icopy = NULL, *ilast = NULL;
   int result = EXIT_SUCCESS;
   size_t nbytes, size, nrpt;
-  unsigned char* input;
 
   if (0 < niters) {
     size = n;
@@ -93,21 +93,36 @@ int main(int argc, char* argv[])
       printf("libxsmm_diff_n:\t\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
     }
 
-    if (size == (j + 1) && 0 == memcmp(ref, input + j * stride, elsize)) { /* benchmark memcmp */
-      void *const icopy = (elsize == stride ? malloc(nbytes) : NULL);
+    if (size == (j + 1) && 0 == memcmp(ref, input + j * stride, elsize)) { /* benchmark libxsmm_memcmp */
+      icopy = (unsigned char*)(elsize == stride ? malloc(nbytes) : NULL);
       if (NULL != icopy) {
+        ilast = icopy + (size - 1) * stride; /* last item */
         memcpy(icopy, input, nbytes);
         start = libxsmm_timer_tick();
         for (i = 0; i < nrpt; ++i) {
-          j = memcmp(input, icopy, nbytes);
+          j += libxsmm_memcmp(input, icopy, nbytes); /* take result of every execution */
+          /* memcmp may be pure and without touching input it is not repeated (nrpt) */
+          ilast[i%elsize] = 255;
         }
-        printf("stdlib memcmp:\t\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+        printf("libxsmm_memcmp:\t\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
         result += (int)j * ((int)stride / ((int)stride + 1)); /* ignore result */
-        free(icopy);
       }
     }
     else {
       result = EXIT_FAILURE;
+    }
+
+    if (NULL != icopy) { /* benchmark stdlib's memcmp */
+      LIBXSMM_ASSERT(NULL != ilast);
+      start = libxsmm_timer_tick();
+      for (i = 0; i < nrpt; ++i) {
+        j += memcmp(input, icopy, nbytes); /* take result of every execution */
+        /* memcmp is likely pure and without touching input it is not repeated (nrpt) */
+        ilast[i%elsize] = 255;
+      }
+      printf("stdlib memcmp:\t\t%.8f s\n", libxsmm_timer_duration(start, libxsmm_timer_tick()));
+      result += (int)j * ((int)stride / ((int)stride + 1)); /* ignore result */
+      free(icopy);
     }
 
     free(input);

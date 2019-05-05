@@ -9,6 +9,7 @@ libxsmm_blas_dgemm0
 libxsmm_blas_dgemm1
 libxsmm_blas_dgemm2
 libxsmm_blas_dgemm_
+libxsmm_blas_error
 libxsmm_blas_sgemm0
 libxsmm_blas_sgemm1
 libxsmm_blas_sgemm2
@@ -54,12 +55,19 @@ libxsmm_dgemm_
 libxsmm_dgemm_descriptor_init
 libxsmm_dgemm_omp_
 libxsmm_diff
+libxsmm_diff_
 libxsmm_diff_16
 libxsmm_diff_32
 libxsmm_diff_48
 libxsmm_diff_64
+libxsmm_diff_char
+libxsmm_diff_i32
+libxsmm_diff_i64
+libxsmm_diff_i8
 libxsmm_diff_n
+libxsmm_dispatch_getrf
 libxsmm_dispatch_mcopy
+libxsmm_dispatch_pgemm
 libxsmm_dispatch_trans
 libxsmm_dispatch_trmm
 libxsmm_dispatch_trsm
@@ -222,11 +230,11 @@ libxsmm_hash_
 libxsmm_hash_char
 libxsmm_hash_i32
 libxsmm_hash_i64
+libxsmm_hash_i8
 libxsmm_icbrt_u32
 libxsmm_icbrt_u64
 libxsmm_init
 libxsmm_init_
-libxsmm_internal_gemm_error
 libxsmm_isqrt2_u32
 libxsmm_isqrt_u32
 libxsmm_isqrt_u64
@@ -246,6 +254,7 @@ libxsmm_matdiff_clear_
 libxsmm_matdiff_reduce
 libxsmm_matdiff_reduce_
 libxsmm_mcopy_descriptor_init
+libxsmm_memcmp
 libxsmm_mhd_element_comparison
 libxsmm_mhd_element_conversion
 libxsmm_mhd_read
@@ -268,7 +277,9 @@ libxsmm_mutex_release
 libxsmm_mutex_trylock
 libxsmm_offset
 libxsmm_original_dgemm
+libxsmm_original_dgemv
 libxsmm_original_sgemm
+libxsmm_original_sgemv
 libxsmm_otrans
 libxsmm_otrans_
 libxsmm_otrans_omp
@@ -290,6 +301,9 @@ libxsmm_ptr_d2
 libxsmm_ptr_i0
 libxsmm_ptr_i1
 libxsmm_ptr_i2
+libxsmm_ptr_j0
+libxsmm_ptr_j1
+libxsmm_ptr_j2
 libxsmm_ptr_l0
 libxsmm_ptr_l1
 libxsmm_ptr_l2
@@ -347,6 +361,7 @@ libxsmm_sgemm_descriptor_init
 libxsmm_sgemm_omp_
 libxsmm_shuffle
 libxsmm_shuffle_
+libxsmm_sink
 libxsmm_smmavailable
 libxsmm_smmcall
 libxsmm_smmcall_abc

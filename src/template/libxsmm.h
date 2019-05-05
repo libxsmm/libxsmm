@@ -191,7 +191,7 @@ LIBXSMM_API void libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_prec
   /*unsigned*/int tid, /*unsigned*/int nthreads);
 
 /** Process a series of matrix multiplications (batch). See also libxsmm_mmbatch. */
-LIBXSMM_APIEXT void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
   const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,
                      const void* b, const libxsmm_blasint* ldb,
@@ -230,11 +230,17 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_de
 /** Code generation routine for transposes using a descriptor */
 LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_descriptor* descriptor);
 
-/** Code generation routine for TRSM using a descriptor */
-LIBXSMM_API libxsmm_xtrsmfunction libxsmm_dispatch_trsm(const libxsmm_trsm_descriptor* descriptor);
+/** Code generation routine for GEMM/packed using a descriptor */
+LIBXSMM_API libxsmm_pgemm_xfunction libxsmm_dispatch_pgemm(const libxsmm_pgemm_descriptor* descriptor);
 
-/** Code generation routine for TRMM using a descriptor */
-LIBXSMM_API libxsmm_xtrmmfunction libxsmm_dispatch_trmm(const libxsmm_trmm_descriptor* descriptor);
+/** Code generation routine for GETRF/packed using a descriptor */
+LIBXSMM_API libxsmm_getrf_xfunction libxsmm_dispatch_getrf(const libxsmm_getrf_descriptor* descriptor);
+
+/** Code generation routine for TRMM/packed using a descriptor */
+LIBXSMM_API libxsmm_trmm_xfunction libxsmm_dispatch_trmm(const libxsmm_trmm_descriptor* descriptor);
+
+/** Code generation routine for TRSM/packed using a descriptor */
+LIBXSMM_API libxsmm_trsm_xfunction libxsmm_dispatch_trsm(const libxsmm_trsm_descriptor* descriptor);
 
 /**
  * Code generation routine for the CSR format which multiplies a dense SOA matrix (each element holds a SIMD-width

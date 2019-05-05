@@ -139,22 +139,28 @@ if (0 < n) { /* check that n is at least 1 */
 
 To process a batch of matrix multiplications and to prefetch the operands of the next multiplication ahead of time, the code presented in the [Overview](#overview) section may be modified as shown above. The last multiplication is peeled off from the batch to avoid prefetching out-of-bounds (OOB). Prefetching from an invalid address does not trap an exception, but an (unnecessary) page fault can be avoided as shown above.
 
+<a name="explicit-batch-interface"></a>
+
 ```C
 /** Batched matrix multiplications (explicit data representation). */
-int libxsmm_mmbatch(libxsmm_xmmfunction kernel,
+int libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+  const char* transa, const char* transb,
+  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda,
+                     const void* b, const libxsmm_blasint* ldb,
+   const void* beta,       void* c, const libxsmm_blasint* ldc,
   libxsmm_blasint index_base, libxsmm_blasint index_stride,
   const libxsmm_blasint stride_a[],
   const libxsmm_blasint stride_b[],
   const libxsmm_blasint stride_c[],
-  const void* a, const void* b, void* c,
   libxsmm_blasint batchsize,
   int tid, int nthreads);
 ```
 
-To further simplify the multiplication of matrices in a batch, the above interface can help if an explicit data representation is available. This low-level form or expert interface is also able to employ a user-defined threading runtime. In case of OpenMP, `libxsmm_mmbatch_omp` is ready-to-use and hosted by the extension library (libxsmmext). Of course, `libxsmm_mmbatch_omp` does not take `tid` and `nthreads` since both arguments are given by OpenMP. An even higher-level set of procedures (and potentially more convenient) is available with `libxsmm_gemm_batch` and `libxsmm_gemm_batch_omp`. The signature of both routines is more BLAS-like, but less flexible than the forms mentioned above.
+To further simplify the multiplication of matrices in a batch, the above interface can help if an explicit data representation is available. This low-level form or expert interface is also able to employ a user-defined threading runtime. In case of OpenMP, `libxsmm_mmbatch_omp` is ready-to-use and hosted by the extension library (libxsmmext). Of course, `libxsmm_mmbatch_omp` does not take `tid` and `nthreads` since both arguments are given by OpenMP. A sequential version is available with `libxsmm_gemm_batch` (libxsmm).
 
 ```C
-void libxsmm_gemm_batch(libxsmm_gemm_precision precision,
+void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
   const char* transa, const char* transb,
   libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const void* alpha, const void* a, const libxsmm_blasint* lda,

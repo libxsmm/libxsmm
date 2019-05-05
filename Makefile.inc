@@ -92,8 +92,6 @@ ifeq (,$(PYTHON))
 ifneq (,$(PYTHON3))
   SHELL := env PATH=$(MAKEINC):$(PATH) $(SHELL)
   PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null && command -v python)
-else
-  $(info ERROR: No Python interpreter found!)
 endif
 endif
 
@@ -265,6 +263,7 @@ ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
 endif
 
 ifneq (0,$(PYMOD))
+ifneq (,$(PYTHON))
   PYVERSION_STRING = $(shell $(PYTHON) --version 2>&1 | head -n1 | sed $(REVERSION))
   PYVERSION = $(shell echo "$(PYVERSION_STRING)" | cut -d"." -f1,2)
   PYROOT = $(abspath $(dir $(call which,$(PYTHON)))/..)
@@ -280,6 +279,7 @@ ifneq (0,$(PYMOD))
     # Enable shared library (req. for Python module)
     override STATIC = 0
   endif
+endif
 endif
 
 # Explicitly disables BLAS by user's intervention
@@ -802,9 +802,16 @@ endif
 absliblpath = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
   $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
   $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1)))
-abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
-  $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
-    -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
+
+ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
+  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
+    $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
+       -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
+else # Cygwin/MinGW (static)
+  abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
+    $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
+       -l$(basename $(notdir $1)),$(NULL)),$1))
+endif
 
 LIBDEP = $(LIBNAME).$(LIBEXT)
 MAINLIB = $(call abslib,$(LIBDEP))

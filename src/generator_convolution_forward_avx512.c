@@ -935,6 +935,8 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
                   l_filter_weight_pos * i_conv_kernel_config->l_ld_ofm_fil * i_conv_kernel_config->datatype_size_wt * i_conv_desc->fm_lp_block );
             }
           }
+#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
+          LIBXSMM_ASSERT(step_size != 4);
           if (step_size == 4) {
             if ( (l_n == 14) && ((i_conv_desc->prefetch & LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) == LIBXSMM_CONVOLUTION_PREFETCH_WEIGHT_L2) ) {
               int l_filter_weight_pos = (l_k+3) + (((l_k+3)/i_conv_desc->ifm_block)*(i_conv_kernel_config->l_ld_ifm_fil-i_conv_desc->ifm_block)*i_conv_desc->fm_lp_block);
@@ -945,6 +947,7 @@ void libxsmm_generator_convolution_forward_avx512_c3_bf16( libxsmm_generated_cod
                   l_filter_weight_pos * i_conv_kernel_config->l_ld_ofm_fil * i_conv_kernel_config->datatype_size_wt * i_conv_desc->fm_lp_block );
             }
           }
+#endif
         }
       }
       l_filter_pos +=  i_conv_kernel_config->l_ld_ofm_fil * 2 * i_conv_kernel_config->datatype_size_wt;

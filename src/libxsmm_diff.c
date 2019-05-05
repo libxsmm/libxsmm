@@ -127,3 +127,21 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
   return result;
 }
 
+
+LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size)
+{
+#if defined(LIBXSMM_DIFF_MEMCMP)
+  return memcmp(a, b, size);
+#else
+  const uint8_t *const a8 = (const uint8_t*)a, *const b8 = (const uint8_t*)b;
+  LIBXSMM_DIFF_32_DECL(aa);
+  size_t i;
+  for (i = 0; i < (size & 0xFFFFFFFFFFFFFFE0); i += 32) {
+    LIBXSMM_DIFF_32_LOAD(aa, a8 + i);
+    if (LIBXSMM_DIFF_32(aa, b8 + i, 0/*dummy*/)) return 1;
+  }
+  for (; i < size; ++i) if (a8[i] ^ b8[i]) return 1;
+  return 0;
+#endif
+}
+

@@ -31,16 +31,27 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-ECHO=$(command -v echo)
 GREP=$(command -v grep)
+SED=$(command -v sed)
 ENV=$(command -v env)
+TR=$(command -v tr)
+WC=$(command -v wc)
 
-# TESTS_NOBLAS (which are header-only based) need additional adjustment on the link-line.
-# Currently header-only cases are not tested for not requiring BLAS (e.g., descriptor).
-# Test increases compilation time!
-#
-#TESTS_NOBLAS="atomics gemmflags hash malloc matcopy matdiff math mhd otrans threadsafety vla"
-#TESTS_DISABLED="headeronly"
+#Eventually disable a set of tests e.g., TESTS_DISABLED="headeronly"
+
+# list of tests that produce "application must be linked against LAPACK/BLAS" in case of BLAS=0
+TESTS_NEEDBLAS="gemm.c"
+# grep pattern based on TESTS_NEEDBLAS
+TESTS_NEEDBLAS_GREP=$(echo ${TESTS_NEEDBLAS} | ${SED} "s/\s\s*/\\\\|/g" | ${SED} "s/\./\\\\./g")
+# good-enough pattern to match main functions, and to include translation unit in test set
+if [ "" = "$*" ]; then
+  TESTS=$(${GREP} -l "main\s*(.*)" ${HERE}/*.c 2>/dev/null)
+else
+  TESTS=$*
+fi
+if [ "" != "${TESTS}" ] && [ "" != "$(${GREP} 'BLAS=0' .state)" ]; then
+  TESTS=$(echo "${TESTS}" | ${GREP} -v "${TESTS_NEEDBLAS_GREP}")
+fi
 
 if [ "Windows_NT" = "${OS}" ]; then
   # Cygwin's "env" does not set PATH ("Files/Black: No such file or directory")
@@ -54,26 +65,20 @@ else
   elif [ "" != "$(command -v otool)" ]; then
     LDD="otool -L"
   else
-    LDD=${ECHO}
+    LDD=echo
   fi
 fi
 
-${ECHO} "============="
-${ECHO} "Running tests"
-${ECHO} "============="
+echo "============="
+echo "Running tests"
+echo "============="
 
-# good-enough pattern to match a main function, and to test this translation unit
-if [ "" = "$*" ]; then
-  TESTS=$(${GREP} -l "main\s*(.*)" ${HERE}/*.c 2>/dev/null)
-else
-  TESTS=$*
-fi
 NTEST=1
-NMAX=$(${ECHO} "${TESTS}" | wc -w | tr -d " ")
+NMAX=$(echo "${TESTS}" | ${WC} -w | ${TR} -d " ")
 for TEST in ${TESTS}; do
   NAME=$(basename ${TEST} .c)
-  ${ECHO} -n "${NTEST} of ${NMAX} (${NAME})... "
-  if [ "0" != "$(${ECHO} ${TESTS_DISABLED} | ${GREP} -q ${NAME}; ${ECHO} $?)" ]; then
+  echo -n "${NTEST} of ${NMAX} (${NAME})... "
+  if [ "0" != "$(echo ${TESTS_DISABLED} | ${GREP} -q ${NAME}; echo $?)" ]; then
     cd ${HERE}
     ERROR=$({
     if [ "" != "$(${LDD} ${HERE}/${NAME}${EXE} 2>/dev/null | ${GREP} libiomp5\.)" ]; then
@@ -96,34 +101,11 @@ for TEST in ${TESTS}; do
     RESULT=0
   fi
   if [ 0 != ${RESULT} ]; then
-    ${ECHO} "FAILED(${RESULT}) ${ERROR}"
+    echo "FAILED(${RESULT}) ${ERROR}"
     exit ${RESULT}
   else
-    ${ECHO} "OK ${ERROR}"
+    echo "OK ${ERROR}"
   fi
   NTEST=$((NTEST+1))
 done
-
-# selected build-only tests that do not run anything
-# below cases do not actually depend on LAPACK/BLAS
-#
-if [ "Windows_NT" != "${OS}" ]; then
-  # Workaround for ICE in ipa-visibility.c (at least GCC 5.4.0/Cygwin)
-  WORKAROUND="DBG=0"
-
-  CWD=${PWD}
-  cd ${HERE}/build
-  for TEST in ${TESTS_NOBLAS}; do
-    if [ -e ${HERE}/../lib/libxsmm.a ] && [ -e ${HERE}/../lib/libxsmmext.a ]; then
-      make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=1 ${TEST}
-    fi
-    if [ -e ${HERE}/../lib/libxsmm.so ] && [ -e ${HERE}/../lib/libxsmmext.so ]; then
-      make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=0 ${TEST}
-    fi
-    if [ -e ${HERE}/../lib/libxsmm.dylib ] && [ -e ${HERE}/../lib/libxsmmext.dylib ]; then
-      make -f ${HERE}/Makefile ${WORKAROUND} BLAS=0 STATIC=0 ${TEST}
-    fi
-  done
-  cd ${CWD}
-fi
 

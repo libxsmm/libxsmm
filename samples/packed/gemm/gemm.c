@@ -28,13 +28,16 @@
 ******************************************************************************/
 /* Greg Henry, Hans Pabst, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#if 1
+#if 0
 #define USE_KERNEL_GENERATION_DIRECTLY
 #endif
 #if 0
 #define USE_PREDEFINED_ASSEMBLY
 #define USE_XSMM_GENERATED
 #define TIME_MKL
+#endif
+#if 0
+#define TEST_SINGLE
 #endif
 
 #if !defined(USE_PREDEFINED_ASSEMBLY) && !defined(USE_XSMM_GENERATED) && !defined(TIME_MKL) && \
@@ -226,7 +229,7 @@ void compact_dgemm_ ( unsigned int *layout, char *transa, char *transb,
                       double *beta, double *C, unsigned int *ldc,
                       unsigned int *nmat, unsigned int *VLEN )
 {
-    int i, j, num, info;
+    unsigned int i, j, num, info;
     double *Ap, Atemp[BUFSIZE];
     double *Bp, Btemp[BUFSIZE];
     double *Cp, Ctemp[BUFSIZE];
@@ -268,7 +271,7 @@ void compact_sgemm_ ( char *transa, char *transb,
                       float *beta, float *C, unsigned int *ldc,
                       unsigned int *nmat, unsigned int *VLEN )
 {
-    int i, j, num, info;
+    unsigned int i, j, num, info;
     float *Ap, Atemp[BUFSIZE];
     float *Bp, Btemp[BUFSIZE];
     float *Cp, Ctemp[BUFSIZE];
@@ -495,8 +498,8 @@ int main(int argc, char* argv[])
   unsigned int VLEND=4, VLENS=8;
   int arch=LIBXSMM_X86_AVX2;
 #endif
-  int nmats, nmatd;
-  int i, j, l, iunroll, junroll, loopi, loopj;
+  unsigned int nmats, nmatd;
+  unsigned int i, j, l, iunroll, junroll, loopi, loopj;
   char side='L', uplo='U', transa='N', transb='N', diag='N';
   unsigned int typesize8 = 8;
   unsigned int typesize4 = 4;
@@ -511,13 +514,9 @@ int main(int argc, char* argv[])
   unsigned long op_count;
   const libxsmm_pgemm_descriptor* desc8 = NULL;
   const libxsmm_pgemm_descriptor* desc4 = NULL;
-  libxsmm_descriptor_blob blob;
 #ifdef USE_XSMM_GENERATED
-  union {
-    libxsmm_dpmmfunction dp;
-    libxsmm_spmmfunction sp;
-    const void* pv;
-  } mykernel = { 0 };
+  libxsmm_descriptor_blob blob;
+  libxsmm_pgemm_xfunction mykernel = NULL;
 #endif
 #if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
   void (*opcode_routine)();
@@ -608,7 +607,7 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
   printf("This code tests the LIBXSMM generated kernels\n");
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
-  printf("This code tests some predefined assembly kenrel\n");
+  printf("This code tests some predefined assembly kernel\n");
 #endif
 #if defined(USE_KERNEL_GENERATION_DIRECTLY) && defined(__linux__)
   printf("This code tests kernel generation directly\n");
@@ -632,13 +631,13 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
 
 
 #ifdef USE_XSMM_GENERATED
-  printf("calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
-  mykernel.dp = libxsmm_xmmdispatch(desc8).dmm;
-  printf("done calling libxsmm_dispatch_trmm: typesize8=%u\n",typesize8);
-  if ( mykernel.dp == NULL ) printf("R8 Kernel after the create call is null\n");
+  printf("calling libxsmm_dispatch_pgemm: typesize8=%u\n",typesize8);
+  mykernel = libxsmm_dispatch_pgemm(desc8);
+  printf("done calling libxsmm_dispatch_pgemm: typesize8=%u\n",typesize8);
+  if ( mykernel == NULL ) printf("R8 Kernel after the create call is null\n");
 #ifdef TEST_SINGLE
-  mykernel.sp = libxsmm_dispatch_gemm(desc4);
-  if ( mykernel.sp == NULL ) printf("R4 kernel after the create call is null\n");
+  mykernel = libxsmm_dispatch_pgemm(desc4);
+  if ( mykernel == NULL ) printf("R4 kernel after the create call is null\n");
 #endif
 #endif
 
@@ -679,7 +678,7 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
 #endif
 
 #ifdef USE_XSMM_GENERATED
-  cptr = (const unsigned char*) mykernel.pv;
+  cptr = (const unsigned char*) mykernel;
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
   cptr = (const unsigned char*) gemm_;
@@ -759,7 +758,7 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
      gen_compact_dgemm_ ( &layout, &m, &n, &k, &dalpha, Ap, &lda, Bp, &ldb, &dbeta, Cp, &ldc, &VLEND );
 #endif
 #ifdef USE_XSMM_GENERATED
-     mykernel.dp ( Ap, Bp, Cp );
+     mykernel ( Ap, Bp, Cp );
 #endif
 #ifdef USE_PREDEFINED_ASSEMBLY
      gemm_ ( Ap, Bp, Cp );
@@ -803,7 +802,7 @@ printf("This is a real*%d tester for JIT compact DGEMM %c%c kernels! (m=%u n=%u 
      float *Bp = &sb[num*ldb*n*VLENS];
      float *Cp = &sc[num*ldc*n*VLENS];
 #ifdef USE_XSMM_GENERATED
-     mykernel.sp ( Ap, Bp, Cp );
+     mykernel ( Ap, Bp, Cp );
 #endif
   }
   printf("after r4 routine, new      C(1,1)=%g C]256]=%g\n",dc[0],dc[256]);

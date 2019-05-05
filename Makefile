@@ -81,6 +81,7 @@ CACHELINE ?= 64
 # Supported: 1.0
 ALPHA ?= 1
 ifneq (1,$(ALPHA))
+  $(info --------------------------------------------------------------------------------)
   $(error ALPHA needs to be 1)
 endif
 
@@ -91,6 +92,7 @@ endif
 BETA ?= 1
 ifneq (1,$(BETA))
 ifneq (0,$(BETA))
+  $(info --------------------------------------------------------------------------------)
   $(error BETA needs to be either 0 or 1)
 endif
 endif
@@ -111,15 +113,19 @@ ASNEEDED ?= 0
 SHARED ?= 0
 
 # Determines if the library can act as a wrapper-library (GEMM)
-# 1: enables wrapping SGEMM/DGEMM, and GEMV (depends on "GEMM")
-# 2: enables wrapping DGEMM only (DGEMV-wrap depends on "GEMM")
+# 0: enables wrapping SGEMM/DGEMM, and DGEMV/SGEMV
+# 1: enables fall-back to DGEMM_BATCH (if wrapped)
 WRAP ?= 0
+ifneq (0,$(WRAP))
+  DFLAGS += -DLIBXSMM_BLAS_BATCH
+endif
 
 # Determines the kind of routine called for intercepted GEMMs
 # odd: sequential and non-tiled (small problem sizes only)
 # even: parallelized and tiled (all problem sizes)
 # 3: GEMV is intercepted; small problem sizes
 # 4: GEMV is intercepted; all problem sizes
+# 0: disabled
 GEMM ?= 1
 
 # JIT backend is enabled by default
@@ -189,9 +195,20 @@ DOCEXT = pdf
 
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE = \
-  DESTDIR INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR \
-  PBINDIR PINCDIR PREFIX POUTDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR \
-  VERSION TEST TSTDIR DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC
+  PREFIX INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR \
+  PBINDIR PINCDIR POUTDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR TEST \
+  VERSION_STRING DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC PKG_CONFIG_%
+
+# in contrast to PREFIX, DESTDIR matters at this point
+ifneq (,$(strip $(DESTDIR)))
+ifneq ($(abspath .),$(abspath $(DESTDIR)))
+  PKG_CONFIG_PREFIX = $(DESTDIR)
+endif
+endif
+ifeq (,$(strip $(PKG_CONFIG_PREFIX)))
+  PKG_CONFIG_PREFIX = $(abspath .)
+  EXCLUDE_STATE += DESTDIR
+endif
 
 ifeq (,$(M)$(N)$(K))
 ifneq (,$(filter 0,$(MNK) 0))
@@ -206,11 +223,16 @@ FORCE_CXX = 0
 include $(ROOTDIR)/Makefile.inc
 
 # Version numbers according to interface (version.txt)
-VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1)
-VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 2)
-VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
-VERSION ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
-VERSION_API ?= $(shell $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION))
+ifneq (,$(PYTHON))
+  VERSION_MAJOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 1)
+  VERSION_MINOR ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 2)
+  VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
+else
+  $(info --------------------------------------------------------------------------------)
+  $(error No Python interpreter found!)
+endif
+VERSION_STRING ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
+VERSION_API ?= $(shell $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_STRING))
 VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
 
@@ -260,7 +282,9 @@ else # osx
   $(BINDIR)/libxsmm_gemm_generator
 endif
 
-INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
+ifneq (,$(PYTHON))
+  INDICES ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py -1 $(THRESHOLD) $(words $(MNK)) $(MNK) $(words $(M)) $(words $(N)) $(M) $(N) $(K))
+endif
 NINDICES = $(words $(INDICES))
 
 SRCFILES_KERNELS = $(patsubst %,$(BLDDIR)/mm_%.c,$(INDICES))
@@ -354,6 +378,7 @@ ifeq (,$(filter Darwin,$(UNAME)))
 endif
 endif
 
+ifneq (,$(PYTHON))
 information = \
 	$(info ================================================================================) \
 	$(info LIBXSMM $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py) ($(UNAME))) \
@@ -366,6 +391,7 @@ information = \
 	$(info Fortran Compiler $(FC_VERSION_STRING) is outdated!), \
 	$(info Fortran Compiler is disabled or missing: no Fortran interface is built!))) \
 	$(info --------------------------------------------------------------------------------)
+endif
 
 ifneq (,$(strip $(TEST)))
 .PHONY: run-tests
@@ -400,6 +426,8 @@ endif
 else ifeq (, $(filter _0_,_$(LNKSOFT)_))
 	$(info LIBXSMM is link-time agnostic with respect to a BLAS library!)
 	$(info Forcing a specific library can take away a user's choice.)
+	$(info If this was to solve linker errors (dgemm_, sgemm_, etc.),)
+	$(info the BLAS library should go after LIBXSMM (link-line).)
 	$(info --------------------------------------------------------------------------------)
 endif
 ifneq (2,$(INTRINSICS))
@@ -409,7 +437,7 @@ else
 	$(info INTRINSICS=$(INTRINSICS) limits LIBXSMM to AVX$(AVX) (and beyond).)
 endif
 ifeq (0,$(INTEL))
-	$(info Prefer an updated tool chain rather than adjusting INTRINSICS.)
+	$(info If adjusting INTRINSICS was necessary, reconsider an updated tool chain.)
 else # Intel Compiler
 	$(info Intel Compiler does not require adjusting INTRINSICS.)
 endif
@@ -602,19 +630,25 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template
 	@$(CP) $(ROOTDIR)/include/libxsmm_sync.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_timer.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_typedefs.h $(INCDIR) 2>/dev/null || true
+ifneq (,$(PYTHON))
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_config.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm_config.h \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) > $@
+endif
 
 .PHONY: cheader
 cheader: $(INCDIR)/libxsmm.h
+ifneq (,$(PYTHON))
 $(INCDIR)/libxsmm.h: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
                      $(INCDIR)/libxsmm_config.h $(HEADERS)
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py $(ROOTDIR)/$(SRCDIR)/template/libxsmm.h \
 		$(PRECISION) $(PREFETCH_TYPE) $(INDICES) > $@
+else
+.PHONY: $(INCDIR)/libxsmm.h
+endif
 
 .PHONY: cheader_only
 cheader_only: $(INCDIR)/libxsmm_source.h
@@ -623,6 +657,7 @@ $(INCDIR)/libxsmm_source.h: $(INCDIR)/.make $(ROOTDIR)/$(SCRDIR)/libxsmm_source.
 
 .PHONY: fheader
 fheader: $(INCDIR)/libxsmm.f
+ifneq (,$(PYTHON))
 $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
                      $(ROOTDIR)/$(SRCDIR)/template/libxsmm.f \
                      $(INCDIR)/libxsmm_config.h
@@ -634,11 +669,18 @@ $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
 		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) | \
 	sed "/ATTRIBUTES OFFLOAD:MIC/d" > $@
+else
+.PHONY: $(INCDIR)/libxsmm.f
+endif
 
 .PHONY: sources
 sources: $(SRCFILES_KERNELS) $(BLDDIR)/libxsmm_dispatch.h
+ifneq (,$(PYTHON))
 $(BLDDIR)/libxsmm_dispatch.h: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(SRCFILES_KERNELS) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_dispatch.py $(abspath .state) $(PRECISION) $(THRESHOLD) $(INDICES) > $@
+else
+.PHONY: $(BLDDIR)/libxsmm_dispatch.h
+endif
 
 $(BLDDIR)/%.c: $(BLDDIR)/.make $(INCDIR)/libxsmm.h $(BINDIR)/libxsmm_gemm_generator $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py $(ROOTDIR)/$(SCRDIR)/libxsmm_specialized.py
 ifneq (,$(strip $(SRCFILES_KERNELS)))
@@ -702,7 +744,9 @@ endif # noarch
 		-e "/#error No kernel was compiled, lacking support for current architecture?/d" \
 		-e "/#pragma message (\".*KERNEL COMPILATION WARNING: compiling ..* code on ..* or newer architecture: \" __FILE__)/d" \
 		| tr "~" "\n" > $(TMPFILE)
+ifneq (,$(PYTHON))
 	@$(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_specialized.py $(PRECISION) $(MVALUE) $(NVALUE) $(KVALUE) $(PREFETCH_TYPE) >> $(TMPFILE)
+endif
 	@$(MV) $(TMPFILE) $@
 endif
 
@@ -989,9 +1033,8 @@ samples: lib_hst
 	@find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/grudriver/ \
 	| grep -v /deeplearning/gxm/ \
-	| grep -v /packed/getrf/ \
-	| grep -v /packed/gemm/ \
 	| grep -v /edge/repro/ \
+	| grep -v /packed/ \
 	| grep -v /pyfr/ \
 	$(patsubst %, | grep -v /%/,$^) | xargs -I {} $(FLOCK) {} "$(MAKE) DEPSTATIC=$(STATIC)"
 
@@ -1463,39 +1506,12 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 		-o $(notdir $@)
 	@rm $(TMPFILE)
 
-$(DOCDIR)/tfserving.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/tfserving.md
-	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
-	@pandoc -D latex \
-	| sed \
-		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE)
-	@cd $(ROOTDIR)/documentation && iconv -t utf-8 tfserving.md \
-	| sed \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
-	| pandoc \
-		--template=$(notdir $(TMPFILE)) --listings \
-		-f markdown_github+all_symbols_escapable+subscript+superscript \
-		-V documentclass=scrartcl \
-		-V title-meta="TensorFlow Serving with LIBXSMM" \
-		-V author-meta="Hans Pabst" \
-		-V classoption=DIV=45 \
-		-V linkcolor=black \
-		-V citecolor=black \
-		-V urlcolor=black \
-		-o $(notdir $@)
-	@rm $(TMPFILE)
-
 .PHONY: documentation
 documentation: \
 $(DOCDIR)/libxsmm.$(DOCEXT) \
 $(DOCDIR)/libxsmm_samples.$(DOCEXT) \
 $(DOCDIR)/cp2k.$(DOCEXT) \
-$(DOCDIR)/tensorflow.$(DOCEXT) \
-$(DOCDIR)/tfserving.$(DOCEXT)
+$(DOCDIR)/tensorflow.$(DOCEXT)
 
 .PHONY: mkdocs
 mkdocs: $(ROOTDIR)/documentation/index.md $(ROOTDIR)/documentation/libxsmm_samples.md
@@ -1667,7 +1683,7 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 	@echo
 	@echo "LIBXSMM installing samples..."
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/cp2k/,cp2k cp2k.sh cp2k-perf* cp2k-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
-	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/wrap/,dgemm-blas dgemm-blas.sh dgemm-wrap dgemm-wrap.sh dgemm-test.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
+	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/wrap/,dgemm-blas dgemm-blas.sh dgemm-wrap dgemm-wrap.sh wrap-test.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/dispatch/,dispatch dispatch.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/nek/,axhm grad rstr *.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
 	@$(CP) -v $(addprefix $(ROOTDIR)/$(SPLDIR)/smm/,smm smm.sh smm-perf* smmf-perf.sh smm-plot.sh) $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true
@@ -1696,35 +1712,38 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 endif
 
 ifeq (Windows_NT,$(UNAME))
-  XSMM_PKG_CONFIG_LIBS_PRIVATE = -ldbghelp
+  PKG_CONFIG_PRIVLIBS = -ldbghelp
 else ifneq (Darwin,$(UNAME))
   ifneq (FreeBSD,$(UNAME))
-    XSMM_PKG_CONFIG_LIBS_PRIVATE = -lpthread -lrt -ldl -lm -lc
+    PKG_CONFIG_PRIVLIBS = -lpthread -lrt -ldl -lm -lc
   else
-    XSMM_PKG_CONFIG_LIBS_PRIVATE = -ldl -lm -lc
+    PKG_CONFIG_PRIVLIBS = -ldl -lm -lc
   endif
 endif
 ifneq (Darwin,$(UNAME))
-  XSMMEXT_PKG_CONFIG_LIBS_PRIVATE = -fopenmp
+  PKG_CONFIG_PRIVLIBS_EXT = -fopenmp
 endif
+
+PKG_CONFIG_INCLUDEDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(PINCDIR)),,\$${prefix}/),$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(PINCDIR)))
+PKG_CONFIG_LIBDIR = $(subst $$$$,$(if $(findstring $$$$/,$$$$$(POUTDIR)),,\$${prefix}/),$(subst $$$$$(PKG_CONFIG_PREFIX),\$${prefix},$$$$$(POUTDIR)))
 
 $(OUTDIR)/libxsmm.pc: $(OUTDIR)/libxsmm.$(LIBEXT)
 	@echo "Name: libxsmm" > $@
 	@echo "Description: Matrix operations and deep learning primitives" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
-	@echo "Version: $(VERSION)" >> $@
+	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(abspath .)" >> $@
-	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
-	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
+	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
+	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
+	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
-ifneq (,$(XSMM_PKG_CONFIG_LIBS_PRIVATE))
+ifneq (,$(PKG_CONFIG_PRIVLIBS))
 	@if [ -e $(OUTDIR)/libxsmm.$(DLIBEXT) ]; then \
 		echo "Libs: -L\$${libdir} -lxsmm" >> $@; \
-		echo "Libs.private: $(XSMM_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+		echo "Libs.private: $(PKG_CONFIG_PRIVLIBS)" >> $@; \
 	else \
-		echo "Libs: -L\$${libdir} -lxsmm $(XSMM_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+		echo "Libs: -L\$${libdir} -lxsmm $(PKG_CONFIG_PRIVLIBS)" >> $@; \
 	fi
 else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmm" >> $@
@@ -1734,11 +1753,11 @@ $(OUTDIR)/libxsmmf.pc: $(OUTDIR)/libxsmmf.$(LIBEXT)
 	@echo "Name: libxsmm/f" > $@
 	@echo "Description: LIBXSMM for Fortran" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
-	@echo "Version: $(VERSION)" >> $@
+	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(abspath .)" >> $@
-	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
-	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
+	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
+	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
+	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Requires: libxsmm" >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
@@ -1748,20 +1767,20 @@ $(OUTDIR)/libxsmmext.pc: $(OUTDIR)/libxsmmext.$(LIBEXT)
 	@echo "Name: libxsmm/ext" > $@
 	@echo "Description: LIBXSMM/multithreaded for OpenMP" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
-	@echo "Version: $(VERSION)" >> $@
+	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(abspath .)" >> $@
-	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
-	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
+	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
+	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
+	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Requires: libxsmm" >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
-ifneq (,$(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE))
+ifneq (,$(PKG_CONFIG_PRIVLIBS_EXT))
 	@if [ -e $(OUTDIR)/libxsmmext.$(DLIBEXT) ]; then \
 		echo "Libs: -L\$${libdir} -lxsmmext" >> $@; \
-		echo "Libs.private: $(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+		echo "Libs.private: $(PKG_CONFIG_PRIVLIBS_EXT)" >> $@; \
 	else \
-		echo "Libs: -L\$${libdir} -lxsmmext $(XSMMEXT_PKG_CONFIG_LIBS_PRIVATE)" >> $@; \
+		echo "Libs: -L\$${libdir} -lxsmmext $(PKG_CONFIG_PRIVLIBS_EXT)" >> $@; \
 	fi
 else # no private libraries
 	@echo "Libs: -L\$${libdir} -lxsmmext" >> $@
@@ -1771,11 +1790,11 @@ $(OUTDIR)/libxsmmnoblas.pc: $(OUTDIR)/libxsmmnoblas.$(LIBEXT)
 	@echo "Name: libxsmm/noblas" > $@
 	@echo "Description: LIBXSMM substituted LAPACK/BLAS dependency" >> $@
 	@echo "URL: https://github.com/hfp/libxsmm" >> $@
-	@echo "Version: $(VERSION)" >> $@
+	@echo "Version: $(VERSION_STRING)" >> $@
 	@echo >> $@
-	@echo "prefix=$(abspath .)" >> $@
-	@echo "includedir=\$${prefix}/$(PINCDIR)" >> $@
-	@echo "libdir=\$${prefix}/$(POUTDIR)" >> $@
+	@echo "prefix=$(PKG_CONFIG_PREFIX)" >> $@
+	@echo "includedir=$(PKG_CONFIG_INCLUDEDIR)" >> $@
+	@echo "libdir=$(PKG_CONFIG_LIBDIR)" >> $@
 	@echo >> $@
 	@echo "Requires: libxsmm" >> $@
 	@echo "Cflags: -I\$${includedir}" >> $@
