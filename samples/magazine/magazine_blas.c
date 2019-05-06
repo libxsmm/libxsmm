@@ -111,9 +111,11 @@ int main(int argc, char* argv[])
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; ++i) {
-    init(25 + i, a + STREAM_A(i * na), m, k, lda, scale);
-    init(75 + i, b + STREAM_B(i * nb), k, n, ldb, scale);
-    init(42 + i, c + STREAM_C(i * nc), m, n, ldc, scale);
+    init(25 + i, a + i * na, m, k, lda, scale);
+    init(75 + i, b + i * nb, k, n, ldb, scale);
+    if (0 != beta) { /* no need to initialize for beta=0 */
+      init(42 + i, c + i * nc, m, n, ldc, scale);
+    }
   }
 
 #if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)

@@ -118,7 +118,9 @@ int main(int argc, char* argv[])
   for (int i = 0; i < size; ++i) {
     init(25 + i, pa + i * na, m, k, lda, scale);
     init(75 + i, pb + i * nb, k, n, ldb, scale);
-    init(42 + i, pc + i * nc, m, n, ldc, scale);
+    if (0 != beta) { /* no need to initialize for beta=0 */
+      init(42 + i, pc + i * nc, m, n, ldc, scale);
+    }
   }
 
 #if defined(_OPENMP) && !defined(SYNC)
