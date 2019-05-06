@@ -751,6 +751,15 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_loop_order_upd( libxsmm_dnn_lay
   if (handle->ofh == 28 && handle->desc.R == 3 && handle->desc.u == 1 && handle->desc.C == 128 && handle->desc.K == 128) {
     result = 0;
   }
+  if (handle->ofw == 28 && handle->desc.R == 1 && handle->desc.C == 256 && handle->desc.K == 512) {
+    result = 0;
+  }
+  if (handle->ofw == 14 && !(handle->desc.R == 1 && handle->desc.C == 1024 && handle->desc.K == 256)) {
+    result = 0;
+  }
+  if (handle->ofw == 7) {
+    result = 0;
+  }
   return result;
 }
 
@@ -794,6 +803,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_upd_ofh_rb( libxsmm_dnn_layer* 
   }
   if (handle->upd_linearized_tasklist == 1 && handle->upd_use_batchreduce == 0 && (handle->desc.R != 1 || handle->desc.S != 1)) {
     result = 1;
+  }
+  if (handle->ofw == 56 && handle->desc.R == 1) {
+    result = 2;
   }
   return result;
 }
@@ -977,6 +989,22 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->block_upd_ofm = libxsmm_dnn_setup_generic_block_upd_OFM(handle);
   handle->block_upd_ifm = libxsmm_dnn_setup_generic_block_upd_IFM(handle);
   handle->upd_loop_order = libxsmm_dnn_setup_generic_loop_order_upd(handle);
+
+#if 0
+  /* Spit out UPD parameters that are selected...  */
+  printf("UPD params...\n");
+  printf("UPD linearized tasks = %d\n", handle->upd_linearized_tasklist);
+  printf("UPD avoid rim fmas = %d\n", handle->upd_avoid_rim_fmas);
+  printf("UPD Pack input = %d\n", handle->upd_pack_input);
+  printf("UPD use batch-reduce GEMM = %d\n", handle->upd_use_batchreduce);
+  printf("Upd_ofw_rb = %d\n", handle->upd_ofw_rb);
+  printf("Upd_ofh_rb = %d\n", handle->upd_ofh_rb);
+  printf("UPD loop order = %d\n", handle->upd_loop_order);
+  printf("UPD weight_copies = %d\n", handle->weight_copies);
+  printf("Block upd ofm = %d\n", handle->block_upd_ofm);
+  printf("Block upd ifm = %d\n", handle->block_upd_ifm);
+#endif
+
   handle->code_upd[0].xconv.sconv = 0;
   handle->code_upd[1].xconv.sconv = 0;
 
