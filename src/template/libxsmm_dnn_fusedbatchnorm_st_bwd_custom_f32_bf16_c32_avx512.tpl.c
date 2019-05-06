@@ -161,7 +161,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 
         lcl_vdeloutput = _mm512_load_act( del_output_ptr );
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-        lcl_relumask = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr ), _mm512_setzero_ps(), _CMP_GT_OQ );
+        lcl_relumask = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr ), _mm512_setzero_ps(), _CMP_NEQ_OQ );
         lcl_vdeloutput = _mm512_mask_blend_ps( lcl_relumask, _mm512_setzero_ps(), lcl_vdeloutput );
         _mm512_store_act( del_output_ptr, lcl_vdeloutput );
 #endif
@@ -179,7 +179,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 
         lcl_vdeloutput2 = _mm512_load_act( del_output_ptr+16 );
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-        lcl_relumask2 = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr+16 ), _mm512_setzero_ps(), _CMP_GT_OQ );
+        lcl_relumask2 = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr+16 ), _mm512_setzero_ps(), _CMP_NEQ_OQ );
         lcl_vdeloutput2 = _mm512_mask_blend_ps( lcl_relumask2, _mm512_setzero_ps(), lcl_vdeloutput2 );
         _mm512_store_act( del_output_ptr+16, lcl_vdeloutput2 );
         output_ptr += 32;
