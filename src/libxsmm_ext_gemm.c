@@ -753,7 +753,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
     int result;
     const libxsmm_gemm_prefetch_type prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
     const unsigned char osize = libxsmm_typesize((libxsmm_datatype)oprec);
-    libxsmm_blasint group = 0, group_next = LIBXSMM_EXT_GEMM_NSUBGROUPS;
+    int group = 0, group_next = LIBXSMM_EXT_GEMM_NSUBGROUPS;
     int max_nthreads = 1;
 #if defined(_OPENMP)
 # if defined(LIBXSMM_EXT_TASKS)
@@ -766,9 +766,9 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
     for (group = 0; group < group_count; group = group_next, group_next += LIBXSMM_EXT_GEMM_NSUBGROUPS) {
       const libxsmm_blasint nsubgroups = LIBXSMM_MIN(group_next, group_count);
       libxsmm_code_pointer kernel[LIBXSMM_EXT_GEMM_NSUBGROUPS];
-      size_t j = group * sizeof(void*);
-      libxsmm_blasint size = 0, i;
-      int suitable = 0;
+      size_t j = sizeof(void*) * group;
+      libxsmm_blasint size = 0;
+      int suitable = 0, i;
       for (i = group; i < nsubgroups; ++i) {
         const libxsmm_blasint im = m[i], in = n[i], ik = k[i];
         suitable = LIBXSMM_SMM_AI(im, in, ik, 2/*RFO*/, osize);
@@ -813,30 +813,30 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
             if (0 >= libxsmm_gemm_taskscale)
 # endif
             {
-              const size_t sa = (NULL != stride_a ? *stride_a : sizeof(void*));
-              const size_t sb = (NULL != stride_b ? *stride_b : sizeof(void*));
-              const size_t sc = (NULL != stride_c ? *stride_c : sizeof(void*));
-#             pragma omp parallel for num_threads(nthreads)
-              for (i = group; i < nsubgroups; ++i) {
-                const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(kernel[i], NULL/*code_size*/);
-                /*check*/libxsmm_mmbatch_kernel(kernel[i].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
-                  (const char*)a + sa * i, (const char*)b + sb * i, (char*)c + sc * i, batchsize[i],
-                  omp_get_thread_num(), nthreads, isize, osize, kernel_info->gemm.desc.flags);
+              const size_t sa = (NULL != stride_a ? (size_t)(*stride_a) : sizeof(void*));
+              const size_t sb = (NULL != stride_b ? (size_t)(*stride_b) : sizeof(void*));
+              const size_t sc = (NULL != stride_c ? (size_t)(*stride_c) : sizeof(void*));
+#             pragma omp parallel for num_threads(nthreads) private(i)
+              for (i = 0; i < nchunks; ++i) {
+                const int g = group + i % nsubgroups;
+                const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(kernel[g], NULL/*code_size*/);
+                /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
+                  (const char*)a + sa * g, (const char*)b + sb * g, (char*)c + sc * g, batchsize[g],
+                  i, nchunks, isize, osize, kernel_info->gemm.desc.flags);
               }
             }
 # if defined(LIBXSMM_EXT_TASKS)
             else { /* tasks requested */
               const int ntasks = nchunks * libxsmm_gemm_taskscale;
-#             pragma omp parallel num_threads(nthreads)
+#             pragma omp parallel num_threads(nthreads) private(i)
               { /* first thread discovering work will launch all tasks */
 #               pragma omp single nowait /* anyone is good */
-                { int tid; for (tid = 0; tid < ntasks; ++tid) {
-                  i = tid % nsubgroups;
+                for (i = 0; i < ntasks; ++i) {
+                  const int g = group + i % nsubgroups;
 #                 pragma omp task
-                  /*check*/libxsmm_mmbatch_kernel(kernel[i].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
-                    (const char*)a + i * (*stride_a), (const char*)b + i * (*stride_b), (char*)c + i * (*stride_c),
-                    batchsize[i], tid, ntasks, isize, osize, libxsmm_get_kernel_info(kernel[i], NULL/*code_size*/)->gemm.desc.flags);
-                  }
+                  /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
+                    (const char*)a + g * (*stride_a), (const char*)b + g * (*stride_b), (char*)c + g * (*stride_c),
+                    batchsize[g], i, ntasks, isize, osize, libxsmm_get_kernel_info(kernel[g], NULL/*code_size*/)->gemm.desc.flags);
                 }
               } /* implicit synchronization (barrier) */
             }
@@ -844,17 +844,17 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           }
           else { /* assume external parallelization */
             const int ntasks = nchunks * (0 < libxsmm_gemm_taskscale ? libxsmm_gemm_taskscale : (LIBXSMM_GEMM_TASKSCALE));
-            const size_t sa = (NULL != stride_a ? *stride_a : sizeof(void*));
-            const size_t sb = (NULL != stride_b ? *stride_b : sizeof(void*));
-            const size_t sc = (NULL != stride_c ? *stride_c : sizeof(void*));
-            int tid; for (tid = 0; tid < ntasks; ++tid) {
-              i = tid % nsubgroups;
+            const size_t sa = (NULL != stride_a ? (size_t)(*stride_a) : sizeof(void*));
+            const size_t sb = (NULL != stride_b ? (size_t)(*stride_b) : sizeof(void*));
+            const size_t sc = (NULL != stride_c ? (size_t)(*stride_c) : sizeof(void*));
+            for (i = 0; i < ntasks; ++i) {
+              const int g = group + i % nsubgroups;
 # if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
 #             pragma omp task
 #endif
-              /*check*/libxsmm_mmbatch_kernel(kernel[i].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
-                (const char*)a + sa * i, (const char*)b + sb * i, (char*)c + sc * i, batchsize[i],
-                tid, ntasks, isize, osize, libxsmm_get_kernel_info(kernel[i], NULL/*code_size*/)->gemm.desc.flags);
+              /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
+                (const char*)a + sa * g, (const char*)b + sb * g, (char*)c + sc * g, batchsize[g],
+                i, ntasks, isize, osize, libxsmm_get_kernel_info(kernel[g], NULL/*code_size*/)->gemm.desc.flags);
             }
 # if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
             if (0 == libxsmm_nosync) { /* allow to omit synchronization */
@@ -866,9 +866,9 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
         else
 #endif /*defined(_OPENMP)*/
         { /* sequential */
-          const size_t sa = (NULL != stride_a ? *stride_a : sizeof(void*));
-          const size_t sb = (NULL != stride_b ? *stride_b : sizeof(void*));
-          const size_t sc = (NULL != stride_c ? *stride_c : sizeof(void*));
+          const size_t sa = (NULL != stride_a ? (size_t)(*stride_a) : sizeof(void*));
+          const size_t sb = (NULL != stride_b ? (size_t)(*stride_b) : sizeof(void*));
+          const size_t sc = (NULL != stride_c ? (size_t)(*stride_c) : sizeof(void*));
           for (i = group; i < nsubgroups; ++i) {
             const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(kernel[i], NULL/*code_size*/);
             libxsmm_mmbatch_kernel(kernel[i].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
@@ -881,7 +881,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
         result = EXIT_FAILURE;
       }
       if (EXIT_SUCCESS != result) {
-        for (i = group, j = group * sizeof(void*); i < nsubgroups; ++i) {
+        for (i = group, j = sizeof(void*) * (size_t)group; i < nsubgroups; ++i) {
           const char *const ta = (NULL != transa ? (transa + i) : NULL);
           const char *const tb = (NULL != transb ? (transb + i) : NULL);
           const libxsmm_blasint im = m[i], in = n[i], ik = k[i];
@@ -1012,7 +1012,7 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision,
       /* ...the batch stops and completely flushes */
       if (0 != internal_ext_gemm_batchsize) {
         result = internal_mmbatch_flush(internal_ext_gemm_batchdesc + i,
-          ((internal_ext_gemm_batchsize - 1) % max_batchsize) + 1,
+          (((libxsmm_blasint)internal_ext_gemm_batchsize - 1) % max_batchsize) + 1,
           (libxsmm_mmbatch_item*)libxsmm_mmbatch_array);
       }
 
