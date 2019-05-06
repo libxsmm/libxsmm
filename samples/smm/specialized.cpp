@@ -218,18 +218,20 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * bwsize / (duration * (1ULL << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        if (0 == benchmark) { /* Gold result is available */
+        if (0 == (benchmark & 1) && 0 != check) { /* Gold result is available */
           libxsmm_matdiff_info diff;
           libxsmm_matdiff_clear(&diff);
           for (libxsmm_blasint h = 0; h < s; ++h) {
             const OTYPE *const u = c + static_cast<size_t>(csize) * h, *const v = c_array[h];
             libxsmm_matdiff_info dv;
             result = libxsmm_matdiff(&dv, LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc);
-            if (EXIT_SUCCESS == result) {
-              libxsmm_matdiff_reduce(&diff, &dv);
-            }
+            if (EXIT_SUCCESS == result) libxsmm_matdiff_reduce(&diff, &dv);
           }
-          if (0 < diff.normf_rel) fprintf(stdout, "\tdiff: %.0f%%\n", 100.0 * diff.normf_rel);
+          fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+          if (check < diff.l2_rel) {
+            fprintf(stderr, "FAILED.\n");
+            result = EXIT_FAILURE;
+          }
         }
       } break;
 
@@ -284,17 +286,21 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - bsize * sizeof(ITYPE)) / (duration * (1ULL << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        libxsmm_matdiff_info diff;
-        libxsmm_matdiff_clear(&diff);
-        for (libxsmm_blasint h = 0; h < s; ++h) {
-          const OTYPE *const u = c + static_cast<size_t>(csize) * h, *const v = c_array[h];
-          libxsmm_matdiff_info dv;
-          result = libxsmm_matdiff(&dv, LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc);
-          if (EXIT_SUCCESS == result) {
-            libxsmm_matdiff_reduce(&diff, &dv);
+        if (0 == (benchmark & 1) && 0 != check) { /* Gold result is available */
+          libxsmm_matdiff_info diff;
+          libxsmm_matdiff_clear(&diff);
+          for (libxsmm_blasint h = 0; h < s; ++h) {
+            const OTYPE *const u = c + static_cast<size_t>(csize) * h, *const v = c_array[h];
+            libxsmm_matdiff_info dv;
+            result = libxsmm_matdiff(&dv, LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc);
+            if (EXIT_SUCCESS == result) libxsmm_matdiff_reduce(&diff, &dv);
+          }
+          fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+          if (check < diff.l2_rel) {
+            fprintf(stderr, "FAILED.\n");
+            result = EXIT_FAILURE;
           }
         }
-        if (0 < diff.normf_rel) fprintf(stdout, "\tdiff: %.0f%%\n", 100.0 * diff.normf_rel);
       } break;
 
       case 4: { // streaming B and C
@@ -348,17 +354,21 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - asize * sizeof(ITYPE)) / (duration * (1ULL << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
-        libxsmm_matdiff_info diff;
-        libxsmm_matdiff_clear(&diff);
-        for (libxsmm_blasint h = 0; h < s; ++h) {
-          const OTYPE *const u = c + static_cast<size_t>(csize) * h, *const v = c_array[h];
-          libxsmm_matdiff_info dv;
-          result = libxsmm_matdiff(&dv, LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc);
-          if (EXIT_SUCCESS == result) {
-            libxsmm_matdiff_reduce(&diff, &dv);
+        if (0 == (benchmark & 1) && 0 != check) { /* Gold result is available */
+          libxsmm_matdiff_info diff;
+          libxsmm_matdiff_clear(&diff);
+          for (libxsmm_blasint h = 0; h < s; ++h) {
+            const OTYPE *const u = c + static_cast<size_t>(csize) * h, *const v = c_array[h];
+            libxsmm_matdiff_info dv;
+            result = libxsmm_matdiff(&dv, LIBXSMM_DATATYPE(OTYPE), m, n, u, v, &ldc, &ldc);
+            if (EXIT_SUCCESS == result) libxsmm_matdiff_reduce(&diff, &dv);
+          }
+          fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+          if (check < diff.l2_rel) {
+            fprintf(stderr, "FAILED.\n");
+            result = EXIT_FAILURE;
           }
         }
-        if (0 < diff.normf_rel) fprintf(stdout, "\tdiff: %.0f%%\n", 100.0 * diff.normf_rel);
       } break;
 
       case 6: { // streaming A and B
@@ -369,10 +379,9 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
+            libxsmm_blasint j = 0;
 #if defined(_OPENMP) /* attempt to write to disjunct cachelines */
-            const libxsmm_blasint j = omp_get_thread_num() * chunksize * csize;
-#else
-            const libxsmm_blasint j = 0;
+            if (0 == check) j = omp_get_thread_num() * chunksize * csize;
 #endif
             const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i), *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
 #if (0 != LIBXSMM_PREFETCH)
@@ -404,10 +413,12 @@ int main(int argc, char* argv[])
           a_array[i] = a + static_cast<size_t>(asize) * helper.shuffle(i);
           b_array[i] = b + static_cast<size_t>(bsize) * helper.shuffle(i);
 #if defined(_OPENMP) /* attempt to write to disjunct cachelines */
-          c_array[i] = d + static_cast<size_t>(csize) * chunksize * omp_get_thread_num();
-#else
-          c_array[i] = d;
+          if (0 == check) {
+            c_array[i] = d + static_cast<size_t>(csize) * chunksize * omp_get_thread_num();
+          }
+          else
 #endif
+          c_array[i] = d;
         }
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
@@ -424,6 +435,15 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tbandwidth: %.1f GB/s\n", s * (bwsize - sizeof(OTYPE) * csize * 2) / (duration * (1ULL << 30)));
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        if (0 == (benchmark & 1) && 0 != check) { /* Gold result is available */
+          libxsmm_matdiff_info diff;
+          result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(OTYPE), m, n, c, d, &ldc, &ldc);
+          fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+          if (check < diff.l2_rel) {
+            fprintf(stderr, "FAILED.\n");
+            result = EXIT_FAILURE;
+          }
+        }
       } break;
 
       case 8: { // cached
@@ -434,10 +454,9 @@ int main(int argc, char* argv[])
 #         pragma omp parallel for schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
+            libxsmm_blasint j = 0;
 #if defined(_OPENMP) /* attempt to write to disjunct cachelines */
-            const libxsmm_blasint j = omp_get_thread_num() * chunksize * csize;
-#else
-            const libxsmm_blasint j = 0;
+            if (0 == check) j = omp_get_thread_num() * chunksize * csize;
 #endif
 #if (0 != LIBXSMM_PREFETCH)
             xmm(a, b, c + j,
@@ -466,10 +485,12 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a; b_array[i] = b;
 #if defined(_OPENMP) /* attempt to write to disjunct cachelines */
-          c_array[i] = d + static_cast<size_t>(csize) * chunksize * omp_get_thread_num();
-#else
-          c_array[i] = d;
+          if (0 == check) {
+            c_array[i] = d + static_cast<size_t>(csize) * chunksize * omp_get_thread_num();
+          }
+          else
 #endif
+          c_array[i] = d;
         }
         const libxsmm_blasint ptrsize = sizeof(void*);
         const unsigned long long start = libxsmm_timer_tick();
@@ -485,28 +506,19 @@ int main(int argc, char* argv[])
           fprintf(stdout, "\tperformance: %.1f G%s/s\n", gflops / duration, ops);
         }
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * duration);
+        if (0 == (benchmark & 1) && 0 != check) { /* Gold result is available */
+          libxsmm_matdiff_info diff;
+          result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(OTYPE), m, n, c, d, &ldc, &ldc);
+          fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+          if (check < diff.l2_rel) {
+            fprintf(stderr, "FAILED.\n");
+            result = EXIT_FAILURE;
+          }
+        }
       } break;
       default: throw "invalid case selected!";
       } /*switch*/
 
-      if (0 != check) {
-        libxsmm_matdiff_info diff;
-        result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(OTYPE), m, n,
-          0 == (benchmark & 1) ? c : d,
-          0 == (benchmark & 1) ? d : c, &ldc, &ldc);
-        if (EXIT_SUCCESS == result) {
-          if (0 == (benchmark & 1)) {
-            fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
-            if (check < diff.l2_rel) {
-              fprintf(stderr, "FAILED.\n");
-              result = EXIT_FAILURE;
-            }
-          }
-          else {
-            fprintf(stdout, "\tcheck: %f\n", diff.l1_ref);
-          }
-        }
-      }
       // finalize LIBXSMM
       libxsmm_finalize();
       fprintf(stdout, "Finished\n");
