@@ -578,6 +578,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm {
   libxsmm_dnn_tensor* expvalue;       /* expected value */
   libxsmm_dnn_tensor* rcpstddev;      /* reciprocal of standard derivation */
   libxsmm_dnn_tensor* variance;       /* variance */
+  libxsmm_dnn_tensor* relumask;       /* relumask */
   libxsmm_barrier* barrier;           /* barrier */
   int ifmblock;
   int ifmblock_hp;

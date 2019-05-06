@@ -94,6 +94,9 @@ LIBXSMM_VLA_DECL(2,       element_stats_type, brstd,     (element_stats_type*)ha
 LIBXSMM_VLA_DECL(2,       element_stats_type, variance,  (element_stats_type*)handle->variance->data,    nFmBlock);
 LIBXSMM_VLA_DECL(3,       element_stats_type, sum_img,   (element_stats_type*)handle->scratch,                                                           nImg, nFmBlock);
 LIBXSMM_VLA_DECL(3,       element_stats_type, sumsq_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)nFmBlock), nImg, nFmBlock);
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+LIBXSMM_VLA_DECL(5,       unsigned char,      relumask,  (unsigned char*)handle->relumask->data, nBlocksFm, ofhp, ofwp, nFmBlock);
+#endif
 
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
 union libxsmm_bfloat16_hp input_f32;
@@ -212,11 +215,14 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
       const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
 #endif
-            element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
       const element_stats_type*  gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, nFmBlock);
       const element_stats_type*  beta_ptr      = &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, nFmBlock);
       const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
       const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
+            element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+            unsigned char*       relumask_ptr  = &LIBXSMM_VLA_ACCESS(5, relumask,  img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
+#endif
       float o;
 
 #if !defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
@@ -241,7 +247,11 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
 #endif
         /* ReLU */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
-        o = ( o < 0.0f ) ? 0.0f : o;
+        o = ( o > 0.0f ) ? o : 0.0f;
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+        o = ( o > 0.0f ) ? o : 0.0f;
+        relumask_ptr[v] = ( o > 0.0f ) ? 1 : 0;
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
         output_f32.f = o;

@@ -108,6 +108,9 @@ LIBXSMM_VLA_DECL(2,       element_stats_type, brstd,     (element_stats_type*)ha
 LIBXSMM_VLA_DECL(2,       element_stats_type, variance,  (element_stats_type*)handle->variance->data,    32);
 LIBXSMM_VLA_DECL(3,       element_stats_type, sum_img,   (element_stats_type*)handle->scratch,                                             nImg, 32);
 LIBXSMM_VLA_DECL(3,       element_stats_type, sumsq_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * 32), nImg, 32);
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+LIBXSMM_VLA_DECL(5,       unsigned char,      relumask,  (unsigned char*)handle->relumask->data, nBlocksFm, ofhp, ofwp, 4);
+#endif
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -225,9 +228,16 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
     const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, hi, ipw, 0, nBlocksFm, ifhp, ifwp, 32);
 #endif
           element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 32);
-    for ( wi=ipw, wo=opw; wi < (ifw+ipw); wi+=sw, wo++ ) {
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+          unsigned char*       relumask_ptr  = &LIBXSMM_VLA_ACCESS(5, relumask,  img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 4);
+#endif
+     for ( wi=ipw, wo=opw; wi < (ifw+ipw); wi+=sw, wo++ ) {
       __m512 lcl_vo;
       __m512 lcl_vo2;
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+      __mmask16 lcl_relumask;
+      __mmask16 lcl_relumask2;
+#endif
 
       /* BN + scale (gamma, beta) */
       lcl_vo = _mm512_sub_ps( _mm512_load_act( input_ptr ), lcl_vbmean );
@@ -241,6 +251,12 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
       lcl_vo = _mm512_max_ps( lcl_vo, _mm512_setzero_ps() );
 #endif
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+      lcl_relumask = _mm512_cmp_ps_mask( lcl_vo, _mm512_setzero_ps(), _CMP_GT_OQ );
+      lcl_vo = _mm512_mask_blend_ps( lcl_relumask, _mm512_setzero_ps(), lcl_vo );
+      _store_mask16( relumask_ptr, lcl_relumask );
+      relumask_ptr += 2;
+#endif
 
       /* BN + scale (gamma, beta) */
       lcl_vo2 = _mm512_sub_ps( _mm512_load_act( input_ptr+16 ), lcl_vbmean2 );
@@ -253,6 +269,12 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
       /* ReLU */
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
       lcl_vo2 = _mm512_max_ps( lcl_vo2, _mm512_setzero_ps() );
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+      lcl_relumask2 = _mm512_cmp_ps_mask( lcl_vo2, _mm512_setzero_ps(), _CMP_GT_OQ );
+      lcl_vo2 = _mm512_mask_blend_ps( lcl_relumask2, _mm512_setzero_ps(), lcl_vo2 );
+      _store_mask16( relumask_ptr, lcl_relumask2 );
+      relumask_ptr += 2;
 #endif
 
       _mm512_stream_act( output_ptr, lcl_vo );

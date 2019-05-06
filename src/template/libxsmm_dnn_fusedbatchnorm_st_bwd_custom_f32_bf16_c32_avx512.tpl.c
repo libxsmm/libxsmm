@@ -111,6 +111,9 @@ LIBXSMM_VLA_DECL(2, const element_stats_type,  bmean,      (element_stats_type*)
 LIBXSMM_VLA_DECL(2, const element_stats_type,  brstd,      (element_stats_type*)handle->rcpstddev->data,  32);
 LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                                                    nImg, 32);
 LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)32), nImg, 32);
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
+LIBXSMM_VLA_DECL(5, const unsigned char,       relumask,   (unsigned char*)handle->relumask->data, nBlocksFm, ofhp, ofwp, 4);
+#endif
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -142,20 +145,31 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
       const element_output_type* output_ptr        = &LIBXSMM_VLA_ACCESS(5,     output, img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 32);
 #endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
+      const unsigned char*       relumask_ptr      = &LIBXSMM_VLA_ACCESS(5,   relumask, img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 4);
+#endif
       const element_input_type*  input_ptr         = &LIBXSMM_VLA_ACCESS(5,      input, img, fm, hi, ipw, 0, nBlocksFm, ifhp, ifwp, 32);
             element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5,    doutput, img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 32);
       for ( wi=ipw, wo=opw; wi < (ifw + ipw); wi+=sw, wo++ ) {
         __m512 lcl_vdeloutput, lcl_vdeloutput2;
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-        const __m512 zero_ps = _mm512_setzero_ps();
-        __mmask16 lcl_mzero, lcl_mzero2;
+        __mmask16 lcl_relumask, lcl_relumask2;
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
+        __mmask16 lcl_relumask, lcl_relumask2;
 #endif
 
         lcl_vdeloutput = _mm512_load_act( del_output_ptr );
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-        lcl_mzero = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr ), zero_ps, _CMP_EQ_OQ );
-        lcl_vdeloutput = _mm512_mask_blend_ps( lcl_mzero, lcl_vdeloutput, zero_ps );
+        lcl_relumask = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr ), _mm512_setzero_ps(), _CMP_GT_OQ );
+        lcl_vdeloutput = _mm512_mask_blend_ps( lcl_relumask, _mm512_setzero_ps(), lcl_vdeloutput );
         _mm512_store_act( del_output_ptr, lcl_vdeloutput );
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
+        lcl_relumask = _load_mask16( relumask_ptr );
+        lcl_vdeloutput = _mm512_mask_blend_ps( lcl_relumask, _mm512_setzero_ps(), lcl_vdeloutput );
+        _mm512_store_act( del_output_ptr, lcl_vdeloutput );
+        relumask_ptr += 2;
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
         _mm512_stream_act( del_input_add_ptr, lcl_vdeloutput );
@@ -165,10 +179,16 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 
         lcl_vdeloutput2 = _mm512_load_act( del_output_ptr+16 );
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
-        lcl_mzero2 = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr+16 ), zero_ps, _CMP_EQ_OQ );
-        lcl_vdeloutput2 = _mm512_mask_blend_ps( lcl_mzero2, lcl_vdeloutput2, zero_ps );
+        lcl_relumask2 = _mm512_cmp_ps_mask( _mm512_load_act( output_ptr+16 ), _mm512_setzero_ps(), _CMP_GT_OQ );
+        lcl_vdeloutput2 = _mm512_mask_blend_ps( lcl_relumask2, _mm512_setzero_ps(), lcl_vdeloutput2 );
         _mm512_store_act( del_output_ptr+16, lcl_vdeloutput2 );
         output_ptr += 32;
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
+        lcl_relumask2 = _load_mask16( relumask_ptr );
+        lcl_vdeloutput2 = _mm512_mask_blend_ps( lcl_relumask2, _mm512_setzero_ps(), lcl_vdeloutput2 );
+        _mm512_store_act( del_output_ptr+16, lcl_vdeloutput2 );
+        relumask_ptr += 2;
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
         _mm512_stream_act( del_input_add_ptr+16, lcl_vdeloutput2 );

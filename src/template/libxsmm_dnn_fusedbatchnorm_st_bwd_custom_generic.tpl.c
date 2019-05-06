@@ -97,6 +97,9 @@ LIBXSMM_VLA_DECL(2, const element_stats_type,  bmean,      (element_stats_type*)
 LIBXSMM_VLA_DECL(2, const element_stats_type,  brstd,      (element_stats_type*)handle->rcpstddev->data,  nFmBlock);
 LIBXSMM_VLA_DECL(3,       element_stats_type,  dgamma_img, (element_stats_type*)handle->scratch,                                                          nImg, nFmBlock);
 LIBXSMM_VLA_DECL(3,       element_stats_type,  dbeta_img, ((element_stats_type*)handle->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)nFmBlock), nImg, nFmBlock);
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
+LIBXSMM_VLA_DECL(5,       unsigned char,       relumask,   (unsigned char*)handle->relumask->data, nBlocksFm, ofhp, ofwp, nFmBlock);
+#endif
 
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_BF16)
 union libxsmm_bfloat16_hp input_f32;
@@ -147,6 +150,9 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
         const element_output_type* output_ptr        = &LIBXSMM_VLA_ACCESS(5,     output, img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
 #endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
+        const unsigned char*       relumask_ptr      = &LIBXSMM_VLA_ACCESS(5,   relumask, img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
+#endif
         const element_input_type*  input_ptr         = &LIBXSMM_VLA_ACCESS(5,      input, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
               element_output_type* del_output_ptr    = &LIBXSMM_VLA_ACCESS(5,    doutput, img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
         const element_stats_type*  bmean_ptr         = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
@@ -164,6 +170,9 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
           del_output_f32.f = LIBXSMM_FEQ(output_f32.f, 0) ? 0 : del_output_f32.f;
           del_output_ptr[v] = del_output_f32.i[1];
 #endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
+          del_output_ptr[v] = ( relumask_ptr[v] == 1 ) ? del_output_ptr[v] : 0;
+#endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
           del_input_add_ptr[v] = del_output_ptr[v];
 #endif
@@ -173,6 +182,9 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 #else
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU)
           del_output_ptr[v] = LIBXSMM_FEQ(output_ptr[v], 0) ? 0 : del_output_ptr[v];
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
+          del_output_ptr[v] = ( relumask_ptr[v] == 1 ) ? del_output_ptr[v] : 0;
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_ELTWISE)
           del_input_add_ptr[v] = del_output_ptr[v];

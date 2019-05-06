@@ -199,7 +199,9 @@ typedef enum libxsmm_dnn_tensor_type {
   LIBXSMM_DNN_MAX_STATS_UPD,
   /** pooling mask */
   LIBXSMM_DNN_POOLING_MASK,
-   /** general type, if needed might cause API issues in copy in/out API */
+  /** ReLU mask */
+  LIBXSMM_DNN_RELU_MASK,
+  /** general type, if needed might cause API issues in copy in/out API */
   LIBXSMM_DNN_TENSOR,
 
   /** regular input buffer */
