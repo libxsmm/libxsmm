@@ -745,8 +745,8 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
   static int error_once = 0;
   if ( /* check for sensible arguments */
 #if defined(LIBXSMM_GEMM_CHECK)
-    NULL != a && NULL != b && NULL != c &&
-    (0 == index_stride || 1 == group_count) &&
+    NULL != a && NULL != b && NULL != c && (1 == group_count ||
+    (0 == index_stride && (NULL == stride_a || 0 != *stride_a) && (NULL == stride_b || 0 != *stride_b) && (NULL == stride_c || 0 != *stride_c))) &&
 #endif
     0 < group_count)
   {
@@ -813,12 +813,15 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
             if (0 >= libxsmm_gemm_taskscale)
 # endif
             {
+              const size_t sa = (NULL != stride_a ? *stride_a : sizeof(void*));
+              const size_t sb = (NULL != stride_b ? *stride_b : sizeof(void*));
+              const size_t sc = (NULL != stride_c ? *stride_c : sizeof(void*));
 #             pragma omp parallel for num_threads(nthreads)
               for (i = group; i < nsubgroups; ++i) {
                 const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(kernel[i], NULL/*code_size*/);
                 /*check*/libxsmm_mmbatch_kernel(kernel[i].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
-                  (const char*)a + (size_t)i * (*stride_a), (const char*)b + (size_t)i * (*stride_b), (char*)c + (size_t)i * (*stride_c),
-                  batchsize[i], omp_get_thread_num(), nthreads, isize, osize, kernel_info->gemm.desc.flags);
+                  (const char*)a + sa * i, (const char*)b + sb * i, (char*)c + sc * i, batchsize[i],
+                  omp_get_thread_num(), nthreads, isize, osize, kernel_info->gemm.desc.flags);
               }
             }
 # if defined(LIBXSMM_EXT_TASKS)
@@ -841,14 +844,17 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           }
           else { /* assume external parallelization */
             const int ntasks = nchunks * (0 < libxsmm_gemm_taskscale ? libxsmm_gemm_taskscale : (LIBXSMM_GEMM_TASKSCALE));
+            const size_t sa = (NULL != stride_a ? *stride_a : sizeof(void*));
+            const size_t sb = (NULL != stride_b ? *stride_b : sizeof(void*));
+            const size_t sc = (NULL != stride_c ? *stride_c : sizeof(void*));
             int tid; for (tid = 0; tid < ntasks; ++tid) {
               i = tid % nsubgroups;
 # if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
 #             pragma omp task
 #endif
               /*check*/libxsmm_mmbatch_kernel(kernel[i].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
-                (const char*)a + (size_t)i * (*stride_a), (const char*)b + (size_t)i * (*stride_b), (char*)c + (size_t)i * (*stride_c),
-                batchsize[i], tid, ntasks, isize, osize, libxsmm_get_kernel_info(kernel[i], NULL/*code_size*/)->gemm.desc.flags);
+                (const char*)a + sa * i, (const char*)b + sb * i, (char*)c + sc * i, batchsize[i],
+                tid, ntasks, isize, osize, libxsmm_get_kernel_info(kernel[i], NULL/*code_size*/)->gemm.desc.flags);
             }
 # if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
             if (0 == libxsmm_nosync) { /* allow to omit synchronization */
@@ -860,11 +866,14 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
         else
 #endif /*defined(_OPENMP)*/
         { /* sequential */
+          const size_t sa = (NULL != stride_a ? *stride_a : sizeof(void*));
+          const size_t sb = (NULL != stride_b ? *stride_b : sizeof(void*));
+          const size_t sc = (NULL != stride_c ? *stride_c : sizeof(void*));
           for (i = group; i < nsubgroups; ++i) {
             const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(kernel[i], NULL/*code_size*/);
             libxsmm_mmbatch_kernel(kernel[i].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
-              (const char*)a + (size_t)i * (*stride_a), (const char*)b + (size_t)i * (*stride_b), (char*)c + (size_t)i * (*stride_c),
-              batchsize[i], 0/*tid*/, 1/*nthreads*/, isize, osize, kernel_info->gemm.desc.flags);
+              (const char*)a + sa * i, (const char*)b + sb * i, (char*)c + sc * i, batchsize[i],
+              0/*tid*/, 1/*nthreads*/, isize, osize, kernel_info->gemm.desc.flags);
           }
         }
       }
