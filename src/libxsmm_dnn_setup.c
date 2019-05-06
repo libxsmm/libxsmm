@@ -431,6 +431,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksofm( libxsmm_dnn_layer* h
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fwd_ofw_rb( libxsmm_dnn_layer* handle ) {
   int result = 0;
   result = handle->ofw;
+  if (handle->ofw == 56) {
+    result = 28;
+  }
   return result;
 }
 
@@ -470,6 +473,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fwd_block_H( libxsmm_dnn_layer*
   if (handle->ofh >= 28) {
     result = 4;
   }
+  if (handle->ofh == 28 && handle->desc.R == 3 ) {
+    result = 14;
+  }
   /* Make sure it is divisible bu the ofh_rb factor in the kernel */
   while ( result % handle->fwd_ofh_rb != 0 ) {
     result--;
@@ -504,11 +510,20 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_loop_order_fwd( libxsmm_dnn_lay
   if ((handle->desc.H >= 28) && (handle->desc.R == 1) && (handle->desc.S == 1) && (handle->desc.C >=512) && (handle->desc.K <=512)) {
     result = 1;
   }
+  if (handle->ofw == 56 && handle->desc.R == 1 && handle->desc.C == 256 && handle->desc.K == 64 ) {
+    result = 1;
+  }
+  if (handle->ofw == 28 && handle->desc.R == 1) {
+    result = 1;
+  }
   return result;
 }
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_fwd_IFM( libxsmm_dnn_layer* handle ) {
   int result = 8;
+  if (handle->ofw == 7 && handle->desc.C == 2048 && handle->desc.K == 512) {
+    result = 4;
+  }
   /* Make sure it is divisible by ifms in the kernel  */
   while (result % handle->blocksifm_blocking != 0) {
     result++;
@@ -519,6 +534,12 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_fwd_IFM( libxsmm_dnn_laye
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_block_fwd_OFM( libxsmm_dnn_layer* handle ) {
   int result = 8;
+  if (handle->ofw == 14 && handle->desc.K == 1024) {
+    result = 16;
+  }
+  if (handle->ofw == 7) {
+    result = 16;
+  }
   result = LIBXSMM_MIN(handle->blocksofm, result);
   return result;
 }
@@ -554,6 +575,15 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_shuffle_filter_accesses( libxsm
   if ((handle->use_ofm_parallelization == 0) && (handle->desc.C > 512) && (handle->desc.K > 512)) {
     result = 1;
   }
+  if (handle->ofw == 7 && handle->desc.R == 3 && handle->desc.C == 512) {
+    result = 1;
+  }
+  if (handle->ofw == 7 && handle->desc.R == 1 && handle->desc.C == 512 && handle->desc.K == 2048) {
+    result = 1;
+  }
+  if (handle->ofw == 7 && handle->desc.R == 1 && handle->desc.C == 2048 && handle->desc.K == 512) {
+    result = 1;
+  }
   return result;
 }
 
@@ -577,6 +607,12 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_fwd_gemm_flags( libxsmm_dn
   int result = 0;
   /* If large image and NOT already loaded in accumulators, tnen use streaming stores */
   if ((handle->ofw >= 56) && (handle->desc.K >= 256) && (handle->avoid_acc_load == 1) && (handle->desc.R == 1) && (handle->desc.S == 1)) {
+    result = LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
+  }
+  if (handle->ofw == 56 && handle->desc.C == 64 && handle->desc.K == 64 && handle->desc.R == 1) {
+    result = LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
+  }
+  if (handle->ofw == 56 && handle->desc.C == 256 && handle->desc.K == 64 && handle->desc.R == 1) {
     result = LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
   }
   return result;
@@ -875,6 +911,24 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->code_fwd[0].xconv.sconv = 0;
   handle->code_fwd[1].xconv.sconv = 0;
   handle->code_fwd[2].xconv.sconv = 0;
+
+#if 0
+  /* Spit out FWD parameters that are selected...  */
+  printf("FWD params...\n");
+  printf("Fwd_ofw_rb = %d\n", handle->fwd_ofw_rb);
+  printf("Fwd_ofh_rb = %d\n", handle->fwd_ofh_rb);
+  printf("Pack input = %d\n", handle->pack_input);
+  printf("Block oj = %d\n", handle->block_fwd_oj);
+  printf("Loop order = %d\n", handle->loop_order);
+  printf("Blocksifm_blocking = %d\n", handle->blocksifm_blocking);
+  printf("Block fwd ofm = %d\n", handle->block_fwd_ofm);
+  printf("Block fwd ifm = %d\n", handle->block_fwd_ifm);
+  printf("Avoid rim fmas = %d\n", handle->avoid_fmas_in_rim);
+  printf("Ofm parallelization = %d\n", handle->use_ofm_parallelization);
+  printf("Shuffle filter accesses = %d\n", handle->shuffle_filter_accesses);
+  printf("Avoid acc load = %d\n", handle->avoid_acc_load);
+  printf("Fwd GEMM flags = %d\n", handle->fwd_flags);
+#endif
 
   /* BWD parameter setup  */
   handle->bwd_ofw_rb = libxsmm_dnn_setup_generic_bwd_ofw_rb(handle);
