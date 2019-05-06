@@ -1247,12 +1247,12 @@ LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
 
 LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasint index_base,
   libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
-  const void* a, const void* b, void* c, libxsmm_blasint batchsize, /*unsigned*/int tid, /*unsigned*/int nthreads,
+  const void* a, const void* b, void* c, libxsmm_blasint batchsize, /*unsigned*/int tid, /*unsigned*/int ntasks,
   unsigned char itypesize, unsigned char otypesize, int flags)
 {
   int result = EXIT_SUCCESS;
   const libxsmm_blasint size = LIBXSMM_ABS(batchsize);
-  const libxsmm_blasint tasksize = (size + nthreads - 1) / nthreads;
+  const libxsmm_blasint tasksize = (size + ntasks - 1) / ntasks;
   const libxsmm_blasint begin = tid * tasksize, span = begin + tasksize;
   const libxsmm_blasint end = LIBXSMM_MIN(span, size);
 
@@ -1270,7 +1270,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
         char*       ci = c0 + ((size_t)ic * otypesize);
         const libxsmm_blasint end1 = (end != size ? end : (end - 1)) * index_stride;
 #if (0 != LIBXSMM_SYNC)
-        if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags))
+        if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags))
 #endif
         { /* no locking */
           if (NULL != stride_a && NULL != stride_b && NULL != stride_c) {
@@ -1365,7 +1365,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
         const char *ai = a0 + (size_t)da * begin, *bi = b0 + (size_t)db * begin;
         char* ci = c0 + (size_t)dc * begin;
 #if (0 != LIBXSMM_SYNC)
-        if (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags))
+        if (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize || 0 != (LIBXSMM_GEMM_FLAG_BETA_0 & flags))
 #endif
         { /* no locking */
           for (i = begin; i < end1; ++i) {
@@ -1446,7 +1446,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
 # if defined(LIBXSMM_GEMM_CHECK)
     if (
 #   if (0 != LIBXSMM_SYNC)
-      (1 == nthreads || 0 == internal_gemm_nlocks || 0 > batchsize) &&
+      (1 == ntasks || 0 == internal_gemm_nlocks || 0 > batchsize) &&
 #   endif
       (0 == (LIBXSMM_GEMM_FLAG_BETA_0 & flags)) &&
       (0 != internal_gemm_batchreduce))
