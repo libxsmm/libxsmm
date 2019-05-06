@@ -491,9 +491,20 @@ int main(int argc, char* argv[])
 
       if (0 != check) {
         libxsmm_matdiff_info diff;
-        result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(OTYPE), m, n, 0 == (benchmark & 1) ? c : d, NULL, &ldc, &ldc);
+        result = libxsmm_matdiff(&diff, LIBXSMM_DATATYPE(OTYPE), m, n,
+          0 == (benchmark & 1) ? c : d,
+          0 == (benchmark & 1) ? d : c, &ldc, &ldc);
         if (EXIT_SUCCESS == result) {
-          fprintf(stdout, "\tcheck: %f\n", diff.l1_ref);
+          if (0 == (benchmark & 1)) {
+            fprintf(stdout, "\tdiff: L2abs=%f Linf=%f\n", diff.l2_abs, diff.linf_abs);
+            if (check < diff.l2_rel) {
+              fprintf(stderr, "FAILED.\n");
+              result = EXIT_FAILURE;
+            }
+          }
+          else {
+            fprintf(stdout, "\tcheck: %f\n", diff.l1_ref);
+          }
         }
       }
       // finalize LIBXSMM
