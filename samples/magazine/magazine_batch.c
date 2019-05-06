@@ -40,9 +40,6 @@
 #if 0 /* process batch of A, B, and C in "random" order */
 # define SHUFFLE
 #endif
-#if 0 /* synchronization among C matrices */
-# define SYNC
-#endif
 
 
 int main(int argc, char* argv[])

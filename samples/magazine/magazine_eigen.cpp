@@ -46,7 +46,7 @@
 #   undef EIGEN_USE_MKL_ALL
 # endif
 # include <Eigen/Dense>
-# if defined(_OPENMP)
+# if defined(_OPENMP) && !defined(SYNC)
 #   include <omp.h>
 # elif defined(__EIGEN_TIMER)
 #   include <bench/BenchTimer.h>
@@ -107,12 +107,12 @@ int main(int argc, char* argv[])
   T *const pc = static_cast<T*>(std::align(PAD, sc - PAD + 1, wc, sc));
   const double scale = 1.0 / size;
   double duration = 0;
-#if !defined(_OPENMP) && defined(__EIGEN_TIMER)
+#if defined(__EIGEN_TIMER) && (!defined(_OPENMP) || defined(SYNC))
   Eigen::BenchTimer timer;
 #endif
 
   /* initialize data according to touch-first policy */
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
 # pragma omp parallel for
 #endif
   for (int i = 0; i < size; ++i) {
@@ -121,11 +121,11 @@ int main(int argc, char* argv[])
     init(42 + i, pc + i * nc, m, n, ldc, scale);
   }
 
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
 # pragma omp parallel
 #endif
   {
-#if !defined(_OPENMP)
+#if !defined(_OPENMP) || defined(SYNC)
 # if defined(__EIGEN_TIMER)
     timer.start();
 # endif
@@ -167,7 +167,7 @@ int main(int argc, char* argv[])
 #endif
     }
   }
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
   duration = omp_get_wtime() - duration;
 #elif defined(__EIGEN_TIMER)
   timer.stop();

@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
 #endif
 
   /* initialize data according to touch-first policy */
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
 # pragma omp parallel for private(i, j)
 #endif
   for (i = 0; i < size; ++i) {
@@ -104,11 +104,11 @@ int main(int argc, char* argv[])
     }
   }
 
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
 # pragma omp parallel
 #endif
   {
-#if !defined(_OPENMP)
+#if !defined(_OPENMP) || defined(SYNC)
     start = libxsmm_timer_tick();
 #else /* OpenMP thread pool is already populated (parallel region) */
 #   pragma omp single

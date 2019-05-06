@@ -85,7 +85,7 @@ int main(int argc, char* argv[])
   blaze::timing::WcTimer timer;
 
   /* initialize data according to touch-first policy */
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
 # pragma omp parallel for
 #endif
   for (int i = 0; i < size; ++i) {
@@ -94,11 +94,11 @@ int main(int argc, char* argv[])
     init(42 + i, pc + i * nc, m, n, ldc, scale);
   }
 
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
 # pragma omp parallel
 #endif
   {
-#if !defined(_OPENMP)
+#if !defined(_OPENMP) || defined(SYNC)
     timer.start();
 #else /* OpenMP thread pool is already populated (parallel region) */
 #   pragma omp single
