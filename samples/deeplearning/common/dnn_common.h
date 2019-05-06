@@ -1320,11 +1320,11 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const
           /* BN + scale (gamma, beta) */
           float o = gamma_ptr[fm]*(input_val - expectval_ptr[fm])*rcpstddev_ptr[fm] + beta_ptr[fm];
           /* Eltwise */
-          if ( (param->fuse_type == 2) || (param->fuse_type == 3) ) {
+          if ( (param->fuse_type == 2) || (param->fuse_type == 3) || (param->fuse_type == 5) ) {
             o += input_add_val;
           }
           /* ReLU */
-          if ( (param->fuse_type == 1) || (param->fuse_type == 3) ) {
+          if ( (param->fuse_type == 1) || (param->fuse_type == 3) || (param->fuse_type == 4) || (param->fuse_type == 5) ) {
             o = ( o < 0.0f ) ? 0.0f : o;
           }
           *output_ptr2 = o;
@@ -1376,11 +1376,11 @@ LIBXSMM_INLINE void naive_fusedbatchnorm_bp(naive_fusedbatchnorm_t* param, const
                   float* del_output_ptr    = &LIBXSMM_VLA_ACCESS(4,    doutput, img, fm, ho, wo, fm, ofh, ofw);
 
             /* ReLU */
-            if ( (param->fuse_type == 1) || (param->fuse_type == 3) ) {
+            if ( (param->fuse_type == 1) || (param->fuse_type == 3) || (param->fuse_type == 4) || (param->fuse_type == 5) ) {
               *del_output_ptr    = (output_val == 0) ? 0 : *del_output_ptr;
             }
             /* elementwise */
-            if ( (param->fuse_type == 2) || (param->fuse_type == 3) ) {
+            if ( (param->fuse_type == 2) || (param->fuse_type == 3) || (param->fuse_type == 5) ) {
               *del_input_add_ptr = *del_output_ptr;
             }
             del_gamma_ptr[fm] += (input_val - expectval_ptr[fm]) * (*del_output_ptr) * rcpstddev_ptr[fm];
