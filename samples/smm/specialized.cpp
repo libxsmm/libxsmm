@@ -410,7 +410,7 @@ int main(int argc, char* argv[])
       case 7: { // indirect A and B
         fprintf(stdout, "Indirect (A,B)...\n");
 #if defined(_OPENMP)
-#       pragma omp parallel for num_threads(nthreads) schedule(static)
+#       pragma omp parallel for num_threads(0 == check ? nthreads : 1) schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a + static_cast<size_t>(asize) * helper.shuffle(i);
@@ -483,7 +483,7 @@ int main(int argc, char* argv[])
       case 9: { // indirect cached
         fprintf(stdout, "Indirect cached...\n");
 #if defined(_OPENMP)
-#       pragma omp parallel for num_threads(nthreads) schedule(static)
+#       pragma omp parallel for num_threads(0 == check ? nthreads : 1) schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a; b_array[i] = b;
