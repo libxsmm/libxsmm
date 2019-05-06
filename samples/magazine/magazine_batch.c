@@ -84,7 +84,7 @@ int main(int argc, char* argv[])
   int i;
 
   /* initialize data according to touch-first policy */
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; ++i) {
