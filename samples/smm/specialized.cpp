@@ -133,8 +133,11 @@ int main(int argc, char* argv[])
       ITYPE *const b = LIBXSMM_ALIGN(helper.b, LIBXSMM_ALIGNMENT);
       OTYPE *const c = LIBXSMM_ALIGN(helper.c, LIBXSMM_ALIGNMENT);
       OTYPE *const d = LIBXSMM_ALIGN(helper.d, LIBXSMM_ALIGNMENT);
-#if defined(_OPENMP)
-#     pragma omp parallel for schedule(static)
+#if !defined(_OPENMP)
+      const int nthreads = 1;
+#else
+      const int nthreads = omp_get_max_threads();
+#     pragma omp parallel for num_threads(nthreads) schedule(static)
 #endif
       for (libxsmm_blasint i = 0; i < s; ++i) {
         LIBXSMM_MATINIT(ITYPE, 42 + helper.shuffle(i), a + static_cast<size_t>(asize) * helper.shuffle(i), m, k, lda, scale);
@@ -171,7 +174,7 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for schedule(static)
+#         pragma omp parallel for num_threads(nthreads) schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i), *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
@@ -240,7 +243,7 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for schedule(static)
+#         pragma omp parallel for num_threads(nthreads) schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             const ITYPE *const ai = a + static_cast<size_t>(asize) * helper.shuffle(i);
@@ -308,7 +311,7 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for schedule(static)
+#         pragma omp parallel for num_threads(nthreads) schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             const ITYPE *const bi = b + static_cast<size_t>(bsize) * helper.shuffle(i);
@@ -376,7 +379,7 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for schedule(static)
+#         pragma omp parallel for num_threads(0 == check ? nthreads : 1) schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             libxsmm_blasint j = 0;
@@ -407,7 +410,7 @@ int main(int argc, char* argv[])
       case 7: { // indirect A and B
         fprintf(stdout, "Indirect (A,B)...\n");
 #if defined(_OPENMP)
-#       pragma omp parallel for schedule(static)
+#       pragma omp parallel for num_threads(nthreads) schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a + static_cast<size_t>(asize) * helper.shuffle(i);
@@ -425,7 +428,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
           USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
-            0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
+            0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, 0 == check ? s : -s);
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
@@ -451,7 +454,7 @@ int main(int argc, char* argv[])
         const unsigned long long start = libxsmm_timer_tick();
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
 #if defined(_OPENMP)
-#         pragma omp parallel for schedule(static)
+#         pragma omp parallel for num_threads(0 == check ? nthreads : 1) schedule(static)
 #endif
           for (libxsmm_blasint i = 0; i < s; ++i) {
             libxsmm_blasint j = 0;
@@ -480,7 +483,7 @@ int main(int argc, char* argv[])
       case 9: { // indirect cached
         fprintf(stdout, "Indirect cached...\n");
 #if defined(_OPENMP)
-#       pragma omp parallel for schedule(static)
+#       pragma omp parallel for num_threads(nthreads) schedule(static)
 #endif
         for (libxsmm_blasint i = 0; i < s; ++i) {
           a_array[i] = a; b_array[i] = b;
@@ -497,7 +500,7 @@ int main(int argc, char* argv[])
         for (libxsmm_blasint r = 0; r < nrepeat; ++r) {
           USEOMP(libxsmm_gemm_batch)(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), &transa, &transb,
             m, n, k, &alpha, &a_array[0], &lda, &b_array[0], &ldb, &beta, &c_array[0], &ldc,
-            0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, s);
+            0/*index_base*/, 0/*index_stride*/, &ptrsize, &ptrsize, &ptrsize, 0 == check ? s : -s);
         }
         const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
