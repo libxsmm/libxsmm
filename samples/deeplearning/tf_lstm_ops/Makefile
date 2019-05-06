@@ -8,7 +8,7 @@ DEPDIR = ../../..
 SRCDIR = $(ROOTDIR)
 INCDIR = .
 BLDDIR = build
-OUTDIR = .
+OUTDIR = xsmm_lstm
 
 CXXFLAGS = $(NULL)
 CFLAGS = $(NULL)
@@ -64,6 +64,15 @@ $(BLDDIR)/%-cc.o: $(SRCDIR)/%.cc .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Ma
 $(BLDDIR)/%-c.o: $(SRCDIR)/%.c .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CC) $(DFLAGS) $(IFLAGS) $(CFLAGS) $(CTARGET) -c $< -o $@
 
+.PHONY: install
+install: $(XFILES) setup.py $(OUTDIR)/__init__.py
+	python setup.py bdist_wheel
+	pip install -U dist/xsmm_lstm-*.whl
+
+.PHONY: uninstall
+uninstall:
+	pip uninstall xsmm_lstm
+
 .PHONY: clean
 clean:
 ifneq ($(abspath $(BLDDIR)),$(ROOTDIR))
@@ -74,6 +83,7 @@ endif
 ifneq (,$(wildcard $(BLDDIR))) # still exists
 	@rm -f $(OBJECTS)
 endif
-	@rm -f .make .state $(XFILES) *.pyc
+	@rm -f .make .state $(XFILES) $(OUTDIR)/*.pyc
+	@rm -rf dist xsmm_lstm.egg-info 
 
 
