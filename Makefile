@@ -112,21 +112,14 @@ ASNEEDED ?= 0
 # 1: build according to STATIC=0 and STATIC=1
 SHARED ?= 0
 
-# Determines if the library can act as a wrapper-library (GEMM)
-# 0: enables wrapping SGEMM/DGEMM, and DGEMV/SGEMV
-# 1: enables fall-back to DGEMM_BATCH (if wrapped)
-WRAP ?= 0
-ifneq (0,$(WRAP))
-  DFLAGS += -DLIBXSMM_BLAS_BATCH
-endif
-
 # Determines the kind of routine called for intercepted GEMMs
-# odd: sequential and non-tiled (small problem sizes only)
-# even: parallelized and tiled (all problem sizes)
-# 3: GEMV is intercepted; small problem sizes
-# 4: GEMV is intercepted; all problem sizes
+# >=1 and odd : sequential and non-tiled (small problem sizes only)
+# >=2 and even: parallelized and tiled (all problem sizes)
+# >=3 and odd : GEMV is intercepted; small problem sizes
+# >=4 and even: GEMV is intercepted; all problem sizes
+# negative: assume BLAS with DGEMM_BATCH
 # 0: disabled
-GEMM ?= 1
+WRAP ?= 1
 
 # JIT backend is enabled by default
 JIT ?= 1
@@ -635,7 +628,7 @@ ifneq (,$(PYTHON))
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) > $@
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(INDICES) > $@
 endif
 
 .PHONY: cheader
@@ -667,7 +660,7 @@ $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(GEMM) $(INDICES) | \
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(INDICES) | \
 	sed "/ATTRIBUTES OFFLOAD:MIC/d" > $@
 else
 .PHONY: $(INCDIR)/libxsmm.f

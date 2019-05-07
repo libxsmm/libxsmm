@@ -196,6 +196,16 @@ LIBXSMM_API int libxsmm_mmbatch_blas(
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
+LIBXSMM_API_INTERN int libxsmm_dmmbatch_blas(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const double* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb, const double* beta, void* c, const libxsmm_blasint* ldc,
+  libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  libxsmm_blasint batchsize);
+
+LIBXSMM_API_INTERN int libxsmm_smmbatch_blas(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+  const float* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb, const float* beta, void* c, const libxsmm_blasint* ldc,
+  libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
+  libxsmm_blasint batchsize);
+
 LIBXSMM_EXTERN_C typedef void (*libxsmm_mmbatch_flush_function)(void);
 
 /** auto-batch descriptor (filter). */
@@ -218,10 +228,12 @@ LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
 
 /**
  * Intercepted GEMM
- * - odd: sequential and non-tiled (small problem sizes only)
- * - even (or negative): parallelized and tiled (all problem sizes)
- * - 3: GEMV is intercepted; small problem sizes
- * - 4: GEMV is intercepted; all problem sizes
+ * - [>=1 and  odd]: sequential and non-tiled (small problem sizes only)
+ * - [>=2 and even]: parallelized and tiled (all problem sizes)
+ * - [>=3 and  odd]: GEMV is intercepted; small problem sizes
+ * - [>=4 and even]: GEMV is intercepted; all problem sizes
+ * - [negative]: assume BLAS with DGEMM_BATCH
+ * - [0]: disabled
  */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_wrap);
 
