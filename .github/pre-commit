@@ -86,7 +86,7 @@ if [ "" != "${GIT}" ]; then
           ISSUES=$((ISSUES+N))
         fi
         # check against trailing whitespace(s)
-        MATCH=$(${CAT} -n ${FILENAME} | ${SED} -n "s/^ *\([0-9][0-9]*\)\t.*\s\s*$/\1/p" 2>/dev/null)
+        MATCH=$(${CAT} -n ${FILENAME} | ${SED} -n "s/^ *\([0-9][0-9]*\)\t.*[[:space:]][[:space:]]*$/\1/p" 2>/dev/null)
         if [ "" != "${MATCH}" ]; then
           N=$(echo ${MATCH} | ${WC} -w)
           if [ "1" = "${N}" ]; then # single occurrence

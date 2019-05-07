@@ -612,26 +612,18 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
                 layout->dim_size[1] = handle->ifwp;
                 layout->dim_size[2] = handle->ifhp;
                 layout->dim_size[3] = handle->desc.N;
-              } else
-#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
-                if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) )
-#endif
-              {
-                LIBXSMM_ASSERT((type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT));
+              } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
                 layout->dim_size[0] = handle->ofmblock * handle->blocksofm;
                 layout->dim_size[1] = handle->ofwp;
                 layout->dim_size[2] = handle->ofhp;
                 layout->dim_size[3] = handle->desc.N;
-              }
-#if !defined(NDEBUG) /* TODO: code protected by !defined(NDEBUG) is logically dead */
-              else {
+              } else {
                 free(layout->dim_type);
                 free(layout->dim_size);
                 free(layout);
                 layout = 0; /* make sure a NULL is returned */
                 *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
               }
-#endif
             }
           } else {
             free(layout);
@@ -2837,6 +2829,7 @@ LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bflo
   /* truncate buffer to bfp16 */
   for ( i = 0; i < length; ++i ) {
     libxsmm_bfloat16_hp t;
+
     t.f = in[i];
     out[i] = t.i[1];
   }
@@ -2906,6 +2899,7 @@ LIBXSMM_API void libxsmm_convert_bf16_f32(const libxsmm_bfloat16* in, float* out
   /* up-convert is super simple */
   for ( i = 0; i < length; ++i ) {
     libxsmm_bfloat16_hp t;
+
     t.i[1] = in[i];
     t.i[0] = 0;
     out[i] = t.f;

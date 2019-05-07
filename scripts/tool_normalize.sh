@@ -35,7 +35,7 @@ BANNED_CHARS="\t"
 
 PATBAN="s/[${BANNED_CHARS}]/"
 PATEOL="s/\r$/"
-PATSPC="s/\s\s*$/"
+PATSPC="s/[[:space:]][[:space:]]*$/"
 
 HERE=$(cd $(dirname $0); pwd -P)
 REPO=${HERE}/..

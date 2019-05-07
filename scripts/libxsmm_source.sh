@@ -97,7 +97,7 @@ else
 fi
 
 # good-enough pattern to match a main function, and to exclude this translation unit
-for FILE in $(grep -L "main\s*(.*)" ${HERE}/${SRCDIR}/*.c); do
+for FILE in $(grep -L "main[[:space:]]*(.*)" ${HERE}/${SRCDIR}/*.c); do
   BASENAME=$(basename ${FILE})
   echo "#include \"${DSTDIR}/${BASENAME}\""
 done

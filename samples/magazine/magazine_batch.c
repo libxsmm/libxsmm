@@ -40,9 +40,6 @@
 #if 0 /* process batch of A, B, and C in "random" order */
 # define SHUFFLE
 #endif
-#if 0 /* synchronization among C matrices */
-# define SYNC
-#endif
 
 
 int main(int argc, char* argv[])
@@ -87,7 +84,7 @@ int main(int argc, char* argv[])
   int i;
 
   /* initialize data according to touch-first policy */
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; ++i) {
@@ -96,10 +93,10 @@ int main(int argc, char* argv[])
 #else
     const int j = i;
 #endif
-    init(25 + i, a + STREAM_A(j * na), m, k, lda, scale);
-    init(75 + i, b + STREAM_B(j * nb), k, n, ldb, scale);
+    init(25 + i, a + j * na, m, k, lda, scale);
+    init(75 + i, b + j * nb, k, n, ldb, scale);
     if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
-      init(42 + i, c + STREAM_C(j * nc), m, n, ldc, scale);
+      init(42 + i, c + j * nc, m, n, ldc, scale);
     }
     ia[i] = (int)STREAM_A(j * na);
     ib[i] = (int)STREAM_B(j * nb);

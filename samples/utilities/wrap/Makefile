@@ -31,7 +31,7 @@ endif
 XWRAP ?= 0
 ifneq (Darwin,$(UNAME))
 ifneq (0,$(DEPSTATIC))
-  XWRAP = $(WRAP)
+  XWRAP = $(GEMM)
 endif
 endif
 

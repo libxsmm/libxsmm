@@ -564,9 +564,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
       if (0 == (LIBXSMM_MALLOC_FLAG_X & flags) && 0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
         alloc_alignment = (0 == alignment ? libxsmm_alignment(size, alignment) : alignment);
         alloc_size = internal_size + alloc_alignment - 1;
-        buffer = NULL != malloc_fn.function
+        buffer = ((NULL != malloc_fn.function)
           ? (NULL == context ? malloc_fn.function(alloc_size) : malloc_fn.ctx_form(context, alloc_size))
-          : (NULL);
+          : (NULL));
       }
       else
 #endif

@@ -109,8 +109,8 @@ else
 endif
 
 # Regular expression to match "main" (good-enough pattern)
-CMAIN = "main\s*(.*)"
-FMAIN = "^\s*PROGRAM\s\s*\w\w*\(\s\s*\!.*\)*$$"
+CMAIN = "main[[:space:]]*(.*)"
+FMAIN = "^[[:space:]]*PROGRAM[[:space:]][[:space:]]*\w\w*\([[:space:]][[:space:]]*\!.*\)*$$"
 
 # Debugging and symbols (e.g., when profiling)
 SYM ?= 0
@@ -479,17 +479,17 @@ endif
 
 # compiler names
 CXX_NAME = $(basename $(shell $(CXX) $(CXX_VERSION_FLAG) | grep -m1 . \
-           | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/\s\s*[Vv]ersion//" \
-                 -e "s/\s\s*$(BRACE_OPEN)..*//" -e "s/\s\s*[[:punct:]]//" \
-                 -e "s/\s\s*[0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
+           | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/[[:space:]][[:space:]]*[Vv]ersion//" \
+                 -e "s/[[:space:]][[:space:]]*$(BRACE_OPEN)..*//" -e "s/[[:space:]][[:space:]]*[[:punct:]]//" \
+                 -e "s/[[:space:]][[:space:]]*[0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
            | rev | cut -d" " -f1 | rev))
 ifeq (,$(strip $(CXX_NAME)))
   CXX_NAME = $(basename $(notdir $(CXX)))
 endif
 CC_NAME = $(basename $(shell $(CC) $(CC_VERSION_FLAG) | grep -m1 . \
-           | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/\s\s*[Vv]ersion//" \
-                 -e "s/\s\s*$(BRACE_OPEN)..*//" -e "s/\s\s*[[:punct:]]//" \
-                 -e "s/\s\s*[0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
+           | sed -e "s/^\([^0-9][^0-9]*\) ..*/\1/" -e "s/[[:space:]][[:space:]]*[Vv]ersion//" \
+                 -e "s/[[:space:]][[:space:]]*$(BRACE_OPEN)..*//" -e "s/[[:space:]][[:space:]]*[[:punct:]]//" \
+                 -e "s/[[:space:]][[:space:]]*[0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*//" \
           | rev | cut -d" " -f1 | rev))
 ifeq (,$(strip $(CC_NAME)))
   CC_NAME = $(basename $(notdir $(CC)))

@@ -113,15 +113,19 @@ ASNEEDED ?= 0
 SHARED ?= 0
 
 # Determines if the library can act as a wrapper-library (GEMM)
-# 1: enables wrapping SGEMM/DGEMM, and GEMV (depends on "GEMM")
-# 2: enables wrapping DGEMM only (DGEMV-wrap depends on "GEMM")
+# 0: enables wrapping SGEMM/DGEMM, and DGEMV/SGEMV
+# 1: enables fall-back to DGEMM_BATCH (if wrapped)
 WRAP ?= 0
+ifneq (0,$(WRAP))
+  DFLAGS += -DLIBXSMM_BLAS_BATCH
+endif
 
 # Determines the kind of routine called for intercepted GEMMs
 # odd: sequential and non-tiled (small problem sizes only)
 # even: parallelized and tiled (all problem sizes)
 # 3: GEMV is intercepted; small problem sizes
 # 4: GEMV is intercepted; all problem sizes
+# 0: disabled
 GEMM ?= 1
 
 # JIT backend is enabled by default
@@ -1840,14 +1844,14 @@ deb:
 		echo "Description: Matrix operations and deep learning primitives" >> control; \
 		wget -qO- https://api.github.com/repos/hfp/libxsmm \
 		| sed -n 's/ *\"description\": \"\(..*\)\".*/\1/p' \
-		| fold -s -w 79 | sed -e 's/^/ /' -e 's/\s\s*$$//' >> control; \
+		| fold -s -w 79 | sed -e 's/^/ /' -e 's/[[:space:]][[:space:]]*$$//' >> control; \
 		echo "$${ARCHIVE_NAME} ($${VERSION_ARCHIVE}-$(VERSION_PACKAGE)) UNRELEASED; urgency=low" > changelog; \
 		echo >> changelog; \
 		wget -qO- https://api.github.com/repos/hfp/libxsmm/releases/tags/$${VERSION_ARCHIVE} \
 		| sed -n 's/ *\"body\": \"\(..*\)\".*/\1/p' \
 		| sed -e 's/\\r\\n/\n/g' -e 's/\\"/"/g' -e 's/\[\([^]]*\)\]([^)]*)/\1/g' \
 		| sed -n 's/^\* \(..*\)/\* \1/p' \
-		| fold -s -w 78 | sed -e 's/^/  /g' -e 's/^  \* /\* /' -e 's/^/  /' -e 's/\s\s*$$//' >> changelog; \
+		| fold -s -w 78 | sed -e 's/^/  /g' -e 's/^  \* /\* /' -e 's/^/  /' -e 's/[[:space:]][[:space:]]*$$//' >> changelog; \
 		echo >> changelog; \
 		echo " -- $${ARCHIVE_AUTHOR}  $${ARCHIVE_DATE}" >> changelog; \
 		echo "#!/usr/bin/make -f" > rules; \

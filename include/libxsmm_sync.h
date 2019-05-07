@@ -301,7 +301,11 @@ typedef enum libxsmm_atomic_kind {
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #if (0 != LIBXSMM_SYNC) /** Default lock-kind */
-# define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_MUTEX
+# if defined(_MSC_VER)
+#   define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
+# else
+#   define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_MUTEX
+# endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
 #   define LIBXSMM_LOCK_SYSTEM_SPINLOCK
 # endif

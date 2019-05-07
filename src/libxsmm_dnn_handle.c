@@ -125,13 +125,11 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
   }
 
   if (0 != noarch) { /* Setup generic code generation */
-    status = libxsmm_dnn_setup_generic(&handle);
+    status = libxsmm_dnn_setup_generic(handle);
   }
 
 # if 0 /* TODO: Bf16 currently triggers error 90005 before but we want to continue */
-  if (NULL != handle && LIBXSMM_DNN_SUCCESS == status)
-#else
-  if (NULL != handle)
+  if (LIBXSMM_DNN_SUCCESS == status)
 # endif
   {
     if (0 != handle->use_fwd_generic || 0 != handle->use_bwd_generic || 0 != handle->use_upd_generic) {
