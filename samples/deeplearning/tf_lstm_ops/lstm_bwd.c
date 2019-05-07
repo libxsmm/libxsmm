@@ -16,11 +16,15 @@
 #endif
 
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
+#if 0
+# define PRINT_LAYOUT2(DESC, LAYOUT) print_layout2(DESC, LAYOUT)
+#else
+# define PRINT_LAYOUT2(DESC, LAYOUT)
+#endif
 
 void print_layout2(char *desc, libxsmm_dnn_tensor_datalayout *layout) {
   char *dim_name[] = {"N", "H", "W", "C", "K", "R", "S", "X", "RLM", "RLK", "RLN"};
   int i;
-  return;
   printf("%s: F:%d IF:%d TT: %d [", desc, layout->format, layout->custom_format, layout->tensor_type);
   for(i = layout->num_dims - 1; i >= 0; i--) {
     printf("%s:%d%s", dim_name[layout->dim_type[i]], layout->dim_size[i], i == 0 ? "" : ", ");
@@ -71,7 +75,7 @@ void* lstm_bwd_create( int N, /* minibatch size */
   libxsmm_dnn_tensor* libxsmm_input;
   libxsmm_dnn_tensor* libxsmm_cs_prev;
   libxsmm_dnn_tensor* libxsmm_hidden_state_prev;
-  libxsmm_dnn_tensor* libxsmm_hidden_state;
+  libxsmm_dnn_tensor* libxsmm_hidden_state = NULL;
   libxsmm_dnn_tensor* libxsmm_weight;
   libxsmm_dnn_tensor* libxsmm_recur_weight;
   libxsmm_dnn_tensor* libxsmm_cs;
@@ -90,7 +94,6 @@ void* lstm_bwd_create( int N, /* minibatch size */
   libxsmm_dnn_tensor* libxsmm_dhidden_state;
   libxsmm_dnn_tensor_datalayout* libxsmm_layout;
   libxsmm_dnn_err_t status;
-  libxsmm_dnn_err_t global_status = LIBXSMM_DNN_SUCCESS;
 
   if (N <= 0) {
     printf("N: %d should be > 0\n", N);
@@ -152,104 +155,104 @@ void* lstm_bwd_create( int N, /* minibatch size */
 
   /* setup LIBXSMM buffers and filter */
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("Xt", libxsmm_layout);
+  PRINT_LAYOUT2("Xt", libxsmm_layout);
   libxsmm_input = libxsmm_dnn_link_tensor( libxsmm_layout, xt, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_CS_PREV, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("CSP", libxsmm_layout);
+  PRINT_LAYOUT2("CSP", libxsmm_layout);
   libxsmm_cs_prev = libxsmm_dnn_link_tensor( libxsmm_layout, csp, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("HP", libxsmm_layout);
+  PRINT_LAYOUT2("HP", libxsmm_layout);
   libxsmm_hidden_state_prev = libxsmm_dnn_link_tensor( libxsmm_layout, hp, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   if(t > 1) {
     libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE, &status ); CHKERR_LIBXSMM_DNN( status );
-    print_layout2("HT", libxsmm_layout);
+    PRINT_LAYOUT2("HT", libxsmm_layout);
     libxsmm_hidden_state = libxsmm_dnn_link_tensor( libxsmm_layout, ht, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
   }
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, w_in_trans ? LIBXSMM_DNN_RNN_REGULAR_WEIGHT_TRANS : LIBXSMM_DNN_RNN_REGULAR_WEIGHT, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("W", libxsmm_layout);
+  PRINT_LAYOUT2("W", libxsmm_layout);
   libxsmm_weight = libxsmm_dnn_link_tensor( libxsmm_layout, w, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, w_in_trans ? LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT_TRANS : LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("R", libxsmm_layout);
+  PRINT_LAYOUT2("R", libxsmm_layout);
   libxsmm_recur_weight = libxsmm_dnn_link_tensor( libxsmm_layout, r, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_CS, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("CSt", libxsmm_layout);
+  PRINT_LAYOUT2("CSt", libxsmm_layout);
   libxsmm_cs = libxsmm_dnn_link_tensor( libxsmm_layout, cst, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_INTERNAL_I, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("It", libxsmm_layout);
+  PRINT_LAYOUT2("It", libxsmm_layout);
   libxsmm_i = libxsmm_dnn_link_tensor( libxsmm_layout, it, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_INTERNAL_F, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("Ft", libxsmm_layout);
+  PRINT_LAYOUT2("Ft", libxsmm_layout);
   libxsmm_f = libxsmm_dnn_link_tensor( libxsmm_layout, ft, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_INTERNAL_O, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("Ot", libxsmm_layout);
+  PRINT_LAYOUT2("Ot", libxsmm_layout);
   libxsmm_o = libxsmm_dnn_link_tensor( libxsmm_layout, ot, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_INTERNAL_CI, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("CIt", libxsmm_layout);
+  PRINT_LAYOUT2("CIt", libxsmm_layout);
   libxsmm_ci = libxsmm_dnn_link_tensor( libxsmm_layout, cit, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_INTERNAL_CO, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("COt", libxsmm_layout);
+  PRINT_LAYOUT2("COt", libxsmm_layout);
   libxsmm_co = libxsmm_dnn_link_tensor( libxsmm_layout, cot, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_INPUT, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("dXt", libxsmm_layout);
+  PRINT_LAYOUT2("dXt", libxsmm_layout);
   libxsmm_dinput = libxsmm_dnn_link_tensor( libxsmm_layout, dxt, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_CS_PREV, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("dCSPt", libxsmm_layout);
+  PRINT_LAYOUT2("dCSPt", libxsmm_layout);
   libxsmm_dcs_prev = libxsmm_dnn_link_tensor( libxsmm_layout, dcspt, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE_PREV, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("dHPt", libxsmm_layout);
+  PRINT_LAYOUT2("dHPt", libxsmm_layout);
   libxsmm_dhidden_state_prev = libxsmm_dnn_link_tensor( libxsmm_layout, dhpt, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_WEIGHT, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("dW", libxsmm_layout);
+  PRINT_LAYOUT2("dW", libxsmm_layout);
   libxsmm_dweight = libxsmm_dnn_link_tensor( libxsmm_layout, dw, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_RECUR_WEIGHT, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("dR", libxsmm_layout);
+  PRINT_LAYOUT2("dR", libxsmm_layout);
   libxsmm_drecur_weight = libxsmm_dnn_link_tensor( libxsmm_layout, dr, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_BIAS, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("dB", libxsmm_layout);
+  PRINT_LAYOUT2("dB", libxsmm_layout);
   libxsmm_dbias = libxsmm_dnn_link_tensor( libxsmm_layout, db, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_CS, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("dCS", libxsmm_layout);
+  PRINT_LAYOUT2("dCS", libxsmm_layout);
   libxsmm_dcs = libxsmm_dnn_link_tensor( libxsmm_layout, dcs, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
   libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_GRADIENT_HIDDEN_STATE, &status ); CHKERR_LIBXSMM_DNN( status );
-  print_layout2("dHt", libxsmm_layout);
+  PRINT_LAYOUT2("dHt", libxsmm_layout);
   libxsmm_dhidden_state = libxsmm_dnn_link_tensor( libxsmm_layout, dht, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
@@ -318,8 +321,6 @@ void lstm_bwd_set_ptr( void* libxsmm_handle_, int w_in_trans,
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   libxsmm_dnn_rnncell* handle = (libxsmm_dnn_rnncell*) libxsmm_handle_;
-  void *scratch, *internalstate;
-  size_t scratch_size = 0, internalstate_size = 0;
 
   if (xt == 0  || csp == 0 || hp == 0 || w == 0  || r == 0   ||
       cst == 0 ||  it == 0 || ft == 0 || ot == 0 || cit == 0 || cot == 0 ||
