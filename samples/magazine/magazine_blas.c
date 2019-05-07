@@ -44,7 +44,7 @@ void sgemm_(const char*, const char*, const int*, const int*, const int*,
   const float*, const float*, const int*, const float*, const int*,
   const float*, float*, const int*);
 #endif
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
 # include <omp.h>
 #endif
 #include <stdlib.h>
@@ -107,18 +107,20 @@ int main(int argc, char* argv[])
 #endif
 
   /* initialize data according to touch-first policy */
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < size; ++i) {
-    init(25 + i, a + STREAM_A(i * na), m, k, lda, scale);
-    init(75 + i, b + STREAM_B(i * nb), k, n, ldb, scale);
-    init(42 + i, c + STREAM_C(i * nc), m, n, ldc, scale);
+    init(25 + i, a + i * na, m, k, lda, scale);
+    init(75 + i, b + i * nb, k, n, ldb, scale);
+    if (0 != beta) { /* no need to initialize for beta=0 */
+      init(42 + i, c + i * nc, m, n, ldc, scale);
+    }
   }
 
 #if defined(mkl_jit_create_sgemm) && defined(mkl_jit_create_dgemm)
   if (NULL != jitter) {
-# if !defined(_OPENMP)
+# if !defined(_OPENMP) || defined(SYNC)
 #   if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     duration = dsecnd();
 #   endif
@@ -132,7 +134,7 @@ int main(int argc, char* argv[])
       for (i = 0; i < size; ++i) {
         kernel(jitter, a + STREAM_A(i * na), b + STREAM_B(i * nb), c + STREAM_C(i * nc));
       }
-# if defined(_OPENMP)
+# if defined(_OPENMP) && !defined(SYNC)
     }
     duration = omp_get_wtime() - duration;
 # elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
@@ -145,7 +147,7 @@ int main(int argc, char* argv[])
 # endif
 #endif
   {
-#if !defined(_OPENMP)
+#if !defined(_OPENMP) || defined(SYNC)
 # if defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)
     duration = dsecnd();
 # endif
@@ -161,7 +163,7 @@ int main(int argc, char* argv[])
           &alpha, a + STREAM_A(i * na), &lda, b + STREAM_B(i * nb), &ldb,
            &beta, c + STREAM_C(i * nc), &ldc);
       }
-#if defined(_OPENMP)
+#if defined(_OPENMP) && !defined(SYNC)
     }
     duration = omp_get_wtime() - duration;
 #elif defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)

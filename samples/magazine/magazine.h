@@ -51,6 +51,8 @@
 # define STREAM_C(EXPR) (EXPR)
 #else
 # define STREAM_C(EXPR) 0
+/* synchronization among C matrices */
+# define SYNC
 #endif
 
 #if 1 /* PAD (alignment) must be power of two */
