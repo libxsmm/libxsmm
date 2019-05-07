@@ -1025,6 +1025,7 @@ endif
 samples: lib_hst
 	@find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/grudriver/ \
+	| grep -v /deeplearning/tf_lstm_ops/ \
 	| grep -v /deeplearning/gxm/ \
 	| grep -v /edge/repro/ \
 	| grep -v /packed/ \
