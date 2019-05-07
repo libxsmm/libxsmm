@@ -886,14 +886,13 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
-  } else if ( i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_MIC  ||
-      ( (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE) && (i_m_blocking == i_micro_kernel_config->vector_length) ) ) {
-    if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
+  } else if ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_CORE ) {
+    if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (l_m_blocking != 1) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
   } else if ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE ) {
-    if ( (i_n_blocking > 6) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
+    if ( (i_n_blocking > 7) || (i_n_blocking < 1) || (l_m_blocking < 1) || (l_m_blocking > 6) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
@@ -1041,14 +1040,13 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
-  } else if ( (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512 && i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_CORE)  ||
-      ( (i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE) && (i_m_blocking == i_micro_kernel_config->vector_length) ) ) {
+  } else if ( i_micro_kernel_config->instruction_set < LIBXSMM_X86_AVX512_CORE ) {
     if ( (i_n_blocking > 30) || (i_n_blocking < 1) || (i_m_blocking != i_micro_kernel_config->vector_length) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
   } else if ( i_micro_kernel_config->instruction_set >= LIBXSMM_X86_AVX512_CORE ) {
-    if ( (i_n_blocking > 6) || (i_n_blocking < 1) || (i_m_blocking < 1) ) {
+    if ( (i_n_blocking > 7) || (i_n_blocking < 1) || (l_m_blocking < 1) || (l_m_blocking > 6) ) {
       LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_REG_BLOCK );
       return;
     }
