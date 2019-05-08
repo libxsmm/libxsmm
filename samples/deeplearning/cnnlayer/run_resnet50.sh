@@ -87,7 +87,7 @@ fi
 
 # ./layer_example_${BIN} iters inpWidth inpHeight nImg nIfm nOfm kw kh padw padh stride type
 #
-if [ "${BIN}" != "f32" ] && [ "${BIN}" != "bf16" ]; then
+if [ "${BIN}" != "f32" ]; then
   true
 else
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  224 224 ${MB}  3     64 7 7 3 3 2 ${TYPE} ${FORMAT} ${PAD}

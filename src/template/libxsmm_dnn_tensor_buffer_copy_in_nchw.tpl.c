@@ -30,24 +30,25 @@
 ******************************************************************************/
 
 /* use for-loops to potentially leverage NUMA in the future */
-int i1, i2, i3, i4, i5, i6;
+int i1, i2, i3, i4, i5, i6, lpb, bfm, W, H, fmb, N;
 
 if (tensor->layout->custom_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
-#if defined(LIBXSMM_DNN_COPY_LOW_PRECISION)
-  int lpb = tensor->layout->dim_size[0];
-  int bfm = tensor->layout->dim_size[1];
-  int W = tensor->layout->dim_size[2];
-  int H = tensor->layout->dim_size[3];
-  int fmb = tensor->layout->dim_size[4];
-  int N = tensor->layout->dim_size[5];
-#else
-  int lpb = 1;
-  int bfm = tensor->layout->dim_size[0];
-  int W = tensor->layout->dim_size[1];
-  int H = tensor->layout->dim_size[2];
-  int fmb = tensor->layout->dim_size[3];
-  int N = tensor->layout->dim_size[4];
-#endif
+  /* low precision formatting */
+  if ( tensor->layout->num_dims == 6 ) {
+    lpb = tensor->layout->dim_size[0];
+    bfm = tensor->layout->dim_size[1];
+    W = tensor->layout->dim_size[2];
+    H = tensor->layout->dim_size[3];
+    fmb = tensor->layout->dim_size[4];
+    N = tensor->layout->dim_size[5];
+  } else {
+    lpb = 1;
+    bfm = tensor->layout->dim_size[0];
+    W = tensor->layout->dim_size[1];
+    H = tensor->layout->dim_size[2];
+    fmb = tensor->layout->dim_size[3];
+    N = tensor->layout->dim_size[4];
+  }
   int C = fmb * bfm * lpb;
 
   /*printf(" layout act copy in  N %i fmb %i H %i W %i bfm %i lpb %i \n", N, fmb, H, W, bfm, lpb);*/
@@ -62,7 +63,7 @@ if (tensor->layout->custom_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
           for (i5 = 0; i5 < bfm; ++i5) {
             for (i6 = 0; i6 < lpb; ++i6) {
               LIBXSMM_VLA_ACCESS(6, handle_data_1, i1, i2, i3, i4, i5, i6, fmb, H, W, bfm, lpb) =
-              LIBXSMM_VLA_ACCESS(4, user_data, i1, ((size_t)i2*bfm*lpb) + ((size_t)i5*lpb) + i6, i3, i4, C, H, W);
+                LIBXSMM_VLA_ACCESS(4, user_data, i1, ((size_t)i2*bfm*lpb) + ((size_t)i5*lpb) + i6, i3, i4, C, H, W);
             }
           }
         }
@@ -89,7 +90,7 @@ if (tensor->layout->custom_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
           for ( i5 = 0; i5 < bimg; i5++ ) {
             for ( i6 = 0; i6 < bfm; i6++ ) {
               LIBXSMM_VLA_ACCESS(6, handle_data_2, i2, i1, i3, i4, i5, i6, N/bimg, H, W, bimg, bfm) =
-              LIBXSMM_VLA_ACCESS(4,  user_data, ((size_t)i1*bimg)+i5, ((size_t)i2*bfm)+i6, i3, i4, C, H, W);
+                LIBXSMM_VLA_ACCESS(4,  user_data, ((size_t)i1*bimg)+i5, ((size_t)i2*bfm)+i6, i3, i4, C, H, W);
             }
           }
         }

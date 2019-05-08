@@ -175,6 +175,17 @@ void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision opr
   libxsmm_blasint batchsize);
 ```
 
+<a name="blas-batch-interface"></a>In recent BLAS library implementations, `dgemm_batch` and `sgemm_batch` have been introduced. This BLAS(-like) interface allows for groups of homogeneous batches, which is like an additional loop around the interface as introduced above. On the other hand, the BLAS(-like) interface only supports arrays of pointers for the matrices (above interface supports arrays of pointers as well as array of indexes plus a flexible way to extract data out of existing arrays of structures). LIBXSMM also supports the BLAS(-like) interface with `libxsmm_?gemm_batch` and `libxsmm_?gemm_batch_omp` (the latter of which relies on LIBXSMM/ext). Further, existing calls to `dgemm_batch` and `sgemm_batch` can be intercepted and replaced with [LIBXSMM's call wrapper](#call-wrapper). The signatures of `libxsmm_dgemm_batch` and `libxsmm_sgemm_batch` are equal except for the element type (`double` and `float` respectively).
+
+```C
+void libxsmm_dgemm_batch(const char transa_array[], const char transb_array[],
+  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[],
+                              const double* b_array[], const libxsmm_blasint ldb_array[],
+  const double  beta_array[],       double* c_array[], const libxsmm_blasint ldc_array[],
+  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
+```
+
 Please note that an explicit data representation is not necessary to process a series of matrix multiplications (see [self-hosted batch loop](#implicit-batches)). A "chain" of multiplications can be often algorithmically described (without the need to build arrays of operands or indexes). However, since such data structures often exist for multiple purposes, it can be handy to call an interface that can handle it right away. LIBXSMM provides an interface that allows an implementation to perform well but describe and extract the necessary input from a variety of different structures (integer indexes, array of pointers both with Byte sized strides).
 
 ### Call Wrapper
@@ -201,7 +212,15 @@ Intercepted GEMMs can also build a sophisticated statistic (histogram) with LIBX
 An application which is linked statically against BLAS requires to wrap the 'sgemm_' and the 'dgemm_' symbol (an alternative is to wrap only 'dgemm_'). To relink the application (without editing the build system) can often be accomplished by copying and pasting the linker command as it appeared in the console output of the build system, and then re-invoking a modified link step:
 
 ```bash
-gcc [...] -Wl,--wrap=sgemm_,--wrap=dgemm_ \
+gcc [...] -Wl,--wrap=dgemm_,--wrap=sgemm_ \
+          /path/to/libxsmmext.a /path/to/libxsmm.a \
+          /path/to/your_regular_blas.a
+```
+
+In addition, existing [BLAS(-like) batch-calls](blas-batch-interface) can be intercepted as well:
+
+```bash
+gcc [...] -Wl,--wrap=dgemm_batch_,--wrap=sgemm_batch_ -Wl,--wrap=dgemm_,--wrap=sgemm_ \
           /path/to/libxsmmext.a /path/to/libxsmm.a \
           /path/to/your_regular_blas.a
 ```
