@@ -652,7 +652,11 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   const __m512 minus_twos = _mm512_set1_ps( -2.0f );
 
   const __m512 x          = _mm512_fmadd_ps(_x, twice_log2_e, half);
+#if 1
+  const __m512 y          = _mm512_sub_ps(x, _mm512_roundscale_round_ps(x, 1, _MM_FROUND_CUR_DIRECTION));
+#else
   const __m512 y          = _mm512_reduce_ps(x, 1);
+#endif
   const __m512 t1         = _mm512_fmadd_ps( y, c2, c1);
   const __m512 two_to_y   = _mm512_fmadd_ps( y, t1, c0);
   const __m512 exp        = _mm512_scalef_ps( two_to_y, x );
@@ -673,7 +677,11 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   const __m512 minus_twos = _mm512_set1_ps( -2.0f );
 
   const __m512 x          = _mm512_fmadd_ps(_x, twice_log2_e, half);
+#if 1
+  const __m512 y          = _mm512_sub_ps(x, _mm512_roundscale_round_ps(x, 1, _MM_FROUND_CUR_DIRECTION));
+#else
   const __m512 y          = _mm512_reduce_ps(x, 1);
+#endif
   const __m512 t1         = _mm512_fmadd_ps( y, c3, c2);
   const __m512 t2         = _mm512_fmadd_ps( y, t1, c1);
   const __m512 two_to_y   = _mm512_fmadd_ps( y, t2, c0);
