@@ -42,6 +42,9 @@
 #include "DummyData.hpp"
 #include "TypeList.hpp"
 
+#include "unistd.h"
+#include "limits.h"
+
 #define VLEN 16
 
 using namespace std;
@@ -688,9 +691,14 @@ void MLEngine::run(int mode)
       current_batch_ = 0;
 
       if ( num_train_batches_ > 1 ) {
-        printf("Average Training time = %f seconds\n",runtime/(num_train_batches_-2));
-        if(runtime > 0)
-          printf("Average Training throughput = %f images/s\n",(float)(batch_size_*(num_train_batches_-2))/runtime);
+        char hostname[HOST_NAME_MAX + 1];
+        gethostname(hostname, HOST_NAME_MAX + 1);
+        printf("%s; Average Training time = %f seconds", hostname, runtime/((double)(num_train_batches_-2)));
+        if(runtime > 0) {
+          printf("; Average Training throughput = %f images/s\n", ((double)(batch_size_*(num_train_batches_-2)))/runtime);
+        } else {
+          printf("\n");
+        }
       }
 
       // Checkpoint weights and biases
