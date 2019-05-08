@@ -6,14 +6,14 @@ node {
   propagate_down: false
   mode: TRAIN
   data_param {
-    train_source: "/home/local_scratch/jpegs_256resized"
-    train_list: "/home/local_scratch/train_images_labels.list"
-    test_source: "/home/local_scratch/jpegs_256resized"
-    test_list: "/home/local_scratch/val_images_labels.list"
-    batch_size: 54    #number of cores(54) - number of EP servers (2)
-    num_train_files: 80073  # per node when numsplits=16
-    num_test_files: 3125    # per node when numsplits=16
-    numsplits: 16
+    train_source: "/scratch/savancha/jpegs_256resized_split/split_1"
+    train_list: "/scratch/savancha/jpegs_256resized_split/split_1/train_images_labels.list"
+    test_source: "/scratch/savancha/jpegs_256resized_split/split_1"
+    test_list: "/scratch/savancha/jpegs_256resized_split/split_1/val_images_labels.list"
+    batch_size: 54    #number of cores(54)
+    num_train_files: 1281167  
+    num_test_files: 50000    
+    numsplits: 1
     lookahead: 2
     shuffle: true
     engine: XSMM

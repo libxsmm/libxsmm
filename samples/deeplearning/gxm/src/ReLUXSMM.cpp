@@ -54,27 +54,12 @@ void ReLUXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf *outpb, int tid)
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-#pragma simd
   for(int i=0; i<size; i++) {
     if(inp[i] < 0.0)
       outp[i] = 0.0;
     else
       outp[i] = inp[i];
   }
-
-#ifdef DUMP_DATA
-  string fname = gp->node_name + "_fp_in";
-  FILE *f = fopen(fname.c_str(), "w");
-  for(int i=0; i<size; i++)
-    fprintf(f, "%g\n", inp[i]);
-  fclose(f);
-
-  fname = gp->node_name + "_fp_out";
-  f = fopen(fname.c_str(), "w");
-  for(int i=0; i<size; i++)
-    fprintf(f, "%g\n", outp[i]);
-  fclose(f);
-#endif
 
   outpb->setLayoutType(inpb->getLayoutType());
   outpb->setLayout(inpb->getLayout());
@@ -105,27 +90,12 @@ void ReLUXSMM::backPropagate(TensorBuf *inpb, TensorBuf *deloutpb, TensorBuf *de
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
-#pragma simd
   for(int i=0; i<size; i++) {
     if(inp[i] > 0.0)
       delinp[i] = deloutp[i];
     else
       delinp[i] = 0.0;
-    }
-
-#ifdef DUMP_DATA
-  string fname = gp->node_name + "_bp_delin";
-  FILE *f = fopen(fname.c_str(), "w");
-  for(int i=0; i<size; i++)
-    fprintf(f, "%g\n", delinp[i]);
-  fclose(f);
-
-  fname = gp->node_name + "_bp_delout";
-  f = fopen(fname.c_str(), "w");
-  for(int i=0; i<size; i++)
-    fprintf(f, "%g\n", deloutp[i]);
-  fclose(f);
-#endif
+  }
 
   delinpb->setLayoutType(deloutpb->getLayoutType());
   delinpb->setLayout(deloutpb->getLayout());
