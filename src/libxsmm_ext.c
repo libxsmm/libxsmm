@@ -129,18 +129,40 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(s
   }
 }
 
+
+LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void dgemm_batch(const char transa_array[], const char transb_array[],
+  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[],
+  const double* b_array[], const libxsmm_blasint ldb_array[],
+  const double beta_array[], double* c_array[], const libxsmm_blasint ldc_array[],
+  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
+{
+  LIBXSMM_FSYMBOL(dgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
+    alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
+    group_count, group_size);
+}
+
+
+LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void sgemm_batch(
+  const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const float alpha_array[], const float* a_array[], const libxsmm_blasint lda_array[], const float* b_array[], const libxsmm_blasint ldb_array[],
+  const float beta_array[], float* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
+{
+  LIBXSMM_FSYMBOL(sgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
+    alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
+    group_count, group_size);
+}
+
 #elif (1 == LIBXSMM_NO_BLAS)
 
 LIBXSMM_GEMM_SYMBOL_VISIBILITY
 #if defined(__GNUC__) && !defined(__PGI)
 LIBXSMM_ATTRIBUTE(no_instrument_function)
 #endif
-void LIBXSMM_FSYMBOL(dgemm_batch)(const char transa_array[], const char transb_array[],
-  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
-  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[],
-                              const double* b_array[], const libxsmm_blasint ldb_array[],
-   const double beta_array[],       double* c_array[], const libxsmm_blasint ldc_array[],
-  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
+void LIBXSMM_FSYMBOL(dgemm_batch)(
+  const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[], const double* b_array[], const libxsmm_blasint ldb_array[],
+  const double beta_array[], double* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
 {
   libxsmm_blas_error("dgemm_batch")(transa_array, transb_array, m_array, n_array, k_array,
     alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
@@ -212,6 +234,36 @@ void LIBXSMM_FSYMBOL(sgemv)(const char* trans, const libxsmm_blasint* m, const l
   const float* beta, float* y, const libxsmm_blasint* incy)
 {
   libxsmm_blas_error("sgemv")(trans, m, n, alpha, a, lda, x, incx, beta, y, incy);
+}
+
+
+LIBXSMM_GEMM_SYMBOL_VISIBILITY
+#if defined(__GNUC__) && !defined(__PGI)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+void dgemm_batch(
+  const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[], const double* b_array[], const libxsmm_blasint ldb_array[],
+  const double beta_array[], double* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
+{
+  LIBXSMM_FSYMBOL(dgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
+    alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
+    group_count, group_size);
+}
+
+
+LIBXSMM_GEMM_SYMBOL_VISIBILITY
+#if defined(__GNUC__) && !defined(__PGI)
+LIBXSMM_ATTRIBUTE(no_instrument_function)
+#endif
+void sgemm_batch(
+  const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const float alpha_array[], const float* a_array[], const libxsmm_blasint lda_array[], const float* b_array[], const libxsmm_blasint ldb_array[],
+  const float beta_array[], float* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
+{
+  LIBXSMM_FSYMBOL(sgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
+    alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
+    group_count, group_size);
 }
 #endif
 #endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)*/
