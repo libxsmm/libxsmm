@@ -36,12 +36,10 @@
 #if defined(LIBXSMM_BUILD)
 #if defined(LIBXSMM_BUILD_EXT) && !defined(__STATIC) /* no-BLAS library */
 
-LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(dgemm_batch)(const char transa_array[], const char transb_array[],
-  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
-  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[],
-                              const double* b_array[], const libxsmm_blasint ldb_array[],
-   const double beta_array[],       double* c_array[], const libxsmm_blasint ldc_array[],
-  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
+LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(dgemm_batch)(
+  const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[], const double* b_array[], const libxsmm_blasint ldb_array[],
+  const double beta_array[], double* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
 {
   if (LIBXSMM_FSYMBOL(__real_dgemm_batch) != libxsmm_original_dgemm_batch_function) {
     LIBXSMM_FSYMBOL(__wrap_dgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
@@ -130,12 +128,10 @@ LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void LIBXSMM_FSYMBOL(s
 }
 
 
-LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void dgemm_batch(const char transa_array[], const char transb_array[],
-  const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
-  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[],
-  const double* b_array[], const libxsmm_blasint ldb_array[],
-  const double beta_array[], double* c_array[], const libxsmm_blasint ldc_array[],
-  const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
+LIBXSMM_GEMM_SYMBOL_VISIBILITY /*LIBXSMM_ATTRIBUTE_WEAK*/ void dgemm_batch(
+  const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
+  const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[], const double* b_array[], const libxsmm_blasint ldb_array[],
+  const double beta_array[], double* c_array[], const libxsmm_blasint ldc_array[], const libxsmm_blasint* group_count, const libxsmm_blasint group_size[])
 {
   LIBXSMM_FSYMBOL(dgemm_batch)(transa_array, transb_array, m_array, n_array, k_array,
     alpha_array, a_array, lda_array, b_array, ldb_array, beta_array, c_array, ldc_array,
