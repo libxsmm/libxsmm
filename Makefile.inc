@@ -1688,6 +1688,11 @@ ifeq (,$(strip $(MKLROOT)))
     MKLROOT = $(abspath $(dir $(MKL_INCFILE))/..)
     ABSLIBS = 1
   endif
+  MKL_INCFILE = $(wildcard /usr/include/mkl/mkl.h)
+  ifneq (,$(strip $(MKL_INCFILE)))
+    MKLROOT = $(abspath $(dir $(MKL_INCFILE))/../..)
+    ABSLIBS = 1
+  endif
 endif
 
 ifneq (0,$(ABSLIBS))
@@ -1735,7 +1740,11 @@ ifeq (1,$(MKL_DIRECT))
   endif
 endif
 ifneq (Darwin,$(UNAME))
-  MKL_ARCH = intel64
+  ifneq (,$(wildcard $(MKLROOT)/lib/x86_64-linux-gnu/libmkl_rt.*))
+    MKL_ARCH = x86_64-linux-gnu
+  else
+    MKL_ARCH = intel64
+  endif
 endif
 
 ifeq (1,$(MKL)) # sequential
@@ -1765,7 +1774,11 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
 endif
 ifneq (0,$(MKL))
-  BLAS_IFLAGS += -I$(MKLROOT)/include
+  ifeq (,$(MKL_INCFILE))
+    BLAS_IFLAGS += -I$(MKLROOT)/include
+  else
+    BLAS_IFLAGS += -I$(dir $(MKL_INCFILE))
+  endif
   BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
