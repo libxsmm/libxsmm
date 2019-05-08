@@ -411,6 +411,29 @@ LIBXSMM_INLINE void matrix_copy_KCCK_to_CK_bf16(libxsmm_bfloat16 *src, libxsmm_b
   }
 }
 
+LIBXSMM_INLINE void matrix_copy_KCCK_to_CKKC_bfp16(libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, int C, int K, int bc, int bk)
+{
+  int k1, k2, c1, c2;
+  int kBlocks = K/bk;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, kBlocks, bk/2, bc, 2);
+  LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_src, src, cBlocks, bc/2, bk, 2);
+
+#if defined(_OPENMP)
+# pragma omp parallel for private(k1)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (c2 = 0; c2 < bc; c2++) {
+        for (k2 = 0; k2 < bk; k2++) {
+          LIBXSMM_VLA_ACCESS(5, real_dst, c1, k1, k2/2, c2, k2%2, kBlocks, bk/2, bc, 2) =
+          LIBXSMM_VLA_ACCESS(5, real_src, k1, c1, c2/2, k2, c2%2, cBlocks, bc/2, bk, 2);
+        }
+      }
+    }
+  }
+}
+
 LIBXSMM_INLINE void matrix_copy_CK_to_KCCK_bfp16(libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, int C, int K, int bc, int bk)
 {
   int k1, k2, c1, c2;
@@ -983,7 +1006,7 @@ int main(int argc, char* argv[])
   float *dwgold, *drgold, *dbgold;
   float *dxgoldt, *dcspgold, *dhpgold, *dcsgold, *dhgoldt;
   float *icfogoldt, *wgold, *rgold;
-  libxsmm_bfloat16 *xt, *csp, *hp, *w, *r, *b, *cst, *ht, *w_tmp, *r_tmp;
+  libxsmm_bfloat16 *xt, *csp, *hp, *w, *wt, *r, *rt, *b, *cst, *ht, *w_tmp, *r_tmp;
   libxsmm_bfloat16 *it, *ft, *ot, *cit, *cot;
   libxsmm_bfloat16 *dxt, *dcsp, *dhp, *dw, *dr, *db, *dcs, *dht;
   float forget_bias = 1.0f;
@@ -1024,6 +1047,8 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_hidden_state_prev;
   libxsmm_dnn_tensor* libxsmm_weight;
   libxsmm_dnn_tensor* libxsmm_recur_weight;
+  libxsmm_dnn_tensor* libxsmm_weight_t;
+  libxsmm_dnn_tensor* libxsmm_recur_weight_t;
   libxsmm_dnn_tensor* libxsmm_bias;
   libxsmm_dnn_tensor* libxsmm_cs;
   libxsmm_dnn_tensor* libxsmm_hidden_state;
@@ -1138,6 +1163,8 @@ int main(int argc, char* argv[])
   hp        = (libxsmm_bfloat16*)libxsmm_aligned_malloc(K*N*sizeof(libxsmm_bfloat16), 2097152);
   w         = (libxsmm_bfloat16*)libxsmm_aligned_malloc(C*K*4*sizeof(libxsmm_bfloat16), 2097152);
   r         = (libxsmm_bfloat16*)libxsmm_aligned_malloc(K*K*4*sizeof(libxsmm_bfloat16), 2097152);
+  wt        = (libxsmm_bfloat16*)libxsmm_aligned_malloc(C*K*4*sizeof(libxsmm_bfloat16), 2097152);
+  rt        = (libxsmm_bfloat16*)libxsmm_aligned_malloc(K*K*4*sizeof(libxsmm_bfloat16), 2097152);
   w_tmp     = (libxsmm_bfloat16*)libxsmm_aligned_malloc(C*K*4*sizeof(libxsmm_bfloat16), 2097152);
   r_tmp     = (libxsmm_bfloat16*)libxsmm_aligned_malloc(K*K*4*sizeof(libxsmm_bfloat16), 2097152);
   b         = (libxsmm_bfloat16*)libxsmm_aligned_malloc(K*4*sizeof(libxsmm_bfloat16), 2097152);
@@ -1366,8 +1393,16 @@ int main(int argc, char* argv[])
     libxsmm_weight = libxsmm_dnn_link_tensor( libxsmm_layout, w, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
+    libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_WEIGHT_TRANS, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_weight_t = libxsmm_dnn_link_tensor( libxsmm_layout, wt, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
     libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_recur_weight = libxsmm_dnn_link_tensor( libxsmm_layout, r, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+    libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT_TRANS, &status ); CHKERR_LIBXSMM_DNN( status );
+    libxsmm_recur_weight_t = libxsmm_dnn_link_tensor( libxsmm_layout, rt, &status ); CHKERR_LIBXSMM_DNN( status );
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
     libxsmm_layout = libxsmm_dnn_rnncell_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_RNN_REGULAR_BIAS, &status ); CHKERR_LIBXSMM_DNN( status );
@@ -1448,7 +1483,14 @@ int main(int argc, char* argv[])
     convert_ck_f32_to_c4k_bfp16(K, K, rogold, &(r_tmp[3*K]));
     matrix_copy_CK_to_KCCK_bfp16(w_tmp, w,  C, 4*K, bc, bk);
     matrix_copy_CK_to_KCCK_bfp16(r_tmp, r,  K, 4*K, bk, bk);
-
+    matrix_copy_KCCK_to_CKKC_bfp16(&w[0], &wt[0], C, K, bc, bk);
+    matrix_copy_KCCK_to_CKKC_bfp16(&w[C*K], &wt[C*K], C, K, bc, bk);
+    matrix_copy_KCCK_to_CKKC_bfp16(&w[2*C*K], &wt[2*C*K], C, K, bc, bk);
+    matrix_copy_KCCK_to_CKKC_bfp16(&w[3*C*K], &wt[3*C*K], C, K, bc, bk);
+    matrix_copy_KCCK_to_CKKC_bfp16(&r[0], &rt[0], K, K, bk, bk);
+    matrix_copy_KCCK_to_CKKC_bfp16(&r[K*K], &rt[K*K], K, K, bk, bk);
+    matrix_copy_KCCK_to_CKKC_bfp16(&r[2*K*K], &rt[2*K*K], K, K, bk, bk);
+    matrix_copy_KCCK_to_CKKC_bfp16(&r[3*K*K], &rt[3*K*K], K, K, bk, bk);
     matrix_copy_f32_bfp16(K, bigold, &(b[0]));
     matrix_copy_f32_bfp16(K, bcgold, &(b[K]));
     matrix_copy_f32_bfp16(K, bfgold, &(b[2*K]));
@@ -1462,6 +1504,8 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_hidden_state_prev, LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE_PREV ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_weight, LIBXSMM_DNN_RNN_REGULAR_WEIGHT ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_recur_weight, LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_weight_t, LIBXSMM_DNN_RNN_REGULAR_WEIGHT_TRANS ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_recur_weight_t, LIBXSMM_DNN_RNN_REGULAR_RECUR_WEIGHT_TRANS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_bias, LIBXSMM_DNN_RNN_REGULAR_BIAS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_cs, LIBXSMM_DNN_RNN_REGULAR_CS ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_bind_tensor( libxsmm_handle, libxsmm_hidden_state, LIBXSMM_DNN_RNN_REGULAR_HIDDEN_STATE ) );
