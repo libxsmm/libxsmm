@@ -791,9 +791,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           libxsmm_gemm_descriptor *const desc = libxsmm_gemm_descriptor_init2(&blob, iprec, oprec, im, in, ik,
             NULL != lda ? lda[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & flags) ? im : ik),
             NULL != ldb ? ldb[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & flags) ? ik : in),
-            NULL != ldc ? ldc[g] : im,
-            NULL != alpha ? ((const void**)alpha)[g] : NULL,
-            NULL != beta  ? ((const void**) beta)[g] : NULL,
+            NULL != ldc ? ldc[g] : im, NULL != alpha ? (&alpha)[g] : NULL, NULL != beta ? (&beta)[g] : NULL,
             flags, prefetch);
           if (NULL != desc) {
             libxsmm_gemm_internal_set_batchflag(desc, c, index_stride, 0 < group_count ? isize : -asize, 1 != max_nthreads);
@@ -801,7 +799,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           }
           else kernel[i].pmm = NULL;
           if (NULL != kernel[i].ptr_const) {
-            size += asize;
+            if (size < asize) size = asize;
           }
           else {
             suitable = 0;
@@ -814,54 +812,68 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
         const unsigned char itypesize = libxsmm_typesize((libxsmm_datatype)iprec);
 #if defined(_OPENMP)
         const int nchunks = (int)((size + libxsmm_gemm_taskgrain - 1) / libxsmm_gemm_taskgrain);
+        const int ntasks = nchunks * npargroups, nthreads = LIBXSMM_MIN(max_nthreads, ntasks);
         result = EXIT_SUCCESS;
-        if (1 < nchunks) {
+        if (1 < nthreads) {
           if (0 == outerpar) { /* enable internal parallelization */
-            const int nthreads = LIBXSMM_MIN(max_nthreads, nchunks);
 # if defined(LIBXSMM_EXT_TASKS)
             if (0 >= libxsmm_gemm_taskscale)
 # endif
             {
 #             pragma omp parallel for num_threads(nthreads) private(i)
-              for (i = 0; i < nchunks; ++i) {
-                const libxsmm_blasint g = group + i % npargroups;
+              for (i = 0; i < ntasks; ++i) {
+                const libxsmm_blasint j = i * libxsmm_gemm_taskgrain, u = j / size, v = j - u * size, g = group + u;
                 const libxsmm_blasint isize = batchsize[g], asize = LIBXSMM_ABS(isize);
-                const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(kernel[g], NULL/*code_size*/);
-                /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
-                  (const char*)a + sa * base[i], (const char*)b + sb * base[i], (char*)c + sc * base[i], 0 < group_count ? isize : -asize,
-                  (int)i, nchunks, itypesize, otypesize, kernel_info->gemm.desc.flags);
+                if (v < asize) {
+                  const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(kernel[g], NULL/*code_size*/);
+                  /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
+                    (const char*)a + sa * base[u], (const char*)b + sb * base[u], (char*)c + sc * base[u],
+                    0 < group_count ? isize : -asize, (int)i, nchunks, itypesize, otypesize,
+                    kernel_info->gemm.desc.flags);
+                }
               }
             }
 # if defined(LIBXSMM_EXT_TASKS)
             else { /* tasks requested */
-              const int ntasks = nchunks * libxsmm_gemm_taskscale;
 #             pragma omp parallel num_threads(nthreads) private(i)
               { /* first thread discovering work will launch all tasks */
 #               pragma omp single nowait /* anyone is good */
-                for (i = 0; i < ntasks; ++i) {
-                  const libxsmm_blasint g = group + i % npargroups;
+                for (i = 0; i < ntasks * libxsmm_gemm_taskscale; ++i) {
+                  const libxsmm_blasint j = i * libxsmm_gemm_taskgrain, u = j / size, v = j - u * size, g = group + u;
                   const libxsmm_blasint isize = batchsize[g], asize = LIBXSMM_ABS(isize);
-#                 pragma omp task
-                  /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
-                    (const char*)a + sa * base[i], (const char*)b + sb * base[i], (char*)c + sc * base[i],
-                    0 < group_count ? isize : -asize, (int)i, ntasks, itypesize, otypesize,
-                    libxsmm_get_kernel_info(kernel[g], NULL/*code_size*/)->gemm.desc.flags);
+                  if (v < asize) {
+#                   pragma omp task
+                    {
+                      const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(kernel[g], NULL/*code_size*/);
+                      /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
+                        (const char*)a + sa * base[i], (const char*)b + sb * base[i], (char*)c + sc * base[i],
+                        0 < group_count ? isize : -asize, (int)i, nchunks * libxsmm_gemm_taskscale, itypesize, otypesize,
+                        kernel_info->gemm.desc.flags);
+                    }
+                  }
                 }
               } /* implicit synchronization (barrier) */
             }
 # endif
           }
           else { /* assume external parallelization */
-            const int ntasks = nchunks * (0 < libxsmm_gemm_taskscale ? libxsmm_gemm_taskscale : (LIBXSMM_GEMM_TASKSCALE));
-            for (i = 0; i < ntasks; ++i) {
-              const libxsmm_blasint g = group + i % npargroups;
+            const int scale = (0 < libxsmm_gemm_taskscale ? libxsmm_gemm_taskscale : (LIBXSMM_GEMM_TASKSCALE));
+
+            for (i = 0; i < ntasks * scale; ++i) {
+              const libxsmm_blasint j = i * libxsmm_gemm_taskgrain, u = j / size, v = j - u * size, g = group + u;
               const libxsmm_blasint isize = batchsize[g], asize = LIBXSMM_ABS(isize);
+              if (v < asize) {
 # if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
-#             pragma omp task
+#               pragma omp task
 #endif
-              /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
-                (const char*)a + sa * base[i], (const char*)b + sb * base[i], (char*)c + sc * base[i], 0 < group_count ? isize : -asize,
-                (int)i, ntasks, itypesize, otypesize, libxsmm_get_kernel_info(kernel[g], NULL/*code_size*/)->gemm.desc.flags);
+                {
+                  const libxsmm_descriptor *const kernel_info = libxsmm_get_kernel_info(kernel[g], NULL/*code_size*/);
+                  /*check*/libxsmm_mmbatch_kernel(kernel[g].xgemm, index_base, index_stride, stride_a, stride_b, stride_c,
+                    (const char*)a + sa * base[i], (const char*)b + sb * base[i], (char*)c + sc * base[i],
+                    0 < group_count ? isize : -asize, (int)i, nchunks * scale, itypesize, otypesize,
+                    kernel_info->gemm.desc.flags);
+                }
+              }
             }
 # if defined(LIBXSMM_EXT_TASKS) /* OpenMP-tasks */
             if (0 == libxsmm_nosync) { /* allow to omit synchronization */
@@ -895,8 +907,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           const libxsmm_blasint ilda = (NULL != lda ? lda[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & flags) ? im : ik));
           const libxsmm_blasint ildb = (NULL != ldb ? ldb[g] : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & flags) ? ik : in));
           const libxsmm_blasint ildc = (NULL != ldc ? ldc[g] : im);
-          const void *const ialpha = (NULL != alpha ? ((const void**)alpha)[g] : NULL);
-          const void *const ibeta  = (NULL != beta  ? ((const void**) beta)[g] : NULL);
+          const void *const ialpha = (NULL != alpha ? (&alpha)[g] : NULL), *const ibeta = (NULL != beta ? (&beta)[g] : NULL);
           if (EXIT_SUCCESS == libxsmm_mmbatch_blas(iprec, oprec, ta, tb, im, in, ik, ialpha,
             (const char*)a + sa * base[i], &ilda, (const char*)b + sb * base[i], &ildb, ibeta, (char*)c + sc * base[i], &ildc,
             index_base, index_stride, stride_a, stride_b, stride_c, batchsize[g]))
