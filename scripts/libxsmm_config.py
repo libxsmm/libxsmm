@@ -121,7 +121,7 @@ if __name__ == "__main__":
             "ILP64":      [0, 1][0 != ilp64],
             "ALPHA":      alpha,
             "BETA":       beta,
-            "WRAP":       [1, 2][0 == (wrap % 2) or (0 > wrap)],
+            "WRAP":       wrap,
             "SYNC":       [0, 1][0 != sync],
             "JIT":        [0, 1][0 != jit],
             "LIBXSMM_OFFLOAD_BUILD":
