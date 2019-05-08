@@ -44,7 +44,7 @@ const libxsmm_blasint bn = handle->bn;
 const libxsmm_blasint bc = handle->bc;
 const libxsmm_blasint cBlocks = C/bc;
 const libxsmm_blasint kBlocks = K/bk;
-const int lpb = 2;
+const int lpb = handle->lpb;
 const int bc_lp = bc/lpb;
 const int bk_lp = bk/lpb;
 unsigned long long blocks;
