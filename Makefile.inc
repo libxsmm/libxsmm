@@ -734,12 +734,19 @@ else # fallback
 endif
 endif
 
-ifneq (,$(strip $(LIB_FLD)))
+FREEFORM ?= 1
 ifeq (,$(strip $(GFC)))
-ifneq (0,$(INTEL))
-  LIB_FLD += -nofor-main
+  ifneq (0,$(INTEL))
+    ifneq (,$(strip $(LIB_FLD)))
+      LIB_FLD += -nofor-main
+    endif
+    ifneq (0,$(FREEFORM))
+      FFORM_FLAG = -free
+    endif
+  endif
 endif
-endif
+ifneq (0,$(FREEFORM))
+  FFORM_FLAG ?= -ffree-form
 endif
 
 ifneq (0,$(DEPSTATIC))
@@ -899,7 +906,7 @@ ifneq (0,$(INTEL))
     ifeq (,$(strip $(GFC)))
       FSTD = -std03
       FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
-      FCFLAGS += -free
+      FCFLAGS += $(FFORM_FLAG)
     endif
     ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
       CXXFLAGS += -Wcheck
@@ -917,7 +924,7 @@ ifneq (0,$(INTEL))
   else
     CSTD = -std=c89
     ifeq (,$(strip $(GFC)))
-      FCFLAGS += -free
+      FCFLAGS += $(FFORM_FLAG)
     endif
   endif
   ifeq (,$(strip $(GFC)))
@@ -1128,7 +1135,7 @@ else # GCC assumed
       CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       #CXXFLAGS += -Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
-      FCFLAGS += -ffree-form
+      FCFLAGS += $(FFORM_FLAG)
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
     else ifneq (0,$(PEDANTIC))
       ifneq (Darwin,$(UNAME))
@@ -1146,7 +1153,7 @@ else # GCC assumed
       FCFLAGS += $(FSTD) $(FPEDANTIC)
     else ifeq (0,$(COMPATIBLE))
       CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers
-      FCFLAGS += -ffree-form
+      FCFLAGS += $(FFORM_FLAG)
       CSTD = -std=c89
     endif
     # flag specifying output directory must be last
@@ -1949,7 +1956,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION% MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP CCAR \
     SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE OMPLIBFILE \
     NOBLASLIB NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 PYMOD CSTD \
-    CWARNEXTRA MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE \
+    CWARNEXTRA MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE FFORM_FLAG FREEFORM \
     which cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
