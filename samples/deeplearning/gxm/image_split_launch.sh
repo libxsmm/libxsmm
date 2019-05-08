@@ -126,7 +126,7 @@ export I_MPI_PIN_MODE=lib
 export I_MPI_PIN_DOMAIN=node
 export I_MPI_DEBUG=6
 
-export MKL_CBWR=AUTO
+#export MKL_CBWR=AUTO
 
 # Produce the configuration file for mpiexec. Each line of the config file contains a # host, enviornment, binary name.
 rm -f $cfile
