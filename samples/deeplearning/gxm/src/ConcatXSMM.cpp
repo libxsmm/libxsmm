@@ -68,7 +68,7 @@ void ConcatXSMM::forwardPropagate(vector<TensorBuf*>& inpb, TensorBuf *outpb, in
       for(int ifm=0; ifm < nBIfm; ifm++) {
         for(int h=0; h < ifh; h++) {
           for(int w=0; w < ifw; w++) {
-#pragma simd
+#pragma omp simd
 #pragma vector aligned
 #pragma vector nontemporal
             for(int v=0; v < VLEN; v++) {
@@ -115,7 +115,7 @@ void ConcatXSMM::backPropagate(TensorBuf *deloutpb, vector<TensorBuf*>& delinpb,
       for(int ifm=0; ifm < nBIfm; ifm++) {
         for(int h=0; h < ifh; h++) {
           for(int w=0; w < ifw; w++) {
-#pragma simd
+#pragma omp simd
 #pragma vector aligned
 #pragma vector nontemporal
             for(int v=0; v < VLEN; v++) {

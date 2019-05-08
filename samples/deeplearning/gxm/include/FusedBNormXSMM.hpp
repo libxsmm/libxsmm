@@ -51,6 +51,7 @@ class FusedBNormXSMM : public FusedBNormImpl
     libxsmm_dnn_tensor* libxsmm_input_train[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_input_add_train[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_output_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_relumask_train[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_expectval_train[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_stddev_train[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_variance_train[NUM_NUMA_NODES] = {NULL};
@@ -59,6 +60,7 @@ class FusedBNormXSMM : public FusedBNormImpl
     libxsmm_dnn_tensor* libxsmm_input_test[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_input_add_test[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_output_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_relumask_test[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_expectval_test[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_stddev_test[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_variance_test[NUM_NUMA_NODES] = {NULL};
@@ -73,6 +75,7 @@ class FusedBNormXSMM : public FusedBNormImpl
     libxsmm_dnn_err_t status;
 
     void *bexpect[NUM_NUMA_NODES]={NULL}, *bstddev[NUM_NUMA_NODES]={NULL}, *bvariance[NUM_NUMA_NODES]={NULL};
+    void *relu_mask[NUM_NUMA_NODES]={NULL};
     void *scratch=NULL;
     bool updated_scratch_fwd=false, updated_scratch_bwd=false;
 

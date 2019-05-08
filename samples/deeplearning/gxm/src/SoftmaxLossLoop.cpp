@@ -65,32 +65,40 @@ void SMaxLossLoop::forwardPropagate(TensorBuf* inpb, TensorBuf* labelb, TensorBu
     int tid = omp_get_thread_num();
     int ntps = gp->num_threads/NUM_NUMA_NODES;
     int n = tid/ntps;
-    int img = tid - n*ntps;
+    int ltid = tid - n*ntps;
 
     float (* __restrict input )[nIfm] = (float (*)[*])inp[n];
     float (* __restrict output)[nOfm] = (float (*)[*])outp[n];
 
-    float max = input[img][0];
-    output[img][0] = input[img][0];
+    int jobs = (nImg % ntps == 0) ? nImg/ntps : (nImg/ntps) + 1;
+    int tb = (ltid*jobs < nImg) ? ltid*jobs : nImg;
+    int te = ((ltid+1)*jobs < nImg) ? (ltid+1)*jobs : nImg;
 
-    for(int ofm = 1; ofm < nOfm; ofm++) {
-      output[img][ofm] = input[img][ofm];
-      if(input[img][ofm] > max)
-        max = input[img][ofm];
+#pragma omp simd
+    for(int i=tb; i<te; i++)
+    {
+      float max = input[i][0];
+      output[i][0] = input[i][0];
+
+      for(int ofm = 1; ofm < nOfm; ofm++) {
+        output[i][ofm] = input[i][ofm];
+        if(input[i][ofm] > max)
+          max = input[i][ofm];
+      }
+
+      float sum_of_exp = 0.0;
+      for(int ofm = 0; ofm < nOfm; ofm++) {
+        output[i][ofm] = output[i][ofm] - max;
+        output[i][ofm] = exp(output[i][ofm]);
+        sum_of_exp += output[i][ofm];
+      }
+
+      float recp_soe = 1.0/sum_of_exp;
+
+      //Normalize each value by sum_of_exp
+      for(int ofm = 0; ofm < nOfm; ofm++)
+        output[i][ofm] = output[i][ofm]*recp_soe;
     }
-
-    float sum_of_exp = 0.0;
-    for(int ofm = 0; ofm < nOfm; ofm++) {
-      output[img][ofm] = output[img][ofm] - max;
-      output[img][ofm] = exp(output[img][ofm]);
-      sum_of_exp += output[img][ofm];
-    }
-
-    float recp_soe = 1.0/sum_of_exp;
-
-    //Normalize each value by sum_of_exp
-    for(int ofm = 0; ofm < nOfm; ofm++)
-      output[img][ofm] = output[img][ofm]*recp_soe;
   }
 
   for(int n=0; n<NUM_NUMA_NODES; n++)
@@ -144,17 +152,26 @@ void SMaxLossLoop::backPropagate(TensorBuf *outpb, TensorBuf* labelb, TensorBuf 
     int tid = omp_get_thread_num();
     int ntps = gp->num_threads/NUM_NUMA_NODES;
     int n = tid/ntps;
-    int img = tid - n*ntps;
+    int ltid = tid - n*ntps;
 
     float (* __restrict output )[nIfm] = (float (*)[*])outp[n];
     float (* __restrict del_input )[nIfm] = (float (*)[*])delinp[n];
     int* lab = label[n];
 
-    for(int fm = 0; fm < nIfm; fm++) {
-      if(fm == lab[img])
-        del_input[img][fm] = (output[img][fm] - 1) * recp_mb * gp->loss_weight;
-      else
-        del_input[img][fm] = output[img][fm] * recp_mb * gp->loss_weight;
+    int jobs = (nImg % ntps == 0) ? nImg/ntps : (nImg/ntps) + 1;
+    int tb = (ltid*jobs < nImg) ? ltid*jobs : nImg;
+    int te = ((ltid+1)*jobs < nImg) ? (ltid+1)*jobs : nImg;
+
+#pragma omp simd
+    for(int i=tb; i<te; i++)
+    {
+      for(int fm = 0; fm < nIfm; fm++)
+      {
+        if(fm == lab[i])
+          del_input[i][fm] = (output[i][fm] - 1) * recp_mb * gp->loss_weight;
+        else
+          del_input[i][fm] = output[i][fm] * recp_mb * gp->loss_weight;
+      }
     }
   }
 }

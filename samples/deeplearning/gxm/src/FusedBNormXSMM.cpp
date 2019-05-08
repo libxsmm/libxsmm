@@ -68,11 +68,19 @@ FusedBNormXSMM::FusedBNormXSMM(FusedBNormImplParams* gp, int engine) : FusedBNor
   fusedbn_desc_train.fuse_order = LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU;
   fusedbn_desc_train.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BN;
   if(gp->relu)
+#if 0
     fusedbn_desc_train.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BN_RELU;
+#else
+    fusedbn_desc_train.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BN_RELU_WITH_MASK;
+#endif
   if(gp->eltwise)
     fusedbn_desc_train.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE;
   if(gp->relu && gp->eltwise)
+#if 0
     fusedbn_desc_train.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE_RELU;
+#else
+    fusedbn_desc_train.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BN_ELTWISE_RELU_WITH_MASK;
+#endif
 
   for(int n=0; n<gp->num_numa_nodes; n++)
   {
@@ -108,12 +116,19 @@ FusedBNormXSMM::FusedBNormXSMM(FusedBNormImplParams* gp, int engine) : FusedBNor
   fusedbn_desc_test.fuse_order = LIBXSMM_DNN_FUSEDBN_ORDER_BN_ELTWISE_RELU;
   fusedbn_desc_test.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE;
   if(gp->relu)
+#if 0
     fusedbn_desc_test.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU;
+#else
+    fusedbn_desc_test.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_RELU_WITH_MASK;
+#endif
   if(gp->eltwise)
     fusedbn_desc_test.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE;
   if(gp->relu && gp->eltwise)
+#if 0
     fusedbn_desc_test.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU;
-
+#else
+    fusedbn_desc_test.fuse_ops = LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE_ELTWISE_RELU_WITH_MASK;
+#endif
   for(int n=0; n<gp->num_numa_nodes; n++)
   {
     libxsmm_handle_test[n] = libxsmm_dnn_create_fusedbatchnorm( fusedbn_desc_test, &status );
@@ -227,6 +242,9 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
       printf("%s allocated %lu bytes for variance\n",nname.c_str(), nFM*sizeof(float));
 #endif
     }
+
+    if(relu_mask[n] == NULL)
+      relu_mask[n] = (void*)libxsmm_aligned_malloc(nImg*nFM*ofhp*ofwp*sizeof(unsigned char), 2097152);
   }
 
   if(gexp_test == NULL)
@@ -311,6 +329,13 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
       libxsmm_output_train[n] = libxsmm_dnn_link_tensor( libxsmm_layout, output[n], &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_tensor( libxsmm_handle_train[n], libxsmm_output_train[n], LIBXSMM_DNN_REGULAR_OUTPUT ) );
+
+      libxsmm_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout( libxsmm_handle_train[n], LIBXSMM_DNN_RELU_MASK, &status );
+      CHKERR_LIBXSMM_DNN( status );
+      libxsmm_relumask_train[n] = libxsmm_dnn_link_tensor( libxsmm_layout, relu_mask[n], &status );
+      CHKERR_LIBXSMM_DNN( status );
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_tensor(libxsmm_handle_train[n], libxsmm_relumask_train[n], LIBXSMM_DNN_RELU_MASK) );
     }
   }
 
@@ -418,6 +443,13 @@ void FusedBNormXSMM::forwardPropagate(vector<TensorBuf *> inpb, TensorBuf *gamma
       libxsmm_output_test[n] = libxsmm_dnn_link_tensor( libxsmm_layout, output[n], &status ); CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_tensor( libxsmm_handle_test[n], libxsmm_output_test[n], LIBXSMM_DNN_REGULAR_OUTPUT ) );
+
+      libxsmm_layout = libxsmm_dnn_fusedbatchnorm_create_tensor_datalayout( libxsmm_handle_test[n], LIBXSMM_DNN_RELU_MASK, &status );
+      CHKERR_LIBXSMM_DNN( status );
+      libxsmm_relumask_test[n] = libxsmm_dnn_link_tensor( libxsmm_layout, relu_mask[n], &status );
+      CHKERR_LIBXSMM_DNN( status );
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_fusedbatchnorm_bind_tensor(libxsmm_handle_test[n], libxsmm_relumask_test[n], LIBXSMM_DNN_RELU_MASK) );
     }
   }
 

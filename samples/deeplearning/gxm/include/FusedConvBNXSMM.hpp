@@ -83,6 +83,8 @@ class FusedConvBNXSMM : public FusedConvBNImpl
     libxsmm_dnn_tensor* libxsmm_middle[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_output_bntrain[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_output_bntest[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_relumask_bntrain[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_relumask_bntest[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_filter[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_checkpoint_filter = NULL;
     libxsmm_dnn_tensor* libxsmm_checkpoint_history_filter = NULL;
@@ -111,6 +113,7 @@ class FusedConvBNXSMM : public FusedConvBNImpl
     FusedConvBNImplParams *cp;
     bool updated_scratch_fwd=false, updated_scratch_bwd=false, updated_scratch_upd=false;
     void *bexpect[NUM_NUMA_NODES]={NULL}, *bstddev[NUM_NUMA_NODES]={NULL}, *bvariance[NUM_NUMA_NODES]={NULL};
+    void *relu_mask[NUM_NUMA_NODES]={NULL};
     void *gexp_test=NULL, *gvar_test=NULL;
     int prev_scratch_size = 0;
 
