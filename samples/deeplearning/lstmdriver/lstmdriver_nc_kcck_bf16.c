@@ -388,6 +388,29 @@ LIBXSMM_INLINE void convert_ck_f32_to_c4k_bfp16(int C, int K, float *src, libxsm
   }
 }
 
+LIBXSMM_INLINE void matrix_copy_KCCK_to_CK_bf16(libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, int C, int K, int bc, int bk)
+{
+  int k1, k2, c1, c2;
+  int kBlocks = K/bk;
+  int cBlocks = C/bc;
+  LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, real_dst, dst, K);
+  LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_src, src, cBlocks, bc/2, bk, 2);
+
+#if defined(_OPENMP)
+# pragma omp parallel for private(k1)
+#endif
+  for (k1 = 0; k1 < kBlocks; k1++) {
+    for (c1 = 0; c1 < cBlocks; c1++) {
+      for (c2 = 0; c2 < bc; c2++) {
+        for (k2 = 0; k2 < bk; k2++) {
+          LIBXSMM_VLA_ACCESS(2, real_dst, c1*bc+c2, k1*bk+k2, K) =
+            LIBXSMM_VLA_ACCESS(5, real_src, k1, c1, c2/2, k2, c2%2, cBlocks, bc/2, bk, 2);
+        }
+      }
+    }
+  }
+}
+
 LIBXSMM_INLINE void matrix_copy_CK_to_KCCK_bfp16(libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, int C, int K, int bc, int bk)
 {
   int k1, k2, c1, c2;
@@ -1578,8 +1601,11 @@ int main(int argc, char* argv[])
         CHKERR_LIBXSMM_DNN( libxsmm_dnn_rnncell_execute_st( libxsmm_handle, LIBXSMM_DNN_COMPUTE_KIND_UPD, 0, tid ) );
       }
 
+      /* Copy out dw matrices from KCCK bf16 format to CK bf16 format */
+      matrix_copy_KCCK_to_CK_bf16(dw, w_tmp, C, 4*K, bc, bk);
+
       /* Upconvert libxsmm bf16 buffer to fp32 for correctness check */
-      matrix_copy_bfp16_f32(4*C*K, dw, dw_test);
+      matrix_copy_bfp16_f32(4*C*K, w_tmp, dw_test);
 
       /* compare */
       libxsmm_matdiff(&norms_upd_w, LIBXSMM_DATATYPE_F32, C*K*4, 1, dwgold, dw_test, 0, 0);
@@ -1593,8 +1619,12 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_w.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_w);
 
+
+      /* Copy out dr matrices from KCCK bf16 format to CK bf16 format */
+      matrix_copy_KCCK_to_CK_bf16(dr, r_tmp, K, 4*K, bk, bk);
+
       /* Upconvert libxsmm bf16 buffer to fp32 for correctness check */
-      matrix_copy_bfp16_f32(4*K*K, dr, dr_test);
+      matrix_copy_bfp16_f32(4*K*K, r_tmp, dr_test);
 
 #if defined(TWO_GEMMS)
       libxsmm_matdiff(&norms_upd_r, LIBXSMM_DATATYPE_F32, K*K*4, 1, drgold, dr_test, 0, 0);
@@ -1658,8 +1688,10 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_bwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_bwd);
 
+      /* Copy out dw matrices from KCCK bf16 format to CK bf16 format */
+      matrix_copy_KCCK_to_CK_bf16(dw, w_tmp, C, 4*K, bc, bk);
       /* Upconvert libxsmm bf16 buffer to fp32 for correctness check */
-      matrix_copy_bfp16_f32(4*C*K, dw, dw_test);
+      matrix_copy_bfp16_f32(4*C*K, w_tmp, dw_test);
 
       libxsmm_matdiff(&norms_upd_w, LIBXSMM_DATATYPE_F32, C*K*4, 1, dwgold, dw_test, 0, 0);
       printf("Delta weight\n");
@@ -1672,8 +1704,12 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_w.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_w);
 
+
+      /* Copy out dr matrices from KCCK bf16 format to CK bf16 format */
+      matrix_copy_KCCK_to_CK_bf16(dr, r_tmp, K, 4*K, bk, bk);
+
       /* Upconvert libxsmm bf16 buffer to fp32 for correctness check */
-      matrix_copy_bfp16_f32(4*K*K, dr, dr_test);
+      matrix_copy_bfp16_f32(4*K*K, r_tmp, dr_test);
 
 #if defined(TWO_GEMMS)
       libxsmm_matdiff(&norms_upd_r, LIBXSMM_DATATYPE_F32, K*K*4, 1, drgold, dr_test, 0, 0);
