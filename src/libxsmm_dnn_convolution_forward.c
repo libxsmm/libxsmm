@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke, Hans Pabst (Intel Corp.)
+/* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #include "libxsmm_dnn_convolution_forward.h"
 #include <libxsmm_intrinsics_x86.h>
@@ -165,16 +165,21 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom(l
       gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch(handle->ofmblock, handle->fwd_ofh_rb*handle->fwd_ofw_rb, handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
       gemm_br_function br_gemm_kernel2 = libxsmm_smmdispatch_reducebatch(handle->ofmblock, handle->fwd_ofh_rb*(handle->fwd_ofw_rb-1), handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_generic.tpl.c"
-#if 0
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
-      const int ldx = (int)(handle->desc.v*handle->ifmblock*handle->fm_lp_block);
+      const libxsmm_blasint ldx = (handle->pack_input == 1) ? (libxsmm_blasint)handle->ifmblock : (libxsmm_blasint)handle->desc.v*handle->ifmblock;
+      const libxsmm_blasint ldA = handle->ofmblock;
+      const libxsmm_blasint ldC = handle->ofmblock;
+      const float  beta = (handle->avoid_acc_load) ? 0.0 : 1.0;
       typedef libxsmm_bfloat16 element_input_type;
       typedef libxsmm_bfloat16 element_output_type;
       typedef libxsmm_bfloat16 element_filter_type;
-      typedef libxsmm_smmfunction gemm_function;
+      typedef libxsmm_bsmmfunction_reducebatch gemm_br_function;
+      int l_flags = ( LIBXSMM_GEMM_FLAGS('N', 'N') ) | handle->fwd_flags;
       /* let's do a ofmblock x ofw_rb x ifmblock GEMM :-) or in other words M=nbOfm, N=ofw, K=nbIfm (col-major) */
-      gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ofmblock*handle->fm_lp_block, handle->ofw, handle->ifmblock*handle->fm_lp_block, NULL, &ldx, NULL, NULL, NULL, NULL, NULL);
+      gemm_br_function br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch(handle->ofmblock, handle->fwd_ofh_rb*handle->fwd_ofw_rb, handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+      gemm_br_function br_gemm_kernel2 = libxsmm_bsmmdispatch_reducebatch(handle->ofmblock, handle->fwd_ofh_rb*(handle->fwd_ofw_rb-1), handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
 # include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_generic_bf16.tpl.c"
+#if 0
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
       typedef short element_input_type;
       typedef int element_output_type;

@@ -401,8 +401,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_ofmblock( libxsmm_dnn_layer* ha
 
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_fm_lp_block( libxsmm_dnn_layer* handle ) {
   int result = 1;
-  /* FIXME: Fix this when requesting BF16 convolutions */
-  LIBXSMM_UNUSED(handle);
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+    result = 2;
+  }
   return result;
 }
 
@@ -902,6 +903,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->ifmblock = libxsmm_dnn_setup_generic_ifmblock(handle);
   handle->ofmblock = libxsmm_dnn_setup_generic_ofmblock(handle);
   handle->fm_lp_block = libxsmm_dnn_setup_generic_fm_lp_block(handle);
+  handle->ifmblock_lp = handle->ifmblock/handle->fm_lp_block;
+  handle->ofmblock_lp = handle->ofmblock/handle->fm_lp_block;
   handle->blocksifm = libxsmm_dnn_setup_generic_blocksifm(handle);
   handle->blocksofm = libxsmm_dnn_setup_generic_blocksofm(handle);
 
@@ -1025,6 +1028,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->scratch3_size = 0;
   handle->scratch4 = 0;
   handle->scratch4_size = 0;
+  handle->scratch6 = 0;
+  handle->scratch6_size = 0;
+
+  /* In this case, allocate scratch for output in fp32 precision (to use when we don't fully accumulate) + a scratchpad (when we fully accumulate)  */
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+    handle->scratch6_size = (size_t) (handle->desc.N * handle->ofwp * handle->ofhp * handle->desc.K + handle->desc.threads * handle->fwd_ofw_rb * handle->fwd_ofh_rb * handle->ofmblock)* sizeof(float);
+  }
 
   return status;
 }
