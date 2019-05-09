@@ -64,18 +64,29 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
 #endif
     if (rnncell_desc.max_T < 1) {
       *status = LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL;
+      free(handle);
+      return 0;
     }
     /* set current seq length to max length */
     handle->T = rnncell_desc.max_T;
-
+    /* set blocking factors */
     handle->bk = (handle->desc.bk == 0) ? 64 : handle->desc.bk;
     handle->bn = (handle->desc.bn == 0) ? 64 : handle->desc.bn;
     handle->bc = (handle->desc.bc == 0) ? 64 : handle->desc.bc;
-    handle->lpb = 1;
     if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
       handle->lpb = 2;
+    } else {
+      handle->lpb = 1;
     }
-
+    /* let's do some simple checks for BF16 as this limits the cell */
+    if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) || (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
+      if ( ( handle->desc.N % 2 != 0 ) || ( handle->desc.C % 16 != 0 ) || ( handle->desc.K % 16 != 0 ) ) {
+        *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        free(handle);
+        return 0;
+      }
+    }
+    /* validate blocking factors */
     if ( handle->desc.N % handle->bn != 0 ) {
       handle->bn = handle->desc.N;
       *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING;
@@ -88,14 +99,29 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
       handle->bk = handle->desc.K;
       *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_K_BLOCKING;
     }
+    /* determining if we have optimized-tensorize-vectorized elementwise cell sub-parts */
     if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
       handle->fwd_generic = 0;
       handle->bwdupd_generic = 0;
+      /* we support bf16 (emulation) only on SKX or higher */
+      if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) || (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
+        if ( LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid ) {
+          *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+          free(handle);
+          return 0;
+        }
+      }
     } else {
       handle->fwd_generic = 1;
       handle->bwdupd_generic = 1;
+      /* we support bf16 (emulation) only on SKX or higher */
+      if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) || (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
+        *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        free(handle);
+        return 0;
+      }
     }
-    /* Need to allocate space for scratch libxsmm_dnn_tensor's */
+    /* Need to allocate space for scratch libxsmm_dnn_tensor's, let's set all pointers to zero */
     handle->internal_z = 0;
     handle->scratch_wT = 0;
     handle->scratch_rT = 0;
@@ -110,7 +136,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     handle->scratch_dfB = 0;
     handle->scratch_dpB = 0;
     handle->scratch_dciB = 0;
-
+    /* initialize a high-performant barrier */
     handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
     if (NULL == handle->barrier)
     {
