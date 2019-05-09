@@ -1312,7 +1312,7 @@ ifeq (undefined,$(origin TARGET))
   endif
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
-    # prevents Clang BE error (CRC32 and others)
+    # detect maintainer build and limit to SSE3
     ifneq (Windows_NT,$(UNAME))
     ifneq (Darwin,$(UNAME))
     ifeq (3,$(GCC))
