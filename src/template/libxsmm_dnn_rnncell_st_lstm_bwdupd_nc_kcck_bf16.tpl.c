@@ -35,6 +35,7 @@
 #define _mm512_roundbf16rne(A) LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(A)
 #define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
+#define _mm512_loadcvtrne_fp32_bf16(A) _mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne(LIBXSMM_INTRINSICS_MM512_LOAD_PS(A)),16))
 
 /* helper variables */
 libxsmm_blasint j, ik, ikb, in, inb, ic, icb, jk, jb/*jn shadows global variable*/, jc, ek, en, ec, BF, KB_BLOCKS, KB;
@@ -142,7 +143,6 @@ element_filter_type *scratch_roT = &(scratch_rT[3*K*K]);
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 LIBXSMM_VLA_DECL(2, element_input_type,  cp, csp, K);
 LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
-
 #if 0
 LIBXSMM_VLA_DECL(5, element_filter_type, wi, wiD, cBlocks, bc_lp, bk, lpb);
 LIBXSMM_VLA_DECL(5, element_filter_type, wc, wcD, cBlocks, bc_lp, bk, lpb);
@@ -153,7 +153,6 @@ LIBXSMM_VLA_DECL(5, element_filter_type, rc, rcD, kBlocks, bk_lp, bk, lpb);
 LIBXSMM_VLA_DECL(5, element_filter_type, rf, rfD, kBlocks, bk_lp, bk, lpb);
 LIBXSMM_VLA_DECL(5, element_filter_type, ro, roD, kBlocks, bk_lp, bk, lpb);
 #endif
-
 LIBXSMM_VLA_DECL(3, element_output_type, cs, cst, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, i, it, N, K);
@@ -353,6 +352,7 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
 #endif
   /* Store result weight matrices in KCCK bf16 format and downcovert to bf16 */
 #if defined(LIBXSMM_RNN_CELL_AVX512)
+#if 0
   for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
     icb = ikic / (K/bk);
     ic = icb*bc;
@@ -392,6 +392,71 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
       }
     }
   }
+#endif
+  __m256i c0, c1;
+  __m512i c01;
+  const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
+  for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
+    icb = ikic / (K/bk);
+    ic = icb*bc;
+    ikb = ikic % (K/bk);
+    ik = ikb*bk;
+    for (jc = 0; jc < bc; jc+=2) {
+      for (jk = 0; jk < bk; jk+=16) {
+        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dwi, ikb, icb, jc, jk, cBlocks, bc, bk));
+        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dwi, ikb, icb, jc+1, jk, cBlocks, bc, bk));
+        c01 = _mm512_inserti64x4 (c01, c0, 0);
+        c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dwi_bf16, ikb, icb, jc/lpb, jk, 0, cBlocks, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dwc, ikb, icb, jc, jk, cBlocks, bc, bk));
+        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dwc, ikb, icb, jc+1, jk, cBlocks, bc, bk));
+        c01 = _mm512_inserti64x4 (c01, c0, 0);
+        c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dwc_bf16, ikb, icb, jc/lpb, jk, 0, cBlocks, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dwf, ikb, icb, jc, jk, cBlocks, bc, bk));
+        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dwf, ikb, icb, jc+1, jk, cBlocks, bc, bk));
+        c01 = _mm512_inserti64x4 (c01, c0, 0);
+        c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dwf_bf16, ikb, icb, jc/lpb, jk, 0, cBlocks, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dwo, ikb, icb, jc, jk, cBlocks, bc, bk));
+        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dwo, ikb, icb, jc+1, jk, cBlocks, bc, bk));
+        c01 = _mm512_inserti64x4 (c01, c0, 0);
+        c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dwo_bf16, ikb, icb, jc/lpb, jk, 0, cBlocks, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+      }
+    }
+  }
+
+  for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
+    icb = ikic / (K/bk);
+    ic = icb*bk;
+    ikb = ikic % (K/bk);
+    ik = ikb*bk;
+    for (jc = 0; jc < bk; jc+=2) {
+      for (jk = 0; jk < bk; jk+=16) {
+        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dri, ikb, icb, jc, jk, cBlocks, bc, bk));
+        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dri, ikb, icb, jc+1, jk, cBlocks, bc, bk));
+        c01 = _mm512_inserti64x4 (c01, c0, 0);
+        c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dri_bf16, ikb, icb, jc/lpb, jk, 0, cBlocks, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, drc, ikb, icb, jc, jk, cBlocks, bc, bk));
+        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, drc, ikb, icb, jc+1, jk, cBlocks, bc, bk));
+        c01 = _mm512_inserti64x4 (c01, c0, 0);
+        c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, drc_bf16, ikb, icb, jc/lpb, jk, 0, cBlocks, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, drf, ikb, icb, jc, jk, cBlocks, bc, bk));
+        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, drf, ikb, icb, jc+1, jk, cBlocks, bc, bk));
+        c01 = _mm512_inserti64x4 (c01, c0, 0);
+        c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, drf_bf16, ikb, icb, jc/lpb, jk, 0, cBlocks, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dro, ikb, icb, jc, jk, cBlocks, bc, bk));
+        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dro, ikb, icb, jc+1, jk, cBlocks, bc, bk));
+        c01 = _mm512_inserti64x4 (c01, c0, 0);
+        c01 = _mm512_inserti64x4 (c01, c1, 1);
+        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dro_bf16, ikb, icb, jc/lpb, jk, 0, cBlocks, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
+      }
+    }
+  }
 #else
   /* TODO: Add here non AVX512 replacement code  */
 #endif
@@ -423,4 +488,5 @@ if (ltid == 0) {
 #undef _mm512_roundbf16rne
 #undef _mm512_loadcvt_bf16_fp32
 #undef _mm512_storecvt_fp32_bf16
+#undef _mm512_loadcvtrne_fp32_bf16
 
