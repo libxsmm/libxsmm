@@ -44,7 +44,7 @@ const libxsmm_blasint bn = handle->bn;
 const libxsmm_blasint bc = handle->bc;
 const libxsmm_blasint cBlocks = C/bc;
 const libxsmm_blasint kBlocks = K/bk;
-const int lpb = handle->lpb;
+const int lpb = 2;
 const int bc_lp = bc/lpb;
 const int bk_lp = bk/lpb;
 unsigned long long blocks;
@@ -55,9 +55,8 @@ element_input_type  *csp = (element_input_type* )handle->csp->data;
 element_input_type  *hpD = (element_input_type* )handle->hp->data;
 element_filter_type *w   = (element_filter_type*)handle->w->data;
 element_filter_type *r   = (element_filter_type*)handle->r->data;
-element_filter_type *w_scratch   = (element_filter_type*)handle->scratch_w;
-element_filter_type *r_scratch   = (element_filter_type*)handle->scratch_r;
 element_output_type *b   = (element_output_type*)handle->b->data;
+
 /* These buffers are scratch for fp32 output of gemms (intermmediate results) */
 float *cst = (float*)handle->cst_scratch;
 float *ht  = (float*)handle->ht_scratch;
@@ -78,21 +77,13 @@ element_output_type *cit_bf16 = (element_output_type*)handle->cit->data;
 element_output_type *cot_bf16 = (element_output_type*)handle->cot->data;
 
 element_filter_type *wiD = &(w[0]);
-element_filter_type *wcD = &(w[K]);
-element_filter_type *wfD = &(w[2*K]);
-element_filter_type *woD = &(w[3*K]);
+element_filter_type *wcD = &(w[C*K]);
+element_filter_type *wfD = &(w[2*C*K]);
+element_filter_type *woD = &(w[3*C*K]);
 element_filter_type *riD = &(r[0]);
-element_filter_type *rcD = &(r[K]);
-element_filter_type *rfD = &(r[2*K]);
-element_filter_type *roD = &(r[3*K]);
-element_filter_type *wiD_scratch = &(w_scratch[0]);
-element_filter_type *wcD_scratch = &(w_scratch[C*K]);
-element_filter_type *wfD_scratch = &(w_scratch[2*C*K]);
-element_filter_type *woD_scratch = &(w_scratch[3*C*K]);
-element_filter_type *riD_scratch = &(r_scratch[0]);
-element_filter_type *rcD_scratch = &(r_scratch[K*K]);
-element_filter_type *rfD_scratch = &(r_scratch[2*K*K]);
-element_filter_type *roD_scratch = &(r_scratch[3*K*K]);
+element_filter_type *rcD = &(r[K*K]);
+element_filter_type *rfD = &(r[2*K*K]);
+element_filter_type *roD = &(r[3*K*K]);
 element_output_type *bi  = &(b[0]);
 element_output_type *bd  = &(b[K]);
 element_output_type *bf  = &(b[2*K]);
@@ -101,22 +92,14 @@ LIBXSMM_VLA_DECL(2, float,  cp, csp_f32, K);
 LIBXSMM_VLA_DECL(2, element_input_type,  cp_bf16, csp, K);
 LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
 LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
-LIBXSMM_VLA_DECL(5, element_filter_type, wi, wiD_scratch, cBlocks, bc_lp, bk, lpb);
-LIBXSMM_VLA_DECL(5, element_filter_type, wf, wfD_scratch, cBlocks, bc_lp, bk, lpb);
-LIBXSMM_VLA_DECL(5, element_filter_type, wo, woD_scratch, cBlocks, bc_lp, bk, lpb);
-LIBXSMM_VLA_DECL(5, element_filter_type, wc, wcD_scratch, cBlocks, bc_lp, bk, lpb);
-LIBXSMM_VLA_DECL(5, element_filter_type, ri, riD_scratch, kBlocks, bk_lp, bk, lpb);
-LIBXSMM_VLA_DECL(5, element_filter_type, rf, rfD_scratch, kBlocks, bk_lp, bk, lpb);
-LIBXSMM_VLA_DECL(5, element_filter_type, ro, roD_scratch, kBlocks, bk_lp, bk, lpb);
-LIBXSMM_VLA_DECL(5, element_filter_type, rc, rcD_scratch, kBlocks, bk_lp, bk, lpb);
-LIBXSMM_VLA_DECL(2, element_filter_type, wi_ck, wiD, 4*K);
-LIBXSMM_VLA_DECL(2, element_filter_type, wf_ck, wfD, 4*K);
-LIBXSMM_VLA_DECL(2, element_filter_type, wo_ck, woD, 4*K);
-LIBXSMM_VLA_DECL(2, element_filter_type, wc_ck, wcD, 4*K);
-LIBXSMM_VLA_DECL(2, element_filter_type, ri_ck, riD, 4*K);
-LIBXSMM_VLA_DECL(2, element_filter_type, rf_ck, rfD, 4*K);
-LIBXSMM_VLA_DECL(2, element_filter_type, ro_ck, roD, 4*K);
-LIBXSMM_VLA_DECL(2, element_filter_type, rc_ck, rcD, 4*K);
+LIBXSMM_VLA_DECL(5, element_filter_type, wi, wiD, cBlocks, bc_lp, bk, lpb);
+LIBXSMM_VLA_DECL(5, element_filter_type, wf, wfD, cBlocks, bc_lp, bk, lpb);
+LIBXSMM_VLA_DECL(5, element_filter_type, wo, woD, cBlocks, bc_lp, bk, lpb);
+LIBXSMM_VLA_DECL(5, element_filter_type, wc, wcD, cBlocks, bc_lp, bk, lpb);
+LIBXSMM_VLA_DECL(5, element_filter_type, ri, riD, kBlocks, bk_lp, bk, lpb);
+LIBXSMM_VLA_DECL(5, element_filter_type, rf, rfD, kBlocks, bk_lp, bk, lpb);
+LIBXSMM_VLA_DECL(5, element_filter_type, ro, roD, kBlocks, bk_lp, bk, lpb);
+LIBXSMM_VLA_DECL(5, element_filter_type, rc, rcD, kBlocks, bk_lp, bk, lpb);
 LIBXSMM_VLA_DECL(3, float, cs, cst, N, K);
 LIBXSMM_VLA_DECL(3, float, h, ht, N, K);
 LIBXSMM_VLA_DECL(3, float, i, it, N, K);
@@ -198,37 +181,9 @@ if (C == 2048 && K == 1024) {
 CB_BLOCKS = cBlocks/BF;
 KB_BLOCKS = kBlocks/BF;
 
-/* Upfront reformatting of W and R */
-/* reformat W */
 #ifdef PROFILE
 if (ltid == 0) reformat_start = _rdtsc();
 #endif
-for (ikic = thr_begin_ck; ikic < thr_end_ck; ++ikic ) {
-  ic = (ikic / (K/bk));
-  ik = (ikic % (K/bk));
-  for (jk = 0; jk < bk; ++jk) {
-    for (jc = 0; jc < bc;++jc) {
-      LIBXSMM_VLA_ACCESS(5, wi, ik, ic, jc/lpb, jk, jc%lpb, cBlocks, bc_lp, bk, lpb) =  LIBXSMM_VLA_ACCESS(2, wi_ck, ic*bc+jc, ik*bk+jk, 4*K);
-      LIBXSMM_VLA_ACCESS(5, wc, ik, ic, jc/lpb, jk, jc%lpb, cBlocks, bc_lp, bk, lpb) =  LIBXSMM_VLA_ACCESS(2, wc_ck, ic*bc+jc, ik*bk+jk, 4*K);
-      LIBXSMM_VLA_ACCESS(5, wf, ik, ic, jc/lpb, jk, jc%lpb, cBlocks, bc_lp, bk, lpb) =  LIBXSMM_VLA_ACCESS(2, wf_ck, ic*bc+jc, ik*bk+jk, 4*K);
-      LIBXSMM_VLA_ACCESS(5, wo, ik, ic, jc/lpb, jk, jc%lpb, cBlocks, bc_lp, bk, lpb) =  LIBXSMM_VLA_ACCESS(2, wo_ck, ic*bc+jc, ik*bk+jk, 4*K);
-    }
-  }
-}
-
-/* reformat R */
-for (ikic = thr_begin_kk; ikic < thr_end_kk; ++ikic ) {
-  ik = (ikic / (K/bk));
-  ic = (ikic % (K/bk));
-  for (jk = 0; jk < bk; ++jk) {
-    for (jc = 0; jc < bk; ++jc) {
-      LIBXSMM_VLA_ACCESS(5, ri, ik, ic, jc/lpb, jk, jc%lpb, kBlocks, bk_lp, bk, lpb) =  LIBXSMM_VLA_ACCESS(2, ri_ck, ic*bk+jc, ik*bk+jk, 4*K);
-      LIBXSMM_VLA_ACCESS(5, rc, ik, ic, jc/lpb, jk, jc%lpb, kBlocks, bk_lp, bk, lpb) =  LIBXSMM_VLA_ACCESS(2, rc_ck, ic*bk+jc, ik*bk+jk, 4*K);
-      LIBXSMM_VLA_ACCESS(5, rf, ik, ic, jc/lpb, jk, jc%lpb, kBlocks, bk_lp, bk, lpb) =  LIBXSMM_VLA_ACCESS(2, rf_ck, ic*bk+jc, ik*bk+jk, 4*K);
-      LIBXSMM_VLA_ACCESS(5, ro, ik, ic, jc/lpb, jk, jc%lpb, kBlocks, bk_lp, bk, lpb) =  LIBXSMM_VLA_ACCESS(2, ro_ck, ic*bk+jc, ik*bk+jk, 4*K);
-    }
-  }
-}
 
 /* Upconvert the cp input to fp32 that is used for elementwise stuff */
 for (inik = thr_begin; inik < thr_end; ++inik ) {
