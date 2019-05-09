@@ -47,7 +47,6 @@ libxsmm_blasint t = handle->T;
 libxsmm_blasint bk = handle->bk;
 libxsmm_blasint bn = handle->bn;
 libxsmm_blasint bc = handle->bc;
-libxsmm_blasint K4 = K * 4;
 const libxsmm_blasint cBlocks = C/bc;
 const libxsmm_blasint kBlocks = K/bk;
 const libxsmm_blasint nBlocks = N/bn;
@@ -459,6 +458,13 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
   }
 #else
   /* TODO: Add here non AVX512 replacement code  */
+  LIBXSMM_UNUSED(thr_begin_kk);
+  LIBXSMM_UNUSED(thr_begin_ck);
+  LIBXSMM_UNUSED(ikic);
+  LIBXSMM_UNUSED(jk);
+  LIBXSMM_UNUSED(jc);
+  LIBXSMM_UNUSED(thr_end_ck);
+  LIBXSMM_UNUSED(thr_end_kk);
 #endif
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 #ifdef PROFILE
