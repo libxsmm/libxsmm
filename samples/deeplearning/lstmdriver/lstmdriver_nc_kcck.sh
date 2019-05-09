@@ -95,27 +95,27 @@ export KMP_AFFINITY=granularity=fine,compact,1,0
 
 
 echo "LSTM FWD"
-CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  0  168   256   256  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168   256   256  50
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  0  168   512   512  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168   512   512  50
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  0  168  1024  1024  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168  1024  1024  50
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  0  168  2048  2048  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168  2048  2048  50
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  0  168  4096  4096  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168  4096  4096  50
 wait
 
 echo "LSTM BWD+UPD"
-CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  3  168   256   256  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168   256   256  50
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  3  168   512   512  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168   512   512  50
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  3  168  1024  1024  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168  1024  1024  50
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  3  168  2048  2048  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168  2048  2048  50
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_ck  ${ITERS}  3  168  4096  4096  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168  4096  4096  50
 wait
 
 echo "LSTM performance done"
