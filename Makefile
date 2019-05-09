@@ -17,6 +17,7 @@ DOCDIR = documentation
 PINCDIR ?= $(INCDIR)
 PSRCDIR ?= $(PINCDIR)/libxsmm
 POUTDIR ?= $(OUTDIR)
+PPKGDIR ?= $(OUTDIR)
 PBINDIR ?= $(BINDIR)
 PTSTDIR ?= $(TSTDIR)
 PDOCDIR ?= share/libxsmm
@@ -189,13 +190,16 @@ DOCEXT = pdf
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE = \
   PREFIX INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR \
-  PBINDIR PINCDIR POUTDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR TEST \
-  VERSION_STRING DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC PKG_CONFIG_%
+  PBINDIR PINCDIR POUTDIR PPKGDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR \
+  TEST VERSION_STRING DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC PKG_CONFIG_%
 
 # in contrast to PREFIX, DESTDIR matters at this point
 ifneq (,$(strip $(DESTDIR)))
 ifneq ($(abspath .),$(abspath $(DESTDIR)))
   PKG_CONFIG_PREFIX = $(DESTDIR)
+  ifeq (FreeBSD,$(UNAME))
+    PPKGDIR = libdata/pkgconfig
+  endif
 endif
 endif
 ifeq (,$(strip $(PKG_CONFIG_PREFIX)))
@@ -1636,10 +1640,11 @@ ifneq ($(abspath $(INSTALL_ROOT)),$(abspath .))
 		mkdir -p $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 		$(CP) -v $(OUTDIR)/mic/libxsmm.$(SLIBEXT) $(INSTALL_ROOT)/$(POUTDIR)/mic; \
 	fi
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmmnoblas.pc > $(INSTALL_ROOT)/$(POUTDIR)/libxsmmnoblas.pc 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmmext.pc > $(INSTALL_ROOT)/$(POUTDIR)/libxsmmext.pc 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmmf.pc > $(INSTALL_ROOT)/$(POUTDIR)/libxsmmf.pc 2>/dev/null || true
-	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmm.pc > $(INSTALL_ROOT)/$(POUTDIR)/libxsmm.pc 2>/dev/null || true
+	@mkdir -p $(INSTALL_ROOT)/$(PPKGDIR)
+	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmmnoblas.pc > $(INSTALL_ROOT)/$(PPKGDIR)/libxsmmnoblas.pc 2>/dev/null || true
+	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmmext.pc > $(INSTALL_ROOT)/$(PPKGDIR)/libxsmmext.pc 2>/dev/null || true
+	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmmf.pc > $(INSTALL_ROOT)/$(PPKGDIR)/libxsmmf.pc 2>/dev/null || true
+	@sed "s/^prefix=..*$$/prefix=$(subst /,\/,$(INSTALL_ROOT))/" $(OUTDIR)/libxsmm.pc > $(INSTALL_ROOT)/$(PPKGDIR)/libxsmm.pc 2>/dev/null || true
 	@echo
 	@echo "LIBXSMM installing stand-alone generators..."
 	@$(CP) -v $(BINDIR)/libxsmm_*_generator $(INSTALL_ROOT)/$(PBINDIR) 2>/dev/null || true

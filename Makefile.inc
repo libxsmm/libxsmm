@@ -1312,7 +1312,7 @@ ifeq (undefined,$(origin TARGET))
   endif
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
-    # prevents Clang BE error (CRC32 and others)
+    # detect maintainer build and limit to SSE3
     ifneq (Windows_NT,$(UNAME))
     ifneq (Darwin,$(UNAME))
     ifeq (3,$(GCC))
@@ -1690,13 +1690,15 @@ endif
 
 # enable MKL if available
 ifeq (,$(strip $(MKLROOT)))
-  MKL_INCFILE = $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h)))
-  ifneq (,$(strip $(MKL_INCFILE)))
+  MKL_INCFILE = $(strip $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h))))
+  ifneq (,$(MKL_INCFILE))
     MKLROOT = $(abspath $(dir $(MKL_INCFILE))/..)
     ABSLIBS = 1
   endif
-  MKL_INCFILE = $(wildcard /usr/include/mkl/mkl.h)
-  ifneq (,$(strip $(MKL_INCFILE)))
+endif
+ifeq (,$(strip $(MKLROOT)))
+  MKL_INCFILE = $(strip $(wildcard /usr/include/mkl/mkl.h))
+  ifneq (,$(MKL_INCFILE))
     MKLROOT = $(abspath $(dir $(MKL_INCFILE))/../..)
     ABSLIBS = 1
   endif
