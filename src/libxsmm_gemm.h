@@ -67,6 +67,9 @@
 #if !defined(LIBXSMM_GEMM_MMBATCH_VERBOSITY)
 # define LIBXSMM_GEMM_MMBATCH_VERBOSITY ((LIBXSMM_VERBOSITY_HIGH) + 1)
 #endif
+#if !defined(LIBXSMM_GEMM_NPARGROUPS)
+# define LIBXSMM_GEMM_NPARGROUPS 128
+#endif
 
 #if !defined(LIBXSMM_WRAP) && defined(LIBXSMM_BUILD) && \
     (defined(LIBXSMM_CONFIG_WRAP) && 0 != (LIBXSMM_CONFIG_WRAP)) && \
@@ -133,12 +136,14 @@ LIBXSMM_API_INTERN libxsmm_gemm_prefetch_type libxsmm_gemm_uid2prefetch(int uid)
 
 #if defined(LIBXSMM_BUILD)
 #if defined(LIBXSMM_BUILD_EXT)
-LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_dgemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
-LIBXSMM_API void LIBXSMM_FSYMBOL(__wrap_sgemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
+LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
+LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm));
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm));
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_dgemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemv));
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(__wrap_sgemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemv));
+LIBXSMM_APIEXT void __wrap_dgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
+LIBXSMM_APIEXT void __wrap_sgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
 #endif
 LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
 LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm_batch)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
@@ -146,14 +151,18 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(con
 LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemm)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm));
 LIBXSMM_API void LIBXSMM_FSYMBOL(__real_dgemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemv));
 LIBXSMM_API void LIBXSMM_FSYMBOL(__real_sgemv)(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemv));
+LIBXSMM_API void __real_dgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, double, gemm_batch));
+LIBXSMM_API void __real_sgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
 #endif
 
-LIBXSMM_BLAS_SYMBOL_XDECL(const*, *, double, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_XDECL(const*, *, float, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_XDECL(const*, *, double, gemm);
-LIBXSMM_BLAS_SYMBOL_XDECL(const*, *, float, gemm);
-LIBXSMM_BLAS_SYMBOL_XDECL(const*, *, double, gemv);
-LIBXSMM_BLAS_SYMBOL_XDECL(const*, *, float, gemv);
+LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, double, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_CDECL(const*, *, double, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, float, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_CDECL(const*, *, float, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, double, gemm);
+LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, float, gemm);
+LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, double, gemv);
+LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, float, gemv);
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
   libxsmm_code_pointer copy_a, copy_b, copy_i, copy_o;
@@ -196,12 +205,12 @@ LIBXSMM_API int libxsmm_mmbatch_blas(
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-LIBXSMM_API_INTERN int libxsmm_dmmbatch_blas(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+LIBXSMM_API_INTERN void libxsmm_dmmbatch_blas(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const double* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb, const double* beta, void* c, const libxsmm_blasint* ldc,
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
 
-LIBXSMM_API_INTERN int libxsmm_smmbatch_blas(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
+LIBXSMM_API_INTERN void libxsmm_smmbatch_blas(const char* transa, const char* transb, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   const float* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb, const float* beta, void* c, const libxsmm_blasint* ldc,
   libxsmm_blasint index_base, libxsmm_blasint index_stride, const libxsmm_blasint stride_a[], const libxsmm_blasint stride_b[], const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize);
@@ -216,6 +225,8 @@ LIBXSMM_APIVAR_ALIGNED(void* libxsmm_mmbatch_array);
 LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_GEMM_LOCK) libxsmm_mmbatch_lock);
 /** Maximum size of the recorded batch. */
 LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_mmbatch_size);
+/** Maximum number of parallelized batch-groups. */
+LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_npargroups);
 /** Minimum batchsize per thread/task. */
 LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_taskgrain);
 /** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
