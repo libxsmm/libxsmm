@@ -48,6 +48,26 @@
 LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_desc rnncell_desc, libxsmm_dnn_err_t* status)
 {
   libxsmm_dnn_rnncell* handle = 0;
+
+  /* some check we can do before allocating the handle */
+  if ( (rnncell_desc.datatype_in != rnncell_desc.datatype_out) ||
+       ( (rnncell_desc.datatype_in != LIBXSMM_DNN_DATATYPE_BF16) && (rnncell_desc.datatype_in != LIBXSMM_DNN_DATATYPE_F32) ) ) {
+    *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+    return 0;
+  }
+  /* let's do some simple checks for BF16 as this limits the cell and architecture */
+  if ( (rnncell_desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) || (rnncell_desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
+    if ( (LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid) || (rnncell_desc.C % 16 != 0) || (rnncell_desc.K % 16 != 0) ) {
+      *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+      return 0;
+    }
+  }
+  /* we need at least one timestep */
+  if (rnncell_desc.max_T < 1) {
+    *status = LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL;
+    return 0;
+  }
+
   handle = (libxsmm_dnn_rnncell*)malloc(sizeof(libxsmm_dnn_rnncell));
   if (0 != handle) {
     *status = LIBXSMM_DNN_SUCCESS;
@@ -55,19 +75,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     memset(handle, 0, sizeof(*handle));
     /* initialize known handle components */
     handle->desc = rnncell_desc;
-#if 0
-    if ( (rnncell_desc.datatype_in != LIBXSMM_DNN_DATATYPE_F32) || (rnncell_desc.datatype_out != LIBXSMM_DNN_DATATYPE_F32)) {
-      /* error */
-      *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-      return handle;
-    }
-#endif
-    if (rnncell_desc.max_T < 1) {
-      *status = LIBXSMM_DNN_ERR_TIME_STEPS_TOO_SMALL;
-      free(handle);
-      return 0;
-    }
-    /* set current seq length to max length */
+  /* set current seq length to max length */
     handle->T = rnncell_desc.max_T;
     /* set blocking factors */
     handle->bk = (handle->desc.bk == 0) ? 64 : handle->desc.bk;
@@ -78,15 +86,7 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     } else {
       handle->lpb = 1;
     }
-    /* let's do some simple checks for BF16 as this limits the cell */
-    if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) || (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
-      if ( ( handle->desc.N % 2 != 0 ) || ( handle->desc.C % 16 != 0 ) || ( handle->desc.K % 16 != 0 ) ) {
-        *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-        free(handle);
-        return 0;
-      }
-    }
-    /* validate blocking factors */
+   /* validate blocking factors */
     if ( handle->desc.N % handle->bn != 0 ) {
       handle->bn = handle->desc.N;
       *status = LIBXSMM_DNN_WARN_RNN_SUBOPTIMAL_N_BLOCKING;
@@ -103,23 +103,9 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
     if ( LIBXSMM_X86_AVX512 <= libxsmm_target_archid ) {
       handle->fwd_generic = 0;
       handle->bwdupd_generic = 0;
-      /* we support bf16 (emulation) only on SKX or higher */
-      if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) || (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
-        if ( LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid ) {
-          *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-          free(handle);
-          return 0;
-        }
-      }
     } else {
       handle->fwd_generic = 1;
       handle->bwdupd_generic = 1;
-      /* we support bf16 (emulation) only on SKX or higher */
-      if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) || (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
-        *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-        free(handle);
-        return 0;
-      }
     }
     /* Need to allocate space for scratch libxsmm_dnn_tensor's, let's set all pointers to zero */
     handle->internal_z = 0;
