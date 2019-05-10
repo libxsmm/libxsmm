@@ -1337,7 +1337,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       LIBXSMM_ASSERT(NULL != request->descriptor.scsoa->row_idx && 0 != request->descriptor.scsoa->column_ptr && 0 != request->descriptor.scsoa->values);
       /* only floating point */
       if (LIBXSMM_GEMM_PRECISION_F64 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.scsoa->gemm->datatype) ||
-          LIBXSMM_GEMM_PRECISION_F32 == */LIBXSMM_GETENUM_OUT*/(request->descriptor.scsoa->gemm->datatype))
+          LIBXSMM_GEMM_PRECISION_F32 == /*LIBXSMM_GETENUM_OUT*/(request->descriptor.scsoa->gemm->datatype))
       {
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_spgemm_csc_soa_kernel, &generated_code, request->descriptor.scsoa->gemm, target_arch,
           request->descriptor.scsoa->row_idx, request->descriptor.scsoa->column_ptr, request->descriptor.scsoa->values);
