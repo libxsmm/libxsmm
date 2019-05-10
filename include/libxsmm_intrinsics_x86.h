@@ -704,17 +704,17 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX2( __m512 x ) {
   __m512 result, func_p0, func_p1, func_p2;
-  const __m512 ps_sign_mask = _mm512_castsi512_ps(_mm512_set1_epi32( 0x80000000 ));
-  const __m512 ps_sign_filter = _mm512_castsi512_ps(_mm512_set1_epi32( 0x7FFFFFFF ));
+  const __m512i sign_mask = _mm512_set1_epi32( 0x80000000 );
+  const __m512i sign_filter = _mm512_set1_epi32( 0x7FFFFFFF );
   const __m512i lut_low = _mm512_set1_epi32( 246 );
   const __m512i lut_high = _mm512_set1_epi32( 261 );
   const __m512 tanh_p0_2_reg = _mm512_set_ps( 0.40555,  0.118928, -0.00972979, -0.027403, -0.0169851, -0.00776152, -0.00305889, -0.00116259,  -0.00041726, -8.53233e-6,  1.0,  0.999998,   0.999754,    0.992682,    0.936453,    0.738339);
   const __m512 tanh_p1_2_reg = _mm512_set_ps( 0.495602, 0.88152,  1.1257,    1.17021,       1.1289,    1.07929,   1.04323,  1.02301, 1.01162, 1.00164, 1.56828e-14, 4.49924e-7, 0.0000646924, 0.00260405, 0.0311608, 0.168736);
   const __m512 tanh_p2_2_reg = _mm512_set_ps( -0.108238,  -0.238428,    -0.354418,   -0.382403,   -0.341357,    -0.274509,   -0.205249,  -0.151196,  -0.107635, -0.0466868, -3.60822e-16, -2.05971e-8, -4.24538e-6, -0.000231709, -0.00386434, -0.0277702);
 
-  const __m512 signs    = _mm512_and_ps(x, ps_sign_mask);
-  const __m512 abs_arg  = _mm512_and_ps(x, ps_sign_filter);
-  __m512i indices       = _mm512_srli_epi32(_mm512_castps_si512(abs_arg), 22);
+  const __m512i signs   = _mm512_and_epi32(_mm512_castps_si512(x), sign_mask);
+  const __m512i abs_arg = _mm512_and_epi32(_mm512_castps_si512(x), sign_filter);
+  __m512i indices       = _mm512_srli_epi32(abs_arg, 22);
   indices               = _mm512_max_epi32(indices, lut_low);
   indices               = _mm512_min_epi32(indices, lut_high);
 
@@ -722,17 +722,17 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   func_p1               = _mm512_permutexvar_ps(indices, tanh_p1_2_reg);
   func_p2               = _mm512_permutexvar_ps(indices, tanh_p2_2_reg);
 
-  result                = _mm512_fmadd_ps(abs_arg, func_p2, func_p1);
-  result                = _mm512_fmadd_ps(abs_arg, result, func_p0);
-  result                = _mm512_xor_ps(result, signs);
+  result                = _mm512_fmadd_ps(_mm512_castsi512_ps(abs_arg), func_p2, func_p1);
+  result                = _mm512_fmadd_ps(_mm512_castsi512_ps(abs_arg), result, func_p0);
+  result                = _mm512_castsi512_ps(_mm512_xor_epi32(_mm512_castps_si512(result), signs));
 
   return result;
 }
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS_MINIMAX3( __m512 x ) {
   __m512 result, func_p0, func_p1, func_p2, func_p3;
-  const __m512 ps_sign_mask = _mm512_castsi512_ps(_mm512_set1_epi32( 0x80000000 ));
-  const __m512 ps_sign_filter = _mm512_castsi512_ps(_mm512_set1_epi32( 0x7FFFFFFF ));
+  const __m512i sign_mask = _mm512_set1_epi32( 0x80000000 );
+  const __m512i sign_filter = _mm512_set1_epi32( 0x7FFFFFFF );
   const __m512i lut_low = _mm512_set1_epi32( 246 );
   const __m512i lut_high = _mm512_set1_epi32( 261 );
 
@@ -741,9 +741,9 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   const __m512 tanh_p2_3_reg = _mm512_setr_ps(-0.161332, -0.0305526, -0.00245909, -6.12647e-05, -3.76127e-07, 0.0, -0.000245872, -0.00341151, -0.00971505, -0.0256817, -0.0686911, -0.162433, -0.346828, -0.566516, -0.640214, -0.440119);
   const __m512 tanh_p3_3_reg = _mm512_setr_ps(0.0177393, 0.00253432, 0.000147303, 2.69963e-06, 1.16764e-08, 0.0, -0.330125, -0.317621, -0.301776, -0.27358, -0.219375, -0.136197, -0.0186868, 0.0808901, 0.107095, 0.0631459);
 
-  const __m512 signs    = _mm512_and_ps(x, ps_sign_mask);
-  const __m512 abs_arg  = _mm512_and_ps(x, ps_sign_filter);
-  __m512i indices       = _mm512_srli_epi32(_mm512_castps_si512(abs_arg), 22);
+  const __m512i signs   = _mm512_and_epi32(_mm512_castps_si512(x), sign_mask);
+  const __m512i abs_arg = _mm512_and_epi32(_mm512_castps_si512(x), sign_filter);
+  __m512i indices       = _mm512_srli_epi32(abs_arg, 22);
   indices               = _mm512_max_epi32(indices, lut_low);
   indices               = _mm512_min_epi32(indices, lut_high);
 
@@ -752,10 +752,10 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   func_p2               = _mm512_permutexvar_ps(indices, tanh_p2_3_reg);
   func_p3               = _mm512_permutexvar_ps(indices, tanh_p3_3_reg);
 
-  result                = _mm512_fmadd_ps(abs_arg, func_p3, func_p2);
-  result                = _mm512_fmadd_ps(abs_arg, result, func_p1);
-  result                = _mm512_fmadd_ps(abs_arg, result, func_p0);
-  result                = _mm512_xor_ps(result, signs);
+  result                = _mm512_fmadd_ps(_mm512_castsi512_ps(abs_arg), func_p3, func_p2);
+  result                = _mm512_fmadd_ps(_mm512_castsi512_ps(abs_arg), result, func_p1);
+  result                = _mm512_fmadd_ps(_mm512_castsi512_ps(abs_arg), result, func_p0);
+  result                = _mm512_castsi512_ps(_mm512_xor_epi32(_mm512_castps_si512(result), signs));
 
   return result;
 }
