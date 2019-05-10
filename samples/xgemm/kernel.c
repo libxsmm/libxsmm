@@ -423,6 +423,7 @@ int main(int argc, char* argv []) {
   float l_scf = libxsmm_sexp2(-1.f*((float)exp_a + (float)exp_b));
   /*l_scf = 1000;*/
   int* l_c_gold_w_i = 0;
+  double l_total_max_error = 0.0;
 
   libxsmm_matdiff_clear(&l_diff);
 
@@ -615,6 +616,10 @@ int main(int argc, char* argv []) {
         }
       }
 
+      if ( (l_total_max_error < l_diff.linf_abs) && (l_run_check == 1) ) {
+        l_total_max_error = l_diff.linf_abs;
+      }
+
       libxsmm_free(l_a_d);
       libxsmm_free(l_b_d);
       libxsmm_free(l_c_d);
@@ -693,6 +698,10 @@ int main(int argc, char* argv []) {
         }
       }
 
+      if ( (l_total_max_error < l_diff.linf_abs) && (l_run_check == 1) ) {
+        l_total_max_error = l_diff.linf_abs;
+      }
+
       libxsmm_free(l_a_d);
       libxsmm_free(l_b_d);
       libxsmm_free(l_c_d);
@@ -769,6 +778,10 @@ int main(int argc, char* argv []) {
         }
       }
 
+      if ( (l_total_max_error < l_diff.linf_abs) && (l_run_check == 1) ) {
+        l_total_max_error = l_diff.linf_abs;
+      }
+
       libxsmm_free(l_a_f);
       libxsmm_free(l_b_f);
       libxsmm_free(l_c_f);
@@ -843,6 +856,10 @@ int main(int argc, char* argv []) {
         } else {
           printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
+      }
+
+      if ( (l_total_max_error < l_diff.linf_abs) && (l_run_check == 1) ) {
+        l_total_max_error = l_diff.linf_abs;
       }
 
       libxsmm_free(l_a_f);
@@ -931,6 +948,10 @@ int main(int argc, char* argv []) {
         } else {
           printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
+      }
+
+      if ( (l_total_max_error < l_max_error) && (l_run_check == 1) ) {
+        l_total_max_error = l_max_error;
       }
 
       libxsmm_free(l_a_w);
@@ -1022,6 +1043,10 @@ int main(int argc, char* argv []) {
         }
       }
 
+      if ( (l_total_max_error < l_max_error) && (l_run_check == 1) ) {
+        l_total_max_error = l_max_error;
+      }
+
       libxsmm_free(l_a_w);
       libxsmm_free(l_b_w);
       libxsmm_free(l_c_w_f);
@@ -1085,13 +1110,11 @@ int main(int argc, char* argv []) {
                 for (l_k2 = 0; l_k2 < l_k_block; l_k2++) {
                   union libxsmm_bfloat16_hp tmp_a_f;
                   union libxsmm_bfloat16_hp tmp_b_f;
-                  float fprod;
                   tmp_a_f.i[1] = l_a_bf[(l_s * (l_lda*l_k_block)) + (l_i*l_k_block) + l_k2];
                   tmp_a_f.i[0] = 0;
                   tmp_b_f.i[1] = l_b_bf[(l_j * l_ldb) + (l_s*l_k_block) + l_k2];
                   tmp_b_f.i[0] = 0;
-                  fprod = (float)(tmp_a_f.f * tmp_b_f.f);
-                  l_c_gold_w_f[(l_j * l_ldc) + l_i] += fprod;
+                  l_c_gold_w_f[(l_j * l_ldc) + l_i] += (float)(tmp_a_f.f * tmp_b_f.f);
                 }
               }
             }
@@ -1119,6 +1142,10 @@ int main(int argc, char* argv []) {
         } else {
           printf("%i %i %i %i %i %i %f\n", l_m, l_n, l_k, l_lda, l_ldb, l_ldc, ((double)((double)g_reps * (double)l_m * (double)l_n * (double)l_k) * 2.0) / (l_runtime_libxsmm * 1.0e9) );
         }
+      }
+
+      if ( (l_total_max_error < l_max_error) && (l_run_check == 1) ) {
+        l_total_max_error = l_max_error;
       }
 
       libxsmm_free(l_a_bf);
@@ -1232,6 +1259,10 @@ int main(int argc, char* argv []) {
         }
       }
 
+      if ( (l_total_max_error < l_max_error) && (l_run_check == 1) ) {
+        l_total_max_error = l_max_error;
+      }
+
       libxsmm_free(l_a_bf);
       libxsmm_free(l_b_bf);
       libxsmm_free(l_c_w_f);
@@ -1277,6 +1308,13 @@ int main(int argc, char* argv []) {
     printf("------------------------------------------------\n");
   }
 
-  return EXIT_SUCCESS;
+  /* Print total max error */
+  printf("\n\n Total Max Error %f\n\n", l_total_max_error );
+
+  if ( l_total_max_error >= 0.00005 ) {
+    return EXIT_FAILURE;
+  } else {
+    return EXIT_SUCCESS;
+  }
 }
 
