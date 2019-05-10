@@ -404,7 +404,7 @@ if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD 
       for (jk = 0; jk < bk; jk+=16) {
         c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dwi, ikb, icb, jc, jk, cBlocks, bc, bk));
         c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dwi, ikb, icb, jc+1, jk, cBlocks, bc, bk));
-        c01 = _mm512_inserti64x4 (c01, c0, 0);
+        c01 = _mm512_inserti64x4 (LIBXSMM_INTRINSICS_MM512_UNDEFINED_EPI32(), c0, 0);
         c01 = _mm512_inserti64x4 (c01, c1, 1);
         _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(5, dwi_bf16, ikb, icb, jc/lpb, jk, 0, cBlocks, bc_lp, bk, lpb), _mm512_permutexvar_epi16(perm_index, c01));
         c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(4, dwc, ikb, icb, jc, jk, cBlocks, bc, bk));
