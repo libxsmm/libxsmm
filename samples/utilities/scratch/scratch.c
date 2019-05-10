@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
     d0 = libxsmm_timer_diff(t0, libxsmm_timer_tick());
 
 #if defined(_OPENMP)
-#   pragma omp parallel for num_threads(nthreads) private(i) default(none) shared(r) reduction(+:d1,nerrors)
+#   pragma omp parallel for num_threads(nthreads) private(i) reduction(+:d1,nerrors)
 #endif
     for (i = 0; i < ncycles; ++i) {
       const int count = r[i%(MAX_MALLOC_N)] % max_nallocs + 1;
