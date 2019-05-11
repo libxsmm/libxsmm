@@ -29,8 +29,9 @@
 /* Alexander Heinecke, Evangelos Georganas, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
+int i1, i2, i3, i4, i5, i6;
 if (tensor->layout->custom_format == LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1) {
-  int i1, i2, i3, i4, i5, i6, lpb, bfm, W, H, fmb, N, C;
+  int lpb, bfm, W, H, fmb, N, C;
   /* low precision formatting */
   if ( tensor->layout->num_dims == 6 ) {
     lpb = tensor->layout->dim_size[0];
