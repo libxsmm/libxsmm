@@ -254,7 +254,7 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
       lcl_relumask = _mm512_cmp_ps_mask( lcl_vo, _mm512_setzero_ps(), _CMP_GT_OQ );
       lcl_vo = _mm512_mask_blend_ps( lcl_relumask, _mm512_setzero_ps(), lcl_vo );
-      _store_mask16( relumask_ptr, lcl_relumask );
+      LIBXSMM_INTRINSICS_MM512_STORE_MASK16( relumask_ptr, lcl_relumask );
       relumask_ptr += 2;
 #endif
 
@@ -273,7 +273,7 @@ for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
 #if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
       lcl_relumask2 = _mm512_cmp_ps_mask( lcl_vo2, _mm512_setzero_ps(), _CMP_GT_OQ );
       lcl_vo2 = _mm512_mask_blend_ps( lcl_relumask2, _mm512_setzero_ps(), lcl_vo2 );
-      _store_mask16( relumask_ptr, lcl_relumask2 );
+      LIBXSMM_INTRINSICS_MM512_STORE_MASK16( relumask_ptr, lcl_relumask2 );
       relumask_ptr += 2;
 #endif
 

@@ -176,7 +176,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
         _mm512_store_act( del_output_ptr, lcl_vdeloutput );
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
-        lcl_relumask = _load_mask16( relumask_ptr );
+        lcl_relumask = LIBXSMM_INTRINSICS_MM512_LOAD_MASK16( relumask_ptr );
         lcl_vdeloutput = _mm512_mask_blend_ps( lcl_relumask, _mm512_setzero_ps(), lcl_vdeloutput );
         _mm512_store_act( del_output_ptr, lcl_vdeloutput );
         relumask_ptr += 2;
@@ -194,7 +194,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
         _mm512_store_act( del_output_ptr+16, lcl_vdeloutput2 );
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
-        lcl_relumask2 = _load_mask16( relumask_ptr );
+        lcl_relumask2 = LIBXSMM_INTRINSICS_MM512_LOAD_MASK16( relumask_ptr );
         lcl_vdeloutput2 = _mm512_mask_blend_ps( lcl_relumask2, _mm512_setzero_ps(), lcl_vdeloutput2 );
         _mm512_store_act( del_output_ptr+16, lcl_vdeloutput2 );
         relumask_ptr += 2;
@@ -212,7 +212,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
         _mm512_store_act( del_output_ptr+32, lcl_vdeloutput3 );
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
-        lcl_relumask3 = _load_mask16( relumask_ptr );
+        lcl_relumask3 = LIBXSMM_INTRINSICS_MM512_LOAD_MASK16( relumask_ptr );
         lcl_vdeloutput3 = _mm512_mask_blend_ps( lcl_relumask3, _mm512_setzero_ps(), lcl_vdeloutput3 );
         _mm512_store_act( del_output_ptr+32, lcl_vdeloutput3 );
         relumask_ptr += 2;
@@ -231,7 +231,7 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
         output_ptr += 64;
 #endif
 #if defined(LIBXSMM_DNN_FUSEDBN_BWD_ENABLE_RELU_WITH_MASK)
-        lcl_relumask4 = _load_mask16( relumask_ptr );
+        lcl_relumask4 = LIBXSMM_INTRINSICS_MM512_LOAD_MASK16( relumask_ptr );
         lcl_vdeloutput4 = _mm512_mask_blend_ps( lcl_relumask4, _mm512_setzero_ps(), lcl_vdeloutput4 );
         _mm512_store_act( del_output_ptr+48, lcl_vdeloutput4 );
         relumask_ptr += 2;
