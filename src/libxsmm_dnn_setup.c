@@ -993,6 +993,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->block_upd_ifm = libxsmm_dnn_setup_generic_block_upd_IFM(handle);
   handle->upd_loop_order = libxsmm_dnn_setup_generic_loop_order_upd(handle);
 
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+    handle->input_pixels = handle->ifwp * handle->ifhp;
+    handle->output_pixels = handle->ofwp * handle->ofhp;
+    handle->pixel_blocking = handle->ofw * handle->ofh;
+    handle->n_used_pixels = handle->ofw * handle->ofh;
+    handle->weight_copies = handle->desc.threads;
+  }
+
 #if 0
   /* Spit out UPD parameters that are selected...  */
   printf("UPD params...\n");
@@ -1034,6 +1042,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   /* In this case, allocate scratch for output in fp32 precision (to use when we don't fully accumulate) + a scratchpad (when we fully accumulate)  */
   if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
     handle->scratch6_size = (size_t) (handle->desc.N * handle->ofwp * handle->ofhp * handle->desc.K + handle->desc.threads * handle->fwd_ofw_rb * handle->fwd_ofh_rb * handle->ofmblock)* sizeof(float);
+  }
+
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+    handle->use_lp_kernel = 1;
+    handle->scratch2_size = (size_t) (handle->desc.N * handle->output_pixels * handle->desc.K * sizeof(float)/2);
+    handle->scratch3_size = (size_t) (handle->desc.N * handle->input_pixels * handle->desc.C * sizeof(float)/2);
   }
 
   return status;

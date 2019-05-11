@@ -452,6 +452,10 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int shuffle_filter_accesses;
   int use_fallback_fwd_loops;
   int use_fallback_bwd_loops;
+  int input_pixels;
+  int output_pixels;
+  int n_used_pixels;
+  int pixel_blocking;
 
   libxsmm_xtransfunction tr_kernel;
 
