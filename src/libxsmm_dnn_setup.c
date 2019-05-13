@@ -994,30 +994,49 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->upd_loop_order = libxsmm_dnn_setup_generic_loop_order_upd(handle);
 
   if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+    int remainder_pixels;
     const int multiple_target = 2;
-    /* Logistics to pad accumulation chainlength */
-    int compute_pixels = handle->ofw * handle->ofh + 2 * handle->desc.pad_w * (handle->ofh-1);
-    int remainder_pixels = (compute_pixels % multiple_target == 0) ? 0 : (compute_pixels/multiple_target+1)*multiple_target - compute_pixels;
-    int accum_length_pixels = compute_pixels + remainder_pixels;
-
-    /* Logistics for input transpose and additional pixel padding */
-    int max_init_offset = 2 * handle->desc.pad_h * handle->ifwp + 2 * handle->desc.pad_w;
-    int max_compute_offset_input = max_init_offset + accum_length_pixels;
-    int input_compute_pad = (max_compute_offset_input > handle->ifwp*handle->ifhp) ? max_compute_offset_input - handle->ifwp*handle->ifhp : 0;
-
-    handle->input_pixels = handle->ifwp * handle->ifhp + input_compute_pad;
-    handle->output_pixels = accum_length_pixels;
-    handle->pixel_blocking = accum_length_pixels/2;
-    handle->n_used_pixels = accum_length_pixels;
+    handle->upd_linearized_pixels = 0;
     handle->weight_copies = handle->desc.threads;
-
-    handle->use_intermediate_f32_wt_tensor = (handle->pixel_blocking == handle->n_used_pixels) ? 0 : 1;
     handle->use_lp_kernel = 1;
-    handle->scratch2_size = (size_t) (handle->desc.N * handle->output_pixels * handle->desc.K * sizeof(float)/2);
-    if (handle->use_intermediate_f32_wt_tensor) {
-      handle->scratch2_size += (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads * sizeof(float);
+
+    if (handle->upd_linearized_pixels == 1) {
+      /* Logistics to pad accumulation chainlength */
+      int compute_pixels = handle->ofw * handle->ofh + 2 * handle->desc.pad_w * (handle->ofh-1);
+      remainder_pixels = (compute_pixels % multiple_target == 0) ? 0 : (compute_pixels/multiple_target+1)*multiple_target - compute_pixels;
+      int accum_length_pixels = compute_pixels + remainder_pixels;
+
+      /* Logistics for input transpose and additional pixel padding */
+      int max_init_offset = 2 * handle->desc.pad_h * handle->ifwp + 2 * handle->desc.pad_w;
+      int max_compute_offset_input = max_init_offset + accum_length_pixels;
+      int input_compute_pad = (max_compute_offset_input > handle->ifwp*handle->ifhp) ? max_compute_offset_input - handle->ifwp*handle->ifhp : 0;
+
+      handle->input_pixels = handle->ifwp * handle->ifhp + input_compute_pad;
+      handle->output_pixels = accum_length_pixels;
+      handle->pixel_blocking = accum_length_pixels;
+      handle->n_used_pixels = accum_length_pixels;
+
+      handle->use_intermediate_f32_wt_tensor = (handle->pixel_blocking == handle->n_used_pixels) ? 0 : 1;
+      handle->scratch2_size = (size_t) (handle->desc.N * handle->output_pixels * handle->desc.K * sizeof(float)/2);
+      if (handle->use_intermediate_f32_wt_tensor) {
+        handle->scratch2_size += (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads * sizeof(float);
+      }
+      handle->scratch3_size = (size_t) (handle->desc.N * handle->input_pixels * handle->desc.C * sizeof(float)/2);
     }
-    handle->scratch3_size = (size_t) (handle->desc.N * handle->input_pixels * handle->desc.C * sizeof(float)/2);
+
+    if (handle->upd_linearized_pixels == 0) {
+      remainder_pixels = (handle->ofw % multiple_target == 0) ? 0 : (handle->ofw/multiple_target+1)*multiple_target - handle->ofw;
+      handle->ofwp_extended = handle->ofwp + remainder_pixels;
+      handle->ifwp_extended = handle->ifwp + remainder_pixels;
+      handle->batchreduce_h_pixels = handle->ofh;
+      handle->use_intermediate_f32_wt_tensor = (handle->batchreduce_h_pixels == handle->ofh) ? 0 : 1;
+      handle->scratch2_size = (size_t) (handle->desc.N * handle->ofhp*handle->ofwp_extended * handle->desc.K * sizeof(float)/2);
+      if (handle->use_intermediate_f32_wt_tensor) {
+        handle->scratch2_size += (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads * sizeof(float);
+      }
+      handle->scratch3_size = (size_t) (handle->desc.N * handle->ifhp * handle->ifwp_extended * handle->desc.C * sizeof(float)/2);
+    }
+
   }
 
 #if 0
