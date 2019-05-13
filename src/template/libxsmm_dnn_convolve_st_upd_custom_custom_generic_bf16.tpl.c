@@ -68,8 +68,11 @@ my_img_end = ltid+1;
 
 /* First transpose input and output */
 element_input_type *scratch_tr_input = (element_input_type*)handle->scratch3;
+element_input_type *zero_ptr_in;
 LIBXSMM_VLA_DECL(4, element_input_type, tr_input, (element_input_type*) scratch_tr_input, handle->blocksifm, handle->ifmblock, handle->input_pixels);
 for (img = my_img_start; img < my_img_end; img++) {
+  zero_ptr_in = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, tr_input, img, 0, 0, 0, handle->blocksifm, handle->ifmblock, handle->input_pixels);
+  memset(zero_ptr_in, 0, handle->desc.C * handle->input_pixels * sizeof(element_input_type));
   for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
     for (ij = 0; ij < handle->ifhp; ij++) {
       for (ii = 0; ii < handle->ifwp; ii++) {
@@ -85,7 +88,10 @@ for (img = my_img_start; img < my_img_end; img++) {
 element_output_type *scratch_tr_output = (element_input_type*)handle->scratch2;
 LIBXSMM_VLA_DECL(5, element_output_type, tr_output, (element_output_type*) scratch_tr_output, handle->blocksofm, handle->output_pixels/2, handle->ofmblock, 2);
 element_output_type *out_ptr = (element_output_type*)handle->grad_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
+element_output_type *zero_ptr_out;
 for (img = my_img_start; img < my_img_end; img++) {
+  zero_ptr_out = (element_output_type*) &LIBXSMM_VLA_ACCESS(5, tr_output, img, 0, 0, 0, 0, handle->blocksofm, handle->output_pixels/2, handle->ofmblock, 2);
+  memset(zero_ptr_out, 0, handle->desc.K * handle->output_pixels * sizeof(element_output_type));
   for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
       for (oi = 0; oi < handle->n_used_pixels; oi++) {
         for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
@@ -110,7 +116,7 @@ const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29
 
 for (img = my_img_start; img < my_img_end; img++) {
   for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
-    for (pix = 0; pix < handle->output_pixels; pix += handle->pixel_blocking){
+    for (pix = 0; pix < handle->n_used_pixels; pix += handle->pixel_blocking){
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
         for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
           for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
@@ -122,7 +128,7 @@ for (img = my_img_start; img < my_img_end; img++) {
                     &LIBXSMM_VLA_ACCESS(2, filter_tmp, 0, 0, handle->ofmblock) );
 
                 /* Convert scratch to bf16 output buffer  */
-                if (pix + handle->pixel_blocking >= handle->output_pixels) {
+                if (pix + handle->pixel_blocking >= handle->n_used_pixels) {
                   for (ij = 0; ij < handle->ifmblock; ij+=2) {
                     for (ii = 0; ii < handle->ofmblock; ii+=16) {
                       c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_tmp, ij, ii, handle->ofmblock));
