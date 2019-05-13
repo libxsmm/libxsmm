@@ -127,7 +127,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
 #if defined(LIBXSMM_DNN_POOLING_BWD_MAX)
   for( ho = oph; ho < (ofh+oph); ho++ ) {
     for( wo = opw; wo < (ofw+opw); wo++ ) {
-      __m512 lcl_vdinput, lcl_vdinput2, lcl_vdinput3, lcl_vdinput4;
+      __m512 lcl_vdinput/*, lcl_vdinput2, lcl_vdinput3, lcl_vdinput4*/;
       const element_output_type* doutput_ptr = &LIBXSMM_VLA_ACCESS(5, doutput, img, fm1,     ho,     wo, fm2, nBlocksFm, ofhp, ofwp, 64);
       const element_mask_type*      mask_ptr = &LIBXSMM_VLA_ACCESS(5, mask,    img, fm1, ho-oph, wo-opw, fm2, nBlocksFm,  ofh,  ofw, 64);
 
