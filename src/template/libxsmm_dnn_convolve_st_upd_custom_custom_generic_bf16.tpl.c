@@ -42,9 +42,13 @@ element_output_type *const out = (element_output_type*)handle->grad_output->data
 LIBXSMM_VLA_DECL(5, const element_output_type, output, (const element_output_type*)out, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
 #endif
 LIBXSMM_VLA_DECL(5, const element_input_type, input, (const element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+
 LIBXSMM_VLA_DECL(7, element_filter_type, weight_global, (element_filter_type*)handle->grad_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2);
 element_filter_type *weight_ptr = (element_filter_type*)handle->scratch7 + ltid * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S;
 LIBXSMM_VLA_DECL(7, element_filter_type, weight_private, (element_filter_type*)weight_ptr, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2);
+element_filter_type *filter_dst_ptr = (handle->weight_copies > 1) ? (element_filter_type*)weight_ptr : (element_filter_type*)handle->grad_filter->data;
+LIBXSMM_VLA_DECL(7, element_filter_type, weight_dst, (element_filter_type*)filter_dst_ptr, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2);
+
 /* This intermediate tensor is used when pixels are NOT fully accumulated  */
 float *weight_ptr_f32 = (float*)handle->scratch2 + handle->desc.N * (handle->output_pixels/2) * handle->desc.K + ltid * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S;
 LIBXSMM_VLA_DECL(6, float, weight_private_f32, (float*)weight_ptr_f32, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
@@ -131,35 +135,30 @@ for (img = my_img_start; img < my_img_end; img++) {
             for (kj = 0; kj < handle->desc.R; ++kj) {
               for (ki = 0; ki < handle->desc.S; ++ki) {
 
-                dst_ptr = (handle->use_intermediate_f32_wt_tensor) ? (float*)&LIBXSMM_VLA_ACCESS(6, weight_private_f32, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) : (float*)&LIBXSMM_VLA_ACCESS(2, filter_tmp, 0, 0, handle->ofmblock);
+                /* Determine if destination is the accumulation scratch or the intermediate fp32 weight tensor */
+                if (handle->use_intermediate_f32_wt_tensor == 1) {
+                  dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(6, weight_private_f32, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+                } else {
+                  dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(2, filter_tmp, 0, 0, handle->ofmblock);
+                }
                 gemm_kernel( &LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, pix/2, 0, 0, handle->blocksofm, handle->output_pixels/2, handle->ofmblock, 2),
                     &LIBXSMM_VLA_ACCESS(4, tr_input, img, ifm1, 0, pix + kj * handle->ifwp + ki, handle->blocksifm, handle->ifmblock, handle->input_pixels),
                     dst_ptr);
 
-                /* Convert acc_buffer to bf16 weight buffer in case of full accumulation has happened */
+                /* Convert fully caccumulated buffer to bf16 weight buffer in case of full accumulation has happened */
                 if (pix + handle->pixel_blocking >= handle->n_used_pixels) {
-                  if (handle->use_intermediate_f32_wt_tensor == 0) {
-                    for (ij = 0; ij < handle->ifmblock; ij+=2) {
-                      for (ii = 0; ii < handle->ofmblock; ii+=16) {
-                        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_tmp, ij, ii, handle->ofmblock));
-                        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_tmp, ij+1, ii, handle->ofmblock));
-                        c01 = _mm512_inserti64x4 (c01, c0, 0);
-                        c01 = _mm512_inserti64x4 (c01, c1, 1);
-                        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_private, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
-                      }
-                    }
-                  } else {
-                    for (ij = 0; ij < handle->ifmblock; ij+=2) {
-                      for (ii = 0; ii < handle->ofmblock; ii+=16) {
-                        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(6, weight_private_f32, ofm1, ifm1, kj, ki, ij, ii, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock));
-                        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(6, weight_private_f32, ofm1, ifm1, kj, ki, ij+1, ii, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock));
-                        c01 = _mm512_inserti64x4 (c01, c0, 0);
-                        c01 = _mm512_inserti64x4 (c01, c1, 1);
-                        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_private, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
-                      }
+                  LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
+                  for (ij = 0; ij < handle->ifmblock; ij+=2) {
+                    for (ii = 0; ii < handle->ofmblock; ii+=16) {
+                      c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
+                      c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
+                      c01 = _mm512_inserti64x4 (c01, c0, 0);
+                      c01 = _mm512_inserti64x4 (c01, c1, 1);
+                      _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_dst, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
                     }
                   }
                 }
+
               }
             }
           }
