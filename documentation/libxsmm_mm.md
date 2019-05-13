@@ -139,7 +139,7 @@ if (0 < n) { /* check that n is at least 1 */
 }
 ```
 
-To process a batch of matrix multiplications and to prefetch the operands of the next multiplication ahead of time, the code presented in the [Overview](#overview) section may be modified as shown above. The last multiplication is peeled off from the batch to avoid prefetching out-of-bounds (OOB). Prefetching from an invalid address does not trap an exception, but an (unnecessary) page fault can be avoided as shown above.
+To process a batch of matrix multiplications and to prefetch the operands of the next multiplication ahead of time, the code presented in the [Overview](#overview) section may be modified as shown above. The last multiplication is peeled from the main-batch to avoid prefetching out-of-bounds (OOB). Prefetching from an invalid address does not trap an exception, but an (unnecessary) page fault can be avoided.
 
 <a name="explicit-batch-interface"></a>
 
@@ -156,10 +156,12 @@ int libxsmm_mmbatch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
   const libxsmm_blasint stride_b[],
   const libxsmm_blasint stride_c[],
   libxsmm_blasint batchsize,
-  int tid, int nthreads);
+  int tid, int ntasks);
 ```
 
-To further simplify the multiplication of matrices in a batch, the above interface can help if an explicit data representation is available. This expert interface can employ a user-defined threading runtime (`tid` and `nthreads`). In case of OpenMP, `libxsmm_mmbatch_omp` is ready-to-use and hosted by the extension library (libxsmmext). Of course, `libxsmm_mmbatch_omp` does not take `tid` and `nthreads` since both arguments are given by OpenMP. Similarly, a sequential version (shown below) is available per `libxsmm_gemm_batch` (libxsmm).
+To further simplify the multiplication of matrices in a batch, LIBXSMM's batch interface can help to extract the necessary input from a variety of existing structures (integer indexes, array of pointers both with Byte sized strides). An expert interface (see above) can employ a user-defined threading runtime (`tid` and `ntasks`). In case of OpenMP, `libxsmm_mmbatch_omp` is ready-to-use and hosted by the extension library (libxsmmext). Of course, `libxsmm_mmbatch_omp` does not take `tid` and `ntasks` since both arguments are given by OpenMP. Similarly, a sequential version (shown below) is available per `libxsmm_gemm_batch` (libxsmm).
+
+Please note that an explicit data representation should exist and reused rather than created only to call the explicit batch-interface. Creating such a data structure only for this matter can introduce an overhead which is hard to amortize (speedup). If no explicit data structure exists, a "chain" of multiplications can be often algorithmically described (see [self-hosted batch loop](#implicit-batches)).
 
 ```C
 void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
@@ -175,7 +177,7 @@ void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_precision opr
   libxsmm_blasint batchsize);
 ```
 
-<a name="blas-batch-interface"></a>In recent BLAS library implementations, `dgemm_batch` and `sgemm_batch` have been introduced. This BLAS(-like) interface allows for groups of homogeneous batches, which is like an additional loop around the interface as introduced above. On the other hand, the BLAS(-like) interface only supports arrays of pointers for the matrices (above interface supports arrays of pointers as well as array of indexes plus a flexible way to extract data out of existing arrays of structures). LIBXSMM also supports the BLAS(-like) interface with `libxsmm_?gemm_batch` and `libxsmm_?gemm_batch_omp` (the latter of which relies on LIBXSMM/ext). Further, existing calls to `dgemm_batch` and `sgemm_batch` can be intercepted and replaced with [LIBXSMM's call wrapper](#call-wrapper). The signatures of `libxsmm_dgemm_batch` and `libxsmm_sgemm_batch` are equal except for the element type (`double` and `float` respectively).
+<a name="blas-batch-interface"></a>In recent BLAS library implementations, `dgemm_batch` and `sgemm_batch` have been introduced. This BLAS(-like) interface allows for groups of homogeneous batches, which is like an additional loop around the interface as introduced above. On the other hand, the BLAS(-like) interface only supports arrays of pointers for the matrices. In contrast, above interface supports arrays of pointers as well as arrays of indexes plus a flexible way to extract data from arrays of structures (AoS). LIBXSMM also supports this (new) BLAS(-like) interface with `libxsmm_?gemm_batch` and `libxsmm_?gemm_batch_omp` (the latter of which relies on LIBXSMM/ext). Further, existing calls to `dgemm_batch` and `sgemm_batch` can be intercepted and replaced with [LIBXSMM's call wrapper](#call-wrapper). The signatures of `libxsmm_dgemm_batch` and `libxsmm_sgemm_batch` are equal except for the element type (`double` and `float` respectively).
 
 ```C
 void libxsmm_dgemm_batch(const char transa_array[], const char transb_array[],
@@ -186,13 +188,13 @@ void libxsmm_dgemm_batch(const char transa_array[], const char transb_array[],
   const libxsmm_blasint* group_count, const libxsmm_blasint group_size[]);
 ```
 
-Please note that an explicit data representation is not necessary to process a series of matrix multiplications (see [self-hosted batch loop](#implicit-batches)). A "chain" of multiplications can be often algorithmically described (without the need to build arrays of operands or indexes). However, since such data structures often exist for multiple purposes, it can be handy to call an interface that can handle it right away. LIBXSMM provides an interface that allows an implementation to perform well but describe and extract the necessary input from a variety of different structures (integer indexes, array of pointers both with Byte sized strides).
+<a name="batch-sync"></a>**NOTE**: the multi-threaded implementation (`ntasks > 1` or "omp" form of the functions) avoids data races if indexes or pointers for the destination (C-)matrix are duplicated. This synchronization occurs automatically (`beta != 0`), but can be avoided by passing a negative `batchsize`, `group_size` and/or a negative `group_count`.
 
 ### Call Wrapper
 
 #### Overview
 
-Since the library is binary compatible with existing GEMM calls (BLAS), such calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original BLAS library. There are two cases to consider: (1)&#160;static linkage, and (2)&#160;dynamic linkage of the application against the original BLAS library. When calls are intercepted, one can select which problem sizes are handled (ignored). By default, only small GEMMs are handled by LIBXSMM (LIBXSMM_GEMM_WRAP=1). Of course, one can handle all problem sizes (LIBXSMM_GEMM_WRAP=2, which denotes "||" for "parallel"), and the default behavior can be also adjusted at compile-time e.g., `make GEMM=2` to handle larger problem-sizes in an OpenMP-parallel fashion.
+Since the library is binary compatible with existing GEMM calls (BLAS), such calls can be replaced at link-time or intercepted at runtime of an application such that LIBXSMM is used instead of the original BLAS library. There are two cases to consider: (1)&#160;static linkage, and (2)&#160;dynamic linkage of the application against the original BLAS library. When calls are intercepted, one can select a sequential (default) or an OpenMP-parallelized implementation (`make WRAP=2`).
 
 ```bash
 LIBXSMM STATISTIC: 1000 multiplications
@@ -220,10 +222,14 @@ gcc [...] -Wl,--wrap=dgemm_,--wrap=sgemm_ \
 In addition, existing [BLAS(-like) batch-calls](blas-batch-interface) can be intercepted as well:
 
 ```bash
-gcc [...] -Wl,--wrap=dgemm_batch_,--wrap=sgemm_batch_ -Wl,--wrap=dgemm_,--wrap=sgemm_ \
+gcc [...] -Wl,--wrap=dgemm_batch_,--wrap=sgemm_batch_ \
+          -Wl,--wrap=dgemm_batch,--wrap=sgemm_batch \
+          -Wl,--wrap=dgemm_,--wrap=sgemm_ \
           /path/to/libxsmmext.a /path/to/libxsmm.a \
           /path/to/your_regular_blas.a
 ```
+
+Above, GEMM and GEMM_BATCH are intercepted both, however this can be chosen independently. For GEMM_BATCH the Fortran and C-form of the symbol may be intercepted both (regular GEMM can always be intercepted per `?gemm_` even when `?gemm` is used in C-code).
 
 **NOTE**: The static link-time wrapper technique may only work with a GCC tool chain (GNU&#160;Binutils: `ld`, or `ld` via compiler-driver), and it has been tested with GNU&#160;GCC, Intel&#160;Compiler, and Clang. However, this does not work under Microsoft Windows (even when using the GNU tool chain or Cygwin).
 

@@ -734,12 +734,19 @@ else # fallback
 endif
 endif
 
-ifneq (,$(strip $(LIB_FLD)))
+FREEFORM ?= 1
 ifeq (,$(strip $(GFC)))
-ifneq (0,$(INTEL))
-  LIB_FLD += -nofor-main
+  ifneq (0,$(INTEL))
+    ifneq (,$(strip $(LIB_FLD)))
+      LIB_FLD += -nofor-main
+    endif
+    ifneq (0,$(FREEFORM))
+      FFORM_FLAG = -free
+    endif
+  endif
 endif
-endif
+ifneq (0,$(FREEFORM))
+  FFORM_FLAG ?= -ffree-form
 endif
 
 ifneq (0,$(DEPSTATIC))
@@ -899,7 +906,7 @@ ifneq (0,$(INTEL))
     ifeq (,$(strip $(GFC)))
       FSTD = -std03
       FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
-      FCFLAGS += -free
+      FCFLAGS += $(FFORM_FLAG)
     endif
     ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
       CXXFLAGS += -Wcheck
@@ -917,7 +924,7 @@ ifneq (0,$(INTEL))
   else
     CSTD = -std=c89
     ifeq (,$(strip $(GFC)))
-      FCFLAGS += -free
+      FCFLAGS += $(FFORM_FLAG)
     endif
   endif
   ifeq (,$(strip $(GFC)))
@@ -1128,7 +1135,7 @@ else # GCC assumed
       CXXFLAGS += $(CPEDANTIC) -Wno-long-long
       #CXXFLAGS += -Wno-missing-field-initializers
       CFLAGS += $(CSTD) $(CPEDANTIC)
-      FCFLAGS += -ffree-form
+      FCFLAGS += $(FFORM_FLAG)
       FMFLAGS += $(FSTD) -pedantic -Wunused-variable $(FWARNEXTRA)
     else ifneq (0,$(PEDANTIC))
       ifneq (Darwin,$(UNAME))
@@ -1146,7 +1153,7 @@ else # GCC assumed
       FCFLAGS += $(FSTD) $(FPEDANTIC)
     else ifeq (0,$(COMPATIBLE))
       CPEDANTIC += -Wno-long-long #-Wno-missing-field-initializers
-      FCFLAGS += -ffree-form
+      FCFLAGS += $(FFORM_FLAG)
       CSTD = -std=c89
     endif
     # flag specifying output directory must be last
@@ -1305,7 +1312,7 @@ ifeq (undefined,$(origin TARGET))
   endif
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
-    # prevents Clang BE error (CRC32 and others)
+    # detect maintainer build and limit to SSE3
     ifneq (Windows_NT,$(UNAME))
     ifneq (Darwin,$(UNAME))
     ifeq (3,$(GCC))
@@ -1683,9 +1690,16 @@ endif
 
 # enable MKL if available
 ifeq (,$(strip $(MKLROOT)))
-  MKL_INCFILE = $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h)))
-  ifneq (,$(strip $(MKL_INCFILE)))
+  MKL_INCFILE = $(strip $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h))))
+  ifneq (,$(MKL_INCFILE))
     MKLROOT = $(abspath $(dir $(MKL_INCFILE))/..)
+    ABSLIBS = 1
+  endif
+endif
+ifeq (,$(strip $(MKLROOT)))
+  MKL_INCFILE = $(strip $(wildcard /usr/include/mkl/mkl.h))
+  ifneq (,$(MKL_INCFILE))
+    MKLROOT = $(abspath $(dir $(MKL_INCFILE))/../..)
     ABSLIBS = 1
   endif
 endif
@@ -1735,7 +1749,11 @@ ifeq (1,$(MKL_DIRECT))
   endif
 endif
 ifneq (Darwin,$(UNAME))
-  MKL_ARCH = intel64
+  ifneq (,$(wildcard $(MKLROOT)/lib/x86_64-linux-gnu/libmkl_rt.*))
+    MKL_ARCH = x86_64-linux-gnu
+  else
+    MKL_ARCH = intel64
+  endif
 endif
 
 ifeq (1,$(MKL)) # sequential
@@ -1765,7 +1783,11 @@ else ifneq (0,$(MKL)) # multi-threaded
   endif
 endif
 ifneq (0,$(MKL))
-  BLAS_IFLAGS += -I$(MKLROOT)/include
+  ifeq (,$(MKL_INCFILE))
+    BLAS_IFLAGS += -I$(MKLROOT)/include
+  else
+    BLAS_IFLAGS += -I$(dir $(MKL_INCFILE))
+  endif
   BLAS_LDFLAGS += $(XLIB_BEGIN) -lm $(LIBDL) $(XLIB_END)
   ifeq (0,$(BLAS_STATIC)) # shared
     BLAS_LDFLAGS := $(call abslibpath,$(MKLROOT)/lib/$(MKL_ARCH)) \
@@ -1936,7 +1958,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION% MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP CCAR \
     SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE OMPLIBFILE \
     NOBLASLIB NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 PYMOD CSTD \
-    CWARNEXTRA MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE \
+    CWARNEXTRA MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE FFORM_FLAG FREEFORM \
     which cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)

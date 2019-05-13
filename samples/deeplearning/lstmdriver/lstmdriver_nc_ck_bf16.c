@@ -2047,6 +2047,11 @@ int main(int argc, char* argv[])
   libxsmm_free(ot);
   libxsmm_free(cit);
   libxsmm_free(cot);
+  libxsmm_free(h_test);
+  libxsmm_free(dxt_test);
+  libxsmm_free(dw_test);
+  libxsmm_free(dr_test);
+  libxsmm_free(db_test);
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 1.0 : atof(env_check_scale));

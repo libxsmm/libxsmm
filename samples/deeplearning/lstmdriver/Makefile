@@ -46,7 +46,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/lstmdriver_nc_ck $(OUTDIR)/lstmdriver_nc_kcck $(OUTDIR)/lstmdriver_nc_ck_bf16 
+XFILES := $(OUTDIR)/lstmdriver_nc_ck $(OUTDIR)/lstmdriver_nc_kcck $(OUTDIR)/lstmdriver_nc_ck_bf16 $(OUTDIR)/lstmdriver_nc_kcck_bf16 
 .PHONY: all
 all: $(XFILES)
 
@@ -61,6 +61,9 @@ $(OUTDIR)/lstmdriver_nc_ck_bf16: $(OUTDIR)/.make $(BLDDIR)/lstmdriver_nc_ck_bf16
 
 $(OUTDIR)/lstmdriver_nc_kcck: $(OUTDIR)/.make $(BLDDIR)/lstmdriver_nc_kcck-c.o $(EXTDEP) $(LIBDEP) 
 	$(LD) -o $@ $(BLDDIR)/lstmdriver_nc_kcck-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/lstmdriver_nc_kcck_bf16: $(OUTDIR)/.make $(BLDDIR)/lstmdriver_nc_kcck_bf16-c.o $(EXTDEP) $(LIBDEP) 
+	$(LD) -o $@ $(BLDDIR)/lstmdriver_nc_kcck_bf16-c.o $(MAINLIB) $(EXTLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

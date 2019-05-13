@@ -1311,7 +1311,7 @@ int main(int argc, char* argv []) {
   /* Print total max error */
   printf("\n\n Total Max Error %f\n\n", l_total_max_error );
 
-  if ( l_total_max_error >= 0.0001 ) {
+  if ( l_total_max_error >= 0.00005 ) {
     return EXIT_FAILURE;
   } else {
     return EXIT_SUCCESS;
