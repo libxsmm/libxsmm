@@ -999,6 +999,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     handle->upd_linearized_pixels = 0;
     handle->weight_copies = handle->desc.threads;
     handle->use_lp_kernel = 1;
+    handle->on_the_fly_input_packing = 0;
 
     if (handle->upd_linearized_pixels == 1) {
       /* Logistics to pad accumulation chainlength */
@@ -1025,6 +1026,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     }
 
     if (handle->upd_linearized_pixels == 0) {
+      if (handle->desc.v !=1) {
+        handle->on_the_fly_input_packing = 1;
+      }
       remainder_pixels = (handle->ofw % multiple_target == 0) ? 0 : (handle->ofw/multiple_target+1)*multiple_target - handle->ofw;
       handle->ofwp_extended = handle->ofwp + remainder_pixels;
       handle->ifwp_extended = handle->ifwp + remainder_pixels;

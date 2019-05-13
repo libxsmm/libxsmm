@@ -117,15 +117,17 @@ if (handle->upd_linearized_pixels == 1) {
     }
   }
 } else {
-  for (img = my_img_start; img < my_img_end; img++) {
-    zero_ptr_in = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended);
-    memset(zero_ptr_in, 0, handle->desc.C * handle->ifhp * handle->ifwp_extended * sizeof(element_input_type));
-    for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
-      for (ij = 0; ij < handle->ifhp; ij++) {
-        for (ii = 0; ii < handle->ifwp; ii++) {
-          for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+  if (handle->on_the_fly_input_packing == 0) {
+    for (img = my_img_start; img < my_img_end; img++) {
+      zero_ptr_in = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended);
+      memset(zero_ptr_in, 0, handle->desc.C * handle->ifhp * handle->ifwp_extended * sizeof(element_input_type));
+      for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
+        for (ij = 0; ij < handle->ifhp; ij++) {
+          for (ii = 0; ii < handle->ifwp; ii++) {
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
               LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, ifm2, ij, ii, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended) =
-              LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            }
           }
         }
       }
@@ -183,13 +185,20 @@ if (handle->upd_linearized_pixels == 0) {
                   }
 
                   /* Copy the input in such a way that we ignore "w-pixels" based on ki value  */
-                  {
-
+                  if (handle->on_the_fly_input_packing == 1) {
+                    for (ij = 0; ij < handle->ifhp; ij++) {
+                      for (ii = 0; ii < handle->ofw; ii++) {
+                        for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                          LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, ifm2, ij, ii, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended) =
+                            LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii*handle->desc.v+ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                        }
+                      }
+                    }
                   }
 
                   for (j_br = 0; j_br < handle->batchreduce_h_pixels; j_br++) {
                     A_ptrs[j_br] = (element_output_type*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, ofm1, oj+j_br, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp_extended/2, handle->ofmblock, 2);
-                    B_ptrs[j_br] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, 0, (oj+j_br) * handle->desc.u + kj, ki, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended);
+                    B_ptrs[j_br] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, 0, (oj+j_br)*handle->desc.u + kj, 0, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended);
                   }
 
                   br_gemm_kernel(A_ptrs, B_ptrs, dst_ptr, &n_blocks);
