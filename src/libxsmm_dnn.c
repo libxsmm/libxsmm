@@ -2157,13 +2157,6 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t internal_execute_st(libxsmm_dnn_layer* hand
               case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
                 switch (handle->filter_format) {
                   case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
-                    if ( (handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCHNORM_BWD) > 0 ) {
-                      if ( 0 != handle->desc.post_bn ) {
-                        status = libxsmm_dnn_fusedbatchnorm_st_bwd_custom( handle->desc.post_bn, start_thread, tid );
-                      } else {
-                        status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
-                      }
-                    }
                     status = libxsmm_dnn_convolve_st_bwd_custom_custom(handle, start_thread, tid);
                   } break;
                   default: {
@@ -2197,6 +2190,13 @@ LIBXSMM_API_INLINE libxsmm_dnn_err_t internal_execute_st(libxsmm_dnn_layer* hand
               case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
                 switch (handle->filter_format) {
                   case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
+                    if ( (handle->desc.fuse_ops & LIBXSMM_DNN_CONV_FUSE_BATCHNORM_BWD) > 0 ) {
+                      if ( 0 != handle->desc.post_bn ) {
+                        status = libxsmm_dnn_fusedbatchnorm_st_bwd_custom( handle->desc.post_bn, start_thread, tid );
+                      } else {
+                        status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+                      }
+                    }
                     status = libxsmm_dnn_convolve_st_upd_custom_custom(handle, start_thread, tid);
                   } break;
                   default: {
