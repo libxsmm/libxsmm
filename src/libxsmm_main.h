@@ -456,6 +456,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int output_pixels;
   int n_used_pixels;
   int pixel_blocking;
+  int use_intermediate_f32_wt_tensor;
 
   libxsmm_xtransfunction tr_kernel;
 

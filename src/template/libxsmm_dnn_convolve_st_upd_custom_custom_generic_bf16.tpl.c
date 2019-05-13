@@ -45,7 +45,10 @@ LIBXSMM_VLA_DECL(5, const element_input_type, input, (const element_input_type*)
 LIBXSMM_VLA_DECL(7, element_filter_type, weight_global, (element_filter_type*)handle->grad_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2);
 element_filter_type *weight_ptr = (element_filter_type*)handle->scratch7 + ltid * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S;
 LIBXSMM_VLA_DECL(7, element_filter_type, weight_private, (element_filter_type*)weight_ptr, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2);
-
+/* This intermediate tensor is used when pixels are NOT fully accumulated  */
+float *weight_ptr_f32 = (float*)handle->scratch2 + handle->desc.N * (handle->output_pixels/2) * handle->desc.K + ltid * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S;
+LIBXSMM_VLA_DECL(6, float, weight_private_f32, (float*)weight_ptr_f32, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+/* Accumulation scratch is used when pixels are ully accumulated  */
 element_filter_type *filter_scratch = (element_filter_type*)handle->scratch7 + handle->weight_copies * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S + ltid * handle->ofmblock * handle->ifmblock * 2;
 LIBXSMM_VLA_DECL(2, float, filter_tmp, (float*)filter_scratch, handle->ofmblock);
 
@@ -54,7 +57,6 @@ const int reduce_work = (handle->desc.C * handle->desc.K * handle->desc.R * hand
 const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce_work / handle->desc.threads) : (reduce_work / handle->desc.threads) + 1;
 const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
 const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
-
 
 /* Batch reduce related variables */
 const element_output_type *A_ptrs[1024];
@@ -102,13 +104,19 @@ for (img = my_img_start; img < my_img_end; img++) {
   }
 }
 
+/* Make sure we initialize intermediate weights to zero */
+if (handle->use_intermediate_f32_wt_tensor) {
+  memset(weight_ptr_f32, 0, handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * sizeof(float));
+}
+
 int LDA = handle->ofmblock;
 int LDB = handle->input_pixels;
 int LDC = handle->ofmblock;
 int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
 int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-const float beta = 0.0;
+const float beta = (handle->use_intermediate_f32_wt_tensor) ? 1.0 : 0.0;
 gemm_function gemm_kernel = libxsmm_bsmmdispatch(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
+float *dst_ptr;
 
 __m256i c0, c1;
 __m512i c01;
@@ -123,19 +131,32 @@ for (img = my_img_start; img < my_img_end; img++) {
             for (kj = 0; kj < handle->desc.R; ++kj) {
               for (ki = 0; ki < handle->desc.S; ++ki) {
 
+                dst_ptr = (handle->use_intermediate_f32_wt_tensor) ? (float*)&LIBXSMM_VLA_ACCESS(6, weight_private_f32, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) : (float*)&LIBXSMM_VLA_ACCESS(2, filter_tmp, 0, 0, handle->ofmblock);
                 gemm_kernel( &LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, pix/2, 0, 0, handle->blocksofm, handle->output_pixels/2, handle->ofmblock, 2),
                     &LIBXSMM_VLA_ACCESS(4, tr_input, img, ifm1, 0, pix + kj * handle->ifwp + ki, handle->blocksifm, handle->ifmblock, handle->input_pixels),
-                    &LIBXSMM_VLA_ACCESS(2, filter_tmp, 0, 0, handle->ofmblock) );
+                    dst_ptr);
 
-                /* Convert scratch to bf16 output buffer  */
+                /* Convert acc_buffer to bf16 weight buffer in case of full accumulation has happened */
                 if (pix + handle->pixel_blocking >= handle->n_used_pixels) {
-                  for (ij = 0; ij < handle->ifmblock; ij+=2) {
-                    for (ii = 0; ii < handle->ofmblock; ii+=16) {
-                      c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_tmp, ij, ii, handle->ofmblock));
-                      c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_tmp, ij+1, ii, handle->ofmblock));
-                      c01 = _mm512_inserti64x4 (c01, c0, 0);
-                      c01 = _mm512_inserti64x4 (c01, c1, 1);
-                      _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_private, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
+                  if (handle->use_intermediate_f32_wt_tensor == 0) {
+                    for (ij = 0; ij < handle->ifmblock; ij+=2) {
+                      for (ii = 0; ii < handle->ofmblock; ii+=16) {
+                        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_tmp, ij, ii, handle->ofmblock));
+                        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_tmp, ij+1, ii, handle->ofmblock));
+                        c01 = _mm512_inserti64x4 (c01, c0, 0);
+                        c01 = _mm512_inserti64x4 (c01, c1, 1);
+                        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_private, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
+                      }
+                    }
+                  } else {
+                    for (ij = 0; ij < handle->ifmblock; ij+=2) {
+                      for (ii = 0; ii < handle->ofmblock; ii+=16) {
+                        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(6, weight_private_f32, ofm1, ifm1, kj, ki, ij, ii, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock));
+                        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(6, weight_private_f32, ofm1, ifm1, kj, ki, ij+1, ii, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock));
+                        c01 = _mm512_inserti64x4 (c01, c0, 0);
+                        c01 = _mm512_inserti64x4 (c01, c1, 1);
+                        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_private, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
+                      }
                     }
                   }
                 }

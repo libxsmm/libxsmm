@@ -1007,9 +1007,17 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
 
     handle->input_pixels = handle->ifwp * handle->ifhp + input_compute_pad;
     handle->output_pixels = accum_length_pixels;
-    handle->pixel_blocking = accum_length_pixels;
+    handle->pixel_blocking = accum_length_pixels/2;
     handle->n_used_pixels = accum_length_pixels;
     handle->weight_copies = handle->desc.threads;
+
+    handle->use_intermediate_f32_wt_tensor = (handle->pixel_blocking == handle->n_used_pixels) ? 0 : 1;
+    handle->use_lp_kernel = 1;
+    handle->scratch2_size = (size_t) (handle->desc.N * handle->output_pixels * handle->desc.K * sizeof(float)/2);
+    if (handle->use_intermediate_f32_wt_tensor) {
+      handle->scratch2_size += (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads * sizeof(float);
+    }
+    handle->scratch3_size = (size_t) (handle->desc.N * handle->input_pixels * handle->desc.C * sizeof(float)/2);
   }
 
 #if 0
@@ -1053,12 +1061,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   /* In this case, allocate scratch for output in fp32 precision (to use when we don't fully accumulate) + a scratchpad (when we fully accumulate)  */
   if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
     handle->scratch6_size = (size_t) (handle->desc.N * handle->ofwp * handle->ofhp * handle->desc.K + handle->desc.threads * handle->fwd_ofw_rb * handle->fwd_ofh_rb * handle->ofmblock)* sizeof(float);
-  }
-
-  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
-    handle->use_lp_kernel = 1;
-    handle->scratch2_size = (size_t) (handle->desc.N * handle->output_pixels * handle->desc.K * sizeof(float)/2);
-    handle->scratch3_size = (size_t) (handle->desc.N * handle->input_pixels * handle->desc.C * sizeof(float)/2);
   }
 
   return status;
