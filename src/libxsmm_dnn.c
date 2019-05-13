@@ -35,6 +35,8 @@
 #include "libxsmm_dnn_convolution_forward.h"
 #include "libxsmm_dnn_convolution_backward.h"
 #include "libxsmm_dnn_convolution_weight_update.h"
+#include "libxsmm_dnn_fusedbatchnorm_forward.h"
+#include "libxsmm_dnn_fusedbatchnorm_backward.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
