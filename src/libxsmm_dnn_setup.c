@@ -562,7 +562,10 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_use_ofm_parallelization( libxsm
 LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_avoid_rim_fmas_fwd( libxsmm_dnn_layer* handle ) {
   int result = 0;
   /* Avoid rim FMA if the convolution is 3x3 (non-strided) and the image is "small" */
-  if ((handle->desc.R == 3) && (handle->desc.S == 3) && (handle->desc.u  == 1) && (handle->desc.v == 1) && (handle->desc.pad_h_in == 1) && (handle->desc.pad_w_in == 1)) {
+  if ((handle->desc.R == 3) && (handle->desc.S == 3) &&
+      (handle->desc.u  == 1) && (handle->desc.v == 1) &&
+      (handle->desc.pad_h_in == 1) && (handle->desc.pad_w_in == 1) &&
+      (handle->desc.H == handle->desc.W) ) {
     if (handle->ofw <= 28) {
       result = 1;
     }
