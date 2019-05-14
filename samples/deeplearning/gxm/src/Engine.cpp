@@ -99,7 +99,7 @@ void MLEngine::create_schedule(int mode)
             tp[i]->setMinBin(t->getMaxBin() + 1);
             tp[i]->setMaxBin(t->getMaxBin() + 1);
             etg_[mode].push_back(tp[i]);
-#ifdef DEBUG
+#ifndef NDEBUG
             if(tp[i]->getBasicTaskId() == BASIC_TASK_BACK)
               printf("BP task %p (node %s), with bin %d pushed to etg_\n",tp[i], s.c_str(), tp[i]->getMaxBin());
             else if(tp[i]->getBasicTaskId() == BASIC_TASK_WGRAD)
@@ -1957,7 +1957,7 @@ void MLEngine::create(int mode, string ntgConfig, string solverConfig)
     }
   }
 
-#ifdef DEBUG
+#ifndef NDEBUG
   for(auto it=etg_[mode].begin(); it != etg_[mode].end(); it++)
   {
     Task* t = (*it);

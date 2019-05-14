@@ -87,9 +87,8 @@ class FusedConvBNImpl
     void set_scaling_factor(float s) { scaling_factor_ = s; }
 
     virtual void forwardPropagate(vector<TensorBuf *>& inp, TensorBuf* weightp, TensorBuf *hweightp, TensorBuf* midp, TensorBuf* gammap, TensorBuf* betap, TensorBuf *gmeanp, TensorBuf *gvarp, TensorBuf *outp, int tid) = 0;
-    virtual void backPropagate(TensorBuf *deloutp, TensorBuf* weightp, TensorBuf* delgammap, TensorBuf* delbetap, TensorBuf *delmidp, vector<TensorBuf *>& delinp, int tid) = 0;
-
-    virtual void weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf *delmidp, TensorBuf *delweightp, TensorBuf *delgammap, TensorBuf *delbetap, int tid) = 0;
+    virtual void backPropagate(TensorBuf *delmidp, TensorBuf* weightp, TensorBuf *delinp, int tid) = 0;
+    virtual void weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf *delmidp, TensorBuf *delinpl, TensorBuf *delweightp, TensorBuf *delgammap, TensorBuf *delbetap, int tid) = 0;
 
     virtual void dumpBuffer(TensorBuf*, void*) {}
 
@@ -103,22 +102,22 @@ class FusedConvBNImpl
       }
     }
 
-    virtual void backPropagate(TensorBuf *deloutp, TensorBuf* weightp, TensorBuf* delgammap, TensorBuf* delbetap, TensorBuf *delmidp, vector<TensorBuf *>& delinp)
+    virtual void backPropagate(TensorBuf *delmidp, TensorBuf* weightp, TensorBuf *delinp)
     {
       switch(engine)
       {
         case XSMM:
-          backPropagate(deloutp, weightp, delgammap, delbetap, delmidp, delinp, 0);
+          backPropagate(delmidp, weightp, delinp, 0);
           break;
       }
     }
 
-    virtual void weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf *delmidp, TensorBuf *delweightp, TensorBuf *delgammap, TensorBuf *delbetap)
+    virtual void weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf *delmidp, TensorBuf *delinpl, TensorBuf *delweightp, TensorBuf *delgammap, TensorBuf *delbetap)
     {
       switch(engine)
       {
         case XSMM:
-          weightUpdate(inp, delmidp, deloutp, delweightp, delgammap, delbetap, 0);
+          weightUpdate(inp, deloutp, delmidp, delinpl, delweightp, delgammap, delbetap, 0);
           break;
       }
     }

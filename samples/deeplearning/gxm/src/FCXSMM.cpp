@@ -250,7 +250,7 @@ void FCXSMM::backPropagate(TensorBuf *deloutpb, TensorBuf *weightpb, TensorBuf *
 
   for(int n=0; n<gp->num_numa_nodes; n++)
   {
-    if(libxsmm_deloutput[n] == NULL && libxsmm_delinput[n] == NULL)
+    if(libxsmm_deloutput[n] == NULL)
     {
       libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[n], LIBXSMM_DNN_GRADIENT_OUTPUT, &status );
       CHKERR_LIBXSMM_DNN( status );
@@ -258,7 +258,10 @@ void FCXSMM::backPropagate(TensorBuf *deloutpb, TensorBuf *weightpb, TensorBuf *
       CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[n], libxsmm_deloutput[n], LIBXSMM_DNN_GRADIENT_OUTPUT ) );
+    }
 
+    if(libxsmm_delinput[n] == NULL)
+    {
       libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[n], LIBXSMM_DNN_GRADIENT_INPUT, &status );
       CHKERR_LIBXSMM_DNN( status );
       libxsmm_delinput[n]  = libxsmm_dnn_link_tensor( libxsmm_layout, delinput[n], &status );
@@ -293,6 +296,18 @@ void FCXSMM::weightUpdate(TensorBuf *deloutpb, TensorBuf *inpb, TensorBuf *delwe
   assert(top_compute_engine != -1);
   assert(bot_compute_engine != -1);
 
+  void *deloutput[NUM_NUMA_NODES];
+  deloutput[0] = deloutpb->getBuffer();
+
+  int imoff = fullyconnected_desc.N * fullyconnected_desc.K;
+  if(gp->out_data_type == DT_FLOAT)
+    imoff = imoff*sizeof(float);
+  else if(gp->out_data_type == DT_BF16)
+    imoff = imoff*sizeof(libxsmm_bfloat16);
+
+  for(int n=1; n<gp->num_numa_nodes; n++)
+    deloutput[n] = deloutput[n-1] + imoff;
+
   void *dwt_ptr[NUM_NUMA_NODES];
 
   void **ptrptr = delweightpb->getBufferPtr();
@@ -315,6 +330,16 @@ void FCXSMM::weightUpdate(TensorBuf *deloutpb, TensorBuf *inpb, TensorBuf *delwe
 
   for(int n=0; n<gp->num_numa_nodes; n++)
   {
+    if(libxsmm_deloutput[n] == NULL)
+    {
+      libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[n], LIBXSMM_DNN_GRADIENT_OUTPUT, &status );
+      CHKERR_LIBXSMM_DNN( status );
+      libxsmm_deloutput[n]  = libxsmm_dnn_link_tensor( libxsmm_layout, deloutput[n], &status );
+      CHKERR_LIBXSMM_DNN( status );
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[n], libxsmm_deloutput[n], LIBXSMM_DNN_GRADIENT_OUTPUT ) );
+    }
+
     if(libxsmm_delfilter[n] == NULL)
     {
       libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout( libxsmm_handle[n], LIBXSMM_DNN_GRADIENT_FILTER, &status );

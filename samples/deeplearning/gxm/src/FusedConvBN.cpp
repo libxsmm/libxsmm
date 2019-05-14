@@ -227,10 +227,29 @@ FusedConvBNNode::FusedConvBNNode(FusedConvBNParams* p, MLEngine* e): NNNode(p, e
   tenVarData_->setBufferSize(tsize);
 
   if(!e->is_inference_only()) {
+    tenBotDiff_.resize(bottom_.size());
+
     if(bp_flag_)
     {
-      tenBotDiff_.resize(bottom_.size());
-      for(int i=0; i<bottom_.size(); i++)
+      tenBotDiff_[0] = tenBot_[0]->addBuf(); // DIFF type and index
+      tenBotDiff_[0]->setDataType(in_dtype);
+      tenBotDiff_[0]->setBufferType(DIFF);
+
+      // Set the size of the input-gradient buffer
+      Shape *bs = tenBot_[0]->getShape();
+      int botelem = bs->dims[0] * bs->dims[1] * (bs->dims[2] + 2*ivp[0]) * (bs->dims[3] + 2*ivp[1]);
+      if(in_dtype == DT_FLOAT)
+        tenBotDiff_[0]->setBufferSize((botelem + convelem)*sizeof(float));
+      else if(in_dtype == DT_BF16)
+        tenBotDiff_[0]->setBufferSize((botelem + convelem)*sizeof(libxsmm_bfloat16));
+    }
+    tenMidDiff_ = tenMid_->addBuf(); // DIFF type and index
+    tenMidDiff_->setDataType(in_dtype);
+    tenMidDiff_->setBufferType(DIFF);
+
+    if(has_weights_)
+    {
+      for(int i=1; i<bottom_.size(); i++)
       {
         tenBotDiff_[i] = tenBot_[i]->addBuf(); // DIFF type and index
         tenBotDiff_[i]->setDataType(in_dtype);
@@ -244,24 +263,6 @@ FusedConvBNNode::FusedConvBNNode(FusedConvBNParams* p, MLEngine* e): NNNode(p, e
         else if(in_dtype == DT_BF16)
           tenBotDiff_[i]->setBufferSize((botelem + convelem)*sizeof(libxsmm_bfloat16));
       }
-      tenMidDiff_ = tenMid_->addBuf(); // DIFF type and index
-      tenMidDiff_->setDataType(in_dtype);
-      tenMidDiff_->setBufferType(DIFF);
-    }
-
-    if(has_weights_)
-    {
-      if(tenMidDiff_ == NULL)
-      {
-        tenMidDiff_ = tenMid_->addBuf(); // DIFF type and index
-        tenMidDiff_->setDataType(in_dtype);
-        tenMidDiff_->setBufferType(DIFF);
-        if(in_dtype == DT_FLOAT)
-          tenMidDiff_->setBufferSize(convelem*sizeof(float));
-        else if(in_dtype == DT_BF16)
-          tenMidDiff_->setBufferSize(convelem*sizeof(libxsmm_bfloat16));
-      }
-
       tenWeightDiff_ = tenWeight_->addBuf(); // DIFF type and index
       tenWeightDiff_->setBufferType(DIFF);
 
@@ -387,7 +388,7 @@ FusedConvBNNode::FusedConvBNNode(FusedConvBNParams* p, MLEngine* e): NNNode(p, e
 
   gparams_.mmf = p->get_mmf();
   gparams_.eps = p->get_eps();
-  gparams_.use_global_stats = p->get_global_stats_flag();
+  gparams_.use_global_stats = (e->get_execution_mode() == TEST);
   gparams_.eltwise = p->get_eltwise();
   gparams_.bprop = bp_flag_;
 
@@ -882,7 +883,6 @@ void FusedConvBNNode::backPropagate()
 
   int nImg = gparams_.batch_size;
   int ifm0 = gparams_.nInput[0];
-  int ifm1 = gparams_.eltwise ? gparams_.nInput[1] : 0;
   int ofm = gparams_.nOutput;
   int ifh = gparams_.iHeight;
   int ifhp = ifh + 2*gparams_.ipad_h;
@@ -892,10 +892,6 @@ void FusedConvBNNode::backPropagate()
   int mfw = gparams_.mWidth;
   int mfhp = mfh + 2*gparams_.mpad_h;
   int mfwp = mfw + 2*gparams_.mpad_w;
-  int ofh = gparams_.oHeight;
-  int ofw = gparams_.oWidth;
-  int ofhp = ofh + 2*gparams_.opad_h;
-  int ofwp = ofw + 2*gparams_.opad_w;
   int kh = gparams_.kh;
   int kw = gparams_.kw;
 
@@ -911,17 +907,11 @@ void FusedConvBNNode::backPropagate()
   if(first_bp)
   {
     int bsize0 = nImg*ifm0*ifhp*ifwp;
-    int bsize1 = nImg*ifm1*ifhp*ifwp;
-    int msize = nImg*ofm*mfhp*mfwp;
 
     if(in_dtype == DT_FLOAT)
     {
       float* ptr = (float*)tenBotDiff_[0]->getBuffer();
-      tenMidDiff_->setBuffer(tenBotDiff_[0]->getBuffer() + bsize0*sizeof(float));
-      tenMidDiff_->setBufferSize(msize*sizeof(float));
       tenBotDiff_[0]->setBufferSize(bsize0*sizeof(float));
-      if(gparams_.eltwise)
-        tenBotDiff_[1]->setBufferSize(bsize1*sizeof(float));
 
       // NUMA initialize Conv delinp
 #ifdef _OPENMP
@@ -930,33 +920,11 @@ void FusedConvBNNode::backPropagate()
       for(int i=0; i<bsize0; i++)
         ptr[i] = 0;
 
-      // NUMA initialize BN delinp = Conv delmidp
-      ptr = (float*)tenMidDiff_->getBuffer();
-
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-      for(int i=0; i<msize; i++)
-        ptr[i] = 0;
-
-      ptr = gparams_.eltwise ? (float*)tenBotDiff_[1]->getBuffer() : NULL;
-      if(ptr)
-      {
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-        for(int i=0; i<bsize1; i++)
-          ptr[i] = 0;
-      }
     }
     else if(in_dtype == DT_BF16)
     {
       libxsmm_bfloat16* ptr = (libxsmm_bfloat16*)tenBotDiff_[0]->getBuffer();
-      tenMidDiff_->setBuffer(tenBotDiff_[0]->getBuffer() + bsize0*sizeof(libxsmm_bfloat16));
-      tenMidDiff_->setBufferSize(msize*sizeof(libxsmm_bfloat16));
       tenBotDiff_[0]->setBufferSize(bsize0*sizeof(libxsmm_bfloat16));
-      if(gparams_.eltwise)
-        tenBotDiff_[1]->setBufferSize(bsize1*sizeof(libxsmm_bfloat16));
 
       // NUMA initialize Conv delinp
 #ifdef _OPENMP
@@ -965,29 +933,11 @@ void FusedConvBNNode::backPropagate()
       for(int i=0; i<bsize0; i++)
         ptr[i] = 0;
 
-      // NUMA initialize BN delinp = Conv delmidp
-      ptr = (libxsmm_bfloat16*)tenMidDiff_->getBuffer();
-
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-      for(int i=0; i<msize; i++)
-        ptr[i] = 0;
-
-      ptr = gparams_.eltwise ? (libxsmm_bfloat16*)tenBotDiff_[1]->getBuffer() : NULL;
-      if(ptr)
-      {
-#ifdef _OPENMP
-#pragma omp parallel for
-#endif
-        for(int i=0; i<bsize1; i++)
-          ptr[i] = 0;
-      }
     }
     first_bp = false;
   }
 
-  impl->backPropagate(tenTopDiff_, tenWeightData_, tenScaleDiff_, tenShiftDiff_, tenMidDiff_, tenBotDiff_, 0);
+  impl->backPropagate(tenMidDiff_, tenWeightData_, tenBotDiff_[0], 0);
 
 #ifdef CHECK_BLOWUP_FP32
   float* cbptr = (float*)tenTopDiff_->getBuffer();
@@ -1010,35 +960,6 @@ void FusedConvBNNode::backPropagate()
 #endif
   if(node_id_ == 0)
   {
-    int sh = gparams_.bn_stride_h;
-    int sw = gparams_.bn_stride_w;
-    int ph = gparams_.opad_h;
-    int pw = gparams_.opad_w;
-
-    if(out_dtype == DT_FLOAT)
-    {
-      float *ptr = (float*)tenTopDiff_->getBuffer();
-
-      int size = nImg*ofm*ofhp*ofwp;
-      string s = nname_ + "_delOutp";
-      MeanOfLayer((char*)s.c_str(), ptr, size);
-    }
-    else if(out_dtype == DT_BF16)
-    {
-      libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenTopDiff_->getBuffer();
-      int size = nImg*ofm*ofhp*ofwp;
-      convert_bf16_f32(ptr, stptr, size);
-      string s = nname_ + "_delOutp";
-      MeanOfLayer((char*)s.c_str(), stptr, size);
-    }
-
-    string s = nname_ + "_delgammap";
-    float* delgamma = (float*)tenScaleDiff_->getBuffer();
-    MeanOfLayer((char*)s.c_str(), delgamma, gparams_.nOutput);
-
-    s = nname_ + "_delbetap";
-    float* delbeta = (float*)tenShiftDiff_->getBuffer();
-    MeanOfLayer((char*)s.c_str(), delbeta, gparams_.nOutput);
 
     if(in_dtype == DT_FLOAT)
     {
@@ -1063,6 +984,7 @@ void FusedConvBNNode::weightUpdate()
 {
   int nImg = gparams_.batch_size;
   int ifm0 = gparams_.nInput[0];
+  int ifm1 = gparams_.eltwise ? gparams_.nInput[1] : 0;
   int ofm = gparams_.nOutput;
   int ifh = gparams_.iHeight;
   int ifw = gparams_.iWidth;
@@ -1072,6 +994,10 @@ void FusedConvBNNode::weightUpdate()
   int mfwp = mfw + 2*gparams_.mpad_w;
   int ifhp = ifh + 2*gparams_.ipad_h;
   int ifwp = ifw + 2*gparams_.ipad_w;
+  int ofh = gparams_.oHeight;
+  int ofw = gparams_.oWidth;
+  int ofhp = ofh + 2*gparams_.opad_h;
+  int ofwp = ofw + 2*gparams_.opad_w;
   int kh = gparams_.kh;
   int kw = gparams_.kw;
 
@@ -1109,39 +1035,74 @@ void FusedConvBNNode::weightUpdate()
   }
 #endif
 
-  if(!bp_flag_ && first_upd)
+  int bsize0 = nImg*ifm0*ifhp*ifwp;
+  int bsize1 = nImg*ifm1*ifhp*ifwp;
+  int msize = nImg*ofm*mfhp*mfwp;
+  int tsize = nImg*ofm*ofhp*ofwp;
+
+  tenTopDiff_ = tenTop_->getBuf(DIFF);
+
+  if(first_upd)
   {
-    int msize = nImg*ofm*mfhp*mfwp;
+    if(bp_flag_)
+      tenMidDiff_->setBuffer(tenBotDiff_[0]->getBuffer() + bsize0*sizeof(float));
+    else
+      tenMidDiff_->setBuffer(tenTopDiff_->getBuffer() + tsize*sizeof(float));
+
+    tenMidDiff_->setBufferSize(msize*sizeof(float));
+    if(gparams_.eltwise)
+      tenBotDiff_[1]->setBufferSize(bsize1*sizeof(float));
 
     if(in_dtype == DT_FLOAT)
     {
       float *ptr = (float*)tenMidDiff_->getBuffer();
 
-      // NUMA initialize Conv delmidp
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
       for(int i=0; i<msize; i++)
         ptr[i] = 0;
+
+      ptr = gparams_.eltwise ? (float*)tenBotDiff_[1]->getBuffer() : NULL;
+      if(ptr)
+      {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+        for(int i=0; i<bsize1; i++)
+          ptr[i] = 0;
+      }
     }
     else if(in_dtype == DT_BF16)
     {
+      tenMidDiff_->setBuffer(tenBotDiff_[0]->getBuffer() + bsize0*sizeof(libxsmm_bfloat16));
+      tenMidDiff_->setBufferSize(msize*sizeof(libxsmm_bfloat16));
       libxsmm_bfloat16* ptr = (libxsmm_bfloat16*)tenMidDiff_->getBuffer();
 
       // NUMA initialize = Conv delmidp
-      ptr = (libxsmm_bfloat16*)tenMidDiff_->getBuffer();
-
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
       for(int i=0; i<msize; i++)
         ptr[i] = 0;
+
+      if(gparams_.eltwise)
+        tenBotDiff_[1]->setBufferSize(bsize1*sizeof(libxsmm_bfloat16));
+
+      ptr = gparams_.eltwise ? (libxsmm_bfloat16*)tenBotDiff_[1]->getBuffer() : NULL;
+      if(ptr)
+      {
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+        for(int i=0; i<bsize1; i++)
+          ptr[i] = 0;
+      }
     }
     first_upd = false;
   }
 
-  tenTopDiff_ = tenTop_->getBuf(DIFF);
-  impl->weightUpdate(tenBotData_[0], tenTopDiff_, tenMidDiff_, tenWeightDiff_, tenScaleDiff_, tenShiftDiff_, 0);
+  impl->weightUpdate(tenBotData_[0], tenTopDiff_, tenMidDiff_, tenBotDiff_[1], tenWeightDiff_, tenScaleDiff_, tenShiftDiff_, 0);
 
 #ifdef CHECK_BLOWUP_FP32
   if(out_dtype == DT_FLOAT)
@@ -1235,6 +1196,22 @@ void FusedConvBNNode::weightUpdate()
 #endif
   if(node_id == 0)
   {
+    if(out_dtype == DT_FLOAT)
+    {
+      float *ptr = (float*)tenTopDiff_->getBuffer();
+
+      int size = nImg*ofm*ofhp*ofwp;
+      string s = nname_ + "_delOutp";
+      MeanOfLayer((char*)s.c_str(), ptr, size);
+    }
+    else if(out_dtype == DT_BF16)
+    {
+      libxsmm_bfloat16 *ptr = (libxsmm_bfloat16*)tenTopDiff_->getBuffer();
+      int size = nImg*ofm*ofhp*ofwp;
+      convert_bf16_f32(ptr, stptr, size);
+      string s = nname_ + "_delOutp";
+      MeanOfLayer((char*)s.c_str(), stptr, size);
+    }
     if(in_dtype == DT_FLOAT)
     {
       string s = nname_ + "_Inp";
@@ -1264,6 +1241,14 @@ void FusedConvBNNode::weightUpdate()
       memset(stptr, 0, nImg*ofm*mfhp*mfwp);
       convert_bf16_f32(ptr, stptr, nImg*ofm*mfhp*mfwp);
       MeanOfLayer((char*)s.c_str(), stptr, nImg*ofm*mfhp*mfwp);
+
+      s = nname_ + "_delgammap";
+      float* delgamma = (float*)tenScaleDiff_->getBuffer();
+      MeanOfLayer((char*)s.c_str(), delgamma, gparams_.nOutput);
+
+      s = nname_ + "_delbetap";
+      float* delbeta = (float*)tenShiftDiff_->getBuffer();
+      MeanOfLayer((char*)s.c_str(), delbeta, gparams_.nOutput);
 
       s = nname_ + "_delWt_Aft";
 #ifdef USE_MLSL

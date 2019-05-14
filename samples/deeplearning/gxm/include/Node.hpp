@@ -104,11 +104,11 @@ class NNNode : public MLNode
       {
         forwardPropagate();
       }
-      else if(taskId == 1)
+      else if(taskId == 2)
       {
         backPropagate();
       }
-      else if(taskId == 2)
+      else if(taskId == 1)
       {
         weightUpdate();
       }
@@ -146,7 +146,7 @@ class NNNode : public MLNode
     Task *getBasicTask(int type)
     {
       int index = -1;
-      if(type == 0 || (type == 1 && bp_flag_) || (type > 1 && has_weights_))
+      if(type == 0 || (type == 2 && bp_flag_) || (type == 1 && has_weights_))
         index = type;
       if(index != -1) {
         if(tBasic_[index] == NULL) tBasic_[index] = new Task(this, -1, type);
