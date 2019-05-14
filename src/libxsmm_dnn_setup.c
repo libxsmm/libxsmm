@@ -1004,6 +1004,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
     handle->use_lp_kernel = 1;
     handle->on_the_fly_input_packing = 0;
     handle->upd_pack_input_upfront = 0;
+    handle->use_hybrid_imgofm_parallelization = 0;
 
     if (handle->upd_linearized_pixels == 1) {
       /* Logistics to pad accumulation chainlength */
@@ -1034,6 +1035,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
         handle->scratch2_size += (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads * sizeof(float);
       }
       handle->scratch3_size = (size_t) (handle->desc.N * handle->input_pixels * handle->desc.C * sizeof(float)/2);
+
+      if (handle->upd_use_batchreduce == 1 && handle->upd_linearized_tasklist == 0) {
+        handle->use_hybrid_imgofm_parallelization = 1;
+      }
     }
 
     if (handle->upd_linearized_pixels == 0) {
