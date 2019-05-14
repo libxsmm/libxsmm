@@ -894,6 +894,74 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_init_upd_gemm_flags( libxsmm_dn
   return result;
 }
 
+LIBXSMM_API_INLINE void libxsmm_dnn_setup_generic_bf16_upd( libxsmm_dnn_layer* handle ) {
+  int remainder_pixels, max_init_offset, max_compute_offset_input, input_compute_pad, accum_length_pixels, compute_pixels;
+  const int multiple_target = 2;
+  handle->upd_linearized_pixels = 1;
+
+  if (handle->desc.S != 1 && handle->desc.v != 1) {
+    handle->upd_linearized_pixels = 0;
+  }
+
+  handle->use_lp_kernel = 1;
+  handle->on_the_fly_input_packing = 0;
+  handle->upd_pack_input_upfront = 0;
+  handle->use_hybrid_imgofm_parallelization = 0;
+
+  if (handle->upd_linearized_pixels == 1) {
+    /* Logistics to pad accumulation chainlength */
+    compute_pixels = handle->ofw * handle->ofh + 2 * handle->desc.pad_w * (handle->ofh-1);
+    remainder_pixels = (compute_pixels % multiple_target == 0) ? 0 : (compute_pixels/multiple_target+1)*multiple_target - compute_pixels;
+    accum_length_pixels = compute_pixels + remainder_pixels;
+
+    /* In this case compact input upfront */
+    if (handle->desc.R == 1 && handle->desc.S == 1 && (handle->desc.u != 1 || handle->desc.v != 1)) {
+      handle->upd_pack_input_upfront = 1;
+    }
+
+    /* Logistics for input transpose and additional pixel padding */
+    max_init_offset = 2 * handle->desc.pad_h * handle->ifwp + 2 * handle->desc.pad_w;
+    max_compute_offset_input = max_init_offset + accum_length_pixels;
+    input_compute_pad = (max_compute_offset_input > handle->ifwp*handle->ifhp) ? max_compute_offset_input - handle->ifwp*handle->ifhp : 0;
+    handle->input_pixels = handle->ifwp * handle->ifhp + input_compute_pad;
+    if (handle->upd_pack_input_upfront) {
+      handle->input_pixels = accum_length_pixels;
+    }
+    handle->output_pixels = accum_length_pixels;
+    handle->pixel_blocking = accum_length_pixels;
+    handle->n_used_pixels = accum_length_pixels;
+
+    handle->use_intermediate_f32_wt_tensor = (handle->pixel_blocking == handle->n_used_pixels) ? 0 : 1;
+    handle->scratch2_size = (size_t) (handle->desc.N * handle->output_pixels * handle->desc.K * sizeof(float)/2);
+    if (handle->use_intermediate_f32_wt_tensor) {
+      handle->scratch2_size += (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads * sizeof(float);
+    }
+    handle->scratch3_size = (size_t) (handle->desc.N * handle->input_pixels * handle->desc.C * sizeof(float)/2);
+
+    if (handle->upd_use_batchreduce == 1 && handle->upd_linearized_tasklist == 0) {
+      handle->use_hybrid_imgofm_parallelization = 1;
+    }
+  }
+
+  if (handle->upd_linearized_pixels == 0) {
+    if (handle->desc.v !=1) {
+      handle->on_the_fly_input_packing = 1;
+    }
+    remainder_pixels = (handle->ofw % multiple_target == 0) ? 0 : (handle->ofw/multiple_target+1)*multiple_target - handle->ofw;
+    handle->ofwp_extended = handle->ofwp + remainder_pixels;
+    handle->ifwp_extended = handle->ifwp + remainder_pixels;
+    handle->batchreduce_h_pixels = handle->ofh;
+    handle->use_intermediate_f32_wt_tensor = (handle->batchreduce_h_pixels == handle->ofh) ? 0 : 1;
+    handle->scratch2_size = (size_t) (handle->desc.N * handle->ofhp*handle->ofwp_extended * handle->desc.K * sizeof(float)/2);
+    if (handle->use_intermediate_f32_wt_tensor) {
+      handle->scratch2_size += (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads * sizeof(float);
+    }
+    handle->scratch3_size = (size_t) (handle->desc.N * handle->ifhp * handle->ifwp_extended * handle->desc.C * sizeof(float)/2);
+  }
+
+}
+
+
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_layer* handle ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const libxsmm_trans_descriptor* tr_desc = 0;
@@ -994,69 +1062,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->upd_loop_order = libxsmm_dnn_setup_generic_loop_order_upd(handle);
 
   if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
-    int remainder_pixels;
-    const int multiple_target = 2;
-    handle->upd_linearized_pixels = 1;
-    if (handle->desc.S != 1 && handle->desc.v != 1) {
-      handle->upd_linearized_pixels = 0;
-    }
-    handle->weight_copies = handle->desc.threads;
-    handle->use_lp_kernel = 1;
-    handle->on_the_fly_input_packing = 0;
-    handle->upd_pack_input_upfront = 0;
-    handle->use_hybrid_imgofm_parallelization = 0;
-
-    if (handle->upd_linearized_pixels == 1) {
-      /* Logistics to pad accumulation chainlength */
-      int compute_pixels = handle->ofw * handle->ofh + 2 * handle->desc.pad_w * (handle->ofh-1);
-      remainder_pixels = (compute_pixels % multiple_target == 0) ? 0 : (compute_pixels/multiple_target+1)*multiple_target - compute_pixels;
-      int accum_length_pixels = compute_pixels + remainder_pixels;
-
-      /* In this case compact input upfront */
-      if (handle->desc.R == 1 && handle->desc.S == 1 && (handle->desc.u != 1 || handle->desc.v != 1)) {
-        handle->upd_pack_input_upfront = 1;
-      }
-
-      /* Logistics for input transpose and additional pixel padding */
-      int max_init_offset = 2 * handle->desc.pad_h * handle->ifwp + 2 * handle->desc.pad_w;
-      int max_compute_offset_input = max_init_offset + accum_length_pixels;
-      int input_compute_pad = (max_compute_offset_input > handle->ifwp*handle->ifhp) ? max_compute_offset_input - handle->ifwp*handle->ifhp : 0;
-      handle->input_pixels = handle->ifwp * handle->ifhp + input_compute_pad;
-      if (handle->upd_pack_input_upfront) {
-        handle->input_pixels = accum_length_pixels;
-      }
-      handle->output_pixels = accum_length_pixels;
-      handle->pixel_blocking = accum_length_pixels;
-      handle->n_used_pixels = accum_length_pixels;
-
-      handle->use_intermediate_f32_wt_tensor = (handle->pixel_blocking == handle->n_used_pixels) ? 0 : 1;
-      handle->scratch2_size = (size_t) (handle->desc.N * handle->output_pixels * handle->desc.K * sizeof(float)/2);
-      if (handle->use_intermediate_f32_wt_tensor) {
-        handle->scratch2_size += (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads * sizeof(float);
-      }
-      handle->scratch3_size = (size_t) (handle->desc.N * handle->input_pixels * handle->desc.C * sizeof(float)/2);
-
-      if (handle->upd_use_batchreduce == 1 && handle->upd_linearized_tasklist == 0) {
-        handle->use_hybrid_imgofm_parallelization = 1;
-      }
-    }
-
-    if (handle->upd_linearized_pixels == 0) {
-      if (handle->desc.v !=1) {
-        handle->on_the_fly_input_packing = 1;
-      }
-      remainder_pixels = (handle->ofw % multiple_target == 0) ? 0 : (handle->ofw/multiple_target+1)*multiple_target - handle->ofw;
-      handle->ofwp_extended = handle->ofwp + remainder_pixels;
-      handle->ifwp_extended = handle->ifwp + remainder_pixels;
-      handle->batchreduce_h_pixels = handle->ofh;
-      handle->use_intermediate_f32_wt_tensor = (handle->batchreduce_h_pixels == handle->ofh) ? 0 : 1;
-      handle->scratch2_size = (size_t) (handle->desc.N * handle->ofhp*handle->ofwp_extended * handle->desc.K * sizeof(float)/2);
-      if (handle->use_intermediate_f32_wt_tensor) {
-        handle->scratch2_size += (size_t) handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * handle->desc.threads * sizeof(float);
-      }
-      handle->scratch3_size = (size_t) (handle->desc.N * handle->ifhp * handle->ifwp_extended * handle->desc.C * sizeof(float)/2);
-    }
-
+    libxsmm_dnn_setup_generic_bf16_upd(handle);
   }
 
 #if 0
