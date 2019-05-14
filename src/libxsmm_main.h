@@ -462,6 +462,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int ofwp_extended;
   int batchreduce_h_pixels;
   int on_the_fly_input_packing;
+  int upd_pack_input_upfront;
 
   libxsmm_xtransfunction tr_kernel;
 

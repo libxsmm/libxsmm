@@ -996,10 +996,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
     int remainder_pixels;
     const int multiple_target = 2;
-    handle->upd_linearized_pixels = 0;
+    handle->upd_linearized_pixels = 1;
+    if (handle->desc.S != 1 && handle->desc.v != 1) {
+      handle->upd_linearized_pixels = 0;
+    }
     handle->weight_copies = handle->desc.threads;
     handle->use_lp_kernel = 1;
     handle->on_the_fly_input_packing = 0;
+    handle->upd_pack_input_upfront = 0;
 
     if (handle->upd_linearized_pixels == 1) {
       /* Logistics to pad accumulation chainlength */
@@ -1007,12 +1011,19 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
       remainder_pixels = (compute_pixels % multiple_target == 0) ? 0 : (compute_pixels/multiple_target+1)*multiple_target - compute_pixels;
       int accum_length_pixels = compute_pixels + remainder_pixels;
 
+      /* In this case compact input upfront */
+      if (handle->desc.R == 1 && handle->desc.S == 1 && (handle->desc.u != 1 || handle->desc.v != 1)) {
+        handle->upd_pack_input_upfront = 1;
+      }
+
       /* Logistics for input transpose and additional pixel padding */
       int max_init_offset = 2 * handle->desc.pad_h * handle->ifwp + 2 * handle->desc.pad_w;
       int max_compute_offset_input = max_init_offset + accum_length_pixels;
       int input_compute_pad = (max_compute_offset_input > handle->ifwp*handle->ifhp) ? max_compute_offset_input - handle->ifwp*handle->ifhp : 0;
-
       handle->input_pixels = handle->ifwp * handle->ifhp + input_compute_pad;
+      if (handle->upd_pack_input_upfront) {
+        handle->input_pixels = accum_length_pixels;
+      }
       handle->output_pixels = accum_length_pixels;
       handle->pixel_blocking = accum_length_pixels;
       handle->n_used_pixels = accum_length_pixels;
