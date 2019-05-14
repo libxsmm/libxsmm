@@ -174,7 +174,7 @@ if (handle->upd_linearized_pixels == 1) {
 }
 
 /* Make sure we initialize intermediate weights to zero */
-if (handle->use_intermediate_f32_wt_tensor) {
+if (handle->use_intermediate_f32_wt_tensor == 1 && handle->use_hybrid_imgofm_parallelization == 0) {
   memset(weight_ptr_f32, 0, handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * sizeof(float));
 }
 
@@ -264,6 +264,10 @@ if (handle->upd_linearized_pixels == 0) {
     int my_R_end = handle->desc.R;
     element_filter_type *weight_ptr_group = (handle->weight_copies > 1) ? (element_filter_type*)handle->scratch7 + tile_id * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S : (element_filter_type*)handle->grad_filter->data;
     LIBXSMM_VLA_DECL(7, element_filter_type, weight_private_group, (element_filter_type*)weight_ptr_group, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2);
+    /* This intermediate tensor is used when pixels are NOT fully accumulated  */
+    float *weight_tile_ptr_f32 = (float*)handle->scratch2 + handle->desc.N * (handle->output_pixels/2) * handle->desc.K + tile_id * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S;
+    LIBXSMM_VLA_DECL(6, float, weight_private_tile_f32, (float*)weight_tile_ptr_f32, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+
     my_img_start = LIBXSMM_MIN( tile_id * img_per_tile, handle->desc.N);
     my_img_end = LIBXSMM_MIN( (tile_id+1) * img_per_tile, handle->desc.N);
     my_ifm_start = LIBXSMM_MIN( my_in_tile_id * ifms_per_thread, handle->blocksifm  );
@@ -293,6 +297,17 @@ if (handle->upd_linearized_pixels == 0) {
     gemm_br_function br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
     n_blocks = img_block_size;
 
+    /* Make sure we initialize intermediate weights to zero */
+    if (handle->use_intermediate_f32_wt_tensor == 1) {
+      for (ofm1 = my_ofm_start; ofm1 < my_ofm_end; ofm1++ ) {
+        for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
+          for (kj = my_R_start; kj < my_R_end; ++kj) {
+            memset((float*)&LIBXSMM_VLA_ACCESS(6, weight_private_tile_f32, ofm1, ifm1, kj, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), 0, handle->ofmblock * handle->ifmblock * handle->desc.S * sizeof(float));
+          }
+        }
+      }
+    }
+
     libxsmm_barrier_wait(handle->barrier, ltid);
 
     for (img = my_img_start; img < my_img_end; img += img_block_size) {
@@ -306,7 +321,7 @@ if (handle->upd_linearized_pixels == 0) {
 
                     /* Determine if destination is the accumulation scratch or the intermediate fp32 weight tensor */
                     if (handle->use_intermediate_f32_wt_tensor == 1) {
-                      dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(6, weight_private_f32, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+                      dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(6, weight_private_tile_f32, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
                     } else {
                       dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(2, filter_tmp, 0, 0, handle->ofmblock);
                     }
