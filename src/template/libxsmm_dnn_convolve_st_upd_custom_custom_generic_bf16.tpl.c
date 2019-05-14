@@ -33,7 +33,7 @@
 #define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_loadcvtrne_fp32_bf16(A) _mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne(LIBXSMM_INTRINSICS_MM512_LOAD_PS(A)),16))
 
-int img, my_img_start, my_img_end, ofmb, ifmb, ojb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, ind, j_br, img_br, i, j, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm, pix, pixb;
+int img, my_img_start, my_img_end, ofmb, ifmb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, j_br, img_br, i, j, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm, pix, pixb;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 
@@ -73,6 +73,9 @@ const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((lti
 
 const float beta = (handle->use_intermediate_f32_wt_tensor) ? 1.0 : 0.0;
 float *dst_ptr;
+gemm_br_function br_gemm_kernel = 0;
+
+/* These are used for the vnni reformatting of the f32 output  */
 __m256i c0, c1;
 __m512i c01;
 const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
@@ -80,7 +83,7 @@ const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29
 /* Batch reduce related variables */
 const element_output_type *A_ptrs[1024];
 const element_input_type  *B_ptrs[1024];
-unsigned long long n_blocks = handle->batchreduce_h_pixels;
+unsigned long long n_blocks;
 
 int LDA = handle->ofmblock;
 int LDB = handle->input_pixels;
@@ -184,7 +187,8 @@ if (handle->upd_linearized_pixels == 0) {
   LDC = handle->ofmblock;
   prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
   l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  gemm_br_function br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch(handle->ofmblock, handle->ifmblock, handle->ofw, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
+  n_blocks = handle->batchreduce_h_pixels;
+  br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch(handle->ofmblock, handle->ifmblock, handle->ofw, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
 
   for (img = my_img_start; img < my_img_end; img++) {
     for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
@@ -294,7 +298,7 @@ if (handle->upd_linearized_pixels == 0) {
     block_ifm = my_ifm_end-my_ifm_start+1;
     img_block_size = my_img_end - my_img_start;
 
-    gemm_br_function br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
+    br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
     n_blocks = img_block_size;
 
     /* Make sure we initialize intermediate weights to zero */
@@ -357,6 +361,7 @@ if (handle->upd_linearized_pixels == 0) {
 
   } else {
     gemm_function gemm_kernel = libxsmm_bsmmdispatch(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
+
     for (img = my_img_start; img < my_img_end; img++) {
       for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
         for (pix = 0; pix < handle->n_used_pixels; pix += handle->pixel_blocking){
