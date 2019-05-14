@@ -74,9 +74,9 @@ void NNNode::createNNGraph(int mode)
 
       if(fnTask != NULL)
         addedFD = fTask->addForwDep(fnTask);
-      if(bTask != NULL && bnTask != NULL) addedBD = bTask->addBackDep(bnTask);
       if(wTask != NULL && bnTask != NULL) addedBD = wTask->addBackDep(bnTask);
-#ifdef DEBUG
+      if(bTask != NULL && bnTask != NULL) addedBD = bTask->addBackDep(bnTask);
+#ifndef NDEBUG
       if(addedFD)
         printf("forward task (node %s) %p depends on forward task (node %s) %p\n",nNode->nname_.c_str(), fnTask, s.c_str(), fTask);
       if(bTask != NULL && bnTask != NULL)

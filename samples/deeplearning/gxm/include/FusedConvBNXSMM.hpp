@@ -69,7 +69,7 @@ class FusedConvBNXSMM : public FusedConvBNImpl
 {
   protected:
     FusedConvBNImpl *gp_;
-    libxsmm_dnn_conv_desc conv_desc;
+    libxsmm_dnn_conv_desc conv_desc[NUM_NUMA_NODES];
     libxsmm_dnn_fusedbatchnorm_desc fusedbn_desc_train;
     libxsmm_dnn_fusedbatchnorm_desc fusedbn_desc_test;
     libxsmm_dnn_layer* libxsmm_handle_conv[NUM_NUMA_NODES] = {NULL};
@@ -121,7 +121,7 @@ class FusedConvBNXSMM : public FusedConvBNImpl
     FusedConvBNXSMM(FusedConvBNImplParams *gp, int engine);
     virtual ~FusedConvBNXSMM(void) {}
     void forwardPropagate(vector<TensorBuf*>& inp, TensorBuf* weightp, TensorBuf *hweightp, TensorBuf* midp, TensorBuf* gammap, TensorBuf* betap, TensorBuf* gmeanp, TensorBuf* gvarp, TensorBuf* outp, int tid);
-    void backPropagate(TensorBuf* deloutp, TensorBuf* weightp, TensorBuf* delgammap, TensorBuf* delbetap, TensorBuf* delmidp, vector<TensorBuf *>& delinp, int tid);
-    void weightUpdate(TensorBuf*, TensorBuf*, TensorBuf*, TensorBuf*, TensorBuf*, TensorBuf*, int tid);
+    void backPropagate(TensorBuf* delmidp, TensorBuf* weightp, TensorBuf *delinp, int tid);
+    void weightUpdate(TensorBuf*, TensorBuf*, TensorBuf*, TensorBuf*, TensorBuf*, TensorBuf*, TensorBuf*, int tid);
     void dumpBuffer(TensorBuf *wt, void* temp);
 };

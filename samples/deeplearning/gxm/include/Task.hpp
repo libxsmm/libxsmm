@@ -37,8 +37,8 @@
 #include "Tensor.hpp"
 
 #define BASIC_TASK_FORW   0
-#define BASIC_TASK_BACK   1
-#define BASIC_TASK_WGRAD  2
+#define BASIC_TASK_WGRAD  1
+#define BASIC_TASK_BACK   2
 #define BASIC_TASK_SOLVE  3
 #define CUSTOM_TASK_START 100
 
