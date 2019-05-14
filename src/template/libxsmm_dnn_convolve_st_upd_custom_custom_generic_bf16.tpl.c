@@ -91,12 +91,12 @@ int LDC = handle->ofmblock;
 int prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
 int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
 
-libxsmm_barrier_init(handle->barrier, ltid);
-
 const int img_work = handle->desc.N;
 const int img_chunksize = (img_work % handle->desc.threads == 0) ? (img_work / handle->desc.threads) : (img_work / handle->desc.threads) + 1;
 my_img_start = (ltid * img_chunksize < img_work) ? (ltid * img_chunksize) : img_work;
 my_img_end = ((ltid + 1) * img_chunksize < img_work) ? ((ltid + 1) * img_chunksize) : img_work;
+
+libxsmm_barrier_init(handle->barrier, ltid);
 
 if (handle->upd_linearized_pixels == 1) {
   /* First transpose input and output */
