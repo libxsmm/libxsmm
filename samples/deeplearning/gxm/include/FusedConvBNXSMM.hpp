@@ -74,7 +74,9 @@ class FusedConvBNXSMM : public FusedConvBNImpl
     libxsmm_dnn_fusedbatchnorm_desc fusedbn_desc_test;
     libxsmm_dnn_layer* libxsmm_handle_conv[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_fusedbatchnorm* libxsmm_handle_bn_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_fusedbatchnorm** prev_handle_bn_train_ptr = NULL;
     libxsmm_dnn_fusedbatchnorm* libxsmm_handle_bn_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_fusedbatchnorm** prev_handle_bn_test_ptr = NULL;
     libxsmm_dnn_tensor* libxsmm_input[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_input_bntrain[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor* libxsmm_input_add_bntrain[NUM_NUMA_NODES] = {NULL};

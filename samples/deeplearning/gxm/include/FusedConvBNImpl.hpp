@@ -59,6 +59,8 @@ typedef struct {
   int in_data_type, out_data_type;
   int num_numa_nodes;
   int num_threads;
+  void **prev_bn_train_handle_ptr, **prev_bn_test_handle_ptr;
+  void **my_bn_train_handle_ptr, **my_bn_test_handle_ptr;
   string exec_mode;
 } FusedConvBNImplParams;
 

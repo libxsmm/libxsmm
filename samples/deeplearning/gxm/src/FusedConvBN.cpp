@@ -394,6 +394,19 @@ FusedConvBNNode::FusedConvBNNode(FusedConvBNParams* p, MLEngine* e): NNNode(p, e
 
   gparams_.in_data_type = in_dtype;
   gparams_.out_data_type = out_dtype;
+
+  NNNode *pnn = (NNNode*)tenBot_[0]->getOwner();
+  if(pnn->getNodeType() == "FusedConvBN")
+  {
+    gparams_.prev_bn_train_handle_ptr = dynamic_cast<FusedConvBNNode*>(pnn)->getBNTrainHandlePtr();
+    gparams_.prev_bn_test_handle_ptr = dynamic_cast<FusedConvBNNode*>(pnn)->getBNTestHandlePtr();
+  }
+  else
+  {
+    gparams_.prev_bn_train_handle_ptr = NULL;
+    gparams_.prev_bn_test_handle_ptr = NULL;
+  }
+
   gparams_.algType = p->get_algo_type();
   gparams_.num_threads = e->get_num_threads();
 
@@ -436,6 +449,16 @@ void FusedConvBNNode::configure(int engine)
       impl = new FusedConvBNXSMM(&gparams_, engine);
       break;
   }
+}
+
+void** FusedConvBNNode::getBNTrainHandlePtr()
+{
+  return gparams_.my_bn_train_handle_ptr;
+}
+
+void** FusedConvBNNode::getBNTestHandlePtr()
+{
+  return gparams_.my_bn_test_handle_ptr;
 }
 
 void FusedConvBNNode::fillWeightBuffers(TensorBuf* tBuf, int buftype, long long int size)

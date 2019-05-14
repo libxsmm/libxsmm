@@ -184,18 +184,26 @@ FusedConvBNXSMM::FusedConvBNXSMM(FusedConvBNImplParams* gp, int engine) : FusedC
 
     if(!gp->use_global_stats)
     {
-      conv_desc[i].pre_bn = NULL;
+      if(gp->prev_bn_train_handle_ptr != NULL)
+        conv_desc[i].pre_bn = ((libxsmm_dnn_fusedbatchnorm**)(gp->prev_bn_train_handle_ptr))[i];
+      else
+        conv_desc[i].pre_bn = NULL;
       conv_desc[i].post_bn = libxsmm_handle_bn_train[i];
     }
     else
     {
-      conv_desc[i].pre_bn = NULL;
+      if(gp->prev_bn_test_handle_ptr != NULL)
+        conv_desc[i].pre_bn = ((libxsmm_dnn_fusedbatchnorm**)(gp->prev_bn_test_handle_ptr))[i];
+      else
+        conv_desc[i].pre_bn = NULL;
       conv_desc[i].post_bn = libxsmm_handle_bn_test[i];
     }
 
     libxsmm_handle_conv[i] = libxsmm_dnn_create_conv_layer( conv_desc[i], &status );
     CHKERR_LIBXSMM_DNN( status );
   }
+  gp->my_bn_train_handle_ptr = (void**)libxsmm_handle_bn_train;
+  gp->my_bn_test_handle_ptr = (void**)libxsmm_handle_bn_test;
 }
 
 void FusedConvBNXSMM::forwardPropagate(vector<TensorBuf *>& inp, TensorBuf *weightp, TensorBuf *hweightp, TensorBuf *midp, TensorBuf *gammap, TensorBuf *betap, TensorBuf *meanp, TensorBuf *varp, TensorBuf *outp, int tid)

@@ -458,6 +458,8 @@ class FusedConvBNNode : public NNNode
     void Checkpoint(TensorBuf* tBuf, string name, string format);
     void convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len);
     void convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len);
+    void** getBNTrainHandlePtr();
+    void** getBNTestHandlePtr();
 
   protected:
     void forwardPropagate();
