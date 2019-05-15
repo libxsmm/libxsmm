@@ -492,34 +492,6 @@ void libxsmm_x86_instruction_full_vec_load_of_constants ( libxsmm_generated_code
                                                           const char *i_id,
                                                           const char i_vector_name,
                                                           const unsigned int i_vec_reg_number );
-/**
- * @TODO: clean-up
- * Opens the inline assembly section / jit stream for convolutions, this is hacked and should be cleaned up
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_arch architecture code was generated for (needed to build clobber)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_open_stream_convolution( libxsmm_generated_code*                   io_generated_code,
-                                                      const unsigned int                        i_gp_reg_input,
-                                                      const unsigned int                        i_gp_reg_weight,
-                                                      const unsigned int                        i_gp_reg_output,
-                                                      const unsigned int                        i_gp_reg_input_pf,
-                                                      const unsigned int                        i_gp_reg_weight_pf,
-                                                      const unsigned int                        i_gp_reg_output_pf,
-                                                      const char*                               i_arch );
-
-/**
- * @TODO: clean-up
- * Closes the inline assembly section / jit stream for convolutions, this is hacked and should be cleaned up
- *
- * @param io_generated_code pointer to the pointer of the generated code structure
- * @param i_arch architecture code was generated for (needed to build clobber)
- */
-LIBXSMM_API_INTERN
-void libxsmm_x86_instruction_close_stream_convolution( libxsmm_generated_code*       io_generated_code,
-                                                const char*                   i_arch );
-
 
 /**
  * @TODO: clean-up

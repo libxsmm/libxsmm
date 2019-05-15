@@ -518,11 +518,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int use_fwd_generic;
   int use_bwd_generic;
   int use_upd_generic;
-  /*
-  libxsmm_convolution_forward_descriptor       fwd_desc;
-  libxsmm_convolution_forward_descriptor       bwd_desc;
-  libxsmm_convolution_weight_update_descriptor wu_desc;
-  */
   libxsmm_code_pointer code_fwd[3];
   libxsmm_code_pointer code_bwd[3];
   libxsmm_code_pointer code_upd[2];
@@ -533,47 +528,16 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
 
   /* Data structures and metadata related to per-thread private JITing */
   int trans_ofw_ifm;
-
-  int *n_entries_fwd;
-  int **compute_fwd_indices_ptrs;
-  int **bn_stats_indices_ptrs;
-  int **bn_aux_stats_indices_ptrs;
-  int **bn_aux_input_indices_ptrs;
-  char **kernel_fwd_variant_ptrs;
   int block_fwd_oj;
   int block_fwd_oi;
   int block_fwd_ifm;
   int block_fwd_ofm;
-  int *n_fwd_code_segments;
-  segment_t **fwd_code_segments;
-  int *ofh_fwd_start;
-  int *ofh_fwd_end;
-
-  int *n_entries_bwd;
-  int **compute_bwd_indices_ptrs;
-  char **kernel_bwd_variant_ptrs;
   int block_bwd_oj;
   int block_bwd_oi;
   int block_bwd_ifm;
   int block_bwd_ofm;
-  int *n_bwd_code_segments;
-  segment_t **bwd_code_segments;
-  int *n_entries_trans_bwd;
-  int **transpose_bwd_indices_ptrs;
-  int *ofh_bwd_start;
-  int *ofh_bwd_end;
-
-  int *n_entries_upd;
   int block_upd_ifm;
   int block_upd_ofm;
-  int **compute_upd_indices_ptrs;
-  char **kernel_upd_variant_ptrs;
-  int *n_upd_code_segments;
-  segment_t **upd_code_segments;
-  int *n_entries_init_upd;
-  int **init_upd_indices_ptrs;
-  int *n_entries_copy_upd;
-  int **copy_upd_indices_ptrs;
 };
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm {
@@ -789,8 +753,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
     const libxsmm_rm_ac_soa_descriptor* rmacsoa;
     const libxsmm_rm_bc_soa_descriptor* rmbcsoa;
     const libxsmm_csr_reg_descriptor* sreg;
-    const libxsmm_convolution_forward_descriptor* cfwd;
-    const libxsmm_convolution_weight_update_descriptor* cupd;
   } descriptor;
   libxsmm_build_kind kind;
 } libxsmm_build_request;
@@ -871,18 +833,6 @@ LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
 
 LIBXSMM_API_INTERN void libxsmm_dnn_init(int target_arch);
 LIBXSMM_API_INTERN void libxsmm_dnn_finalize(void);
-
-/** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
-
-/** Code generation routine for a convolution kernel as specified by descriptor. */
-LIBXSMM_API_INTERN libxsmm_sconvfunction libxsmm_create_sconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
-
-/** Code generation routine for a forward-convolution kernel. Call libxsmm_release_kernel in order to deallocate the JIT'ted code. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_forward(const libxsmm_convolution_forward_descriptor* descriptor);
-
-/** Code generation routine for a convolution kernel as specified by descriptor. */
-LIBXSMM_API_INTERN void* libxsmm_create_xconv_update_weights(const libxsmm_convolution_weight_update_descriptor* descriptor);
 
 /** Global lock; create an own lock for an independent domain. */
 LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);

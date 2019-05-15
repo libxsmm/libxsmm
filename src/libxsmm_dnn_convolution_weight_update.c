@@ -43,18 +43,23 @@
 #endif
 
 /* function prototypes for below implementations */
+#if 0
 LIBXSMM_API_INTERN void libxsmm_dnn_inout_transpose_lp(int ltid, libxsmm_dnn_layer* handle);
 LIBXSMM_API_INTERN void libxsmm_dnn_inout_transpose_resize_lp(int ltid, libxsmm_dnn_layer* handle);
 LIBXSMM_API_INTERN void libxsmm_dnn_transpose_fallback(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*transposer)(int M, int N, float *LIBXSMM_RESTRICT dst, int ldD, const float *LIBXSMM_RESTRICT src, int ldS);
 LIBXSMM_API_INTERN transposer libxsmm_dnn_transposer(int M, int N, int ldD, int ldS);
+#endif
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid);
+#if 0
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32(libxsmm_dnn_layer* handle, int start_thread, int tid);
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid);
+#endif
 
+#if 0
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
 #define TRANSPOSE_W_CHUNK(img, ifm1, ij, w_offset, ifm2) \
         base_addr = &LIBXSMM_VLA_ACCESS(6, input_nopad, img, ifm1, ij, w_offset, ifm2, 0, handle->blocksifm_lp, handle->ifhp, handle->ifwp, handle->ifmblock, handle->fm_lp_block); \
@@ -997,7 +1002,7 @@ LIBXSMM_API_INTERN transposer libxsmm_dnn_transposer(int M, int N, int ldD, int 
 #endif
   return libxsmm_dnn_transpose_fallback;
 }
-
+#endif
 
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
 libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_layer* handle, int start_thread, int tid)
@@ -1007,8 +1012,9 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
-  typedef libxsmm_sconvfunction libxsmm_convfunction;
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c"
+  typedef libxsmm_smmfunction gemm_function;
+  typedef libxsmm_smmfunction_reducebatch gemm_br_function;
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic.tpl.c"
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
@@ -1017,6 +1023,25 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_
 }
 
 
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
+  typedef libxsmm_bfloat16 element_input_type;
+  typedef libxsmm_bfloat16 element_output_type;
+  typedef libxsmm_bfloat16 element_filter_type;
+  typedef libxsmm_bsmmfunction gemm_function;
+  typedef libxsmm_bsmmfunction_reducebatch gemm_br_function;
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic_bf16.tpl.c"
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+
+#if 0
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
 libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
@@ -1058,35 +1083,6 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32(libxsmm_dnn_
 }
 
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
-libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid)
-{
-  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
-  if (handle->upd_use_thread_fil > 0) {
-    typedef libxsmm_bfloat16 element_input_type;
-    typedef libxsmm_bfloat16 element_output_type;
-    typedef float element_filter_type;
-    typedef libxsmm_bf16f32convfunction libxsmm_convfunction;
-    if (handle->use_fastpath) {
-      if ( handle->use_hybrid_wu_parallelism == 1) {
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_bf16.tpl.c"
-      }
-      else {
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_opt_bf16.tpl.c"
-      }
-    } else {
-      /* We come here only when we have C=3  */
-# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_stream_bf16.tpl.c"
-    }
-  }
-#else /* should not happen */
-  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
-  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
-#endif
-  return status;
-}
-
-LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
 libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
@@ -1111,6 +1107,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32(libxsmm_dnn_l
 #endif
   return status;
 }
+#endif
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
@@ -1160,12 +1157,14 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(l
     else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
       status = libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16( handle, start_thread, tid );
     }
+#if 0
     else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       status = libxsmm_dnn_convolve_st_upd_custom_custom_i16_f32( handle, start_thread, tid );
     }
     else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_I32 ) {
       status = libxsmm_dnn_convolve_st_upd_custom_custom_i8_i32( handle, start_thread, tid );
     }
+#endif
     else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;

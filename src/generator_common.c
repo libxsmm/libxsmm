@@ -1046,42 +1046,6 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "number of elements read differs from number of elements specified in CSR file (error #%u)!", i_error_code );
       break;
-    case LIBXSMM_ERR_UNSUP_CONV_FORMAT:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "invalid activation or filter format was detected during convolution kernel generation (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_INVALID_KW_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "invalid kw unroll was detected during convolution kernel generation (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_INVALID_KH_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "invalid kh unroll was detected during convolution kernel generation (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_INVALID_OFW_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "invalid ofw unroll was detected during convolution kernel generation (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_INVALID_OFH_UNROLL:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "invalid ofh unroll was detected during convolution kernel generation (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_INVALID_CONV_ACC:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "invalid size of accumulator was detected during convolution kernel generation (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_CONV_OFM_VEC:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "forward conv. or weight upd. vect. failed, OFM blocking is not divisible by VLEN (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_CONV_IFM_VEC:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "backward conv vectorization failed, IFM blocking is not divisible by VLEN (error #%u)!", i_error_code );
-      break;
-    case LIBXSMM_ERR_CONV_CONT_STRIDE:
-      LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
-        "backward conv vectorization failed, stride_h/w need to be 1 (error #%u)!", i_error_code );
-      break;
     case LIBXSMM_ERR_UNSUP_DATATYPE:
       LIBXSMM_SNPRINTF( error_message, GENERATOR_COMMON_MAX_ERROR_LENGTH,
         "unsupported datatype was requested (error #%u)!", i_error_code );
@@ -1117,42 +1081,6 @@ const char* libxsmm_strerror(unsigned int i_error_code) {
   }
 
   return error_message;
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_convfunction_signature_fp32( libxsmm_generated_code*         io_generated_code,
-                                          const char*                     i_routine_name ) {
-  char l_new_code[512];
-  int l_max_code_length = 511;
-  int l_code_length = 0;
-
-  if ( io_generated_code->code_type > 1 ) {
-    return;
-  } else if ( io_generated_code->code_type == 1 ) {
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
-  } else {
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const float* inputptr, const float* weightptr, float* outputptr, const float* inputpfptr, const float* weightpfptr, const float* outputpfptr) {\n", i_routine_name);
-  }
-
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
-}
-
-LIBXSMM_API_INTERN
-void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_generated_code,
-                                           const char*                     i_routine_name ) {
-  char l_new_code[512];
-  int l_max_code_length = 511;
-  int l_code_length = 0;
-
-  if ( io_generated_code->code_type > 1 ) {
-    return;
-  } else if ( io_generated_code->code_type == 1 ) {
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, ".global %s\n.type %s, @function\n%s:\n", i_routine_name, i_routine_name, i_routine_name);
-  } else {
-    l_code_length = LIBXSMM_SNPRINTF(l_new_code, l_max_code_length, "void %s(const short* inputptr, const short* weightptr, int* outputptr, const short* inputpfptr, const short* weightpfptr, const int* outputpfptr) {\n", i_routine_name);
-  }
-
-  libxsmm_append_code_as_string( io_generated_code, l_new_code, l_code_length );
 }
 
 

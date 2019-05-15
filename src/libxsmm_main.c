@@ -650,7 +650,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       libxsmm_perf_init();
 #endif
       { const char *const env = getenv("LIBXSMM_GEMM_PREFETCH");
-#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
+#if defined(_WIN32) || defined(__CYGWIN__)
         libxsmm_gemm_auto_prefetch_default = INTERNAL_PREFETCH;
 #else
         libxsmm_gemm_auto_prefetch_default = (0 == internal_statistic_ntry(0/*DP*/) && 0 == internal_statistic_ntry(1/*SP*/))
@@ -1437,83 +1437,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           /*0 != (LIBXSMM_GEMM_FLAG_ALPHA_0 & request->descriptor.sreg->gemm->flags) ? 0 : */1,
             0 != (LIBXSMM_GEMM_FLAG_BETA_0  & request->descriptor.sreg->gemm->flags) ? 0 : 1,
             uid);
-        }
-      }
-    } break;
-    case LIBXSMM_BUILD_KIND_CFWD: { /* forward convolution */
-      LIBXSMM_ASSERT(NULL != request->descriptor.cfwd);
-      if (0 < request->descriptor.cfwd->kw && 0 < request->descriptor.cfwd->kh &&
-          0 != request->descriptor.cfwd->stride_w && 0 != request->descriptor.cfwd->stride_h)
-      {
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_forward_kernel, &generated_code, request->descriptor.cfwd, target_arch);
-# if !defined(LIBXSMM_VTUNE)
-        if (0 > libxsmm_verbosity)
-# endif
-        {
-          const char *const precision_in  = libxsmm_typename((libxsmm_datatype)request->descriptor.cfwd->datatype);
-          const char *const precision_out = libxsmm_typename((libxsmm_datatype)request->descriptor.cfwd->datatype_itm);
-          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          if (request->descriptor.cfwd->use_fwd_generator_for_bwd == 0) {
-           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_fwd_%s_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_p%i_f%i.conv",
-            target_arch/*code path name*/, precision_in, precision_out,
-            (unsigned int)request->descriptor.cfwd->kw/*kernel width*/, (unsigned int)request->descriptor.cfwd->kh/*kernel height*/,
-            (unsigned int)request->descriptor.cfwd->unroll_kw/*width*/, (unsigned int)request->descriptor.cfwd->unroll_kh/*height*/,
-            (int)request->descriptor.cfwd->stride_w/*input offset*/, (int)request->descriptor.cfwd->stride_h/*output offsets*/,
-            (unsigned int)request->descriptor.cfwd->ifm_block/*VLEN*/, (unsigned int)request->descriptor.cfwd->ofm_block/*VLEN*/,
-            (unsigned int)request->descriptor.cfwd->ifw_padded, (unsigned int)request->descriptor.cfwd->ifh_padded,
-            (unsigned int)request->descriptor.cfwd->ofw_padded/*1D and 2D register block*/,
-            (unsigned int)request->descriptor.cfwd->ofh_padded/*2D register block*/,
-            (unsigned int)request->descriptor.cfwd->ofw_rb/*register block ofw*/,
-            (unsigned int)request->descriptor.cfwd->ofh_rb/*register block ofh*/,
-            (int)request->descriptor.cfwd->prefetch/*binary OR'd prefetch flags*/,
-            (int)request->descriptor.cfwd->format/*binary OR'd format flags*/);
-          } else {
-           LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_bwd_%s_%s_%ux%u_%ux%uu_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_p%i_f%i.conv",
-            target_arch/*code path name*/, precision_in, precision_out,
-            (unsigned int)request->descriptor.cfwd->kw/*kernel width*/, (unsigned int)request->descriptor.cfwd->kh/*kernel height*/,
-            (unsigned int)request->descriptor.cfwd->unroll_kw/*width*/, (unsigned int)request->descriptor.cfwd->unroll_kh/*height*/,
-            (int)request->descriptor.cfwd->stride_w/*input offset*/, (int)request->descriptor.cfwd->stride_h/*output offsets*/,
-            (unsigned int)request->descriptor.cfwd->ifm_block/*VLEN*/, (unsigned int)request->descriptor.cfwd->ofm_block/*VLEN*/,
-            (unsigned int)request->descriptor.cfwd->ifw_padded, (unsigned int)request->descriptor.cfwd->ifh_padded,
-            (unsigned int)request->descriptor.cfwd->ofw_padded/*1D and 2D register block*/,
-            (unsigned int)request->descriptor.cfwd->ofh_padded/*2D register block*/,
-            (unsigned int)request->descriptor.cfwd->ofw_rb/*register block ofw*/,
-            (unsigned int)request->descriptor.cfwd->ofh_rb/*register block ofh*/,
-            (int)request->descriptor.cfwd->prefetch/*binary OR'd prefetch flags*/,
-            (int)request->descriptor.cfwd->format/*binary OR'd format flags*/);
-          }
-        }
-      }
-    } break;
-    case LIBXSMM_BUILD_KIND_CUPD: { /* convolution update weights */
-      LIBXSMM_ASSERT(NULL != request->descriptor.cupd);
-      if (0 < request->descriptor.cupd->kw &&
-          0 != request->descriptor.cupd->stride_w && 0 != request->descriptor.cupd->stride_h)
-      {
-        LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_convolution_weight_update_kernel, &generated_code, request->descriptor.cupd, target_arch);
-# if !defined(LIBXSMM_VTUNE)
-        if (0 > libxsmm_verbosity)
-# endif
-        {
-          const char *const precision_in  = libxsmm_typename((libxsmm_datatype)request->descriptor.cupd->datatype);
-          const char *const precision_out = libxsmm_typename((libxsmm_datatype)request->descriptor.cupd->datatype_itm);
-          /* adopt scheme which allows kernel names of LIBXSMM to appear in order (Intel VTune, etc.) */
-          LIBXSMM_SNPRINTF(jit_name, sizeof(jit_name), "libxsmm_%s_upd_%s_%s_%ux%u_s%ii%io_vl%ui%uo_ri%ux%u_ro%ux%u_r%ux%u_of%uu%ux%uu%u_if%uu_t%u_p%i_f%i.conv",
-            target_arch/*code path name*/, precision_in, precision_out,
-            (unsigned int)request->descriptor.cupd->kw/*kernel width*/, (unsigned int)request->descriptor.cupd->kh/*kernel height*/,
-            (int)request->descriptor.cupd->stride_w/*input offset*/, (int)request->descriptor.cupd->stride_h/*output offsets*/,
-            (unsigned int)request->descriptor.cupd->ifm_block/*VLEN*/, (unsigned int)request->descriptor.cupd->ofm_block/*VLEN*/,
-            (unsigned int)request->descriptor.cupd->ifw_padded, (unsigned int)request->descriptor.cupd->ifh_padded,
-            (unsigned int)request->descriptor.cupd->ofw_padded/*1D and 2D register block*/,
-            (unsigned int)request->descriptor.cupd->ofh_padded/*2D register block*/,
-            (unsigned int)request->descriptor.cupd->ofw_rb/*register block ofw*/,
-            (unsigned int)request->descriptor.cupd->ofh_rb/*register block ofh*/,
-            (unsigned int)request->descriptor.cupd->ofw/*ofw*/, (unsigned int)request->descriptor.cupd->ofw_unroll/*ofw_unroll*/,
-            (unsigned int)request->descriptor.cupd->ofh/*ofh*/, (unsigned int)request->descriptor.cupd->ofh_unroll/*ofh_unroll*/,
-            (unsigned int)request->descriptor.cupd->ifm_unroll/*ifm unroll*/,
-            (unsigned int)request->descriptor.cupd->transpose_ofw_ifm/*transpose_ofw_ifm*/,
-            (int)request->descriptor.cupd->prefetch/*binary OR'd prefetch flags*/,
-            (int)request->descriptor.cupd->format/*binary OR'd format flags*/);
         }
       }
     } break;
@@ -2324,7 +2247,7 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_de
     LIBXSMM_INIT
     wrap.mcopy.desc = *descriptor;
     wrap.kind = LIBXSMM_KERNEL_KIND_MCOPY;
-#if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
+#if defined(_WIN32) || defined(__CYGWIN__)
     wrap.mcopy.desc.prefetch = 0;
 #endif
     result = internal_find_code(&wrap, sizeof(*descriptor)).xmatcopy;

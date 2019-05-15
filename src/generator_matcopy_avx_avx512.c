@@ -30,7 +30,6 @@
 ******************************************************************************/
 #include "generator_matcopy_avx_avx512.h"
 #include "generator_x86_instructions.h"
-#include "generator_convolution_common.h"
 #include "generator_common.h"
 #include "libxsmm_main.h"
 
@@ -44,6 +43,46 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_matcopy_header_m_loop( libxsmm_generated_code*                   io_generated_code,
+                                              libxsmm_loop_label_tracker*               io_loop_label_tracker,
+                                              const libxsmm_matcopy_kernel_config*      i_kernel_config,
+                                              const unsigned int                        i_gp_reg_m_loop ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_mov_instruction, i_gp_reg_m_loop, 0);
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_add_instruction, i_gp_reg_m_loop, 1);
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_matcopy_footer_m_loop( libxsmm_generated_code*                       io_generated_code,
+                                              libxsmm_loop_label_tracker*                   io_loop_label_tracker,
+                                              const libxsmm_matcopy_kernel_config*          i_kernel_config,
+                                              const unsigned int                            i_gp_reg_m_loop,
+                                              const unsigned int                            i_m ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_cmp_instruction, i_gp_reg_m_loop, i_m );
+  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_matcopy_header_n_loop( libxsmm_generated_code*                  io_generated_code,
+                                              libxsmm_loop_label_tracker*               io_loop_label_tracker,
+                                              const libxsmm_matcopy_kernel_config*      i_kernel_config,
+                                              const unsigned int                        i_gp_reg_n_loop ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_mov_instruction, i_gp_reg_n_loop, 0);
+  libxsmm_x86_instruction_register_jump_back_label( io_generated_code, io_loop_label_tracker );
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_add_instruction, i_gp_reg_n_loop, 1);
+}
+
+LIBXSMM_API_INTERN
+void libxsmm_generator_matcopy_footer_n_loop( libxsmm_generated_code*                      io_generated_code,
+                                              libxsmm_loop_label_tracker*                   io_loop_label_tracker,
+                                              const libxsmm_matcopy_kernel_config*          i_kernel_config,
+                                              const unsigned int                            i_gp_reg_n_loop,
+                                              const unsigned int                            i_n ) {
+  libxsmm_x86_instruction_alu_imm( io_generated_code, i_kernel_config->alu_cmp_instruction, i_gp_reg_n_loop, i_n );
+  libxsmm_x86_instruction_jump_back_to_label( io_generated_code, i_kernel_config->alu_jmp_instruction, io_loop_label_tracker );
+}
 
 LIBXSMM_API_INLINE
 void libxsmm_generator_matcopy_avx_avx512_kernel_initialize_mask( libxsmm_generated_code*               io_generated_code,
@@ -264,13 +303,13 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
 
   if (i_matcopy_desc->n > 1) {
     /* open n loop */
-    libxsmm_generator_convolution_header_n_loop(  io_generated_code, &l_loop_label_tracker,
+    libxsmm_generator_matcopy_header_n_loop(  io_generated_code, &l_loop_label_tracker,
         &l_kernel_config, l_gp_reg_mapping.gp_reg_n_loop );
   }
 
   if (m_trips > 1) {
     /* open m loop */
-    libxsmm_generator_convolution_header_m_loop(  io_generated_code, &l_loop_label_tracker,
+    libxsmm_generator_matcopy_header_m_loop(  io_generated_code, &l_loop_label_tracker,
         &l_kernel_config, l_gp_reg_mapping.gp_reg_m_loop );
   }
 
@@ -336,7 +375,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
 
   if (m_trips > 1) {
     /* close m loop */
-    libxsmm_generator_convolution_footer_m_loop(  io_generated_code, &l_loop_label_tracker,
+    libxsmm_generator_matcopy_footer_m_loop(  io_generated_code, &l_loop_label_tracker,
         &l_kernel_config, l_gp_reg_mapping.gp_reg_m_loop, m_trips );
   }
 
@@ -460,7 +499,7 @@ void libxsmm_generator_matcopy_avx_avx512_kernel( libxsmm_generated_code*       
       }
     }
     /* close n loop */
-    libxsmm_generator_convolution_footer_n_loop(  io_generated_code, &l_loop_label_tracker,
+    libxsmm_generator_matcopy_footer_n_loop(  io_generated_code, &l_loop_label_tracker,
         &l_kernel_config, l_gp_reg_mapping.gp_reg_n_loop, i_matcopy_desc->n );
   }
 
