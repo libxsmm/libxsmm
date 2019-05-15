@@ -58,8 +58,6 @@
 
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( libxsmm_dnn_layer* handle ) {
-  /* flag to test if we found an architecture which is supported */
-  int noarch = 1;
   int internal_format_type;
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
   const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
