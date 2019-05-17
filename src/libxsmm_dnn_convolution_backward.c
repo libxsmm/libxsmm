@@ -197,6 +197,35 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(l
         gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, NULL, NULL, &ldx, NULL, NULL, NULL, NULL);
 #include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic.tpl.c"
       }
+    } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16) {
+      if (handle->use_fallback_bwd_loops == 0) {
+        const libxsmm_blasint ldx = ((libxsmm_blasint)handle->ofmblock);
+        const libxsmm_blasint ldA = handle->ifmblock;
+        const libxsmm_blasint ldC = (handle->spread_input_bwd == 1) ? handle->ifmblock * handle->desc.v : handle->ifmblock;
+        const float  beta = (handle->avoid_acc_load_bwd) ? 0.0 : 1.0;
+        typedef libxsmm_bfloat16 element_input_type;
+        typedef libxsmm_bfloat16 element_output_type;
+        typedef libxsmm_bfloat16 element_filter_type;
+        typedef libxsmm_bsmmfunction_reducebatch gemm_br_function;
+        int l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+        /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+        gemm_br_function br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch(handle->ifmblock, handle->bwd_ofh_rb*handle->bwd_ofw_rb, handle->ofmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+        gemm_br_function br_gemm_kernel2 = libxsmm_bsmmdispatch_reducebatch(handle->ifmblock, handle->bwd_ofh_rb*(handle->bwd_ofw_rb-1), handle->ofmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+# include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_generic_bf16.tpl.c"
+      } else {
+        status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+        return status;
+#if 0
+        const libxsmm_blasint ldx = ((libxsmm_blasint)handle->desc.v*handle->ifmblock);
+        typedef float element_input_type;
+        typedef float element_output_type;
+        typedef float element_filter_type;
+        typedef libxsmm_smmfunction gemm_function;
+        /* let's do a ifmblock x ofw_rb x ofmblock GEMM :-) or in other words M=nbIfm, N=ofw, K=nbOfm (col-major) */
+        gemm_function gemm_kernel = libxsmm_smmdispatch(handle->ifmblock, handle->ofw, handle->ofmblock, NULL, NULL, &ldx, NULL, NULL, NULL, NULL);
+#include "template/libxsmm_dnn_convolve_st_bwd_custom_custom_fallback_generic.tpl.c"
+#endif
+      }
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
