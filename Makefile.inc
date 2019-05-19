@@ -1905,8 +1905,8 @@ ECXXFLAGS ?= $(ECFLAGS)
 cleanup = $(foreach flag,$(subst //,/,$1),$(flag))
 # cleanup eventually duplicated flags and slashes
 cleanld = $(shell echo "$1" | sed -e "s/[[:space:]][[:space:]]*/ /g" \
-  -e "s/$(XLIB_BEGIN)[[:space:]]$(XLIB_END)//g" \
-  -e "s/$(XLIB_END)[[:space:]]$(XLIB_BEGIN)//g" \
+  -e "s/[[:space:]]$(XLIB_BEGIN)[[:space:]]$(XLIB_END)/ /g" \
+  -e "s/[[:space:]]$(XLIB_END)[[:space:]]$(XLIB_BEGIN)/ /g" \
   -e "s/\/\//\//g")
 
 # no-BLAS flags: cleanup and extra flags
