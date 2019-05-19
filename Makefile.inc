@@ -250,7 +250,8 @@ libpath = $(strip $(if $1, \
   $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL), \
     $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>&1 \
     | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(BRACE_CLOSE)]\).*/:\1/" \
-    | rev | cut -d":" -f1 | rev | sed "s/ *//" | cut -d" " -f1 | tail -n1)))), \
+    | rev | cut -d":" -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)/\1/p" \
+    | cut -d" " -f1 | tail -n1)))), \
   $(NULL)))
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
@@ -1902,6 +1903,7 @@ endif
 ECXXFLAGS ?= $(ECFLAGS)
 
 cleanup = $(foreach flag,$1,$(flag))
+dedupld = $(subst $(NULL) $(XLIB_BEGIN) $(XLIB_END),$(NULL),$1)
 
 # no-BLAS flags: cleanup and extra flags
 NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
@@ -1923,10 +1925,10 @@ IFLAGS := $(call cleanup,$(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
 CXXLDFLAGS := $(call cleanup,$(CXXLDFLAGS))
 FLDFLAGS := $(call cleanup,$(FLDFLAGS))
 # cleanup eventually duplicated flags
-LDFLAGS := $(subst $(NULL) $(XLIB_BEGIN) $(XLIB_END),$(NULL),$(LDFLAGS))
-LDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(LDFLAGS))
-CLDFLAGS := $(subst $(NULL) $(XLIB_BEGIN) $(XLIB_END),$(NULL),$(CLDFLAGS))
-CLDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(CLDFLAGS))
+LDFLAGS := $(call dedupld,$(LDFLAGS))
+LDFLAGS := $(call dedupld,$(LDFLAGS))
+CLDFLAGS := $(call dedupld,$(CLDFLAGS))
+CLDFLAGS := $(call dedupld,$(CLDFLAGS))
 # cleanup duplicated slashes
 LDFLAGS := $(subst //,/,$(LDFLAGS))
 CLDFLAGS := $(subst //,/,$(CLDFLAGS))
@@ -1950,9 +1952,9 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     DLIBEXT ENV EXTDEP FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE FLOCK SUITE \
     ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION% MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP CCAR \
     SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE OMPLIBFILE \
-    NOBLASLIB NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 PYMOD CSTD \
-    CWARNEXTRA MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE FFORM_FLAG FREEFORM BLAS_LDTEST \
-    which cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V), \
+    NOBLASLIB NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 PYMOD \
+    CSTD CWARNEXTRA MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE FFORM_FLAG FREEFORM BLAS_LDTEST \
+    which cleanup dedupld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
