@@ -248,9 +248,9 @@ BRACE_CLOSE := )
 
 libpath = $(strip $(if $1, \
   $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL), \
-    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>/dev/null \
-    | grep "lib$3" | grep -o "\([[:alpha:]]:\)*\/..*[ $(BRACE_CLOSE)]" \
-    | grep -o "..*[^$(BRACE_CLOSE)]" | tail -n1)))), \
+    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>&1 \
+    | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(BRACE_CLOSE)]\).*/:\1/" \
+    | rev | cut -d":" -f1 | rev | sed "s/ *//" | cut -d" " -f1 | tail -n1)))), \
   $(NULL)))
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
@@ -1825,11 +1825,8 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_THREADS = p
       endif
     endif
-    ifneq (,$(BLASDIR))
-      BLASROOT = $(BLASDIR)/..
-    else
-      BLASROOT = /usr
-    endif
+    BLASDIR ?= /usr/lib
+    BLASROOT = $(BLASDIR)/..
     ifeq (0,$(BLAS_STATIC)) # shared
       BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
       ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
