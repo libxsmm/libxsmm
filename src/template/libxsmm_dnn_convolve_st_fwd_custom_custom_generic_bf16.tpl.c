@@ -30,6 +30,7 @@
 ******************************************************************************/
 
 int img, ofm1, ofm2, ifm1, ifm2, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myOfmId, nOfmBlocks, ind, ofm11, ki1, kj1, ojj, oii;
+int last_ki, last_kj, next_ki, next_kj;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -154,6 +155,10 @@ if (handle->use_fallback_fwd_loops == 1) {
                 }
                 oi_use = oi;
                 oj_use = oj;
+                last_kj = handle->desc.R-1;
+                last_ki = handle->desc.S-1;
+                next_ki = ki+1;
+                next_kj = kj+1;
 
                 if (kj == 0 && oj == 0) {
                   /* Do no FLOPS  */
@@ -175,6 +180,16 @@ if (handle->use_fallback_fwd_loops == 1) {
                           &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use+1, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                           (handle->fwd_ofw_rb-1) * handle->ofmblock);
                     }
+
+                  } else if (ifm2 == handle->blocksifm &&
+                      ((kj == last_kj && ki == last_ki) ||
+                       (next_kj == 0 && next_kj == last_kj && oj == 0) ||
+                       (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
+                    for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
+                      libxsmm_truncate_convert_f32_bf16(  &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                          &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                          handle->fwd_ofw_rb * handle->ofmblock);
+                    }
                   }
                 } else if (oi == handle->ofw-handle->fwd_ofw_rb  && ki == handle->desc.S-1) {
                   ind = 0;
@@ -192,6 +207,15 @@ if (handle->use_fallback_fwd_loops == 1) {
                           &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                           (handle->fwd_ofw_rb-1) * handle->ofmblock);
                     }
+                  } else if (ifm2 == handle->blocksifm &&
+                      ((kj == last_kj && ki == last_ki) ||
+                       (next_kj == 0 && next_kj == last_kj && oj == 0) ||
+                       (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
+                    for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
+                      libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                          &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                          handle->fwd_ofw_rb * handle->ofmblock);
+                    }
                   }
                 } else {
                   ind = 0;
@@ -206,6 +230,15 @@ if (handle->use_fallback_fwd_loops == 1) {
                   if (handle->avoid_acc_load == 1) {
                     for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
                       libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, ojj, 0, 0, handle->fwd_ofw_rb, handle->ofmblock),
+                          &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                          handle->fwd_ofw_rb * handle->ofmblock);
+                    }
+                  } else if (ifm2 == handle->blocksifm &&
+                      ((kj == last_kj && ki == last_ki) ||
+                       (next_kj == 0 && next_kj == last_kj && oj == 0) ||
+                       (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
+                    for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
+                      libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                           &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                           handle->fwd_ofw_rb * handle->ofmblock);
                     }
@@ -268,25 +301,18 @@ if (handle->use_fallback_fwd_loops == 1) {
                     &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                     handle->fwd_ofw_rb * handle->ofmblock);
               }
+            } else if (ifm2 == handle->blocksifm && kj == handle->desc.R && ki == handle->desc.S) {
+              for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
+                libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS( 5, output_fp32, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                    &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                    handle->fwd_ofw_rb * handle->ofmblock);
+              }
             }
           }
         }
       }
     }
   }
-
-  /* In case we used intermediate fp32 buffer, now downconvert the result to the actual bf16 output */
-  if (handle->avoid_acc_load == 0) {
-    for (imgofm1ofh = thr_begin; imgofm1ofh < thr_end; ++imgofm1ofh) {
-      img = imgofm1ofh / (handle->blocksofm*handle->ofh);
-      ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->ofh;
-      oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->ofh;
-      libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS( 5, output_fp32, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-          &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
-          handle->ofw * handle->ofmblock);
-    }
-  }
-
 } else {
   if (handle->loop_order == 0) {
     if ( handle->avoid_fmas_in_rim == 1) {
@@ -328,6 +354,10 @@ if (handle->use_fallback_fwd_loops == 1) {
 
                           ki = (handle->shuffle_filter_accesses == 1) ?  (ki1+ltid)%handle->desc.S : ki1;
                           kj = (handle->shuffle_filter_accesses == 1) ?  (kj1+ltid)%handle->desc.R : kj1;
+                          last_ki = (handle->shuffle_filter_accesses == 1) ?  (handle->desc.S-1+ltid)%handle->desc.S : handle->desc.S-1;
+                          last_kj = (handle->shuffle_filter_accesses == 1) ?  (handle->desc.R-1+ltid)%handle->desc.R : handle->desc.R-1;
+                          next_ki = (handle->shuffle_filter_accesses == 1) ?  (ki1+1+ltid)%handle->desc.S : ki1+1;
+                          next_kj = (handle->shuffle_filter_accesses == 1) ?  (kj1+1+ltid)%handle->desc.R : kj1+1;
 
                           if (kj == 0 && oj == 0) {
                             /* Do no FLOPS  */
@@ -349,6 +379,15 @@ if (handle->use_fallback_fwd_loops == 1) {
                                     &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use+1, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                                     (handle->fwd_ofw_rb-1) * handle->ofmblock);
                               }
+                            } else if (ifm2 == handle->blocksifm &&
+                                ((kj == last_kj && ki == last_ki) ||
+                                 (next_kj == 0 && next_kj == last_kj && oj == 0) ||
+                                 (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
+                              for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
+                                libxsmm_truncate_convert_f32_bf16(  &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                                    &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                                    handle->fwd_ofw_rb * handle->ofmblock);
+                              }
                             }
                           } else if (oi == handle->ofw-handle->fwd_ofw_rb  && ki == handle->desc.S-1) {
                             ind = 0;
@@ -366,6 +405,15 @@ if (handle->use_fallback_fwd_loops == 1) {
                                     &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                                     (handle->fwd_ofw_rb-1) * handle->ofmblock);
                               }
+                            } else if (ifm2 == handle->blocksifm &&
+                                ((kj == last_kj && ki == last_ki) ||
+                                 (next_kj == 0 && next_kj == last_kj && oj == 0) ||
+                                 (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
+                              for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
+                                libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                                    &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                                    handle->fwd_ofw_rb * handle->ofmblock);
+                              }
                             }
                           } else {
                             ind = 0;
@@ -380,6 +428,15 @@ if (handle->use_fallback_fwd_loops == 1) {
                             if (handle->avoid_acc_load == 1) {
                               for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
                                 libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, ojj, 0, 0, handle->fwd_ofw_rb, handle->ofmblock),
+                                    &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                                    handle->fwd_ofw_rb * handle->ofmblock);
+                              }
+                            } else if (ifm2 == handle->blocksifm &&
+                                ((kj == last_kj && ki == last_ki) ||
+                                 (next_kj == 0 && next_kj == last_kj && oj == 0) ||
+                                 (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
+                              for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
+                                libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                                     &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                                     handle->fwd_ofw_rb * handle->ofmblock);
                               }
@@ -450,6 +507,12 @@ if (handle->use_fallback_fwd_loops == 1) {
                               &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                               handle->fwd_ofw_rb * handle->ofmblock);
                         }
+                      } else if (kj1 == handle->desc.R && ki1 == handle->desc.S && ifm2 == handle->blocksifm) {
+                        for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
+                          libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                              &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                              handle->fwd_ofw_rb * handle->ofmblock);
+                        }
                       }
                     }
                   }
@@ -507,9 +570,16 @@ if (handle->use_fallback_fwd_loops == 1) {
                     n_blocks = ind;
                     out_ptr = (handle->avoid_acc_load == 1) ? &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, 0, 0, 0, handle->fwd_ofw_rb, handle->ofmblock) : &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
                     br_gemm_kernel(A_ptrs, B_ptrs, out_ptr, &n_blocks);
+
                     if (handle->avoid_acc_load == 1) {
                       for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
                         libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, ojj, 0, 0, handle->fwd_ofw_rb, handle->ofmblock),
+                            &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
+                            handle->fwd_ofw_rb * handle->ofmblock);
+                      }
+                    } else if (kj == handle->desc.R && ki == handle->desc.S && ifm2 == handle->blocksifm) {
+                      for (ojj = 0; ojj < handle->fwd_ofh_rb; ojj++) {
+                        libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS(5, output_fp32, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                             &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                             handle->fwd_ofw_rb * handle->ofmblock);
                       }
@@ -524,6 +594,7 @@ if (handle->use_fallback_fwd_loops == 1) {
     }
   }
 
+#if 0
   /* In case we used intermediate fp32 buffer, now downconvert the result to the actual bf16 output */
   if (handle->avoid_acc_load == 0) {
     for (img = my_img_start; img < my_img_end; img++) {
@@ -536,6 +607,7 @@ if (handle->use_fallback_fwd_loops == 1) {
       }
     }
   }
+#endif
 
 }
 
