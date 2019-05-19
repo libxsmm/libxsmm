@@ -1825,18 +1825,16 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_THREADS = p
       endif
     endif
-    BLASDIR ?= /usr/lib
-    BLASROOT = $(BLASDIR)/..
+    BLASDIR ?= $(wildcard /usr/local/lib /usr/lib)
+    BLASROOT = $(wildcard $(patsubst %,%/..,$(BLASDIR)))
     ifeq (0,$(BLAS_STATIC)) # shared
-      BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
-      ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
-        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),openblas$(BLAS_BITS))
-      endif
+      BLAS_LDTEST = $(SLDFLAGS) $(patsubst %,-L%,$(BLASDIR))
     else # static
-      BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
-      ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
-        BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),openblas$(BLAS_BITS))
-      endif
+      BLAS_LDTEST = -static $(patsubst %,-L%,$(BLASDIR))
+    endif
+    BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),openblas$(BLAS_THREADS)$(BLAS_BITS))
+    ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
+      BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),openblas$(BLAS_BITS))
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
     OPENBLAS := $(if $(BLASLIBFILE),1,0)
@@ -1844,19 +1842,17 @@ else ifneq (0,$(BLAS)) # generic
     ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
       BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
-      ifneq (,$(wildcard $(BLASROOT)/include/openblas/f77blas.h))
-        BLAS_FLAGS += -D__OPENBLAS77 -I$(BLASROOT)/include/openblas
-      else ifneq (,$(wildcard $(BLASROOT)/include/x86_64-linux-gnu/f77blas.h))
-        BLAS_FLAGS += -D__OPENBLAS77 -I$(BLASROOT)/include/x86_64-linux-gnu
+      ifneq (,$(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
+        BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include/openblas,$(BLASROOT))
+      else ifneq (,$(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
+        BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include/x86_64-linux-gnu,$(BLASROOT))
       endif
     else # BLAS (reference)
       BLAS_FLAGS += -D__BLAS
       ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
-        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),blas$(BLAS_BITS).dll)
-      else ifeq (0,$(BLAS_STATIC)) # potentially shared
-        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),blas$(BLAS_BITS))
-      else # static
-        BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),blas$(BLAS_BITS))
+        BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),blas$(BLAS_BITS).dll)
+      else
+        BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),blas$(BLAS_BITS))
       endif
     endif
     ifneq (,$(BLASLIBFILE))
@@ -1890,9 +1886,9 @@ else ifneq (0,$(BLAS)) # generic
     ifneq (,$(findstring openblas,$(notdir $(BLASLIB))))
       BLAS_FLAGS += -D__CBLAS -D__OPENBLAS
     endif
-    ifneq (./,$(BLASDIR)$(dir $(BLASLIB)))
+    ifneq (./,$(firstword $(BLASDIR))$(dir $(BLASLIB)))
       ifeq (./,$(dir $(BLASLIB)))
-        BLAS_LDFLAGS += $(call abslib,$(BLASDIR)/$(if $(suffix $(BLASLIB)),$(BLASLIB),lib$(BLASLIB).$(BLASLIBEXT)))
+        BLAS_LDFLAGS += $(call abslib,$(firstword $(BLASDIR))/$(if $(suffix $(BLASLIB)),$(BLASLIB),lib$(BLASLIB).$(BLASLIBEXT)))
       else
         BLAS_LDFLAGS += $(call abslib,$(if $(suffix $(BLASLIB)),$(BLASLIB),$(BLASLIB).$(BLASLIBEXT)))
       endif
@@ -1955,7 +1951,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION% MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP CCAR \
     SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE OMPLIBFILE \
     NOBLASLIB NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 PYMOD CSTD \
-    CWARNEXTRA MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE FFORM_FLAG FREEFORM \
+    CWARNEXTRA MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE FFORM_FLAG FREEFORM BLAS_LDTEST \
     which cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
