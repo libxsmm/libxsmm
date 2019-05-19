@@ -1902,37 +1902,34 @@ endif
 # adopt extra flags from C if not set individually
 ECXXFLAGS ?= $(ECFLAGS)
 
-cleanup = $(foreach flag,$1,$(flag))
-dedupld = $(subst $(NULL) $(XLIB_BEGIN) $(XLIB_END),$(NULL),$1)
+cleanup = $(foreach flag,$(subst //,/,$1),$(flag))
+# cleanup eventually duplicated flags and slashes
+cleanld = $(shell echo "$1" | sed -e "s/[[:space:]][[:space:]]*/ /g" \
+  -e "s/$(XLIB_BEGIN)[[:space:]]$(XLIB_END)//g" \
+  -e "s/$(XLIB_END)[[:space:]]$(XLIB_BEGIN)//g" \
+  -e "s/\/\//\//g")
 
 # no-BLAS flags: cleanup and extra flags
 NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
 NOBLAS_FCFLAGS := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
 NOBLAS_CFLAGS := $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_LDFLAGS := $(call cleanup,$(LDFLAGS) $(ELDFLAGS))
-NOBLAS_CLDFLAGS := $(call cleanup,$(CLDFLAGS))
 NOBLAS_FLAGS := $(call cleanup,$(DFLAGS))
 NOBLAS_IFLAGS := $(call cleanup,$(IFLAGS))
+NOBLAS_LDFLAGS := $(call cleanld,$(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CLDFLAGS := $(call cleanld,$(CLDFLAGS))
 
 # regular flags: cleanup
 CXXFLAGS := $(call cleanup,$(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))
 FCFLAGS := $(call cleanup,$(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
 CFLAGS := $(call cleanup,$(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
-LDFLAGS := $(call cleanup,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
-CLDFLAGS := $(call cleanup,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
 DFLAGS := $(call cleanup,$(NOBLAS_FLAGS) $(BLAS_FLAGS))
 IFLAGS := $(call cleanup,$(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
-CXXLDFLAGS := $(call cleanup,$(CXXLDFLAGS))
-FLDFLAGS := $(call cleanup,$(FLDFLAGS))
-# cleanup eventually duplicated flags
-LDFLAGS := $(call dedupld,$(LDFLAGS))
-LDFLAGS := $(call dedupld,$(LDFLAGS))
-CLDFLAGS := $(call dedupld,$(CLDFLAGS))
-CLDFLAGS := $(call dedupld,$(CLDFLAGS))
-# cleanup duplicated slashes
-LDFLAGS := $(subst //,/,$(LDFLAGS))
-CLDFLAGS := $(subst //,/,$(CLDFLAGS))
-IFLAGS  := $(subst //,/,$(IFLAGS))
+LDFLAGS := $(call cleanld,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
+CLDFLAGS := $(call cleanld,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
+CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
+FLDFLAGS := $(call cleanld,$(FLDFLAGS))
+LDFLAGS := $(call cleanld,$(LDFLAGS))
+CLDFLAGS := $(call cleanld,$(CLDFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
@@ -1954,7 +1951,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE OMPLIBFILE \
     NOBLASLIB NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 PYMOD \
     CSTD CWARNEXTRA MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE FFORM_FLAG FREEFORM BLAS_LDTEST \
-    which cleanup dedupld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V), \
+    which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
