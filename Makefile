@@ -221,7 +221,7 @@ VERSION_PACKAGE ?= 1
 
 # detect environment used to build a package (maintainer build)
 ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
-  DESTDIR = /usr/local
+  DESTDIR ?= /usr/local
 endif
 
 # in contrast to PREFIX, DESTDIR matters at this point
