@@ -193,20 +193,6 @@ EXCLUDE_STATE = \
   PBINDIR PINCDIR POUTDIR PPKGDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR \
   TEST VERSION_STRING DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC PKG_CONFIG_%
 
-# in contrast to PREFIX, DESTDIR matters at this point
-ifneq (,$(strip $(DESTDIR)))
-ifneq ($(abspath .),$(abspath $(DESTDIR)))
-  PKG_CONFIG_PREFIX = $(DESTDIR)
-  ifeq (FreeBSD,$(UNAME))
-    PPKGDIR = libdata/pkgconfig
-  endif
-endif
-endif
-ifeq (,$(strip $(PKG_CONFIG_PREFIX)))
-  PKG_CONFIG_PREFIX = $(abspath .)
-  EXCLUDE_STATE += DESTDIR
-endif
-
 ifeq (,$(M)$(N)$(K))
 ifneq (,$(filter 0,$(MNK) 0))
   EXCLUDE_STATE += PRECISION MNK M N K
@@ -232,6 +218,25 @@ VERSION_STRING ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
 VERSION_API ?= $(shell $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_STRING))
 VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
+
+# detect environment used to build a package (maintainer build)
+ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
+  DESTDIR ?= /usr/local
+endif
+
+# in contrast to PREFIX, DESTDIR matters at this point
+ifneq (,$(strip $(DESTDIR)))
+ifneq ($(abspath .),$(abspath $(DESTDIR)))
+  PKG_CONFIG_PREFIX = $(DESTDIR)
+  ifeq (FreeBSD,$(UNAME))
+    PPKGDIR = libdata/pkgconfig
+  endif
+endif
+endif
+ifeq (,$(strip $(PKG_CONFIG_PREFIX)))
+  PKG_CONFIG_PREFIX = $(abspath .)
+  EXCLUDE_STATE += DESTDIR
+endif
 
 # explicitly target all objects
 ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
@@ -1581,15 +1586,17 @@ distclean: realclean-all
 
 # INSTALL_ROOT may sanitize the given PREFIX
 ifneq (,$(strip $(PREFIX)))
-INSTALL_ROOT = $(PREFIX)
+  INSTALL_ROOT = $(PREFIX)
 else
-INSTALL_ROOT = .
+  INSTALL_ROOT = .
 endif
 # ensure INSTALL_ROOT is an absolute path
 ifneq (,$(strip $(DESTDIR))) # consider DESTDIR
-INSTALL_ROOT := $(abspath $(DESTDIR)/$(INSTALL_ROOT))
+  INSTALL_ROOT := $(abspath $(DESTDIR)/$(INSTALL_ROOT))
+else ifneq (,$(strip $(PKG_CONFIG_PREFIX)))
+  INSTALL_ROOT := $(abspath $(PKG_CONFIG_PREFIX)/$(INSTALL_ROOT))
 else
-INSTALL_ROOT := $(abspath $(INSTALL_ROOT))
+  INSTALL_ROOT := $(abspath $(INSTALL_ROOT))
 endif
 
 .PHONY: install-minimal

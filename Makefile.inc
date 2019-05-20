@@ -248,9 +248,10 @@ BRACE_CLOSE := )
 
 libpath = $(strip $(if $1, \
   $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL), \
-    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>/dev/null \
-    | grep "lib$3" | grep -o "\([[:alpha:]]:\)*\/..*[ $(BRACE_CLOSE)]" \
-    | grep -o "..*[^$(BRACE_CLOSE)]" | tail -n1)))), \
+    $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>&1 \
+    | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(BRACE_CLOSE)]\).*/:\1/" \
+    | rev | cut -d":" -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)/\1/p" \
+    | cut -d" " -f1 | tail -n1)))), \
   $(NULL)))
 abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
 
@@ -1825,21 +1826,16 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_THREADS = p
       endif
     endif
-    ifneq (,$(BLASDIR))
-      BLASROOT = $(BLASDIR)/..
-    else
-      BLASROOT = /usr
-    endif
+    BLASDIR ?= $(wildcard /usr/local/lib /usr/lib)
+    BLASROOT = $(wildcard $(patsubst %,%/..,$(BLASDIR)))
     ifeq (0,$(BLAS_STATIC)) # shared
-      BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
-      ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
-        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),openblas$(BLAS_BITS))
-      endif
+      BLAS_LDTEST = $(SLDFLAGS) $(patsubst %,-L%,$(BLASDIR))
     else # static
-      BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),openblas$(BLAS_THREADS)$(BLAS_BITS))
-      ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
-        BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),openblas$(BLAS_BITS))
-      endif
+      BLAS_LDTEST = -static $(patsubst %,-L%,$(BLASDIR))
+    endif
+    BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),openblas$(BLAS_THREADS)$(BLAS_BITS))
+    ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
+      BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),openblas$(BLAS_BITS))
     endif
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
     OPENBLAS := $(if $(BLASLIBFILE),1,0)
@@ -1847,19 +1843,17 @@ else ifneq (0,$(BLAS)) # generic
     ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
       BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
-      ifneq (,$(wildcard $(BLASROOT)/include/openblas/f77blas.h))
-        BLAS_FLAGS += -D__OPENBLAS77 -I$(BLASROOT)/include/openblas
-      else ifneq (,$(wildcard $(BLASROOT)/include/x86_64-linux-gnu/f77blas.h))
-        BLAS_FLAGS += -D__OPENBLAS77 -I$(BLASROOT)/include/x86_64-linux-gnu
+      ifneq (,$(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
+        BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include/openblas,$(BLASROOT))
+      else ifneq (,$(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
+        BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include/x86_64-linux-gnu,$(BLASROOT))
       endif
     else # BLAS (reference)
       BLAS_FLAGS += -D__BLAS
       ifeq (Windows_NT,$(UNAME)) # no particular action about static linkage (use DLL)
-        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),blas$(BLAS_BITS).dll)
-      else ifeq (0,$(BLAS_STATIC)) # potentially shared
-        BLASLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(BLASDIR),blas$(BLAS_BITS))
-      else # static
-        BLASLIBFILE = $(call libpath,$(LD),-static $(BLASDIR),blas$(BLAS_BITS))
+        BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),blas$(BLAS_BITS).dll)
+      else
+        BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),blas$(BLAS_BITS))
       endif
     endif
     ifneq (,$(BLASLIBFILE))
@@ -1893,9 +1887,9 @@ else ifneq (0,$(BLAS)) # generic
     ifneq (,$(findstring openblas,$(notdir $(BLASLIB))))
       BLAS_FLAGS += -D__CBLAS -D__OPENBLAS
     endif
-    ifneq (./,$(BLASDIR)$(dir $(BLASLIB)))
+    ifneq (./,$(firstword $(BLASDIR))$(dir $(BLASLIB)))
       ifeq (./,$(dir $(BLASLIB)))
-        BLAS_LDFLAGS += $(call abslib,$(BLASDIR)/$(if $(suffix $(BLASLIB)),$(BLASLIB),lib$(BLASLIB).$(BLASLIBEXT)))
+        BLAS_LDFLAGS += $(call abslib,$(firstword $(BLASDIR))/$(if $(suffix $(BLASLIB)),$(BLASLIB),lib$(BLASLIB).$(BLASLIBEXT)))
       else
         BLAS_LDFLAGS += $(call abslib,$(if $(suffix $(BLASLIB)),$(BLASLIB),$(BLASLIB).$(BLASLIBEXT)))
       endif
@@ -1908,36 +1902,34 @@ endif
 # adopt extra flags from C if not set individually
 ECXXFLAGS ?= $(ECFLAGS)
 
-cleanup = $(foreach flag,$1,$(flag))
+cleanup = $(foreach flag,$(subst //,/,$1),$(flag))
+# cleanup eventually duplicated flags and slashes
+cleanld = $(shell echo "$1" | sed -e "s/[[:space:]][[:space:]]*/ /g" \
+  -e "s/[[:space:]]$(XLIB_BEGIN)[[:space:]]$(XLIB_END)/ /g" \
+  -e "s/[[:space:]]$(XLIB_END)[[:space:]]$(XLIB_BEGIN)/ /g" \
+  -e "s/\/\//\//g")
 
 # no-BLAS flags: cleanup and extra flags
 NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
 NOBLAS_FCFLAGS := $(call cleanup,$(PICFLAG) $(FCFLAGS) $(EFCFLAGS) $(EFLAGS))
 NOBLAS_CFLAGS := $(call cleanup,$(PICFLAG) $(CFLAGS) $(ECFLAGS) $(EFLAGS))
-NOBLAS_LDFLAGS := $(call cleanup,$(LDFLAGS) $(ELDFLAGS))
-NOBLAS_CLDFLAGS := $(call cleanup,$(CLDFLAGS))
 NOBLAS_FLAGS := $(call cleanup,$(DFLAGS))
 NOBLAS_IFLAGS := $(call cleanup,$(IFLAGS))
+NOBLAS_LDFLAGS := $(call cleanld,$(LDFLAGS) $(ELDFLAGS))
+NOBLAS_CLDFLAGS := $(call cleanld,$(CLDFLAGS))
 
 # regular flags: cleanup
 CXXFLAGS := $(call cleanup,$(NOBLAS_CXXFLAGS) $(BLAS_CXXFLAGS))
 FCFLAGS := $(call cleanup,$(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
 CFLAGS := $(call cleanup,$(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
-LDFLAGS := $(call cleanup,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
-CLDFLAGS := $(call cleanup,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
 DFLAGS := $(call cleanup,$(NOBLAS_FLAGS) $(BLAS_FLAGS))
 IFLAGS := $(call cleanup,$(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
-CXXLDFLAGS := $(call cleanup,$(CXXLDFLAGS))
-FLDFLAGS := $(call cleanup,$(FLDFLAGS))
-# cleanup eventually duplicated flags
-LDFLAGS := $(subst $(NULL) $(XLIB_BEGIN) $(XLIB_END),$(NULL),$(LDFLAGS))
-LDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(LDFLAGS))
-CLDFLAGS := $(subst $(NULL) $(XLIB_BEGIN) $(XLIB_END),$(NULL),$(CLDFLAGS))
-CLDFLAGS := $(subst $(NULL) $(XLIB_END) $(XLIB_BEGIN),$(NULL),$(CLDFLAGS))
-# cleanup duplicated slashes
-LDFLAGS := $(subst //,/,$(LDFLAGS))
-CLDFLAGS := $(subst //,/,$(CLDFLAGS))
-IFLAGS  := $(subst //,/,$(IFLAGS))
+LDFLAGS := $(call cleanld,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
+CLDFLAGS := $(call cleanld,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
+CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
+FLDFLAGS := $(call cleanld,$(FLDFLAGS))
+LDFLAGS := $(call cleanld,$(LDFLAGS))
+CLDFLAGS := $(call cleanld,$(CLDFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
@@ -1952,14 +1944,14 @@ objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG
 
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_STATE .SHELLSTATUS .DEFAULT_GOAL MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION \
-    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING FSTD DEPDIR \
-    DLIBEXT ENV EXTDEP FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE FLOCK SUITE \
-    ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MAKE_ILP64 MAKE_VERSION% MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP CCAR \
-    SHARED CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE OMPLIBFILE \
-    NOBLASLIB NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC DNOBLAS PYTHON PYTHON3 PYMOD CSTD \
-    CWARNEXTRA MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE FFORM_FLAG FREEFORM \
-    which cleanup linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V), \
+  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_STATE .% _% MAKE_% HAVE_% MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION \
+    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING DEPDIR \
+    DLIBEXT ENV EXTDEP FSTD FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE \
+    FLOCK SUITE ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP BLAS_LDTEST \
+    SHARED CCAR CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE \
+    OMPLIBFILE NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC PYTHON% PYMOD CWARNEXTRA \
+    CSTD DNOBLAS MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE FFORM_FLAG FREEFORM OPSYS \
+    which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
