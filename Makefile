@@ -193,6 +193,11 @@ EXCLUDE_STATE = \
   PBINDIR PINCDIR POUTDIR PPKGDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR \
   TEST VERSION_STRING DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC PKG_CONFIG_%
 
+# attempt to detect environment used to build a package (maintainer build)
+ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
+  DESTDIR = /usr/local
+endif
+
 # in contrast to PREFIX, DESTDIR matters at this point
 ifneq (,$(strip $(DESTDIR)))
 ifneq ($(abspath .),$(abspath $(DESTDIR)))
