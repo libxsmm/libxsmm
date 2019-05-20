@@ -180,7 +180,6 @@ if (handle->use_fallback_fwd_loops == 1) {
                           &LIBXSMM_VLA_ACCESS( 5, output, img, ofm1, oj_use+ojj, oi_use+1, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock),
                           (handle->fwd_ofw_rb-1) * handle->ofmblock);
                     }
-
                   } else if (ifm2 == handle->blocksifm &&
                       ((kj == last_kj && ki == last_ki) ||
                        (next_kj == 0 && next_kj == last_kj && oj == 0) ||

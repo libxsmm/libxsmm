@@ -29,6 +29,7 @@
 /* Evangelos Georganas, Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 int img, ofm1, ofm2, ifm1, ifm2, oj, ojj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myIfmId, nIfmBlocks, ind, task, ifm1ofm1;
+int last_ki, last_kj, next_ki, next_kj;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -165,6 +166,10 @@ if (handle->loop_order == 0) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) {*/
                         ii_use = oi;
                         oj_use = oj - (1-handle->desc.pad_h_out);
                         oi_use = oi - (1-handle->desc.pad_w_out);
+                        last_kj = handle->desc.R-1;
+                        last_ki = handle->desc.S-1;
+                        next_ki = ki+1;
+                        next_kj = kj+1;
 
                         if (kj == 0 && oj == 0) {
                           /* Do no FLOPS  */
@@ -187,6 +192,15 @@ if (handle->loop_order == 0) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) {*/
                                   &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij_use+ojj, ii_use + 1, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
                                   (handle->bwd_ofw_rb-1) * handle->ifmblock);
                             }
+                          } else if (ofm2 == handle->blocksofm &&
+                              ((kj == last_kj && ki == last_ki) ||
+                               (next_kj == 0 && next_kj == last_kj && oj == 0) ||
+                               (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
+                            for (ojj = 0; ojj < handle->bwd_ofh_rb; ojj++) {
+                              libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS(5, del_input_fp32, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                                  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                                  handle->bwd_ofw_rb * handle->ifmblock);
+                            }
                           }
                         } else if (oi == handle->ofw-handle->bwd_ofw_rb  && ki == handle->desc.S-1) {
                           ind = 0;
@@ -205,6 +219,15 @@ if (handle->loop_order == 0) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) {*/
                                   &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
                                   (handle->bwd_ofw_rb-1) * handle->ifmblock);
                             }
+                          } else if (ofm2 == handle->blocksofm &&
+                              ((kj == last_kj && ki == last_ki) ||
+                               (next_kj == 0 && next_kj == last_kj && oj == 0) ||
+                               (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
+                            for (ojj = 0; ojj < handle->bwd_ofh_rb; ojj++) {
+                              libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS(5, del_input_fp32, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                                  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                                  handle->bwd_ofw_rb * handle->ifmblock);
+                            }
                           }
                         } else {
                           ind = 0;
@@ -220,6 +243,15 @@ if (handle->loop_order == 0) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) {*/
                           if (handle->avoid_acc_load_bwd == 1) {
                             for (ojj = 0; ojj < handle->bwd_ofh_rb; ojj++) {
                               libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS( 3, scratch_fp32, ojj, 0, 0, handle->bwd_ofw_rb, handle->ifmblock),
+                                  &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                                  handle->bwd_ofw_rb * handle->ifmblock);
+                            }
+                          } else if (ofm2 == handle->blocksofm &&
+                              ((kj == last_kj && ki == last_ki) ||
+                               (next_kj == 0 && next_kj == last_kj && oj == 0) ||
+                               (next_kj == handle->desc.R-1 && next_kj == last_kj && oj == handle->ofh-1))) {
+                            for (ojj = 0; ojj < handle->bwd_ofh_rb; ojj++) {
+                              libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS(5, del_input_fp32, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
                                   &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
                                   handle->bwd_ofw_rb * handle->ifmblock);
                             }
@@ -284,6 +316,12 @@ if (handle->loop_order == 0) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) {*/
                             &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
                             handle->bwd_ofw_rb * handle->ifmblock);
                       }
+                    } else if (ofm2 == handle->blocksofm && kj == handle->desc.R && ki == handle->desc.S) {
+                      for (ojj = 0; ojj < handle->bwd_ofh_rb; ojj++) {
+                        libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS(5, del_input_fp32, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                            &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                            handle->bwd_ofw_rb * handle->ifmblock);
+                      }
                     }
                   }
                 }
@@ -343,25 +381,18 @@ if (handle->loop_order == 1) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) { */
                           &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
                           handle->bwd_ofw_rb * handle->ifmblock);
                     }
+                  } else if (ofm2 == handle->blocksofm && kj == handle->desc.R && ki == handle->desc.S) {
+                    for (ojj = 0; ojj < handle->bwd_ofh_rb; ojj++) {
+                      libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS(5, del_input_fp32, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                          &LIBXSMM_VLA_ACCESS(5, del_input, img, ifm1, ij_use+ojj, ii_use, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
+                          handle->bwd_ofw_rb * handle->ifmblock);
+                    }
                   }
                 }
               }
             }
           }
         }
-      }
-    }
-  }
-}
-
-/* In case we used intermediate fp32 buffer, now downconvert the result to the actual bf16 output */
-if (handle->avoid_acc_load_bwd == 0) {
-  for (img = my_img_start; img < my_img_end; img++) {
-    for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
-      for (oj = 0; oj < handle->ofh; oj++) {
-        libxsmm_truncate_convert_f32_bf16( &LIBXSMM_VLA_ACCESS( 5, del_input_fp32, img, ifm1, oj, 0, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
-            &LIBXSMM_VLA_ACCESS( 5, del_input, img, ifm1, oj, 0, 0, handle->blocksifm, IFH, IFW, handle->ifmblock),
-            handle->ofw * handle->ifmblock);
       }
     }
   }
