@@ -1709,9 +1709,9 @@ else # shared (DLL)
 endif
 
 ifneq (0,$(ABSLIBS))
-ifeq (0,$(DEPSTATIC))
+#ifeq (0,$(DEPSTATIC))
   abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
-endif
+#endif
 endif
 abslibpath ?= $(call absliblpath,$1)
 
