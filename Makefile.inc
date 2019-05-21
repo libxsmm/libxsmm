@@ -1698,7 +1698,7 @@ ifeq (,$(strip $(MKLROOT)))
   endif
 endif
 ifneq (,$(MKL_INCFILE))
-  BLAS_STATIC = 0
+  #BLAS_STATIC = 0
   ABSLIBS = 1
 endif
 
