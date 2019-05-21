@@ -29,7 +29,7 @@
 /* Evangelos Georganas, Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
 
-int img, ofm1, ofm2, ifm1, ifm2, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myOfmId, nOfmBlocks, ind, ofm11, ki1, kj1, ojj, oii;
+int img, ofm1, ofm2, ifm1, ifm2, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myOfmId, nOfmBlocks, ind, ofm11, ki1, kj1, ojj, oii, spread_out = 1;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -66,7 +66,6 @@ if ( imgpt <= 1 ) {
 }
 
 if ( handle->use_ofm_parallelization == 1 ) {
-  int spread_out = 0;
   if ( handle->desc.N % 8 == 0) {
     spread_out = 8;
   } else if ( handle->desc.N % 4 == 0) {
@@ -91,9 +90,13 @@ if ( handle->use_ofm_parallelization == 1 ) {
 }
 
 if (handle->pack_input == 1) {
+  int ifmpt = (handle->blocksifm+spread_out-1)/spread_out;
+  int ifm_id = ltid % spread_out;
+  int my_ifm_start = LIBXSMM_MIN( ifm_id * ifmpt, handle->blocksifm);
+  int my_ifm_end = LIBXSMM_MIN( (ifm_id+1) * ifmpt, handle->blocksifm);
   LIBXSMM_VLA_DECL(5, element_input_type, input_src, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
   for (img = my_img_start; img < my_img_end; img++) {
-    for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
+    for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
       for (oj = 0; oj < handle->ofh; oj++) {
         for (oi = 0; oi < handle->ofw; oi++) {
           ij_use = oj * handle->desc.u;
@@ -105,6 +108,9 @@ if (handle->pack_input == 1) {
         }
       }
     }
+  }
+  if ( handle->use_ofm_parallelization == 1 ) {
+    libxsmm_barrier_wait(handle->barrier, ltid);
   }
 }
 
