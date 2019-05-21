@@ -51,8 +51,8 @@ then
   # disable glob in Shell
   #set -f
   for CLEAN in ${CLEANUP}; do
-    CLEAN_CHECK="${CLEAN_CHECK}/#SBATCH[[:space:]][[:space:]]*${CLEAN}[[:space:]][[:space:]]*/p;"
-    CLEAN_CLEAN="${CLEAN_CLEAN}/#SBATCH[[:space:]][[:space:]]*${CLEAN}[[:space:]][[:space:]]*/d;"
+    CLEAN_CHECK="${CLEAN_CHECK}/^#SBATCH[[:space:]][[:space:]]*${CLEAN}[[:space:]][[:space:]]*/p;"
+    CLEAN_CLEAN="${CLEAN_CLEAN}/^#SBATCH[[:space:]][[:space:]]*${CLEAN}[[:space:]][[:space:]]*/d;"
   done
   COUNT_TOTAL=0
   COUNT_CLEAN=0
