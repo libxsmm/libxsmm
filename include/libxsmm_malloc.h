@@ -80,13 +80,16 @@ LIBXSMM_API int libxsmm_get_scratch_allocator(void** context,
 /** Allocate memory (malloc/free interface). */
 LIBXSMM_API LIBXSMM_ATTRIBUTE_MALLOC void* libxsmm_malloc(size_t size);
 
-/** Allocate aligned default memory. */
+/** Allocate aligned memory using the default allocator. */
 LIBXSMM_API LIBXSMM_ATTRIBUTE_MALLOC void* libxsmm_aligned_malloc(size_t size,
   /**
    * =0: align automatically according to the size
    * 0<: align according to the alignment value
    */
   size_t alignment);
+
+/** Reallocate memory using the default allocator (alignment is preserved). */
+LIBXSMM_API void* libxsmm_realloc(size_t size, void* ptr);
 
 /**
  * Allocate aligned scratch memory. It is not supported
@@ -103,7 +106,7 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size,
    * Identifies the call site, which is used
    * to determine the memory pool.
    */
-  const char* caller);
+  const void* caller);
 
 /**
  * Binary form of libxsmm_scratch_malloc, which

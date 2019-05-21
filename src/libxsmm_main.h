@@ -880,6 +880,8 @@ LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
 LIBXSMM_APIVAR(double libxsmm_timer_scale);
+/** Security-enhanced environment */
+LIBXSMM_APIVAR(int libxsmm_se);
 
 #endif /*LIBXSMM_MAIN_H*/
 
