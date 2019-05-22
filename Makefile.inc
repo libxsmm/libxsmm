@@ -602,11 +602,6 @@ endif
 
 # Separate control on how to link against the BLAS library
 BLAS_STATIC ?= $(DEPSTATIC)
-ifneq (0,$(BLAS_STATIC))
-  BLASLIBEXT ?= $(SLIBEXT)
-else # shared (DLL)
-  BLASLIBEXT ?= $(ILIBEXT)
-endif
 
 # Too many ICEs with older Clang (need to know if Clang is used)
 ifeq (0,$(GCC)) # not GCC
@@ -1694,21 +1689,29 @@ ifeq (,$(strip $(MKLROOT)))
   MKL_INCFILE = $(strip $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h))))
   ifneq (,$(MKL_INCFILE))
     MKLROOT = $(abspath $(dir $(MKL_INCFILE))/..)
-    ABSLIBS = 1
   endif
 endif
 ifeq (,$(strip $(MKLROOT)))
   MKL_INCFILE = $(strip $(wildcard /usr/include/mkl/mkl.h))
   ifneq (,$(MKL_INCFILE))
     MKLROOT = $(abspath $(dir $(MKL_INCFILE))/../..)
-    ABSLIBS = 1
   endif
+endif
+ifneq (,$(MKL_INCFILE))
+  #BLAS_STATIC = 0
+  ABSLIBS = 1
+endif
+
+ifneq (0,$(BLAS_STATIC))
+  BLASLIBEXT ?= $(SLIBEXT)
+else # shared (DLL)
+  BLASLIBEXT ?= $(ILIBEXT)
 endif
 
 ifneq (0,$(ABSLIBS))
-ifeq (0,$(DEPSTATIC))
+#ifeq (0,$(DEPSTATIC))
   abslibpath = $(strip $(call abslibrpath,$1) $(call absliblpath,$1))
-endif
+#endif
 endif
 abslibpath ?= $(call absliblpath,$1)
 

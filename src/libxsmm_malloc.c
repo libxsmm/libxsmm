@@ -193,7 +193,6 @@ LIBXSMM_APIVAR_ARRAY(char internal_malloc_pool_buffer, (LIBXSMM_MALLOC_SCRATCH_M
 LIBXSMM_APIVAR(size_t internal_malloc_scratch_size_private);
 LIBXSMM_APIVAR(size_t internal_malloc_scratch_size_public);
 LIBXSMM_APIVAR(size_t internal_malloc_scratch_nmallocs);
-LIBXSMM_APIVAR(int internal_malloc_secured);
 
 
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
@@ -661,17 +660,17 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             FILE *const selinux = fopen("/sys/fs/selinux/enforce", "rb");
             const char *const env = getenv("LIBXSMM_SE");
             if (NULL != selinux) {
-              if (1 == fread(&internal_malloc_secured, 1/*sizeof(char)*/, 1/*count*/, selinux)) {
-                internal_malloc_secured = ('0' != internal_malloc_secured ? 1 : 0);
+              if (1 == fread(&libxsmm_se, 1/*sizeof(char)*/, 1/*count*/, selinux)) {
+                libxsmm_se = ('0' != libxsmm_se ? 1 : 0);
               }
               else { /* conservative assumption in case of read-error */
-                internal_malloc_secured = 1;
+                libxsmm_se = 1;
               }
               fclose(selinux);
             }
             LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&fallback, NULL == env
-              /* internal_malloc_secured decides */
-              ? (0 == internal_malloc_secured ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK)
+              /* libxsmm_se decides */
+              ? (0 == libxsmm_se ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK)
               /* user's choice takes precedence */
               : ('0' != *env ? LIBXSMM_MALLOC_FALLBACK : LIBXSMM_MALLOC_FINAL),
               LIBXSMM_ATOMIC_SEQ_CST);
@@ -1072,7 +1071,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 # endif   /* treat memory protection errors as soft error; ignore return value */
           mprotect_result = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
           if (EXIT_SUCCESS != mprotect_result) {
-            if (0 != internal_malloc_secured) { /* hard-error in case of SELinux */
+            if (0 != libxsmm_se) { /* hard-error in case of SELinux */
               if (0 != libxsmm_verbosity /* library code is expected to be mute */
                 && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
               {
@@ -1120,13 +1119,21 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_MALLOC void* libxsmm_aligned_malloc(size_t size, s
 }
 
 
-LIBXSMM_API_INLINE const void* internal_malloc_site(const char* site)
+LIBXSMM_API void* libxsmm_realloc(size_t size, void* ptr)
+{
+  LIBXSMM_UNUSED(size); LIBXSMM_UNUSED(ptr);
+  LIBXSMM_ASSERT_MSG(0, "libxsmm_realloc is not yet implemented");
+  return NULL;
+}
+
+
+LIBXSMM_API_INLINE const void* internal_malloc_site(const void* site)
 {
   const void* result;
   if (NULL != site) {
 #if !defined(LIBXSMM_STRING_POOLING)
     if ((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != site) {
-      const uintptr_t hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, site, strlen(site));
+      const uintptr_t hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, site, strlen((const char*)site));
       result = (const void*)((LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE) != hash ? hash : (hash - 1));
       LIBXSMM_ASSERT((LIBXSMM_MALLOC_SCRATCH_INTERNAL) != result);
     }
@@ -1178,7 +1185,7 @@ LIBXSMM_API_INLINE size_t internal_get_scratch_size(const internal_malloc_pool_t
 }
 
 
-LIBXSMM_API void* libxsmm_scratch_malloc(size_t size, size_t alignment, const char* caller)
+LIBXSMM_API void* libxsmm_scratch_malloc(size_t size, size_t alignment, const void* caller)
 {
   static int error_once = 0;
   size_t local_size = 0;
