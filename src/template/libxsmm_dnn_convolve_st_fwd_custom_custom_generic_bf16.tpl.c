@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 int img, ofm1, ofm2, ifm1, ifm2, oj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myOfmId, nOfmBlocks, ind, ofm11, ki1, kj1, ojj, oii;
-int last_ki, last_kj, next_ki, next_kj;
+int last_ki, last_kj, next_kj;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -157,7 +157,6 @@ if (handle->use_fallback_fwd_loops == 1) {
                 oj_use = oj;
                 last_kj = handle->desc.R-1;
                 last_ki = handle->desc.S-1;
-                next_ki = ki+1;
                 next_kj = kj+1;
 
                 if (kj == 0 && oj == 0) {
@@ -282,6 +281,8 @@ if (handle->use_fallback_fwd_loops == 1) {
             oi_use = oi;
             oj_use = oj;
             ind = 0;
+            kj = 0;
+            ki = 0;
             for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
               for (kj = 0; kj < handle->desc.R; kj++) {
                 for (ki = 0; ki < handle->desc.S; ki++) {
@@ -355,7 +356,6 @@ if (handle->use_fallback_fwd_loops == 1) {
                           kj = (handle->shuffle_filter_accesses == 1) ?  (kj1+ltid)%handle->desc.R : kj1;
                           last_ki = (handle->shuffle_filter_accesses == 1) ?  (handle->desc.S-1+ltid)%handle->desc.S : handle->desc.S-1;
                           last_kj = (handle->shuffle_filter_accesses == 1) ?  (handle->desc.R-1+ltid)%handle->desc.R : handle->desc.R-1;
-                          next_ki = (handle->shuffle_filter_accesses == 1) ?  (ki1+1+ltid)%handle->desc.S : ki1+1;
                           next_kj = (handle->shuffle_filter_accesses == 1) ?  (kj1+1+ltid)%handle->desc.R : kj1+1;
 
                           if (kj == 0 && oj == 0) {
@@ -486,6 +486,8 @@ if (handle->use_fallback_fwd_loops == 1) {
                       oi_use = oi;
                       oj_use = oj;
                       ind = 0;
+                      kj1 = 0;
+                      ki1 = 0;
                       for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
                         for (kj1 = 0; kj1 < handle->desc.R; kj1++) {
                           for (ki1 = 0; ki1 < handle->desc.S; ki1++) {
@@ -557,6 +559,8 @@ if (handle->use_fallback_fwd_loops == 1) {
                     oi_use = oi;
                     oj_use = oj;
                     ind = 0;
+                    kj = 0;
+                    ki = 0;
                     for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
                       for (kj = 0; kj < handle->desc.R; kj++) {
                         for (ki = 0; ki < handle->desc.S; ki++) {

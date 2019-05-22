@@ -28,8 +28,8 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke, Hans Pabst (Intel Corp.)
 ******************************************************************************/
-int img, ofm1, ofm2, ifm1, ifm2, oj, ojj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myIfmId, nIfmBlocks, ind, task, ifm1ofm1;
-int last_ki, last_kj, next_ki, next_kj;
+int img, ofm1, ofm2, ifm1, ifm2, oj, ojj, oi, kj, ki, oi_use, oj_use, ii_use, ij_use, ofmb, ifmb, ojb, myIfmId, nIfmBlocks, ind, task;
+int last_ki, last_kj, next_kj;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
 int imgpt = (handle->desc.N + handle->desc.threads - 1)/handle->desc.threads;
@@ -168,7 +168,6 @@ if (handle->loop_order == 0) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) {*/
                         oi_use = oi - (1-handle->desc.pad_w_out);
                         last_kj = handle->desc.R-1;
                         last_ki = handle->desc.S-1;
-                        next_ki = ki+1;
                         next_kj = kj+1;
 
                         if (kj == 0 && oj == 0) {
@@ -297,6 +296,8 @@ if (handle->loop_order == 0) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) {*/
                     oi_use = oi;
                     oj_use = oj;
                     ind = 0;
+                    kj = 0;
+                    ki = 0;
                     for (ofm2 = ofm1; ofm2 < ofm1 + handle->blocksofm_blocking; ofm2++) {
                       for (kj = 0; kj < handle->desc.R; kj++) {
                         for (ki = 0; ki < handle->desc.S; ki++) {
@@ -362,6 +363,8 @@ if (handle->loop_order == 1) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) { */
                   oi_use = oi;
                   oj_use = oj;
                   ind = 0;
+                  kj = 0;
+                  ki = 0;
                   for (ofm2 = ofm1; ofm2 < ofm1 + handle->blocksofm_blocking; ofm2++) {
                     for (kj = 0; kj < handle->desc.R; kj++) {
                       for (ki = 0; ki < handle->desc.S; ki++) {
