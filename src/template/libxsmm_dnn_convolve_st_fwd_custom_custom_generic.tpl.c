@@ -131,8 +131,8 @@ if (handle->use_fallback_fwd_loops == 1) {
       ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->ofh;
       oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->ofh;
 #else
-      oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->blocksofm;  
-      ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->blocksofm;       
+      oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->blocksofm;
+      ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->blocksofm;
 #endif
 
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
@@ -207,8 +207,8 @@ if (handle->use_fallback_fwd_loops == 1) {
       ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->ofh;
       oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->ofh;
 #else
-      oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->blocksofm;  
-      ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->blocksofm;       
+      oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->blocksofm;
+      ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->blocksofm;
 #endif
 
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
