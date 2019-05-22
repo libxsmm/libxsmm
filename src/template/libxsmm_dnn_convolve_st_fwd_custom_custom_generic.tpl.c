@@ -127,8 +127,14 @@ if (handle->use_fallback_fwd_loops == 1) {
   if ( handle->avoid_fmas_in_rim == 1) {
     for (imgofm1ofh = thr_begin; imgofm1ofh < thr_end; ++imgofm1ofh) {
       img = imgofm1ofh / (handle->blocksofm*handle->ofh);
+#if 1
       ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->ofh;
       oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->ofh;
+#else
+      oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->blocksofm;  
+      ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->blocksofm;       
+#endif
+
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
         if ( (ifmb == 0) && ((handle->options & LIBXSMM_DNN_CONV_OPTION_OVERWRITE) > 0) && handle->avoid_acc_load == 0) {
           /* set output feature map to zero */
@@ -197,8 +203,13 @@ if (handle->use_fallback_fwd_loops == 1) {
   } else {
     for (imgofm1ofh = thr_begin; imgofm1ofh < thr_end; ++imgofm1ofh) {
       img = imgofm1ofh / (handle->blocksofm*handle->ofh);
+#if 1
       ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->ofh;
       oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->ofh;
+#else
+      oj = (imgofm1ofh % (handle->blocksofm*handle->ofh))/handle->blocksofm;  
+      ofm1 = (imgofm1ofh % (handle->blocksofm*handle->ofh))%handle->blocksofm;       
+#endif
 
       for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_fwd_ifm) {
 
