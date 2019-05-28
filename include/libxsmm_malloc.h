@@ -35,7 +35,7 @@
 
 
 /** Function types accepted for memory allocation (see libxsmm_*_allocator). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_ctx)(void* /*context*/, size_t /*size*/);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_ctx)(size_t /*size*/, const void* /*context*/);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_fun)(size_t /*size*/);
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_malloc_function {
   libxsmm_malloc_ctx ctx_form;
@@ -43,7 +43,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_malloc_function {
 } libxsmm_malloc_function;
 
 /** Function types accepted for releasing memory (see libxsmm_*_allocator). */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_ctx)(void* /*context*/, void* /*buffer*/);
+LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_ctx)(void* /*buffer*/, const void* /*context*/);
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_free_fun)(void* /*buffer*/);
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_free_function {
   libxsmm_free_ctx ctx_form;
@@ -58,9 +58,9 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_free_function {
  * It is supported to change the allocator while buffers are pending.
  */
 LIBXSMM_API int libxsmm_set_default_allocator(/* malloc_fn/free_fn must correspond */
-  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+  const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Retrieve the default memory allocator. */
-LIBXSMM_API int libxsmm_get_default_allocator(void** context,
+LIBXSMM_API int libxsmm_get_default_allocator(const void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /**
@@ -72,9 +72,9 @@ LIBXSMM_API int libxsmm_get_default_allocator(void** context,
  * It is supported to change the allocator while buffers are pending.
  */
 LIBXSMM_API int libxsmm_set_scratch_allocator(/* malloc_fn/free_fn must correspond */
-  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+  const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Retrieve the scratch memory allocator. */
-LIBXSMM_API int libxsmm_get_scratch_allocator(void** context,
+LIBXSMM_API int libxsmm_get_scratch_allocator(const void** context,
   libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /** Allocate memory (malloc/free interface). */
@@ -173,12 +173,12 @@ public:
   /** C'tor, which instantiates the new allocator (plain form). */
   libxsmm_scoped_allocator(libxsmm_malloc_fun malloc_fn, libxsmm_free_fun free_fn) {
     kind::get(m_context, m_malloc, m_free);
-    kind::set(0/*context*/, 0/*malloc_ctx*/, 0/*free_ctx*/, malloc_fn, free_fn);
+    kind::set(NULL/*context*/, NULL/*malloc_ctx*/, NULL/*free_ctx*/, malloc_fn, free_fn);
   }
 
   /** C'tor, which instantiates the new allocator (context form). */
-  libxsmm_scoped_allocator(void* context, libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
-    libxsmm_malloc_fun malloc_fun = 0, libxsmm_free_fun free_fun = 0)
+  libxsmm_scoped_allocator(const void* context, libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
+    libxsmm_malloc_fun malloc_fun = NULL, libxsmm_free_fun free_fun = NULL)
   {
     kind::get(m_context, m_malloc, m_free);
     kind::set(context, malloc_ctx, free_ctx, malloc_fun, free_fun);
@@ -196,20 +196,20 @@ private: /* no copy/assignment */
   libxsmm_scoped_allocator& operator=(const libxsmm_scoped_allocator&);
 
 protected: /* saved/previous allocator */
-  void* m_context;
+  const void* m_context;
   libxsmm_malloc_function m_malloc;
   libxsmm_free_function m_free;
 };
 
 /** Allocator-kind to instantiate libxsmm_scoped_allocator<kind>. */
 struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
-  static void set(void* context,
+  static void set(const void* context,
     libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
     libxsmm_malloc_fun malloc_fun, libxsmm_free_fun free_fun)
   {
     libxsmm_malloc_function malloc_fn;
     libxsmm_free_function free_fn;
-    if (0 == context) { /* use global form only when no context is given */
+    if (NULL == context) { /* use global form only when no context is given */
       malloc_fn.function = malloc_fun; free_fn.function = free_fun;
     }
     else {
@@ -217,7 +217,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
     }
     libxsmm_set_default_allocator(context, malloc_fn, free_fn);
   }
-  static void get(void*& context,
+  static void get(const void*& context,
     libxsmm_malloc_function& malloc_fn, libxsmm_free_function& free_fn)
   {
     libxsmm_get_default_allocator(&context, &malloc_fn, &free_fn);
@@ -226,13 +226,13 @@ struct LIBXSMM_RETARGETABLE libxsmm_default_allocator {
 
 /** Allocator-kind to instantiate libxsmm_scoped_allocator<kind>. */
 struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
-  static void set(void* context,
+  static void set(const void* context,
     libxsmm_malloc_ctx malloc_ctx, libxsmm_free_ctx free_ctx,
     libxsmm_malloc_fun malloc_fun, libxsmm_free_fun free_fun)
   {
     libxsmm_malloc_function malloc_fn;
     libxsmm_free_function free_fn;
-    if (0 != context) { /* adopt context form */
+    if (NULL != context) { /* adopt context form */
       malloc_fn.function = malloc_fun; free_fn.function = free_fun;
     }
     else { /* adopt global form */
@@ -240,7 +240,7 @@ struct LIBXSMM_RETARGETABLE libxsmm_scratch_allocator {
     }
     libxsmm_set_scratch_allocator(context, malloc_fn, free_fn);
   }
-  static void get(void*& context,
+  static void get(const void*& context,
     libxsmm_malloc_function& malloc_fn, libxsmm_free_function& free_fn)
   {
     libxsmm_get_scratch_allocator(&context, &malloc_fn, &free_fn);
@@ -307,13 +307,13 @@ public:
   }
 
   /** Context based form of allocating memory. */
-  template<typename context_type> static void* malloc_ctx(void* context, size_t size) {
+  template<typename context_type> static void* malloc_ctx(const void* context, size_t size) {
     typedef typename context_type::WrappedAllocator::first_type allocator_ptr;
     context_type *const tf_context = static_cast<context_type*>(context);
-    allocator_ptr allocator = 0;
-    if (0 != tf_context) {
+    allocator_ptr allocator = NULL;
+    if (NULL != tf_context) {
 #if defined(TF_VERSION_STRING) && LIBXSMM_VERSION3(1, 12, 0) > LIBXSMM_VERSION3(TF_MAJOR_VERSION, TF_MINOR_VERSION, TF_PATCH_VERSION)
-      if (0 != tf_context->device()) {
+      if (NULL != tf_context->device()) {
         if (0 < tf_context->num_outputs()) {
           allocator = tf_context->device()->GetStepAllocator(
             tf_context->output_alloc_attr(0),
@@ -334,13 +334,13 @@ public:
   }
 
   /** Context based form of deallocating memory. */
-  template<typename context_type> static void free_ctx(void* context, void* buffer) {
+  template<typename context_type> static void free_ctx(const void* context, void* buffer) {
     typedef typename context_type::WrappedAllocator::first_type allocator_ptr;
     context_type *const tf_context = static_cast<context_type*>(context);
-    allocator_ptr allocator = 0;
-    if (0 != tf_context) {
+    allocator_ptr allocator = NULL;
+    if (NULL != tf_context) {
 #if defined(TF_VERSION_STRING) && LIBXSMM_VERSION3(1, 12, 0) > LIBXSMM_VERSION3(TF_MAJOR_VERSION, TF_MINOR_VERSION, TF_PATCH_VERSION)
-      if (0 != tf_context->device()) {
+      if (NULL != tf_context->device()) {
         if (0 < tf_context->num_outputs()) {
           allocator = tf_context->device()->GetStepAllocator(
             tf_context->output_alloc_attr(0),
@@ -364,21 +364,21 @@ private:
   template<typename allocator_ptr> /* break interface dependency with TF */
   static void* allocate(allocator_ptr allocator, size_t size) {
     void* result;
-    if (0 != allocator) {
+    if (NULL != allocator) {
     /* no (useless) waste with alignment; raw result is re-aligned anyways */
       result = allocator->AllocateRaw(1/*alignment*/, size);
     }
     else {
-      LIBXSMM_ASSERT_MSG(0, "LIBXSMM ERROR: memory allocator is missing");
-      result = 0;
+      LIBXSMM_ASSERT_MSG(0/*false*/, "LIBXSMM ERROR: memory allocator is missing");
+      result = NULL;
     }
     return result;
   }
 
   template<typename allocator_ptr> /* break interface dependency with TF */
   static void deallocate(allocator_ptr allocator, void* buffer) {
-    LIBXSMM_ASSERT_MSG(0 != allocator, "LIBXSMM ERROR: memory allocator is missing");
-    if (0 != allocator) allocator->DeallocateRaw(buffer);
+    LIBXSMM_ASSERT_MSG(NULL != allocator, "LIBXSMM ERROR: memory allocator is missing");
+    if (NULL != allocator) allocator->DeallocateRaw(buffer);
   }
 };
 

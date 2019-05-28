@@ -60,11 +60,11 @@
 #   define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
 # endif
 #endif
-#if !defined(LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE)
-# define LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE ((uintptr_t)-1)
+#if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER_ID)
+# define LIBXSMM_MALLOC_INTERNAL_CALLER_ID ((uintptr_t)-1)
 #endif
-#if !defined(LIBXSMM_MALLOC_SCRATCH_INTERNAL)
-# define LIBXSMM_MALLOC_SCRATCH_INTERNAL ((const char*)(LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE))
+#if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER)
+# define LIBXSMM_MALLOC_INTERNAL_CALLER ((const void*)(LIBXSMM_MALLOC_INTERNAL_CALLER_ID))
 #endif
 
 #if !defined(LIBXSMM_VERBOSITY_HIGH)
@@ -791,17 +791,17 @@ LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment);
 
 /** Same as libxsmm_set_default_allocator, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+  const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Same as libxsmm_get_default_allocator, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
+  const void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /** Same as libxsmm_set_scratch_allocator, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+  const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Same as libxsmm_get_scratch_allocator, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
+  const void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /**
  * Attribute memory allocation and protect with only the necessary flags.
@@ -817,7 +817,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
   /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
   const void* extra, size_t extra_size);
 /** Release memory, which was allocated using libxsmm_[*]malloc. */
-LIBXSMM_API_INTERN int libxsmm_xfree(const void* memory);
+LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory);
 
 /** Determines the given value in double-precision based on the given type. */
 LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
@@ -868,9 +868,9 @@ LIBXSMM_APIVAR(libxsmm_free_function libxsmm_default_free_fn);
 /** Function used to release scratch memory. */
 LIBXSMM_APIVAR(libxsmm_free_function libxsmm_scratch_free_fn);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
-LIBXSMM_APIVAR(void* libxsmm_default_allocator_context);
+LIBXSMM_APIVAR(const void* libxsmm_default_allocator_context);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
-LIBXSMM_APIVAR(void* libxsmm_scratch_allocator_context);
+LIBXSMM_APIVAR(const void* libxsmm_scratch_allocator_context);
 /** Number of discovered threads (per libxsmm_get_tid) */
 LIBXSMM_APIVAR(unsigned int libxsmm_threads_count);
 /** Number of scratch memory pools used; clamped against internal maximum. */
@@ -879,8 +879,8 @@ LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
 LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
-/** Non-zero value turns all allocations into scratch allocations. */
-LIBXSMM_APIVAR(int libxsmm_scratch);
+/** even: regular, odd: scratch, >1: intercept */
+LIBXSMM_APIVAR(int libxsmm_malloc_kind);
 
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
 LIBXSMM_APIVAR(double libxsmm_timer_scale);
