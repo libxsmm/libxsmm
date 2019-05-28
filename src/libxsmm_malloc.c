@@ -39,6 +39,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <malloc.h>
+#if !defined(LIBXSMM_MALLOC_HOOK_GLIBC) && defined(__MALLOC_HOOK_VOLATILE)
+# define LIBXSMM_MALLOC_HOOK_GLIBC
+#endif
 #if defined(__TBB)
 # include <tbb/scalable_allocator.h>
 #endif
@@ -227,6 +231,61 @@ LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], s
   if (NULL != size) *size = size1;
   return result;
 }
+
+
+#if defined(LIBXSMM_MALLOC_HOOK_GLIBC)
+
+LIBXSMM_API_INTERN void* internal_hook_memalign(size_t /*alignment*/, size_t /*size*/, const void* /*caller*/);
+LIBXSMM_API_INTERN void* internal_hook_memalign(size_t alignment, size_t size, const void* caller)
+{
+  void* result;
+  LIBXSMM_INIT
+  if (0 == libxsmm_scratch) {
+#if !defined(NDEBUG)
+    int status =
+#endif
+    libxsmm_xmalloc(&result, size, alignment, LIBXSMM_MALLOC_FLAG_DEFAULT, NULL/*extra*/, 0/*extra_size*/);
+    assert(EXIT_SUCCESS == status || NULL == result); /* !LIBXSMM_ASSERT */
+  }
+  else {
+    result = libxsmm_scratch_malloc(size, alignment, caller);
+  }
+  return result;
+}
+
+LIBXSMM_API_INTERN void* internal_hook_malloc(size_t /*size*/, const void* /*caller*/);
+LIBXSMM_API_INTERN void* internal_hook_malloc(size_t size, const void* caller)
+{
+  return internal_hook_memalign(0/*auto-align*/, size, caller);
+}
+
+LIBXSMM_API_INTERN void* internal_hook_realloc(void* /*ptr*/, size_t /*size*/, const void* /*caller*/);
+LIBXSMM_API_INTERN void* internal_hook_realloc(void* ptr, size_t size, const void* caller)
+{
+  const int nzeros = LIBXSMM_INTRINSICS_BITSCANFWD64((uintptr_t)ptr), alignment = 1 << nzeros;
+  LIBXSMM_ASSERT(0 == ((uintptr_t)ptr & ~(0xFFFFFFFFFFFFFFFF << nzeros)));
+  LIBXSMM_INIT
+  if (0 == libxsmm_scratch) {
+#if !defined(NDEBUG)
+    int status =
+#endif
+    libxsmm_xmalloc(&ptr, size, alignment, LIBXSMM_MALLOC_FLAG_REALLOC, NULL/*extra*/, 0/*extra_size*/);
+    assert(EXIT_SUCCESS == status || NULL == ptr); /* !LIBXSMM_ASSERT */
+  }
+  else {
+    ptr = libxsmm_scratch_malloc(size, 0/*auto-align*/, caller);
+  }
+  return ptr;
+}
+
+LIBXSMM_API_INTERN void internal_hook_free(void* /*ptr*/, const void* /*caller*/);
+LIBXSMM_API_INTERN void internal_hook_free(void* ptr, const void* caller)
+{
+  LIBXSMM_UNUSED(caller);
+  libxsmm_free(ptr);
+}
+
+#endif /*defined(LIBXSMM_MALLOC_HOOK_GLIBC)*/
 
 
 LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
@@ -851,7 +910,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 #endif
           if (NULL != info) { /* copy previous content */
             memcpy(aligned, *memory, info->size);
-            result = libxsmm_xfree(*memory);
+            result = libxsmm_xfree(*memory); /* !libxsmm_free */
             if (EXIT_SUCCESS == result) { /* finally commit/return allocated buffer */
               *memory = aligned;
             }
@@ -1180,16 +1239,20 @@ LIBXSMM_API_INLINE const void* internal_malloc_site_auto(void)
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_MALLOC void* libxsmm_aligned_malloc(size_t size, size_t alignment)
 {
-  void* result = NULL;
+  void* result;
   LIBXSMM_INIT
   if (0 == libxsmm_scratch) {
-    return EXIT_SUCCESS == libxsmm_xmalloc(&result, size, alignment, LIBXSMM_MALLOC_FLAG_DEFAULT,
-      NULL/*extra*/, 0/*extra_size*/) ? result : NULL;
+#if !defined(NDEBUG)
+    int status =
+#endif
+    libxsmm_xmalloc(&result, size, alignment, LIBXSMM_MALLOC_FLAG_DEFAULT, NULL/*extra*/, 0/*extra_size*/);
+    assert(EXIT_SUCCESS == status || NULL == result); /* !LIBXSMM_ASSERT */
   }
   else {
     const void *const caller = internal_malloc_site_auto();
-    return libxsmm_scratch_malloc(size, alignment, caller);
+    result = libxsmm_scratch_malloc(size, alignment, caller);
   }
+  return result;
 }
 
 
@@ -1198,8 +1261,18 @@ LIBXSMM_API void* libxsmm_realloc(size_t size, void* ptr)
   const int nzeros = LIBXSMM_INTRINSICS_BITSCANFWD64((uintptr_t)ptr), alignment = 1 << nzeros;
   LIBXSMM_ASSERT(0 == ((uintptr_t)ptr & ~(0xFFFFFFFFFFFFFFFF << nzeros)));
   LIBXSMM_INIT
-  return EXIT_SUCCESS == libxsmm_xmalloc(&ptr, size, alignment, LIBXSMM_MALLOC_FLAG_REALLOC,
-    NULL/*extra*/, 0/*extra_size*/) ? ptr : NULL;
+  if (0 == libxsmm_scratch) {
+#if !defined(NDEBUG)
+    int status =
+#endif
+    libxsmm_xmalloc(&ptr, size, alignment, LIBXSMM_MALLOC_FLAG_REALLOC, NULL/*extra*/, 0/*extra_size*/);
+    assert(EXIT_SUCCESS == status || NULL == ptr); /* !LIBXSMM_ASSERT */
+  }
+  else {
+    const void *const caller = internal_malloc_site_auto();
+    ptr = libxsmm_scratch_malloc(size, alignment, caller);
+  }
+  return ptr;
 }
 
 
