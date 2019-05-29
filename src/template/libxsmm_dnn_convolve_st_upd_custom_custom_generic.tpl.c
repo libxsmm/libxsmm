@@ -407,7 +407,7 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
 
 if (handle->weight_copies > 1) {
   /* reduce work-related variables  */
-  const int reduce_work = handle->blocksofm * handle->blocksifm * handle->desc.R * handle->desc.S * (handle->ofmblock/16) * handle->ifmblock;
+  const int reduce_work = handle->blocksofm * handle->blocksifm * handle->desc.R * handle->desc.S * (handle->ofmblock/handle->ofmblock) * handle->ifmblock;
   const int reduce_chunksize = (reduce_work % handle->desc.threads == 0) ? (reduce_work / handle->desc.threads) : (reduce_work / handle->desc.threads) + 1;
   const int reduce_thr_begin = (ltid * reduce_chunksize < reduce_work) ? (ltid * reduce_chunksize) : reduce_work;
   const int reduce_thr_end = ((ltid + 1) * reduce_chunksize < reduce_work) ? ((ltid + 1) * reduce_chunksize) : reduce_work;
@@ -418,25 +418,25 @@ if (handle->weight_copies > 1) {
   for ( ij = reduce_thr_begin; ij < reduce_thr_end; ij++ ) {
     element_filter_type *weight_ptr_glb = (element_filter_type*) handle->grad_filter->data;
 #if 1
-    float weight_sum[16];
+    float weight_sum[handle->ofmblock];
     unsigned int wtcnt = 0;
 
     LIBXSMM_PRAGMA_SIMD
-    for ( wtcnt = 0; wtcnt < 16; ++wtcnt ) {
+    for ( wtcnt = 0; wtcnt < handle->ofmblock; ++wtcnt ) {
       weight_sum[wtcnt] = 0.0f;
     }
 
     for ( ii = 0; ii < handle->weight_copies; ii++ ) {
-      element_filter_type *weight_ptr_src = (element_filter_type*)handle->scratch7 + ii * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S + ij * 16;
+      element_filter_type *weight_ptr_src = (element_filter_type*)handle->scratch7 + ii * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S + ij * handle->ofmblock;
       LIBXSMM_PRAGMA_SIMD
-      for ( wtcnt = 0; wtcnt < 16; ++wtcnt ) {
+      for ( wtcnt = 0; wtcnt < handle->ofmblock; ++wtcnt ) {
         weight_sum[wtcnt] += weight_ptr_src[wtcnt];
       }
     }
 
     LIBXSMM_PRAGMA_SIMD
-    for ( wtcnt = 0; wtcnt < 16; ++wtcnt ) {
-      weight_ptr_glb[(ij*16) + wtcnt] = weight_sum[wtcnt];
+    for ( wtcnt = 0; wtcnt < handle->ofmblock; ++wtcnt ) {
+      weight_ptr_glb[(ij*handle->ofmblock) + wtcnt] = weight_sum[wtcnt];
     }
 #else
     __m512 weight_sum = _mm512_setzero_ps();

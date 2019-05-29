@@ -357,6 +357,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksifm_blocking( libxsmm_dnn
       result = 2;
     }
   }
+  if (handle->blocksifm % result != 0) {
+    result = 1;
+  }
   return result;
 }
 
@@ -564,6 +567,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_blocksofm_blocking( libxsmm_dnn
     if (handle->desc.R == 3 && handle->desc.S == 3 && handle->ofh == 7 && handle->ofw == 7) {
       result = 2;
     }
+  }
+  if (handle->blocksofm % result != 0) {
+    result = 1;
   }
   return result;
 }
