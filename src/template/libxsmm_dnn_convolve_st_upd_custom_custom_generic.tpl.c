@@ -420,7 +420,7 @@ if (handle->weight_copies > 1) {
     element_filter_type *weight_ptr_glb = (element_filter_type*) handle->grad_filter->data;
 #if 1
     float weight_sum[64];
-    unsigned int wtcnt = 0;
+    int wtcnt = 0;
     assert( handle->ofmblock < 64 );
 
     LIBXSMM_PRAGMA_SIMD
