@@ -189,7 +189,7 @@ DOCEXT = pdf
 
 # state to be excluded from tracking the (re-)build state
 EXCLUDE_STATE = \
-  PREFIX INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR \
+  DESTDIR PREFIX INSTALL_ROOT BINDIR CURDIR DOCDIR DOCEXT INCDIR LICFDIR OUTDIR TSTDIR \
   PBINDIR PINCDIR POUTDIR PPKGDIR PSRCDIR PTSTDIR PDOCDIR SCRDIR SPLDIR SRCDIR \
   TEST VERSION_STRING DEPSTATIC BLAS %_TARGET %ROOT MPSS KNC PKG_CONFIG_%
 
@@ -218,25 +218,6 @@ VERSION_STRING ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
 VERSION_API ?= $(shell $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_STRING))
 VERSION_RELEASE ?= HEAD
 VERSION_PACKAGE ?= 1
-
-# detect environment used to build a package (maintainer build)
-ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
-  DESTDIR ?= /usr/local
-endif
-
-# in contrast to PREFIX, DESTDIR matters at this point
-ifneq (,$(strip $(DESTDIR)))
-ifneq ($(abspath .),$(abspath $(DESTDIR)))
-  PKG_CONFIG_PREFIX = $(DESTDIR)
-  ifeq (FreeBSD,$(UNAME))
-    PPKGDIR = libdata/pkgconfig
-  endif
-endif
-endif
-ifeq (,$(strip $(PKG_CONFIG_PREFIX)))
-  PKG_CONFIG_PREFIX = $(abspath .)
-  EXCLUDE_STATE += DESTDIR
-endif
 
 # explicitly target all objects
 ifneq (,$(strip $(SSE)$(AVX)$(MIC)))
@@ -1584,20 +1565,26 @@ realclean-all: realclean
 .PHONY: distclean
 distclean: realclean-all
 
+# PREFIX and DESTDIR are equivalent
+# - DESTDIR rules if PREFIX is also specified
+# - ensures deterministic behavior
+ifneq (,$(strip $(DESTDIR)))
+  PREFIX = $(DESTDIR)
+endif
 # INSTALL_ROOT may sanitize the given PREFIX
+# - attempts to detect maintainer build
 ifneq (,$(strip $(PREFIX)))
   INSTALL_ROOT = $(PREFIX)
+else ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
+  PPKGDIR = libdata/pkgconfig
+  INSTALL_ROOT = /usr/local
 else
   INSTALL_ROOT = .
 endif
 # ensure INSTALL_ROOT is an absolute path
-ifneq (,$(strip $(DESTDIR))) # consider DESTDIR
-  INSTALL_ROOT := $(abspath $(DESTDIR)/$(INSTALL_ROOT))
-else ifneq (,$(strip $(PKG_CONFIG_PREFIX)))
-  INSTALL_ROOT := $(abspath $(PKG_CONFIG_PREFIX)/$(INSTALL_ROOT))
-else
-  INSTALL_ROOT := $(abspath $(INSTALL_ROOT))
-endif
+INSTALL_ROOT := $(abspath $(INSTALL_ROOT))
+# PKG_CONFIG_PREFIX aliases INSTALL_ROOT
+PKG_CONFIG_PREFIX = $(INSTALL_ROOT)
 
 .PHONY: install-minimal
 install-minimal: libxsmm

@@ -52,6 +52,8 @@ libxsmm_dgemm0
 libxsmm_dgemm1
 libxsmm_dgemm2
 libxsmm_dgemm_
+libxsmm_dgemm_batch
+libxsmm_dgemm_batch_omp
 libxsmm_dgemm_descriptor_init
 libxsmm_dgemm_omp_
 libxsmm_diff
@@ -277,8 +279,10 @@ libxsmm_mutex_release
 libxsmm_mutex_trylock
 libxsmm_offset
 libxsmm_original_dgemm
+libxsmm_original_dgemm_batch
 libxsmm_original_dgemv
 libxsmm_original_sgemm
+libxsmm_original_sgemm_batch
 libxsmm_original_sgemv
 libxsmm_otrans
 libxsmm_otrans_
@@ -316,6 +320,7 @@ libxsmm_ptr_w2
 libxsmm_ptr_z0
 libxsmm_ptr_z1
 libxsmm_ptr_z2
+libxsmm_realloc
 libxsmm_release_dmmkernel
 libxsmm_release_kernel
 libxsmm_release_kernel_
@@ -357,6 +362,8 @@ libxsmm_sgemm0
 libxsmm_sgemm1
 libxsmm_sgemm2
 libxsmm_sgemm_
+libxsmm_sgemm_batch
+libxsmm_sgemm_batch_omp
 libxsmm_sgemm_descriptor_init
 libxsmm_sgemm_omp_
 libxsmm_shuffle
