@@ -672,6 +672,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_upd_ofh_rb( libxsmm_dnn_layer* 
   if (handle->upd_linearized_tasklist == 1 && handle->upd_use_batchreduce == 0 && (handle->desc.R != 1 || handle->desc.S != 1)) {
     result = 1;
   }
+  if (handle->upd_linearized_tasklist == 0 && handle->upd_use_batchreduce == 0 && (handle->desc.R != 1 || handle->desc.S != 1)) {
+    result = 1;
+  }
   if (handle->ofw == 56 && handle->desc.R == 1) {
     result = 2;
   }
