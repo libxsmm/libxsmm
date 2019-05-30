@@ -421,6 +421,7 @@ if (handle->weight_copies > 1) {
 #if 1
     float weight_sum[64];
     unsigned int wtcnt = 0;
+    assert( handle->ofmblock < 64 );
 
     LIBXSMM_PRAGMA_SIMD
     for ( wtcnt = 0; wtcnt < fm_blocking; ++wtcnt ) {
