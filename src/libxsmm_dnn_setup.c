@@ -672,6 +672,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_upd_ofh_rb( libxsmm_dnn_layer* 
   if (handle->upd_linearized_tasklist == 1 && handle->upd_use_batchreduce == 0 && (handle->desc.R != 1 || handle->desc.S != 1)) {
     result = 1;
   }
+  if (handle->upd_linearized_tasklist == 0 && handle->upd_use_batchreduce == 0 && (handle->desc.R != 1 || handle->desc.S != 1)) {
+    result = 1;
+  }
   if (handle->ofw == 56 && handle->desc.R == 1) {
     result = 2;
   }
@@ -730,6 +733,9 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_weight_copies_upd( libxsmm_dnn_
     if (handle->desc.N == 26) {
       result = 13;
     }
+  }
+  if (handle->desc.N != handle->desc.threads) {
+    result = handle->desc.N;
   }
   /* Make sure a single copy when we use linearized-task view */
   if (handle->upd_linearized_tasklist == 1) {

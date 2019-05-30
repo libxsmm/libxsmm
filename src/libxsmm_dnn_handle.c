@@ -113,7 +113,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
       /* FIXME: currently filter data-type is always smaller/equal output type */
       const size_t filter_typesize = libxsmm_dnn_typesize(handle->datatype_out);
       const size_t size7 = (size_t)handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * filter_typesize + handle->ifmblock * handle->ofmblock * sizeof(float);
-      handle->scratch7_size = LIBXSMM_UP2(size7, LIBXSMM_CACHELINE) * handle->desc.threads;
+      handle->scratch7_size = LIBXSMM_UP2(size7, LIBXSMM_CACHELINE) * LIBXSMM_MAX(handle->desc.threads, handle->desc.N);
     }
   }
   return status;

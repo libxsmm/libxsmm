@@ -318,46 +318,132 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     block_ifm = my_ifm_end-my_ifm_start+1;
     img_block_size = my_img_end - my_img_start;
 
-    /* May need to initialized private weights to zero  */
-    if (!((handle->upd_ofh_rb == handle->ofh) && (handle->upd_ofw_rb == handle->ofw))) {
-      for (ofm1 = my_ofm_start; ofm1 < my_ofm_end; ofm1++ ) {
-        for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
-          for (kj = my_R_start; kj < my_R_end; ++kj) {
-            for (ki = 0; ki < handle->desc.S; ++ki) {
-              for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++ ) {
-                for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-                  LIBXSMM_VLA_ACCESS(6, weight_private_group, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) = (element_filter_type)0;
+    if (handle->desc.N != handle->desc.threads) {
+      /* Use "flat" parallelism + reduction */
+      const int work = handle->desc.R * handle->desc.S * handle->blocksofm * handle->blocksifm * handle->desc.N;
+      const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.threads) : (work / handle->desc.threads) + 1;
+      const int work_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
+      const int work_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
+      int work_item;
+      int Cb = handle->blocksifm;
+      int Kb = handle->blocksofm;
+      int R = handle->desc.R;
+      int S = handle->desc.S;
+      const int IFH = (handle->upd_pack_input == 1) ? handle->ifhp/handle->desc.u : handle->ifhp;
+      const int IFW = (handle->upd_pack_input == 1) ? handle->ifwp/handle->desc.v : handle->ifwp;
+      element_input_type *input_ptr_base = (handle->upd_pack_input == 1) ? (element_input_type*)handle->scratch1 + handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock * handle->desc.R * handle->desc.S : (element_input_type*)handle->reg_input->data;
+      LIBXSMM_VLA_DECL(5, element_input_type, input_use, (element_input_type*)input_ptr_base, handle->blocksifm, IFH, IFW, handle->ifmblock);
+
+      /* If requested, pack input to avoid strided accesses */
+      if (handle->upd_pack_input == 1) {
+        LIBXSMM_VLA_DECL(5, element_input_type, input_src, (element_input_type*)handle->reg_input->data, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+        const int img_chunk = (handle->desc.N % handle->desc.threads == 0) ? handle->desc.N/handle->desc.threads : (handle->desc.N/handle->desc.threads) + 1;
+        const int img_copy_start = LIBXSMM_MIN(ltid*img_chunk, handle->desc.N);
+        const int img_copy_end = LIBXSMM_MIN((ltid+1)*img_chunk, handle->desc.N);
+
+        for (img = img_copy_start; img < img_copy_end; img++) {
+          for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
+            for (oj = 0; oj < handle->ofh; oj++) {
+              for (oi = 0; oi < handle->ofw; oi++) {
+                ij = oj * handle->desc.u;
+                ii = oi * handle->desc.v;
+                LIBXSMM_PRAGMA_SIMD
+                  for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                    LIBXSMM_VLA_ACCESS(5, input_use, img, ifm1, oj, oi, ifm2, handle->blocksifm, IFH, IFW, handle->ifmblock) = LIBXSMM_VLA_ACCESS(5, input_src, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                  }
+              }
+            }
+          }
+        }
+        libxsmm_barrier_wait(handle->barrier, ltid);
+      }
+
+      /* Initialize weights to zero */
+      if (handle->upd_ofw_rb != handle->ofw) {
+        for (work_item = work_begin; work_item < work_end; work_item++) {
+          img = work_item/(Cb*Kb*R*S);
+          ofm1 = (work_item%(Cb*Kb*R*S))/(Cb*R*S);
+          ifm1 = ((work_item%(Cb*Kb*R*S))%(Cb*R*S))/(R*S);
+          kj = (((work_item%(Cb*Kb*R*S))%(Cb*R*S))%(R*S))/S;
+          ki = (((work_item%(Cb*Kb*R*S))%(Cb*R*S))%(R*S))%S;
+          {
+            element_filter_type *weight_ptr_current = (handle->weight_copies > 1) ? (element_filter_type*)handle->scratch7 + img * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S : (element_filter_type*)handle->grad_filter->data;
+            LIBXSMM_VLA_DECL(6, element_filter_type, weight_current, (element_filter_type*)weight_ptr_current, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+            for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+              LIBXSMM_PRAGMA_SIMD
+                for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
+                  LIBXSMM_VLA_ACCESS(6, weight_current, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) = (element_filter_type)0;
+                }
+            }
+          }
+        }
+      }
+
+      for (work_item = work_begin; work_item < work_end; work_item++) {
+        img = work_item/(Cb*Kb*R*S);
+        ofm1 = (work_item%(Cb*Kb*R*S))/(Cb*R*S);
+        ifm1 = ((work_item%(Cb*Kb*R*S))%(Cb*R*S))/(R*S);
+        kj = (((work_item%(Cb*Kb*R*S))%(Cb*R*S))%(R*S))/S;
+        ki = (((work_item%(Cb*Kb*R*S))%(Cb*R*S))%(R*S))%S;
+        ii = 0 + ki;
+        ij = 0 + kj;
+        oj = 0;
+        oi = 0;
+        {
+          element_filter_type *weight_ptr_current = (handle->weight_copies > 1) ? (element_filter_type*)handle->scratch7 + img * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S : (element_filter_type*)handle->grad_filter->data;
+          LIBXSMM_VLA_DECL(6, element_filter_type, weight_current, (element_filter_type*)weight_ptr_current, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+          ind = 0;
+          for (j_br = 0; j_br < handle->ofh; j_br++) {
+            A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5, output, img , ofm1, oj + j_br, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+            B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5, input_use, img, ifm1, ij + j_br * handle->desc.u, ii, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+            ind++;
+          }
+          n_blocks = ind;
+          br_gemm_kernel(A_ptrs, B_ptrs, &LIBXSMM_VLA_ACCESS(6, weight_current, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &n_blocks);
+        }
+      }
+    } else {
+      /* May need to initialized private weights to zero  */
+      if (!((handle->upd_ofh_rb == handle->ofh) && (handle->upd_ofw_rb == handle->ofw))) {
+        for (ofm1 = my_ofm_start; ofm1 < my_ofm_end; ofm1++ ) {
+          for (ifm1 = my_ifm_start; ifm1 < my_ifm_end; ifm1++) {
+            for (kj = my_R_start; kj < my_R_end; ++kj) {
+              for (ki = 0; ki < handle->desc.S; ++ki) {
+                for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++ ) {
+                  for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                    LIBXSMM_VLA_ACCESS(6, weight_private_group, ofm1, ifm1, kj, ki, ifm2, ofm2, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock) = (element_filter_type)0;
+                  }
                 }
               }
             }
           }
         }
       }
-    }
 
-    if (handle->upd_loop_order == 0) {
-      for (img = my_img_start; img < my_img_end; img += img_block_size) {
-        for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
-          for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += block_ifm) {
-            for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
-              for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+block_ofm, my_ofm_end); ofm1++ ) {
-                for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
-                  for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj+= handle->upd_ofh_rb) {
-                    for (oi = 0; oi < handle->ofw; oi += handle->upd_ofw_rb) {
-                      for (kj = my_R_start; kj < my_R_end; ++kj) {
-                        for (ki = 0; ki < handle->desc.S; ++ki) {
-                          ii = oi * handle->desc.u + ki;
-                          ij = oj * handle->desc.v + kj;
-                          ind = 0;
-                          for (img_br = 0; img_br < img_block_size; img_br++) {
-                            for (j_br = 0; j_br < handle->upd_ofh_rb; j_br++) {
-                              A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5, output, img + img_br, ofm1, oj + j_br, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                              B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5, input, img + img_br, ifm1, ij + j_br * handle->desc.u, ii, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                              ind++;
+      if (handle->upd_loop_order == 0) {
+        for (img = my_img_start; img < my_img_end; img += img_block_size) {
+          for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
+            for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += block_ifm) {
+              for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
+                for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+block_ofm, my_ofm_end); ofm1++ ) {
+                  for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
+                    for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj+= handle->upd_ofh_rb) {
+                      for (oi = 0; oi < handle->ofw; oi += handle->upd_ofw_rb) {
+                        for (kj = my_R_start; kj < my_R_end; ++kj) {
+                          for (ki = 0; ki < handle->desc.S; ++ki) {
+                            ii = oi * handle->desc.u + ki;
+                            ij = oj * handle->desc.v + kj;
+                            ind = 0;
+                            for (img_br = 0; img_br < img_block_size; img_br++) {
+                              for (j_br = 0; j_br < handle->upd_ofh_rb; j_br++) {
+                                A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5, output, img + img_br, ofm1, oj + j_br, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                                B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5, input, img + img_br, ifm1, ij + j_br * handle->desc.u, ii, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                                ind++;
+                              }
                             }
+                            n_blocks = ind;
+                            br_gemm_kernel(A_ptrs, B_ptrs, &LIBXSMM_VLA_ACCESS(6, weight_private_group, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &n_blocks);
                           }
-                          n_blocks = ind;
-                          br_gemm_kernel(A_ptrs, B_ptrs, &LIBXSMM_VLA_ACCESS(6, weight_private_group, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &n_blocks);
                         }
                       }
                     }
@@ -367,30 +453,30 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
             }
           }
         }
-      }
-    } else {
-      for (img = my_img_start; img < my_img_end; img += img_block_size) {
-        for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += block_ifm) {
-          for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
-            for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
-              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
-                for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+block_ofm, my_ofm_end); ofm1++ ) {
-                  for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj+= handle->upd_ofh_rb) {
-                    for (oi = 0; oi < handle->ofw; oi += handle->upd_ofw_rb) {
-                      for (kj = my_R_start; kj < my_R_end; ++kj) {
-                        for (ki = 0; ki < handle->desc.S; ++ki) {
-                          ii = oi * handle->desc.u + ki;
-                          ij = oj * handle->desc.v + kj;
-                          ind = 0;
-                          for (img_br = 0; img_br < img_block_size; img_br++) {
-                            for (j_br = 0; j_br < handle->upd_ofh_rb; j_br++) {
-                              A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5, output, img + img_br, ofm1, oj + j_br, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
-                              B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5, input, img + img_br, ifm1, ij + j_br * handle->desc.u, ii, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
-                              ind++;
+      } else {
+        for (img = my_img_start; img < my_img_end; img += img_block_size) {
+          for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += block_ifm) {
+            for (ofmb = my_ofm_start; ofmb < my_ofm_end; ofmb += block_ofm) {
+              for (ojb = 0; ojb < handle->ofh; ojb += handle->upd_ofh_rb) {
+                for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+block_ifm, my_ifm_end); ifm1++) {
+                  for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+block_ofm, my_ofm_end); ofm1++ ) {
+                    for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->upd_ofh_rb,handle->ofh); oj+= handle->upd_ofh_rb) {
+                      for (oi = 0; oi < handle->ofw; oi += handle->upd_ofw_rb) {
+                        for (kj = my_R_start; kj < my_R_end; ++kj) {
+                          for (ki = 0; ki < handle->desc.S; ++ki) {
+                            ii = oi * handle->desc.u + ki;
+                            ij = oj * handle->desc.v + kj;
+                            ind = 0;
+                            for (img_br = 0; img_br < img_block_size; img_br++) {
+                              for (j_br = 0; j_br < handle->upd_ofh_rb; j_br++) {
+                                A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5, output, img + img_br, ofm1, oj + j_br, oi, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+                                B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5, input, img + img_br, ifm1, ij + j_br * handle->desc.u, ii, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                                ind++;
+                              }
                             }
+                            n_blocks = ind;
+                            br_gemm_kernel(A_ptrs, B_ptrs, &LIBXSMM_VLA_ACCESS(6, weight_private_group, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &n_blocks);
                           }
-                          n_blocks = ind;
-                          br_gemm_kernel(A_ptrs, B_ptrs, &LIBXSMM_VLA_ACCESS(6, weight_private_group, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &n_blocks);
                         }
                       }
                     }
@@ -424,22 +510,22 @@ if (handle->weight_copies > 1) {
     assert( handle->ofmblock < 64 );
 
     LIBXSMM_PRAGMA_SIMD
-    for ( wtcnt = 0; wtcnt < fm_blocking; ++wtcnt ) {
-      weight_sum[wtcnt] = 0.0f;
-    }
+      for ( wtcnt = 0; wtcnt < fm_blocking; ++wtcnt ) {
+        weight_sum[wtcnt] = 0.0f;
+      }
 
     for ( ii = 0; ii < handle->weight_copies; ii++ ) {
       element_filter_type *weight_ptr_src = (element_filter_type*)handle->scratch7 + ii * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S + ij * fm_blocking;
       LIBXSMM_PRAGMA_SIMD
-      for ( wtcnt = 0; wtcnt < fm_blocking; ++wtcnt ) {
-        weight_sum[wtcnt] += weight_ptr_src[wtcnt];
-      }
+        for ( wtcnt = 0; wtcnt < fm_blocking; ++wtcnt ) {
+          weight_sum[wtcnt] += weight_ptr_src[wtcnt];
+        }
     }
 
     LIBXSMM_PRAGMA_SIMD
-    for ( wtcnt = 0; wtcnt < fm_blocking; ++wtcnt ) {
-      weight_ptr_glb[(ij*fm_blocking) + wtcnt] = weight_sum[wtcnt];
-    }
+      for ( wtcnt = 0; wtcnt < fm_blocking; ++wtcnt ) {
+        weight_ptr_glb[(ij*fm_blocking) + wtcnt] = weight_sum[wtcnt];
+      }
 #else
     __m512 weight_sum = _mm512_setzero_ps();
     for ( ii = 0; ii < handle->weight_copies; ii++ ) {
