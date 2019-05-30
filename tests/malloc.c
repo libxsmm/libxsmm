@@ -35,8 +35,9 @@
 int main(void)
 {
   const size_t size = 2507, alignment = (2u << 20);
-  void *context, *p;
+  const void* context;
   int nerrors = 0;
+  void* p;
 
   libxsmm_malloc_info malloc_info;
   libxsmm_malloc_function malloc_fn;
@@ -44,7 +45,7 @@ int main(void)
   malloc_fn.function = malloc; free_fn.function = free;
   libxsmm_set_default_allocator(NULL/*context*/, malloc_fn/*malloc*/, free_fn/*free*/);
   malloc_fn.function = NULL; free_fn.function = NULL;
-  libxsmm_set_scratch_allocator(NULL/*context*/, malloc_fn, free_fn);
+  libxsmm_set_scratch_allocator(NULL/*context*/, malloc_fn/*NULL*/, free_fn/*NULL*/);
 
   /* check adoption of the default allocator */
   libxsmm_get_scratch_allocator(&context, &malloc_fn, &free_fn);
