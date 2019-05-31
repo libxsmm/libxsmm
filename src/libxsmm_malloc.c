@@ -39,7 +39,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#include <malloc.h>
 #if defined(__TBB)
 # include <tbb/scalable_allocator.h>
 #endif
@@ -140,7 +139,8 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_SEED 1051981
 #endif
 
-#if !defined(LIBXSMM_MALLOC_HOOK_GLIBC) && defined(__MALLOC_HOOK_VOLATILE)
+/* malloc.h must NOT be included (__MALLOC_HOOK_VOLATILE define cannot be used) */
+#if (!defined(LIBXSMM_MALLOC_HOOK_GLIBC) && defined(LIBXSMM_CONFIG_WRAP) && (0 > LIBXSMM_CONFIG_WRAP))
 # define LIBXSMM_MALLOC_HOOK_GLIBC 4 /* scratch threshold (prior-to-main allocations) */
 #endif
 #if !defined(LIBXSMM_MALLOC_CTXFORM) && !defined(NDEBUG) && 0
@@ -622,6 +622,7 @@ LIBXSMM_API_INTERN void* internal_hook_memalign(size_t alignment, size_t size, c
 #endif
     /* ensure allocations prior to main-function are non-scratch allocations */)
   {
+    LIBXSMM_ASSERT(8 == sizeof(void*)); ((char*)&caller)[7] = 0;
     internal_scratch_malloc(&result, size, alignment, LIBXSMM_MALLOC_FLAG_MMAP, caller);
   }
   else { /* even */
@@ -658,6 +659,7 @@ LIBXSMM_API_INTERN void* internal_hook_realloc(void* ptr, size_t size, const voi
     assert(EXIT_SUCCESS == status || NULL == ptr); /* !LIBXSMM_ASSERT */
   }
   else { /* odd */
+    LIBXSMM_ASSERT(8 == sizeof(void*)); ((char*)&caller)[7] = 0;
     internal_scratch_malloc(&ptr, size, 0/*auto-align*/, LIBXSMM_MALLOC_FLAG_MMAP | LIBXSMM_MALLOC_FLAG_REALLOC, caller);
   }
   return ptr;
@@ -672,6 +674,13 @@ LIBXSMM_API_INTERN void internal_hook_free(void* ptr, const void* caller)
 #endif
   libxsmm_free(ptr);
 }
+
+#if defined(LIBXSMM_MALLOC_HOOK_GLIBC) /* hack: get rid of deprecation attribute */
+LIBXSMM_EXTERN_C void* (*volatile __memalign_hook)(size_t, size_t, const void*);
+LIBXSMM_EXTERN_C void* (*volatile __malloc_hook)(size_t, const void*);
+LIBXSMM_EXTERN_C void* (*volatile __realloc_hook)(void*, size_t, const void*);
+LIBXSMM_EXTERN_C void  (*volatile __free_hook)(void*, const void*);
+#endif
 
 #endif /*defined(LIBXSMM_MALLOC_CTXFORM) || defined(LIBXSMM_MALLOC_HOOK_GLIBC)*/
 

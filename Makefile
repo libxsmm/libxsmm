@@ -118,9 +118,16 @@ SHARED ?= 0
 # >=2 and even: parallelized and tiled (all problem sizes)
 # >=3 and odd : GEMV is intercepted; small problem sizes
 # >=4 and even: GEMV is intercepted; all problem sizes
-# negative: assume BLAS with DGEMM_BATCH
+# negative: intercept memory allocations (experimental)
 # 0: disabled
 WRAP ?= 1
+
+# BLAS provides DGEMM_BATCH and SGEMM_BATCH
+BLAS_BATCH ?= 0
+
+ifneq (0,$(BLAS_BATCH))
+  DFLAGS += -DLIBXSMM_BLAS_GEMM_BATCH
+endif
 
 # JIT backend is enabled by default
 JIT ?= 1
