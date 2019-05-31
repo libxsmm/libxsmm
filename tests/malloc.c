@@ -72,10 +72,17 @@ int main(void)
     for (i = 0; i < size; ++i) { /* check that content is preserved */
       nerrors += (c[i] == (unsigned char)LIBXSMM_MOD2(i, 256) ? 0 : 1);
     }
+    for (i = size; i < 2 * size; ++i) c[i] = (unsigned char)LIBXSMM_MOD2(i, 256);
+    /* reallocate with smaller size */
+    p = libxsmm_realloc(size / 2, p);
+    c = (unsigned char*)p;
+    for (i = 0; i < size / 2; ++i) { /* check that content is preserved */
+      nerrors += (c[i] == (unsigned char)LIBXSMM_MOD2(i, 256) ? 0 : 1);
+    }
   }
 
   /* query and check the size of the buffer */
-  if (NULL != p && (EXIT_SUCCESS != libxsmm_get_malloc_info(p, &malloc_info) || malloc_info.size < 2 * size)) {
+  if (NULL != p && (EXIT_SUCCESS != libxsmm_get_malloc_info(p, &malloc_info) || malloc_info.size < (size / 2))) {
     ++nerrors;
   }
 

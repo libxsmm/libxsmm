@@ -568,7 +568,7 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
       }
     }
   }
-  else {
+  else { /* reallocate memory */
 #if !defined(NDEBUG)
     int status = EXIT_SUCCESS;
 #endif
@@ -577,10 +577,11 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
     if (NULL != pool) {
       const size_t counter = LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
       LIBXSMM_ASSERT(pool->instance.buffer <= pool->instance.head);
+      const void *const pool_buffer = pool->instance.buffer;
+      internal_malloc_info_type *const info = internal_malloc_info(pool_buffer);
+      LIBXSMM_ASSERT(NULL != info);
       *memory = NULL; /* no reallocation */
       if (0 == counter) { /* in-use scratch is reported as dangling buffer at program termination */
-        const void *const pool_buffer = pool->instance.buffer;
-        internal_malloc_info_type *const info = internal_malloc_info(pool_buffer);
         pool->instance.buffer = pool->instance.head = NULL;
 # if defined(LIBXSMM_MALLOC_AFFINITY) && (0 != LIBXSMM_SYNC) && !defined(NDEBUG) /* library code is expected to be mute */
         if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) && libxsmm_get_tid() != pool->instance.tid) {
@@ -590,21 +591,34 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
           }
         }
 # endif
-#if !defined(NDEBUG)
+      }
+# if !defined(NDEBUG)
+      status =
+# endif
+      libxsmm_xmalloc(memory, size, alignment/* no need here to determine alignment of given buffer */,
+        (flags | LIBXSMM_MALLOC_FLAG_REALLOC) & ~LIBXSMM_MALLOC_FLAG_SCRATCH,
+        NULL/*extra*/, 0/*extra_size*/);
+      assert(EXIT_SUCCESS == status || NULL == *memory); /* !LIBXSMM_ASSERT */
+      memcpy(*memory, pool_buffer, LIBXSMM_MIN(size, info->size));
+      if (0 == counter) {
+# if !defined(NDEBUG)
         status =
-#endif
+# endif
         internal_xfree(pool_buffer, info);
+        assert(EXIT_SUCCESS == status); /* !LIBXSMM_ASSERT */
       }
     }
+    else
 #endif
-    assert(EXIT_SUCCESS == status); /* !LIBXSMM_ASSERT */
+    {
 #if !defined(NDEBUG)
-    status =
+      status =
 #endif
-    libxsmm_xmalloc(memory, size, alignment/* no need here to determine alignment from given buffer */,
-      (flags | LIBXSMM_MALLOC_FLAG_REALLOC) & ~LIBXSMM_MALLOC_FLAG_SCRATCH,
-      NULL/*extra*/, 0/*extra_size*/);
-    assert(EXIT_SUCCESS == status || NULL == *memory); /* !LIBXSMM_ASSERT */
+      libxsmm_xmalloc(memory, size, alignment/* no need here to determine alignment of given buffer */,
+        (flags | LIBXSMM_MALLOC_FLAG_REALLOC) & ~LIBXSMM_MALLOC_FLAG_SCRATCH,
+        NULL/*extra*/, 0/*extra_size*/);
+      assert(EXIT_SUCCESS == status || NULL == *memory); /* !LIBXSMM_ASSERT */
+    }
   }
 }
 
@@ -1366,7 +1380,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             (unsigned int)(((char*)&buffer_info->hash) - ((char*)buffer_info)));
 #endif
           if (NULL != info) { /* copy previous content */
-            memcpy(aligned, *memory, info->size);
+            memcpy(aligned, *memory, LIBXSMM_MIN(info->size, size));
             result = internal_xfree(*memory, info); /* !libxsmm_free */
             if (EXIT_SUCCESS == result) { /* finally commit/return allocated buffer */
               *memory = aligned;
