@@ -576,9 +576,9 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
     internal_malloc_pool_type *const pool = internal_scratch_malloc_pool(*memory);
     if (NULL != pool) {
       const size_t counter = LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
-      LIBXSMM_ASSERT(pool->instance.buffer <= pool->instance.head);
       const void *const pool_buffer = pool->instance.buffer;
       internal_malloc_info_type *const info = internal_malloc_info(pool_buffer);
+      LIBXSMM_ASSERT(pool->instance.buffer <= pool->instance.head);
       LIBXSMM_ASSERT(NULL != info);
       *memory = NULL; /* no reallocation */
       if (0 == counter) { /* in-use scratch is reported as dangling buffer at program termination */
