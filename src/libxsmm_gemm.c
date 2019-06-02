@@ -1887,7 +1887,7 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_p
 }
 
 
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dgemm)(const char*, const char*,

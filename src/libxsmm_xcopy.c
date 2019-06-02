@@ -423,7 +423,7 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
 }
 
 
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* /*out*/, const void* /*in*/, const unsigned int* /*typesize*/,

@@ -2631,7 +2631,7 @@ LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel)
 }
 
 
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_init)(void);

@@ -1130,7 +1130,7 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_end(void)
 }
 
 
-#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && !defined(LIBXSMM_NOFORTRAN)
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_xgemm_omp)(const libxsmm_gemm_precision*, const libxsmm_gemm_precision*,
