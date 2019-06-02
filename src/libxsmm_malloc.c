@@ -729,17 +729,25 @@ LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
     /*internal_allocator = NULL;*/
 #else
 # if defined(LIBXSMM_MALLOC_HOOK_GLIBC)
+    static void* (*original_memalign_hook)(size_t, size_t, const void*) = NULL;
+    static void* (*original_malloc_hook)(size_t, const void*) = NULL;
+    static void* (*original_realloc_hook)(void*, size_t, const void*) = NULL;
+    static void  (*original_free_hook)(void*, const void*) = NULL;
     if (1 < libxsmm_malloc_kind) { /* intercept */
+      original_memalign_hook = __memalign_hook;
+      original_malloc_hook = __malloc_hook;
+      original_realloc_hook = __realloc_hook;
+      original_free_hook = __free_hook;
       __memalign_hook = internal_hook_memalign;
       __malloc_hook = internal_hook_malloc;
       __realloc_hook = internal_hook_realloc;
       __free_hook = internal_hook_free;
     }
     else { /* reset hooks */
-      __memalign_hook = NULL;
-      __malloc_hook = NULL;
-      __realloc_hook = NULL;
-      __free_hook = NULL;
+      __memalign_hook = original_memalign_hook;
+      __malloc_hook = original_malloc_hook;
+      __realloc_hook = original_realloc_hook;
+      __free_hook = original_free_hook;
     }
 # endif
     internal_malloc_fn.function = malloc;
