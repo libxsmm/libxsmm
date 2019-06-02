@@ -212,7 +212,7 @@ ifneq (,$(PYTHON))
   VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
 else
   $(info --------------------------------------------------------------------------------)
-  $(error No Python interpreter found!)
+  $(error No Python interpreter found)
 endif
 VERSION_STRING ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
 VERSION_API ?= $(shell $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_STRING))

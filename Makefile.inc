@@ -91,7 +91,7 @@ PYTHON ?= $(call which,python)
 ifeq (,$(PYTHON))
 ifneq (,$(PYTHON3))
   SHELL := env PATH=$(MAKEINC):$(PATH) $(SHELL)
-  PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null && command -v python)
+  PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null; command -v python)
 endif
 endif
 
