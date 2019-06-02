@@ -39,7 +39,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
-#if !defined(_LIBC)
+#if !defined(_LIBC) && 0
 # define _LIBC
 # include <malloc.h>
 #endif

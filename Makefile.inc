@@ -1617,17 +1617,17 @@ ifeq (Darwin,$(UNAME))
   FCFLAGS += -Wa,-q
 endif
 
-#ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
-#  echo "\#include <malloc.h>" > $${INFILE}; \
-#  echo "\#ifndef __MALLOC_HOOK_VOLATILE" >> $${INFILE}; \
-#  echo "0" >> $${INFILE}; \
-#  echo "\#endif" >> $${INFILE}; \
-#  RESULT=$$($(CC) -c $${INFILE} -o $${INFILE}.o 2>&1); \
-#  if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
-#  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
-#    GLIBC = 1
-#endif
-#GLIBC ?= 0
+ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
+  echo "\#include <malloc.h>" > $${INFILE}; \
+  echo "\#ifndef __MALLOC_HOOK_VOLATILE" >> $${INFILE}; \
+  echo "0" >> $${INFILE}; \
+  echo "\#endif" >> $${INFILE}; \
+  RESULT=$$($(CC) -c $${INFILE} -o $${INFILE}.o 2>&1); \
+  if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
+    GLIBC = 1
+endif
+GLIBC ?= 0
 
 OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
 ifneq (,$(strip $(OMPLIBFILE)))
