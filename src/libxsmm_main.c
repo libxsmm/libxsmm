@@ -688,7 +688,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       { /* setup libxsmm_malloc_kind after internal allocations */
         const libxsmm_malloc_function null_malloc_fn = { 0 };
         const libxsmm_free_function null_free_fn = { 0 };
-        const char *const env = getenv("LIBXSMM_MALLOC_KIND");
+        const char *const env = getenv("LIBXSMM_MALLOC");
         if (NULL != env && 0 != *env) libxsmm_malloc_kind = atoi(env);
         libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
         libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);

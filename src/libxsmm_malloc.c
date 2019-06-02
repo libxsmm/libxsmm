@@ -39,6 +39,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#if !defined(_LIBC)
+# define _LIBC
+# include <malloc.h>
+#endif
 #if defined(__TBB)
 # include <tbb/scalable_allocator.h>
 #endif
@@ -139,8 +143,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_SEED 1051981
 #endif
 
-/* malloc.h must NOT be included (__MALLOC_HOOK_VOLATILE define cannot be used) */
-#if (!defined(LIBXSMM_MALLOC_HOOK_GLIBC) && defined(LIBXSMM_CONFIG_WRAP) && (0 > LIBXSMM_CONFIG_WRAP))
+#if (!defined(LIBXSMM_MALLOC_HOOK_GLIBC) && (defined(__MALLOC_HOOK_VOLATILE) || defined(LIBXSMM_GLIBC)))
 # define LIBXSMM_MALLOC_HOOK_GLIBC 4 /* scratch threshold (prior-to-main allocations) */
 #endif
 #if !defined(LIBXSMM_MALLOC_CTXFORM) && !defined(NDEBUG) && 0
@@ -689,7 +692,7 @@ LIBXSMM_API_INTERN void internal_hook_free(void* ptr, const void* caller)
   libxsmm_free(ptr);
 }
 
-#if defined(LIBXSMM_MALLOC_HOOK_GLIBC) /* hack: get rid of deprecation attribute */
+#if defined(LIBXSMM_MALLOC_HOOK_GLIBC) && defined(LIBXSMM_GLIBC)
 LIBXSMM_EXTERN_C void* (*volatile __memalign_hook)(size_t, size_t, const void*);
 LIBXSMM_EXTERN_C void* (*volatile __malloc_hook)(size_t, const void*);
 LIBXSMM_EXTERN_C void* (*volatile __realloc_hook)(void*, size_t, const void*);
