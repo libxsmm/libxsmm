@@ -290,6 +290,8 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
     int my_R_end = handle->desc.R;
     const float beta = ((handle->upd_ofh_rb == handle->ofh) && (handle->upd_ofw_rb == handle->ofw)) ? 0.0 : 1.0;
     gemm_br_function br_gemm_kernel = libxsmm_smmdispatch_reducebatch(handle->ofmblock, handle->ifmblock, handle->upd_ofw_rb, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
+    const float beta_flat = 0.0;
+    gemm_br_function br_gemm_kernel_flat = libxsmm_smmdispatch_reducebatch(handle->ofmblock, handle->ifmblock, handle->upd_ofw_rb, &LDA, &LDB, &LDC, NULL, &beta_flat, &l_flags, &prefetch_mode);
     element_filter_type *weight_ptr_group = (handle->weight_copies > 1) ? (element_filter_type*)handle->scratch7 + tile_id * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S : (element_filter_type*)handle->grad_filter->data;
     LIBXSMM_VLA_DECL(6, element_filter_type, weight_private_group, (element_filter_type*)weight_ptr_group, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
     my_img_start = LIBXSMM_MIN( tile_id * img_per_tile, handle->desc.N);
@@ -399,7 +401,7 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
             ind++;
           }
           n_blocks = ind;
-          br_gemm_kernel(A_ptrs, B_ptrs, &LIBXSMM_VLA_ACCESS(6, weight_current, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &n_blocks);
+          br_gemm_kernel_flat(A_ptrs, B_ptrs, &LIBXSMM_VLA_ACCESS(6, weight_current, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock), &n_blocks);
         }
       }
     } else {

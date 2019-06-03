@@ -734,7 +734,7 @@ LIBXSMM_API_INLINE int libxsmm_dnn_setup_generic_weight_copies_upd( libxsmm_dnn_
       result = 13;
     }
   }
-  if (handle->desc.N != handle->desc.threads) {
+  if ((handle->desc.N != handle->desc.threads) && !(handle->upd_linearized_tasklist == 0 && handle->upd_use_batchreduce == 0)) {
     result = handle->desc.N;
   }
   /* Make sure a single copy when we use linearized-task view */
