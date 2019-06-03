@@ -325,18 +325,24 @@ endif
 # or pickup the Intel Compiler (if available).
 GNU ?= 0
 ifeq (0,$(GNU))
-  ifneq (,$(notdir $(call which,icpc)))
-    CXX = icpc
-  else ifneq (,$(notdir $(call which,icpx)))
-    CXX = icpx
+  ifeq (,$(shell echo "$${CXX}"))
+    ifneq (,$(notdir $(call which,icpc)))
+      CXX = icpc
+    else ifneq (,$(notdir $(call which,icpx)))
+      CXX = icpx
+    endif
   endif
-  ifneq (,$(notdir $(call which,icc)))
-    CC = icc
-  else ifneq (,$(notdir $(call which,icx)))
-    CC = icx
+  ifeq (,$(shell echo "$${CC}"))
+    ifneq (,$(notdir $(call which,icc)))
+      CC = icc
+    else ifneq (,$(notdir $(call which,icx)))
+      CC = icx
+    endif
   endif
+  ifeq (,$(shell echo "$${FC}"))
   ifneq (,$(notdir $(call which,ifort)))
     FC = ifort
+  endif
   endif
 endif
 
