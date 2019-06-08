@@ -4110,28 +4110,32 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
           l_reg0 = i_gp_reg_number_dest;
           l_reg1 = i_gp_reg_number_src;
           break;
+       case LIBXSMM_X86_INSTR_POPCNT:
+          l_second += 0x0e;
+          l_third += 0x74;
+          l_extra_byte = 1;
+          l_reg0 = i_gp_reg_number_dest;
+          l_reg1 = i_gp_reg_number_src;
+          break;
        default:
           fprintf(stderr, "libxsmm_instruction_alu_reg: Not sure what instruction you have in mind: %u\n",i_alu_instr);
           exit(-1);
     }
-    if ( (l_reg0 > 7) && (l_reg0 <=15) )
-    {
-       l_first += 4;
-       l_reg0 -= 8;
-    }
-    if ( (l_reg1 > 7) && (l_reg1 <=15) )
-    {
-       l_first += 1;
-       l_reg1 -= 8;
-    }
+    int l_regbas0 = l_reg0 % 8;
+    int l_gp8     = ((l_reg0 > 7)&&(l_reg0 <=15)?1:0);
+    int l_regnum  = l_reg1 % 8;
+    int l_nx8     = ((l_reg1 >7)&&(l_reg1<=15)?1:0);
 
-    buf[i++] = (unsigned char)(0x48 + l_first);
+    if ( i_alu_instr == LIBXSMM_X86_INSTR_POPCNT ) {
+       buf[i++] = (unsigned char)(0xf3);
+    }
+    buf[i++] = (unsigned char)(0x48 + l_gp8 * 0x01 + l_nx8 * 0x04);
     buf[i++] = (unsigned char)(0x01 + l_second);
     if ( l_extra_byte )
     {
        buf[i++] = (unsigned char)(0x44 + l_third);
     }
-    buf[i++] = (unsigned char)(0xc0 + 8*l_reg0 + l_reg1);
+    buf[i++] = (unsigned char)(0xc0 + l_regbas0 + 8*l_regnum);
 
     io_generated_code->code_size = i;
     /* *loc = i; */
