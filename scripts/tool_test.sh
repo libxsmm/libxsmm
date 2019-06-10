@@ -229,6 +229,21 @@ then
     ${SED} -e 's/^ *- *//' -e 's/^  *//' | ${TR} '\n' ' ' | \
     ${SED} -e 's/  *$//'") && [ "" != "${TEST}" ];
   do
+    if [ -d "${TEST}" ]; then
+      SLURMDIR=${TEST}
+    else # dummy
+      SLURMDIR=$0
+    fi
+    for SLURMFILE in $(ls -1 ${SLURMDIR}); do
+    if [ -d ${SLURMDIR} ]; then
+      SLURMFILE=${SLURMDIR}/${SLURMFILE}
+    fi
+    if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
+      PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
+      if [ "" != "${PARTITION}" ]; then
+        PARTITIONS=${PARTITION}
+      fi
+    fi
     for PARTITION in ${PARTITIONS}; do
     for CONFIG in ${CONFIGS}; do
       # print some header if all tests are selected or in case of multi-tests
@@ -264,7 +279,21 @@ then
           echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
         # record the current test case
-        echo "${TEST}" >> ${TESTSCRIPT}
+        if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
+          echo "cd ${TRAVIS_BUILD_DIR} && make ${MAKEJ}" >> ${TESTSCRIPT}
+          DIR=$(cd $(dirname ${SLURMFILE}); pwd -P)
+          if [ -e ${DIR}/../Makefile ]; then
+            DIR=${DIR}/..
+          fi
+          echo "cd ${DIR} && make ${MAKEJ}" >> ${TESTSCRIPT}
+          DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
+          ${SED} \
+            -e "/^#!..*/d" \
+            -e "s/\.\//${DIRSED}\//" \
+            ${SLURMFILE} >> ${TESTSCRIPT}
+        else
+          echo "${TEST}" >> ${TESTSCRIPT}
+        fi
         # clear captured test
         TEST=""
 
@@ -272,7 +301,7 @@ then
           ${SYNC}
         fi
       fi
-echo "DEBUG: ${TEST}"
+
       COMMAND=$(eval echo "${LAUNCH}")
       # run the prepared test case/script
       if [ "" != "${LABEL}" ]; then
@@ -294,6 +323,7 @@ echo "DEBUG: ${TEST}"
       fi
     done # CONFIGS
     done # PARTITIONS
+    done # SLURMFILE
 
     # increment the case number, or exit the script
     if [ "" = "$1" ] && [ "0" = "${RESULT}" ]; then
