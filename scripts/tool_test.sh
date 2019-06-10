@@ -237,6 +237,7 @@ then
     for SLURMFILE in $(ls -1 ${SLURMDIR}); do
     if [ -d ${SLURMDIR} ]; then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
+      TESTID=$(basename ${SLURMFILE})
     fi
     if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
       PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
