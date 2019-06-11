@@ -604,14 +604,14 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
         }
 # endif
       }
-# if !defined(NDEBUG)
-      status =
-# endif
-      libxsmm_xmalloc(memory, size, alignment/* no need here to determine alignment of given buffer */,
+      if (EXIT_SUCCESS == libxsmm_xmalloc(memory, size, alignment/* no need here to determine alignment of given buffer */,
         (flags | LIBXSMM_MALLOC_FLAG_REALLOC) & ~LIBXSMM_MALLOC_FLAG_SCRATCH,
-        NULL/*extra*/, 0/*extra_size*/);
-      assert(EXIT_SUCCESS == status || NULL == *memory); /* !LIBXSMM_ASSERT */
-      memcpy(*memory, pool_buffer, LIBXSMM_MIN(size, info->size));
+        NULL/*extra*/, 0/*extra_size*/))
+      {
+        LIBXSMM_ASSERT(NULL != *memory);
+        memcpy(*memory, pool_buffer, LIBXSMM_MIN(size, info->size));
+      }
+      else LIBXSMM_ASSERT(NULL == *memory);
       if (0 == counter) {
 # if !defined(NDEBUG)
         status =
