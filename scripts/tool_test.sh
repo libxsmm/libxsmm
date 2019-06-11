@@ -121,29 +121,6 @@ then
     export TRAVIS_OS_NAME=$(${UNAME})
   fi
 
-  if [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
-    export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
-    export NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
-    export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
-  elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
-    export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
-    export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
-    export NT=$(sysctl hw.logicalcpu | ${CUT} -d: -f2 | tr -d " ")
-  fi
-  if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
-    export HT=$((NT/(NC)))
-    if [ "" = "${MAKEJ}" ]; then
-      export MAKEJ="-j ${NC}"
-    fi
-  else
-    export NS=1 NC=1 NT=1 HT=1
-  fi
-  if [ "" != "${CUT}" ] && [ "" != "$(command -v numactl)" ]; then
-    export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
-  else
-    export NN=${NS}
-  fi
-
   # set the case number
   if [ "" != "$1" ] && [ -e $1 ]; then
     export TESTSETFILE=$1
@@ -215,6 +192,9 @@ then
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
   else # avoid temporary script in case of non-batch execution
+    if [ "" = "${MAKEJ}" ]; then
+      export MAKEJ="-j $(eval ${HERE}/tool_cpuinfo.sh | ${CUT} -d' ' -f2)"
+    fi
     SHOW_PARTITION=0
     LAUNCH="\${TEST}"
   fi
@@ -268,6 +248,7 @@ then
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
+        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh | ${CUT} -d' ' -f2)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
@@ -281,12 +262,12 @@ then
         fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
-          echo "cd ${TRAVIS_BUILD_DIR} && make ${MAKEJ}" >> ${TESTSCRIPT}
+          echo "cd ${TRAVIS_BUILD_DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
           DIR=$(cd $(dirname ${SLURMFILE}); pwd -P)
           if [ -e ${DIR}/../Makefile ]; then
             DIR=${DIR}/..
           fi
-          echo "cd ${DIR} && make ${MAKEJ}" >> ${TESTSCRIPT}
+          echo "cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
           DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
           ${SED} \
             -e "/^#!..*/d" \
