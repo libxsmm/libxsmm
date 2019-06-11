@@ -193,7 +193,7 @@ then
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
   else # avoid temporary script in case of non-batch execution
     if [ "" = "${MAKEJ}" ]; then
-      export MAKEJ="-j $(eval ${HERE}/tool_cpuinfo.sh | ${CUT} -d' ' -f2)"
+      export MAKEJ="-j $(eval ${HERE}/tool_cpuinfo.sh -nc)"
     fi
     SHOW_PARTITION=0
     LAUNCH="\${TEST}"
@@ -248,7 +248,7 @@ then
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
-        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh | ${CUT} -d' ' -f2)\"; fi" >> ${TESTSCRIPT}
+        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];

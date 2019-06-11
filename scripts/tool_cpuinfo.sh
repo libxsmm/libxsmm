@@ -61,7 +61,25 @@ then
   else
     NN=${NS}
   fi
-  echo "${NS} ${NC} ${NT} ${HT} ${NN}"
+  if [ "-ns" = "$1" ] || [ "--sockets" = "$1" ]; then
+    echo "${NS}"
+  elif [ "-nc" = "$1" ] || [ "--cores" = "$1" ]; then
+    echo "${NC}"
+  elif [ "-nt" = "$1" ] || [ "--threads" = "$1" ]; then
+    echo "${NT}"
+  elif [ "-ht" = "$1" ] || [ "--smt" = "$1" ]; then
+    echo "${HT}"
+  elif [ "-nn" = "$1" ] || [ "--numa" = "$1" ]; then
+    echo "${NN}"
+  elif [ "-h" = "$1" ] || [ "--help" = "$1" ]; then
+    echo "$0 [-ns|--sockets] [-nc|--cores] [-nt|--threads] [-ht|--smt] [-nn|--numa]"
+  else
+    echo -e "sockets\t: ${NS}"
+    echo -e "cores\t: ${NC}"
+    echo -e "threads\t: ${NT}"
+    echo -e "smt\t: ${HT}"
+    echo -e "numa:\t: ${NN}"
+  fi
 else
   echo "Error: missing prerequisites!"
   exit 1
