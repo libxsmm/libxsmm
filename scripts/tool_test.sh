@@ -269,6 +269,7 @@ then
           fi
           echo "cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
           DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
+          echo "--- TEST ${TESTID}"
           ${SED} \
             -e "/^#!..*/d" \
             -e "s/\.\//${DIRSED}\//" \
