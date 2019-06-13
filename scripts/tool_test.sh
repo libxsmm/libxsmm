@@ -240,14 +240,17 @@ then
 
       # make execution environment locally available (always)
       if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-         [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
+         [ -e "${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" ];
       then
         source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env
+      else
+        ENV=${CONFIG}
       fi
 
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
+        if [ "" != "${ENV}" ]; then echo "export ${ENV}"; fi
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
@@ -283,6 +286,8 @@ then
         if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
           ${SYNC}
         fi
+      else
+        LAUNCH="${ENV} \'${LAUNCH}\'"
       fi
 
       COMMAND=$(eval echo "${LAUNCH}")
