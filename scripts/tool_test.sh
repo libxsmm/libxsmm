@@ -159,6 +159,14 @@ then
       CONFIGS=none
     fi
   fi
+  # setup ENVS (multiple environments)
+  if [ "" = "${ENVS}" ]; then
+    if [ "" != "${ENV}" ]; then
+      ENVS=${ENV}
+    else
+      ENVS=none
+    fi
+  fi
 
   # select test-set ("travis" by default)
   if [ "" = "${TESTSET}" ]; then
@@ -227,6 +235,7 @@ then
     fi
     for PARTITION in ${PARTITIONS}; do
     for CONFIG in ${CONFIGS}; do
+    for ENV in ${ENVS}; do
       # print some header if all tests are selected or in case of multi-tests
       if [ "" = "$1" ] || [ "none" != "${PARTITION}" ]; then
         echo "================================================================================"
@@ -240,17 +249,15 @@ then
 
       # make execution environment locally available (always)
       if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-         [ -e "${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" ];
+         [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
       then
         source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env
-      else
-        ENV=${CONFIG}
       fi
 
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
-        if [ "" != "${ENV}" ]; then echo "export ${ENV}"; fi
+        if [ "none" != "${ENV}" ]; then echo "export ${ENV}"; fi
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
@@ -286,7 +293,7 @@ then
         if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
           ${SYNC}
         fi
-      else
+      elif [ "none" != "${ENV}" ]; then
         LAUNCH="${ENV} \'${LAUNCH}\'"
       fi
 
@@ -309,6 +316,7 @@ then
       else
         break
       fi
+    done # ENVS
     done # CONFIGS
     done # PARTITIONS
     done # SLURMFILE
