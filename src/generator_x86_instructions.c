@@ -3816,7 +3816,7 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
      unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
      int i = io_generated_code->code_size;
      int l_inst = 0x00, l_base = 0x00, l_place2 = i+2;
-     int l_regbas0, l_gp8, l_regnum, l_nx8, l_sca = 0;
+     int l_regbas0, l_gp8, l_regnum, l_nx8, l_sca = 0, l_forced_offset=0;
 
      switch ( i_alu_instr ) {
        case LIBXSMM_X86_INSTR_MOVSLQ:
@@ -3833,6 +3833,9 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
           } else {
              l_inst = 0x28;
           }
+          break;
+       case LIBXSMM_X86_INSTR_LEAQ:
+          l_inst = 0x2A;
           break;
        case LIBXSMM_X86_INSTR_MOVL:
           if ( i_is_store == 1 )
@@ -3884,7 +3887,11 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
          buf[i++] = (unsigned char)(0x04 + l_regnum * 0x08);
          buf[i++] = (unsigned char)(l_sca + l_regbas0 + l_regidx*8);
      }
-     i += internal_x86_instructions_add_offset( l_place2, i, i_displacement, 0, 1, buf );
+     if ( (l_regbas0 == 5) && (i_displacement==0) )
+     {
+         l_forced_offset = 1;
+     }
+     i += internal_x86_instructions_add_offset( l_place2, i, i_displacement, l_forced_offset, 1, buf );
 
      io_generated_code->code_size = i;
   }
