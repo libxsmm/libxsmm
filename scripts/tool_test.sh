@@ -236,11 +236,21 @@ then
     for PARTITION in ${PARTITIONS}; do
     for CONFIG in ${CONFIGS}; do
     for ENV in ${ENVS}; do
+      if [ "none" != "${ENV}" ]; then
+        if [ "" != "${CUT}" ]; then ENVVAL=$(echo "${ENV}" | ${CUT} -d= -f2); fi
+        ENVSTR=${ENV}
+      fi
       # print some header if all tests are selected or in case of multi-tests
       if [ "" = "$1" ] || [ "none" != "${PARTITION}" ]; then
         echo "================================================================================"
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
-          echo "Test Case ${TESTID} (${PARTITION})"
+          if [ "" != "${ENVVAL}" ]; then
+            echo "Test Case ${TESTID} (${PARTITION}/${ENVVAL})"
+          else
+            echo "Test Case ${TESTID} (${PARTITION})"
+          fi
+        elif [ "" != "${ENVVAL}" ]; then
+          echo "Test Case ${TESTID} (${ENVVAL})"
         else
           echo "Test Case ${TESTID}"
         fi
@@ -294,12 +304,7 @@ then
         fi
       fi
 
-      if [ "none" != "${ENV}" ]; then
-        COMMAND=$(eval echo "${ENV} ${LAUNCH}")
-      else
-        COMMAND=$(eval echo "${LAUNCH}")
-      fi
-
+      COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
       # run the prepared test case/script
       if [ "" != "${LABEL}" ]; then
         eval "${COMMAND}" 2>&1 | tee .test-${LABEL}.log
