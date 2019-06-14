@@ -225,7 +225,7 @@ then
     for SLURMFILE in $(ls -1 ${SLURMDIR}); do
     if [ -d ${SLURMDIR} ]; then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
-      TESTID=$(basename ${SLURMFILE})
+      TESTID=$(${BASENAME} ${SLURMFILE%.*})
     fi
     if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
       PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
@@ -257,7 +257,6 @@ then
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
-        if [ "none" != "${ENV}" ]; then echo "export ${ENV}"; fi
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
@@ -293,11 +292,14 @@ then
         if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
           ${SYNC}
         fi
-      elif [ "none" != "${ENV}" ]; then
-        LAUNCH="${ENV} \'${LAUNCH}\'"
       fi
 
-      COMMAND=$(eval echo "${LAUNCH}")
+      if [ "none" != "${ENV}" ]; then
+        COMMAND=$(eval echo "${ENV} ${LAUNCH}")
+      else
+        COMMAND=$(eval echo "${LAUNCH}")
+      fi
+
       # run the prepared test case/script
       if [ "" != "${LABEL}" ]; then
         eval "${COMMAND}" 2>&1 | tee .test-${LABEL}.log
