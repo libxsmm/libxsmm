@@ -342,7 +342,12 @@ ifeq (0,$(GNU))
   ifeq (,$(shell echo "$${FC}"))
   ifneq (,$(notdir $(call which,ifort)))
     FC = ifort
+  else ifneq (,$(notdir $(call which,ifx)))
+    FC = ifx
   endif
+  endif
+  ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" | $(CC) -E -P - 2>/dev/null))
+    ICX = 1
   endif
 endif
 
@@ -897,7 +902,7 @@ ifneq (0,$(INTEL))
     endif
     FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   endif
-  ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
+  ifeq (0,$(ICX))
     CPEDANTIC += -Wcheck
   endif
   CPEDANTIC += -diag-disable 177,1419,1572,2547,10382
@@ -910,7 +915,7 @@ ifneq (0,$(INTEL))
       FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
       FCFLAGS += $(FFORM_FLAG)
     endif
-    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
+    ifeq (0,$(ICX))
       CXXFLAGS += -Wcheck
       CFLAGS += -Wcheck
     endif
@@ -937,25 +942,25 @@ ifneq (0,$(INTEL))
   CFLAGS += $(OPTFLAG)
   FCFLAGS += $(OPTFLAG)
   ifeq (0,$(OFFLOAD))
-    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
-      CXXFLAGS += -qno-offload
-      CFLAGS += -qno-offload
-    endif
+  ifeq (0,$(ICX))
     ifeq (,$(strip $(GFC)))
       FCFLAGS += -qno-offload
     endif
+    CXXFLAGS += -qno-offload
+    CFLAGS += -qno-offload
+  endif
   endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
     CXXFLAGS += -fno-alias -ansi-alias
     CFLAGS += -fno-alias -ansi-alias
-    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
-      CXXFLAGS += -qoverride_limits #-fp-model fast=2
-      CFLAGS += -qoverride_limits #-fp-model fast=2
-    endif
+    #ifeq (0,$(ICX))
+      #CXXFLAGS += -qoverride_limits #-fp-model fast=2
+      #CFLAGS += -qoverride_limits #-fp-model fast=2
+    #endif
     ifeq (,$(strip $(GFC)))
     ifneq (,$(strip $(FC)))
-      FCFLAGS += -qoverride_limits #-fp-model fast=2
+      #FCFLAGS += -qoverride_limits #-fp-model fast=2
       ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
         FCFLAGS += -align array64byte
       endif
@@ -969,7 +974,7 @@ ifneq (0,$(INTEL))
       CFLAGS += -ipo
     endif
   else ifeq (,$(strip $(GFC))) # debugging enabled
-    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
+    ifeq (0,$(ICX))
       FCFLAGS += -check
     endif
   endif
@@ -1971,7 +1976,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     FLOCK SUITE ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP BLAS_LDTEST \
     SHARED CCAR CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE \
     OMPLIBFILE NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC PYTHON% PYMOD CWARNEXTRA \
-    CSTD DNOBLAS MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE FFORM_FLAG FREEFORM OPSYS \
+    CSTD DNOBLAS MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC ICX AVX SSE FFORM_FLAG FREEFORM OPSYS \
     which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink applyif extname objname,$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
