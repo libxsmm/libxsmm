@@ -288,11 +288,18 @@ then
           fi
           echo "cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
           DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
-          echo "--- TEST ${TESTID}"
+          echo "--- TEST ${TESTID}" >> ${TESTSCRIPT}
+          if [ "" != "${LIMITLOG}" ]; then
+            echo "(" >> ${TESTSCRIPT}
+          fi
           ${SED} \
-            -e "/^#!..*/d" \
+            -e "/^#\!..*/d" \
+            -e "/^[[:space:]]*$/d" \
             -e "s/\.\//${DIRSED}\//" \
             ${SLURMFILE} >> ${TESTSCRIPT}
+          if [ "" != "${LIMITLOG}" ]; then
+            echo ") | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
+          fi
         else
           echo "${TEST}" >> ${TESTSCRIPT}
         fi
