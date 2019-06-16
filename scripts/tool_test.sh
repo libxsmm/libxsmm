@@ -323,11 +323,7 @@ then
       RESULT=$?
 
       # exit the loop in case of an error
-      if [ "0" = "${RESULT}" ]; then
-        echo "--------------------------------------------------------------------------------"
-        echo "SUCCESS"
-        echo
-      else
+      if [ "0" != "${RESULT}" ]; then
         break
       fi
     done # ENVS
@@ -348,7 +344,10 @@ then
     ${RM} ${TESTSCRIPT}
   fi
 
-  if [ "0" != "${RESULT}" ]; then
+  if [ "0" = "${RESULT}" ]; then
+    echo "+++ ------------------------------------------------------------------------------"
+    echo "SUCCESS"
+  else
     echo "^^^ +++"
     echo "--- ------------------------------------------------------------------------------"
     echo "FAILURE"
