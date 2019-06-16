@@ -1,13 +1,5 @@
 #!/bin/bash
 
-#SBATCH -J sgemm_nn_gtld_kernel_cpx_check
-#SBATCH --get-user-env
-#SBATCH --partition=skx
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=112
-#SBATCH --time=02:00:00
-
-LIBXSMM_TARGET=cpx
 
 TESTFILE=`mktemp -p .`
 
@@ -21,6 +13,6 @@ for m in range(2, 101, 2):
 f.close()
 END
 
-taskset -c 10 ./kernel $TESTFILE 1 1 0 0 0 0 SP 1 1
+taskset -c 10 ./kernel $TESTFILE 1 1 0 0 0 1 DP 1 1
 
 rm $TESTFILE

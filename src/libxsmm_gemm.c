@@ -360,10 +360,9 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       const unsigned int minsize = (batchscale * env_bu + (LIBXSMM_GEMM_BATCHSCALE) - 1) / (LIBXSMM_GEMM_BATCHSCALE);
       const unsigned int batchsize = LIBXSMM_MAX(env_bu, minsize);
       const void *const extra = NULL;
-      /* draw default/non-scratch memory, but utilize the scratch memory allocator */
       LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_MMBATCH_SCALE));
       if (EXIT_SUCCESS == libxsmm_xmalloc(&libxsmm_mmbatch_array, (size_t)batchsize * (LIBXSMM_GEMM_BATCHSCALE), 0/*auto-alignment*/,
-        LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE, &extra, sizeof(extra)))
+        LIBXSMM_MALLOC_FLAG_PRIVATE /*| LIBXSMM_MALLOC_FLAG_SCRATCH*/, &extra, sizeof(extra)))
       {
         LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &libxsmm_mmbatch_lock, &attr);
         LIBXSMM_ASSERT(NULL != libxsmm_mmbatch_array);
@@ -1888,7 +1887,7 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_p
 }
 
 
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dgemm)(const char*, const char*,

@@ -32,10 +32,10 @@
 set -o pipefail
 
 HERE=$(cd $(dirname $0); pwd -P)
+BASENAME=$(command -v basename)
 MKDIR=$(command -v mkdir)
 CHMOD=$(command -v chmod)
 UNAME=$(command -v uname)
-ECHO=$(command -v echo)
 SYNC=$(command -v sync)
 SORT=$(command -v sort)
 GREP=$(command -v grep)
@@ -43,6 +43,7 @@ WGET=$(command -v wget)
 GIT=$(command -v git)
 SED=$(command -v sed)
 CUT=$(command -v cut)
+REV=$(command -v rev)
 TR=$(command -v tr)
 WC=$(command -v wc)
 RM=$(command -v rm)
@@ -71,7 +72,7 @@ if [ "" = "${FULLCI}" ] || [ "0" = "${FULLCI}" ]; then
   FULLCI="\[full ci\]"
 fi
 
-if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && [ "" != "${ECHO}" ] && \
+if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && \
    [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${WC}" ] && \
    [ "" != "${RM}" ] && [ "" != "${CP}" ];
 then
@@ -87,7 +88,7 @@ then
       for FILENAME in $(${GIT} diff --name-only ${REVSTART} HEAD 2>/dev/null); do
         # check if the file is supposed to impact a build (source code or script)
         for PATTERN in ${PATTERNS}; do
-          MATCH=$(${ECHO} "${FILENAME}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
+          MATCH=$(echo "${FILENAME}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
           if [ "" != "${MATCH}" ]; then # file would impact the build
             DOTESTS=1
             break
@@ -101,9 +102,9 @@ then
       DOTESTS=1
     fi
     if [ "0" = "${DOTESTS}" ]; then
-      ${ECHO} "================================================================================"
-      ${ECHO} "Skipped test(s) due to FASTCI option."
-      ${ECHO} "================================================================================"
+      echo "================================================================================"
+      echo "Skipped test(s) due to FASTCI option."
+      echo "================================================================================"
       exit 0 # skip tests
     fi
   fi
@@ -120,34 +121,21 @@ then
     export TRAVIS_OS_NAME=$(${UNAME})
   fi
 
-  if [ "" != "${SORT}" ] && [ "" != "${WC}" ] && [ -e /proc/cpuinfo ]; then
-    export NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
-    export NC=$((NS*$(${GREP} "core id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")))
-    export NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
-  elif [ "" != "${UNAME}" ] && [ "" != "${CUT}" ] && [ "Darwin" = "$(${UNAME})" ]; then
-    export NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
-    export NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
-    export NT=$(sysctl hw.logicalcpu | ${CUT} -d: -f2 | tr -d " ")
-  fi
-  if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
-    export HT=$((NT/(NC)))
-    if [ "" = "${MAKEJ}" ]; then
-      export MAKEJ="-j ${NC}"
-    fi
-  else
-    export NS=1 NC=1 NT=1 HT=1
-  fi
-  if [ "" != "${CUT}" ] && [ "" != "$(command -v numactl)" ]; then
-    export NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
-  else
-    export NN=${NS}
-  fi
-
   # set the case number
-  if [ "" != "$1" ]; then
-    export TESTID=$1
+  if [ "" != "$1" ] && [ -e $1 ]; then
+    export TESTSETFILE=$1
+    if [ "" != "${BASENAME}" ] && [ "" != "${REV}" ] && [ "" != "${CUT}" ]; then
+      export TESTID=$(${BASENAME} ${TESTSETFILE} | ${REV} | ${CUT} -d. -f1 | ${REV})
+    else
+      export TESTID=${TESTSETFILE}
+    fi
+    export TESTSET=${TESTID}
   else
-    export TESTID=1
+    if [ "" != "$1" ]; then
+      export TESTID=$1
+    else
+      export TESTID=1
+    fi
   fi
 
   # should be source'd after the above variables are set
@@ -171,66 +159,103 @@ then
       CONFIGS=none
     fi
   fi
+  # setup ENVS (multiple environments)
+  if [ "" = "${ENVS}" ]; then
+    if [ "" != "${ENV}" ]; then
+      ENVS=${ENV}
+    else
+      ENVS=none
+    fi
+  fi
 
   # select test-set ("travis" by default)
   if [ "" = "${TESTSET}" ]; then
     TESTSET=travis
   fi
-  if [ -e .${TESTSET}.yml ]; then
-    TESTSETFILE=.${TESTSET}.yml
-  elif [ -e ${TESTSET}.yml ]; then
-    TESTSETFILE=${TESTSET}.yml
-  elif [ -e ${TESTSET} ]; then
-    TESTSETFILE=${TESTSET}
+  if [ "" = "${TESTSETFILE}" ] || [ ! -e ${TESTSETFILE} ]; then
+    if [ -e .${TESTSET}.yml ]; then
+      TESTSETFILE=.${TESTSET}.yml
+    elif [ -e ${TESTSET}.yml ]; then
+      TESTSETFILE=${TESTSET}.yml
+    elif [ -e ${TESTSET} ]; then
+      TESTSETFILE=${TESTSET}
+    else
+      echo "ERROR: Cannot find file with test set!"
+      exit 1
+    fi
   else
-    ${ECHO} "ERROR: Cannot find file with test set!"
-    exit 1
+    TEST=${TESTSETFILE}
   fi
 
-  # setup batch execution
+  # setup batch execution (TEST may be a singular test given by filename)
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "" != "${BUILDKITE_LABEL}" ]; then
-      LABEL=$(${ECHO} "${BUILDKITE_LABEL}" | ${TR} -s [:punct:][:space:] - | ${SED} -e "s/^-//" -e "s/-$//")
+      LABEL=$(echo "${BUILDKITE_LABEL}" | ${TR} -s [:punct:][:space:] - | ${SED} -e "s/^-//" -e "s/-$//")
     fi
     if [ "" != "${LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
-      TESTSCRIPT=${HERE}/../.tool_test-${LABEL}.sh
     fi
     umask 007
-    if [ "" != "${TESTSCRIPT}" ]; then
-      touch ${TESTSCRIPT}
-    else
-      TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
-    fi
+    TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
   else # avoid temporary script in case of non-batch execution
+    if [ "" = "${MAKEJ}" ]; then
+      export MAKEJ="-j $(eval ${HERE}/tool_cpuinfo.sh -nc)"
+    fi
     SHOW_PARTITION=0
-    LAUNCH=\${TEST}
+    LAUNCH="\${TEST}"
   fi
   if [ "" != "${LAUNCH_USER}" ] && [ "0" != "${SLURM}" ]; then
     LAUNCH="su ${LAUNCH_USER} -p ${RUN_CMD} \'${LAUNCH}\'"
   fi
 
   RESULT=0
-  while TEST=$(eval " \
+  # control log
+  echo "^^^ +++"
+  while [ "" != "${TEST}" ] || TEST=$(eval " \
     ${SED} -n -e '/^ *script: *$/,\$p' ${HERE}/../${TESTSETFILE} | ${SED} -e '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
     ${SED} -e 's/^ *- *//' -e 's/^  *//' | ${TR} '\n' ' ' | \
     ${SED} -e 's/  *$//'") && [ "" != "${TEST}" ];
   do
+    if [ -d "${TEST}" ]; then
+      SLURMDIR=${TEST}
+    else # dummy
+      SLURMDIR=$0
+    fi
+    for SLURMFILE in $(ls -1 ${SLURMDIR}); do
+    if [ -d ${SLURMDIR} ]; then
+      SLURMFILE=${SLURMDIR}/${SLURMFILE}
+      TESTID=$(${BASENAME} ${SLURMFILE%.*})
+    fi
+    if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
+      PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
+      if [ "" != "${PARTITION}" ]; then
+        PARTITIONS=${PARTITION}
+      fi
+    fi
     for PARTITION in ${PARTITIONS}; do
     for CONFIG in ${CONFIGS}; do
+    for ENV in ${ENVS}; do
+      if [ "none" != "${ENV}" ]; then
+        if [ "" != "${CUT}" ]; then ENVVAL=$(echo "${ENV}" | ${CUT} -d= -f2); fi
+        ENVSTR=${ENV}
+      fi
       # print some header if all tests are selected or in case of multi-tests
-      if [ "" = "$1" ] || [ "none" != "${PARTITION}" ]; then
-        ${ECHO} "================================================================================"
+      if [ "" = "$1" ] || [ "none" != "${PARTITION}" ] || [ "none" != "${ENV}" ]; then
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
-          ${ECHO} "Test Case #${TESTID} (${PARTITION})"
+          if [ "" != "${ENVVAL}" ]; then
+            echo "+++ TEST ${TESTID} (${PARTITION}/${ENVVAL})"
+          else
+            echo "+++ TEST ${TESTID} (${PARTITION})"
+          fi
+        elif [ "" != "${ENVVAL}" ]; then
+          echo "+++ TEST ${TESTID} (${ENVVAL})"
         else
-          ${ECHO} "Test Case #${TESTID}"
+          echo "+++ TEST ${TESTID}"
         fi
       fi
-      ${ECHO} "^^^ +++"
 
       # make execution environment locally available (always)
       if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
@@ -241,7 +266,8 @@ then
 
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
-        ${ECHO} "#!/bin/bash" > ${TESTSCRIPT}
+        echo "#!/bin/bash" > ${TESTSCRIPT}
+        echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
            [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
@@ -250,38 +276,61 @@ then
           ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
           ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
           ${CP} -u ${LICSDIR}/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
-          ${ECHO} "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
-          ${ECHO} "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
+          echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
+          echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
         # record the current test case
-        ${ECHO} "${TEST}" >> ${TESTSCRIPT}
+        if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
+          echo "cd ${TRAVIS_BUILD_DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
+          DIR=$(cd $(dirname ${SLURMFILE}); pwd -P)
+          if [ -e ${DIR}/../Makefile ]; then
+            DIR=${DIR}/..
+          fi
+          echo "cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
+          # control log
+          echo "echo \"--- RUN ${TESTID}\"" >> ${TESTSCRIPT}
+          if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
+            echo "(" >> ${TESTSCRIPT}
+          fi
+          DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
+          ${SED} \
+            -e "/^#\!..*/d" \
+            -e "/^[[:space:]]*$/d" \
+            -e "s/\.\//${DIRSED}\//" \
+            ${SLURMFILE} >> ${TESTSCRIPT}
+          if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
+            echo ") | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
+          fi
+        else
+          echo "${TEST}" >> ${TESTSCRIPT}
+        fi
+        # clear captured test
+        TEST=""
 
         if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
           ${SYNC}
         fi
       fi
 
-      COMMAND=$(eval ${ECHO} ${LAUNCH})
+      COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
       # run the prepared test case/script
       if [ "" != "${LABEL}" ]; then
-        eval ${COMMAND} 2>&1 | tee .test-${LABEL}.log
+        eval "${COMMAND}" 2>&1 | tee .test-${LABEL}.log
       else
-        eval ${COMMAND}
+        eval "${COMMAND}"
       fi
 
       # capture test status
       RESULT=$?
 
       # exit the loop in case of an error
-      if [ "0" = "${RESULT}" ]; then
-        ${ECHO} "--- ------------------------------------------------------------------------------"
-        ${ECHO} "SUCCESS"
-        ${ECHO}
-      else
+      if [ "0" != "${RESULT}" ]; then
         break
       fi
+    done # ENVS
     done # CONFIGS
     done # PARTITIONS
+    done # SLURMFILE
 
     # increment the case number, or exit the script
     if [ "" = "$1" ] && [ "0" = "${RESULT}" ]; then
@@ -289,18 +338,22 @@ then
     else # finish
       break
     fi
-  done
+  done # TEST
 
   # remove temporary script (if it exists)
   if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
     ${RM} ${TESTSCRIPT}
   fi
 
-  if [ "0" != "${RESULT}" ]; then
-    ${ECHO} "^^^ +++"
-    ${ECHO} "--- ------------------------------------------------------------------------------"
-    ${ECHO} "FAILURE"
-    ${ECHO}
+  # control log
+  if [ "0" = "${RESULT}" ]; then
+    echo "+++ ------------------------------------------------------------------------------"
+    echo "SUCCESS"
+  else
+    echo "^^^ +++"
+    echo "+++ ------------------------------------------------------------------------------"
+    echo "FAILURE"
+    echo
   fi
 
   # override result code (alternative outcome)

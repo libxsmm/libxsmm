@@ -118,7 +118,7 @@ SHARED ?= 0
 # >=2 and even: parallelized and tiled (all problem sizes)
 # >=3 and odd : GEMV is intercepted; small problem sizes
 # >=4 and even: GEMV is intercepted; all problem sizes
-# negative: assume BLAS with DGEMM_BATCH
+# negative: BLAS provides DGEMM_BATCH and SGEMM_BATCH
 # 0: disabled
 WRAP ?= 1
 
@@ -212,7 +212,7 @@ ifneq (,$(PYTHON))
   VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
 else
   $(info --------------------------------------------------------------------------------)
-  $(error No Python interpreter found!)
+  $(error No Python interpreter found)
 endif
 VERSION_STRING ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
 VERSION_API ?= $(shell $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_STRING))
@@ -760,18 +760,19 @@ ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 $(foreach OBJ,$(OBJFILES_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
-  -mmic $(DFLAGS) $(IFLAGS) $(CFLAGS))))
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, -mmic \
+  $(call applyif,$(GLIBC),libxsmm_malloc,$(OBJ),-DLIBXSMM_GLIBC) \
+  $(DFLAGS) $(IFLAGS) $(CFLAGS))))
 $(foreach OBJ,$(KRNOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  -mmic $(DFLAGS) $(IFLAGS) $(CFLAGS))))
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, -mmic \
+  $(DFLAGS) $(IFLAGS) $(CFLAGS))))
 $(foreach OBJ,$(EXTOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  -mmic $(DFLAGS) $(IFLAGS) $(EXTCFLAGS) $(CFLAGS))))
-$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_MIC),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
-  -mmic $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, -mmic \
+  $(DFLAGS) $(IFLAGS) $(EXTCFLAGS) $(CFLAGS))))
+$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_MIC),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, -mmic \
+  $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 endif
 endif
 
@@ -781,6 +782,7 @@ $(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext
 $(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
+  $(call applyif,$(GLIBC),libxsmm_malloc,$(OBJ),-DLIBXSMM_GLIBC) \
   $(DFLAGS) $(IFLAGS) $(CTARGET) $(CFLAGS))))
 $(foreach OBJ,$(KRNOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \

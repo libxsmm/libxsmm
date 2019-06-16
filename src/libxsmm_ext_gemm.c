@@ -348,7 +348,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_dgemm)(
       void* d = NULL;
       if (LIBXSMM_NEQ(0, check)) {
         const size_t size = (size_t)(*ldc) * (size_t)(*n) * sizeof(double);
-        d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_SCRATCH_INTERNAL);
+        d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_INTERNAL_CALLER);
         if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
       }
 #endif
@@ -485,7 +485,7 @@ LIBXSMM_APIEXT LIBXSMM_ATTRIBUTE_USED void LIBXSMM_FSYMBOL(__wrap_sgemm)(
       void* d = NULL;
       if (LIBXSMM_NEQ(0, check)) {
         const size_t size = (size_t)(*ldc) * (size_t)(*n) * sizeof(float);
-        d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_SCRATCH_INTERNAL);
+        d = libxsmm_scratch_malloc(size, 0/*auto*/, LIBXSMM_MALLOC_INTERNAL_CALLER);
         if (NULL != d && LIBXSMM_NEQ(0, *beta)) memcpy(d, c, size); /* copy destination */
       }
 #endif
@@ -681,7 +681,7 @@ LIBXSMM_APIEXT void libxsmm_xgemm_omp(libxsmm_gemm_precision iprec, libxsmm_gemm
   const size_t scratch_size = libxsmm_gemm_handle_get_scratch_size(handle);
   void* scratch = NULL;
   if (NULL != handle && (0 == scratch_size ||
-      NULL != (scratch = libxsmm_scratch_malloc(scratch_size, LIBXSMM_CACHELINE, LIBXSMM_MALLOC_SCRATCH_INTERNAL))))
+      NULL != (scratch = libxsmm_scratch_malloc(scratch_size, LIBXSMM_CACHELINE, LIBXSMM_MALLOC_INTERNAL_CALLER))))
   {
 #if defined(_OPENMP)
     if (0 == outerpar) { /* enable internal parallelization */
@@ -1130,7 +1130,7 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_end(void)
 }
 
 
-#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT)
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && !defined(LIBXSMM_NOFORTRAN)
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_xgemm_omp)(const libxsmm_gemm_precision*, const libxsmm_gemm_precision*,

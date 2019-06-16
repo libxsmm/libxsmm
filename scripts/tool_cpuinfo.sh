@@ -1,6 +1,6 @@
-#!/bin/sh
+#!/bin/bash
 #############################################################################
-# Copyright (c) 2019, Intel Corporation                                     #
+# Copyright (c) 2016-2019, Intel Corporation                                #
 # All rights reserved.                                                      #
 #                                                                           #
 # Redistribution and use in source and binary forms, with or without        #
@@ -30,52 +30,55 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
+GREP=$(command -v grep)
+SORT=$(command -v sort)
+CUT=$(command -v cut)
+TR=$(command -v tr)
+WC=$(command -v wc)
 
-MKTEMP=${HERE}/../../.mktmp.sh
-SED=$(command -v sed)
-CP=$(command -v cp)
-RM=$(command -v rm)
-
-CLEANUP="-o -D -J --time --ntasks --cpus-per-task --get-user-env"
-JOBDIR=kernel_test
-JOBEXT=slurm
-
-if [ "" != "${MKTEMP}" ] && [ "" != "${SED}" ] && \
-   [ "" != "${CP}" ] && [ "" != "${RM}" ];
+if [ "" != "${GREP}" ] && \
+   [ "" != "${SORT}" ] && \
+   [ "" != "${CUT}" ] && \
+   [ "" != "${TR}" ] && \
+   [ "" != "${WC}" ];
 then
-  # remove any leftover temporary files
-  ${RM} -f .${JOBDIR}_??????.${JOBEXT}
-  # create temporary file to avoid sed's i-flag
-  JOBTMPFILE=$(${MKTEMP} ${HERE}/.${JOBDIR}_XXXXXX.${JOBEXT})
-  # disable glob in Shell
-  #set -f
-  for CLEAN in ${CLEANUP}; do
-    CLEAN_CHECK="${CLEAN_CHECK}/^#SBATCH[[:space:]][[:space:]]*${CLEAN}\([[:space:]=][[:space:]=]*\|$\)/p;"
-    CLEAN_CLEAN="${CLEAN_CLEAN}/^#SBATCH[[:space:]][[:space:]]*${CLEAN}\([[:space:]=][[:space:]=]*\|$\)/d;"
-  done
-  CLEAN_CHECK="${CLEAN_CHECK}/^LIBXSMM_TARGET=/p;"
-  CLEAN_CLEAN="${CLEAN_CLEAN}/^LIBXSMM_TARGET=/d;"
-  # CLEANUP specification is overruled here
-  CLEAN_CHECK="${CLEAN_CHECK}/^#SBATCH/p;"
-  CLEAN_CLEAN="${CLEAN_CLEAN}/^#SBATCH/d;"
-  COUNT_TOTAL=0
-  COUNT_CLEAN=0
-  for JOBFILE in $(ls -1 ${HERE}/${JOBDIR}/*.${JOBEXT}); do
-    if [ "" != "$(${SED} -n "${CLEAN_CHECK}" ${JOBFILE})" ];
-    then
-      echo "Cleaning ${JOBFILE}..."
-      ${SED} "${CLEAN_CLEAN}" ${JOBFILE} > ${JOBTMPFILE}
-      ${CP} ${JOBTMPFILE} ${JOBFILE}
-      COUNT_CLEAN=$((COUNT_CLEAN+1))
-    fi
-    COUNT_TOTAL=$((COUNT_TOTAL+1))
-  done
-  ${RM} -f ${JOBTMPFILE}
-  if [ "0" != "${COUNT_CLEAN}" ]; then
-    echo "Successfully cleaned ${COUNT_CLEAN} of ${COUNT_TOTAL} job files."
+  if [ -e /proc/cpuinfo ]; then
+    NS=$(${GREP} "physical id" /proc/cpuinfo | ${SORT} -u | ${WC} -l | ${TR} -d " ")
+    NC=$((NS*$(${GREP} -m1 "cpu cores" /proc/cpuinfo | ${TR} -d " " | ${CUT} -d: -f2)))
+    NT=$(${GREP} "core id" /proc/cpuinfo | ${WC} -l | ${TR} -d " ")
+  elif [ "Darwin" = "$(uname)" ]; then
+    NS=$(sysctl hw.packages | ${CUT} -d: -f2 | tr -d " ")
+    NC=$(sysctl hw.physicalcpu | ${CUT} -d: -f2 | tr -d " ")
+    NT=$(sysctl hw.logicalcpu | ${CUT} -d: -f2 | tr -d " ")
+  fi
+  if [ "" != "${NC}" ] && [ "" != "${NT}" ]; then
+    HT=$((NT/NC))
   else
-    echo "Successfully completed (there was nothing to clean)."
+    NS=1 NC=1 NT=1 HT=1
+  fi
+  if [ "" != "$(command -v numactl)" ]; then
+    NN=$(numactl -H | ${GREP} available: | ${CUT} -d' ' -f2)
+  else
+    NN=${NS}
+  fi
+  if [ "-ns" = "$1" ] || [ "--sockets" = "$1" ]; then
+    echo "${NS}"
+  elif [ "-nc" = "$1" ] || [ "--cores" = "$1" ]; then
+    echo "${NC}"
+  elif [ "-nt" = "$1" ] || [ "--threads" = "$1" ]; then
+    echo "${NT}"
+  elif [ "-ht" = "$1" ] || [ "--smt" = "$1" ]; then
+    echo "${HT}"
+  elif [ "-nn" = "$1" ] || [ "--numa" = "$1" ]; then
+    echo "${NN}"
+  elif [ "-h" = "$1" ] || [ "--help" = "$1" ]; then
+    echo "$0 [-ns|--sockets] [-nc|--cores] [-nt|--threads] [-ht|--smt] [-nn|--numa]"
+  else
+    echo -e "sockets\t: ${NS}"
+    echo -e "cores\t: ${NC}"
+    echo -e "threads\t: ${NT}"
+    echo -e "smt\t: ${HT}"
+    echo -e "numa:\t: ${NN}"
   fi
 else
   echo "Error: missing prerequisites!"
