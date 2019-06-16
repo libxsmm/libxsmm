@@ -1,12 +1,5 @@
 #!/bin/bash
 
-#SBATCH -J sgemm_nt_gtld_kernel_wsm_check
-#SBATCH --get-user-env
-#SBATCH --partition=skx
-#SBATCH --ntasks=1
-#SBATCH --cpus-per-task=112
-#SBATCH --time=02:00:00
-
 
 TESTFILE=`mktemp -p .`
 
