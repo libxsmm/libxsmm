@@ -211,6 +211,8 @@ then
   fi
 
   RESULT=0
+  # control log
+  echo "^^^ +++"
   while [ "" != "${TEST}" ] || TEST=$(eval " \
     ${SED} -n -e '/^ *script: *$/,\$p' ${HERE}/../${TESTSETFILE} | ${SED} -e '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
@@ -245,17 +247,16 @@ then
         echo "================================================================================"
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
           if [ "" != "${ENVVAL}" ]; then
-            echo "Test Case ${TESTID} (${PARTITION}/${ENVVAL})"
+            echo "Test ${TESTID} (${PARTITION}/${ENVVAL})"
           else
-            echo "Test Case ${TESTID} (${PARTITION})"
+            echo "Test ${TESTID} (${PARTITION})"
           fi
         elif [ "" != "${ENVVAL}" ]; then
-          echo "Test Case ${TESTID} (${ENVVAL})"
+          echo "Test ${TESTID} (${ENVVAL})"
         else
-          echo "Test Case ${TESTID}"
+          echo "Test ${TESTID}"
         fi
       fi
-      echo "^^^ +++"
 
       # make execution environment locally available (always)
       if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
@@ -287,7 +288,8 @@ then
             DIR=${DIR}/..
           fi
           echo "cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
-          echo "echo \"--- TEST ${TESTID}\"" >> ${TESTSCRIPT}
+          # control log
+          echo "echo \"--- TEST run log\"" >> ${TESTSCRIPT}
           if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
             echo "(" >> ${TESTSCRIPT}
           fi
@@ -337,19 +339,20 @@ then
     else # finish
       break
     fi
-  done
+  done # TEST
 
   # remove temporary script (if it exists)
   if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
     ${RM} ${TESTSCRIPT}
   fi
 
+  # control log
   if [ "0" = "${RESULT}" ]; then
     echo "+++ ------------------------------------------------------------------------------"
     echo "SUCCESS"
   else
     echo "^^^ +++"
-    echo "--- ------------------------------------------------------------------------------"
+    echo "+++ ------------------------------------------------------------------------------"
     echo "FAILURE"
     echo
   fi
