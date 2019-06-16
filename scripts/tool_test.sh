@@ -244,7 +244,7 @@ then
       fi
       # print some header if all tests are selected or in case of multi-tests
       if [ "" = "$1" ] || [ "none" != "${PARTITION}" ]; then
-        echo "================================================================================"
+        echo "+++ =============================================================================="
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
           if [ "" != "${ENVVAL}" ]; then
             echo "Test ${TESTID} (${PARTITION}/${ENVVAL})"
