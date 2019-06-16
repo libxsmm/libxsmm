@@ -243,18 +243,17 @@ then
         ENVSTR=${ENV}
       fi
       # print some header if all tests are selected or in case of multi-tests
-      if [ "" = "$1" ] || [ "none" != "${PARTITION}" ]; then
-        echo "+++ =============================================================================="
+      if [ "" = "$1" ] || [ "none" != "${PARTITION}" ] || [ "none" != "${ENV}" ]; then
         if [ "none" != "${PARTITION}" ] && [ "0" != "${SHOW_PARTITION}" ]; then
           if [ "" != "${ENVVAL}" ]; then
-            echo "Test ${TESTID} (${PARTITION}/${ENVVAL})"
+            echo "+++ TEST ${TESTID} (${PARTITION}/${ENVVAL})"
           else
-            echo "Test ${TESTID} (${PARTITION})"
+            echo "+++ TEST ${TESTID} (${PARTITION})"
           fi
         elif [ "" != "${ENVVAL}" ]; then
-          echo "Test ${TESTID} (${ENVVAL})"
+          echo "+++ TEST ${TESTID} (${ENVVAL})"
         else
-          echo "Test ${TESTID}"
+          echo "+++ TEST ${TESTID}"
         fi
       fi
 
@@ -289,7 +288,7 @@ then
           fi
           echo "cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
           # control log
-          echo "echo \"--- TEST run log\"" >> ${TESTSCRIPT}
+          echo "echo \"--- RUN ${TESTID}\"" >> ${TESTSCRIPT}
           if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
             echo "(" >> ${TESTSCRIPT}
           fi
