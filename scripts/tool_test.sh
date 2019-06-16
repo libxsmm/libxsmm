@@ -287,18 +287,18 @@ then
             DIR=${DIR}/..
           fi
           echo "cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
-          DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
-          echo "--- TEST ${TESTID}" >> ${TESTSCRIPT}
-          if [ "" != "${LIMITLOG}" ]; then
+          echo "echo \"--- TEST ${TESTID}\"" >> ${TESTSCRIPT}
+          if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
             echo "(" >> ${TESTSCRIPT}
           fi
+          DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
           ${SED} \
             -e "/^#\!..*/d" \
             -e "/^[[:space:]]*$/d" \
             -e "s/\.\//${DIRSED}\//" \
             ${SLURMFILE} >> ${TESTSCRIPT}
-          if [ "" != "${LIMITLOG}" ]; then
-            echo ") | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
+          if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
+            echo ") | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
           fi
         else
           echo "${TEST}" >> ${TESTSCRIPT}
@@ -324,7 +324,7 @@ then
 
       # exit the loop in case of an error
       if [ "0" = "${RESULT}" ]; then
-        echo "--- ------------------------------------------------------------------------------"
+        echo "--------------------------------------------------------------------------------"
         echo "SUCCESS"
         echo
       else
