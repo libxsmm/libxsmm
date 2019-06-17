@@ -267,6 +267,7 @@ then
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
+        echo "set -o pipefail" >> ${TESTSCRIPT}
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
@@ -281,12 +282,13 @@ then
         fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
-          echo "cd ${TRAVIS_BUILD_DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
           DIR=$(cd $(dirname ${SLURMFILE}); pwd -P)
           if [ -e ${DIR}/../Makefile ]; then
             DIR=${DIR}/..
           fi
-          echo "cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
+          echo "cd ${TRAVIS_BUILD_DIR} && make \${MAKEJ} && cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
+          echo "RESULT=\$?" >> ${TESTSCRIPT}
+          echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >> ${TESTSCRIPT}
           # control log
           echo "echo \"--- RUN ${TESTID}\"" >> ${TESTSCRIPT}
           if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
@@ -325,7 +327,7 @@ then
 
       # exit the loop in case of an error
       if [ "0" != "${RESULT}" ]; then
-        break
+        break 4
       fi
     done # ENVS
     done # CONFIGS
