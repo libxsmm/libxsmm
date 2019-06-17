@@ -196,9 +196,11 @@ then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
     fi
     umask 007
+    # eventually cleanup run-script from terminated sessions
+    ${RM} -f ${HERE}/../.tool_??????.sh
     TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
-    LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} --preserve-env --pty ${TESTSCRIPT} 2\>/dev/null"
+    LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} --preserve-env --unbuffered ${TESTSCRIPT}"
   else # avoid temporary script in case of non-batch execution
     if [ "" = "${MAKEJ}" ]; then
       export MAKEJ="-j $(eval ${HERE}/tool_cpuinfo.sh -nc)"
@@ -212,7 +214,7 @@ then
 
   RESULT=0
   # control log
-  echo "^^^ +++"
+  echo && echo "^^^ +++"
   while [ "" != "${TEST}" ] || TEST=$(eval " \
     ${SED} -n -e '/^ *script: *$/,\$p' ${HERE}/../${TESTSETFILE} | ${SED} -e '/^ *script: *$/d' | \
     ${SED} -n -E \"/^ *- */H;//,/^ *$/G;s/\n(\n[^\n]*){\${TESTID}}$//p\" | \
@@ -316,12 +318,15 @@ then
 
       COMMAND=$(eval echo "${ENVSTR} ${LAUNCH}")
       # run the prepared test case/script
-      if [ "" != "${LABEL}" ]; then
-        eval "${COMMAND}" 2>&1 | tee .test-${LABEL}.log
+      if [ "" != "${LABEL}" ] && [ "" != "$(command -v tee)" ]; then
+        if [ -t 0 ]; then
+          eval "${COMMAND} 2>&1 | tee .test-${LABEL}.log"
+        else
+          eval "${COMMAND} 2>&1 | ${GREP} -v '^srun: error:' | tee .test-${LABEL}.log"
+        fi
       else
         eval "${COMMAND}"
       fi
-
       # capture test status
       RESULT=$?
 
