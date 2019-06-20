@@ -4078,7 +4078,6 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_gp_reg_number_dest) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
     /* int i = *loc; */
@@ -4088,8 +4087,8 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
     int l_second = 0;
     int l_third = 0;
     int l_extra_byte = 0;
-    int l_reg0 = i_gp_reg_number_src;
-    int l_reg1 = i_gp_reg_number_dest;
+    int l_reg1 = i_gp_reg_number_src;
+    int l_reg0 = i_gp_reg_number_dest;
 
     switch ( i_alu_instr ) {
        case LIBXSMM_X86_INSTR_ADDQ:
@@ -4106,29 +4105,29 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
        case LIBXSMM_X86_INSTR_CMOVZ:
           l_second += 0x0e;
           l_extra_byte = 1;
-          l_reg0 = i_gp_reg_number_dest;
-          l_reg1 = i_gp_reg_number_src;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
           break;
        case LIBXSMM_X86_INSTR_CMOVNZ:
           l_second += 0x0e;
           l_third += 0x01;
           l_extra_byte = 1;
-          l_reg0 = i_gp_reg_number_dest;
-          l_reg1 = i_gp_reg_number_src;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
           break;
        case LIBXSMM_X86_INSTR_POPCNT:
           l_second += 0x0e;
           l_third += 0x74;
           l_extra_byte = 1;
-          l_reg0 = i_gp_reg_number_dest;
-          l_reg1 = i_gp_reg_number_src;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
           break;
        case LIBXSMM_X86_INSTR_TZCNT:
           l_second += 0x0e;
           l_third += 0x78;
           l_extra_byte = 1;
-          l_reg0 = i_gp_reg_number_dest;
-          l_reg1 = i_gp_reg_number_src;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
           break;
        default:
           fprintf(stderr, "libxsmm_instruction_alu_reg: Not sure what instruction you have in mind: %u\n",i_alu_instr);
