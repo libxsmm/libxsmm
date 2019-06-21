@@ -1859,7 +1859,7 @@ deb:
 		echo "	dh_auto_install -- prefix=/usr" >> rules; \
 		echo >> rules; \
 		echo "9" > compat; \
-		$(MV) ../../LICENSE.md copyright; \
+		$(CP) ../LICENSE.md copyright; \
 		rm -f ../$(TSTDIR)/mhd_test.mhd; \
 		chmod +x rules; \
 		debuild \
