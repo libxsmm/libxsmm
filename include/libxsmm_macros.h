@@ -696,7 +696,7 @@
 #endif
 
 /* _Float128 was introduced with GNU GCC 7.0. */
-#if !defined(_Float128) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__) \
+#if !defined(_Float128) && !defined(__SIZEOF_FLOAT128__) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__) \
   && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
   || (defined(LIBXSMM_INTEL_COMPILER) && defined(LIBXSMM_INTEL_COMPILER_UPDATE) && ( \
         ((1800 <= ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE))) \
