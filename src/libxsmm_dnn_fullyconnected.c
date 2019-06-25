@@ -84,11 +84,13 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
                                                           &(handle->ifmblock), &(handle->ifmblock_hp),
                                                           &(handle->ofmblock), &(handle->ofmblock_lp),
                                                           &(handle->fm_lp_block), LIBXSMM_DNN_DATATYPE_F32, LIBXSMM_DNN_DATATYPE_F32, &noarch );
-          } else {
+          } else if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
             *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K,
                                                           &(handle->ifmblock), &(handle->ifmblock_hp),
                                                           &(handle->ofmblock), &(handle->ofmblock_lp),
                                                           &(handle->fm_lp_block), handle->desc.datatype_in, handle->desc.datatype_out, &noarch );
+          } else {
+            /* should not happen, not implemented */
           }
         } else if ( (handle->desc.C % 64 == 0) && (handle->desc.K == 1000) ) {
           /* @TODO this a hack for the last FC layer */
@@ -128,6 +130,8 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
       /* calculate scratch size for batchstats */
       if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
         handle->scratch_size = sizeof(float) * ( ( (size_t)handle->desc.C * (size_t)handle->desc.N ) + ( (size_t)handle->desc.C * (size_t)handle->desc.K ) );
+      } else if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)  ) {
+        handle->scratch_size = (sizeof(float) * LIBXSMM_MAX( LIBXSMM_MAX( handle->bk, handle->bn ), handle->bc ) * LIBXSMM_MAX( LIBXSMM_MAX( handle->bk, handle->bn ), handle->bc ) * handle->desc.threads);
       } else {
         handle->scratch_size = sizeof(float) * LIBXSMM_MAX( ((size_t)handle->desc.C + (size_t)handle->desc.K) * (size_t)handle->desc.N,
                                                            (size_t)handle->desc.C * (size_t)handle->desc.K                            ) ;
@@ -308,8 +312,9 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fullyconnected_create_ten
             *status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
           }
         } else if ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) > 0) {
-          if ( ((handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) ) {
-            layout->datatype = LIBXSMM_DNN_DATATYPE_F32;
+          if ( ((handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32)  && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32)) ||
+               ((handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16))    ) {
+            layout->datatype = handle->desc.datatype_in;
             layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(4*sizeof(libxsmm_dnn_tensor_dimtype));
             layout->dim_size = (unsigned int*) malloc(4*sizeof(unsigned int));
 
@@ -460,6 +465,37 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fullyconnected_create_ten
                 layout->dim_size[1] = (unsigned int)handle->bc;
                 layout->dim_size[2] = (unsigned int)(handle->desc.C / handle->bc);
                 layout->dim_size[3] = (unsigned int)(handle->desc.K / handle->bk);
+              } else {
+                free(layout->dim_type);
+                free(layout->dim_size);
+                free(layout);
+                layout = 0; /* make sure a NULL is returned */
+                *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
+              }
+            } else {
+              free(layout);
+              layout = 0; /* make sure a NULL is returned */
+              *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
+            }
+          } else if ( ((handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) ) {
+            layout->datatype = LIBXSMM_DNN_DATATYPE_BF16;
+            layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(5*sizeof(libxsmm_dnn_tensor_dimtype));
+            layout->dim_size = (unsigned int*) malloc(5*sizeof(unsigned int));
+
+            if (0 != layout->dim_type && 0 != layout->dim_size) { /* TODO: handle the error */
+              layout->num_dims = 5;
+
+              if ( (type == LIBXSMM_DNN_REGULAR_FILTER) || (type == LIBXSMM_DNN_GRADIENT_FILTER) ) {
+                layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
+                layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
+                layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
+                layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
+                layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
+                layout->dim_size[0] = (unsigned int)2;
+                layout->dim_size[1] = (unsigned int)handle->bk;
+                layout->dim_size[2] = (unsigned int)handle->bc/2;
+                layout->dim_size[3] = (unsigned int)(handle->desc.C / handle->bc);
+                layout->dim_size[4] = (unsigned int)(handle->desc.K / handle->bk);
               } else {
                 free(layout->dim_type);
                 free(layout->dim_size);
