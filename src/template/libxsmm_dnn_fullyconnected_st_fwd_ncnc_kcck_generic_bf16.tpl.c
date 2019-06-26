@@ -77,7 +77,7 @@ for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
   /* downconvert scratch to bf16 and store to final C */
   for ( img2 = 0; img2 < handle->bn; ++img2 ) {
     for ( ofm2 = 0; ofm2 < handle->bk; ofm2 += 16 ) {
-      _mm256_storeu_epi16( &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, img2, ofm2, nBlocksOFm, handle->bn, handle->bk),
+      _mm256_storeu_si256( (__m256i *) &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, img2, ofm2, nBlocksOFm, handle->bn, handle->bk),
          _mm512_cvtepi32_epi16( _mm512_srai_epi32( _mm512_castps_si512( _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, out_tmp, img2, ofm2, handle->bk) ) ), 16 ) ) );
     }
   }
