@@ -48,8 +48,10 @@
 int main(int argc, char* argv[])
 {
   float *naive_input0, *naive_output0, *naive_filter0, *naive_output1, *naive_filter1, *naive_output2, *naive_filter2, *naive_output3, *naive_filter3;
-  float *naive_libxsmm_output0, *naive_libxsmm_output1, *naive_libxsmm_output2, *naive_libxsmm_output3;
-  float *input_libxsmm0, *output_libxsmm0, *filter_libxsmm0, *output_libxsmm1, *filter_libxsmm1, *output_libxsmm2, *filter_libxsmm2, *output_libxsmm3, *filter_libxsmm3;
+  libxsmm_bfloat16 *naive_input0_bf16, *naive_output0_bf16, *naive_filter0_bf16, *naive_output1_bf16, *naive_filter1_bf16, *naive_output2_bf16, *naive_filter2_bf16, *naive_output3_bf16, *naive_filter3_bf16;
+  float *naive_libxsmm_output0_f32, *naive_libxsmm_output1_f32, *naive_libxsmm_output2_f32, *naive_libxsmm_output3_f32;
+  libxsmm_bfloat16 *naive_libxsmm_output0_bf16, *naive_libxsmm_output1_bf16, *naive_libxsmm_output2_bf16, *naive_libxsmm_output3_bf16;
+  libxsmm_bfloat16 *input_libxsmm0, *output_libxsmm0, *filter_libxsmm0, *output_libxsmm1, *filter_libxsmm1, *output_libxsmm2, *filter_libxsmm2, *output_libxsmm3, *filter_libxsmm3;
 
   naive_fullyconnected_t naive_param;
   void* scratch;
@@ -64,9 +66,9 @@ int main(int argc, char* argv[])
   int fuse_type = 0;      /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
   char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
   char format = 'B';
-  int bn = 64;
-  int bk = 64;
-  int bc = 64;
+  int bn = 32;
+  int bk = 32;
+  int bc = 32;
 
   const char *const env_check = getenv("CHECK");
   const double check = LIBXSMM_ABS(0 == env_check ? 1 : atof(env_check));
@@ -125,8 +127,8 @@ int main(int argc, char* argv[])
   if (argc > i) bk         = atoi(argv[i++]);
   if (argc > i) bc         = atoi(argv[i++]);
 
-  if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
-    printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (UP only)\n");
+  if (type != 'A' && type != 'F') {
+    printf("type needs to be 'A' (All), 'F' (FP only)\n");
     return -1;
   }
   if ( fuse_type != 0 ) {
@@ -176,21 +178,34 @@ int main(int argc, char* argv[])
   naive_filter2               = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
   naive_output3               = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
   naive_filter3               = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
+  naive_input0_bf16           = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_output0_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_filter0_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_output1_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_filter1_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_output2_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_filter2_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_output3_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_filter3_bf16          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
 
-  naive_libxsmm_output0       = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  naive_libxsmm_output1       = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  naive_libxsmm_output2       = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  naive_libxsmm_output3       = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
+  naive_libxsmm_output0_f32   = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
+  naive_libxsmm_output1_f32   = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
+  naive_libxsmm_output2_f32   = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
+  naive_libxsmm_output3_f32   = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
+  naive_libxsmm_output0_bf16  = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_libxsmm_output1_bf16  = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_libxsmm_output2_bf16  = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  naive_libxsmm_output3_bf16  = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
 
-  input_libxsmm0              = (float*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(float), 2097152);
-  output_libxsmm0             = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  filter_libxsmm0             = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
-  output_libxsmm1             = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  filter_libxsmm1             = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
-  output_libxsmm2             = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  filter_libxsmm2             = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
-  output_libxsmm3             = (float*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(float), 2097152);
-  filter_libxsmm3             = (float*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(float), 2097152);
+  input_libxsmm0              = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIFm*sizeof(libxsmm_bfloat16), 2097152);
+  output_libxsmm0             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  filter_libxsmm0             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  output_libxsmm1             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  filter_libxsmm1             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  output_libxsmm2             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  filter_libxsmm2             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  output_libxsmm3             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOFm*sizeof(libxsmm_bfloat16), 2097152);
+  filter_libxsmm3             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nIFm*nOFm*sizeof(libxsmm_bfloat16), 2097152);
 
   /* initialize data */
   init_buf( naive_input0,     nImg*nIFm, 0, 0 );
@@ -202,6 +217,16 @@ int main(int argc, char* argv[])
   init_buf( naive_filter2,    nIFm*nOFm, 0, 0 );
   init_buf( naive_output3,    nImg*nOFm, 0, 0 );
   init_buf( naive_filter3,    nIFm*nOFm, 0, 0 );
+
+  libxsmm_rne_convert_fp32_bfp16( naive_input0,     naive_input0_bf16,     nImg*nIFm );
+  libxsmm_rne_convert_fp32_bfp16( naive_output0,    naive_output0_bf16,    nImg*nOFm );
+  libxsmm_rne_convert_fp32_bfp16( naive_filter0,    naive_filter0_bf16,    nIFm*nOFm );
+  libxsmm_rne_convert_fp32_bfp16( naive_output1,    naive_output1_bf16,    nImg*nOFm );
+  libxsmm_rne_convert_fp32_bfp16( naive_filter1,    naive_filter1_bf16,    nIFm*nOFm );
+  libxsmm_rne_convert_fp32_bfp16( naive_output2,    naive_output2_bf16,    nImg*nOFm );
+  libxsmm_rne_convert_fp32_bfp16( naive_filter2,    naive_filter2_bf16,    nIFm*nOFm );
+  libxsmm_rne_convert_fp32_bfp16( naive_output3,    naive_output3_bf16,    nImg*nOFm );
+  libxsmm_rne_convert_fp32_bfp16( naive_filter3,    naive_filter3_bf16,    nIFm*nOFm );
 
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");
@@ -232,8 +257,8 @@ int main(int argc, char* argv[])
     fullyconnected_desc.bk = bk;
     fullyconnected_desc.bc = bc;
     fullyconnected_desc.threads = nThreads;
-    fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
-    fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+    fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_BF16;
+    fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_BF16;
     fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED;
     fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED;
     fullyconnected_desc.fuse_ops = LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE;
@@ -267,15 +292,15 @@ int main(int argc, char* argv[])
     /* copy in data to LIBXSMM format */
     /* we can also use the layout functions and set the data on our
        own external to the library */
-    matrix_copy_NC_to_NCNC( naive_input0,     input_libxsmm0,     1, nImg, nIFm, bn, bc );
-    matrix_copy_NC_to_NCNC( naive_output0,    output_libxsmm0,    1, nImg, nOFm, bn, bk );
-    matrix_copy_KC_to_KCCK( naive_filter0,    filter_libxsmm0      , nIFm, nOFm, bc, bk );
-    matrix_copy_NC_to_NCNC( naive_output1,    output_libxsmm1,    1, nImg, nOFm, bn, bk );
-    matrix_copy_KC_to_KCCK( naive_filter1,    filter_libxsmm1      , nIFm, nOFm, bc, bk );
-    matrix_copy_NC_to_NCNC( naive_output2,    output_libxsmm2,    1, nImg, nOFm, bn, bk );
-    matrix_copy_KC_to_KCCK( naive_filter2,    filter_libxsmm2      , nIFm, nOFm, bc, bk );
-    matrix_copy_NC_to_NCNC( naive_output3,    output_libxsmm3,    1, nImg, nOFm, bn, bk );
-    matrix_copy_KC_to_KCCK( naive_filter3,    filter_libxsmm3      , nIFm, nOFm, bc, bk );
+    matrix_copy_NC_to_NCNC_bf16( naive_input0_bf16,     input_libxsmm0,     1, nImg, nIFm, bn, bc );
+    matrix_copy_NC_to_NCNC_bf16( naive_output0_bf16,    output_libxsmm0,    1, nImg, nOFm, bn, bk );
+    matrix_copy_KC_to_KCCK_bf16( naive_filter0_bf16,    filter_libxsmm0      , nIFm, nOFm, bc, bk );
+    matrix_copy_NC_to_NCNC_bf16( naive_output1_bf16,    output_libxsmm1,    1, nImg, nOFm, bn, bk );
+    matrix_copy_KC_to_KCCK_bf16( naive_filter1_bf16,    filter_libxsmm1      , nIFm, nOFm, bc, bk );
+    matrix_copy_NC_to_NCNC_bf16( naive_output2_bf16,    output_libxsmm2,    1, nImg, nOFm, bn, bk );
+    matrix_copy_KC_to_KCCK_bf16( naive_filter2_bf16,    filter_libxsmm2      , nIFm, nOFm, bc, bk );
+    matrix_copy_NC_to_NCNC_bf16( naive_output3_bf16,    output_libxsmm3,    1, nImg, nOFm, bn, bk );
+    matrix_copy_KC_to_KCCK_bf16( naive_filter3_bf16,    filter_libxsmm3      , nIFm, nOFm, bc, bk );
 
     /* bind buffers and filter to handle */
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle0, libxsmm_input0,        LIBXSMM_DNN_REGULAR_INPUT ) );
@@ -326,20 +351,17 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      if ( format == 'L' ) {
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output0, (void*)naive_libxsmm_output0, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output1, (void*)naive_libxsmm_output1, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output2, (void*)naive_libxsmm_output2, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyout_tensor( libxsmm_output3, (void*)naive_libxsmm_output3, LIBXSMM_DNN_TENSOR_FORMAT_NCHW ) );
-      } else {
-        matrix_copy_NCNC_to_NC( output_libxsmm0, naive_libxsmm_output0, 1, nImg, nOFm, bn, bk );
-        matrix_copy_NCNC_to_NC( output_libxsmm1, naive_libxsmm_output1, 1, nImg, nOFm, bn, bk );
-        matrix_copy_NCNC_to_NC( output_libxsmm2, naive_libxsmm_output2, 1, nImg, nOFm, bn, bk );
-        matrix_copy_NCNC_to_NC( output_libxsmm3, naive_libxsmm_output3, 1, nImg, nOFm, bn, bk );
-      }
+      matrix_copy_NCNC_to_NC_bf16( output_libxsmm0, naive_libxsmm_output0_bf16, 1, nImg, nOFm, bn, bk );
+      matrix_copy_NCNC_to_NC_bf16( output_libxsmm1, naive_libxsmm_output1_bf16, 1, nImg, nOFm, bn, bk );
+      matrix_copy_NCNC_to_NC_bf16( output_libxsmm2, naive_libxsmm_output2_bf16, 1, nImg, nOFm, bn, bk );
+      matrix_copy_NCNC_to_NC_bf16( output_libxsmm3, naive_libxsmm_output3_bf16, 1, nImg, nOFm, bn, bk );
+      libxsmm_convert_bf16_f32( naive_libxsmm_output0_bf16, naive_libxsmm_output0_f32, nImg*nOFm );
+      libxsmm_convert_bf16_f32( naive_libxsmm_output1_bf16, naive_libxsmm_output1_f32, nImg*nOFm );
+      libxsmm_convert_bf16_f32( naive_libxsmm_output2_bf16, naive_libxsmm_output2_f32, nImg*nOFm );
+      libxsmm_convert_bf16_f32( naive_libxsmm_output3_bf16, naive_libxsmm_output3_f32, nImg*nOFm );
 
       /* compare */
-      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output0, naive_libxsmm_output0, 0, 0);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output0, naive_libxsmm_output0_f32, 0, 0);
       printf("Layer 0:\n");
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
@@ -349,7 +371,7 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
       printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_fwd);
-      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output1, naive_libxsmm_output1, 0, 0);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output1, naive_libxsmm_output1_f32, 0, 0);
       printf("Layer 1:\n");
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
@@ -359,7 +381,7 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
       printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_fwd);
-      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output2, naive_libxsmm_output2, 0, 0);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output2, naive_libxsmm_output2_f32, 0, 0);
       printf("Layer 2:\n");
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
@@ -369,7 +391,7 @@ int main(int argc, char* argv[])
       printf("Linf rel.error: %.24f\n", norms_fwd.linf_rel);
       printf("Check-norm    : %.24f\n", norms_fwd.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_fwd);
-      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output3, naive_libxsmm_output3, 0, 0);
+      libxsmm_matdiff(&norms_fwd, LIBXSMM_DATATYPE_F32, nImg*nOFm, 1, naive_output3, naive_libxsmm_output3_f32, 0, 0);
       printf("Layer 3:\n");
       printf("L1 reference  : %.25g\n", norms_fwd.l1_ref);
       printf("L1 test       : %.25g\n", norms_fwd.l1_tst);
@@ -464,11 +486,24 @@ int main(int argc, char* argv[])
   libxsmm_free(naive_filter2);
   libxsmm_free(naive_output3);
   libxsmm_free(naive_filter3);
+  libxsmm_free(naive_input0_bf16);
+  libxsmm_free(naive_output0_bf16);
+  libxsmm_free(naive_filter0_bf16);
+  libxsmm_free(naive_output1_bf16);
+  libxsmm_free(naive_filter1_bf16);
+  libxsmm_free(naive_output2_bf16);
+  libxsmm_free(naive_filter2_bf16);
+  libxsmm_free(naive_output3_bf16);
+  libxsmm_free(naive_filter3_bf16);
 
-  libxsmm_free(naive_libxsmm_output0);
-  libxsmm_free(naive_libxsmm_output1);
-  libxsmm_free(naive_libxsmm_output2);
-  libxsmm_free(naive_libxsmm_output3);
+  libxsmm_free(naive_libxsmm_output0_f32);
+  libxsmm_free(naive_libxsmm_output1_f32);
+  libxsmm_free(naive_libxsmm_output2_f32);
+  libxsmm_free(naive_libxsmm_output3_f32);
+  libxsmm_free(naive_libxsmm_output0_bf16);
+  libxsmm_free(naive_libxsmm_output1_bf16);
+  libxsmm_free(naive_libxsmm_output2_bf16);
+  libxsmm_free(naive_libxsmm_output3_bf16);
 
   libxsmm_free(input_libxsmm0);
   libxsmm_free(output_libxsmm0);
