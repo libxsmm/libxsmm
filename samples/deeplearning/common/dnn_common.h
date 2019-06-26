@@ -665,7 +665,7 @@ LIBXSMM_INLINE void matrix_copy_KCCK_to_KC(float *src, float *dst, int C, int K,
 
 LIBXSMM_INLINE void matrix_copy_CK_to_KCCK_bf16(libxsmm_bfloat16 *src, libxsmm_bfloat16 *dst, int C, int K, int bc, int bk)
 {
-  int k1, k2, c1, c2, c3;
+  int k1, k2, c1, c2;
   int kBlocks = K/bk;
   int cBlocks = C/bc;
   LIBXSMM_VLA_DECL(2, libxsmm_bfloat16, real_src, src, K);
