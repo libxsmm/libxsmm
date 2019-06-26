@@ -1440,32 +1440,6 @@ $(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
 		-o $@
 	@rm $(TMPFILE)
 
-$(DOCDIR)/cp2k.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/cp2k.md
-	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
-	@pandoc -D latex \
-	| sed \
-		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE)
-	@cd $(ROOTDIR)/documentation && iconv -t utf-8 cp2k.md \
-	| sed \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
-	| pandoc \
-		--template=$(notdir $(TMPFILE)) --listings \
-		-f markdown_github+all_symbols_escapable+subscript+superscript \
-		-V documentclass=scrartcl \
-		-V title-meta="CP2K with LIBXSMM" \
-		-V author-meta="Hans Pabst" \
-		-V classoption=DIV=45 \
-		-V linkcolor=black \
-		-V citecolor=black \
-		-V urlcolor=black \
-		-o $(notdir $@)
-	@rm $(TMPFILE)
-
 $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/tensorflow.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
@@ -1496,7 +1470,6 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 documentation: \
 $(DOCDIR)/libxsmm.$(DOCEXT) \
 $(DOCDIR)/libxsmm_samples.$(DOCEXT) \
-$(DOCDIR)/cp2k.$(DOCEXT) \
 $(DOCDIR)/tensorflow.$(DOCEXT)
 
 .PHONY: mkdocs

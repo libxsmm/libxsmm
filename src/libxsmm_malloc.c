@@ -275,7 +275,8 @@ LIBXSMM_API_INLINE const void* internal_malloc_site(const void* site)
   if (NULL != site) {
 #if !defined(LIBXSMM_STRING_POOLING)
     if ((LIBXSMM_MALLOC_INTERNAL_CALLER) != site) {
-      const uintptr_t hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, site, strlen((const char*)site));
+      const size_t length = strlen((const char*)site);
+      const uintptr_t hash = (sizeof(void*) < length ? libxsmm_crc32(LIBXSMM_MALLOC_SEED, site, length) : ((uintptr_t)site));
       result = (const void*)((LIBXSMM_MALLOC_INTERNAL_CALLER_ID) != hash ? hash : (hash - 1));
       LIBXSMM_ASSERT((LIBXSMM_MALLOC_INTERNAL_CALLER) != result);
     }

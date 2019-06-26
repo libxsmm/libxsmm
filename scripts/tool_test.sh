@@ -239,6 +239,12 @@ then
     fi
     for PARTITION in ${PARTITIONS}; do
     for CONFIG in ${CONFIGS}; do
+    # make execution environment locally available (always)
+    if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
+       [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
+    then
+      source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env
+    fi
     for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
         if [ "" != "${CUT}" ]; then ENVVAL=$(echo "${ENV}" | ${CUT} -d= -f2); fi
@@ -258,14 +264,6 @@ then
           echo "+++ TEST ${TESTID}"
         fi
       fi
-
-      # make execution environment locally available (always)
-      if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-         [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
-      then
-        source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env
-      fi
-
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
@@ -305,11 +303,11 @@ then
           if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
             echo ") | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
           fi
+          # clear captured test
+          TEST=""
         else
           echo "${TEST}" >> ${TESTSCRIPT}
         fi
-        # clear captured test
-        TEST=""
 
         if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
           ${SYNC}
