@@ -195,6 +195,9 @@ then
     if [ "" != "${LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
     fi
+    if [ "" != "${LIMITRUN}" ]; then
+      SRUN_FLAGS="${SRUN_FLAGS} --time=${LIMITRUN}"
+    fi
     umask 007
     # eventually cleanup run-script from terminated sessions
     ${RM} -f ${HERE}/../.tool_??????.sh
