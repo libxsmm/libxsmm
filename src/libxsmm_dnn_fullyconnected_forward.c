@@ -150,7 +150,7 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16(libxsmm_
   libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
-    libxsmm_bsmmfunction_reducebatch batchreduce_kernel = libxsmm_bsmmdispatch_reducebatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+    libxsmm_bsmmfunction_reducebatch batchreduce_kernel = handle->gemm_fwd.xgemm.bsmr;
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
   } else {
     status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;

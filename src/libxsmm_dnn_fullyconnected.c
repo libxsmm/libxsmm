@@ -136,6 +136,36 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
         handle->scratch_size = sizeof(float) * LIBXSMM_MAX( ((size_t)handle->desc.C + (size_t)handle->desc.K) * (size_t)handle->desc.N,
                                                            (size_t)handle->desc.C * (size_t)handle->desc.K                            ) ;
       }
+      /* create code pointers in some special cases */
+      if ( ((handle->desc.buffer_format & LIBXSMM_DNN_TENSOR_FORMAT_NCPACKED) > 0) && ((handle->desc.filter_format & LIBXSMM_DNN_TENSOR_FORMAT_CKPACKED) > 0)  ) {
+        if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
+          float alpha = 1.0f;
+          float beta  = 0.0f;
+          libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
+          libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
+          libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
+
+          if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
+            handle->gemm_fwd.pmm = (void*)libxsmm_smmdispatch_reducebatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+          } else {
+            /* should not happen */
+          }
+        } else if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
+          float alpha = 1.0f;
+          float beta  = 0.0f;
+          libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
+          libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
+          libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
+
+          if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
+            handle->gemm_fwd.pmm = (void*)libxsmm_bsmmdispatch_reducebatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+          } else {
+            /* should not happen */
+          }
+        } else {
+
+        }
+      }
     } else {
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
     }
