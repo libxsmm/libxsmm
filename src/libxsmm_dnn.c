@@ -456,30 +456,27 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
             } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
               layout->datatype = handle->datatype_out;
             }
-            layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(6*sizeof(libxsmm_dnn_tensor_dimtype));
-            layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
+            layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(5*sizeof(libxsmm_dnn_tensor_dimtype));
+            layout->dim_size = (unsigned int*) malloc(5*sizeof(unsigned int));
             if (0 != layout->dim_type && 0 != layout->dim_size) { /* TODO: handle the error */
-              layout->num_dims = 6;
+              layout->num_dims = 5;
               layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-              layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-              layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
-              layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
-              layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-              layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
+              layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
+              layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
+              layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
+              layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
               if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) || (type == LIBXSMM_DNN_INPUT) )   {
-                layout->dim_size[0] = handle->fm_lp_block;
-                layout->dim_size[1] = handle->ifmblock;
-                layout->dim_size[2] = handle->ifwp;
-                layout->dim_size[3] = handle->ifhp;
-                layout->dim_size[4] = handle->blocksifm_lp;
-                layout->dim_size[5] = handle->desc.N;
+                layout->dim_size[0] = handle->ifmblock;
+                layout->dim_size[1] = handle->ifwp;
+                layout->dim_size[2] = handle->ifhp;
+                layout->dim_size[3] = handle->blocksifm;
+                layout->dim_size[4] = handle->desc.N;
               } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
-                layout->dim_size[0] = 1;
-                layout->dim_size[1] = handle->ofmblock;
-                layout->dim_size[2] = handle->ofwp;
-                layout->dim_size[3] = handle->ofhp;
-                layout->dim_size[4] = handle->blocksofm;
-                layout->dim_size[5] = handle->desc.N;
+                layout->dim_size[0] = handle->ofmblock;
+                layout->dim_size[1] = handle->ofwp;
+                layout->dim_size[2] = handle->ofhp;
+                layout->dim_size[3] = handle->blocksofm;
+                layout->dim_size[4] = handle->desc.N;
               } else {
                 free(layout->dim_type);
                 free(layout->dim_size);
@@ -525,37 +522,33 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
             } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) ) {
               layout->datatype = handle->datatype_out;
             }
-            layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(6*sizeof(libxsmm_dnn_tensor_dimtype));
-            layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
+            layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(5*sizeof(libxsmm_dnn_tensor_dimtype));
+            layout->dim_size = (unsigned int*) malloc(5*sizeof(unsigned int));
             if (0 != layout->dim_type && 0 != layout->dim_size) { /* TODO: handle the error */
               if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_INPUT) )   {
-                layout->num_dims = 6;
+                layout->num_dims = 5;
                 layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
-                layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
-                layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-                layout->dim_size[0] = handle->fm_lp_block;
-                layout->dim_size[1] = handle->ifmblock;
-                layout->dim_size[2] = handle->ifwp;
-                layout->dim_size[3] = handle->ifhp;
-                layout->dim_size[4] = handle->blocksifm_lp;
-                layout->dim_size[5] = handle->desc.N;
+                layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
+                layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
+                layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
+                layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
+                layout->dim_size[0] = handle->ifmblock;
+                layout->dim_size[1] = handle->ifwp;
+                layout->dim_size[2] = handle->ifhp;
+                layout->dim_size[3] = handle->blocksifm;
+                layout->dim_size[4] = handle->desc.N;
               } else if ( type == LIBXSMM_DNN_GRADIENT_OUTPUT )   {
-                layout->num_dims = 6;
+                layout->num_dims = 5;
                 layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
-                layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
-                layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-                layout->dim_size[0] = handle->fm_lp_block;
-                layout->dim_size[1] = handle->ofmblock_lp;
-                layout->dim_size[2] = handle->ofwp;
-                layout->dim_size[3] = handle->ofhp;
-                layout->dim_size[4] = handle->blocksofm;
-                layout->dim_size[5] = handle->desc.N;
+                layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
+                layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
+                layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
+                layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
+                layout->dim_size[0] = handle->ofmblock;
+                layout->dim_size[1] = handle->ofwp;
+                layout->dim_size[2] = handle->ofhp;
+                layout->dim_size[3] = handle->blocksofm;
+                layout->dim_size[4] = handle->desc.N;
               } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
                 layout->num_dims = 5;
                 layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
@@ -575,7 +568,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
                 layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
                 layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
                 layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-                layout->dim_size[0] = handle->ifmblock_hp;
+                layout->dim_size[0] = handle->ifmblock;
                 layout->dim_size[1] = handle->ifwp;
                 layout->dim_size[2] = handle->ifhp;
                 layout->dim_size[3] = handle->blocksifm;
@@ -671,7 +664,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
               layout->dim_type[6] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
               layout->dim_size[0] = handle->fm_lp_block;
               layout->dim_size[1] = handle->ofmblock;
-              layout->dim_size[2] = handle->ifmblock_lp;
+              layout->dim_size[2] = handle->ifmblock/handle->fm_lp_block;
               layout->dim_size[3] = handle->desc.S;
               layout->dim_size[4] = handle->desc.R;
               layout->dim_size[5] = handle->blocksifm;
@@ -697,25 +690,11 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
                 layout->dim_type[6] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
                 layout->dim_size[0] = handle->fm_lp_block;
                 layout->dim_size[1] = handle->ofmblock;
-                layout->dim_size[2] = handle->ifmblock;
+                layout->dim_size[2] = handle->ifmblock/handle->fm_lp_block;
                 layout->dim_size[3] = handle->desc.S;
                 layout->dim_size[4] = handle->desc.R;
-                layout->dim_size[5] = handle->blocksifm_lp;
+                layout->dim_size[5] = handle->blocksifm;
                 layout->dim_size[6] = handle->blocksofm;
-              } else if (type == LIBXSMM_DNN_GRADIENT_FILTER) {
-                layout->num_dims = 6;
-                layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
-                layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_S;
-                layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_R;
-                layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
-                layout->dim_size[0] = handle->ofmblock;
-                layout->dim_size[1] = handle->ifmblock_hp;
-                layout->dim_size[2] = handle->desc.S;
-                layout->dim_size[3] = handle->desc.R;
-                layout->dim_size[4] = handle->blocksifm;
-                layout->dim_size[5] = handle->blocksofm;
               }
             }
           } else {
@@ -788,33 +767,11 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_create_tensor_datalayout(
               layout->dim_type[6] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
               layout->dim_size[0] = handle->fm_lp_block;
               layout->dim_size[1] = handle->ifmblock;
-              layout->dim_size[2] = handle->ofmblock_lp;
+              layout->dim_size[2] = handle->ofmblock/handle->fm_lp_block;
               layout->dim_size[3] = handle->desc.S;
               layout->dim_size[4] = handle->desc.R;
               layout->dim_size[5] = handle->blocksofm;
               layout->dim_size[6] = handle->blocksifm;
-            }
-          } else if ( (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I16) ||
-              (handle->datatype_in == LIBXSMM_DNN_DATATYPE_I8) ) {
-            layout->datatype = handle->datatype_in;
-            layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(7*sizeof(libxsmm_dnn_tensor_dimtype));
-            layout->dim_size = (unsigned int*) malloc(7*sizeof(unsigned int));
-            if (0 != layout->dim_type && 0 != layout->dim_size) { /* TODO: handle the error */
-              layout->num_dims = 7;
-              layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
-              layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-              layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
-              layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_S;
-              layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_R;
-              layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
-              layout->dim_type[6] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-              layout->dim_size[0] = handle->fm_lp_block;
-              layout->dim_size[1] = handle->ofmblock;
-              layout->dim_size[2] = handle->ifmblock;
-              layout->dim_size[3] = handle->desc.S;
-              layout->dim_size[4] = handle->desc.R;
-              layout->dim_size[5] = handle->blocksofm;
-              layout->dim_size[6] = handle->blocksifm*handle->fm_lp_block;
             }
           } else {
             free(layout);

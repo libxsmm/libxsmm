@@ -39,7 +39,7 @@ int my_img_start = LIBXSMM_MIN( ltid * imgpt, handle->desc.N);
 int my_img_end = LIBXSMM_MIN( (ltid+1) * imgpt, handle->desc.N);
 int my_ofm_start = 0;
 int my_ofm_end = handle->blocksofm;
-
+int ifmblock_lp =  handle->ifmblock/handle->fm_lp_block;
 /* Batch reduce related variables */
 const element_filter_type *A_ptrs[1024];
 const element_input_type  *B_ptrs[1024];
@@ -57,7 +57,7 @@ element_input_type *input_ptr = (handle->pack_input == 1) ?(element_input_type*)
 const int IFW = (handle->pack_input == 1) ? handle->ofwp : handle->ifwp;
 const int IFH = (handle->pack_input == 1) ? handle->ofhp : handle->ifhp;
 LIBXSMM_VLA_DECL(5, element_input_type, input, input_ptr, handle->blocksifm, IFH, IFW, handle->ifmblock);
-LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
+LIBXSMM_VLA_DECL(7, const element_filter_type, weight, (element_filter_type*)handle->reg_filter->data, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -172,7 +172,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                 } else if ( oi == 0 && ki == 0 ) {
                   ind = 0;
                   for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
-                    A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
+                    A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
                     B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki + 1, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                     ind++;
                   }
@@ -198,7 +198,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                 } else if (oi == handle->ofw-handle->fwd_ofw_rb  && ki == handle->desc.S-1) {
                   ind = 0;
                   for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
-                    A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
+                    A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
                     B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                     ind++;
                   }
@@ -224,7 +224,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                 } else {
                   ind = 0;
                   for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
-                    A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
+                    A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
                     B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                     ind++;
                   }
@@ -292,7 +292,7 @@ if (handle->use_fallback_fwd_loops == 1) {
             for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
               for (kj = 0; kj < handle->desc.R; kj++) {
                 for (ki = 0; ki < handle->desc.S; ki++) {
-                  A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
+                  A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
                   B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                   ind++;
                 }
@@ -371,7 +371,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                           } else if ( oi == 0 && ki == 0 ) {
                             ind = 0;
                             for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
-                              A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
+                              A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
                               B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki + 1, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                               ind++;
                             }
@@ -397,7 +397,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                           } else if (oi == handle->ofw-handle->fwd_ofw_rb  && ki == handle->desc.S-1) {
                             ind = 0;
                             for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
-                              A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
+                              A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
                               B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                               ind++;
                             }
@@ -423,7 +423,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                           } else {
                             ind = 0;
                             for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
-                              A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
+                              A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
                               B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                               ind++;
                             }
@@ -499,7 +499,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                           for (ki1 = 0; ki1 < handle->desc.S; ki1++) {
                             ki = (handle->shuffle_filter_accesses == 1) ?  (ki1+ltid)%handle->desc.S : ki1;
                             kj = (handle->shuffle_filter_accesses == 1) ?  (kj1+ltid)%handle->desc.R : kj1;
-                            A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
+                            A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
                             B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                             ind++;
                           }
@@ -570,7 +570,7 @@ if (handle->use_fallback_fwd_loops == 1) {
                     for (ifm2 = ifm1; ifm2 < ifm1 + handle->blocksifm_blocking; ifm2++) {
                       for (kj = 0; kj < handle->desc.R; kj++) {
                         for (ki = 0; ki < handle->desc.S; ki++) {
-                          A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
+                          A_ptrs[ind] = &LIBXSMM_VLA_ACCESS(7, weight, ofm1, ifm2, kj, ki, 0, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, ifmblock_lp, handle->ofmblock, handle->fm_lp_block);
                           B_ptrs[ind] = &LIBXSMM_VLA_ACCESS(5,  input,  img, ifm2, ij_use + kj, ii_use + ki, 0, handle->blocksifm, IFH, IFW, handle->ifmblock);
                           ind++;
                         }

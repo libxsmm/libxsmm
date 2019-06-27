@@ -111,8 +111,8 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
   handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
   /* backward transpose filters */
   handle->scratch1 = 0;
-  handle->scratch1_size = (size_t)handle->blocksifm_lp * handle->ifmblock * handle->blocksofm * handle->ofmblock
-    * handle->desc.R * handle->desc.S * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
+  handle->scratch1_size = (size_t)handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock
+    * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_in);
   if (handle->fm_lp_block > 1) {
     /* If low precision, we need extra buffer to store intermediate weight tensor */
     handle->scratch1_size *= 2;
@@ -120,8 +120,8 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
 
   /* weight update transpose of minibatch */
   handle->scratch3 = 0;
-  handle->scratch3_size = (size_t)handle->desc.N * handle->blocksifm_lp * handle->ifmblock * handle->ifhp * ((size_t)handle->ifwp + 8)
-    * handle->fm_lp_block * libxsmm_dnn_typesize(handle->datatype_in);
+  handle->scratch3_size = (size_t)handle->desc.N * handle->blocksifm * handle->ifmblock * handle->ifhp * ((size_t)handle->ifwp + 8)
+    * libxsmm_dnn_typesize(handle->datatype_in);
 
   /* minibatch parallel execution of weight update kernel */
   if ( ((handle->blocksifm * handle->blocksofm) < handle->desc.threads) || ( handle->use_upd_generic == 0 ) ) {
@@ -805,8 +805,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->ifmblock = libxsmm_dnn_setup_generic_ifmblock(handle);
   handle->ofmblock = libxsmm_dnn_setup_generic_ofmblock(handle);
   handle->fm_lp_block = libxsmm_dnn_setup_generic_fm_lp_block(handle);
-  handle->ifmblock_lp = handle->ifmblock/handle->fm_lp_block;
-  handle->ofmblock_lp = handle->ofmblock/handle->fm_lp_block;
   handle->blocksifm = libxsmm_dnn_setup_generic_blocksifm(handle);
   handle->blocksofm = libxsmm_dnn_setup_generic_blocksofm(handle);
 
