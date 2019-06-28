@@ -923,7 +923,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
 
   /* In this case, allocate scratch for output in fp32 precision (to use when we don't fully accumulate) + a scratchpad (when we fully accumulate)  */
   if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
-    handle->scratch6_size = (size_t) (handle->desc.N * LIBXSMM_MAX(handle->ofwp * handle->ofhp * handle->desc.K, handle->desc.W * handle->desc.H * handle->desc.C) + handle->desc.threads * LIBXSMM_MAX(handle->fwd_ofw_rb * handle->fwd_ofh_rb * handle->ofmblock, handle->bwd_ofw_rb * handle->bwd_ofh_rb * handle->ifmblock))* sizeof(float);
+    handle->scratch6_size = (size_t) (handle->desc.N * LIBXSMM_MAX(handle->ofwp * handle->ofhp * handle->desc.K, handle->desc.W * handle->desc.H * handle->desc.C) + handle->desc.threads * LIBXSMM_MAX(handle->fwd_ofw_rb * handle->fwd_ofh_rb * handle->ofmblock, handle->bwd_ofw_rb * handle->desc.v * handle->bwd_ofh_rb * handle->ifmblock))* sizeof(float);
   }
 
   return status;
