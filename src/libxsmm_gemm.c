@@ -1328,7 +1328,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
     char *const c0 = (char*)c;
 
     LIBXSMM_ASSERT(0 < itypesize && 0 < otypesize);
-    if (0 == (LIBXSMM_GEMM_FLAG_BATCH_REDUCE & flags)) {
+    if (0 == (LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS & flags)) {
       if (0 != index_stride) { /* stride arrays contain indexes */
         libxsmm_blasint i = begin * index_stride, ic = (NULL != stride_c ? (LIBXSMM_ACCESS(const libxsmm_blasint, stride_c, i) - index_base) : 0);
         const char* ai = a0 + ((size_t)(NULL != stride_a ? ((LIBXSMM_ACCESS(const libxsmm_blasint, stride_a, i) - index_base) * itypesize) : 0));
@@ -1508,7 +1508,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
       }
     }
 #if defined(LIBXSMM_GEMM_BATCHREDUCE)
-    else /* LIBXSMM_GEMM_FLAG_BATCH_REDUCE */
+    else /* LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS */
 # if defined(LIBXSMM_GEMM_CHECK)
     if (
 #   if (0 != LIBXSMM_SYNC)
@@ -1649,7 +1649,7 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
         } break;
       }
       if (EXIT_SUCCESS == result) {
-        descriptor->flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE;
+        descriptor->flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS;
         descriptor->prefetch = 0; /* omit decision */
       }
       else {

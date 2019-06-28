@@ -1013,7 +1013,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f32_f32(libxsmm_dnn_
   typedef float element_output_type;
   typedef float element_filter_type;
   typedef libxsmm_smmfunction gemm_function;
-  typedef libxsmm_smmfunction_reducebatch gemm_br_function;
+  typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function;
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic.tpl.c"
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -1032,7 +1032,7 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dn
   typedef libxsmm_bfloat16 element_output_type;
   typedef libxsmm_bfloat16 element_filter_type;
   typedef libxsmm_bsmmfunction gemm_function;
-  typedef libxsmm_bsmmfunction_reducebatch gemm_br_function;
+  typedef libxsmm_bsmmfunction_reducebatch_addr gemm_br_function;
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic_bf16.tpl.c"
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
@@ -1132,7 +1132,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(l
       typedef float element_output_type;
       typedef float element_filter_type;
       typedef libxsmm_smmfunction gemm_function;
-      typedef libxsmm_smmfunction_reducebatch gemm_br_function;
+      typedef libxsmm_smmfunction_reducebatch_addr gemm_br_function;
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic.tpl.c"
     } else if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
 #if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
@@ -1140,7 +1140,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(l
       typedef libxsmm_bfloat16 element_output_type;
       typedef libxsmm_bfloat16 element_filter_type;
       typedef libxsmm_bsmmfunction gemm_function;
-      typedef libxsmm_bsmmfunction_reducebatch gemm_br_function;
+      typedef libxsmm_bsmmfunction_reducebatch_addr gemm_br_function;
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic_bf16.tpl.c"
 #else
 #endif

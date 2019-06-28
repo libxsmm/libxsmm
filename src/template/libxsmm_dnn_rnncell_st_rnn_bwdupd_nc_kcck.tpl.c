@@ -85,12 +85,12 @@ element_output_type *zt = (element_output_type*)handle->internal_z;
 LIBXSMM_VLA_DECL(3, element_output_type, z, zt, N, K);
 #endif
 /* define batch-reduce gemm kernels */
-const libxsmm_smmfunction_reducebatch batchreduce_kernelaz = libxsmm_smmdispatch_reducebatch( bc, bn, bk, &bc, &K, &C, NULL, &beta, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kernelbz = libxsmm_smmdispatch_reducebatch( bk, bk, bn, &K, &N, &bk, NULL, &beta, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kernelcz = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &K, &N, &bk, NULL, &beta, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kernelb = libxsmm_smmdispatch_reducebatch( bk, bk, bn, &K, &N, &bk, NULL, NULL, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kernelc = libxsmm_smmdispatch_reducebatch( bk, bc, bn, &K, &N, &bk, NULL, NULL, NULL, NULL);
-const libxsmm_smmfunction_reducebatch batchreduce_kerneld = libxsmm_smmdispatch_reducebatch( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelaz = libxsmm_smmdispatch_reducebatch_addr( bc, bn, bk, &bc, &K, &C, NULL, &beta, NULL, NULL);
+const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelbz = libxsmm_smmdispatch_reducebatch_addr( bk, bk, bn, &K, &N, &bk, NULL, &beta, NULL, NULL);
+const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelcz = libxsmm_smmdispatch_reducebatch_addr( bk, bc, bn, &K, &N, &bk, NULL, &beta, NULL, NULL);
+const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelb = libxsmm_smmdispatch_reducebatch_addr( bk, bk, bn, &K, &N, &bk, NULL, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelc = libxsmm_smmdispatch_reducebatch_addr( bk, bc, bn, &K, &N, &bk, NULL, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch_addr batchreduce_kerneld = libxsmm_smmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL);
 
 /* computing first logical thread */
 const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_thread;

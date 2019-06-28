@@ -186,7 +186,7 @@ if (handle->upd_linearized_pixels == 0) {
   prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
   l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   n_blocks = handle->batchreduce_h_pixels;
-  br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch(handle->ofmblock, handle->ifmblock, handle->ofw, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
+  br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->ifmblock, handle->ofw, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
 
   for (img = my_img_start; img < my_img_end; img++) {
     for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
@@ -296,7 +296,7 @@ if (handle->upd_linearized_pixels == 0) {
     block_ifm = my_ifm_end-my_ifm_start+1;
     img_block_size = my_img_end - my_img_start;
 
-    br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
+    br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->ifmblock, handle->pixel_blocking, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
     n_blocks = img_block_size;
 
     /* Make sure we initialize intermediate weights to zero */
