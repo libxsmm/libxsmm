@@ -43,7 +43,7 @@
 
 LIBXSMM_API libxsmm_dnn_pooling* libxsmm_dnn_create_pooling(libxsmm_dnn_pooling_desc pooling_desc, libxsmm_dnn_err_t* status) {
   libxsmm_dnn_pooling* handle = 0;
-  int noarch;
+  int lpb;
 
   if ( ((pooling_desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (pooling_desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16)) ||
        ((pooling_desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (pooling_desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32))    ) {
@@ -57,24 +57,12 @@ LIBXSMM_API libxsmm_dnn_pooling* libxsmm_dnn_create_pooling(libxsmm_dnn_pooling_
       handle->desc = pooling_desc;
       /* we need to compute the memory layout given the */
       *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.C,
-                                                    &(handle->ifmblock), &(handle->ifmblock_hp),
-                                                    &(handle->ofmblock), &(handle->ofmblock_lp),
-                                                    &(handle->fm_lp_block), handle->desc.datatype_in, handle->desc.datatype_out, &noarch );
+                                                    &(handle->ifmblock), &(handle->ofmblock), &lpb,
+                                                    handle->desc.datatype_in, handle->desc.datatype_out );
       /* compute the outer blocks */
-      if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
-        handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
-        handle->blocksofm = handle->desc.C / handle->ofmblock;
-        handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
-        handle->blocksofm_lp = handle->desc.C / handle->ofmblock;
-      } else {
-        /* this is FP32 */
-        handle->blocksifm = handle->desc.C / handle->ifmblock;
-        handle->blocksofm = handle->desc.C / handle->ofmblock;
-        handle->blocksifm_lp = handle->blocksifm;
-        handle->blocksofm_lp = handle->blocksofm;
-      }
+      handle->blocksifm = handle->desc.C / handle->ifmblock;
+      handle->blocksofm = handle->desc.C / handle->ofmblock;
       /* setting ofh and ofw */
-
       handle->ofh = (handle->desc.H + 2 * handle->desc.pad_h - handle->desc.R) / handle->desc.u + 1;
       handle->ofw = (handle->desc.W + 2 * handle->desc.pad_w - handle->desc.S) / handle->desc.v + 1;
       /* create barrier */
@@ -182,30 +170,27 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_pooling_create_tensor_dat
               layout->datatype = LIBXSMM_DNN_DATATYPE_BF16;
             }
 
-            layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(6*sizeof(libxsmm_dnn_tensor_dimtype));
-            layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
+            layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(5*sizeof(libxsmm_dnn_tensor_dimtype));
+            layout->dim_size = (unsigned int*) malloc(5*sizeof(unsigned int));
             if (0 != layout->dim_type && 0 != layout->dim_size) {
-              layout->num_dims = 6;
+              layout->num_dims = 5;
               layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-              layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-              layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
-              layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
-              layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-              layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
+              layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
+              layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
+              layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
+              layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
               if ( (type == LIBXSMM_DNN_REGULAR_INPUT)     || (type == LIBXSMM_DNN_GRADIENT_INPUT)     || (type == LIBXSMM_DNN_INPUT)    ) {
-                layout->dim_size[0] = handle->fm_lp_block;
-                layout->dim_size[1] = handle->ifmblock;
-                layout->dim_size[2] = handle->desc.W + (2*handle->desc.pad_w_in);
-                layout->dim_size[3] = handle->desc.H + (2*handle->desc.pad_h_in);
-                layout->dim_size[4] = handle->blocksifm;
-                layout->dim_size[5] = handle->desc.N;
+                layout->dim_size[0] = handle->ifmblock;
+                layout->dim_size[1] = handle->desc.W + (2*handle->desc.pad_w_in);
+                layout->dim_size[2] = handle->desc.H + (2*handle->desc.pad_h_in);
+                layout->dim_size[3] = handle->blocksifm;
+                layout->dim_size[4] = handle->desc.N;
               } else if ( (type == LIBXSMM_DNN_REGULAR_OUTPUT) || (type == LIBXSMM_DNN_GRADIENT_OUTPUT) || (type == LIBXSMM_DNN_OUTPUT) ) {
-                layout->dim_size[0] = handle->fm_lp_block;
-                layout->dim_size[1] = handle->ofmblock_lp;
-                layout->dim_size[2] = (handle->ofw) + (2*handle->desc.pad_w_out);
-                layout->dim_size[3] = (handle->ofh) + (2*handle->desc.pad_h_out);
-                layout->dim_size[4] = handle->blocksofm;
-                layout->dim_size[5] = handle->desc.N;
+                layout->dim_size[0] = handle->ofmblock;
+                layout->dim_size[1] = (handle->ofw) + (2*handle->desc.pad_w_out);
+                layout->dim_size[2] = (handle->ofh) + (2*handle->desc.pad_h_out);
+                layout->dim_size[3] = handle->blocksofm;
+                layout->dim_size[4] = handle->desc.N;
               } else if ( (type == LIBXSMM_DNN_POOLING_MASK) ) {
                 layout->dim_size[0] = handle->ofmblock;
                 layout->dim_size[1] = handle->ofw;

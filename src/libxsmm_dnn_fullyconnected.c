@@ -80,50 +80,34 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
         /* we need to compute the memory layout given the */
         if ( (handle->desc.C % 16 == 0) && (handle->desc.K % 16 == 0) ) {
           if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
-             *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K,
-                                                          &(handle->ifmblock), &(handle->ifmblock_hp),
-                                                          &(handle->ofmblock), &(handle->ofmblock_lp),
-                                                          &(handle->fm_lp_block), LIBXSMM_DNN_DATATYPE_F32, LIBXSMM_DNN_DATATYPE_F32, &noarch );
+            *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K,
+                                                          &(handle->ifmblock), &(handle->ofmblock), &(handle->fm_lp_block),
+                                                          LIBXSMM_DNN_DATATYPE_F32, LIBXSMM_DNN_DATATYPE_F32 );
           } else if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
             *status = libxsmm_dnn_get_feature_map_blocks( handle->desc.C, handle->desc.K,
-                                                          &(handle->ifmblock), &(handle->ifmblock_hp),
-                                                          &(handle->ofmblock), &(handle->ofmblock_lp),
-                                                          &(handle->fm_lp_block), handle->desc.datatype_in, handle->desc.datatype_out, &noarch );
+                                                          &(handle->ifmblock), &(handle->ofmblock), &(handle->fm_lp_block),
+                                                          handle->desc.datatype_in, handle->desc.datatype_out );
           } else {
             /* should not happen, not implemented */
           }
         } else if ( (handle->desc.C % 64 == 0) && (handle->desc.K == 1000) ) {
           /* @TODO this a hack for the last FC layer */
           handle->ifmblock = 64;
-          handle->ifmblock_hp = 64;
           handle->fm_lp_block = 1;
           handle->ofmblock = 10;
-          handle->ofmblock_lp = 10;
         } else if ( (handle->desc.C % 16 == 0) && (handle->desc.K == 1000) ) {
           /* @TODO this a hack for the last FC layer */
           handle->ifmblock = 16;
-          handle->ifmblock_hp = 16;
           handle->fm_lp_block = 1;
           handle->ofmblock = 10;
-          handle->ofmblock_lp = 10;
         } else {
           *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
           free( handle );
           return 0;
         }
         /* compute the outer blocks */
-        if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
-          handle->blocksifm = handle->desc.C / handle->ifmblock_hp;
-          handle->blocksofm = handle->desc.K / handle->ofmblock;
-          handle->blocksifm_lp = handle->desc.C / handle->ifmblock_hp;
-          handle->blocksofm_lp = handle->desc.K / handle->ofmblock;
-        } else {
-          /* this is FP32 */
-          handle->blocksifm = handle->desc.C / handle->ifmblock;
-          handle->blocksofm = handle->desc.K / handle->ofmblock;
-          handle->blocksifm_lp = handle->blocksifm;
-          handle->blocksofm_lp = handle->blocksofm;
-        }
+        handle->blocksifm = handle->desc.C / handle->ifmblock;
+        handle->blocksofm = handle->desc.K / handle->ofmblock;
       }
       /* create barrier */
       handle->barrier = libxsmm_barrier_create(handle->desc.threads, 1);
@@ -249,22 +233,20 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fullyconnected_create_ten
           } else if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32) ) {
             if ( (type == LIBXSMM_DNN_REGULAR_INPUT) || (type == LIBXSMM_DNN_GRADIENT_INPUT) || (type == LIBXSMM_DNN_INPUT) ) {
               layout->datatype = handle->desc.datatype_in;
-              layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(6*sizeof(libxsmm_dnn_tensor_dimtype));
-              layout->dim_size = (unsigned int*) malloc(6*sizeof(unsigned int));
+              layout->dim_type = (libxsmm_dnn_tensor_dimtype*) malloc(5*sizeof(libxsmm_dnn_tensor_dimtype));
+              layout->dim_size = (unsigned int*) malloc(5*sizeof(unsigned int));
               if (0 != layout->dim_type && 0 != layout->dim_size) {
-                layout->num_dims = 6;
+                layout->num_dims = 5;
                 layout->dim_type[0] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
-                layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
-                layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
-                layout->dim_type[5] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
-                layout->dim_size[0] = handle->fm_lp_block;
-                layout->dim_size[1] = handle->ifmblock;
+                layout->dim_type[1] = LIBXSMM_DNN_TENSOR_DIMTYPE_W;
+                layout->dim_type[2] = LIBXSMM_DNN_TENSOR_DIMTYPE_H;
+                layout->dim_type[3] = LIBXSMM_DNN_TENSOR_DIMTYPE_C;
+                layout->dim_type[4] = LIBXSMM_DNN_TENSOR_DIMTYPE_N;
+                layout->dim_size[0] = handle->ifmblock;
+                layout->dim_size[1] = 1;
                 layout->dim_size[2] = 1;
-                layout->dim_size[3] = 1;
-                layout->dim_size[4] = handle->blocksifm;
-                layout->dim_size[5] = handle->desc.N;
+                layout->dim_size[3] = handle->blocksifm;
+                layout->dim_size[4] = handle->desc.N;
               } else {
                 free(layout->dim_type);
                 free(layout->dim_size);
@@ -435,7 +417,7 @@ LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_fullyconnected_create_ten
               layout->dim_type[6] = LIBXSMM_DNN_TENSOR_DIMTYPE_K;
               layout->dim_size[0] = handle->fm_lp_block;
               layout->dim_size[1] = handle->ofmblock;
-              layout->dim_size[2] = handle->ifmblock;
+              layout->dim_size[2] = handle->ifmblock/handle->fm_lp_block;
               layout->dim_size[3] = 1;
               layout->dim_size[4] = 1;
               layout->dim_size[5] = handle->blocksifm;

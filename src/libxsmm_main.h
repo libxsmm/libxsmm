@@ -553,14 +553,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm {
   libxsmm_dnn_tensor* relumask;       /* relumask */
   libxsmm_barrier* barrier;           /* barrier */
   int ifmblock;
-  int ifmblock_hp;
   int ofmblock;
-  int ofmblock_lp;
   int blocksifm;
   int blocksofm;
-  int blocksifm_lp;  /* not used */
-  int blocksofm_lp;  /* not used */
-  int fm_lp_block;
   size_t scratch_size;
   void* scratch;
 };
@@ -575,13 +570,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   libxsmm_dnn_tensor* grad_filter;    /* grad filter tensor */
   libxsmm_barrier* barrier;           /* barrier */
   int ifmblock;
-  int ifmblock_hp;
   int ofmblock;
-  int ofmblock_lp;
   int blocksifm;
   int blocksofm;
-  int blocksifm_lp;  /* not used */
-  int blocksofm_lp;  /* not used */
   int fm_lp_block;
   int bn;
   int bk;
@@ -601,14 +592,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
   libxsmm_dnn_tensor* mask;           /* elementwise tensor */
   libxsmm_barrier* barrier;           /* barrier */
   int ifmblock;
-  int ifmblock_hp;
   int ofmblock;
-  int ofmblock_lp;
   int blocksifm;
   int blocksofm;
-  int blocksifm_lp;  /* not used */
-  int blocksofm_lp;  /* not used */
-  int fm_lp_block;
   int ofh;
   int ofw;
   size_t scratch_size;

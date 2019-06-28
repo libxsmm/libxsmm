@@ -49,7 +49,7 @@ const int ifhp = ifh + 2*iph;
 const int ifwp = ifw + 2*ipw;
 /* here we assume that input and output blocking is similar */
 const int nBlocksFm = handle->blocksifm;
-const int nFmBlock = handle->fm_lp_block*handle->ifmblock;
+const int nFmBlock = handle->ifmblock;
 
 /* computing first logical thread */
 const int ltid = tid - start_thread;
