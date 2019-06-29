@@ -2400,6 +2400,7 @@ LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd libxsmm_bsmmdispatch_reducebat
   LIBXSMM_UNUSED( alpha );
   LIBXSMM_UNUSED( beta );
   LIBXSMM_UNUSED( flags );
+  LIBXSMM_UNUSED( prefetch );
   return 0;
 #endif
 }
