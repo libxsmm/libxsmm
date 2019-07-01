@@ -2319,120 +2319,80 @@ LIBXSMM_API libxsmm_bmmfunction_reducebatch_offs libxsmm_bmmdispatch_reducebatch
 LIBXSMM_API libxsmm_dmmfunction_reducebatch_strd libxsmm_dmmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const double* alpha, const double* beta, const int* flags, const int* prefetch)
 {
-#if 0
   const int gemm_flags = (NULL == flags ? LIBXSMM_FLAGS : *flags);
   libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor *const desc = libxsmm_dgemm_descriptor_init(&blob,
+  /*const*/libxsmm_gemm_descriptor* desc = libxsmm_dgemm_descriptor_init(&blob,
     m, n, k, NULL != lda ? *lda : m, NULL != ldb ? *ldb : k, NULL != ldc ? *ldc : m,
     NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
-  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  desc->c1 = (unsigned long long)stride_a;
+  desc->c2 = (unsigned long long)stride_b;
+  /*const*/ libxsmm_xmmfunction result;
+  if ( (stride_a < 0) || (stride_b < 0) ) {
+    return NULL;
+  }
+  result = libxsmm_xmmdispatch(desc);
   return result.dmrs;
-#else
-  LIBXSMM_UNUSED( m );
-  LIBXSMM_UNUSED( n );
-  LIBXSMM_UNUSED( k );
-  LIBXSMM_UNUSED( stride_a );
-  LIBXSMM_UNUSED( stride_b );
-  LIBXSMM_UNUSED( lda );
-  LIBXSMM_UNUSED( ldb );
-  LIBXSMM_UNUSED( ldc );
-  LIBXSMM_UNUSED( alpha );
-  LIBXSMM_UNUSED( beta );
-  LIBXSMM_UNUSED( flags );
-  LIBXSMM_UNUSED( prefetch );
-  return 0;
-#endif
 }
 
 
 LIBXSMM_API libxsmm_smmfunction_reducebatch_strd libxsmm_smmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch)
 {
-#if 0
   const int gemm_flags = (NULL == flags ? LIBXSMM_FLAGS : *flags);
   libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor *const desc = libxsmm_sgemm_descriptor_init(&blob,
+  /*const*/ libxsmm_gemm_descriptor* desc = libxsmm_sgemm_descriptor_init(&blob,
     m, n, k, NULL != lda ? *lda : m, NULL != ldb ? *ldb : k, NULL != ldc ? *ldc : m,
     NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
-  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  desc->c1 = (unsigned long long)stride_a;
+  desc->c2 = (unsigned long long)stride_b;
+  /*const*/ libxsmm_xmmfunction result;
+  if ( (stride_a < 0) || (stride_b < 0) ) {
+    return NULL;
+  }
+  result = libxsmm_xmmdispatch(desc);
   return result.smrs;
-#else
-  LIBXSMM_UNUSED( m );
-  LIBXSMM_UNUSED( n );
-  LIBXSMM_UNUSED( k );
-  LIBXSMM_UNUSED( stride_a );
-  LIBXSMM_UNUSED( stride_b );
-  LIBXSMM_UNUSED( lda );
-  LIBXSMM_UNUSED( ldb );
-  LIBXSMM_UNUSED( ldc );
-  LIBXSMM_UNUSED( alpha );
-  LIBXSMM_UNUSED( beta );
-  LIBXSMM_UNUSED( flags );
-  LIBXSMM_UNUSED( prefetch );
-  return 0;
-#endif
 }
 
 
 LIBXSMM_API libxsmm_bsmmfunction_reducebatch_strd libxsmm_bsmmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch)
 {
-#if 0
   const int gemm_flags = (NULL == flags ? LIBXSMM_FLAGS : *flags);
   libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor *const desc = libxsmm_bsgemm_descriptor_init(&blob,
+  /*const*/ libxsmm_gemm_descriptor* desc = libxsmm_bsgemm_descriptor_init(&blob,
     m, n, k, NULL != lda ? *lda : m, NULL != ldb ? *ldb : k, NULL != ldc ? *ldc : m,
     NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
-  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  desc->c1 = (unsigned long long)stride_a;
+  desc->c2 = (unsigned long long)stride_b;
+  /*const*/ libxsmm_xmmfunction result;
+  if ( (stride_a < 0) || (stride_b < 0) ) {
+    return NULL;
+  }
+  result = libxsmm_xmmdispatch(desc);
   return result.bsmrs;
-#else
-  LIBXSMM_UNUSED( m );
-  LIBXSMM_UNUSED( n );
-  LIBXSMM_UNUSED( k );
-  LIBXSMM_UNUSED( stride_a );
-  LIBXSMM_UNUSED( stride_b );
-  LIBXSMM_UNUSED( lda );
-  LIBXSMM_UNUSED( ldb );
-  LIBXSMM_UNUSED( ldc );
-  LIBXSMM_UNUSED( alpha );
-  LIBXSMM_UNUSED( beta );
-  LIBXSMM_UNUSED( flags );
-  LIBXSMM_UNUSED( prefetch );
-  return 0;
-#endif
 }
 
 
 LIBXSMM_API libxsmm_bmmfunction_reducebatch_strd libxsmm_bmmdispatch_reducebatch_strd(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, libxsmm_blasint stride_a, libxsmm_blasint stride_b,
   const libxsmm_blasint* lda, const libxsmm_blasint* ldb, const libxsmm_blasint* ldc, const float* alpha, const float* beta, const int* flags, const int* prefetch)
 {
-#if 0
   const int gemm_flags = (NULL == flags ? LIBXSMM_FLAGS : *flags);
   libxsmm_descriptor_blob blob;
-  const libxsmm_gemm_descriptor *const desc = libxsmm_bgemm_descriptor_init(&blob,
+  /*const*/ libxsmm_gemm_descriptor* desc = libxsmm_bgemm_descriptor_init(&blob,
     m, n, k, NULL != lda ? *lda : m, NULL != ldb ? *ldb : k, NULL != ldc ? *ldc : m,
     NULL != alpha ? *alpha : LIBXSMM_ALPHA, NULL != beta ? *beta : LIBXSMM_BETA,
     gemm_flags | LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE, libxsmm_get_gemm_xprefetch(prefetch));
-  /*const*/ libxsmm_xmmfunction result = libxsmm_xmmdispatch(desc);
+  desc->c1 = (unsigned long long)stride_a;
+  desc->c2 = (unsigned long long)stride_b;
+  /*const*/ libxsmm_xmmfunction result;
+  if ( (stride_a < 0) || (stride_b < 0) ) {
+    return NULL;
+  }
+  result = libxsmm_xmmdispatch(desc);
   return result.bmrs;
-#else
-  LIBXSMM_UNUSED( m );
-  LIBXSMM_UNUSED( n );
-  LIBXSMM_UNUSED( k );
-  LIBXSMM_UNUSED( stride_a );
-  LIBXSMM_UNUSED( stride_b );
-  LIBXSMM_UNUSED( lda );
-  LIBXSMM_UNUSED( ldb );
-  LIBXSMM_UNUSED( ldc );
-  LIBXSMM_UNUSED( alpha );
-  LIBXSMM_UNUSED( beta );
-  LIBXSMM_UNUSED( flags );
-  LIBXSMM_UNUSED( prefetch );
-  return 0;
-#endif
 }
 
 
