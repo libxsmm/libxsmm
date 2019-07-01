@@ -80,8 +80,19 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     }
   }
 
+  /* we only support physical paddind in these days */
+  /* @TODO: add logical padding support */
+  if ( ( handle->desc.pad_h != handle->desc.pad_h_in )  ||
+       ( handle->desc.pad_w != handle->desc.pad_w_in )  ||
+       ( handle->desc.pad_h != handle->desc.pad_h_out ) ||
+       ( handle->desc.pad_w != handle->desc.pad_w_out )    ) {
+    status = LIBXSMM_DNN_ERR_INVALID_PADDING;
+    free( handle );
+    handle = 0;
+    return status;
+  }
+
   /* let's enable generic code path by default */
-  /* @TODO we need to do AVX512 vs. non AVX512 split */
   handle->use_fwd_generic = 1;
   handle->use_bwd_generic = 1;
   handle->use_upd_generic = 1;
