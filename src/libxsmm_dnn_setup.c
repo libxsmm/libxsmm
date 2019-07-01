@@ -809,9 +809,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->avoid_acc_load = libxsmm_dnn_setup_generic_avoid_acc_load(handle);
   handle->fwd_flags = libxsmm_dnn_setup_generic_init_fwd_gemm_flags(handle);
   handle->use_fallback_fwd_loops = libxsmm_dnn_setup_generic_fallback_loops_fwd(handle);
-  handle->code_fwd[0].xconv.sconv = 0;
-  handle->code_fwd[1].xconv.sconv = 0;
-  handle->code_fwd[2].xconv.sconv = 0;
+  handle->code_fwd[0].pmm = 0;
+  handle->code_fwd[1].pmm = 0;
+  handle->code_fwd[2].pmm = 0;
 
 #if 0
   /* Spit out FWD parameters that are selected...  */
@@ -859,9 +859,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   printf("Block oj = %d\n", handle->block_bwd_oj);
 #endif
 
-  handle->code_bwd[0].xconv.sconv = 0;
-  handle->code_bwd[1].xconv.sconv = 0;
-  handle->code_bwd[2].xconv.sconv = 0;
+  handle->code_bwd[0].pmm = 0;
+  handle->code_bwd[1].pmm = 0;
+  handle->code_bwd[2].pmm = 0;
   /* Transpose kernel used for filter transpose in bwd pass  */
   tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), 64, 16, 64);
   handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
@@ -898,8 +898,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   printf("Block upd ifm = %d\n", handle->block_upd_ifm);
 #endif
 
-  handle->code_upd[0].xconv.sconv = 0;
-  handle->code_upd[1].xconv.sconv = 0;
+  handle->code_upd[0].pmm = 0;
+  handle->code_upd[1].pmm = 0;
 
   /*****************************/
   /* Barrier and scratch setup */
