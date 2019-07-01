@@ -32,7 +32,7 @@
 #include <libxsmm_intrinsics_x86.h>
 #include "libxsmm_main.h"
 #include <libxsmm.h>
-#define ADDRESS_BRGEMM
+#define STRIDE_BRGEMM
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -124,13 +124,13 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_f32_f32(libxsmm_dn
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #ifdef ADDRESS_BRGEMM
-    libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+    libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_fwd.xgemm.smra;
 #endif
 #ifdef OFFSET_BRGEMM
-    libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = libxsmm_smmdispatch_reducebatch_offs(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+    libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_fwd.xgemm.smro;
 #endif
 #ifdef STRIDE_BRGEMM
-    libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = libxsmm_smmdispatch_reducebatch_strd(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(element_filter_type), handle->bk*handle->bn*sizeof(element_input_type), &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+    libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.smrs;
 #endif
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c"
   } else {
@@ -255,13 +255,13 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #ifdef ADDRESS_BRGEMM
-        libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = libxsmm_smmdispatch_reducebatch_addr(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+        libxsmm_smmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_fwd.xgemm.smra;
 #endif
 #ifdef OFFSET_BRGEMM
-        libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = libxsmm_smmdispatch_reducebatch_offs(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+        libxsmm_smmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_fwd.xgemm.smro;
 #endif
 #ifdef STRIDE_BRGEMM
-    libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = libxsmm_smmdispatch_reducebatch_strd(handle->bk, handle->bn, handle->bc, handle->bk*handle->bc*sizeof(element_filter_type), handle->bk*handle->bn*sizeof(element_input_type), &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
+        libxsmm_smmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.smrs;
 #endif
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic.tpl.c"
       } else {
