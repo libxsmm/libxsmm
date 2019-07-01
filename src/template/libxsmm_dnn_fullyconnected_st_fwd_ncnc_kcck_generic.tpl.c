@@ -89,6 +89,11 @@ for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
                       &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
                       &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1,  0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks, A_offsets, B_offsets);
 #endif
+#ifdef STRIDE_BRGEMM
+  batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, handle->bc, handle->bk),
+                      &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+                      &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1,  0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
+#endif
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
