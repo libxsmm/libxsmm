@@ -493,14 +493,6 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const char*             context,
                            int emit_message );
 
-LIBXSMM_API_INTERN
-void libxsmm_convfunction_signature_fp32( libxsmm_generated_code*         io_generated_code,
-                                          const char*                     i_routine_name     );
-
-LIBXSMM_API_INTERN
-void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_generated_code,
-                                           const char*                     i_routine_name     );
-
 LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   unsigned int i_size, unsigned int i_max_block,
   unsigned int* o_range_1, unsigned int* o_block_1,

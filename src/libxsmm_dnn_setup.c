@@ -120,24 +120,9 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
   handle->scratch3_size = (size_t)handle->desc.N * handle->blocksifm * handle->ifmblock * handle->ifhp * ((size_t)handle->ifwp + 8)
     * libxsmm_dnn_typesize(handle->datatype_in);
 
-  /* minibatch parallel execution of weight update kernel */
-  if ( ((handle->blocksifm * handle->blocksofm) < handle->desc.threads) || ( handle->use_upd_generic == 0 ) ) {
-    handle->upd_use_thread_fil = 1;
-    handle->scratch4 = 0;
-    handle->scratch4_size = (size_t)2 * handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_out);
-    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
-      /* Allocate twice as much since the out datatype is BF16 while the intermediate output is in float  */
-      handle->scratch4_size = 2 * handle->scratch4_size;
-    }
-    /* enable external reduce of filter scratch */
-    if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) > 0 ) {
-      handle->upd_use_external_reduce = 1;
-    }
-  } else {
-    handle->scratch4 = 0;
-    handle->scratch4_size = 0;
-    handle->upd_use_thread_fil = 0;
-  }
+  handle->scratch4 = 0;
+  handle->scratch4_size = 0;
+  handle->upd_use_thread_fil = 0;
 
   /* Allocate scratch for additional output transpose */
   if (handle->use_lp_kernel == 1) {
@@ -809,9 +794,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   handle->avoid_acc_load = libxsmm_dnn_setup_generic_avoid_acc_load(handle);
   handle->fwd_flags = libxsmm_dnn_setup_generic_init_fwd_gemm_flags(handle);
   handle->use_fallback_fwd_loops = libxsmm_dnn_setup_generic_fallback_loops_fwd(handle);
-  handle->code_fwd[0].xconv.sconv = 0;
-  handle->code_fwd[1].xconv.sconv = 0;
-  handle->code_fwd[2].xconv.sconv = 0;
+  handle->code_fwd[0].pmm = 0;
+  handle->code_fwd[1].pmm = 0;
+  handle->code_fwd[2].pmm = 0;
 
 #if 0
   /* Spit out FWD parameters that are selected...  */
@@ -859,9 +844,9 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   printf("Block oj = %d\n", handle->block_bwd_oj);
 #endif
 
-  handle->code_bwd[0].xconv.sconv = 0;
-  handle->code_bwd[1].xconv.sconv = 0;
-  handle->code_bwd[2].xconv.sconv = 0;
+  handle->code_bwd[0].pmm = 0;
+  handle->code_bwd[1].pmm = 0;
+  handle->code_bwd[2].pmm = 0;
   /* Transpose kernel used for filter transpose in bwd pass  */
   tr_desc = libxsmm_trans_descriptor_init(&blob, sizeof(float), 64, 16, 64);
   handle->tr_kernel = libxsmm_dispatch_trans(tr_desc);
@@ -898,8 +883,8 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_laye
   printf("Block upd ifm = %d\n", handle->block_upd_ifm);
 #endif
 
-  handle->code_upd[0].xconv.sconv = 0;
-  handle->code_upd[1].xconv.sconv = 0;
+  handle->code_upd[0].pmm = 0;
+  handle->code_upd[1].pmm = 0;
 
   /*****************************/
   /* Barrier and scratch setup */
