@@ -92,35 +92,30 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
     return status;
   }
 
-  /* let's enable generic code path by default */
-  handle->use_fwd_generic = 1;
-  handle->use_bwd_generic = 1;
-  handle->use_upd_generic = 1;
-
   status = libxsmm_dnn_setup_generic(handle);
 
   {
-    if (0 != handle->use_fwd_generic || 0 != handle->use_bwd_generic || 0 != handle->use_upd_generic) {
+    {
       const size_t padded_h = ((size_t)2 * handle->desc.pad_h) + handle->desc.H, padded_w = ((size_t)2 * handle->desc.pad_w) + handle->desc.W;
       const size_t size5_tensor = padded_h * padded_w * handle->ifmblock * libxsmm_dnn_typesize(handle->datatype_in);
       const size_t size5 = LIBXSMM_UP2(size5_tensor, LIBXSMM_CACHELINE) * handle->desc.threads;
       if (handle->max_scratch5_size < size5) handle->max_scratch5_size = size5;
+      handle->scratch5 = 0;
     }
-    handle->scratch5 = 0;
     {
       const size_t size6a = (size_t)handle->ofmblock * handle->ofw * handle->ofh * sizeof(float);
       const size_t size6b = (size_t)handle->ifmblock * handle->fm_lp_block *  handle->desc.W * handle->desc.H * sizeof(float);
       const size_t size6 = ( size6a > size6b ) ? size6a : size6b;
       handle->scratch6_size = LIBXSMM_MAX(LIBXSMM_UP2(size6, LIBXSMM_CACHELINE) * handle->desc.threads, handle->scratch6_size);
     }
-    if (0 != handle->use_upd_generic) {
+    {
       const size_t output_typesize = libxsmm_dnn_typesize(handle->datatype_out);
       const size_t size6_tensor = (size_t)handle->ofhp * handle->ofwp * handle->ofmblock * output_typesize;
       const size_t size6 = LIBXSMM_UP2(size6_tensor, LIBXSMM_CACHELINE) * handle->desc.threads;
       if (handle->scratch6_size < size6) handle->scratch6_size = size6;
     }
     handle->scratch6 = 0;
-    if (0 != handle->use_upd_generic) {
+    {
       /* FIXME: currently filter data-type is always smaller/equal output type */
       const size_t filter_typesize = libxsmm_dnn_typesize(handle->datatype_out);
       const size_t size7 = (size_t)handle->desc.R * handle->desc.S * handle->desc.C * handle->desc.K * filter_typesize + handle->ifmblock * handle->ofmblock * sizeof(float);
@@ -133,39 +128,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_dir
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_free_structs_code_conv_handle( const libxsmm_dnn_layer* handle ) {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-
-  if (0 != handle) {
-    /* deallocate data components; not an error to deallocate a NULL-pointer
-       deallocate code known to be not registered; no index attached
-       do not use libxsmm_release_kernel here! */
-
-    /* deallocate forward pass */
-    if ( handle->use_fwd_generic == 0 ) {
-      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-        libxsmm_free(handle->code_fwd[0].pmm);
-      }
-      libxsmm_free(handle->code_fwd[1].pmm);
-      libxsmm_free(handle->code_fwd[2].pmm);
-    }
-
-    /* deallocate backward pass */
-    if ( handle->use_bwd_generic == 0 ) {
-      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-        libxsmm_free(handle->code_bwd[0].pmm);
-      }
-      libxsmm_free(handle->code_bwd[1].pmm);
-      libxsmm_free(handle->code_bwd[2].pmm);
-    }
-
-    /* deallocate update pass */
-    if ( handle->use_upd_generic == 0 ) {
-      if (handle->custom_format_type != LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2) {
-        libxsmm_free(handle->code_upd[0].pmm);
-      }
-      libxsmm_free(handle->code_upd[1].pmm);
-    }
-  }
-
   return status;
 }
 

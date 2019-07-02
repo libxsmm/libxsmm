@@ -120,24 +120,9 @@ LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle ) {
   handle->scratch3_size = (size_t)handle->desc.N * handle->blocksifm * handle->ifmblock * handle->ifhp * ((size_t)handle->ifwp + 8)
     * libxsmm_dnn_typesize(handle->datatype_in);
 
-  /* minibatch parallel execution of weight update kernel */
-  if ( ((handle->blocksifm * handle->blocksofm) < handle->desc.threads) || ( handle->use_upd_generic == 0 ) ) {
-    handle->upd_use_thread_fil = 1;
-    handle->scratch4 = 0;
-    handle->scratch4_size = (size_t)2 * handle->desc.threads * handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S * libxsmm_dnn_typesize(handle->datatype_out);
-    if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
-      /* Allocate twice as much since the out datatype is BF16 while the intermediate output is in float  */
-      handle->scratch4_size = 2 * handle->scratch4_size;
-    }
-    /* enable external reduce of filter scratch */
-    if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_UPD_NO_FILTER_REDUCE) > 0 ) {
-      handle->upd_use_external_reduce = 1;
-    }
-  } else {
-    handle->scratch4 = 0;
-    handle->scratch4_size = 0;
-    handle->upd_use_thread_fil = 0;
-  }
+  handle->scratch4 = 0;
+  handle->scratch4_size = 0;
+  handle->upd_use_thread_fil = 0;
 
   /* Allocate scratch for additional output transpose */
   if (handle->use_lp_kernel == 1) {
