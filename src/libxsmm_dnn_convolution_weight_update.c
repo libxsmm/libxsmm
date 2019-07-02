@@ -98,7 +98,9 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dn
   typedef libxsmm_bfloat16 element_filter_type;
   typedef libxsmm_bsmmfunction gemm_function;
   typedef libxsmm_bsmmfunction_reducebatch_addr gemm_br_function;
+#define LIBXSMM_DNN_CONVOLUTION_UPD_AVX512_CPX
 # include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic_bf16.tpl.c"
+#undef LIBXSMM_DNN_CONVOLUTION_UPD_AVX512_CPX
 #else /* should not happen */
   LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
   status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
