@@ -220,7 +220,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
             3, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
 
         /* In case of batch reduce try to prefetch a few more columns ahead...  */
-        if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
+        if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
           unsigned int pf_a_cols_ahead = 16;
           if (i_xgemm_desc->lda == 1024) {
             pf_a_cols_ahead = 4;
@@ -462,7 +462,7 @@ void libxsmm_generator_gemm_avx512_microkernel_nofsdbcst( libxsmm_generated_code
               i_n_blocking, ( l_m == (l_m_blocking - 1) ) ? i_micro_kernel_config->use_masking_a_c : 0, 1, 0 );
 
           /* In case of batch reduce try to prefetch a few more columns ahead...  */
-          if (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) {
+          if ((i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_OFFSET) || (i_xgemm_desc->flags & LIBXSMM_GEMM_FLAG_BATCH_REDUCE_STRIDE)) {
             unsigned int pf_a_cols_ahead = 16;
             if (i_xgemm_desc->lda == 1024) {
               pf_a_cols_ahead = 4;

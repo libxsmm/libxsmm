@@ -28,7 +28,6 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 /* size variables, all const */
 /* here we assume that input and output blocking is similar */
 const int nBlocksIFm = handle->desc.C / handle->bc;
@@ -53,9 +52,23 @@ LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)han
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc, handle->bk);
 
+#ifdef ADDRESS_BRGEMM
 const element_filter_type *A_array[1024];
 const element_input_type  *B_array[1024];
+#endif
+#ifdef OFFSET_BRGEMM
+unsigned long long  A_offsets[1024];
+unsigned long long  B_offsets[1024];
+#endif
 unsigned long long  blocks = nBlocksIFm;
+
+#ifdef OFFSET_BRGEMM
+/* Hoist here the offset preparation */
+for ( ifm1 = 0; ifm1 < nBlocksIFm; ++ifm1 ) {
+  A_offsets[ifm1] = ifm1 * handle->bc * handle->bk * sizeof(element_filter_type);
+  B_offsets[ifm1] = ifm1 * handle->bn * handle->bk * sizeof(element_input_type);
+}
+#endif
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -63,14 +76,24 @@ libxsmm_barrier_init(handle->barrier, ltid);
 for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
   int mb1  = mb1ofm1/nBlocksOFm;
   int ofm1 = mb1ofm1%nBlocksOFm;
-
+#ifdef ADDRESS_BRGEMM
   /* prepare arguments for batch-reduce call  */
   for ( ifm1 = 0; ifm1 < nBlocksIFm; ++ifm1 ) {
     A_array[ifm1] = &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm1, 0, 0, nBlocksIFm, handle->bc, handle->bk);
     B_array[ifm1] = &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1,  0, 0, nBlocksIFm, handle->bn, handle->bc);
   }
   batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1,  0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
-
+#endif
+#ifdef OFFSET_BRGEMM
+  batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, handle->bc, handle->bk),
+                      &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+                      &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1,  0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks, A_offsets, B_offsets);
+#endif
+#ifdef STRIDE_BRGEMM
+  batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0, 0, 0, nBlocksIFm, handle->bc, handle->bk),
+                      &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+                      &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1,  0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
+#endif
 }
 
 libxsmm_barrier_wait(handle->barrier, ltid);
