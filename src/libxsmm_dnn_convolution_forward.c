@@ -101,12 +101,13 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16_emu(libxsm
   return status;
 }
 
-/* @TODO: this should be CPX flags */
-LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+
+#if defined(LIBXSMM_INTRINSICS_AVX512_CPX)
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CPX)
 libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-#if defined(LIBXSMM_INTRINSICS_AVX512_CORE) /*__AVX512F__,__AVX512BW__,__AVX512DQ__*/
+#if defined(LIBXSMM_INTRINSICS_AVX512_CPX) /*__AVX512F__,__AVX512BW__,__AVX512DQ__,__AVX512BF16__*/
   const libxsmm_blasint ldx = (handle->pack_input == 1) ? (libxsmm_blasint)handle->ifmblock : (libxsmm_blasint)handle->desc.v*handle->ifmblock;
   const libxsmm_blasint ldA = handle->ofmblock;
   const libxsmm_blasint ldC = handle->ofmblock;
@@ -128,6 +129,32 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16(libxsmm_dn
 #endif
   return status;
 }
+#else
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_fwd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE) /*__AVX512F__,__AVX512BW__,__AVX512DQ__*/
+  const libxsmm_blasint ldx = (handle->pack_input == 1) ? (libxsmm_blasint)handle->ifmblock : (libxsmm_blasint)handle->desc.v*handle->ifmblock;
+  const libxsmm_blasint ldA = handle->ofmblock;
+  const libxsmm_blasint ldC = handle->ofmblock;
+  const float  beta = (handle->avoid_acc_load) ? 0.0 : 1.0;
+  typedef libxsmm_bfloat16 element_input_type;
+  typedef libxsmm_bfloat16 element_output_type;
+  typedef libxsmm_bfloat16 element_filter_type;
+  typedef libxsmm_bsmmfunction_reducebatch_addr gemm_br_function;
+  int l_flags = ( LIBXSMM_GEMM_FLAGS('N', 'N') ) | handle->fwd_flags;
+  /* let's do a ofmblock x ofw_rb x ifmblock GEMM :-) or in other words M=nbOfm, N=ofw, K=nbIfm (col-major) */
+  gemm_br_function br_gemm_kernel = libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->fwd_ofh_rb*handle->fwd_ofw_rb, handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+  gemm_br_function br_gemm_kernel2 = libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->fwd_ofh_rb*(handle->fwd_ofw_rb-1), handle->ifmblock, &ldA, &ldx, &ldC, NULL, &beta, &l_flags, NULL);
+# include "template/libxsmm_dnn_convolve_st_fwd_custom_custom_generic_bf16.tpl.c"
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+#endif
 
 
 #if 0

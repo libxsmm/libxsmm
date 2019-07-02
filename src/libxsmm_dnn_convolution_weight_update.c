@@ -87,12 +87,12 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16_emu(libxsm
 }
 
 
-/* @TODO: we need to guard this by CPX */
+#if defined(LIBXSMM_INTRINSICS_AVX512_CPX)
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
 libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-#if defined(LIBXSMM_INTRINSICS_AVX512_CORE) /*__AVX512F__,__AVX512BW__,__AVX512DQ__*/
+#if defined(LIBXSMM_INTRINSICS_AVX512_CPX) /*__AVX512F__,__AVX512BW__,__AVX512DQ__,__AVX512BF16__*/
   typedef libxsmm_bfloat16 element_input_type;
   typedef libxsmm_bfloat16 element_output_type;
   typedef libxsmm_bfloat16 element_filter_type;
@@ -107,6 +107,25 @@ libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dn
 #endif
   return status;
 }
+#else
+LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE) /*__AVX512F__,__AVX512BW__,__AVX512DQ__*/
+  typedef libxsmm_bfloat16 element_input_type;
+  typedef libxsmm_bfloat16 element_output_type;
+  typedef libxsmm_bfloat16 element_filter_type;
+  typedef libxsmm_bsmmfunction gemm_function;
+  typedef libxsmm_bsmmfunction_reducebatch_addr gemm_br_function;
+# include "template/libxsmm_dnn_convolve_st_upd_custom_custom_generic_bf16.tpl.c"
+#else /* should not happen */
+  LIBXSMM_UNUSED(handle); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+  status = LIBXSMM_DNN_ERR_UNSUPPORTED_ARCH;
+#endif
+  return status;
+}
+#endif
 
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid)
