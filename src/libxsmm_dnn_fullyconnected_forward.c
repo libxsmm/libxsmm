@@ -116,11 +116,6 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_f32_f32(libxsmm_dn
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
-  element_input_type alpha = (element_input_type)1;
-  element_input_type beta = (element_input_type)0;
-  libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
-  libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
-  libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #ifdef ADDRESS_BRGEMM
@@ -148,15 +143,10 @@ LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
 libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16(libxsmm_dnn_fullyconnected* handle, int start_thread, int tid)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-#if defined(LIBXSMM_INTRINSICS_AVX512) /*__AVX512F__*/
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE) /*__AVX512F__,__AVX512BW__,__AVX512DQ__*/
   typedef libxsmm_bfloat16 element_input_type;
   typedef libxsmm_bfloat16 element_output_type;
   typedef libxsmm_bfloat16 element_filter_type;
-  float alpha = (element_input_type)1;
-  float beta = (element_input_type)0;
-  libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
-  libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
-  libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
     libxsmm_bsmmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_fwd.xgemm.bsmra;
