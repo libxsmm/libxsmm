@@ -237,11 +237,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-      libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
-      libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
-      libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
-      element_input_type beta = (element_input_type)0;
-      element_input_type alpha = (element_input_type)1;
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
 #ifdef ADDRESS_BRGEMM

@@ -61,6 +61,9 @@ LIBXSMM_UNUSED( ifm1 );
 unsigned long long  A_offsets[1024];
 unsigned long long  B_offsets[1024];
 #endif
+#ifdef STRIDE_BRGEMM
+LIBXSMM_UNUSED( ifm1 );
+#endif
 unsigned long long  blocks = nBlocksIFm;
 
 #ifdef OFFSET_BRGEMM
