@@ -52,6 +52,7 @@ LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)han
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc, handle->bk);
 
+unsigned long long  blocks = nBlocksIFm;
 #ifdef ADDRESS_BRGEMM
 const element_filter_type *A_array[1024];
 const element_input_type  *B_array[1024];
@@ -64,7 +65,6 @@ unsigned long long  B_offsets[1024];
 #ifdef STRIDE_BRGEMM
 LIBXSMM_UNUSED( ifm1 );
 #endif
-unsigned long long  blocks = nBlocksIFm;
 
 #ifdef OFFSET_BRGEMM
 /* Hoist here the offset preparation */
