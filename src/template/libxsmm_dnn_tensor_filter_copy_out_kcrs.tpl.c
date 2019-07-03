@@ -38,7 +38,6 @@ int S = 0;
 int R = 0;
 int ifmb = 0;
 int ofmb = 0;
-int C = 0;
 /* low precision formatting */
 if ( tensor->layout->num_dims == 7 ) {
   lpb = tensor->layout->dim_size[0];
@@ -59,12 +58,10 @@ if ( tensor->layout->num_dims == 7 ) {
 } else {
   /* should not happen, @TODO throw ERR */
 }
-C = ifmb * bifm * lpb;
 
 {
   LIBXSMM_VLA_DECL(4, element_type, user_data, (element_type*)data, ifmb * bifm * lpb, R, S);
   LIBXSMM_VLA_DECL(7, const element_type, handle_data_1, (const element_type*)tensor->data, ifmb, R, S, bifm, bofm, lpb);
-  LIBXSMM_VLA_DECL(6, const element_type, handle_data_2, (const element_type*)tensor->data, ifmb, R, S, bifm, bofm);
 
   for (i1 = 0; i1 < ofmb; ++i1) {
     for (i2 = 0; i2 < ifmb; ++i2) {

@@ -38,7 +38,6 @@ int S = 0;
 int R = 0;
 int ifmb = 0;
 int ofmb = 0;
-int C = 0;
 /* low precision formatting */
 if ( tensor->layout->num_dims == 7 ) {
   lpb = tensor->layout->dim_size[0];
@@ -59,12 +58,10 @@ if ( tensor->layout->num_dims == 7 ) {
 } else {
   /* should not happen, @TODO throw ERR */
 }
-C = ifmb * bifm * lpb;
 
 /*printf("Layout of filters fil ofmb %i ifmb %i R %i S %i bifm %i bofm %i lpb %i \n", ofmb, ifmb, R, S, bifm, bofm, lpb);*/
 {
   LIBXSMM_VLA_DECL(7, element_type, handle_data_1, (element_type*)tensor->data, ifmb, R, S, bifm, bofm, lpb);
-  LIBXSMM_VLA_DECL(6, element_type, handle_data_2, (element_type*)tensor->data, ifmb, R, S, bifm, bofm);
   LIBXSMM_VLA_DECL(4, const element_type, user_data, (const element_type*)data, ifmb * bifm * lpb, R, S);
 
   for (i1 = 0; i1 < ofmb; ++i1) {
