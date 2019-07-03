@@ -1068,6 +1068,21 @@ LIBXSMM_API void* libxsmm_dnn_get_tensor_data_ptr(const libxsmm_dnn_tensor* tens
 }
 
 
+LIBXSMM_API libxsmm_dnn_tensor_datalayout* libxsmm_dnn_get_tensor_datalayout(const libxsmm_dnn_tensor* tensor, libxsmm_dnn_err_t* status) {
+  *status = LIBXSMM_DNN_SUCCESS;
+  libxsmm_dnn_tensor_datalayout* dst_layout = NULL;
+
+  if (0 != tensor) {
+    dst_layout = libxsmm_dnn_duplicate_tensor_datalayout( tensor->layout, status );
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_INVALID_TENSOR;
+  }
+
+  return dst_layout;
+}
+
+
 LIBXSMM_API unsigned char libxsmm_dnn_get_qtensor_scf(const libxsmm_dnn_tensor* tensor, libxsmm_dnn_err_t* status)
 {
   *status = LIBXSMM_DNN_SUCCESS;
