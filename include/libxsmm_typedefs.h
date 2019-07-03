@@ -293,15 +293,6 @@ typedef enum libxsmm_dnn_tensor_format {
   LIBXSMM_DNN_TENSOR_FORMAT_NC       = 256
 } libxsmm_dnn_tensor_format;
 
-typedef enum libxsmm_dnn_internal_format {
-  /* use LIBXSMM internal format NC_bHWc */
-  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1 = 1,
-  /* use LIBXSMM internal format C_bN_bHWnc */
-  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2 = 2,
-  /* use LIBXSMM internal format HWN_bC_bnc */
-  LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_3 = 3
-} libxsmm_dnn_internal_format;
-
 /** Denotes the element/pixel type of an image/channel. */
 typedef enum libxsmm_dnn_datatype {
   LIBXSMM_DNN_DATATYPE_F64  = LIBXSMM_DATATYPE_F64,

@@ -298,7 +298,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_tensor_format filter_format;
   libxsmm_dnn_conv_fuse_op fuse_ops;
   libxsmm_dnn_conv_option options;
-  libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
   /* These are the batchnorm handles in case of fusion */
   libxsmm_dnn_fusedbatchnorm* pre_bn;
@@ -507,7 +506,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_rnncell_desc desc;
-  libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts */
   libxsmm_blasint T;                              /* sequence length, must be smaller than max sequence length in desc */
   libxsmm_blasint bk;
   libxsmm_blasint bn;

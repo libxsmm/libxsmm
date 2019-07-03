@@ -259,7 +259,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_tensor_datalayo
   unsigned int* dim_size;
   unsigned int num_dims;
   libxsmm_dnn_tensor_format format;                /* format of activation buffer */
-  libxsmm_dnn_internal_format custom_format;       /* internal classifier of format, an internal subgroup */
   libxsmm_dnn_datatype datatype;                   /* data type */
   libxsmm_dnn_tensor_type tensor_type;             /* tensor type */
 } libxsmm_dnn_tensor_datalayout;

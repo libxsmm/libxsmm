@@ -58,27 +58,8 @@
 
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( libxsmm_dnn_layer* handle ) {
-  int internal_format_type;
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
-  const char *const env = getenv("LIBXSMM_DNN_INTERNAL_FORMAT");
   LIBXSMM_ASSERT(0 != handle);
-
-  if ( 0 == env || 0 == *env) {
-    /* Default internal format type */
-    handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
-  } else {
-    internal_format_type = atoi(env);
-    if (internal_format_type == 1) {
-      handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_1;
-    } else if ( internal_format_type == 2) {
-      handle->custom_format_type = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM_2;
-    } else {
-      status = LIBXSMM_DNN_ERR_INVALID_FORMAT_GENERAL;
-      free(handle);
-      handle = 0;
-      return status;
-    }
-  }
 
   /* we only support physical paddind in these days */
   /* @TODO: add logical padding support */
