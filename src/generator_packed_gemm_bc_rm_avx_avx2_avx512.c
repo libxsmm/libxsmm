@@ -28,7 +28,7 @@
 ******************************************************************************/
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-#include "generator_gemm_rm_ac_soa.h"
+#include "generator_packed_gemm_bc_rm_avx_avx2_avx512.h"
 #include "generator_gemm_common.h"
 #include "generator_x86_instructions.h"
 #include "libxsmm_main.h"
@@ -43,9 +43,9 @@
 # pragma offload_attribute(pop)
 #endif
 
-LIBXSMM_API void libxsmm_generator_gemm_rm_ac_soa( libxsmm_generated_code*         io_generated_code,
-                                                   const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                   const char*                     i_arch ) {
+LIBXSMM_API void libxsmm_generator_packed_gemm_bc_rm( libxsmm_generated_code*         io_generated_code,
+                                                      const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                      const char*                     i_arch ) {
   if ( strcmp(i_arch, "knl") == 0 ||
        strcmp(i_arch, "knm") == 0 ||
        strcmp(i_arch, "skx") == 0 ||
@@ -71,16 +71,16 @@ LIBXSMM_API void libxsmm_generator_gemm_rm_ac_soa( libxsmm_generated_code*      
       /* cannot happen */
     }
 
-    libxsmm_generator_gemm_rm_ac_soa_avx256_512( io_generated_code,
-                                                 i_xgemm_desc );
+    libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512( io_generated_code,
+                                                         i_xgemm_desc );
   } else {
     fprintf( stderr, "RM AC SOA is only available for AVX/AVX2/AVX512 at this point\n" );
     exit(-1);
   }
 }
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_generated_code*         io_generated_code,
-                                                                     const libxsmm_gemm_descriptor*  i_xgemm_desc ) {
+LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512( libxsmm_generated_code*         io_generated_code,
+                                                                             const libxsmm_gemm_descriptor*  i_xgemm_desc ) {
   unsigned int l_soa_width = 0;
   unsigned int l_max_reg_block = 0;
   unsigned int l_n1_range = 0;
@@ -92,6 +92,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
+  /* define loop_label_tracker */
+  libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
+
+  /* define the micro kernel code gen properties */
+  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
+
+  /* define gp register mapping */
+  libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
+
   /* select soa width */
   if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
@@ -101,6 +110,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
       l_soa_width = 4;
       l_max_reg_block = 14;
     }
+    l_micro_kernel_config.a_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSD;
+    l_micro_kernel_config.b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPD;
   } else {
     if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
       l_soa_width = 16;
@@ -109,10 +120,10 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
       l_soa_width = 8;
       l_max_reg_block = 14;
     }
+    l_micro_kernel_config.a_vmove_instruction = LIBXSMM_X86_INSTR_VBROADCASTSS;
+    l_micro_kernel_config.b_vmove_instruction = LIBXSMM_X86_INSTR_VMOVUPS;
   }
 
-  /* define gp register mapping */
-  libxsmm_reset_x86_gp_reg_mapping( &l_gp_reg_mapping );
   /* matching calling convention on Linux */
 #if defined(_WIN32) || defined(__CYGWIN__)
   l_gp_reg_mapping.gp_reg_a = LIBXSMM_X86_GP_REG_RCX;
@@ -139,12 +150,6 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
   l_gp_reg_mapping.gp_reg_help_4 = LIBXSMM_X86_GP_REG_UNDEF;
   l_gp_reg_mapping.gp_reg_help_5 = LIBXSMM_X86_GP_REG_UNDEF;
 
-  /* define loop_label_tracker */
-  libxsmm_reset_loop_label_tracker( &l_loop_label_tracker );
-
-  /* define the micro kernel code gen properties */
-  libxsmm_generator_gemm_init_micro_kernel_config_fullvector( &l_micro_kernel_config, io_generated_code->arch, i_xgemm_desc, 0 );
-
   /* calculate the chunk size of current columns to work on */
   if ( libxsmm_compute_equalized_blocking( i_xgemm_desc->n, l_max_reg_block, &l_n1_range, &l_n1_block, &l_n2_range, &l_n2_block ) ) {
     LIBXSMM_HANDLE_ERROR( io_generated_code, LIBXSMM_ERR_N_BLOCK );
@@ -161,8 +166,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
   /* loop over n-blocks */
   if ( l_n1_block == i_xgemm_desc->n ) {
     /* no N loop at all */
-    libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
-                                                         l_soa_width, i_xgemm_desc->n );
+    libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
+                                                               l_soa_width, i_xgemm_desc->n );
   } else if ( (l_n1_range > 0) && (l_n2_range > 0) ) {
     /* reset n loop */
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_mov_instruction, l_gp_reg_mapping.gp_reg_nloop, 0 );
@@ -172,8 +177,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
     libxsmm_x86_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n1_block );
 
-    libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
-                                                         l_soa_width, l_n1_block );
+    libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
+                                                               l_soa_width, l_n1_block );
 
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n1_range );
     libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
@@ -182,8 +187,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
     libxsmm_x86_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n2_block );
 
-    libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
-                                                         l_soa_width, l_n2_block );
+    libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
+                                                               l_soa_width, l_n2_block );
 
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_nloop, i_xgemm_desc->n );
     libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
@@ -192,7 +197,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_micro_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_b,
-                                     i_xgemm_desc->n * l_micro_kernel_config.datatype_size );
+                                     i_xgemm_desc->n * l_soa_width * l_micro_kernel_config.datatype_size );
 
     /* reset C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
@@ -207,8 +212,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
     libxsmm_x86_instruction_register_jump_back_label( io_generated_code, &l_loop_label_tracker );
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_nloop, l_n1_block );
 
-    libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
-                                                         l_soa_width, l_n1_block );
+    libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloop( io_generated_code, &l_loop_label_tracker, &l_gp_reg_mapping, &l_micro_kernel_config, i_xgemm_desc,
+                                                               l_soa_width, l_n1_block );
 
     libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_cmp_instruction, l_gp_reg_mapping.gp_reg_nloop, i_xgemm_desc->n );
     libxsmm_x86_instruction_jump_back_to_label( io_generated_code, l_micro_kernel_config.alu_jmp_instruction, &l_loop_label_tracker );
@@ -217,7 +222,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      l_micro_kernel_config.alu_sub_instruction,
                                      l_gp_reg_mapping.gp_reg_b,
-                                     i_xgemm_desc->n * l_micro_kernel_config.datatype_size );
+                                     i_xgemm_desc->n * l_soa_width * l_micro_kernel_config.datatype_size );
 
     /* reset C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
@@ -231,7 +236,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
 
   /* advance A pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_a,
-                                   l_micro_kernel_config.datatype_size*l_soa_width*i_xgemm_desc->lda);
+                                   l_micro_kernel_config.datatype_size*i_xgemm_desc->lda);
 
   /* advance C pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code, l_micro_kernel_config.alu_add_instruction, l_gp_reg_mapping.gp_reg_c,
@@ -245,15 +250,14 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512( libxsmm_gen
   libxsmm_x86_instruction_close_stream( io_generated_code, &l_gp_reg_mapping, i_xgemm_desc->prefetch );
 }
 
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxsmm_generated_code*            io_generated_code,
-                                                                           libxsmm_loop_label_tracker*        io_loop_label_tracker,
-                                                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                           const unsigned int                 i_soa_width,
-                                                                           const unsigned int                 i_n_blocking ) {
+LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloop( libxsmm_generated_code*            io_generated_code,
+                                                                                   libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                                                                   const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                   const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                   const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                   const unsigned int                 i_soa_width,
+                                                                                   const unsigned int                 i_n_blocking ) {
   unsigned int l_n = 0;
-  unsigned int l_lcl_k = 0;
 
   /* load C accumulator */
   for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
@@ -278,18 +282,15 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
   /* k loop */
   libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, 0, 1 );
 
-  /* full vector load of A */
-  /* prepare KNM's QMADD */
-  for ( l_lcl_k = 0; l_lcl_k < 1; l_lcl_k++ ) {
-    libxsmm_x86_instruction_vec_move( io_generated_code,
-                                      i_micro_kernel_config->instruction_set,
-                                      i_micro_kernel_config->a_vmove_instruction,
-                                      i_gp_reg_mapping->gp_reg_a,
-                                      LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                      l_lcl_k*i_soa_width*i_micro_kernel_config->datatype_size,
-                                      i_micro_kernel_config->vector_name,
-                                      i_n_blocking+l_lcl_k, 0, 1, 0 );
-  }
+  /* broadcast of A */
+  libxsmm_x86_instruction_vec_move( io_generated_code,
+                                    i_micro_kernel_config->instruction_set,
+                                    i_micro_kernel_config->a_vmove_instruction,
+                                    i_gp_reg_mapping->gp_reg_a,
+                                    LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                    0,
+                                    i_micro_kernel_config->vector_name,
+                                    i_n_blocking, 0, 1, 0 );
 
   /* loop over the register block */
   for ( l_n = 0; l_n < i_n_blocking; ++l_n ) {
@@ -297,11 +298,11 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
       libxsmm_x86_instruction_vec_compute_mem( io_generated_code,
                                                i_micro_kernel_config->instruction_set,
                                                i_micro_kernel_config->vmul_instruction,
-                                               1,
+                                               0,
                                                i_gp_reg_mapping->gp_reg_b,
                                                LIBXSMM_X86_GP_REG_UNDEF,
                                                0,
-                                               l_n * i_micro_kernel_config->datatype_size,
+                                               l_n * i_soa_width * i_micro_kernel_config->datatype_size,
                                                i_micro_kernel_config->vector_name,
                                                i_n_blocking,
                                                l_n );
@@ -311,7 +312,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
                                         i_micro_kernel_config->b_vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_b,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        l_n * i_micro_kernel_config->datatype_size,
+                                        l_n * i_soa_width * i_micro_kernel_config->datatype_size,
                                         i_micro_kernel_config->vector_name,
                                         i_n_blocking+1, 0, 1, 0 );
       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -327,7 +328,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
                                         i_micro_kernel_config->b_vmove_instruction,
                                         i_gp_reg_mapping->gp_reg_b,
                                         LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                        l_n * i_micro_kernel_config->datatype_size,
+                                        l_n * i_soa_width * i_micro_kernel_config->datatype_size,
                                         i_micro_kernel_config->vector_name,
                                         i_n_blocking+1, 0, 1, 0 );
       libxsmm_x86_instruction_vec_compute_reg( io_generated_code,
@@ -353,13 +354,13 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
   libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_add_instruction,
                                    i_gp_reg_mapping->gp_reg_a,
-                                   i_soa_width * i_micro_kernel_config->datatype_size );
+                                   i_micro_kernel_config->datatype_size );
 
   /* advance B pointer */
   libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_add_instruction,
                                    i_gp_reg_mapping->gp_reg_b,
-                                   i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size );
+                                   i_soa_width * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size );
 
   /* close k loop */
   libxsmm_generator_gemm_footer_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc, 0, i_xgemm_desc->k, 0 );
@@ -380,7 +381,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
   libxsmm_x86_instruction_alu_imm( io_generated_code,
                                    i_micro_kernel_config->alu_sub_instruction,
                                    i_gp_reg_mapping->gp_reg_a,
-                                   i_xgemm_desc->k * i_soa_width * i_micro_kernel_config->datatype_size );
+                                   i_xgemm_desc->k * i_micro_kernel_config->datatype_size );
 
   /* fix pointers */
   if ( i_xgemm_desc->n != i_n_blocking ) {
@@ -388,7 +389,8 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_sub_instruction,
                                      i_gp_reg_mapping->gp_reg_b,
-                                     (i_xgemm_desc->k * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size) - (i_n_blocking * i_micro_kernel_config->datatype_size) );
+                                     (i_xgemm_desc->k * i_xgemm_desc->ldb * i_soa_width * i_micro_kernel_config->datatype_size)
+                                     - (i_n_blocking * i_soa_width * i_micro_kernel_config->datatype_size) );
 
     /* advance C pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
@@ -399,7 +401,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_ac_soa_avx256_512_kloop( libxs
     libxsmm_x86_instruction_alu_imm( io_generated_code,
                                      i_micro_kernel_config->alu_sub_instruction,
                                      i_gp_reg_mapping->gp_reg_b,
-                                     i_xgemm_desc->k * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size );
+                                     i_soa_width * i_xgemm_desc->k * i_xgemm_desc->ldb * i_micro_kernel_config->datatype_size );
   }
 }
 

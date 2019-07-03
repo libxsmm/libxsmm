@@ -245,13 +245,13 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
   const void* values;
 } libxsmm_csc_soa_descriptor;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_rm_ac_soa_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pgemm_ac_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
-} libxsmm_rm_ac_soa_descriptor;
+} libxsmm_pgemm_ac_rm_descriptor;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_rm_bc_soa_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pgemm_bc_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
-} libxsmm_rm_bc_soa_descriptor;
+} libxsmm_pgemm_bc_rm_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
   const libxsmm_gemm_descriptor* gemm;
@@ -599,15 +599,15 @@ struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
 };
 
 typedef enum libxsmm_build_kind {
-  LIBXSMM_BUILD_KIND_GEMM     = LIBXSMM_KERNEL_KIND_MATMUL,
-  LIBXSMM_BUILD_KIND_MCOPY    = LIBXSMM_KERNEL_KIND_MCOPY,
-  LIBXSMM_BUILD_KIND_TRANS    = LIBXSMM_KERNEL_KIND_TRANS,
-  LIBXSMM_BUILD_KIND_PGEMM    = LIBXSMM_KERNEL_KIND_PGEMM,
-  LIBXSMM_BUILD_KIND_GETRF    = LIBXSMM_KERNEL_KIND_GETRF,
-  LIBXSMM_BUILD_KIND_TRMM     = LIBXSMM_KERNEL_KIND_TRMM,
-  LIBXSMM_BUILD_KIND_TRSM     = LIBXSMM_KERNEL_KIND_TRSM,
-  LIBXSMM_BUILD_KIND_RMACSOA  = LIBXSMM_KERNEL_KIND_INVALID,
-  LIBXSMM_BUILD_KIND_RMBCSOA,
+  LIBXSMM_BUILD_KIND_GEMM       = LIBXSMM_KERNEL_KIND_MATMUL,
+  LIBXSMM_BUILD_KIND_MCOPY      = LIBXSMM_KERNEL_KIND_MCOPY,
+  LIBXSMM_BUILD_KIND_TRANS      = LIBXSMM_KERNEL_KIND_TRANS,
+  LIBXSMM_BUILD_KIND_PGEMM      = LIBXSMM_KERNEL_KIND_PGEMM,
+  LIBXSMM_BUILD_KIND_GETRF      = LIBXSMM_KERNEL_KIND_GETRF,
+  LIBXSMM_BUILD_KIND_TRMM       = LIBXSMM_KERNEL_KIND_TRMM,
+  LIBXSMM_BUILD_KIND_TRSM       = LIBXSMM_KERNEL_KIND_TRSM,
+  LIBXSMM_BUILD_KIND_PGEMMRMAC  = LIBXSMM_KERNEL_KIND_INVALID,
+  LIBXSMM_BUILD_KIND_PGEMMRMBC,
   LIBXSMM_BUILD_KIND_SRSOA,
   LIBXSMM_BUILD_KIND_SCSOA,
   LIBXSMM_BUILD_KIND_SREG
@@ -633,8 +633,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
     LIBXSMM_REGDESC(LIBXSMM_REGDESC_DEFAULT, const*);
     const libxsmm_csr_soa_descriptor* srsoa;
     const libxsmm_csc_soa_descriptor* scsoa;
-    const libxsmm_rm_ac_soa_descriptor* rmacsoa;
-    const libxsmm_rm_bc_soa_descriptor* rmbcsoa;
+    const libxsmm_pgemm_ac_rm_descriptor* pgemmacrm;
+    const libxsmm_pgemm_bc_rm_descriptor* pgemmbcrm;
     const libxsmm_csr_reg_descriptor* sreg;
   } descriptor;
   libxsmm_build_kind kind;
