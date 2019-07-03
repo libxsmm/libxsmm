@@ -29,25 +29,25 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 
-#ifndef GENERATOR_GEMM_RM_BC_SOA_H
-#define GENERATOR_GEMM_RM_BC_SOA_H
+#ifndef GENERATOR_PACKED_GEMM_BC_RM_AVX_AVX2_AVX512_H
+#define GENERATOR_PACKED_GEMM_BC_RM_AVX_AVX2_AVX512_H
 
 #include <libxsmm_generator.h>
 #include "generator_common.h"
 
 /* @TODO change int based architecture value */
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512( libxsmm_generated_code*         io_generated_code,
-                                                                     const libxsmm_gemm_descriptor*  i_xgemm_desc,
-                                                                     const char*                     i_arch );
+LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512( libxsmm_generated_code*         io_generated_code,
+                                                                             const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                                             const char*                     i_arch );
 
 /* @TODO change int based architecture value */
-LIBXSMM_API_INTERN void libxsmm_generator_gemm_rm_bc_soa_avx256_512_kloop( libxsmm_generated_code*            io_generated_code,
-                                                                           libxsmm_loop_label_tracker*        io_loop_label_tracker,
-                                                                           const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
-                                                                           const libxsmm_micro_kernel_config* i_micro_kernel_config,
-                                                                           const libxsmm_gemm_descriptor*     i_xgemm_desc,
-                                                                           const char*                        i_arch,
-                                                                           const unsigned int                 i_soa_width,
-                                                                           const unsigned int                 i_n_blocking );
+LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloop( libxsmm_generated_code*            io_generated_code,
+                                                                                   libxsmm_loop_label_tracker*        io_loop_label_tracker,
+                                                                                   const libxsmm_gp_reg_mapping*      i_gp_reg_mapping,
+                                                                                   const libxsmm_micro_kernel_config* i_micro_kernel_config,
+                                                                                   const libxsmm_gemm_descriptor*     i_xgemm_desc,
+                                                                                   const char*                        i_arch,
+                                                                                   const unsigned int                 i_soa_width,
+                                                                                   const unsigned int                 i_n_blocking );
 
-#endif /* GENERATOR_GEMM_RM_BC_SOA_H */
+#endif /* GENERATOR_PACKED_GEMM_BC_RM_AVX_AVX2_AVX512_H */

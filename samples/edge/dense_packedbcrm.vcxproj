@@ -27,14 +27,14 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="dense_rmacsoa.c" />
+    <ClCompile Include="dense_packedbcrm.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>dense_rmacsoa</ProjectName>
-    <ProjectGuid>{FE7A7F77-2363-480D-A2C5-D9B72260A8AB}</ProjectGuid>
+    <ProjectName>dense_packedbcrm</ProjectName>
+    <ProjectGuid>{7E33EB2B-7C25-4308-A86E-6D9A90F8613D}</ProjectGuid>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

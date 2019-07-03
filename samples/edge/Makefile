@@ -50,8 +50,8 @@ XFILES := $(OUTDIR)/edge_vol_int \
 	$(OUTDIR)/asparse_srsoa_f64 $(OUTDIR)/bsparse_srsoa_f64 \
 	$(OUTDIR)/asparse_srsoa_f32 $(OUTDIR)/bsparse_srsoa_f32 \
 	$(OUTDIR)/bsparse_scsoa_f64 $(OUTDIR)/bsparse_scsoa_f32 \
-	$(OUTDIR)/dense_rmacsoa_f64 $(OUTDIR)/dense_rmacsoa_f32 \
-	$(OUTDIR)/dense_rmbcsoa_f64 $(OUTDIR)/dense_rmbcsoa_f32
+	$(OUTDIR)/dense_packedacrm_f64 $(OUTDIR)/dense_packedacrm_f32 \
+	$(OUTDIR)/dense_packedbcrm_f64 $(OUTDIR)/dense_packedbcrm_f32
 
 .PHONY: all
 all: $(XFILES)
@@ -80,17 +80,17 @@ $(OUTDIR)/bsparse_scsoa_f64: $(OUTDIR)/.make $(BLDDIR)/bsparse_scsoa-c.o $(LIBDE
 $(OUTDIR)/bsparse_scsoa_f32: $(OUTDIR)/.make $(BLDDIR)/bsparse_scsoa-c-f32.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/bsparse_scsoa-c-f32.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/dense_rmacsoa_f64: $(OUTDIR)/.make $(BLDDIR)/dense_rmacsoa-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/dense_rmacsoa-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/dense_packedacrm_f64: $(OUTDIR)/.make $(BLDDIR)/dense_packedacrm-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/dense_packedacrm-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/dense_rmacsoa_f32: $(OUTDIR)/.make $(BLDDIR)/dense_rmacsoa-c-f32.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/dense_rmacsoa-c-f32.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/dense_packedacrm_f32: $(OUTDIR)/.make $(BLDDIR)/dense_packedacrm-c-f32.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/dense_packedacrm-c-f32.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/dense_rmbcsoa_f64: $(OUTDIR)/.make $(BLDDIR)/dense_rmbcsoa-c.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/dense_rmbcsoa-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/dense_packedbcrm_f64: $(OUTDIR)/.make $(BLDDIR)/dense_packedbcrm-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/dense_packedbcrm-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
-$(OUTDIR)/dense_rmbcsoa_f32: $(OUTDIR)/.make $(BLDDIR)/dense_rmbcsoa-c-f32.o $(LIBDEP)
-	$(LD) -o $@ $(BLDDIR)/dense_rmbcsoa-c-f32.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+$(OUTDIR)/dense_packedbcrm_f32: $(OUTDIR)/.make $(BLDDIR)/dense_packedbcrm-c-f32.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/dense_packedbcrm-c-f32.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@
