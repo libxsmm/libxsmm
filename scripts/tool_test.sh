@@ -251,7 +251,7 @@ then
           echo "================================================================================"
           continue
         else
-          touch ${SLURMFILE}
+          TOUCH=${SLURMFILE}
         fi
       fi
       if [ "none" = "${PARTITIONS}" ]; then
@@ -364,6 +364,10 @@ then
     done # ENVS
     done # CONFIGS
     done # PARTITIONS
+    if [ "" != "${TOUCH}" ] && [ -e ${TOUCH} ]; then
+      touch ${TOUCH}
+      TOUCH=""
+    fi
     done # SLURMFILE
 
     # increment the case number, or exit the script
