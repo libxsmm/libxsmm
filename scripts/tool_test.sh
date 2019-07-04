@@ -235,9 +235,27 @@ then
       TESTID=$(${BASENAME} ${SLURMFILE%.*})
     fi
     if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
-      PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
-      if [ "" != "${PARTITION}" ]; then
-        PARTITIONS=${PARTITION}
+      if [ "" != "LIMIT" ] && [ "0" != "LIMIT" ] && \
+         [ "" != "$(command -v touch)" ] && \
+         [ "" != "$(command -v stat)" ] && \
+         [ "" != "$(command -v date)" ];
+      then
+        OLD=$(stat -c %Y ${SLURMFILE})
+        NOW=$(date +%s)
+        if [ "0" != "$(((OLD+LIMIT)<=NOW))" ]; then
+          echo "================================================================================"
+          echo "Skipped ${TESTID} due to LIMIT=${LIMIT}."
+          echo "================================================================================"
+          continue
+        else
+          touch ${SLURMFILE}
+        fi
+      fi
+      if [ "none" = "${PARTITIONS}" ]; then
+        PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
+        if [ "" != "${PARTITION}" ]; then
+          PARTITIONS=${PARTITION}
+        fi
       fi
     fi
     for PARTITION in ${PARTITIONS}; do
@@ -300,8 +318,10 @@ then
           DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
           ${SED} \
             -e "/^#\!..*/d" \
+            -e "/^#SBATCH/d" \
             -e "/^[[:space:]]*$/d" \
             -e "s/\.\//${DIRSED}\//" \
+            -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
             ${SLURMFILE} >> ${TESTSCRIPT}
           if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
             echo ") | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
