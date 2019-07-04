@@ -199,7 +199,11 @@ then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
     fi
     if [ "" != "${LIMITRUN}" ]; then
-      SRUN_FLAGS="${SRUN_FLAGS} --time=${LIMITRUN}"
+      if [ "" = "${LIMIT}" ] || [ "0" = "${LIMIT}" ]; then
+        SRUN_FLAGS="${SRUN_FLAGS} --time=${LIMITRUN}"
+      else # seconds -> minutes
+        SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMIT/60))"
+      fi
     fi
     umask 007
     # eventually cleanup run-script from terminated sessions
@@ -251,7 +255,7 @@ then
           echo "================================================================================"
           continue
         else
-          touch ${SLURMFILE}
+          TOUCH=${SLURMFILE}
         fi
       fi
       if [ "none" = "${PARTITIONS}" ]; then
@@ -364,6 +368,10 @@ then
     done # ENVS
     done # CONFIGS
     done # PARTITIONS
+    if [ "" != "${TOUCH}" ] && [ -e ${TOUCH} ]; then
+      touch ${TOUCH}
+      TOUCH=""
+    fi
     done # SLURMFILE
 
     # increment the case number, or exit the script
