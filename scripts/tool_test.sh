@@ -247,7 +247,12 @@ then
          [ "" != "$(command -v stat)" ] && \
          [ "" != "$(command -v date)" ];
       then
-        OLD=$(stat -c %Y ${SLURMFILE})
+        if [ "" != "${LIMITDIR}" ] && [ -d ${LIMITDIR} ]; then
+          LIMITFILE=${LIMITDIR}/$(basename ${SLURMFILE})
+        else
+          LIMITFILE=${SLURMFILE}
+        fi
+        OLD=$(stat -c %Y ${LIMITFILE})
         NOW=$(date +%s)
         if [ "0" != "$(((OLD+LIMIT)<=NOW))" ]; then
           echo "================================================================================"
@@ -255,7 +260,7 @@ then
           echo "================================================================================"
           continue
         else
-          TOUCH=${SLURMFILE}
+          TOUCH=${LIMITFILE}
         fi
       fi
       if [ "none" = "${PARTITIONS}" ]; then
