@@ -234,7 +234,7 @@ then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
       TESTID=$(${BASENAME} ${SLURMFILE%.*})
     fi
-    if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
+    if [ "none" = "${PARTITIONS}" ] && [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
       PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
       if [ "" != "${PARTITION}" ]; then
         PARTITIONS=${PARTITION}
@@ -300,8 +300,10 @@ then
           DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
           ${SED} \
             -e "/^#\!..*/d" \
+            -e "/^#SBATCH/d" \
             -e "/^[[:space:]]*$/d" \
             -e "s/\.\//${DIRSED}\//" \
+            -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
             ${SLURMFILE} >> ${TESTSCRIPT}
           if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
             echo ") | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
