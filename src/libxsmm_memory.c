@@ -62,7 +62,7 @@ LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string)
   else { /* reinterpret directly as hash value */
     char *const s = (char*)&result; signed char i;
     for (i = 0; i < (signed char)length; ++i) s[i] = string[i];
-    for (; i < sizeof(result); ++i) s[i] = 0;
+    for (; i < (signed char)sizeof(result); ++i) s[i] = 0;
   }
   return result;
 }

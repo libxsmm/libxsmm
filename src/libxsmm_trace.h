@@ -44,18 +44,6 @@
 # define LIBXSMM_TRACE
 #endif
 
-#if defined(__GNUC__)
-# define LIBXSMM_TRACE_CALLER_ID(LEVEL) __builtin_return_address(LEVEL)
-#elif defined(_WIN32) && (0 == (LEVEL))
-# define LIBXSMM_TRACE_CALLER_ID(LEVEL) _AddressOfReturnAddress()
-#else
-LIBXSMM_API_INLINE const void* LIBXSMM_TRACE_CALLER_ID(int LEVEL) {
-  const void* stacktrace[4];
-  const unsigned int n = libxsmm_backtrace(stacktrace, sizeof(stacktrace) / sizeof(*stacktrace), 0/*skip*/);
-  return (LEVEL < n ? stacktrace[LEVEL] : NULL);
-}
-#endif
-
 
 /** Initializes the trace facility; NOT thread-safe. */
 LIBXSMM_API int libxsmm_trace_init(
@@ -71,6 +59,21 @@ LIBXSMM_API int libxsmm_trace_finalize(void);
 
 /** Receives the backtrace of up to 'size' addresses. Returns the actual number of addresses (n <= size). */
 LIBXSMM_API unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned int skip);
+
+LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* must be inline */
+#if defined(__GNUC__)
+  return __builtin_return_address(level);
+#else
+# if defined(_WIN32)
+  if (0 == level) return _AddressOfReturnAddress();
+  else
+# endif
+  { const void* stacktrace[4/*sufficient/maximum level*/];
+    const unsigned int n = libxsmm_backtrace(stacktrace, sizeof(stacktrace) / sizeof(*stacktrace), 0/*skip*/);
+    return (level < n ? stacktrace[level] : NULL);
+  }
+#endif
+}
 
 /** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
 LIBXSMM_API const char* libxsmm_trace_info(
