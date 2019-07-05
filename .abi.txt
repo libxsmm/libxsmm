@@ -233,6 +233,7 @@ libxsmm_hash_char
 libxsmm_hash_i32
 libxsmm_hash_i64
 libxsmm_hash_i8
+libxsmm_hash_string
 libxsmm_icbrt_u32
 libxsmm_icbrt_u64
 libxsmm_init
