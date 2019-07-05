@@ -85,8 +85,11 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
 /** Similar to memcmp (C standard library), but the result is conceptually only a boolean. */
 LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size);
 
-/** Calculate a hash value for a given buffer. */
+/** Calculate a hash value for the given buffer and seed. */
 LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed);
+
+/** Calculate a hash value for the given character string and seed. */
+LIBXSMM_API unsigned int libxsmm_hash_string(const char* string, unsigned int seed);
 
 /** Greatest common divisor (corner case: the GCD of 0 and 0 is 1). */
 LIBXSMM_API size_t libxsmm_gcd(size_t a, size_t b);

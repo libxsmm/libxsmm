@@ -264,6 +264,21 @@ LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsig
 }
 
 
+LIBXSMM_API unsigned int libxsmm_hash_string(const char* string, unsigned int seed)
+{
+  unsigned int result;
+  const size_t length = strlen(string);
+  if (sizeof(unsigned int) < length) {
+    result = libxsmm_crc32(seed, string, length);
+  }
+  else {
+    char *const s = (char*)&result; signed char i; result = 0;
+    for (i = 0; i < (signed char)length; ++i) s[i] = string[i];
+  }
+  return result;
+}
+
+
 LIBXSMM_API size_t libxsmm_shuffle(unsigned int n)
 {
   const unsigned int s = (0 != (n & 1) ? ((n / 2 - 1) | 1) : ((n / 2) & ~1));
