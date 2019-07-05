@@ -48,6 +48,7 @@
 #endif
 #if defined(_WIN32)
 # include <windows.h>
+# include <intrin.h>
 #else
 # include <sys/mman.h>
 # if defined(MAP_HUGETLB) && defined(MAP_POPULATE)
@@ -143,9 +144,30 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_SEED 1051981
 #endif
 
-#if (!defined(LIBXSMM_MALLOC_HOOK_GLIBC) && (defined(__MALLOC_HOOK_VOLATILE) || defined(LIBXSMM_GLIBC)))
+#if defined(NDEBUG)
+# define LIBXSMM_MALLOC_CALLER_LEVEL 0
+#else
+# define LIBXSMM_MALLOC_CALLER_LEVEL 3
+#endif
+
+#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_BUILD) && \
+  (defined(__GNUC__) || defined(_CRAYC)) && !defined(_WIN32) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
+    LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+# define LIBXSMM_MALLOC_HOOK_DYNAMIC
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+# endif
+# include <dlfcn.h>
+# if defined(LIBXSMM_OFFLOAD_TARGET)
+#   pragma offload_attribute(pop)
+# endif
+#endif
+#if !defined(LIBXSMM_MALLOC_HOOK_GLIBC) && !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && \
+    (defined(__MALLOC_HOOK_VOLATILE) || defined(LIBXSMM_GLIBC))
 # define LIBXSMM_MALLOC_HOOK_GLIBC 4 /* scratch threshold (prior-to-main allocations) */
 #endif
+
 #if !defined(LIBXSMM_MALLOC_CTXFORM) && !defined(NDEBUG) && 0
 # define LIBXSMM_MALLOC_CTXFORM
 #endif
@@ -251,44 +273,6 @@ LIBXSMM_API size_t libxsmm_offset(const size_t offset[], const size_t shape[], s
     }
   }
   if (NULL != size) *size = size1;
-  return result;
-}
-
-
-LIBXSMM_API_INLINE const void* internal_malloc_site_auto(void)
-{
-  const void *stacktrace[4], *result;
-  const unsigned int n = libxsmm_backtrace(stacktrace, sizeof(stacktrace) / sizeof(*stacktrace), 0/*skip*/);
-#if defined(NDEBUG) /* internal_malloc_site is inlined */
-  if (0 < n) result = stacktrace[0];
-#else /* not inlined */
-  if (3 < n) result = stacktrace[3];
-#endif
-  else result = NULL;
-  return result;
-}
-
-
-LIBXSMM_API_INLINE const void* internal_malloc_site(const void* site)
-{
-  const void* result;
-  if (NULL != site) {
-#if !defined(LIBXSMM_STRING_POOLING)
-    if ((LIBXSMM_MALLOC_INTERNAL_CALLER) != site) {
-      const size_t length = strlen((const char*)site);
-      const uintptr_t hash = (sizeof(void*) < length ? libxsmm_crc32(LIBXSMM_MALLOC_SEED, site, length) : ((uintptr_t)site));
-      result = (const void*)((LIBXSMM_MALLOC_INTERNAL_CALLER_ID) != hash ? hash : (hash - 1));
-      LIBXSMM_ASSERT((LIBXSMM_MALLOC_INTERNAL_CALLER) != result);
-    }
-    else
-#endif
-    {
-      result = site;
-    }
-  }
-  else {
-    result = internal_malloc_site_auto();
-  }
   return result;
 }
 
@@ -447,7 +431,7 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
     if (0 < libxsmm_scratch_pools && 0 < libxsmm_scratch_limit) {
       internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_CACHELINE);
       internal_malloc_pool_type *const end = pools + libxsmm_scratch_pools, *pool0 = end, *pool = pools;
-      const void *const site = internal_malloc_site(caller);
+      const void *const site = (NULL != caller ? caller : LIBXSMM_TRACE_CALLER_ID(LIBXSMM_MALLOC_CALLER_LEVEL));
       const size_t align_size = libxsmm_alignment(size, alignment);
       const size_t alloc_size = size + align_size - 1;
 #if defined(LIBXSMM_MALLOC_AFFINITY) && (0 != LIBXSMM_SYNC)
@@ -660,7 +644,7 @@ LIBXSMM_API_INTERN void* internal_memalign(size_t alignment, size_t size, const 
 #endif
     /* ensure allocations prior to main-function are non-scratch allocations */)
   {
-    LIBXSMM_ASSERT(8 == sizeof(void*)); ((char*)&caller)[7] = 0;
+    /*LIBXSMM_ASSERT(8 == sizeof(void*)); ((char*)&caller)[7] = 0;*/
     internal_scratch_malloc(&result, size, alignment, flags, caller);
   }
   else { /* even */
@@ -714,7 +698,7 @@ LIBXSMM_API_INTERN void* internal_realloc(void* ptr, size_t size, const void* ca
     assert(EXIT_SUCCESS == status || NULL == ptr); /* !LIBXSMM_ASSERT */
   }
   else { /* odd */
-    LIBXSMM_ASSERT(8 == sizeof(void*)); ((char*)&caller)[7] = 0;
+    /*LIBXSMM_ASSERT(8 == sizeof(void*)); ((char*)&caller)[7] = 0;*/
     internal_scratch_malloc(&ptr, size, 0/*auto-align*/, flags | LIBXSMM_MALLOC_FLAG_REALLOC, caller);
   }
 #if !defined(LIBXSMM_MALLOC_MMAP_HOOK) && defined(LIBXSMM_MALLOC_HOOK_GLIBC)
@@ -1710,7 +1694,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_MALLOC void* libxsmm_aligned_malloc(size_t size, s
     assert(EXIT_SUCCESS == status || NULL == result); /* !LIBXSMM_ASSERT */
   }
   else { /* odd */
-    const void *const caller = internal_malloc_site_auto();
+    const void *const caller = LIBXSMM_TRACE_CALLER_ID(LIBXSMM_MALLOC_CALLER_LEVEL);
     internal_scratch_malloc(&result, size, alignment,
 #if defined(LIBXSMM_MALLOC_HOOK_GLIBC) && defined(LIBXSMM_MALLOC_MMAP_HOOK)
       LIBXSMM_MALLOC_FLAG_DEFAULT | LIBXSMM_MALLOC_FLAG_MMAP,
@@ -1736,7 +1720,7 @@ LIBXSMM_API void* libxsmm_realloc(size_t size, void* ptr)
     assert(EXIT_SUCCESS == status || NULL == ptr); /* !LIBXSMM_ASSERT */
   }
   else { /* odd */
-    const void *const caller = internal_malloc_site_auto();
+    const void *const caller = LIBXSMM_TRACE_CALLER_ID(LIBXSMM_MALLOC_CALLER_LEVEL);
     internal_scratch_malloc(&ptr, size, alignment,
 #if defined(LIBXSMM_MALLOC_HOOK_GLIBC) && defined(LIBXSMM_MALLOC_MMAP_HOOK)
       LIBXSMM_MALLOC_FLAG_REALLOC | LIBXSMM_MALLOC_FLAG_MMAP,

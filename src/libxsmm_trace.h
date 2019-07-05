@@ -44,6 +44,18 @@
 # define LIBXSMM_TRACE
 #endif
 
+#if defined(__GNUC__)
+# define LIBXSMM_TRACE_CALLER_ID(LEVEL) __builtin_return_address(LEVEL)
+#elif defined(_WIN32) && (0 == (LEVEL))
+# define LIBXSMM_TRACE_CALLER_ID(LEVEL) _AddressOfReturnAddress()
+#else
+LIBXSMM_API_INLINE const void* LIBXSMM_TRACE_CALLER_ID(int LEVEL) {
+  const void* stacktrace[4];
+  const unsigned int n = libxsmm_backtrace(stacktrace, sizeof(stacktrace) / sizeof(*stacktrace), 0/*skip*/);
+  return (LEVEL < n ? stacktrace[LEVEL] : NULL);
+}
+#endif
+
 
 /** Initializes the trace facility; NOT thread-safe. */
 LIBXSMM_API int libxsmm_trace_init(

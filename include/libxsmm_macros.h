@@ -143,6 +143,13 @@
 #if !defined(LIBXSMM_FUNCNAME)
 # define LIBXSMM_FUNCNAME LIBXSMM_CALLER
 #endif
+#if !defined(LIBXSMM_CALLER_ID)
+# if defined(__GNUC__) || 1
+#   define LIBXSMM_CALLER_ID ((const void*)libxsmm_hash_string(LIBXSMM_CALLER))
+# else /* assume no string-pooling (perhaps unsafe) */
+#   define LIBXSMM_CALLER_ID LIBXSMM_CALLER
+# endif
+#endif
 
 #if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD))
 # define LIBXSMM_UNPACKED

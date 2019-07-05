@@ -44,6 +44,7 @@
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_malloc.h" />
     <ClInclude Include="..\include\libxsmm_math.h" />
+    <ClInclude Include="..\include\libxsmm_memory.h" />
     <ClInclude Include="..\include\libxsmm_mhd.h" />
     <ClInclude Include="..\include\libxsmm_rng.h" />
     <ClInclude Include="..\include\libxsmm_source.h" />
@@ -187,6 +188,7 @@
     <ClCompile Include="..\src\libxsmm_main.c" />
     <ClCompile Include="..\src\libxsmm_malloc.c" />
     <ClCompile Include="..\src\libxsmm_math.c" />
+    <ClCompile Include="..\src\libxsmm_memory.c" />
     <ClCompile Include="..\src\libxsmm_mhd.c" />
     <ClCompile Include="..\src\libxsmm_perf.c" />
     <ClCompile Include="..\src\libxsmm_python.c" />
