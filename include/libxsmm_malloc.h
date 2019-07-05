@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_MALLOC_H
 #define LIBXSMM_MALLOC_H
 
-#include "libxsmm_macros.h"
+#include "libxsmm_memory.h"
 
 
 /** Function types accepted for memory allocation (see libxsmm_*_allocator). */
@@ -114,7 +114,8 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size,
  * macro is intentionally lower case.
  */
 #define libxsmm_aligned_scratch(size, alignment) \
-  libxsmm_scratch_malloc(size, alignment, LIBXSMM_CALLER_ID)
+  libxsmm_scratch_malloc(size, alignment, \
+    LIBXSMM_CALLER_ID)
 
 /** Deallocate memory (malloc/free interface). */
 LIBXSMM_API void libxsmm_free(const void* memory);

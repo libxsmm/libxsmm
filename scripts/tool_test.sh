@@ -242,7 +242,7 @@ then
       TESTID=$(${BASENAME} ${SLURMFILE%.*})
     fi
     if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
-      if [ "" != "LIMIT" ] && [ "0" != "LIMIT" ] && \
+      if [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
          [ "" != "$(command -v touch)" ] && \
          [ "" != "$(command -v stat)" ] && \
          [ "" != "$(command -v date)" ];

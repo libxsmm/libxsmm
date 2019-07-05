@@ -30,7 +30,6 @@
 ******************************************************************************/
 #include <libxsmm_mhd.h>
 #include "libxsmm_main.h"
-#include "libxsmm_hash.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -254,13 +253,6 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
     info->min_ref = info->min_tst = +inf.value;
     info->max_ref = info->max_tst = -inf.value;
   }
-}
-
-
-LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed)
-{
-  LIBXSMM_INIT
-  return libxsmm_crc32(seed, data, size);
 }
 
 
@@ -571,49 +563,6 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* coprime, const int*
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_shuffle specified!\n");
-  }
-#endif
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* hash_seed, const void* data, const int* size)
-{
-#if !defined(NDEBUG)
-  static int error_once = 0;
-  if (NULL != hash_seed && NULL != data && NULL != size && 0 <= *size)
-#endif
-  {
-    unsigned int *const hash_seed_ui32 = (unsigned int*)hash_seed;
-    *hash_seed_ui32 = (libxsmm_hash(data, (unsigned int)*size, *hash_seed_ui32) & 0x7FFFFFFF/*sign-bit*/);
-  }
-#if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_hash specified!\n");
-  }
-#endif
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* result, const void* a, const void* b, const long long* size)
-{
-#if !defined(NDEBUG)
-  static int error_once = 0;
-  if (NULL != result && NULL != a && NULL != b && NULL != size && 0 <= *size)
-#endif
-  {
-    *result = libxsmm_memcmp(a, b, (size_t)*size);
-  }
-#if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_memcmp specified!\n");
   }
 #endif
 }

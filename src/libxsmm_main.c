@@ -592,7 +592,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       }
       else {
         size_t u = internal_strlen(env, 32) - 1;
-        const char *const unit = "kmgKMG", *const hit = strchr(unit, env[u]);
+        const char unit[] = "kmgKMG", *const hit = strchr(unit, env[u]);
         libxsmm_scratch_limit = (size_t)strtoul(env, 0, 10);
         u = (0 != hit ? ((hit - unit) % 3) : 3);
         if (u < 3) {
