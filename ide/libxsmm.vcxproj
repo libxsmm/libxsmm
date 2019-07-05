@@ -55,7 +55,9 @@
     <ClInclude Include="..\src\generator_gemm_avx512_microkernel_fsdbcst.h" />
     <ClInclude Include="..\src\generator_packed_aux.h" />
     <ClInclude Include="..\src\generator_packed_gemmnn.h" />
+    <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_packed_gemm_avx_avx512.h" />
+    <ClInclude Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_packed_getrf_avx_avx512.h" />
     <ClInclude Include="..\src\generator_packed_trmm_avx_avx512.h" />
     <ClInclude Include="..\src\generator_packed_trsm_dmacros.h" />
@@ -73,8 +75,6 @@
     <ClInclude Include="..\src\generator_gemm_avx_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_common.h" />
     <ClInclude Include="..\src\generator_gemm_noarch.h" />
-    <ClInclude Include="..\src\generator_gemm_rm_ac_soa.h" />
-    <ClInclude Include="..\src\generator_gemm_rm_bc_soa.h" />
     <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_gemm_sse3_microkernel.h" />
     <ClInclude Include="..\src\generator_matcopy_avx_avx512.h" />
@@ -123,7 +123,9 @@
     <ClCompile Include="..\src\generator_gemm_avx512_fsdbcst.c" />
     <ClCompile Include="..\src\generator_gemm_avx512_microkernel_fsdbcst.c" />
     <ClCompile Include="..\src\generator_packed.c" />
+    <ClCompile Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.c" />
     <ClCompile Include="..\src\generator_packed_gemm_avx_avx512.c" />
+    <ClCompile Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.c" />
     <ClCompile Include="..\src\generator_packed_getrf_avx_avx512.c" />
     <ClCompile Include="..\src\generator_packed_trmm_avx_avx512.c" />
     <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c" />
@@ -137,8 +139,6 @@
     <ClCompile Include="..\src\generator_gemm_avx_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_common.c" />
     <ClCompile Include="..\src\generator_gemm_noarch.c" />
-    <ClCompile Include="..\src\generator_gemm_rm_ac_soa.c" />
-    <ClCompile Include="..\src\generator_gemm_rm_bc_soa.c" />
     <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2_avx512.c" />
     <ClCompile Include="..\src\generator_gemm_sse3_microkernel.c" />
     <ClCompile Include="..\src\generator_matcopy.c" />
