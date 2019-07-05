@@ -1539,6 +1539,7 @@ realclean-all: realclean
 
 .PHONY: distclean
 distclean: realclean-all
+	@rm -rf libxsmm*
 
 # PREFIX and DESTDIR are equivalent
 # - DESTDIR rules if PREFIX is also specified
