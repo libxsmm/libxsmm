@@ -74,12 +74,12 @@ int main(int argc, char* argv[])
   /* count number of calls according to randomized scheme */
   for (i = 0; i < ncycles; ++i) {
     const int count = r[i%(MAX_MALLOC_N)] % max_nallocs + 1;
-    int j;
+    int mbytes = 0, j;
     for (j = 0; j < count; ++j) {
       const int k = (i * count + j) % (MAX_MALLOC_N);
-      const int mbytes = (r[k] % (MAX_MALLOC_MB) + 1);
-      if (max_size < mbytes) max_size = mbytes;
+      mbytes += (r[k] % (MAX_MALLOC_MB) + 1);
     }
+    if (max_size < mbytes) max_size = mbytes;
     nallocs += count;
   }
   assert(0 != nallocs);
@@ -94,7 +94,8 @@ int main(int argc, char* argv[])
     const char *const longlife_env = getenv("LONGLIFE");
     const int enable_longlife = ((NULL == longlife_env || 0 == *longlife_env) ? 0 : atoi(longlife_env));
     void* longlife = (0 == enable_longlife ? NULL : malloc_offsite((MAX_MALLOC_MB) << 20));
-    unsigned long long d0 = 0, d1 = 0;
+    libxsmm_timer_tickint d0 = 0, d1 = 0;
+    int scratch = 0, local = 0;
     libxsmm_scratch_info info;
 
     libxsmm_init();
@@ -110,7 +111,7 @@ int main(int argc, char* argv[])
       for (j = 0; j < count; ++j) {
         const int k = (i * count + j) % (MAX_MALLOC_N);
         const size_t nbytes = ((size_t)r[k] % (MAX_MALLOC_MB) + 1) << 20;
-        const unsigned long long t1 = libxsmm_timer_tick();
+        const libxsmm_timer_tickint t1 = libxsmm_timer_tick();
         p[j] = libxsmm_aligned_scratch(nbytes, 0/*auto*/);
         d1 += libxsmm_timer_diff(t1, libxsmm_timer_tick());
         if (NULL != p[j]) {
@@ -126,8 +127,10 @@ int main(int argc, char* argv[])
     }
     libxsmm_free(longlife);
     if (EXIT_SUCCESS == libxsmm_get_scratch_info(&info) && 0 < info.size) {
-      fprintf(stdout, "\nScratch: %.f MB (mallocs=%lu, pools=%u)\n",
-        1.0 * info.size / (1ULL << 20), (unsigned long int)info.nmallocs, info.npools);
+      scratch = (int)(1.0 * info.size / (1ULL << 20) + 0.5);
+      local = (int)(1.0 * info.local / (1ULL << 20) + 0.5);
+      fprintf(stdout, "\nScratch: %i+%i MB (mallocs=%lu, pools=%u)\n",
+        scratch, local, (unsigned long int)info.nmallocs, info.npools);
       libxsmm_release_scratch(); /* suppress LIBXSMM's termination message about scratch */
     }
 
@@ -143,7 +146,7 @@ int main(int argc, char* argv[])
       for (j = 0; j < count; ++j) {
         const int k = (i * count + j) % (MAX_MALLOC_N);
         const size_t nbytes = ((size_t)r[k] % (MAX_MALLOC_MB) + 1) << 20;
-        const unsigned long long t1 = libxsmm_timer_tick();
+        const libxsmm_timer_tickint t1 = libxsmm_timer_tick();
         p[j] = malloc(nbytes);
         d0 += libxsmm_timer_diff(t1, libxsmm_timer_tick());
         if (NULL != p[j]) {
@@ -164,10 +167,13 @@ int main(int argc, char* argv[])
       const double dalloc = libxsmm_timer_duration(0, d1);
       const double scratch_freq = 1E-3 * nallocs / dalloc;
       const double malloc_freq = 1E-3 * nallocs / dcalls;
+      const double speedup = scratch_freq / malloc_freq;
       fprintf(stdout, "\tlibxsmm scratch calls/s: %.1f kHz\n", scratch_freq);
       fprintf(stdout, "Malloc: %i MB\n", max_size);
       fprintf(stdout, "\tstd.malloc+free calls/s: %.1f kHz\n", malloc_freq);
-      fprintf(stdout, "Scratch Speedup: %.1fx\n", scratch_freq / malloc_freq);
+      fprintf(stdout, "Fair (size vs. speed): %.1fx\n",
+        max_size * speedup / LIBXSMM_MAX(scratch + local, max_size));
+      fprintf(stdout, "Scratch Speedup: %.1fx\n", speedup);
     }
   }
 
