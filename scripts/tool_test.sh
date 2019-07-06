@@ -328,7 +328,9 @@ then
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >> ${TESTSCRIPT}
           # control log
           echo "echo \"--- RUN ${TESTID}\"" >> ${TESTSCRIPT}
-          if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
+          if [ "" != "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
+             [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ];
+          then
             echo "(" >> ${TESTSCRIPT}
           fi
           DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
@@ -339,7 +341,9 @@ then
             -e "s/\.\//${DIRSED}\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
             ${SLURMFILE} >> ${TESTSCRIPT}
-          if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
+          if [ "" != "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
+             [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ];
+          then
             echo ") | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
           fi
           # clear captured test
