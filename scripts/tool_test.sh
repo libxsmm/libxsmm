@@ -201,8 +201,8 @@ then
     if [ "" != "${LIMITRUN}" ]; then
       if [ "" = "${LIMIT}" ] || [ "0" = "${LIMIT}" ]; then
         SRUN_FLAGS="${SRUN_FLAGS} --time=${LIMITRUN}"
-      else # seconds -> minutes
-        SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMIT/60))"
+      #else # seconds -> minutes (HMS: date -d@${LIMIT} -u +%H:%M:%S)
+        #SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMIT/60))"
       fi
     fi
     umask 007
@@ -257,7 +257,7 @@ then
         fi
         if [ "0" != "$(((OLD+LIMIT)<=NOW))" ]; then
           echo "================================================================================"
-          echo "Skipped ${TESTID} due to LIMIT=${LIMIT}."
+          echo "Skipped ${TESTID} due to LIMIT=${LIMIT} seconds."
           echo "================================================================================"
           continue
         else
