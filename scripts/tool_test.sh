@@ -190,6 +190,12 @@ then
     TEST=${TESTSETFILE}
   fi
 
+  if [ "" != "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ] && \
+     [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ];
+  then
+    LIMIT=$((LIMITRUN<LIMIT?LIMITRUN:LIMIT))
+  fi
+
   # setup batch execution (TEST may be a singular test given by filename)
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "" != "${BUILDKITE_LABEL}" ]; then
@@ -198,12 +204,9 @@ then
     if [ "" != "${LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
     fi
-    if [ "" != "${LIMITRUN}" ]; then
-      if [ "" = "${LIMIT}" ] || [ "0" = "${LIMIT}" ]; then
-        SRUN_FLAGS="${SRUN_FLAGS} --time=${LIMITRUN}"
-      #else # seconds -> minutes (HMS: date -d@${LIMIT} -u +%H:%M:%S)
-        #SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMIT/60))"
-      fi
+    if [ "" != "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ]; then
+      # convert: seconds -> minutes
+      SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMITRUN/60))"
     fi
     umask 007
     # eventually cleanup run-script from terminated sessions
