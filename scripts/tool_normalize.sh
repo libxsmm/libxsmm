@@ -30,7 +30,7 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.sh *.py *.yml *.txt"
+PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.py *.sh *.env *.yml *.txt"
 BANNED_CHARS="\t"
 
 PATBAN="s/[${BANNED_CHARS}]/"
