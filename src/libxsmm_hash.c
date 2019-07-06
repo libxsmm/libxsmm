@@ -44,24 +44,25 @@
 #endif
 
 #define LIBXSMM_HASH_U64(FN, SEED, BEGIN, END) { \
-  for (; (BEGIN) < ((END) - 7); (BEGIN) += 8) { LIBXSMM_ASSERT(NULL != (BEGIN)); \
+  const uint8_t *const end = (NULL != (END) ? ((END) - 7) : NULL); \
+  for (; (BEGIN) < end; (BEGIN) += 8) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = (uint32_t)FN(SEED, BEGIN); \
   } \
 }
 #define LIBXSMM_HASH_U32(FN, SEED, BEGIN, END) { \
   const uint8_t *const next = (BEGIN) + 4; \
-  if (next <= (END)) { LIBXSMM_ASSERT(NULL != (BEGIN)); \
+  if (next <= (END)) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = FN(SEED, BEGIN); BEGIN = next; \
   } \
 }
 #define LIBXSMM_HASH_U16(FN, SEED, BEGIN, END) { \
   const uint8_t *const next = (BEGIN) + 2; \
-  if (next <= (END)) { LIBXSMM_ASSERT(NULL != (BEGIN)); \
+  if (next <= (END)) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = FN(SEED, BEGIN); BEGIN = next; \
   } \
 }
 #define LIBXSMM_HASH_U8(FN, SEED, BEGIN, END) { \
-  if ((BEGIN) < (END)) { LIBXSMM_ASSERT(NULL != (BEGIN)); \
+  if ((BEGIN) < (END)) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = FN(SEED, BEGIN); ++(BEGIN); \
   } \
 }

@@ -32,7 +32,7 @@
 
 HERE=$(cd $(dirname $0); pwd -P)
 
-MKTEMP=${HERE}/../../.mktmp.sh
+MKTEMP=${HERE}/../../../.mktmp.sh
 SED=$(command -v sed)
 CP=$(command -v cp)
 RM=$(command -v rm)

@@ -125,7 +125,10 @@ then
   if [ "" != "$1" ] && [ -e $1 ]; then
     export TESTSETFILE=$1
     if [ "" != "${BASENAME}" ] && [ "" != "${REV}" ] && [ "" != "${CUT}" ]; then
-      export TESTID=$(${BASENAME} ${TESTSETFILE} | ${REV} | ${CUT} -d. -f1 | ${REV})
+      export TESTID=$(${BASENAME} ${TESTSETFILE%.*})
+      if [ "" = "${TESTID}" ]; then
+        export TESTID=$(${BASENAME} ${TESTSETFILE} | ${REV} | ${CUT} -d. -f1 | ${REV})
+      fi
     else
       export TESTID=${TESTSETFILE}
     fi
@@ -187,6 +190,12 @@ then
     TEST=${TESTSETFILE}
   fi
 
+  if [ "" != "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ] && \
+     [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ];
+  then
+    LIMIT=$((LIMITRUN<LIMIT?LIMITRUN:LIMIT))
+  fi
+
   # setup batch execution (TEST may be a singular test given by filename)
   if [ "" = "${LAUNCH}" ] && [ "" != "${SRUN}" ] && [ "0" != "${SLURM}" ]; then
     if [ "" != "${BUILDKITE_LABEL}" ]; then
@@ -195,8 +204,9 @@ then
     if [ "" != "${LABEL}" ]; then
       SRUN_FLAGS="${SRUN_FLAGS} -J ${LABEL}"
     fi
-    if [ "" != "${LIMITRUN}" ]; then
-      SRUN_FLAGS="${SRUN_FLAGS} --time=${LIMITRUN}"
+    if [ "" != "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ]; then
+      # convert: seconds -> minutes
+      SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMITRUN/60))"
     fi
     umask 007
     # eventually cleanup run-script from terminated sessions
@@ -235,9 +245,33 @@ then
       TESTID=$(${BASENAME} ${SLURMFILE%.*})
     fi
     if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
-      PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
-      if [ "" != "${PARTITION}" ]; then
-        PARTITIONS=${PARTITION}
+      if [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
+         [ "" != "$(command -v touch)" ] && \
+         [ "" != "$(command -v stat)" ] && \
+         [ "" != "$(command -v date)" ];
+      then
+        NOW=$(date +%s)
+        if [ "" != "${LIMITDIR}" ] && [ -d ${LIMITDIR} ]; then
+          LIMITFILE=${LIMITDIR}/$(basename ${SLURMFILE})
+          if [ ! -e ${LIMITFILE} ]; then OLD=${NOW}; fi
+        else
+          LIMITFILE=${SLURMFILE}
+          OLD=$(stat -c %Y ${LIMITFILE})
+        fi
+        if [ "0" != "$(((OLD+LIMIT)<=NOW))" ]; then
+          echo "================================================================================"
+          echo "Skipped ${TESTID} due to LIMIT=${LIMIT} seconds."
+          echo "================================================================================"
+          continue
+        else
+          TOUCH=${LIMITFILE}
+        fi
+      fi
+      if [ "none" = "${PARTITIONS}" ]; then
+        PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
+        if [ "" != "${PARTITION}" ]; then
+          PARTITIONS=${PARTITION}
+        fi
       fi
     fi
     for PARTITION in ${PARTITIONS}; do
@@ -283,6 +317,9 @@ then
           echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
           echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
+        if [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ] && [ -e "${TEST}" ]; then
+          SLURMFILE=${TEST}
+        fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
           DIR=$(cd $(dirname ${SLURMFILE}); pwd -P)
@@ -294,16 +331,22 @@ then
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >> ${TESTSCRIPT}
           # control log
           echo "echo \"--- RUN ${TESTID}\"" >> ${TESTSCRIPT}
-          if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
+          if [ "" != "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
+             [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ];
+          then
             echo "(" >> ${TESTSCRIPT}
           fi
           DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
           ${SED} \
             -e "/^#\!..*/d" \
+            -e "/^#SBATCH/d" \
             -e "/^[[:space:]]*$/d" \
             -e "s/\.\//${DIRSED}\//" \
+            -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
             ${SLURMFILE} >> ${TESTSCRIPT}
-          if [ "" != "${LIMITLOG}" ] && [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ]; then
+          if [ "" != "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
+             [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ];
+          then
             echo ") | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
           fi
           # clear captured test
@@ -338,6 +381,10 @@ then
     done # ENVS
     done # CONFIGS
     done # PARTITIONS
+    if [ "" != "${TOUCH}" ] && [ -e ${TOUCH} ]; then
+      touch ${TOUCH}
+      TOUCH=""
+    fi
     done # SLURMFILE
 
     # increment the case number, or exit the script

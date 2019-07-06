@@ -60,6 +60,20 @@ LIBXSMM_API int libxsmm_trace_finalize(void);
 /** Receives the backtrace of up to 'size' addresses. Returns the actual number of addresses (n <= size). */
 LIBXSMM_API unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned int skip);
 
+LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* must be inline */
+#if defined(__GNUC__)
+  if (0 == level) return __builtin_return_address(0);
+  else
+#elif defined(_WIN32)
+  if (0 == level) return _AddressOfReturnAddress();
+  else
+#endif
+  { const void* stacktrace[4/*sufficient/maximum level*/];
+    const unsigned int n = libxsmm_backtrace(stacktrace, sizeof(stacktrace) / sizeof(*stacktrace), 0/*skip*/);
+    return (level < n ? stacktrace[level] : NULL);
+  }
+}
+
 /** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
 LIBXSMM_API const char* libxsmm_trace_info(
   /* Query and output the abs. location in stacktrace (no input). */
