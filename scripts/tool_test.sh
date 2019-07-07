@@ -380,7 +380,7 @@ then
     done # ENVS
     done # CONFIGS
     done # PARTITIONS
-    if [ "" != "${TOUCHFILE}" ] && [ -e ${TOUCHFILE} ]; then
+    if [ "" != "${TOUCHFILE}" ]; then
       touch ${TOUCHFILE}
       TOUCHFILE=""
     fi
