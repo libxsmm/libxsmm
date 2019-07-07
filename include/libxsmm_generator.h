@@ -223,6 +223,7 @@ LIBXSMM_API void libxsmm_generator_packed_gemm_ac_rm( libxsmm_generated_code*   
 /* @TODO change int based architecture value */
 LIBXSMM_API void libxsmm_generator_packed_gemm_bc_rm( libxsmm_generated_code*         io_generated_code,
                                                       const libxsmm_gemm_descriptor*  i_xgemm_desc,
+                                                      const unsigned int              i_packed_width,
                                                       const char*                     i_arch );
 
 LIBXSMM_API
