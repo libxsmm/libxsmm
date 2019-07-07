@@ -321,7 +321,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloo
   /* we need masking and have less than SIMD width */
   } else if ( l_simd_packed_width > i_packed_width  ) {
     /* run remainder compute kernel */
-    libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloop_simd_packed( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc,
+    libxsmm_generator_packed_gemm_bc_rm_avx_avx2_avx512_kloop_simd_packed( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, i_xgemm_desc,
                                                                            i_packed_width, l_simd_packed_width, l_simd_packed_remainder, i_n_blocking );
   /* we need the general case */
   } else {
