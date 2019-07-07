@@ -93,7 +93,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512( lib
   libxsmm_loop_label_tracker l_loop_label_tracker;
   libxsmm_gp_reg_mapping l_gp_reg_mapping;
 
-  /* select simd packing width and accumulator blocking */
+  /* select accumulator blocking */
   /* @TODO we could do more agressive blockings if needed */
   if ( ( io_generated_code->arch >= LIBXSMM_X86_AVX512 ) && ( io_generated_code->arch <= LIBXSMM_X86_ALLFEAT ) ) {
     l_max_reg_block = 28;
@@ -358,7 +358,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
                                      l_simd_packed_iters * l_simd_packed_width * i_micro_kernel_config->datatype_size );
   }
 
-  /* fix pointers, all pointers are at their beginning */
+  /* advance B and C pointers if N is bigger than our register blocking */
   if ( i_xgemm_desc->n != i_n_blocking ) {
     /* advance B pointer */
     libxsmm_x86_instruction_alu_imm( io_generated_code,
@@ -472,7 +472,7 @@ LIBXSMM_API_INTERN void libxsmm_generator_packed_gemm_ac_rm_avx_avx2_avx512_kloo
   libxsmm_generator_gemm_header_kloop( io_generated_code, io_loop_label_tracker, i_gp_reg_mapping, i_micro_kernel_config, 0, 1 );
 
   /* full vector load of A */
-  /* prepare KNM's QMADD */
+  /* @TODO: prepare KNM's QMADD */
   for ( l_lcl_k = 0; l_lcl_k < 1; l_lcl_k++ ) {
     /* in case of masking we need to distinguish between AVX/AVX2 and AVX512 */
     if ( l_use_masking ) {
