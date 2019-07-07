@@ -243,6 +243,8 @@ then
     if [ -d ${SLURMDIR} ]; then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
       TESTID=$(${BASENAME} ${SLURMFILE%.*})
+    elif [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ] && [ -e "${TEST}" ]; then
+      SLURMFILE=${TEST}
     fi
     if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
       if [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
@@ -264,7 +266,7 @@ then
           echo "================================================================================"
           continue
         else
-          TOUCH=${LIMITFILE}
+          TOUCHFILE=${LIMITFILE}
         fi
       fi
       if [ "none" = "${PARTITIONS}" ]; then
@@ -316,9 +318,6 @@ then
           ${CP} -u ${LICSDIR}/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
           echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
           echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
-        fi
-        if [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ] && [ -e "${TEST}" ]; then
-          SLURMFILE=${TEST}
         fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
@@ -381,9 +380,9 @@ then
     done # ENVS
     done # CONFIGS
     done # PARTITIONS
-    if [ "" != "${TOUCH}" ] && [ -e ${TOUCH} ]; then
-      touch ${TOUCH}
-      TOUCH=""
+    if [ "" != "${TOUCHFILE}" ] && [ -e ${TOUCHFILE} ]; then
+      touch ${TOUCHFILE}
+      TOUCHFILE=""
     fi
     done # SLURMFILE
 
