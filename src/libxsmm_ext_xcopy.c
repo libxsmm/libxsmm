@@ -151,8 +151,8 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
       else if (0 == typesize) {
         fprintf(stderr, "LIBXSMM ERROR: the type-size of the matrix-copy is zero!\n");
       }
-      else if (0 >= m || 0 >= n) {
-        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the matrix-copy is/are zero or negative!\n");
+      else if (0 > m || 0 > n) {
+        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the matrix-copy is/are negative!\n");
       }
       else {
         LIBXSMM_ASSERT(ldi < m || ldo < n);
@@ -274,8 +274,8 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
       else if (0 == typesize) {
         fprintf(stderr, "LIBXSMM ERROR: the type-size of the transpose is zero!\n");
       }
-      else if (0 >= m || 0 >= n) {
-        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the transpose is/are zero or negative!\n");
+      else if (0 > m || 0 > n) {
+        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the transpose is/are negative!\n");
       }
       else {
         LIBXSMM_ASSERT(ldi < m || ldo < n);
