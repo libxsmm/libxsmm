@@ -32,7 +32,7 @@
       MODULE LIBXSMM
         USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
      &    C_FLOAT, C_DOUBLE, C_CHAR, C_SHORT, C_INT, C_LONG_LONG,       &
-     &    C_INT8_T, C_INTPTR_T, C_F_POINTER, C_LOC, C_PTR
+     &    C_INT8_T, C_INTPTR_T, C_F_POINTER, C_LOC, C_PTR, C_NULL_PTR
         IMPLICIT NONE
 
         ! Name of the version (stringized set of version numbers).
@@ -735,14 +735,22 @@
         FUNCTION libxsmm_ptr_z1(a)
           COMPLEX(C_DOUBLE), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_z1
-          libxsmm_ptr_z1 = libxsmm_ptr_z0(a(LBOUND(a,1)))
+          IF (0.LT.SIZE(a)) THEN
+            libxsmm_ptr_z1 = libxsmm_ptr_z0(a(LBOUND(a,1)))
+          ELSE
+            libxsmm_ptr_z1 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z2
         FUNCTION libxsmm_ptr_z2(a)
           COMPLEX(C_DOUBLE), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_z2
-          libxsmm_ptr_z2 = libxsmm_ptr_z0(a(LBOUND(a,1),LBOUND(a,2)))
+          IF (ALL(0.LT.SHAPE(a))) THEN
+            libxsmm_ptr_z2 = libxsmm_ptr_z0(a(LBOUND(a,1),LBOUND(a,2)))
+          ELSE
+            libxsmm_ptr_z2 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c0
@@ -757,14 +765,22 @@
         FUNCTION libxsmm_ptr_c1(a)
           COMPLEX(C_FLOAT), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_c1
-          libxsmm_ptr_c1 = libxsmm_ptr_c0(a(LBOUND(a,1)))
+          IF (0.LT.SIZE(a)) THEN
+            libxsmm_ptr_c1 = libxsmm_ptr_c0(a(LBOUND(a,1)))
+          ELSE
+            libxsmm_ptr_c1 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_c2
         FUNCTION libxsmm_ptr_c2(a)
           COMPLEX(C_FLOAT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_c2
-          libxsmm_ptr_c2 = libxsmm_ptr_c0(a(LBOUND(a,1),LBOUND(a,2)))
+          IF (ALL(0.LT.SHAPE(a))) THEN
+            libxsmm_ptr_c2 = libxsmm_ptr_c0(a(LBOUND(a,1),LBOUND(a,2)))
+          ELSE
+            libxsmm_ptr_c2 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d0
@@ -779,14 +795,22 @@
         FUNCTION libxsmm_ptr_d1(a)
           REAL(C_DOUBLE), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_d1
-          libxsmm_ptr_d1 = libxsmm_ptr_d0(a(LBOUND(a,1)))
+          IF (0.LT.SIZE(a)) THEN
+            libxsmm_ptr_d1 = libxsmm_ptr_d0(a(LBOUND(a,1)))
+          ELSE
+            libxsmm_ptr_d1 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_d2
         FUNCTION libxsmm_ptr_d2(a)
           REAL(C_DOUBLE), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_d2
-          libxsmm_ptr_d2 = libxsmm_ptr_d0(a(LBOUND(a,1),LBOUND(a,2)))
+          IF (ALL(0.LT.SHAPE(a))) THEN
+            libxsmm_ptr_d2 = libxsmm_ptr_d0(a(LBOUND(a,1),LBOUND(a,2)))
+          ELSE
+            libxsmm_ptr_d2 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s0
@@ -801,14 +825,22 @@
         FUNCTION libxsmm_ptr_s1(a)
           REAL(C_FLOAT), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_s1
-          libxsmm_ptr_s1 = libxsmm_ptr_s0(a(LBOUND(a,1)))
+          IF (0.LT.SIZE(a)) THEN
+            libxsmm_ptr_s1 = libxsmm_ptr_s0(a(LBOUND(a,1)))
+          ELSE
+            libxsmm_ptr_s1 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_s2
         FUNCTION libxsmm_ptr_s2(a)
           REAL(C_FLOAT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_s2
-          libxsmm_ptr_s2 = libxsmm_ptr_s0(a(LBOUND(a,1),LBOUND(a,2)))
+          IF (ALL(0.LT.SHAPE(a))) THEN
+            libxsmm_ptr_s2 = libxsmm_ptr_s0(a(LBOUND(a,1),LBOUND(a,2)))
+          ELSE
+            libxsmm_ptr_s2 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i0
@@ -823,14 +855,22 @@
         FUNCTION libxsmm_ptr_i1(a)
           INTEGER(C_INT), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_i1
-          libxsmm_ptr_i1 = libxsmm_ptr_i0(a(LBOUND(a,1)))
+          IF (0.LT.SIZE(a)) THEN
+            libxsmm_ptr_i1 = libxsmm_ptr_i0(a(LBOUND(a,1)))
+          ELSE
+            libxsmm_ptr_i1 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_i2
         FUNCTION libxsmm_ptr_i2(a)
           INTEGER(C_INT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_i2
-          libxsmm_ptr_i2 = libxsmm_ptr_i0(a(LBOUND(a,1),LBOUND(a,2)))
+          IF (ALL(0.LT.SHAPE(a))) THEN
+            libxsmm_ptr_i2 = libxsmm_ptr_i0(a(LBOUND(a,1),LBOUND(a,2)))
+          ELSE
+            libxsmm_ptr_i2 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w0
@@ -845,14 +885,22 @@
         FUNCTION libxsmm_ptr_w1(a)
           INTEGER(C_SHORT), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_w1
-          libxsmm_ptr_w1 = libxsmm_ptr_w0(a(LBOUND(a,1)))
+          IF (0.LT.SIZE(a)) THEN
+            libxsmm_ptr_w1 = libxsmm_ptr_w0(a(LBOUND(a,1)))
+          ELSE
+            libxsmm_ptr_w1 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_w2
         FUNCTION libxsmm_ptr_w2(a)
           INTEGER(C_SHORT), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_w2
-          libxsmm_ptr_w2 = libxsmm_ptr_w0(a(LBOUND(a,1),LBOUND(a,2)))
+          IF (ALL(0.LT.SHAPE(a))) THEN
+            libxsmm_ptr_w2 = libxsmm_ptr_w0(a(LBOUND(a,1),LBOUND(a,2)))
+          ELSE
+            libxsmm_ptr_w2 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_j0
@@ -867,14 +915,22 @@
         FUNCTION libxsmm_ptr_j1(a)
           INTEGER(C_INT8_T), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_j1
-          libxsmm_ptr_j1 = libxsmm_ptr_j0(a(LBOUND(a,1)))
+          IF (0.LT.SIZE(a)) THEN
+            libxsmm_ptr_j1 = libxsmm_ptr_j0(a(LBOUND(a,1)))
+          ELSE
+            libxsmm_ptr_j1 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_j2
         FUNCTION libxsmm_ptr_j2(a)
           INTEGER(C_INT8_T), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_j2
-          libxsmm_ptr_j2 = libxsmm_ptr_j0(a(LBOUND(a,1),LBOUND(a,2)))
+          IF (ALL(0.LT.SHAPE(a))) THEN
+            libxsmm_ptr_j2 = libxsmm_ptr_j0(a(LBOUND(a,1),LBOUND(a,2)))
+          ELSE
+            libxsmm_ptr_j2 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b0
@@ -889,14 +945,22 @@
         FUNCTION libxsmm_ptr_b1(a)
           CHARACTER(C_CHAR), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_b1
-          libxsmm_ptr_b1 = libxsmm_ptr_b0(a(LBOUND(a,1)))
+          IF (0.LT.SIZE(a)) THEN
+            libxsmm_ptr_b1 = libxsmm_ptr_b0(a(LBOUND(a,1)))
+          ELSE
+            libxsmm_ptr_b1 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_b2
         FUNCTION libxsmm_ptr_b2(a)
           CHARACTER(C_CHAR), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_b2
-          libxsmm_ptr_b2 = libxsmm_ptr_b0(a(LBOUND(a,1),LBOUND(a,2)))
+          IF (ALL(0.LT.SHAPE(a))) THEN
+            libxsmm_ptr_b2 = libxsmm_ptr_b0(a(LBOUND(a,1),LBOUND(a,2)))
+          ELSE
+            libxsmm_ptr_b2 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_l0
@@ -911,14 +975,22 @@
         FUNCTION libxsmm_ptr_l1(a)
           INTEGER(C_LONG_LONG), INTENT(IN) :: a(:)
           TYPE(C_PTR) :: libxsmm_ptr_l1
-          libxsmm_ptr_l1 = libxsmm_ptr_l0(a(LBOUND(a,1)))
+          IF (0.LT.SIZE(a)) THEN
+            libxsmm_ptr_l1 = libxsmm_ptr_l0(a(LBOUND(a,1)))
+          ELSE
+            libxsmm_ptr_l1 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_l2
         FUNCTION libxsmm_ptr_l2(a)
           INTEGER(C_LONG_LONG), INTENT(IN) :: a(:,:)
           TYPE(C_PTR) :: libxsmm_ptr_l2
-          libxsmm_ptr_l2 = libxsmm_ptr_l0(a(LBOUND(a,1),LBOUND(a,2)))
+          IF (ALL(0.LT.SHAPE(a))) THEN
+            libxsmm_ptr_l2 = libxsmm_ptr_l0(a(LBOUND(a,1),LBOUND(a,2)))
+          ELSE
+            libxsmm_ptr_l2 = C_NULL_PTR
+          END IF
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_release_dmmkernel
@@ -1203,10 +1275,12 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_DOUBLE), INTENT(IN) :: a(:), b(:)
           REAL(C_DOUBLE), INTENT(INOUT) :: c(:)
-          CALL libxsmm_dgemm0(transa, transb, m, n, k,                  &
-     &      alpha, a(LBOUND(a,1)), lda,                                 &
-     &             b(LBOUND(b,1)), ldb,                                 &
-     &       beta, c(LBOUND(c,1)), ldc)
+          IF ((0.LT.SIZE(a)).AND.(0.LT.SIZE(b)).AND.(0.LT.SIZE(c))) THEN
+            CALL libxsmm_dgemm0(transa, transb, m, n, k,                &
+     &        alpha, a(LBOUND(a,1)), lda,                               &
+     &               b(LBOUND(b,1)), ldb,                               &
+     &         beta, c(LBOUND(c,1)), ldc)
+          END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm2
@@ -1220,10 +1294,15 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
-          CALL libxsmm_dgemm0(transa, transb, m, n, k,                  &
-     &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
-     &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
-     &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
+     &        ALL(0.LT.SHAPE(b)).AND.                                   &
+     &        ALL(0.LT.SHAPE(c)))                                       &
+     &    THEN
+            CALL libxsmm_dgemm0(transa, transb, m, n, k,                &
+     &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
+     &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
+     &         beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm0
@@ -1268,10 +1347,12 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_FLOAT), INTENT(IN) :: a(:), b(:)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:)
-          CALL libxsmm_sgemm0(transa, transb, m, n, k,                  &
-     &      alpha, a(LBOUND(a,1)), lda,                                 &
-     &             b(LBOUND(b,1)), ldb,                                 &
-     &       beta, c(LBOUND(c,1)), ldc)
+          IF ((0.LT.SIZE(a)).AND.(0.LT.SIZE(b)).AND.(0.LT.SIZE(c))) THEN
+            CALL libxsmm_sgemm0(transa, transb, m, n, k,                &
+     &        alpha, a(LBOUND(a,1)), lda,                               &
+     &               b(LBOUND(b,1)), ldb,                               &
+     &         beta, c(LBOUND(c,1)), ldc)
+          END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm2
@@ -1285,10 +1366,15 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
-          CALL libxsmm_sgemm0(transa, transb, m, n, k,                  &
-     &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
-     &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
-     &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
+     &        ALL(0.LT.SHAPE(b)).AND.                                   &
+     &        ALL(0.LT.SHAPE(c)))                                       &
+     &    THEN
+            CALL libxsmm_sgemm0(transa, transb, m, n, k,                &
+     &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
+     &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
+     &         beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm0
@@ -1333,10 +1419,12 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_SHORT), INTENT(IN) :: a(:), b(:)
           INTEGER(C_INT), INTENT(INOUT) :: c(:)
-          CALL libxsmm_wigemm0(transa, transb, m, n, k,                 &
-     &      alpha, a(LBOUND(a,1)), lda,                                 &
-     &             b(LBOUND(b,1)), ldb,                                 &
-     &       beta, c(LBOUND(c,1)), ldc)
+          IF ((0.LT.SIZE(a)).AND.(0.LT.SIZE(b)).AND.(0.LT.SIZE(c))) THEN
+            CALL libxsmm_wigemm0(transa, transb, m, n, k,               &
+     &        alpha, a(LBOUND(a,1)), lda,                               &
+     &               b(LBOUND(b,1)), ldb,                               &
+     &         beta, c(LBOUND(c,1)), ldc)
+          END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wigemm2
@@ -1350,10 +1438,15 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_SHORT), INTENT(IN) :: a(:,:), b(:,:)
           INTEGER(C_INT), INTENT(INOUT) :: c(:,:)
-          CALL libxsmm_wigemm0(transa, transb, m, n, k,                 &
-     &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
-     &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
-     &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
+     &        ALL(0.LT.SHAPE(b)).AND.                                   &
+     &        ALL(0.LT.SHAPE(c)))                                       &
+     &    THEN
+            CALL libxsmm_wigemm0(transa, transb, m, n, k,               &
+     &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
+     &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
+     &         beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsgemm0
@@ -1398,10 +1491,12 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_SHORT), INTENT(IN) :: a(:), b(:)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:)
-          CALL libxsmm_wsgemm0(transa, transb, m, n, k,                 &
-     &      alpha, a(LBOUND(a,1)), lda,                                 &
-     &             b(LBOUND(b,1)), ldb,                                 &
-     &       beta, c(LBOUND(c,1)), ldc)
+          IF ((0.LT.SIZE(a)).AND.(0.LT.SIZE(b)).AND.(0.LT.SIZE(c))) THEN
+            CALL libxsmm_wsgemm0(transa, transb, m, n, k,               &
+     &        alpha, a(LBOUND(a,1)), lda,                               &
+     &               b(LBOUND(b,1)), ldb,                               &
+     &         beta, c(LBOUND(c,1)), ldc)
+          END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsgemm2
@@ -1415,10 +1510,15 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_SHORT), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
-          CALL libxsmm_wsgemm0(transa, transb, m, n, k,                 &
-     &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
-     &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
-     &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
+     &        ALL(0.LT.SHAPE(b)).AND.                                   &
+     &        ALL(0.LT.SHAPE(c)))                                       &
+     &    THEN
+            CALL libxsmm_wsgemm0(transa, transb, m, n, k,               &
+     &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
+     &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
+     &         beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm0
@@ -1463,10 +1563,12 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_DOUBLE), INTENT(IN) :: a(:), b(:)
           REAL(C_DOUBLE), INTENT(INOUT) :: c(:)
-          CALL libxsmm_blas_dgemm0(transa, transb, m, n, k,             &
-     &      alpha, a(LBOUND(a,1)), lda,                                 &
-     &             b(LBOUND(b,1)), ldb,                                 &
-     &       beta, c(LBOUND(c,1)), ldc)
+          IF ((0.LT.SIZE(a)).AND.(0.LT.SIZE(b)).AND.(0.LT.SIZE(c))) THEN
+            CALL libxsmm_blas_dgemm0(transa, transb, m, n, k,           &
+     &        alpha, a(LBOUND(a,1)), lda,                               &
+     &               b(LBOUND(b,1)), ldb,                               &
+     &         beta, c(LBOUND(c,1)), ldc)
+          END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_dgemm2
@@ -1480,10 +1582,15 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
-          CALL libxsmm_blas_dgemm0(transa, transb, m, n, k,             &
-     &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
-     &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
-     &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
+     &        ALL(0.LT.SHAPE(b)).AND.                                   &
+     &        ALL(0.LT.SHAPE(c)))                                       &
+     &    THEN
+            CALL libxsmm_blas_dgemm0(transa, transb, m, n, k,           &
+     &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
+     &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
+     &         beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm0
@@ -1528,10 +1635,12 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_FLOAT), INTENT(IN) :: a(:), b(:)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:)
-          CALL libxsmm_blas_sgemm0(transa, transb, m, n, k,             &
-     &      alpha, a(LBOUND(a,1)), lda,                                 &
-     &             b(LBOUND(b,1)), ldb,                                 &
-     &       beta, c(LBOUND(c,1)), ldc)
+          IF ((0.LT.SIZE(a)).AND.(0.LT.SIZE(b)).AND.(0.LT.SIZE(c))) THEN
+            CALL libxsmm_blas_sgemm0(transa, transb, m, n, k,           &
+     &        alpha, a(LBOUND(a,1)), lda,                               &
+     &               b(LBOUND(b,1)), ldb,                               &
+     &         beta, c(LBOUND(c,1)), ldc)
+          END IF
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_blas_sgemm2
@@ -1545,10 +1654,15 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
-          CALL libxsmm_blas_sgemm0(transa, transb, m, n, k,             &
-     &      alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                     &
-     &             b(LBOUND(b,1),LBOUND(b,2)), ldb,                     &
-     &       beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
+     &        ALL(0.LT.SHAPE(b)).AND.                                   &
+     &        ALL(0.LT.SHAPE(c)))                                       &
+     &    THEN
+            CALL libxsmm_blas_sgemm0(transa, transb, m, n, k,           &
+     &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
+     &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
+     &         beta, c(LBOUND(c,1),LBOUND(c,2)), ldc)
+          END IF
         END SUBROUTINE
 
         ! Matrix-copy (2-dimensional copy) routine. If the input (optional)

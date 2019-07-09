@@ -193,7 +193,7 @@ then
   if [ "" != "${LIMITRUN}" ] && [ "0" != "${LIMITRUN}" ] && \
      [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ];
   then
-    LIMIT=$((LIMITRUN<LIMIT?LIMITRUN:LIMIT))
+    LIMITRUN=$((LIMIT<LIMITRUN?LIMIT:LIMITRUN))
   fi
 
   # setup batch execution (TEST may be a singular test given by filename)

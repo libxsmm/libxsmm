@@ -298,7 +298,7 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
-          libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_hash.c libxsmm_diff.c libxsmm_math.c \
+          libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_hash.c libxsmm_math.c \
           libxsmm_sync.c libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_xcopy.c libxsmm_blocked_gemm.c libxsmm_spmdm.c libxsmm_fsspmdm.c libxsmm_rng.c\
           libxsmm_dnn.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c libxsmm_dnn_elementwise.c \
