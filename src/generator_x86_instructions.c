@@ -3972,7 +3972,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
        /* four bytes */
        unsigned char *l_cptr = (unsigned char *) &i_immediate;
        buf[i++] = (unsigned char)(0x48 + l_first);
-       if ( i_gp_reg_number==0 && (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
+       if ( i_gp_reg_number==0 && ((i_alu_instr==LIBXSMM_X86_INSTR_SUBQ) || (i_alu_instr==LIBXSMM_X86_INSTR_CMPQ) || (i_alu_instr==LIBXSMM_X86_INSTR_ADDQ)) )
        {
           /* special case for %rax! */
           buf[i++] = (unsigned char)(0x05 + l_second);
