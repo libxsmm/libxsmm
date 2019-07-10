@@ -58,7 +58,6 @@ const element_filter_type *A_array[1024];
 const element_input_type  *B_array[1024];
 #endif
 #ifdef OFFSET_BRGEMM
-LIBXSMM_UNUSED( ifm1 );
 unsigned long long  A_offsets[1024];
 unsigned long long  B_offsets[1024];
 #endif
