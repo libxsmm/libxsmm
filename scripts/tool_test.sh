@@ -260,7 +260,7 @@ then
           LIMITFILE=${SLURMFILE}
           OLD=$(stat -c %Y ${LIMITFILE})
         fi
-        if [ "0" != "$(((OLD+LIMIT)<=NOW))" ]; then
+        if [ "0" != "$((NOW<(OLD+LIMIT)))" ]; then
           echo "================================================================================"
           echo "Skipped ${TESTID} due to LIMIT=${LIMIT} seconds."
           echo "================================================================================"
