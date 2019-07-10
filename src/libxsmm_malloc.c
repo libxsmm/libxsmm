@@ -1388,7 +1388,12 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         flags |= info->flags;
         info = NULL;
       }
-      if (alloc_failed != buffer && /*fall-back*/NULL != buffer) {
+      if (
+#if !defined(__clang_analyzer__)
+        alloc_failed != buffer &&
+#endif
+        /*fall-back*/NULL != buffer)
+      {
         char *const cbuffer = (char*)buffer, *const aligned = LIBXSMM_ALIGN(cbuffer + extra_size + sizeof(internal_malloc_info_type), alloc_alignment);
         internal_malloc_info_type *const buffer_info = (internal_malloc_info_type*)(aligned - sizeof(internal_malloc_info_type));
         LIBXSMM_ASSERT((aligned + size) <= (cbuffer + alloc_size));
@@ -1396,63 +1401,56 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         if (NULL != extra || 0 == extra_size) {
           const char *const src = (const char*)extra;
           int i; for (i = 0; i < (int)extra_size; ++i) cbuffer[i] = src[i];
-          if (0 == (LIBXSMM_MALLOC_FLAG_PRIVATE & flags)) { /* public */
-            if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags) && internal_malloc_scratch_size < alloc_size) {
-              internal_malloc_scratch_size = alloc_size; /* accept data-race */
-            }
-          }
-          else {
-            if (0 == (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
-              internal_malloc_private_size += alloc_size; /* accept data-race */
-            }
-            else if (internal_malloc_private_size < alloc_size) { /* scratch */
-              internal_malloc_private_size = alloc_size; /* accept data-race */
-            }
-          }
-          /* keep allocation function on record */
-          if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
-            buffer_info->context = context;
-            buffer_info->free = free_fn;
-          }
-          else {
-            buffer_info->free.function = NULL;
-            buffer_info->context = NULL;
-          }
-          buffer_info->size = size; /* record user's size rather than allocated size */
-          buffer_info->pointer = buffer;
-          buffer_info->reloc = reloc;
-          buffer_info->flags = flags;
-#if !defined(LIBXSMM_MALLOC_NOCRC) /* calculate checksum over info */
-          buffer_info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, buffer_info,
-            /* info size minus actual hash value */
-            (unsigned int)(((char*)&buffer_info->hash) - ((char*)buffer_info)));
-#endif
-          if (NULL != info) { /* copy previous content */
-            memcpy(aligned, *memory, LIBXSMM_MIN(info->size, size));
-            result = internal_xfree(*memory, info); /* !libxsmm_free */
-            if (EXIT_SUCCESS == result) { /* finally commit/return allocated buffer */
-              *memory = aligned;
-            }
-#if !defined(NDEBUG) /* display some extra context of the failure (reallocation) */
-            else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-              && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-            {
-              fprintf(stderr, "LIBXSMM ERROR: memory reallocation failed to release memory!\n");
-            }
-#endif
-          }
-          else { /* finally commit/return allocated buffer */
-            *memory = aligned;
+        }
+        else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM ERROR: incorrect extraneous data specification!\n");
+          /* no EXIT_FAILURE because valid buffer is returned */
+        }
+        /* update statistics */
+        if (0 == (LIBXSMM_MALLOC_FLAG_PRIVATE & flags)) { /* public */
+          if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags) && internal_malloc_scratch_size < alloc_size) {
+            internal_malloc_scratch_size = alloc_size; /* accept data-race */
           }
         }
         else {
-          if (0 != libxsmm_verbosity /* library code is expected to be mute */
+          if (0 == (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
+            internal_malloc_private_size += alloc_size; /* accept data-race */
+          }
+          else if (internal_malloc_private_size < alloc_size) { /* scratch */
+            internal_malloc_private_size = alloc_size; /* accept data-race */
+          }
+        }
+        /* keep allocation function on record */
+        if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
+          buffer_info->context = context;
+          buffer_info->free = free_fn;
+        }
+        else {
+          buffer_info->free.function = NULL;
+          buffer_info->context = NULL;
+        }
+        buffer_info->size = size; /* record user's size rather than allocated size */
+        buffer_info->pointer = buffer;
+        buffer_info->reloc = reloc;
+        buffer_info->flags = flags;
+#if !defined(LIBXSMM_MALLOC_NOCRC) /* calculate checksum over info */
+        buffer_info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, buffer_info,
+          /* info size minus actual hash value */
+          (unsigned int)(((char*)&buffer_info->hash) - ((char*)buffer_info)));
+#endif
+        if (NULL != info) { /* copy previous content */
+          memcpy(aligned, *memory, LIBXSMM_MIN(info->size, size));
+          /* display some extra context of the failure (reallocation) */
+          if (EXIT_SUCCESS != internal_xfree(*memory, info) /* !libxsmm_free */
+            && 0 != libxsmm_verbosity /* library code is expected to be mute */
             && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
           {
-            fprintf(stderr, "LIBXSMM ERROR: incorrect extraneous data specification!\n");
+            fprintf(stderr, "LIBXSMM ERROR: memory reallocation failed to release memory!\n");
           }
-          result = EXIT_FAILURE;
         }
+        *memory = aligned; /* finally commit/return allocated buffer */
       }
       else {
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -1461,6 +1459,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
           fprintf(stderr, "LIBXSMM ERROR: memory allocation error for size %" PRIuPTR " with flag=%i!\n", (uintptr_t)alloc_size, flags);
         }
         result = EXIT_FAILURE;
+        *memory = NULL;
       }
     }
     else {
@@ -1469,7 +1468,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
       {
         fprintf(stderr, "LIBXSMM WARNING: zero-sized memory allocation detected!\n");
       }
-      *memory = NULL;
+      *memory = NULL; /* no EXIT_FAILURE */
     }
   }
 #if !defined(NDEBUG)
@@ -1477,7 +1476,6 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
     result = EXIT_FAILURE;
   }
 #endif
-  LIBXSMM_ASSERT(EXIT_SUCCESS == result);
   return result;
 }
 
