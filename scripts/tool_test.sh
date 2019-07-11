@@ -259,8 +259,9 @@ then
         fi
         if [ -e ${LIMITFILE} ]; then
           OLD=$(stat -c %Y ${LIMITFILE})
-        else # fallback
+        else # ensure build is not skipped
           OLD=${NOW}
+          LIMIT=0
         fi
         if [ "0" != "$((NOW<(OLD+LIMIT)))" ]; then
           echo "================================================================================"
