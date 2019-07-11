@@ -50,13 +50,12 @@ MKTEMP=${HERE}/../.mktmp.sh
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
 
-if [ "" != "${WGET}" ] && \
+if [ "" != "${WGET}" ] && [ "" != "${PIPELINE}" ] && \
    [ "" != "${BUILDKITE_ORGANIZATION_SLUG}" ] && \
-   [ "" != "${BUILDKITE_PIPELINE_SLUG}" ] && \
    [ "" != "${BUILDKITE_AGENT_ACCESS_TOKEN}" ];
 then
   REVSTART=$(${WGET} -qO- \
-  https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN} \
+  https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN} \
   | ${SED} -n '/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
 fi
 if [ "" = "${REVSTART}" ]; then
@@ -208,30 +207,26 @@ then
     elif [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ] && [ -e "${TEST}" ]; then
       SLURMFILE=${TEST}
     fi
+    if [ "none" = "${PARTITIONS}" ] && [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
+      PARTITION=$(${SED} -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
+      if [ "" != "${PARTITION}" ]; then PARTITIONS=${PARTITION}; fi
+    fi
     if [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
        [ "" != "$(command -v touch)" ] && \
        [ "" != "$(command -v stat)" ] && \
        [ "" != "$(command -v date)" ];
     then
       NOW=$(date +%s)
-      if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
-        if [ "none" = "${PARTITIONS}" ]; then
-          PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
-          if [ "" != "${PARTITION}" ]; then PARTITIONS=${PARTITION}; fi
-        fi
+      LIMITFILE=$(echo "${LABEL}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
+      if [ "" = "${LIMITFILE}" ]; then
+        LIMITFILE=$(echo "${TESTID}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
+      fi
+      if [ "" = "${LIMITFILE}" ]; then
+        if [ "" != "${PIPELINE}" ]; then LIMITBASE="${PIPELINE}-"; fi
         if [ "" != "${LIMITDIR}" ] && [ -d ${LIMITDIR} ]; then
-          if [ "" != "${BRANCH}" ]; then LIMITBRANCH="${BRANCH}-"; fi
-          LIMITFILE=${LIMITDIR}/${LIMITBRANCH}$(${BASENAME} ${SLURMFILE})
-        else # existing Slurm-file is also used to carry time-stamp
-          LIMITFILE=${SLURMFILE}
-        fi
-      else # support LIMIT for non-Slurmscripts
-        LIMITFILE=$(echo "${LABEL}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
-        if [ "" = "${LIMITFILE}" ]; then
-          LIMITFILE=$(echo "${TESTID}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
-        fi
-        if [ "" != "${LIMITFILE}" ]; then # LIMITDIR not considered (always local)
-          LIMITFILE=${REPOROOT}/${LIMITFILE}
+          LIMITFILE=${LIMITDIR}/${LIMITBASE}${LIMITFILE}
+        else
+          LIMITFILE=${REPOROOT}/${LIMITBASE}${LIMITFILE}
         fi
       fi
       if [ "" != "${LIMITFILE}" ] && [ -e ${LIMITFILE} ]; then
