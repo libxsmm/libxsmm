@@ -110,16 +110,6 @@ then
   fi
 
   HOST=$(hostname -s 2>/dev/null)
-  if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
-    export TRAVIS_BUILD_DIR=${BUILDKITE_BUILD_CHECKOUT_PATH}
-  fi
-  if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
-    export BUILDKITE_BUILD_CHECKOUT_PATH=${HERE}/..
-    export TRAVIS_BUILD_DIR=${HERE}/..
-  fi
-  if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "${UNAME}" ]; then
-    export TRAVIS_OS_NAME=$(${UNAME})
-  fi
 
   # set the case number
   if [ "" != "$1" ] && [ -e $1 ]; then
@@ -142,8 +132,16 @@ then
   fi
 
   # should be source'd after the above variables are set
-  source ${HERE}/../.env/travis.env
   source ${HERE}/../.env/buildkite.env
+  source ${HERE}/../.env/travis.env
+
+  # support yml-files for Travis-CI that depend on TRAVIS_* variables
+  if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
+    export TRAVIS_BUILD_DIR=${REPOROOT}
+  fi
+  if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "${UNAME}" ]; then
+    export TRAVIS_OS_NAME=$(${UNAME})
+  fi
 
   # setup PARTITIONS for multi-tests
   if [ "" = "${PARTITIONS}" ]; then
@@ -254,11 +252,15 @@ then
       then
         NOW=$(date +%s)
         if [ "" != "${LIMITDIR}" ] && [ -d ${LIMITDIR} ]; then
-          LIMITFILE=${LIMITDIR}/$(basename ${SLURMFILE})
-          if [ ! -e ${LIMITFILE} ]; then OLD=${NOW}; fi
-        else
+          if [ "" != "${BRANCH}" ]; then LIMITBRANCH="${BRANCH}-"; fi
+          LIMITFILE=${LIMITDIR}/${LIMITBRANCH}$(basename ${SLURMFILE})
+        else # existing Slurm-file is also used to carry time-stamp
           LIMITFILE=${SLURMFILE}
+        fi
+        if [ -e ${LIMITFILE} ]; then
           OLD=$(stat -c %Y ${LIMITFILE})
+        else # fallback
+          OLD=${NOW}
         fi
         if [ "0" != "$((NOW<(OLD+LIMIT)))" ]; then
           echo "================================================================================"
@@ -280,9 +282,9 @@ then
     for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
     if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-       [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
+       [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ];
     then
-      source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env
+      source ${REPOROOT}/.env/${HOST}/${CONFIG}.env
     fi
     for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
@@ -310,14 +312,14 @@ then
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-           [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
+           [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ];
         then
           LICSDIR=$(command -v icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
-          ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
-          ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
-          ${CP} -u ${LICSDIR}/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
-          echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
-          echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
+          ${MKDIR} -p ${REPOROOT}/licenses
+          ${CP} -u /opt/intel/licenses/* ${REPOROOT}/licenses 2>/dev/null
+          ${CP} -u ${LICSDIR}/licenses/* ${REPOROOT}/licenses 2>/dev/null
+          echo "export INTEL_LICENSE_FILE=${REPOROOT}/licenses" >> ${TESTSCRIPT}
+          echo "source ${REPOROOT}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
@@ -325,7 +327,7 @@ then
           if [ -e ${DIR}/../Makefile ]; then
             DIR=${DIR}/..
           fi
-          echo "cd ${TRAVIS_BUILD_DIR} && make \${MAKEJ} && cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
+          echo "cd ${REPOROOT} && make \${MAKEJ} && cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
           echo "RESULT=\$?" >> ${TESTSCRIPT}
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >> ${TESTSCRIPT}
           # control log
