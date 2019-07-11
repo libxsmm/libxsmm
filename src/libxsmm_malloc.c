@@ -293,8 +293,10 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
 
 LIBXSMM_API_INLINE int internal_xfree(const void* memory, internal_malloc_info_type* info)
 {
-  int result = EXIT_SUCCESS;
+#if !defined(LIBXSMM_BUILD) || !defined(_WIN32)
   static int error_once = 0;
+#endif
+  int result = EXIT_SUCCESS;
   void* buffer;
   LIBXSMM_ASSERT(NULL != memory && NULL != info);
   buffer = info->pointer;
