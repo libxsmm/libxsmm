@@ -37,21 +37,16 @@ MKDIR=$(command -v mkdir)
 CHMOD=$(command -v chmod)
 UNAME=$(command -v uname)
 SYNC=$(command -v sync)
-SORT=$(command -v sort)
 GREP=$(command -v grep)
 WGET=$(command -v wget)
 GIT=$(command -v git)
 SED=$(command -v sed)
 CUT=$(command -v cut)
-REV=$(command -v rev)
 TR=$(command -v tr)
-WC=$(command -v wc)
 RM=$(command -v rm)
 CP=$(command -v cp)
 
 MKTEMP=${HERE}/../.mktmp.sh
-FASTCI=$2
-
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
 
@@ -68,57 +63,25 @@ if [ "" = "${REVSTART}" ]; then
   REVSTART="HEAD^"
 fi
 
-if [ "" = "${FULLCI}" ] || [ "0" = "${FULLCI}" ]; then
-  FULLCI="\[full ci\]"
-fi
-
 if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && \
-   [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${WC}" ] && \
+   [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
    [ "" != "${RM}" ] && [ "" != "${CP}" ];
 then
-  # check if full tests are triggered (allows to skip the detailed investigation)
-  if [ "webhook" = "${BUILDKITE_SOURCE}" ] && \
-     [ "" != "${FASTCI}" ] && [ -e ${FASTCI} ] && [ "" != "${GIT}" ] && [ "1" != "${FULLCI}" ] && \
-     [ "" = "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "${FULLCI}")" ];
-  then
-    # transform wild-card patterns to regular expressions
-    PATTERNS="$(${SED} -e 's/\./\\./g' -e 's/\*/..*/g' -e 's/?/./g' -e 's/$/\$/g' ${FASTCI} 2>/dev/null)"
-    DOTESTS=0
-    if [ "" != "${PATTERNS}" ]; then
-      for FILENAME in $(${GIT} diff --name-only ${REVSTART} HEAD 2>/dev/null); do
-        # check if the file is supposed to impact a build (source code or script)
-        for PATTERN in ${PATTERNS}; do
-          MATCH=$(echo "${FILENAME}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
-          if [ "" != "${MATCH}" ]; then # file would impact the build
-            DOTESTS=1
-            break
-          fi
-        done
-        if [ "0" != "${DOTESTS}" ]; then
-          break
-        fi
-      done
-    else
-      DOTESTS=1
-    fi
-    if [ "0" = "${DOTESTS}" ]; then
-      echo "================================================================================"
-      echo "Skipped test(s) due to FASTCI option."
-      echo "================================================================================"
-      exit 0 # skip tests
-    fi
+  # check if full/unlimited tests are triggered
+  if [ "" != "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
+    LIMIT=0
   fi
-
-  HOST=$(hostname -s 2>/dev/null)
+  if [ "0" != "${LIMIT}" ] && [ "" != "${GIT}" ] && \
+     [ "" != "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "\[full ci\]")" ];
+  then
+    LIMIT=0
+  fi
 
   # set the case number
   if [ "" != "$1" ] && [ -e $1 ]; then
     export TESTSETFILE=$1
-    if [ "" != "${BASENAME}" ] && [ "" != "${REV}" ] && [ "" != "${CUT}" ]; then
+    if [ "" != "${BASENAME}" ]; then
       export TESTID=$(${BASENAME} ${TESTSETFILE%.*})
-      if [ "" = "${TESTID}" ]; then
-        export TESTID=$(${BASENAME} ${TESTSETFILE} | ${REV} | ${CUT} -d. -f1 | ${REV})
-      fi
     else
       export TESTID=${TESTSETFILE}
     fi
@@ -142,6 +105,7 @@ then
   if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "${UNAME}" ]; then
     export TRAVIS_OS_NAME=$(${UNAME})
   fi
+  HOST=$(hostname -s 2>/dev/null)
 
   # setup PARTITIONS for multi-tests
   if [ "" = "${PARTITIONS}" ]; then
@@ -244,40 +208,48 @@ then
     elif [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ] && [ -e "${TEST}" ]; then
       SLURMFILE=${TEST}
     fi
-    if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
-      if [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
-         [ "" != "$(command -v touch)" ] && \
-         [ "" != "$(command -v stat)" ] && \
-         [ "" != "$(command -v date)" ];
-      then
-        NOW=$(date +%s)
+    if [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
+       [ "" != "$(command -v touch)" ] && \
+       [ "" != "$(command -v stat)" ] && \
+       [ "" != "$(command -v date)" ];
+    then
+      NOW=$(date +%s)
+      if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
+        if [ "none" = "${PARTITIONS}" ]; then
+          PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
+          if [ "" != "${PARTITION}" ]; then PARTITIONS=${PARTITION}; fi
+        fi
         if [ "" != "${LIMITDIR}" ] && [ -d ${LIMITDIR} ]; then
           if [ "" != "${BRANCH}" ]; then LIMITBRANCH="${BRANCH}-"; fi
-          LIMITFILE=${LIMITDIR}/${LIMITBRANCH}$(basename ${SLURMFILE})
+          LIMITFILE=${LIMITDIR}/${LIMITBRANCH}$(${BASENAME} ${SLURMFILE})
         else # existing Slurm-file is also used to carry time-stamp
           LIMITFILE=${SLURMFILE}
         fi
-        if [ -e ${LIMITFILE} ]; then
-          OLD=$(stat -c %Y ${LIMITFILE})
-        else # ensure build is not skipped
-          OLD=${NOW}
-          LIMIT=0
+      else # support LIMIT for non-Slurmscripts
+        LIMITFILE=$(echo "${LABEL}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
+        if [ "" = "${LIMITFILE}" ]; then
+          LIMITFILE=$(echo "${TESTID}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
         fi
-        if [ "0" != "$((NOW<(OLD+LIMIT)))" ]; then
-          echo "================================================================================"
-          echo "Skipped ${TESTID} due to LIMIT=${LIMIT} seconds."
-          echo "================================================================================"
-          continue
-        else
-          TOUCHFILE=${LIMITFILE}
+        if [ "" != "${LIMITFILE}" ]; then # LIMITDIR not considered (always local)
+          LIMITFILE=${REPOROOT}/${LIMITFILE}
         fi
       fi
-      if [ "none" = "${PARTITIONS}" ]; then
-        PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
-        if [ "" != "${PARTITION}" ]; then
-          PARTITIONS=${PARTITION}
-        fi
+      if [ "" != "${LIMITFILE}" ] && [ -e ${LIMITFILE} ]; then
+        OLD=$(stat -c %Y ${LIMITFILE})
+      else # ensure build is not skipped
+        OLD=${NOW}
+        LIMIT=0
       fi
+    fi
+    if [ "" = "${NOW}" ]; then NOW=0; fi
+    if [ "" = "${OLD}" ]; then OLD=0; fi
+    if [ "0" != "$((NOW<(OLD+LIMIT)))" ]; then
+      echo "================================================================================"
+      echo "Skipped ${TESTID} due to LIMIT=${LIMIT} seconds."
+      echo "================================================================================"
+      continue
+    else
+      TOUCHFILE=${LIMITFILE}
     fi
     for PARTITION in ${PARTITIONS}; do
     for CONFIG in ${CONFIGS}; do
