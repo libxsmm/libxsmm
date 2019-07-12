@@ -90,7 +90,7 @@ PYTHON ?= $(call which,python)
 
 ifeq (,$(PYTHON))
 ifneq (,$(PYTHON3))
-  SHELL := env PATH=$(MAKEINC):$(PATH) $(SHELL)
+  SHELL := $(ENV) PATH=$(MAKEINC):$(PATH) $(SHELL)
   PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null; command -v python)
 endif
 endif
@@ -1320,9 +1320,9 @@ ifeq (undefined,$(origin TARGET))
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     # detect maintainer build and limit to SSE3
-    ifneq (Windows_NT,$(UNAME))
-    ifneq (Darwin,$(UNAME))
-    ifeq (3,$(GCC))
+    ifeq (,$(filter Windows_NT Darwin,$(UNAME)))
+    ifeq (,$(SPACK_ENV_PATH)) # not under Spack
+    ifeq (3,$(GCC)) # pure GNU pipeline
     ifeq (0,$(DEPSTATIC))
       CTARGET = -msse3
     else ifneq (0,$(SHARED))
