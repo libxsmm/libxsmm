@@ -882,7 +882,6 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           }
           else { /* assume external parallelization */
             const int scale = (0 < libxsmm_gemm_taskscale ? libxsmm_gemm_taskscale : (LIBXSMM_GEMM_TASKSCALE));
-
             for (i = 0; i < ntasks * scale; ++i) {
               const libxsmm_blasint j = i * libxsmm_gemm_taskgrain, u = j / size, v = j - u * size, g = group + u;
               const libxsmm_blasint isize = batchsize[g], asize = LIBXSMM_ABS(isize);
