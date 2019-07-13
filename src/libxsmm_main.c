@@ -442,11 +442,12 @@ LIBXSMM_API_INLINE void internal_finalize(void)
         if (0 != ngemms || 0 != internal_statistic_num_mcopy || 0 != internal_statistic_num_tcopy
           || 0 != libxsmm_statistic_num_spmdm)
         {
+          const char sep[] = " ", *s = "";
           fprintf(stderr, " (");
-          if (0 != ngemms) fprintf(stderr, "gemm=%lu", (unsigned long int)ngemms);
-          if (0 != internal_statistic_num_mcopy) fprintf(stderr, "mcopy=%u", internal_statistic_num_mcopy);
-          if (0 != internal_statistic_num_tcopy) fprintf(stderr, "tcopy=%u", internal_statistic_num_tcopy);
-          if (0 != libxsmm_statistic_num_spmdm) fprintf(stderr, "spmdm=%u", libxsmm_statistic_num_spmdm);
+          if (0 != ngemms) { fprintf(stderr, "gemm=%lu", (unsigned long int)ngemms); s = sep; }
+          if (0 != internal_statistic_num_mcopy) { fprintf(stderr, "%smcopy=%u", s, internal_statistic_num_mcopy); s = sep; }
+          if (0 != internal_statistic_num_tcopy) { fprintf(stderr, "%stcopy=%u", s, internal_statistic_num_tcopy); s = sep; }
+          if (0 != libxsmm_statistic_num_spmdm) { fprintf(stderr, "%sspmdm=%u", s, libxsmm_statistic_num_spmdm); s = sep; }
           fprintf(stderr, ")");
         }
       }
