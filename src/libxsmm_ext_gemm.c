@@ -772,15 +772,15 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
     0 != group_count)
   {
     int result;
-    const libxsmm_blasint max_npargroups = (libxsmm_blasint)(0 < libxsmm_gemm_npargroups
+    const int max_npargroups = (int)(0 < libxsmm_gemm_npargroups
       ? LIBXSMM_MIN(libxsmm_gemm_npargroups, LIBXSMM_GEMM_NPARGROUPS) : LIBXSMM_GEMM_NPARGROUPS);
     const libxsmm_gemm_prefetch_type prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
     const size_t sa = (NULL != stride_a ? (size_t)(*stride_a) : sizeof(void*));
     const size_t sb = (NULL != stride_b ? (size_t)(*stride_b) : sizeof(void*));
     const size_t sc = (NULL != stride_c ? (size_t)(*stride_c) : sizeof(void*));
     const unsigned char otypesize = libxsmm_typesize((libxsmm_datatype)oprec);
-    const libxsmm_blasint ngroups = LIBXSMM_ABS(group_count);
-    libxsmm_blasint group = 0, group_next = LIBXSMM_GEMM_NPARGROUPS;
+    const int ngroups = (int)LIBXSMM_ABS(group_count);
+    int group = 0, group_next = LIBXSMM_GEMM_NPARGROUPS;
     libxsmm_code_pointer kernel[LIBXSMM_GEMM_NPARGROUPS];
     libxsmm_blasint base[LIBXSMM_GEMM_NPARGROUPS], i;
     int max_nthreads = 1;
@@ -794,7 +794,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
 #endif
     for (i = 0; i < max_npargroups; ++i) base[i] = 0;
     for (group = 0; group < ngroups; group = group_next, group_next += max_npargroups) {
-      const libxsmm_blasint npargroups = LIBXSMM_MIN(group_next, ngroups);
+      const int npargroups = LIBXSMM_MIN(group_next, ngroups);
       libxsmm_blasint size = 0;
       int suitable = 0;
       if (0 < group) { /* base is maintained even if par-group is not suitable */
@@ -882,7 +882,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
           }
           else { /* assume external parallelization */
             const int scale = (0 < libxsmm_gemm_taskscale ? libxsmm_gemm_taskscale : (LIBXSMM_GEMM_TASKSCALE));
-            for (i = 0; i < ntasks * scale; ++i) {
+            for (i = 0; i < ((libxsmm_blasint)ntasks * scale); ++i) {
               const libxsmm_blasint j = i * libxsmm_gemm_taskgrain, u = j / size, v = j - u * size, g = group + u;
               const libxsmm_blasint isize = batchsize[g], asize = LIBXSMM_ABS(isize);
               if (v < asize) {
