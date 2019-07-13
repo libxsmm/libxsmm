@@ -37,98 +37,50 @@ MKDIR=$(command -v mkdir)
 CHMOD=$(command -v chmod)
 UNAME=$(command -v uname)
 SYNC=$(command -v sync)
-SORT=$(command -v sort)
 GREP=$(command -v grep)
 WGET=$(command -v wget)
 GIT=$(command -v git)
 SED=$(command -v sed)
 CUT=$(command -v cut)
-REV=$(command -v rev)
 TR=$(command -v tr)
-WC=$(command -v wc)
 RM=$(command -v rm)
 CP=$(command -v cp)
 
 MKTEMP=${HERE}/../.mktmp.sh
-FASTCI=$2
-
 RUN_CMD="--session-command"
 #RUN_CMD="-c"
 
-if [ "" != "${WGET}" ] && \
+if [ "" != "${WGET}" ] && [ "" != "${PIPELINE}" ] && \
    [ "" != "${BUILDKITE_ORGANIZATION_SLUG}" ] && \
-   [ "" != "${BUILDKITE_PIPELINE_SLUG}" ] && \
    [ "" != "${BUILDKITE_AGENT_ACCESS_TOKEN}" ];
 then
   REVSTART=$(${WGET} -qO- \
-  https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${BUILDKITE_PIPELINE_SLUG}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN} \
+  https://api.buildkite.com/v2/organizations/${BUILDKITE_ORGANIZATION_SLUG}/pipelines/${PIPELINE}/builds?access_token=${BUILDKITE_AGENT_ACCESS_TOKEN} \
   | ${SED} -n '/ *\"commit\": / {0,/ *\"commit\": / s/ *\"commit\": \"\(..*\)\".*/\1/p}')
 fi
 if [ "" = "${REVSTART}" ]; then
   REVSTART="HEAD^"
 fi
 
-if [ "" = "${FULLCI}" ] || [ "0" = "${FULLCI}" ]; then
-  FULLCI="\[full ci\]"
-fi
-
 if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && \
-   [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && [ "" != "${WC}" ] && \
+   [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
    [ "" != "${RM}" ] && [ "" != "${CP}" ];
 then
-  # check if full tests are triggered (allows to skip the detailed investigation)
-  if [ "webhook" = "${BUILDKITE_SOURCE}" ] && \
-     [ "" != "${FASTCI}" ] && [ -e ${FASTCI} ] && [ "" != "${GIT}" ] && [ "1" != "${FULLCI}" ] && \
-     [ "" = "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "${FULLCI}")" ];
+  # check if full/unlimited tests are triggered
+  if [ "" != "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
+    LIMIT=0
+  fi
+  if [ "0" != "${LIMIT}" ] && [ "" != "${GIT}" ] && \
+     [ "" != "$(${GIT} log ${REVSTART}...HEAD 2>/dev/null | ${GREP} -e "\[full ci\]")" ];
   then
-    # transform wild-card patterns to regular expressions
-    PATTERNS="$(${SED} -e 's/\./\\./g' -e 's/\*/..*/g' -e 's/?/./g' -e 's/$/\$/g' ${FASTCI} 2>/dev/null)"
-    DOTESTS=0
-    if [ "" != "${PATTERNS}" ]; then
-      for FILENAME in $(${GIT} diff --name-only ${REVSTART} HEAD 2>/dev/null); do
-        # check if the file is supposed to impact a build (source code or script)
-        for PATTERN in ${PATTERNS}; do
-          MATCH=$(echo "${FILENAME}" | ${GREP} -e "${PATTERN}" 2>/dev/null)
-          if [ "" != "${MATCH}" ]; then # file would impact the build
-            DOTESTS=1
-            break
-          fi
-        done
-        if [ "0" != "${DOTESTS}" ]; then
-          break
-        fi
-      done
-    else
-      DOTESTS=1
-    fi
-    if [ "0" = "${DOTESTS}" ]; then
-      echo "================================================================================"
-      echo "Skipped test(s) due to FASTCI option."
-      echo "================================================================================"
-      exit 0 # skip tests
-    fi
-  fi
-
-  HOST=$(hostname -s 2>/dev/null)
-  if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
-    export TRAVIS_BUILD_DIR=${BUILDKITE_BUILD_CHECKOUT_PATH}
-  fi
-  if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
-    export BUILDKITE_BUILD_CHECKOUT_PATH=${HERE}/..
-    export TRAVIS_BUILD_DIR=${HERE}/..
-  fi
-  if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "${UNAME}" ]; then
-    export TRAVIS_OS_NAME=$(${UNAME})
+    LIMIT=0
   fi
 
   # set the case number
   if [ "" != "$1" ] && [ -e $1 ]; then
     export TESTSETFILE=$1
-    if [ "" != "${BASENAME}" ] && [ "" != "${REV}" ] && [ "" != "${CUT}" ]; then
+    if [ "" != "${BASENAME}" ]; then
       export TESTID=$(${BASENAME} ${TESTSETFILE%.*})
-      if [ "" = "${TESTID}" ]; then
-        export TESTID=$(${BASENAME} ${TESTSETFILE} | ${REV} | ${CUT} -d. -f1 | ${REV})
-      fi
     else
       export TESTID=${TESTSETFILE}
     fi
@@ -142,8 +94,17 @@ then
   fi
 
   # should be source'd after the above variables are set
-  source ${HERE}/../.env/travis.env
   source ${HERE}/../.env/buildkite.env
+  source ${HERE}/../.env/travis.env
+
+  # support yml-files for Travis-CI that depend on TRAVIS_* variables
+  if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
+    export TRAVIS_BUILD_DIR=${REPOROOT}
+  fi
+  if [ "" = "${TRAVIS_OS_NAME}" ] && [ "" != "${UNAME}" ]; then
+    export TRAVIS_OS_NAME=$(${UNAME})
+  fi
+  HOST=$(hostname -s 2>/dev/null)
 
   # setup PARTITIONS for multi-tests
   if [ "" = "${PARTITIONS}" ]; then
@@ -246,43 +207,52 @@ then
     elif [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ] && [ -e "${TEST}" ]; then
       SLURMFILE=${TEST}
     fi
-    if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
-      if [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
-         [ "" != "$(command -v touch)" ] && \
-         [ "" != "$(command -v stat)" ] && \
-         [ "" != "$(command -v date)" ];
-      then
-        NOW=$(date +%s)
+    if [ "none" = "${PARTITIONS}" ] && [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
+      PARTITION=$(${SED} -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
+      if [ "" != "${PARTITION}" ]; then PARTITIONS=${PARTITION}; fi
+    fi
+    if [ "" != "${LIMIT}" ] && [ "0" != "${LIMIT}" ] && \
+       [ "" != "$(command -v touch)" ] && \
+       [ "" != "$(command -v stat)" ] && \
+       [ "" != "$(command -v date)" ];
+    then
+      NOW=$(date +%s)
+      LIMITFILE=$(echo "${LABEL}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
+      if [ "" = "${LIMITFILE}" ]; then
+        LIMITFILE=$(echo "${TESTID}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
+      fi
+      if [ "" = "${LIMITFILE}" ]; then
+        if [ "" != "${PIPELINE}" ]; then LIMITBASE="${PIPELINE}-"; fi
         if [ "" != "${LIMITDIR}" ] && [ -d ${LIMITDIR} ]; then
-          LIMITFILE=${LIMITDIR}/$(basename ${SLURMFILE})
-          if [ ! -e ${LIMITFILE} ]; then OLD=${NOW}; fi
+          LIMITFILE=${LIMITDIR}/${LIMITBASE}${LIMITFILE}
         else
-          LIMITFILE=${SLURMFILE}
-          OLD=$(stat -c %Y ${LIMITFILE})
-        fi
-        if [ "0" != "$(((OLD+LIMIT)<=NOW))" ]; then
-          echo "================================================================================"
-          echo "Skipped ${TESTID} due to LIMIT=${LIMIT} seconds."
-          echo "================================================================================"
-          continue
-        else
-          TOUCHFILE=${LIMITFILE}
+          LIMITFILE=${REPOROOT}/${LIMITBASE}${LIMITFILE}
         fi
       fi
-      if [ "none" = "${PARTITIONS}" ]; then
-        PARTITION=$(sed -n "s/^#SBATCH[[:space:]][[:space:]]*\(--partition=\|-p\)\(..*\)/\2/p" ${SLURMFILE})
-        if [ "" != "${PARTITION}" ]; then
-          PARTITIONS=${PARTITION}
-        fi
+      if [ "" != "${LIMITFILE}" ] && [ -e ${LIMITFILE} ]; then
+        OLD=$(stat -c %Y ${LIMITFILE})
+      else # ensure build is not skipped
+        OLD=${NOW}
+        LIMIT=0
       fi
+    fi
+    if [ "" = "${NOW}" ]; then NOW=0; fi
+    if [ "" = "${OLD}" ]; then OLD=0; fi
+    if [ "0" != "$((NOW<(OLD+LIMIT)))" ]; then
+      echo "================================================================================"
+      echo "Skipped ${TESTID} due to LIMIT=${LIMIT} seconds."
+      echo "================================================================================"
+      continue
+    else
+      TOUCHFILE=${LIMITFILE}
     fi
     for PARTITION in ${PARTITIONS}; do
     for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
     if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-       [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
+       [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ];
     then
-      source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env
+      source ${REPOROOT}/.env/${HOST}/${CONFIG}.env
     fi
     for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
@@ -310,14 +280,14 @@ then
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-           [ -e ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env ];
+           [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ];
         then
           LICSDIR=$(command -v icc | ${SED} -e "s/\(\/.*intel\)\/.*$/\1/")
-          ${MKDIR} -p ${TRAVIS_BUILD_DIR}/licenses
-          ${CP} -u /opt/intel/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
-          ${CP} -u ${LICSDIR}/licenses/* ${TRAVIS_BUILD_DIR}/licenses 2>/dev/null
-          echo "export INTEL_LICENSE_FILE=${TRAVIS_BUILD_DIR}/licenses" >> ${TESTSCRIPT}
-          echo "source ${TRAVIS_BUILD_DIR}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
+          ${MKDIR} -p ${REPOROOT}/licenses
+          ${CP} -u /opt/intel/licenses/* ${REPOROOT}/licenses 2>/dev/null
+          ${CP} -u ${LICSDIR}/licenses/* ${REPOROOT}/licenses 2>/dev/null
+          echo "export INTEL_LICENSE_FILE=${REPOROOT}/licenses" >> ${TESTSCRIPT}
+          echo "source ${REPOROOT}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
         fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
@@ -325,7 +295,7 @@ then
           if [ -e ${DIR}/../Makefile ]; then
             DIR=${DIR}/..
           fi
-          echo "cd ${TRAVIS_BUILD_DIR} && make \${MAKEJ} && cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
+          echo "cd ${REPOROOT} && make \${MAKEJ} && cd ${DIR} && make \${MAKEJ}" >> ${TESTSCRIPT}
           echo "RESULT=\$?" >> ${TESTSCRIPT}
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >> ${TESTSCRIPT}
           # control log
