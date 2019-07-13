@@ -410,8 +410,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid)
       : NULL/*hidden*/;
-    /* synchronize I/O */
-    LIBXSMM_STDIO_ACQUIRE();
+    LIBXSMM_STDIO_ACQUIRE(); /* synchronize I/O */
 #if !defined(NDEBUG) && defined(__OPTIMIZE__)
     fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
 #endif
@@ -440,12 +439,18 @@ LIBXSMM_API_INLINE void internal_finalize(void)
           ngemms += (size_t)internal_statistic[0/*DP*/][i].nsta + internal_statistic[1/*SP*/][i].nsta;
           ngemms += (size_t)internal_statistic[0/*DP*/][i].njit + internal_statistic[1/*SP*/][i].njit;
         }
-        fprintf(stderr, " (gemm=%lu mcopy=%u tcopy=%u)\n", (unsigned long int)ngemms,
-          internal_statistic_num_mcopy, internal_statistic_num_tcopy);
+        if (0 != ngemms || 0 != internal_statistic_num_mcopy || 0 != internal_statistic_num_tcopy
+          || 0 != libxsmm_statistic_num_spmdm)
+        {
+          fprintf(stderr, " (");
+          if (0 != ngemms) fprintf(stderr, "gemm=%lu", (unsigned long int)ngemms);
+          if (0 != internal_statistic_num_mcopy) fprintf(stderr, "mcopy=%u", internal_statistic_num_mcopy);
+          if (0 != internal_statistic_num_tcopy) fprintf(stderr, "tcopy=%u", internal_statistic_num_tcopy);
+          if (0 != libxsmm_statistic_num_spmdm) fprintf(stderr, "spmdm=%u", libxsmm_statistic_num_spmdm);
+          fprintf(stderr, ")");
+        }
       }
-      else {
-        fprintf(stderr, "\n");
-      }
+      fprintf(stderr, "\n");
       if (0 != size_scratch) {
         fprintf(stderr, "Scratch: %.f MB", 1.0 * size_scratch / (1ULL << 20));
         if (0 != high_verbosity) {
@@ -469,8 +474,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     else {
       fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
     }
-    /* synchronize I/O */
-    LIBXSMM_STDIO_RELEASE();
+    LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
   }
   /* release scratch memory pool */
   libxsmm_release_scratch();
