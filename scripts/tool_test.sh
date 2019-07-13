@@ -201,10 +201,10 @@ then
       SLURMDIR=$0
     fi
     for SLURMFILE in $(ls -1 ${SLURMDIR}); do
-    if [ -d ${SLURMDIR} ]; then
+    if [[ (-d ${SLURMDIR}) && ("" = "${SLURMSCRIPT}" || "0" = "${SLURMSCRIPT}") ]]; then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
       TESTID=$(${BASENAME} ${SLURMFILE%.*})
-    elif [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ] && [ -e "${TEST}" ]; then
+    elif [ -e "${TEST}" ]; then
       SLURMFILE=${TEST}
     fi
     if [ "none" = "${PARTITIONS}" ] && [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
