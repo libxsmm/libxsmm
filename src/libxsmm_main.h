@@ -754,6 +754,7 @@ LIBXSMM_APIVAR(double libxsmm_scratch_scale);
 /** even: regular, odd: scratch, >1: intercept */
 LIBXSMM_APIVAR(int libxsmm_malloc_kind);
 
+LIBXSMM_APIVAR(unsigned int libxsmm_statistic_num_spmdm);
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
 LIBXSMM_APIVAR(double libxsmm_timer_scale);
 /** Security-enhanced environment */

@@ -201,10 +201,10 @@ then
       SLURMDIR=$0
     fi
     for SLURMFILE in $(ls -1 ${SLURMDIR}); do
-    if [ -d ${SLURMDIR} ]; then
+    if [[ (-d ${SLURMDIR}) && ("" = "${SLURMSCRIPT}" || "0" = "${SLURMSCRIPT}") ]]; then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
       TESTID=$(${BASENAME} ${SLURMFILE%.*})
-    elif [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ] && [ -e "${TEST}" ]; then
+    elif [ -e "${TEST}" ]; then
       SLURMFILE=${TEST}
     fi
     if [ "none" = "${PARTITIONS}" ] && [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
@@ -221,7 +221,7 @@ then
       if [ "" = "${LIMITFILE}" ]; then
         LIMITFILE=$(echo "${TESTID}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
       fi
-      if [ "" = "${LIMITFILE}" ]; then
+      if [ "" != "${LIMITFILE}" ]; then
         if [ "" != "${PIPELINE}" ]; then LIMITBASE="${PIPELINE}-"; fi
         if [ "" != "${LIMITDIR}" ] && [ -d ${LIMITDIR} ]; then
           LIMITFILE=${LIMITDIR}/${LIMITBASE}${LIMITFILE}
