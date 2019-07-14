@@ -221,7 +221,7 @@ then
       if [ "" = "${LIMITFILE}" ]; then
         LIMITFILE=$(echo "${TESTID}" | ${SED} -e "s/[^A-Za-z0-9._-]//g")
       fi
-      if [ "" = "${LIMITFILE}" ]; then
+      if [ "" != "${LIMITFILE}" ]; then
         if [ "" != "${PIPELINE}" ]; then LIMITBASE="${PIPELINE}-"; fi
         if [ "" != "${LIMITDIR}" ] && [ -d ${LIMITDIR} ]; then
           LIMITFILE=${LIMITDIR}/${LIMITBASE}${LIMITFILE}
