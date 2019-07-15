@@ -35,9 +35,9 @@
 #include <libxsmm_generator.h>
 
 LIBXSMM_API_INTERN
-void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*         io_generated_code,
-                                  const char*                     i_routine_name,
-                                  const libxsmm_gemm_descriptor* i_xgemm_desc );
+void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code* io_generated_code,
+                                  const char*                           i_routine_name,
+                                  const libxsmm_gemm_descriptor*        i_xgemm_desc );
 
 /* @TODO change int based architecture value */
 LIBXSMM_API_INTERN
