@@ -125,7 +125,7 @@ double residual_dtranspose ( double *A, unsigned int lda, unsigned int m, unsign
          dtmp = A[ (j-1)*lda + (i-1) ] - out [ (i-1)*ld_out + (j-1) ];
          if ( dtmp < 0.0 ) dtmp = -dtmp;
          if ( dtmp > 0.0 ) {
-            if ( ++ntimes < 5 ) printf("FP64 Position (%d,%d) is %g and not %g\n",i,j,out [ (i-1)*ld_out + (j-1) ], A[ (j-1)*lda + (i-1) ]);
+            if ( ++ntimes < 5 ) printf("FP64 Position (%u,%u) is %g and not %g\n",i,j,out [ (i-1)*ld_out + (j-1) ], A[ (j-1)*lda + (i-1) ]);
             *nerrs = *nerrs + 1;
          }
          derror += dtmp;
@@ -230,7 +230,7 @@ int main(int argc, char* argv[])
   fputs("\t.type trans_,@function\n",fp);
   fputs("\t.size trans_,.-trans_\n",fp);
   fclose(fp);
-  printf("Dumped FP64 %d bytes\n",i);
+  printf("Dumped FP64 %u bytes\n",i);
 #endif
 
 #ifdef DUMP_FP32_ASSEMBLY_FILE
@@ -257,7 +257,7 @@ int main(int argc, char* argv[])
   fputs("\t.type strans_,@function\n",fp);
   fputs("\t.size strans_,.-strans_\n",fp);
   fclose(fp);
-  printf("Dumped FP32 %d bytes\n",i);
+  printf("Dumped FP32 %u bytes\n",i);
 #endif
 
 #ifdef COMPARE_TO_AN_ASSEMBLY_CODE
