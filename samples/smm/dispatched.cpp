@@ -137,9 +137,6 @@ int main(int argc, char* argv[])
         LIBXSMM_MATINIT(OTYPE, 22 + i, c + static_cast<size_t>(csize) * i, m, n, ldc, scale);
       }
 
-#if defined(MKL_ENABLE_AVX512)
-      mkl_enable_instructions(MKL_ENABLE_AVX512);
-#endif
       // initialize LIBXSMM
       libxsmm_init();
 

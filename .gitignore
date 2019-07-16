@@ -49,6 +49,7 @@ _*.txt
 *.opendb
 *.VC.db
 *.dylib
+*.sarif
 *.docx
 *.user
 *.tlog
