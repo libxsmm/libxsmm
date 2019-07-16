@@ -7,9 +7,7 @@ include/libxsmm_config.h
 include/libxsmm_source.h
 include/libxsmm.f
 include/libxsmm.h
-build/libxsmm_dispatch.h
-build/mm_*_*_*.c
-build/*/*/*.xml
+build
 lib/libxsmm*
 ide/_vs*-*.bat
 ide/.vs
@@ -68,6 +66,7 @@ _*.txt
 *.sdf
 *.ilk
 *.pdb
+*.vsp
 *.obj
 *.lib
 *.mod
