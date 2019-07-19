@@ -34,6 +34,8 @@
 #include "Dropout.hpp"
 #include "fillers.hpp"
 
+#define PRIME_SEED 131
+
 using namespace std;
 using namespace gxm;
 

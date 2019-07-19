@@ -672,6 +672,7 @@ void FusedBNormXSMM::backPropagate(TensorBuf *deloutpb, TensorBuf *delgammapb, T
   for(int n=0; n<gp->num_numa_nodes; n++)
     delbeta[n] = bptrptr[n] + offset;
 
+#if 0
   for(int n=0; n<gp->num_numa_nodes; n++)
   {
     if(gp->in_data_type == DT_FLOAT)
@@ -765,7 +766,7 @@ void FusedBNormXSMM::backPropagate(TensorBuf *deloutpb, TensorBuf *delgammapb, T
       }
     }
   }
-
+#endif
   /* Perform physical padding tests */
 #ifndef NDEBUG
   if ( (oph > 0 || opw > 0) && (iph > 0 || ipw > 0) ) {

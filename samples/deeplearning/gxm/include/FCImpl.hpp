@@ -73,16 +73,16 @@ class FCImpl
     void set_node_name(string s) { nname = s; }
     void set_scratch_buffer(TensorBuf* sb) { scratchp = sb; }
 
-    virtual void forwardPropagate(TensorBuf *inp, TensorBuf* weightp, TensorBuf* biasp, TensorBuf *outp, int tid) = 0;
+    virtual void forwardPropagate(TensorBuf *inp, TensorBuf* weightp, TensorBuf *hweightp, TensorBuf* biasp, TensorBuf *outp, int tid) = 0;
     virtual void backPropagate(TensorBuf *deloutp, TensorBuf* weightp, TensorBuf *delinp, int tid) = 0;
     virtual void weightUpdate(TensorBuf *deloutp, TensorBuf *inp, TensorBuf *delweightp, TensorBuf *delbiasp, int tid) = 0;
 
-    virtual void forwardPropagate(TensorBuf *inp, TensorBuf* weightp, TensorBuf* biasp, TensorBuf *outp)
+    virtual void forwardPropagate(TensorBuf *inp, TensorBuf* weightp, TensorBuf *hweightp, TensorBuf* biasp, TensorBuf *outp)
     {
       switch(engine)
       {
         case XSMM:
-          forwardPropagate(inp, weightp, biasp, outp, 0);
+          forwardPropagate(inp, weightp, hweightp, biasp, outp, 0);
           break;
       }
     }

@@ -40,18 +40,27 @@
 
 using namespace std;
 
-void Uniform(const float lower, const float upper, int n, float *dist, unsigned int seed)
+void Uniform(const float lower, const float upper, int n, float *dist)
 {
+  /*
   for(int i=0; i<n; i++)
   {
     float random_number = (float)drand48();
     float retval = lower + (upper-lower)*random_number;
     dist[i] = retval;
   }
+  */
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
+  std::default_random_engine generator (seed);
+  std::uniform_real_distribution<double> distribution(lower,upper);
+
+  for(int i=0; i<n; i++)
+    dist[i] = distribution(generator);
 }
 
-void Gaussian(float mean, float stddev, int n, float *dist, unsigned int seed)
+void Gaussian(float mean, float stddev, int n, float *dist)
 {
+  unsigned seed = std::chrono::system_clock::now().time_since_epoch().count();
   std::default_random_engine generator (seed);
 
   std::normal_distribution<double> distribution (mean, stddev);
@@ -60,46 +69,32 @@ void Gaussian(float mean, float stddev, int n, float *dist, unsigned int seed)
     dist[i] = distribution(generator);
 }
 
-void initBuffer(void* ptr, int dtype, int vnorm, int fanin, int fanout, long long int bytes, string filler, unsigned int seed, float std)
+void initBuffer(void* ptr, int vnorm, int fanin, int fanout, long long int bytes, string filler, float std)
 {
-  if(dtype == DT_FLOAT)
-  {
-    long long int size = bytes/sizeof(float);
-    int divisor = fanin;
-    if(vnorm == FAN_OUT)
-      divisor = fanout;
-    else if(vnorm == AVERAGE)
-      divisor = (fanin + fanout)/2;
+  long long int size = bytes/sizeof(float);
+  int divisor = fanin;
+  if(vnorm == FAN_OUT)
+    divisor = fanout;
+  else if(vnorm == AVERAGE)
+    divisor = (fanin + fanout)/2;
 
-    if(filler.compare("msra") == 0)
-      Gaussian(0.0, sqrt(2.0/(float)divisor), size, (float*)ptr, seed);
-    else if(filler.compare("CAFFE") == 0)
-      Gaussian(0.0, std, size, (float*)ptr, seed);
-    else if(filler.compare("XAVIER") == 0)
-      Uniform(-sqrt(3.0f/(float)divisor), sqrt(3.0f/(float)divisor), size, (float*)ptr, seed);
-    else if(filler.compare("Gaussian") == 0)
-      Gaussian(0.0, std, size, (float*)ptr, seed);
-    else if(filler.compare("RANDOM01") == 0)
-    {
-      float *p = (float*)ptr;
-      for(long long int i=0; i<size; i++)
-        p[i] = drand48();
-    }
-  }
-  else if(dtype == DT_INT16)
+  if(filler.compare("msra") == 0)
+    Gaussian(0.0, sqrt(2.0/(float)divisor), size, (float*)ptr);
+  else if(filler.compare("CAFFE") == 0)
+    Gaussian(0.0, std, size, (float*)ptr);
+  else if(filler.compare("XAVIER") == 0)
+    Uniform(-sqrt(3.0f/(float)divisor), sqrt(3.0f/(float)divisor), size, (float*)ptr);
+  else if(filler.compare("Gaussian") == 0)
+    Gaussian(0.0, std, size, (float*)ptr);
+  else if(filler.compare("RANDOM01") == 0)
   {
-    long long int size = bytes/sizeof(short int);
-
-    short int*p = (short int*)ptr;
-    if(filler.compare("ZERO") == 0)
-      for(long long int i=0; i<size; i++)
-        p[i] = 0;
-    else
-      printf("Weight filling for int16 not implemented!\n");
+    float *p = (float*)ptr;
+    for(long long int i=0; i<size; i++)
+      p[i] = drand48();
   }
 }
 
-void initConstantBuffer(void* ptr, int dtype, long long int bytes, string filler, float v)
+void initConstantBuffer(void* ptr, long long int bytes, string filler, float v)
 {
   float *p = (float*)ptr;
   long long int size = bytes/sizeof(float);
@@ -115,7 +110,7 @@ void initConstantBuffer(void* ptr, int dtype, long long int bytes, string filler
       p[i] = v;
 }
 
-void initConstantBuffer(void* ptr, int dtype, long long int bytes, string filler, short int v)
+void initConstantBuffer(void* ptr, long long int bytes, string filler, short int v)
 {
   short int *p = (short int*)ptr;
   long long int size = bytes/sizeof(short int);

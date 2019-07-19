@@ -848,7 +848,6 @@ void MLEngine::convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len, int n
 
 void MLEngine::convert_f32_bf16(float** in, libxsmm_bfloat16** out, int len)
 {
-
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -866,8 +865,8 @@ void MLEngine::convert_f32_bf16(float** in, libxsmm_bfloat16** out, int len)
     int te = ((ltid+1)*jobs < len) ? (ltid+1)*jobs : len;
 
     for (int i = tb; i < te; i+=16 ) {
-      __m512  vfp32  = gxm_fp32_to_bfp16_rne_adjustment_avx512f( _mm512_loadu_ps( inp+i ) );
-      __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f( vfp32 );
+      __m512  vfp32  = gxm_fp32_to_bfp16_rne_adjustment_avx512f(_mm512_loadu_ps(inp + i));
+      __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f(vfp32);
       _mm256_storeu_si256( (__m256i*)(outp+i), vbfp16 );
     }
   }
@@ -934,6 +933,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
   {
     if(tenType == "WEIGHT")
     {
+#ifdef BF16_MLSL
       if(buftype == DIFF)
       {
         if(data_type_ == FLOAT)
@@ -942,12 +942,14 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
           total_weights_ = s/sizeof(libxsmm_bfloat16);
       }
       else
+#endif
         total_weights_ = s/sizeof(float);
 
       int factor = num_threads_ * VLEN;
       int nwt = (total_weights_ + factor - 1)/factor;
       total_weights_ = nwt * factor;
 
+#ifdef BF16_MLSL
       if(buftype == DIFF)
       {
         if(data_type_ == FLOAT)
@@ -956,6 +958,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
           s = total_weights_ * sizeof(libxsmm_bfloat16);
       }
       else
+#endif
         s = total_weights_ * sizeof(float);
     }
     else if(tenType == "BIAS" || tenType == "STATS")
@@ -973,12 +976,16 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
   *nc = num_canaries;
 
   // Allocate memory
+#ifdef BF16_MLSL
   bool lp = (data_type_ == BF16) && (tenType=="WEIGHT") && (buftype == DATA);
+#else
+  bool lp = (data_type_ == BF16) && (tenType=="WEIGHT");
+#endif
 
   void *buf_;
   void **ptrptr, **lptrptr=NULL;
 
-#ifdef USE_MLSL
+#if 0 //def USE_MLSL
   s = ALIGN_SIZE(s, 2097152);
 #endif
 
@@ -1026,13 +1033,23 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     else if(buftype == DIFF)
     {
       for(int n=0; n<NUM_NUMA_NODES; n++)
+      {
 #ifdef USE_MLSL
         wdiff_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
 #else
         wdiff_buf_[n] = (void*)libxsmm_aligned_malloc(s, 2097152);
 #endif
+        if(lp)
+#ifdef USE_MLSL
+          lpwdiff_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s/sizeof(libxsmm_bfloat16), 2097152);
+#else
+          lpwdiff_buf_[n] = (void*)libxsmm_aligned_malloc(s/sizeof(libxsmm_bfloat16), 2097152);
+#endif
+      }
       buf_ = wdiff_buf_[0];
       ptrptr = wdiff_buf_;
+      if(lp)
+        lptrptr = lpwdiff_buf_;
     }
     else if(buftype == HISTORY)
     {
@@ -1126,7 +1143,6 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     printf("could not allocate low precision weights memory.. exiting\n");
     exit(-1);
   }
-#endif
 
   if(solver_->getGlobalFlag())
   {
@@ -1217,6 +1233,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
       decptr = bias_decay_mult_[0];
     }
   }
+#endif
 
   if(ttp)
     memset(buf_, CANARY, START_GUARD_BAND);
@@ -1227,6 +1244,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
   //Set up tensor buffer pointers
   void* ptr = ttp ? buf_ + START_GUARD_BAND : buf_;
   void* lptr = lp ? lpweight_buf_[0] : NULL;
+  void* lgptr = lp ? lpwdiff_buf_[0] : NULL;
 
   for(Iter it=L.begin(); it != L.end(); it++)
   {
@@ -1277,16 +1295,15 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
 
       if(lp)
       {
-        tBuf->setLPBuffer(lptr);
+        if(buftype == DATA)
+          tBuf->setLPBuffer(lptr);
+        else if(buftype == DIFF)
+          tBuf->setLPBuffer(lgptr);
         tBuf->setLPBufferPtr(lptrptr);
       }
     }
     else
-    {
       tBuf->setBuffer(ptr);
-      if(lp)
-        tBuf->setLPBuffer(lptr);
-    }
 
     // If weight or bias tensor, call corresponding intialization function (for training only)
     if(!is_inference_only())
@@ -1301,16 +1318,19 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
           if(!load_from_checkpoint_)
           {
             fcbn->fillWeightBuffers(tBuf, buftype, bytes);
+#if 0
             if(lp)
               convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16), 0);
+#endif
           }
-
+#if 0
           if(solver_->getGlobalFlag())
             if(buftype == DIFF)
               if(data_type_ == FLOAT)
                 fcbn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(float));
               else if(data_type_ == BF16)
                 fcbn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(libxsmm_bfloat16));
+#endif
         }
         else if(nntype == "Convolution")
         {
@@ -1319,16 +1339,20 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
           if(!load_from_checkpoint_)
           {
             cn->fillWeightBuffers(tBuf, buftype, bytes);
+#if 0
             if(lp)
               convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16), 0);
+#endif
           }
 
+#if 0
           if(solver_->getGlobalFlag())
             if(buftype == DIFF)
               if(data_type_ == FLOAT)
                 cn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(float));
               else if(data_type_ == BF16)
                 cn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(libxsmm_bfloat16));
+#endif
         }
       }
       else if(tType == CONVBIAS)
@@ -1337,9 +1361,11 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
         assert(bytes > 0);
         if(!load_from_checkpoint_)
           cn->fillBiasBuffers(tBuf, buftype, bytes);
+#if 0
         if(solver_->getGlobalFlag())
           if(buftype == DIFF)
             cn->fillBiasMultipliers(lrptr, decptr, bytes/sizeof(float));
+#endif
       }
       else if(tType == FCWEIGHT)
       {
@@ -1348,16 +1374,20 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
         if(!load_from_checkpoint_)
         {
           fn->fillWeightBuffers(tBuf, buftype, bytes);
+#if 0
           if(lp)
             convert_f32_bf16((float*)ptr, (libxsmm_bfloat16*)lptr, lpbytes/sizeof(libxsmm_bfloat16), 0);
+#endif
         }
 
+#if 0
         if(solver_->getGlobalFlag())
           if(buftype == DIFF)
             if(data_type_ == FLOAT)
               fn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(float));
             else if(data_type_ == BF16)
               fn->fillWeightMultipliers(lrptr, decptr, bytes/sizeof(libxsmm_bfloat16));
+#endif
       }
       else if(tType == FCBIAS)
       {
@@ -1365,9 +1395,11 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
         assert(bytes > 0);
         if(!load_from_checkpoint_)
           fn->fillBiasBuffers(tBuf, buftype, bytes);
+#if 0
         if(solver_->getGlobalFlag())
           if(buftype == DIFF)
             fn->fillBiasMultipliers(lrptr, decptr, bytes/sizeof(float));
+#endif
       }
       else if((tType == BNORMSCALE) || (tType == BNORMSHIFT))
       {
@@ -1377,9 +1409,11 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
           assert(bytes > 0);
           if(!load_from_checkpoint_)
             fcbn->fillBuffer(tBuf, buftype, bytes);
+#if 0
           if(solver_->getGlobalFlag())
             if(buftype == DIFF)
               fcbn->fillBiasMultipliers(lrptr, decptr, bytes/sizeof(float));
+#endif
         }
         else if(nntype == "FusedBatchNorm")
         {
@@ -1387,9 +1421,11 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
           assert(bytes > 0);
           if(!load_from_checkpoint_)
             bn->fillBuffer(tBuf, buftype, bytes);
+#if 0
           if(solver_->getGlobalFlag())
             if(buftype == DIFF)
               bn->fillBiasMultipliers(lrptr, decptr, bytes/sizeof(float));
+#endif
         }
       }
       else if((tType == BNORMMEAN) || (tType == BNORMVAR))
@@ -1415,8 +1451,14 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     {
       ptr += bytes;
       if(lp)
-        lptr += lpbytes;
+        if(buftype == DATA)
+          lptr += lpbytes;
+#ifndef BF16_MLSL
+        else if(buftype == DIFF)
+          lgptr += lpbytes;
+#endif
 
+#ifdef BF16_MLSL
       if(tenType == "WEIGHT" && buftype == DATA)
         offset += bytes/sizeof(float);
       else if(tenType == "WEIGHT" && buftype == DIFF)
@@ -1426,9 +1468,14 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
         else if(data_type_ == BF16)
           offset += bytes/sizeof(libxsmm_bfloat16);
       }
+#else
+      if(tenType == "WEIGHT")
+        offset += bytes/sizeof(float);
+#endif
       else if((tenType == "BIAS" && (buftype == DATA || buftype == DIFF)) || tenType == "STATS")
         offset += bytes/sizeof(float);
 
+#if 0
       if(solver_->getGlobalFlag())
       {
         if(tenType == "WEIGHT" && buftype == DIFF)
@@ -1450,6 +1497,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
           decptr += bytes/sizeof(float);
         }
       }
+#endif
 
       assert(ptr <= buf_ + s);
 
@@ -1486,16 +1534,11 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
 #pragma omp simd
         for(int i=0; i<w; i++)
           wtptr[i] = ((float*)weight_buf_[0])[i];
-
-        if(lp)
-        {
-          libxsmm_bfloat16* lwptr = (libxsmm_bfloat16*)lpweight_buf_[n];
-#pragma omp simd
-          for(int i=0; i<w; i++)
-            lwptr[i] = ((libxsmm_bfloat16*)lpweight_buf_[0])[i];
-        }
       }
     }
+
+    if(lp)
+      convert_f32_bf16((float**)weight_buf_, (libxsmm_bfloat16**)lpweight_buf_, total_weights_);
   }
 
   if(tenType=="WEIGHT" && buftype==DIFF)
@@ -1532,15 +1575,20 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
         int w = total_weights_;
         if(n != 0 && tid % ntps == 0)
         {
-          libxsmm_bfloat16 *wdiff = (libxsmm_bfloat16*)wdiff_buf_[n];
+          libxsmm_bfloat16 *lpwdiff = (libxsmm_bfloat16*)lpwdiff_buf_[n];
+          float *wdiff = (float*)wdiff_buf_[n];
 
 #pragma omp simd
           for(int i=0; i<w; i++)
-            wdiff[i] = ((libxsmm_bfloat16*)wdiff_buf_[0])[i];
+          {
+            lpwdiff[i] = ((libxsmm_bfloat16*)lpwdiff_buf_[0])[i];
+            wdiff[i] = ((float*)wdiff_buf_[0])[i];
+          }
         }
       }
     }
 
+#if 0
 #ifdef _OPENMP
 #pragma omp parallel
 #endif
@@ -1562,6 +1610,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
         }
       }
     }
+#endif
   }
 
   if(tenType=="WEIGHT" && buftype==HISTORY)
@@ -1622,15 +1671,19 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
       if(n != 0 && tid % ntps == 0)
       {
         float *bidiff = (float*)bidiff_buf_[n];
+#if 0
         float *lrp = (float*)bias_lr_mult_[n];
         float *dcp = (float*)bias_decay_mult_[n];
+#endif
 
 #pragma omp simd
         for(int i=0; i<b; i++)
         {
           bidiff[i] = ((float*)bidiff_buf_[0])[i];
+#if 0
           lrp[i] = ((float*)bias_lr_mult_[0])[i];
           dcp[i] = ((float*)bias_decay_mult_[0])[i];
+#endif
         }
       }
     }
@@ -1679,40 +1732,6 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
       }
     }
   }
-}
-
-void* MLEngine::allocate_gradient_tensor(TensorList L, int buftype, int n, long long int size)
-{
-#ifdef USE_MLSL
-  void *rw_buf = (void*)MLSL::Environment::GetEnv().Alloc(n * size, 2097152);
-#else
-  void *rw_buf = (void*)libxsmm_aligned_malloc(n * size, 2097152);
-#endif
-
-  int count = 0;
-  for(Iter it = L.begin(); it != L.end(); it++)
-  {
-
-    Tensor *t = it->t;
-    string owner = dynamic_cast<NNNode*>(t->getOwner())->getNodeName();
-    for(int j=0; j<t->getNumDataBuffers(); j++)
-    {
-      TensorBuf *tBuf = t->getBuf(j);
-      if(tBuf->getBufferType() == buftype)
-      {
-        long long int offset = (count % n) * size;
-        tBuf->setBuffer(rw_buf + offset);
-#ifdef DEBUG
-#ifdef USE_MLSL
-        if(MLSL::Environment::GetEnv().GetProcessIdx() == 0)
-          printf("node %s, tensor %s, count %d, pointer %p\n",owner.c_str(), it->name.c_str(), count, rw_buf + offset);
-#endif
-#endif
-        count++;
-      }
-    }
-  }
-  return rw_buf;
 }
 
 void MLEngine::insertSplitNodes(NTGParameter& p, NTGParameter* ps)

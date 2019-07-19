@@ -459,7 +459,8 @@ void FusedConvBNNode::fillWeightBuffers(TensorBuf* tBuf, int buftype, long long 
 
   if(buftype == DATA)
   {
-    initBuffer(ptr, dtype, variance_norm_, fanin, fanout, welem*sizeof(float), wfiller_type_, (unsigned int)(node_id+PRIME_SEED), std_);
+    if(node_id == 0)
+      initBuffer(ptr, variance_norm_, fanin, fanout, welem*sizeof(float), wfiller_type_, std_);
 
 #ifdef USE_MLSL
     if(dtype == DT_FLOAT)
@@ -497,12 +498,12 @@ void FusedConvBNNode::fillBuffer(TensorBuf* tBuf, int buftype, long long int siz
   if(ttype==BNORMSCALE && buftype == DATA)
   {
     if(nname_.find("bn3") == nname_.npos)
-      initConstantBuffer(ptr, dtype, size, "CONSTANT", 1.0f);
+      initConstantBuffer(ptr, size, "CONSTANT", 1.0f);
     else
-      initConstantBuffer(ptr, dtype, size, "CONSTANT", 0.0f);
+      initConstantBuffer(ptr, size, "CONSTANT", 0.0f);
   }
   else
-      initConstantBuffer(ptr, dtype, size, "CONSTANT", 0.0f);
+      initConstantBuffer(ptr, size, "CONSTANT", 0.0f);
 }
 
 void FusedConvBNNode::Checkpoint(TensorBuf *tBuf, string name, string format)
@@ -596,8 +597,8 @@ void FusedConvBNNode::convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len
 #pragma omp parallel for private(i)
 #endif
   for ( i = 0; i < len; i+=16 ) {
-    __m512  vfp32  = gxm_fp32_to_bfp16_rne_adjustment_avx512f( _mm512_loadu_ps( in+i ) );
-    __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f( vfp32 );
+    __m512  vfp32  = gxm_fp32_to_bfp16_rne_adjustment_avx512f(_mm512_loadu_ps(in + i));
+    __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f(vfp32);
     _mm256_storeu_si256( (__m256i*)(out+i), vbfp16 );
   }
 }
@@ -1193,7 +1194,7 @@ void FusedConvBNNode::weightUpdate()
   {
     if(dwptr == NULL)
     {
-      int wsize = ALIGN_SIZE(ifm0*ofm*kh*kw*sizeof(float), 2097152);
+      int wsize = ifm0*ofm*kh*kw*sizeof(float);
       dwptr = (float*)MLSL::Environment::GetEnv().Alloc(wsize, 2097152);
     }
     convert_bf16_f32((libxsmm_bfloat16*)mptr, dwptr, ifm0*ofm*kh*kw);

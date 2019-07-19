@@ -69,7 +69,7 @@ class ConvXSMM : public ConvImpl
     float *dinptr, *dwtptr;
     bool updated_scratch_fwd=false, updated_scratch_bwd=false, updated_scratch_upd=false;
     void *in_ptr[NUM_NUMA_NODES] = {NULL}, *wt_ptr[NUM_NUMA_NODES]={NULL}, *hwt_ptr=NULL;
-    void *out_ptr[NUM_NUMA_NODES] = {NULL};
+    void *out_ptr[NUM_NUMA_NODES] = {NULL}, *f32_wt_ptr[NUM_NUMA_NODES]={NULL};
     void *din_ptr[NUM_NUMA_NODES] = {NULL}, *dout_ptr[NUM_NUMA_NODES] = {NULL};
     void *scratch[NUM_NUMA_NODES]={NULL};
     int prev_scratch_size = 0;

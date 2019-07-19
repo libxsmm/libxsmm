@@ -137,6 +137,8 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
   int ifwp = ifw + 2*ipw;
   int ofhp = ofh + 2*oph;
   int ofwp = ofw + 2*opw;
+  int kh = gp->kh;
+  int kw = gp->kw;
 
   // Conv input. LPBuffer is non-NULL if data layer output is BF16
   int imoff = conv_desc.N * conv_desc.C * ifhp * ifwp;
@@ -166,7 +168,10 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
   {
     if(lptrptr != NULL)
       for(int n=0; n<gp->num_numa_nodes; n++)
+      {
         wt_ptr[n] = lptrptr[n] + offset*sizeof(libxsmm_bfloat16);
+        f32_wt_ptr[n] = ptrptr[n] + offset*sizeof(float);
+      }
   }
   else if(gp->in_data_type == DT_FLOAT)
     for(int n=0; n<gp->num_numa_nodes; n++)
@@ -224,6 +229,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
       int welem = gp->nInput * gp->nOutput * gp->kw * gp->kh;
       if(gp->in_data_type == DT_FLOAT)
       {
+#if 0
         int wsize = welem*sizeof(float);
         wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(float), 2097152);
 
@@ -239,11 +245,49 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
           libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor(libxsmm_layout, wt_ptr[n], &status);
           CHKERR_LIBXSMM_DNN( status );
         }
-
+#endif
         libxsmm_filter[n] = libxsmm_dnn_link_tensor( libxsmm_layout, wt_ptr[n], &status );
         CHKERR_LIBXSMM_DNN( status );
 
+        libxsmm_dnn_tensor *tensor = libxsmm_filter[n];
+        libxsmm_dnn_err_t status;
+        libxsmm_dnn_tensor_datalayout *mylayout = libxsmm_dnn_get_tensor_datalayout (tensor, &status);
+        int i1, i2, i3, i4, i5, i6;
+        int bofm = 0;
+        int bifm = 0;
+        int S = 0;
+        int R = 0;
+        int ifmb = 0;
+        int ofmb = 0;
+
+        assert( mylayout->num_dims == 6 );
+
+        bofm = mylayout->dim_size[0];
+        bifm = mylayout->dim_size[1];
+        S = mylayout->dim_size[2];
+        R = mylayout->dim_size[3];
+        ifmb = mylayout->dim_size[4];
+          ofmb = mylayout->dim_size[5];
+        LIBXSMM_VLA_DECL(6, float, handle_data, (float*)wt_ptr[n], ifmb, R, S, bifm, bofm);
+
+        for (i1 = 0; i1 < ofmb; ++i1) {
+          for (i2 = 0; i2 < ifmb; ++i2) {
+            for (i3 = 0; i3 < R; ++i3) {
+              for (i4 = 0; i4 < S; ++i4) {
+                for (i5 = 0; i5 < bifm; ++i5) {
+                  for (i6 = 0; i6 < bofm; ++i6) {
+                      /* set 4th input channel to 0 */
+                      if ( (i6 == 1) && (i5 == 1) ) {
+                        LIBXSMM_VLA_ACCESS(6, handle_data, i1, i2, i3, i4, i5, i6, ifmb, R, S, bifm, bofm) = (float)0;
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
         // Transform weight history layout
+#if 0
         if(n == 0)
         {
           if(hwt_ptr != NULL)
@@ -261,9 +305,11 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
         libxsmm_free(wt_prv_ptr);
         wt_prv_ptr = NULL;
         weightp->setPrivBuffer(NULL);
+#endif
       }
       else if(gp->in_data_type == DT_BF16)
       {
+#if 0
         int wsize = welem*sizeof(libxsmm_bfloat16);
         wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(libxsmm_bfloat16), 2097152);
 
@@ -273,11 +319,98 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
 
         CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_tensor(libxsmm_filter[n], wt_ptr[n], LIBXSMM_DNN_TENSOR_FORMAT_KCRS) );
         memcpy(wt_ptr[n], wt_prv_ptr, welem*sizeof(libxsmm_bfloat16));
+#endif
 
         libxsmm_filter[n] = libxsmm_dnn_link_tensor( libxsmm_layout, wt_ptr[n], &status );
         CHKERR_LIBXSMM_DNN( status );
-        libxsmm_free(wt_prv_ptr);
+//        libxsmm_free(wt_prv_ptr);
 
+        if(gp->node_name == "conv1" || gp->node_name == "convbn1")
+        {
+          libxsmm_dnn_tensor *tensor = libxsmm_filter[n];
+          libxsmm_dnn_err_t status;
+          libxsmm_bfloat16* mydata = (libxsmm_bfloat16*)libxsmm_dnn_get_tensor_data_ptr(tensor, &status);
+          libxsmm_dnn_tensor_datalayout * mylayout = libxsmm_dnn_get_tensor_datalayout (tensor, &status);
+          int i1, i2, i3, i4, i5, i6, i7;
+          int lpb = 0;
+          int bofm = 0;
+          int bifm = 0;
+          int S = 0;
+          int R = 0;
+          int ifmb = 0;
+          int ofmb = 0;
+
+          /* check for VNNI weights */
+          assert( mylayout->num_dims == 7 );
+
+          lpb = mylayout->dim_size[0];
+          bofm = mylayout->dim_size[1];
+          bifm = mylayout->dim_size[2];
+          S = mylayout->dim_size[3];
+          R = mylayout->dim_size[4];
+          ifmb = mylayout->dim_size[5];
+          ofmb = mylayout->dim_size[6];
+
+          LIBXSMM_VLA_DECL(7, libxsmm_bfloat16, handle_data_1, mydata, ifmb, R, S, bifm, bofm, lpb);
+
+          for (i1 = 0; i1 < ofmb; ++i1) {
+            for (i2 = 0; i2 < ifmb; ++i2) {
+              for (i3 = 0; i3 < R; ++i3) {
+                for (i4 = 0; i4 < S; ++i4) {
+                  for (i5 = 0; i5 < bifm; ++i5) {
+                    for (i6 = 0; i6 < bofm; ++i6) {
+                      for (i7 = 0; i7 < lpb; ++i7) {
+                        /* set 4th input channel to 0 */
+                        if ( (i7 == 1) && (i5 == 1) ) {
+                          LIBXSMM_VLA_ACCESS(7, handle_data_1, i1, i2, i3, i4, i5, i6, i7, ifmb, R, S, bifm, bofm, lpb) = (libxsmm_bfloat16)0;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          LIBXSMM_VLA_DECL(7, float, handle_data_2, (float*)f32_wt_ptr[n], ifmb, R, S, bifm, bofm, lpb);
+
+          for (i1 = 0; i1 < ofmb; ++i1) {
+            for (i2 = 0; i2 < ifmb; ++i2) {
+              for (i3 = 0; i3 < R; ++i3) {
+                for (i4 = 0; i4 < S; ++i4) {
+                  for (i5 = 0; i5 < bifm; ++i5) {
+                    for (i6 = 0; i6 < bofm; ++i6) {
+                      for (i7 = 0; i7 < lpb; ++i7) {
+                        /* set 4th input channel to 0 */
+                        if ( (i7 == 1) && (i5 == 1) ) {
+                          LIBXSMM_VLA_ACCESS(7, handle_data_2, i1, i2, i3, i4, i5, i6, i7, ifmb, R, S, bifm, bofm, lpb) = (float)0;
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+#if 0
+          wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(float), 2097152);
+          memcpy(wt_prv_ptr, f32_wt_ptr[n], welem*sizeof(float));
+          float (* __restrict wt_prv)[nIFM][kh][kw] = (float (*)[*][*][*])wt_prv_ptr;
+          float (* __restrict f32_wt)[ifmb][R][S][bifm][bofm][lpb] = (float (*)[*][*][*][*][*][*])f32_wt_ptr[n];
+          for(int k=0; k<ofmb; k++)
+            for(int c=0; c<ifmb; c++)
+              for(int r=0; r<R; r++)
+                for(int s=0; s<S; s++)
+                  for(int cc=0; cc<bifm; cc++)
+                    for(int kk=0; kk<bofm; kk++)
+                      for(int ccc=0; ccc<lpb; ccc++)
+                        f32_wt[k][c][r][s][cc][kk][ccc] = wt_prv[k*bofm+kk][c*bifm*lpb+cc*lpb+ccc][r][s];
+
+          libxsmm_free(wt_prv_ptr);
+#endif
+        }
+
+#if 0
         // Transform FP32 weight layout
         if(n == 0)
         {
@@ -289,7 +422,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
           CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_tensor(libxsmm_checkpoint_filter, fwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS));
           memcpy(fwt_ptr, wt_prv_ptr, welem*sizeof(float));
 
-          libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor( libxsmm_layout, fwt_ptr, &status );
+          libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor( libxsmm_layout, f32_wt_ptr[n], &status );
           CHKERR_LIBXSMM_DNN( status );
 
           // Transform FP32 weight history layout
@@ -309,6 +442,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
           wt_prv_ptr = NULL;
           weightp->setPrivBuffer(NULL);
         }
+#endif
       }
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
       CHKERR_LIBXSMM_DNN(libxsmm_dnn_bind_tensor( libxsmm_handle[n], libxsmm_filter[n], LIBXSMM_DNN_REGULAR_FILTER ) );
@@ -602,7 +736,12 @@ void ConvXSMM::weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf* delwe
 
   void *dwt_ptr[NUM_NUMA_NODES];
 
+#ifdef BF16_MLSL
   void **ptrptr = delweightp->getBufferPtr();
+#else
+  void **ptrptr = delweightp->getLPBufferPtr();
+#endif
+
   int offset = delweightp->getOffset();
 
   if(gp->in_data_type == DT_FLOAT)
@@ -677,13 +816,16 @@ void ConvXSMM::weightUpdate(TensorBuf *inp, TensorBuf *deloutp, TensorBuf* delwe
 #ifdef USE_MLSL
 #pragma omp barrier
 
-      if(gp->in_data_type == DT_FLOAT)
+      if(gp->num_numa_nodes > 1)
       {
+        if(gp->in_data_type == DT_FLOAT)
+        {
 #include "reduce_weight_grads.c"
-      }
-      else if(gp->in_data_type == DT_BF16)
-      {
+        }
+        else if(gp->in_data_type == DT_BF16)
+        {
 #include "reduce_weight_grads_bf16.c"
+        }
       }
 #endif
     }
