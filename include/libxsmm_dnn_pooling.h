@@ -32,7 +32,7 @@
 #define LIBXSMM_DNN_POOLING_H
 
 #include "libxsmm_dnn.h"
-
+#include "libxsmm_dnn_tensor.h"
 
 /** Opaque handles which represents LIBXSMM pooling */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling libxsmm_dnn_pooling;
