@@ -31,7 +31,6 @@
 #include "libxsmm_dnn_fullyconnected_weight_update.h"
 #include "libxsmm_dnn_fullyconnected_backward.h"
 #include "libxsmm_dnn_fullyconnected_forward.h"
-#include "libxsmm_dnn_setup.h"
 #include "libxsmm_main.h"
 #define STRIDE_BRGEMM
 
