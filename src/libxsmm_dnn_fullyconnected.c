@@ -132,27 +132,6 @@ LIBXSMM_API libxsmm_dnn_fullyconnected* libxsmm_dnn_create_fullyconnected(libxsm
         handle->scratch_size = sizeof(float) * LIBXSMM_MAX( ((size_t)handle->desc.C + (size_t)handle->desc.K) * (size_t)handle->desc.N,
                                                            (size_t)handle->desc.C * (size_t)handle->desc.K                            ) ;
       }
-      const char *const env_bf = getenv("BLK_FACTOR");
-      const double blk_factor = LIBXSMM_ABS(0 == env_bf ? 0/*disabled by default*/ : atof(env_bf));
-      if (env_bf) {
-        handle->BF = blk_factor;
-      } else {
-        handle->BF = 1;
-      }
-      const char *const env_row = getenv("ROW_FACTOR");
-      const double row_factor = LIBXSMM_ABS(0 == env_row ? 0/*disabled by default*/ : atof(env_row));
-      if (env_row) {
-        handle->ROW = row_factor;
-      } else {
-        handle->ROW = 1;
-      }
-      const char *const env_col = getenv("COL_FACTOR");
-      const double col_factor = LIBXSMM_ABS(0 == env_col ? 0/*disabled by default*/ : atof(env_col));
-      if (env_col) {
-        handle->COLUMN = col_factor;
-      } else {
-        handle->COLUMN = 1;
-      }
     } else {
       *status = LIBXSMM_DNN_ERR_CREATE_HANDLE;
     }

@@ -55,11 +55,9 @@ LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)han
 
 unsigned long long blocks = nBlocksIFm;
 
-int iteri = 0, iterj = 0, ifm2 = 0, BF = handle->BF;
-#if 0
+int iteri = 0, iterj = 0, ifm2 = 0, BF = 1;
 /* Blocking reduction domain if it is too large */
 int C = handle->desc.C, K = handle->desc.K;
-BF = 1;
 if ((C > 1024 && C <= 2048) || (K > 1024 && K <= 2048)) {
   BF = 8;
   while ( (nBlocksIFm % BF != 0) || (nBlocksOFm % BF != 0) ) {
@@ -76,13 +74,12 @@ if (C > 2048 || K > 2048) {
 if (C == 2048 && K == 1024) {
   BF = 2;
 }
-#endif
 
 int CB_BLOCKS = nBlocksIFm/BF;
 /* The snippet below does a 2D domain decomposition of output IF the number of threads and the number of work items are compatible */
 /* TODO: For now 2D decomposition targets single socket SKX */
-int row_teams = handle->ROW;//7;
-int column_teams = handle->COLUMN;//4;
+int row_teams = 7;
+int column_teams = 4;
 libxsmm_blasint my_col_id = ltid % column_teams;
 libxsmm_blasint my_row_id = ltid / column_teams;
 int in_tasks = (int)(handle->desc.N/handle->bn);
@@ -95,15 +92,12 @@ libxsmm_blasint my_ik_start = LIBXSMM_MIN( my_col_id * ik_tasks_per_thread, ik_t
 libxsmm_blasint my_ik_end = LIBXSMM_MIN( (my_col_id+1) * ik_tasks_per_thread, ik_tasks);
 
 int perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads &&
-  ik_tasks_per_thread*in_tasks_per_thread*CB_BLOCKS <= 65536) ? 1 : 0;
+  ik_tasks_per_thread*in_tasks_per_thread*CB_BLOCKS <= 4096) ? 1 : 0;
 
 if (perform_2d_decomp) {
-#if 0
-  if (ltid == 0) printf("2D decomposition\n");
-#endif
   /* Auxiliary arrays for batch-reduce gemms and potential prefetch */
-  const element_filter_type *A_array[65536];
-  const element_input_type  *B_array[65536];
+  const element_filter_type *A_array[4096];
+  const element_input_type  *B_array[4096];
   int ik, in, index;
 
   /* lazy barrier init */

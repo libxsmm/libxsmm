@@ -62,8 +62,8 @@ int main(int argc, char* argv[])
   int nIFm = 256;          /* number of input feature maps, "C" */
   int nOFm = 256;          /* number of input feature maps, "C" */
   int fuse_type = 0;      /* 0: nothing fused, 1: relu fused, 2: elementwise fused, 3: relu and elementwise fused */
-  char type = 'F';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
-  char format = 'B';
+  char type = 'A';        /* 'A': ALL, 'F': FP, 'B': BP, 'U', WU */
+  char format = 'L';
   int bn = 64;
   int bk = 64;
   int bc = 64;
