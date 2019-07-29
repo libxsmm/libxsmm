@@ -33,6 +33,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -105,8 +106,7 @@ int main(int argc, char* argv[])
   const libxsmm_blasint maxsize = LIBXSMM_CLMP(5 < argc ? atoi(argv[5]) : default_maxsize, 1, MAXSIZE);
   const libxsmm_blasint minsize = LIBXSMM_CLMP(6 < argc ? atoi(argv[6]) : default_minsize, 1, maxsize);
   const libxsmm_blasint range = maxsize - minsize;
-  double tcall, tcgen, tdsp0 = 0, tdsp1 = 0;
-  libxsmm_timer_tickint start;
+  libxsmm_timer_tickint start, tcall, tcgen, tdsp0 = 0, tdsp1 = 0;
   int result = EXIT_SUCCESS;
 
 #if 0 != LIBXSMM_JIT
@@ -162,7 +162,7 @@ int main(int argc, char* argv[])
       /* measure call overhead of an "empty" function (not inlined) */
       libxsmm_init();
     }
-    tcall = libxsmm_timer_duration(start, libxsmm_timer_tick());
+    tcall = libxsmm_timer_diff(start, libxsmm_timer_tick());
 
     /* trigger code generation to subsequently measure only dispatch time */
     for (i = 0; i < size_local; ++i) {
@@ -197,7 +197,7 @@ int main(int argc, char* argv[])
 #endif
         }
       }
-      tdsp1 += libxsmm_timer_duration(start, libxsmm_timer_tick());
+      tdsp1 += libxsmm_timer_diff(start, libxsmm_timer_tick());
     }
 
     /* measure duration for code-generation */
@@ -222,7 +222,7 @@ int main(int argc, char* argv[])
 #endif
       }
     }
-    tcgen = libxsmm_timer_duration(start, libxsmm_timer_tick());
+    tcgen = libxsmm_timer_diff(start, libxsmm_timer_tick());
 
     /* measure dispatching previously generated kernel (likely non-cached) */
     for (n = 0; n < nrepeat; ++n) {
@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
 #endif
         }
       }
-      tdsp0 += libxsmm_timer_duration(start, libxsmm_timer_tick());
+      tdsp0 += libxsmm_timer_diff(start, libxsmm_timer_tick());
     }
 
 #if defined(CHECK)
@@ -303,20 +303,25 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  if (1 < size_total) {
-    tcall /= size_total;
-    tdsp0 /= size_total * nrepeat;
-    tdsp1 /= size_total * nrepeat;
-    tcgen /= size_total - size_local;
+  if (size_local < size_total) {
+    const int size_total_repeated = size_total * nrepeat, size_total_reduced = size_total - size_local;
+    tcall = (tcall + size_total - 1) / size_total;
+    tdsp0 = (tdsp0 + size_total_repeated - 1) / size_total_repeated;
+    tdsp1 = (tdsp1 + size_total_repeated - 1) / size_total_repeated;
+    tcgen = (tcgen + size_total_reduced - 1) / size_total_reduced;
     if (0 < tcall && 0 < tdsp0 && 0 < tdsp1 && 0 < tcgen) {
-      printf("\tfunction-call (empty): %.0f ns (%.0f MHz)\n", 1E9 * tcall, 1E-6 / tcall);
-      printf("\tdispatch (ro/cached): %.0f ns (%.0f MHz)\n", 1E9 * tdsp1, 1E-6 / tdsp1);
-      printf("\tdispatch (ro): %.0f ns (%.0f MHz)\n", 1E9 * tdsp0, 1E-6 / tdsp0);
-      if (1E-6 <= tcgen) {
-        printf("\tcode-gen (rw): %.0f us (%.0f kHz)\n", 1E6 * tcgen, 1E-3 / tcgen);
+      const double tcall_ns = 1E9 * libxsmm_timer_duration(0, tcall);
+      const double tdsp0_ns = 1E9 * libxsmm_timer_duration(0, tdsp0);
+      const double tdsp1_ns = 1E9 * libxsmm_timer_duration(0, tdsp1);
+      const double tcgen_ns = 1E9 * libxsmm_timer_duration(0, tcgen), tcgen_us = 1E-3 * tcgen_ns;
+      printf("\tfunction-call (false): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tcall_ns, 1E3 / tcall_ns, (uintptr_t)libxsmm_timer_cycles(0, tcall));
+      printf("\tdispatch (ro/cached): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tdsp1_ns, 1E3 / tdsp1_ns, (uintptr_t)libxsmm_timer_cycles(0, tdsp1));
+      printf("\tdispatch (ro): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tdsp0_ns, 1E3 / tdsp0_ns, (uintptr_t)libxsmm_timer_cycles(0, tdsp0));
+      if (1E3 < tcgen_ns) {
+        printf("\tcode-gen (rw): %.0f us (call/s %.0f kHz)\n", tcgen_us, 1E3 / tcgen_us);
       }
       else {
-        printf("\tcode-gen (rw): %.0f ns (%.0f MHz)\n", 1E9 * tcgen, 1E-6 / tcgen);
+        printf("\tcode-gen (rw): %.0f ns (call/s %.0f MHz)\n", tcgen_ns, 1E3 / tcgen_ns);
       }
     }
   }
