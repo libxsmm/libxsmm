@@ -115,12 +115,12 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_f32_f32(libxsmm_dn
   typedef float element_input_type;
   typedef float element_output_type;
   typedef float element_filter_type;
+  libxsmm_blasint lda = (libxsmm_blasint)handle->ofmblock;
+  libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.C;
+  libxsmm_blasint ldc = (libxsmm_blasint)handle->desc.K;
   element_input_type alpha = (element_input_type)1;
   /* beta is set to 1 because we have 2 blockings on ifm */
   element_input_type beta = (element_input_type)1;
-  libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
-  libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
-  libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
     libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
@@ -227,12 +227,12 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck
       typedef float element_input_type;
       typedef float element_output_type;
       typedef float element_filter_type;
-      libxsmm_blasint lda = (libxsmm_blasint)handle->bk;
-      libxsmm_blasint ldb = (libxsmm_blasint)handle->bc;
-      libxsmm_blasint ldc = (libxsmm_blasint)handle->bk;
+      libxsmm_blasint lda = (libxsmm_blasint)handle->ofmblock;
+      libxsmm_blasint ldb = (libxsmm_blasint)handle->desc.C;
+      libxsmm_blasint ldc = (libxsmm_blasint)handle->desc.K;
+      element_input_type alpha = (element_input_type)1;
       /* beta is set to 1 because we have 2 blockings on ifm */
       element_input_type beta = (element_input_type)1;
-      element_input_type alpha = (element_input_type)1;
 
       if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
         libxsmm_smmfunction_reducebatch batchreduce_kernel = libxsmm_smmdispatch_reducebatch(handle->bk, handle->bn, handle->bc, &lda, &ldb, &ldc, &alpha, &beta, NULL, NULL);
