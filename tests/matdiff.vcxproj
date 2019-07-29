@@ -37,6 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>matdiff</ProjectName>
     <ProjectGuid>{978B5AF3-4A2E-4DC9-BF7C-374403865240}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

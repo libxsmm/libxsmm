@@ -68,6 +68,14 @@ int main(void)
     result = EXIT_FAILURE;
   }
 
+  if (seed != libxsmm_hash(NULL/*data*/, 0/*size*/, seed)) {
+    result = EXIT_FAILURE;
+  }
+
+  if (0 != libxsmm_hash_string(NULL/*string*/)) {
+    result = EXIT_FAILURE;
+  }
+
   libxsmm_free(data);
 
   return result;

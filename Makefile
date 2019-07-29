@@ -118,7 +118,7 @@ SHARED ?= 0
 # >=2 and even: parallelized and tiled (all problem sizes)
 # >=3 and odd : GEMV is intercepted; small problem sizes
 # >=4 and even: GEMV is intercepted; all problem sizes
-# negative: assume BLAS with DGEMM_BATCH
+# negative: BLAS provides DGEMM_BATCH and SGEMM_BATCH
 # 0: disabled
 WRAP ?= 1
 
@@ -212,7 +212,7 @@ ifneq (,$(PYTHON))
   VERSION_UPDATE ?= $(shell $(PYTHON) $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 3)
 else
   $(info --------------------------------------------------------------------------------)
-  $(error No Python interpreter found!)
+  $(error No Python interpreter found)
 endif
 VERSION_STRING ?= $(VERSION_MAJOR).$(VERSION_MINOR).$(VERSION_UPDATE)
 VERSION_API ?= $(shell $(ROOTDIR)/$(SCRDIR)/libxsmm_utilities.py 0 $(VERSION_STRING))
@@ -279,6 +279,8 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
           $(ROOTDIR)/include/libxsmm_blocked_gemm.h \
           $(ROOTDIR)/include/libxsmm_cpuid.h \
           $(ROOTDIR)/include/libxsmm_dnn.h \
+          $(ROOTDIR)/include/libxsmm_dnn_tensor.h \
+          $(ROOTDIR)/include/libxsmm_dnn_convolution.h \
           $(ROOTDIR)/include/libxsmm_dnn_fusedbatchnorm.h \
           $(ROOTDIR)/include/libxsmm_dnn_pooling.h \
           $(ROOTDIR)/include/libxsmm_dnn_fullyconnected.h \
@@ -291,16 +293,17 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
           $(ROOTDIR)/include/libxsmm_macros.h \
           $(ROOTDIR)/include/libxsmm_malloc.h \
           $(ROOTDIR)/include/libxsmm_math.h \
+          $(ROOTDIR)/include/libxsmm_memory.h \
           $(ROOTDIR)/include/libxsmm_mhd.h \
           $(ROOTDIR)/include/libxsmm_spmdm.h \
           $(ROOTDIR)/include/libxsmm_sync.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
-          libxsmm_main.c libxsmm_malloc.c libxsmm_hash.c libxsmm_diff.c libxsmm_math.c \
+          libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_hash.c libxsmm_math.c \
           libxsmm_sync.c libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_xcopy.c libxsmm_blocked_gemm.c libxsmm_spmdm.c libxsmm_fsspmdm.c libxsmm_rng.c\
-          libxsmm_dnn.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c libxsmm_dnn_elementwise.c \
+          libxsmm_dnn.c libxsmm_dnn_tensor.c libxsmm_dnn_convolution.c  libxsmm_dnn_elementwise.c \
           libxsmm_dnn_rnncell.c libxsmm_dnn_rnncell_forward.c libxsmm_dnn_rnncell_backward_weight_update.c \
           libxsmm_dnn_fusedbatchnorm.c libxsmm_dnn_fusedbatchnorm_forward.c libxsmm_dnn_fusedbatchnorm_backward.c \
           libxsmm_dnn_pooling.c libxsmm_dnn_pooling_forward.c libxsmm_dnn_pooling_backward.c libxsmm_dnn_convolution_forward.c \
@@ -607,6 +610,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template
 	@$(CP) $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_math.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_memory.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_mhd.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_rng.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_spmdm.h $(INCDIR) 2>/dev/null || true
@@ -760,18 +764,19 @@ ifneq (0,$(MIC))
 ifneq (0,$(MPSS))
 $(foreach OBJ,$(OBJFILES_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
-  -mmic $(DFLAGS) $(IFLAGS) $(CFLAGS))))
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, -mmic \
+  $(call applyif,$(GLIBC),libxsmm_malloc,$(OBJ),-DLIBXSMM_GLIBC) \
+  $(DFLAGS) $(IFLAGS) $(CFLAGS))))
 $(foreach OBJ,$(KRNOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  -mmic $(DFLAGS) $(IFLAGS) $(CFLAGS))))
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, -mmic \
+  $(DFLAGS) $(IFLAGS) $(CFLAGS))))
 $(foreach OBJ,$(EXTOBJS_MIC),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ), $(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
-  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, \
-  -mmic $(DFLAGS) $(IFLAGS) $(EXTCFLAGS) $(CFLAGS))))
-$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_MIC),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, \
-  -mmic $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
+  $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h, -mmic \
+  $(DFLAGS) $(IFLAGS) $(EXTCFLAGS) $(CFLAGS))))
+$(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_MIC),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext.c,$(INCDIR)/libxsmm.h, -mmic \
+  $(NOBLAS_CFLAGS) $(NOBLAS_FLAGS) $(NOBLAS_IFLAGS) $(DNOBLAS)))
 endif
 endif
 
@@ -781,6 +786,7 @@ $(eval $(call DEFINE_COMPILE_RULE,$(NOBLAS_HST),$(ROOTDIR)/$(SRCDIR)/libxsmm_ext
 $(foreach OBJ,$(OBJFILES_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(ROOTDIR)/$(SRCDIR)/%.c,$(notdir $(OBJ))), \
   $(INCDIR)/libxsmm.h $(INCDIR)/libxsmm_source.h $(BLDDIR)/libxsmm_dispatch.h, \
+  $(call applyif,$(GLIBC),libxsmm_malloc,$(OBJ),-DLIBXSMM_GLIBC) \
   $(DFLAGS) $(IFLAGS) $(CTARGET) $(CFLAGS))))
 $(foreach OBJ,$(KRNOBJS_HST),$(eval $(call DEFINE_COMPILE_RULE, \
   $(OBJ),$(patsubst %.o,$(BLDDIR)/%.c,$(notdir $(OBJ))), \
@@ -1438,32 +1444,6 @@ $(DOCDIR)/libxsmm_samples.$(DOCEXT): $(ROOTDIR)/documentation/libxsmm_samples.md
 		-o $@
 	@rm $(TMPFILE)
 
-$(DOCDIR)/cp2k.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/cp2k.md
-	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
-	@pandoc -D latex \
-	| sed \
-		-e 's/\(\\documentclass\[..*\]{..*}\)/\1\n\\pagenumbering{gobble}\n\\RedeclareSectionCommands[beforeskip=-1pt,afterskip=1pt]{subsection,subsubsection}/' \
-		-e 's/\\usepackage{listings}/\\usepackage{listings}\\lstset{basicstyle=\\footnotesize\\ttfamily}/' \
-		-e 's/\(\\usepackage.*{hyperref}\)/\\usepackage[hyphens]{url}\n\1/' \
-		> $(TMPFILE)
-	@cd $(ROOTDIR)/documentation && iconv -t utf-8 cp2k.md \
-	| sed \
-		-e 's/<sub>/~/g' -e 's/<\/sub>/~/g' \
-		-e 's/<sup>/^/g' -e 's/<\/sup>/^/g' \
-		-e 's/----*//g' \
-	| pandoc \
-		--template=$(notdir $(TMPFILE)) --listings \
-		-f markdown_github+all_symbols_escapable+subscript+superscript \
-		-V documentclass=scrartcl \
-		-V title-meta="CP2K with LIBXSMM" \
-		-V author-meta="Hans Pabst" \
-		-V classoption=DIV=45 \
-		-V linkcolor=black \
-		-V citecolor=black \
-		-V urlcolor=black \
-		-o $(notdir $@)
-	@rm $(TMPFILE)
-
 $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/documentation/tensorflow.md
 	$(eval TMPFILE = $(shell $(MKTEMP) $(ROOTDIR)/documentation/.libxsmm_XXXXXX.tex))
 	@pandoc -D latex \
@@ -1494,7 +1474,6 @@ $(DOCDIR)/tensorflow.$(DOCEXT): $(DOCDIR)/.make $(ROOTDIR)/Makefile $(ROOTDIR)/d
 documentation: \
 $(DOCDIR)/libxsmm.$(DOCEXT) \
 $(DOCDIR)/libxsmm_samples.$(DOCEXT) \
-$(DOCDIR)/cp2k.$(DOCEXT) \
 $(DOCDIR)/tensorflow.$(DOCEXT)
 
 .PHONY: mkdocs
@@ -1564,6 +1543,7 @@ realclean-all: realclean
 
 .PHONY: distclean
 distclean: realclean-all
+	@rm -rf libxsmm*
 
 # PREFIX and DESTDIR are equivalent
 # - DESTDIR rules if PREFIX is also specified
@@ -1857,7 +1837,7 @@ deb:
 		echo "	dh_auto_install -- prefix=/usr" >> rules; \
 		echo >> rules; \
 		echo "9" > compat; \
-		$(MV) ../../LICENSE.md copyright; \
+		$(CP) ../LICENSE.md copyright; \
 		rm -f ../$(TSTDIR)/mhd_test.mhd; \
 		chmod +x rules; \
 		debuild \

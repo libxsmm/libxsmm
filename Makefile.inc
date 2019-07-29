@@ -90,8 +90,8 @@ PYTHON ?= $(call which,python)
 
 ifeq (,$(PYTHON))
 ifneq (,$(PYTHON3))
-  SHELL := env PATH=$(MAKEINC):$(PATH) $(SHELL)
-  PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null && command -v python)
+  SHELL := $(ENV) PATH=$(MAKEINC):$(PATH) $(SHELL)
+  PYTHON = $(shell ln -s $(PYTHON3) $(MAKEINC)/python 2>/dev/null; command -v python)
 endif
 endif
 
@@ -325,18 +325,29 @@ endif
 # or pickup the Intel Compiler (if available).
 GNU ?= 0
 ifeq (0,$(GNU))
-  ifneq (,$(notdir $(call which,icpc)))
-    CXX = icpc
-  else ifneq (,$(notdir $(call which,icpx)))
-    CXX = icpx
+  ifeq (,$(shell echo "$${CXX}"))
+    ifneq (,$(notdir $(call which,icpc)))
+      CXX = icpc
+    else ifneq (,$(notdir $(call which,icpx)))
+      CXX = icpx
+    endif
   endif
-  ifneq (,$(notdir $(call which,icc)))
-    CC = icc
-  else ifneq (,$(notdir $(call which,icx)))
-    CC = icx
+  ifeq (,$(shell echo "$${CC}"))
+    ifneq (,$(notdir $(call which,icc)))
+      CC = icc
+    else ifneq (,$(notdir $(call which,icx)))
+      CC = icx
+    endif
   endif
+  ifeq (,$(shell echo "$${FC}"))
   ifneq (,$(notdir $(call which,ifort)))
     FC = ifort
+  else ifneq (,$(notdir $(call which,ifx)))
+    FC = ifx
+  endif
+  endif
+  ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" | $(CC) -E -P - 2>/dev/null))
+    ICX = 1
   endif
 endif
 
@@ -891,7 +902,7 @@ ifneq (0,$(INTEL))
     endif
     FPEDANTIC += -warn all,notruncated_source -diag-disable 7025,7373,10237,10342,10382
   endif
-  ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
+  ifeq (0,$(ICX))
     CPEDANTIC += -Wcheck
   endif
   CPEDANTIC += -diag-disable 177,1419,1572,2547,10382
@@ -904,7 +915,7 @@ ifneq (0,$(INTEL))
       FMFLAGS += $(FSTD) $(FPEDANTIC) -diag-disable 10010
       FCFLAGS += $(FFORM_FLAG)
     endif
-    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
+    ifeq (0,$(ICX))
       CXXFLAGS += -Wcheck
       CFLAGS += -Wcheck
     endif
@@ -931,25 +942,25 @@ ifneq (0,$(INTEL))
   CFLAGS += $(OPTFLAG)
   FCFLAGS += $(OPTFLAG)
   ifeq (0,$(OFFLOAD))
-    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
-      CXXFLAGS += -qno-offload
-      CFLAGS += -qno-offload
-    endif
+  ifeq (0,$(ICX))
     ifeq (,$(strip $(GFC)))
       FCFLAGS += -qno-offload
     endif
+    CXXFLAGS += -qno-offload
+    CFLAGS += -qno-offload
+  endif
   endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
     CXXFLAGS += -fno-alias -ansi-alias
     CFLAGS += -fno-alias -ansi-alias
-    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
-      CXXFLAGS += -qoverride_limits #-fp-model fast=2
-      CFLAGS += -qoverride_limits #-fp-model fast=2
-    endif
+    #ifeq (0,$(ICX))
+      #CXXFLAGS += -qoverride_limits #-fp-model fast=2
+      #CFLAGS += -qoverride_limits #-fp-model fast=2
+    #endif
     ifeq (,$(strip $(GFC)))
     ifneq (,$(strip $(FC)))
-      FCFLAGS += -qoverride_limits #-fp-model fast=2
+      #FCFLAGS += -qoverride_limits #-fp-model fast=2
       ifneq (0,$(shell echo "$$((130000<=$(FC_VERSION)))"))
         FCFLAGS += -align array64byte
       endif
@@ -963,7 +974,7 @@ ifneq (0,$(INTEL))
       CFLAGS += -ipo
     endif
   else ifeq (,$(strip $(GFC))) # debugging enabled
-    ifneq (0,$(shell echo "$$((990000>$(CC_VERSION)))"))
+    ifeq (0,$(ICX))
       FCFLAGS += -check
     endif
   endif
@@ -1309,9 +1320,9 @@ ifeq (undefined,$(origin TARGET))
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     # detect maintainer build and limit to SSE3
-    ifneq (Windows_NT,$(UNAME))
-    ifneq (Darwin,$(UNAME))
-    ifeq (3,$(GCC))
+    ifeq (,$(filter Windows_NT Darwin,$(UNAME)))
+    ifeq (,$(SPACK_ENV_PATH)) # not under Spack
+    ifeq (3,$(GCC)) # pure GNU pipeline
     ifeq (0,$(DEPSTATIC))
       CTARGET = -msse3
     else ifneq (0,$(SHARED))
@@ -1617,11 +1628,22 @@ ifeq (Darwin,$(UNAME))
   FCFLAGS += -Wa,-q
 endif
 
+ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
+  echo "\#include <malloc.h>" > $${INFILE}; \
+  echo "\#ifndef __MALLOC_HOOK_VOLATILE" >> $${INFILE}; \
+  echo "0" >> $${INFILE}; \
+  echo "\#endif" >> $${INFILE}; \
+  RESULT=$$($(CC) -c $${INFILE} -o $${INFILE}.o 2>&1); \
+  if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
+    GLIBC = 1
+endif
+GLIBC ?= 0
+
 OMPLIBFILE ?= $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
 ifneq (,$(strip $(OMPLIBFILE)))
   OMPLIB = $(call abslib,$(OMPLIBFILE))
 endif
-
 ifneq (,$(OMPFLAG_FORCE))
   OMPFLAG = $(OMPFLAG_FORCE)
   ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
@@ -1634,7 +1656,6 @@ ifneq (,$(OMPFLAG_FORCE))
       OMPFLAG = $(NULL)
   endif
 endif
-
 ifeq (0,$(OMP))
   EXTLIB += $(OMPLIB)
 endif
@@ -1940,6 +1961,8 @@ CLDFLAGS := $(call cleanld,$(CLDFLAGS))
 
 .SUFFIXES:
 
+# applyif(A1,A2,A3,A4) evaluates to A4 if the basenames (A1, A2) match and if A1 is non-zero (precondition)
+applyif = $(if $(filter 0,$1),$(NULL),$(if $(filter $2,$(basename $(notdir $3))),$(if $1,$4,$(NULL)),$(NULL)))
 # derives the extension of a filename
 extname = $(subst .,,$(suffix $(1)))
 # derives the name of an object files for a given source file
@@ -1953,8 +1976,8 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     FLOCK SUITE ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP BLAS_LDTEST \
     SHARED CCAR CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE \
     OMPLIBFILE NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC PYTHON% PYMOD CWARNEXTRA \
-    CSTD DNOBLAS MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC AVX SSE FFORM_FLAG FREEFORM OPSYS \
-    which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink extname objname,$V), \
+    CSTD DNOBLAS MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC ICX AVX SSE FFORM_FLAG FREEFORM OPSYS \
+    which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink applyif extname objname,$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 

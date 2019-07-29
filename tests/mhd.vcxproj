@@ -37,6 +37,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>mhd</ProjectName>
     <ProjectGuid>{0F908964-721C-4952-99A8-EF5C988CCE58}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

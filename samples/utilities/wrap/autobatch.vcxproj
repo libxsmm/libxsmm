@@ -36,6 +36,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>autobatch</ProjectName>
     <ProjectGuid>{7C20EC72-D155-4C70-87EB-855CA95733A8}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

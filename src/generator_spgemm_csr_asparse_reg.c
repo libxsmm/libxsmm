@@ -45,9 +45,9 @@
 #endif
 
 LIBXSMM_API_INTERN
-void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*         io_generated_code,
-                                  const char*                     i_routine_name,
-                                  const libxsmm_gemm_descriptor* i_xgemm_desc ) {
+void libxsmm_mmfunction_signature_asparse_reg( libxsmm_generated_code*        io_generated_code,
+                                               const char*                    i_routine_name,
+                                               const libxsmm_gemm_descriptor* i_xgemm_desc ) {
   char l_new_code[512];
   int l_max_code_length = 511;
   int l_code_length = 0;
@@ -263,12 +263,15 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
                                                    l_unique+l_n );
         }
 
-        libxsmm_x86_instruction_prefetch( io_generated_code,
-                                          LIBXSMM_X86_INSTR_PREFETCHT2,
-                                          l_gp_reg_mapping.gp_reg_c,
-                                          LIBXSMM_X86_GP_REG_UNDEF, 0,
-                                          l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size +
-                                            (l_n+1)*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length );
+        /* only prefetch if we do temporal stores */
+        if ((LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags) == 0) {
+          libxsmm_x86_instruction_prefetch( io_generated_code,
+                                            LIBXSMM_X86_INSTR_PREFETCHT2,
+                                            l_gp_reg_mapping.gp_reg_c,
+                                            LIBXSMM_X86_GP_REG_UNDEF, 0,
+                                            l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size +
+                                              (l_n+1)*l_micro_kernel_config.datatype_size*l_micro_kernel_config.vector_length );
+        }
       }
     }
     for ( l_z = 0; l_z < l_row_elements; l_z++ ) {
@@ -300,9 +303,19 @@ void libxsmm_generator_spgemm_csr_asparse_reg( libxsmm_generated_code*         i
     }
     if (l_row_elements > 0) {
       for ( l_n = 0; l_n < l_n_blocking; l_n++ ) {
+        unsigned int l_store_instruction = 0;
+        if ((LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT & i_xgemm_desc->flags) > 0) {
+          if ( LIBXSMM_GEMM_PRECISION_F64 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype )  ) {
+            l_store_instruction = LIBXSMM_X86_INSTR_VMOVNTPD;
+          } else {
+            l_store_instruction = LIBXSMM_X86_INSTR_VMOVNTPS;
+          }
+        } else {
+          l_store_instruction = l_micro_kernel_config.c_vmove_instruction;
+        }
         libxsmm_x86_instruction_vec_move( io_generated_code,
                                           l_micro_kernel_config.instruction_set,
-                                          l_micro_kernel_config.c_vmove_instruction,
+                                          l_store_instruction,
                                           l_gp_reg_mapping.gp_reg_c,
                                           LIBXSMM_X86_GP_REG_UNDEF, 0,
                                           l_m*i_xgemm_desc->ldc*l_micro_kernel_config.datatype_size +

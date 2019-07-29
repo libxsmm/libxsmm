@@ -31,7 +31,7 @@
 void print_layout(char *desc, libxsmm_dnn_tensor_datalayout *layout) {
   char *dim_name[] = {"N", "H", "W", "C", "K", "R", "S", "X", "RLM", "RLK", "RLN"};
   int i;
-  printf("%s: F:%d IF:%d TT: %d [", desc, layout->format, layout->custom_format, layout->tensor_type);
+  printf("%s: F:%d TT: %d [", desc, layout->format, layout->tensor_type);
   for(i = layout->num_dims - 1; i >= 0; i--) {
     printf("%s:%d%s", dim_name[layout->dim_type[i]], layout->dim_size[i], i == 0 ? "" : ", ");
   }

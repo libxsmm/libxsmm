@@ -87,35 +87,265 @@ else
     -e "MIC_KMP_HW_SUBSET=$((MICCORES-1))${MICTPERC}t"
 fi
 
-ITERS=10
+ITERS=100
 CHKVAL=1
 
 export OMP_NUM_THREADS=28
 export KMP_AFFINITY=granularity=fine,compact,1,0
 
+##### using the optimal block size as mentioned in emails
+echo "LSTM FWD Minibatch=1, low latency inference"
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 10 1024 512 1 10 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 10 1024 512 1 10 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 256 256 101  1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 256 256 10 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 256 256 20 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 256 256 30 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 256 256 40 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 256 256 50 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 256 256 60 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 256 256 70 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 512 512 101 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 512 512 10 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 512 512 20 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 512 512 30 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 512 512 40 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 512 512 50 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 512 512 60 1 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 1 512 512 70 1 32 64
+wait
 
-echo "LSTM FWD"
-CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168   256   256  50
+echo "LSTM FWD small batch inference, throughput inference"
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 640 1024 512 1 64 64 64
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168   512   512  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 640 1024 512 1 64 64 64
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168  1024  1024  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 256 256 101 4 64 64
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168  2048  2048  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 256 256 10 4 64 64
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168  4096  4096  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 256 256 20 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 256 256 30 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 256 256 40 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 256 256 50 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 256 256 60 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 256 256 70 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 512 512 101 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 512 512 10 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 512 512 20 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 512 512 30 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 512 512 40 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 512 512 50 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 512 512 60 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 64 512 512 70 4 64 64
 wait
 
-echo "LSTM BWD+UPD"
-CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168   256   256  50
+echo "LSTM FWD training, minibatch=128"
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 1024 512 1 16 32 64
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168   512   512  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 1024 512 1 16 32 64
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168  1024  1024  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 256 256 101 4 64 64
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168  2048  2048  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 256 256 10 4 64 64
 wait
-CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168  4096  4096  50
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 256 256 20 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 256 256 30 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 256 256 40 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 256 256 50 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 256 256 60 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 256 256 70 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 512 512 101 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 512 512 10 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 512 512 20 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 512 512 30 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 512 512 40 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 512 512 50 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 512 512 60 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 128 512 512 70 16 32 64
+wait
+
+
+echo "LSTM BWD+UPD training, minibatch=128"
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 1024 512 1 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 1024 512 1 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 256 256 101 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 256 256 10 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 256 256 20 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 256 256 30 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 256 256 40 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 256 256 50 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 256 256 60 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 256 256 70 4 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 512 512 101 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 512 512 10 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 512 512 20 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 512 512 30 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 512 512 40 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 512 512 50 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 512 512 60 16 32 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 128 512 512 70 16 32 64
+wait
+
+echo "LSTM FWD training, minibatch=168"
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 1024 512 1 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 1024 512 1 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 256 256 101 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 256 256 10 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 256 256 20 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 256 256 30 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 256 256 40 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 256 256 50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 256 256 60 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 256 256 70 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 512 512 101 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 512 512 10 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 512 512 20 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 512 512 30 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 512 512 40 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 512 512 50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 512 512 60 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0 168 512 512 70 24 64 64
+wait
+
+
+echo "LSTM BWD+UPD training, minibatch=168"
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 1024 512 1 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 1024 512 1 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 256 256 101 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 256 256 10 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 256 256 20 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 256 256 30 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 256 256 40 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 256 256 50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 256 256 60 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 256 256 70 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 512 512 101 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 512 512 10 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 512 512 20 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 512 512 30 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 512 512 40 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 512 512 50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 512 512 60 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3 168 512 512 70 24 64 64
+wait
+
+echo "LSTM FWD, large sizes, minibatch=168"
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168   256   256  50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168   512   512  50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168  1024  1024  50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168  2048  2048  50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  0  168  4096  4096  50 24 64 64
+wait
+
+echo "LSTM BWD+UPD, large sizes, minibatch=168"
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168   256   256  50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168   512   512  50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168  1024  1024  50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168  2048  2048  50 24 64 64
+wait
+CHECK=${CHKVAL} ./lstmdriver_nc_kcck  ${ITERS}  3  168  4096  4096  50 24 64 64
 wait
 
 echo "LSTM performance done"

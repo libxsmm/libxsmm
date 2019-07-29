@@ -32,7 +32,7 @@
 #define LIBXSMM_DNN_FULLYCONNECTED_H
 
 #include "libxsmm_dnn.h"
-
+#include "libxsmm_dnn_tensor.h"
 
 /** Opaque handles which represents LIBXSMM fullyconnected */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected libxsmm_dnn_fullyconnected;

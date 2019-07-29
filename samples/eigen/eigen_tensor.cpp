@@ -107,9 +107,6 @@ int main(int argc, char* argv[])
 #   pragma offload target(LIBXSMM_OFFLOAD_TARGET)
 # endif
     {
-# if defined(MKL_ENABLE_AVX512)
-      mkl_enable_instructions(MKL_ENABLE_AVX512);
-# endif
       Eigen::ThreadPool threadpool(nthreads);
       Eigen::ThreadPoolDevice device(&threadpool, threadpool.NumThreads());
       Eigen::Tensor<ITYPE,2/*nindices*/,0/*options*/,libxsmm_blasint> ta(m, k), tb(k, n), tc(m, n);

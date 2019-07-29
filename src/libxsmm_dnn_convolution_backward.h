@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_DNN_CONVOLUTION_BACKWARD_H
 #define LIBXSMM_DNN_CONVOLUTION_BACKWARD_H
 
-#include <libxsmm_dnn.h>
+#include <libxsmm_dnn_convolution.h>
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_bwd_custom_custom(libxsmm_dnn_layer* handle, int start_thread, int tid);
 

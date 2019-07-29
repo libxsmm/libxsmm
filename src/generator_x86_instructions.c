@@ -3816,7 +3816,7 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
      unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
      int i = io_generated_code->code_size;
      int l_inst = 0x00, l_base = 0x00, l_place2 = i+2;
-     int l_regbas0, l_gp8, l_regnum, l_nx8, l_sca = 0;
+     int l_regbas0, l_gp8, l_regnum, l_nx8, l_sca = 0, l_forced_offset=0;
 
      switch ( i_alu_instr ) {
        case LIBXSMM_X86_INSTR_MOVSLQ:
@@ -3833,6 +3833,9 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
           } else {
              l_inst = 0x28;
           }
+          break;
+       case LIBXSMM_X86_INSTR_LEAQ:
+          l_inst = 0x2A;
           break;
        case LIBXSMM_X86_INSTR_MOVL:
           if ( i_is_store == 1 )
@@ -3884,7 +3887,11 @@ void libxsmm_x86_instruction_alu_mem( libxsmm_generated_code* io_generated_code,
          buf[i++] = (unsigned char)(0x04 + l_regnum * 0x08);
          buf[i++] = (unsigned char)(l_sca + l_regbas0 + l_regidx*8);
      }
-     i += internal_x86_instructions_add_offset( l_place2, i, i_displacement, 0, 1, buf );
+     if ( (l_regbas0 == 5) && (i_displacement==0) )
+     {
+         l_forced_offset = 1;
+     }
+     i += internal_x86_instructions_add_offset( l_place2, i, i_displacement, l_forced_offset, 1, buf );
 
      io_generated_code->code_size = i;
   }
@@ -3965,7 +3972,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
        /* four bytes */
        unsigned char *l_cptr = (unsigned char *) &i_immediate;
        buf[i++] = (unsigned char)(0x48 + l_first);
-       if ( i_gp_reg_number==0 && (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
+       if ( i_gp_reg_number==0 && ((i_alu_instr==LIBXSMM_X86_INSTR_SUBQ) || (i_alu_instr==LIBXSMM_X86_INSTR_CMPQ) || (i_alu_instr==LIBXSMM_X86_INSTR_ADDQ)) )
        {
           /* special case for %rax! */
           buf[i++] = (unsigned char)(0x05 + l_second);
@@ -4071,19 +4078,17 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
                                       const unsigned int      i_gp_reg_number_dest) {
   /* @TODO add checks in debug mode */
   if ( io_generated_code->code_type > 1 ) {
-
     unsigned char *buf = (unsigned char *) io_generated_code->generated_code;
     int i = io_generated_code->code_size;
     /* int i = *loc; */
     /* unsigned int l_maxsize = io_generated_code->buffer_size;*/
     /* unsigned int l_maxsize = 1024; */
 
-    int l_first = 0;
     int l_second = 0;
     int l_third = 0;
     int l_extra_byte = 0;
-    int l_reg0 = i_gp_reg_number_src;
-    int l_reg1 = i_gp_reg_number_dest;
+    int l_reg1 = i_gp_reg_number_src;
+    int l_reg0 = i_gp_reg_number_dest;
 
     switch ( i_alu_instr ) {
        case LIBXSMM_X86_INSTR_ADDQ:
@@ -4100,41 +4105,54 @@ void libxsmm_x86_instruction_alu_reg( libxsmm_generated_code* io_generated_code,
        case LIBXSMM_X86_INSTR_CMOVZ:
           l_second += 0x0e;
           l_extra_byte = 1;
-          l_reg0 = i_gp_reg_number_dest;
-          l_reg1 = i_gp_reg_number_src;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
           break;
        case LIBXSMM_X86_INSTR_CMOVNZ:
           l_second += 0x0e;
           l_third += 0x01;
           l_extra_byte = 1;
-          l_reg0 = i_gp_reg_number_dest;
-          l_reg1 = i_gp_reg_number_src;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_POPCNT:
+          l_second += 0x0e;
+          l_third += 0x74;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
+          break;
+       case LIBXSMM_X86_INSTR_TZCNT:
+          l_second += 0x0e;
+          l_third += 0x78;
+          l_extra_byte = 1;
+          l_reg1 = i_gp_reg_number_dest;
+          l_reg0 = i_gp_reg_number_src;
           break;
        default:
           fprintf(stderr, "libxsmm_instruction_alu_reg: Not sure what instruction you have in mind: %u\n",i_alu_instr);
           exit(-1);
     }
-    if ( (l_reg0 > 7) && (l_reg0 <=15) )
-    {
-       l_first += 4;
-       l_reg0 -= 8;
-    }
-    if ( (l_reg1 > 7) && (l_reg1 <=15) )
-    {
-       l_first += 1;
-       l_reg1 -= 8;
-    }
+    {/* open new scope for additional variable declarations (C89) */
+      int l_regbas0 = l_reg0 % 8;
+      int l_gp8     = ((l_reg0 > 7)&&(l_reg0 <=15)?1:0);
+      int l_regnum  = l_reg1 % 8;
+      int l_nx8     = ((l_reg1 >7)&&(l_reg1<=15)?1:0);
 
-    buf[i++] = (unsigned char)(0x48 + l_first);
-    buf[i++] = (unsigned char)(0x01 + l_second);
-    if ( l_extra_byte )
-    {
-       buf[i++] = (unsigned char)(0x44 + l_third);
-    }
-    buf[i++] = (unsigned char)(0xc0 + 8*l_reg0 + l_reg1);
+      if ( (i_alu_instr == LIBXSMM_X86_INSTR_POPCNT) || (i_alu_instr == LIBXSMM_X86_INSTR_TZCNT) ) {
+         buf[i++] = (unsigned char)(0xf3);
+      }
+      buf[i++] = (unsigned char)(0x48 + l_gp8 * 0x01 + l_nx8 * 0x04);
+      buf[i++] = (unsigned char)(0x01 + l_second);
+      if ( l_extra_byte )
+      {
+         buf[i++] = (unsigned char)(0x44 + l_third);
+      }
+      buf[i++] = (unsigned char)(0xc0 + l_regbas0 + 8*l_regnum);
 
-    io_generated_code->code_size = i;
-    /* *loc = i; */
+      io_generated_code->code_size = i;
+      /* *loc = i; */
+    }
   } else {
     char l_new_code[512];
     int l_max_code_length = 511;

@@ -7,4 +7,5 @@
 *.fh
 *.py
 *.sh
+*.env
 *.yml

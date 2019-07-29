@@ -39,6 +39,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>edge_vol_int</ProjectName>
     <ProjectGuid>{2432BA35-1862-4AF1-831C-6B2A7A079C84}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

@@ -30,7 +30,7 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.sh *.py *.yml *.txt"
+PATTERNS="*.c *.cpp *.h *.hpp *.f *.F90 *.fh *.py *.sh *.env *.yml *.txt"
 BANNED_CHARS="\t"
 
 PATBAN="s/[${BANNED_CHARS}]/"
@@ -46,6 +46,7 @@ FLAKE8=$(command -v flake8)
 ICONV=$(command -v iconv)
 GIT=$(command -v git)
 SED=$(command -v sed)
+CUT=$(command -v cut)
 TR=$(command -v tr)
 CP=$(command -v cp)
 RM=$(command -v rm)
@@ -61,7 +62,7 @@ then
 fi
 
 if [ "" != "${GIT}" ] && [ "" != "${CP}" ] && [ "" != "${RM}" ] && \
-   [ "" != "${SED}" ] && [ "" != "${TR}" ];
+   [ "" != "${SED}" ] && [ "" != "${CUT}" ] && [ "" != "${TR}" ];
 then
   if [ "" != "${ICONV}" ]; then
     CAT="${ICONV} -t ASCII"
@@ -85,6 +86,14 @@ then
           ${CAT} ${FILE} | ${SED} -e "${PATSPC}/" > ${TMPF}
           ${CP} ${TMPF} ${FILE}
           echo "${FILE}: removed trailing white spaces."
+        fi
+        if [ "*.sh" = "${PATTERN}" ] || [ "*.py" = "${PATTERN}" ]; then
+          if [ "" != "$(${SED} -n '1!b;/#!/p' ${FILE})" ] && \
+             [ "100755" != "$(${GIT} ls-files -s ${FILE} | ${CUT} -d' ' -f1)" ];
+          then
+            ${GIT} update-index --chmod=+x ${FILE}
+            echo "${FILE}: added executable flag."
+          fi
         fi
       done
     done

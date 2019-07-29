@@ -149,8 +149,8 @@ int main(int argc, char* argv[])
     printf("norm type needs to be 0 or 1\n");
     return -1;
   }
-  if ((fuse_type < 0) && (fuse_type > 3)) {
-    printf("fuse type needs to be 0, 1, 2, or 3\n");
+  if ((fuse_type < 0) || (fuse_type > 5)) {
+    printf("fuse type needs to be 0, 1, 2, 3, 4 or 5\n");
     return -1;
   }
 

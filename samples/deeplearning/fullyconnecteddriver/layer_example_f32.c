@@ -217,6 +217,17 @@ int main(int argc, char* argv[])
     fullyconnected_desc.threads = nThreads;
     fullyconnected_desc.datatype_in = LIBXSMM_DNN_DATATYPE_F32;
     fullyconnected_desc.datatype_out = LIBXSMM_DNN_DATATYPE_F32;
+
+    if (nImg % bn != 0) {
+      bn = nImg;
+    }
+    if (nIFm % bc != 0) {
+      bc = nIFm;
+    }
+    if (nOFm % bk != 0) {
+      bk = nOFm;
+    }
+
     if ( format == 'L' ) {
       fullyconnected_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
       fullyconnected_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;

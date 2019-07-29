@@ -93,10 +93,10 @@ int main(int argc, char* argv[])
 #else
     const int j = i;
 #endif
-    init(25 + i, a + j * na, m, k, lda, scale);
-    init(75 + i, b + j * nb, k, n, ldb, scale);
+    init(25 + i, a + j * na, (int)m, (int)k, (int)lda, scale);
+    init(75 + i, b + j * nb, (int)k, (int)n, (int)ldb, scale);
     if (LIBXSMM_NEQ(0, beta)) { /* no need to initialize for beta=0 */
-      init(42 + i, c + j * nc, m, n, ldc, scale);
+      init(42 + i, c + j * nc, (int)m, (int)n, (int)ldc, scale);
     }
     ia[i] = (int)STREAM_A(j * na);
     ib[i] = (int)STREAM_B(j * nb);
@@ -118,7 +118,7 @@ int main(int argc, char* argv[])
   { /* calculate checksum */
     double check = 0;
     for (i = 0; i < size; ++i) {
-      const double cn = norm(c + STREAM_C(i * nc), m, n, ldc);
+      const double cn = norm(c + STREAM_C(i * nc), (int)m, (int)n, (int)ldc);
       if (check < cn) check = cn;
     }
     printf("\n%f (check)\n", check);

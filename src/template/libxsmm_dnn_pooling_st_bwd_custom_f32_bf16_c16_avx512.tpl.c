@@ -144,11 +144,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
             continue;
           } else {
             const element_output_type*   doutput_ptr = &LIBXSMM_VLA_ACCESS(5, doutput,    img, fm,    ho,    wo, 0, nBlocksFm, ofhp, ofwp, 16);
-#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
                   float*              lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,          hi+kh, wi+kw, 0,                   ifw, 16);
-#else
-                  element_input_type* lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,          hi+kh, wi+kw, 0,                   ifw, 16);
-#endif
             const __m512 recp_pool_size_ps = _mm512_set1_ps( recp_pool_size );
             const __m512 lcl_dinput_ps = _mm512_loadu_ps( lcl_dinput_ptr );
             _mm512_storeu_ps( lcl_dinput_ptr, _mm512_fmadd_ps( _mm512_load_act( doutput_ptr ), recp_pool_size_ps, lcl_dinput_ps ) );
@@ -163,11 +159,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   for ( hi = iph; hi < (ifh+iph); hi++ ) {
     for ( wi = ipw; wi < (ifw+ipw); wi++ ) {
       element_input_type*     dinput_ptr = &LIBXSMM_VLA_ACCESS(5, dinput,     img, fm,        hi,        wi, 0, nBlocksFm, ifhp, ifwp, 16);
-#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
       float*              lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,             hi-iph,    wi-ipw, 0,                   ifw, 16);
-#else
-      element_input_type* lcl_dinput_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_dinput,             hi-iph,    wi-ipw, 0,                   ifw, 16);
-#endif
       _mm512_stream_act( dinput_ptr, _mm512_loadu_ps( lcl_dinput_ptr ) );
     }
   }

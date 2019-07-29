@@ -280,7 +280,7 @@ if (handle->loop_order == 0) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) {*/
 if (handle->loop_order == 1) { /* (loop_order == N_Kb_Cb_Hb_k_c_h_w) { */
   for (img = my_img_start; img < my_img_end; img++) {
     for (ifmb = my_ifm_start; ifmb < my_ifm_end; ifmb += handle->block_bwd_ifm) {
-      for (ojb = 0; ojb < handle->ofh; ojb += handle->block_fwd_oj) {
+      for (ojb = 0; ojb < handle->ofh; ojb += handle->block_bwd_oj) {
         for (oj = ojb; oj < LIBXSMM_MIN(ojb+handle->block_bwd_oj,handle->ofh); oj += handle->bwd_ofh_rb) {
           for (oi = 0; oi < handle->ofw; oi += handle->bwd_ofw_rb) {
             for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_bwd_ifm, my_ifm_end); ifm1++ ) {

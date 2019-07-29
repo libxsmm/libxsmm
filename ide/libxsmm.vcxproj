@@ -44,6 +44,7 @@
     <ClInclude Include="..\include\libxsmm_macros.h" />
     <ClInclude Include="..\include\libxsmm_malloc.h" />
     <ClInclude Include="..\include\libxsmm_math.h" />
+    <ClInclude Include="..\include\libxsmm_memory.h" />
     <ClInclude Include="..\include\libxsmm_mhd.h" />
     <ClInclude Include="..\include\libxsmm_rng.h" />
     <ClInclude Include="..\include\libxsmm_source.h" />
@@ -55,7 +56,9 @@
     <ClInclude Include="..\src\generator_gemm_avx512_microkernel_fsdbcst.h" />
     <ClInclude Include="..\src\generator_packed_aux.h" />
     <ClInclude Include="..\src\generator_packed_gemmnn.h" />
+    <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_packed_gemm_avx_avx512.h" />
+    <ClInclude Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_packed_getrf_avx_avx512.h" />
     <ClInclude Include="..\src\generator_packed_trmm_avx_avx512.h" />
     <ClInclude Include="..\src\generator_packed_trsm_dmacros.h" />
@@ -73,8 +76,6 @@
     <ClInclude Include="..\src\generator_gemm_avx_microkernel.h" />
     <ClInclude Include="..\src\generator_gemm_common.h" />
     <ClInclude Include="..\src\generator_gemm_noarch.h" />
-    <ClInclude Include="..\src\generator_gemm_rm_ac_soa.h" />
-    <ClInclude Include="..\src\generator_gemm_rm_bc_soa.h" />
     <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2_avx512.h" />
     <ClInclude Include="..\src\generator_gemm_sse3_microkernel.h" />
     <ClInclude Include="..\src\generator_matcopy_avx_avx512.h" />
@@ -123,7 +124,9 @@
     <ClCompile Include="..\src\generator_gemm_avx512_fsdbcst.c" />
     <ClCompile Include="..\src\generator_gemm_avx512_microkernel_fsdbcst.c" />
     <ClCompile Include="..\src\generator_packed.c" />
+    <ClCompile Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.c" />
     <ClCompile Include="..\src\generator_packed_gemm_avx_avx512.c" />
+    <ClCompile Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.c" />
     <ClCompile Include="..\src\generator_packed_getrf_avx_avx512.c" />
     <ClCompile Include="..\src\generator_packed_trmm_avx_avx512.c" />
     <ClCompile Include="..\src\generator_packed_trsm_avx_avx512.c" />
@@ -137,8 +140,6 @@
     <ClCompile Include="..\src\generator_gemm_avx_microkernel.c" />
     <ClCompile Include="..\src\generator_gemm_common.c" />
     <ClCompile Include="..\src\generator_gemm_noarch.c" />
-    <ClCompile Include="..\src\generator_gemm_rm_ac_soa.c" />
-    <ClCompile Include="..\src\generator_gemm_rm_bc_soa.c" />
     <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2_avx512.c" />
     <ClCompile Include="..\src\generator_gemm_sse3_microkernel.c" />
     <ClCompile Include="..\src\generator_matcopy.c" />
@@ -157,7 +158,6 @@
     <ClCompile Include="..\src\generator_transpose_avx_avx512.c" />
     <ClCompile Include="..\src\generator_x86_instructions.c" />
     <ClCompile Include="..\src\libxsmm_blocked_gemm.c" />
-    <ClCompile Include="..\src\libxsmm_diff.c" />
     <ClCompile Include="..\src\libxsmm_dnn.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_backward.c" />
     <ClCompile Include="..\src\libxsmm_dnn_convolution_forward.c" />
@@ -187,6 +187,7 @@
     <ClCompile Include="..\src\libxsmm_main.c" />
     <ClCompile Include="..\src\libxsmm_malloc.c" />
     <ClCompile Include="..\src\libxsmm_math.c" />
+    <ClCompile Include="..\src\libxsmm_memory.c" />
     <ClCompile Include="..\src\libxsmm_mhd.c" />
     <ClCompile Include="..\src\libxsmm_perf.c" />
     <ClCompile Include="..\src\libxsmm_python.c" />
@@ -380,14 +381,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom_2.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
@@ -413,14 +406,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_custom_custom_2.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
@@ -469,14 +454,6 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_2.tpl.c">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='release|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='symbols|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='debug|Win32'">true</ExcludedFromBuild>
@@ -1081,7 +1058,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>libxsmm</ProjectName>
     <ProjectGuid>{01CE57B8-270B-48B6-8BD5-CFD30B8EFCDC}</ProjectGuid>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">
