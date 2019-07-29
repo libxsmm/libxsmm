@@ -252,6 +252,9 @@
 #define LIBXSMM_X86_INSTR_JGE            30022
 #define LIBXSMM_X86_INSTR_JLE            30023
 #define LIBXSMM_X86_INSTR_JMP            30024
+#define LIBXSMM_X86_INSTR_POPCNT         30025
+#define LIBXSMM_X86_INSTR_TZCNT          30026
+#define LIBXSMM_X86_INSTR_LEAQ           30027
 
 /* Mask move instructions */
 #define LIBXSMM_X86_INSTR_KMOV           40000
@@ -316,9 +319,9 @@
 # define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE)
 #else
 # define LIBXSMM_HANDLE_ERROR(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-    GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, 0 != libxsmm_ninit ? libxsmm_verbosity : 1)
+    GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 0 != libxsmm_ninit ? libxsmm_verbosity : 1)
 # define LIBXSMM_HANDLE_ERROR_VERBOSE(GENERATED_CODE, ERROR_CODE) libxsmm_handle_error( \
-    GENERATED_CODE, ERROR_CODE, LIBXSMM_CALLER, 1)
+    GENERATED_CODE, ERROR_CODE, LIBXSMM_FUNCNAME, 1)
 #endif
 
 /* micro kernel configuration */
@@ -351,7 +354,9 @@ LIBXSMM_EXTERN_C typedef struct libxsmm_gp_reg_mapping_struct {
   unsigned int gp_reg_b;
   unsigned int gp_reg_c;
   unsigned int gp_reg_a_prefetch;
+  unsigned int gp_reg_a_offset;
   unsigned int gp_reg_b_prefetch;
+  unsigned int gp_reg_b_offset;
   unsigned int gp_reg_c_prefetch;
   unsigned int gp_reg_mloop;
   unsigned int gp_reg_nloop;
@@ -487,14 +492,6 @@ void libxsmm_handle_error( libxsmm_generated_code* io_generated_code,
                            const unsigned int      i_error_code,
                            const char*             context,
                            int emit_message );
-
-LIBXSMM_API_INTERN
-void libxsmm_convfunction_signature_fp32( libxsmm_generated_code*         io_generated_code,
-                                          const char*                     i_routine_name     );
-
-LIBXSMM_API_INTERN
-void libxsmm_convfunction_signature_int16( libxsmm_generated_code*         io_generated_code,
-                                           const char*                     i_routine_name     );
 
 LIBXSMM_API_INTERN unsigned int libxsmm_compute_equalized_blocking(
   unsigned int i_size, unsigned int i_max_block,

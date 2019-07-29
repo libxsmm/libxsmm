@@ -33,7 +33,7 @@
 const int nImg = handle->desc.N;
 /* here we assume that input and output blocking is similar */
 const int nBlocksIFm = handle->blocksifm;
-const int nIFmBlock = handle->fm_lp_block*handle->ifmblock;
+const int nIFmBlock = handle->ifmblock;
 const int nBlocksOFm = handle->blocksofm;
 const int nOFmBlock = handle->ofmblock;
 

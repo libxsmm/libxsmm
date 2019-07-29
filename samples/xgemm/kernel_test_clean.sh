@@ -51,9 +51,11 @@ then
   # disable glob in Shell
   #set -f
   for CLEAN in ${CLEANUP}; do
-    CLEAN_CHECK="${CLEAN_CHECK}/^#SBATCH[[:space:]][[:space:]]*${CLEAN}[[:space:]][[:space:]]*/p;"
-    CLEAN_CLEAN="${CLEAN_CLEAN}/^#SBATCH[[:space:]][[:space:]]*${CLEAN}[[:space:]][[:space:]]*/d;"
+    CLEAN_CHECK="${CLEAN_CHECK}/^#SBATCH[[:space:]][[:space:]]*${CLEAN}\([[:space:]=][[:space:]=]*\|$\)/p;"
+    CLEAN_CLEAN="${CLEAN_CLEAN}/^#SBATCH[[:space:]][[:space:]]*${CLEAN}\([[:space:]=][[:space:]=]*\|$\)/d;"
   done
+  CLEAN_CHECK="${CLEAN_CHECK}/^LIBXSMM_TARGET=/p;"
+  CLEAN_CLEAN="${CLEAN_CLEAN}/^LIBXSMM_TARGET=/d;"
   COUNT_TOTAL=0
   COUNT_CLEAN=0
   for JOBFILE in $(ls -1 ${HERE}/${JOBDIR}/*.${JOBEXT}); do

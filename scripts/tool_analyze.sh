@@ -30,23 +30,35 @@
 # Hans Pabst (Intel Corp.)
 #############################################################################
 
-HERE=$(cd $(dirname $0); pwd -P)
+MAKE=$(command -v make)
+GREP=$(command -v grep)
+SORT=$(command -v sort)
+CXX=$(command -v clang++)
+CC=$(command -v clang)
 
-cd ${HERE}/..
-ARG=$*
-if [ "" = "${ARG}" ]; then
-  ARG=lib
-fi
-make CXX=clang++ CC=clang FC= DBG=1 EFLAGS=--analyze ${ARG} 2> .analyze.log
-ISSUES=$(grep -e "error:" -e "warning:" .analyze.log | grep -v "is never read" | sort -u)
-echo
-echo "================================================================================"
-if [ "" = "${ISSUES}" ]; then
-echo "SUCCESS"
-echo "================================================================================"
+if [ "" != "${MAKE}" ] && [ "" != "${CXX}" ] && [ "" != "${CC}" ] && \
+   [ "" != "${GREP}" ] && [ "" != "${SORT}" ];
+then
+  HERE=$(cd $(dirname $0); pwd -P)
+  cd ${HERE}/..
+  ARG=$*
+  if [ "" = "${ARG}" ]; then
+    ARG=lib
+  fi
+  ${MAKE} CXX=${CXX} CC=${CC} FC= DBG=1 EFLAGS=--analyze ${ARG} 2> .analyze.log
+  ISSUES=$(${GREP} -e "error:" -e "warning:" .analyze.log | ${GREP} -v "is never read" | ${SORT} -u)
+  echo
+  echo   "================================================================================"
+  if [ "" = "${ISSUES}" ]; then
+    echo "SUCCESS"
+    echo "================================================================================"
+  else
+    echo "Errors (warnings)"
+    echo "================================================================================"
+    echo "${ISSUES}"
+  fi
 else
-echo "Errors (warnings)"
-echo "================================================================================"
-echo "${ISSUES}"
+  echo "Error: missing prerequisites!"
+  exit 1
 fi
 

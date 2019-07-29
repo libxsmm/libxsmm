@@ -1,7 +1,6 @@
 .env export-ignore
 .theme export-ignore
 .github export-ignore
-.fullci export-ignore
 .abi.txt export-ignore
 .codefile export-ignore
 .gitconfig export-ignore

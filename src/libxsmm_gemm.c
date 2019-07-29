@@ -360,10 +360,9 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
       const unsigned int minsize = (batchscale * env_bu + (LIBXSMM_GEMM_BATCHSCALE) - 1) / (LIBXSMM_GEMM_BATCHSCALE);
       const unsigned int batchsize = LIBXSMM_MAX(env_bu, minsize);
       const void *const extra = NULL;
-      /* draw default/non-scratch memory, but utilize the scratch memory allocator */
       LIBXSMM_ASSERT(1 < (LIBXSMM_GEMM_MMBATCH_SCALE));
       if (EXIT_SUCCESS == libxsmm_xmalloc(&libxsmm_mmbatch_array, (size_t)batchsize * (LIBXSMM_GEMM_BATCHSCALE), 0/*auto-alignment*/,
-        LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_PRIVATE, &extra, sizeof(extra)))
+        LIBXSMM_MALLOC_FLAG_PRIVATE /*| LIBXSMM_MALLOC_FLAG_SCRATCH*/, &extra, sizeof(extra)))
       {
         LIBXSMM_LOCK_INIT(LIBXSMM_GEMM_LOCK, &libxsmm_mmbatch_lock, &attr);
         LIBXSMM_ASSERT(NULL != libxsmm_mmbatch_array);
@@ -1329,7 +1328,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
     char *const c0 = (char*)c;
 
     LIBXSMM_ASSERT(0 < itypesize && 0 < otypesize);
-    if (0 == (LIBXSMM_GEMM_FLAG_BATCH_REDUCE & flags)) {
+    if (0 == (LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS & flags)) {
       if (0 != index_stride) { /* stride arrays contain indexes */
         libxsmm_blasint i = begin * index_stride, ic = (NULL != stride_c ? (LIBXSMM_ACCESS(const libxsmm_blasint, stride_c, i) - index_base) : 0);
         const char* ai = a0 + ((size_t)(NULL != stride_a ? ((LIBXSMM_ACCESS(const libxsmm_blasint, stride_a, i) - index_base) * itypesize) : 0));
@@ -1509,7 +1508,7 @@ LIBXSMM_API int libxsmm_mmbatch_kernel(libxsmm_xmmfunction kernel, libxsmm_blasi
       }
     }
 #if defined(LIBXSMM_GEMM_BATCHREDUCE)
-    else /* LIBXSMM_GEMM_FLAG_BATCH_REDUCE */
+    else /* LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS */
 # if defined(LIBXSMM_GEMM_CHECK)
     if (
 #   if (0 != LIBXSMM_SYNC)
@@ -1650,7 +1649,7 @@ LIBXSMM_API void libxsmm_gemm_internal_set_batchflag(libxsmm_gemm_descriptor* de
         } break;
       }
       if (EXIT_SUCCESS == result) {
-        descriptor->flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE;
+        descriptor->flags |= LIBXSMM_GEMM_FLAG_BATCH_REDUCE_ADDRESS;
         descriptor->prefetch = 0; /* omit decision */
       }
       else {
@@ -1888,7 +1887,7 @@ LIBXSMM_API void libxsmm_gemm_batch(libxsmm_gemm_precision iprec, libxsmm_gemm_p
 }
 
 
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_dgemm)(const char*, const char*,

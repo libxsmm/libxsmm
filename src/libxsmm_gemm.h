@@ -243,7 +243,6 @@ LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch);
  * - [>=2 and even]: parallelized and tiled (all problem sizes)
  * - [>=3 and  odd]: GEMV is intercepted; small problem sizes
  * - [>=4 and even]: GEMV is intercepted; all problem sizes
- * - [negative]: assume BLAS with DGEMM_BATCH
  * - [0]: disabled
  */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_wrap);

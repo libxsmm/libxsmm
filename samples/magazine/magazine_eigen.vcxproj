@@ -38,6 +38,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>magazine_eigen</ProjectName>
     <ProjectGuid>{AE28E17A-6A33-463E-B586-F7B7501256F1}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

@@ -106,12 +106,12 @@
 # define LIBXSMM_INLINE_KEYWORD inline
 # define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
 # if defined(__GNUC__) || defined(_CRAYC)
-#   define LIBXSMM_CALLER_ID __PRETTY_FUNCTION__
+#   define LIBXSMM_CALLER __PRETTY_FUNCTION__
 # elif defined(_MSC_VER)
-#   define LIBXSMM_CALLER_ID __FUNCDNAME__
-#   define LIBXSMM_CALLER __FUNCTION__
+#   define LIBXSMM_CALLER __FUNCDNAME__
+#   define LIBXSMM_FUNCNAME __FUNCTION__
 # else
-#   define LIBXSMM_CALLER_ID __FUNCNAME__
+#   define LIBXSMM_CALLER __FUNCNAME__
 # endif
 #else
 # define LIBXSMM_VARIADIC
@@ -120,16 +120,16 @@
 # define LIBXSMM_EXTERN_C
 # if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
 #   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
-#   define LIBXSMM_CALLER_ID __func__
+#   define LIBXSMM_CALLER __func__
 #   define LIBXSMM_RESTRICT restrict
 #   define LIBXSMM_INLINE_KEYWORD inline
 # elif defined(_MSC_VER)
-#   define LIBXSMM_CALLER_ID __FUNCDNAME__
-#   define LIBXSMM_CALLER __FUNCTION__
+#   define LIBXSMM_CALLER __FUNCDNAME__
+#   define LIBXSMM_FUNCNAME __FUNCTION__
 #   define LIBXSMM_INLINE_KEYWORD __inline
 #   define LIBXSMM_INLINE_FIXUP
 # elif defined(__GNUC__) && !defined(__STRICT_ANSI__)
-#   define LIBXSMM_CALLER_ID __PRETTY_FUNCTION__
+#   define LIBXSMM_CALLER __PRETTY_FUNCTION__
 # endif
 # if !defined(LIBXSMM_INLINE_KEYWORD)
 #   define LIBXSMM_INLINE_KEYWORD
@@ -137,11 +137,18 @@
 # endif
 # define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
 #endif /*__cplusplus*/
-#if !defined(LIBXSMM_CALLER_ID)
-# define LIBXSMM_CALLER_ID NULL
-#endif
 #if !defined(LIBXSMM_CALLER)
-# define LIBXSMM_CALLER LIBXSMM_CALLER_ID
+# define LIBXSMM_CALLER NULL
+#endif
+#if !defined(LIBXSMM_FUNCNAME)
+# define LIBXSMM_FUNCNAME LIBXSMM_CALLER
+#endif
+#if !defined(LIBXSMM_CALLER_ID)
+# if defined(__GNUC__) || 1
+#   define LIBXSMM_CALLER_ID ((const void*)((uintptr_t)libxsmm_hash_string(LIBXSMM_CALLER)))
+# else /* assume no string-pooling (perhaps unsafe) */
+#   define LIBXSMM_CALLER_ID LIBXSMM_CALLER
+# endif
 #endif
 
 #if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD))
@@ -182,7 +189,11 @@
 #endif
 
 #if defined(__INTEL_COMPILER)
-# define LIBXSMM_INTEL_COMPILER __INTEL_COMPILER
+# if !defined(__INTEL_COMPILER_UPDATE)
+#   define LIBXSMM_INTEL_COMPILER __INTEL_COMPILER
+# else
+#   define LIBXSMM_INTEL_COMPILER (__INTEL_COMPILER + __INTEL_COMPILER_UPDATE)
+# endif
 #elif defined(__INTEL_COMPILER_BUILD_DATE)
 # define LIBXSMM_INTEL_COMPILER ((__INTEL_COMPILER_BUILD_DATE / 10000 - 2000) * 100)
 #endif
@@ -321,7 +332,7 @@
 #   define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(omp simd collapse(N))
 #   define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(omp simd private(A, __VA_ARGS__))
 #   define LIBXSMM_PRAGMA_SIMD LIBXSMM_PRAGMA(omp simd)
-# elif defined(LIBXSMM_INTEL_COMPILER)
+# elif defined(__INTEL_COMPILER)
 #   define LIBXSMM_PRAGMA_SIMD_REDUCTION(EXPRESSION) LIBXSMM_PRAGMA(simd reduction(EXPRESSION))
 #   define LIBXSMM_PRAGMA_SIMD_COLLAPSE(N) LIBXSMM_PRAGMA(simd collapse(N))
 #   define LIBXSMM_PRAGMA_SIMD_PRIVATE(A, ...) LIBXSMM_PRAGMA(simd private(A, __VA_ARGS__))
@@ -642,13 +653,6 @@
 #define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)
 #define LIBXSMM_STDIO_RELEASE() LIBXSMM_FUNLOCK(stderr); LIBXSMM_FUNLOCK(stdout)
 
-/** Determines whether constant-folding is available or not. */
-#if !defined(LIBXSMM_STRING_POOLING)
-# if defined(__GNUC__) /*&& !defined(_MSC_VER)*/
-#   define LIBXSMM_STRING_POOLING
-# endif
-#endif
-
 /** Below group is to fix-up some platform/compiler specifics. */
 #if defined(_WIN32)
 # if !defined(_CRT_SECURE_CPP_OVERLOAD_STANDARD_NAMES)
@@ -695,36 +699,6 @@
 # define _REENTRANT
 #endif
 
-/* _Float128 was introduced with GNU GCC 7.0. */
-#if !defined(_Float128) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__) \
-  && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
-  || (defined(LIBXSMM_INTEL_COMPILER) && defined(LIBXSMM_INTEL_COMPILER_UPDATE) && ( \
-        ((1800 <= ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE))) \
-      && (1801  > ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE)))) || \
-        ((1706  > ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE))) \
-      &&    (0 != ((LIBXSMM_INTEL_COMPILER) + (LIBXSMM_INTEL_COMPILER_UPDATE)))))))
-# define _Float128 __float128
-#endif
-#if !defined(LIBXSMM_GLIBC_FPTYPES) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__) \
-  && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
-  || defined(LIBXSMM_INTEL_COMPILER)) && 0 /* TODO */
-# define LIBXSMM_GLIBC_FPTYPES
-#endif
-#if !defined(_Float128X) && defined(LIBXSMM_GLIBC_FPTYPES)
-# define _Float128X _Float128
-#endif
-#if !defined(_Float32) && defined(LIBXSMM_GLIBC_FPTYPES)
-# define _Float32 float
-#endif
-#if !defined(_Float32x) && defined(LIBXSMM_GLIBC_FPTYPES)
-# define _Float32x _Float32
-#endif
-#if !defined(_Float64) && defined(LIBXSMM_GLIBC_FPTYPES)
-# define _Float64 double
-#endif
-#if !defined(_Float64x) && defined(LIBXSMM_GLIBC_FPTYPES)
-# define _Float64x _Float64
-#endif
 #if !defined(__has_feature) && !defined(__clang__)
 # define __has_feature(A) 0
 #endif
@@ -778,6 +752,34 @@
 #include <stdint.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
+#endif
+
+/* block must be after including above header files */
+#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__) < LIBXSMM_VERSION2(2, 26)
+/* _Float128 was introduced with GNU GCC 7.0. */
+# if !defined(_Float128) && !defined(__SIZEOF_FLOAT128__) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__)
+#   define _Float128 __float128
+# endif
+# if !defined(LIBXSMM_GLIBC_FPTYPES) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__) \
+  && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
+  || defined(LIBXSMM_INTEL_COMPILER)) && 0 /* TODO */
+#   define LIBXSMM_GLIBC_FPTYPES
+# endif
+# if !defined(_Float128X) && defined(LIBXSMM_GLIBC_FPTYPES)
+#   define _Float128X _Float128
+# endif
+# if !defined(_Float32) && defined(LIBXSMM_GLIBC_FPTYPES)
+#   define _Float32 float
+# endif
+# if !defined(_Float32x) && defined(LIBXSMM_GLIBC_FPTYPES)
+#   define _Float32x _Float32
+# endif
+# if !defined(_Float64) && defined(LIBXSMM_GLIBC_FPTYPES)
+#   define _Float64 double
+# endif
+# if !defined(_Float64x) && defined(LIBXSMM_GLIBC_FPTYPES)
+#   define _Float64x _Float64
+# endif
 #endif
 
 #endif /*LIBXSMM_MACROS_H*/

@@ -46,7 +46,7 @@ OBJECTS := $(CPPOBJS) $(CXXOBJS) $(CCXOBJS) $(COBJCTS)
 FTNSRCS := $(FXXSRCS) $(F77SRCS) $(F90SRCS)
 MODULES := $(addsuffix .mod,$(basename $(FTNSRCS))) $(addsuffix .modmic,$(basename $(FTNSRCS)))
 FTNOBJS := $(FXXOBJS) $(F77OBJS) $(F90OBJS)
-XFILES := $(OUTDIR)/layer_example_f32 $(OUTDIR)/fourlayer_example_f32 $(OUTDIR)/layer_example_bf16
+XFILES := $(OUTDIR)/layer_example_f32 $(OUTDIR)/fourlayer_example_f32 $(OUTDIR)/layer_example_bf16 $(OUTDIR)/layer_example_bf16_f32 $(OUTDIR)/fourlayer_example_bf16
 
 .PHONY: all
 all: $(XFILES)
@@ -60,8 +60,14 @@ $(OUTDIR)/layer_example_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_f32-c.o $(L
 $(OUTDIR)/fourlayer_example_f32: $(OUTDIR)/.make $(BLDDIR)/fourlayer_example_f32-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/fourlayer_example_f32-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
+$(OUTDIR)/fourlayer_example_bf16: $(OUTDIR)/.make $(BLDDIR)/fourlayer_example_bf16-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/fourlayer_example_bf16-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
 $(OUTDIR)/layer_example_bf16: $(OUTDIR)/.make $(BLDDIR)/layer_example_bf16-c.o $(LIBDEP)
 	$(LD) -o $@ $(BLDDIR)/layer_example_bf16-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
+
+$(OUTDIR)/layer_example_bf16_f32: $(OUTDIR)/.make $(BLDDIR)/layer_example_bf16_f32-c.o $(LIBDEP)
+	$(LD) -o $@ $(BLDDIR)/layer_example_bf16_f32-c.o $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
 
 $(BLDDIR)/%-cpp.o: $(SRCDIR)/%.cpp .state $(BLDDIR)/.make $(HEADERS) $(ROOTDIR)/Makefile $(DEPDIR)/Makefile.inc ./../common/dnn_common.h
 	$(CXX) $(DFLAGS) $(IFLAGS) $(CXXFLAGS) $(CTARGET) -c $< -o $@

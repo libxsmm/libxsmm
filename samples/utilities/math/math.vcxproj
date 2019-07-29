@@ -35,6 +35,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>math</ProjectName>
     <ProjectGuid>{87E8DB3A-EDDF-441F-81A5-27052DE316BB}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

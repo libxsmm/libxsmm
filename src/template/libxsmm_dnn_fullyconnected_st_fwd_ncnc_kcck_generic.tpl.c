@@ -28,7 +28,6 @@
 ******************************************************************************/
 /* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
-
 /* size variables, all const */
 /* here we assume that input and output blocking is similar */
 const int nBlocksIFm = handle->desc.C / handle->bc;

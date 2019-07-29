@@ -32,7 +32,7 @@
 #define LIBXSMM_DNN_RNNCELL_H
 
 #include "libxsmm_dnn.h"
-
+#include "libxsmm_dnn_tensor.h"
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell libxsmm_dnn_rnncell;
 

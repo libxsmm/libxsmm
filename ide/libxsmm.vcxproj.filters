@@ -153,12 +153,6 @@
     <ClInclude Include="..\src\generator_gemm_noarch.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_gemm_rm_ac_soa.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_gemm_rm_bc_soa.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2_avx512.h">
       <Filter>src\generator</Filter>
     </ClInclude>
@@ -287,6 +281,15 @@
     </ClInclude>
     <ClInclude Include="..\src\libxsmm_diff.h">
       <Filter>src</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_memory.h">
+      <Filter>include</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -476,9 +479,6 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_dryrun_upd_custom_custom_opt.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom_2.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_bwd_custom_custom_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
@@ -489,9 +489,6 @@
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_custom_custom.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_custom_custom_2.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_fwd_custom_custom_generic.tpl.c">
@@ -507,9 +504,6 @@
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom.tpl.c">
-      <Filter>src\template</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_2.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
     <ClCompile Include="..\src\template\libxsmm_dnn_convolve_st_upd_custom_custom_generic.tpl.c">
@@ -582,12 +576,6 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_noarch.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_gemm_rm_ac_soa.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_gemm_rm_bc_soa.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2_avx512.c">
@@ -836,7 +824,13 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_gru_bwdupd_nc_ck_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_diff.c">
+    <ClCompile Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_memory.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

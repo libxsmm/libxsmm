@@ -129,11 +129,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   for( ho = oph; ho < (ofh+oph); ho++ ) {
     hi = ((ho-oph) * sh) - handle->desc.pad_h;
     for( wo = opw; wo < (ofw+opw); wo++ ) {
-#if defined(LIBXSMM_DNN_POOLING_FWD_BF16)
       float*               lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output, ho-oph, wo-opw, 0, ofw, 32);
-#else
-      element_output_type* lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output, ho-oph, wo-opw, 0, ofw, 32);
-#endif
 #if defined(LIBXSMM_DNN_POOLING_FWD_MAX)
       __m512i lcl_vmask  = _mm512_loadu_si512( &LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-oph, wo-opw,  0, nBlocksFm, ofh, ofw, 32) );
       __m512i lcl_vmask2 = _mm512_loadu_si512( &LIBXSMM_VLA_ACCESS(5, mask, img, fm, ho-oph, wo-opw, 16, nBlocksFm, ofh, ofw, 32) );
@@ -180,11 +176,7 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
   /* copy the local buffer into output activations */
   for( ho = oph; ho < (ofh+oph); ho++ ) {
     element_output_type*     output_ptr = &LIBXSMM_VLA_ACCESS(5, output,     img, fm,     ho, opw, 0, nBlocksFm, ofhp, ofwp, 32);
-#if defined(LIBXSMM_DNN_POOLING_FWD_BF16)
     float*               lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output,          ho-oph,   0, 0,                   ofw, 32);
-#else
-    element_output_type* lcl_output_ptr = &LIBXSMM_VLA_ACCESS(3, lcl_output,          ho-oph,   0, 0,                   ofw, 32);
-#endif
     for( wo = opw; wo < (ofw+opw); wo++ ) {
 #if defined(LIBXSMM_DNN_POOLING_FWD_AVG)
       const __m512 recp_pool_size_ps = _mm512_set1_ps( recp_pool_size );

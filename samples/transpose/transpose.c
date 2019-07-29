@@ -39,7 +39,6 @@
 #include <math.h>
 #if defined(__MKL)
 # include <mkl_trans.h>
-# include <mkl_service.h>
 #elif defined(__OPENBLAS77)
 # include <f77blas.h>
 #endif
@@ -168,9 +167,7 @@ int main(int argc, char* argv[])
     libxsmm_timer_tickint start, duration = 0, duration2 = 0;
     libxsmm_blasint i;
     size_t size = 0;
-#if defined(MKL_ENABLE_AVX512)
-    mkl_enable_instructions(MKL_ENABLE_AVX512);
-#endif
+
     fprintf(stdout, "m=%lli n=%lli ldi=%lli ldo=%lli size=%.fMB (%s, %s)\n",
       (long long)m, (long long)n, (long long)ldi, (long long)ldo,
       1.0 * (m * n * sizeof(ELEM_TYPE)) / (1 << 20), LIBXSMM_STRINGIFY(ELEM_TYPE),

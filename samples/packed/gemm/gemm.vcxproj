@@ -36,6 +36,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>gemm</ProjectName>
     <ProjectGuid>{2FB902F2-8622-43F0-9AE4-A2EA228CA0F8}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

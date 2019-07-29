@@ -50,21 +50,21 @@
 #if !defined(LIBXSMM_MALLOC_SCRATCH_LIMIT)
 # define LIBXSMM_MALLOC_SCRATCH_LIMIT (4ULL << 30) /* 4 GB */
 #endif
-#if !defined(LIBXSMM_MALLOC_SCRATCH_MMAP) && 0
-# define LIBXSMM_MALLOC_SCRATCH_MMAP
+#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 0
+# define LIBXSMM_MALLOC_MMAP_SCRATCH
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_SCALE)
-# if defined(LIBXSMM_MALLOC_SCRATCH_MMAP)
+# if defined(LIBXSMM_MALLOC_MMAP_SCRATCH)
 #   define LIBXSMM_MALLOC_SCRATCH_SCALE 1.3
 # else
 #   define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
 # endif
 #endif
-#if !defined(LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE)
-# define LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE ((uintptr_t)-1)
+#if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER_ID)
+# define LIBXSMM_MALLOC_INTERNAL_CALLER_ID ((uintptr_t)-1)
 #endif
-#if !defined(LIBXSMM_MALLOC_SCRATCH_INTERNAL)
-# define LIBXSMM_MALLOC_SCRATCH_INTERNAL ((const char*)(LIBXSMM_MALLOC_SCRATCH_INTERNAL_SITE))
+#if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER)
+# define LIBXSMM_MALLOC_INTERNAL_CALLER ((const void*)(LIBXSMM_MALLOC_INTERNAL_CALLER_ID))
 #endif
 
 #if !defined(LIBXSMM_VERBOSITY_HIGH)
@@ -118,13 +118,13 @@
   LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(LDA, LDB, LDC); \
   LIBXSMM_GEMM_DESCRIPTOR_DIM_CHECK(M, N, K); \
   LIBXSMM_DESCRIPTOR_CLEAR(&(DESCRIPTOR)); \
-  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); \
+  (DESCRIPTOR).datatype = (unsigned char)(DATA_TYPE); (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH); \
   (DESCRIPTOR).flags = (unsigned short)((FLAGS) \
     /*| (LIBXSMM_NEQ(0, ALPHA) ? 0 : LIBXSMM_GEMM_FLAG_ALPHA_0)*/ \
     | (LIBXSMM_NEQ(0, BETA) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
   (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
-  (DESCRIPTOR).prefetch = (unsigned char)(PREFETCH)
+  (DESCRIPTOR).pad = 0; (DESCRIPTOR).c1 = 0; (DESCRIPTOR).c2 = 0; (DESCRIPTOR).c3 = 0
 
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
@@ -157,14 +157,22 @@
 LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descriptor {
   /** Denotes the data-type. */
   unsigned char datatype;
+  /** Prefetch strategy. */
+  unsigned char prefetch;
   /** Set of flags. */
   unsigned short flags;
   /** Extents of the matrix. */
   unsigned int m, n, k;
   /** Leading dimensions. */
   unsigned int lda, ldb, ldc;
-  /** Prefetch strategy. */
-  unsigned char prefetch;
+  /** Ignored entry. */
+  unsigned int pad;
+  /** multipurpose 64bit field, currently used for: a) stride_a in brgemm */
+  unsigned long long c1;
+  /** multipurpose 64bit field, currently used for: a) stride_b in brgemm */
+  unsigned long long c2;
+  /** multipurpose 8bit field, currently used for: a) unroll hint in brgemm */
+  unsigned char c3;
 };
 
 /** Packed structure storing the matcopy argument description. */
@@ -239,13 +247,15 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
   const void* values;
 } libxsmm_csc_soa_descriptor;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_rm_ac_soa_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pgemm_ac_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
-} libxsmm_rm_ac_soa_descriptor;
+  unsigned int packed_width;
+} libxsmm_pgemm_ac_rm_descriptor;
 
-LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_rm_bc_soa_descriptor {
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pgemm_bc_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
-} libxsmm_rm_bc_soa_descriptor;
+  unsigned int packed_width;
+} libxsmm_pgemm_bc_rm_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
   const libxsmm_gemm_descriptor* gemm;
@@ -253,71 +263,6 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
   const unsigned int* column_idx;
   const void* values;
 } libxsmm_csr_reg_descriptor;
-
-/** Function type used for convolutions (single-precision); the actual signature depends on the kind of convolution. */
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_sconvfunction)(
-  const float* input1, const float* input2, float* output,
-  const float* ipf1, const float* ipf2, const float* opf, ...);
-
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bf16convfunction)(
-  const libxsmm_bfloat16* input1, const libxsmm_bfloat16* input2, libxsmm_bfloat16* output,
-  const libxsmm_bfloat16* ipf1, const libxsmm_bfloat16* ipf2, const libxsmm_bfloat16* opf, ...);
-
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bf16f32convfunction)(
-  const libxsmm_bfloat16* input1, const float* input2, libxsmm_bfloat16* output,
-  const libxsmm_bfloat16* ipf1, const float* ipf2, const libxsmm_bfloat16* opf, ...);
-
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction)(
-  const short* input1, const short* input2, int* output,
-  const short* ipf1, const short* ipf2, const int* opf, ...);
-
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wsconvfunction)(
-  const short* input1, const short* input2, float* output,
-  const short* ipf1, const short* ipf2, const float* opf, ...);
-
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_uwsconvfunction)(
-  short* input1, float* input2, short* output,
-  short* ipf1, float* ipf2, short* opf, ...);
-
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_bdbconvfunction)(
-  unsigned char* input1, int* input2, unsigned char* output,
-  unsigned char* ipf1, int* ipf2, unsigned char* opf, ...);
-
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction)(
-  const unsigned char* input1, const char* input2, short* output,
-  const unsigned char* ipf1, const char* ipf2, const short* opf, ...);
-
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction)(
-  const unsigned char* input1, const char* input2, int* output,
-  const unsigned char* ipf1, const char* ipf2, const int* opf, ...);
-
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_wconvfunction_bwd)(
-  int* input1, const short* input2, const short* output,
-  const int* ipf1, const short* ipf2, const short* opf, ...);
-
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_busconvfunction_bwd)(
-  const unsigned short* input1, const char* input2, const char* output,
-  const unsigned short* ipf1, const char* ipf2, const char* opf, ...);
-
-LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void (*libxsmm_budconvfunction_bwd)(
-  const unsigned int* input1, const char* input2, const char* output,
-  const unsigned int* ipf1, const char* ipf2, const char* opf, ...);
-
-/** Function type which is either libxsmm_sconvfunction or libxsmm_wconvfunction (weak-typed). */
-LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_xconvfunction {
-  libxsmm_sconvfunction sconv;
-  libxsmm_bf16convfunction bf16conv;
-  libxsmm_bf16f32convfunction bf1632conv;
-  libxsmm_wsconvfunction wsconv;
-  libxsmm_uwsconvfunction uwsconv;
-  libxsmm_wconvfunction wconv;
-  libxsmm_bdbconvfunction bdbconv;
-  libxsmm_busconvfunction busconv;
-  libxsmm_budconvfunction budconv;
-  libxsmm_wconvfunction_bwd wconvb;
-  libxsmm_busconvfunction_bwd busconvb;
-  libxsmm_budconvfunction_bwd budconvb;
-} libxsmm_xconvfunction;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   void (*ptr_fn)(LIBXSMM_VARIADIC);
@@ -328,7 +273,6 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_code_pointer {
   libxsmm_xmmfunction xgemm; /* GEMM: smm, dmm, wimm, wsmm, or void-function */
   libxsmm_xmcopyfunction xmatcopy;
   libxsmm_xtransfunction xtrans;
-  libxsmm_xconvfunction xconv;
   libxsmm_pgemm_xfunction xpgemm;
   libxsmm_getrf_xfunction xgetrf;
   libxsmm_trmm_xfunction xtrmm;
@@ -358,7 +302,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_dnn_tensor_format filter_format;
   libxsmm_dnn_conv_fuse_op fuse_ops;
   libxsmm_dnn_conv_option options;
-  libxsmm_dnn_internal_format custom_format_type;    /* Specifies internal LIBXSMM format to be used */
 
   /* These are the batchnorm handles in case of fusion */
   libxsmm_dnn_fusedbatchnorm* pre_bn;
@@ -372,18 +315,12 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int ofhp;
   int ofwp;
   int ifmblock;
-  int ifmblock_hp;
-  int ifmblock_lp;
   int ofmblock;
-  int ofmblock_lp;
   int blocksifm;
   int blocksofm;
-  int blocksifm_lp;
-  int blocksofm_lp;
   int fwd_ofw_rb;
   int fwd_ofw_rb_2;
   int fwd_ofh_rb;
-  int fwd_ofh_rb_2;
   int bwd_ofw_rb;
   int bwd_ofh_rb;
   int upd_ofw_rb;
@@ -396,48 +333,19 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int nbImg;
   int blocksifm_blocking;
   int blocksofm_blocking;
-  int blocksimg_blocking;
-  int use_accumulation_scratch;
-  int use_nts_fwd;
-  int use_nts_bwd;
-  int use_nts_upd;
   int avoid_acc_load;
   int avoid_acc_load_bwd;
   int pack_input;
   int pack_input_bwd;
   int spread_input_bwd;
-  int use_fwd_for_bwd;
-  int exploit_duality;
-  int qfma_input_pad;
-  int resize_input;
-  int ifhp_resized;
-  int ifwp_resized;
-  int use_fastpath;
-  int use_hybrid_wu_parallelism;
   int weight_copies;
-  int compute_batch_stats_in_kernel_fwd;
-  int compute_batch_stats_in_kernel_bwd;
-  int compute_eltwise_in_kernel_bwd;
-  int perform_relu_in_kernel;
-  int compute_max_in_kernel_fwd;
-  int compute_max_in_kernel_bwd;
   int fuse_batchstats_fwd;
   int fuse_batchstats_bwd;
   int fuse_eltwise_bwd;
   int fuse_relu_bwd;
   int use_lp_kernel;
-  int output_lp_padding;
-  int reduce_weights;
   int use_vperm_transposes;
-  int avoid_output_trans;
-  int avoid_input_trans;
-  int enforce_sfma_kernel;
-  int n_variants;
-  int w_variants;
-  int h_variants;
   int loop_order;
-  int f32_bf16_cvt_rne;
-  int fwd_img_par;
   int use_ofm_parallelization;
   int use_ifm_parallelization;
   int avoid_fmas_in_rim;
@@ -515,9 +423,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   size_t scratchVk_size;
 
   /* JIT-generated convolution code */
-  int use_fwd_generic;
-  int use_bwd_generic;
-  int use_upd_generic;
   libxsmm_code_pointer code_fwd[3];
   libxsmm_code_pointer code_bwd[3];
   libxsmm_code_pointer code_upd[2];
@@ -527,13 +432,10 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   libxsmm_code_pointer matcopy_upd[3];
 
   /* Data structures and metadata related to per-thread private JITing */
-  int trans_ofw_ifm;
   int block_fwd_oj;
-  int block_fwd_oi;
   int block_fwd_ifm;
   int block_fwd_ofm;
   int block_bwd_oj;
-  int block_bwd_oi;
   int block_bwd_ifm;
   int block_bwd_ofm;
   int block_upd_ifm;
@@ -558,14 +460,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm {
   libxsmm_dnn_tensor* relumask;       /* relumask */
   libxsmm_barrier* barrier;           /* barrier */
   int ifmblock;
-  int ifmblock_hp;
   int ofmblock;
-  int ofmblock_lp;
   int blocksifm;
   int blocksofm;
-  int blocksifm_lp;  /* not used */
-  int blocksofm_lp;  /* not used */
-  int fm_lp_block;
   size_t scratch_size;
   void* scratch;
 };
@@ -580,19 +477,17 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   libxsmm_dnn_tensor* grad_filter;    /* grad filter tensor */
   libxsmm_barrier* barrier;           /* barrier */
   int ifmblock;
-  int ifmblock_hp;
   int ofmblock;
-  int ofmblock_lp;
   int blocksifm;
   int blocksofm;
-  int blocksifm_lp;  /* not used */
-  int blocksofm_lp;  /* not used */
   int fm_lp_block;
   int bn;
   int bk;
   int bc;
   size_t scratch_size;
   void* scratch;
+
+  libxsmm_code_pointer gemm_fwd;     /* ability to hoist forward GEMMs */
 };
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
@@ -604,14 +499,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
   libxsmm_dnn_tensor* mask;           /* elementwise tensor */
   libxsmm_barrier* barrier;           /* barrier */
   int ifmblock;
-  int ifmblock_hp;
   int ofmblock;
-  int ofmblock_lp;
   int blocksifm;
   int blocksofm;
-  int blocksifm_lp;  /* not used */
-  int blocksofm_lp;  /* not used */
-  int fm_lp_block;
   int ofh;
   int ofw;
   size_t scratch_size;
@@ -620,7 +510,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_pooling {
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   libxsmm_dnn_rnncell_desc desc;
-  libxsmm_dnn_internal_format custom_format_type; /* required only for comparing layouts */
   libxsmm_blasint T;                              /* sequence length, must be smaller than max sequence length in desc */
   libxsmm_blasint bk;
   libxsmm_blasint bn;
@@ -714,15 +603,15 @@ struct LIBXSMM_RETARGETABLE libxsmm_sfsspmdm {
 };
 
 typedef enum libxsmm_build_kind {
-  LIBXSMM_BUILD_KIND_GEMM     = LIBXSMM_KERNEL_KIND_MATMUL,
-  LIBXSMM_BUILD_KIND_MCOPY    = LIBXSMM_KERNEL_KIND_MCOPY,
-  LIBXSMM_BUILD_KIND_TRANS    = LIBXSMM_KERNEL_KIND_TRANS,
-  LIBXSMM_BUILD_KIND_PGEMM    = LIBXSMM_KERNEL_KIND_PGEMM,
-  LIBXSMM_BUILD_KIND_GETRF    = LIBXSMM_KERNEL_KIND_GETRF,
-  LIBXSMM_BUILD_KIND_TRMM     = LIBXSMM_KERNEL_KIND_TRMM,
-  LIBXSMM_BUILD_KIND_TRSM     = LIBXSMM_KERNEL_KIND_TRSM,
-  LIBXSMM_BUILD_KIND_RMACSOA  = LIBXSMM_KERNEL_KIND_INVALID,
-  LIBXSMM_BUILD_KIND_RMBCSOA,
+  LIBXSMM_BUILD_KIND_GEMM       = LIBXSMM_KERNEL_KIND_MATMUL,
+  LIBXSMM_BUILD_KIND_MCOPY      = LIBXSMM_KERNEL_KIND_MCOPY,
+  LIBXSMM_BUILD_KIND_TRANS      = LIBXSMM_KERNEL_KIND_TRANS,
+  LIBXSMM_BUILD_KIND_PGEMM      = LIBXSMM_KERNEL_KIND_PGEMM,
+  LIBXSMM_BUILD_KIND_GETRF      = LIBXSMM_KERNEL_KIND_GETRF,
+  LIBXSMM_BUILD_KIND_TRMM       = LIBXSMM_KERNEL_KIND_TRMM,
+  LIBXSMM_BUILD_KIND_TRSM       = LIBXSMM_KERNEL_KIND_TRSM,
+  LIBXSMM_BUILD_KIND_PGEMMRMAC  = LIBXSMM_KERNEL_KIND_INVALID,
+  LIBXSMM_BUILD_KIND_PGEMMRMBC,
   LIBXSMM_BUILD_KIND_SRSOA,
   LIBXSMM_BUILD_KIND_SCSOA,
   LIBXSMM_BUILD_KIND_SREG
@@ -748,8 +637,8 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_build_request {
     LIBXSMM_REGDESC(LIBXSMM_REGDESC_DEFAULT, const*);
     const libxsmm_csr_soa_descriptor* srsoa;
     const libxsmm_csc_soa_descriptor* scsoa;
-    const libxsmm_rm_ac_soa_descriptor* rmacsoa;
-    const libxsmm_rm_bc_soa_descriptor* rmbcsoa;
+    const libxsmm_pgemm_ac_rm_descriptor* pgemmacrm;
+    const libxsmm_pgemm_bc_rm_descriptor* pgemmbcrm;
     const libxsmm_csr_reg_descriptor* sreg;
   } descriptor;
   libxsmm_build_kind kind;
@@ -786,17 +675,20 @@ LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment);
 
 /** Same as libxsmm_set_default_allocator, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+  const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Same as libxsmm_get_default_allocator, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xget_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
+  const void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
 /** Same as libxsmm_set_scratch_allocator, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
+  const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
 /** Same as libxsmm_get_scratch_allocator, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
-  void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
+  const void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
+
+/** intern function to calculate blockings, that's private API hence it's in this function */
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, int* fm_lp_block, libxsmm_dnn_datatype datatype_in, libxsmm_dnn_datatype datatype_out );
 
 /**
  * Attribute memory allocation and protect with only the necessary flags.
@@ -812,7 +704,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
   /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
   const void* extra, size_t extra_size);
 /** Release memory, which was allocated using libxsmm_[*]malloc. */
-LIBXSMM_API_INTERN int libxsmm_xfree(const void* memory);
+LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory);
 
 /** Determines the given value in double-precision based on the given type. */
 LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
@@ -851,9 +743,9 @@ LIBXSMM_APIVAR(libxsmm_free_function libxsmm_default_free_fn);
 /** Function used to release scratch memory. */
 LIBXSMM_APIVAR(libxsmm_free_function libxsmm_scratch_free_fn);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
-LIBXSMM_APIVAR(void* libxsmm_default_allocator_context);
+LIBXSMM_APIVAR(const void* libxsmm_default_allocator_context);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
-LIBXSMM_APIVAR(void* libxsmm_scratch_allocator_context);
+LIBXSMM_APIVAR(const void* libxsmm_scratch_allocator_context);
 /** Number of discovered threads (per libxsmm_get_tid) */
 LIBXSMM_APIVAR(unsigned int libxsmm_threads_count);
 /** Number of scratch memory pools used; clamped against internal maximum. */
@@ -862,9 +754,10 @@ LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
 LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
-/** Non-zero value turns all allocations into scratch allocations. */
-LIBXSMM_APIVAR(int libxsmm_scratch);
+/** even: regular, odd: scratch, >1: intercept */
+LIBXSMM_APIVAR(int libxsmm_malloc_kind);
 
+LIBXSMM_APIVAR(unsigned int libxsmm_statistic_num_spmdm);
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
 LIBXSMM_APIVAR(double libxsmm_timer_scale);
 /** Security-enhanced environment */

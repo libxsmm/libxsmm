@@ -35,6 +35,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>grudriver</ProjectName>
     <ProjectGuid>{1066873D-98A8-4133-9386-5D1BC113290E}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

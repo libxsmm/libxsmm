@@ -38,6 +38,7 @@
   <PropertyGroup Label="Globals">
     <ProjectName>bsparse_scsoa</ProjectName>
     <ProjectGuid>{6D35CCC6-EB8B-4D2B-8AFC-5954B2990438}</ProjectGuid>
+    <WindowsTargetPlatformVersion>10.0.17763.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='debug|Win32'" Label="Configuration">

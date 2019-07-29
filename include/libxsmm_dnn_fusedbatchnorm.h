@@ -32,7 +32,10 @@
 #define LIBXSMM_DNN_FUSEDBATCHNORM_H
 
 #include "libxsmm_dnn.h"
+#include "libxsmm_dnn_tensor.h"
 
+/** Opaque handles which represents LIBXSMM fusedbatchnorm */
+LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_dnn_fusedbatchnorm libxsmm_dnn_fusedbatchnorm;
 
 LIBXSMM_API libxsmm_dnn_fusedbatchnorm* libxsmm_dnn_create_fusedbatchnorm(libxsmm_dnn_fusedbatchnorm_desc fusedbatchnorm_desc, libxsmm_dnn_err_t* status);
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_destroy_fusedbatchnorm(const libxsmm_dnn_fusedbatchnorm* handle);
