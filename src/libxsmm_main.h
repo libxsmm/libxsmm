@@ -591,6 +591,9 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_fullyconnected {
   int bn;
   int bk;
   int bc;
+  int BF; /* blocking factor */
+  int ROW;
+  int COLUMN;
   size_t scratch_size;
   void* scratch;
 };
