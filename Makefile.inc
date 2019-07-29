@@ -1871,6 +1871,8 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include/openblas,$(BLASROOT))
       else ifneq (,$(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
         BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include/x86_64-linux-gnu,$(BLASROOT))
+      else ifneq (,$(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT))))
+        BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include,$(BLASROOT))
       endif
     else # BLAS (reference)
       BLAS_FLAGS += -D__BLAS
