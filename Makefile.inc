@@ -1035,8 +1035,8 @@ ifneq (0,$(INTEL))
       CXXFLAGS := -g $(CXXFLAGS)
       CFLAGS := -g $(CFLAGS)
     else
-      CXXFLAGS := -g3 -debug inline-debug-info $(CXXFLAGS)
-      CFLAGS := -g3 -debug inline-debug-info $(CFLAGS)
+      CXXFLAGS := -g3 -inline-debug-info $(CXXFLAGS)
+      CFLAGS := -g3 -inline-debug-info $(CFLAGS)
     endif
     ifeq (,$(strip $(GFC)))
       FCFLAGS := -g -traceback $(FCFLAGS)
@@ -1594,6 +1594,8 @@ endif
 endif
 ifeq (0,$(VLA))
   DFLAGS += -DLIBXSMM_NO_VLA
+else ifneq (,$(VLA))
+  DFLAGS += -DLIBXSMM_VLA
 endif
 
 # Information which can be displayed by the actual Makefile
