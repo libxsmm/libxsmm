@@ -32,7 +32,8 @@
 #include "libxsmm_dnn_fullyconnected_backward.h"
 #include "libxsmm_dnn_fullyconnected_forward.h"
 #include "libxsmm_main.h"
-#define STRIDE_BRGEMM
+/* #define STRIDE_BRGEMM */
+#define ADDRESS_BRGEMM
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))

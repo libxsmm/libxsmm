@@ -51,6 +51,7 @@ int ifm1 = 0;
 LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc, handle->bk);
+/* const libxsmm_smmfunction_reducebatch_addr batchreduce_kernela = libxsmm_smmdispatch_reducebatch_addr( handle->bk, handle->bn, handle->bc, &(handle->bk), &(handle->desc.C), &(handle->desc.K), NULL, NULL, NULL, NULL ); */
 
 unsigned long long blocks = nBlocksIFm;
 
