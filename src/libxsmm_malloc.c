@@ -1112,7 +1112,12 @@ LIBXSMM_API_INLINE void* internal_xmalloc_plain(
 #else
     result = realloc((*info)->pointer, size);
     if (NULL != result) {
-      *info = NULL; /* signal no-copy */
+      if (result == (*info)->pointer) {
+        *info = NULL; /* signal no-copy */
+      }
+      else {
+        (*info)->free.function = NULL;
+      }
     }
     else /* error */
 #endif
