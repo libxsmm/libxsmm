@@ -449,9 +449,10 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
       }
 #endif
       if (end == pool) pool = pool0; /* fall-back to new pool */
+      LIBXSMM_ASSERT(NULL != pool);
       if (end != pool) {
         const size_t counter = LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.counter, (size_t)1, LIBXSMM_ATOMIC_SEQ_CST);
-        if (NULL != pool->instance.buffer || 1 != counter) {
+        if (NULL != pool->instance.buffer || 1 != counter) { /* attempt to (re-)use existing pool */
           const internal_malloc_info_type *const info = internal_malloc_info(pool->instance.buffer);
           const size_t used_size = pool->instance.head - pool->instance.buffer;
           const size_t pool_size = (NULL != info ? info->size : 0);
