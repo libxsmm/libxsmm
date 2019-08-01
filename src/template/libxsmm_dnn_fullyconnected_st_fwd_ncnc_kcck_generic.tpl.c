@@ -75,7 +75,7 @@ if (C == 2048 && K == 1024) {
   BF = 2;
 }
 
-int CB_BLOCKS = nBlocksIFm/BF;
+const int CB_BLOCKS = nBlocksIFm/BF;
 /* The snippet below does a 2D domain decomposition of output IF the number of threads and the number of work items are compatible */
 /* TODO: For now 2D decomposition targets single socket SKX */
 int row_teams = 7;
@@ -90,14 +90,23 @@ libxsmm_blasint my_in_start = LIBXSMM_MIN( my_row_id * in_tasks_per_thread, in_t
 libxsmm_blasint my_in_end = LIBXSMM_MIN( (my_row_id+1) * in_tasks_per_thread, in_tasks);
 libxsmm_blasint my_ik_start = LIBXSMM_MIN( my_col_id * ik_tasks_per_thread, ik_tasks);
 libxsmm_blasint my_ik_end = LIBXSMM_MIN( (my_col_id+1) * ik_tasks_per_thread, ik_tasks);
+#ifdef STRIDE_BRGEMM
+LIBXSMM_UNUSED( ifm2 );
+#endif
 
 int perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads &&
   ik_tasks_per_thread*in_tasks_per_thread*CB_BLOCKS <= 4096) ? 1 : 0;
 
 if (perform_2d_decomp) {
   /* Auxiliary arrays for batch-reduce gemms and potential prefetch */
+#ifdef ADDRESS_BRGEMM
   const element_filter_type *A_array[4096];
   const element_input_type  *B_array[4096];
+#endif
+#ifdef OFFSET_BRGEMM
+  unsigned long long  A_offsets[4096];
+  unsigned long long  B_offsets[4096];
+#endif
   int ik, in, index;
 
   /* lazy barrier init */
@@ -118,8 +127,14 @@ if (perform_2d_decomp) {
         /* prepare arguments for batch-reduce call */
         for ( ifm2 = 0; ifm2 < CB_BLOCKS; ++ifm2 ) {
           index = (ik-my_ik_start)*(my_in_end-my_in_start)*CB_BLOCKS + (in-my_in_start)*CB_BLOCKS + ifm2;
+#ifdef ADDRESS_BRGEMM
           A_array[index] = &LIBXSMM_VLA_ACCESS(4, filter, ik, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm/BF, handle->bc, handle->bk);
           B_array[index] = &LIBXSMM_VLA_ACCESS(4, input,  in, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm/BF, handle->bn, handle->bc);
+#endif
+#ifdef OFFSET_BRGEMM
+          A_offsets[index] = (ifm2 + ifm1*CB_BLOCKS) * handle->bc * handle->bk * sizeof(element_filter_type);
+          B_offsets[index] = (ifm2 + ifm1*CB_BLOCKS) * handle->bn * handle->bk * sizeof(element_input_type);
+#endif
         }
       }
     }
@@ -128,18 +143,43 @@ if (perform_2d_decomp) {
       for ( in = my_in_start; in < my_in_end; ++in ) {
         blocks = CB_BLOCKS;
         index = (ik-my_ik_start)*(my_in_end-my_in_start)*CB_BLOCKS + (in-my_in_start)*CB_BLOCKS;
+#ifdef ADDRESS_BRGEMM
         batchreduce_kernel(&A_array[index], &B_array[index], &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
+#endif
+#ifdef OFFSET_BRGEMM
+        batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ik, 0,  0, 0, nBlocksIFm/BF, handle->bc, handle->bk),
+                            &LIBXSMM_VLA_ACCESS(4, input,  in, 0,  0, 0, nBlocksIFm/BF, handle->bn, handle->bc),
+                            &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks, A_offsets, B_offsets);
+#endif
+#ifdef STRIDE_BRGEMM
+        batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ik, 0,  0, 0, nBlocksIFm/BF, handle->bc, handle->bk),
+                            &LIBXSMM_VLA_ACCESS(4, input,  in, 0,  0, 0, nBlocksIFm/BF, handle->bn, handle->bc),
+                            &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks);
+#endif
       }
     }
   }
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 } else {
+#ifdef ADDRESS_BRGEMM
   const element_filter_type *A_array[1024];
   const element_input_type  *B_array[1024];
+#endif
+#ifdef OFFSET_BRGEMM
+unsigned long long  A_offsets[1024];
+unsigned long long  B_offsets[1024];
+#endif
   /* lazy barrier init */
   libxsmm_barrier_init(handle->barrier, ltid);
 
   for ( ifm1 = 0; ifm1 < BF; ++ifm1 ) {
+#ifdef OFFSET_BRGEMM
+    /* Hoist here the offset preparation */
+    for ( ifm2 = 0; ifm2 < CB_BLOCKS; ++ifm2 ) {
+      A_offsets[ifm2] = (ifm2 + ifm1*CB_BLOCKS) * handle->bc * handle->bk * sizeof(element_filter_type);
+      B_offsets[ifm2] = (ifm2 + ifm1*CB_BLOCKS) * handle->bn * handle->bk * sizeof(element_input_type);
+    }
+#endif
     for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
       int mb1  = mb1ofm1%nBlocksMB;
       int ofm1 = mb1ofm1/nBlocksMB;
@@ -152,13 +192,25 @@ if (perform_2d_decomp) {
         }
       }
 
+      blocks = CB_BLOCKS;
+#ifdef ADDRESS_BRGEMM
       /* prepare arguments for batch-reduce call */
       for ( ifm2 = 0; ifm2 < CB_BLOCKS; ++ifm2 ) {
         A_array[ifm2] = &LIBXSMM_VLA_ACCESS(4, filter, ofm1, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm/BF, handle->bc, handle->bk);
-        B_array[ifm2] = &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm/BF, handle->bn, handle->bc);
+        B_array[ifm2] = &LIBXSMM_VLA_ACCESS(4, input,  mb1,  ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm/BF, handle->bn, handle->bc);
       }
-      blocks = CB_BLOCKS;
       batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(4, output, mb1, ofm1, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
+#endif
+#ifdef OFFSET_BRGEMM
+      batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0,    0, 0, nBlocksIFm/BF, handle->bc, handle->bk),
+                          &LIBXSMM_VLA_ACCESS(4, input,  mb1,  0,    0, 0, nBlocksIFm/BF, handle->bn, handle->bc),
+                          &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks, A_offsets, B_offsets);
+#endif
+#ifdef STRIDE_BRGEMM
+      batchreduce_kernel( &LIBXSMM_VLA_ACCESS(4, filter, ofm1, 0,    0, 0, nBlocksIFm/BF, handle->bc, handle->bk),
+                          &LIBXSMM_VLA_ACCESS(4, input,  mb1,  0,    0, 0, nBlocksIFm/BF, handle->bn, handle->bc),
+                          &LIBXSMM_VLA_ACCESS(4, output, mb1,  ofm1, 0, 0, nBlocksOFm,    handle->bn, handle->bk), &blocks);
+#endif
     }
   }
 
