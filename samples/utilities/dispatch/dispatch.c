@@ -81,10 +81,15 @@ LIBXSMM_INLINE void unique(triplet* mnk, int* size)
 
 
 /**
- * This (micro-)benchmark optionally takes a number of dispatches to be performed.
- * The program measures the duration needed to figure out whether a requested matrix
- * multiplication is available or not. The measured duration excludes the time taken
- * to actually generate the code during the first dispatch.
+ * This (micro-)benchmark measures the duration needed to dispatch a kernel.
+ * Various durations are measured: time to generate the code, to dispatch
+ * from cache, and to dispatch from the entire database. The large total
+ * number of kernels may also stress the in-memory database.
+ * When building with "make MKL=1", the benchmark exercises JIT capability of
+ * Intel MKL. However, the measured "dispatch" durations cannot be compared
+ * with LIBXSMM because MKL's JIT-interface does not provide a function to
+ * query a kernel for a set of GEMM-arguments. The implicit JIT-dispatch
+ * on the other hand does not expose the time to query the kernel.
  */
 int main(int argc, char* argv[])
 {
@@ -100,7 +105,7 @@ int main(int argc, char* argv[])
   const int default_maxsize = 16;
 #endif
   int size_total = LIBXSMM_MAX((1 < argc && 0 < atoi(argv[1])) ? atoi(argv[1]) : 10000/*default*/, 2);
-  const int size_local = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 1/*default*/, 1, size_total);
+  const int size_local = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 4/*default*/, 1, size_total);
   const int nthreads = LIBXSMM_CLMP(3 < argc ? atoi(argv[3]) : 1/*default*/, 1, max_nthreads);
   const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 1/*default*/, 1);
   const libxsmm_blasint maxsize = LIBXSMM_CLMP(5 < argc ? atoi(argv[5]) : default_maxsize, 1, MAXSIZE);
@@ -168,7 +173,7 @@ int main(int argc, char* argv[])
       mkl_cblas_jit_create_dgemm(jitter,
         MKL_COL_MAJOR, MKL_NOTRANS/*transa*/, MKL_NOTRANS/*transb*/,
         rnd[i].m, rnd[i].n, rnd[i].k, alpha, rnd[i].m, rnd[i].k, beta, rnd[i].m);
-      mkl_jit_get_dgemm_ptr(jitter[i]); /* to measure "cached" lookup time (below) */
+      mkl_jit_get_dgemm_ptr(jitter[i]); /* to include lookup time */
 #else
       libxsmm_dmmdispatch(rnd[i].m, rnd[i].n, rnd[i].k, &rnd[i].m, &rnd[i].k, &rnd[i].m, &alpha, &beta, &flags, &prefetch);
 #endif
@@ -326,7 +331,7 @@ int main(int argc, char* argv[])
           libxsmm_matdiff_reduce(&check, &diff);
         }
         else {
-          printf(" m=%u n=%u k=%u", (unsigned int)rnd[j].m, (unsigned int)rnd[j].n, (unsigned int)rnd[j].k);
+          printf(" m=%u n=%u k=%u kernel=%p", (unsigned int)rnd[j].m, (unsigned int)rnd[j].n, (unsigned int)rnd[j].k, kernel);
           i = size_total + 1; /* break */
         }
       }
