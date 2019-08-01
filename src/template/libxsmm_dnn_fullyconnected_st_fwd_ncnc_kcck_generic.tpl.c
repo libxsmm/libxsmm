@@ -44,10 +44,6 @@ const int chunksize = (work % handle->desc.threads == 0) ? (work / handle->desc.
 const int thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const int thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
-/* loop variables */
-int mb1ofm1 = 0;
-int ifm1 = 0;
-
 LIBXSMM_VLA_DECL(4, element_output_type,       output, (element_output_type*)handle->reg_output->data, nBlocksOFm, handle->bn, handle->bk);
 LIBXSMM_VLA_DECL(4, const element_input_type,  input,  (element_input_type* )handle->reg_input->data,  nBlocksIFm, handle->bn, handle->bc);
 LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc, handle->bk);
@@ -55,27 +51,26 @@ LIBXSMM_VLA_DECL(4, const element_filter_type, filter, (element_filter_type*)han
 
 unsigned long long blocks = nBlocksIFm;
 
-int iteri = 0, iterj = 0, ifm2 = 0, BF = 1;
+int iteri = 0, iterj = 0, ifm1 = 0, ifm2 = 0, BF = 1;
+int CB_BLOCKS = nBlocksIFm, perform_2d_decomp = 0;
 /* Blocking reduction domain if it is too large */
-int C = handle->desc.C, K = handle->desc.K;
-if ((C > 1024 && C <= 2048) || (K > 1024 && K <= 2048)) {
+if ((handle->desc.C > 1024 && handle->desc.C <= 2048) || (handle->desc.K > 1024 && handle->desc.K <= 2048)) {
   BF = 8;
   while ( (nBlocksIFm % BF != 0) || (nBlocksOFm % BF != 0) ) {
     BF--;
   }
 }
-if (C > 2048 || K > 2048) {
+if (handle->desc.C > 2048 || handle->desc.K > 2048) {
   BF = 16;
   while ( (nBlocksIFm % BF != 0) || (nBlocksOFm % BF != 0) ) {
     BF--;
   }
 }
 
-if (C == 2048 && K == 1024) {
+if (handle->desc.C == 2048 && handle->desc.K == 1024) {
   BF = 2;
 }
 
-const int CB_BLOCKS = nBlocksIFm/BF;
 /* The snippet below does a 2D domain decomposition of output IF the number of threads and the number of work items are compatible */
 /* TODO: For now 2D decomposition targets single socket SKX */
 int row_teams = 7;
@@ -94,7 +89,8 @@ libxsmm_blasint my_ik_end = LIBXSMM_MIN( (my_col_id+1) * ik_tasks_per_thread, ik
 LIBXSMM_UNUSED( ifm2 );
 #endif
 
-int perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads &&
+CB_BLOCKS = nBlocksIFm/BF;
+perform_2d_decomp = (in_tasks % row_teams == 0 && ik_tasks % column_teams == 0 && row_teams*column_teams == handle->desc.threads &&
   ik_tasks_per_thread*in_tasks_per_thread*CB_BLOCKS <= 4096) ? 1 : 0;
 
 if (perform_2d_decomp) {
@@ -174,6 +170,7 @@ if (perform_2d_decomp) {
 unsigned long long  A_offsets[1024];
 unsigned long long  B_offsets[1024];
 #endif
+  int mb1ofm1;
   /* lazy barrier init */
   libxsmm_barrier_init(handle->barrier, ltid);
 
