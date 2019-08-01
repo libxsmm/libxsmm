@@ -107,7 +107,10 @@ if (perform_2d_decomp) {
   unsigned long long  A_offsets[4096];
   unsigned long long  B_offsets[4096];
 #endif
-  int ik, in, index;
+#if defined(ADDRESS_BRGEMM) || defined(OFFSET_BRGEMM)
+  int index;
+#endif
+  int ik, in;
 
   /* lazy barrier init */
   libxsmm_barrier_init(handle->barrier, (int)ltid);
@@ -126,7 +129,9 @@ if (perform_2d_decomp) {
         }
         /* prepare arguments for batch-reduce call */
         for ( ifm2 = 0; ifm2 < CB_BLOCKS; ++ifm2 ) {
+#if defined(ADDRESS_BRGEMM) || defined(OFFSET_BRGEMM)
           index = (ik-my_ik_start)*(my_in_end-my_in_start)*CB_BLOCKS + (in-my_in_start)*CB_BLOCKS + ifm2;
+#endif
 #ifdef ADDRESS_BRGEMM
           A_array[index] = &LIBXSMM_VLA_ACCESS(4, filter, ik, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm/BF, handle->bc, handle->bk);
           B_array[index] = &LIBXSMM_VLA_ACCESS(4, input,  in, ifm2 + ifm1*CB_BLOCKS, 0, 0, nBlocksIFm/BF, handle->bn, handle->bc);
@@ -142,8 +147,8 @@ if (perform_2d_decomp) {
     for ( ik = my_ik_start; ik < my_ik_end; ++ik ) {
       for ( in = my_in_start; in < my_in_end; ++in ) {
         blocks = CB_BLOCKS;
-        index = (ik-my_ik_start)*(my_in_end-my_in_start)*CB_BLOCKS + (in-my_in_start)*CB_BLOCKS;
 #ifdef ADDRESS_BRGEMM
+        index = (ik-my_ik_start)*(my_in_end-my_in_start)*CB_BLOCKS + (in-my_in_start)*CB_BLOCKS;
         batchreduce_kernel(&A_array[index], &B_array[index], &LIBXSMM_VLA_ACCESS(4, output, in, ik, 0, 0, nBlocksOFm, handle->bn, handle->bk), &blocks);
 #endif
 #ifdef OFFSET_BRGEMM
