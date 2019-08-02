@@ -47,7 +47,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(MKLJIT) && defined(mkl_jit_create_dgemm) && 1
+#if !defined(MKLJIT) && defined(mkl_jit_create_dgemm) && \
+  !defined(_WIN32) /* check this manually under Windows */
 # define MKLJIT
 #endif
 #if (!defined(INTEL_MKL_VERSION) || (20190003 <= INTEL_MKL_VERSION)) && \
