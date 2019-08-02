@@ -80,8 +80,8 @@
     libxsmm_diff_b_ += (STRIDE); \
   } \
   if ((N) == (RESULT)) { /* wrong hint */ \
-    libxsmm_diff_b_ = (const char*)(BN); /* reset */ \
     TYPE libxsmm_diff_r_; \
+    libxsmm_diff_b_ = (const char*)(BN); /* reset */ \
     for (libxsmm_diff_r_ = 0; libxsmm_diff_r_ < (HINT); ++libxsmm_diff_r_) { \
       if (0 == DIFF(A, libxsmm_diff_b_, ELEMSIZE)) { \
         RESULT = libxsmm_diff_r_; \
