@@ -101,29 +101,29 @@ LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned 
   LIBXSMM_DIFF_N(unsigned int, result, memcmp, a, bn, size, stride, hint, n);
 #else
   switch (size) {
-  case 64: {
-    LIBXSMM_DIFF_64_DECL(a64);
-    LIBXSMM_DIFF_64_LOAD(a64, a);
-    LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_64, a64, bn, size, stride, hint, n);
-  } break;
-  case 48: {
-    LIBXSMM_DIFF_48_DECL(a48);
-    LIBXSMM_DIFF_48_LOAD(a48, a);
-    LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_48, a48, bn, size, stride, hint, n);
-  } break;
-  case 32: {
-    LIBXSMM_DIFF_32_DECL(a32);
-    LIBXSMM_DIFF_32_LOAD(a32, a);
-    LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_32, a32, bn, size, stride, hint, n);
-  } break;
-  case 16: {
-    LIBXSMM_DIFF_16_DECL(a16);
-    LIBXSMM_DIFF_16_LOAD(a16, a);
-    LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_16, a16, bn, size, stride, hint, n);
-  } break;
-  default: {
-    LIBXSMM_DIFF_N(unsigned int, result, libxsmm_diff, a, bn, size, stride, hint, n);
-  }
+    case 64: {
+      LIBXSMM_DIFF_64_DECL(a64);
+      LIBXSMM_DIFF_64_LOAD(a64, a);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_64, a64, bn, size, stride, hint, n);
+    } break;
+    case 48: {
+      LIBXSMM_DIFF_48_DECL(a48);
+      LIBXSMM_DIFF_48_LOAD(a48, a);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_48, a48, bn, size, stride, hint, n);
+    } break;
+    case 32: {
+      LIBXSMM_DIFF_32_DECL(a32);
+      LIBXSMM_DIFF_32_LOAD(a32, a);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_32, a32, bn, size, stride, hint, n);
+    } break;
+    case 16: {
+      LIBXSMM_DIFF_16_DECL(a16);
+      LIBXSMM_DIFF_16_LOAD(a16, a);
+      LIBXSMM_DIFF_N(unsigned int, result, LIBXSMM_DIFF_16, a16, bn, size, stride, hint, n);
+    } break;
+    default: {
+      LIBXSMM_DIFF_N(unsigned int, result, libxsmm_diff, a, bn, size, stride, hint, n);
+    }
   }
 #endif
   return result;
