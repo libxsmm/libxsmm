@@ -33,6 +33,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
+#include <inttypes.h>
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
@@ -46,7 +47,8 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if !defined(MKLJIT) && defined(mkl_jit_create_dgemm) && 1
+#if !defined(MKLJIT) && defined(mkl_jit_create_dgemm) && \
+  !defined(_WIN32) /* check this manually under Windows */
 # define MKLJIT
 #endif
 #if (!defined(INTEL_MKL_VERSION) || (20190003 <= INTEL_MKL_VERSION)) && \
@@ -80,10 +82,15 @@ LIBXSMM_INLINE void unique(triplet* mnk, int* size)
 
 
 /**
- * This (micro-)benchmark optionally takes a number of dispatches to be performed.
- * The program measures the duration needed to figure out whether a requested matrix
- * multiplication is available or not. The measured duration excludes the time taken
- * to actually generate the code during the first dispatch.
+ * This (micro-)benchmark measures the duration needed to dispatch a kernel.
+ * Various durations are measured: time to generate the code, to dispatch
+ * from cache, and to dispatch from the entire database. The large total
+ * number of kernels may also stress the in-memory database.
+ * When building with "make MKL=1", the benchmark exercises JIT capability of
+ * Intel MKL. However, the measured "dispatch" durations cannot be compared
+ * with LIBXSMM because MKL's JIT-interface does not provide a function to
+ * query a kernel for a set of GEMM-arguments. The implicit JIT-dispatch
+ * on the other hand does not expose the time to query the kernel.
  */
 int main(int argc, char* argv[])
 {
@@ -99,14 +106,13 @@ int main(int argc, char* argv[])
   const int default_maxsize = 16;
 #endif
   int size_total = LIBXSMM_MAX((1 < argc && 0 < atoi(argv[1])) ? atoi(argv[1]) : 10000/*default*/, 2);
-  const int size_local = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 1/*default*/, 1, size_total - 1);
+  const int size_local = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 4/*default*/, 1, size_total);
   const int nthreads = LIBXSMM_CLMP(3 < argc ? atoi(argv[3]) : 1/*default*/, 1, max_nthreads);
   const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 1/*default*/, 1);
   const libxsmm_blasint maxsize = LIBXSMM_CLMP(5 < argc ? atoi(argv[5]) : default_maxsize, 1, MAXSIZE);
   const libxsmm_blasint minsize = LIBXSMM_CLMP(6 < argc ? atoi(argv[6]) : default_minsize, 1, maxsize);
   const libxsmm_blasint range = maxsize - minsize;
-  double tcall, tcgen, tdsp0 = 0, tdsp1 = 0;
-  libxsmm_timer_tickint start;
+  libxsmm_timer_tickint start, tcall, tcgen, tdsp0 = 0, tdsp1 = 0;
   int result = EXIT_SUCCESS;
 
 #if 0 != LIBXSMM_JIT
@@ -146,71 +152,100 @@ int main(int argc, char* argv[])
     }
     unique(rnd, &size_total);
 
-    printf("Dispatching %i calls %s internal synchronization using %i thread%s...", size_total,
-#if (0 != LIBXSMM_SYNC)
-      "with",
-#else
-      "without",
-#endif
+    printf("Dispatching total=%i and local=%i kernels using %i thread%s...", size_total, size_local,
       1 >= nthreads ? 1 : nthreads,
       1 >= nthreads ? "" : "s");
 
     /* first invocation may initialize some internals */
     libxsmm_init(); /* subsequent calls are not doing any work */
     start = libxsmm_timer_tick();
-    for (i = 0; i < size_total; ++i) {
-      /* measure call overhead of an "empty" function (not inlined) */
-      libxsmm_init();
+    for (n = 0; n < nrepeat; ++n) {
+      for (i = 0; i < size_total; ++i) {
+        /* measure call overhead of an "empty" function (not inlined) */
+        libxsmm_init();
+      }
     }
-    tcall = libxsmm_timer_duration(start, libxsmm_timer_tick());
+    tcall = libxsmm_timer_diff(start, libxsmm_timer_tick());
 
     /* trigger code generation to subsequently measure only dispatch time */
+    start = libxsmm_timer_tick();
     for (i = 0; i < size_local; ++i) {
 #if defined(MKLJIT)
       mkl_cblas_jit_create_dgemm(jitter,
         MKL_COL_MAJOR, MKL_NOTRANS/*transa*/, MKL_NOTRANS/*transb*/,
         rnd[i].m, rnd[i].n, rnd[i].k, alpha, rnd[i].m, rnd[i].k, beta, rnd[i].m);
-      mkl_jit_get_dgemm_ptr(jitter[i]); /* to measure "cached" lookup time (below) */
+      mkl_jit_get_dgemm_ptr(jitter[i]); /* to include lookup time */
 #else
       libxsmm_dmmdispatch(rnd[i].m, rnd[i].n, rnd[i].k, &rnd[i].m, &rnd[i].k, &rnd[i].m, &alpha, &beta, &flags, &prefetch);
 #endif
     }
+    tcgen = libxsmm_timer_diff(start, libxsmm_timer_tick());
 
-    /* measure duration for dispatching (cached) kernel */
-    for (n = 0; n < nrepeat; ++n) {
+    /* measure duration for dispatching (cached) kernel; MKL: no "dispatch" just unwrapping the jitter */
 #if defined(_OPENMP)
-#     pragma omp parallel num_threads(nthreads) private(i)
-      {
-#       pragma omp single
-        start = libxsmm_timer_tick();
-#       pragma omp for
+    if (1 < nthreads) {
+      for (n = 0; n < nrepeat; ++n) {
+#       pragma omp parallel num_threads(nthreads) private(i)
+        {
+#         pragma omp master
+          start = libxsmm_timer_tick();
+#         pragma omp for
+          for (i = 0; i < size_total; ++i) {
+            const int j = LIBXSMM_MOD(i, size_local);
+#if defined(MKLJIT)
+            mkl_jit_get_dgemm_ptr(jitter[j]);
 #else
-      {
-        start = libxsmm_timer_tick();
+            libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
 #endif
+          }
+#         pragma omp master
+          tdsp1 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+        }
+      }
+    }
+    else
+#endif
+    {
+      for (n = 0; n < nrepeat; ++n) {
+        start = libxsmm_timer_tick();
         for (i = 0; i < size_total; ++i) {
           const int j = LIBXSMM_MOD(i, size_local);
 #if defined(MKLJIT)
-          mkl_jit_get_dgemm_ptr(jitter[j]); /* no "dispatch" just unwrapping the jitter */
+          mkl_jit_get_dgemm_ptr(jitter[j]);
 #else
           libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
 #endif
         }
+        tdsp1 += libxsmm_timer_diff(start, libxsmm_timer_tick());
       }
-      tdsp1 += libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
 
     /* measure duration for code-generation */
 #if defined(_OPENMP)
-#   pragma omp parallel num_threads(nthreads) private(i)
-    {
-#     pragma omp single
-      start = libxsmm_timer_tick();
-#     pragma omp for
+    if (1 < nthreads) {
+#     pragma omp parallel num_threads(nthreads) private(i)
+      {
+#       pragma omp master
+        start = libxsmm_timer_tick();
+#       pragma omp for
+        for (i = size_local; i < size_total; ++i) {
+#if defined(MKLJIT)
+          mkl_cblas_jit_create_dgemm(jitter + i,
+            MKL_COL_MAJOR, MKL_NOTRANS/*transa*/, MKL_NOTRANS/*transb*/,
+            rnd[i].m, rnd[i].n, rnd[i].k, alpha, rnd[i].m, rnd[i].k, beta, rnd[i].m);
+          mkl_jit_get_dgemm_ptr(jitter[i]);
 #else
+          libxsmm_dmmdispatch(rnd[i].m, rnd[i].n, rnd[i].k, &rnd[i].m, &rnd[i].k, &rnd[i].m, &alpha, &beta, &flags, &prefetch);
+#endif
+        }
+#       pragma omp master
+        tcgen += libxsmm_timer_diff(start, libxsmm_timer_tick());
+      }
+    }
+    else
+#endif
     {
       start = libxsmm_timer_tick();
-#endif
       for (i = size_local; i < size_total; ++i) {
 #if defined(MKLJIT)
         mkl_cblas_jit_create_dgemm(jitter + i,
@@ -221,21 +256,36 @@ int main(int argc, char* argv[])
         libxsmm_dmmdispatch(rnd[i].m, rnd[i].n, rnd[i].k, &rnd[i].m, &rnd[i].k, &rnd[i].m, &alpha, &beta, &flags, &prefetch);
 #endif
       }
+      tcgen += libxsmm_timer_diff(start, libxsmm_timer_tick());
     }
-    tcgen = libxsmm_timer_duration(start, libxsmm_timer_tick());
 
     /* measure dispatching previously generated kernel (likely non-cached) */
-    for (n = 0; n < nrepeat; ++n) {
 #if defined(_OPENMP)
-#     pragma omp parallel num_threads(nthreads) private(i)
-      {
-#       pragma omp single
-        start = libxsmm_timer_tick();
-#       pragma omp for
+    if (1 < nthreads) {
+      for (n = 0; n < nrepeat; ++n) {
+#       pragma omp parallel num_threads(nthreads) private(i)
+        {
+#         pragma omp master
+          start = libxsmm_timer_tick();
+#         pragma omp for
+          for (i = 0; i < size_total; ++i) {
+            const int j = (int)LIBXSMM_MOD(shuffle * i, size_total);
+#if defined(MKLJIT)
+            mkl_jit_get_dgemm_ptr(jitter[j]);
 #else
-      {
-        start = libxsmm_timer_tick();
+            libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
 #endif
+          }
+#         pragma omp master
+          tdsp0 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+        }
+      }
+    }
+    else
+#endif
+    {
+      for (n = 0; n < nrepeat; ++n) {
+        start = libxsmm_timer_tick();
         for (i = 0; i < size_total; ++i) {
           const int j = (int)LIBXSMM_MOD(shuffle * i, size_total);
 #if defined(MKLJIT)
@@ -244,8 +294,8 @@ int main(int argc, char* argv[])
           libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
 #endif
         }
+        tdsp0 += libxsmm_timer_diff(start, libxsmm_timer_tick());
       }
-      tdsp0 += libxsmm_timer_duration(start, libxsmm_timer_tick());
     }
 
 #if defined(CHECK)
@@ -282,7 +332,7 @@ int main(int argc, char* argv[])
           libxsmm_matdiff_reduce(&check, &diff);
         }
         else {
-          printf(" m=%u n=%u k=%u", (unsigned int)rnd[j].m, (unsigned int)rnd[j].n, (unsigned int)rnd[j].k);
+          printf(" m=%u n=%u k=%u kernel=%p", (unsigned int)rnd[j].m, (unsigned int)rnd[j].n, (unsigned int)rnd[j].k, kernel);
           i = size_total + 1; /* break */
         }
       }
@@ -303,21 +353,24 @@ int main(int argc, char* argv[])
 #endif
   }
 
-  if (1 < size_total) {
-    tcall /= size_total;
-    tdsp0 /= size_total * nrepeat;
-    tdsp1 /= size_total * nrepeat;
-    tcgen /= size_total - size_local;
-    if (0 < tcall && 0 < tdsp0 && 0 < tdsp1 && 0 < tcgen) {
-      printf("\tfunction-call (empty): %.0f ns (%.0f MHz)\n", 1E9 * tcall, 1E-6 / tcall);
-      printf("\tdispatch (ro/cached): %.0f ns (%.0f MHz)\n", 1E9 * tdsp1, 1E-6 / tdsp1);
-      printf("\tdispatch (ro): %.0f ns (%.0f MHz)\n", 1E9 * tdsp0, 1E-6 / tdsp0);
-      if (1E-6 <= tcgen) {
-        printf("\tcode-gen (rw): %.0f us (%.0f kHz)\n", 1E6 * tcgen, 1E-3 / tcgen);
-      }
-      else {
-        printf("\tcode-gen (rw): %.0f ns (%.0f MHz)\n", 1E9 * tcgen, 1E-6 / tcgen);
-      }
+  tcall = (tcall + (size_t)size_total * nrepeat - 1) / ((size_t)size_total * nrepeat);
+  tdsp0 = (tdsp0 + (size_t)size_total * nrepeat - 1) / ((size_t)size_total * nrepeat);
+  tdsp1 = (tdsp1 + (size_t)size_total * nrepeat - 1) / ((size_t)size_total * nrepeat);
+  tcgen = (tcgen + size_total - 1) / size_total;
+  if (0 < tcall && 0 < tdsp0 && 0 < tdsp1 && 0 < tcgen) {
+    const double tcall_ns = 1E9 * libxsmm_timer_duration(0, tcall), tcgen_ns = 1E9 * libxsmm_timer_duration(0, tcgen);
+    const double tdsp0_ns = 1E9 * libxsmm_timer_duration(0, tdsp0), tdsp1_ns = 1E9 * libxsmm_timer_duration(0, tdsp1);
+    printf("\tfunction-call (false): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tcall_ns, 1E3 / tcall_ns, (uintptr_t)libxsmm_timer_cycles(0, tcall));
+    printf("\tdispatch (ro/cached): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tdsp1_ns, 1E3 / tdsp1_ns, (uintptr_t)libxsmm_timer_cycles(0, tdsp1));
+    printf("\tdispatch (ro): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tdsp0_ns, 1E3 / tdsp0_ns, (uintptr_t)libxsmm_timer_cycles(0, tdsp0));
+    if (1E6 < tcgen_ns) {
+      printf("\tcode-gen (rw): %.0f ms (call/s %.0f Hz)\n", 1E-6 * tcgen_ns, 1E9 / tcgen_ns);
+    }
+    else if (1E3 < tcgen_ns) {
+      printf("\tcode-gen (rw): %.0f us (call/s %.0f kHz)\n", 1E-3 * tcgen_ns, 1E6 / tcgen_ns);
+    }
+    else {
+      printf("\tcode-gen (rw): %.0f ns (call/s %.0f MHz)\n", tcgen_ns, 1E3 / tcgen_ns);
     }
   }
   printf("Finished\n");

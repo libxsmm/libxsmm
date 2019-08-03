@@ -1594,6 +1594,8 @@ endif
 endif
 ifeq (0,$(VLA))
   DFLAGS += -DLIBXSMM_NO_VLA
+else ifneq (,$(VLA))
+  DFLAGS += -DLIBXSMM_VLA
 endif
 
 # Information which can be displayed by the actual Makefile
@@ -1871,6 +1873,8 @@ else ifneq (0,$(BLAS)) # generic
         BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include/openblas,$(BLASROOT))
       else ifneq (,$(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
         BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include/x86_64-linux-gnu,$(BLASROOT))
+      else ifneq (,$(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT))))
+        BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include,$(BLASROOT))
       endif
     else # BLAS (reference)
       BLAS_FLAGS += -D__BLAS

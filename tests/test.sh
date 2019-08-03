@@ -88,12 +88,12 @@ for TEST in ${TESTS}; do
         MIC_KMP_AFFINITY=scatter,granularity=fine \
         MIC_ENV_PREFIX=MIC \
         OFFLOAD_INIT=on_start \
-      ${TOOL_COMMAND} ${HERE}/${NAME}${EXE}
+      ${TOOL_COMMAND} ${HERE}/${NAME}${EXE} ${TOOL_COMMAND_POST}
     else
       ${ENV} LD_LIBRARY_PATH=${LD_LIBRARY_PATH}:${HERE}/../lib \
         DYLD_LIBRARY_PATH=${DYLD_LIBRARY_PATH}:${HERE}/../lib \
         OMP_PROC_BIND=TRUE \
-      ${TOOL_COMMAND} ${HERE}/${NAME}${EXE}
+      ${TOOL_COMMAND} ${HERE}/${NAME}${EXE} ${TOOL_COMMAND_POST}
     fi >/dev/null; } 2>&1)
     RESULT=$?
   else

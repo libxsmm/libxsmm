@@ -552,6 +552,17 @@ LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u256(unsigned int seed, const void
 }
 
 
+LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u384(unsigned int seed, const void* value, ...)
+{
+#if (LIBXSMM_X86_SSE4 <= LIBXSMM_STATIC_TARGET_ARCH)
+  return internal_crc32_u384_sse4(seed, value);
+#else /* pointer based function call */
+  LIBXSMM_ASSERT(NULL != internal_hash_u384_function);
+  return internal_hash_u384_function(seed, value);
+#endif
+}
+
+
 LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u512(unsigned int seed, const void* value, ...)
 {
 #if (LIBXSMM_X86_SSE4 <= LIBXSMM_STATIC_TARGET_ARCH)

@@ -93,7 +93,7 @@
   }
 #elif (!defined(__BLAS) || (0 != __BLAS))
 # define LIBXSMM_BLAS_WRAPPER_STATIC(TYPE, KIND, ORIGINAL) if (NULL == (ORIGINAL)) { \
-    ORIGINAL = LIBXSMM_BLAS_SYMBOL(TYPE, KIND); \
+    ORIGINAL = (LIBXSMM_BLAS_FNTYPE(TYPE, KIND))LIBXSMM_BLAS_SYMBOL(TYPE, KIND); \
   }
 #else
 # define LIBXSMM_BLAS_WRAPPER_STATIC(TYPE, KIND, ORIGINAL)
@@ -155,14 +155,14 @@ LIBXSMM_API void __real_dgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, dou
 LIBXSMM_API void __real_sgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
 #endif
 
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, double, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_CDECL(const*, *, double, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, float, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_CDECL(const*, *, float, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, double, gemm);
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, float, gemm);
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, double, gemv);
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, float, gemv);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, double, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_CDECL(LIBXSMM_GEMM_CONST*, *, double, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, float, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_CDECL(LIBXSMM_GEMM_CONST*, *, float, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, double, gemm);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, float, gemm);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, double, gemv);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, float, gemv);
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
   libxsmm_code_pointer copy_a, copy_b, copy_i, copy_o;
