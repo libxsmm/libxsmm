@@ -1916,17 +1916,19 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
     } while (0 != diff);
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
     if (NULL != flux_entry.ptr_const) { /* keep code version on record (cache) */
-      if (cache.id != libxsmm_ninit) { /* invalidate */
-        memset(cache.keys, 0, sizeof(cache.keys));
+      if (cache.id == libxsmm_ninit) {
+        if (cache.size < (LIBXSMM_CACHE_MAXSIZE)) { /* grow */
+          INTERNAL_FIND_CODE_CACHE_GROW(cache_index, cache.size);
+          LIBXSMM_ASSERT(cache.size <= LIBXSMM_CACHE_MAXSIZE);
+        }
+        else { /* evict */
+          INTERNAL_FIND_CODE_CACHE_EVICT(cache_index, cache.size, cache.hit);
+        }
+      }
+      else { /* invalidate */
+        LIBXSMM_ASSERT(0 == cache_index);
         cache.id = libxsmm_ninit;
-        cache.size = cache.hit = 0;
-      }
-      if (cache.size < (LIBXSMM_CACHE_MAXSIZE)) { /* grow */
-        INTERNAL_FIND_CODE_CACHE_GROW(cache_index, cache.size);
-        LIBXSMM_ASSERT(cache.size <= LIBXSMM_CACHE_MAXSIZE);
-      }
-      else { /* evict */
-        INTERNAL_FIND_CODE_CACHE_EVICT(cache_index, cache.size, cache.hit);
+        cache.size = 1;
       }
       cache.keys[cache_index] = *desc;
       cache.code[cache_index] = flux_entry;
