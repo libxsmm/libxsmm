@@ -1870,11 +1870,11 @@ else ifneq (0,$(BLAS)) # generic
       # OpenBLAS also carries the CBLAS bits
       BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
       ifneq (,$(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
-        BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include/openblas,$(BLASROOT))
+        BLAS_FLAGS += -D__OPENBLAS77 -I$(dir $(wildcard $(patsubst %,%/include/openblas/f77blas.h,$(BLASROOT))))
       else ifneq (,$(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
-        BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include/x86_64-linux-gnu,$(BLASROOT))
+        BLAS_FLAGS += -D__OPENBLAS77 -I$(dir $(wildcard $(patsubst %,%/include/x86_64-linux-gnu/f77blas.h,$(BLASROOT))))
       else ifneq (,$(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT))))
-        BLAS_FLAGS += -D__OPENBLAS77 $(patsubst %,-I%/include,$(BLASROOT))
+        BLAS_FLAGS += -D__OPENBLAS77 -I$(dir $(wildcard $(patsubst %,%/include/f77blas.h,$(BLASROOT))))
       endif
     else # BLAS (reference)
       BLAS_FLAGS += -D__BLAS
