@@ -332,7 +332,7 @@ int main(int argc, char* argv[])
           libxsmm_matdiff_reduce(&check, &diff);
         }
         else {
-          printf(" m=%u n=%u k=%u kernel=%p", (unsigned int)rnd[j].m, (unsigned int)rnd[j].n, (unsigned int)rnd[j].k, kernel);
+          printf(" m=%u n=%u k=%u kernel=%" PRIuPTR, (unsigned int)rnd[j].m, (unsigned int)rnd[j].n, (unsigned int)rnd[j].k, (uintptr_t)kernel);
           i = size_total + 1; /* break */
         }
       }
