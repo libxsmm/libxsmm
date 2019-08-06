@@ -1,4 +1,5 @@
 My Amplifier*
+VTune Amplifier Results
 libxsmm*-*
 libxsmm*_*
 opentuner.db
@@ -9,6 +10,7 @@ include/libxsmm.f
 include/libxsmm.h
 build
 lib/libxsmm*
+ide/GPUCache
 ide/_vs*-*.bat
 ide/.vs
 ide/build

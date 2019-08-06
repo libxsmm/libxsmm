@@ -37,12 +37,12 @@
 # define LIBXSMM_DIFF_AVX512
 #endif
 
-#if (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
+#if (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH) /*|| defined(LIBXSMM_INTRINSICS_TARGET)*/
 # define LIBXSMM_DIFF_16_DECL(A) __m128i A
 # define LIBXSMM_DIFF_16_ASSIGN(A, B) (A) = (B)
-# define LIBXSMM_DIFF_16_LOAD(A, SRC) A = _mm_loadu_si128((const __m128i*)(SRC))
+# define LIBXSMM_DIFF_16_LOAD(A, SRC) A = LIBXSMM_INTRINSICS_LDDQU_SI128((const __m128i*)(SRC))
 # define LIBXSMM_DIFF_16(A, B, ...) ((unsigned char)(0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8( \
-    A, _mm_loadu_si128((const __m128i*)(B))))))
+    A, LIBXSMM_INTRINSICS_LDDQU_SI128((const __m128i*)(B))))))
 #else
 # define LIBXSMM_DIFF_16_DECL(A) const uint64_t */*const*/ A
 # define LIBXSMM_DIFF_16_ASSIGN(A, B) (A) = (B)
