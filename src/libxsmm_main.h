@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Hans Pabst (Intel Corp.), Rajkishore Barik (Intel Corp. )
+/* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #ifndef LIBXSMM_MAIN_H
 #define LIBXSMM_MAIN_H
