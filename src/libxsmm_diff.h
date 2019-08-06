@@ -33,12 +33,16 @@
 
 #include <libxsmm_intrinsics_x86.h>
 
-#if (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH)
+#if !defined(LIBXSMM_DIFF_AVX512) && 0
+# define LIBXSMM_DIFF_AVX512
+#endif
+
+#if (LIBXSMM_X86_SSE3 <= LIBXSMM_STATIC_TARGET_ARCH) /*|| defined(LIBXSMM_INTRINSICS_TARGET)*/
 # define LIBXSMM_DIFF_16_DECL(A) __m128i A
 # define LIBXSMM_DIFF_16_ASSIGN(A, B) (A) = (B)
-# define LIBXSMM_DIFF_16_LOAD(A, SRC) A = _mm_loadu_si128((const __m128i*)(SRC))
+# define LIBXSMM_DIFF_16_LOAD(A, SRC) A = LIBXSMM_INTRINSICS_LDDQU_SI128((const __m128i*)(SRC))
 # define LIBXSMM_DIFF_16(A, B, ...) ((unsigned char)(0xFFFF != _mm_movemask_epi8(_mm_cmpeq_epi8( \
-    A, _mm_loadu_si128((const __m128i*)(B))))))
+    A, LIBXSMM_INTRINSICS_LDDQU_SI128((const __m128i*)(B))))))
 #else
 # define LIBXSMM_DIFF_16_DECL(A) const uint64_t */*const*/ A
 # define LIBXSMM_DIFF_16_ASSIGN(A, B) (A) = (B)
@@ -64,32 +68,35 @@
 #define LIBXSMM_DIFF_48_LOAD(A, SRC) LIBXSMM_DIFF_16_LOAD(A, SRC); LIBXSMM_DIFF_32_LOAD(LIBXSMM_CONCATENATE2(libxsmm_diff_48_, A, _), (const uint64_t*)(SRC) + 2)
 #define LIBXSMM_DIFF_48(A, B, ...) ((unsigned char)(0 != LIBXSMM_DIFF_16(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_32(LIBXSMM_CONCATENATE2(libxsmm_diff_48_, A, _), (const uint64_t*)(B) + 2, __VA_ARGS__)))
 
-#define LIBXSMM_DIFF_64_DECL(A) LIBXSMM_DIFF_32_DECL(A); LIBXSMM_DIFF_32_DECL(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _))
-#define LIBXSMM_DIFF_64_ASSIGN(A, B) LIBXSMM_DIFF_32_ASSIGN(A, B); LIBXSMM_DIFF_32_ASSIGN(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _), LIBXSMM_CONCATENATE2(libxsmm_diff_64_, B, _))
-#define LIBXSMM_DIFF_64_LOAD(A, SRC) LIBXSMM_DIFF_32_LOAD(A, SRC); LIBXSMM_DIFF_32_LOAD(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _), (const uint64_t*)(SRC) + 4)
-#define LIBXSMM_DIFF_64(A, B, ...) ((unsigned char)(0 != LIBXSMM_DIFF_32(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_32(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _), (const uint64_t*)(B) + 4, __VA_ARGS__)))
+#if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH) && defined(LIBXSMM_DIFF_AVX512)
+# define LIBXSMM_DIFF_64_DECL(A) __m512i A
+# define LIBXSMM_DIFF_64_ASSIGN(A, B) (A) = (B)
+# define LIBXSMM_DIFF_64_LOAD(A, SRC) A = _mm512_loadu_si512((const __m512i*)(SRC))
+# define LIBXSMM_DIFF_64(A, B, ...) ((unsigned char)(0xFFFF != _cvtmask16_u32(_mm512_cmpeq_epi32_mask( \
+    A, _mm512_loadu_si512((const __m512i*)(B))))))
+#else
+# define LIBXSMM_DIFF_64_DECL(A) LIBXSMM_DIFF_32_DECL(A); LIBXSMM_DIFF_32_DECL(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _))
+# define LIBXSMM_DIFF_64_ASSIGN(A, B) LIBXSMM_DIFF_32_ASSIGN(A, B); LIBXSMM_DIFF_32_ASSIGN(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _), LIBXSMM_CONCATENATE2(libxsmm_diff_64_, B, _))
+# define LIBXSMM_DIFF_64_LOAD(A, SRC) LIBXSMM_DIFF_32_LOAD(A, SRC); LIBXSMM_DIFF_32_LOAD(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _), (const uint64_t*)(SRC) + 4)
+# define LIBXSMM_DIFF_64(A, B, ...) ((unsigned char)(0 != LIBXSMM_DIFF_32(A, B, __VA_ARGS__) ? 1 : LIBXSMM_DIFF_32(LIBXSMM_CONCATENATE2(libxsmm_diff_64_, A, _), (const uint64_t*)(B) + 4, __VA_ARGS__)))
+#endif
 
 #define LIBXSMM_DIFF_DECL(N, A) LIBXSMM_CONCATENATE2(LIBXSMM_DIFF_, N, _DECL)(A)
 #define LIBXSMM_DIFF_LOAD(N, A, SRC) LIBXSMM_CONCATENATE2(LIBXSMM_DIFF_, N, _LOAD)(A, SRC)
 #define LIBXSMM_DIFF(N) LIBXSMM_CONCATENATE(LIBXSMM_DIFF_, N)
 
 #define LIBXSMM_DIFF_N(TYPE, RESULT, DIFF, A, BN, ELEMSIZE, STRIDE, HINT, N) { \
-  const char* libxsmm_diff_b_ = (const char*)(BN); \
-  if (0 == (HINT)) { /* fast-path */ \
-    for (RESULT = 0; (RESULT) < (N); ++(RESULT)) { \
-      if (0 == DIFF(A, libxsmm_diff_b_, ELEMSIZE)) break; \
-      libxsmm_diff_b_ += (STRIDE); \
-    } \
+  const char* libxsmm_diff_b_ = (const char*)(BN) + (size_t)(HINT) * (STRIDE); \
+  for (RESULT = (HINT); (RESULT) < (N); ++(RESULT)) { \
+    if (0 == DIFF(A, libxsmm_diff_b_, ELEMSIZE)) break; \
+    libxsmm_diff_b_ += (STRIDE); \
   } \
-  else { /* wrap around index */ \
-    TYPE libxsmm_diff_i_ = (HINT); \
-    const size_t libxsmm_diff_end_ = (size_t)(N) * (STRIDE); \
-    libxsmm_diff_b_ += (size_t)(HINT) * (STRIDE); \
-    RESULT = (N); \
-    for (; libxsmm_diff_i_ < ((N) + (HINT)); ++libxsmm_diff_i_) { \
-      const char *const libxsmm_diff_c_ = (libxsmm_diff_i_ < (N) ? libxsmm_diff_b_ : (libxsmm_diff_b_ - libxsmm_diff_end_)); \
-      if (0 == DIFF(A, libxsmm_diff_c_, ELEMSIZE)) { \
-        RESULT = (libxsmm_diff_i_ < (N) ? libxsmm_diff_i_ : (libxsmm_diff_i_ - (N))); \
+  if ((N) == (RESULT)) { /* wrong hint */ \
+    TYPE libxsmm_diff_r_; \
+    libxsmm_diff_b_ = (const char*)(BN); /* reset */ \
+    for (libxsmm_diff_r_ = 0; libxsmm_diff_r_ < (HINT); ++libxsmm_diff_r_) { \
+      if (0 == DIFF(A, libxsmm_diff_b_, ELEMSIZE)) { \
+        RESULT = libxsmm_diff_r_; \
         break; \
       } \
       libxsmm_diff_b_ += (STRIDE); \

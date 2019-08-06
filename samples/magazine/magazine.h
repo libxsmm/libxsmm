@@ -62,7 +62,7 @@
 #endif
 
 
-void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
+static void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
   const double seed1 = scale * seed + scale;
   int i;
   for (i = 0; i < ncols; ++i) {
@@ -79,7 +79,7 @@ void init(int seed, TYPE* dst, int nrows, int ncols, int ld, double scale) {
 }
 
 
-double norm(const TYPE* src, int nrows, int ncols, int ld) {
+static double norm(const TYPE* src, int nrows, int ncols, int ld) {
   int i, j;
   double result = 0, comp = 0;
   for (i = 0; i < ncols; ++i) {
