@@ -47,7 +47,7 @@
 #include <linux/mman.h>
 #endif
 
-void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
+static void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
   void* ret_ptr = NULL;
 #if defined(EDGE_HP_1G)
   size_t num_large_pages = nbytes / (1073741824L);
@@ -81,7 +81,7 @@ void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
   return ret_ptr;
 }
 
-void edge_hp_free( void* ptr,  size_t nbytes ) {
+static void edge_hp_free( void* ptr,  size_t nbytes ) {
   LIBXSMM_UNUSED( nbytes );
 #if defined(EDGE_HP_1G)
   /* to be implemented */
@@ -155,7 +155,7 @@ static void matMulFusedBC(        unsigned short  i_r,
 }
 #endif
 
-void amok_detect( const double* i_runtimes, size_t* io_amoks, const size_t i_workers ) {
+static void amok_detect( const double* i_runtimes, size_t* io_amoks, const size_t i_workers ) {
   double time_avg;
   size_t i;
   time_avg = 0.0;
@@ -176,7 +176,7 @@ void amok_detect( const double* i_runtimes, size_t* io_amoks, const size_t i_wor
   }
 }
 
-void amok_balance( const size_t* i_amoks, const size_t i_workers, const size_t i_worksize, const size_t i_mytid, size_t* io_chunk, size_t* io_mystart, size_t* io_myend ) {
+static void amok_balance( const size_t* i_amoks, const size_t i_workers, const size_t i_worksize, const size_t i_mytid, size_t* io_chunk, size_t* io_mystart, size_t* io_myend ) {
   size_t l_chunk, l_start, l_end;
   size_t l_cur_amoks = i_amoks[8*i_workers];
   size_t l_non_amoks = i_workers - l_cur_amoks;

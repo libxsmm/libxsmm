@@ -358,6 +358,8 @@
 #     else
 #       define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     endif
+#   elif !defined(LIBXSMM_INTRINSICS_TARGET)
+#     define LIBXSMM_INTRINSICS_TARGET
 #   endif /*!defined(LIBXSMM_INTRINSICS)*/
 # endif /*defined(LIBXSMM_STATIC_TARGET_ARCH)*/
 #endif /*!defined(LIBXSMM_INTRINSICS_NONE)*/
