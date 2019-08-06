@@ -42,7 +42,11 @@
 #endif
 
 #if !defined(LIBXSMM_MAX_NTHREADS)
-# define LIBXSMM_MAX_NTHREADS 1024
+# if (0 != LIBXSMM_SYNC)
+#   define LIBXSMM_MAX_NTHREADS 1024
+# else
+#   define LIBXSMM_MAX_NTHREADS 1
+# endif
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
 # define LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS LIBXSMM_MAX_NTHREADS
@@ -746,8 +750,6 @@ LIBXSMM_APIVAR(libxsmm_free_function libxsmm_scratch_free_fn);
 LIBXSMM_APIVAR(const void* libxsmm_default_allocator_context);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
 LIBXSMM_APIVAR(const void* libxsmm_scratch_allocator_context);
-/** Number of discovered threads (per libxsmm_get_tid) */
-LIBXSMM_APIVAR(unsigned int libxsmm_threads_count);
 /** Number of scratch memory pools used; clamped against internal maximum. */
 LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
 /** Maximum total size of the scratch memory domain. */
@@ -756,6 +758,11 @@ LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
 /** even: regular, odd: scratch, >1: intercept */
 LIBXSMM_APIVAR(int libxsmm_malloc_kind);
+
+# if (0 != LIBXSMM_SYNC)
+/** Number of discovered threads (per libxsmm_get_tid) */
+LIBXSMM_APIVAR(unsigned int libxsmm_thread_count);
+#endif
 
 LIBXSMM_APIVAR(unsigned int libxsmm_statistic_num_spmdm);
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */

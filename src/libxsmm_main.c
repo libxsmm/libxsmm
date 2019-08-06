@@ -173,25 +173,28 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   unsigned int ntry, ncol, njit, nsta;
 } internal_statistic_type;
 
+#if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_cache_entry_type {
   libxsmm_descriptor keys[LIBXSMM_CACHE_MAXSIZE];
   libxsmm_code_pointer code[LIBXSMM_CACHE_MAXSIZE];
-#if !defined(LIBXSMM_CACHE_GLOBAL)
+# if !defined(LIBXSMM_CACHE_GLOBAL)
   unsigned int id; /* to invalidate */
-#endif
+# endif
   unsigned char size, hit;
 } internal_cache_entry_type;
 
 LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_cache_type {
-#if defined(LIBXSMM_CACHE_PAD)
+# if defined(LIBXSMM_CACHE_PAD)
   char pad[LIBXSMM_UP2(sizeof(internal_cache_entry_type),LIBXSMM_CACHELINE)];
-#endif
+# endif
   internal_cache_entry_type entry;
 } internal_cache_type;
 
-#if defined(LIBXSMM_CACHE_GLOBAL)
+# if defined(LIBXSMM_CACHE_GLOBAL)
 LIBXSMM_APIVAR(internal_cache_type* internal_cache_buffer);
-#endif
+# endif
+#endif /*defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))*/
+
 
 /** Determines the try-lock property (1<N: disabled, N=1: enabled [N=0: disabled in case of RW-lock]). */
 LIBXSMM_APIVAR(int internal_reglock_count);
@@ -482,9 +485,9 @@ LIBXSMM_API_INLINE void internal_finalize(void)
         fprintf(stderr, "Scratch: %.f MB", 1.0 * size_scratch / (1ULL << 20));
         if (0 != high_verbosity) {
 #if (0 != LIBXSMM_SYNC)
-          if (1 < libxsmm_threads_count) {
+          if (1 < libxsmm_thread_count) {
             fprintf(stderr, " (mallocs=%lu, pools=%u, threads=%u)\n",
-              (unsigned long int)scratch_info.nmallocs, scratch_info.npools, libxsmm_threads_count);
+              (unsigned long int)scratch_info.nmallocs, scratch_info.npools, libxsmm_thread_count);
           }
           else
 #endif
@@ -673,7 +676,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 #endif
     libxsmm_hash_init(libxsmm_target_archid); /* used by debug memory allocation (checksum) */
     if (
-#if defined(LIBXSMM_CACHE_GLOBAL)
+#if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       (EXIT_SUCCESS == libxsmm_xmalloc((void**)&internal_cache_buffer, (LIBXSMM_MAX_NTHREADS) * sizeof(internal_cache_type), LIBXSMM_CACHELINE/*alignment*/,
         LIBXSMM_MALLOC_FLAG_PRIVATE, NULL/*extra*/, 0/*extra-size*/)) &&
 #endif
@@ -683,7 +686,7 @@ LIBXSMM_API_INTERN void internal_init(void)
         LIBXSMM_MALLOC_FLAG_PRIVATE, NULL/*extra*/, 0/*extra-size*/)))
     {
       LIBXSMM_ASSERT(NULL != new_registry && NULL != internal_registry_keys);
-#if defined(LIBXSMM_CACHE_GLOBAL)
+#if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       LIBXSMM_ASSERT(NULL != internal_cache_buffer);
       for (i = 0; i < (LIBXSMM_MAX_NTHREADS); ++i) {
         internal_cache_buffer[i].entry.size = 0;
@@ -744,7 +747,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
         fprintf(stderr, "LIBXSMM ERROR: failed to allocate code registry!\n");
       }
-#if defined(LIBXSMM_CACHE_GLOBAL)
+#if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       libxsmm_xfree(internal_cache_buffer);
 #endif
       libxsmm_xfree(internal_registry_keys);
@@ -995,7 +998,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       internal_registry_keys = NULL;
       libxsmm_xfree(registry_keys);
       libxsmm_xfree(registry);
-#if defined(LIBXSMM_CACHE_GLOBAL)
+#if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       libxsmm_xfree(internal_cache_buffer);
 #endif
       }
