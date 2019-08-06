@@ -372,7 +372,7 @@ LIBXSMM_API_INLINE int internal_xfree(const void* memory, internal_malloc_info_t
 LIBXSMM_API_INLINE size_t internal_get_scratch_size(const internal_malloc_pool_type* exclude)
 {
   size_t result = 0;
-#if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) || (0 >= (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+#if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) || (1 >= (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
   LIBXSMM_UNUSED(exclude);
 #else
   const internal_malloc_pool_type* pool = (const internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_CACHELINE);
@@ -424,17 +424,17 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
     static int error_once = 0;
     size_t local_size = 0;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+    LIBXSMM_ASSERT(sizeof(internal_malloc_pool_type) <= (LIBXSMM_CACHELINE));
     if (0 < libxsmm_scratch_pools && 0 < libxsmm_scratch_limit) {
       internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_CACHELINE);
       internal_malloc_pool_type *const end = pools + libxsmm_scratch_pools, *pool0 = end, *pool = pools;
-      const void *const site = (NULL != caller ? caller : libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL));
       const size_t align_size = libxsmm_alignment(size, alignment);
       const size_t alloc_size = size + align_size - 1;
 #if defined(LIBXSMM_MALLOC_AFFINITY) && (0 != LIBXSMM_SYNC)
       const unsigned int tid = libxsmm_get_tid();
 #endif
-      LIBXSMM_ASSERT(sizeof(internal_malloc_pool_type) <= (LIBXSMM_CACHELINE));
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+      const void *const site = (NULL != caller ? caller : libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL));
       for (; pool != end; ++pool) { /* find matching pool */
         if (site == pool->instance.site
 # if defined(LIBXSMM_MALLOC_AFFINITY) && (0 != LIBXSMM_SYNC)
@@ -469,7 +469,12 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
             const size_t incsize = req_size - LIBXSMM_MIN(pool_size, req_size);
             pool->instance.incsize = LIBXSMM_MAX(pool->instance.incsize, incsize);
             LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
-            if (internal_malloc_maxlocal_size < size && (LIBXSMM_MALLOC_INTERNAL_CALLER) != pool->instance.site) {
+            if (
+#if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+              (LIBXSMM_MALLOC_INTERNAL_CALLER) != pool->instance.site &&
+#endif
+              internal_malloc_maxlocal_size < size)
+            {
               internal_malloc_maxlocal_size = size; /* accept data-race */
             }
             local_size = size;
@@ -508,7 +513,10 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
             pool->instance.buffer = (char*)*memory;
             pool->instance.head = pool->instance.buffer + alloc_size;
             *memory = LIBXSMM_ALIGN((char*)*memory, align_size);
-            if ((LIBXSMM_MALLOC_INTERNAL_CALLER) != pool->instance.site) {
+#if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+            if ((LIBXSMM_MALLOC_INTERNAL_CALLER) != pool->instance.site)
+#endif
+            {
               LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_scratch_nmallocs, 1, LIBXSMM_ATOMIC_RELAXED);
             }
 #if defined(LIBXSMM_MALLOC_SCRATCH_JOIN) /* library code is expected to be mute */
@@ -1858,9 +1866,9 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
 # if (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
       const internal_malloc_pool_type *const end = pool + libxsmm_scratch_pools;
       LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
-      for (; pool != end; ++pool)
+      for (; pool != end; ++pool) if ((LIBXSMM_MALLOC_INTERNAL_CALLER) != pool->instance.site)
 # endif
-      if ((LIBXSMM_MALLOC_INTERNAL_CALLER) != pool->instance.site) {
+      {
         info->npools += (unsigned int)LIBXSMM_MIN(pool->instance.minsize, 1);
         info->npending += pool->instance.counter;
       }
