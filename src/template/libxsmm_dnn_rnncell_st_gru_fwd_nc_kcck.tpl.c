@@ -95,15 +95,6 @@ const libxsmm_blasint chunksize = (work % (libxsmm_blasint)handle->desc.threads 
 const libxsmm_blasint thr_begin = (ltid * chunksize < work) ? (ltid * chunksize) : work;
 const libxsmm_blasint thr_end = ((ltid + 1) * chunksize < work) ? ((ltid + 1) * chunksize) : work;
 
-/* number of tasks that could be run in parallel for C and K blocks*/
-const libxsmm_blasint work_ck = (C/bc) * (K/bk);
-/* compute chunk size */
-const libxsmm_blasint chunksize_ck = (work_ck % (libxsmm_blasint)handle->desc.threads == 0) ? (work_ck / (libxsmm_blasint)handle->desc.threads) : ((work_ck / (libxsmm_blasint)handle->desc.threads) + 1);
-
-/* number of tasks that could be run in parallel for K and K blocks*/
-const libxsmm_blasint work_kk = (K/bk) * (K/bk);
-/* compute chunk size */
-const libxsmm_blasint chunksize_kk = (work_kk % (libxsmm_blasint)handle->desc.threads == 0) ? (work_kk / (libxsmm_blasint)handle->desc.threads) : ((work_kk / (libxsmm_blasint)handle->desc.threads) + 1);
 #if 0
 const int use_fused_implementation = (C == 2048 && K == 2048) ? 1 : 0;
 #endif
