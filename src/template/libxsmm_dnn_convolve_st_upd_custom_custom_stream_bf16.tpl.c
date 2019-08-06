@@ -215,7 +215,7 @@ if (handle->desc.C == 3) {
 #if defined(LIBXSMM_INTRINSICS_AVX512)
 #define _mm512_roundbf16rne(A) LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(A)
 #define _mm512_storecvtrne_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
-#define _mm512_storecvttrunc_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32((__m512i) (B),16)))
+#define _mm512_storecvttrunc_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_castps_si512(B),16)))
   if ( handle->f32_bf16_cvt_rne ) {
     for (i=0; i<reduce_work; i++) {
       _mm512_storecvtrne_fp32_bf16( ((libxsmm_bfloat16*) dst_weight_base) + i * 16, LIBXSMM_INTRINSICS_MM512_LOAD_PS(((float*) weight_base) + i * 16 ));
