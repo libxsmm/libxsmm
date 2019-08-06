@@ -160,6 +160,8 @@ LIBXSMM_APIVAR_ARRAY(internal_reglocktype internal_reglock, INTERNAL_REGLOCK_MAX
 #   endif
 LIBXSMM_APIVAR(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
 # endif
+#elif !defined(LIBXSMM_CACHE_MAXSIZE)
+# define LIBXSMM_CACHE_MAXSIZE LIBXSMM_CAPACITY_CACHE
 #endif
 
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
