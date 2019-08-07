@@ -956,7 +956,6 @@ int main(int argc, char* argv[])
     matrix_copy_CK_to_CKKC(rfgold, rt+(2*K*K), K, K, bk, bk);
     matrix_copy_CK_to_CKKC(rogold, rt+(3*K*K), K, K, bk, bk);
     matrix_copy(K, bigold, &(b[0]));
-    matrix_copy(K, bigold, &(b[0]));
     matrix_copy(K, bcgold, &(b[K]));
     matrix_copy(K, bfgold, &(b[2*K]));
     matrix_copy(K, bogold, &(b[3*K]));
