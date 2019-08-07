@@ -85,7 +85,7 @@ element_output_type *zt = (element_output_type*)handle->internal_z;
 LIBXSMM_VLA_DECL(3, element_output_type, z, zt, N, K);
 #endif
 /* define batch-reduce gemm kernels */
-const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelaz = libxsmm_smmdispatch_reducebatch_addr( bc, bn, bk, &bc, &K, &C, NULL, &beta, NULL, NULL);
+/*const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelaz = libxsmm_smmdispatch_reducebatch_addr( bc, bn, bk, &bc, &K, &C, NULL, &beta, NULL, NULL);*/
 const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelbz = libxsmm_smmdispatch_reducebatch_addr( bk, bk, bn, &K, &N, &bk, NULL, &beta, NULL, NULL);
 const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelcz = libxsmm_smmdispatch_reducebatch_addr( bk, bc, bn, &K, &N, &bk, NULL, &beta, NULL, NULL);
 const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelb = libxsmm_smmdispatch_reducebatch_addr( bk, bk, bn, &K, &N, &bk, NULL, NULL, NULL, NULL);
