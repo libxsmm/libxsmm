@@ -931,6 +931,17 @@ LIBXSMM_INLINE void matrix_eltwise_mult(int size, float *a, float *b, float *c)
   }
 }
 
+LIBXSMM_INLINE void matrix_eltwise_fma(int size, float *a, float *b, float *c)
+{
+  int i;
+#if defined(_OPENMP)
+# pragma omp parallel for private(i)
+#endif
+  for (i = 0; i < size; i++) {
+    c[i] += a[i] * b[i];
+  }
+}
+
 LIBXSMM_INLINE void matrix_eltwise_mult_ld_a(int m, int n, int ld, float *a, float *b, float *c)
 {
   int i;
@@ -1247,6 +1258,20 @@ LIBXSMM_INLINE void convert_c4k_4ck(int C, int K, float *src, float *dst)
       for (x = 0; x < K; x++) {
         dst[offset*C*K + y*K + x] = src[y*4*K + offset*K + x];
       }
+    }
+  }
+}
+
+LIBXSMM_INLINE void convert_ck_c3k(int C, int K, float *src, float *dst)
+{
+  int x, y;
+#if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(x);
+# pragma omp parallel for private(x, y)
+#endif
+  for (y = 0; y < C; y++) {
+    for (x = 0; x < K; x++) {
+      dst[y*3*K + x] = src[y*K + x];
     }
   }
 }
@@ -2544,6 +2569,225 @@ void lstm_ref_bwd_upd( int N, int C, int K, int t,
         dbgold[l + K]   += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + K,   N, 4 * K);
         dbgold[l + 2*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + 2*K, N, 4 * K);
         dbgold[l + 3*K] += LIBXSMM_VLA_ACCESS(3, dicfogold, j, p, l + 3*K, N, 4 * K);
+      }
+    }
+  }
+}
+
+void gru_ref_fwd( int N, int C, int K, int t,
+                  float *wi, float *wc, float *wf,
+                  float *ri, float *rc, float *rf,
+                  float *bi, float *bc, float *bf,
+                  float *xt, float *hp, float *ht,
+                  float *it, float *ct, float *ft, float *ot )
+{
+  const char transa = 'N', transb = 'N';   /* no transposes */
+  const float alpha = 1, beta = 1;
+  int j;
+  LIBXSMM_VLA_DECL(2, float, x, xt, N * C);
+  LIBXSMM_VLA_DECL(2, float, h, ht, K * N);
+  LIBXSMM_VLA_DECL(2, float, i, it, K * N);
+  LIBXSMM_VLA_DECL(2, float, c, ct, K * N);
+  LIBXSMM_VLA_DECL(2, float, f, ft, K * N);
+  LIBXSMM_VLA_DECL(2, float, o, ot, K * N);
+  for (j = 0; j < t; ++j) {
+    /* i_t = b_i */
+    matrix_copy_bias(K, N, K, bi, &LIBXSMM_VLA_ACCESS(2, i, j, 0, K * N));
+    /* i_t += W_i * x_t */
+    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &N, &C, &alpha, wi, &K, &LIBXSMM_VLA_ACCESS(2, x, j, 0, N * C), &C, &beta, &LIBXSMM_VLA_ACCESS(2, i, j, 0, K * N), &K);
+    /* i_t += R_i * h_{t-1} */
+    if (0 == j) {
+      LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &N, &K, &alpha, ri, &K, hp,                                       &K, &beta, &LIBXSMM_VLA_ACCESS(2, i, j, 0, K * N), &K);
+    } else {
+      LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &N, &K, &alpha, ri, &K, &LIBXSMM_VLA_ACCESS(2, h, j-1, 0, K * N), &K, &beta, &LIBXSMM_VLA_ACCESS(2, i, j, 0, K * N), &K);
+    }
+    /* i_t = sigmoid(i_t) */
+    matrix_sigmoid(N*K, &LIBXSMM_VLA_ACCESS(2, i, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, i, j, 0, K * N));
+    /* c_t = b_c */
+    matrix_copy_bias(K, N, K, bc, &LIBXSMM_VLA_ACCESS(2, c, j, 0, K * N));
+    /* c_t += W_c * x_t */
+    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &N, &C, &alpha, wc, &K, &LIBXSMM_VLA_ACCESS(2, x, j, 0, N * C), &C, &beta, &LIBXSMM_VLA_ACCESS(2, c, j, 0, K * N), &K);
+    /* c_t += R_c * h_{t-1} */
+    if (0 == j) {
+      LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &N, &K, &alpha, rc, &K, hp,                                       &K, &beta, &LIBXSMM_VLA_ACCESS(2, c, j, 0, K * N), &K);
+    } else {
+      LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &N, &K, &alpha, rc, &K, &LIBXSMM_VLA_ACCESS(2, h, j-1, 0, K * N), &K, &beta, &LIBXSMM_VLA_ACCESS(2, c, j, 0, K * N), &K);
+    }
+    /* c_t = sigmoid(c_t) */
+    matrix_sigmoid(N*K, &LIBXSMM_VLA_ACCESS(2, c, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, c, j, 0, K * N));
+    /* o_t = h_{t-1} . i_t */
+    if (0 == j) {
+      matrix_eltwise_mult(N*K, hp,                                       &LIBXSMM_VLA_ACCESS(2, i, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, o, j, 0, K * N));
+    } else {
+      matrix_eltwise_mult(N*K, &LIBXSMM_VLA_ACCESS(2, h, j-1, 0, K * N), &LIBXSMM_VLA_ACCESS(2, i, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, o, j, 0, K * N));
+    }
+    /* f_t = b_f */
+    matrix_copy_bias(K, N, K, bf, &LIBXSMM_VLA_ACCESS(2, f, j, 0, K * N));
+    /* f_t += W_f * x_t */
+    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &N, &C, &alpha, wf, &K, &LIBXSMM_VLA_ACCESS(2, x, j, 0, N * C), &C, &beta, &LIBXSMM_VLA_ACCESS(2, f, j, 0, K * N), &K);
+    /* f_t += R_f * o_t */
+    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transb, &K, &N, &K, &alpha, rf, &K, &LIBXSMM_VLA_ACCESS(2, o, j, 0, K * N), &K, &beta, &LIBXSMM_VLA_ACCESS(2, f, j, 0, K * N), &K);
+    /* f_t = tanh(f_t) */
+    matrix_tanh(N*K, &LIBXSMM_VLA_ACCESS(2, f, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, f, j, 0, K * N));
+    /* h_t = (1 - c_t) . f_t */
+    matrix_complement  (N*K, &LIBXSMM_VLA_ACCESS(2, c, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, h, j, 0, K * N));
+    matrix_eltwise_mult(N*K, &LIBXSMM_VLA_ACCESS(2, h, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, f, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, h, j, 0, K * N));
+    /* h_t += c_t . h_{t-1} */
+    if (0 == j) {
+      matrix_eltwise_fma(N*K, &LIBXSMM_VLA_ACCESS(2, c, j, 0, K * N), hp,                                       &LIBXSMM_VLA_ACCESS(2, h, j, 0, K * N));
+    } else {
+      matrix_eltwise_fma(N*K, &LIBXSMM_VLA_ACCESS(2, c, j, 0, K * N), &LIBXSMM_VLA_ACCESS(2, h, j-1, 0, K * N), &LIBXSMM_VLA_ACCESS(2, h, j, 0, K * N));
+    }
+  }
+}
+
+void gru_ref_bwd_upd( int N, int C, int K, int t,
+                      float *xt,  float *hpD,  float *ht,
+                      float *it,  float *ct,   float *ft, float *ot,
+                      float *wi,  float *wc,   float *wf,
+                      float *ri,  float *rc,   float *rf,
+                      float *dht, float *dw,   float *dr, float *db,
+                      float *dxt, float *dhpD, float *scratch )
+{
+  const char transa = 'N', transb = 'N';   /* no transposes */
+  const char transaT = 'T', transbT = 'T'; /* transposes */
+  const float alpha = 1, beta = 1, beta0 = 0;
+  int j, l, p;
+  float *dwi = dw;
+  float *dwc = &(dw[C*K]);
+  float *dwf = &(dw[2*C*K]);
+  float *dri = dr;
+  float *drc = &(dr[K*K]);
+  float *drf = &(dr[2*K*K]);
+  float *dbi = db;
+  float *dbc = &(db[K]);
+  float *dbf = &(db[2*K]);
+  float *deltaD = scratch;
+  float *doutD  = &(scratch[N*K]);
+  float *diD    = &(scratch[2*N*K]);
+  float *dcD    = &(scratch[3*N*K]);
+  float *dfD    = &(scratch[4*N*K]);
+  float *doD    = &(scratch[5*N*K]);
+  LIBXSMM_VLA_DECL(3, float, x,     xt,     N, C);
+  LIBXSMM_VLA_DECL(2, float, hp,    hpD,    K);
+  LIBXSMM_VLA_DECL(3, float, h,     ht,     N, K);
+  LIBXSMM_VLA_DECL(3, float, i,     it,     N, K);
+  LIBXSMM_VLA_DECL(3, float, c,     ct,     N, K);
+  LIBXSMM_VLA_DECL(3, float, f,     ft,     N, K);
+  LIBXSMM_VLA_DECL(3, float, o,     ot,     N, K);
+  LIBXSMM_VLA_DECL(3, float, dx,    dxt,    N, C);
+  LIBXSMM_VLA_DECL(2, float, dhp,   dhpD,   K);
+  LIBXSMM_VLA_DECL(3, float, dh,    dht,    N, K);
+  LIBXSMM_VLA_DECL(2, float, di,    diD,    K);
+  LIBXSMM_VLA_DECL(2, float, dc,    dcD,    K);
+  LIBXSMM_VLA_DECL(2, float, df,    dfD,    K);
+  LIBXSMM_VLA_DECL(2, float, dp,    doD,    K);
+  LIBXSMM_VLA_DECL(2, float, dout,  doutD,  K);
+  LIBXSMM_VLA_DECL(2, float, delta, deltaD, K);
+  for (j = t-1; j >= 0; j--) {
+#if defined(_OPENMP)
+    LIBXSMM_OMP_VAR(p);
+#   pragma omp parallel for private(l, p) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
+    for (l = 0; l < N; l++) {
+      for (p = 0; p < K; p++) {
+        if (t-1 == j) {
+          LIBXSMM_VLA_ACCESS(2, delta, l, p, K) = LIBXSMM_VLA_ACCESS(3, dh, t-1, l, p, N, K);
+        } else {
+          LIBXSMM_VLA_ACCESS(2, delta, l, p, K) = LIBXSMM_VLA_ACCESS(3, dh, j,   l, p, N, K) + LIBXSMM_VLA_ACCESS(2, dout, l, p, K);
+        }
+        /* df = delta . (1 - c_t) . (1 - (f_t . f_t)) */
+        LIBXSMM_VLA_ACCESS(2, df, l, p, K) = LIBXSMM_VLA_ACCESS(2, delta, l, p, K) * (1.0f - LIBXSMM_VLA_ACCESS(3, c, j, l, p, N, K)) * (1.0f - (LIBXSMM_VLA_ACCESS(3, f, j, l, p, N, K) * LIBXSMM_VLA_ACCESS(3, f, j, l, p, N, K)));
+        /* dc = delta . (h_{t-1} - f_t) . c_t . (1 - c_t) */
+        if (0 == j) {
+          LIBXSMM_VLA_ACCESS(2, dc, l, p, K) = LIBXSMM_VLA_ACCESS(2, delta, l, p, K) * (LIBXSMM_VLA_ACCESS(2, hp, l, p, K) -        LIBXSMM_VLA_ACCESS(3, f, j, l, p, N, K)) * LIBXSMM_VLA_ACCESS(3, c, j, l, p, N, K) * (1.0f - LIBXSMM_VLA_ACCESS(3, c, j, l, p, N, K));
+        } else {
+          LIBXSMM_VLA_ACCESS(2, dc, l, p, K) = LIBXSMM_VLA_ACCESS(2, delta, l, p, K) * (LIBXSMM_VLA_ACCESS(3, h, j-1, l, p, N, K) - LIBXSMM_VLA_ACCESS(3, f, j, l, p, N, K)) * LIBXSMM_VLA_ACCESS(3, c, j, l, p, N, K) * (1.0f - LIBXSMM_VLA_ACCESS(3, c, j, l, p, N, K));
+        }
+      }
+    }
+    /* do = {R_f}^T * df */
+    LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K, &alpha, rf, &K, dfD, &K, &beta0, doD, &K);
+    /* di = do . h_{t-1} . i_t . (1 - i_t) */
+    if (0 == j) {
+#if defined(_OPENMP)
+#     pragma omp parallel for private(l, p) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
+      for (l = 0; l < N; l++) {
+        for (p = 0; p < K; p++) {
+          LIBXSMM_VLA_ACCESS(2, di, l, p, K) = LIBXSMM_VLA_ACCESS(2, dp, l, p, K) * LIBXSMM_VLA_ACCESS(2, hp, l, p, K)        * LIBXSMM_VLA_ACCESS(3, i, 0, l, p, N, K) * (1.0f - LIBXSMM_VLA_ACCESS(3, i, 0, l, p, N, K));
+        }
+      }
+    } else {
+#if defined(_OPENMP)
+#     pragma omp parallel for private(l, p) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
+      for (l = 0; l < N; l++) {
+        for (p = 0; p < K; p++) {
+          LIBXSMM_VLA_ACCESS(2, di, l, p, K) = LIBXSMM_VLA_ACCESS(2, dp, l, p, K) * LIBXSMM_VLA_ACCESS(3, h, j-1, l, p, N, K) * LIBXSMM_VLA_ACCESS(3, i, j, l, p, N, K) * (1.0f - LIBXSMM_VLA_ACCESS(3, i, j, l, p, N, K));
+        }
+      }
+    }
+    /* dx_t  = {W_i}^T * di */
+    LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &C, &N, &K, &alpha, wi, &K, diD, &K, &beta0, &LIBXSMM_VLA_ACCESS(3, dx, j, 0, 0, N, C), &C);
+    /* dx_t += {W_c}^T * dc */
+    LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &C, &N, &K, &alpha, wc, &K, dcD, &K, &beta,  &LIBXSMM_VLA_ACCESS(3, dx, j, 0, 0, N, C), &C);
+    /* dx_t += {W_f}^T * df */
+    LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &C, &N, &K, &alpha, wf, &K, dfD, &K, &beta,  &LIBXSMM_VLA_ACCESS(3, dx, j, 0, 0, N, C), &C);
+    /* dh_{t-1}  = {R_i}^T * di */
+    /* dh_{t-1} += {R_c}^T * dc */
+    if (0 == j) {
+      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K, &alpha, ri, &K, diD, &K, &beta0, dhpD, &K);
+      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K, &alpha, rc, &K, dcD, &K, &beta,  dhpD, &K);
+    } else {
+      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K, &alpha, ri, &K, diD, &K, &beta0, doutD, &K);
+      LIBXSMM_XBLAS_SYMBOL(float)(&transaT, &transb, &K, &N, &K, &alpha, rc, &K, dcD, &K, &beta,  doutD, &K);
+    }
+    /* dh_{t-1} += do * i_t + delta * c_t */
+    if (0 == j) {
+#if defined(_OPENMP)
+#     pragma omp parallel for private(l, p) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
+      for (l = 0; l < N; l++) {
+        for (p = 0; p < K; p++) {
+          LIBXSMM_VLA_ACCESS(2, dhp,  l, p, K) += LIBXSMM_VLA_ACCESS(2, dp, l, p, K) * LIBXSMM_VLA_ACCESS(3, i, j, l, p, N, K) + LIBXSMM_VLA_ACCESS(2, delta, l, p, K) * LIBXSMM_VLA_ACCESS(3, c, j, l, p, N, K);
+        }
+      }
+    } else {
+#if defined(_OPENMP)
+#     pragma omp parallel for private(l, p) LIBXSMM_OPENMP_COLLAPSE(2)
+#endif
+      for (l = 0; l < N; l++) {
+        for (p = 0; p < K; p++) {
+          LIBXSMM_VLA_ACCESS(2, dout, l, p, K) += LIBXSMM_VLA_ACCESS(2, dp, l, p, K) * LIBXSMM_VLA_ACCESS(3, i, j, l, p, N, K) + LIBXSMM_VLA_ACCESS(2, delta, l, p, K) * LIBXSMM_VLA_ACCESS(3, c, j, l, p, N, K);
+        }
+      }
+    }
+    /* dw_i += di * {x_t}^T */
+    /* dw_c += dc * {x_t}^T */
+    /* dw_f += df * {x_t}^T */
+    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K, &C, &N, &alpha, diD, &K, &LIBXSMM_VLA_ACCESS(3, x, j, 0, 0, N, C), &C, &beta, dwi, &K);
+    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K, &C, &N, &alpha, dcD, &K, &LIBXSMM_VLA_ACCESS(3, x, j, 0, 0, N, C), &C, &beta, dwc, &K);
+    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K, &C, &N, &alpha, dfD, &K, &LIBXSMM_VLA_ACCESS(3, x, j, 0, 0, N, C), &C, &beta, dwf, &K);
+    /* dr_i += di * {o_t}^T */
+    /* dr_c += dc * {o_t}^T */
+    /* dr_f += df * {h_{t-1}}^T */
+    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K, &K, &N, &alpha, diD, &K, &LIBXSMM_VLA_ACCESS(3, o, j, 0, 0, N, K), &K, &beta, dri, &K);
+    LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K, &K, &N, &alpha, dcD, &K, &LIBXSMM_VLA_ACCESS(3, o, j, 0, 0, N, K), &K, &beta, drc, &K);
+    if (0 == j) {
+      LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K, &K, &N, &alpha, dfD, &K, &LIBXSMM_VLA_ACCESS(2, hp, 0, 0, K),        &K, &beta, drf, &K);
+    } else {
+      LIBXSMM_XBLAS_SYMBOL(float)(&transa, &transbT, &K, &K, &N, &alpha, dfD, &K, &LIBXSMM_VLA_ACCESS(3, h, j-1, 0, 0, N, K), &K, &beta, drf, &K);
+    }
+    /* compute db */
+#if defined(_OPENMP)
+#   pragma omp parallel for private(l, p)
+#endif
+    for (l = 0; l < K; l++) {
+      for (p = 0; p < N; p++) {
+        dbi[l] += LIBXSMM_VLA_ACCESS(2, di, p, l, K);
+        dbc[l] += LIBXSMM_VLA_ACCESS(2, dc, p, l, K);
+        dbf[l] += LIBXSMM_VLA_ACCESS(2, df, p, l, K);
       }
     }
   }
