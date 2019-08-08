@@ -400,9 +400,11 @@ endif
 endif
 	$(information)
 ifneq (,$(filter _0_,_$(LNKSOFT)_))
+ifeq (0,$(DEPSTATIC))
 	$(info Building a shared library requires to link against BLAS)
 	$(info since a deferred choice is not implemented for this OS.)
 	$(info --------------------------------------------------------------------------------)
+endif
 endif
 ifneq (,$(filter _0_,_$(BLAS)_))
 ifeq (,$(filter _0_,_$(NOBLAS)_))
