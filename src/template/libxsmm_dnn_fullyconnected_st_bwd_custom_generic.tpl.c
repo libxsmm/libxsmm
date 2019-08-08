@@ -140,7 +140,7 @@ for ( ifm1 = thr_begin; ifm1 < thr_end; ++ifm1 ) {  /* outer GEMM m-loop */
 #if defined(LIBXSMM_DNN_FULLYCONNECTED_BWD_BF16_F32)
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-libxsmm_rne_convert_fp32_bfp16( dinput_f32_ptr+thr_begin_input, ((element_input_type*)handle->grad_input->data)+thr_begin_input, thr_end_input-thr_begin_input );
+libxsmm_rne_convert_fp32_bf16( dinput_f32_ptr+thr_begin_input, ((element_input_type*)handle->grad_input->data)+thr_begin_input, thr_end_input-thr_begin_input );
 #endif
 
 libxsmm_barrier_wait(handle->barrier, ltid);

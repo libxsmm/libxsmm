@@ -618,7 +618,7 @@ LIBXSMM_API void libxsmm_dnn_dequantize( short* in_buffer, float* out_buffer, in
 LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bfloat16* out, unsigned int length) {
   unsigned int i = 0;
 
-  /* truncate buffer to bfp16 */
+  /* truncate buffer to bf16 */
   for ( i = 0; i < length; ++i ) {
     libxsmm_bfloat16_hp t;
 
@@ -628,10 +628,10 @@ LIBXSMM_API void libxsmm_truncate_convert_f32_bf16(const float* in, libxsmm_bflo
 }
 
 
-LIBXSMM_API void libxsmm_rnaz_convert_fp32_bfp16(const float* in, libxsmm_bfloat16* out, unsigned int len) {
+LIBXSMM_API void libxsmm_rnaz_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, unsigned int len) {
   unsigned int i = 0;
 
-  /* truncate buffer to bfp16 */
+  /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
     unsigned int int_round = 0;
     unsigned int do_round = 1;
@@ -648,7 +648,7 @@ LIBXSMM_API void libxsmm_rnaz_convert_fp32_bfp16(const float* in, libxsmm_bfloat
       int_round = int_round + 0x00008000;
     }
 
-    /* create the bfp16 value by shifting out the lower 16bits */
+    /* create the bf16 value by shifting out the lower 16bits */
     int_round = int_round >> 16;
 
     out[i] = (libxsmm_bfloat16)int_round;
@@ -656,10 +656,10 @@ LIBXSMM_API void libxsmm_rnaz_convert_fp32_bfp16(const float* in, libxsmm_bfloat
 }
 
 
-LIBXSMM_API void libxsmm_rne_convert_fp32_bfp16(const float* in, libxsmm_bfloat16* out, unsigned int len) {
+LIBXSMM_API void libxsmm_rne_convert_fp32_bf16(const float* in, libxsmm_bfloat16* out, unsigned int len) {
   unsigned int i = 0;
 
-  /* truncate buffer to bfp16 */
+  /* truncate buffer to bf16 */
   for ( i = 0; i < len; ++i ) {
     unsigned int int_round = 0;
     unsigned int do_round = 1;
@@ -677,7 +677,7 @@ LIBXSMM_API void libxsmm_rne_convert_fp32_bfp16(const float* in, libxsmm_bfloat1
       int_round = int_round + 0x00007fff + fixup;
     }
 
-    /* create the bfp16 value by shifting out the lower 16bits */
+    /* create the bf16 value by shifting out the lower 16bits */
     int_round = int_round >> 16;
 
     out[i] = (unsigned short)int_round;

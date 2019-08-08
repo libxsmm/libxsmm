@@ -329,8 +329,8 @@ libxsmm_release_scratch
 libxsmm_release_smmkernel
 libxsmm_release_wimmkernel
 libxsmm_release_wsmmkernel
-libxsmm_rnaz_convert_fp32_bfp16
-libxsmm_rne_convert_fp32_bfp16
+libxsmm_rnaz_convert_fp32_bf16
+libxsmm_rne_convert_fp32_bf16
 libxsmm_rng_f32_seq
 libxsmm_rng_f64
 libxsmm_rng_set_seed

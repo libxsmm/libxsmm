@@ -218,15 +218,15 @@ int main(int argc, char* argv[])
   init_buf( naive_output3,    nImg*nOFm, 0, 0 );
   init_buf( naive_filter3,    nIFm*nOFm, 0, 0 );
 
-  libxsmm_rne_convert_fp32_bfp16( naive_input0,     naive_input0_bf16,     nImg*nIFm );
-  libxsmm_rne_convert_fp32_bfp16( naive_output0,    naive_output0_bf16,    nImg*nOFm );
-  libxsmm_rne_convert_fp32_bfp16( naive_filter0,    naive_filter0_bf16,    nIFm*nOFm );
-  libxsmm_rne_convert_fp32_bfp16( naive_output1,    naive_output1_bf16,    nImg*nOFm );
-  libxsmm_rne_convert_fp32_bfp16( naive_filter1,    naive_filter1_bf16,    nIFm*nOFm );
-  libxsmm_rne_convert_fp32_bfp16( naive_output2,    naive_output2_bf16,    nImg*nOFm );
-  libxsmm_rne_convert_fp32_bfp16( naive_filter2,    naive_filter2_bf16,    nIFm*nOFm );
-  libxsmm_rne_convert_fp32_bfp16( naive_output3,    naive_output3_bf16,    nImg*nOFm );
-  libxsmm_rne_convert_fp32_bfp16( naive_filter3,    naive_filter3_bf16,    nIFm*nOFm );
+  libxsmm_rne_convert_fp32_bf16( naive_input0,     naive_input0_bf16,     nImg*nIFm );
+  libxsmm_rne_convert_fp32_bf16( naive_output0,    naive_output0_bf16,    nImg*nOFm );
+  libxsmm_rne_convert_fp32_bf16( naive_filter0,    naive_filter0_bf16,    nIFm*nOFm );
+  libxsmm_rne_convert_fp32_bf16( naive_output1,    naive_output1_bf16,    nImg*nOFm );
+  libxsmm_rne_convert_fp32_bf16( naive_filter1,    naive_filter1_bf16,    nIFm*nOFm );
+  libxsmm_rne_convert_fp32_bf16( naive_output2,    naive_output2_bf16,    nImg*nOFm );
+  libxsmm_rne_convert_fp32_bf16( naive_filter2,    naive_filter2_bf16,    nIFm*nOFm );
+  libxsmm_rne_convert_fp32_bf16( naive_output3,    naive_output3_bf16,    nImg*nOFm );
+  libxsmm_rne_convert_fp32_bf16( naive_filter3,    naive_filter3_bf16,    nIFm*nOFm );
 
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");

@@ -302,13 +302,13 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
   }
 
-  /* make things bfp16 */
-  truncate_mask_fp32_bfp16( naive_input, naive_input, nImg*nIfm*ifhp*ifwp );
-  truncate_mask_fp32_bfp16( naive_input_bp, naive_input_bp, nImg*nIfm*ifhp*ifwp );
-  truncate_mask_fp32_bfp16( naive_output_fp, naive_output_fp, nImg*nOfm*ofhp*ofwp );
-  truncate_mask_fp32_bfp16( naive_output_bp, naive_output_bp, nImg*nOfm*ofhp*ofwp );
-  truncate_mask_fp32_bfp16( naive_filter, naive_filter, nIfm*nOfm*kh*kw );
-  truncate_mask_fp32_bfp16( naive_filter_wu, naive_filter_wu, nIfm*nOfm*kh*kw );
+  /* make things bf16 */
+  truncate_mask_fp32_bf16( naive_input, naive_input, nImg*nIfm*ifhp*ifwp );
+  truncate_mask_fp32_bf16( naive_input_bp, naive_input_bp, nImg*nIfm*ifhp*ifwp );
+  truncate_mask_fp32_bf16( naive_output_fp, naive_output_fp, nImg*nOfm*ofhp*ofwp );
+  truncate_mask_fp32_bf16( naive_output_bp, naive_output_bp, nImg*nOfm*ofhp*ofwp );
+  truncate_mask_fp32_bf16( naive_filter, naive_filter, nIfm*nOfm*kh*kw );
+  truncate_mask_fp32_bf16( naive_filter_wu, naive_filter_wu, nIfm*nOfm*kh*kw );
   libxsmm_truncate_convert_f32_bf16( naive_input, naive_input_bf16, nImg*nIfm*ifhp*ifwp );
   libxsmm_truncate_convert_f32_bf16( naive_input_bp, naive_input_bp_bf16, nImg*nIfm*ifhp*ifwp );
   libxsmm_truncate_convert_f32_bf16( naive_output_fp, naive_output_bf16, nImg*nOfm*ofhp*ofwp );
