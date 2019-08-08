@@ -45,294 +45,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+/* include c-based dnn library */
+#include "../common/dnn_common.h"
+
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
-
-
-LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < (int)size; ++i) {
-    buf[i] = 0.0f;
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_add(int size, float *a, float *b, float *c)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    c[i] = a[i] + b[i];
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_eltwise_mult(int size, float *a, float *b, float *c)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    c[i] = a[i] * b[i];
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_sigmoid(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    const float exp_value = (float)exp((double) -src[i]);
-    dst[i] = 1 / (1 + exp_value);
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_tanh(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = (float)tanh((double)src[i]);
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_relu(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = (src[i] > 0.0f) ? src[i] : 0.0f;
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_sigmoid_inverse(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    const float exp_value = (float)exp((double) -src[i]);
-    const float sig_exp = 1 / (1 + exp_value);
-    dst[i] = (1.0f - sig_exp)*sig_exp;
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_tanh_inverse(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    const float tanh_value = (float)tanh((double)src[i]);
-    dst[i] = 1.0f - (tanh_value * tanh_value);
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = (float)(src[i] > 0.0f ? 1.0f : 0.0f);
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_transpose(int rows, int cols, float *src, float *dst)
-{
-  libxsmm_otrans_omp(dst, src, sizeof(float), cols, rows, cols/*ldi*/, rows/*ldo*/);
-}
-
-
-LIBXSMM_INLINE void matrix_copy(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = src[i];
-  }
-}
-
-LIBXSMM_INLINE void matrix_copy_NC_to_NCNC(float *src, float *dst, int T, int N, int C, int bn, int bc)
-{
-  int t, n1, n2, c1, c2;
-  int nBlocks = N/bn;
-  int cBlocks = C/bc;
-  LIBXSMM_VLA_DECL(3, float, real_src, src, N, C);
-  LIBXSMM_VLA_DECL(5, float, real_dst, dst, nBlocks, cBlocks, bn, bc);
-
-  for (t = 0; t < T; t++) {
-#if defined(_OPENMP)
-# pragma omp parallel for private(n1,c1,n2,c2)
-#endif
-    for (n1 = 0; n1 < nBlocks; n1++) {
-      for (c1 = 0; c1 < cBlocks; c1++) {
-        for (n2 = 0; n2 < bn; n2++) {
-          for (c2 = 0; c2 < bc; c2++) {
-            LIBXSMM_VLA_ACCESS(5, real_dst, t, n1, c1, n2, c2, nBlocks, cBlocks, bn, bc) =
-              LIBXSMM_VLA_ACCESS(3, real_src, t, n1*bn+n2, c1*bc+c2, N, C);
-          }
-        }
-      }
-    }
-  }
-}
-
-LIBXSMM_INLINE void matrix_copy_NCNC_to_NC(float *src, float *dst, int T, int N, int C, int bn, int bc)
-{
-  int t, n1, n2, c1, c2;
-  int nBlocks = N/bn;
-  int cBlocks = C/bc;
-  LIBXSMM_VLA_DECL(3, float, real_dst, dst, N, C);
-  LIBXSMM_VLA_DECL(5, float, real_src, src, nBlocks, cBlocks, bn, bc);
-
-  for (t = 0; t < T; t++) {
-#if defined(_OPENMP)
-# pragma omp parallel for private(n1,c1,n2,c2)
-#endif
-    for (n1 = 0; n1 < nBlocks; n1++) {
-      for (c1 = 0; c1 < cBlocks; c1++) {
-        for (n2 = 0; n2 < bn; n2++) {
-          for (c2 = 0; c2 < bc; c2++) {
-            LIBXSMM_VLA_ACCESS(3, real_dst, t, n1*bn+n2, c1*bc+c2, N, C) =
-              LIBXSMM_VLA_ACCESS(5, real_src, t, n1, c1, n2, c2, nBlocks, cBlocks, bn, bc);
-          }
-        }
-      }
-    }
-  }
-}
-
-LIBXSMM_INLINE void matrix_copy_CK_to_KCCK(float *src, float *dst, int C, int K, int bc, int bk)
-{
-  int k1, k2, c1, c2;
-  int kBlocks = K/bk;
-  int cBlocks = C/bc;
-  LIBXSMM_VLA_DECL(2, float, real_src, src, K);
-  LIBXSMM_VLA_DECL(4, float, real_dst, dst, cBlocks, bc, bk);
-
-#if defined(_OPENMP)
-# pragma omp parallel for private(k1,c1,c2,k2)
-#endif
-  for (k1 = 0; k1 < kBlocks; k1++) {
-    for (c1 = 0; c1 < cBlocks; c1++) {
-      for (c2 = 0; c2 < bc; c2++) {
-        for (k2 = 0; k2 < bk; k2++) {
-          LIBXSMM_VLA_ACCESS(4, real_dst, k1, c1, c2, k2, cBlocks, bc, bk) =
-            LIBXSMM_VLA_ACCESS(2, real_src, c1*bc+c2, k1*bk+k2, K);
-        }
-      }
-    }
-  }
-}
-
-LIBXSMM_INLINE void matrix_copy_CK_to_CKKC(float *src, float *dst, int C, int K, int bc, int bk)
-{
-  int k1, k2, c1, c2;
-  int kBlocks = K/bk;
-  int cBlocks = C/bc;
-  LIBXSMM_VLA_DECL(2, float, real_src, src, K);
-  LIBXSMM_VLA_DECL(4, float, real_dst, dst, kBlocks, bk, bc);
-
-#if defined(_OPENMP)
-# pragma omp parallel for private(c1,k1,k2,c2)
-#endif
-  for (c1 = 0; c1 < cBlocks; c1++) {
-    for (k1 = 0; k1 < kBlocks; k1++) {
-      for (k2 = 0; k2 < bk; k2++) {
-        for (c2 = 0; c2 < bc; c2++) {
-          LIBXSMM_VLA_ACCESS(4, real_dst, c1, k1, k2, c2, kBlocks, bk, bc) =
-            LIBXSMM_VLA_ACCESS(2, real_src, c1*bc+c2, k1*bk+k2, K);
-        }
-      }
-    }
-  }
-}
-
-LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = 1.0f - src[i];
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = 1.0f - (src[i] * src[i]);
-  }
-}
-
-
-LIBXSMM_INLINE void rnn_copyin(int N, int C, int bn, int bc, float *src, float *dst)
-{
-  LIBXSMM_VLA_DECL(2, float, real_src, src, C);
-  LIBXSMM_VLA_DECL(4, float, real_dst, dst, C/bc, bn, bc);
-  int in, ic, jn, jc;
-
-  for (in = 0; in < N; in += bn) {
-    for (ic = 0; ic < C; ic += bc) {
-      for (jn = 0; jn < bn; jn++) {
-        for (jc = 0; jc < bc; jc++) {
-          LIBXSMM_VLA_ACCESS(4, real_dst, in/bn, ic/bc, jn, jc, C/bc, bn, bc) =
-            LIBXSMM_VLA_ACCESS(2, real_src, in + jn, ic + jc, C);
-        }
-      }
-    }
-  }
-}
-
-
-LIBXSMM_INLINE void rnn_copyout(int N, int C, int bn, int bc, float *src, float *dst)
-{
-  LIBXSMM_VLA_DECL(4, float, real_src, src, C/bc, bn, bc);
-  LIBXSMM_VLA_DECL(2, float, real_dst, dst, C);
-  int in, ic, jn, jc;
-
-  for (in = 0; in < N; in += bn) {
-    for (ic = 0; ic < C; ic += bc) {
-      for (jn = 0; jn < bn; jn++) {
-        for (jc = 0; jc < bc; jc++) {
-          LIBXSMM_VLA_ACCESS(2, real_dst, in + jn, ic + jc, C) =
-            LIBXSMM_VLA_ACCESS(4, real_src, in/bn, ic/bc, jn, jc, C/bc, bn, bc);
-        }
-      }
-    }
-  }
-}
-
 
 int main(int argc, char* argv[])
 {
@@ -710,10 +426,6 @@ int main(int argc, char* argv[])
     libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
     /* copy in data to LIBXSMM format */
-    /*matrix_copy( t*N*C, xgoldt, xt );
-      matrix_copy( K*N, hpgold, hp );
-      matrix_copy( C*K, wgold, w );
-      matrix_copy( K*K, ugold, u );*/
     matrix_copy( K, bgold, b );
     matrix_copy_NC_to_NCNC(xgoldt, xt, t, N, C, bn, bc);
     matrix_copy_NC_to_NCNC(hpgold, hp, 1, N, K, bn, bk);
@@ -721,9 +433,6 @@ int main(int argc, char* argv[])
     matrix_copy_CK_to_KCCK(ugold, u,  K, K, bk, bk);
     matrix_copy_CK_to_CKKC(wgold, wt, C, K, bc, bk);
     matrix_copy_CK_to_CKKC(ugold, ut, K, K, bk, bk);
-
-    /* rnn_copyin(K, K, bm, bm, ugold, u); */
-    /* rnn_copyin(C, K, bk, bm, wgold, w); */
     matrix_copy( t*K*N, djdhgoldt, djdht );
 
     /* bind buffers and filter to handle */
@@ -834,12 +543,6 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      /*
-         LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, N*C);
-         for (i = 0; i < t; ++i) {
-         rnn_copyout(n, k, bn, bk, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, N*C), &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, N*C));
-         }
-         */
       matrix_copy(N*C*t, djdxt, djdxtestt);
 
       /* compare */
@@ -872,10 +575,6 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      /*
-         rnn_copyout(k, m, bk, bm, djdw, djdwtest);
-         rnn_copyout(m, m, bm, bm, djdu, djdutest);
-         */
       matrix_copy(C*K, djdw, djdwtest);
       matrix_copy(K*K, djdu, djdutest);
 
@@ -932,14 +631,6 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      /*
-         LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, N*C);
-         for (i = 0; i < t; ++i) {
-         rnn_copyout(N, C, bN, bC, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, N*C), &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, N*C));
-         }
-         rnn_copyout(C, K, bC, bK, djdw, djdwtest);
-         rnn_copyout(K, K, bK, bK, djdu, djdutest);
-         */
       matrix_copy(N*C*t, djdxt, djdxtestt);
       matrix_copy(C*K, djdw, djdwtest);
       matrix_copy(K*K, djdu, djdutest);

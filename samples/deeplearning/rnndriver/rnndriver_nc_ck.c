@@ -45,199 +45,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+/* include c-based dnn library */
+#include "../common/dnn_common.h"
+
 #define CHKERR_LIBXSMM_DNN(A) if ( A != LIBXSMM_DNN_SUCCESS ) fprintf(stderr, "%s\n", libxsmm_dnn_get_error(A) );
-
-
-LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < (int)size; ++i) {
-    buf[i] = 0.0f;
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_add(int size, float *a, float *b, float *c)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    c[i] = a[i] + b[i];
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_eltwise_mult(int size, float *a, float *b, float *c)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    c[i] = a[i] * b[i];
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_sigmoid(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    const float exp_value = (float)exp((double) -src[i]);
-    dst[i] = 1 / (1 + exp_value);
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_tanh(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = (float)tanh((double)src[i]);
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_relu(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = (src[i] > 0.0f) ? src[i] : 0.0f;
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_sigmoid_inverse(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    const float exp_value = (float)exp((double) -src[i]);
-    const float sig_exp = 1 / (1 + exp_value);
-    dst[i] = (1.0f - sig_exp)*sig_exp;
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_tanh_inverse(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    const float tanh_value = (float)tanh((double)src[i]);
-    dst[i] = 1.0f - (tanh_value * tanh_value);
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_relu_inverse(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = (float)(src[i] > 0.0f ? 1.0f : 0.0f);
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_transpose(int rows, int cols, float *src, float *dst)
-{
-  libxsmm_otrans_omp(dst, src, sizeof(float), cols, rows, cols/*ldi*/, rows/*ldo*/);
-}
-
-
-LIBXSMM_INLINE void matrix_copy(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = src[i];
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_complement(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = 1.0f - src[i];
-  }
-}
-
-
-LIBXSMM_INLINE void matrix_complement_square(int size, float *src, float *dst)
-{
-  int i;
-#if defined(_OPENMP)
-# pragma omp parallel for private(i)
-#endif
-  for (i = 0; i < size; i++) {
-    dst[i] = 1.0f - (src[i] * src[i]);
-  }
-}
-
-
-LIBXSMM_INLINE void rnn_copyin(int N, int C, int bn, int bc, float *src, float *dst)
-{
-  LIBXSMM_VLA_DECL(2, float, real_src, src, C);
-  LIBXSMM_VLA_DECL(4, float, real_dst, dst, C/bc, bn, bc);
-  int in, ic, jn, jc;
-
-  for (in = 0; in < N; in += bn) {
-    for (ic = 0; ic < C; ic += bc) {
-      for (jn = 0; jn < bn; jn++) {
-        for (jc = 0; jc < bc; jc++) {
-          LIBXSMM_VLA_ACCESS(4, real_dst, in/bn, ic/bc, jn, jc, C/bc, bn, bc) =
-            LIBXSMM_VLA_ACCESS(2, real_src, in + jn, ic + jc, C);
-        }
-      }
-    }
-  }
-}
-
-
-LIBXSMM_INLINE void rnn_copyout(int N, int C, int bn, int bc, float *src, float *dst)
-{
-  LIBXSMM_VLA_DECL(4, float, real_src, src, C/bc, bn, bc);
-  LIBXSMM_VLA_DECL(2, float, real_dst, dst, C);
-  int in, ic, jn, jc;
-
-  for (in = 0; in < N; in += bn) {
-    for (ic = 0; ic < C; ic += bc) {
-      for (jn = 0; jn < bn; jn++) {
-        for (jc = 0; jc < bc; jc++) {
-          LIBXSMM_VLA_ACCESS(2, real_dst, in + jn, ic + jc, C) =
-            LIBXSMM_VLA_ACCESS(4, real_src, in/bn, ic/bc, jn, jc, C/bc, bn, bc);
-        }
-      }
-    }
-  }
-}
-
 
 int main(int argc, char* argv[])
 {
@@ -614,8 +425,6 @@ int main(int argc, char* argv[])
     matrix_copy( C*K, wgold, w );
     matrix_copy( K*K, ugold, u );
     matrix_copy( K, bgold, b );
-    /* rnn_copyin(K, K, bm, bm, ugold, u); */
-    /* rnn_copyin(C, K, bk, bm, wgold, w); */
     matrix_copy( t*K*N, djdhgoldt, djdht );
 
     /* bind buffers and filter to handle */
@@ -720,12 +529,6 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      /*
-      LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, N*C);
-      for (i = 0; i < t; ++i) {
-        rnn_copyout(n, k, bn, bk, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, N*C), &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, N*C));
-      }
-      */
       matrix_copy(N*C*t, djdxt, djdxtestt);
 
       /* compare */
@@ -758,10 +561,6 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      /*
-      rnn_copyout(k, m, bk, bm, djdw, djdwtest);
-      rnn_copyout(m, m, bm, bm, djdu, djdutest);
-      */
       matrix_copy(C*K, djdw, djdwtest);
       matrix_copy(K*K, djdu, djdutest);
 
@@ -818,14 +617,6 @@ int main(int argc, char* argv[])
       }
 
       /* copy out data */
-      /*
-      LIBXSMM_VLA_DECL(2, float, djdxtest, djdxtestt, N*C);
-      for (i = 0; i < t; ++i) {
-        rnn_copyout(N, C, bN, bC, &LIBXSMM_VLA_ACCESS(2, djdx, i, 0, N*C), &LIBXSMM_VLA_ACCESS(2, djdxtest, i, 0, N*C));
-      }
-      rnn_copyout(C, K, bC, bK, djdw, djdwtest);
-      rnn_copyout(K, K, bK, bK, djdu, djdutest);
-      */
       matrix_copy(N*C*t, djdxt, djdxtestt);
       matrix_copy(C*K, djdw, djdwtest);
       matrix_copy(K*K, djdu, djdutest);
