@@ -397,7 +397,7 @@ LIBXSMM_INLINE void matrix_copy_KCCK_to_CK_bf16(libxsmm_bfloat16 *src, libxsmm_b
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_src, src, cBlocks, bc/2, bk, 2);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(k1)
+# pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
     for (c1 = 0; c1 < cBlocks; c1++) {
@@ -420,7 +420,7 @@ LIBXSMM_INLINE void matrix_copy_KCCK_to_CKKC_bfp16(libxsmm_bfloat16 *src, libxsm
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_src, src, cBlocks, bc/2, bk, 2);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(k1)
+# pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
     for (c1 = 0; c1 < cBlocks; c1++) {
@@ -443,7 +443,7 @@ LIBXSMM_INLINE void matrix_copy_CK_to_KCCK_bfp16(libxsmm_bfloat16 *src, libxsmm_
   LIBXSMM_VLA_DECL(5, libxsmm_bfloat16, real_dst, dst, cBlocks, bc/2, bk, 2);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(k1)
+# pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
     for (c1 = 0; c1 < cBlocks; c1++) {

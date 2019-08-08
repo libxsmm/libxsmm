@@ -186,7 +186,7 @@ LIBXSMM_INLINE void matrix_copy_NC_to_NCNC(float *src, float *dst, int T, int N,
 
   for (t = 0; t < T; t++) {
 #if defined(_OPENMP)
-# pragma omp parallel for
+# pragma omp parallel for private(n1,c1,n2,c2)
 #endif
     for (n1 = 0; n1 < nBlocks; n1++) {
       for (c1 = 0; c1 < cBlocks; c1++) {
@@ -211,7 +211,7 @@ LIBXSMM_INLINE void matrix_copy_NCNC_to_NC(float *src, float *dst, int T, int N,
 
   for (t = 0; t < T; t++) {
 #if defined(_OPENMP)
-# pragma omp parallel for
+# pragma omp parallel for private(n1,c1,n2,c2)
 #endif
     for (n1 = 0; n1 < nBlocks; n1++) {
       for (c1 = 0; c1 < cBlocks; c1++) {
@@ -235,7 +235,7 @@ LIBXSMM_INLINE void matrix_copy_CK_to_KCCK(float *src, float *dst, int C, int K,
   LIBXSMM_VLA_DECL(4, float, real_dst, dst, cBlocks, bc, bk);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(k1)
+# pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
     for (c1 = 0; c1 < cBlocks; c1++) {
@@ -258,7 +258,7 @@ LIBXSMM_INLINE void matrix_copy_CK_to_CKKC(float *src, float *dst, int C, int K,
   LIBXSMM_VLA_DECL(4, float, real_dst, dst, kBlocks, bk, bc);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(c1)
+# pragma omp parallel for private(c1,k1,k2,c2)
 #endif
   for (c1 = 0; c1 < cBlocks; c1++) {
     for (k1 = 0; k1 < kBlocks; k1++) {
@@ -281,7 +281,7 @@ LIBXSMM_INLINE void matrix_copy_KCCK_to_CK(float *src, float *dst, int C, int K,
   LIBXSMM_VLA_DECL(4, float, real_src, src, cBlocks, bc, bk);
 
 #if defined(_OPENMP)
-# pragma omp parallel for private(k1)
+# pragma omp parallel for private(k1,c1,c2,k2)
 #endif
   for (k1 = 0; k1 < kBlocks; k1++) {
     for (c1 = 0; c1 < cBlocks; c1++) {
