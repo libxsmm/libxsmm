@@ -149,10 +149,10 @@ void internal_rng_set_seed_avx512(uint32_t seed)
 {
   internal_rng_set_seed_sw(seed);
   /* bring scalar state to AVX-512 */
-  libxsmm_intrinsics_mm512_rng_state0 = _mm512_loadu_si512(internal_rng_state0);
-  libxsmm_intrinsics_mm512_rng_state1 = _mm512_loadu_si512(internal_rng_state1);
-  libxsmm_intrinsics_mm512_rng_state2 = _mm512_loadu_si512(internal_rng_state2);
-  libxsmm_intrinsics_mm512_rng_state3 = _mm512_loadu_si512(internal_rng_state3);
+  LIBXSMM_INTRINSICS_MM512_RNG_STATE(0) = _mm512_loadu_si512(internal_rng_state0);
+  LIBXSMM_INTRINSICS_MM512_RNG_STATE(1) = _mm512_loadu_si512(internal_rng_state1);
+  LIBXSMM_INTRINSICS_MM512_RNG_STATE(2) = _mm512_loadu_si512(internal_rng_state2);
+  LIBXSMM_INTRINSICS_MM512_RNG_STATE(3) = _mm512_loadu_si512(internal_rng_state3);
 }
 
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
@@ -165,10 +165,10 @@ void internal_rng_f32_seq_avx512(float* rngs, libxsmm_blasint count)
   }
   if (i < count) { /* remainder */
     if (0 != n) { /* bring AVX-512 state to scalar */
-      _mm512_storeu_si512(internal_rng_state0, libxsmm_intrinsics_mm512_rng_state0);
-      _mm512_storeu_si512(internal_rng_state1, libxsmm_intrinsics_mm512_rng_state1);
-      _mm512_storeu_si512(internal_rng_state2, libxsmm_intrinsics_mm512_rng_state2);
-      _mm512_storeu_si512(internal_rng_state3, libxsmm_intrinsics_mm512_rng_state3);
+      _mm512_storeu_si512(internal_rng_state0, LIBXSMM_INTRINSICS_MM512_RNG_STATE(0));
+      _mm512_storeu_si512(internal_rng_state1, LIBXSMM_INTRINSICS_MM512_RNG_STATE(1));
+      _mm512_storeu_si512(internal_rng_state2, LIBXSMM_INTRINSICS_MM512_RNG_STATE(2));
+      _mm512_storeu_si512(internal_rng_state3, LIBXSMM_INTRINSICS_MM512_RNG_STATE(3));
     }
     LIBXSMM_ASSERT(count < i + 16);
     do { /* scalar remainder */
@@ -176,10 +176,10 @@ void internal_rng_f32_seq_avx512(float* rngs, libxsmm_blasint count)
       ++i;
     } while (i < count);
     /* bring scalar state to AVX-512 */
-    libxsmm_intrinsics_mm512_rng_state0 = _mm512_loadu_si512(internal_rng_state0);
-    libxsmm_intrinsics_mm512_rng_state1 = _mm512_loadu_si512(internal_rng_state1);
-    libxsmm_intrinsics_mm512_rng_state2 = _mm512_loadu_si512(internal_rng_state2);
-    libxsmm_intrinsics_mm512_rng_state3 = _mm512_loadu_si512(internal_rng_state3);
+    LIBXSMM_INTRINSICS_MM512_RNG_STATE(0) = _mm512_loadu_si512(internal_rng_state0);
+    LIBXSMM_INTRINSICS_MM512_RNG_STATE(1) = _mm512_loadu_si512(internal_rng_state1);
+    LIBXSMM_INTRINSICS_MM512_RNG_STATE(2) = _mm512_loadu_si512(internal_rng_state2);
+    LIBXSMM_INTRINSICS_MM512_RNG_STATE(3) = _mm512_loadu_si512(internal_rng_state3);
   }
 }
 #endif /*defined(LIBXSMM_INTRINSICS_AVX512)*/
