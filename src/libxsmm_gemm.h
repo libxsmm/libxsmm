@@ -58,9 +58,6 @@
 #if !defined(LIBXSMM_GEMM_LOCK)
 # define LIBXSMM_GEMM_LOCK LIBXSMM_LOCK_DEFAULT
 #endif
-#if !defined(LIBXSMM_GEMM_TASKSCALE)
-# define LIBXSMM_GEMM_TASKSCALE 2
-#endif
 #if !defined(LIBXSMM_GEMM_MMBATCH_SCALE)
 # define LIBXSMM_GEMM_MMBATCH_SCALE 1.5
 #endif
@@ -229,8 +226,8 @@ LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_mmbatch_size);
 LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_npargroups);
 /** Minimum batchsize per thread/task. */
 LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_taskgrain);
-/** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_taskscale);
+/** Determines if OpenMP tasks are used. */
+LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_tasks);
 
 /** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);
