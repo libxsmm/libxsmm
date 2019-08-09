@@ -191,18 +191,18 @@ if (perform_2d_decomp) {
           }
           /* z += W.x */
           blocks = CB_BLOCKS;
-          batchreduce_kernela(&A_array[ii][jj][0], &B_array[ii][jj][0], &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &blocks, &A_array_pf[ii][jj][0], &B_array_pf[ii][jj][0]);
+          batchreduce_kernela(&A_array[ii][jj][0], &B_array[ii][jj][0], &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &blocks, &A_array_pf[ii][jj][0], &B_array_pf[ii][jj][0]);
           /* z += U.h */
           blocks = KB_BLOCKS;
-          batchreduce_kernelb(&A_array2[ii][jj][0], &B_array2[ii][jj][0], &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &blocks, &A_array2_pf[ii][jj][0], &B_array2_pf[ii][jj][0]);
+          batchreduce_kernelb(&A_array2[ii][jj][0], &B_array2[ii][jj][0], &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &blocks, &A_array2_pf[ii][jj][0], &B_array2_pf[ii][jj][0]);
 #if defined(LIBXSMM_DNN_RNN_RELU_FWD)
-          libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K) );
+          libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, ik*bk, N, K) );
 #endif
 #if defined(LIBXSMM_DNN_RNN_SIGMOID_FWD)
-          libxsmm_internal_matrix_sigmoid_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K) );
+          libxsmm_internal_matrix_sigmoid_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, ik*bk, N, K) );
 #endif
 #if defined(LIBXSMM_DNN_RNN_TANH_FWD)
-          libxsmm_internal_matrix_tanh_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K) );
+          libxsmm_internal_matrix_tanh_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, ik*bk, N, K) );
 #endif
         }
       }
@@ -226,12 +226,12 @@ if (perform_2d_decomp) {
     /* let's run the cell in blocks for good locality */
     for (CB = 0; CB < BF; CB++) {
       for (inik = thr_begin; inik < thr_end; ++inik ) {
-        in = inik / (K/bk);
-        ik = inik % (K/bk);
+        in = inik % (N/bn);
+        ik = inik / (N/bn);
 
         /* z = per_col(b) */
         if (0 == CB) {
-          libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &b[ik*bk] );
+          libxsmm_internal_matrix_bcst_colvector_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &b[ik*bk] );
         }
 
         /* z += W.x */
@@ -243,7 +243,7 @@ if (perform_2d_decomp) {
         }
         /* Reduce batch gemm call  */
         blocks = CB_BLOCKS;
-        batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &blocks);
+        batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &blocks);
 
         /* z += U.h */
         if (0 == i) {
@@ -254,7 +254,7 @@ if (perform_2d_decomp) {
           }
           /* Reduce batch gemm call  */
           blocks = KB_BLOCKS;
-          batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &blocks);
+          batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &blocks);
         } else {
           /* Prepare arrays for the call */
           for (ic = 0; ic < KB_BLOCKS; ic++) {
@@ -263,16 +263,16 @@ if (perform_2d_decomp) {
           }
           /* Reduce batch gemm call  */
           blocks = KB_BLOCKS;
-          batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &blocks);
+          batchreduce_kernelb(A_array2, B_array2, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &blocks);
         }
 #if defined(LIBXSMM_DNN_RNN_RELU_FWD)
-        libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K) );
+        libxsmm_internal_matrix_relu_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, ik*bk, N, K) );
 #endif
 #if defined(LIBXSMM_DNN_RNN_SIGMOID_FWD)
-        libxsmm_internal_matrix_sigmoid_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K) );
+        libxsmm_internal_matrix_sigmoid_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, ik*bk, N, K) );
 #endif
 #if defined(LIBXSMM_DNN_RNN_TANH_FWD)
-        libxsmm_internal_matrix_tanh_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, (ik + CB*KB_BLOCKS)*bk, N, K) );
+        libxsmm_internal_matrix_tanh_ld(    bk, bn, K, &LIBXSMM_VLA_ACCESS(3, z, i, in*bn, ik*bk, N, K), &LIBXSMM_VLA_ACCESS(3, h, i, in*bn, ik*bk, N, K) );
 #endif
       }
     }
