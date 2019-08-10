@@ -427,13 +427,15 @@ LIBXSMM_API_INTERN void libxsmm_gemm_init(int archid)
   }
   { /* determines if OpenMP tasks are used (when available) */
     const char *const env_t = getenv("LIBXSMM_GEMM_TASKS");
-    libxsmm_gemm_taskscale = ((NULL == env_t || 0 == *env_t)
-      ? 0/*disabled*/ : (LIBXSMM_GEMM_TASKSCALE * atoi(env_t)));
+    const int gemm_tasks = ((NULL == env_t || 0 == *env_t) ? 0/*disabled*/ : atoi(env_t));
+    libxsmm_gemm_tasks = (0 <= gemm_tasks ? LIBXSMM_ABS(gemm_tasks) : 1/*enabled*/);
   }
   { /* determines grain-size of tasks (when available) */
     const char *const env_g = getenv("LIBXSMM_GEMM_TASKGRAIN");
-    libxsmm_gemm_taskgrain = ((NULL == env_g || 0 == *env_g || 0 >= atoi(env_g))
+    const int gemm_taskgrain = ((NULL == env_g || 0 == *env_g || 0 >= atoi(env_g))
       ? (LIBXSMM_GEMM_TASKGRAIN) : atoi(env_g));
+    /* adjust grain-size or scale beyond the number of threads */
+    libxsmm_gemm_taskgrain = LIBXSMM_MAX(0 < libxsmm_gemm_tasks ? (gemm_taskgrain / libxsmm_gemm_tasks) : gemm_taskgrain, 1);
   }
   LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_GEMM_LOCK, &attr);
 #if defined(LIBXSMM_INIT_COMPLETED) /* perform only if not lazy */
