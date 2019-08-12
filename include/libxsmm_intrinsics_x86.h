@@ -33,6 +33,77 @@
 
 #include "libxsmm_cpuid.h"
 
+/** https://github.com/intel/Immintrin-debug */
+#if !defined(LIBXSMM_INTRINSICS_DEBUG) && 0
+# define LIBXSMM_INTRINSICS_DEBUG
+#endif
+#if defined(LIBXSMM_INTRINSICS_DEBUG)
+# include "immintrin_dbg.h"
+# define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
+# if !defined(_mm512_undefined_epi32)
+#   define _mm512_undefined_epi32() _mm512_set1_epi32(0)
+# endif
+# if !defined(_mm256_movemask_epi8)
+# define _mm256_movemask_epi8 mm256_movemask_epi8_dbg
+  LIBXSMM_API_INLINE int mm256_movemask_epi8_dbg(__m256i k) {
+    unsigned char mask[32], i; int result = 0;
+    _mm256_storeu_si256((__m256i*)mask, k);
+    for (i = 0; i < 32; ++i) result |= (mask[i] >> 7) << i;
+    return result;
+  }
+# endif
+# if !defined(_mm512_or_epi32)
+# define _mm512_or_epi32 mm512_or_epi32_dbg
+  LIBXSMM_API_INLINE __m512i mm512_or_epi32_dbg(__m512i a, __m512i b) {
+    uint32_t a16[16], b16[16]; signed char i;
+    _mm512_storeu_si512((__m512i*)a16, a);
+    _mm512_storeu_si512((__m512i*)b16, b);
+    for (i = 0; i < 16; ++i) a16[i] |= b16[i];
+    return _mm512_loadu_si512((const __m512i*)a16);
+  }
+# endif
+# if !defined(_mm512_xor_epi32)
+# define _mm512_xor_epi32 mm512_xor_epi32_dbg
+  LIBXSMM_API_INLINE __m512i mm512_xor_epi32_dbg(__m512i a, __m512i b) {
+    uint32_t a16[16], b16[16]; signed char i;
+    _mm512_storeu_si512((__m512i*)a16, a);
+    _mm512_storeu_si512((__m512i*)b16, b);
+    for (i = 0; i < 16; ++i) a16[i] ^= b16[i];
+    return _mm512_loadu_si512((const __m512i*)a16);
+  }
+# endif
+# if !defined(_mm512_srli_epi32_dbg) /* GCC: avoid conflict w/ built-in */
+# undef _mm512_srli_epi32
+# define _mm512_srli_epi32 mm512_srli_epi32_dbg
+  LIBXSMM_API_INLINE __m512i mm512_srli_epi32_dbg(__m512i a, unsigned int imm8) {
+    uint32_t a16[16]; signed char i;
+    _mm512_storeu_si512((__m512i*)a16, a);
+    for (i = 0; i < 16; ++i) a16[i] >>= imm8;
+    return _mm512_loadu_si512((const __m512i*)a16);
+  }
+# endif
+# if !defined(_mm512_slli_epi32_dbg) /* GCC: avoid conflict w/ built-in */
+# undef _mm512_slli_epi32
+# define _mm512_slli_epi32 mm512_slli_epi32_dbg
+  LIBXSMM_API_INLINE __m512i mm512_slli_epi32_dbg(__m512i a, unsigned int imm8) {
+    uint32_t a16[16]; signed char i;
+    _mm512_storeu_si512((__m512i*)a16, a);
+    for (i = 0; i < 16; ++i) a16[i] <<= imm8;
+    return _mm512_loadu_si512((const __m512i*)a16);
+  }
+# endif
+# if !defined(_mm512_sub_ps)
+# define _mm512_sub_ps mm512_sub_ps_dbg
+  LIBXSMM_API_INLINE __m512 mm512_sub_ps_dbg(__m512 a, __m512 b) {
+    float a16[16], b16[16]; signed char i;
+    _mm512_storeu_ps((__m512*)a16, a);
+    _mm512_storeu_ps((__m512*)b16, b);
+    for (i = 0; i < 16; ++i) a16[i] -= b16[i];
+    return _mm512_loadu_ps((const __m512*)a16);
+  }
+# endif
+#endif
+
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
 
@@ -54,7 +125,9 @@
 #endif
 
 #if defined(__MIC__) && !defined(LIBXSMM_INTRINSICS_NONE)
-# define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_TARGET_ARCH_GENERIC
+# if !defined(LIBXSMM_STATIC_TARGET_ARCH)
+#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_TARGET_ARCH_GENERIC
+# endif
 # define LIBXSMM_INTRINSICS(TARGET)
 # define LIBXSMM_INTRINSICS_INCLUDE
 #elif !defined(LIBXSMM_INTRINSICS_NONE) /*!defined(__MIC__)*/
@@ -66,7 +139,9 @@
    && (!defined(__clang__) || (LIBXSMM_VERSION3(9, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) \
                            || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)))) \
    && (!defined(__APPLE__) || !defined(__MACH__) || LIBXSMM_VERSION3(99, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
+#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CPX
+#   endif
 #   define LIBXSMM_INTRINSICS_INCLUDE
 # elif  defined(__AVX512F__)  && defined(__AVX512CD__) \
    &&   defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VL__) && defined(__AVX512VNNI__) \
@@ -76,7 +151,9 @@
    && (!defined(__clang__) || (LIBXSMM_VERSION3(4, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) \
                            || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)))) \
    && (!defined(__APPLE__) || !defined(__MACH__) || LIBXSMM_VERSION3(8, 1, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CLX
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
+#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CLX
+#   endif
 #   define LIBXSMM_INTRINSICS_INCLUDE
 # elif  defined(__AVX512F__)  && defined(__AVX512CD__) \
    &&   defined(__AVX512DQ__) && defined(__AVX512BW__) && defined(__AVX512VL__) \
@@ -86,7 +163,9 @@
    && (!defined(__clang__) || (LIBXSMM_VERSION3(4, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) \
                            || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)))) \
    && (!defined(__APPLE__) || !defined(__MACH__) || LIBXSMM_VERSION3(8, 1, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
+#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_CORE
+#   endif
 #   define LIBXSMM_INTRINSICS_INCLUDE
 # elif  defined(__AVX512F__) && defined(__AVX512CD__) \
    &&   defined(__AVX512PF__) && defined(__AVX512ER__) \
@@ -96,7 +175,9 @@
    && (!defined(__clang__) || (LIBXSMM_VERSION3(4, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) \
                            || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)))) \
    && (!defined(__APPLE__) || !defined(__MACH__) || LIBXSMM_VERSION3(8, 1, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
+#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
+#   endif
 #   define LIBXSMM_INTRINSICS_INCLUDE
 # elif  defined(__AVX512F__) && defined(__AVX512CD__) \
    &&   defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__) \
@@ -105,22 +186,34 @@
    && (!defined(__clang__) || (LIBXSMM_VERSION3(4, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) \
                            || (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)))) \
    && (!defined(__APPLE__) || !defined(__MACH__) || LIBXSMM_VERSION3(8, 1, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
+#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512
+#   endif
 #   define LIBXSMM_INTRINSICS_INCLUDE
 # elif defined(__AVX2__) && defined(__FMA__) && defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__)
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
+#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
+#   endif
 #   define LIBXSMM_INTRINSICS_INCLUDE
 # elif defined(__AVX__) && defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__)
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
+#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
+#   endif
 #   define LIBXSMM_INTRINSICS_INCLUDE
 # elif defined(__SSE4_2__) && defined(__SSE4_1__) && defined(__SSE3__)
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE4
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
+#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE4
+#   endif
 #   define LIBXSMM_INTRINSICS_INCLUDE
 # elif defined(__SSE3__)
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE3
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
+#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_SSE3
+#   endif
 #   define LIBXSMM_INTRINSICS_INCLUDE
 # elif defined(__x86_64__) || defined(_WIN32) || defined(_WIN64)
-#   define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_GENERIC
+#   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
+#     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_GENERIC
+#   endif
 # endif
 # if defined(LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_INTRINSICS_STATIC)
 #   if defined(__INTEL_COMPILER)
@@ -138,19 +231,25 @@
 #     endif
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     define LIBXSMM_INTRINSICS_INCLUDE
-#     include <immintrin.h>
+#     if !defined(LIBXSMM_INTRINSICS_DEBUG)
+#       include <immintrin.h>
+#     endif
 #   elif defined(_CRAYC) && defined(__GNUC__)
       /* TODO: version check e.g., LIBXSMM_VERSION2(11, 5) <= LIBXSMM_VERSION2(_RELEASE, _RELEASE_MINOR) */
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     define LIBXSMM_INTRINSICS_INCLUDE
-#     include <immintrin.h>
+#     if !defined(LIBXSMM_INTRINSICS_DEBUG)
+#       include <immintrin.h>
+#     endif
 #   elif defined(_MSC_VER) && !defined(__clang__)
       /* TODO: compiler version check for LIBXSMM_MAX_STATIC_TARGET_ARCH */
 #     define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     define LIBXSMM_INTRINSICS(TARGET)/*no need for target flags*/
 #     define LIBXSMM_INTRINSICS_INCLUDE
-#     include <immintrin.h>
+#     if !defined(LIBXSMM_INTRINSICS_DEBUG)
+#       include <immintrin.h>
+#     endif
 #   elif (defined(__GNUC__) && LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
       && !defined(__PGI)
 #     if LIBXSMM_X86_AVX2 < LIBXSMM_STATIC_TARGET_ARCH && !defined(__CYGWIN__)
@@ -159,7 +258,9 @@
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #     endif
 #     define LIBXSMM_INTRINSICS_INCLUDE
-#     include <immintrin.h>
+#     if !defined(LIBXSMM_INTRINSICS_DEBUG)
+#       include <immintrin.h>
+#     endif
 #   else /* GCC/legacy incl. Clang */
 #     if defined(__clang__) && !(defined(__APPLE__) && defined(__MACH__))
 #       if (LIBXSMM_VERSION3(0, 0, 0) == LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) /* devel */ || \
@@ -172,13 +273,13 @@
 #       elif !defined(LIBXSMM_INTRINSICS_STATIC)
 #         define LIBXSMM_INTRINSICS_STATIC
 #       endif
-#       if !defined(__CYGWIN__)
+#       if !defined(__CYGWIN__) || defined(LIBXSMM_INTRINSICS_DEBUG)
 #         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX512_MIC
 #         if (LIBXSMM_MAX_STATIC_TARGET_ARCH < LIBXSMM_STATIC_TARGET_ARCH)
 #           undef LIBXSMM_STATIC_TARGET_ARCH /* account for compiler issues */
 #           define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_MAX_STATIC_TARGET_ARCH
 #         endif
-#       else /* Error: invalid register for .seh_savexmm */
+#       else /* Cygwin: invalid register for .seh_savexmm */
 #         define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_X86_AVX2
 #       endif
 #     else /* fall-back */
@@ -253,7 +354,9 @@
 #           pragma GCC target("avx")
 #         endif
 #       endif
-#       include <immintrin.h>
+#       if !defined(LIBXSMM_INTRINSICS_DEBUG)
+#         include <immintrin.h>
+#       endif
 #       if defined(__GNUC__) && !defined(__clang__)
 #         pragma GCC pop_options
 #       endif
@@ -380,7 +483,7 @@
 #endif
 
 /** Include basic x86 intrinsics such as __rdtsc. */
-#if defined(LIBXSMM_INTRINSICS_INCLUDE)
+#if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_DEBUG)
 # if defined(_WIN32)
 #   include <intrin.h>
 # elif defined(LIBXSMM_INTEL_COMPILER) || defined(_CRAYC) || defined(__clang__) || defined(__PGI)

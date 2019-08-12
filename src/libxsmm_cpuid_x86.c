@@ -84,7 +84,11 @@
 
 LIBXSMM_API int libxsmm_cpuid_x86(void)
 {
+#if defined(LIBXSMM_INTRINSICS_DEBUG)
+  int target_arch = LIBXSMM_X86_GENERIC;
+#else
   int target_arch = LIBXSMM_STATIC_TARGET_ARCH;
+#endif
 #if defined(LIBXSMM_PLATFORM_SUPPORTED)
   unsigned int eax, ebx, ecx, edx;
   LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
@@ -148,10 +152,13 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
       fprintf(stderr, "LIBXSMM WARNING: detected CPU features are not permitted by the OS!\n");
     }
   }
-  /* check if procedure obviously failed to detect the highest available instruction set extension */
-  LIBXSMM_ASSERT(LIBXSMM_STATIC_TARGET_ARCH <= target_arch);
 #endif
+#if defined(LIBXSMM_INTRINSICS_DEBUG)
+  return target_arch;
+#else /* check if procedure obviously failed to detect the highest available instruction set extension */
+  LIBXSMM_ASSERT(LIBXSMM_STATIC_TARGET_ARCH <= target_arch);
   return LIBXSMM_MAX(target_arch, LIBXSMM_STATIC_TARGET_ARCH);
+#endif
 }
 
 
