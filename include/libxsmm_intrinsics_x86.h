@@ -892,8 +892,11 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
 #endif /* SVML */
 
 /** 2048-bit state for RNG */
-#define LIBXSMM_INTRINSICS_MM512_RNG_STATE(INDEX) (*(__m512i*)(libxsmm_intrinsics_mm512_rng_state + (INDEX) * 16))
-LIBXSMM_APIVAR(unsigned int libxsmm_intrinsics_mm512_rng_state[4*16]);
+#define LIBXSMM_INTRINSICS_MM512_RNG_STATE(INDEX) (*(__m512i*)LIBXSMM_CONCATENATE(libxsmm_intrinsics_mm512_rng_state, INDEX))
+LIBXSMM_APIVAR_ARRAY(unsigned int libxsmm_intrinsics_mm512_rng_state0, 16);
+LIBXSMM_APIVAR_ARRAY(unsigned int libxsmm_intrinsics_mm512_rng_state1, 16);
+LIBXSMM_APIVAR_ARRAY(unsigned int libxsmm_intrinsics_mm512_rng_state2, 16);
+LIBXSMM_APIVAR_ARRAY(unsigned int libxsmm_intrinsics_mm512_rng_state3, 16);
 
 /** Generate random number in the interval [0, 1); not thread-safe. */
 # if defined(__GNUC__) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) && !defined(_CRAYC)
