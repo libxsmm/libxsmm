@@ -64,8 +64,13 @@ int main(int argc, char* argv[])
   desc = libxsmm_mcopy_descriptor_init(&blob, sizeof(ELEM_TYPE),
     m, n, ldo, ldi, flags, prefetch, &unroll);
 
-  a = (ELEM_TYPE*)malloc(n * ldi * sizeof(ELEM_TYPE));
-  b = (ELEM_TYPE*)malloc(n * ldo * sizeof(ELEM_TYPE));
+  a = (ELEM_TYPE*)((0 < n && 0 < ldi) ? malloc(sizeof(ELEM_TYPE) * n * ldi) : NULL);
+  b = (ELEM_TYPE*)((0 < n && 0 < ldo) ? malloc(sizeof(ELEM_TYPE) * n * ldo) : NULL);
+  if (NULL == a || NULL == b) {
+    printf("buffer allocation failed!\n");
+    free(a); free(b);
+    exit(EXIT_FAILURE);
+  }
 
   for (i = 0; i < n; i++) {
     for (j = 0; j < m; j++) {
