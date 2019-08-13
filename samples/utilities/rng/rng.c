@@ -29,15 +29,8 @@
 /* Alexander Heinecke (Intel Corp.)
 ******************************************************************************/
 #include <libxsmm.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
 #include <time.h>
-#include <stdint.h>
-
-#if defined(_OPENMP)
-# include <omp.h>
-#endif
 
 
 int main(int argc, char* argv[])
@@ -45,10 +38,10 @@ int main(int argc, char* argv[])
   double rng_stddev = 0;
   float* rngs;
   float  vrng[16];
+  libxsmm_timer_tickint start;
   libxsmm_matdiff_info info;
   libxsmm_blasint num_rngs;
   libxsmm_blasint i;
-  unsigned long long start;
 
   if (2 < argc) {
     fprintf(stderr, "Usage:\n  %s number_rngs\n", argv[0]);
@@ -57,12 +50,14 @@ int main(int argc, char* argv[])
 
   /* parse the command line and set up the test parameters */
   num_rngs = (1 < argc ? atoi(argv[1]) : 1000);
+  /* avoid scalar remainder in timing loop */
+  num_rngs = LIBXSMM_UP2(num_rngs, 16);
   assert(num_rngs >= 1);
 
-  rngs = (float*)malloc((size_t)(sizeof(float) * num_rngs));
+  rngs = (float*)malloc(sizeof(float) * num_rngs);
   if (NULL == rngs) num_rngs = 0;
 
-  libxsmm_rng_set_seed( (uint32_t)(time(0)));
+  libxsmm_rng_set_seed( (unsigned int)(time(0)) );
 
   /* fill array with random floats */
   libxsmm_rng_f32_seq( rngs, num_rngs );
@@ -71,7 +66,7 @@ int main(int argc, char* argv[])
   if (EXIT_SUCCESS == libxsmm_matdiff(&info, LIBXSMM_DATATYPE_F32, 1/*m*/, num_rngs,
     NULL/*ref*/, rngs/*tst*/, NULL/*ldref*/, NULL/*ldtst*/))
   {
-    rng_stddev = sqrt(info.var_tst);
+    rng_stddev = libxsmm_dsqrt( info.var_tst );
   }
 
   start = libxsmm_timer_tick();
@@ -89,14 +84,14 @@ int main(int argc, char* argv[])
     libxsmm_timer_cycles(start, libxsmm_timer_tick()) / ((size_t)num_rngs*16));
 
   /* let's compute some values of the random numbers */
-  printf("\nWe have generated %lli random numbers uniformly distributed in [0,1(\n", (long long)num_rngs);
-  printf("We expect the following values E=0.5, Var=0.083333, Stddev=0.288675\n\n");
-  printf("minimum random number is:            %f\n", info.min_tst);
-  printf("maximum random number is:            %f\n", info.max_tst);
-  printf("sum of random numbers is:            %f\n", info.l1_tst);
-  printf("Expected Value of random numbers is: %f\n", info.avg_tst);
-  printf("Variance of random numbers is:       %f\n", info.var_tst);
-  printf("StdDev of random numbers is:         %f\n\n", rng_stddev);
+  printf("\n%lli random numbers generated, which are uniformly distributed in [0,1(\n", (long long)num_rngs);
+  printf("Expected properties: avg=0.5, var=0.083333, stddev=0.288675\n\n");
+  printf("minimum random number: %f\n", info.min_tst);
+  printf("maximum random number: %f\n", info.max_tst);
+  printf("sum of random numbers: %f\n", info.l1_tst);
+  printf("avg of random numbers: %f\n", info.avg_tst);
+  printf("var of random numbers: %f\n", info.var_tst);
+  printf("dev of random numbers: %f\n\n", rng_stddev);
 
   free( rngs );
 

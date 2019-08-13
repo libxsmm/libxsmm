@@ -549,6 +549,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     /* cleanup singleton */
 #if defined(_WIN32)
     ReleaseMutex(internal_singleton_handle);
+    CloseHandle(internal_singleton_handle);
 #else
     unlink(internal_singleton_fname);
     close(internal_singleton_handle);
@@ -690,9 +691,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       LIBXSMM_ASSERT(NULL != new_registry && NULL != internal_registry_keys);
 #if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       LIBXSMM_ASSERT(NULL != internal_cache_buffer);
-      for (i = 0; i < (LIBXSMM_MAX_NTHREADS); ++i) {
-        internal_cache_buffer[i].entry.size = 0;
-      }
+      memset(internal_cache_buffer, 0, (LIBXSMM_MAX_NTHREADS) * sizeof(internal_cache_type));
 #endif
       libxsmm_trans_init(libxsmm_target_archid);
       libxsmm_dnn_init(libxsmm_target_archid);
