@@ -33,6 +33,40 @@
 #define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
 #define _mm512_loadcvtrne_fp32_bf16(A) _mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne(LIBXSMM_INTRINSICS_MM512_LOAD_PS(A)),16))
 
+#define TRANS_OUTPUT_TO_VNNI_FORMAT(img, ofm1) do {\
+  __m512i zero_reg = _mm512_setzero_si512();\
+  src_out = (element_output_type*) &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);\
+  tr_out = (element_output_type*) &LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, 0, 0, 0, handle->blocksofm, handle->output_pixels/2, handle->ofmblock, 2);\
+  for (pixel_pair = 0; pixel_pair < n_full_pixel_pairs; pixel_pair++) {\
+    for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2+=32) {\
+      pixel_0 = _mm512_loadu_si512((element_output_type*)src_out+ofm2);\
+      pixel_1 = _mm512_loadu_si512(((element_output_type*)src_out+handle->ofmblock+ofm2));\
+      ofms_lo = _mm512_permutex2var_epi16(pixel_0, idx_lo, pixel_1);\
+      ofms_hi = _mm512_permutex2var_epi16(pixel_0, idx_hi, pixel_1);\
+      _mm512_storeu_si512(tr_out+ofm2*2, ofms_lo);\
+      _mm512_storeu_si512((element_output_type*)tr_out+32+ofm2*2, ofms_hi);\
+    }\
+    src_out += 2* handle->ofmblock;\
+    tr_out += 2*handle->ofmblock;\
+  }\
+  if (half_pixel_pair == 1) {\
+    for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2+=32) {\
+      pixel_0 = _mm512_loadu_si512((element_output_type*)src_out+ofm2);\
+      pixel_1 = _mm512_setzero_si512();\
+      ofms_lo = _mm512_permutex2var_epi16(pixel_0, idx_lo, pixel_1);\
+      ofms_hi = _mm512_permutex2var_epi16(pixel_0, idx_hi, pixel_1);\
+      _mm512_storeu_si512(tr_out+ofm2*2, ofms_lo);\
+      _mm512_storeu_si512((element_output_type*)tr_out+32+ofm2*2, ofms_hi);\
+    }\
+  }\
+  for (oi = ((handle->compute_pixels+1)/2)*2; oi < handle->output_pixels; oi+=2) {\
+    for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2+=32) {\
+      tr_out = (element_output_type*) &LIBXSMM_VLA_ACCESS(5, tr_output, img, ofm1, oi/2, ofm2, 0, handle->blocksofm, handle->output_pixels/2, handle->ofmblock, 2);\
+      _mm512_storeu_si512((element_output_type*)tr_out, zero_reg);\
+      _mm512_storeu_si512((element_output_type*)tr_out+32, zero_reg);\
+    }\
+  }\
+} while(0)
 int img, my_img_start, my_img_end, ofmb, ifmb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, j_br, img_br, i, j, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm, pix;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -77,6 +111,16 @@ gemm_br_function br_gemm_kernel = 0;
 __m256i c0, c1;
 __m512i c01;
 const __m512i perm_index = LIBXSMM_INTRINSICS_MM512_SET_EPI16(31, 15, 30, 14, 29, 13, 28, 12, 27, 11, 26, 10, 25, 9, 24, 8, 23, 7, 22, 6, 21, 5, 20, 4, 19, 3, 18, 2, 17, 1, 16, 0);
+
+/* Related to the output transpose */
+int n_full_pixel_pairs = handle->compute_pixels/2, half_pixel_pair = handle->compute_pixels%2, pixel_pair;
+element_output_type *tr_out, *src_out;
+const __m512i selector = _mm512_set_epi16(32, 0, 32, 0, 32, 0, 32, 0, 32, 0, 32, 0, 32, 0, 32, 0, 32, 0, 32, 0, 32, 0, 32, 0, 32, 0, 32, 0, 32, 0, 32, 0);
+const __m512i offsets_lo = _mm512_set_epi16(15, 15, 14, 14, 13, 13, 12, 12, 11, 11, 10, 10, 9, 9, 8, 8, 7, 7, 6, 6, 5, 5, 4, 4, 3, 3, 2, 2, 1, 1, 0, 0);
+const __m512i offsets_hi = _mm512_set_epi16(31, 31, 30, 30, 29, 29, 28, 28, 27, 27, 26, 26, 25, 25, 24, 24, 23, 23, 22, 22, 21, 21, 20, 20, 19, 19, 18, 18, 17, 17, 16, 16);
+const __m512i idx_lo =  _mm512_or_epi32(selector, offsets_lo);
+const __m512i idx_hi =  _mm512_or_epi32(selector, offsets_hi);
+__m512i pixel_0, pixel_1, ofms_lo, ofms_hi;
 
 /* Batch reduce related variables */
 const element_output_type *A_ptrs[1024];
@@ -131,6 +175,14 @@ if (handle->upd_linearized_pixels == 1) {
   }
 
   /* Reformat output */
+  if (handle->use_hybrid_imgofm_parallelization == 1) {
+    for (img = my_img_start; img < my_img_end; img++) {
+      for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
+        TRANS_OUTPUT_TO_VNNI_FORMAT(img, ofm1);
+      }
+    }
+  }
+#if 0
   for (img = my_img_start; img < my_img_end; img++) {
     zero_ptr_out = (element_output_type*) &LIBXSMM_VLA_ACCESS(5, tr_output, img, 0, 0, 0, 0, handle->blocksofm, handle->output_pixels/2, handle->ofmblock, 2);
     memset(zero_ptr_out, 0, handle->desc.K * handle->output_pixels * sizeof(element_output_type));
@@ -143,6 +195,7 @@ if (handle->upd_linearized_pixels == 1) {
       }
     }
   }
+#endif
 } else {
   if (handle->on_the_fly_input_packing == 0) {
     for (img = my_img_start; img < my_img_end; img++) {
@@ -365,6 +418,10 @@ if (handle->upd_linearized_pixels == 0) {
         for (pix = 0; pix < handle->n_used_pixels; pix += handle->pixel_blocking){
           for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
             for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
+              /* Transpose output block  */
+              if (pix == 0 && ifmb == 0) {
+                TRANS_OUTPUT_TO_VNNI_FORMAT(img, ofm1);
+              }
               for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
                 for (kj = 0; kj < handle->desc.R; ++kj) {
                   for (ki = 0; ki < handle->desc.S; ++ki) {

@@ -686,6 +686,7 @@ LIBXSMM_API_INTERN void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
     handle->output_pixels = accum_length_pixels;
     handle->pixel_blocking = accum_length_pixels;
     handle->n_used_pixels = accum_length_pixels;
+    handle->compute_pixels = compute_pixels;
 
     handle->use_intermediate_f32_wt_tensor = (handle->pixel_blocking == handle->n_used_pixels) ? 0 : 1;
     handle->scratch2_size = (size_t) (handle->desc.N * handle->output_pixels * handle->desc.K * sizeof(float)/2);
