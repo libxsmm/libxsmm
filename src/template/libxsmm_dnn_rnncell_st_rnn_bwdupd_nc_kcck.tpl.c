@@ -156,18 +156,11 @@ libxsmm_barrier_init(handle->barrier, (int)ltid);
 
 /* Blocking reduction domain if it is too large */
 BF = 1;
-if (K > 1024 && K <= 2048) {
-  BF = 8;
-  while (kBlocks % BF != 0) {
-    BF--;
-  }
+if (C >= 512 && C%2 == 0 && K >= 512 && K%2 == 0) {
+  BF = 2;
 }
-
-if (K > 2048) {
+if (C >= 2048 && C%16 == 0 && K >= 2048 && K%16 == 0) {
   BF = 16;
-  while (kBlocks % BF != 0) {
-    BF--;
-  }
 }
 KB_BLOCKS = kBlocks/BF;
 
