@@ -248,6 +248,7 @@ int main(int argc, char* argv[])
 
   /* initialize data */
   zero_buf(naive_input, nImg*nIfm*ifhp*ifwp);
+  zero_buf(naive_output_bp, nImg*nOfm*ofhp*ofwp);
   if (padding_mode == 0 ) {
     init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
     init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
@@ -707,6 +708,7 @@ int main(int argc, char* argv[])
 
   /* deallocate data */
   libxsmm_free( naive_input );
+  libxsmm_free( naive_input_save ) ;
   libxsmm_free( naive_input_tmp );
   libxsmm_free( naive_output );
   libxsmm_free( naive_filter );
