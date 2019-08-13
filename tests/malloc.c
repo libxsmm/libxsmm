@@ -31,6 +31,10 @@
 #include <libxsmm.h>
 #include <stdlib.h>
 
+#if !defined(REALLOC) && 1
+# define REALLOC
+#endif
+
 
 int main(void)
 {
@@ -60,7 +64,7 @@ int main(void)
   if (NULL != p && (EXIT_SUCCESS != libxsmm_get_malloc_info(p, &malloc_info) || malloc_info.size < size)) {
     ++nerrors;
   }
-
+#if defined(REALLOC)
   if (NULL != p) { /* reallocate larger amount of memory */
     const int palign = 1 << LIBXSMM_INTRINSICS_BITSCANFWD64((uintptr_t)p);
     unsigned char* c = (unsigned char*)p;
@@ -81,7 +85,6 @@ int main(void)
     for (i = 0; i < size; ++i) { /* check that content is preserved */
       nerrors += (c[i] == (unsigned char)LIBXSMM_MOD2(i, 256) ? 0 : 1);
     }
-    for (i = size; i < 2 * size; ++i) c[i] = (unsigned char)LIBXSMM_MOD2(i, 256);
     /* reallocate with smaller size */
     p = libxsmm_realloc(size / 2, p);
     /* check that alignment is preserved */
@@ -93,7 +96,7 @@ int main(void)
       nerrors += (c[i] == (unsigned char)LIBXSMM_MOD2(i, 256) ? 0 : 1);
     }
   }
-
+#endif
   /* query and check the size of the buffer */
   if (NULL != p && (EXIT_SUCCESS != libxsmm_get_malloc_info(p, &malloc_info) || malloc_info.size < (size / 2))) {
     ++nerrors;
