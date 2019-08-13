@@ -549,6 +549,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     /* cleanup singleton */
 #if defined(_WIN32)
     ReleaseMutex(internal_singleton_handle);
+    CloseHandle(internal_singleton_handle);
 #else
     unlink(internal_singleton_fname);
     close(internal_singleton_handle);
