@@ -194,8 +194,7 @@ const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads =
 const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
 const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
 
-/* int bcbk_multiples_of_16 = ((bc % 16 == 0) && (bk % 16 == 0)) ? 1 : 0; */
-
+int bcbk_multiples_of_16 = ((bc % 16 == 0) && (bk % 16 == 0)) ? 1 : 0;
 libxsmm_blasint ikic, inic, inik, icin, ikin;
 
 /* lazy barrier init */
@@ -203,18 +202,14 @@ libxsmm_barrier_init(handle->barrier, (int)ltid);
 
 /* Blocking reduction domain if it is too large */
 BF = 1;
-if (K > 1024 && K <= 2048) {
-  BF = 8;
-  while (kBlocks % BF != 0) {
-    BF--;
-  }
+if (K >= 1024 && K%2==0) {
+  BF = 2;
 }
-
-if (K > 2048) {
-  BF = 16;
-  while (kBlocks % BF != 0) {
-    BF--;
-  }
+if (K >= 2048 && K%4==0) {
+  BF = 4;
+}
+if (K >= 4096 && K%8==0) {
+  BF = 8;
 }
 KB_BLOCKS = kBlocks/BF;
 
@@ -262,7 +257,31 @@ for (j = t-1; j >= 0; --j) {
   for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
     in = (inik % (N/bn))*bn;
     ik = (inik / (N/bn))*bk;
-
+#if defined(LIBXSMM_RNN_CELL_AVX512)
+    if (bcbk_multiples_of_16) {
+#include "libxsmm_internal_gru_bwdupd_fused_eltwise_1.tpl.c"
+    } else {
+      /* compute dhp */
+      if (j == t-1) {
+        libxsmm_internal_matrix_copy_ld(  bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dh, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K) );
+      } else {
+        libxsmm_internal_matrix_add_ld(   bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dh, j,   in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K) );
+      }
+      /* df = dout . (1 - c) . (1 - (f . f)) */
+      libxsmm_internal_matrix_complement_ld(        bk, bn, K, &LIBXSMM_VLA_ACCESS(3, c, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K) );
+      libxsmm_internal_matrix_complement_square_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
+      libxsmm_internal_matrix_eltwise_mult_ld(      bk, bn, K, &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K) );
+      libxsmm_internal_matrix_eltwise_mult_ld(      bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K),   &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), &LIBXSMM_VLA_ACCESS(2, df, in, ik, K) );
+      /* dc = dout . (hp - f) . c . (1 - c) */
+      libxsmm_internal_matrix_eltwise_mult_ld(      bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K),   &LIBXSMM_VLA_ACCESS(3, c, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K) );
+      if (0 == j) {
+        libxsmm_internal_matrix_sub_ld(             bk, bn, K, &LIBXSMM_VLA_ACCESS(2, hp, in, ik, K),        &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
+      } else {
+        libxsmm_internal_matrix_sub_ld(             bk, bn, K, &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
+      }
+      libxsmm_internal_matrix_eltwise_mult_ld(      bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K),   &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dc, in, ik, K) );
+    }
+#else
     /* compute dhp */
     if (j == t-1) {
       libxsmm_internal_matrix_copy_ld(  bk, bn, K, &LIBXSMM_VLA_ACCESS(3, dh, t-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dout, in, ik, K) );
@@ -282,8 +301,8 @@ for (j = t-1; j >= 0; --j) {
       libxsmm_internal_matrix_sub_ld(             bk, bn, K, &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(3, f, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
     }
     libxsmm_internal_matrix_eltwise_mult_ld(      bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K),   &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), &LIBXSMM_VLA_ACCESS(2, dc, in, ik, K) );
+#endif
   }
-
   if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* transpose xt for current timestep */
     for (icin = thr_begin_nc; icin < thr_end_nc; ++icin ) {
@@ -367,6 +386,20 @@ for (j = t-1; j >= 0; --j) {
   for (inik = thr_begin_nk; inik < thr_end_nk; ++inik ) {
     in = (inik % (N/bn))*bn;
     ik = (inik / (N/bn))*bk;
+#if defined(LIBXSMM_RNN_CELL_AVX512)
+    if (bcbk_multiples_of_16) {
+#include "libxsmm_internal_gru_bwdupd_fused_eltwise_2.tpl.c"
+    } else {
+      libxsmm_internal_matrix_complement_ld(   bk, bn, K, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K) );
+      libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K) );
+      if (0 == j) {
+        libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, hp, in, ik, K),        &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
+      } else {
+        libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
+      }
+      libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K) );
+    }
+#else
     libxsmm_internal_matrix_complement_ld(   bk, bn, K, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K) );
     libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K) );
     if (0 == j) {
@@ -375,6 +408,7 @@ for (j = t-1; j >= 0; --j) {
       libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ik, N, K), &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K) );
     }
     libxsmm_internal_matrix_eltwise_mult_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, t1, in, ik, K), &LIBXSMM_VLA_ACCESS(2, t2, in, ik, K), &LIBXSMM_VLA_ACCESS(2, di, in, ik, K) );
+#endif
   }
   libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
