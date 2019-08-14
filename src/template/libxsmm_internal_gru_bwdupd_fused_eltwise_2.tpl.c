@@ -31,7 +31,7 @@
 
 {
   libxsmm_blasint _k, _j;
-  __m512 _vdh, _vdi, _vdo, _vi, _vhp, _vt1, _vt2;
+  __m512 _vdi, _vdo, _vi, _vhp, _vt1, _vt2;
   element_input_type* _hp;
   element_input_type* _i = &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K);
   element_input_type* _di = &LIBXSMM_VLA_ACCESS(2, di, in, ik, K);

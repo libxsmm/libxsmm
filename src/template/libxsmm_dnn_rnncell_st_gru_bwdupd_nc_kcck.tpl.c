@@ -194,8 +194,10 @@ const libxsmm_blasint chunksize_k = (K % (libxsmm_blasint)handle->desc.threads =
 const libxsmm_blasint thr_begin_k = (ltid * chunksize_k < K) ? (ltid * chunksize_k) : K;
 const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) * chunksize_k) : K;
 
-int bcbk_multiples_of_16 = ((bc % 16 == 0) && (bk % 16 == 0)) ? 1 : 0;
 libxsmm_blasint ikic, inic, inik, icin, ikin;
+#if defined(LIBXSMM_RNN_CELL_AVX512)
+int bcbk_multiples_of_16 = ((bc % 16 == 0) && (bk % 16 == 0)) ? 1 : 0;
+#endif
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, (int)ltid);
