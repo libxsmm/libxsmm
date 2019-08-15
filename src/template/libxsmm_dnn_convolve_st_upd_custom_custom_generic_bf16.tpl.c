@@ -67,6 +67,7 @@
     }\
   }\
 } while(0)
+
 int img, my_img_start, my_img_end, ofmb, ifmb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, j_br, img_br, i, j, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm, pix;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -144,9 +145,15 @@ if (handle->upd_linearized_pixels == 1) {
   /* First transpose input and output */
   if (handle->upd_pack_input_upfront == 0) {
     for (img = my_img_start; img < my_img_end; img++) {
+#if 0
       zero_ptr_in = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, tr_input, img, 0, 0, 0, handle->blocksifm, handle->ifmblock, handle->input_pixels);
       memset(zero_ptr_in, 0, handle->desc.C * handle->input_pixels * sizeof(element_input_type));
+#endif
       for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
+        transpose_input_pixels_bf16( (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, 0, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+                                     (element_input_type*)&LIBXSMM_VLA_ACCESS(4, tr_input, img, ifm1, 0, 0, handle->blocksifm, handle->ifmblock, handle->input_pixels),
+                                     handle->ifmblock, handle->ifhp*handle->ifwp, handle->ifmblock, handle->input_pixels );
+#if 0
         for (ij = 0; ij < handle->ifhp; ij++) {
           for (ii = 0; ii < handle->ifwp; ii++) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
@@ -155,20 +162,28 @@ if (handle->upd_linearized_pixels == 1) {
             }
           }
         }
+#endif
       }
     }
   } else {
     for (img = my_img_start; img < my_img_end; img++) {
+#if 0
       zero_ptr_in = (element_input_type*) &LIBXSMM_VLA_ACCESS(4, tr_input, img, 0, 0, 0, handle->blocksifm, handle->ifmblock, handle->input_pixels);
       memset(zero_ptr_in, 0, handle->desc.C * handle->input_pixels * sizeof(element_input_type));
+#endif
       for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
         for (ij = 0; ij < handle->ifhp/handle->desc.u; ij++) {
+          transpose_input_pixels_bf16( (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij*handle->desc.u, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+                                       (element_input_type*)&LIBXSMM_VLA_ACCESS(4, tr_input, img, ifm1, 0, ij * (handle->ifwp/handle->desc.v), handle->blocksifm, handle->ifmblock, handle->input_pixels),
+                                        handle->ifmblock, handle->ifwp/handle->desc.v, 2*handle->ifmblock, handle->input_pixels );
+#if 0
           for (ii = 0; ii < handle->ifwp/handle->desc.v; ii++) {
             for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
               LIBXSMM_VLA_ACCESS(4, tr_input, img, ifm1, ifm2, ij * (handle->ifwp/handle->desc.v) + ii, handle->blocksifm, handle->ifmblock, handle->input_pixels) =
                 LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij*handle->desc.u, ii*handle->desc.v, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
             }
           }
+#endif
         }
       }
     }
