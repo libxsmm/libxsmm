@@ -48,9 +48,10 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16_emu(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid);
 
-#if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
-LIBXSMM_API_INLINE void transpose_32x16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int ld_in, int ld_out)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+void transpose_32x16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int ld_in, int ld_out)
 {
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
   __m512i r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;
   __m512i t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;
   const int in_width=ld_in, out_width=ld_out;
@@ -191,10 +192,15 @@ LIBXSMM_API_INLINE void transpose_32x16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *
   _mm256_store_epi32(out + 29*out_width, _mm512_extracti64x4_epi64(te, 1));
   _mm256_store_epi32(out + 30*out_width, _mm512_extracti64x4_epi64(tf, 0));
   _mm256_store_epi32(out + 31*out_width, _mm512_extracti64x4_epi64(tf, 1));
+#else
+  LIBXSMM_UNUSED(in); LIBXSMM_UNUSED(out); LIBXSMM_UNUSED(ld_in); LIBXSMM_UNUSED(ld_out);
+#endif
 }
 
-LIBXSMM_API_INLINE void transpose_32xcols(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int col, int ld_in, int ld_out)
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+void transpose_32xcols(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int col, int ld_in, int ld_out)
 {
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
   __m512i r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;
   __m512i t0, t1, t2, t3, t4, t5, t6, t7, t8, t9, ta, tb, tc, td, te, tf;
   const int in_width=ld_in, out_width=ld_out;
@@ -456,10 +462,14 @@ LIBXSMM_API_INLINE void transpose_32xcols(libxsmm_bfloat16 *in, libxsmm_bfloat16
   _mm256_mask_storeu_epi16(out + 29*out_width, store_mask, _mm512_extracti64x4_epi64(te, 1));
   _mm256_mask_storeu_epi16(out + 30*out_width, store_mask, _mm512_extracti64x4_epi64(tf, 0));
   _mm256_mask_storeu_epi16(out + 31*out_width, store_mask, _mm512_extracti64x4_epi64(tf, 1));
-}
+#else
+  LIBXSMM_UNUSED(in); LIBXSMM_UNUSED(out); LIBXSMM_UNUSED(col); LIBXSMM_UNUSED(ld_in); LIBXSMM_UNUSED(ld_out);
 #endif
+}
 
-LIBXSMM_API_INLINE void transpose_input_pixels_bf16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int M, int N, int ld_in, int ld_out){
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
+void transpose_input_pixels_bf16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int M, int N, int ld_in, int ld_out){
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
   int i, j, _j;
   int full16_chunks = N/16;
   int remainder_cols = N%16;
@@ -478,6 +488,9 @@ LIBXSMM_API_INLINE void transpose_input_pixels_bf16(libxsmm_bfloat16 *in, libxsm
       transpose_32xcols((libxsmm_bfloat16*)in + i + ld_in*full16_chunks*16, (libxsmm_bfloat16*)out + full16_chunks*16 + i*ld_out, remainder_cols, ld_in, ld_out);
     }
   }
+#else
+  LIBXSMM_UNUSED(in); LIBXSMM_UNUSED(out); LIBXSMM_UNUSED(M); LIBXSMM_UNUSED(N); LIBXSMM_UNUSED(ld_in); LIBXSMM_UNUSED(ld_out);
+#endif
 }
 
 LIBXSMM_API_INTERN LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
