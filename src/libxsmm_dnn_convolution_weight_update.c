@@ -48,6 +48,7 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_f
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16_emu(libxsmm_dnn_layer* handle, int start_thread, int tid);
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_convolve_st_upd_custom_custom_bf16_bf16(libxsmm_dnn_layer* handle, int start_thread, int tid);
 
+#if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
 LIBXSMM_API_INLINE void transpose_32x16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int ld_in, int ld_out)
 {
   __m512i r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, ra, rb, rc, rd, re, rf;
@@ -456,6 +457,7 @@ LIBXSMM_API_INLINE void transpose_32xcols(libxsmm_bfloat16 *in, libxsmm_bfloat16
   _mm256_mask_storeu_epi16(out + 30*out_width, store_mask, _mm512_extracti64x4_epi64(tf, 0));
   _mm256_mask_storeu_epi16(out + 31*out_width, store_mask, _mm512_extracti64x4_epi64(tf, 1));
 }
+#endif
 
 LIBXSMM_API_INLINE void transpose_input_pixels_bf16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int M, int N, int ld_in, int ld_out){
   int i, j, _j;
