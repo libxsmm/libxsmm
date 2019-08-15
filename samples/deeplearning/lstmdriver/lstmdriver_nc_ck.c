@@ -439,19 +439,19 @@ LIBXSMM_INLINE void lstm_fwd_eltwise_merged(int N, int K, float *i, float *c, fl
       __m512 csv, cov, hv;
       /* i = sigmoid(i) */
       iv = _mm512_mul_ps (iv, minus1);
-      iv = _mm512_exp_ps (iv);
+      iv = LIBXSMM_INTRINSICS_MM512_EXP_PS (iv);
       iv = _mm512_add_ps (iv, plus1);
       iv = _mm512_div_ps (plus1, iv);
       /* c = tanh(c) */
       cv = LIBXSMM_INTRINSICS_MM512_TANH_PS (cv);
       /* f = sigmoid(f) */
       fv = _mm512_mul_ps (fv, minus1);
-      fv = _mm512_exp_ps (fv);
+      fv = LIBXSMM_INTRINSICS_MM512_EXP_PS (fv);
       fv = _mm512_add_ps (fv, plus1);
       fv = _mm512_div_ps (plus1, fv);
       /* o = sigmoid(o) */
       ov = _mm512_mul_ps (ov, minus1);
-      ov = _mm512_exp_ps (ov);
+      ov = LIBXSMM_INTRINSICS_MM512_EXP_PS (ov);
       ov = _mm512_add_ps (ov, plus1);
       ov = _mm512_div_ps (plus1, ov);
       /* cs = f.csp + i.c */

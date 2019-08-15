@@ -884,12 +884,19 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
 
 #if defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_INTRINSICS_MM512_TANH_PS(A) _mm512_tanh_ps(A)
+# define LIBXSMM_INTRINSICS_MM512_EXP_PS(A) _mm512_exp_ps(A)
 #else
 # include <math.h>
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS(__m512 a) {
   float a16[16]; int i;
   _mm512_store_ps(a16, a);
   for (i = 0; i < 16; ++i) a16[i] = LIBXSMM_TANHF(a16[i]);
+  return _mm512_loadu_ps(a16);
+}
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_EXP_PS(__m512 a) {
+  float a16[16]; int i;
+  _mm512_store_ps(a16, a);
+  for (i = 0; i < 16; ++i) a16[i] = LIBXSMM_EXPF(a16[i]);
   return _mm512_loadu_ps(a16);
 }
 #endif /* SVML */
