@@ -29,9 +29,20 @@
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
 #define _mm512_roundbf16rne(A) LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16(A)
+
+#if defined(LIBXSMM_DNN_CONVOLUTION_UPD_AVX512_CPX)
+#define _mm512_storecvtrne_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A), (__m256i)_mm512_cvtneps_pbh(B))
+#else
 #define _mm512_storecvtrne_fp32_bf16(A,B)  _mm256_stream_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
-#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+#endif
+
+#define _mm512_loadcvt_bf16_fp32(A)        _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+
+#if defined(LIBXSMM_DNN_CONVOLUTION_UPD_AVX512_CPX)
+#define _mm512_loadcvtrne_fp32_bf16(A) ((__m256i)_mm512_cvtneps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS(A)))
+#else
 #define _mm512_loadcvtrne_fp32_bf16(A) _mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne(LIBXSMM_INTRINSICS_MM512_LOAD_PS(A)),16))
+#endif
 
 #define TRANS_OUTPUT_TO_VNNI_FORMAT(img, ofm1) do {\
   __m512i zero_reg = _mm512_setzero_si512();\
