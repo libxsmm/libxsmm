@@ -45,15 +45,15 @@ int main(int argc, char* argv[]) {
   const int flags = LIBXSMM_GEMM_FLAGS('N', 'N');
   const REALTYPE alpha = 1, beta = 1;
 
-  REALTYPE* l_a_de = (REALTYPE*)libxsmm_aligned_malloc(K * K * sizeof(REALTYPE), 64);
+  REALTYPE* l_a_de = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * K * K, 64);
   REALTYPE* l_a_sp = NULL;
-  REALTYPE* l_b = (REALTYPE*)libxsmm_aligned_malloc(K * N * N_CRUNS* sizeof(REALTYPE), 64);
+  REALTYPE* l_b = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * K * N * N_CRUNS, 64);
   unsigned int* l_rowptr = NULL;
   unsigned int* l_colidx = NULL;
   unsigned int l_rowcount, l_colcount, l_elements;
-  REALTYPE* l_c = (REALTYPE*)libxsmm_aligned_malloc(K * N * N_CRUNS * sizeof(REALTYPE), 64);
-  REALTYPE* l_c_gold = (REALTYPE*)libxsmm_aligned_malloc(K * N * N_CRUNS * sizeof(REALTYPE), 64);
-  REALTYPE* l_c_asm = (REALTYPE*)libxsmm_aligned_malloc(K * N * N_CRUNS * sizeof(REALTYPE), 64);
+  REALTYPE* l_c = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * K * N * N_CRUNS, 64);
+  REALTYPE* l_c_gold = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * K * N * N_CRUNS, 64);
+  REALTYPE* l_c_asm = (REALTYPE*)libxsmm_aligned_malloc(sizeof(REALTYPE) * K * N * N_CRUNS, 64);
   REALTYPE l_max_error = 0.0;
   unsigned int l_k, l_n;
   int l_i, l_j, l_jj;

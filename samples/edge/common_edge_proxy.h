@@ -83,7 +83,7 @@ static void libxsmm_sparse_csr_reader( const char*    i_csr_file_in,
         {
           /* allocate CSC datastructure matching mtx file */
           *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_element_count));
-          *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_row_count + 1));
+          *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_row_count + (size_t)1));
           *o_values = (REALTYPE*) malloc(sizeof(double) * (*o_element_count));
           l_row_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * (*o_row_count));
 
@@ -97,7 +97,7 @@ static void libxsmm_sparse_csr_reader( const char*    i_csr_file_in,
           }
 
           /* set everything to zero for init */
-          memset(*o_row_idx, 0, sizeof(unsigned int)*(*o_row_count + 1));
+          memset(*o_row_idx, 0, sizeof(unsigned int)*(*o_row_count + (size_t)1));
           memset(*o_column_idx, 0, sizeof(unsigned int)*(*o_element_count));
           memset(*o_values, 0, sizeof(double)*(*o_element_count));
           memset(l_row_idx_id, 0, sizeof(unsigned int)*(*o_row_count));
@@ -153,6 +153,11 @@ static void libxsmm_sparse_csr_reader( const char*    i_csr_file_in,
     return;
   }
 
+  if ( NULL == l_row_idx_id ) {
+    fprintf( stderr, "allocating memory for row indexes failed!\n" );
+    return;
+  }
+
   /* let's handle empty rows */
   for ( l_i = 0; l_i < (*o_row_count); l_i++) {
     if ( l_row_idx_id[l_i] == 0 ) {
@@ -200,7 +205,7 @@ static void libxsmm_sparse_csc_reader( const char*    i_csc_file_in,
         if ( sscanf(l_line, "%u %u %u", o_row_count, o_column_count, o_element_count) == 3 ) {
           /* allocate CSC datastructure matching mtx file */
           *o_row_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_element_count));
-          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_column_count + 1));
+          *o_column_idx = (unsigned int*) malloc(sizeof(unsigned int) * (*o_column_count + (size_t)1));
           *o_values = (REALTYPE*) malloc(sizeof(double) * (*o_element_count));
           l_column_idx_id = (unsigned int*) malloc(sizeof(unsigned int) * (*o_column_count));
 
@@ -214,15 +219,15 @@ static void libxsmm_sparse_csc_reader( const char*    i_csc_file_in,
           }
 
           /* set everything to zero for init */
-          memset(*o_column_idx, 0, sizeof(unsigned int)*(*o_column_count + 1));
+          memset(*o_column_idx, 0, sizeof(unsigned int)*(*o_column_count + (size_t)1));
           memset(*o_row_idx, 0, sizeof(unsigned int)*(*o_element_count));
           memset(*o_values, 0, sizeof(double)*(*o_element_count));
           memset(l_column_idx_id, 0, sizeof(unsigned int)*(*o_column_count));
 
           /* init column idx */
-          for ( l_i = 0; l_i < (*o_column_count + 1); l_i++)
+          for ( l_i = 0; l_i < (*o_column_count + 1); l_i++ ) {
             (*o_column_idx)[l_i] = (*o_element_count);
-
+          }
           /* init */
           (*o_column_idx)[0] = 0;
           l_i = 0;
@@ -267,6 +272,11 @@ static void libxsmm_sparse_csc_reader( const char*    i_csc_file_in,
   /* check if we read a file which was consistent */
   if ( l_i != (*o_element_count) ) {
     fprintf( stderr, "we were not able to read all elements!\n" );
+    return;
+  }
+
+  if ( NULL == l_column_idx_id ) {
+    fprintf( stderr, "allocating memory for column indexes failed!\n" );
     return;
   }
 
