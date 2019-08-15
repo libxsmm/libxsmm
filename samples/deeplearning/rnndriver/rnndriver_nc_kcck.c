@@ -215,19 +215,16 @@ int main(int argc, char* argv[])
   LIBXSMM_VLA_DECL(2, float, djdxgold, djdxgoldt, N*C);
   LIBXSMM_VLA_DECL(2, float, djdhgold, djdhgoldt, K*N);
   LIBXSMM_VLA_DECL(2, float, deltagold, deltagoldt, K*N);
-  /*LIBXSMM_VLA_DECL(2, float, djdh, djdht, K*N);*/
-  /*LIBXSMM_VLA_DECL(2, float, hb, ht, K*N);*/
-  /*LIBXSMM_VLA_DECL(2, float, djdx, djdxt, N*C);*/
 
   /* initialize data */
   /* All data in gold is considered to be in column-major format */
   for (it = 0; it < t; ++it) {
-    LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, xgold, it, 0, N*C), N, C, N, 1.0);
+    init_buf(&LIBXSMM_VLA_ACCESS(2, xgold, it, 0, N*C), N*C, 0, 0);
   }
-  LIBXSMM_MATINIT_OMP(float, 24, hpgold,N, K, N, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 42, wgold, C, K, C, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 42, ugold, K, K, K, 1.0);
-  LIBXSMM_MATINIT_OMP(float, 42, bgold, 1, K, 1, 1.0);
+  init_buf(hpgold, N*K, 0, 0);
+  init_buf(wgold,  C*K, 0, 0);
+  init_buf(ugold,  K*K, 0, 0);
+  init_buf(bgold,  K,   0, 0);
   for (j = 0; j < N; j++) {
     matrix_copy(K, bgold, &(bmgold[j*K]));
   }
@@ -236,7 +233,7 @@ int main(int argc, char* argv[])
   zero_buf(z1gold, K*N);
   zero_buf(z2gold, K*N);
   for (it = 0; it < t; ++it) {
-    LIBXSMM_MATINIT_OMP(float, 24, &LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, K*N), N, K, N, 1.0);
+    init_buf(&LIBXSMM_VLA_ACCESS(2, djdhgold, it, 0, K*N), N*K, 0, 0);
   }
   zero_buf(djdxgoldt, N*C*t);
   zero_buf(djdwgold, C*K);
@@ -265,7 +262,6 @@ int main(int argc, char* argv[])
   zero_buf(djdu, K*K);
   zero_buf(djdb, K);
   zero_buf(djdht, K*N*t);
-  /*LIBXSMM_VLA_DECL(2, float, x, xt, N*C);*/
   LIBXSMM_VLA_DECL(2, float, h, ht, K*N);
 
   if (LIBXSMM_NEQ(0, check)) {
