@@ -350,6 +350,7 @@ ifeq (0,$(GNU))
     ICX = 1
   endif
 endif
+ICX ?= 0
 
 # check if the Intel Development Tools are available
 INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \

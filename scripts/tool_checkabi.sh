@@ -91,7 +91,7 @@ then
               OBJECT=$(echo "${LOCATION}" | ${SED} -e "s/:$//")
             fi
           fi
-        done < <(${NM} ${LIBFILE})
+        done < <(${NM} -D ${LIBFILE})
       else
         echo "Excluded ${LIB}"
       fi
