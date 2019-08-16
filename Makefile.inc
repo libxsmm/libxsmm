@@ -620,10 +620,13 @@ ifeq (0,$(GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
 ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__clang__"; echo "$$?"))
   CLANG = 1
+else # PGI variable may conflict with environment variable of same name hence do not use "?="
+  PGI = $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
 endif
 endif
 endif
 CLANG ?= 0
+PGI ?= 0
 
 # Make GCC version number available even when not using GCC
 ifneq (0,$(GCC))
@@ -694,24 +697,22 @@ ifneq (0,$(INTEL))
 else ifneq (0,$(GCC))
   SUITE = GNU Compiler Collection
   MKL_OMPRTL = gnu
+else ifneq (0,$(PGI))
+  SUITE = $(if $(filter-out 0,$(PGI)),PGI $(NULL),$(NULL))Compiler
+  MKL_OMPRTL = pgi
 else
   ifeq (0,$(CLANG))
     COMPATIBLE = 1
   endif
   ifneq (0,$(COMPATIBLE))
-    ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
-      SUITE = Cray Compiler
-      LDFLAGS += -hsystem_alloc
-      CRAY ?= 1
-    else # PGI variable may conflict with environment variable of same name hence do not use "?="
-      PGI = $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
-      SUITE = $(if $(filter-out 0,$(PGI)),PGI $(NULL),$(NULL))Compiler
-      MKL_OMPRTL = pgi
-    endif
-  else
-    SUITE = Compiler
+  ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
+    SUITE = Cray Compiler
+    LDFLAGS += -hsystem_alloc
+    CRAY ?= 1
+  endif
   endif
 endif
+SUITE ?= Compiler
 MKL_OMPRTL ?= gnu
 CRAY ?= 0
 PGI ?= 0
@@ -754,7 +755,9 @@ ifeq (,$(strip $(GFC)))
   endif
 endif
 ifneq (0,$(FREEFORM))
+ifeq (0,$(PGI))
   FFORM_FLAG ?= -ffree-form
+endif
 endif
 
 ifneq (0,$(DEPSTATIC))
@@ -1098,7 +1101,7 @@ else # GCC assumed
     FCLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
     CLDFLAGS += $(XLIB_BEGIN) -lstdc++ $(XLIB_END)
   endif
-  ifeq (0,$(COMPATIBLE))
+  ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
     ifneq (0,$(shell echo "$$((50000<=$(GCC_VERSION)))"))
       CXXFLAGS += -std=c++14
     else ifneq (0,$(shell echo "$$((40700<=$(GCC_VERSION)))"))
@@ -1167,7 +1170,9 @@ else # GCC assumed
       CSTD = -std=c89
     endif
     # flag specifying output directory must be last
-    FMFLAGS += -J
+    ifeq (0,$(PGI))
+      FMFLAGS += -J
+    endif
   else # fallback
     FMFLAGS += -I
   endif
@@ -1175,7 +1180,7 @@ else # GCC assumed
   CFLAGS += $(OPTFLAG)
   FCFLAGS += $(OPTFLAG)
   ifeq (0,$(DBG))
-    ifeq (0,$(COMPATIBLE))
+    ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
       CXXFLAGS += -funroll-loops
       CFLAGS += -funroll-loops
       FCFLAGS += -funroll-loops
@@ -1241,7 +1246,10 @@ else # GCC assumed
     endif
   endif
   ifeq (0,$(COMPATIBLE))
-    ifneq (0,$(GCC))
+    ifneq (0,$(PGI))
+      OMPFLAG_FORCE = -mp
+      OMPRT = omp
+    else ifneq (0,$(GCC))
       OMPFLAG_FORCE = -fopenmp
     else ifneq (Darwin,$(UNAME))
       ifneq (0,$(shell echo "$$((0!=$(CLANG) && 30900<=$(CC_VERSION)))"))
@@ -1263,7 +1271,7 @@ else # GCC assumed
     THREADS ?= 0
     OMP = 0
   endif
-  ifeq (,$(strip $(OMPRT)))
+  ifeq (,$(strip $(OMPRT))) # fallback
     OMPRT = gomp
   endif
   OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
@@ -1296,9 +1304,12 @@ else # GCC assumed
     endif
   endif
   ifeq (1,$(STATIC))
-    SLDFLAGS += -Bstatic -static-libstdc++
-    ifneq (Darwin,$(UNAME))
-      SLDFLAGS += -static-libgcc
+    SLDFLAGS += -Bstatic
+    ifeq (0,$(PGI))
+      SLDFLAGS += -static-libstdc++
+      ifneq (Darwin,$(UNAME))
+        SLDFLAGS += -static-libgcc
+      endif
     endif
     DFLAGS += -D__STATIC=1
   else ifneq (0,$(STATIC))
@@ -1362,7 +1373,7 @@ ifeq (undefined,$(origin TARGET))
     endif
     endif
     endif
-    ifeq (,$(CTARGET)) # fall-back to AVX2
+    ifeq (,$(CTARGET)) # fallback to AVX2
     ifneq (,$(filter 2 3,$(AVX)))
       ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || (40800<=$(GCC_VERSION) && 0==$(PGI)) || 0==$(CC_VERSION)))"))
         CTARGET ?= -march=core-avx2
@@ -1371,7 +1382,7 @@ ifeq (undefined,$(origin TARGET))
       endif
     endif
     endif
-    ifeq (,$(CTARGET)) # fall-back to AVX
+    ifeq (,$(CTARGET)) # fallback to AVX
     ifneq (,$(filter 1 2 3,$(AVX)))
       ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || 40400<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
         CTARGET ?= -mavx
@@ -1494,12 +1505,14 @@ ifeq (0,$(COMPATIBLE))
         endif
       endif
     endif # SIMD
-    ifneq (,$(CTARGET))
-      CXXFLAGS += -ftree-vectorize
-      CFLAGS += -ftree-vectorize
-    endif
-    ifneq (,$(CTARGET))
-      FCFLAGS += -ftree-vectorize
+    ifeq (0,$(PGI))
+      ifneq (,$(CTARGET))
+        CXXFLAGS += -ftree-vectorize
+        CFLAGS += -ftree-vectorize
+      endif
+      ifneq (,$(CTARGET))
+        FCFLAGS += -ftree-vectorize
+      endif
     endif
   endif
   endif
@@ -1538,19 +1551,21 @@ ifeq (0,$(COMPATIBLE))
       endif
     endif
     endif
-    CXXFLAGS += -fdata-sections -ffunction-sections
-    CFLAGS += -fdata-sections -ffunction-sections
-    ifeq (0,$(INTEL))
-      FCFLAGS += -fdata-sections -ffunction-sections
-    else ifneq (,$(strip $(GFC)))
-      FCFLAGS += -fdata-sections -ffunction-sections
-    endif
-    # --gc-sections: relies on section-flags present at compile-stage
-    LDFLAGS += $(XLNKOPT)--gc-sections
-    ifeq (0,$(VISIBILITY)) # -fvisibility=hidden may cause crashes
-      CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
-      #FCFLAGS += -fvisibility=hidden
-      CFLAGS += -fvisibility=hidden
+    ifeq (0,$(PGI))
+      CXXFLAGS += -fdata-sections -ffunction-sections
+      CFLAGS += -fdata-sections -ffunction-sections
+      ifeq (0,$(INTEL))
+        FCFLAGS += -fdata-sections -ffunction-sections
+      else ifneq (,$(strip $(GFC)))
+        FCFLAGS += -fdata-sections -ffunction-sections
+      endif
+      # --gc-sections: relies on section-flags present at compile-stage
+      LDFLAGS += $(XLNKOPT)--gc-sections
+      ifeq (0,$(VISIBILITY)) # -fvisibility=hidden may cause crashes
+        CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
+        #FCFLAGS += -fvisibility=hidden
+        CFLAGS += -fvisibility=hidden
+      endif
     endif
   endif
   ifeq (0,$(EXP))
@@ -1564,7 +1579,7 @@ endif
 endif
 
 ifneq (0,$(THREADS))
-ifeq (0,$(COMPATIBLE))
+ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
   CFLAGS += -pthread
   CXXFLAGS += -pthread
   FLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
@@ -1881,7 +1896,7 @@ else ifneq (0,$(BLAS)) # generic
       else # static
         BLAS_LDFLAGS += $(BLASLIBFILE)
       endif
-    else # fall-back
+    else # fallback
       BLAS_LDFLAGS += -lblas
     endif
     ifeq (0,$(OPENBLAS)) # BLAS (reference)
