@@ -711,6 +711,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 /** Release memory, which was allocated using libxsmm_[*]malloc. */
 LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory);
 
+/** Like libxsmm_release_scratch, but takes a lock (can be NULL). */
+LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock);
+
 /** Determines the given value in double-precision based on the given type. */
 LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
 

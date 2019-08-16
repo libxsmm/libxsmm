@@ -310,7 +310,7 @@ LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x)
 
 LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double x)
 {
-#if defined(LIBXSMM_INTRINSICS_X86)
+#if defined(LIBXSMM_INTRINSICS_X86) && !defined(__PGI)
   const __m128d a = LIBXSMM_INTRINSICS_MM_UNDEFINED_PD();
   const double result = _mm_cvtsd_f64(_mm_sqrt_sd(a, _mm_set_sd(x)));
 #elif !defined(LIBXSMM_NO_LIBM)
