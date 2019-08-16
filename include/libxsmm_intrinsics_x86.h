@@ -513,7 +513,7 @@
 #else
 # define LIBXSMM_INTRINSICS_LDDQU_SI128(A) _mm_lddqu_si128(A)
 #endif
-#if defined(__clang__) && ( \
+#if !defined(LIBXSMM_INTEL_COMPILER) && defined(__clang__) && ( \
       (LIBXSMM_VERSION3(3, 9, 0)  > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) && \
        LIBXSMM_VERSION3(0, 0, 0) != LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
    || (LIBXSMM_VERSION3(7, 3, 0)  > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) && \
@@ -522,15 +522,23 @@
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const double*)(A))
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const float*)(A))
 /* Clang misses _mm512_stream_p? (checked with v3.8.1). */
-# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_store_si512((A), (B))
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps((A), (B))
+# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_store_si512(A, B)
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps(A, B)
 # define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_store_pd(A, B)
 #else
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const float*)(A))
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const double*)(A))
 # define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_stream_si512((__m512i*)(A), (B))
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_stream_ps((A), (B))
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_stream_pd((A), (B))
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_stream_ps(A, B)
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_stream_pd(A, B)
+#endif
+#if !defined(LIBXSMM_INTEL_COMPILER) || (defined(__clang__) && ( \
+      (LIBXSMM_VERSION3(8, 0, 0)  > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) && \
+       LIBXSMM_VERSION3(0, 0, 0) != LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)))) \
+   || (defined(__APPLE__) && defined(__MACH__)) || defined(__GNUC__)
+# define LIBXSMM_INTRINSICS_MM256_STORE_EPI32(A, B) _mm256_store_si256((__m256i*)(A), B)
+#else
+# define LIBXSMM_INTRINSICS_MM256_STORE_EPI32(A, B) _mm256_store_epi32(A, B)
 #endif
 #if defined(LIBXSMM_INTEL_COMPILER)
 # if 1600 <= (LIBXSMM_INTEL_COMPILER)
@@ -571,13 +579,16 @@
   || ((!defined(__APPLE__) || !defined(__MACH__)) && defined(__clang__) \
       && LIBXSMM_VERSION3(8, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 # define LIBXSMM_INTRINSICS_MM512_LOAD_MASK16(SRC_PTR) _load_mask16((/*const*/ __mmask16*)(SRC_PTR))
-# define LIBXSMM_INTRINSICS_MM512_STORE_MASK16(DST_PTR, SRC) _store_mask16((__mmask16*)(DST_PTR), SRC);
+# define LIBXSMM_INTRINSICS_MM512_STORE_MASK16(DST_PTR, SRC) _store_mask16((__mmask16*)(DST_PTR), SRC)
+# define LIBXSMM_INTRINSICS_MM512_CVTU32_MASK16(A) _cvtu32_mask16((unsigned int)(A))
 #elif defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_INTRINSICS_MM512_LOAD_MASK16(SRC_PTR) ((__mmask16)_mm512_mask2int(*(const __mmask16*)(SRC_PTR)))
 # define LIBXSMM_INTRINSICS_MM512_STORE_MASK16(DST_PTR, SRC) (*(unsigned short*)(DST_PTR) = (unsigned short)(SRC))
+# define LIBXSMM_INTRINSICS_MM512_CVTU32_MASK16(A) _mm512_int2mask((int)(A))
 #else
 # define LIBXSMM_INTRINSICS_MM512_LOAD_MASK16(SRC_PTR) (*(const __mmask16*)(SRC_PTR))
 # define LIBXSMM_INTRINSICS_MM512_STORE_MASK16(DST_PTR, SRC) (*(unsigned short*)(DST_PTR) = (unsigned short)(SRC))
+# define LIBXSMM_INTRINSICS_MM512_CVTU32_MASK16(A) ((__mmask16)(A))
 #endif
 
 /**
