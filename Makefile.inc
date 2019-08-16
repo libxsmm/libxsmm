@@ -703,8 +703,8 @@ else
       SUITE = Cray Compiler
       LDFLAGS += -hsystem_alloc
       CRAY ?= 1
-    else
-      PGI ?= $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
+    else # PGI variable may conflict with environment variable of same name hence do not use "?="
+      PGI = $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
       SUITE = $(if $(filter-out 0,$(PGI)),PGI $(NULL),$(NULL))Compiler
       MKL_OMPRTL = pgi
     endif
@@ -1338,7 +1338,9 @@ ifeq (undefined,$(origin TARGET))
     endif
     ifeq (,$(CTARGET))
     ifeq (3,$(AVX))
-    ifneq (0,$(shell echo "$$(((0!=$(GCC) && 60000<=$(GCC_VERSION)) || (0!=$(CLANG) && (40000<=$(CC_VERSION) || 0==$(CC_VERSION)))))"))
+    ifneq (0,$(shell echo "$$(((0!=$(GCC) && 60000<=$(GCC_VERSION)) || \
+          (0!=$(CLANG) && (40000<=$(CC_VERSION) || 0==$(CC_VERSION))) || \
+          (0!=$(PGI) && 190000<=$(CC_VERSION))))"))
     ifeq (0,$(shell $(CC) -E -mfma -mavx512f -mavx512cd /dev/null 2>/dev/null >/dev/null; echo "$$?"))
       CTARGET = -mfma -mavx512f -mavx512cd
       ifneq (0,$(lastword $(sort 0 $(MIC)))) # MIC
@@ -1362,20 +1364,16 @@ ifeq (undefined,$(origin TARGET))
     endif
     ifeq (,$(CTARGET)) # fall-back to AVX2
     ifneq (,$(filter 2 3,$(AVX)))
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__AVX2__ -D__FMA__ -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-        CTARGET = -tp=haswell
-      else ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || 40800<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
+      ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || (40800<=$(GCC_VERSION) && 0==$(PGI)) || 0==$(CC_VERSION)))"))
         CTARGET ?= -march=core-avx2
+      else
+        CTARGET ?= -mavx2 -mfma
       endif
     endif
     endif
     ifeq (,$(CTARGET)) # fall-back to AVX
     ifneq (,$(filter 1 2 3,$(AVX)))
-      ifneq (0,$(PGI))
-        #DFLAGS += -D__AVX__ -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-        CTARGET = -tp=sandybridge
-      else ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || 40400<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
+      ifneq (0,$(shell echo "$$((0!=$(INTEL) || 0!=$(CLANG) || 40400<=$(GCC_VERSION) || 0==$(CC_VERSION)))"))
         CTARGET ?= -mavx
       endif
     endif
@@ -1383,10 +1381,7 @@ ifeq (undefined,$(origin TARGET))
     ifneq (,$(filter 1 2 3 4,$(SSE) $(AVX)))
       ifeq (,$(CTARGET)) # SSE-4.2
         ifneq (,$(filter 40 41 42 43,$(SSE)$(AVX)))
-          ifneq (0,$(PGI))
-            #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-            CTARGET = -tp=nehalem
-          else ifneq (0,$(GCC))
+          ifneq (0,$(GCC))
             ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
               CTARGET = -msse4.2
             else
@@ -1400,10 +1395,6 @@ ifeq (undefined,$(origin TARGET))
       endif
       ifeq (,$(CTARGET)) # SSE3
       ifneq (,$(filter 30 31 32 33,$(SSE)$(AVX)))
-        ifneq (0,$(PGI))
-          #DFLAGS += -D__SSSE3__ -D__SSE3__
-          CTARGET = -tp=penryn
-        endif
         ifneq (Darwin,$(UNAME))
           CTARGET ?= -msse3
         else # prevents Clang BE error (CRC32 and others)
@@ -1414,10 +1405,7 @@ ifeq (undefined,$(origin TARGET))
       # SSE=2 is implicitly present (64-bit ABI)
       ifeq (,$(CTARGET)) # default SSE
       ifneq (,$(filter 01 02 03 10 11 12 13,$(SSE)$(AVX)))
-        ifneq (0,$(PGI))
-          #DFLAGS += -D__SSE4_2__ -D__SSE4_1__ -D__SSSE3__ -D__SSE3__
-          CTARGET = -tp=nehalem
-        else ifneq (0,$(GCC))
+        ifneq (0,$(GCC))
           ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
             CTARGET = -msse4.2
           else

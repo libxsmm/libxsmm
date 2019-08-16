@@ -107,7 +107,9 @@
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
 
-#if /*no intrinsics: tested with 17.x and 18.x*/defined(__PGI) || /*legacy*/(defined(_CRAYC) && !defined(__GNUC__))
+#if /*no intrinsics: tested with 17.x and 18.x*/(defined(__PGI) && \
+    LIBXSMM_VERSION3(19, 0, 0) > LIBXSMM_VERSION3(__PGIC__, __PGIC_MINOR__, __PGIC_PATCHLEVEL__)) \
+ || /*legacy*/(defined(_CRAYC) && !defined(__GNUC__))
 # if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_STATIC)
 #   define LIBXSMM_INTRINSICS_NONE
 # endif
@@ -251,7 +253,7 @@
 #       include <immintrin.h>
 #     endif
 #   elif (defined(__GNUC__) && LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
-      && !defined(__PGI)
+      && (!defined(__PGI) || LIBXSMM_VERSION3(19, 0, 0) <= LIBXSMM_VERSION3(__PGIC__, __PGIC_MINOR__, __PGIC_PATCHLEVEL__))
 #     if LIBXSMM_X86_AVX2 < LIBXSMM_STATIC_TARGET_ARCH && !defined(__CYGWIN__)
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
 #     else /* Cygwin: invalid register for .seh_savexmm */
@@ -288,7 +290,7 @@
 #         define LIBXSMM_INTRINSICS_STATIC
 #       endif
 #     endif
-#     if !defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(__PGI)
+#     if !defined(LIBXSMM_INTRINSICS_INCLUDE) && (!defined(__PGI) || LIBXSMM_VERSION3(19, 0, 0) <= LIBXSMM_VERSION3(__PGIC__, __PGIC_MINOR__, __PGIC_PATCHLEVEL__))
 #       define LIBXSMM_INTRINSICS_INCLUDE
 #     endif
 #     if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_STATIC)
