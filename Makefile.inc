@@ -953,12 +953,14 @@ ifneq (0,$(INTEL))
   endif
   ifeq (0,$(DBG))
     # consider more accurate -fp-model (C/C++: precise, Fortran: source)
-    CXXFLAGS += -fno-alias -ansi-alias
-    CFLAGS += -fno-alias -ansi-alias
-    #ifeq (0,$(ICX))
+    ifeq (0,$(ICX))
       #CXXFLAGS += -qoverride_limits #-fp-model fast=2
       #CFLAGS += -qoverride_limits #-fp-model fast=2
-    #endif
+      CXXFLAGS += -fno-alias
+      CFLAGS += -fno-alias
+    endif
+    CXXFLAGS += -ansi-alias
+    CFLAGS += -ansi-alias
     ifeq (,$(strip $(GFC)))
     ifneq (,$(strip $(FC)))
       #FCFLAGS += -qoverride_limits #-fp-model fast=2
