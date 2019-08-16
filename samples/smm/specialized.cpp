@@ -133,9 +133,7 @@ int main(int argc, char* argv[])
       ITYPE *const b = LIBXSMM_ALIGN(helper.b, LIBXSMM_ALIGNMENT);
       OTYPE *const c = LIBXSMM_ALIGN(helper.c, LIBXSMM_ALIGNMENT);
       OTYPE *const d = LIBXSMM_ALIGN(helper.d, LIBXSMM_ALIGNMENT);
-#if !defined(_OPENMP)
-      const int nthreads = 1;
-#else
+#if defined(_OPENMP)
       const int nthreads = omp_get_max_threads();
 #     pragma omp parallel for num_threads(nthreads) schedule(static)
 #endif

@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
 #if !defined(_DEBUG)
     const char *const env_check = getenv("CHECK");
     const int check = (NULL == env_check ? 0 : atoi(env_check));
-#else
+#elif (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
     /*const*/ int check = 1;
 #endif
 
@@ -143,9 +143,7 @@ int main(int argc, char* argv[])
       ITYPE *const b = LIBXSMM_ALIGN(helper.b, LIBXSMM_ALIGNMENT);
       OTYPE *const c = LIBXSMM_ALIGN(helper.c, LIBXSMM_ALIGNMENT);
       OTYPE *const d = LIBXSMM_ALIGN(helper.d, LIBXSMM_ALIGNMENT);
-#if !defined(_OPENMP)
-      const int nthreads = 1;
-#else
+#if defined(_OPENMP)
       const int nthreads = omp_get_max_threads();
 #     pragma omp parallel for num_threads(nthreads) schedule(static)
 #endif
