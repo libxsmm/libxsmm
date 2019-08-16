@@ -509,7 +509,7 @@ LIBXSMM_API_INLINE void internal_finalize(void)
     LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
   }
   /* release scratch memory pool */
-  libxsmm_release_scratch();
+  libxsmm_xrelease_scratch(NULL/*lock*/);
   /* turn-off redirected memory allocations */
   libxsmm_malloc_kind = 0;
   /* release global services */
