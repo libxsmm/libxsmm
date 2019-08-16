@@ -376,6 +376,7 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int on_the_fly_input_packing;
   int upd_pack_input_upfront;
   int use_hybrid_imgofm_parallelization;
+  int compute_pixels;
 
   libxsmm_xtransfunction tr_kernel;
 

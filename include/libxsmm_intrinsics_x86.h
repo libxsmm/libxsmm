@@ -107,7 +107,9 @@
 /** Macro evaluates to LIBXSMM_ATTRIBUTE_TARGET_xxx (see below). */
 #define LIBXSMM_ATTRIBUTE_TARGET(TARGET) LIBXSMM_CONCATENATE(LIBXSMM_ATTRIBUTE_TARGET_, TARGET)
 
-#if /*no intrinsics: tested with 17.x and 18.x*/defined(__PGI) || /*legacy*/(defined(_CRAYC) && !defined(__GNUC__))
+#if /*no intrinsics: tested with 17.x and 18.x*/(defined(__PGI) && \
+    LIBXSMM_VERSION3(19, 0, 0) > LIBXSMM_VERSION3(__PGIC__, __PGIC_MINOR__, __PGIC_PATCHLEVEL__)) \
+ || /*legacy*/(defined(_CRAYC) && !defined(__GNUC__))
 # if !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_STATIC)
 #   define LIBXSMM_INTRINSICS_NONE
 # endif
@@ -251,7 +253,7 @@
 #       include <immintrin.h>
 #     endif
 #   elif (defined(__GNUC__) && LIBXSMM_VERSION3(4, 9, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
-      && !defined(__PGI)
+      && (!defined(__PGI) || LIBXSMM_VERSION3(19, 0, 0) <= LIBXSMM_VERSION3(__PGIC__, __PGIC_MINOR__, __PGIC_PATCHLEVEL__))
 #     if LIBXSMM_X86_AVX2 < LIBXSMM_STATIC_TARGET_ARCH && !defined(__CYGWIN__)
 #       define LIBXSMM_MAX_STATIC_TARGET_ARCH LIBXSMM_STATIC_TARGET_ARCH
 #     else /* Cygwin: invalid register for .seh_savexmm */
@@ -288,7 +290,7 @@
 #         define LIBXSMM_INTRINSICS_STATIC
 #       endif
 #     endif
-#     if !defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(__PGI)
+#     if !defined(LIBXSMM_INTRINSICS_INCLUDE) && (!defined(__PGI) || LIBXSMM_VERSION3(19, 0, 0) <= LIBXSMM_VERSION3(__PGIC__, __PGIC_MINOR__, __PGIC_PATCHLEVEL__))
 #       define LIBXSMM_INTRINSICS_INCLUDE
 #     endif
 #     if defined(LIBXSMM_INTRINSICS_INCLUDE) && !defined(LIBXSMM_INTRINSICS_NONE) && !defined(LIBXSMM_INTRINSICS_STATIC)
@@ -513,7 +515,7 @@
 #else
 # define LIBXSMM_INTRINSICS_LDDQU_SI128(A) _mm_lddqu_si128(A)
 #endif
-#if defined(__clang__) && ( \
+#if !defined(LIBXSMM_INTEL_COMPILER) && defined(__clang__) && ( \
       (LIBXSMM_VERSION3(3, 9, 0)  > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) && \
        LIBXSMM_VERSION3(0, 0, 0) != LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) \
    || (LIBXSMM_VERSION3(7, 3, 0)  > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) && \
@@ -522,15 +524,23 @@
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const double*)(A))
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const float*)(A))
 /* Clang misses _mm512_stream_p? (checked with v3.8.1). */
-# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_store_si512((A), (B))
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps((A), (B))
+# define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_store_si512(A, B)
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_store_ps(A, B)
 # define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_store_pd(A, B)
 #else
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PS(A) _mm512_load_ps((const float*)(A))
 # define LIBXSMM_INTRINSICS_MM512_LOAD_PD(A) _mm512_load_pd((const double*)(A))
 # define LIBXSMM_INTRINSICS_MM512_STREAM_SI512(A, B) _mm512_stream_si512((__m512i*)(A), (B))
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_stream_ps((A), (B))
-# define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_stream_pd((A), (B))
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PS(A, B) _mm512_stream_ps(A, B)
+# define LIBXSMM_INTRINSICS_MM512_STREAM_PD(A, B) _mm512_stream_pd(A, B)
+#endif
+#if !defined(LIBXSMM_INTEL_COMPILER) || (defined(__clang__) && ( \
+      (LIBXSMM_VERSION3(8, 0, 0)  > LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__) && \
+       LIBXSMM_VERSION3(0, 0, 0) != LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)))) \
+   || (defined(__APPLE__) && defined(__MACH__)) || defined(__GNUC__)
+# define LIBXSMM_INTRINSICS_MM256_STORE_EPI32(A, B) _mm256_store_si256((__m256i*)(A), B)
+#else
+# define LIBXSMM_INTRINSICS_MM256_STORE_EPI32(A, B) _mm256_store_epi32(A, B)
 #endif
 #if defined(LIBXSMM_INTEL_COMPILER)
 # if 1600 <= (LIBXSMM_INTEL_COMPILER)
@@ -567,14 +577,20 @@
 # define LIBXSMM_INTRINSICS_MM_UNDEFINED_PD() _mm_set1_pd(0)
 #endif
 #if (defined(LIBXSMM_INTEL_COMPILER) && (1800 <= (LIBXSMM_INTEL_COMPILER))) || (defined(__GNUC__) \
-      && LIBXSMM_VERSION3(6, 0, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
+      && LIBXSMM_VERSION3(7, 0, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
   || ((!defined(__APPLE__) || !defined(__MACH__)) && defined(__clang__) \
       && LIBXSMM_VERSION3(8, 0, 0) <= LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
 # define LIBXSMM_INTRINSICS_MM512_LOAD_MASK16(SRC_PTR) _load_mask16((/*const*/ __mmask16*)(SRC_PTR))
-# define LIBXSMM_INTRINSICS_MM512_STORE_MASK16(DST_PTR, SRC) _store_mask16((__mmask16*)(DST_PTR), SRC);
-#else
-# define LIBXSMM_INTRINSICS_MM512_LOAD_MASK16(SRC_PTR) ((__mmask16)_mm512_mask2int(*((__mmask16*)(SRC_PTR))))
+# define LIBXSMM_INTRINSICS_MM512_STORE_MASK16(DST_PTR, SRC) _store_mask16((__mmask16*)(DST_PTR), SRC)
+# define LIBXSMM_INTRINSICS_MM512_CVTU32_MASK16(A) _cvtu32_mask16((unsigned int)(A))
+#elif defined(LIBXSMM_INTEL_COMPILER)
+# define LIBXSMM_INTRINSICS_MM512_LOAD_MASK16(SRC_PTR) ((__mmask16)_mm512_mask2int(*(const __mmask16*)(SRC_PTR)))
 # define LIBXSMM_INTRINSICS_MM512_STORE_MASK16(DST_PTR, SRC) (*(unsigned short*)(DST_PTR) = (unsigned short)(SRC))
+# define LIBXSMM_INTRINSICS_MM512_CVTU32_MASK16(A) _mm512_int2mask((int)(A))
+#else
+# define LIBXSMM_INTRINSICS_MM512_LOAD_MASK16(SRC_PTR) (*(const __mmask16*)(SRC_PTR))
+# define LIBXSMM_INTRINSICS_MM512_STORE_MASK16(DST_PTR, SRC) (*(unsigned short*)(DST_PTR) = (unsigned short)(SRC))
+# define LIBXSMM_INTRINSICS_MM512_CVTU32_MASK16(A) ((__mmask16)(A))
 #endif
 
 /**
@@ -881,12 +897,19 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
 
 #if defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_INTRINSICS_MM512_TANH_PS(A) _mm512_tanh_ps(A)
+# define LIBXSMM_INTRINSICS_MM512_EXP_PS(A) _mm512_exp_ps(A)
 #else
 # include <math.h>
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_TANH_PS(__m512 a) {
   float a16[16]; int i;
   _mm512_store_ps(a16, a);
   for (i = 0; i < 16; ++i) a16[i] = LIBXSMM_TANHF(a16[i]);
+  return _mm512_loadu_ps(a16);
+}
+LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_EXP_PS(__m512 a) {
+  float a16[16]; int i;
+  _mm512_store_ps(a16, a);
+  for (i = 0; i < 16; ++i) a16[i] = LIBXSMM_EXPF(a16[i]);
   return _mm512_loadu_ps(a16);
 }
 #endif /* SVML */
@@ -899,7 +922,7 @@ LIBXSMM_APIVAR_ARRAY(unsigned int libxsmm_intrinsics_mm512_rng_state2, 16);
 LIBXSMM_APIVAR_ARRAY(unsigned int libxsmm_intrinsics_mm512_rng_state3, 16);
 
 /** Generate random number in the interval [0, 1); not thread-safe. */
-# if defined(__GNUC__) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) && !defined(_CRAYC)
+# if defined(__GNUC__) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) && !defined(_CRAYC) && 0
 LIBXSMM_PRAGMA_OPTIMIZE_OFF /* avoid ICE in case of symbols (-g) */
 # endif
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINSICS_MM512_RNG_PS(void) {
@@ -916,7 +939,7 @@ LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512) __m512 LIBXSMM_INTRINS
   LIBXSMM_INTRINSICS_MM512_RNG_STATE(3) = _mm512_or_epi32(t, _mm512_srli_epi32(LIBXSMM_INTRINSICS_MM512_RNG_STATE(3), 32 - 11));
   return _mm512_sub_ps(_mm512_castsi512_ps(_mm512_or_epi32(_mm512_set1_epi32(0x3f800000), rng_mantissa)), one);
 }
-# if defined(__GNUC__) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) && !defined(_CRAYC)
+# if defined(__GNUC__) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER) && !defined(_CRAYC) && 0
 LIBXSMM_PRAGMA_OPTIMIZE_ON
 # endif
 #endif /*__AVX512F__*/

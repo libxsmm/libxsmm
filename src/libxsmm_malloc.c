@@ -411,8 +411,10 @@ LIBXSMM_API_INLINE internal_malloc_pool_type* internal_scratch_malloc_pool(const
       break;
     }
   }
-#endif
   LIBXSMM_ASSERT(NULL != memory);
+#else
+  LIBXSMM_UNUSED(memory);
+#endif
   return result;
 }
 

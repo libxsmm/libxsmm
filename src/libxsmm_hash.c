@@ -71,7 +71,7 @@
 #define LIBXSMM_HASH_CRC32_U16(SEED, PVALUE) _mm_crc32_u16(SEED, *(const uint16_t*)(PVALUE))
 #define LIBXSMM_HASH_CRC32_U32(SEED, PVALUE) _mm_crc32_u32(SEED, *(const uint32_t*)(PVALUE))
 
-#if (64 > (LIBXSMM_BITS))
+#if (64 > (LIBXSMM_BITS)) || defined(__PGI)
 # define LIBXSMM_HASH_CRC32_U64(SEED, PVALUE) \
     LIBXSMM_HASH_CRC32_U32(((const uint32_t*)(PVALUE))[1], \
     LIBXSMM_HASH_CRC32_U32(((const uint32_t*)(PVALUE))[0], (uint32_t)(SEED)))
