@@ -31,7 +31,7 @@
 #include "libxsmm_trace.h"
 #include <libxsmm_sync.h>
 
-#if !defined(LIBXSMM_TRACE_DLINFO) /*&& !defined(__STATIC)*/
+#if !defined(LIBXSMM_TRACE_DLINFO) && defined(_GNU_SOURCE) /*&& !defined(__STATIC)*/
 # define LIBXSMM_TRACE_DLINFO
 #endif
 #if !defined(LIBXSMM_TRACE_MINDEPTH) || 0 > (LIBXSMM_TRACE_MINDEPTH)
