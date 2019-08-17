@@ -615,18 +615,18 @@ endif
 # Separate control on how to link against the BLAS library
 BLAS_STATIC ?= $(DEPSTATIC)
 
-# Too many ICEs with older Clang (need to know if Clang is used)
+# PGI: ignore env. variable (same name)
+PGI = 0
 ifeq (0,$(GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
 ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__clang__"; echo "$$?"))
   CLANG = 1
-else # PGI variable may conflict with environment variable of same name hence do not use "?="
+else
   PGI = $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
 endif
 endif
 endif
 CLANG ?= 0
-PGI ?= 0
 
 # Make GCC version number available even when not using GCC
 ifneq (0,$(GCC))
@@ -1869,8 +1869,12 @@ else ifneq (0,$(BLAS)) # generic
     ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
       BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),openblas$(BLAS_BITS))
     endif
-    # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
-    OPENBLAS := $(if $(BLASLIBFILE),1,0)
+    # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available; use OPENBLAS=0 to avoid this
+    ifeq (0,$(PGI))
+      OPENBLAS := $(if $(BLASLIBFILE),1,0)
+    else # PGI
+      OPENBLAS := 0
+    endif
 
     ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
@@ -1907,13 +1911,15 @@ else ifneq (0,$(BLAS)) # generic
           BLAS_XLDFLAGS += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
         endif
       endif
-      QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
-      ifneq (0,$(QUADMATH))
-        BLAS_XLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
-      endif
-      BLAS_CLDFLAGS += $(BLAS_XLDFLAGS)
-      ifneq (3,$(GCC))
-        BLAS_LDFLAGS += $(BLAS_XLDFLAGS)
+      ifeq (0,$(PGI))
+        QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
+        ifneq (0,$(QUADMATH))
+          BLAS_XLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
+        endif
+        BLAS_CLDFLAGS += $(BLAS_XLDFLAGS)
+        ifneq (3,$(GCC))
+          BLAS_LDFLAGS += $(BLAS_XLDFLAGS)
+        endif
       endif
     endif
   else # BLAS library is specified via BLASLIB
