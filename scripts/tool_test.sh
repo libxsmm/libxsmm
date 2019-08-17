@@ -253,6 +253,8 @@ then
        [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ];
     then
       source ${REPOROOT}/.env/${HOST}/${CONFIG}.env
+    else
+      echo "WARNING: configuration \"${CONFIG}\" not found!"
     fi
     for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
