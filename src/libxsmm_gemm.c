@@ -40,7 +40,9 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
-#include <math.h>
+#if !defined(LIBXSMM_NO_LIBM)
+# include <math.h>
+#endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
