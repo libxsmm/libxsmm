@@ -616,13 +616,13 @@ endif
 BLAS_STATIC ?= $(DEPSTATIC)
 
 # PGI: ignore env. variable (same name)
-PGI = 0
+override PGI = 0
 ifeq (0,$(GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
 ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__clang__"; echo "$$?"))
   CLANG = 1
 else
-  PGI = $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
+  override PGI = $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
 endif
 endif
 endif
@@ -1199,20 +1199,22 @@ else # GCC assumed
     endif
   endif
   ifneq (0,$(INSTRUMENT))
-    CXXFLAGS += -finstrument-functions
-    CFLAGS += -finstrument-functions
-    FCFLAGS += -finstrument-functions
-    # e.g. clang does not need/understand below flag
-    ifneq (0,$(shell echo "$$((40300<=$(GCC_VERSION)))"))
-      CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
-      ifneq (,$(filter 2 3,$(GCC)))
-        CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
-        ifeq (3,$(GCC))
-          FCFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
+    DFLAGS += -D__TRACE=$(INSTRUMENT)
+    ifeq (0,$(PGI))
+      CXXFLAGS += -finstrument-functions
+      CFLAGS += -finstrument-functions
+      FCFLAGS += -finstrument-functions
+      # e.g. clang does not need/understand below flag
+      ifneq (0,$(shell echo "$$((40300<=$(GCC_VERSION)))"))
+        CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
+        ifneq (,$(filter 2 3,$(GCC)))
+          CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
+          ifeq (3,$(GCC))
+            FCFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
+          endif
         endif
       endif
     endif
-    DFLAGS += -D__TRACE=$(INSTRUMENT)
   endif
   ifeq (Windows_NT,$(UNAME))
     LDFLAGS += $(XLIB_BEGIN) -ldbghelp $(XLIB_END)
