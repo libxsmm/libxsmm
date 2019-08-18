@@ -284,7 +284,7 @@
 ! 3 different arrays for x/y/z-components, 2-dimensional arrays (25,5)/(5,25), same B matrix for all 3 component arrays
 
 #ifdef XSMM
-  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_mmcall,xmm1
+  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_mmcall,xmm1,libxsmm_ptr2
   ! debug timing
   !use my_libxsmm,only: libxsmm_timer_tick,libxsmm_timer_duration
 #endif
@@ -310,9 +310,9 @@
   ! matrix-matrix multiplication C = alpha A * B + beta C
   ! with A(n1,n2) 5x5-matrix, B(n2,n3) 5x25-matrix and C(n1,n3) 5x25-matrix
   if (USE_XSMM_FUNCTION) then
-    call libxsmm_mmcall(xmm1, c_loc(A), c_loc(B1), c_loc(C1))
-    call libxsmm_mmcall(xmm1, c_loc(A), c_loc(B2), c_loc(C2))
-    call libxsmm_mmcall(xmm1, c_loc(A), c_loc(B3), c_loc(C3))
+    call libxsmm_mmcall(xmm1, libxsmm_ptr2(A), libxsmm_ptr2(B1), libxsmm_ptr2(C1))
+    call libxsmm_mmcall(xmm1, libxsmm_ptr2(A), libxsmm_ptr2(B2), libxsmm_ptr2(C2))
+    call libxsmm_mmcall(xmm1, libxsmm_ptr2(A), libxsmm_ptr2(B3), libxsmm_ptr2(C3))
 
     ! debug timing
     !duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -364,7 +364,7 @@
 ! 3 different arrays for x/y/z-components, 2-dimensional arrays (25,5)/(5,25), same B matrix for all 3 component arrays
 
 #ifdef XSMM
-  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_mmcall,xmm2
+  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_mmcall,xmm2,libxsmm_ptr2
 #endif
 
   implicit none
@@ -381,9 +381,9 @@
   ! matrix-matrix multiplication C = alpha A * B + beta C
   ! with A(n1,n2) 25x5-matrix, B(n2,n3) 5x5-matrix and C(n1,n3) 25x5-matrix
   if (USE_XSMM_FUNCTION) then
-    call libxsmm_mmcall(xmm2, c_loc(A1), c_loc(B), c_loc(C1))
-    call libxsmm_mmcall(xmm2, c_loc(A2), c_loc(B), c_loc(C2))
-    call libxsmm_mmcall(xmm2, c_loc(A3), c_loc(B), c_loc(C3))
+    call libxsmm_mmcall(xmm2, libxsmm_ptr2(A1), libxsmm_ptr2(B), libxsmm_ptr2(C1))
+    call libxsmm_mmcall(xmm2, libxsmm_ptr2(A2), libxsmm_ptr2(B), libxsmm_ptr2(C2))
+    call libxsmm_mmcall(xmm2, libxsmm_ptr2(A3), libxsmm_ptr2(B), libxsmm_ptr2(C3))
     return
   endif
 #endif
@@ -422,7 +422,7 @@
 ! 3 different arrays for x/y/z-components, 3-dimensional arrays (5,5,5), same B matrix for all 3 component arrays
 
 #ifdef XSMM
-  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_mmcall,xmm3
+  use my_libxsmm,only: USE_XSMM_FUNCTION,libxsmm_mmcall,xmm3,libxsmm_ptr2,libxsmm_ptr0
 #endif
 
   implicit none
@@ -440,9 +440,9 @@
   ! with A(n1,n2,n4) 5x5x5-matrix, B(n2,n3) 5x5-matrix and C(n1,n3,n4) 5x5x5-matrix
   if (USE_XSMM_FUNCTION) then
     do k = 1,5
-      call libxsmm_mmcall(xmm3, c_loc(A1(1,1,k)), c_loc(B), c_loc(C1(1,1,k)))
-      call libxsmm_mmcall(xmm3, c_loc(A2(1,1,k)), c_loc(B), c_loc(C2(1,1,k)))
-      call libxsmm_mmcall(xmm3, c_loc(A3(1,1,k)), c_loc(B), c_loc(C3(1,1,k)))
+      call libxsmm_mmcall(xmm3, libxsmm_ptr0(A1(1,1,k)), libxsmm_ptr2(B), libxsmm_ptr0(C1(1,1,k)))
+      call libxsmm_mmcall(xmm3, libxsmm_ptr0(A2(1,1,k)), libxsmm_ptr2(B), libxsmm_ptr0(C2(1,1,k)))
+      call libxsmm_mmcall(xmm3, libxsmm_ptr0(A3(1,1,k)), libxsmm_ptr2(B), libxsmm_ptr0(C3(1,1,k)))
     enddo
     return
   endif

@@ -737,7 +737,9 @@
 #if defined(LIBXSMM_GLIBC_FPTYPES)
 # if defined(__cplusplus)
 #   undef __USE_MISC
-#   include <math.h>
+#   if !defined(LIBXSMM_NO_LIBM)
+#     include <math.h>
+#   endif
 #   if !defined(_DEFAULT_SOURCE)
 #     define _DEFAULT_SOURCE
 #   endif

@@ -615,18 +615,18 @@ endif
 # Separate control on how to link against the BLAS library
 BLAS_STATIC ?= $(DEPSTATIC)
 
-# Too many ICEs with older Clang (need to know if Clang is used)
+# PGI: ignore env. variable (same name)
+override PGI = 0
 ifeq (0,$(GCC)) # not GCC
 ifeq (0,$(INTEL)) # not Intel
 ifeq (0,$(shell $(CC) -dM -E - < /dev/null 2>/dev/null | grep -q "__clang__"; echo "$$?"))
   CLANG = 1
-else # PGI variable may conflict with environment variable of same name hence do not use "?="
-  PGI = $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
+else
+  override PGI = $(shell $(CC) $(CC_VERSION_FLAG) | if grep -q "PGI"; then echo "1"; else echo "0"; fi)
 endif
 endif
 endif
 CLANG ?= 0
-PGI ?= 0
 
 # Make GCC version number available even when not using GCC
 ifneq (0,$(GCC))
@@ -1199,20 +1199,22 @@ else # GCC assumed
     endif
   endif
   ifneq (0,$(INSTRUMENT))
-    CXXFLAGS += -finstrument-functions
-    CFLAGS += -finstrument-functions
-    FCFLAGS += -finstrument-functions
-    # e.g. clang does not need/understand below flag
-    ifneq (0,$(shell echo "$$((40300<=$(GCC_VERSION)))"))
-      CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
-      ifneq (,$(filter 2 3,$(GCC)))
-        CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
-        ifeq (3,$(GCC))
-          FCFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
+    DFLAGS += -D__TRACE=$(INSTRUMENT)
+    ifeq (0,$(PGI))
+      CXXFLAGS += -finstrument-functions
+      CFLAGS += -finstrument-functions
+      FCFLAGS += -finstrument-functions
+      # e.g. clang does not need/understand below flag
+      ifneq (0,$(shell echo "$$((40300<=$(GCC_VERSION)))"))
+        CFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
+        ifneq (,$(filter 2 3,$(GCC)))
+          CXXFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
+          ifeq (3,$(GCC))
+            FCFLAGS += -finstrument-functions-exclude-function-list=_mm_,_mm256_,_mm512_,__rdtsc
+          endif
         endif
       endif
     endif
-    DFLAGS += -D__TRACE=$(INSTRUMENT)
   endif
   ifeq (Windows_NT,$(UNAME))
     LDFLAGS += $(XLIB_BEGIN) -ldbghelp $(XLIB_END)
@@ -1304,9 +1306,8 @@ else # GCC assumed
     endif
   endif
   ifeq (1,$(STATIC))
-    SLDFLAGS += -Bstatic
     ifeq (0,$(PGI))
-      SLDFLAGS += -static-libstdc++
+      SLDFLAGS += -Bstatic -static-libstdc++
       ifneq (Darwin,$(UNAME))
         SLDFLAGS += -static-libgcc
       endif
@@ -1714,21 +1715,23 @@ ifneq (0,$(BLAS))
 endif
 
 # enable MKL if available
-ifeq (,$(strip $(MKLROOT)))
-  MKL_INCFILE = $(strip $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h))))
-  ifneq (,$(MKL_INCFILE))
-    MKLROOT = $(abspath $(dir $(MKL_INCFILE))/..)
+ifeq (0,$(PGI))
+  ifeq (,$(strip $(MKLROOT)))
+    MKL_INCFILE = $(strip $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h))))
+    ifneq (,$(MKL_INCFILE))
+      MKLROOT = $(abspath $(dir $(MKL_INCFILE))/..)
+    endif
   endif
-endif
-ifeq (,$(strip $(MKLROOT)))
-  MKL_INCFILE = $(strip $(wildcard /usr/include/mkl/mkl.h))
-  ifneq (,$(MKL_INCFILE))
-    MKLROOT = $(abspath $(dir $(MKL_INCFILE))/../..)
+  ifeq (,$(strip $(MKLROOT)))
+    MKL_INCFILE = $(strip $(wildcard /usr/include/mkl/mkl.h))
+    ifneq (,$(MKL_INCFILE))
+      MKLROOT = $(abspath $(dir $(MKL_INCFILE))/../..)
+    endif
   endif
-endif
-ifneq (,$(MKL_INCFILE))
-  #BLAS_STATIC = 0
-  ABSLIBS = 1
+  ifneq (,$(MKL_INCFILE))
+    #BLAS_STATIC = 0
+    ABSLIBS = 1
+  endif
 endif
 
 ifneq (0,$(BLAS_STATIC))
@@ -1869,8 +1872,12 @@ else ifneq (0,$(BLAS)) # generic
     ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
       BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),openblas$(BLAS_BITS))
     endif
-    # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available as well; use OPENBLAS=0 to avoid this
-    OPENBLAS := $(if $(BLASLIBFILE),1,0)
+    # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available; use OPENBLAS=0 to avoid this
+    ifeq (0,$(PGI))
+      OPENBLAS := $(if $(BLASLIBFILE),1,0)
+    else # PGI
+      OPENBLAS := 0
+    endif
 
     ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
@@ -1907,13 +1914,15 @@ else ifneq (0,$(BLAS)) # generic
           BLAS_XLDFLAGS += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
         endif
       endif
-      QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
-      ifneq (0,$(QUADMATH))
-        BLAS_XLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
-      endif
-      BLAS_CLDFLAGS += $(BLAS_XLDFLAGS)
-      ifneq (3,$(GCC))
-        BLAS_LDFLAGS += $(BLAS_XLDFLAGS)
+      ifeq (0,$(PGI))
+        QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
+        ifneq (0,$(QUADMATH))
+          BLAS_XLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
+        endif
+        BLAS_CLDFLAGS += $(BLAS_XLDFLAGS)
+        ifneq (3,$(GCC))
+          BLAS_LDFLAGS += $(BLAS_XLDFLAGS)
+        endif
       endif
     endif
   else # BLAS library is specified via BLASLIB

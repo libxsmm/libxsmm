@@ -285,7 +285,7 @@
 
 #ifdef XSMM
   use my_libxsmm,only: USE_XSMM_FUNCTION_PREFETCH,libxsmm_mmcall,xmm1
-  use my_libxsmm,only: xmm1p,C_LOC
+  use my_libxsmm,only: xmm1p,libxsmm_ptr2
   ! debug timing
   !use my_libxsmm,only: libxsmm_timer_tick,libxsmm_timer_duration
 #endif
@@ -313,10 +313,13 @@
   ! with A(n1,n2) 5x5-matrix, B(n2,n3) 5x25-matrix and C(n1,n3) 5x25-matrix
   if (USE_XSMM_FUNCTION_PREFETCH) then
     ! prefetch version
-    call libxsmm_mmcall(xmm1p, a=C_LOC(A), b=C_LOC(B1), c=C_LOC(C1), pa=C_LOC(A), pb=C_LOC(B2), pc=C_LOC(C2)) ! with prefetch
-    call libxsmm_mmcall(xmm1p, a=C_LOC(A), b=C_LOC(B2), c=C_LOC(C2), pa=C_LOC(A), pb=C_LOC(B3), pc=C_LOC(C3)) ! with prefetch
-    call libxsmm_mmcall(xmm1, a=C_LOC(A), b=C_LOC(B3), c=C_LOC(C3))
-    !call libxsmm_mmcall(xmm1p, a=C_LOC(A), b=C_LOC(B3), c=C_LOC(C3), pa=C_LOC(A), pb=C_LOC(B1), pc=C_LOC(C1)) ! with dummy prefetch
+    call libxsmm_mmcall(xmm1p, a=libxsmm_ptr2(A), b=libxsmm_ptr2(B1), c=libxsmm_ptr2(C1), &
+                            pa=libxsmm_ptr2(A), pb=libxsmm_ptr2(B2), pc=libxsmm_ptr2(C2)) ! with prefetch
+    call libxsmm_mmcall(xmm1p, a=libxsmm_ptr2(A), b=libxsmm_ptr2(B2), c=libxsmm_ptr2(C2), &
+                            pa=libxsmm_ptr2(A), pb=libxsmm_ptr2(B3), pc=libxsmm_ptr2(C3)) ! with prefetch
+    call libxsmm_mmcall(xmm1, a=libxsmm_ptr2(A), b=libxsmm_ptr2(B3), c=libxsmm_ptr2(C3))
+    !call libxsmm_mmcall(xmm1p, a=libxsmm_ptr2(A), b=libxsmm_ptr2(B3), c=libxsmm_ptr2(C3), &
+                            !pa=libxsmm_ptr2(A), pb=libxsmm_ptr2(B1), pc=libxsmm_ptr2(C1)) ! with dummy prefetch
 
     ! debug timing
     !duration = libxsmm_timer_duration(start, libxsmm_timer_tick())
@@ -369,7 +372,7 @@
 
 #ifdef XSMM
   use my_libxsmm,only: USE_XSMM_FUNCTION_PREFETCH,libxsmm_mmcall,xmm2
-  use my_libxsmm,only: xmm2p,C_LOC
+  use my_libxsmm,only: xmm2p,libxsmm_ptr2
 #endif
 
   implicit none
@@ -388,10 +391,13 @@
   ! with A(n1,n2) 25x5-matrix, B(n2,n3) 5x5-matrix and C(n1,n3) 25x5-matrix
   if (USE_XSMM_FUNCTION_PREFETCH) then
     ! prefetch version
-    call libxsmm_mmcall(xmm2p, a=C_LOC(A1), b=C_LOC(B), c=C_LOC(C1), pa=C_LOC(A2), pb=C_LOC(B), pc=C_LOC(C2)) ! with prefetch
-    call libxsmm_mmcall(xmm2p, a=C_LOC(A2), b=C_LOC(B), c=C_LOC(C2), pa=C_LOC(A3), pb=C_LOC(B), pc=C_LOC(C3)) ! with prefetch
-    call libxsmm_mmcall(xmm2, a=C_LOC(A3), b=C_LOC(B), c=C_LOC(C3))
-    !call libxsmm_mmcall(xmm2p, a=C_LOC(A3), b=C_LOC(B), c=C_LOC(C3), pa=C_LOC(A1), pb=C_LOC(B), pc=C_LOC(C1)) ! with dummy prefetch
+    call libxsmm_mmcall(xmm2p, a=libxsmm_ptr2(A1), b=libxsmm_ptr2(B), c=libxsmm_ptr2(C1), &
+                            pa=libxsmm_ptr2(A2), pb=libxsmm_ptr2(B), pc=libxsmm_ptr2(C2)) ! with prefetch
+    call libxsmm_mmcall(xmm2p, a=libxsmm_ptr2(A2), b=libxsmm_ptr2(B), c=libxsmm_ptr2(C2), &
+                            pa=libxsmm_ptr2(A3), pb=libxsmm_ptr2(B), pc=libxsmm_ptr2(C3)) ! with prefetch
+    call libxsmm_mmcall(xmm2, a=libxsmm_ptr2(A3), b=libxsmm_ptr2(B), c=libxsmm_ptr2(C3))
+    !call libxsmm_mmcall(xmm2p, a=libxsmm_ptr2(A3), b=libxsmm_ptr2(B), c=libxsmm_ptr2(C3), &
+                            !pa=libxsmm_ptr2(A1), pb=libxsmm_ptr2(B), pc=libxsmm_ptr2(C1)) ! with dummy prefetch
     return
   endif
 #endif
@@ -431,7 +437,7 @@
 
 #ifdef XSMM
   use my_libxsmm,only: USE_XSMM_FUNCTION_PREFETCH,libxsmm_mmcall,xmm3
-  use my_libxsmm,only: xmm3p,C_LOC
+  use my_libxsmm,only: xmm3p,libxsmm_ptr2,libxsmm_ptr0
 #endif
 
   implicit none
@@ -451,16 +457,16 @@
   if (USE_XSMM_FUNCTION_PREFETCH) then
     do k = 1,5
       ! prefetch version
-      call libxsmm_mmcall(xmm3p, a=C_LOC(A1(1,1,k)), b=C_LOC(B), c=C_LOC(C1(1,1,k)), &
-                              pa=C_LOC(A2(1,1,k)), pb=C_LOC(B), pc=C_LOC(C2(1,1,k))) ! with prefetch
-      call libxsmm_mmcall(xmm3p, a=C_LOC(A2(1,1,k)), b=C_LOC(B), c=C_LOC(C2(1,1,k)), &
-                              pa=C_LOC(A3(1,1,k)), pb=C_LOC(B), pc=C_LOC(C3(1,1,k))) ! with prefetch
+      call libxsmm_mmcall(xmm3p, a=libxsmm_ptr0(A1(1,1,k)), b=libxsmm_ptr2(B), c=libxsmm_ptr0(C1(1,1,k)), &
+                              pa=libxsmm_ptr0(A2(1,1,k)), pb=libxsmm_ptr2(B), pc=libxsmm_ptr0(C2(1,1,k))) ! with prefetch
+      call libxsmm_mmcall(xmm3p, a=libxsmm_ptr0(A2(1,1,k)), b=libxsmm_ptr2(B), c=libxsmm_ptr0(C2(1,1,k)), &
+                              pa=libxsmm_ptr0(A3(1,1,k)), pb=libxsmm_ptr2(B), pc=libxsmm_ptr0(C3(1,1,k))) ! with prefetch
 
       !if (k == 5) then
-        call libxsmm_mmcall(xmm3, a=C_LOC(A3(1,1,k)), b=C_LOC(B), c=C_LOC(C3(1,1,k)))
+        call libxsmm_mmcall(xmm3, a=libxsmm_ptr0(A3(1,1,k)), b=libxsmm_ptr2(B), c=libxsmm_ptr0(C3(1,1,k)))
       !else
-      !  call libxsmm_mmcall(xmm3p, a=C_LOC(A3(1,1,k)), b=C_LOC(B), c=C_LOC(C3(1,1,k)), &
-      !                        pa=C_LOC(A1(1,1,k+1)), pb=C_LOC(B), pc=C_LOC(C1(1,1,k+1))) ! with dummy prefetch
+      !  call libxsmm_mmcall(xmm3p, a=libxsmm_ptr0(A3(1,1,k)), b=libxsmm_ptr2(B), c=libxsmm_ptr0(C3(1,1,k)), &
+      !                        pa=libxsmm_ptr0(A1(1,1,k+1)), pb=libxsmm_ptr2(B), pc=libxsmm_ptr0(C1(1,1,k+1))) ! with dummy prefetch
       !endif
     enddo
     return

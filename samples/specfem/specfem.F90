@@ -16,12 +16,7 @@
 
 module my_libxsmm
 
-  ! for C_LOC(A)
-  ! note: using C_LOC(A) however needs array A to be defined with "..,target :: A" attribute to become an interoperable pointer.
-  !       we haven't had issues yet though with array pointers when passing to C-functions, thus we omit it for now.
-  !use,intrinsic :: ISO_C_BINDING
-
-  use libxsmm !,only: C_LOC,LIBXSMM_SMMFUNCTION,libxsmm_dispatch,libxsmm_mmcall,libxsmm_init,libxsmm_finalize
+  use libxsmm !,only: LIBXSMM_SMMFUNCTION,libxsmm_dispatch,libxsmm_mmcall,libxsmm_init,libxsmm_finalize,libxsmm_ptr2,libxsmm_ptr0
 
   implicit none
 
