@@ -1306,9 +1306,8 @@ else # GCC assumed
     endif
   endif
   ifeq (1,$(STATIC))
-    SLDFLAGS += -Bstatic
     ifeq (0,$(PGI))
-      SLDFLAGS += -static-libstdc++
+      SLDFLAGS += -Bstatic -static-libstdc++
       ifneq (Darwin,$(UNAME))
         SLDFLAGS += -static-libgcc
       endif
