@@ -1715,23 +1715,21 @@ ifneq (0,$(BLAS))
 endif
 
 # enable MKL if available
-ifeq (0,$(PGI))
-  ifeq (,$(strip $(MKLROOT)))
-    MKL_INCFILE = $(strip $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h))))
-    ifneq (,$(MKL_INCFILE))
-      MKLROOT = $(abspath $(dir $(MKL_INCFILE))/..)
-    endif
-  endif
-  ifeq (,$(strip $(MKLROOT)))
-    MKL_INCFILE = $(strip $(wildcard /usr/include/mkl/mkl.h))
-    ifneq (,$(MKL_INCFILE))
-      MKLROOT = $(abspath $(dir $(MKL_INCFILE))/../..)
-    endif
-  endif
+ifeq (,$(strip $(MKLROOT)))
+  MKL_INCFILE = $(strip $(lastword $(sort $(wildcard /opt/intel/compilers_and_libraries_*/$(MKL_PLATFORM)/mkl/include/mkl.h))))
   ifneq (,$(MKL_INCFILE))
-    #BLAS_STATIC = 0
-    ABSLIBS = 1
+    MKLROOT = $(abspath $(dir $(MKL_INCFILE))/..)
   endif
+endif
+ifeq (,$(strip $(MKLROOT)))
+  MKL_INCFILE = $(strip $(wildcard /usr/include/mkl/mkl.h))
+  ifneq (,$(MKL_INCFILE))
+    MKLROOT = $(abspath $(dir $(MKL_INCFILE))/../..)
+  endif
+endif
+ifneq (,$(MKL_INCFILE))
+  #BLAS_STATIC = 0
+  ABSLIBS = 1
 endif
 
 ifneq (0,$(BLAS_STATIC))
@@ -1757,17 +1755,21 @@ endif
 endif
 
 ifneq (,$(strip $(MKLROOT)))
-  MKL ?= $(BLAS)
-  ifneq (,$(strip $(FC)))
-    ifneq (0,$(shell echo "$$((0==$(GCC) || 40600<=$(GCC_VERSION)))"))
-      MKL_DIRECT ?= 0
+  ifeq (0,$(PGI))
+    MKL ?= $(BLAS)
+    ifneq (,$(strip $(FC)))
+      ifneq (0,$(shell echo "$$((0==$(GCC) || 40600<=$(GCC_VERSION)))"))
+        MKL_DIRECT ?= 0
+      else
+        MKL_DIRECT = 0
+      endif
     else
       MKL_DIRECT = 0
     endif
   else
-    MKL_DIRECT = 0
+    MKL ?= 0
   endif
-else
+else # disable
   MKL = 0
 endif
 ifneq (0,$(MKL))
