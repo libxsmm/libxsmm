@@ -249,12 +249,12 @@ then
     for PARTITION in ${PARTITIONS}; do
     for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
-    if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-       [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ];
-    then
-      source ${REPOROOT}/.env/${HOST}/${CONFIG}.env
-    else
-      echo "WARNING: configuration \"${CONFIG}\" not found!"
+    if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ]; then
+      if [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ]; then
+        source ${REPOROOT}/.env/${HOST}/${CONFIG}.env
+      else
+        echo "WARNING: configuration \"${CONFIG}\" not found!"
+      fi
     fi
     for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then
