@@ -375,7 +375,6 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_gemm_batch_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_duration
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_cycles
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_tick
         INTERFACE
           ! Initialize the library; pay for setup cost at a specific point.
@@ -438,14 +437,6 @@
           ! Implicit FORTRAN 77 interface: not available.
           INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_tick() BIND(C)
             IMPORT :: C_LONG_LONG
-          END FUNCTION
-
-          ! Returns the difference between two timer ticks (cycles).
-          ! Implicit FORTRAN 77 interface: not available.
-          PURE FUNCTION libxsmm_timer_cycles(tick0, tick1) BIND(C)
-            IMPORT :: C_LONG_LONG
-            INTEGER(C_LONG_LONG), INTENT(IN), VALUE :: tick0, tick1
-            INTEGER(C_LONG_LONG) :: libxsmm_timer_cycles
           END FUNCTION
 
           ! Impure function (timer freq. may vary) which returns the duration
@@ -722,6 +713,25 @@
           arch = libxsmmf_get_target_arch(length(1))
           CALL C_F_POINTER(arch, libxsmm_get_target_arch, length)
         END FUNCTION
+
+        ! Returns the difference between two timer ticks (cycles).
+        ! Implicit FORTRAN 77 interface: subroutine available.
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_ncycles
+        PURE FUNCTION libxsmm_timer_ncycles(tick0, tick1)
+          INTEGER(C_LONG_LONG), INTENT(IN) :: tick0, tick1
+          INTEGER(C_LONG_LONG) :: libxsmm_timer_ncycles
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_timer_ncycles
+          INTERFACE
+            PURE SUBROUTINE internal_timer_ncycles(ncycles              &
+     &      tick0, tick1) BIND(C, NAME="libxsmm_timer_ncycles_")
+              IMPORT C_LONG_LONG
+              INTEGER(C_LONG_LONG), INTENT(IN)  :: tick0, tick1
+              INTEGER(C_LONG_LONG), INTENT(OUT) :: ncycles
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_timer_ncycles(                                  &
+     &      libxsmm_timer_ncycles, tick0, tick1)
+          END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z0
         FUNCTION libxsmm_ptr_z0(a)

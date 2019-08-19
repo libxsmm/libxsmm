@@ -461,5 +461,5 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* inout, const unsigned int
   libxsmm_itrans(inout, *typesize, *m, *(0 != n ? n : m), *(0 != ld ? ld : m));
 }
 
-#endif /*defined(LIBXSMM_BUILD)*/
+#endif /*defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)*/
 

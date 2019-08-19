@@ -220,5 +220,5 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* result, const void* a, const
 #endif
 }
 
-#endif /*defined(LIBXSMM_BUILD)*/
+#endif /*defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)*/
 
