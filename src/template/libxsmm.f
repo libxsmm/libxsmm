@@ -1064,25 +1064,25 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmavailable
-        LOGICAL ELEMENTAL FUNCTION libxsmm_dmmavailable(kernel)
+        LOGICAL FUNCTION libxsmm_dmmavailable(kernel)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_dmmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmavailable
-        LOGICAL ELEMENTAL FUNCTION libxsmm_smmavailable(kernel)
+        LOGICAL FUNCTION libxsmm_smmavailable(kernel)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_smmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmavailable
-        LOGICAL ELEMENTAL FUNCTION libxsmm_wimmavailable(kernel)
+        LOGICAL FUNCTION libxsmm_wimmavailable(kernel)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_wimmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsmmavailable
-        LOGICAL ELEMENTAL FUNCTION libxsmm_wsmmavailable(kernel)
+        LOGICAL FUNCTION libxsmm_wsmmavailable(kernel)
           TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
           libxsmm_wsmmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
