@@ -851,8 +851,12 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         internal_init();
         atexit(internal_finalize); /* once */
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick(); /* final timing */
-        if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && s0 != s1 && t0 != t1) {
-          libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / (t0 < t1 ? (t1 - t0) : (t0 - t1));
+        if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && t0 != t1) {
+          const libxsmm_timer_tickint ds = LIBXSMM_DELTA(s0, s1), dt = LIBXSMM_DELTA(t0, t1);
+          libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / dt;
+          if (ds > LIBXSMM_DELTA(ds, dt)) { /* no LIBXSMM_TIMER_RDTSC/cycles */
+            fprintf(stderr, "LIBXSMM WARNING: libxsmm_timer_ncycles may not measure in cycles!\n");
+          }
         }
       }
 #if (0 != LIBXSMM_SYNC)
@@ -3123,5 +3127,5 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmcall)(
   LIBXSMM_FSYMBOL(libxsmm_xmmcall_prf)(fn, a, b, c, pa, pb, pc);
 }
 
-#endif /*defined(LIBXSMM_BUILD)*/
+#endif /*defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)*/
 

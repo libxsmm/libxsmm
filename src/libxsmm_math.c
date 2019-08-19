@@ -567,5 +567,5 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* coprime, const int*
 #endif
 }
 
-#endif /*defined(LIBXSMM_BUILD)*/
+#endif /*defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)*/
 

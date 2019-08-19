@@ -94,7 +94,7 @@ int main(int argc, char* argv[])
   }
 
   printf("libxsmm_barrier_wait(): %llu cycles (%d threads)\n",
-    libxsmm_timer_cycles(start, libxsmm_timer_tick()) / num_iterations,
+    libxsmm_timer_ncycles(start, libxsmm_timer_tick()) / num_iterations,
     num_threads);
 
   libxsmm_barrier_destroy(barrier);

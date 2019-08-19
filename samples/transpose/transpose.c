@@ -226,7 +226,7 @@ int main(int argc, char* argv[])
 #else
           OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
 #endif
-          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
           start = libxsmm_timer_tick();
@@ -235,7 +235,7 @@ int main(int argc, char* argv[])
 #         pragma omp single nowait
 #endif
           OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
-          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
       }
       else {
@@ -245,7 +245,7 @@ int main(int argc, char* argv[])
         if (2 > tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
           ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
-          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
           start = libxsmm_timer_tick();
@@ -254,7 +254,7 @@ int main(int argc, char* argv[])
 #         pragma omp single
 #endif
           ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
-          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
       }
       if (0 != check) { /* check */
@@ -304,7 +304,7 @@ int main(int argc, char* argv[])
           start = libxsmm_timer_tick();
           matrix_transpose(b, a, km, kn);
 #endif
-          duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration2 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
         else {
           assert(('i' == t || 'I' == t) && kldo == kldi);
@@ -312,7 +312,7 @@ int main(int argc, char* argv[])
           memcpy(b, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
           start = libxsmm_timer_tick();
           ITRANS_GOLD(&km, &kn, b, &kldi, &kldo);
-          duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration2 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
 #else
           fprintf(stderr, "Error: no validation routine available!\n");
           result = EXIT_FAILURE;
