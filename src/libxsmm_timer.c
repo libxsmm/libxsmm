@@ -134,7 +134,7 @@ LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_t
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_timer_ncycles)(libxsmm_timer_tickint* ncycles, const libxsmm_timer_tickint* tick0, const libxsmm_timer_tickint* tick1);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_timer_ncycles)(libxsmm_timer_tickint* /*ncycles*/, const libxsmm_timer_tickint* /*tick0*/, const libxsmm_timer_tickint* /*tick1*/);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_timer_ncycles)(libxsmm_timer_tickint* ncycles, const libxsmm_timer_tickint* tick0, const libxsmm_timer_tickint* tick1)
 {
 #if !defined(NDEBUG)
