@@ -30,9 +30,10 @@
 !*****************************************************************************!
 
       MODULE LIBXSMM
-        USE, INTRINSIC :: ISO_C_BINDING, ONLY:                          &
-     &    C_FLOAT, C_DOUBLE, C_CHAR, C_SHORT, C_INT, C_LONG_LONG,       &
-     &    C_INT8_T, C_INTPTR_T, C_F_POINTER, C_LOC, C_PTR, C_NULL_PTR
+        USE, INTRINSIC :: ISO_C_BINDING, ONLY: C_DOUBLE, C_FLOAT,       &
+     &    C_LONG_LONG, C_INT, C_SHORT, C_CHAR, C_INT8_T,                &
+     &    C_F_POINTER, C_ASSOCIATED, C_LOC, C_PTR, C_NULL_PTR,          &
+     &    C_F_PROCPOINTER, C_FUNPTR
         IMPLICIT NONE
 
         ! Name of the version (stringized set of version numbers).
@@ -165,23 +166,37 @@
 
         ! Generic function type (double-precision).
         TYPE :: LIBXSMM_DMMFUNCTION
-          INTEGER(C_INTPTR_T) :: handle
+          TYPE(C_FUNPTR) :: handle
         END TYPE
 
         ! Generic function type (single-precision).
         TYPE :: LIBXSMM_SMMFUNCTION
-          INTEGER(C_INTPTR_T) :: handle
+          TYPE(C_FUNPTR) :: handle
         END TYPE
 
         ! Generic function type (single-precision).
         TYPE :: LIBXSMM_WIMMFUNCTION
-          INTEGER(C_INTPTR_T) :: handle
+          TYPE(C_FUNPTR) :: handle
         END TYPE
 
         ! Generic function type (single-precision).
         TYPE :: LIBXSMM_WSMMFUNCTION
-          INTEGER(C_INTPTR_T) :: handle
+          TYPE(C_FUNPTR) :: handle
         END TYPE
+
+        ! Generic function types with certain arity.
+        ABSTRACT INTERFACE
+          PURE SUBROUTINE LIBXSMM_FUNCTION3(a, b, c) BIND(C)
+            IMPORT :: C_PTR
+            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          END SUBROUTINE
+
+          PURE SUBROUTINE LIBXSMM_FUNCTION6(a, b, c, pa, pb, pc) BIND(C)
+            IMPORT :: C_PTR
+            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+            TYPE(C_PTR), INTENT(IN), VALUE :: pa, pb, pc
+          END SUBROUTINE
+        END INTERFACE
 
         ! Structure of differences with matrix norms according
         ! to http://www.netlib.org/lapack/lug/node75.html).
@@ -364,8 +379,6 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_matdiff_clear
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch2
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmdispatch
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_abc
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_prf
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_otrans_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dgemm_omp
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_sgemm_omp
@@ -454,8 +467,8 @@
           ! INTEGER(8) :: kernel
           SUBROUTINE libxsmm_release_kernel(kernel)                     &
      &    BIND(C, NAME="libxsmm_release_kernel_")
-            IMPORT :: C_INTPTR_T
-            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
+            IMPORT :: C_FUNPTR
+            TYPE(C_FUNPTR), INTENT(IN) :: kernel
           END SUBROUTINE
 
           ! Type-generic (unsafe) code dispatch (trylock: impure routine).
@@ -467,8 +480,8 @@
           SUBROUTINE libxsmm_xmmdispatch(kernel, prec,                  &
      &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
      &    BIND(C, NAME="libxsmm_xmmdispatch_")
-            IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
-            INTEGER(C_INTPTR_T), INTENT(OUT) :: kernel
+            IMPORT :: C_FUNPTR, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            TYPE(C_FUNPTR), INTENT(OUT) :: kernel
             INTEGER(C_INT), INTENT(IN) :: prec
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
@@ -485,35 +498,13 @@
           SUBROUTINE libxsmm_xmmdispatch2(kernel, iprec, oprec,         &
      &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
      &    BIND(C, NAME="libxsmm_xmmdispatch2_")
-            IMPORT :: C_INTPTR_T, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
-            INTEGER(C_INTPTR_T), INTENT(OUT) :: kernel
+            IMPORT :: C_FUNPTR, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
+            TYPE(C_FUNPTR), INTENT(OUT) :: kernel
             INTEGER(C_INT), INTENT(IN) :: iprec, oprec
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
             TYPE(C_PTR), INTENT(IN), VALUE :: flags, prefetch
-          END SUBROUTINE
-
-          ! Generic call routine (3-argument form).
-          ! Implicit FORTRAN 77 interface:
-          ! REAL(4|8)  :: a(1), b(1), c(1)
-          ! INTEGER(8) :: kernel
-          PURE SUBROUTINE libxsmm_xmmcall_abc(kernel, a, b, c)          &
-     &    BIND(C, NAME="libxsmm_xmmcall_abc_")
-            IMPORT :: C_INTPTR_T, C_PTR
-            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
-            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
-          END SUBROUTINE
-
-          ! Generic call routine (6-argument form).
-          ! Implicit FORTRAN 77 interface:
-          ! REAL(4|8)  :: a(1), b(1), c(1), pa(1), pb(1), pc(1)
-          ! INTEGER(8) :: kernel
-          PURE SUBROUTINE libxsmm_xmmcall_prf(kernel,                   &
-     &    a,b,c, pa,pb,pc)  BIND(C, NAME="libxsmm_xmmcall_prf_")
-            IMPORT :: C_INTPTR_T, C_PTR
-            INTEGER(C_INTPTR_T), INTENT(IN) :: kernel
-            TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
           END SUBROUTINE
 
           ! Matrix transposition; MT via libxsmmext (out-of-place form).
@@ -713,25 +704,6 @@
           arch = libxsmmf_get_target_arch(length(1))
           CALL C_F_POINTER(arch, libxsmm_get_target_arch, length)
         END FUNCTION
-
-        ! Returns the difference between two timer ticks (cycles).
-        ! Implicit FORTRAN 77 interface: subroutine available.
-        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_ncycles
-        PURE FUNCTION libxsmm_timer_ncycles(tick0, tick1)
-          INTEGER(C_LONG_LONG), INTENT(IN) :: tick0, tick1
-          INTEGER(C_LONG_LONG) :: libxsmm_timer_ncycles
-          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_timer_ncycles
-          INTERFACE
-            PURE SUBROUTINE internal_timer_ncycles(ncycles,             &
-     &      tick0, tick1) BIND(C, NAME="libxsmm_timer_ncycles_")
-              IMPORT C_LONG_LONG
-              INTEGER(C_LONG_LONG), INTENT(IN)  :: tick0, tick1
-              INTEGER(C_LONG_LONG), INTENT(OUT) :: ncycles
-            END SUBROUTINE
-          END INTERFACE
-          CALL internal_timer_ncycles(                                  &
-     &      libxsmm_timer_ncycles, tick0, tick1)
-          END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_ptr_z0
         FUNCTION libxsmm_ptr_z0(a)
@@ -1094,26 +1066,52 @@
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmavailable
         LOGICAL ELEMENTAL FUNCTION libxsmm_dmmavailable(kernel)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
-          libxsmm_dmmavailable = 0.NE.kernel%handle
+          libxsmm_dmmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmavailable
         LOGICAL ELEMENTAL FUNCTION libxsmm_smmavailable(kernel)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
-          libxsmm_smmavailable = 0.NE.kernel%handle
+          libxsmm_smmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmavailable
         LOGICAL ELEMENTAL FUNCTION libxsmm_wimmavailable(kernel)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
-          libxsmm_wimmavailable = 0.NE.kernel%handle
+          libxsmm_wimmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsmmavailable
         LOGICAL ELEMENTAL FUNCTION libxsmm_wsmmavailable(kernel)
           TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
-          libxsmm_wsmmavailable = 0.NE.kernel%handle
+          libxsmm_wsmmavailable = C_ASSOCIATED(kernel%handle)
         END FUNCTION
+
+        ! Generic call routine (3-argument form).
+        ! Implicit FORTRAN 77 interface:
+        ! REAL(4|8)  :: a(1), b(1), c(1)
+        ! INTEGER(8) :: kernel
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_abc
+        SUBROUTINE libxsmm_xmmcall_abc(kernel, a, b, c)
+          TYPE(C_FUNPTR), INTENT(IN) :: kernel
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c
+          PROCEDURE(LIBXSMM_FUNCTION3), POINTER :: xmm
+          CALL C_F_PROCPOINTER(kernel, xmm)
+          CALL xmm(a, b, c)
+        END SUBROUTINE
+
+        ! Generic call routine (6-argument form).
+        ! Implicit FORTRAN 77 interface:
+        ! REAL(4|8)  :: a(1), b(1), c(1), pa(1), pb(1), pc(1)
+        ! INTEGER(8) :: kernel
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_xmmcall_prf
+        SUBROUTINE libxsmm_xmmcall_prf(kernel, a,b,c, pa,pb,pc)
+          TYPE(C_FUNPTR), INTENT(IN) :: kernel
+          TYPE(C_PTR), INTENT(IN), VALUE :: a, b, c, pa, pb, pc
+          PROCEDURE(LIBXSMM_FUNCTION6), POINTER :: xmm
+          CALL C_F_PROCPOINTER(kernel, xmm)
+          CALL xmm(a, b, c, pa, pb, pc)
+        END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall
         SUBROUTINE libxsmm_dmmcall(kernel, a,b,c, pa,pb,pc)
@@ -1188,56 +1186,56 @@
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_abc
-        PURE SUBROUTINE libxsmm_dmmcall_abc(kernel, a, b, c)
+        SUBROUTINE libxsmm_dmmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c
           CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_abc
-        PURE SUBROUTINE libxsmm_smmcall_abc(kernel, a, b, c)
+        SUBROUTINE libxsmm_smmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c
           CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcall_abc
-        PURE SUBROUTINE libxsmm_wimmcall_abc(kernel, a, b, c)
+        SUBROUTINE libxsmm_wimmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c
           CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsmmcall_abc
-        PURE SUBROUTINE libxsmm_wsmmcall_abc(kernel, a, b, c)
+        SUBROUTINE libxsmm_wsmmcall_abc(kernel, a, b, c)
           TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c
           CALL libxsmm_xmmcall_abc(kernel%handle, a, b, c)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_dmmcall_prf
-        PURE SUBROUTINE libxsmm_dmmcall_prf(kernel, a,b,c, pa,pb,pc)
+        SUBROUTINE libxsmm_dmmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_DMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_smmcall_prf
-        PURE SUBROUTINE libxsmm_smmcall_prf(kernel, a,b,c, pa,pb,pc)
+        SUBROUTINE libxsmm_smmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_SMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wimmcall_prf
-        PURE SUBROUTINE libxsmm_wimmcall_prf(kernel, a,b,c, pa,pb,pc)
+        SUBROUTINE libxsmm_wimmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_WIMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
         END SUBROUTINE
 
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_wsmmcall_prf
-        PURE SUBROUTINE libxsmm_wsmmcall_prf(kernel, a,b,c, pa,pb,pc)
+        SUBROUTINE libxsmm_wsmmcall_prf(kernel, a,b,c, pa,pb,pc)
           TYPE(LIBXSMM_WSMMFUNCTION), INTENT(IN) :: kernel
           TYPE(C_PTR), INTENT(IN) :: a, b, c, pa, pb, pc
           CALL libxsmm_xmmcall_prf(kernel%handle, a, b, c, pa, pb, pc)
@@ -1757,6 +1755,25 @@
           END INTERFACE
           CALL internal_itrans(matrix, typesize, m, n, ld)
         END SUBROUTINE
+
+        ! Returns the difference between two timer ticks (cycles).
+        ! Implicit FORTRAN 77 interface: subroutine available.
+        !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_ncycles
+        PURE FUNCTION libxsmm_timer_ncycles(tick0, tick1)
+          INTEGER(C_LONG_LONG), INTENT(IN) :: tick0, tick1
+          INTEGER(C_LONG_LONG) :: libxsmm_timer_ncycles
+          !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_timer_ncycles
+          INTERFACE
+            PURE SUBROUTINE internal_timer_ncycles(ncycles,             &
+     &      tick0, tick1) BIND(C, NAME="libxsmm_timer_ncycles_")
+              IMPORT C_LONG_LONG
+              INTEGER(C_LONG_LONG), INTENT(IN)  :: tick0, tick1
+              INTEGER(C_LONG_LONG), INTENT(OUT) :: ncycles
+            END SUBROUTINE
+          END INTERFACE
+          CALL internal_timer_ncycles(                                  &
+     &      libxsmm_timer_ncycles, tick0, tick1)
+          END FUNCTION
 
         ! Utility function to calculate a collection of scalar differences
         ! between two matrices (libxsmm_matdiff_info). The location (m, n)
