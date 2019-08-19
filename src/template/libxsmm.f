@@ -722,7 +722,7 @@
           INTEGER(C_LONG_LONG) :: libxsmm_timer_ncycles
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_timer_ncycles
           INTERFACE
-            PURE SUBROUTINE internal_timer_ncycles(ncycles              &
+            PURE SUBROUTINE internal_timer_ncycles(ncycles,             &
      &      tick0, tick1) BIND(C, NAME="libxsmm_timer_ncycles_")
               IMPORT C_LONG_LONG
               INTEGER(C_LONG_LONG), INTENT(IN)  :: tick0, tick1

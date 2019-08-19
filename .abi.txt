@@ -391,8 +391,9 @@ libxsmm_spmdm_get_num_createSparseSlice_blocks
 libxsmm_spmdm_init
 libxsmm_ssqrt
 libxsmm_strerror
-libxsmm_timer_cycles
 libxsmm_timer_duration
+libxsmm_timer_ncycles
+libxsmm_timer_ncycles_
 libxsmm_timer_tick
 libxsmm_trace
 libxsmm_trace_finalize
