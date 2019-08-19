@@ -33,7 +33,7 @@
         USE, INTRINSIC :: ISO_C_BINDING, ONLY: C_DOUBLE, C_FLOAT,       &
      &    C_LONG_LONG, C_INT, C_SHORT, C_CHAR, C_INT8_T,                &
      &    C_F_POINTER, C_ASSOCIATED, C_LOC, C_PTR, C_NULL_PTR,          &
-     &    C_F_PROCPOINTER, C_FUNPTR
+     &    C_F_PROCPOINTER, C_FUNPTR, C_NULL_FUNPTR
         IMPLICIT NONE
 
         ! Name of the version (stringized set of version numbers).
@@ -166,22 +166,22 @@
 
         ! Generic function type (double-precision).
         TYPE :: LIBXSMM_DMMFUNCTION
-          TYPE(C_FUNPTR) :: handle
+          TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
 
         ! Generic function type (single-precision).
         TYPE :: LIBXSMM_SMMFUNCTION
-          TYPE(C_FUNPTR) :: handle
+          TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
 
         ! Generic function type (single-precision).
         TYPE :: LIBXSMM_WIMMFUNCTION
-          TYPE(C_FUNPTR) :: handle
+          TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
 
         ! Generic function type (single-precision).
         TYPE :: LIBXSMM_WSMMFUNCTION
-          TYPE(C_FUNPTR) :: handle
+          TYPE(C_FUNPTR) :: handle = C_NULL_FUNPTR
         END TYPE
 
         ! Generic function types with certain arity.
