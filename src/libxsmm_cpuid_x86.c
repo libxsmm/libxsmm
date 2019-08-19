@@ -92,7 +92,8 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
 #if defined(LIBXSMM_PLATFORM_SUPPORTED)
   unsigned int eax, ebx, ecx, edx;
   LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
-  if (1 <= eax) { /* CPUID */
+  if (1 <= eax) { /* CPUID max. leaf */
+    const unsigned int maxleaf = eax;
     static int error_once = 0;
     LIBXSMM_CPUID_X86(1, 0/*ecx*/, eax, ebx, ecx, edx);
     /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
@@ -103,7 +104,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
     if (LIBXSMM_CPUID_CHECK(ecx, 0x0C000000)) {
       LIBXSMM_XGETBV(0, eax, edx);
       if (LIBXSMM_CPUID_CHECK(eax, 0x00000006)) { /* OS XSAVE 256-bit */
-        if (LIBXSMM_CPUID_CHECK(eax, 0x000000E0)) { /* OS XSAVE 512-bit */
+        if (7 <= maxleaf && LIBXSMM_CPUID_CHECK(eax, 0x000000E0)) { /* OS XSAVE 512-bit */
           LIBXSMM_CPUID_X86(7, 0/*ecx*/, eax, ebx, ecx, edx);
           /* AVX512F(0x00010000), AVX512CD(0x10000000) */
           if (LIBXSMM_CPUID_CHECK(ebx, 0x10010000)) { /* Common */
