@@ -50,7 +50,7 @@
     __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \
     CYCLE |= libxsmm_timer_rdtsc_hi_ << 32; \
   }
-#elif 0 && (defined(_rdtsc) || defined(_WIN32))
+#elif (defined(_rdtsc) || defined(_WIN32))
 # define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
 #endif
 
