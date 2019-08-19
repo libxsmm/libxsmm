@@ -473,16 +473,16 @@
 
           ! Type-generic (unsafe) code dispatch (trylock: impure routine).
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4)   :: prec, flags, prefetch
+          ! INTEGER(4)   :: gemm_precision, flags, prefetch
           ! INTEGER(4|8) :: m, n, k, lda, ldb, ldc
           ! REAL(4|8)    :: alpha, beta
           ! INTEGER(8)   :: kernel
-          SUBROUTINE libxsmm_xmmdispatch(kernel, prec,                  &
+          SUBROUTINE libxsmm_xmmdispatch(kernel, gemm_precision,        &
      &    m, n, k, lda, ldb, ldc, alpha, beta, flags, prefetch)         &
      &    BIND(C, NAME="libxsmm_xmmdispatch_")
             IMPORT :: C_FUNPTR, C_PTR, C_INT, LIBXSMM_BLASINT_KIND
             TYPE(C_FUNPTR), INTENT(OUT) :: kernel
-            INTEGER(C_INT), INTENT(IN) :: prec
+            INTEGER(C_INT), INTENT(IN) :: gemm_precision
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             TYPE(C_PTR), INTENT(IN), VALUE :: lda, ldb, ldc
             TYPE(C_PTR), INTENT(IN), VALUE :: alpha, beta
@@ -645,13 +645,13 @@
           ! non-NULL values match. Otherwise (NULL) the respective argument is
           ! considered a "free value" i.e., every value can match; libxsmmext required.
           ! Implicit FORTRAN 77 interface:
-          ! INTEGER(4)   :: prec, flags
+          ! INTEGER(4)   :: gemm_precision, flags
           ! INTEGER(4|8) :: m, n, k, lda, ldb, ldc
           ! REAL(4|8)    :: alpha, beta
-          SUBROUTINE libxsmm_mmbatch_begin(prec, flags, m, n, k,        &
-     &    lda, ldb, ldc, alpha, beta) BIND(C)
+          SUBROUTINE libxsmm_mmbatch_begin(gemm_precision, flags,       &
+     &    m, n, k,  lda, ldb, ldc, alpha, beta) BIND(C)
             IMPORT C_PTR, C_INT, LIBXSMM_BLASINT_KIND
-            INTEGER(C_INT), INTENT(IN), VALUE :: prec
+            INTEGER(C_INT), INTENT(IN), VALUE :: gemm_precision
             INTEGER(C_INT), INTENT(IN) :: flags
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
             INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: lda, ldb, ldc
