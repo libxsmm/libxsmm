@@ -74,14 +74,14 @@ int main(int argc, char* argv[])
     libxsmm_rng_f32_seq( rngs, 1 );
   }
   printf("\nlibxsmm_rng_float:  %llu cycles per random number (scalar)\n",
-    libxsmm_timer_cycles(start, libxsmm_timer_tick()) / num_rngs);
+    libxsmm_timer_ncycles(start, libxsmm_timer_tick()) / num_rngs);
 
   start = libxsmm_timer_tick();
   for (i = 0; i < num_rngs; ++i) {
     libxsmm_rng_f32_seq( vrng, 16 );
   }
   printf("\nlibxsmm_rng_float:  %llu cycles per random number (vlen=16)\n",
-    libxsmm_timer_cycles(start, libxsmm_timer_tick()) / ((size_t)num_rngs*16));
+    libxsmm_timer_ncycles(start, libxsmm_timer_tick()) / ((size_t)num_rngs*16));
 
   /* let's compute some values of the random numbers */
   printf("\n%lli random numbers generated, which are uniformly distributed in [0,1(\n", (long long)num_rngs);

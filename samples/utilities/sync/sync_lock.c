@@ -102,7 +102,7 @@ int main(int argc, char* argv[])
       LIBXSMM_LOCK_RELREAD(LOCK_KIND, &lock);
       LIBXSMM_LOCK_ACQREAD(LOCK_KIND, &lock);
       LIBXSMM_LOCK_RELREAD(LOCK_KIND, &lock);
-      latency += libxsmm_timer_diff(tick, libxsmm_timer_tick());
+      latency += libxsmm_timer_ncycles(tick, libxsmm_timer_tick());
     }
     duration = libxsmm_timer_duration(0, latency);
     if (0 < duration) {
@@ -126,7 +126,7 @@ int main(int argc, char* argv[])
       LIBXSMM_LOCK_RELEASE(LOCK_KIND, &lock);
       LIBXSMM_LOCK_ACQUIRE(LOCK_KIND, &lock);
       LIBXSMM_LOCK_RELEASE(LOCK_KIND, &lock);
-      latency += libxsmm_timer_diff(tick, libxsmm_timer_tick());
+      latency += libxsmm_timer_ncycles(tick, libxsmm_timer_tick());
     }
     duration = libxsmm_timer_duration(0, latency);
     if (0 < duration) {
@@ -153,17 +153,17 @@ int main(int argc, char* argv[])
           t1 = libxsmm_timer_tick();
           t2 = work(t1, work_r);
           LIBXSMM_LOCK_RELREAD(LOCK_KIND, &lock);
-          d += libxsmm_timer_diff(t1, t2);
+          d += libxsmm_timer_ncycles(t1, t2);
         }
         else { /* write */
           LIBXSMM_LOCK_ACQUIRE(LOCK_KIND, &lock);
           t1 = libxsmm_timer_tick();
           t2 = work(t1, work_w);
           LIBXSMM_LOCK_RELEASE(LOCK_KIND, &lock);
-          d += libxsmm_timer_diff(t1, t2);
+          d += libxsmm_timer_ncycles(t1, t2);
         }
       }
-      t1 = libxsmm_timer_diff(t0, libxsmm_timer_tick());
+      t1 = libxsmm_timer_ncycles(t0, libxsmm_timer_tick());
 #if defined(_OPENMP)
 #     pragma omp atomic
 #endif
