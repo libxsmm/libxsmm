@@ -852,10 +852,13 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         atexit(internal_finalize); /* once */
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick(); /* final timing */
         if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && t0 != t1) {
-          const libxsmm_timer_tickint ds = LIBXSMM_DELTA(s0, s1), dt = LIBXSMM_DELTA(t0, t1);
+          const libxsmm_timer_tickint dt = LIBXSMM_DELTA(t0, t1);
           libxsmm_timer_scale = libxsmm_timer_duration(s0, s1) / dt;
-          if (ds > LIBXSMM_DELTA(ds, dt)) { /* no LIBXSMM_TIMER_RDTSC/cycles */
-            fprintf(stderr, "LIBXSMM WARNING: libxsmm_timer_ncycles may not measure in cycles!\n");
+          if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+            const libxsmm_timer_tickint ds = LIBXSMM_DELTA(s0, s1);
+            if (ds > LIBXSMM_DELTA(ds, dt)) { /* no LIBXSMM_TIMER_RDTSC/cycles */
+              fprintf(stderr, "LIBXSMM WARNING: libxsmm_timer_ncycles may not measure in cycles!\n");
+            }
           }
         }
       }
