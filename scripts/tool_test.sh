@@ -42,6 +42,7 @@ WGET=$(command -v wget)
 GIT=$(command -v git)
 SED=$(command -v sed)
 CUT=$(command -v cut)
+LS=$(command -v ls)
 TR=$(command -v tr)
 RM=$(command -v rm)
 CP=$(command -v cp)
@@ -63,8 +64,8 @@ if [ "" = "${REVSTART}" ]; then
 fi
 
 if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && \
-   [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
-   [ "" != "${RM}" ] && [ "" != "${CP}" ];
+   [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${LS}" ] && \
+   [ "" != "${TR}" ] && [ "" != "${RM}" ] && [ "" != "${CP}" ];
 then
   # check if full/unlimited tests are triggered
   if [ "" != "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
@@ -200,7 +201,7 @@ then
     else # dummy
       SLURMDIR=$0
     fi
-    for SLURMFILE in $(ls -1 ${SLURMDIR}); do
+    for SLURMFILE in $(${LS} -1 ${SLURMDIR}); do
     if [[ (-d ${SLURMDIR}) && ("" = "${SLURMSCRIPT}" || "0" = "${SLURMSCRIPT}") ]]; then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
       TESTID=$(${BASENAME} ${SLURMFILE%.*})
