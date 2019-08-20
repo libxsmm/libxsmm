@@ -108,6 +108,7 @@ class SplitNode : public NNNode
       void forwardPropagate();
       void backPropagate();
       void configure(int engine);
+      void convert_bf16_f32(libxsmm_bfloat16*, float*, int);
 
       void shape_setzero(Shape* s)
       {

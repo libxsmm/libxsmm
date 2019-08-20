@@ -74,10 +74,12 @@ class FusedBNormXSMM : public FusedBNormImpl
     libxsmm_dnn_tensor_datalayout* libxsmm_layout;
     libxsmm_dnn_err_t status;
 
-    void *bexpect[NUM_NUMA_NODES]={NULL}, *bstddev[NUM_NUMA_NODES]={NULL}, *bvariance[NUM_NUMA_NODES]={NULL};
+    float *bexpect[NUM_NUMA_NODES]={NULL}, *bstddev[NUM_NUMA_NODES]={NULL}, *bvariance[NUM_NUMA_NODES]={NULL};
     void *relu_mask[NUM_NUMA_NODES]={NULL};
     void *scratch=NULL;
     bool updated_scratch_fwd=false, updated_scratch_bwd=false;
+    int nBlocksFm, ofmblock;
+    float *sumscratch=NULL;
 
   public:
     FusedBNormXSMM(FusedBNormImplParams* gp, int engine);

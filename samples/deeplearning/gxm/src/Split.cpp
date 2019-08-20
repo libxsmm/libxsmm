@@ -154,6 +154,19 @@ void SplitNode::configure(int engine)
   }
 }
 
+void SplitNode::convert_bf16_f32(libxsmm_bfloat16* in, float *out, int len)
+{
+#ifdef _OPENMP
+#pragma omp parallel for
+#endif
+  for(int i=0; i<len; i+=16)
+  {
+    __m256i vbfp16    = _mm256_loadu_si256( (const __m256i*)(in+i) );
+    __m512  vfp32     = gxm_bfp16_to_fp32_avx512f( vbfp16 );
+    _mm512_storeu_ps( out+i, vfp32 );
+  }
+}
+
 void SplitNode::forwardPropagate()
 {
 
@@ -224,6 +237,13 @@ void SplitNode::backPropagate()
 {
   int num_gtops=0;
   int nni;
+  int nImg = gparams_.batch_size;
+  int ifm = gparams_.nInput;
+  int ofm = gparams_.nOutput[0];
+  int ifh = gparams_.iHeight;
+  int ifw = gparams_.iWidth;
+  int ofh = gparams_.oHeight;
+  int ofw = gparams_.oWidth;
 
   for(int i=0; i<tenTop_.size(); i++)
   {
@@ -260,13 +280,27 @@ void SplitNode::backPropagate()
   }
   else if(in_dtype == DT_BF16)
   {
-    libxsmm_convert_bf16_f32((libxsmm_bfloat16*)tenBotDiff_->getBuffer(), cbptr, 16);
-    for(int i=0; i<16; i++)
+    convert_bf16_f32((libxsmm_bfloat16*)tenBotDiff_->getBuffer(), cbptr, 16);
+#ifdef USE_MLSL
+    int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
+#else
+    int node_id = 0;
+#endif
+    if(node_id == 0)
     {
-      if(isnan(cbptr[i]) || isinf(cbptr[i]))
+      for(int i=0; i<16; i++)
       {
-        printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
-        exit(-1);
+        if(isnan(cbptr[i]) || isinf(cbptr[i]))
+        {
+          printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
+          MeanOfLayer((char*)((nname_+"_delin").c_str()), (libxsmm_bfloat16*)tenBotDiff_->getBuffer(), nImg*ifm*ifh*ifw);
+          MeanOfLayer((char*)((nname_+"_delout0").c_str()), (libxsmm_bfloat16*)tenTopDiff_[0]->getBuffer(), nImg*ofm*ofh*ofw);
+          MeanOfLayer((char*)((nname_+"_delout1").c_str()), (libxsmm_bfloat16*)tenTopDiff_[1]->getBuffer(), nImg*ofm*ofh*ofw);
+#ifdef USE_MLSL
+          MPI_Finalize();
+#endif
+          exit(-1);
+        }
       }
     }
   }

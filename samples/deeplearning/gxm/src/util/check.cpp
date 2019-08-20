@@ -129,52 +129,36 @@ void check_physical_pad(const char *s, libxsmm_bfloat16 *tensor, int nImg, int n
     }
   }
 }
-void MeanOfLayer(char *s, short *array, int size)
+
+void MeanOfLayer(char *s, libxsmm_bfloat16 *array, int size)
 {
-  int nnz, mmt;
-  short max, min;
-  long int sum, absum;
+  union libxsmm_bfloat16_hp max, min, sum, absum;
 
-  max = array[0];
-  min = array[0];
-  sum = 0;
-  absum = 0;
-  nnz = 0;
-  mmt = 0;
+  max.i[0] = 0;
+  max.i[1] = array[0];
+  min.i[0] = 0;
+  min.i[1] = array[0];
+  sum.i[0] = 0;
+  sum.i[1] = array[0];
+  absum.i[0] = 0;
+  absum.i[1] = (array[0] > 0) ? array[0] : -array[0];
 
-  int which_max = 0;
-  int which_min = 0;
-  int first_nz = -1;
-  int last_nz = -1;
-
-  for(int i=0; i<size; i++)
+  for(int i=1; i<size; i++)
   {
-    if(array[i] != 0) last_nz = i;
-    if(first_nz == -1 && array[i] != 0) first_nz = i;
-#if 0
-    if(array[i] > 1000 || array[i] < -1000) {mmt++; printf(">>%d (%f)\n", i, array[i]);}
-    if(mmt > 10)
-    {
-      printf("In %s more than 10 values out-of-range. exiting statistics loop...\n",s);
-      exit(0);
-    }
-#endif
-    if(array[i] != 0) nnz++;
-    if(array[i] > max)
-    {
-      max = array[i];
-      which_max = i;
-    }
-    if(array[i] < min)
-    {
-      min = array[i];
-      which_min = i;
-    }
-    sum += array[i];
+    union libxsmm_bfloat16_hp val;
+    val.i[0] = 0;
+    val.i[1] = array[i];
 
-    absum += fabs(array[i]);
+    if(val.f > max.f)
+      max.f = val.f;
+
+    if(val.f < min.f)
+      min.f = val.f;
+
+    sum.f += val.f;
+    absum.f += fabs(val.f);
   }
-  printf("%s %ld %ld %d %d\n", s, sum, absum, max, min);
+  printf("%s %f %f %f %f\n", s, sum.f, absum.f, max.f, min.f);
 }
 
 void MeanOfLayer(char *s, float *array, int size)

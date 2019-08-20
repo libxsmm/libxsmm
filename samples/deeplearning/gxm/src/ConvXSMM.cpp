@@ -506,6 +506,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
     prev_scratch_size = scratchp->getBufferSize();
   }
 
+#if 0
 #ifndef NDEBUG
   /* check physical padding */
   if ( (gp->ipad_h > 0 || gp->ipad_w > 0) && (gp->opad_h > 0 || gp->opad_w > 0) ) {
@@ -523,7 +524,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
     check_physical_pad( nname.c_str(), (float*)out_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
   else if(gp->in_data_type == DT_BF16)
     check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)out_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
-
+#endif
 #endif
 
 #ifdef USE_XSMM_TIMING
@@ -566,6 +567,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
   outp->setLayoutType(top_layout_type);
   outp->setLayout(libxsmm_handle);
 
+#if 0
 #ifndef NDEBUG
   /* check physical padding */
   if(gp->in_data_type == DT_FLOAT)
@@ -577,6 +579,7 @@ void ConvXSMM::forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *h
     check_physical_pad( nname.c_str(), (float*)out_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
   else if(gp->out_data_type == DT_BF16)
     check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)out_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
+#endif
 #endif
 }
 
@@ -647,6 +650,7 @@ void ConvXSMM::backPropagate(TensorBuf* inp, TensorBuf* weightp, TensorBuf *delo
     }
   }
 
+#if 0
 #ifndef NDEBUG
   /* check physical padding */
   if ( (gp->ipad_h > 0 || gp->ipad_w > 0) && (gp->opad_h > 0 || gp->opad_w > 0) ) {
@@ -663,6 +667,7 @@ void ConvXSMM::backPropagate(TensorBuf* inp, TensorBuf* weightp, TensorBuf *delo
     check_physical_pad( nname.c_str(), (float*)dout_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
   else if(gp->in_data_type == DT_BF16)
     check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)dout_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
+#endif
 #endif
 
 #ifdef USE_XSMM_TIMING
@@ -707,6 +712,7 @@ void ConvXSMM::backPropagate(TensorBuf* inp, TensorBuf* weightp, TensorBuf *delo
   delinp->setLayoutType(gbot_layout_type);
   delinp->setLayout(libxsmm_handle);
 
+#if 0
 #ifndef NDEBUG
   /* check physical padding */
   if(gp->out_data_type == DT_FLOAT)
@@ -718,6 +724,7 @@ void ConvXSMM::backPropagate(TensorBuf* inp, TensorBuf* weightp, TensorBuf *delo
     check_physical_pad( nname.c_str(), (float*)dout_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
   else if(gp->in_data_type == DT_BF16)
     check_physical_pad( nname.c_str(), (libxsmm_bfloat16*)dout_ptr[0], conv_desc.N, nBOfm, ofh, ofw, VLEN, oph, opw);
+#endif
 #endif
 }
 

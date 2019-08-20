@@ -324,14 +324,6 @@ void FusedBNormNode::configure(int engine)
 
 void FusedBNormNode::convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len)
 {
-# define _mm512_load_act(A)     _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
-  __m512i vnaninf = _mm512_set1_epi32( 0x7f800000 );
-  __m512i vrneadd = _mm512_set1_epi32( 0x00007fff );
-  __m512i vfixup = _mm512_set1_epi32( 0x00000001 );
-  __m512i vfixupmask = _mm512_set1_epi32( 0x00010000 );
-# define _mm512_roundbf16rne(A) _mm512_mask_add_epi32( _mm512_castps_si512( A ), _mm512_cmp_epi32_mask( _mm512_and_epi32( _mm512_castps_si512( A ), vnaninf ), vnaninf, _MM_CMPINT_NE ), _mm512_castps_si512( A ), _mm512_mask_add_epi32( vrneadd , _mm512_cmp_epi32_mask( _mm512_and_epi32( _mm512_castps_si512( A ), vfixupmask ), vfixupmask, _MM_CMPINT_EQ ), vrneadd, vfixup ) )
-# define _mm512_store_act(A,B)  _mm256_storeu_si256((__m256i*)A,_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
-
   int i;
 
 #ifdef _OPENMP
@@ -499,7 +491,9 @@ void FusedBNormNode::forwardPropagate()
         ptr[i] = 0;
     }
 
+#ifdef CHECK_BLOWUP_FP32
     cbptr = (float*)_mm_malloc(10240*4, 64);
+#endif
 
     scf_ = eptr_->get_scaling_factor();
     impl->set_scaling_factor(scf_);
@@ -718,25 +712,39 @@ void FusedBNormNode::backPropagate()
 #ifdef CHECK_BLOWUP_FP32
   if(out_dtype == DT_FLOAT)
   {
-    for(int i=0; i<16; i++)
+    for(int i=0; i<10240; i++)
     {
       float v = ((float*)tenBotDiff_[0]->getBuffer())[i];
       if(isnan(v) || isinf(v))
       {
-        printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
+        printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
         exit(-1);
       }
     }
   }
   else if(out_dtype == DT_BF16)
   {
-    convert_bf16_f32((libxsmm_bfloat16*)tenBotDiff_[0]->getBuffer(), cbptr, 16);
-    for(int i=0; i<16; i++)
+    convert_bf16_f32((libxsmm_bfloat16*)tenBotDiff_[0]->getBuffer(), cbptr, 10240);
+#ifdef USE_MLSL
+    int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
+#else
+    int node_id = 0;
+#endif
+    if(node_id == 0)
     {
-      if(isnan(cbptr[i]) || isinf(cbptr[i]))
+      for(int i=0; i<10240; i++)
       {
-        printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
-        exit(-1);
+        if(isnan(cbptr[i]) || isinf(cbptr[i]))
+        {
+          printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
+          MeanOfLayer((char*)nname_.c_str(), (libxsmm_bfloat16*)tenBotDiff_[0]->getBuffer(), nImg*ifm0*ifhp*ifwp);
+          if(gparams_.eltwise)
+            MeanOfLayer((char*)nname_.c_str(), (libxsmm_bfloat16*)tenBotDiff_[1]->getBuffer(), nImg*ifm1*ifhp*ifwp);
+#ifdef USE_MLSL
+          MPI_Finalize();
+#endif
+          exit(-1);
+        }
       }
     }
   }

@@ -756,6 +756,45 @@ void MLEngine::run(int mode)
       canary_check(bias_buf_, bias_can_ptr, bic);
 #endif
     }
+
+#ifdef USE_MLSL
+    MLSL::Environment::GetEnv().Free(input_buf_);
+    MLSL::Environment::GetEnv().Free(fact_buf_);
+    MLSL::Environment::GetEnv().Free(bact_buf_);
+#else
+    libxsmm_free(input_buf_);
+    libxsmm_free(fact_buf_);
+    libxsmm_free(bact_buf_);
+#endif
+
+    for(int n=0; n<NUM_NUMA_NODES; n++)
+    {
+#ifdef USE_MLSL
+      MLSL::Environment::GetEnv().Free(weight_buf_[n]);
+      if(lpweight_buf_[n] != NULL)
+        MLSL::Environment::GetEnv().Free(lpweight_buf_[n]);
+      MLSL::Environment::GetEnv().Free(wdiff_buf_[n]);
+      if(lpwdiff_buf_[n] != NULL)
+        MLSL::Environment::GetEnv().Free(lpwdiff_buf_[n]);
+      MLSL::Environment::GetEnv().Free(winc_buf_[n]);
+      MLSL::Environment::GetEnv().Free(bias_buf_[n]);
+      MLSL::Environment::GetEnv().Free(bidiff_buf_[n]);
+      MLSL::Environment::GetEnv().Free(biinc_buf_[n]);
+      MLSL::Environment::GetEnv().Free(stats_buf_[n]);
+#else
+      libxsmm_free(weight_buf_[n]);
+      libxsmm_free(wdiff_buf_[n]);
+      if(lpweight_buf_[n] != NULL)
+        libxsmm_free(lpweight_buf_[n]);
+      if(lpwdiff_buf_[n] != NULL)
+        libxsmm_free(lpwdiff_buf_[n]);
+      libxsmm_free(winc_buf_[n]);
+      libxsmm_free(bias_buf_[n]);
+      libxsmm_free(bidiff_buf_[n]);
+      libxsmm_free(biinc_buf_[n]);
+      libxsmm_free(stats_buf_[n]);
+#endif
+    }
   }
   else if(mode == TEST)
   {
