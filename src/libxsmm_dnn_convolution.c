@@ -656,6 +656,12 @@ LIBXSMM_API_INTERN void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
   handle->upd_linearized_pixels = 1;
   if (handle->desc.S != 1 && handle->desc.v != 1) {
     handle->upd_linearized_pixels = 0;
+    handle->upd_trans_w_only = 0;
+  }
+  /* For large images facilitate the "large" transposes by blocking the pixel/reduciton domains  */
+  if (handle->ofw >= 56 && handle->ofh >=56 && handle->desc.R == 1 && handle->desc.S == 1 && handle->desc.u == 1 && handle->desc.v == 1) {
+    handle->upd_linearized_pixels = 0;
+    handle->upd_trans_w_only = 1;
   }
 
   handle->use_lp_kernel = 1;
@@ -711,7 +717,8 @@ LIBXSMM_API_INTERN void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
     remainder_pixels = (handle->ofw % multiple_target == 0) ? 0 : (handle->ofw/multiple_target+1)*multiple_target - handle->ofw;
     handle->ofwp_extended = handle->ofwp + remainder_pixels;
     handle->ifwp_extended = handle->ifwp + remainder_pixels;
-    handle->batchreduce_h_pixels = handle->ofh;
+    handle->output_pixels = handle->ofwp * handle->ofwp_extended;
+    handle->batchreduce_h_pixels = (handle->upd_trans_w_only) ? 1 : handle->ofh;
     handle->use_intermediate_f32_wt_tensor = (handle->batchreduce_h_pixels == handle->ofh) ? 0 : 1;
     handle->scratch2_size = (size_t) (handle->desc.N * handle->ofhp*handle->ofwp_extended * handle->desc.K * sizeof(float)/2);
     if (handle->use_intermediate_f32_wt_tensor) {

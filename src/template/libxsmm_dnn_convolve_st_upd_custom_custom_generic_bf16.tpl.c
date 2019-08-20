@@ -79,6 +79,27 @@
   }\
 } while(0)
 
+#define TRANS_OUTPUT_W_TO_VNNI_FORMAT(img, ofm1, oj, H) do {\
+  __m512i zero_reg = _mm512_setzero_si512();\
+  int h, w_pixel_pair, w_full_pixel_pairs = handle->ofwp/2;\
+  for (h=0; h<H; h++) {\
+    src_out = (element_output_type*) &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + h, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);\
+    tr_out = (element_output_type*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, 0, h, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp_extended/2, handle->ofmblock, 2);\
+    for (w_pixel_pair = 0; w_pixel_pair < w_full_pixel_pairs; w_pixel_pair++) {\
+      for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2+=32) {\
+        pixel_0 = _mm512_loadu_si512((element_output_type*)src_out+ofm2);\
+        pixel_1 = _mm512_loadu_si512(((element_output_type*)src_out+handle->ofmblock+ofm2));\
+        ofms_lo = _mm512_permutex2var_epi16(pixel_0, idx_lo, pixel_1);\
+        ofms_hi = _mm512_permutex2var_epi16(pixel_0, idx_hi, pixel_1);\
+        _mm512_storeu_si512(tr_out+ofm2*2, ofms_lo);\
+        _mm512_storeu_si512((element_output_type*)tr_out+32+ofm2*2, ofms_hi);\
+      }\
+      src_out += 2* handle->ofmblock;\
+      tr_out += 2*handle->ofmblock;\
+    }\
+  }\
+} while(0)
+
 int img, my_img_start, my_img_end, ofmb, ifmb, ofm1, ifm1, ifm2, ofm2, oj, oi, ii, ij, kj, ki, j_br, img_br, i, j, img_block_size = 1, my_ofm_start, my_ofm_end, my_ifm_start, my_ifm_end, block_ofm, block_ifm, pix;
 /* computing first logical thread */
 const int ltid = tid - start_thread;
@@ -222,29 +243,31 @@ if (handle->upd_linearized_pixels == 1) {
   }
 #endif
 } else {
-  if (handle->on_the_fly_input_packing == 0) {
-    for (img = my_img_start; img < my_img_end; img++) {
-      zero_ptr_in = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended);
-      memset(zero_ptr_in, 0, handle->desc.C * handle->ifhp * handle->ifwp_extended * sizeof(element_input_type));
-      for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
-        for (ij = 0; ij < handle->ifhp; ij++) {
-          for (ii = 0; ii < handle->ifwp; ii++) {
-            for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-              LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, ifm2, ij, ii, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended) =
-                LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+  if (handle->upd_trans_w_only == 0) {
+    if (handle->on_the_fly_input_packing == 0) {
+      for (img = my_img_start; img < my_img_end; img++) {
+        zero_ptr_in = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, 0, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended);
+        memset(zero_ptr_in, 0, handle->desc.C * handle->ifhp * handle->ifwp_extended * sizeof(element_input_type));
+        for (ifm1 = 0; ifm1 < handle->blocksifm; ifm1++) {
+          for (ij = 0; ij < handle->ifhp; ij++) {
+            for (ii = 0; ii < handle->ifwp; ii++) {
+              for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, ifm2, ij, ii, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended) =
+                  LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+              }
             }
           }
         }
       }
     }
-  }
-  for (img = my_img_start; img < my_img_end; img++) {
-    for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
-      for (oj = 0; oj < handle->ofh; oj++) {
-        for (oi = 0; oi < handle->ofw; oi++) {
-          for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
-            LIBXSMM_VLA_ACCESS(6, tr_output_2, img, ofm1, oj, oi/2, ofm2, oi%2, handle->blocksofm, handle->ofhp, handle->ofwp_extended/2, handle->ofmblock, 2) =
-              LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+    for (img = my_img_start; img < my_img_end; img++) {
+      for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
+        for (oj = 0; oj < handle->ofh; oj++) {
+          for (oi = 0; oi < handle->ofw; oi++) {
+            for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
+              LIBXSMM_VLA_ACCESS(6, tr_output_2, img, ofm1, oj, oi/2, ofm2, oi%2, handle->blocksofm, handle->ofhp, handle->ofwp_extended/2, handle->ofmblock, 2) =
+                LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj, oi, ofm2, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);
+            }
           }
         }
       }
@@ -258,63 +281,126 @@ if (handle->use_intermediate_f32_wt_tensor == 1 && handle->use_hybrid_imgofm_par
 }
 
 if (handle->upd_linearized_pixels == 0) {
-  LDA = handle->ofmblock;
-  LDB = handle->ifhp*handle->ifwp_extended;
-  LDC = handle->ofmblock;
-  prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
-  l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
-  n_blocks = handle->batchreduce_h_pixels;
-  br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->ifmblock, handle->ofw, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
+  if (handle->upd_trans_w_only == 1) {
+    LDA = handle->ofmblock;
+    LDB = handle->ifhp*handle->ifwp_extended;
+    LDC = handle->ofmblock;
+    prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
+    l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+    n_blocks = handle->batchreduce_h_pixels;
+    br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->ifmblock, handle->ofw, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
 
-  for (img = my_img_start; img < my_img_end; img++) {
-    for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
-      for (oj = 0; oj < handle->ofh; oj += handle->batchreduce_h_pixels){
-        for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
-          for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
-            for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
-              for (kj = 0; kj < handle->desc.R; ++kj) {
-                for (ki = 0; ki < handle->desc.S; ++ki) {
+    for (img = my_img_start; img < my_img_end; img++) {
+      for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
+        for (oj = 0; oj < handle->ofh; oj += handle->batchreduce_h_pixels){
+          for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
+            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
+              /* Transpose output block */
+              TRANS_OUTPUT_W_TO_VNNI_FORMAT(img, ofm1, oj, handle->batchreduce_h_pixels);
+              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
+                /* Transpose input block */
+                for (j=0; j < handle->batchreduce_h_pixels; j++) {
+                  transpose_input_pixels_bf16( (element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, oj+j, 0, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock),
+                      (element_input_type*)&LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, j, 0, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended),
+                      handle->ifmblock, handle->ifwp_extended, handle->ifmblock, handle->ifhp*handle->ifwp_extended );
+                }
+                for (kj = 0; kj < handle->desc.R; ++kj) {
+                  for (ki = 0; ki < handle->desc.S; ++ki) {
 
-                  /* Determine if destination is the accumulation scratch or the intermediate fp32 weight tensor */
-                  if (handle->use_intermediate_f32_wt_tensor == 1) {
-                    dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(6, weight_private_f32, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
-                  } else {
-                    dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(2, filter_tmp, 0, 0, handle->ofmblock);
-                  }
+                    /* Determine if destination is the accumulation scratch or the intermediate fp32 weight tensor */
+                    if (handle->use_intermediate_f32_wt_tensor == 1) {
+                      dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(6, weight_private_f32, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+                    } else {
+                      dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(2, filter_tmp, 0, 0, handle->ofmblock);
+                    }
 
-                  /* Copy the input in such a way that we ignore "w-pixels" based on ki value  */
-                  if (handle->on_the_fly_input_packing == 1) {
-                    for (ij = 0; ij < handle->ifhp; ij++) {
-                      for (ii = 0; ii < handle->ofw; ii++) {
-                        for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-                          LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, ifm2, ij, ii, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended) =
-                            LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii*handle->desc.v+ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                    for (j_br = 0; j_br < handle->batchreduce_h_pixels; j_br++) {
+                      A_ptrs[j_br] = (element_output_type*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, 0, j_br, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp_extended/2, handle->ofmblock, 2);
+                      B_ptrs[j_br] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, j_br, 0, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended);
+                    }
+
+                    br_gemm_kernel(A_ptrs, B_ptrs, dst_ptr, &n_blocks);
+
+                    /* Convert fully caccumulated buffer to bf16 weight buffer in case of full accumulation has happened */
+                    if (oj + handle->batchreduce_h_pixels >= handle->ofh) {
+                      LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
+                      for (ij = 0; ij < handle->ifmblock; ij+=2) {
+                        for (ii = 0; ii < handle->ofmblock; ii+=16) {
+                          c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
+                          c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
+                          c01 = _mm512_inserti64x4 (c01, c0, 0);
+                          c01 = _mm512_inserti64x4 (c01, c1, 1);
+                          _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_dst, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
                         }
                       }
                     }
                   }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  } else {
+    LDA = handle->ofmblock;
+    LDB = handle->ifhp*handle->ifwp_extended;
+    LDC = handle->ofmblock;
+    prefetch_mode = libxsmm_get_gemm_prefetch(LIBXSMM_GEMM_PREFETCH_NONE);
+    l_flags = LIBXSMM_GEMM_FLAGS('N', 'N');
+    n_blocks = handle->batchreduce_h_pixels;
+    br_gemm_kernel =  libxsmm_bsmmdispatch_reducebatch_addr(handle->ofmblock, handle->ifmblock, handle->ofw, &LDA, &LDB, &LDC, NULL, &beta, &l_flags, &prefetch_mode);
 
-                  for (j_br = 0; j_br < handle->batchreduce_h_pixels; j_br++) {
-                    A_ptrs[j_br] = (element_output_type*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, ofm1, oj+j_br, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp_extended/2, handle->ofmblock, 2);
-                    B_ptrs[j_br] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, 0, (oj+j_br)*handle->desc.u + kj, 0, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended);
-                  }
+    for (img = my_img_start; img < my_img_end; img++) {
+      for (ofmb = 0; ofmb < handle->blocksofm; ofmb += handle->block_upd_ofm) {
+        for (oj = 0; oj < handle->ofh; oj += handle->batchreduce_h_pixels){
+          for (ifmb = 0; ifmb < handle->blocksifm; ifmb += handle->block_upd_ifm) {
+            for (ofm1 = ofmb; ofm1 < LIBXSMM_MIN(ofmb+handle->block_upd_ofm, handle->blocksofm); ofm1++ ) {
+              for (ifm1 = ifmb; ifm1 < LIBXSMM_MIN(ifmb+handle->block_upd_ifm, handle->blocksifm); ifm1++) {
+                for (kj = 0; kj < handle->desc.R; ++kj) {
+                  for (ki = 0; ki < handle->desc.S; ++ki) {
 
-                  br_gemm_kernel(A_ptrs, B_ptrs, dst_ptr, &n_blocks);
+                    /* Determine if destination is the accumulation scratch or the intermediate fp32 weight tensor */
+                    if (handle->use_intermediate_f32_wt_tensor == 1) {
+                      dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(6, weight_private_f32, ofm1, ifm1, kj, ki, 0, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock, handle->ofmblock);
+                    } else {
+                      dst_ptr = (float*)&LIBXSMM_VLA_ACCESS(2, filter_tmp, 0, 0, handle->ofmblock);
+                    }
 
-                  /* Convert fully caccumulated buffer to bf16 weight buffer in case of full accumulation has happened */
-                  if (oj + handle->batchreduce_h_pixels >= handle->ofh) {
-                    LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
-                    for (ij = 0; ij < handle->ifmblock; ij+=2) {
-                      for (ii = 0; ii < handle->ofmblock; ii+=16) {
-                        c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
-                        c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
-                        c01 = _mm512_inserti64x4 (c01, c0, 0);
-                        c01 = _mm512_inserti64x4 (c01, c1, 1);
-                        _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_dst, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
+                    /* Copy the input in such a way that we ignore "w-pixels" based on ki value  */
+                    if (handle->on_the_fly_input_packing == 1) {
+                      for (ij = 0; ij < handle->ifhp; ij++) {
+                        for (ii = 0; ii < handle->ofw; ii++) {
+                          for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                            LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, ifm2, ij, ii, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended) =
+                              LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii*handle->desc.v+ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                          }
+                        }
                       }
                     }
-                  }
 
+                    for (j_br = 0; j_br < handle->batchreduce_h_pixels; j_br++) {
+                      A_ptrs[j_br] = (element_output_type*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, ofm1, oj+j_br, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp_extended/2, handle->ofmblock, 2);
+                      B_ptrs[j_br] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, 0, (oj+j_br)*handle->desc.u + kj, 0, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended);
+                    }
+
+                    br_gemm_kernel(A_ptrs, B_ptrs, dst_ptr, &n_blocks);
+
+                    /* Convert fully caccumulated buffer to bf16 weight buffer in case of full accumulation has happened */
+                    if (oj + handle->batchreduce_h_pixels >= handle->ofh) {
+                      LIBXSMM_VLA_DECL(2, float, filter_acc_buffer, (float*)dst_ptr, handle->ofmblock);
+                      for (ij = 0; ij < handle->ifmblock; ij+=2) {
+                        for (ii = 0; ii < handle->ofmblock; ii+=16) {
+                          c0 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij, ii, handle->ofmblock));
+                          c1 = _mm512_loadcvtrne_fp32_bf16(&LIBXSMM_VLA_ACCESS(2, filter_acc_buffer, ij+1, ii, handle->ofmblock));
+                          c01 = _mm512_inserti64x4 (c01, c0, 0);
+                          c01 = _mm512_inserti64x4 (c01, c1, 1);
+                          _mm512_store_epi32(&LIBXSMM_VLA_ACCESS(7, weight_dst, ofm1, ifm1, kj, ki, ij/2, ii, 0, handle->blocksifm, handle->desc.R, handle->desc.S, handle->ifmblock/2, handle->ofmblock, 2), _mm512_permutexvar_epi16(perm_index, c01));
+                        }
+                      }
+                    }
+
+                  }
                 }
               }
             }
@@ -515,6 +601,8 @@ if (handle->weight_copies > 1) {
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
+#undef TRANS_OUTPUT_W_TO_VNNI_FORMAT
+#undef TRANS_OUTPUT_TO_VNNI_FORMAT
 #undef _mm512_roundbf16rne
 #undef _mm512_storecvtrne_fp32_bf16
 #undef _mm512_loadcvt_bf16_fp32
