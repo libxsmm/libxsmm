@@ -704,6 +704,10 @@ LIBXSMM_API_INTERN void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
     if (handle->ofw <= 14) {
       handle->use_hybrid_imgofm_parallelization = 1;
       handle->weight_copies = libxsmm_dnn_convolution_setup_weight_copies_upd(handle);
+      if (handle->ofw == 14 && handle->desc.K >= 1024) {
+        handle->use_hybrid_imgofm_parallelization = 0;
+        handle->weight_copies = handle->desc.threads;
+      }
     } else {
       handle->weight_copies = handle->desc.threads;
     }
