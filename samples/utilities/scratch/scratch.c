@@ -113,7 +113,7 @@ int main(int argc, char* argv[])
         const size_t nbytes = ((size_t)r[k] % (MAX_MALLOC_MB) + 1) << 20;
         const libxsmm_timer_tickint t1 = libxsmm_timer_tick();
         p[j] = libxsmm_aligned_scratch(nbytes, 0/*auto*/);
-        d1 += libxsmm_timer_diff(t1, libxsmm_timer_tick());
+        d1 += libxsmm_timer_ncycles(t1, libxsmm_timer_tick());
         if (NULL != p[j]) {
           memset(p[j], j, nbytes);
         }
@@ -148,7 +148,7 @@ int main(int argc, char* argv[])
         const size_t nbytes = ((size_t)r[k] % (MAX_MALLOC_MB) + 1) << 20;
         const libxsmm_timer_tickint t1 = libxsmm_timer_tick();
         p[j] = malloc(nbytes);
-        d0 += libxsmm_timer_diff(t1, libxsmm_timer_tick());
+        d0 += libxsmm_timer_ncycles(t1, libxsmm_timer_tick());
         if (NULL != p[j]) {
           memset(p[j], j, nbytes);
         }

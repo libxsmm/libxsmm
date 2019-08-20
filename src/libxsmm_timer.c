@@ -45,12 +45,12 @@
 # pragma offload_attribute(pop)
 #endif
 
-#if (defined(__GNUC__) || defined(LIBXSMM_INTEL_COMPILER)) && (64 <= (LIBXSMM_BITS))
+#if ((defined(__GNUC__) || defined(LIBXSMM_INTEL_COMPILER) || defined(__PGI)) && (64 <= (LIBXSMM_BITS)))
 # define LIBXSMM_TIMER_RDTSC(CYCLE) { libxsmm_timer_tickint libxsmm_timer_rdtsc_hi_; \
     __asm__ __volatile__ ("rdtsc" : "=a"(CYCLE), "=d"(libxsmm_timer_rdtsc_hi_)); \
     CYCLE |= libxsmm_timer_rdtsc_hi_ << 32; \
   }
-#elif defined(_rdtsc) || defined(_WIN32)
+#elif (defined(_rdtsc) || defined(_WIN32))
 # define LIBXSMM_TIMER_RDTSC(CYCLE) (CYCLE = __rdtsc())
 #endif
 
@@ -63,9 +63,13 @@ LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void)
   libxsmm_timer_tickint result;
   int dummy;
 #if defined(_WIN32)
+# if 1
   LARGE_INTEGER t;
   QueryPerformanceCounter(&t);
   result = (libxsmm_timer_tickint)t.QuadPart;
+# else /* low resolution */
+  result = (libxsmm_timer_tickint)GetTickCount();
+# endif
 #elif defined(CLOCK_MONOTONIC)
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
@@ -94,12 +98,6 @@ libxsmm_timer_tickint libxsmm_timer_tick(void)
 }
 
 
-LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_cycles(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
-{
-  return LIBXSMM_DELTA(tick0, tick1);
-}
-
-
 LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1)
 {
   double result = (double)LIBXSMM_DELTA(tick0, tick1);
@@ -116,9 +114,13 @@ LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_t
 #endif
   {
 #if defined(_WIN32)
+# if 1
     LARGE_INTEGER frequency;
     QueryPerformanceFrequency(&frequency);
     result /= (double)frequency.QuadPart;
+# else /* low resolution */
+    result *= 1E-3;
+# endif
 #elif defined(CLOCK_MONOTONIC)
     result *= 1E-9;
 #else
@@ -127,4 +129,29 @@ LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_t
   }
   return result;
 }
+
+
+#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_timer_ncycles)(libxsmm_timer_tickint* /*ncycles*/, const libxsmm_timer_tickint* /*tick0*/, const libxsmm_timer_tickint* /*tick1*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_timer_ncycles)(libxsmm_timer_tickint* ncycles, const libxsmm_timer_tickint* tick0, const libxsmm_timer_tickint* tick1)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != ncycles && NULL != tick0 && NULL != tick1)
+#endif
+  {
+    *ncycles = libxsmm_timer_ncycles(*tick0, *tick1);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_timer_ncycles specified!\n");
+  }
+#endif
+}
+
+#endif /*defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)*/
 

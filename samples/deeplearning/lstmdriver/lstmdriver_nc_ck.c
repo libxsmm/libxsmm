@@ -28,14 +28,6 @@
 ******************************************************************************/
 /* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
-
-#if 0
-#define TWO_GEMMS
-#endif
-#if 0
-#define PROFILE
-#endif
-
 #include <libxsmm.h>
 #include <libxsmm_intrinsics_x86.h>
 
@@ -205,21 +197,12 @@ int main(int argc, char* argv[])
   dxgoldt   = (float*)libxsmm_aligned_malloc(N*C*t*sizeof(float), 2097152);
   dcspgold  = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   dhpgold   = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
-#if defined(TWO_GEMMS)
-  wgold     = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
-  rgold     = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
-  dwgold    = (float*)libxsmm_aligned_malloc(C*K*4*sizeof(float), 2097152);
-  drgold    = (float*)libxsmm_aligned_malloc(K*K*4*sizeof(float), 2097152);
-  scratch_fwd = NULL;
-  scratch_bu  = (float*)libxsmm_aligned_malloc(K*N*t*5*sizeof(float), 2097152);
-#else
   wgold     = (float*)libxsmm_aligned_malloc((C+K)*K*4*sizeof(float), 2097152);
   rgold     = NULL;
   dwgold    = (float*)libxsmm_aligned_malloc((C+K)*K*4*sizeof(float), 2097152);
   drgold    = NULL;
   scratch_fwd = (float*)libxsmm_aligned_malloc((C+K)*N*sizeof(float), 2097152);
   scratch_bu  = (float*)libxsmm_aligned_malloc(((C+K)*N*2 + K*N*t*5)*sizeof(float), 2097152);
-#endif
   dbgold    = (float*)libxsmm_aligned_malloc(K*4*sizeof(float), 2097152);
   dcsgold   = (float*)libxsmm_aligned_malloc(K*N*sizeof(float), 2097152);
   dhgoldt   = (float*)libxsmm_aligned_malloc(K*N*t*sizeof(float), 2097152);
@@ -280,12 +263,7 @@ int main(int argc, char* argv[])
   zero_buf(dxgoldt,  N*C*t);
   zero_buf(dcspgold, K*N);
   zero_buf(dhpgold,  K*N);
-#if defined(TWO_GEMMS)
-  zero_buf(dwgold, C*K*4);
-  zero_buf(drgold, K*K*4);
-#else
   zero_buf(dwgold, (C+K)*K*4);
-#endif
   zero_buf(dbgold, K*4);
 
   /* first touch LIBXSMM */
@@ -627,11 +605,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_w.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_w);
 
-#if defined(TWO_GEMMS)
-      libxsmm_matdiff(&norms_upd_r, LIBXSMM_DATATYPE_F32, K*K*4, 1, drgold, dr, 0, 0);
-#else
       libxsmm_matdiff(&norms_upd_r, LIBXSMM_DATATYPE_F32, K*K*4, 1, &(dwgold[C*K*4]), dr, 0, 0);
-#endif
       printf("Delta recurrent weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_r.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_r.l1_tst);
@@ -694,11 +668,7 @@ int main(int argc, char* argv[])
       printf("Check-norm    : %.24f\n", norms_upd_w.normf_rel);
       libxsmm_matdiff_reduce(&diff, &norms_upd_w);
 
-#if defined(TWO_GEMMS)
-      libxsmm_matdiff(&norms_upd_r, LIBXSMM_DATATYPE_F32, K*K*4, 1, drgold, dr, 0, 0);
-#else
       libxsmm_matdiff(&norms_upd_r, LIBXSMM_DATATYPE_F32, K*K*4, 1, &(dwgold[C*K*4]), dr, 0, 0);
-#endif
       printf("Delta recurrent weight\n");
       printf("L1 reference  : %.25g\n", norms_upd_r.l1_ref);
       printf("L1 test       : %.25g\n", norms_upd_r.l1_tst);
@@ -1073,10 +1043,6 @@ int main(int argc, char* argv[])
   libxsmm_free(dcspgold);
   libxsmm_free(dhpgold);
   libxsmm_free(dwgold);
-#if defined(TWO_GEMMS)
-  libxsmm_free(rgold);
-  libxsmm_free(drgold);
-#endif
   libxsmm_free(dbgold);
   libxsmm_free(dcsgold);
   libxsmm_free(dhgoldt);

@@ -120,7 +120,7 @@ int main(int argc, char* argv[])
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type padding_mode\n", argv[0]);
     return 0;
   }
-  srand(1);
+  libxsmm_rng_set_seed(1);
 
   /* reading new values from cli */
   i = 1;
@@ -701,25 +701,47 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_input ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_filter ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dinput ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_doutput ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dfilter ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_conv_layer( libxsmm_handle ) );
 
   /* deallocate data */
   libxsmm_free( naive_input );
-  libxsmm_free( naive_input_save ) ;
+  libxsmm_free( naive_input_save );
   libxsmm_free( naive_input_tmp );
   libxsmm_free( naive_output );
+  libxsmm_free( naive_output_fp );
+  libxsmm_free( naive_output_save );
+  libxsmm_free( naive_output_bp );
+  libxsmm_free( naive_input_bp );
   libxsmm_free( naive_filter );
+  libxsmm_free( naive_filter_wu );
   libxsmm_free( naive_input_bf16 );
+  libxsmm_free( naive_input_bp_bf16 );
   libxsmm_free( naive_output_bf16 );
+  libxsmm_free( naive_output_bp_bf16 );
   libxsmm_free( naive_filter_bf16 );
+  libxsmm_free( naive_filter_wu_bf16 );
   libxsmm_free( naive_libxsmm_output );
   libxsmm_free( naive_libxsmm_output_f32 );
+  libxsmm_free( naive_libxsmm_input_f32 );
+  libxsmm_free( naive_libxsmm_filter_f32 );
+  libxsmm_free( naive_libxsmm_input );
+  libxsmm_free( naive_libxsmm_filter );
   libxsmm_free( input_libxsmm );
   libxsmm_free( filter_libxsmm );
   libxsmm_free( output_libxsmm );
+  libxsmm_free( dinput_libxsmm );
+  libxsmm_free( doutput_libxsmm );
+  libxsmm_free( dfilter_libxsmm );
+  libxsmm_free( batchstats_libxsmm );
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 100.0 : atof(env_check_scale));

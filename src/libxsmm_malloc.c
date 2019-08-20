@@ -411,8 +411,10 @@ LIBXSMM_API_INLINE internal_malloc_pool_type* internal_scratch_malloc_pool(const
       break;
     }
   }
-#endif
   LIBXSMM_ASSERT(NULL != memory);
+#else
+  LIBXSMM_UNUSED(memory);
+#endif
   return result;
 }
 
@@ -1808,7 +1810,7 @@ LIBXSMM_API void libxsmm_free(const void* memory)
 }
 
 
-LIBXSMM_API void libxsmm_release_scratch(void)
+LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock)
 {
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
   internal_malloc_pool_type *const pools = (internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_CACHELINE);
@@ -1823,13 +1825,23 @@ LIBXSMM_API void libxsmm_release_scratch(void)
         (unsigned long int)scratch_info.npending);
     }
   }
-  LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, &libxsmm_lock_global);
+  if (NULL != lock) {
+    LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, &libxsmm_lock_global);
+  }
   for (i = 0; i < libxsmm_scratch_pools; ++i) libxsmm_xfree(pools[i].instance.buffer);
   memset(pools, 0, (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) * sizeof(internal_malloc_pool_type));
   /* keep private watermark (no reset) */
   internal_malloc_scratch_nmallocs = internal_malloc_maxlocal_size = internal_malloc_scratch_size = 0;
-  LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, &libxsmm_lock_global);
+  if (NULL != lock) {
+    LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, lock);
+  }
 #endif
+}
+
+
+LIBXSMM_API void libxsmm_release_scratch(void)
+{
+  libxsmm_xrelease_scratch(&libxsmm_lock_global);
 }
 
 

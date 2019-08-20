@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2009-2019, Intel Corporation                                **
+** Copyright (c) 2016-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,28 +26,33 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Hans Pabst (Intel Corp.)
+/* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_TIMER_H
-#define LIBXSMM_TIMER_H
 
-#include "libxsmm_macros.h"
-
-
-typedef unsigned long long libxsmm_timer_tickint;
-
-/**
- * Returns the current clock tick of a monotonic timer source with
- * platform-specific resolution (not necessarily CPU cycles).
- */
-LIBXSMM_API libxsmm_timer_tickint libxsmm_timer_tick(void);
-
-/** Returns the difference between two timer ticks (cycles); avoids potential side-effects/assumptions of LIBXSMM_DIFF. */
-LIBXSMM_API_INLINE libxsmm_timer_tickint libxsmm_timer_ncycles(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1) {
-  return LIBXSMM_DELTA(tick0, tick1);
+{
+  libxsmm_blasint _k, _j;
+  __m512 _vdi, _vdo, _vi, _vhp, _vt1, _vt2;
+  element_input_type* _hp;
+  element_input_type* _i = &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K);
+  element_input_type* _di = &LIBXSMM_VLA_ACCESS(2, di, in, ik, K);
+  element_input_type* _do = &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K);
+  const __m512 _vones = _mm512_set1_ps( (float)1.0 );
+  if (0 == j) {
+    _hp = &LIBXSMM_VLA_ACCESS(2, hp, in, ik, K);
+  } else {
+    _hp = &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ik, N, K);
+  }
+  for ( _j = 0; _j < bn; ++_j ) {
+    LIBXSMM_PRAGMA_UNROLL_N(4)
+    for ( _k = 0; _k < bk; _k += 16 ) {
+      _vi = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&_i[(_j*K)+_k]);
+      _vt1 = _mm512_sub_ps(_vones, _vi);
+      _vt1 = _mm512_mul_ps(_vi, _vt1);
+      _vhp = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&_hp[(_j*K)+_k]);
+      _vdo = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&_do[(_j*K)+_k]);
+      _vt2 = _mm512_mul_ps(_vdo, _vhp);
+      _vdi = _mm512_mul_ps(_vt1, _vt2);
+      LIBXSMM_INTRINSICS_MM512_STREAM_PS(&_di[(_j*K)+_k], _vdi);
+    }
+  }
 }
-
-/** Returns the duration (in seconds) between two values received by libxsmm_timer_tick. */
-LIBXSMM_API double libxsmm_timer_duration(libxsmm_timer_tickint tick0, libxsmm_timer_tickint tick1);
-
-#endif /*LIBXSMM_TIMER_H*/

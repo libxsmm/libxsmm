@@ -71,10 +71,9 @@
 #define LIBXSMM_HASH_CRC32_U16(SEED, PVALUE) _mm_crc32_u16(SEED, *(const uint16_t*)(PVALUE))
 #define LIBXSMM_HASH_CRC32_U32(SEED, PVALUE) _mm_crc32_u32(SEED, *(const uint32_t*)(PVALUE))
 
-#if (64 > (LIBXSMM_BITS))
+#if (64 > (LIBXSMM_BITS)) || defined(__PGI)
 # define LIBXSMM_HASH_CRC32_U64(SEED, PVALUE) \
-    LIBXSMM_HASH_CRC32_U32(((const uint32_t*)(PVALUE))[1], \
-    LIBXSMM_HASH_CRC32_U32(((const uint32_t*)(PVALUE))[0], (uint32_t)(SEED)))
+  LIBXSMM_HASH_CRC32_U32(LIBXSMM_HASH_CRC32_U32((uint32_t)(SEED), PVALUE), (const uint32_t*)(PVALUE) + 1)
 #else
 # define LIBXSMM_HASH_CRC32_U64(SEED, PVALUE) _mm_crc32_u64(SEED, *(const uint64_t*)(PVALUE))
 #endif
@@ -211,10 +210,12 @@ unsigned int internal_crc32_u128_sse4(unsigned int seed, const void* value, ...)
 {
 #if defined(LIBXSMM_INTRINSICS_SSE4)
   const uint64_t *const pu64 = (const uint64_t*)value;
-  return (unsigned int)LIBXSMM_HASH_CRC32_U64(LIBXSMM_HASH_CRC32_U64(seed, pu64), pu64 + 1);
+  seed = (unsigned int)LIBXSMM_HASH_CRC32_U64(seed, pu64);
+  seed = (unsigned int)LIBXSMM_HASH_CRC32_U64(seed, pu64 + 1);
 #else
-  return internal_crc32_u128(seed, value);
+  seed = internal_crc32_u128(seed, value);
 #endif
+  return seed;
 }
 
 

@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
         libxsmm_init();
       }
     }
-    tcall = libxsmm_timer_diff(start, libxsmm_timer_tick());
+    tcall = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
 
     /* trigger code generation to subsequently measure only dispatch time */
     start = libxsmm_timer_tick();
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
       libxsmm_dmmdispatch(rnd[i].m, rnd[i].n, rnd[i].k, &rnd[i].m, &rnd[i].k, &rnd[i].m, &alpha, &beta, &flags, &prefetch);
 #endif
     }
-    tcgen = libxsmm_timer_diff(start, libxsmm_timer_tick());
+    tcgen = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
 
     /* measure duration for dispatching (cached) kernel; MKL: no "dispatch" just unwrapping the jitter */
 #if defined(_OPENMP)
@@ -199,7 +199,7 @@ int main(int argc, char* argv[])
 #endif
           }
 #         pragma omp master
-          tdsp1 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          tdsp1 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
       }
     }
@@ -216,7 +216,7 @@ int main(int argc, char* argv[])
           libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
 #endif
         }
-        tdsp1 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+        tdsp1 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       }
     }
 
@@ -239,7 +239,7 @@ int main(int argc, char* argv[])
 #endif
         }
 #       pragma omp master
-        tcgen += libxsmm_timer_diff(start, libxsmm_timer_tick());
+        tcgen += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       }
     }
     else
@@ -256,7 +256,7 @@ int main(int argc, char* argv[])
         libxsmm_dmmdispatch(rnd[i].m, rnd[i].n, rnd[i].k, &rnd[i].m, &rnd[i].k, &rnd[i].m, &alpha, &beta, &flags, &prefetch);
 #endif
       }
-      tcgen += libxsmm_timer_diff(start, libxsmm_timer_tick());
+      tcgen += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
     }
 
     /* measure dispatching previously generated kernel (likely non-cached) */
@@ -277,7 +277,7 @@ int main(int argc, char* argv[])
 #endif
           }
 #         pragma omp master
-          tdsp0 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          tdsp0 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
       }
     }
@@ -294,7 +294,7 @@ int main(int argc, char* argv[])
           libxsmm_dmmdispatch(rnd[j].m, rnd[j].n, rnd[j].k, &rnd[j].m, &rnd[j].k, &rnd[j].m, &alpha, &beta, &flags, &prefetch);
 #endif
         }
-        tdsp0 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+        tdsp0 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
       }
     }
 
@@ -360,9 +360,9 @@ int main(int argc, char* argv[])
   if (0 < tcall && 0 < tdsp0 && 0 < tdsp1 && 0 < tcgen) {
     const double tcall_ns = 1E9 * libxsmm_timer_duration(0, tcall), tcgen_ns = 1E9 * libxsmm_timer_duration(0, tcgen);
     const double tdsp0_ns = 1E9 * libxsmm_timer_duration(0, tdsp0), tdsp1_ns = 1E9 * libxsmm_timer_duration(0, tdsp1);
-    printf("\tfunction-call (false): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tcall_ns, 1E3 / tcall_ns, (uintptr_t)libxsmm_timer_cycles(0, tcall));
-    printf("\tdispatch (ro/cached): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tdsp1_ns, 1E3 / tdsp1_ns, (uintptr_t)libxsmm_timer_cycles(0, tdsp1));
-    printf("\tdispatch (ro): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tdsp0_ns, 1E3 / tdsp0_ns, (uintptr_t)libxsmm_timer_cycles(0, tdsp0));
+    printf("\tfunction-call (false): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tcall_ns, 1E3 / tcall_ns, (uintptr_t)libxsmm_timer_ncycles(0, tcall));
+    printf("\tdispatch (ro/cached): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tdsp1_ns, 1E3 / tdsp1_ns, (uintptr_t)libxsmm_timer_ncycles(0, tdsp1));
+    printf("\tdispatch (ro): %.0f ns (call/s %.0f MHz, %" PRIuPTR " cycles)\n", tdsp0_ns, 1E3 / tdsp0_ns, (uintptr_t)libxsmm_timer_ncycles(0, tdsp0));
     if (1E6 < tcgen_ns) {
       printf("\tcode-gen (rw): %.0f ms (call/s %.0f Hz)\n", 1E-6 * tcgen_ns, 1E9 / tcgen_ns);
     }

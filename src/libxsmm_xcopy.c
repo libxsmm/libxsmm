@@ -133,7 +133,7 @@ LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsi
   LIBXSMM_ASSERT_MSG(m0 <= m1 && m1 <= m, "Invalid task size");
   LIBXSMM_ASSERT_MSG(n0 <= n1 && n1 <= n, "Invalid task size");
 
-  if (0 != prefetch && 0 != *prefetch) { /* prefetch */
+  if (NULL != prefetch && 0 != *prefetch) { /* prefetch */
     libxsmm_matcopy_internal_pf(out, in, typesize, ldi, ldo,
       m0, m1, n0, n1, tm, tn, kernel);
   }
@@ -172,7 +172,7 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
 {
   LIBXSMM_INIT
   if (0 < typesize && m <= ldi && m <= ldo && out != in &&
-    ((0 != out && 0 < m && 0 < n) || (0 == m && 0 == n)) &&
+    ((NULL != out && 0 < m && 0 < n) || (0 == m && 0 == n)) &&
     /* use (signed) integer types, but check sanity of input */
     0 <= tid && tid < nthreads)
   {
@@ -197,7 +197,7 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
         libxsmm_descriptor_blob blob;
         kernel = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&blob, typesize,
           (unsigned int)tm, (unsigned int)tn, (unsigned int)ldo, (unsigned int)ldi,
-          0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/));
+          NULL != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/));
       }
       libxsmm_matcopy_thread_internal(out, in, typesize,
         (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,
@@ -292,7 +292,7 @@ LIBXSMM_API void libxsmm_otrans_thread(void* out, const void* in, unsigned int t
   static int error_once = 0;
   LIBXSMM_INIT
   if (0 < typesize && m <= ldi && n <= ldo &&
-    ((0 != out && 0 != in && 0 < m && 0 < n) || (0 == m && 0 == n)) &&
+    ((NULL != out && NULL != in && 0 < m && 0 < n) || (0 == m && 0 == n)) &&
     /* use (signed) integer types, but check sanity of input */
     0 <= tid && tid < nthreads)
   {
@@ -381,7 +381,7 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
 {
   static int error_once = 0;
   LIBXSMM_INIT
-  if (0 != inout) {
+  if (NULL != inout) {
     if (m == n) { /* some fall-back; still warned as "not implemented" */
       libxsmm_blasint i, j;
       for (i = 0; i < m; ++i) {
@@ -424,42 +424,42 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
 #if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* /*out*/, const void* /*in*/, const unsigned int* /*typesize*/,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* /*out*/, const void* /*in*/, const int* /*typesize*/,
   const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/,
   const int* /*prefetch*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* out, const void* in, const unsigned int* typesize,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matcopy)(void* out, const void* in, const int* typesize,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo,
   const int* prefetch)
 {
   libxsmm_blasint ldx;
-  LIBXSMM_ASSERT(0 != typesize && 0 != m);
-  ldx = *(0 != ldi ? ldi : m);
-  libxsmm_matcopy(out, in, *typesize, *m, *(0 != n ? n : m), ldx, 0 != ldo ? *ldo : ldx, prefetch);
+  LIBXSMM_ASSERT(NULL != typesize && 0 < *typesize && NULL != m);
+  ldx = *(NULL != ldi ? ldi : m);
+  libxsmm_matcopy(out, in, (unsigned int)*typesize, *m, *(NULL != n ? n : m), ldx, NULL != ldo ? *ldo : ldx, prefetch);
 }
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* /*out*/, const void* /*in*/, const unsigned int* /*typesize*/,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* /*out*/, const void* /*in*/, const int* /*typesize*/,
   const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* out, const void* in, const unsigned int* typesize,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_otrans)(void* out, const void* in, const int* typesize,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo)
 {
   libxsmm_blasint ldx;
-  LIBXSMM_ASSERT(0 != typesize && 0 != m);
-  ldx = *(0 != ldi ? ldi : m);
-  libxsmm_otrans(out, in, *typesize, *m, *(0 != n ? n : m), ldx, 0 != ldo ? *ldo : ldx);
+  LIBXSMM_ASSERT(NULL != typesize && 0 < *typesize && NULL != m);
+  ldx = *(NULL != ldi ? ldi : m);
+  libxsmm_otrans(out, in, (unsigned int)*typesize, *m, *(NULL != n ? n : m), ldx, NULL != ldo ? *ldo : ldx);
 }
 
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* /*inout*/, const unsigned int* /*typesize*/,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* /*inout*/, const int* /*typesize*/,
   const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ld*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* inout, const unsigned int* typesize,
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_itrans)(void* inout, const int* typesize,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ld)
 {
-  LIBXSMM_ASSERT(0 != typesize && 0 != m);
-  libxsmm_itrans(inout, *typesize, *m, *(0 != n ? n : m), *(0 != ld ? ld : m));
+  LIBXSMM_ASSERT(NULL != typesize && 0 < *typesize && NULL != m);
+  libxsmm_itrans(inout, (unsigned int)*typesize, *m, *(NULL != n ? n : m), *(NULL != ld ? ld : m));
 }
 
-#endif /*defined(LIBXSMM_BUILD)*/
+#endif /*defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)*/
 

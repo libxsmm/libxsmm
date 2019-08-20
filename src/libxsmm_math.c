@@ -310,7 +310,7 @@ LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x)
 
 LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double x)
 {
-#if defined(LIBXSMM_INTRINSICS_X86)
+#if defined(LIBXSMM_INTRINSICS_X86) && !defined(__PGI)
   const __m128d a = LIBXSMM_INTRINSICS_MM_UNDEFINED_PD();
   const double result = _mm_cvtsd_f64(_mm_sqrt_sd(a, _mm_set_sd(x)));
 #elif !defined(LIBXSMM_NO_LIBM)
@@ -516,14 +516,15 @@ LIBXSMM_API float libxsmm_sexp2_i8i(int x)
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff)(libxsmm_matdiff_info* /*info*/,
-  const libxsmm_datatype* /*datatype*/, const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const void* /*ref*/, const void* /*tst*/,
+  const int* /*datatype*/, const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const void* /*ref*/, const void* /*tst*/,
   const libxsmm_blasint* /*ldref*/, const libxsmm_blasint* /*ldtst*/);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff)(libxsmm_matdiff_info* info,
-  const libxsmm_datatype* datatype, const libxsmm_blasint* m, const libxsmm_blasint* n, const void* ref, const void* tst,
+  const int* datatype, const libxsmm_blasint* m, const libxsmm_blasint* n, const void* ref, const void* tst,
   const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst)
 {
   static int error_once = 0;
-  if ((NULL == datatype || NULL == m || EXIT_SUCCESS != libxsmm_matdiff(info, *datatype, *m, *(NULL != n ? n : m), ref, tst, ldref, ldtst))
+  if ((NULL == datatype || LIBXSMM_DATATYPE_UNSUPPORTED <= *datatype || 0 > *datatype || NULL == m
+    || EXIT_SUCCESS != libxsmm_matdiff(info, (libxsmm_datatype)*datatype, *m, *(NULL != n ? n : m), ref, tst, ldref, ldtst))
     && 0 != libxsmm_verbosity && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_matdiff specified!\n");
@@ -567,5 +568,5 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* coprime, const int*
 #endif
 }
 
-#endif /*defined(LIBXSMM_BUILD)*/
+#endif /*defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)*/
 

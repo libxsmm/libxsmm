@@ -42,6 +42,7 @@ WGET=$(command -v wget)
 GIT=$(command -v git)
 SED=$(command -v sed)
 CUT=$(command -v cut)
+LS=$(command -v ls)
 TR=$(command -v tr)
 RM=$(command -v rm)
 CP=$(command -v cp)
@@ -63,8 +64,8 @@ if [ "" = "${REVSTART}" ]; then
 fi
 
 if [ "" != "${MKTEMP}" ] && [ "" != "${MKDIR}" ] && [ "" != "${CHMOD}" ] && \
-   [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${TR}" ] && \
-   [ "" != "${RM}" ] && [ "" != "${CP}" ];
+   [ "" != "${GREP}" ] && [ "" != "${SED}" ] && [ "" != "${LS}" ] && \
+   [ "" != "${TR}" ] && [ "" != "${RM}" ] && [ "" != "${CP}" ];
 then
   # check if full/unlimited tests are triggered
   if [ "" != "${FULLCI}" ] && [ "0" != "${FULLCI}" ]; then
@@ -200,7 +201,7 @@ then
     else # dummy
       SLURMDIR=$0
     fi
-    for SLURMFILE in $(ls -1 ${SLURMDIR}); do
+    for SLURMFILE in $(${LS} -1 ${SLURMDIR}); do
     if [[ (-d ${SLURMDIR}) && ("" = "${SLURMSCRIPT}" || "0" = "${SLURMSCRIPT}") ]]; then
       SLURMFILE=${SLURMDIR}/${SLURMFILE}
       TESTID=$(${BASENAME} ${SLURMFILE%.*})
@@ -249,10 +250,12 @@ then
     for PARTITION in ${PARTITIONS}; do
     for CONFIG in ${CONFIGS}; do
     # make execution environment locally available (always)
-    if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
-       [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ];
-    then
-      source ${REPOROOT}/.env/${HOST}/${CONFIG}.env
+    if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ]; then
+      if [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ]; then
+        source ${REPOROOT}/.env/${HOST}/${CONFIG}.env
+      else
+        echo "WARNING: configuration \"${CONFIG}\" not found!"
+      fi
     fi
     for ENV in ${ENVS}; do
       if [ "none" != "${ENV}" ]; then

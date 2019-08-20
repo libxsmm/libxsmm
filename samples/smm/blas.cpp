@@ -111,7 +111,7 @@ int main(int argc, char* argv[])
 #if !defined(_DEBUG)
     const char *const env_check = getenv("CHECK");
     const int check = (NULL == env_check ? 0 : atoi(env_check));
-#else
+#elif (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
     /*const*/ int check = 1;
 #endif
 
@@ -143,9 +143,7 @@ int main(int argc, char* argv[])
       ITYPE *const b = LIBXSMM_ALIGN(helper.b, LIBXSMM_ALIGNMENT);
       OTYPE *const c = LIBXSMM_ALIGN(helper.c, LIBXSMM_ALIGNMENT);
       OTYPE *const d = LIBXSMM_ALIGN(helper.d, LIBXSMM_ALIGNMENT);
-#if !defined(_OPENMP)
-      const int nthreads = 1;
-#else
+#if defined(_OPENMP)
       const int nthreads = omp_get_max_threads();
 #     pragma omp parallel for num_threads(nthreads) schedule(static)
 #endif
@@ -209,7 +207,7 @@ int main(int argc, char* argv[])
                &beta, c + static_cast<size_t>(csize) * i, &ldc);
           }
         }
-        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -228,7 +226,7 @@ int main(int argc, char* argv[])
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
              &beta, &c_array[0], &ldc, &group_count, &s);
         }
-        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -267,7 +265,7 @@ int main(int argc, char* argv[])
                &beta, c + static_cast<size_t>(csize) * i, &ldc);
           }
         }
-        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -291,7 +289,7 @@ int main(int argc, char* argv[])
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
              &beta, &c_array[0], &ldc, &group_count, &s);
         }
-        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -330,7 +328,7 @@ int main(int argc, char* argv[])
                &beta, c + static_cast<size_t>(csize) * i, &ldc);
           }
         }
-        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -354,7 +352,7 @@ int main(int argc, char* argv[])
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
              &beta, &c_array[0], &ldc, &group_count, &s);
         }
-        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -397,7 +395,7 @@ int main(int argc, char* argv[])
                &beta, c + j, &ldc);
           }
         }
-        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -433,7 +431,7 @@ int main(int argc, char* argv[])
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
              &beta, &c_array[0], &ldc, &group_count, &s);
         }
-        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -469,7 +467,7 @@ int main(int argc, char* argv[])
               &alpha, a, &lda, b, &ldb, &beta, c + j, &ldc);
           }
         }
-        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
@@ -503,7 +501,7 @@ int main(int argc, char* argv[])
             &alpha, &a_array[0], &lda, &b_array[0], &ldb,
              &beta, &c_array[0], &ldc, &group_count, &s);
         }
-        const unsigned long long ncycles = libxsmm_timer_diff(start, libxsmm_timer_tick());
+        const unsigned long long ncycles = libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         const double duration = libxsmm_timer_duration(0, ncycles) / nrepeat;
         if (0 < duration && 0 != ncycles) {
           fprintf(stdout, "\tpseudo-perf.: %.1f %s/cycle\n", (2.0 * k - 1.0) * (static_cast<double>(s) * m * n) / ncycles, ops);
