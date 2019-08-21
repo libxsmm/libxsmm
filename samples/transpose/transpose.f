@@ -149,7 +149,7 @@
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ",         &
      &        REAL(size, T)                                             &
      &        * MERGE(3D0, 2D0, ('o'.EQ.trans).OR.('O'.EQ.trans))       &
-     &        * REAL(nrepeat, T) / (duration * REAL(ISHFT(1_8, 30), T), &
+     &        * REAL(nrepeat, T) / (duration * REAL(ISHFT(1_8, 30), T)),&
      &        " GB/s"
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ",         &
      &        1D3 * duration / REAL(nrepeat, T),                        &
