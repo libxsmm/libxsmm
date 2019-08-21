@@ -64,6 +64,8 @@ int main(int argc, char* argv[])
   const int ncycles = LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : 100, 1);
   const int max_nallocs = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 4, 1, MAX_MALLOC_N);
   const int nthreads = LIBXSMM_CLMP(3 < argc ? atoi(argv[3]) : 1, 1, max_nthreads);
+  const char *const env_check = getenv("CHECK");
+  const double check = LIBXSMM_ABS(NULL == env_check ? 0 : atof(env_check));
   unsigned int nallocs = 0, nerrors0 = 0, nerrors1 = 0;
   int r[MAX_MALLOC_N], i;
   int max_size = 0;
@@ -114,11 +116,11 @@ int main(int argc, char* argv[])
         const libxsmm_timer_tickint t1 = libxsmm_timer_tick();
         p[j] = libxsmm_aligned_scratch(nbytes, 0/*auto*/);
         d1 += libxsmm_timer_ncycles(t1, libxsmm_timer_tick());
-        if (NULL != p[j]) {
-          memset(p[j], j, nbytes);
-        }
-        else {
+        if (NULL == p[j]) {
           ++nerrors1;
+        }
+        else if (0 != check) {
+          memset(p[j], j, nbytes);
         }
       }
       for (j = 0; j < count; ++j) {
@@ -149,11 +151,11 @@ int main(int argc, char* argv[])
         const libxsmm_timer_tickint t1 = libxsmm_timer_tick();
         p[j] = malloc(nbytes);
         d0 += libxsmm_timer_ncycles(t1, libxsmm_timer_tick());
-        if (NULL != p[j]) {
-          memset(p[j], j, nbytes);
-        }
-        else {
+        if (NULL == p[j]) {
           ++nerrors0;
+        }
+        else if (0 != check) {
+          memset(p[j], j, nbytes);
         }
       }
       for (j = 0; j < count; ++j) {
