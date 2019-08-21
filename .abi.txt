@@ -430,7 +430,9 @@ libxsmm_wsmmdispatch
 libxsmm_xgemm_omp
 libxsmm_xgemm_omp_
 libxsmm_xmmcall_
+libxsmm_xmmcall_abc
 libxsmm_xmmcall_abc_
+libxsmm_xmmcall_prf
 libxsmm_xmmcall_prf_
 libxsmm_xmmdispatch
 libxsmm_xmmdispatch2_
