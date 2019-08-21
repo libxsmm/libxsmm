@@ -437,9 +437,9 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
 #if defined(LIBXSMM_MALLOC_SCRATCH_AFFINITY) && (0 != LIBXSMM_SYNC)
       const unsigned int tid = libxsmm_get_tid();
 #endif
+      unsigned int npools = 1;
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
       const void *const site = (NULL != caller ? caller : libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL));
-      unsigned int npools = 1;
       for (; pool != end; ++pool) { /* find matching pool */
         if (site == pool->instance.site
 # if defined(LIBXSMM_MALLOC_SCRATCH_AFFINITY) && (0 != LIBXSMM_SYNC)
