@@ -404,11 +404,13 @@ LIBXSMM_API_INLINE internal_malloc_pool_type* internal_scratch_malloc_pool(const
   LIBXSMM_ASSERT(npools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
   LIBXSMM_ASSERT(sizeof(internal_malloc_pool_type) <= (LIBXSMM_CACHELINE));
   for (; pool != end; ++pool) {
-    const internal_malloc_info_type *const info = internal_malloc_info(pool->instance.buffer);
-    /* check if memory belongs to scratch domain or local domain */
-    if (NULL != info && pool->instance.buffer <= buffer && buffer < (pool->instance.buffer + info->size)) {
-      result = pool;
-      break;
+    if (pool->instance.buffer <= buffer) {
+      const internal_malloc_info_type *const info = internal_malloc_info(pool->instance.buffer);
+      /* check if memory belongs to scratch domain or local domain */
+      if (NULL != info && buffer < (pool->instance.buffer + info->size)) {
+        result = pool;
+        break;
+      }
     }
   }
   LIBXSMM_ASSERT(NULL != memory);
@@ -491,7 +493,7 @@ LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size
         else { /* fresh pool */
           const size_t scratch_size = internal_get_scratch_size(pool); /* exclude current pool */
           const size_t limit_size = (1 < npools ? (libxsmm_scratch_limit - LIBXSMM_MIN(scratch_size, libxsmm_scratch_limit)) : ((size_t)-1/*unlimited*/));
-          const size_t scale_size = (size_t)(libxsmm_scratch_scale * alloc_size); /* hysteresis */
+          const size_t scale_size = (size_t)(1 != libxsmm_scratch_scale ? (libxsmm_scratch_scale * alloc_size) : alloc_size); /* hysteresis */
           const size_t incsize = (size_t)(libxsmm_scratch_scale * pool->instance.incsize);
           const size_t maxsize = LIBXSMM_MAX(scale_size, pool->instance.minsize) + incsize;
           const size_t limsize = LIBXSMM_MIN(maxsize, limit_size);
@@ -1781,7 +1783,7 @@ LIBXSMM_API void libxsmm_free(const void* memory)
       LIBXSMM_ASSERT(pool->instance.buffer <= pool->instance.head);
       if (0 == counter) { /* reuse or reallocate scratch domain */
         const internal_malloc_info_type *const info = internal_malloc_info(pool->instance.buffer);
-        const size_t scale_size = (size_t)(libxsmm_scratch_scale * info->size); /* hysteresis */
+        const size_t scale_size = (size_t)(1 != libxsmm_scratch_scale ? (libxsmm_scratch_scale * info->size) : info->size); /* hysteresis */
         const size_t size = pool->instance.minsize + pool->instance.incsize;
         if (size <= scale_size) { /* reuse scratch domain */
           pool->instance.head = LIBXSMM_MIN(pool->instance.head, (char*)memory);
@@ -1801,8 +1803,8 @@ LIBXSMM_API void libxsmm_free(const void* memory)
         }
       }
       /* TODO: document/check that allocation/deallocation must follow the linear/scoped allocator policy */
-      else { /* reuse scratch domain */
-        pool->instance.head = LIBXSMM_MIN(pool->instance.head, (char*)memory);
+      else if ((char*)memory < pool->instance.head) { /* reuse scratch domain */
+        pool->instance.head = (char*)memory;
       }
     }
     else
