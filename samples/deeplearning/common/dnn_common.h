@@ -274,8 +274,10 @@ LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf(buf, size);
+#if 0
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
+#endif
 #endif
    for (i = 0; i < (int)size; ++i) {
     buf[i] = (float)((initOne != 0) ? 1.0 : ((initPos != 0) ? libxsmm_rng_f64() : (0.05 - libxsmm_rng_f64()/10.0)));
@@ -1784,12 +1786,19 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
   LIBXSMM_VLA_DECL(4,       float, output, output_ptr, nFm, ofh, ofw);
 
 #if defined(_OPENMP)
+  float* tmp_buffer = (float*)malloc(sizeof(float)*ofh*ofw*omp_get_max_threads());
   LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(fm);
 # pragma omp parallel for private(img, fm)
+#else
+  float* tmp_buffer = (float*)malloc(sizeof(float)*ofh*ofw);
 #endif
   for (img = 0; img < nImg; img++) {
     for (fm = 0; fm < nFm; fm++) {
-      float* lcl_buffer_ptr = (float*)malloc(sizeof(float)*ofh*ofw);
+#if defined(_OPENMP)
+      float* lcl_buffer_ptr = tmp_buffer + (ofh*ofw*omp_get_thread_num());
+#else
+      float* lcl_buffer_ptr = tmp_buffer;
+#endif
       LIBXSMM_VLA_DECL(2, float, lcl_buffer, lcl_buffer_ptr, ofw);
       int i, ho, wo, hi, wi, kh, kw;
 
@@ -1844,10 +1853,10 @@ LIBXSMM_INLINE void naive_pooling_fp(naive_pooling_t* param, const float* input_
       } else {
         /* shouldn't happen */
       }
-
-      free( lcl_buffer_ptr );
     }
   }
+
+  free( tmp_buffer );
 }
 
 LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, const float* doutput_ptr, const int* mask_ptr)
@@ -1872,12 +1881,19 @@ LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, 
   LIBXSMM_VLA_DECL(4, const float, doutput, doutput_ptr, nFm, ofh, ofw);
 
 #if defined(_OPENMP)
+  float* tmp_buffer = (float*)malloc(sizeof(float)*ifh*ifw*omp_get_max_threads());
   LIBXSMM_OMP_VAR(img); LIBXSMM_OMP_VAR(fm);
 # pragma omp parallel for private(img, fm)
+#else
+  float* tmp_buffer = (float*)malloc(sizeof(float)*ofh*ofw);
 #endif
-  for (img = 0; img < nImg; img++) {
+   for (img = 0; img < nImg; img++) {
     for (fm = 0; fm < nFm; fm++) {
-      float* lcl_buffer_ptr = (float*)malloc(sizeof(float)*ifh*ifw);
+#if defined(_OPENMP)
+      float* lcl_buffer_ptr = tmp_buffer + (ifh*ifw*omp_get_thread_num());
+#else
+      float* lcl_buffer_ptr = tmp_buffer;
+#endif
       LIBXSMM_VLA_DECL(2, float, lcl_buffer, lcl_buffer_ptr, ifw);
       int i, ho, wo, hi, wi, kh, kw;
 
@@ -1914,10 +1930,10 @@ LIBXSMM_INLINE void naive_pooling_bp(naive_pooling_t* param, float* dinput_ptr, 
           LIBXSMM_VLA_ACCESS(4, dinput, img, fm, hi, wi, nFm, ifh, ifw) = LIBXSMM_VLA_ACCESS(2, lcl_buffer, hi, wi, ifw);
         }
       }
-
-      free( lcl_buffer_ptr );
     }
   }
+
+  free( tmp_buffer );
 }
 
 LIBXSMM_INLINE void naive_fusedbatchnorm_fp(naive_fusedbatchnorm_t* param, const float* input_ptr, float* output_ptr, const float* input_add_ptr,
