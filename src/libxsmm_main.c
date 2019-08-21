@@ -2757,7 +2757,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn, const int* 
     && (NULL == oprec || (0 <= *oprec && *oprec < LIBXSMM_DATATYPE_UNSUPPORTED)))
 #endif
   {
-    const libxsmm_gemm_precision precision = (NULL != iprec ? *iprec : LIBXSMM_GEMM_PRECISION_F64);
+    const libxsmm_gemm_precision precision = (NULL != iprec ? ((libxsmm_gemm_precision)*iprec) : LIBXSMM_GEMM_PRECISION_F64);
     const libxsmm_blasint kk = *(NULL != k ? k : m), nn = (NULL != n ? *n : kk);
     const int gemm_flags = (NULL != flags ? *flags : LIBXSMM_FLAGS);
     libxsmm_descriptor_blob blob;
