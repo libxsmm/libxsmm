@@ -274,7 +274,7 @@ LIBXSMM_INLINE void init_buf(float* buf, size_t size, int initPos, int initOne)
 {
   int i;
   zero_buf(buf, size);
-#if 0
+#if 1
 #if defined(_OPENMP)
 # pragma omp parallel for private(i)
 #endif
