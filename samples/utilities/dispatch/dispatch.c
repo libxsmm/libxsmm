@@ -106,12 +106,12 @@ int main(int argc, char* argv[])
   const int default_maxsize = 16;
 #endif
   int size_total = LIBXSMM_MAX((1 < argc && 0 < atoi(argv[1])) ? atoi(argv[1]) : 10000/*default*/, 2);
-  const int size_local = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 4/*default*/, 1, size_total);
+  const int size_local = LIBXSMM_CLMP((2 < argc && 0 < atoi(argv[2])) ? atoi(argv[2]) : 4/*default*/, 1, size_total);
   const int nthreads = LIBXSMM_CLMP(3 < argc ? atoi(argv[3]) : 1/*default*/, 1, max_nthreads);
   const int nrepeat = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 1/*default*/, 1);
-  const libxsmm_blasint maxsize = LIBXSMM_CLMP(5 < argc ? atoi(argv[5]) : default_maxsize, 1, MAXSIZE);
-  const libxsmm_blasint minsize = LIBXSMM_CLMP(6 < argc ? atoi(argv[6]) : default_minsize, 1, maxsize);
-  const libxsmm_blasint range = maxsize - minsize;
+  const libxsmm_blasint maxsize = LIBXSMM_CLMP((5 < argc && 0 < atoi(argv[5])) ? atoi(argv[5]) : default_maxsize, 1, MAXSIZE);
+  const libxsmm_blasint minsize = LIBXSMM_CLMP((6 < argc && 0 < atoi(argv[6])) ? atoi(argv[6]) : default_minsize, 1, maxsize);
+  const libxsmm_blasint range = maxsize - minsize + 1;
   libxsmm_timer_tickint start, tcall, tcgen, tdsp0 = 0, tdsp1 = 0;
   int result = EXIT_SUCCESS;
 
