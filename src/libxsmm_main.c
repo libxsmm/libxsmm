@@ -469,15 +469,16 @@ LIBXSMM_API_INLINE void internal_finalize(void)
           ngemms += (size_t)internal_statistic[0/*DP*/][i].nsta + internal_statistic[1/*SP*/][i].nsta;
           ngemms += (size_t)internal_statistic[0/*DP*/][i].njit + internal_statistic[1/*SP*/][i].njit;
         }
-        if (0 != ngemms || 0 != internal_statistic_num_mcopy || 0 != internal_statistic_num_tcopy
+        if (0 != ngemms || 0 != internal_statistic_num_gemv
+          || 0 != internal_statistic_num_mcopy || 0 != internal_statistic_num_tcopy
           || 0 != libxsmm_statistic_num_spmdm)
         {
           const char sep[] = " ", *s = "";
           fprintf(stderr, " (");
           if (0 != ngemms) { fprintf(stderr, "gemm=%lu", (unsigned long int)ngemms); s = sep; }
+          if (0 != internal_statistic_num_gemv) { fprintf(stderr, "%sgemv=%u", s, internal_statistic_num_gemv); s = sep; }
           if (0 != internal_statistic_num_mcopy) { fprintf(stderr, "%smcopy=%u", s, internal_statistic_num_mcopy); s = sep; }
           if (0 != internal_statistic_num_tcopy) { fprintf(stderr, "%stcopy=%u", s, internal_statistic_num_tcopy); s = sep; }
-          if (0 != internal_statistic_num_gemv) { fprintf(stderr, "%sgemv=%u", s, internal_statistic_num_gemv); s = sep; }
           if (0 != libxsmm_statistic_num_spmdm) { fprintf(stderr, "%sspmdm=%u", s, libxsmm_statistic_num_spmdm); s = sep; }
           fprintf(stderr, ")");
         }
