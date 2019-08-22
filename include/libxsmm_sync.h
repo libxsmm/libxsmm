@@ -533,7 +533,6 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_LOCK_TYPE_ISPOD_spin 0
 #   define LIBXSMM_LOCK_TYPE_ISRW_spin 0
 #   define LIBXSMM_LOCK_TYPE_spin omp_lock_t
-#   define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
 #   define LIBXSMM_LOCK_DESTROY_spin(LOCK) omp_destroy_lock(LOCK)
 #   define LIBXSMM_LOCK_TRYLOCK_spin(LOCK) omp_test_lock(LOCK)
 #   define LIBXSMM_LOCK_ACQUIRE_spin(LOCK) omp_set_lock(LOCK)
@@ -541,8 +540,15 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_LOCK_TRYREAD_spin(LOCK) LIBXSMM_LOCK_TRYLOCK_spin(LOCK)
 #   define LIBXSMM_LOCK_ACQREAD_spin(LOCK) LIBXSMM_LOCK_ACQUIRE_spin(LOCK)
 #   define LIBXSMM_LOCK_RELREAD_spin(LOCK) LIBXSMM_LOCK_RELEASE_spin(LOCK)
-#   define LIBXSMM_LOCK_ATTR_TYPE_spin const void*
-#   define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) LIBXSMM_UNUSED(ATTR)
+#   if (201811/*OpenMP 5.0*/ <= _OPENMP)
+#     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) omp_init_lock_with_hint(LOCK, *(ATTR))
+#     define LIBXSMM_LOCK_ATTR_TYPE_spin omp_lock_hint_t
+#     define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) (*(ATTR) = omp_lock_hint_none)
+#   else
+#     define LIBXSMM_LOCK_INIT_spin(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
+#     define LIBXSMM_LOCK_ATTR_TYPE_spin const void*
+#     define LIBXSMM_LOCK_ATTR_INIT_spin(ATTR) LIBXSMM_UNUSED(ATTR)
+#   endif
 #   define LIBXSMM_LOCK_ATTR_DESTROY_spin(ATTR) LIBXSMM_UNUSED(ATTR)
 # endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
@@ -565,7 +571,6 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_LOCK_TYPE_ISPOD_mutex 0
 #   define LIBXSMM_LOCK_TYPE_ISRW_mutex 0
 #   define LIBXSMM_LOCK_TYPE_mutex omp_lock_t
-#   define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
 #   define LIBXSMM_LOCK_DESTROY_mutex(LOCK) omp_destroy_lock(LOCK)
 #   define LIBXSMM_LOCK_TRYLOCK_mutex(LOCK) omp_test_lock(LOCK)
 #   define LIBXSMM_LOCK_ACQUIRE_mutex(LOCK) omp_set_lock(LOCK)
@@ -573,8 +578,15 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_LOCK_TRYREAD_mutex(LOCK) LIBXSMM_LOCK_TRYLOCK_mutex(LOCK)
 #   define LIBXSMM_LOCK_ACQREAD_mutex(LOCK) LIBXSMM_LOCK_ACQUIRE_mutex(LOCK)
 #   define LIBXSMM_LOCK_RELREAD_mutex(LOCK) LIBXSMM_LOCK_RELEASE_mutex(LOCK)
-#   define LIBXSMM_LOCK_ATTR_TYPE_mutex const void*
-#   define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
+#   if (201811/*OpenMP 5.0*/ <= _OPENMP)
+#     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) omp_init_lock_with_hint(LOCK, *(ATTR))
+#     define LIBXSMM_LOCK_ATTR_TYPE_mutex omp_lock_hint_t
+#     define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) (*(ATTR) = omp_lock_hint_none)
+#   else
+#     define LIBXSMM_LOCK_INIT_mutex(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
+#     define LIBXSMM_LOCK_ATTR_TYPE_mutex const void*
+#     define LIBXSMM_LOCK_ATTR_INIT_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
+#   endif
 #   define LIBXSMM_LOCK_ATTR_DESTROY_mutex(ATTR) LIBXSMM_UNUSED(ATTR)
 # endif
 # if !defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
@@ -597,7 +609,6 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_LOCK_TYPE_ISPOD_rwlock 0
 #   define LIBXSMM_LOCK_TYPE_ISRW_rwlock 0
 #   define LIBXSMM_LOCK_TYPE_rwlock omp_lock_t
-#   define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
 #   define LIBXSMM_LOCK_DESTROY_rwlock(LOCK) omp_destroy_lock(LOCK)
 #   define LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK) omp_test_lock(LOCK)
 #   define LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK) omp_set_lock(LOCK)
@@ -605,8 +616,15 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_LOCK_TRYREAD_rwlock(LOCK) LIBXSMM_LOCK_TRYLOCK_rwlock(LOCK)
 #   define LIBXSMM_LOCK_ACQREAD_rwlock(LOCK) LIBXSMM_LOCK_ACQUIRE_rwlock(LOCK)
 #   define LIBXSMM_LOCK_RELREAD_rwlock(LOCK) LIBXSMM_LOCK_RELEASE_rwlock(LOCK)
-#   define LIBXSMM_LOCK_ATTR_TYPE_rwlock const void*
-#   define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
+#   if (201811/*OpenMP 5.0*/ <= _OPENMP)
+#     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) omp_init_lock_with_hint(LOCK, *(ATTR))
+#     define LIBXSMM_LOCK_ATTR_TYPE_rwlock omp_lock_hint_t
+#     define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) (*(ATTR) = omp_lock_hint_none)
+#   else
+#     define LIBXSMM_LOCK_INIT_rwlock(LOCK, ATTR) { LIBXSMM_UNUSED(ATTR); omp_init_lock(LOCK); }
+#     define LIBXSMM_LOCK_ATTR_TYPE_rwlock const void*
+#     define LIBXSMM_LOCK_ATTR_INIT_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
+#   endif
 #   define LIBXSMM_LOCK_ATTR_DESTROY_rwlock(ATTR) LIBXSMM_UNUSED(ATTR)
 # endif
 #else
