@@ -1440,7 +1440,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             internal_malloc_scratch_size = alloc_size; /* accept data-race */
           }
         }
-        else {
+        else { /* private */
           if (0 == (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
             internal_malloc_private_size += alloc_size; /* accept data-race */
           }
