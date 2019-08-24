@@ -1225,8 +1225,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>mkl_rt.lib;dbghelp.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\ia32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -1269,8 +1268,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>mkl_rt.lib;dbghelp.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\ia32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -1313,8 +1311,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>mkl_rt.lib;dbghelp.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -1359,8 +1356,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>mkl_rt.lib;dbghelp.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -1396,8 +1392,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>mkl_rt.lib;dbghelp.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\ia32</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
@@ -1435,8 +1430,7 @@
     <ProjectReference />
     <Lib>
       <SubSystem>Console</SubSystem>
-      <AdditionalDependencies>mkl_rt.lib;dbghelp.lib</AdditionalDependencies>
-      <AdditionalLibraryDirectories>$(MKLROOT)\lib\intel64</AdditionalLibraryDirectories>
+      <AdditionalDependencies>dbghelp.lib</AdditionalDependencies>
     </Lib>
     <BuildLog />
   </ItemDefinitionGroup>
