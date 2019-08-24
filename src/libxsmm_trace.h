@@ -61,7 +61,7 @@ LIBXSMM_API int libxsmm_trace_finalize(void);
 LIBXSMM_API unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned int skip);
 
 LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* must be inline */
-#if defined(__GNUC__) && (!defined(__PGI) || \
+#if (defined(__GNUC__) || defined(__clang__)) && (!defined(__PGI) || \
   LIBXSMM_VERSION3(19, 0, 0) <= LIBXSMM_VERSION3(__PGIC__, __PGIC_MINOR__, __PGIC_PATCHLEVEL__))
   if (0 == level) return __builtin_return_address(0);
   else

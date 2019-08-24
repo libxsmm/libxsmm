@@ -155,7 +155,7 @@
 # define LIBXSMM_UNPACKED
 #endif
 
-#if defined(_WIN32) && !defined(__GNUC__)
+#if defined(_WIN32) && !defined(__GNUC__) && !defined(__clang__)
 # define LIBXSMM_ATTRIBUTE(A) __declspec(A)
 # if defined(__cplusplus)
 #   define LIBXSMM_INLINE_ALWAYS __forceinline

@@ -39,9 +39,9 @@
 #     define LIBXSMM_NO_TLS
 #     define LIBXSMM_TLS
 #   else
-#     if (defined(_WIN32) && !defined(__GNUC__)) || (defined(__PGI) && !defined(__cplusplus))
+#     if (defined(_WIN32) && !defined(__GNUC__) && !defined(__clang__)) || (defined(__PGI) && !defined(__cplusplus))
 #       define LIBXSMM_TLS LIBXSMM_ATTRIBUTE(thread)
-#     elif defined(__GNUC__) || defined(_CRAYC)
+#     elif defined(__GNUC__) || defined(__clang__) || defined(_CRAYC)
 #       define LIBXSMM_TLS __thread
 #     elif defined(__cplusplus)
 #       define LIBXSMM_TLS thread_local
@@ -57,8 +57,9 @@
 # endif
 #endif
 
-#if !defined(LIBXSMM_GCC_BASELINE) && !defined(LIBXSMM_SYNC_LEGACY) && defined(__GNUC__) && \
-  LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
+#if !defined(LIBXSMM_GCC_BASELINE) && !defined(LIBXSMM_SYNC_LEGACY) && ((defined(__GNUC__) && \
+  LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
+  || (defined(_WIN32) && defined(__clang__)))
 # define LIBXSMM_GCC_BASELINE
 #endif
 
@@ -143,8 +144,8 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_SYNC_NPAUSE 0
 # endif
 #else
-# if defined(__GNUC__) && !defined(LIBXSMM_SYNC_SYSTEM) && /* check for legacy GCC (no atomics) */ \
-  LIBXSMM_VERSION3(4, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
+# if !defined(LIBXSMM_SYNC_SYSTEM) && (defined(LIBXSMM_GCC_BASELINE) || (defined(__GNUC__) && \
+  LIBXSMM_VERSION3(4, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)))
 #   define LIBXSMM_ATOMIC(FN, BITS) FN
 #   if defined(LIBXSMM_GCC_BASELINE)
 #     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_n(SRC_PTR, KIND)
