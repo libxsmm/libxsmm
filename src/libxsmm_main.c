@@ -376,13 +376,16 @@ LIBXSMM_API_INLINE unsigned int internal_print_statistic(FILE* ostream,
 }
 
 
+#if !(defined(_WIN32) || defined(__CYGWIN__))
 LIBXSMM_API_INLINE unsigned int internal_statistic_ntry(int precision)
 {
   return internal_statistic[precision][0/*SML*/].ntry + internal_statistic[precision][1/*MED*/].ntry
        + internal_statistic[precision][2/*BIG*/].ntry + internal_statistic[precision][3/*XXX*/].ntry;
 }
+#endif
 
 
+#if !defined(_WIN32)
 LIBXSMM_API_INLINE void internal_register_static_code(
   libxsmm_gemm_precision precision, libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k,
   libxsmm_xmmfunction xgemm, libxsmm_code_pointer* registry)
@@ -427,6 +430,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(
     internal_update_mmstatistic(desc, 1/*try*/, 0, 0, 0);
   }
 }
+#endif
 
 
 LIBXSMM_API_INLINE void internal_finalize(void)
