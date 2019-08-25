@@ -1054,12 +1054,12 @@ ifneq (0,$(INTEL))
   endif
   ifneq (0,$(OMP))
     CXXFLAGS += $(OMPFLAG_FORCE)
+    FCFLAGS += $(OMPFLAG_FORCE)
     CFLAGS += $(OMPFLAG_FORCE)
-    ifeq (,$(strip $(GFC)))
-      BLAS_LDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
-      FCFLAGS += $(OMPFLAG_FORCE)
+    ifneq (,$(strip $(GFC)))
+      LDFLAGS += $(XLIB_BEGIN) -l$(OMPRT) $(XLIB_END)
     else
-      BLAS_LDFLAGS += $(OMPFLAG_FORCE)
+      LDFLAGS += $(OMPFLAG_FORCE)
     endif
   endif
   ifneq (0,$(SIMD))
