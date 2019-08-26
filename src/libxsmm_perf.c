@@ -239,6 +239,7 @@ error:
 }
 
 
+#if defined(LIBXSMM_PERF_JITDUMP) && !defined(_WIN32)
 /** Utility function to receive the OS-specific thread ID. */
 LIBXSMM_API_INLINE unsigned int internal_perf_get_tid(void)
 {
@@ -248,6 +249,7 @@ LIBXSMM_API_INLINE unsigned int internal_perf_get_tid(void)
   return libxsmm_get_tid();
 #endif
 }
+#endif
 
 
 LIBXSMM_API_INTERN void libxsmm_perf_dump_code(const void* memory, size_t size, const char* name)

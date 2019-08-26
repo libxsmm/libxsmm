@@ -13,7 +13,5 @@ export ITERS=1
 #export LIBXSMM_VERBOSE=-1
 
 date
-srun ./run_all_conv.sh 50 ${ITERS} 1 f32 F L 1
-srun ./run_all_conv.sh 50 ${ITERS} 1 f32 B L 1
 srun ./run_all_conv.sh 50 ${ITERS} 1 f32 U L 1
 date

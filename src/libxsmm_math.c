@@ -370,6 +370,7 @@ LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x)
   return y;
 }
 
+#if defined(LIBXSMM_NO_LIBM)
 /* Implementation based on Claude Baumann's product (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm).
  * Exponential function, which exposes the number of iterations taken in the main case (1...22).
  */
@@ -439,6 +440,7 @@ LIBXSMM_API_INLINE float internal_math_sexp2(float x, int maxiter)
   }
   return result.s;
 }
+#endif
 
 
 LIBXSMM_API float libxsmm_sexp2(float x)
