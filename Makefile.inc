@@ -326,17 +326,17 @@ endif
 GNU ?= 0
 ifeq (0,$(GNU))
   ifeq (,$(shell echo "$${CXX}"))
-    ifneq (,$(notdir $(call which,icpc)))
-      CXX = icpc
-    else ifneq (,$(notdir $(call which,icpx)))
+    ifneq (,$(notdir $(call which,icpx)))
       CXX = icpx
+    else ifneq (,$(notdir $(call which,icpc)))
+      CXX = icpc
     endif
   endif
   ifeq (,$(shell echo "$${CC}"))
-    ifneq (,$(notdir $(call which,icc)))
-      CC = icc
-    else ifneq (,$(notdir $(call which,icx)))
+    ifneq (,$(notdir $(call which,icx)))
       CC = icx
+    else ifneq (,$(notdir $(call which,icc)))
+      CC = icc
     endif
   endif
   ifeq (,$(shell echo "$${FC}"))
@@ -868,13 +868,13 @@ else # osx
   endif
 endif
 
+LIBGFORTRAN = $(call libpath,$(FC),$(SLDFLAGS),gfortran)
+ifneq (,$(strip $(LIBGFORTRAN)))
 ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
-  LIBGFORTRAN = $(call libpath,$(FC),$(SLDFLAGS),gfortran)
-  ifneq (,$(strip $(LIBGFORTRAN)))
-    FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
-    LIB_FLD = $(LIB_LD)
-    #FLD = $(LD)
-  endif
+  FLDFLAGS += $(call abslibpath,$(LIBGFORTRAN)) $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) $(XLIB_END)
+  LIB_FLD = $(LIB_LD)
+  #FLD = $(LD)
+endif
 endif
 
 ifneq (0,$(INTEL))

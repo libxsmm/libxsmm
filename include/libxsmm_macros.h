@@ -472,7 +472,7 @@
 # define LIBXSMM_ASSUME(EXPRESSION) assert(EXPRESSION)
 #endif
 
-#if defined(LIBXSMM_INTEL_COMPILER)
+#if defined(__INTEL_COMPILER)
 # define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
 #else
 # define LIBXSMM_ASSUME_ALIGNED(A, N) assert(0 == ((uintptr_t)(A)) % (N))
