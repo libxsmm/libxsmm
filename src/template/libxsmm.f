@@ -62,9 +62,10 @@
         INTEGER(C_INT), PARAMETER :: LIBXSMM_COL_MAJOR = 1
         INTEGER(C_INT), PARAMETER :: LIBXSMM_ROW_MAJOR = 0
 
-        ! Integer type impacting the BLAS interface (LP64: 32-bit, and ILP64: 64-bit).
-        INTEGER(C_INT), PARAMETER :: LIBXSMM_BLASINT_KIND =             &
-     &    $BLASINT_KIND ! MERGE(C_INT, C_LONG_LONG, 0.EQ.LIBXSMM_ILP64)
+        ! LIBXSMM_BLASINT_KIND impacts BLAS interface (LP64: 32-bit, ILP64: 64-bit).
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_BLASINT_KIND = $BLASINT_KIND
+        ! Integer kind used by timer interface.
+        INTEGER(C_INT), PARAMETER :: LIBXSMM_TICKINT_KIND = C_LONG_LONG
 
         ! Parameters representing the GEMM performed by the simplified interface.
         REAL(C_DOUBLE), PARAMETER :: LIBXSMM_ALPHA = REAL($ALPHA, C_DOUBLE)
@@ -448,16 +449,18 @@
           ! Impure function which returns the current clock tick of a
           ! monotonic timer source; uses a platform-specific resolution.
           ! Implicit FORTRAN 77 interface: not available.
-          INTEGER(C_LONG_LONG) FUNCTION libxsmm_timer_tick() BIND(C)
-            IMPORT :: C_LONG_LONG
+          INTEGER(LIBXSMM_TICKINT_KIND)                                 &
+     &    FUNCTION libxsmm_timer_tick() BIND(C)
+            IMPORT :: LIBXSMM_TICKINT_KIND
           END FUNCTION
 
           ! Impure function (timer freq. may vary) which returns the duration
           ! (in seconds) between two values received by libxsmm_timer_tick.
           ! Implicit FORTRAN 77 interface: not available.
           FUNCTION libxsmm_timer_duration(tick0, tick1) BIND(C)
-            IMPORT :: C_LONG_LONG, C_DOUBLE
-            INTEGER(C_LONG_LONG), INTENT(IN), VALUE :: tick0, tick1
+            IMPORT :: LIBXSMM_TICKINT_KIND, C_DOUBLE
+            INTEGER(LIBXSMM_TICKINT_KIND), INTENT(IN), VALUE :: tick0
+            INTEGER(LIBXSMM_TICKINT_KIND), INTENT(IN), VALUE :: tick1
             REAL(C_DOUBLE) :: libxsmm_timer_duration
           END FUNCTION
 
@@ -1760,15 +1763,15 @@
         ! Implicit FORTRAN 77 interface: subroutine available.
         !DIR$ ATTRIBUTES OFFLOAD:MIC :: libxsmm_timer_ncycles
         PURE FUNCTION libxsmm_timer_ncycles(tick0, tick1)
-          INTEGER(C_LONG_LONG), INTENT(IN) :: tick0, tick1
-          INTEGER(C_LONG_LONG) :: libxsmm_timer_ncycles
+          INTEGER(LIBXSMM_TICKINT_KIND), INTENT(IN) :: tick0, tick1
+          INTEGER(LIBXSMM_TICKINT_KIND) :: libxsmm_timer_ncycles
           !DIR$ ATTRIBUTES OFFLOAD:MIC :: internal_timer_ncycles
           INTERFACE
             PURE SUBROUTINE internal_timer_ncycles(ncycles,             &
      &      tick0, tick1) BIND(C, NAME="libxsmm_timer_ncycles_")
-              IMPORT C_LONG_LONG
-              INTEGER(C_LONG_LONG), INTENT(IN)  :: tick0, tick1
-              INTEGER(C_LONG_LONG), INTENT(OUT) :: ncycles
+              IMPORT LIBXSMM_TICKINT_KIND
+              INTEGER(LIBXSMM_TICKINT_KIND), INTENT(IN)  :: tick0, tick1
+              INTEGER(LIBXSMM_TICKINT_KIND), INTENT(OUT) :: ncycles
             END SUBROUTINE
           END INTERFACE
           CALL internal_timer_ncycles(                                  &
