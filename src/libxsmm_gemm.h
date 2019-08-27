@@ -36,11 +36,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if !defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && defined(LIBXSMM_BUILD) && \
-  (!defined(__BLAS) || (0 != __BLAS)) && (defined(__GNUC__) || defined(_CRAYC)) && \
-  !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
-    LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) && \
-  !defined(_WIN32) && !defined(__CYGWIN__)
+#if !defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && (!defined(__BLAS) || (0 != __BLAS))
 # define LIBXSMM_BLAS_WRAP_DYNAMIC
 #endif
 #if defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
