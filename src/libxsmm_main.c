@@ -433,7 +433,8 @@ LIBXSMM_API_INLINE void internal_register_static_code(
 #endif
 
 
-LIBXSMM_API_INLINE void internal_finalize(void)
+LIBXSMM_API_INTERN void internal_finalize(void);
+LIBXSMM_API_INTERN void internal_finalize(void)
 {
   char *const env_dump_build = getenv("LIBXSMM_DUMP_BUILD");
   char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES")
