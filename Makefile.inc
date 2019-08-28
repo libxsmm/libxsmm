@@ -1638,8 +1638,8 @@ ifeq (Darwin,$(UNAME))
 endif
 
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
-  echo "\#include <malloc.h>" > $${INFILE}; \
-  echo "\#ifndef __MALLOC_HOOK_VOLATILE" >> $${INFILE}; \
+  echo "\#include <features.h>" > $${INFILE}; \
+  echo "\#if !defined(__GNU_LIBRARY__) && !defined(__GLIBC__)" >> $${INFILE}; \
   echo "0" >> $${INFILE}; \
   echo "\#endif" >> $${INFILE}; \
   RESULT=$$($(CC) -c $${INFILE} -o $${INFILE}.o 2>&1); \
