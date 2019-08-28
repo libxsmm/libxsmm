@@ -37,12 +37,9 @@
 #endif
 #include <inttypes.h>
 #include <stdlib.h>
+#include <malloc.h>
 #include <string.h>
 #include <stdio.h>
-#if !defined(_LIBC) && 0
-# define _LIBC
-# include <malloc.h>
-#endif
 #if defined(__TBB)
 # include <tbb/scalable_allocator.h>
 #endif
@@ -636,10 +633,10 @@ LIBXSMM_EXTERN_C void* __libc_memalign(size_t /*alignment*/, size_t /*size*/);
 LIBXSMM_EXTERN_C void* __libc_malloc(size_t /*size*/);
 LIBXSMM_EXTERN_C void* __libc_realloc(void* /*ptr*/, size_t /*size*/);
 LIBXSMM_EXTERN_C void  __libc_free(void* /*ptr*/);
-#endif
+#endif /*defined(LIBXSMM_GLIBC)*/
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t /*alignment*/, size_t /*size*/);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment, size_t size)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t /*alignment*/, size_t /*size*/);
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment, size_t size)
 {
 #if defined(__TBB)
   return scalable_aligned_malloc(size, alignment);
@@ -653,8 +650,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment, size_
 #endif
 }
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t /*size*/);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t /*size*/);
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
 {
 #if defined(__TBB)
   return scalable_malloc(size);
@@ -665,8 +662,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
 #endif
 }
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* /*ptr*/, size_t /*size*/);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t size)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* /*ptr*/, size_t /*size*/);
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t size)
 {
 #if defined(__TBB)
   return scalable_realloc(ptr, size);
@@ -677,8 +674,8 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t size)
 #endif
 }
 
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* /*ptr*/);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* /*ptr*/);
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
 {
 #if defined(__TBB)
   scalable_free(ptr);
@@ -783,7 +780,7 @@ LIBXSMM_API void free(void* ptr)
   __wrap_free(ptr);
 }
 
-#endif
+#endif /*defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)*/
 
 
 LIBXSMM_API_INTERN int libxsmm_xset_default_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
