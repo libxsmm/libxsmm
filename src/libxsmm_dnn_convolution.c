@@ -350,6 +350,11 @@ LIBXSMM_API_INTERN int libxsmm_dnn_convolution_setup_init_fwd_gemm_flags( libxsm
   if (handle->ofw == 56 && handle->desc.C == 256 && handle->desc.K == 64 && handle->desc.R == 1) {
     result = LIBXSMM_GEMM_FLAG_ALIGN_C_NTS_HINT;
   }
+  /* Disable since the GEMM output is going to f32 scratch  */
+  if (handle->datatype_in == LIBXSMM_DNN_DATATYPE_BF16) {
+    result = 0;
+  }
+
   return result;
 }
 
