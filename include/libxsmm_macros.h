@@ -98,6 +98,53 @@
 #define LIBXSMM_VERSION43(VERSION) (((VERSION) >> 14) & 0x1F)
 #define LIBXSMM_VERSION44(VERSION) (((VERSION)) & 0x3FFF)
 
+#if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD))
+# define LIBXSMM_UNPACKED
+#endif
+#if defined(_WIN32) && !defined(__GNUC__) && !defined(__clang__)
+# define LIBXSMM_ATTRIBUTE(A) __declspec(A)
+# if defined(__cplusplus)
+#   define LIBXSMM_INLINE_ALWAYS __forceinline
+# else
+#   define LIBXSMM_INLINE_ALWAYS static __forceinline
+# endif
+# define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
+# if !defined(LIBXSMM_UNPACKED)
+#   define LIBXSMM_PACKED(TYPE) LIBXSMM_PRAGMA(pack(1)) TYPE
+# endif
+# define LIBXSMM_CDECL __cdecl
+#elif (defined(__GNUC__) || defined(__clang__) || defined(__PGI))
+# define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
+# define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
+# define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
+# if !defined(LIBXSMM_UNPACKED)
+#   define LIBXSMM_PACKED(TYPE) TYPE LIBXSMM_ATTRIBUTE(__packed__)
+# endif
+# define LIBXSMM_CDECL LIBXSMM_ATTRIBUTE(cdecl)
+#else
+# define LIBXSMM_ATTRIBUTE(A)
+# define LIBXSMM_INLINE_ALWAYS LIBXSMM_INLINE
+# define LIBXSMM_ALIGNED(DECL, N) DECL
+# define LIBXSMM_CDECL
+#endif
+#if !defined(LIBXSMM_PACKED)
+# define LIBXSMM_PACKED(TYPE) TYPE
+# if !defined(LIBXSMM_UNPACKED)
+#   define LIBXSMM_UNPACKED
+# endif
+#endif
+
+/* LIBXSMM_ATTRIBUTE_USED: mark library functions as used to avoid warning */
+#if defined(__GNUC__) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32))
+# define LIBXSMM_ATTRIBUTE_MALLOC LIBXSMM_ATTRIBUTE(malloc)
+# define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
+# define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
+#else
+# define LIBXSMM_ATTRIBUTE_MALLOC
+# define LIBXSMM_ATTRIBUTE_UNUSED
+# define LIBXSMM_ATTRIBUTE_USED
+#endif
+
 #if defined(__cplusplus)
 # define LIBXSMM_VARIADIC ...
 # define LIBXSMM_EXTERN_KEYWORD extern "C"
@@ -135,7 +182,7 @@
 #   define LIBXSMM_INLINE_KEYWORD
 #   define LIBXSMM_INLINE_FIXUP
 # endif
-# define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
+# define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE_USED
 #endif /*__cplusplus*/
 #if !defined(LIBXSMM_CALLER)
 # define LIBXSMM_CALLER NULL
@@ -148,43 +195,6 @@
 #   define LIBXSMM_CALLER_ID ((const void*)((uintptr_t)libxsmm_hash_string(LIBXSMM_CALLER)))
 # else /* assume no string-pooling (perhaps unsafe) */
 #   define LIBXSMM_CALLER_ID LIBXSMM_CALLER
-# endif
-#endif
-
-#if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD))
-# define LIBXSMM_UNPACKED
-#endif
-
-#if defined(_WIN32) && !defined(__GNUC__) && !defined(__clang__)
-# define LIBXSMM_ATTRIBUTE(A) __declspec(A)
-# if defined(__cplusplus)
-#   define LIBXSMM_INLINE_ALWAYS __forceinline
-# else
-#   define LIBXSMM_INLINE_ALWAYS static __forceinline
-# endif
-# define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(align(N)) DECL
-# if !defined(LIBXSMM_UNPACKED)
-#   define LIBXSMM_PACKED(TYPE) LIBXSMM_PRAGMA(pack(1)) TYPE
-# endif
-# define LIBXSMM_CDECL __cdecl
-#elif (defined(__GNUC__) || defined(__clang__) || defined(__PGI))
-# define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
-# define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
-# define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
-# if !defined(LIBXSMM_UNPACKED)
-#   define LIBXSMM_PACKED(TYPE) TYPE LIBXSMM_ATTRIBUTE(__packed__)
-# endif
-# define LIBXSMM_CDECL LIBXSMM_ATTRIBUTE(cdecl)
-#else
-# define LIBXSMM_ATTRIBUTE(A)
-# define LIBXSMM_INLINE_ALWAYS LIBXSMM_INLINE
-# define LIBXSMM_ALIGNED(DECL, N) DECL
-# define LIBXSMM_CDECL
-#endif
-#if !defined(LIBXSMM_PACKED)
-# define LIBXSMM_PACKED(TYPE) TYPE
-# if !defined(LIBXSMM_UNPACKED)
-#   define LIBXSMM_UNPACKED
 # endif
 #endif
 
@@ -246,17 +256,6 @@
 # define LIBXSMM_VISIBILITY_IMPORT LIBXSMM_EXTERN_KEYWORD LIBXSMM_VISIBILITY_PUBLIC
 #endif
 
-/* LIBXSMM_ATTRIBUTE_USED: mark library functions as used to avoid warning */
-#if defined(__GNUC__) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32))
-# define LIBXSMM_ATTRIBUTE_MALLOC LIBXSMM_ATTRIBUTE(malloc)
-# define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
-# define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
-#else
-# define LIBXSMM_ATTRIBUTE_MALLOC
-# define LIBXSMM_ATTRIBUTE_UNUSED
-# define LIBXSMM_ATTRIBUTE_USED
-#endif
-
 #if defined(LIBXSMM_API) /* header-only mode */
 # define LIBXSMM_API_INTERN LIBXSMM_API
 # define LIBXSMM_API_EXPORT LIBXSMM_API
@@ -303,7 +302,7 @@
 # define LIBXSMM_APIVAR_ALIGNED(DECL) LIBXSMM_APIVAR_PUBLIC(DECL)
 # define LIBXSMM_APIVAR_ARRAY(DECL, N) LIBXSMM_APIVAR(DECL[N])
 #endif
-#define LIBXSMM_API_INLINE LIBXSMM_EXTERN_C LIBXSMM_INLINE LIBXSMM_RETARGETABLE LIBXSMM_ATTRIBUTE_USED
+#define LIBXSMM_API_INLINE LIBXSMM_EXTERN_C LIBXSMM_INLINE LIBXSMM_RETARGETABLE
 
 #if !defined(LIBXSMM_RESTRICT)
 # if ((defined(__GNUC__) && !defined(__CYGWIN32__)) || defined(LIBXSMM_INTEL_COMPILER)) && !defined(_WIN32)
