@@ -154,7 +154,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_START 3
 #endif
 
-#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC)
+#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && !defined(__TRACE)
 # define LIBXSMM_MALLOC_HOOK_DYNAMIC
 # if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -188,6 +188,10 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_MMAP) && 0
 # define LIBXSMM_MALLOC_MMAP
 #endif
+#if !defined(LIBXSMM_MALLOC_HOOK_SYNC) && 1
+# define LIBXSMM_MALLOC_HOOK_SYNC
+#endif
+
 
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
@@ -664,43 +668,47 @@ LIBXSMM_APIVAR(internal_malloc_hook_type internal_malloc_hook);
 LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* /*hook*/);
 LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* hook)
 {
+# if defined(LIBXSMM_MALLOC_HOOK_SYNC)
   static union { char pad[LIBXSMM_CACHELINE]; volatile LIBXSMM_ATOMIC_LOCKTYPE state; } lock;
-  LIBXSMM_ASSERT(NULL != hook);
   LIBXSMM_ATOMIC_ACQUIRE(&lock.state, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
+# endif
+  LIBXSMM_ASSERT(NULL != hook);
   dlerror(); /* clear an eventual error status */
   hook->memalign.dlsym = dlsym(RTLD_NEXT, "memalign");
   if (NULL != dlerror() || NULL == hook->memalign.dlsym) {
-#if defined(LIBXSMM_GLIBC)
+# if defined(LIBXSMM_GLIBC)
     hook->memalign.ptr = __libc_memalign;
-#else
+# else
     hook->memalign.ptr = internal_malloc_memalign;
-#endif
+# endif
   }
   hook->malloc.dlsym = dlsym(RTLD_NEXT, "malloc");
   if (NULL != dlerror() || NULL == hook->malloc.dlsym) {
-#if defined(LIBXSMM_GLIBC)
+# if defined(LIBXSMM_GLIBC)
     hook->malloc.ptr = __libc_malloc;
-#else
+# else
     hook->malloc.ptr = malloc;
-#endif
+# endif
   }
   hook->realloc.dlsym = dlsym(RTLD_NEXT, "realloc");
   if (NULL != dlerror() || NULL == hook->realloc.dlsym) {
-#if defined(LIBXSMM_GLIBC)
+# if defined(LIBXSMM_GLIBC)
     hook->realloc.ptr = __libc_realloc;
-#else
+# else
     hook->realloc.ptr = realloc;
-#endif
+# endif
   }
   hook->free.dlsym = dlsym(RTLD_NEXT, "free");
   if (NULL != dlerror() || NULL == hook->free.dlsym) {
-#if defined(LIBXSMM_GLIBC)
+# if defined(LIBXSMM_GLIBC)
     hook->free.ptr = __libc_free;
-#else
+# else
     hook->free.ptr = free;
-#endif
+# endif
   }
+# if defined(LIBXSMM_MALLOC_HOOK_SYNC)
   LIBXSMM_ATOMIC_RELEASE(&lock.state, LIBXSMM_ATOMIC_RELAXED);
+# endif
   return ((NULL != hook->memalign.ptr && NULL != hook->malloc.ptr
     && NULL != hook->realloc.ptr && NULL != hook->free.ptr)
     ? EXIT_SUCCESS : EXIT_FAILURE);
