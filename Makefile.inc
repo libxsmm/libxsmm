@@ -227,7 +227,7 @@ OMP ?= 0
 PEDANTIC ?= 0
 
 # Warning about unused functions
-WUNUSED ?= 0
+UNUSED ?= 0
 
 # Embed InterProcedural Optimization information into libraries
 IPO ?= 0
@@ -899,7 +899,7 @@ ifneq (0,$(INTEL))
   endif
   CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
   CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  ifneq (0,$(WUNUSED))
+  ifneq (0,$(UNUSED))
     CXXFLAGS += -Wno-unused-function
     CFLAGS += -Wno-unused-function
   endif
@@ -1142,7 +1142,7 @@ else # GCC assumed
                    -Wreal-q-constant -Wconversion-extra
     endif
     endif
-    ifneq (0,$(WUNUSED))
+    ifneq (0,$(UNUSED))
       CXXFLAGS += -Wno-unused-function #-Wno-attributes
       CFLAGS += -Wno-unused-function #-Wno-attributes
     endif
@@ -2015,7 +2015,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     FLOCK SUITE ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP BLAS_LDTEST \
     SHARED CCAR CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE \
     OMPLIBFILE NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC PYTHON% PYMOD CWARNEXTRA \
-    CSTD DNOBLAS MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC ICX AVX SSE FFORM_FLAG FREEFORM OPSYS WUNUSED \
+    CSTD DNOBLAS MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC ICX AVX SSE FFORM_FLAG FREEFORM OPSYS UNUSED \
     which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink applyif extname objname,$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
