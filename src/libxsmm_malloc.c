@@ -37,11 +37,13 @@
 #endif
 #include <inttypes.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <string.h>
 #include <stdio.h>
 #if defined(__TBB)
 # include <tbb/scalable_allocator.h>
+#endif
+#if defined(LIBXSMM_GLIBC) || defined(_WIN32)
+# include <malloc.h>
 #endif
 #if defined(_WIN32)
 # include <windows.h>
