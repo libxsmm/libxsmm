@@ -52,6 +52,16 @@
     return result;
   }
 # endif
+# if !defined(_mm512_and_epi32)
+# define _mm512_and_epi32 mm512_and_epi32_dbg
+  LIBXSMM_API_INLINE __m512i mm512_and_epi32_dbg(__m512i a, __m512i b) {
+    uint32_t a16[16], b16[16]; signed char i;
+    _mm512_storeu_si512((__m512i*)a16, a);
+    _mm512_storeu_si512((__m512i*)b16, b);
+    for (i = 0; i < 16; ++i) a16[i] &= b16[i];
+    return _mm512_loadu_si512((const __m512i*)a16);
+  }
+# endif
 # if !defined(_mm512_or_epi32)
 # define _mm512_or_epi32 mm512_or_epi32_dbg
   LIBXSMM_API_INLINE __m512i mm512_or_epi32_dbg(__m512i a, __m512i b) {
