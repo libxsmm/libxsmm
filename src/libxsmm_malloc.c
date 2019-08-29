@@ -714,7 +714,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
   LIBXSMM_UNUSED(alignment);
   result = malloc(size);
 #else
-  result = memalign(alignment, size);
+  if (0 != posix_memalign(&result, alignment, size)) result = NULL;
 #endif
   return result;
 }
