@@ -264,12 +264,6 @@ void libxsmm_generator_convolution_forward_kernel(libxsmm_generated_code*       
 
 /* @TODO change int based architecture value */
 LIBXSMM_API
-void libxsmm_generator_convolution_backward_kernel(libxsmm_generated_code*           io_generated_code,
-                                                   const libxsmm_convolution_backward_descriptor* i_conv_desc,
-                                                   const char*                       i_arch);
-
-/* @TODO change int based architecture value */
-LIBXSMM_API
 void libxsmm_generator_convolution_weight_update_kernel(libxsmm_generated_code*           io_generated_code,
                                                         const libxsmm_convolution_weight_update_descriptor* i_conv_desc,
                                                         const char*                       i_arch);
