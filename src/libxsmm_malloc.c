@@ -646,6 +646,17 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_malloc_hook_type {
   union { const void* dlsym; void  (*ptr)(void*);           } free;
 } internal_malloc_hook_type;
 LIBXSMM_APIVAR(internal_malloc_hook_type internal_malloc_hook);
+LIBXSMM_API_INTERN void* internal_malloc_memalign(size_t /*alignment*/, size_t /*size*/);
+LIBXSMM_API_INTERN void* internal_malloc_memalign(size_t alignment, size_t size)
+{
+  void* result;
+# if defined(LIBXSMM_GLIBC)
+  result = memalign(alignment, size);
+# else
+  if (0 != posix_memalign(&result, alignment, size)) result = NULL;
+# endif
+  return result;
+}
 LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* /*hook*/);
 LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* hook)
 {
@@ -658,7 +669,7 @@ LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* hook)
 #if defined(LIBXSMM_GLIBC)
     hook->memalign.ptr = __libc_memalign;
 #else
-    hook->memalign.ptr = memalign;
+    hook->memalign.ptr = internal_malloc_memalign;
 #endif
   }
   hook->malloc.dlsym = dlsym(RTLD_NEXT, "malloc");
@@ -714,7 +725,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
   LIBXSMM_UNUSED(alignment);
   result = malloc(size);
 #else
-  if (0 != posix_memalign(&result, alignment, size)) result = NULL;
+  result = internal_malloc_memalign(alignment, size);
 #endif
   return result;
 }
