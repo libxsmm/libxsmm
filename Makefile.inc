@@ -1963,7 +1963,7 @@ endif
 # adopt extra flags from C if not set individually
 ECXXFLAGS ?= $(ECFLAGS)
 
-cleanup = $(foreach flag,$(subst //,/,$1),$(flag))
+cleanup = $(foreach flag,$(subst / $(NULL), $(NULL),$(subst //,/,$1)),$(flag))
 # cleanup eventually duplicated flags and slashes
 cleanld = $(strip $(shell echo "$1" | sed \
   -e "s/[[:space:]]$(XLIB_BEGIN)[[:space:]]$(XLIB_END)/ /g" \
