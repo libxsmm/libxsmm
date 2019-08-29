@@ -752,7 +752,7 @@ LIBXSMM_API_INTERN void internal_init(void)
     }
     else {
       if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
-        fprintf(stderr, "LIBXSMM ERROR: failed to allocate code registry!\n");
+        fprintf(stderr, "LIBXSMM ERROR: failed to allocate internal buffers!\n");
       }
 #if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       libxsmm_xfree(internal_cache_buffer);
