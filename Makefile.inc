@@ -226,6 +226,9 @@ OMP ?= 0
 # Code conformance (beyond -Wall)
 PEDANTIC ?= 0
 
+# Warning about unused functions
+WUNUSED ?= 0
+
 # Embed InterProcedural Optimization information into libraries
 IPO ?= 0
 FAT ?= 0
@@ -246,14 +249,14 @@ REVERSION := "s/..* \([0-9][0-9]*\.[0-9][0-9]*\.*[0-9]*\)[ \S]*.*/\1/"
 BRACE_OPEN := (
 BRACE_CLOSE := )
 
-libpath = $(strip $(if $1, \
+libpath = $(strip $(subst / $(NULL), $(NULL),$(if $1, \
   $(if $(shell $1 $2 -l$3 2>&1 | grep "\-l$3"),$(NULL), \
     $(subst //,/,$(abspath $(shell $1 $2 -l$3 -Wl,--verbose 2>&1 \
     | grep "lib$3" | sed "s/[^./]\(\.*\/..*[^[:space:]$(BRACE_CLOSE)]\).*/:\1/" \
     | rev | cut -d":" -f1 | rev | sed -n "s/[[:space:]]*\(\.*\/..*\)/\1/p" \
     | cut -d" " -f1 | tail -n1)))), \
-  $(NULL)))
-abslib = $(strip $(call abslibpath,$1) $(call abslibfile,$1))
+  $(NULL))))
+abslib = $(strip $(subst / $(NULL), $(NULL),$(call abslibpath,$1) $(call abslibfile,$1)))
 
 # Embedd soname into shared library
 SONAMELNK ?= 2
@@ -800,8 +803,8 @@ ifneq (Darwin,$(UNAME))
     XLNKOPT = -Wl,
   endif
   linkopt = $(XLNKOPT)$(if $2,$1=$2,$1)
-  abslibrpath = $(strip $(call linkopt,--rpath,$(if \
-    $(filter .$(ILIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
+  abslibrpath = $(strip $(subst / $(NULL), $(NULL),$(call linkopt,--rpath,$(if \
+    $(filter .$(ILIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1)))))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
   ifneq (0,$(ASNEEDED))
@@ -817,9 +820,9 @@ else
     $(filter .$(ILIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
 endif
 
-absliblpath = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
+absliblpath = $(strip $(subst / $(NULL), $(NULL),$(if $(filter .$(ILIBEXT),$(suffix $1)), \
   $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
-  $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1)))
+  $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1))))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
@@ -894,8 +897,12 @@ ifneq (0,$(INTEL))
       CXXFLAGS += -std=c++11
     endif
   endif
-  CXXFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
-  CFLAGS += -Wall -Wno-unused-function -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  CXXFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  CFLAGS += -Wall -diag-disable 1879,3415,3948,10006,10010,10411,13003
+  ifneq (0,$(WUNUSED))
+    CXXFLAGS += -Wno-unused-function
+    CFLAGS += -Wno-unused-function
+  endif
   ifeq (,$(strip $(GFC)))
     ifneq (ld,$(notdir $(LD)))
       LDFLAGS += -diag-disable 1879,3415,10006,10010,10411
@@ -926,7 +933,12 @@ ifneq (0,$(INTEL))
   else ifneq (0,$(PEDANTIC))
     CSTD = -std=c89
     CXXFLAGS += $(CPEDANTIC)
-    CFLAGS += $(CSTD) $(CPEDANTIC) $(CWARNEXTRA)
+    CFLAGS += $(CSTD) $(CPEDANTIC)
+    ifneq (990000,$(CC_VERSION))
+      CFLAGS += $(CWARNEXTRA)
+    else ifneq (2,$(PEDANTIC))
+      CFLAGS += $(CWARNEXTRA)
+    endif
     ifeq (,$(strip $(GFC)))
       FSTD = -std03
       FCFLAGS += $(FSTD) $(FPEDANTIC)
@@ -1107,8 +1119,8 @@ else # GCC assumed
     else ifneq (0,$(shell echo "$$((40700<=$(GCC_VERSION)))"))
       CXXFLAGS += -std=c++11
     endif
-    CXXFLAGS += -Wall -Wno-unused-function #-Wno-attributes
-    CFLAGS += -Wall -Wno-unused-function #-Wno-attributes
+    CXXFLAGS += -Wall
+    CFLAGS += -Wall
     FSTD = -std=f2003
     CPEDANTIC += -pedantic -Wextra -Wno-variadic-macros
     FPEDANTIC += -pedantic -Wextra -Wunused-variable \
@@ -1129,6 +1141,10 @@ else # GCC assumed
                    -Wrealloc-lhs -Wrealloc-lhs-all \
                    -Wreal-q-constant -Wconversion-extra
     endif
+    endif
+    ifneq (0,$(WUNUSED))
+      CXXFLAGS += -Wno-unused-function #-Wno-attributes
+      CFLAGS += -Wno-unused-function #-Wno-attributes
     endif
     ifeq (0,$(MINGW))
       CPEDANTIC += -Wformat=2
@@ -1949,10 +1965,12 @@ ECXXFLAGS ?= $(ECFLAGS)
 
 cleanup = $(foreach flag,$(subst //,/,$1),$(flag))
 # cleanup eventually duplicated flags and slashes
-cleanld = $(shell echo "$1" | sed -e "s/[[:space:]][[:space:]]*/ /g" \
+cleanld = $(strip $(shell echo "$1" | sed \
   -e "s/[[:space:]]$(XLIB_BEGIN)[[:space:]]$(XLIB_END)/ /g" \
   -e "s/[[:space:]]$(XLIB_END)[[:space:]]$(XLIB_BEGIN)/ /g" \
-  -e "s/\/\//\//g")
+  -e "s/[[:space:]][[:space:]][[:space:]]*/ /g" \
+  -e "s/\/[[:space:]]/ /g" \
+  -e "s/\/\//\//g"))
 
 # no-BLAS flags: cleanup and extra flags
 NOBLAS_CXXFLAGS := $(call cleanup,$(PICFLAG) $(CXXFLAGS) $(ECXXFLAGS) $(EFLAGS))
@@ -1997,7 +2015,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     FLOCK SUITE ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP BLAS_LDTEST \
     SHARED CCAR CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE \
     OMPLIBFILE NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC PYTHON% PYMOD CWARNEXTRA \
-    CSTD DNOBLAS MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC ICX AVX SSE FFORM_FLAG FREEFORM OPSYS \
+    CSTD DNOBLAS MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC ICX AVX SSE FFORM_FLAG FREEFORM OPSYS WUNUSED \
     which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink applyif extname objname,$V), \
     $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
