@@ -18,9 +18,6 @@ IF %VS_COMNTOOLS%=="" (
     GOTO SELECT_VS_VERSION
   )
 )
-IF EXIST %VS_COMNTOOLS%"..\IDE\devenv.exe" (
-  SET VS_IDE=%VS_COMNTOOLS%..\IDE\devenv.exe
-)
 
 SET ICL_VERSION=%2
 IF "%ICL_VERSION%"=="" SET ICL_VERSION=%VS_VERSION:~2,4%
@@ -55,3 +52,9 @@ IF EXIST %ICPP_COMPILER%bin\compilervars.bat (
 )
 
 SET MPI_ROOT="%I_MPI_ROOT:-RT=%"
+
+IF EXIST %VS_COMNTOOLS%"..\IDE\devenv.exe" (
+  START/B "" %VS_COMNTOOLS%..\IDE\devenv.exe "%~d0%~p0_vs%VS_VERSION%.sln"
+) ELSE (
+  START/B "" "%~d0%~p0_vs%VS_VERSION%.sln"
+)

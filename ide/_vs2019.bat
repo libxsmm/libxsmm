@@ -12,11 +12,5 @@ IF EXIST C:\blaze\blaze\Blaze.h (
 )
 
 CALL "%~d0%~p0_vs.bat" 2019
-IF NOT %VS_IDE%=="" (
-  START/B "" %VS_IDE% "%~d0%~p0_vs2019.sln"
-)
-IF %VS_IDE%=="" (
-  START/B "" "%~d0%~p0_vs2019.sln"
-)
 
 ENDLOCAL

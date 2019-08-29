@@ -472,7 +472,7 @@
 # define LIBXSMM_ASSUME(EXPRESSION) assert(EXPRESSION)
 #endif
 
-#if defined(LIBXSMM_INTEL_COMPILER)
+#if defined(__INTEL_COMPILER)
 # define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
 #else
 # define LIBXSMM_ASSUME_ALIGNED(A, N) assert(0 == ((uintptr_t)(A)) % (N))
@@ -598,12 +598,12 @@
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT
 #endif
 
-#if !defined(LIBXSMM_NO_CTOR) && defined(__GNUC__) && !defined(LIBXSMM_CTOR)
+#if !defined(LIBXSMM_NO_CTOR) && !defined(LIBXSMM_CTOR) && \
+    (defined(LIBXSMM_BUILD) && !defined(__STATIC)) && \
+    (defined(__GNUC__) || defined(__clang__))
 # define LIBXSMM_ATTRIBUTE_CTOR LIBXSMM_ATTRIBUTE(constructor)
 # define LIBXSMM_ATTRIBUTE_DTOR LIBXSMM_ATTRIBUTE(destructor)
-# if defined(LIBXSMM_BUILD) && !defined(__STATIC)
-#   define LIBXSMM_CTOR
-# endif
+# define LIBXSMM_CTOR
 #else
 # define LIBXSMM_ATTRIBUTE_CTOR
 # define LIBXSMM_ATTRIBUTE_DTOR
