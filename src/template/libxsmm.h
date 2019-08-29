@@ -412,7 +412,11 @@ LIBXSMM_API void libxsmm_bsgemm(const char* transa, const char* transb,
   const float* alpha, const libxsmm_bfloat16* a, const libxsmm_blasint* lda,
   const libxsmm_bfloat16* b, const libxsmm_blasint* ldb,
   const float* beta, float* c, const libxsmm_blasint* ldc);
+
+#if defined(LIBXSMM_BUILD)
 $MNK_INTERFACE_LIST
+#endif /*defined(LIBXSMM_BUILD)*/
+
 #if defined(__cplusplus)
 
 /** Map a built-in type to libxsmm_gemm_precision (libxsmm_gemm_precision_enum). */
