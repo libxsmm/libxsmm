@@ -154,7 +154,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_START 3
 #endif
 
-#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && !defined(__TRACE)
+#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && !defined(__TRACE) && 1
 # define LIBXSMM_MALLOC_HOOK_DYNAMIC
 # if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -163,6 +163,12 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload_attribute(pop)
 # endif
+#endif
+#if !defined(LIBXSMM_MALLOC_HOOK_STATIC) && (defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) || !defined(_WIN32)) && 1
+# define LIBXSMM_MALLOC_HOOK_STATIC
+#endif
+#if !defined(LIBXSMM_MALLOC_HOOK_SYNC) && 1
+# define LIBXSMM_MALLOC_HOOK_SYNC
 #endif
 
 /* allows to reclaim a pool for a different thread */
@@ -188,10 +194,6 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_MMAP) && 0
 # define LIBXSMM_MALLOC_MMAP
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_SYNC) && 1
-# define LIBXSMM_MALLOC_HOOK_SYNC
-#endif
-
 
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
@@ -806,6 +808,8 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
 #endif
 }
 
+#if defined(LIBXSMM_MALLOC_HOOK_STATIC)
+
 LIBXSMM_API void* __wrap_memalign(size_t /*alignment*/, size_t /*size*/);
 LIBXSMM_API void* __wrap_memalign(size_t alignment, size_t size)
 {
@@ -881,6 +885,8 @@ LIBXSMM_API void __wrap_free(void* ptr)
   }
   LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
 }
+
+#endif /*defined(LIBXSMM_MALLOC_HOOK_STATIC)*/
 
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
 
