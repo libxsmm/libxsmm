@@ -96,7 +96,7 @@ then
 
   # should be source'd after the above variables are set
   source ${HERE}/../.env/buildkite.env
-  source ${HERE}/../.env/travis.env
+  #source ${HERE}/../.env/travis.env
 
   # support yml-files for Travis-CI that depend on TRAVIS_* variables
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
