@@ -353,6 +353,9 @@
     <ClCompile Include="..\src\libxsmm_dnn_dryruns.c">
       <Filter>src</Filter>
     </ClCompile>
+    <ClCompile Include="..\src\libxsmm_python.c">
+      <Filter>src</Filter>
+    </ClCompile>
     <ClCompile Include="..\src\libxsmm_generator.c">
       <Filter>src</Filter>
     </ClCompile>
