@@ -108,7 +108,7 @@ int main(int argc, char* argv[])
     const char ops[] = "OPS";
     const double scale = 1;
 #endif
-#if !defined(_DEBUG)
+#if defined(_OPENMP) && !defined(_DEBUG)
     const char *const env_check = getenv("CHECK");
     const int check = (NULL == env_check ? 0 : atoi(env_check));
 #elif (defined(__MKL) || defined(MKL_DIRECT_CALL_SEQ) || defined(MKL_DIRECT_CALL)) && (LIBXSMM_VERSION3(11, 3, 0) <= INTEL_MKL_VERSION)
