@@ -167,7 +167,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_HOOK_STATIC) && (defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) || !defined(_WIN32)) && 1
 # define LIBXSMM_MALLOC_HOOK_STATIC
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_SYNC) && 1
+#if !defined(LIBXSMM_MALLOC_HOOK_SYNC) && 0
 # define LIBXSMM_MALLOC_HOOK_SYNC
 #endif
 
@@ -893,24 +893,36 @@ LIBXSMM_API void __wrap_free(void* ptr)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* memalign(size_t /*alignment*/, size_t /*size*/);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* memalign(size_t alignment, size_t size)
 {
+# if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+  LIBXSMM_ASSERT(memalign != internal_malloc_hook.memalign.ptr);
+# endif
   return __wrap_memalign(alignment, size);
 }
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* malloc(size_t /*size*/);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* malloc(size_t size)
 {
+# if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+  LIBXSMM_ASSERT(malloc != internal_malloc_hook.malloc.ptr);
+# endif
   return __wrap_malloc(size);
 }
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* /*ptr*/, size_t /*size*/);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void* realloc(void* ptr, size_t size)
 {
+# if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+  LIBXSMM_ASSERT(realloc != internal_malloc_hook.realloc.ptr);
+# endif
   return __wrap_realloc(ptr, size);
 }
 
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* /*ptr*/);
 LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void free(void* ptr)
 {
+# if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+  LIBXSMM_ASSERT(free != internal_malloc_hook.free.ptr);
+# endif
   __wrap_free(ptr);
 }
 
