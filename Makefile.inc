@@ -1313,6 +1313,7 @@ else # GCC assumed
         endif
         ifneq (Darwin,$(UNAME))
           CXXFLAGS += $(OMPFLAG_FORCE)
+          FLDFLAGS += $(OMPFLAG_FORCE)
           FCFLAGS += $(OMPFLAG_FORCE)
           CFLAGS += $(OMPFLAG_FORCE)
         endif
