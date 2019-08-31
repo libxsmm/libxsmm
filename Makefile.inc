@@ -803,35 +803,38 @@ ifneq (Darwin,$(UNAME))
     XLNKOPT = -Wl,
   endif
   linkopt = $(XLNKOPT)$(if $2,$1=$2,$1)
-  abslibrpath = $(strip $(subst / $(NULL), $(NULL),$(call linkopt,--rpath,$(if \
-    $(filter .$(ILIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1)))))
+  abslibrpath = $(strip $(subst / $(NULL), $(NULL),$(if \
+    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out .$(SLIBEXT),$(suffix $1)), \
+    $(call linkopt,--rpath,$(dir $(abspath $1))),$(NULL))))
   XGROUP_BEGIN = $(XLNKOPT)--start-group
   XGROUP_END = $(XLNKOPT)--end-group
   ifneq (0,$(ASNEEDED))
     XLIB_BEGIN = $(XLNKOPT)--as-needed
     XLIB_END = $(XLNKOPT)--no-as-needed
   endif
-else
+else # OSX
   ifneq (ld,$(notdir $(LD)))
     XLNKOPT = -Xlinker
   endif
   linkopt = $(XLNKOPT) $1 $(XLNKOPT) $2
-  abslibrpath = $(strip $(call linkopt,-rpath,$(if \
-    $(filter .$(ILIBEXT),$(suffix $1)),$(dir $(abspath $1)),$(abspath $1))))
+  abslibrpath = $(strip $(subst / $(NULL), $(NULL),$(if \
+    $(filter $(ILIBEXT),$(SLIBEXT))$(filter-out .$(SLIBEXT),$(suffix $1)), \
+    $(call linkopt,-rpath,$(dir $(abspath $1))),$(NULL))))
 endif
 
-absliblpath = $(strip $(subst / $(NULL), $(NULL),$(if $(filter .$(ILIBEXT),$(suffix $1)), \
+absliblpath = $(strip $(subst / $(NULL), $(NULL), \
+  $(if $(filter .$(ILIBEXT),$(suffix $1)), \
   $(if $1,-L$(dir $(abspath $1)),-L$(dir $1)), \
   $(if $(filter .$(SLIBEXT),$(suffix $1)),$(NULL),-L$1))))
 
 ifneq (Windows_NT1,$(OS)$(DEPSTATIC))
   abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
     $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
-       -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$1))
+       -l$(patsubst lib%,%,$(basename $(notdir $1))),$(NULL)),$(abspath $1)))
 else # Cygwin/MinGW (static)
   abslibfile = $(strip $(if $(filter .$(ILIBEXT),$(suffix $1)), \
     $(if $(patsubst lib%,%,$(basename $(notdir $1))), \
-       -l$(basename $(notdir $1)),$(NULL)),$1))
+       -l$(basename $(notdir $1)),$(NULL)),$(abspath $1)))
 endif
 
 LIBDEP = $(LIBNAME).$(LIBEXT)
@@ -1553,19 +1556,19 @@ ifeq (0,$(COMPATIBLE))
     endif
     ifneq (ld,$(notdir $(LD)))
     ifneq (Windows_NT,$(UNAME))
-      # Linux distributions may apply similar hardening
-      LDFLAGS += $(XLNKOPT)-z,relro,-z,now
       ifneq (0,$(DEPSTATIC))
         ifneq (0,$(HARDEN))
           ifneq (,$(strip $(HARDEN))) # explicit
-            LDFLAGS += $(XLNKOPT)--export-dynamic
+            LDFLAGS := $(XLNKOPT)--export-dynamic $(LDFLAGS)
           else ifneq (0,$(SYM))
-            LDFLAGS += $(XLNKOPT)--export-dynamic
+            LDFLAGS := $(XLNKOPT)--export-dynamic $(LDFLAGS)
           endif
         else ifneq (0,$(SYM))
-          LDFLAGS += $(XLNKOPT)--export-dynamic
+          LDFLAGS := $(XLNKOPT)--export-dynamic $(LDFLAGS)
         endif
       endif
+      # Linux distributions may apply similar hardening
+      LDFLAGS := $(XLNKOPT)-z,relro,-z,now $(LDFLAGS)
     endif
     endif
     ifeq (0,$(PGI))
@@ -1577,7 +1580,7 @@ ifeq (0,$(COMPATIBLE))
         FCFLAGS += -fdata-sections -ffunction-sections
       endif
       # --gc-sections: relies on section-flags present at compile-stage
-      LDFLAGS += $(XLNKOPT)--gc-sections
+      LDFLAGS := $(XLNKOPT)--gc-sections $(LDFLAGS)
       ifeq (0,$(VISIBILITY)) # -fvisibility=hidden may cause crashes
         CXXFLAGS += -fvisibility=hidden -fvisibility-inlines-hidden
         #FCFLAGS += -fvisibility=hidden
@@ -1890,13 +1893,13 @@ else ifneq (0,$(BLAS)) # generic
     ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
       BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),openblas$(BLAS_BITS))
     endif
+    BLAS_LDTEST = $(NULL)
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available; use OPENBLAS=0 to avoid this
     ifeq (0,$(PGI))
       OPENBLAS := $(if $(BLASLIBFILE),1,0)
     else # PGI
       OPENBLAS := 0
     endif
-
     ifneq (0,$(OPENBLAS)) # OpenBLAS
       # OpenBLAS also carries the CBLAS bits
       BLAS_FLAGS += -D__BLAS=$(BLAS) -D__CBLAS -D__OPENBLAS
@@ -1927,19 +1930,20 @@ else ifneq (0,$(BLAS)) # generic
     ifeq (0,$(OPENBLAS)) # BLAS (reference)
       ifneq (0,$(DEPSTATIC))
         ifneq (,$(LIBGFORTRAN))
-          BLAS_XLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
+          BLAS_LDTEST += $(XLIB_BEGIN) $(call abslibfile,$(LIBGFORTRAN)) -lm $(XLIB_END)
         else ifeq (3,$(GCC))
-          BLAS_XLDFLAGS += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
+          BLAS_LDTEST += $(XLIB_BEGIN) -lgfortran -lm $(XLIB_END)
         endif
       endif
       ifeq (0,$(PGI))
         QUADMATH = $(shell $(LD) $(SLDFLAGS) -lquadmath 2>&1 | grep -q "\-lquadmath"; echo "$$?")
         ifneq (0,$(QUADMATH))
-          BLAS_XLDFLAGS += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
+          BLAS_LDTEST += $(XLIB_BEGIN) -lquadmath -lm $(XLIB_END)
         endif
-        BLAS_CLDFLAGS += $(BLAS_XLDFLAGS)
         ifneq (3,$(GCC))
-          BLAS_LDFLAGS += $(BLAS_XLDFLAGS)
+          BLAS_LDFLAGS += $(BLAS_LDTEST)
+        else
+          BLAS_CLDFLAGS += $(BLAS_LDTEST)
         endif
       endif
     endif
