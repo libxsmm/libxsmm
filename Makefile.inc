@@ -1312,7 +1312,6 @@ else # GCC assumed
         CXXLDFLAGS += $(OMPFLAG_FORCE)
         CLDFLAGS += $(OMPFLAG_FORCE)
       else ifneq (,$(strip $(OMPLIBFILE)))
-        BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
         ifneq (,$(strip $(OMPLIBFILE)))
           CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
           CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
@@ -1920,6 +1919,11 @@ else ifneq (0,$(BLAS)) # generic
       else
         BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),blas$(BLAS_BITS))
       endif
+    endif
+    ifeq (0,$(OMP))
+    ifneq (,$(OMPLIBFILE))
+      BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
+    endif
     endif
     ifneq (,$(BLASLIBFILE))
       ifeq (0,$(BLAS_STATIC)) # shared
