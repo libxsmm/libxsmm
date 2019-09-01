@@ -1295,7 +1295,7 @@ else # GCC assumed
   ifeq (,$(strip $(OMPRT))) # fallback
     OMPRT = gomp
   endif
-  OMPLIBFILE = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
+  OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
   ifneq (,$(OMPFLAG_FORCE))
   ifneq (0,$(OMP))
     # clang: OMP=libomp
@@ -1308,19 +1308,17 @@ else # GCC assumed
       FLDFLAGS += $(OMPFLAG_FORCE)
       FCFLAGS += $(OMPFLAG_FORCE)
     else
-      ifeq (3,$(GCC))
-        CXXLDFLAGS += $(OMPFLAG_FORCE)
-        CLDFLAGS += $(OMPFLAG_FORCE)
-      else ifneq (,$(strip $(OMPLIBFILE)))
-        ifneq (,$(strip $(OMPLIBFILE)))
-          CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
-          CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
-        endif
-      endif
       ifneq (Darwin,$(UNAME))
         CXXFLAGS += $(OMPFLAG_FORCE)
         FCFLAGS += $(OMPFLAG_FORCE)
         CFLAGS += $(OMPFLAG_FORCE)
+      endif
+      ifeq (3,$(GCC))
+        CXXLDFLAGS += $(OMPFLAG_FORCE)
+        CLDFLAGS += $(OMPFLAG_FORCE)
+      else ifneq (,$(strip $(OMPLIBFILE)))
+        CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
+        CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
       endif
       FLDFLAGS += $(OMPFLAG_FORCE)
     endif
@@ -1950,9 +1948,12 @@ else ifneq (0,$(BLAS)) # generic
       endif
     endif
     ifeq (0,$(OMP))
-    ifneq (,$(OMPLIBFILE))
-      BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
-    endif
+      BLAS_LDTEST = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
+      ifeq (,$(BLAS_LDTEST)) # Fortran compiler cannot link OpenMP runtime
+        BLAS_CLDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
+      else # common link BLAS/OMP-link flags (all compilers)
+        BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
+      endif
     endif
   else # BLAS library is specified via BLASLIB
     BLAS_FLAGS += -D__BLAS=$(BLAS)
@@ -1998,7 +1999,7 @@ FCFLAGS := $(call cleanup,$(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
 CFLAGS := $(call cleanup,$(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
 DFLAGS := $(call cleanup,$(NOBLAS_FLAGS) $(BLAS_FLAGS))
 IFLAGS := $(call cleanup,$(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
-CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
+CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS) $(BLAS_CLDFLAGS))
 CLDFLAGS := $(call cleanld,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
 FLDFLAGS := $(call cleanld,$(FLDFLAGS))
 LDFLAGS := $(call cleanld,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
