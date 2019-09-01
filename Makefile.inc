@@ -1301,6 +1301,12 @@ else # GCC assumed
     ifneq (,$(OMPLIBFILE))
       FLDFLAGS += $(OMPFLAG_FORCE)
       FCFLAGS += $(OMPFLAG_FORCE)
+    else
+      OMPLIBFILE = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,gomp)
+      ifneq (,$(OMPLIBFILE))
+        FLDFLAGS += $(OMPFLAG_FORCE)
+        FCFLAGS += $(OMPFLAG_FORCE)
+      endif
     endif
   endif
   endif
