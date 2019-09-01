@@ -516,8 +516,6 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   }
   /* release scratch memory pool */
   libxsmm_xrelease_scratch(NULL/*lock*/);
-  /* turn-off redirected memory allocations */
-  libxsmm_malloc_kind = 0;
   /* release global services */
   libxsmm_hash_finalize();
 #if defined(_WIN32)
@@ -561,6 +559,11 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     close(internal_singleton_handle);
 #endif
   }
+  /* turn-off redirected memory allocations */
+  libxsmm_malloc_kind = 0;
+#if !defined(NDEBUG)
+  libxsmm_ninit = 0;
+#endif
 #if (0 != LIBXSMM_SYNC)
   { /* release locks */
 # if (1 < INTERNAL_REGLOCK_MAXN)
