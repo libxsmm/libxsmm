@@ -71,6 +71,13 @@
 # define LIBXSMM_MALLOC_INTERNAL_CALLER ((const void*)(LIBXSMM_MALLOC_INTERNAL_CALLER_ID))
 #endif
 
+#if !defined(LIBXSMM_INTERCEPT_DYNAMIC) && defined(LIBXSMM_BUILD) && \
+  (defined(__GNUC__) || defined(_CRAYC)) && !defined(_WIN32) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
+    LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+# define LIBXSMM_INTERCEPT_DYNAMIC
+#endif
+
 #if !defined(LIBXSMM_VERBOSITY_HIGH)
 # define LIBXSMM_VERBOSITY_HIGH 3 /* secondary warning or info-verbosity */
 #endif
@@ -757,7 +764,7 @@ LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
 LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
-/** even: regular, odd: scratch, >1: intercept */
+/** 0: regular, 1/odd: intercept/scratch, otherwise: all/scratch */
 LIBXSMM_APIVAR(int libxsmm_malloc_kind);
 
 # if (0 != LIBXSMM_SYNC)

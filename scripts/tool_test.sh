@@ -96,7 +96,7 @@ then
 
   # should be source'd after the above variables are set
   source ${HERE}/../.env/buildkite.env
-  source ${HERE}/../.env/travis.env
+  #source ${HERE}/../.env/travis.env
 
   # support yml-files for Travis-CI that depend on TRAVIS_* variables
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
@@ -176,6 +176,13 @@ then
     TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
     LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} --preserve-env --unbuffered ${TESTSCRIPT}"
+  elif [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ]; then
+    umask 007
+    # eventually cleanup run-script from terminated sessions
+    ${RM} -f ${HERE}/../.tool_??????.sh
+    TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
+    ${CHMOD} +rx ${TESTSCRIPT}
+    LAUNCH="${TESTSCRIPT}"
   else # avoid temporary script in case of non-batch execution
     if [ "" = "${MAKEJ}" ]; then
       export MAKEJ="-j $(eval ${HERE}/tool_cpuinfo.sh -nc)"
@@ -321,8 +328,6 @@ then
           then
             echo ") | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
           fi
-          # clear captured test
-          TEST=""
         else
           echo "${TEST}" >> ${TESTSCRIPT}
         fi
@@ -365,6 +370,8 @@ then
     else # finish
       break
     fi
+    # clear captured test
+    TEST=""
   done # TEST
 
   # remove temporary script (if it exists)

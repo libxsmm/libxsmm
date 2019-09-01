@@ -13,6 +13,7 @@ CFLAGS = $(NULL)
 DFLAGS = $(NULL)
 IFLAGS = -I$(INCDIR) -I$(DEPDIR)/include
 
+UNUSED = 1
 BLAS = 1
 OMP = 1
 SYM = 1
