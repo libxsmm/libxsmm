@@ -766,17 +766,17 @@ LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
 /** 0: regular, 1/odd: intercept/scratch, otherwise: all/scratch */
 LIBXSMM_APIVAR(int libxsmm_malloc_kind);
-
-# if (0 != LIBXSMM_SYNC)
-/** Number of discovered threads (per libxsmm_get_tid) */
-LIBXSMM_APIVAR(unsigned int libxsmm_thread_count);
-#endif
-
+/** Counts the number of attempts to create an SPMDM-handle */
 LIBXSMM_APIVAR(unsigned int libxsmm_statistic_num_spmdm);
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
 LIBXSMM_APIVAR(double libxsmm_timer_scale);
 /** Security-enhanced environment */
 LIBXSMM_APIVAR(int libxsmm_se);
+
+#if (0 != LIBXSMM_SYNC)
+/** Number of discovered threads (per libxsmm_get_tid) */
+LIBXSMM_APIVAR(unsigned int libxsmm_thread_count);
+#endif
 
 #endif /*LIBXSMM_MAIN_H*/
 

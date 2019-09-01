@@ -1295,28 +1295,38 @@ else # GCC assumed
   ifeq (,$(strip $(OMPRT))) # fallback
     OMPRT = gomp
   endif
-  OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
-  ifneq (,$(OMPFLAG_FORCE))
   ifneq (0,$(OMP))
+  ifneq (,$(OMPFLAG_FORCE))
+    OMPLIBFILE = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
+    ifneq (,$(OMPLIBFILE))
+      FLDFLAGS += $(OMPFLAG_FORCE)
+      FCFLAGS += $(OMPFLAG_FORCE)
+    else
+      OMPLIBFILE = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,gomp)
+      ifneq (,$(OMPLIBFILE))
+        FLDFLAGS += $(OMPFLAG_FORCE)
+        FCFLAGS += $(OMPFLAG_FORCE)
+      endif
+    endif
+  endif
+  endif
+  OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
+  ifneq (0,$(OMP))
+  ifneq (,$(OMPFLAG_FORCE))
+  ifneq (,$(OMPLIBFILE))
     # clang: OMP=libomp
     ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
       CXXLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
       CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
       CLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
       CFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-      # Fortran: regular OMP flags
-      FLDFLAGS += $(OMPFLAG_FORCE)
-      FCFLAGS += $(OMPFLAG_FORCE)
-    else
-      ifneq (Darwin,$(UNAME))
-        CXXLDFLAGS += $(OMPFLAG_FORCE)
-        CLDFLAGS += $(OMPFLAG_FORCE)
-        CXXFLAGS += $(OMPFLAG_FORCE)
-        CFLAGS += $(OMPFLAG_FORCE)
-      endif
-      FLDFLAGS += $(OMPFLAG_FORCE)
-      FCFLAGS += $(OMPFLAG_FORCE)
+    else ifneq (Darwin,$(UNAME))
+      CXXLDFLAGS += $(OMPFLAG_FORCE)
+      CLDFLAGS += $(OMPFLAG_FORCE)
+      CXXFLAGS += $(OMPFLAG_FORCE)
+      CFLAGS += $(OMPFLAG_FORCE)
     endif
+  endif
   endif
   endif
   ifeq (1,$(STATIC))
@@ -1668,16 +1678,15 @@ ifneq (,$(strip $(OMPLIBFILE)))
   OMPLIB = $(call abslib,$(OMPLIBFILE))
 endif
 ifneq (,$(OMPFLAG_FORCE))
-  OMPFLAG = $(OMPFLAG_FORCE)
-  ifneq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
-    echo "\#if defined(_OPENMP)" > $${INFILE}; \
-    echo "\# include <omp.h>" >> $${INFILE}; \
-    echo "\#endif" >> $${INFILE}; \
-    RESULT=$$($(CC) $(OMPFLAG_FORCE) -c $${INFILE} -o $${INFILE}.o 2>&1); \
-    if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
-    rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
-      OMPFLAG = $(NULL)
-  endif
+ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
+  echo "\#if defined(_OPENMP)" > $${INFILE}; \
+  echo "\# include <omp.h>" >> $${INFILE}; \
+  echo "\#endif" >> $${INFILE}; \
+  RESULT=$$($(CC) $(OMPFLAG_FORCE) $${INFILE} -o $${INFILE}.x 2>&1); \
+  if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
+  rm -f /tmp/$$(basename $${INFILE} .c).* .libxsmm_??????.* 2>/dev/null))
+    OMPFLAG = $(OMPFLAG_FORCE)
+endif
 endif
 ifeq (0,$(OMP))
   EXTLIB += $(OMPLIB)
@@ -1820,7 +1829,13 @@ else ifneq (0,$(MKL)) # multi-threaded
   BLAS_FLAGS += -D__BLAS=$(MKL) -D__MKL=$(MKL)
   MKL_THREADS = $(MKL_OMPRTL)_thread
   ifeq (0,$(OMP))
-    BLAS_LDFLAGS += $(OMPLIB)
+    ifneq (gnu,$(MKL_OMPRTL))
+      BLAS_LDFLAGS += $(OMPLIB)
+    else
+      BLAS_LDFLAGS += -lgomp
+    endif
+  else ifeq (gnu,$(OMPLIB)$(MKL_OMPRTL))
+    BLAS_LDFLAGS += -lgomp
   endif
   ifneq (0,$(THREADS))
     BLAS_LDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
