@@ -1309,18 +1309,13 @@ else # GCC assumed
       FCFLAGS += $(OMPFLAG_FORCE)
     else
       ifneq (Darwin,$(UNAME))
-        CXXFLAGS += $(OMPFLAG_FORCE)
-        FCFLAGS += $(OMPFLAG_FORCE)
-        CFLAGS += $(OMPFLAG_FORCE)
-      endif
-      ifeq (3,$(GCC))
         CXXLDFLAGS += $(OMPFLAG_FORCE)
         CLDFLAGS += $(OMPFLAG_FORCE)
-      else ifneq (,$(strip $(OMPLIBFILE)))
-        CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
-        CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
+        CXXFLAGS += $(OMPFLAG_FORCE)
+        CFLAGS += $(OMPFLAG_FORCE)
       endif
       FLDFLAGS += $(OMPFLAG_FORCE)
+      FCFLAGS += $(OMPFLAG_FORCE)
     endif
   endif
   endif
@@ -1999,10 +1994,10 @@ FCFLAGS := $(call cleanup,$(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
 CFLAGS := $(call cleanup,$(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
 DFLAGS := $(call cleanup,$(NOBLAS_FLAGS) $(BLAS_FLAGS))
 IFLAGS := $(call cleanup,$(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
-CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS) $(BLAS_CLDFLAGS))
 CLDFLAGS := $(call cleanld,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
-FLDFLAGS := $(call cleanld,$(FLDFLAGS))
 LDFLAGS := $(call cleanld,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
+CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
+FLDFLAGS := $(call cleanld,$(FLDFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
