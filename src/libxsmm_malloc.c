@@ -154,7 +154,8 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_START 3
 #endif
 
-#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && !defined(__TRACE) && 1
+#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && \
+  defined(LIBXSMM_INTERCEPT_DYNAMIC) && !defined(_CRAYC) && !defined(__TRACE) && 1
 # define LIBXSMM_MALLOC_HOOK_DYNAMIC
 # if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -166,9 +167,6 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #endif
 #if !defined(LIBXSMM_MALLOC_HOOK_STATIC) && (defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) || !defined(_WIN32)) && 1
 # define LIBXSMM_MALLOC_HOOK_STATIC
-#endif
-#if !defined(LIBXSMM_MALLOC_HOOK_SYNC) && 0
-# define LIBXSMM_MALLOC_HOOK_SYNC
 #endif
 
 /* allows to reclaim a pool for a different thread */
@@ -670,10 +668,6 @@ LIBXSMM_APIVAR(internal_malloc_hook_type internal_malloc_hook);
 LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* /*hook*/);
 LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* hook)
 {
-# if defined(LIBXSMM_MALLOC_HOOK_SYNC)
-  static union { char pad[LIBXSMM_CACHELINE]; volatile LIBXSMM_ATOMIC_LOCKTYPE state; } lock;
-  LIBXSMM_ATOMIC_ACQUIRE(&lock.state, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
-# endif
   LIBXSMM_ASSERT(NULL != hook);
   dlerror(); /* clear an eventual error status */
   hook->memalign.dlsym = dlsym(RTLD_NEXT, "memalign");
@@ -708,9 +702,6 @@ LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* hook)
     hook->free.ptr = free;
 # endif
   }
-# if defined(LIBXSMM_MALLOC_HOOK_SYNC)
-  LIBXSMM_ATOMIC_RELEASE(&lock.state, LIBXSMM_ATOMIC_RELAXED);
-# endif
   return ((NULL != hook->memalign.ptr && NULL != hook->malloc.ptr
     && NULL != hook->realloc.ptr && NULL != hook->free.ptr)
     ? EXIT_SUCCESS : EXIT_FAILURE);
