@@ -1295,7 +1295,7 @@ else # GCC assumed
   ifeq (,$(strip $(OMPRT))) # fallback
     OMPRT = gomp
   endif
-  OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
+  OMPLIBFILE = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
   ifneq (,$(OMPFLAG_FORCE))
   ifneq (0,$(OMP))
     # clang: OMP=libomp
@@ -1920,11 +1920,6 @@ else ifneq (0,$(BLAS)) # generic
         BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),blas$(BLAS_BITS))
       endif
     endif
-    ifeq (0,$(OMP))
-    ifneq (,$(OMPLIBFILE))
-      BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
-    endif
-    endif
     ifneq (,$(BLASLIBFILE))
       ifeq (0,$(BLAS_STATIC)) # shared
         BLAS_LDFLAGS += $(call abslib,$(BLASLIBFILE))
@@ -1953,6 +1948,11 @@ else ifneq (0,$(BLAS)) # generic
           BLAS_CLDFLAGS += $(BLAS_LDTEST)
         endif
       endif
+    endif
+    ifeq (0,$(OMP))
+    ifneq (,$(OMPLIBFILE))
+      BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
+    endif
     endif
   else # BLAS library is specified via BLASLIB
     BLAS_FLAGS += -D__BLAS=$(BLAS)
@@ -1998,12 +1998,10 @@ FCFLAGS := $(call cleanup,$(NOBLAS_FCFLAGS) $(BLAS_FCFLAGS))
 CFLAGS := $(call cleanup,$(NOBLAS_CFLAGS) $(BLAS_CFLAGS))
 DFLAGS := $(call cleanup,$(NOBLAS_FLAGS) $(BLAS_FLAGS))
 IFLAGS := $(call cleanup,$(NOBLAS_IFLAGS) $(BLAS_IFLAGS))
-LDFLAGS := $(call cleanld,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
-CLDFLAGS := $(call cleanld,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
 CXXLDFLAGS := $(call cleanld,$(CXXLDFLAGS))
+CLDFLAGS := $(call cleanld,$(NOBLAS_CLDFLAGS) $(BLAS_CLDFLAGS))
 FLDFLAGS := $(call cleanld,$(FLDFLAGS))
-LDFLAGS := $(call cleanld,$(LDFLAGS))
-CLDFLAGS := $(call cleanld,$(CLDFLAGS))
+LDFLAGS := $(call cleanld,$(NOBLAS_LDFLAGS) $(BLAS_LDFLAGS))
 
 .PRECIOUS: $(BLDDIR)/%-cpp.o $(BLDDIR)/%-c.o $(BLDDIR)/%-f.o \
            $(BLDDIR)/%-f90.o $(BLDDIR)/%-f90.o $(BLDDIR)/%-f77.o \
