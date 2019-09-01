@@ -1723,6 +1723,61 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_bind_tensor(libxsmm_dnn_layer* handle,
 }
 
 
+LIBXSMM_API libxsmm_dnn_tensor* libxsmm_dnn_get_tensor(libxsmm_dnn_layer* handle, const libxsmm_dnn_tensor_type type, libxsmm_dnn_err_t* status)
+{
+  libxsmm_dnn_tensor* return_tensor = 0;
+
+  *status = LIBXSMM_DNN_SUCCESS;
+
+  /* check for tensor type */
+  if ( (type != LIBXSMM_DNN_REGULAR_INPUT)        && (type != LIBXSMM_DNN_GRADIENT_INPUT)  &&
+      (type != LIBXSMM_DNN_REGULAR_OUTPUT)       && (type != LIBXSMM_DNN_GRADIENT_OUTPUT) &&
+      (type != LIBXSMM_DNN_REGULAR_FILTER)       && (type != LIBXSMM_DNN_GRADIENT_FILTER) &&
+      (type != LIBXSMM_DNN_REGULAR_CHANNEL_BIAS)         && (type != LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS)   &&
+      (type != LIBXSMM_DNN_REGULAR_FILTER_TRANS) && (type != LIBXSMM_DNN_BATCH_STATS) && (type != LIBXSMM_DNN_MAX_STATS_FWD) && (type != LIBXSMM_DNN_MAX_STATS_BWD)  && (type != LIBXSMM_DNN_MAX_STATS_UPD)  ) {
+    *status = LIBXSMM_DNN_ERR_UNKNOWN_TENSOR_TYPE;
+    return return_tensor;
+  }
+
+  if (handle != 0) {
+    if ( type == LIBXSMM_DNN_REGULAR_INPUT ) {
+      return_tensor = handle->reg_input;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_INPUT ) {
+      return_tensor = handle->grad_input;
+    } else if ( type == LIBXSMM_DNN_REGULAR_OUTPUT ) {
+      return_tensor = handle->reg_output;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_OUTPUT ) {
+      return_tensor = handle->grad_output;
+    } else if ( type == LIBXSMM_DNN_REGULAR_FILTER ) {
+      return_tensor = handle->reg_filter;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_FILTER ) {
+      return_tensor = handle->grad_filter;
+    } else if ( type == LIBXSMM_DNN_REGULAR_CHANNEL_BIAS ) {
+      return_tensor = handle->reg_bias;
+    } else if ( type == LIBXSMM_DNN_GRADIENT_CHANNEL_BIAS ) {
+      return_tensor = handle->grad_bias;
+    } else if ( type == LIBXSMM_DNN_REGULAR_FILTER_TRANS ) {
+      return_tensor = handle->reg_filter_tr;
+    } else if ( type == LIBXSMM_DNN_BATCH_STATS ) {
+      return_tensor = handle->batch_stats;
+    } else if ( type == LIBXSMM_DNN_MAX_STATS_FWD ) {
+      return_tensor = handle->maxstats_fwd;
+    } else if ( type == LIBXSMM_DNN_MAX_STATS_BWD ) {
+      return_tensor = handle->maxstats_bwd;
+    } else if ( type == LIBXSMM_DNN_MAX_STATS_UPD ) {
+      return_tensor = handle->maxstats_upd;
+    } else {
+      /* cannot happen */
+    }
+  }
+  else {
+    *status = LIBXSMM_DNN_ERR_INVALID_HANDLE_TENSOR;
+  }
+
+  return return_tensor;
+}
+
+
 LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_release_tensor(libxsmm_dnn_layer* handle, const libxsmm_dnn_tensor_type type)
 {
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
