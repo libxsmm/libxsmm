@@ -1297,33 +1297,35 @@ else # GCC assumed
   endif
   OMPLIBFILE = $(call libpath,$(LD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
   ifneq (,$(OMPFLAG_FORCE))
-    ifneq (0,$(OMP))
-      # clang: OMP=libomp
-      ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
-        # omit passing special OMP into Fortran compiler
-        FCFLAGS += $(OMPFLAG_FORCE)
-        CLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-        CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-        CFLAGS += $(OMPFLAG_FORCE)=$(OMP)
-      else
-        ifeq (3,$(GCC))
-          LDFLAGS += $(OMPFLAG_FORCE)
-        else ifneq (,$(strip $(OMPLIBFILE)))
-          BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
-        endif
-        ifneq (Darwin,$(UNAME))
-          CXXFLAGS += $(OMPFLAG_FORCE)
-          FLDFLAGS += $(OMPFLAG_FORCE)
-          FCFLAGS += $(OMPFLAG_FORCE)
-          CFLAGS += $(OMPFLAG_FORCE)
+  ifneq (0,$(OMP))
+    # clang: OMP=libomp
+    ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
+      CXXLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+      CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+      CLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+      CFLAGS += $(OMPFLAG_FORCE)=$(OMP)
+      # Fortran: regular OMP flags
+      FLDFLAGS += $(OMPFLAG_FORCE)
+      FCFLAGS += $(OMPFLAG_FORCE)
+    else
+      ifeq (3,$(GCC))
+        CXXLDFLAGS += $(OMPFLAG_FORCE)
+        CLDFLAGS += $(OMPFLAG_FORCE)
+      else ifneq (,$(strip $(OMPLIBFILE)))
+        BLAS_LDFLAGS += $(XLIB_BEGIN) $(call abslibfile,$(OMPLIBFILE)) $(XLIB_END)
+        ifneq (,$(strip $(OMPLIBFILE)))
+          CXXLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
+          CLDFLAGS += $(call abslibpath,$(OMPLIBFILE))
         endif
       endif
+      ifneq (Darwin,$(UNAME))
+        CXXFLAGS += $(OMPFLAG_FORCE)
+        FCFLAGS += $(OMPFLAG_FORCE)
+        CFLAGS += $(OMPFLAG_FORCE)
+      endif
+      FLDFLAGS += $(OMPFLAG_FORCE)
     endif
-    ifneq (3,$(GCC))
-    ifneq (,$(strip $(OMPLIBFILE)))
-      LDFLAGS += $(call abslibpath,$(OMPLIBFILE))
-    endif
-    endif
+  endif
   endif
   ifeq (1,$(STATIC))
     ifeq (0,$(PGI))
