@@ -279,29 +279,34 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
   internal_malloc_info_type* result = (internal_malloc_info_type*)(NULL != memory
     ? (buffer - sizeof(internal_malloc_info_type)) : NULL);
   if (0 != check && NULL != result) { /* check ownership */
-    if ( /* check further */
 #if !defined(_WIN32) /* mprotect: pass address rounded down to page/4k alignment */
-      (0 == mprotect((void*)(((uintptr_t)result) & 0xFFFFFFFFFFFFF000), sizeof(internal_malloc_info_type), PROT_READ) || ENOMEM != errno) &&
+    if (0 == mprotect((void*)(((uintptr_t)result) & 0xFFFFFFFFFFFFF000), sizeof(internal_malloc_info_type), PROT_READ) || ENOMEM != errno)
 #endif
-      NULL != result->pointer)
     {
-      const char *const pointer = (const char*)result->pointer;
+      if (NULL != result->pointer) {
+        const char *const pointer = (const char*)result->pointer;
 #if !defined(LIBXSMM_MALLOC_NOCRC)
-      const char *const hash = (const char*)&result->hash;
-      const size_t ncrc = hash - (const char*)result;
+        const char *const hash = (const char*)&result->hash;
+        const size_t ncrc = hash - (const char*)result;
 #endif
-      if ( /* check content: calculate checksum over info */
+        if ( /* check content: calculate checksum over info */
 #if !defined(LIBXSMM_MALLOC_NOCRC)
-        result->hash != libxsmm_crc32(LIBXSMM_MALLOC_SEED, result, ncrc) ||
+          result->hash != libxsmm_crc32(LIBXSMM_MALLOC_SEED, result, ncrc) ||
 #endif /* check pointer relation */
-        pointer >= buffer)
-      { /* mismatch */
+          pointer >= buffer)
+        { /* mismatch */
+          result = NULL;
+        }
+      }
+      else { /* mismatch */
         result = NULL;
       }
     }
+#if !defined(_WIN32)
     else { /* mismatch */
       result = NULL;
     }
+#endif
   }
   return result;
 }
@@ -826,7 +831,9 @@ LIBXSMM_API void* __wrap_memalign(size_t /*alignment*/, size_t /*size*/);
 LIBXSMM_API void* __wrap_memalign(size_t alignment, size_t size)
 {
   void* result;
-  const int recursive = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
+  int recursive;
+  LIBXSMM_INIT
+  recursive = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
   if (0 == (libxsmm_malloc_kind & 1) /* even */
 #if defined(LIBXSMM_MALLOC_HOOK_THRESHOLD) && (0 < (LIBXSMM_MALLOC_HOOK_THRESHOLD))
     || (LIBXSMM_MALLOC_HOOK_THRESHOLD) >= size
@@ -869,7 +876,7 @@ LIBXSMM_API void* __wrap_realloc(void* /*ptr*/, size_t /*size*/);
 LIBXSMM_API void* __wrap_realloc(void* ptr, size_t size)
 {
   void* result;
-#if !defined(NDEBUG)
+#if !defined(NDEBUG) /* LIBXSMM_INIT: not needed here */
   const int recursive = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
 #endif
   if ( /* recursion is not expected; check only in debug builds */
@@ -1635,7 +1642,6 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory)
 {
   /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory, 1/*check*/);
-  static int error_once = 0;
   if (NULL != info) {
 #if !defined(NDEBUG)
     int status =
@@ -1643,16 +1649,18 @@ LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory)
     internal_xfree(memory, info); /* !libxsmm_free */
     assert(EXIT_SUCCESS == status); /* !LIBXSMM_ASSERT */
   }
+  else {
 #if defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  else if (0 != (libxsmm_malloc_kind & 1)) { /* interception enabled */
     __real_free((void*)memory);
-  }
+#else
+    static int error_once = 0;
+    if (NULL != memory /* library code is expected to be mute */
+      && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM WARNING: deallocation of %p does not match allocation!\n", memory);
+    }
 #endif
-  else if (NULL != memory /* library code is expected to be mute */
-    && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM WARNING: deallocation of %p does not match allocation!\n", memory);
   }
 }
 
