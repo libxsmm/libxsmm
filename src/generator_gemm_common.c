@@ -922,7 +922,7 @@ void libxsmm_generator_gemm_load_C( libxsmm_generated_code*             io_gener
               l_vec_reg_acc_start + l_m + (l_m_blocking * l_n) );
         }
       }
-    } else if ( ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) ||
+    } else if ( ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) ||
                   (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX) ) &&
                 ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
       /* we add when scaling during conversion to FP32 */
@@ -1148,7 +1148,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
         }
       }
     }
-  } else if ( ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_KNM) ||
+  } else if ( ( (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CORE) ||
                 (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CLX)  || (i_micro_kernel_config->instruction_set == LIBXSMM_X86_AVX512_CPX) ) &&
               ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
 #if 0
