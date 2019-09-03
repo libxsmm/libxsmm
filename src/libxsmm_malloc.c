@@ -237,6 +237,11 @@ LIBXSMM_APIVAR(size_t internal_malloc_scratch_size);
 LIBXSMM_APIVAR(size_t internal_malloc_start);
 LIBXSMM_APIVAR(int internal_malloc_recursive);
 
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t /*alignment*/, size_t /*size*/);
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t /*size*/);
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* /*ptr*/, size_t /*size*/);
+LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* /*ptr*/);
+
 
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment)
 {
@@ -333,7 +338,15 @@ LIBXSMM_API_INLINE int internal_xfree(const void* memory, internal_malloc_info_t
         info->pointer = NULL; info->size = 0;
 #endif
         if (NULL == info->context) {
-          info->free.function(buffer);
+#if defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+          if (free == info->free.function) {
+            __real_free(buffer);
+          }
+          else
+#endif
+          {
+            info->free.function(buffer);
+          }
         }
         else {
           info->free.ctx_form(buffer, info->context);
@@ -736,7 +749,6 @@ LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* hook)
 }
 #endif /*defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)*/
 
-LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t /*alignment*/, size_t /*size*/);
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment, size_t size)
 {
   void* result;
@@ -760,7 +772,6 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
   return result;
 }
 
-LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t /*size*/);
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
 {
   void* result;
@@ -784,7 +795,6 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
   return result;
 }
 
-LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* /*ptr*/, size_t /*size*/);
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t size)
 {
   void* result;
@@ -808,7 +818,6 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t
   return result;
 }
 
-LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* /*ptr*/);
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
 {
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
