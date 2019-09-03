@@ -844,7 +844,7 @@ LIBXSMM_API void* __wrap_memalign(size_t alignment, size_t size)
 {
   void* result;
   int recursive;
-  LIBXSMM_INIT
+  if (0 == libxsmm_ninit) libxsmm_init(); /* !LIBXSMM_INIT */
   recursive = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
   if (0 == (libxsmm_malloc_kind & 1) /* even */
 #if defined(LIBXSMM_MALLOC_HOOK_THRESHOLD) && (0 < (LIBXSMM_MALLOC_HOOK_THRESHOLD))
