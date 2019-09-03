@@ -280,7 +280,8 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
     ? (buffer - sizeof(internal_malloc_info_type)) : NULL);
   if (0 != check && NULL != result) { /* check ownership */
 #if !defined(_WIN32) /* mprotect: pass address rounded down to page/4k alignment */
-    if (0 == mprotect((void*)(((uintptr_t)result) & 0xFFFFFFFFFFFFF000), sizeof(internal_malloc_info_type), PROT_READ) || ENOMEM != errno)
+    if (1 == check || 0 == mprotect((void*)(((uintptr_t)result) & 0xFFFFFFFFFFFFF000),
+      sizeof(internal_malloc_info_type), PROT_READ | PROT_WRITE) || ENOMEM != errno)
 #endif
     {
       if (NULL != result->pointer) {
@@ -1641,7 +1642,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 
 LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory)
 {
-  /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory, 1/*check*/);
+  /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory, 2/*check*/);
   if (NULL != info) {
 #if !defined(NDEBUG)
     int status =
