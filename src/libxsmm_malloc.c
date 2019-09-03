@@ -290,10 +290,11 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
 #endif
     {
       const char* const pointer = (const char*)result->pointer;
-      if ( (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) || 0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & result->flags))
+      if (((0 == (LIBXSMM_MALLOC_FLAG_X & result->flags)) ? 1 : (0 == (LIBXSMM_MALLOC_FLAG_SCRATCH & result->flags)))
         && (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) || NULL == result->context)
         && (0 != (LIBXSMM_MALLOC_FLAG_X & result->flags) || NULL == result->reloc)
         && (0 == (~LIBXSMM_MALLOC_FLAG_VALID & result->flags))
+        && (0 != (LIBXSMM_MALLOC_FLAG_RW & result->flags))
         && NULL != pointer && 0 != result->size)
       {
         if ( /* check content: calculate checksum over info */
@@ -927,8 +928,13 @@ LIBXSMM_API void* __wrap_realloc(void* ptr, size_t size)
 LIBXSMM_API void __wrap_free(void* /*ptr*/);
 LIBXSMM_API void __wrap_free(void* ptr)
 {
-  /* rely on recognizing pointers not issued by LIBXSMM */
-  libxsmm_free(ptr);
+  if (0 != libxsmm_ninit) {
+    /* rely on recognizing pointers not issued by LIBXSMM */
+    libxsmm_free(ptr);
+  }
+  else { /* post shutdown */
+    __real_free(ptr);
+  }
 }
 
 #endif /*defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)*/
@@ -1304,7 +1310,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
       /* ATOMIC END: this region should be atomic */
       internal_malloc_info_type* info = ((0 == (LIBXSMM_MALLOC_FLAG_REALLOC & flags) || NULL == *memory)
         ? NULL : internal_malloc_info(*memory, 1/*check*/));
-      void *alloc_failed = NULL, *buffer = NULL, *reloc = (NULL == info ? NULL : info->pointer);
+      void *alloc_failed = NULL, *buffer = NULL, *reloc = NULL/*(NULL == info ? NULL : info->pointer)*/;
       size_t alloc_alignment = 0, alloc_size = 0;
       flags |= LIBXSMM_MALLOC_FLAG_RW; /* normalize given flags since flags=0 is accepted as well */
       if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
