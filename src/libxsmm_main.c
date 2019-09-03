@@ -561,9 +561,8 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   }
   /* turn-off redirected memory allocations */
   libxsmm_malloc_kind = 0;
-#if !defined(NDEBUG)
+  /* signal shutdown */
   libxsmm_ninit = 0;
-#endif
 #if (0 != LIBXSMM_SYNC)
   { /* release locks */
 # if (1 < INTERNAL_REGLOCK_MAXN)

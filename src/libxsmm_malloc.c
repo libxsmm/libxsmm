@@ -289,15 +289,17 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
       sizeof(internal_malloc_info_type), PROT_READ | PROT_WRITE) || ENOMEM != errno)
 #endif
     {
-      if (NULL != result->pointer) {
-        const char *const pointer = (const char*)result->pointer;
-#if !defined(LIBXSMM_MALLOC_NOCRC)
-        const char *const hash = (const char*)&result->hash;
-        const size_t ncrc = hash - (const char*)result;
-#endif
+      const char* const pointer = (const char*)result->pointer;
+      if ( (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) || 0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & result->flags))
+        && (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) || NULL == result->context)
+        && (0 != (LIBXSMM_MALLOC_FLAG_X & result->flags) || NULL == result->reloc)
+        && (0 == (~LIBXSMM_MALLOC_FLAG_VALID & result->flags))
+        && NULL != pointer && 0 != result->size)
+      {
         if ( /* check content: calculate checksum over info */
 #if !defined(LIBXSMM_MALLOC_NOCRC)
-          result->hash != libxsmm_crc32(LIBXSMM_MALLOC_SEED, result, ncrc) ||
+          (0 == libxsmm_ninit || result->hash != libxsmm_crc32(LIBXSMM_MALLOC_SEED,
+            result, (const char*)&result->hash - (const char*)result)) &&
 #endif /* check pointer relation */
           pointer >= buffer)
         { /* mismatch */
@@ -1154,7 +1156,6 @@ LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* 
 {
   int result;
 #if !defined(NDEBUG)
-  static int error_once = 0;
   if (NULL != size || NULL != extra)
 #endif
   {
@@ -1165,20 +1166,8 @@ LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* 
       if (extra) *extra = info->pointer;
       result = EXIT_SUCCESS;
     }
-    else {
-      if (NULL != memory) {
-#if !defined(NDEBUG) /* library code is expected to be mute */
-        if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
-          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-        {
-          fprintf(stderr, "LIBXSMM WARNING: foreign memory buffer %p discovered!\n", memory);
-        }
-#endif
-        result = EXIT_FAILURE;
-      }
-      else {
-        result = EXIT_SUCCESS;
-      }
+    else { /* potentially foreign buffer */
+      result = (NULL != memory ? EXIT_FAILURE : EXIT_SUCCESS);
       if (NULL != size) *size = 0;
       if (NULL != flags) *flags = 0;
       if (NULL != extra) *extra = 0;
@@ -1186,8 +1175,9 @@ LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* 
   }
 #if !defined(NDEBUG)
   else {
+    static int error_once = 0;
     if (0 != libxsmm_verbosity /* library code is expected to be mute */
-     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM ERROR: attachment error for memory buffer %p!\n", memory);
     }
@@ -1993,6 +1983,14 @@ LIBXSMM_API int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info*
     if (EXIT_SUCCESS == result) {
       info->size = size;
     }
+#if !defined(NDEBUG) /* library code is expected to be mute */
+    else if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) {
+      static int error_once = 0;
+      if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+        fprintf(stderr, "LIBXSMM WARNING: foreign memory buffer %p discovered!\n", memory);
+      }
+    }
+#endif
   }
   else {
     result = EXIT_FAILURE;
