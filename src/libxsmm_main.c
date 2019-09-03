@@ -758,10 +758,10 @@ LIBXSMM_API_INTERN void internal_init(void)
         fprintf(stderr, "LIBXSMM ERROR: failed to allocate internal buffers!\n");
       }
 #if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-      libxsmm_xfree(internal_cache_buffer);
+      libxsmm_xfree(internal_cache_buffer, 0/*no check*/);
 #endif
-      libxsmm_xfree(internal_registry_keys);
-      libxsmm_xfree(new_registry);
+      libxsmm_xfree(internal_registry_keys, 0/*no check*/);
+      libxsmm_xfree(new_registry, 0/*no check*/);
     }
   }
 #if (0 != LIBXSMM_SYNC) /* release locks */
@@ -981,7 +981,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             code.uval &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
             if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, &size, NULL/*flags*/, &buffer)) {
-              libxsmm_xfree(code.ptr_const);
+              libxsmm_xfree(code.ptr_const, 0/*no check*/);
               /* round-up size (it is fine to assume 4 KB pages since it is likely more accurate than not rounding up) */
               internal_registry_nbytes += (unsigned int)LIBXSMM_UP2(size + (((char*)code.ptr_const) - (char*)buffer), 4096/*4KB*/);
             }
@@ -1003,10 +1003,10 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       /* make internal registry globally unavailable */
       LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
       internal_registry_keys = NULL;
-      libxsmm_xfree(registry_keys);
-      libxsmm_xfree(registry);
+      libxsmm_xfree(registry_keys, 0/*no check*/);
+      libxsmm_xfree(registry, 0/*no check*/);
 #if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-      libxsmm_xfree(internal_cache_buffer);
+      libxsmm_xfree(internal_cache_buffer, 0/*no check*/);
 #endif
       }
 #if (0 != LIBXSMM_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
@@ -1729,7 +1729,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_ASSERT(NULL != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->uval));
         }
         else { /* release buffer */
-          libxsmm_xfree(code_buffer);
+          libxsmm_xfree(code_buffer, 0/*no check*/);
         }
       }
     }
@@ -2681,7 +2681,7 @@ LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel)
     if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(jit_kernel, NULL/*size*/, NULL/*flags*/, &extra) && NULL != extra) {
       const unsigned int regindex = *((const unsigned int*)extra);
       if ((LIBXSMM_CAPACITY_REGISTRY) <= regindex) {
-        libxsmm_xfree(jit_kernel);
+        libxsmm_xfree(jit_kernel, 0/*no check*/);
       }
       else
 #if !defined(LIBXSMM_ENABLE_DEREG)
@@ -2696,7 +2696,7 @@ LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel)
 # if !defined(NDEBUG)
         memset(internal_registry_keys + regindex, 0, sizeof(libxsmm_descriptor));
 # endif
-        libxsmm_xfree(jit_kernel);
+        libxsmm_xfree(jit_kernel, 0/*no check*/);
       }
 #endif
     }

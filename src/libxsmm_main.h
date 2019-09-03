@@ -834,7 +834,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
   /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
   const void* extra, size_t extra_size);
 /** Release memory, which was allocated using libxsmm_[*]malloc. */
-LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory);
+LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check);
 
 /** Like libxsmm_release_scratch, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock);

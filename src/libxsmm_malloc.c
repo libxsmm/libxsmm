@@ -1640,9 +1640,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 }
 
 
-LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory)
+LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check)
 {
-  /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory, 2/*check*/);
+  /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory, check);
   if (NULL != info) {
 #if !defined(NDEBUG)
     int status =
@@ -1922,7 +1922,7 @@ LIBXSMM_API void libxsmm_free(const void* memory)
             }
           }
 # endif
-          libxsmm_xfree(pool_buffer);
+          libxsmm_xfree(pool_buffer, 0/*no check*/);
         }
       }
       /* TODO: document/check that allocation/deallocation must follow the linear/scoped allocator policy */
@@ -1933,7 +1933,7 @@ LIBXSMM_API void libxsmm_free(const void* memory)
     else
 #endif
     { /* local */
-      libxsmm_xfree(memory);
+      libxsmm_xfree(memory, 2/*check*/);
     }
   }
 }
@@ -1957,7 +1957,7 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
   if (NULL != lock) {
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, lock);
   }
-  for (i = 0; i < libxsmm_scratch_pools; ++i) libxsmm_xfree(pools[i].instance.buffer);
+  for (i = 0; i < libxsmm_scratch_pools; ++i) libxsmm_xfree(pools[i].instance.buffer, 0/*no check*/);
   memset(pools, 0, (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) * sizeof(internal_malloc_pool_type));
   /* keep private watermark (no reset) */
   internal_malloc_scratch_nmallocs = internal_malloc_maxlocal_size = internal_malloc_scratch_size = 0;

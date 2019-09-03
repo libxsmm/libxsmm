@@ -172,9 +172,9 @@ LIBXSMM_API_INLINE void internal_spmdm_allocate_scratch(libxsmm_spmdm_handle* ha
 
 LIBXSMM_API_INLINE void internal_spmdm_deallocate_csr_a(libxsmm_spmdm_handle* handle)
 {
-  libxsmm_xfree(handle->base_ptr_scratch_A);
+  libxsmm_xfree(handle->base_ptr_scratch_A, 0/*no check*/);
   handle->base_ptr_scratch_A = NULL;
-  libxsmm_xfree(handle->base_ptr_scratch_B_scratch_C);
+  libxsmm_xfree(handle->base_ptr_scratch_B_scratch_C, 0/*no check*/);
   handle->base_ptr_scratch_B_scratch_C = NULL;
 }
 
