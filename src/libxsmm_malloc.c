@@ -141,8 +141,8 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_CALLER_LEVEL 3
 #endif
 
-#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && \
-  defined(LIBXSMM_INTERCEPT_DYNAMIC) && !defined(_CRAYC) && !defined(__TRACE) && 1
+#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && \
+  !(defined(__APPLE__) && defined(__MACH__)) && !defined(_CRAYC) && !defined(__TRACE)
 # define LIBXSMM_MALLOC_HOOK_DYNAMIC
 # if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -786,8 +786,10 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
     result = scalable_aligned_malloc(size, alignment);
 #elif defined(LIBXSMM_GLIBC)
     result = __libc_memalign(alignment, size);
-#else
+#elif !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
     result = internal_malloc_memalign(alignment, size);
+#else
+    result = NULL;
 #endif
   }
   return result;
@@ -808,8 +810,10 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
     result = scalable_malloc(size);
 #elif defined(LIBXSMM_GLIBC)
     result = __libc_malloc(size);
-#else
+#elif !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
     result = malloc(size);
+#else
+    result = NULL;
 #endif
   }
   return result;
@@ -830,8 +834,10 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t
     result = scalable_realloc(ptr, size);
 #elif defined(LIBXSMM_GLIBC)
     result = __libc_realloc(ptr, size);
-#else
+#elif !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
     result = realloc(ptr, size);
+#else
+    result = NULL;
 #endif
   }
   return result;
@@ -851,7 +857,7 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
     scalable_free(ptr);
 #elif defined(LIBXSMM_GLIBC)
     __libc_free(ptr);
-#else
+#elif !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
     free(ptr);
 #endif
   }
@@ -1655,18 +1661,23 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check)
 {
   /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory, check);
-  if (NULL != info) {
-#if !defined(NDEBUG)
-    int status =
-#endif
+  static int error_once = 0;
+  if (NULL != info) { /* !libxsmm_free */
+#if !defined(NDEBUG) || defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+    if (EXIT_SUCCESS != internal_xfree(memory, info) && NULL != memory
+      && 0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: memory deallocation of %p failed!\n", memory);
+    }
+#else
     internal_xfree(memory, info); /* !libxsmm_free */
-    assert(EXIT_SUCCESS == status); /* !LIBXSMM_ASSERT */
+#endif
   }
   else {
 #if defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
     __real_free((void*)memory);
 #else
-    static int error_once = 0;
     if (NULL != memory /* library code is expected to be mute */
       && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
