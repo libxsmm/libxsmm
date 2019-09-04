@@ -742,8 +742,11 @@ LIBXSMM_API_INTERN void internal_init(void)
       { /* setup libxsmm_malloc_kind after internal allocations */
         const libxsmm_malloc_function null_malloc_fn = { 0 };
         const libxsmm_free_function null_free_fn = { 0 };
-        const char *const env = getenv("LIBXSMM_MALLOC");
-        if (NULL != env && 0 != *env) libxsmm_malloc_kind = atoi(env);
+        const char *const env_kind = getenv("LIBXSMM_MALLOC");
+        const char *const env_threshold = getenv("LIBXSMM_MALLOC_THRESHOLD");
+        const int threshold = ((NULL != env_threshold && 0 != *env_threshold) ? atoi(env_threshold) : -1/*rely on default*/);
+        if (NULL != env_kind && 0 != *env_kind) libxsmm_malloc_kind = atoi(env_kind);
+        libxsmm_malloc_threshold = (0 <= threshold ? threshold : (LIBXSMM_MALLOC_THRESHOLD));
         libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
         libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
       }
@@ -777,10 +780,9 @@ LIBXSMM_API_INTERN void internal_init(void)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
-#if (0 != LIBXSMM_SYNC)
-    static int once = 0;
-    /* libxsmm_ninit: serves as an ID to invalidate the thread-local cache; never decremented */
+    /* libxsmm_ninit (1: started, 2: library initialized), invalidate code-TLS, never decremented */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
+#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_REGLOCK_TRY)
       const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
 # endif
@@ -870,11 +872,11 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           }
         }
       }
-#if (0 != LIBXSMM_SYNC)
-      LIBXSMM_ATOMIC_STORE(&once, 1, LIBXSMM_ATOMIC_RELAXED); /* inc? */
+      LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }
+#if (0 != LIBXSMM_SYNC)
     else while (1) {
-      if (0 != LIBXSMM_ATOMIC_LOAD(&once, LIBXSMM_ATOMIC_RELAXED)) {
+      if (1 < LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) {
         break;
       }
 # if 1
@@ -883,7 +885,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       else LIBXSMM_SYNC_PAUSE;
 # endif
     }
-#endif
+#endif /*0 != LIBXSMM_SYNC*/
     internal_init();
   }
 }

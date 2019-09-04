@@ -155,9 +155,6 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(_WIN32) && 1
 # define LIBXSMM_MALLOC_HOOK_STATIC
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_THRESHOLD) && 1
-# define LIBXSMM_MALLOC_HOOK_THRESHOLD (2U << 20)
-#endif
 #if !defined(LIBXSMM_MALLOC_HOOK_REREDIR) && 1
 # define LIBXSMM_MALLOC_HOOK_REREDIR
 #endif
@@ -305,7 +302,7 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
         || pointer == convert.ptr || pointer == result->context
         || pointer >= buffer || NULL == pointer
         || maxsize < result->size || 0 == result->size
-        || 0 == libxsmm_ninit /* before checksum calculation */
+        || 1 >= libxsmm_ninit /* before checksum calculation */
 #if !defined(LIBXSMM_MALLOC_NOCRC) /* last check: checksum over info */
         || result->hash != libxsmm_crc32(LIBXSMM_MALLOC_SEED, result,
             (const char*)& result->hash - (const char*)result)
@@ -870,9 +867,7 @@ LIBXSMM_API void* __wrap_memalign(size_t alignment, size_t size)
     libxsmm_init();
   }
   if (0 == (libxsmm_malloc_kind & 1) /* even */
-# if defined(LIBXSMM_MALLOC_HOOK_THRESHOLD) && (0 < (LIBXSMM_MALLOC_HOOK_THRESHOLD))
-    || (LIBXSMM_MALLOC_HOOK_THRESHOLD) >= size
-# endif
+    || libxsmm_malloc_threshold > size
 # if defined(LIBXSMM_MALLOC_HOOK_REREDIR)
     || 1 < recursive
 # endif

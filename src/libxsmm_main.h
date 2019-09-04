@@ -54,15 +54,11 @@
 #if !defined(LIBXSMM_MALLOC_SCRATCH_LIMIT)
 # define LIBXSMM_MALLOC_SCRATCH_LIMIT (4ULL << 30) /* 4 GB */
 #endif
-#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 0
-# define LIBXSMM_MALLOC_MMAP_SCRATCH
-#endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_SCALE)
-# if defined(LIBXSMM_MALLOC_MMAP_SCRATCH)
-#   define LIBXSMM_MALLOC_SCRATCH_SCALE 1.3
-# else
-#   define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
-# endif
+# define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
+#endif
+#if !defined(LIBXSMM_MALLOC_THRESHOLD) && 1
+# define LIBXSMM_MALLOC_THRESHOLD (2U << 20)
 #endif
 #if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER_ID)
 # define LIBXSMM_MALLOC_INTERNAL_CALLER_ID ((uintptr_t)-1)
@@ -896,6 +892,8 @@ LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
 LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
+/** Minimum number of bytes needed for interception (libxsmm_malloc_kind) */
+LIBXSMM_APIVAR(int libxsmm_malloc_threshold);
 /** 0: regular, 1/odd: intercept/scratch, otherwise: all/scratch */
 LIBXSMM_APIVAR(int libxsmm_malloc_kind);
 /** Counts the number of attempts to create an SPMDM-handle */
