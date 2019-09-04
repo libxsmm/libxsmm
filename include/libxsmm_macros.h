@@ -98,7 +98,8 @@
 #define LIBXSMM_VERSION43(VERSION) (((VERSION) >> 14) & 0x1F)
 #define LIBXSMM_VERSION44(VERSION) (((VERSION)) & 0x3FFF)
 
-#if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD))
+#if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD) || \
+  (0 == LIBXSMM_SYNC)/*Windows: missing pack(pop) error*/)
 # define LIBXSMM_UNPACKED
 #endif
 #if defined(_WIN32) && !defined(__GNUC__) && !defined(__clang__)
