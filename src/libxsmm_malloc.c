@@ -294,7 +294,7 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
       const char* const pointer = (const char*)result->pointer;
       union { libxsmm_free_fun fun; const void* ptr; } convert;
       convert.fun = result->free.function;
-      if (((0 != (LIBXSMM_MALLOC_FLAG_X & result->flags)) ? 0 : (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & result->flags)))
+      if (((0 == (LIBXSMM_MALLOC_FLAG_X & result->flags)) ? 0 : (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & result->flags)))
         || (0 == (LIBXSMM_MALLOC_FLAG_X & LIBXSMM_MALLOC_FLAG_MMAP & result->flags) && NULL != result->reloc)
         || (0 != (LIBXSMM_MALLOC_FLAG_X & result->flags) && NULL != result->context)
 #if defined(LIBXSMM_VTUNE)
@@ -1603,13 +1603,12 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         buffer_info->pointer = buffer;
         buffer_info->reloc = reloc;
         buffer_info->flags = flags;
-#if !defined(LIBXSMM_MALLOC_NOCRC) /* calculate checksum over info */
-        buffer_info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, buffer_info,
-          /* info size minus actual hash value */
-          (unsigned int)(((char*)&buffer_info->hash) - ((char*)buffer_info)));
-#endif
 #if defined(LIBXSMM_VTUNE)
         buffer_info->code_id = 0;
+#endif /* info must be initialized to calculate correct checksum */
+#if !defined(LIBXSMM_MALLOC_NOCRC)
+        buffer_info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, buffer_info,
+          (unsigned int)(((char*)&buffer_info->hash) - ((char*)buffer_info)));
 #endif
         if (NULL != info) { /* copy previous content */
           memcpy(aligned, *memory, LIBXSMM_MIN(info->size, size));
