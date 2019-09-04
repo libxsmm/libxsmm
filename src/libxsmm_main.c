@@ -576,11 +576,29 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 }
 
 
-LIBXSMM_API_INLINE size_t internal_strlen(const char* cstr, size_t maxlen)
+LIBXSMM_API_INTERN size_t internal_strlen(const char* /*cstr*/, size_t /*maxlen*/);
+LIBXSMM_API_INTERN size_t internal_strlen(const char* cstr, size_t maxlen)
 {
   size_t result = 0;
   if (NULL != cstr) {
     while (0 != cstr[result] && result < maxlen) ++result;
+  }
+  return result;
+}
+
+
+LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* /*nbytes*/, size_t /*ndefault*/);
+LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* nbytes, size_t ndefault)
+{
+  size_t result = ndefault;
+  if (NULL != nbytes && 0 != *nbytes) {
+    size_t u = internal_strlen(nbytes, 32) - 1;
+    const char unit[] = "kmgKMG", * const hit = strchr(unit, nbytes[u]);
+    result = (size_t)strtoul(nbytes, 0, 10);
+    u = (0 != hit ? ((hit - unit) % 3) : 3);
+    if (u < 3) {
+      result <<= (u + 1) * 10;
+    }
   }
   return result;
 }
@@ -630,22 +648,6 @@ LIBXSMM_API_INTERN void internal_init(void)
       }
       LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
     }
-    { const char *const env = getenv("LIBXSMM_SCRATCH_LIMIT");
-      if (NULL == env || 0 == *env) {
-        /*const*/ unsigned long long limit = LIBXSMM_MALLOC_SCRATCH_LIMIT;
-        libxsmm_scratch_limit = (size_t)limit;
-      }
-      else {
-        size_t u = internal_strlen(env, 32) - 1;
-        const char unit[] = "kmgKMG", *const hit = strchr(unit, env[u]);
-        libxsmm_scratch_limit = (size_t)strtoul(env, 0, 10);
-        u = (0 != hit ? ((hit - unit) % 3) : 3);
-        if (u < 3) {
-          libxsmm_scratch_limit <<= (u + 1) * 10;
-        }
-        /*libxsmm_scratch_limit_locked = 1;*/
-      }
-    }
     { const char *const env = getenv("LIBXSMM_SCRATCH_SCALE");
       if (NULL == env || 0 == *env) {
         libxsmm_scratch_scale = LIBXSMM_MALLOC_SCRATCH_SCALE;
@@ -656,6 +658,8 @@ LIBXSMM_API_INTERN void internal_init(void)
       }
       LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
     }
+    libxsmm_scratch_limit = internal_parse_nbytes(getenv("LIBXSMM_SCRATCH_LIMIT"),
+      (size_t)LIBXSMM_MALLOC_SCRATCH_LIMIT);
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
 #if defined(LIBXSMM_MAXTARGET)
     libxsmm_set_target_arch(LIBXSMM_STRINGIFY(LIBXSMM_MAXTARGET));
@@ -742,11 +746,10 @@ LIBXSMM_API_INTERN void internal_init(void)
       { /* setup libxsmm_malloc_kind after internal allocations */
         const libxsmm_malloc_function null_malloc_fn = { 0 };
         const libxsmm_free_function null_free_fn = { 0 };
-        const char *const env_kind = getenv("LIBXSMM_MALLOC");
-        const char *const env_threshold = getenv("LIBXSMM_MALLOC_THRESHOLD");
-        const int threshold = ((NULL != env_threshold && 0 != *env_threshold) ? atoi(env_threshold) : -1/*rely on default*/);
-        if (NULL != env_kind && 0 != *env_kind) libxsmm_malloc_kind = atoi(env_kind);
-        libxsmm_malloc_threshold = (0 <= threshold ? threshold : (LIBXSMM_MALLOC_THRESHOLD));
+        const char *const env = getenv("LIBXSMM_MALLOC");
+        if (NULL != env && 0 != *env) libxsmm_malloc_kind = atoi(env);
+        libxsmm_malloc_threshold = internal_parse_nbytes(getenv("LIBXSMM_MALLOC_THRESHOLD"),
+          (size_t)LIBXSMM_MALLOC_THRESHOLD);
         libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
         libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
       }
