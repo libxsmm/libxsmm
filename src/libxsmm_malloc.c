@@ -232,8 +232,9 @@ LIBXSMM_APIVAR_ARRAY(char internal_malloc_pool_buffer, (LIBXSMM_MALLOC_SCRATCH_M
 #endif
 LIBXSMM_APIVAR(size_t internal_malloc_scratch_nmallocs);
 LIBXSMM_APIVAR(size_t internal_malloc_maxlocal_size);
-LIBXSMM_APIVAR(size_t internal_malloc_private_size);
 LIBXSMM_APIVAR(size_t internal_malloc_scratch_size);
+LIBXSMM_APIVAR(size_t internal_malloc_private_size);
+LIBXSMM_APIVAR(size_t internal_malloc_public_size);
 LIBXSMM_APIVAR(size_t internal_malloc_start);
 LIBXSMM_APIVAR(int internal_malloc_recursive);
 
@@ -290,16 +291,23 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
 #endif
     {
       const char* const pointer = (const char*)result->pointer;
+      const size_t maxsize = LIBXSMM_MAX(LIBXSMM_MAX(internal_malloc_scratch_size, internal_malloc_maxlocal_size), internal_malloc_public_size);
       if (((0 == (LIBXSMM_MALLOC_FLAG_X & result->flags)) ? 1 : (0 == (LIBXSMM_MALLOC_FLAG_SCRATCH & result->flags)))
+        && (0 != (LIBXSMM_MALLOC_FLAG_X & LIBXSMM_MALLOC_FLAG_MMAP & result->flags) || NULL == result->reloc)
         && (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) || NULL == result->context)
-        && (0 != (LIBXSMM_MALLOC_FLAG_X & result->flags) || NULL == result->reloc)
+#if defined(LIBXSMM_VTUNE)
+        && (0 != (LIBXSMM_MALLOC_FLAG_X & result->flags) || 0 == result->code_id)
+#endif
         && (0 == (~LIBXSMM_MALLOC_FLAG_VALID & result->flags))
         && (0 != (LIBXSMM_MALLOC_FLAG_R & result->flags))
-        && NULL != pointer && 0 != result->size)
+        && (result->pointer != (const void*)result->free.function)
+        && (result->pointer != result->context && NULL != pointer)
+        && maxsize >= result->size
+        && 0 != result->size)
       {
         if ( /* check content: calculate checksum over info */
 #if !defined(LIBXSMM_MALLOC_NOCRC)
-          (0 == libxsmm_ninit || result->hash != libxsmm_crc32(LIBXSMM_MALLOC_SEED,
+          (0 == libxsmm_ninit || result->hash == libxsmm_crc32(LIBXSMM_MALLOC_SEED,
             result, (const char*)&result->hash - (const char*)result)) &&
 #endif /* check pointer relation */
           pointer >= buffer)
@@ -764,7 +772,9 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
   if (NULL != internal_malloc_hook.memalign.ptr) {
+# if defined(LIBXSMM_GLIBC)
     LIBXSMM_ASSERT(memalign != internal_malloc_hook.memalign.ptr);
+# endif
     result = internal_malloc_hook.memalign.ptr(alignment, size);
   }
   else
@@ -1567,6 +1577,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
           if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags) && internal_malloc_scratch_size < alloc_size) {
             internal_malloc_scratch_size = alloc_size; /* accept data-race */
           }
+          else if (internal_malloc_public_size < alloc_size) {
+            internal_malloc_public_size = alloc_size; /* accept data-race */
+          }
         }
         else { /* private */
           if (0 == (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
@@ -1941,10 +1954,10 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
   LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
   LIBXSMM_ASSERT(sizeof(internal_malloc_pool_type) <= (LIBXSMM_CACHELINE));
   /* acquire pending mallocs prior to cleanup (below libxsmm_xfree) */
-  if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+  if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
     libxsmm_scratch_info scratch_info;
     if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.npending) {
-      fprintf(stderr, "LIBXSMM ERROR: %lu pending scratch-memory allocations!\n",
+      fprintf(stderr, "LIBXSMM WARNING: %lu pending scratch-memory allocations!\n",
         (unsigned long int)scratch_info.npending);
     }
   }
