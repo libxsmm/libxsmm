@@ -1965,8 +1965,8 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
   if (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) { /* library code is expected to be mute */
     libxsmm_scratch_info scratch_info;
     if (EXIT_SUCCESS == libxsmm_get_scratch_info(&scratch_info) && 0 < scratch_info.npending) {
-      fprintf(stderr, "LIBXSMM WARNING: %lu pending scratch-memory allocations!\n",
-        (unsigned long int)scratch_info.npending);
+      fprintf(stderr, "LIBXSMM WARNING: %lu pending scratch-memory allocation%s!\n",
+        (unsigned long int)scratch_info.npending, 1 < scratch_info.npending ? "s" : "");
     }
   }
   if (NULL != lock) {
