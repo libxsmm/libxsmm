@@ -294,30 +294,23 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
       const char* const pointer = (const char*)result->pointer;
       union { libxsmm_free_fun fun; const void* ptr; } convert;
       convert.fun = result->free.function;
-      if (((0 == (LIBXSMM_MALLOC_FLAG_X & result->flags)) ? 1 : (0 == (LIBXSMM_MALLOC_FLAG_SCRATCH & result->flags)))
-        && (0 != (LIBXSMM_MALLOC_FLAG_X & LIBXSMM_MALLOC_FLAG_MMAP & result->flags) || NULL == result->reloc)
-        && (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) || NULL == result->context)
+      if (((0 != (LIBXSMM_MALLOC_FLAG_X & result->flags)) ? 0 : (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & result->flags)))
+        || (0 == (LIBXSMM_MALLOC_FLAG_X & LIBXSMM_MALLOC_FLAG_MMAP & result->flags) && NULL != result->reloc)
+        || (0 != (LIBXSMM_MALLOC_FLAG_X & result->flags) && NULL != result->context)
 #if defined(LIBXSMM_VTUNE)
-        && (0 != (LIBXSMM_MALLOC_FLAG_X & result->flags) || 0 == result->code_id)
+        || (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) && 0 != result->code_id)
 #endif
-        && (0 == (~LIBXSMM_MALLOC_FLAG_VALID & result->flags))
-        && (0 != (LIBXSMM_MALLOC_FLAG_R & result->flags))
-        && (pointer != convert.ptr && NULL != pointer)
-        && (pointer != result->context)
-        && maxsize >= result->size
-        && 0 != result->size)
-      {
-        if ( /* check content: calculate checksum over info */
-#if !defined(LIBXSMM_MALLOC_NOCRC)
-          (0 == libxsmm_ninit || result->hash == libxsmm_crc32(LIBXSMM_MALLOC_SEED,
-            result, (const char*)&result->hash - (const char*)result)) &&
-#endif /* check pointer relation */
-          pointer >= buffer)
-        { /* mismatch */
-          result = NULL;
-        }
-      }
-      else { /* mismatch */
+        || (0 != (~LIBXSMM_MALLOC_FLAG_VALID & result->flags))
+        || (0 == (LIBXSMM_MALLOC_FLAG_R & result->flags))
+        || pointer == convert.ptr || pointer == result->context
+        || pointer >= buffer || NULL == pointer
+        || maxsize < result->size || 0 == result->size
+        || 0 == libxsmm_ninit /* before checksum calculation */
+#if !defined(LIBXSMM_MALLOC_NOCRC) /* last check: checksum over info */
+        || result->hash != libxsmm_crc32(LIBXSMM_MALLOC_SEED, result,
+            (const char*)& result->hash - (const char*)result)
+#endif
+      ) { /* mismatch */
         result = NULL;
       }
     }
