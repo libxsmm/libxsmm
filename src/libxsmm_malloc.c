@@ -125,14 +125,6 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # include "libxsmm_perf.h"
 #endif
 
-#if !defined(LIBXSMM_MALLOC_NOCRC)
-# if defined(NDEBUG)
-#   define LIBXSMM_MALLOC_NOCRC
-# elif !defined(LIBXSMM_BUILD)
-#   define LIBXSMM_MALLOC_NOCRC
-# endif
-#endif
-
 #if !defined(LIBXSMM_MALLOC_ALIGNMAX)
 # define LIBXSMM_MALLOC_ALIGNMAX (2 * 1024 * 1024)
 #endif
@@ -168,6 +160,14 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #endif
 #if !defined(LIBXSMM_MALLOC_HOOK_REREDIR) && 1
 # define LIBXSMM_MALLOC_HOOK_REREDIR
+#endif
+
+#if !defined(LIBXSMM_MALLOC_NOCRC)
+# if defined(NDEBUG) && !defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+#   define LIBXSMM_MALLOC_NOCRC
+# elif !defined(LIBXSMM_BUILD)
+#   define LIBXSMM_MALLOC_NOCRC
+# endif
 #endif
 
 /* allows to reclaim a pool for a different thread */
@@ -290,8 +290,10 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
       sizeof(internal_malloc_info_type), PROT_READ | PROT_WRITE) || ENOMEM != errno)
 #endif
     {
-      const char* const pointer = (const char*)result->pointer;
       const size_t maxsize = LIBXSMM_MAX(LIBXSMM_MAX(internal_malloc_scratch_size, internal_malloc_maxlocal_size), internal_malloc_public_size);
+      const char* const pointer = (const char*)result->pointer;
+      union { libxsmm_free_fun fun; const void* ptr; } convert;
+      convert.fun = result->free.function;
       if (((0 == (LIBXSMM_MALLOC_FLAG_X & result->flags)) ? 1 : (0 == (LIBXSMM_MALLOC_FLAG_SCRATCH & result->flags)))
         && (0 != (LIBXSMM_MALLOC_FLAG_X & LIBXSMM_MALLOC_FLAG_MMAP & result->flags) || NULL == result->reloc)
         && (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) || NULL == result->context)
@@ -300,8 +302,8 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
 #endif
         && (0 == (~LIBXSMM_MALLOC_FLAG_VALID & result->flags))
         && (0 != (LIBXSMM_MALLOC_FLAG_R & result->flags))
-        && (result->pointer != (const void*)result->free.function)
-        && (result->pointer != result->context && NULL != pointer)
+        && (pointer != convert.ptr && NULL != pointer)
+        && (pointer != result->context)
         && maxsize >= result->size
         && 0 != result->size)
       {
@@ -1606,6 +1608,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         buffer_info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, buffer_info,
           /* info size minus actual hash value */
           (unsigned int)(((char*)&buffer_info->hash) - ((char*)buffer_info)));
+#endif
+#if defined(LIBXSMM_VTUNE)
+        buffer_info->code_id = 0;
 #endif
         if (NULL != info) { /* copy previous content */
           memcpy(aligned, *memory, LIBXSMM_MIN(info->size, size));
