@@ -873,8 +873,8 @@ LIBXSMM_API void* __wrap_memalign(size_t alignment, size_t size)
     libxsmm_init();
   }
   if (0 == (libxsmm_malloc_kind & 1) || 0 > libxsmm_malloc_kind
-    || (libxsmm_malloc_threshold[0] > size)
-    || (libxsmm_malloc_threshold[1] < size && 0 != libxsmm_malloc_threshold[1])
+    || (libxsmm_malloc_limit[0] > size)
+    || (libxsmm_malloc_limit[1] < size && 0 != libxsmm_malloc_limit[1])
 # if defined(LIBXSMM_MALLOC_HOOK_REREDIR)
     || 1 < recursive
 # endif
