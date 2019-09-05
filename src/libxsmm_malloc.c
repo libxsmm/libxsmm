@@ -459,7 +459,8 @@ LIBXSMM_API_INLINE internal_malloc_pool_type* internal_scratch_malloc_pool(const
 }
 
 
-LIBXSMM_API_INLINE void internal_scratch_malloc(void** memory, size_t size, size_t alignment, int flags, const void* caller)
+LIBXSMM_API_INTERN void internal_scratch_malloc(void** /*memory*/, size_t /*size*/, size_t /*alignment*/, int /*flags*/, const void* /*caller*/);
+LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size_t alignment, int flags, const void* caller)
 {
   LIBXSMM_ASSERT(NULL != memory);
   if (0 == (LIBXSMM_MALLOC_FLAG_REALLOC & flags) || NULL == *memory) {
@@ -927,13 +928,8 @@ LIBXSMM_API void* __wrap_realloc(void* ptr, size_t size)
 LIBXSMM_API void __wrap_free(void* /*ptr*/);
 LIBXSMM_API void __wrap_free(void* ptr)
 {
-  if (0 != libxsmm_ninit) {
-    /* rely on recognizing pointers not issued by LIBXSMM */
-    libxsmm_free(ptr);
-  }
-  else { /* post shutdown */
-    __real_free(ptr);
-  }
+  /* rely on recognizing pointers not issued by LIBXSMM */
+  libxsmm_free(ptr);
 }
 
 #endif /*defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)*/
