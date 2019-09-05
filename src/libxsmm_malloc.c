@@ -499,7 +499,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
 #endif
       if (end == pool) pool = pool0; /* fall-back to new pool */
       LIBXSMM_ASSERT(NULL != pool);
-      if (end != pool) {
+      if (end != pool && 0 <= libxsmm_malloc_kind) {
         const size_t counter = LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.counter, (size_t)1, LIBXSMM_ATOMIC_SEQ_CST);
         LIBXSMM_ASSERT(0 != counter); /* at least one owner */
         if (NULL != pool->instance.buffer || 1 != counter) { /* attempt to (re-)use existing pool */
@@ -867,7 +867,7 @@ LIBXSMM_API void* __wrap_memalign(size_t alignment, size_t size)
 # endif
     libxsmm_init();
   }
-  if (0 == (libxsmm_malloc_kind & 1) /* even */
+  if (0 == (libxsmm_malloc_kind & 1) || 0 > libxsmm_malloc_kind
     || libxsmm_malloc_threshold > size
 # if defined(LIBXSMM_MALLOC_HOOK_REREDIR)
     || 1 < recursive
@@ -907,7 +907,7 @@ LIBXSMM_API void* __wrap_realloc(void* /*ptr*/, size_t /*size*/);
 LIBXSMM_API void* __wrap_realloc(void* ptr, size_t size)
 {
   void* result;
-  if (0 == (libxsmm_malloc_kind & 1)) { /* even */
+  if (0 == (libxsmm_malloc_kind & 1) || 0 > libxsmm_malloc_kind) {
     result = __real_realloc(ptr, size);
   }
   else {
