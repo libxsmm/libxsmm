@@ -212,7 +212,7 @@ int main(int argc, char* argv[])
           ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
         }
       }
-      size += sizeof(ELEM_TYPE) * km * kn;
+      size += (size_t)(sizeof(ELEM_TYPE) * km * kn);
 
       if (('o' == t || 'O' == t)) {
 #if !defined(USE_REFERENCE)
@@ -240,7 +240,7 @@ int main(int argc, char* argv[])
       }
       else {
         assert(('i' == t || 'I' == t) && kldo == kldi);
-        memcpy(b, a, sizeof(ELEM_TYPE) * kldi * kn);
+        memcpy(b, a, (size_t)(sizeof(ELEM_TYPE) * kldi * kn));
 
         if (2 > tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
@@ -339,7 +339,7 @@ int main(int argc, char* argv[])
       if (0 < duration) {
         /* out-of-place transpose bandwidth assumes RFO */
         fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size
-          * ((('o' == t || 'O' == t)) ? 3 : 2) / (d * (1ULL << 30)));
+          * ((('o' == t || 'O' == t)) ? 3 : 2) / (d * (1U << 30)));
       }
       if (0 == lower) {
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * (d / (0 == r ? (s + 1) : s)));

@@ -467,7 +467,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         size_private = scratch_info.internal;
         size_scratch = scratch_info.size;
       }
-      fprintf(stderr, "Memory: %.f MB", 1.0 * (internal_registry_nbytes + size_private) / (1ULL << 20));
+      fprintf(stderr, "Memory: %.f MB", 1.0 * ((unsigned long long)internal_registry_nbytes + size_private) / (1ULL << 20));
       if (0 != high_verbosity) {
         size_t ngemms = 0;
         int i; for (i = 0; i < 4; ++i) {
@@ -658,8 +658,8 @@ LIBXSMM_API_INTERN void internal_init(void)
       }
       LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
     }
-    libxsmm_scratch_limit = internal_parse_nbytes(getenv("LIBXSMM_SCRATCH_LIMIT"),
-      (size_t)LIBXSMM_MALLOC_SCRATCH_LIMIT);
+    libxsmm_scratch_limit = internal_parse_nbytes(
+      getenv("LIBXSMM_SCRATCH_LIMIT"), LIBXSMM_MALLOC_SCRATCH_LIMIT);
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
 #if defined(LIBXSMM_MAXTARGET)
     libxsmm_set_target_arch(LIBXSMM_STRINGIFY(LIBXSMM_MAXTARGET));
@@ -748,8 +748,8 @@ LIBXSMM_API_INTERN void internal_init(void)
         const libxsmm_free_function null_free_fn = { 0 };
         const char *const env = getenv("LIBXSMM_MALLOC");
         if (NULL != env && 0 != *env) libxsmm_malloc_kind = atoi(env);
-        libxsmm_malloc_threshold = internal_parse_nbytes(getenv("LIBXSMM_MALLOC_THRESHOLD"),
-          (size_t)LIBXSMM_MALLOC_THRESHOLD);
+        libxsmm_malloc_threshold = internal_parse_nbytes(
+          getenv("LIBXSMM_MALLOC_THRESHOLD"), LIBXSMM_MALLOC_THRESHOLD);
         libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
         libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
       }
@@ -783,7 +783,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
-    /* libxsmm_ninit (1: started, 2: library initialized), invalidate code-TLS, never decremented */
+    /* libxsmm_ninit (1: started, 2: library initialized), invalidate code-TLS */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
 #if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_REGLOCK_TRY)

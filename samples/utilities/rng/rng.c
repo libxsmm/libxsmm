@@ -54,7 +54,7 @@ int main(int argc, char* argv[])
   num_rngs = LIBXSMM_UP2(num_rngs, 16);
   assert(num_rngs >= 1);
 
-  rngs = (float*)malloc(sizeof(float) * num_rngs);
+  rngs = (float*)malloc((size_t)(sizeof(float) * num_rngs));
   if (NULL == rngs) num_rngs = 0;
 
   libxsmm_rng_set_seed( (unsigned int)(time(0)) );
