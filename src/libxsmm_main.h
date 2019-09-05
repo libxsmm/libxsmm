@@ -893,7 +893,7 @@ LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
 /** Minimum number of bytes needed for interception (libxsmm_malloc_kind) */
-LIBXSMM_APIVAR(size_t libxsmm_malloc_threshold);
+LIBXSMM_APIVAR_ARRAY(size_t libxsmm_malloc_threshold, 2);
 /** 0: regular, 1/odd: intercept/scratch, otherwise: all/scratch */
 LIBXSMM_APIVAR(int libxsmm_malloc_kind);
 /** Counts the number of attempts to create an SPMDM-handle */
