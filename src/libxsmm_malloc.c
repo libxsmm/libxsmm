@@ -171,6 +171,10 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_SCRATCH_AFFINITY) && 1
 # define LIBXSMM_MALLOC_SCRATCH_AFFINITY
 #endif
+/* can clobber memory if not following scoped allocator policy */
+#if !defined(LIBXSMM_MALLOC_SCRATCH_TRIM_HEAD) && 0
+# define LIBXSMM_MALLOC_SCRATCH_TRIM_HEAD
+#endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_JOIN) && 0
 # define LIBXSMM_MALLOC_SCRATCH_JOIN
 #endif
@@ -321,7 +325,8 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
 }
 
 
-LIBXSMM_API_INLINE int internal_xfree(const void* memory, internal_malloc_info_type* info)
+LIBXSMM_API_INTERN int internal_xfree(const void* /*memory*/, internal_malloc_info_type* /*info*/);
+LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_type* info)
 {
 #if !defined(LIBXSMM_BUILD) || !defined(_WIN32)
   static int error_once = 0;
@@ -1909,7 +1914,7 @@ LIBXSMM_API void libxsmm_free(const void* memory)
     internal_malloc_pool_type *const pool = internal_scratch_malloc_pool(memory);
     if (NULL != pool) { /* memory belongs to scratch domain */
       const size_t counter = LIBXSMM_ATOMIC_SUB_FETCH(&pool->instance.counter, 1, LIBXSMM_ATOMIC_SEQ_CST);
-      LIBXSMM_ASSERT(pool->instance.buffer <= pool->instance.head);
+      LIBXSMM_ASSERT(0 <= counter && (((size_t)-1) != counter) && pool->instance.buffer <= pool->instance.head);
       if (0 == counter) { /* reuse or reallocate scratch domain */
         const internal_malloc_info_type *const info = internal_malloc_info(pool->instance.buffer, 0/*no check*/);
         const size_t scale_size = (size_t)(1 != libxsmm_scratch_scale ? (libxsmm_scratch_scale * info->size) : info->size); /* hysteresis */
@@ -1931,10 +1936,11 @@ LIBXSMM_API void libxsmm_free(const void* memory)
           libxsmm_xfree(pool_buffer, 0/*no check*/);
         }
       }
-      /* TODO: document/check that allocation/deallocation must follow the linear/scoped allocator policy */
+# if defined(LIBXSMM_MALLOC_SCRATCH_TRIM_HEAD) /* TODO: document linear/scoped allocator policy */
       else if ((char*)memory < pool->instance.head) { /* reuse scratch domain */
         pool->instance.head = (char*)memory;
       }
+# endif
     }
     else
 #endif
