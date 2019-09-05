@@ -31,31 +31,38 @@
 #include <libxsmm.h>
 #include <stdlib.h>
 
-#if !defined(REALLOC) && 1
-# define REALLOC
+#if !defined(CHECK_SETUP) && 1
+# define CHECK_SETUP
+#endif
+#if !defined(CHECK_REALLOC) && 1
+# define CHECK_REALLOC
 #endif
 
 
 int main(void)
 {
   const size_t size = 2507, alignment = (2U << 20);
-  const void* context;
+  libxsmm_malloc_info malloc_info;
   int nerrors = 0;
   void* p;
 
-  libxsmm_malloc_info malloc_info;
-  libxsmm_malloc_function malloc_fn;
-  libxsmm_free_function free_fn;
-  malloc_fn.function = malloc; free_fn.function = free;
-  libxsmm_set_default_allocator(NULL/*context*/, malloc_fn/*malloc*/, free_fn/*free*/);
-  malloc_fn.function = NULL; free_fn.function = NULL;
-  libxsmm_set_scratch_allocator(NULL/*context*/, malloc_fn/*NULL*/, free_fn/*NULL*/);
+#if defined(CHECK_SETUP)
+  { /* check allocator setup */
+    libxsmm_malloc_function malloc_fn;
+    libxsmm_free_function free_fn;
+    const void* context;
+    malloc_fn.function = malloc; free_fn.function = free;
+    libxsmm_set_default_allocator(NULL/*context*/, malloc_fn/*malloc*/, free_fn/*free*/);
+    malloc_fn.function = NULL; free_fn.function = NULL;
+    libxsmm_set_scratch_allocator(NULL/*context*/, malloc_fn/*NULL*/, free_fn/*NULL*/);
 
-  /* check adoption of the default allocator */
-  libxsmm_get_scratch_allocator(&context, &malloc_fn, &free_fn);
-  if (NULL != context || malloc != malloc_fn.function || free != free_fn.function) {
-    ++nerrors;
+    /* check adoption of the default allocator */
+    libxsmm_get_scratch_allocator(&context, &malloc_fn, &free_fn);
+    if (NULL != context || malloc != malloc_fn.function || free != free_fn.function) {
+      ++nerrors;
+    }
   }
+#endif
 
   /* allocate some amount of memory */
   p = libxsmm_malloc(size);
@@ -64,7 +71,8 @@ int main(void)
   if (NULL != p && (EXIT_SUCCESS != libxsmm_get_malloc_info(p, &malloc_info) || malloc_info.size < size)) {
     ++nerrors;
   }
-#if defined(REALLOC)
+
+#if defined(CHECK_REALLOC)
   if (NULL != p) { /* reallocate larger amount of memory */
     const int palign = 1 << LIBXSMM_INTRINSICS_BITSCANFWD64((uintptr_t)p);
     unsigned char* c = (unsigned char*)p;
@@ -97,6 +105,7 @@ int main(void)
     }
   }
 #endif
+
   /* query and check the size of the buffer */
   if (NULL != p && (EXIT_SUCCESS != libxsmm_get_malloc_info(p, &malloc_info) || malloc_info.size < (size / 2))) {
     ++nerrors;
@@ -123,6 +132,13 @@ int main(void)
 
   /* release aligned memory */
   libxsmm_free(p);
+
+  /* check foreign memory */
+  p = malloc(size);
+  if (NULL != p && EXIT_SUCCESS == libxsmm_get_malloc_info(p, &malloc_info)) {
+    ++nerrors;
+  }
+  free(p);
 
   return 0 == nerrors ? EXIT_SUCCESS : EXIT_FAILURE;
 }

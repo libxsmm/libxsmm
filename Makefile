@@ -337,6 +337,7 @@ endif
 
 MSGJITPROFILING = 0
 ifneq (0,$(JIT))
+ifneq (0,$(VTUNE))
 ifeq (,$(filter Darwin,$(UNAME)))
   ifneq (0,$(PERF))
     DFLAGS += -DLIBXSMM_PERF
@@ -361,6 +362,7 @@ ifeq (,$(filter Darwin,$(UNAME)))
     endif
     MSGJITPROFILING = 1
   endif
+endif
 endif
 endif
 

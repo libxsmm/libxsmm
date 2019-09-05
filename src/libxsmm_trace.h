@@ -69,7 +69,7 @@ LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* 
   if (0 == level) return _AddressOfReturnAddress();
   else
 #endif
-  { const void* stacktrace[4/*sufficient/maximum level*/];
+  { const void* stacktrace[8/*sufficient/maximum level*/];
     const unsigned int n = libxsmm_backtrace(stacktrace, sizeof(stacktrace) / sizeof(*stacktrace), 0/*skip*/);
     return (level < n ? stacktrace[level] : NULL);
   }

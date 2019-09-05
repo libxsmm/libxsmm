@@ -52,17 +52,13 @@
 # define LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS LIBXSMM_MAX_NTHREADS
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_LIMIT)
-# define LIBXSMM_MALLOC_SCRATCH_LIMIT (4ULL << 30) /* 4 GB */
-#endif
-#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 0
-# define LIBXSMM_MALLOC_MMAP_SCRATCH
+# define LIBXSMM_MALLOC_SCRATCH_LIMIT 0xFFFFFFFF /* ~4 GB */
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_SCALE)
-# if defined(LIBXSMM_MALLOC_MMAP_SCRATCH)
-#   define LIBXSMM_MALLOC_SCRATCH_SCALE 1.3
-# else
-#   define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
-# endif
+# define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
+#endif
+#if !defined(LIBXSMM_MALLOC_THRESHOLD) && 1
+# define LIBXSMM_MALLOC_THRESHOLD (2U << 20)
 #endif
 #if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER_ID)
 # define LIBXSMM_MALLOC_INTERNAL_CALLER_ID ((uintptr_t)-1)
@@ -668,7 +664,10 @@ typedef enum libxsmm_malloc_flags {
   LIBXSMM_MALLOC_FLAG_X       = 64,
   LIBXSMM_MALLOC_FLAG_RW  = LIBXSMM_MALLOC_FLAG_R | LIBXSMM_MALLOC_FLAG_W,
   LIBXSMM_MALLOC_FLAG_WX  = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_W,
-  LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_RW
+  LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_RW,
+  LIBXSMM_MALLOC_FLAG_VALID       = LIBXSMM_MALLOC_FLAG_SCRATCH |
+      LIBXSMM_MALLOC_FLAG_PRIVATE | LIBXSMM_MALLOC_FLAG_REALLOC |
+      LIBXSMM_MALLOC_FLAG_MMAP    | LIBXSMM_MALLOC_FLAG_RWX
 } libxsmm_malloc_flags;
 
 /** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
@@ -717,7 +716,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
   /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
   const void* extra, size_t extra_size);
 /** Release memory, which was allocated using libxsmm_[*]malloc. */
-LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory);
+LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check);
 
 /** Like libxsmm_release_scratch, but takes a lock (can be NULL). */
 LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock);
@@ -764,6 +763,8 @@ LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
 LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
+/** Minimum number of bytes needed for interception (libxsmm_malloc_kind) */
+LIBXSMM_APIVAR(size_t libxsmm_malloc_threshold);
 /** 0: regular, 1/odd: intercept/scratch, otherwise: all/scratch */
 LIBXSMM_APIVAR(int libxsmm_malloc_kind);
 /** Counts the number of attempts to create an SPMDM-handle */

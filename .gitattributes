@@ -14,7 +14,7 @@ documentation/*.pptx export-ignore
 documentation/*.pptm export-ignore
 scripts/tool_scan.sh export-ignore
 scripts/tool_normalize.sh export-ignore
-scripts/tool_aheadforks.sh export-ignore
+scripts/tool_changelog.sh export-ignore
 samples/xgemm/kernel_test* export-ignore
 PULL_REQUEST_TEMPLATE.md export-ignore
 samples/seissol/*.orient export-ignore

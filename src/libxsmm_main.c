@@ -467,7 +467,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         size_private = scratch_info.internal;
         size_scratch = scratch_info.size;
       }
-      fprintf(stderr, "Memory: %.f MB", 1.0 * (internal_registry_nbytes + size_private) / (1ULL << 20));
+      fprintf(stderr, "Memory: %.f MB", 1.0 * ((unsigned long long)internal_registry_nbytes + size_private) / (1ULL << 20));
       if (0 != high_verbosity) {
         size_t ngemms = 0;
         int i; for (i = 0; i < 4; ++i) {
@@ -561,9 +561,8 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   }
   /* turn-off redirected memory allocations */
   libxsmm_malloc_kind = 0;
-#if !defined(NDEBUG)
+  /* signal shutdown */
   libxsmm_ninit = 0;
-#endif
 #if (0 != LIBXSMM_SYNC)
   { /* release locks */
 # if (1 < INTERNAL_REGLOCK_MAXN)
@@ -577,11 +576,29 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 }
 
 
-LIBXSMM_API_INLINE size_t internal_strlen(const char* cstr, size_t maxlen)
+LIBXSMM_API_INTERN size_t internal_strlen(const char* /*cstr*/, size_t /*maxlen*/);
+LIBXSMM_API_INTERN size_t internal_strlen(const char* cstr, size_t maxlen)
 {
   size_t result = 0;
   if (NULL != cstr) {
     while (0 != cstr[result] && result < maxlen) ++result;
+  }
+  return result;
+}
+
+
+LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* /*nbytes*/, size_t /*ndefault*/);
+LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* nbytes, size_t ndefault)
+{
+  size_t result = ndefault;
+  if (NULL != nbytes && 0 != *nbytes) {
+    size_t u = internal_strlen(nbytes, 32) - 1;
+    const char unit[] = "kmgKMG", * const hit = strchr(unit, nbytes[u]);
+    result = (size_t)strtoul(nbytes, 0, 10);
+    u = (0 != hit ? ((hit - unit) % 3) : 3);
+    if (u < 3) {
+      result <<= (u + 1) * 10;
+    }
   }
   return result;
 }
@@ -631,22 +648,6 @@ LIBXSMM_API_INTERN void internal_init(void)
       }
       LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
     }
-    { const char *const env = getenv("LIBXSMM_SCRATCH_LIMIT");
-      if (NULL == env || 0 == *env) {
-        /*const*/ unsigned long long limit = LIBXSMM_MALLOC_SCRATCH_LIMIT;
-        libxsmm_scratch_limit = (size_t)limit;
-      }
-      else {
-        size_t u = internal_strlen(env, 32) - 1;
-        const char unit[] = "kmgKMG", *const hit = strchr(unit, env[u]);
-        libxsmm_scratch_limit = (size_t)strtoul(env, 0, 10);
-        u = (0 != hit ? ((hit - unit) % 3) : 3);
-        if (u < 3) {
-          libxsmm_scratch_limit <<= (u + 1) * 10;
-        }
-        /*libxsmm_scratch_limit_locked = 1;*/
-      }
-    }
     { const char *const env = getenv("LIBXSMM_SCRATCH_SCALE");
       if (NULL == env || 0 == *env) {
         libxsmm_scratch_scale = LIBXSMM_MALLOC_SCRATCH_SCALE;
@@ -657,6 +658,8 @@ LIBXSMM_API_INTERN void internal_init(void)
       }
       LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
     }
+    libxsmm_scratch_limit = internal_parse_nbytes(
+      getenv("LIBXSMM_SCRATCH_LIMIT"), LIBXSMM_MALLOC_SCRATCH_LIMIT);
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
 #if defined(LIBXSMM_MAXTARGET)
     libxsmm_set_target_arch(LIBXSMM_STRINGIFY(LIBXSMM_MAXTARGET));
@@ -745,6 +748,8 @@ LIBXSMM_API_INTERN void internal_init(void)
         const libxsmm_free_function null_free_fn = { 0 };
         const char *const env = getenv("LIBXSMM_MALLOC");
         if (NULL != env && 0 != *env) libxsmm_malloc_kind = atoi(env);
+        libxsmm_malloc_threshold = internal_parse_nbytes(
+          getenv("LIBXSMM_MALLOC_THRESHOLD"), LIBXSMM_MALLOC_THRESHOLD);
         libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
         libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
       }
@@ -758,10 +763,10 @@ LIBXSMM_API_INTERN void internal_init(void)
         fprintf(stderr, "LIBXSMM ERROR: failed to allocate internal buffers!\n");
       }
 #if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-      libxsmm_xfree(internal_cache_buffer);
+      libxsmm_xfree(internal_cache_buffer, 0/*no check*/);
 #endif
-      libxsmm_xfree(internal_registry_keys);
-      libxsmm_xfree(new_registry);
+      libxsmm_xfree(internal_registry_keys, 0/*no check*/);
+      libxsmm_xfree(new_registry, 0/*no check*/);
     }
   }
 #if (0 != LIBXSMM_SYNC) /* release locks */
@@ -778,10 +783,9 @@ LIBXSMM_API_INTERN void internal_init(void)
 LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
 {
   if (0 == LIBXSMM_ATOMIC_LOAD(&internal_registry, LIBXSMM_ATOMIC_RELAXED)) {
-#if (0 != LIBXSMM_SYNC)
-    static int once = 0;
-    /* libxsmm_ninit: serves as an ID to invalidate the thread-local cache; never decremented */
+    /* libxsmm_ninit (1: started, 2: library initialized), invalidate code-TLS */
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST)) {
+#if (0 != LIBXSMM_SYNC)
 # if defined(LIBXSMM_REGLOCK_TRY)
       const char *const env_trylock = getenv("LIBXSMM_TRYLOCK");
 # endif
@@ -871,11 +875,11 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
           }
         }
       }
-#if (0 != LIBXSMM_SYNC)
-      LIBXSMM_ATOMIC_STORE(&once, 1, LIBXSMM_ATOMIC_RELAXED); /* inc? */
+      LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_ninit, 1, LIBXSMM_ATOMIC_SEQ_CST);
     }
+#if (0 != LIBXSMM_SYNC)
     else while (1) {
-      if (0 != LIBXSMM_ATOMIC_LOAD(&once, LIBXSMM_ATOMIC_RELAXED)) {
+      if (1 < LIBXSMM_ATOMIC_LOAD(&libxsmm_ninit, LIBXSMM_ATOMIC_RELAXED)) {
         break;
       }
 # if 1
@@ -884,7 +888,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
       else LIBXSMM_SYNC_PAUSE;
 # endif
     }
-#endif
+#endif /*0 != LIBXSMM_SYNC*/
     internal_init();
   }
 }
@@ -981,7 +985,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
             code.uval &= ~LIBXSMM_HASH_COLLISION; /* clear collision flag */
 #endif
             if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, &size, NULL/*flags*/, &buffer)) {
-              libxsmm_xfree(code.ptr_const);
+              libxsmm_xfree(code.ptr_const, 0/*no check*/);
               /* round-up size (it is fine to assume 4 KB pages since it is likely more accurate than not rounding up) */
               internal_registry_nbytes += (unsigned int)LIBXSMM_UP2(size + (((char*)code.ptr_const) - (char*)buffer), 4096/*4KB*/);
             }
@@ -1003,10 +1007,10 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       /* make internal registry globally unavailable */
       LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
       internal_registry_keys = NULL;
-      libxsmm_xfree(registry_keys);
-      libxsmm_xfree(registry);
+      libxsmm_xfree(registry_keys, 0/*no check*/);
+      libxsmm_xfree(registry, 0/*no check*/);
 #if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-      libxsmm_xfree(internal_cache_buffer);
+      libxsmm_xfree(internal_cache_buffer, 0/*no check*/);
 #endif
       }
 #if (0 != LIBXSMM_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
@@ -1719,7 +1723,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
           LIBXSMM_ASSERT(NULL != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->uval));
         }
         else { /* release buffer */
-          libxsmm_xfree(code_buffer);
+          libxsmm_xfree(code_buffer, 0/*no check*/);
         }
       }
     }
@@ -2915,7 +2919,7 @@ LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel)
     if (EXIT_SUCCESS == libxsmm_get_malloc_xinfo(jit_kernel, NULL/*size*/, NULL/*flags*/, &extra) && NULL != extra) {
       const unsigned int regindex = *((const unsigned int*)extra);
       if ((LIBXSMM_CAPACITY_REGISTRY) <= regindex) {
-        libxsmm_xfree(jit_kernel);
+        libxsmm_xfree(jit_kernel, 0/*no check*/);
       }
       else
 #if !defined(LIBXSMM_ENABLE_DEREG)
@@ -2930,7 +2934,7 @@ LIBXSMM_API void libxsmm_release_kernel(const void* jit_kernel)
 # if !defined(NDEBUG)
         memset(internal_registry_keys + regindex, 0, sizeof(libxsmm_descriptor));
 # endif
-        libxsmm_xfree(jit_kernel);
+        libxsmm_xfree(jit_kernel, 0/*no check*/);
       }
 #endif
     }

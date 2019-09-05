@@ -488,7 +488,7 @@ LIBXSMM_API_INTERN void libxsmm_gemm_finalize(void)
       const libxsmm_mmbatch_flush_function flush = *(libxsmm_mmbatch_flush_function*)extra;
       if (NULL != flush) flush();
     }
-    libxsmm_xfree(libxsmm_mmbatch_array);
+    libxsmm_xfree(libxsmm_mmbatch_array, 0/*no check*/);
     LIBXSMM_LOCK_DESTROY(LIBXSMM_GEMM_LOCK, &libxsmm_mmbatch_lock);
   }
 #endif
