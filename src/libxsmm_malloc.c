@@ -155,9 +155,6 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(_WIN32) && 1
 # define LIBXSMM_MALLOC_HOOK_STATIC
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_REREDIR) && 1
-# define LIBXSMM_MALLOC_HOOK_REREDIR
-#endif
 #if !defined(LIBXSMM_MALLOC_HOOK_DELAY) && 0
 # define LIBXSMM_MALLOC_HOOK_DELAY 4
 #endif
@@ -521,17 +518,12 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
         const size_t counter = LIBXSMM_ATOMIC_ADD_FETCH(&pool->instance.counter, (size_t)1, LIBXSMM_ATOMIC_SEQ_CST);
         LIBXSMM_ASSERT(0 < counter); /* at least one owner */
         if (NULL != pool->instance.buffer || 1 != counter) { /* attempt to (re-)use existing pool */
-          LIBXSMM_ASSERT(NULL != pool->instance.buffer);
-# if defined(LIBXSMM_MALLOC_SCRATCH_AFFINITY) && (0 != LIBXSMM_SYNC)
-          LIBXSMM_ASSERT(NULL != info);
-# else
           if (NULL == info) {
             info = internal_malloc_info(pool->instance.buffer, 0/*no check*/);
             used_size = pool->instance.head - pool->instance.buffer;
             pool_size = (NULL != info ? info->size : 0);
             req_size = alloc_size + used_size;
           }
-# endif
           LIBXSMM_ASSERT(used_size <= pool_size);
           if (req_size <= pool_size) { /* fast path: draw from pool-buffer */
             void *const headaddr = &pool->instance.head;
@@ -738,47 +730,50 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_malloc_hook_type {
 LIBXSMM_APIVAR(internal_malloc_hook_type internal_malloc_hook);
 LIBXSMM_API_INLINE void internal_malloc_init(internal_malloc_hook_type* hook)
 {
-  void *const dlhandle = dlopen("libc.so.6", RTLD_LAZY);
-  const char* errmsg = dlerror(); /* clear an eventual error status */
-  void* const handle = ((NULL != dlhandle && NULL == errmsg) ? dlhandle : RTLD_NEXT);
   LIBXSMM_ASSERT(NULL != hook);
-  hook->memalign.dlsym = dlsym(handle, "memalign");
-  errmsg = dlerror(); /* clear an eventual error status */
-  if (NULL != errmsg || NULL == hook->memalign.dlsym) {
-# if defined(LIBXSMM_GLIBC)
-    hook->memalign.ptr = __libc_memalign;
-# else
-    hook->memalign.ptr = internal_malloc_memalign;
-# endif
+  dlerror(); /* clear an eventual error status */
+  hook->memalign.dlsym = dlsym(RTLD_NEXT, "memalign");
+  if (NULL == dlerror() && NULL != hook->memalign.dlsym) {
+    hook->malloc.dlsym = dlsym(RTLD_NEXT, "malloc");
+    if (NULL == dlerror() && NULL != hook->malloc.dlsym) {
+      hook->realloc.dlsym = dlsym(RTLD_NEXT, "realloc");
+      if (NULL == dlerror() && NULL != hook->realloc.dlsym) {
+        hook->free.dlsym = dlsym(RTLD_NEXT, "free");
+      }
+    }
   }
-  hook->malloc.dlsym = dlsym(handle, "malloc");
-  errmsg = dlerror(); /* clear an eventual error status */
-  if (NULL != errmsg || NULL == hook->malloc.dlsym) {
+  if (NULL == hook->free.ptr) {
+    void* handle = NULL;
+    dlerror(); /* clear an eventual error status */
+    handle = dlopen("libc.so.6", RTLD_LAZY);
+    if (NULL != handle) {
+      hook->memalign.dlsym = dlsym(handle, "memalign");
+      if (NULL == dlerror() && NULL != hook->memalign.dlsym) {
+        hook->malloc.dlsym = dlsym(handle, "malloc");
+        if (NULL == dlerror() && NULL != hook->malloc.dlsym) {
+          hook->realloc.dlsym = dlsym(handle, "realloc");
+          if (NULL == dlerror() && NULL != hook->realloc.dlsym) {
+            hook->free.dlsym = dlsym(handle, "free");
+          }
+        }
+      }
+      dlclose(handle);
+    }
+    if (NULL == hook->free.ptr) { /* fall-back */
+      dlerror(); /* clear an eventual error status */
 # if defined(LIBXSMM_GLIBC)
-    hook->malloc.ptr = __libc_malloc;
-# else
-    hook->malloc.ptr = malloc;
+      hook->memalign.ptr = __libc_memalign;
+      hook->malloc.ptr = __libc_malloc;
+      hook->realloc.ptr = __libc_realloc;
+      hook->free.ptr = __libc_free;
+# else /* potentially recursive */
+      hook->memalign.ptr = internal_malloc_memalign;
+      hook->malloc.ptr = malloc;
+      hook->realloc.ptr = realloc;
+      hook->free.ptr = free;
 # endif
+    }
   }
-  hook->realloc.dlsym = dlsym(handle, "realloc");
-  errmsg = dlerror(); /* clear an eventual error status */
-  if (NULL != errmsg || NULL == hook->realloc.dlsym) {
-# if defined(LIBXSMM_GLIBC)
-    hook->realloc.ptr = __libc_realloc;
-# else
-    hook->realloc.ptr = realloc;
-# endif
-  }
-  hook->free.dlsym = dlsym(handle, "free");
-  errmsg = dlerror(); /* clear an eventual error status */
-  if (NULL != errmsg || NULL == hook->free.dlsym) {
-# if defined(LIBXSMM_GLIBC)
-    hook->free.ptr = __libc_free;
-# else
-    hook->free.ptr = free;
-# endif
-  }
-  if (NULL != dlhandle) dlclose(dlhandle);
 }
 #endif /*defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)*/
 
@@ -904,13 +899,11 @@ LIBXSMM_API void* __wrap_memalign(size_t alignment, size_t size)
 # endif
     if (0 == libxsmm_ninit) libxsmm_init();
   }
-  if (0 == (libxsmm_malloc_kind & 1) || 0 > libxsmm_malloc_kind
+  if ( 1 < recursive /* protect against recursion */
+    || 0 == (libxsmm_malloc_kind & 1) || 0 > libxsmm_malloc_kind
     || (libxsmm_malloc_limit[0] > size)
-    || (libxsmm_malloc_limit[1] < size && 0 != libxsmm_malloc_limit[1])
-# if defined(LIBXSMM_MALLOC_HOOK_REREDIR)
-    || 1 < recursive
-# endif
-  ){
+    || (libxsmm_malloc_limit[1] < size && 0 != libxsmm_malloc_limit[1]))
+  {
     result = (0 != alignment
       ? __real_memalign(alignment, size)
       : __real_malloc(size));
@@ -922,13 +915,7 @@ LIBXSMM_API void* __wrap_memalign(size_t alignment, size_t size)
     const int flags = LIBXSMM_MALLOC_FLAG_DEFAULT;
 # endif
     /* libxsmm_trace_caller_id may allocate memory */
-# if defined(LIBXSMM_MALLOC_HOOK_REREDIR)
     const void *const caller = libxsmm_trace_caller_id((LIBXSMM_MALLOC_CALLER_LEVEL) + 1);
-# else
-    const void *const caller = (1 == recursive
-      ? libxsmm_trace_caller_id((LIBXSMM_MALLOC_CALLER_LEVEL) + 1)
-      : LIBXSMM_MALLOC_INTERNAL_CALLER);
-# endif
     internal_scratch_malloc(&result, size, alignment, flags, caller);
   }
   LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
