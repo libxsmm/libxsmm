@@ -158,6 +158,9 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_HOOK_REREDIR) && 1
 # define LIBXSMM_MALLOC_HOOK_REREDIR
 #endif
+#if !defined(LIBXSMM_MALLOC_HOOK_DELAY) && 0
+# define LIBXSMM_MALLOC_HOOK_DELAY 4
+#endif
 
 #if !defined(LIBXSMM_MALLOC_NOCRC)
 # if defined(NDEBUG) && !defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
@@ -236,7 +239,6 @@ LIBXSMM_APIVAR(size_t internal_malloc_maxlocal_size);
 LIBXSMM_APIVAR(size_t internal_malloc_scratch_size);
 LIBXSMM_APIVAR(size_t internal_malloc_private_size);
 LIBXSMM_APIVAR(size_t internal_malloc_public_size);
-LIBXSMM_APIVAR(size_t internal_malloc_start);
 LIBXSMM_APIVAR(int internal_malloc_recursive);
 
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t /*alignment*/, size_t /*size*/);
@@ -734,8 +736,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_malloc_hook_type {
   union { const void* dlsym; void  (*ptr)(void*);           } free;
 } internal_malloc_hook_type;
 LIBXSMM_APIVAR(internal_malloc_hook_type internal_malloc_hook);
-LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* /*hook*/);
-LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* hook)
+LIBXSMM_API_INLINE void internal_malloc_init(internal_malloc_hook_type* hook)
 {
   void *const dlhandle = dlopen("libc.so.6", RTLD_LAZY);
   const char* errmsg = dlerror(); /* clear an eventual error status */
@@ -778,9 +779,6 @@ LIBXSMM_API_INTERN int internal_malloc_init(internal_malloc_hook_type* hook)
 # endif
   }
   if (NULL != dlhandle) dlclose(dlhandle);
-  return ((NULL != hook->memalign.ptr && NULL != hook->malloc.ptr
-    && NULL != hook->realloc.ptr && NULL != hook->free.ptr)
-    ? EXIT_SUCCESS : EXIT_FAILURE);
 }
 #endif /*defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)*/
 
@@ -885,11 +883,26 @@ LIBXSMM_API void* __wrap_memalign(size_t alignment, size_t size)
 {
   void* result;
   const int recursive = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
-  if (0 == libxsmm_ninit && 1 == recursive) {
-# if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-    internal_malloc_init(&internal_malloc_hook);
+  if (1 == recursive) {
+# if defined(LIBXSMM_MALLOC_HOOK_DELAY) && (0 < (LIBXSMM_MALLOC_HOOK_DELAY))
+    static int counter = 0;
 # endif
-    libxsmm_init();
+# if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+    if (NULL == internal_malloc_hook.memalign.ptr) {
+      internal_malloc_init(&internal_malloc_hook);
+    }
+    LIBXSMM_ASSERT(NULL != internal_malloc_hook.memalign.ptr
+      && NULL != internal_malloc_hook.malloc.ptr
+      && NULL != internal_malloc_hook.realloc.ptr
+      && NULL != internal_malloc_hook.free.ptr);
+# endif
+# if defined(LIBXSMM_MALLOC_HOOK_DELAY) && (0 < (LIBXSMM_MALLOC_HOOK_DELAY))
+    if ((LIBXSMM_MALLOC_HOOK_DELAY) > counter) {
+      LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_RELAXED);
+    }
+    else
+# endif
+    if (0 == libxsmm_ninit) libxsmm_init();
   }
   if (0 == (libxsmm_malloc_kind & 1) || 0 > libxsmm_malloc_kind
     || (libxsmm_malloc_limit[0] > size)
