@@ -1329,6 +1329,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         libxsmm_malloc_function malloc_fn = libxsmm_default_malloc_fn;
         libxsmm_free_function free_fn = libxsmm_default_free_fn;
       /* ATOMIC END: this region should be atomic */
+#if 0
       void *alloc_failed = NULL, *buffer = NULL, *reloc = NULL;
       size_t alloc_alignment = 0, alloc_size = 0;
       internal_malloc_info_type* info = NULL;
@@ -1342,6 +1343,13 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
           flags &= ~LIBXSMM_MALLOC_FLAG_MMAP;
         }
       }
+#else
+      internal_malloc_info_type* info = ((0 == (LIBXSMM_MALLOC_FLAG_REALLOC & flags) || NULL == *memory)
+        ? NULL : internal_malloc_info(*memory, 1/*check*/));
+      void* alloc_failed = NULL, * buffer = NULL, * reloc = NULL/*(NULL == info ? NULL : info->pointer)*/;
+      size_t alloc_alignment = 0, alloc_size = 0;
+      flags |= LIBXSMM_MALLOC_FLAG_RW; /* normalize given flags since flags=0 is accepted as well */
+#endif
       if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
 #if defined(LIBXSMM_MALLOC_MMAP_SCRATCH) /* try harder for uncommitted scratch memory */
         flags |= LIBXSMM_MALLOC_FLAG_MMAP;
