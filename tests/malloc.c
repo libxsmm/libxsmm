@@ -104,22 +104,29 @@ int main(void)
       nerrors += (c[i] == (unsigned char)LIBXSMM_MOD2(i, 256) ? 0 : 1);
     }
   }
-#endif
-
   /* query and check the size of the buffer */
   if (NULL != p && (EXIT_SUCCESS != libxsmm_get_malloc_info(p, &malloc_info) || malloc_info.size < (size / 2))) {
     ++nerrors;
   }
+  libxsmm_free(p); /* release buffer */
+
+  /* check degenerated reallocation */
+  p = libxsmm_realloc(size, NULL/*allocation*/);
+  /* query and check the size of the buffer */
+  if (NULL != p && (EXIT_SUCCESS != libxsmm_get_malloc_info(p, &malloc_info) || malloc_info.size < size)) {
+    ++nerrors;
+  }
+#endif
 
   /* check that a NULL-pointer yields no size */
   if (EXIT_SUCCESS != libxsmm_get_malloc_info(NULL, &malloc_info) || 0 != malloc_info.size) {
     ++nerrors;
   }
 
-  /* release a NULL pointer */
+  /* release NULL pointer */
   libxsmm_free(NULL);
 
-  /* release a buffer */
+  /* release buffer */
   libxsmm_free(p);
 
   /* allocate memory with specific alignment */
