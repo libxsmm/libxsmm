@@ -133,6 +133,11 @@ int main(int argc, char* argv[])
     return 0;
   }
 
+  if (format != 'L') {
+    printf("format needs to be 'L'\n");
+    return 0;
+  }
+
   stride_w = stride;
   stride_h = stride;
   pad_w = padw;
