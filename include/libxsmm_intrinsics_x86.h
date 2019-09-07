@@ -631,15 +631,15 @@ LIBXSMM_API_INLINE int LIBXSMM_INTRINSICS_BITSCANFWD64_SW(unsigned long long n) 
     unsigned long r = 0; _BitScanReverse(&r, n); return r;
   }
 # if defined(_WIN64)
-    LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANFWD64(unsigned long long n) {
-      unsigned long r = 0; _BitScanForward64(&r, n); return (0 != n) * r;
-    }
-    LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANBWD64(unsigned long long n) {
-      unsigned long r = 0; _BitScanReverse64(&r, n); return r;
-    }
+  LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANFWD64(unsigned long long n) {
+    unsigned long r = 0; _BitScanForward64(&r, n); return (0 != n) * r;
+  }
+  LIBXSMM_API_INLINE unsigned int LIBXSMM_INTRINSICS_BITSCANBWD64(unsigned long long n) {
+    unsigned long r = 0; _BitScanReverse64(&r, n); return r;
+  }
 # else
-#   define LIBXSMM_INTRINSICS_BITSCANFWD64 LIBXSMM_INTRINSICS_BITSCANFWD64_SW
-#   define LIBXSMM_INTRINSICS_BITSCANBWD64 LIBXSMM_INTRINSICS_BITSCANBWD64_SW
+# define LIBXSMM_INTRINSICS_BITSCANFWD64 LIBXSMM_INTRINSICS_BITSCANFWD64_SW
+# define LIBXSMM_INTRINSICS_BITSCANBWD64 LIBXSMM_INTRINSICS_BITSCANBWD64_SW
 # endif
 #elif defined(__GNUC__) && !defined(LIBXSMM_INTRINSICS_NONE)
 # define LIBXSMM_INTRINSICS_BITSCANFWD32(N) ((0 != (N)) * __builtin_ctz(N))
