@@ -112,10 +112,9 @@ if ( (handle->options & LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE) == 0 ) 
       }
     }
   }
+  /* wait for transpose to finish */
+  libxsmm_barrier_wait(handle->barrier, ltid);
 }
-/* wait for transpose to finish */
-
-libxsmm_barrier_wait(handle->barrier, ltid);
 
 if ( imgpt <= 1 ) {
   my_img_start = LIBXSMM_MIN( ltid / threads_per_image, handle->desc.N);
