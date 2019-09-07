@@ -1204,7 +1204,7 @@ void libxsmm_generator_gemm_store_C( libxsmm_generated_code*             io_gene
               ( (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_INP( i_xgemm_desc->datatype ) ) && (LIBXSMM_GEMM_PRECISION_BF16 == LIBXSMM_GETENUM_OUT( i_xgemm_desc->datatype ) ) ) ) {
     /* storing downconverted and rounded C accumulator */
     for ( l_n = 0; l_n < i_n_blocking; l_n++ ) {
-      int l_m_2_blocking = (l_m_blocking/2)*2;
+      unsigned int l_m_2_blocking = (l_m_blocking/2)*2;
       l_m = 0;
 
       for ( ; l_m < l_m_2_blocking; l_m+=2 ) {
