@@ -210,6 +210,7 @@ void transpose_32xcols(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int col, int
   const __m512i idx_hi         = _mm512_set_epi64(7, 6, 15, 14, 3, 2, 11, 10);
   __mmask16 store_mask         = LIBXSMM_INTRINSICS_MM512_CVTU32_MASK16(((unsigned int)1 << col) - 1);
 
+  rf = _mm512_setzero_si512();
   if (col == 15) {
     r0 = _mm512_load_epi32(in + 0*in_width);
     r1 = _mm512_load_epi32(in + 1*in_width);
@@ -472,7 +473,7 @@ void transpose_32xcols(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int col, int
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512_CORE)
 void transpose_input_pixels_bf16(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int M, int N, int ld_in, int ld_out){
 #if defined(LIBXSMM_INTRINSICS_AVX512_CORE)
-  int i, j, _j;
+  int i, j;
   int full16_chunks = N/16;
   int remainder_cols = N%16;
   int _N = N - remainder_cols;

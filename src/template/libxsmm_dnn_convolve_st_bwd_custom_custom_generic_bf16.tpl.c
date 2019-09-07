@@ -62,9 +62,7 @@ const int ifwp_scratch = (handle->spread_input_bwd == 1) ? handle->desc.v * hand
 /* Auxiliary fp32 accumulators */
 float *del_inp_ptr;
 float *del_inp_fp32 = (float*)handle->scratch6 + ((size_t)handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->ifmblock;
-float *del_inp_scratch = (float*)handle->scratch6 + ((size_t) handle->desc.N * handle->desc.H * handle->desc.W * handle->desc.C + ltid * ifwp_scratch * handle->bwd_ofh_rb * handle->ifmblock);
 LIBXSMM_VLA_DECL(5, float, del_input_fp32, del_inp_fp32, handle->blocksifm, IFH, IFW, handle->ifmblock);
-LIBXSMM_VLA_DECL(3, float, scratch_fp32, del_inp_scratch, ifwp_scratch, handle->ifmblock);
 
 element_input_type *input_ptr = (handle->pack_input_bwd == 1) ? (element_input_type*)handle->scratch1 + handle->blocksifm * handle->ifmblock * handle->blocksofm * handle->ofmblock * handle->desc.R * handle->desc.S : (element_input_type*)handle->grad_input->data + ((size_t)handle->desc.pad_h_in * handle->ifwp + handle->desc.pad_w_in) * handle->ifmblock;
 LIBXSMM_VLA_DECL(5, element_input_type, del_input, input_ptr, handle->blocksifm, IFH, IFW, handle->ifmblock);

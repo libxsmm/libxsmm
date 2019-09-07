@@ -80,7 +80,6 @@
 } while(0)
 
 #define TRANS_OUTPUT_W_TO_VNNI_FORMAT(img, ofm1, oj, H) do {\
-  __m512i zero_reg = _mm512_setzero_si512();\
   int h, w_pixel_pair, w_full_pixel_pairs = handle->ofwp/2;\
   for (h=0; h<H; h++) {\
     src_out = (element_output_type*) &LIBXSMM_VLA_ACCESS(5, output, img, ofm1, oj + h, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp, handle->ofmblock);\
@@ -127,8 +126,10 @@ LIBXSMM_VLA_DECL(5, element_input_type, tr_input_2, (element_input_type*) scratc
 element_output_type *scratch_tr_output = (element_input_type*)handle->scratch2;
 LIBXSMM_VLA_DECL(5, element_output_type, tr_output, (element_output_type*) scratch_tr_output, handle->blocksofm, handle->output_pixels/2, handle->ofmblock, 2);
 LIBXSMM_VLA_DECL(6, element_output_type, tr_output_2, (element_output_type*) scratch_tr_output, handle->blocksofm, handle->ofhp, handle->ofwp_extended/2, handle->ofmblock, 2);
+#if 0
 element_output_type *out_ptr = (element_output_type*)handle->grad_output->data + ((size_t)handle->desc.pad_h_out * handle->ofwp + handle->desc.pad_w_out) * handle->ofmblock;
 element_output_type *zero_ptr_out;
+#endif
 
 /* transpose, copy and reduce work-related variables  */
 const int reduce_work = (handle->desc.C * handle->desc.K * handle->desc.R * handle->desc.S)/16 ;
