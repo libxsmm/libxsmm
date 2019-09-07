@@ -40,7 +40,7 @@ void libxsmm_set_verbosity(int level);
 
 ### Timer Facility
 
-Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface ([libxsmm_timer.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_timer.h#L37) and [libxsmm.f](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f#L32)). The timer is used in many of the [code samples](https://github.com/hfp/libxsmm/tree/master/samples) to measure the duration of executing a region of the code. The timer is based on a monotonic clock tick, which uses a platform-specific resolution. The counter may rely on the time stamp counter instruction (RDTSC), which is not necessarily counting CPU cycles (reasons are out of scope in this context). However, `libxsmm_timer_cycles` delivers raw clock ticks (RDTSC).
+Due to the performance oriented nature of LIBXSMM, timer-related functionality is available for the C and Fortran interface ([libxsmm_timer.h](https://github.com/hfp/libxsmm/blob/master/include/libxsmm_timer.h#L37) and [libxsmm.f](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f#L32)). The timer is used in many of the [code samples](https://github.com/hfp/libxsmm/tree/master/samples) to measure the duration of executing a region of the code. The timer is based on a monotonic clock tick, which uses a platform-specific resolution. The counter may rely on the time stamp counter instruction (RDTSC), which is not necessarily counting CPU cycles (reasons are out of scope in this context). However, `libxsmm_timer_ncycles` delivers raw clock ticks (RDTSC).
 
 ```C
 typedef unsigned long long libxsmm_timer_tickint;
@@ -48,7 +48,7 @@ libxsmm_timer_tickint libxsmm_timer_tick(void);
 double libxsmm_timer_duration(
   libxsmm_timer_tickint tick0,
   libxsmm_timer_tickint tick1);
-libxsmm_timer_tickint libxsmm_timer_cycles(
+libxsmm_timer_tickint libxsmm_timer_ncycles(
   libxsmm_timer_tickint tick0,
   libxsmm_timer_tickint tick1);
 ```
@@ -159,5 +159,14 @@ LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_RWLOCK, &rwlock);
 LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK_RWLOCK, &rwlock);
 ```
 
-Depending on the platform or when using OpenMP to implement the low-level synchronization primitives, the LIBXSMM_LOCK_RWLOCK may be not implemented (OSX) or not available (OMP). In any case, LIBXSMM also implements own lock primitives which are available per API (libxsmm_mutex_\*, and libxsmm_rwlock_\*). This experimental implementation can be used independently of the LIBXSMM_LOCK_\* macros. Future versions of the library eventually map the macros to LIBXSMM's own low-level primitives.
+For a lock not backed by an OS level primitive (fully featured lock), the synchronization layer also provides a simple lock based on atomic operations:
+
+```C
+static union { char pad[LIBXSMM_CACHELINE]; volatile LIBXSMM_ATOMIC_LOCKTYPE state; } lock;
+LIBXSMM_ATOMIC_ACQUIRE(&lock.state, LIBXSMM_SYNC_NPAUSE, LIBXSMM_ATOMIC_RELAXED);
+/* locked code section */
+LIBXSMM_ATOMIC_RELEASE(&lock.state, LIBXSMM_ATOMIC_RELAXED);
+```
+
+In addition to the LIBXSMM_LOCK_\* macros or LIBXSMM_ATOMIC_LOCKTYPE, API-based lock primitives are also available (libxsmm_mutex_\*, and libxsmm_rwlock_\*). However, the underlying implementation of the latter is experimental.
 
