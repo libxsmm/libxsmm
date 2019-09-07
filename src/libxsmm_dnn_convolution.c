@@ -608,7 +608,7 @@ LIBXSMM_API_INTERN int libxsmm_dnn_convolution_setup_use_batchreduce_upd( libxsm
 LIBXSMM_API_INTERN int libxsmm_dnn_convolution_setup_weight_copies_upd( libxsmm_dnn_layer* handle ) {
   int result = handle->desc.threads;
   if (handle->ofw <= 14) {
-    result = 9;
+    result = 6;
   }
   while (handle->desc.threads % result != 0) {
     result--;
@@ -618,8 +618,8 @@ LIBXSMM_API_INTERN int libxsmm_dnn_convolution_setup_weight_copies_upd( libxsmm_
     result = 7;
   }
   if (handle->ofh == 14 && handle->desc.R == 3 && handle->desc.S == 3) {
-    if (handle->desc.N == 26) {
-      result = 13;
+    if (handle->desc.N == 18) {
+      result = 9;
     }
   }
   if ((handle->desc.N != handle->desc.threads) && !(handle->upd_linearized_tasklist == 0 && handle->upd_use_batchreduce == 0)) {
