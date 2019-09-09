@@ -294,12 +294,13 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
       const int flags_rs = LIBXSMM_MALLOC_FLAG_REALLOC | LIBXSMM_MALLOC_FLAG_SCRATCH;
       const int flags_mr = LIBXSMM_MALLOC_FLAG_MMAP | LIBXSMM_MALLOC_FLAG_REALLOC;
       const int flags_mx = LIBXSMM_MALLOC_FLAG_MMAP | LIBXSMM_MALLOC_FLAG_X;
+      const int mapreloc = (flags_mr == (flags_mr & result->flags));
+      const int mmapexec = (flags_mx == (flags_mx & result->flags));
       const char* const pointer = (const char*)result->pointer;
       union { libxsmm_free_fun fun; const void* ptr; } convert;
       convert.fun = result->free.function;
-      if ((flags_mx != (flags_mx & result->flags) && flags_mr != (flags_mr & result->flags) && NULL != result->reloc)
+      if (((mmapexec != mapreloc) ? 0 : (mmapexec/*mapreloc*/ || NULL != result->reloc))
         || (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) ? 0 : (0 != (flags_rs & result->flags)))
-        || (0 == (flags_mx & result->flags) && NULL != result->reloc)
         || (0 != (LIBXSMM_MALLOC_FLAG_X & result->flags) && NULL != result->context)
 #if defined(LIBXSMM_VTUNE)
         || (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) && 0 != result->code_id)
@@ -1329,27 +1330,21 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         libxsmm_malloc_function malloc_fn = libxsmm_default_malloc_fn;
         libxsmm_free_function free_fn = libxsmm_default_free_fn;
       /* ATOMIC END: this region should be atomic */
-#if 0
       void *alloc_failed = NULL, *buffer = NULL, *reloc = NULL;
       size_t alloc_alignment = 0, alloc_size = 0;
       internal_malloc_info_type* info = NULL;
       flags |= LIBXSMM_MALLOC_FLAG_RW; /* normalize given flags since flags=0 is accepted as well */
       if (0 != (LIBXSMM_MALLOC_FLAG_REALLOC & flags) && NULL != *memory) {
         info = internal_malloc_info(*memory, 2/*check*/);
-        if (NULL != info) { /* mmap'ed reallocation */
-          reloc = info->pointer;
-        }
-        else {
-          flags &= ~LIBXSMM_MALLOC_FLAG_MMAP;
+        if (0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
+          if (NULL != info) { /* mmap'ed reallocation */
+            reloc = info->pointer;
+          }
+          else {
+            flags &= ~LIBXSMM_MALLOC_FLAG_MMAP;
+          }
         }
       }
-#else
-      internal_malloc_info_type* info = ((0 == (LIBXSMM_MALLOC_FLAG_REALLOC & flags) || NULL == *memory)
-        ? NULL : internal_malloc_info(*memory, 1/*check*/));
-      void* alloc_failed = NULL, * buffer = NULL, * reloc = NULL/*(NULL == info ? NULL : info->pointer)*/;
-      size_t alloc_alignment = 0, alloc_size = 0;
-      flags |= LIBXSMM_MALLOC_FLAG_RW; /* normalize given flags since flags=0 is accepted as well */
-#endif
       if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
 #if defined(LIBXSMM_MALLOC_MMAP_SCRATCH) /* try harder for uncommitted scratch memory */
         flags |= LIBXSMM_MALLOC_FLAG_MMAP;
