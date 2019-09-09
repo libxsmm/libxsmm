@@ -433,6 +433,19 @@ LIBXSMM_API_INLINE void internal_register_static_code(
 #endif
 
 
+LIBXSMM_API_INTERN void internal_release_scratch(void);
+LIBXSMM_API_INTERN void internal_release_scratch(void)
+{
+  libxsmm_xrelease_scratch(NULL/*lock*/);
+  /* release global services */
+  libxsmm_hash_finalize();
+#if !defined(NDEBUG)
+  /* turn-off redirected memory allocations */
+  libxsmm_malloc_kind = 0;
+#endif
+}
+
+
 LIBXSMM_API_INTERN void internal_finalize(void);
 LIBXSMM_API_INTERN void internal_finalize(void)
 {
@@ -515,9 +528,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
   }
   /* release scratch memory pool */
-  libxsmm_xrelease_scratch(NULL/*lock*/);
-  /* release global services */
-  libxsmm_hash_finalize();
+  atexit(internal_release_scratch);
 #if defined(_WIN32)
   if (NULL != internal_singleton_handle)
 #else
@@ -559,8 +570,6 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     close(internal_singleton_handle);
 #endif
   }
-  /* turn-off redirected memory allocations */
-  libxsmm_malloc_kind = 0;
   /* signal shutdown */
   libxsmm_ninit = 0;
 #if (0 != LIBXSMM_SYNC)
