@@ -292,14 +292,11 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
     {
       const size_t maxsize = LIBXSMM_MAX(LIBXSMM_MAX(internal_malloc_scratch_size, internal_malloc_maxlocal_size), internal_malloc_public_size);
       const int flags_rs = LIBXSMM_MALLOC_FLAG_REALLOC | LIBXSMM_MALLOC_FLAG_SCRATCH;
-      const int flags_mr = LIBXSMM_MALLOC_FLAG_MMAP | LIBXSMM_MALLOC_FLAG_REALLOC;
       const int flags_mx = LIBXSMM_MALLOC_FLAG_MMAP | LIBXSMM_MALLOC_FLAG_X;
-      const int mapreloc = (flags_mr == (flags_mr & result->flags));
-      const int mmapexec = (flags_mx == (flags_mx & result->flags));
       const char* const pointer = (const char*)result->pointer;
       union { libxsmm_free_fun fun; const void* ptr; } convert;
       convert.fun = result->free.function;
-      if (((mmapexec != mapreloc) ? 0 : (mmapexec/*mapreloc*/ || NULL != result->reloc))
+      if (((flags_mx != (flags_mx & result->flags)) && NULL != result->reloc)
         || (0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) ? 0 : (0 != (flags_rs & result->flags)))
         || (0 != (LIBXSMM_MALLOC_FLAG_X & result->flags) && NULL != result->context)
 #if defined(LIBXSMM_VTUNE)
@@ -931,7 +928,10 @@ LIBXSMM_API void* __wrap_realloc(void* /*ptr*/, size_t /*size*/);
 LIBXSMM_API void* __wrap_realloc(void* ptr, size_t size)
 {
   void* result;
-  LIBXSMM_ASSERT(0 == internal_malloc_recursive);
+# if !defined(NDEBUG)
+  const int recursive = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
+  LIBXSMM_ASSERT(1 == recursive);
+# endif
   if (0 == (libxsmm_malloc_kind & 1) || 0 > libxsmm_malloc_kind) {
     result = __real_realloc(ptr, size);
   }
@@ -947,6 +947,9 @@ LIBXSMM_API void* __wrap_realloc(void* ptr, size_t size)
     internal_scratch_malloc(&ptr, size, (size_t)alignment, flags, caller);
     result = ptr;
   }
+# if !defined(NDEBUG)
+  LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
+# endif
   return result;
 }
 
@@ -1269,40 +1272,60 @@ LIBXSMM_API_INLINE void* internal_xmalloc_xmap(const char* dir, size_t size, int
 #endif /*!defined(_WIN32)*/
 
 
-LIBXSMM_API_INLINE void* internal_xmalloc_plain(
-  const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn,
-  size_t size, internal_malloc_info_type** info)
+LIBXSMM_API_INLINE void* internal_xmalloc_plain(const void* context,
+  libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn,
+  internal_malloc_info_type* info, void** ptr, size_t size)
 {
   void* result;
-  LIBXSMM_ASSERT(NULL != info);
-  if (NULL == *info || __real_free != free_fn.function) {
-    if (NULL == *info || size != (*info)->size) {
-      result = (NULL != malloc_fn.function
-        ? (NULL == context ? malloc_fn.function(size) : malloc_fn.ctx_form(size, context))
-        : (NULL));
-    }
-    else { /* no allocation, signal no-copy */
-      result = (*info)->pointer;
-      *info = NULL;
-    }
+  LIBXSMM_ASSERT(NULL != malloc_fn.function && NULL != ptr);
+  if (NULL == *ptr) {
+    result = (NULL == context
+      ? malloc_fn.function(size)
+      : malloc_fn.ctx_form(size, context));
   }
   else { /* reallocate */
-#if !defined(LIBXSMM_MALLOC_DELETE_SAFE)
-    LIBXSMM_ASSERT(NULL != (*info)->pointer);
-#endif
-    result = realloc((*info)->pointer, size);
-    if (NULL != result) {
-      if (result == (*info)->pointer) {
-        *info = NULL; /* signal no-copy */
+    if (__real_free == free_fn.function) {
+      void *const base = NULL != info ? info->pointer : *ptr;
+      result = __real_realloc(base, size);
+      if (result == base) { /* signal no-copy */
+        LIBXSMM_ASSERT(NULL != result);
+        *ptr = NULL;
       }
       else {
-        (*info)->free.function = NULL;
+        if (NULL != result) { /* signal no-delete */
+          if (NULL != info) info->free.function = NULL;
+        }
+        else { /* failed */
+          internal_xfree(*ptr, info);
+          *ptr = NULL;
+        }
       }
     }
-    else { /* fall-back */
-      result = (NULL != malloc_fn.function
-        ? (NULL == context ? malloc_fn.function(size) : malloc_fn.ctx_form(size, context))
-        : (NULL));
+    else if (free == free_fn.function) {
+      void *const base = NULL != info ? info->pointer : *ptr;
+      result = realloc(base, size);
+      if (result == base) { /* signal no-copy */
+        LIBXSMM_ASSERT(NULL != result);
+        *ptr = NULL;
+      }
+      else {
+        if (NULL != result) { /* signal no-delete */
+          if (NULL != info) info->free.function = NULL;
+        }
+        else { /* failed */
+          internal_xfree(*ptr, info);
+          *ptr = NULL;
+        }
+      }
+    }
+    else { /* fall-back with regular allocation */
+      result = (NULL == context
+        ? malloc_fn.function(size)
+        : malloc_fn.ctx_form(size, context));
+      if (NULL == result) { /* failed */
+        internal_xfree(*ptr, info);
+        *ptr = NULL;
+      }
     }
   }
   return result;
@@ -1330,15 +1353,11 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
       flags |= LIBXSMM_MALLOC_FLAG_RW; /* normalize given flags since flags=0 is accepted as well */
       if (0 != (LIBXSMM_MALLOC_FLAG_REALLOC & flags) && NULL != *memory) {
         info = internal_malloc_info(*memory, 2/*check*/);
-        if (0 != (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
-          if (NULL != info) { /* mmap'ed reallocation */
-            reloc = info->pointer;
-          }
-          else {
-            flags &= ~LIBXSMM_MALLOC_FLAG_MMAP;
-          }
+        if (NULL == info) { /* reallocation of unknown allocation */
+          flags &= ~LIBXSMM_MALLOC_FLAG_MMAP;
         }
       }
+      else *memory = NULL;
       if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
 #if defined(LIBXSMM_MALLOC_MMAP_SCRATCH) /* try harder for uncommitted scratch memory */
         flags |= LIBXSMM_MALLOC_FLAG_MMAP;
@@ -1354,9 +1373,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
       }
 #if !defined(LIBXSMM_MALLOC_MMAP)
       if (0 == (LIBXSMM_MALLOC_FLAG_X & flags) && 0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
-        alloc_alignment = (NULL == info ? libxsmm_alignment(size, alignment) : alignment);
+        alloc_alignment = (0 == (LIBXSMM_MALLOC_FLAG_REALLOC & flags) ? libxsmm_alignment(size, alignment) : alignment);
         alloc_size = size + extra_size + sizeof(internal_malloc_info_type) + alloc_alignment - 1;
-        buffer = internal_xmalloc_plain(context, malloc_fn, free_fn, alloc_size, &info);
+        buffer = internal_xmalloc_plain(context, malloc_fn, free_fn, info, memory, alloc_size);
       }
       else
 #endif
@@ -1404,7 +1423,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
           flags |= LIBXSMM_MALLOC_FLAG_MMAP; /* select the corresponding deallocation */
         }
         else if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* fall-back allocation */
-          buffer = internal_xmalloc_plain(context, malloc_fn, free_fn, alloc_size, &info);
+          buffer = internal_xmalloc_plain(context, malloc_fn, free_fn, info, memory, alloc_size);
         }
 #else /* !defined(_WIN32) */
 # if defined(MAP_HUGETLB)
@@ -1447,7 +1466,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         alloc_size = size + extra_size + sizeof(internal_malloc_info_type) + alloc_alignment - 1;
         alloc_failed = MAP_FAILED;
         if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) {
-          buffer = mmap(reloc, alloc_size, PROT_READ | PROT_WRITE,
+          buffer = mmap(NULL == info ? *memory : info->pointer, alloc_size, PROT_READ | PROT_WRITE,
             MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | xflags, -1, 0/*offset*/);
         }
         else { /* executable buffer requested */
@@ -1572,12 +1591,18 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         }
 #endif
       }
-      else {
+      else { /* reallocation of the same pointer and size */
         alloc_size = size + extra_size + sizeof(internal_malloc_info_type) + alignment - 1;
+        if (NULL != info) {
+          buffer = info->pointer;
+          flags |= info->flags;
+        }
+        else {
+          flags |= LIBXSMM_MALLOC_FLAG_MMAP;
+          buffer = *memory;
+        }
         alloc_alignment = alignment;
-        buffer = info->pointer;
-        flags |= info->flags;
-        info = NULL;
+        *memory = NULL; /* signal no-copy */
       }
       if (
 #if !defined(__clang_analyzer__)
@@ -1636,8 +1661,9 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         buffer_info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, buffer_info,
           (unsigned int)(((char*)&buffer_info->hash) - ((char*)buffer_info)));
 #endif
-        if (NULL != info) { /* copy previous content */
-          memcpy(aligned, *memory, LIBXSMM_MIN(info->size, size));
+        if (NULL != *memory) { /* copy previous content */
+          LIBXSMM_ASSERT(0 != (LIBXSMM_MALLOC_FLAG_REALLOC & flags));
+          memcpy(aligned, *memory, LIBXSMM_MIN(NULL != info ? info->size : size, size));
           /* display some extra context of the failure (reallocation) */
           if (EXIT_SUCCESS != internal_xfree(*memory, info) /* !libxsmm_free */
             && 0 != libxsmm_verbosity /* library code is expected to be mute */
