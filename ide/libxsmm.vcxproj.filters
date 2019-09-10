@@ -90,9 +90,6 @@
     <ClInclude Include="..\include\libxsmm_cpuid.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dnn_handle.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_spmdm.h">
       <Filter>include</Filter>
     </ClInclude>
@@ -105,14 +102,8 @@
     <ClInclude Include="..\include\libxsmm_blocked_gemm.h">
       <Filter>include</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dnn_dryruns.h">
-      <Filter>src</Filter>
-    </ClInclude>
     <ClInclude Include="..\include\libxsmm_math.h">
       <Filter>include</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\libxsmm_dnn_setup.h">
-      <Filter>src</Filter>
     </ClInclude>
     <ClInclude Include="..\include\libxsmm_dnn_rnncell.h">
       <Filter>include</Filter>
@@ -129,15 +120,6 @@
     <ClInclude Include="..\src\generator_common.h">
       <Filter>src\generator</Filter>
     </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_common.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_forward_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_convolution_weight_update_avx512.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
     <ClInclude Include="..\src\generator_gemm_avx_microkernel.h">
       <Filter>src\generator</Filter>
     </ClInclude>
@@ -151,12 +133,6 @@
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_gemm_noarch.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_gemm_rm_ac_soa.h">
-      <Filter>src\generator</Filter>
-    </ClInclude>
-    <ClInclude Include="..\src\generator_gemm_rm_bc_soa.h">
       <Filter>src\generator</Filter>
     </ClInclude>
     <ClInclude Include="..\src\generator_gemm_sse3_avx_avx2_avx512.h">
@@ -288,6 +264,15 @@
     <ClInclude Include="..\src\libxsmm_diff.h">
       <Filter>src</Filter>
     </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.h">
+      <Filter>src\generator</Filter>
+    </ClInclude>
+    <ClInclude Include="..\include\libxsmm_memory.h">
+      <Filter>include</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\src\libxsmm_hash.c">
@@ -332,9 +317,6 @@
     <ClCompile Include="..\src\libxsmm_dnn_convolution_weight_update.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_handle.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_spmdm.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -347,9 +329,6 @@
     <ClCompile Include="..\src\libxsmm_mhd.c">
       <Filter>src</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_dryruns.c">
-      <Filter>src</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\libxsmm_python.c">
       <Filter>src</Filter>
     </ClCompile>
@@ -357,9 +336,6 @@
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_math.c">
-      <Filter>src</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\libxsmm_dnn_setup.c">
       <Filter>src</Filter>
     </ClCompile>
     <ClCompile Include="..\src\libxsmm_dnn_rnncell.c">
@@ -545,18 +521,6 @@
     <ClCompile Include="..\src\generator_common.c">
       <Filter>src\generator</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\generator_convolution.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_common.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_forward_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_convolution_weight_update_avx512.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
     <ClCompile Include="..\src\generator_gemm.c">
       <Filter>src\generator</Filter>
     </ClCompile>
@@ -573,12 +537,6 @@
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_noarch.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_gemm_rm_ac_soa.c">
-      <Filter>src\generator</Filter>
-    </ClCompile>
-    <ClCompile Include="..\src\generator_gemm_rm_bc_soa.c">
       <Filter>src\generator</Filter>
     </ClCompile>
     <ClCompile Include="..\src\generator_gemm_sse3_avx_avx2_avx512.c">
@@ -827,7 +785,19 @@
     <ClCompile Include="..\src\template\libxsmm_dnn_rnncell_st_gru_bwdupd_nc_ck_generic.tpl.c">
       <Filter>src\template</Filter>
     </ClCompile>
-    <ClCompile Include="..\src\libxsmm_diff.c">
+    <ClCompile Include="..\src\generator_packed_gemm_ac_rm_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\generator_packed_gemm_bc_rm_avx_avx2_avx512.c">
+      <Filter>src\generator</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_memory.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_tensor.c">
+      <Filter>src</Filter>
+    </ClCompile>
+    <ClCompile Include="..\src\libxsmm_dnn_convolution.c">
       <Filter>src</Filter>
     </ClCompile>
   </ItemGroup>

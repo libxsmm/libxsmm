@@ -28,13 +28,15 @@
 ******************************************************************************/
 /* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#include <libxsmm_math.h>
+#include <libxsmm_memory.h>
+#include "libxsmm_hash.h"
 #include "libxsmm_diff.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #include <string.h>
+#include <stdio.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(pop)
 #endif
@@ -144,4 +146,79 @@ LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size)
   return 0;
 #endif
 }
+
+
+LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed)
+{
+  LIBXSMM_INIT
+  return libxsmm_crc32(seed, data, size);
+}
+
+
+LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string)
+{
+  unsigned long long result;
+  const size_t length = NULL != string ? strlen(string) : 0;
+  if (sizeof(result) < length) {
+    const size_t length2 = length / 2;
+    unsigned int seed32 = 0; /* seed=0: match else-optimization */
+    LIBXSMM_INIT
+    seed32 = libxsmm_crc32(seed32, string, length2);
+    result = libxsmm_crc32(seed32, string + length2, length - length2);
+    result = (result << 32) | seed32;
+  }
+  else { /* reinterpret directly as hash value */
+    char *const s = (char*)&result; signed char i;
+    for (i = 0; i < (signed char)length; ++i) s[i] = string[i];
+    for (; i < (signed char)sizeof(result); ++i) s[i] = 0;
+  }
+  return result;
+}
+
+
+#if defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* hash_seed, const void* data, const int* size)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != hash_seed && NULL != data && NULL != size && 0 <= *size)
+#endif
+  {
+    unsigned int *const hash_seed_ui32 = (unsigned int*)hash_seed;
+    *hash_seed_ui32 = (libxsmm_hash(data, (unsigned int)*size, *hash_seed_ui32) & 0x7FFFFFFF/*sign-bit*/);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_hash specified!\n");
+  }
+#endif
+}
+
+
+/* implementation provided for Fortran 77 compatibility */
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
+LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* result, const void* a, const void* b, const long long* size)
+{
+#if !defined(NDEBUG)
+  static int error_once = 0;
+  if (NULL != result && NULL != a && NULL != b && NULL != size && 0 <= *size)
+#endif
+  {
+    *result = libxsmm_memcmp(a, b, (size_t)*size);
+  }
+#if !defined(NDEBUG)
+  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
+    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+  {
+    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_memcmp specified!\n");
+  }
+#endif
+}
+
+#endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
 

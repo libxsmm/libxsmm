@@ -37,7 +37,7 @@ SED=$(command -v sed)
 CP=$(command -v cp)
 RM=$(command -v rm)
 
-CLEANUP="-o -D -J --time --ntasks --cpus-per-task --get-user-env"
+CLEANUP="-o -D"
 JOBDIR=kernel_test
 JOBEXT=slurm
 
@@ -56,9 +56,6 @@ then
   done
   CLEAN_CHECK="${CLEAN_CHECK}/^LIBXSMM_TARGET=/p;"
   CLEAN_CLEAN="${CLEAN_CLEAN}/^LIBXSMM_TARGET=/d;"
-  # CLEANUP specification is overruled here
-  CLEAN_CHECK="${CLEAN_CHECK}/^#SBATCH/p;"
-  CLEAN_CLEAN="${CLEAN_CLEAN}/^#SBATCH/d;"
   COUNT_TOTAL=0
   COUNT_CLEAN=0
   for JOBFILE in $(ls -1 ${HERE}/${JOBDIR}/*.${JOBEXT}); do

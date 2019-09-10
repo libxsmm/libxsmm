@@ -95,27 +95,27 @@ export KMP_AFFINITY=granularity=fine,compact,1,0
 
 
 echo "GRU FWD"
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  168   256   256  50
+CHECK=${CHKVAL} ./grudriver_nc_ck  ${ITERS}  0  168   256   256  50  24  64  64
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  168   512   512  50
+CHECK=${CHKVAL} ./grudriver_nc_ck  ${ITERS}  0  168   512   512  50  24  64  64
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  168  1024  1024  50
+CHECK=${CHKVAL} ./grudriver_nc_ck  ${ITERS}  0  168  1024  1024  50  24  64  64
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  168  2048  2048  50
+CHECK=${CHKVAL} ./grudriver_nc_ck  ${ITERS}  0  168  2048  2048  50  24  64  64
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  0  168  4096  4096  50
+CHECK=${CHKVAL} ./grudriver_nc_ck  ${ITERS}  0  168  4096  4096  50  24  64  64
 wait
 
 echo "GRU BWD+UPD"
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  168   256   256  50
+CHECK=${CHKVAL} ./grudriver_nc_ck  ${ITERS}  3  168   256   256  50  24  64  64
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  168   512   512  50
+CHECK=${CHKVAL} ./grudriver_nc_ck  ${ITERS}  3  168   512   512  50  24  64  64
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  168  1024  1024  50
+CHECK=${CHKVAL} ./grudriver_nc_ck  ${ITERS}  3  168  1024  1024  50  24  64  64
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  168  2048  2048  50
+CHECK=${CHKVAL} ./grudriver_nc_ck  ${ITERS}  3  168  2048  2048  50  24  64  64
 wait
-CHECK=${CHKVAL} ./grudriver  ${ITERS}  3  168  4096  4096  50
+CHECK=${CHKVAL} ./grudriver_nc_ck  ${ITERS}  3  168  4096  4096  50  24  64  64
 wait
 
 echo "GRU performance done"

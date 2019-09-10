@@ -26,14 +26,33 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Evangelos Georganas, Alexander Heinecke (Intel Corp.)
+/* Kunal Banerjee (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_DNN_SETUP_H
-#define LIBXSMM_DNN_SETUP_H
 
-#include <libxsmm_dnn.h>
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, int* fm_lp_block, libxsmm_dnn_datatype datatype_in, libxsmm_dnn_datatype datatype_out );
-LIBXSMM_API_INTERN void libxsmm_dnn_setup_scratch( libxsmm_dnn_layer* handle );
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_setup_generic( libxsmm_dnn_layer* handle );
-
-#endif /* LIBXSMM_DNN_SETUP_H */
+{
+  libxsmm_blasint _k, _j;
+  __m512 _vdi, _vdo, _vi, _vhp, _vt1, _vt2;
+  element_input_type* _hp;
+  element_input_type* _i = &LIBXSMM_VLA_ACCESS(3, i, j, in, ik, N, K);
+  element_input_type* _di = &LIBXSMM_VLA_ACCESS(2, di, in, ik, K);
+  element_input_type* _do = &LIBXSMM_VLA_ACCESS(2, dp, in, ik, K);
+  const __m512 _vones = _mm512_set1_ps( (float)1.0 );
+  if (0 == j) {
+    _hp = &LIBXSMM_VLA_ACCESS(2, hp, in, ik, K);
+  } else {
+    _hp = &LIBXSMM_VLA_ACCESS(3, h, j-1, in, ik, N, K);
+  }
+  for ( _j = 0; _j < bn; ++_j ) {
+    LIBXSMM_PRAGMA_UNROLL_N(4)
+    for ( _k = 0; _k < bk; _k += 16 ) {
+      _vi = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&_i[(_j*K)+_k]);
+      _vt1 = _mm512_sub_ps(_vones, _vi);
+      _vt1 = _mm512_mul_ps(_vi, _vt1);
+      _vhp = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&_hp[(_j*K)+_k]);
+      _vdo = LIBXSMM_INTRINSICS_MM512_LOAD_PS(&_do[(_j*K)+_k]);
+      _vt2 = _mm512_mul_ps(_vdo, _vhp);
+      _vdi = _mm512_mul_ps(_vt1, _vt2);
+      LIBXSMM_INTRINSICS_MM512_STREAM_PS(&_di[(_j*K)+_k], _vdi);
+    }
+  }
+}

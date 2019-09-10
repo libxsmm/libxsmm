@@ -1145,6 +1145,23 @@ void libxsmm_x86_instruction_vec_compute_reg( libxsmm_generated_code* io_generat
        case LIBXSMM_X86_INSTR_VDIVPD:
           l_fpadj = 5;
           break;
+       case LIBXSMM_X86_INSTR_VDPBF16PS:
+          if ( i_vector_name == 'x' )
+          {
+             l_fourth -= 0x40;
+             if ( l_vreg0 >= 16 ) l_fourth -= 0xc0;
+             if ( l_vreg1 >= 16 ) l_fourth -= 0xc0;
+          } else if ( i_vector_name == 'y' )
+          {
+             l_fourth -= 0x20;
+             if ( l_vreg0 >= 16 ) l_fourth += 0x20;
+             if ( l_vreg1 >= 16 ) l_fourth += 0x20;
+          }
+          l_bytes = 6;
+          l_second += 1;
+          l_fpadj = -7;
+          l_fpadj2 = 0x81;
+          break;
        case LIBXSMM_X86_INSTR_VDIVPS:
           if ( (i_vector_name!='z') && (l_vreg0 <=15) &&
                (l_vreg1<=15) && (l_vreg2<=15) )
@@ -3972,7 +3989,7 @@ void libxsmm_x86_instruction_alu_imm( libxsmm_generated_code* io_generated_code,
        /* four bytes */
        unsigned char *l_cptr = (unsigned char *) &i_immediate;
        buf[i++] = (unsigned char)(0x48 + l_first);
-       if ( i_gp_reg_number==0 && (i_alu_instr!=LIBXSMM_X86_INSTR_MOVQ) )
+       if ( i_gp_reg_number==0 && ((i_alu_instr==LIBXSMM_X86_INSTR_SUBQ) || (i_alu_instr==LIBXSMM_X86_INSTR_CMPQ) || (i_alu_instr==LIBXSMM_X86_INSTR_ADDQ)) )
        {
           /* special case for %rax! */
           buf[i++] = (unsigned char)(0x05 + l_second);

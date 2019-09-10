@@ -44,24 +44,25 @@
 #endif
 
 #define LIBXSMM_HASH_U64(FN, SEED, BEGIN, END) { \
-  for (; (BEGIN) < ((END) - 7); (BEGIN) += 8) { LIBXSMM_ASSERT(NULL != (BEGIN)); \
+  const uint8_t *const end = (NULL != (END) ? ((END) - 7) : NULL); \
+  for (; (BEGIN) < end; (BEGIN) += 8) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = (uint32_t)FN(SEED, BEGIN); \
   } \
 }
 #define LIBXSMM_HASH_U32(FN, SEED, BEGIN, END) { \
   const uint8_t *const next = (BEGIN) + 4; \
-  if (next <= (END)) { LIBXSMM_ASSERT(NULL != (BEGIN)); \
+  if (next <= (END)) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = FN(SEED, BEGIN); BEGIN = next; \
   } \
 }
 #define LIBXSMM_HASH_U16(FN, SEED, BEGIN, END) { \
   const uint8_t *const next = (BEGIN) + 2; \
-  if (next <= (END)) { LIBXSMM_ASSERT(NULL != (BEGIN)); \
+  if (next <= (END)) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = FN(SEED, BEGIN); BEGIN = next; \
   } \
 }
 #define LIBXSMM_HASH_U8(FN, SEED, BEGIN, END) { \
-  if ((BEGIN) < (END)) { LIBXSMM_ASSERT(NULL != (BEGIN)); \
+  if ((BEGIN) < (END)) { LIBXSMM_ASSERT(NULL != (BEGIN) || NULL == (END)); \
     SEED = FN(SEED, BEGIN); ++(BEGIN); \
   } \
 }
@@ -70,10 +71,9 @@
 #define LIBXSMM_HASH_CRC32_U16(SEED, PVALUE) _mm_crc32_u16(SEED, *(const uint16_t*)(PVALUE))
 #define LIBXSMM_HASH_CRC32_U32(SEED, PVALUE) _mm_crc32_u32(SEED, *(const uint32_t*)(PVALUE))
 
-#if (64 > (LIBXSMM_BITS))
+#if (64 > (LIBXSMM_BITS)) || defined(__PGI)
 # define LIBXSMM_HASH_CRC32_U64(SEED, PVALUE) \
-    LIBXSMM_HASH_CRC32_U32(((const uint32_t*)(PVALUE))[1], \
-    LIBXSMM_HASH_CRC32_U32(((const uint32_t*)(PVALUE))[0], (uint32_t)(SEED)))
+  LIBXSMM_HASH_CRC32_U32(LIBXSMM_HASH_CRC32_U32((uint32_t)(SEED), PVALUE), (const uint32_t*)(PVALUE) + 1)
 #else
 # define LIBXSMM_HASH_CRC32_U64(SEED, PVALUE) _mm_crc32_u64(SEED, *(const uint64_t*)(PVALUE))
 #endif
@@ -210,10 +210,12 @@ unsigned int internal_crc32_u128_sse4(unsigned int seed, const void* value, ...)
 {
 #if defined(LIBXSMM_INTRINSICS_SSE4)
   const uint64_t *const pu64 = (const uint64_t*)value;
-  return (unsigned int)LIBXSMM_HASH_CRC32_U64(LIBXSMM_HASH_CRC32_U64(seed, pu64), pu64 + 1);
+  seed = (unsigned int)LIBXSMM_HASH_CRC32_U64(seed, pu64);
+  seed = (unsigned int)LIBXSMM_HASH_CRC32_U64(seed, pu64 + 1);
 #else
-  return internal_crc32_u128(seed, value);
+  seed = internal_crc32_u128(seed, value);
 #endif
+  return seed;
 }
 
 
@@ -547,6 +549,17 @@ LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u256(unsigned int seed, const void
 #else /* pointer based function call */
   LIBXSMM_ASSERT(NULL != internal_hash_u256_function);
   return internal_hash_u256_function(seed, value);
+#endif
+}
+
+
+LIBXSMM_API_INTERN unsigned int libxsmm_crc32_u384(unsigned int seed, const void* value, ...)
+{
+#if (LIBXSMM_X86_SSE4 <= LIBXSMM_STATIC_TARGET_ARCH)
+  return internal_crc32_u384_sse4(seed, value);
+#else /* pointer based function call */
+  LIBXSMM_ASSERT(NULL != internal_hash_u384_function);
+  return internal_hash_u384_function(seed, value);
 #endif
 }
 

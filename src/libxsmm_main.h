@@ -26,7 +26,7 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Hans Pabst (Intel Corp.), Rajkishore Barik (Intel Corp. )
+/* Hans Pabst (Intel Corp.)
 ******************************************************************************/
 #ifndef LIBXSMM_MAIN_H
 #define LIBXSMM_MAIN_H
@@ -42,29 +42,36 @@
 #endif
 
 #if !defined(LIBXSMM_MAX_NTHREADS)
-# define LIBXSMM_MAX_NTHREADS 1024
+# if (0 != LIBXSMM_SYNC)
+#   define LIBXSMM_MAX_NTHREADS 1024
+# else
+#   define LIBXSMM_MAX_NTHREADS 1
+# endif
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
 # define LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS LIBXSMM_MAX_NTHREADS
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_LIMIT)
-# define LIBXSMM_MALLOC_SCRATCH_LIMIT (4ULL << 30) /* 4 GB */
-#endif
-#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 0
-# define LIBXSMM_MALLOC_MMAP_SCRATCH
+# define LIBXSMM_MALLOC_SCRATCH_LIMIT 0xFFFFFFFF /* ~4 GB */
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_SCALE)
-# if defined(LIBXSMM_MALLOC_MMAP_SCRATCH)
-#   define LIBXSMM_MALLOC_SCRATCH_SCALE 1.3
-# else
-#   define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
-# endif
+# define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
+#endif
+#if !defined(LIBXSMM_MALLOC_LIMIT) && 1
+# define LIBXSMM_MALLOC_LIMIT (2U << 20)
 #endif
 #if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER_ID)
 # define LIBXSMM_MALLOC_INTERNAL_CALLER_ID ((uintptr_t)-1)
 #endif
 #if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER)
 # define LIBXSMM_MALLOC_INTERNAL_CALLER ((const void*)(LIBXSMM_MALLOC_INTERNAL_CALLER_ID))
+#endif
+
+#if !defined(LIBXSMM_INTERCEPT_DYNAMIC) && defined(LIBXSMM_BUILD) && \
+  (defined(__GNUC__) || defined(_CRAYC)) && !defined(_WIN32) && !defined(__CYGWIN__) && \
+  !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
+    LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__))
+# define LIBXSMM_INTERCEPT_DYNAMIC
 #endif
 
 #if !defined(LIBXSMM_VERBOSITY_HIGH)
@@ -124,7 +131,7 @@
     | (LIBXSMM_NEQ(0, BETA) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
   (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
-  (DESCRIPTOR).pad = 0; (DESCRIPTOR).c1 = 0; (DESCRIPTOR).c2 = 0
+  (DESCRIPTOR).pad = 0; (DESCRIPTOR).c1 = 0; (DESCRIPTOR).c2 = 0; (DESCRIPTOR).c3 = 0
 
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
@@ -167,10 +174,12 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descri
   unsigned int lda, ldb, ldc;
   /** Ignored entry. */
   unsigned int pad;
-  /** Description. */
+  /** multipurpose 64bit field, currently used for: a) stride_a in brgemm */
   unsigned long long c1;
-  /** Description. */
+  /** multipurpose 64bit field, currently used for: a) stride_b in brgemm */
   unsigned long long c2;
+  /** multipurpose 8bit field, currently used for: a) unroll hint in brgemm */
+  unsigned char c3;
 };
 
 /** Packed structure storing the matcopy argument description. */
@@ -247,10 +256,12 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_c
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pgemm_ac_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
+  unsigned int packed_width;
 } libxsmm_pgemm_ac_rm_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_pgemm_bc_rm_descriptor {
   const libxsmm_gemm_descriptor* gemm;
+  unsigned int packed_width;
 } libxsmm_pgemm_bc_rm_descriptor;
 
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE LIBXSMM_MAY_ALIAS libxsmm_csr_reg_descriptor {
@@ -368,6 +379,8 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_layer {
   int on_the_fly_input_packing;
   int upd_pack_input_upfront;
   int use_hybrid_imgofm_parallelization;
+  int compute_pixels;
+  int upd_trans_w_only;
 
   libxsmm_xtransfunction tr_kernel;
 
@@ -651,7 +664,10 @@ typedef enum libxsmm_malloc_flags {
   LIBXSMM_MALLOC_FLAG_X       = 64,
   LIBXSMM_MALLOC_FLAG_RW  = LIBXSMM_MALLOC_FLAG_R | LIBXSMM_MALLOC_FLAG_W,
   LIBXSMM_MALLOC_FLAG_WX  = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_W,
-  LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_RW
+  LIBXSMM_MALLOC_FLAG_RWX = LIBXSMM_MALLOC_FLAG_X | LIBXSMM_MALLOC_FLAG_RW,
+  LIBXSMM_MALLOC_FLAG_VALID       = LIBXSMM_MALLOC_FLAG_SCRATCH |
+      LIBXSMM_MALLOC_FLAG_PRIVATE | LIBXSMM_MALLOC_FLAG_REALLOC |
+      LIBXSMM_MALLOC_FLAG_MMAP    | LIBXSMM_MALLOC_FLAG_RWX
 } libxsmm_malloc_flags;
 
 /** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
@@ -683,6 +699,9 @@ LIBXSMM_API_INTERN int libxsmm_xset_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_
 LIBXSMM_API_INTERN int libxsmm_xget_scratch_allocator(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock,
   const void** context, libxsmm_malloc_function* malloc_fn, libxsmm_free_function* free_fn);
 
+/** intern function to calculate blockings, that's private API hence it's in this function */
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_get_feature_map_blocks( int C, int K, int* C_block, int* K_block, int* fm_lp_block, libxsmm_dnn_datatype datatype_in, libxsmm_dnn_datatype datatype_out );
+
 /**
  * Attribute memory allocation and protect with only the necessary flags.
  * This procedure is expected to run only one time per buffer, and may
@@ -697,7 +716,10 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
   /* The extra information is stored along with the allocated chunk; can be NULL/zero. */
   const void* extra, size_t extra_size);
 /** Release memory, which was allocated using libxsmm_[*]malloc. */
-LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory);
+LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check);
+
+/** Like libxsmm_release_scratch, but takes a lock (can be NULL). */
+LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock);
 
 /** Determines the given value in double-precision based on the given type. */
 LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* value, double* dvalue);
@@ -707,10 +729,6 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 
 /** Attempts to receive information about JIT-generated code. */
 LIBXSMM_API const libxsmm_descriptor* libxsmm_get_kernel_info(libxsmm_code_pointer code, size_t* size);
-
-/** Updates counters of the statistic, which is shown at program termination. */
-LIBXSMM_API_INTERN unsigned int libxsmm_update_mmstatistic(libxsmm_gemm_precision precision,
-  libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k, unsigned int ntry, unsigned int ncol);
 
 /** Returns the current tick of a (monotonic) platform-specific counter; not necessarily CPU cycles. */
 LIBXSMM_API_INTERN libxsmm_timer_tickint libxsmm_timer_tick_rtc(void);
@@ -739,21 +757,27 @@ LIBXSMM_APIVAR(libxsmm_free_function libxsmm_scratch_free_fn);
 LIBXSMM_APIVAR(const void* libxsmm_default_allocator_context);
 /** If non-NULL, this context is used by the context-form of memory allocation. */
 LIBXSMM_APIVAR(const void* libxsmm_scratch_allocator_context);
-/** Number of discovered threads (per libxsmm_get_tid) */
-LIBXSMM_APIVAR(unsigned int libxsmm_threads_count);
 /** Number of scratch memory pools used; clamped against internal maximum. */
 LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
 /** Maximum total size of the scratch memory domain. */
 LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
-/** even: regular, odd: scratch, >1: intercept */
+/** Minimum number of bytes needed for interception (libxsmm_malloc_kind) */
+LIBXSMM_APIVAR_ARRAY(size_t libxsmm_malloc_limit, 2);
+/** 0: regular, 1/odd: intercept/scratch, otherwise: all/scratch */
 LIBXSMM_APIVAR(int libxsmm_malloc_kind);
-
+/** Counts the number of attempts to create an SPMDM-handle */
+LIBXSMM_APIVAR(unsigned int libxsmm_statistic_num_spmdm);
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */
 LIBXSMM_APIVAR(double libxsmm_timer_scale);
 /** Security-enhanced environment */
 LIBXSMM_APIVAR(int libxsmm_se);
+
+#if (0 != LIBXSMM_SYNC)
+/** Number of discovered threads (per libxsmm_get_tid) */
+LIBXSMM_APIVAR(unsigned int libxsmm_thread_count);
+#endif
 
 #endif /*LIBXSMM_MAIN_H*/
 

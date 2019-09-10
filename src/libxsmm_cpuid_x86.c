@@ -84,11 +84,16 @@
 
 LIBXSMM_API int libxsmm_cpuid_x86(void)
 {
+#if defined(LIBXSMM_INTRINSICS_DEBUG)
+  int target_arch = LIBXSMM_X86_GENERIC;
+#else
   int target_arch = LIBXSMM_STATIC_TARGET_ARCH;
+#endif
 #if defined(LIBXSMM_PLATFORM_SUPPORTED)
   unsigned int eax, ebx, ecx, edx;
   LIBXSMM_CPUID_X86(0, 0/*ecx*/, eax, ebx, ecx, edx);
-  if (1 <= eax) { /* CPUID */
+  if (1 <= eax) { /* CPUID max. leaf */
+    const unsigned int maxleaf = eax;
     static int error_once = 0;
     LIBXSMM_CPUID_X86(1, 0/*ecx*/, eax, ebx, ecx, edx);
     /* Check for CRC32 (this is not a proper test for SSE 4.2 as a whole!) */
@@ -99,7 +104,7 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
     if (LIBXSMM_CPUID_CHECK(ecx, 0x0C000000)) {
       LIBXSMM_XGETBV(0, eax, edx);
       if (LIBXSMM_CPUID_CHECK(eax, 0x00000006)) { /* OS XSAVE 256-bit */
-        if (LIBXSMM_CPUID_CHECK(eax, 0x000000E0)) { /* OS XSAVE 512-bit */
+        if (7 <= maxleaf && LIBXSMM_CPUID_CHECK(eax, 0x000000E0)) { /* OS XSAVE 512-bit */
           LIBXSMM_CPUID_X86(7, 0/*ecx*/, eax, ebx, ecx, edx);
           /* AVX512F(0x00010000), AVX512CD(0x10000000) */
           if (LIBXSMM_CPUID_CHECK(ebx, 0x10010000)) { /* Common */
@@ -148,10 +153,13 @@ LIBXSMM_API int libxsmm_cpuid_x86(void)
       fprintf(stderr, "LIBXSMM WARNING: detected CPU features are not permitted by the OS!\n");
     }
   }
-  /* check if procedure obviously failed to detect the highest available instruction set extension */
-  LIBXSMM_ASSERT(LIBXSMM_STATIC_TARGET_ARCH <= target_arch);
 #endif
+#if defined(LIBXSMM_INTRINSICS_DEBUG)
+  return target_arch;
+#else /* check if procedure obviously failed to detect the highest available instruction set extension */
+  LIBXSMM_ASSERT(LIBXSMM_STATIC_TARGET_ARCH <= target_arch);
   return LIBXSMM_MAX(target_arch, LIBXSMM_STATIC_TARGET_ARCH);
+#endif
 }
 
 

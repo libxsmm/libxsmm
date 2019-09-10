@@ -47,7 +47,7 @@
 #include <linux/mman.h>
 #endif
 
-void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
+LIBXSMM_INLINE void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
   void* ret_ptr = NULL;
 #if defined(EDGE_HP_1G)
   size_t num_large_pages = nbytes / (1073741824L);
@@ -81,7 +81,7 @@ void* edge_hp_malloc( size_t nbytes, size_t alignment ) {
   return ret_ptr;
 }
 
-void edge_hp_free( void* ptr,  size_t nbytes ) {
+LIBXSMM_INLINE void edge_hp_free( void* ptr,  size_t nbytes ) {
   LIBXSMM_UNUSED( nbytes );
 #if defined(EDGE_HP_1G)
   /* to be implemented */
@@ -93,17 +93,17 @@ void edge_hp_free( void* ptr,  size_t nbytes ) {
 }
 
 #if defined(__AVX512F__)
-static void matMulFusedAC(       unsigned short  i_r,
-                                 unsigned int    i_m,
-                                 unsigned int    i_n,
-                                 unsigned int    i_k,
-                                 unsigned int    i_ldA,
-                                 unsigned int    i_ldB,
-                                 unsigned int    i_ldC,
-                                 double       i_beta,
-                           const double      *i_a,
-                           const double      *i_b,
-                                 double      *o_c ) {
+LIBXSMM_INLINE void matMulFusedAC(  unsigned short  i_r,
+                                    unsigned int    i_m,
+                                    unsigned int    i_n,
+                                    unsigned int    i_k,
+                                    unsigned int    i_ldA,
+                                    unsigned int    i_ldB,
+                                    unsigned int    i_ldC,
+                                          double    i_beta,
+                                    const double   *i_a,
+                                    const double   *i_b,
+                                          double   *o_c ) {
   unsigned int l_m, l_n, l_k;
   for( l_m = 0; l_m < i_m; l_m++ ) {
     for( l_n = 0; l_n < i_n; l_n++ ) {
@@ -124,17 +124,17 @@ static void matMulFusedAC(       unsigned short  i_r,
 }
 
 
-static void matMulFusedBC(        unsigned short  i_r,
-                                  unsigned int    i_m,
-                                  unsigned int    i_n,
-                                  unsigned int    i_k,
-                                  unsigned int    i_ldA,
-                                  unsigned int    i_ldB,
-                                  unsigned int    i_ldC,
-                                  double       i_beta,
-                            const double      *i_a,
-                            const double      *i_b,
-                                  double      *o_c ) {
+LIBXSMM_INLINE void matMulFusedBC(  unsigned short  i_r,
+                                    unsigned int    i_m,
+                                    unsigned int    i_n,
+                                    unsigned int    i_k,
+                                    unsigned int    i_ldA,
+                                    unsigned int    i_ldB,
+                                    unsigned int    i_ldC,
+                                    double          i_beta,
+                              const double         *i_a,
+                              const double         *i_b,
+                                    double         *o_c ) {
   unsigned int l_m, l_n, l_k;
   for( l_m = 0; l_m < i_m; l_m++ ) {
     for( l_n = 0; l_n < i_n; l_n++ ) {
@@ -155,7 +155,7 @@ static void matMulFusedBC(        unsigned short  i_r,
 }
 #endif
 
-void amok_detect( const double* i_runtimes, size_t* io_amoks, const size_t i_workers ) {
+LIBXSMM_INLINE void amok_detect( const double* i_runtimes, size_t* io_amoks, const size_t i_workers ) {
   double time_avg;
   size_t i;
   time_avg = 0.0;
@@ -176,7 +176,7 @@ void amok_detect( const double* i_runtimes, size_t* io_amoks, const size_t i_wor
   }
 }
 
-void amok_balance( const size_t* i_amoks, const size_t i_workers, const size_t i_worksize, const size_t i_mytid, size_t* io_chunk, size_t* io_mystart, size_t* io_myend ) {
+LIBXSMM_INLINE void amok_balance( const size_t* i_amoks, const size_t i_workers, const size_t i_worksize, const size_t i_mytid, size_t* io_chunk, size_t* io_mystart, size_t* io_myend ) {
   size_t l_chunk, l_start, l_end;
   size_t l_cur_amoks = i_amoks[8*i_workers];
   size_t l_non_amoks = i_workers - l_cur_amoks;

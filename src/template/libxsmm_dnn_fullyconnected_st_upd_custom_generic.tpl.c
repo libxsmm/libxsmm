@@ -141,7 +141,7 @@ for ( ifm1ofm1 = thr_begin; ifm1ofm1 < thr_end; ++ifm1ofm1 ) {  /* outer GEMM m/
 #if defined(LIBXSMM_DNN_FULLYCONNECTED_UPD_BF16_F32)
 libxsmm_barrier_wait(handle->barrier, ltid);
 
-libxsmm_rne_convert_fp32_bfp16( dfilter_f32_ptr+thr_begin_filter, ((element_input_type*)handle->grad_filter->data)+thr_begin_filter, thr_end_filter-thr_begin_filter );
+libxsmm_rne_convert_fp32_bf16( dfilter_f32_ptr+thr_begin_filter, ((element_input_type*)handle->grad_filter->data)+thr_begin_filter, thr_end_filter-thr_begin_filter );
 #endif
 
 libxsmm_barrier_wait(handle->barrier, ltid);

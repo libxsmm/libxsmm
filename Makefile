@@ -279,6 +279,8 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
           $(ROOTDIR)/include/libxsmm_blocked_gemm.h \
           $(ROOTDIR)/include/libxsmm_cpuid.h \
           $(ROOTDIR)/include/libxsmm_dnn.h \
+          $(ROOTDIR)/include/libxsmm_dnn_tensor.h \
+          $(ROOTDIR)/include/libxsmm_dnn_convolution.h \
           $(ROOTDIR)/include/libxsmm_dnn_fusedbatchnorm.h \
           $(ROOTDIR)/include/libxsmm_dnn_pooling.h \
           $(ROOTDIR)/include/libxsmm_dnn_fullyconnected.h \
@@ -291,16 +293,17 @@ HEADERS = $(wildcard $(ROOTDIR)/$(SRCDIR)/template/*.c) $(wildcard $(ROOTDIR)/$(
           $(ROOTDIR)/include/libxsmm_macros.h \
           $(ROOTDIR)/include/libxsmm_malloc.h \
           $(ROOTDIR)/include/libxsmm_math.h \
+          $(ROOTDIR)/include/libxsmm_memory.h \
           $(ROOTDIR)/include/libxsmm_mhd.h \
           $(ROOTDIR)/include/libxsmm_spmdm.h \
           $(ROOTDIR)/include/libxsmm_sync.h \
           $(ROOTDIR)/include/libxsmm_timer.h \
           $(ROOTDIR)/include/libxsmm_typedefs.h
 SRCFILES_LIB = $(patsubst %,$(ROOTDIR)/$(SRCDIR)/%, \
-          libxsmm_main.c libxsmm_malloc.c libxsmm_hash.c libxsmm_diff.c libxsmm_math.c \
+          libxsmm_main.c libxsmm_memory.c libxsmm_malloc.c libxsmm_hash.c libxsmm_math.c \
           libxsmm_sync.c libxsmm_python.c libxsmm_mhd.c libxsmm_timer.c libxsmm_perf.c \
           libxsmm_gemm.c libxsmm_xcopy.c libxsmm_blocked_gemm.c libxsmm_spmdm.c libxsmm_fsspmdm.c libxsmm_rng.c\
-          libxsmm_dnn.c libxsmm_dnn_setup.c libxsmm_dnn_handle.c libxsmm_dnn_elementwise.c \
+          libxsmm_dnn.c libxsmm_dnn_tensor.c libxsmm_dnn_convolution.c  libxsmm_dnn_elementwise.c \
           libxsmm_dnn_rnncell.c libxsmm_dnn_rnncell_forward.c libxsmm_dnn_rnncell_backward_weight_update.c \
           libxsmm_dnn_fusedbatchnorm.c libxsmm_dnn_fusedbatchnorm_forward.c libxsmm_dnn_fusedbatchnorm_backward.c \
           libxsmm_dnn_pooling.c libxsmm_dnn_pooling_forward.c libxsmm_dnn_pooling_backward.c libxsmm_dnn_convolution_forward.c \
@@ -334,6 +337,7 @@ endif
 
 MSGJITPROFILING = 0
 ifneq (0,$(JIT))
+ifneq (0,$(VTUNE))
 ifeq (,$(filter Darwin,$(UNAME)))
   ifneq (0,$(PERF))
     DFLAGS += -DLIBXSMM_PERF
@@ -358,6 +362,7 @@ ifeq (,$(filter Darwin,$(UNAME)))
     endif
     MSGJITPROFILING = 1
   endif
+endif
 endif
 endif
 
@@ -397,9 +402,11 @@ endif
 endif
 	$(information)
 ifneq (,$(filter _0_,_$(LNKSOFT)_))
+ifeq (0,$(DEPSTATIC))
 	$(info Building a shared library requires to link against BLAS)
 	$(info since a deferred choice is not implemented for this OS.)
 	$(info --------------------------------------------------------------------------------)
+endif
 endif
 ifneq (,$(filter _0_,_$(BLAS)_))
 ifeq (,$(filter _0_,_$(NOBLAS)_))
@@ -607,6 +614,7 @@ $(INCDIR)/libxsmm_config.h: $(INCDIR)/.make .state $(ROOTDIR)/$(SRCDIR)/template
 	@$(CP) $(ROOTDIR)/include/libxsmm_macros.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_malloc.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_math.h $(INCDIR) 2>/dev/null || true
+	@$(CP) $(ROOTDIR)/include/libxsmm_memory.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_mhd.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_rng.h $(INCDIR) 2>/dev/null || true
 	@$(CP) $(ROOTDIR)/include/libxsmm_spmdm.h $(INCDIR) 2>/dev/null || true
@@ -749,11 +757,11 @@ endef
 EXTCFLAGS = -DLIBXSMM_BUILD_EXT
 ifeq (0,$(OMP))
 ifeq (,$(filter environment% override command%,$(origin OMP)))
-  EXTCFLAGS += $(OMPFLAG) -DLIBXSMM_OMP
+  EXTCFLAGS += $(OMPFLAG)
   EXTLDFLAGS += $(OMPFLAG)
 endif
 else # OpenMP
-  DFLAGS += -DLIBXSMM_OMP
+  DFLAGS += -DLIBXSMM_SYNC_OMP
 endif
 
 ifneq (0,$(MIC))
@@ -1539,6 +1547,7 @@ realclean-all: realclean
 
 .PHONY: distclean
 distclean: realclean-all
+	@rm -rf libxsmm*
 
 # PREFIX and DESTDIR are equivalent
 # - DESTDIR rules if PREFIX is also specified

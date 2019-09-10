@@ -1,6 +1,6 @@
 !>     unrolled loop version
 !
-!				  COPYRIGHT
+! COPYRIGHT
 !
 !The following is a notice of limited availability of the code, and disclaimer
 !which must be included in the prologue of the code and in all source listings
@@ -18,7 +18,7 @@
 !
 ! M Hutchinson: maxhutch@gmail.com
 !
-!			      GOVERNMENT LICENSE
+! GOVERNMENT LICENSE
 !
 !Portions of this material resulted from work developed under a U.S.
 !Government Contract and are subject to the following license: the Government
@@ -26,7 +26,7 @@
 !irrevocable worldwide license in this computer software to reproduce, prepare
 !derivative works, and perform publicly and display publicly.
 !
-!				  DISCLAIMER
+! DISCLAIMER
 !
 !This computer code material was prepared, in part, as an account of work
 !sponsored by an agency of the United States Government.  Neither the United
@@ -1189,15 +1189,17 @@
       DOUBLE PRECISION :: A(N1,N2),B(N2,N3),C(N1,N3)
 
       N0=N1*N3
-      DO 10 I=1,N0
+      DO I=1,N0
           C(I,1)=0.
-   10 END DO
-      DO 100 J=1,N3
-          DO 100 K=1,N2
+      END DO
+      DO J=1,N3
+          DO K=1,N2
               BB=B(K,J)
-              DO 100 I=1,N1
+              DO I=1,N1
                   C(I,J)=C(I,J)+A(I,K)*BB
-  100 END DO
+              END DO
+          END DO
+      END DO
       return
       end subroutine mxms
 !-----------------------------------------------------------------------
@@ -1212,23 +1214,24 @@
       DOUBLE PRECISION :: A(N1,N2),B(N2,N3),C(N1,N3)
 
       N0=N1*N3
-      DO 10 I=1,N0
+      DO I=1,N0
           C(I,1)=0.
-   10 END DO
+      END DO
       i1 = n1 - mod(n1,4) + 1
-      DO 100 J=1,N3
-          DO 100 K=1,N2
+      DO J=1,N3
+          DO K=1,N2
               BB=B(K,J)
               DO I=1,N1-3,4
                   C(I  ,J)=C(I  ,J)+A(I  ,K)*BB
                   C(I+1,J)=C(I+1,J)+A(I+1,K)*BB
                   C(I+2,J)=C(I+2,J)+A(I+2,K)*BB
                   C(I+3,J)=C(I+3,J)+A(I+3,K)*BB
-              enddo
+              END DO
               DO i=i1,N1
                   C(I  ,J)=C(I  ,J)+A(I  ,K)*BB
-              enddo
-  100 END DO
+              END DO
+          END DO
+      END DO
       return
       end subroutine mxmu4
 !-----------------------------------------------------------------------
@@ -1294,15 +1297,17 @@
           endif
       else
           N0=N1*N3
-          DO 10 I=1,N0
+          DO I=1,N0
               C(I,1)=0.
-   10     END DO
-          DO 100 J=1,N3
-              DO 100 K=1,N2
+          END DO
+          DO J=1,N3
+              DO K=1,N2
                   BB=B(K,J)
-                  DO 100 I=1,N1
+                  DO I=1,N1
                       C(I,J)=C(I,J)+A(I,K)*BB
-  100 END DO
+                  END DO
+              END DO
+          END DO
       endif
       return
       end subroutine mxmUR2
@@ -1631,9 +1636,9 @@
       DOUBLE PRECISION :: A(N1,N2),B(N2,N3),C(N1,N3)
 
       N0=N1*N3
-      DO 10 I=1,N0
+      DO I=1,N0
           C(I,1)=0.
-   10 END DO
+      END DO
       if (n3 <= 8) then
           if (n3 == 1) then
               call mxmur3_1(a,n1,b,n2,c,n3)
@@ -1671,12 +1676,14 @@
               call mxmur3_16(a,n1,b,n2,c,n3)
           endif
       else
-          DO 100 J=1,N3
-              DO 100 K=1,N2
+          DO J=1,N3
+              DO K=1,N2
                   BB=B(K,J)
-                  DO 100 I=1,N1
+                  DO I=1,N1
                       C(I,J)=C(I,J)+A(I,K)*BB
-  100 END DO
+                  END DO
+              END DO
+          END DO
       endif
       return
       end subroutine mxmUR3
@@ -2910,16 +2917,6 @@
           else
               call dgemm( 'N','N',n1,n3,n2,ONE,A,N1,B,N2,ZERO,C,N1)
           endif
-      !        N0=N1*N3
-      !        DO 10 I=1,N0
-      !           C(I,1)=0.
-      !  10    CONTINUE
-      !        DO 100 J=1,N3
-      !        DO 100 K=1,N2
-      !        BB=B(K,J)
-      !        DO 100 I=1,N1
-      !           C(I,J)=C(I,J)+A(I,K)*BB
-      ! 100    CONTINUE
       endif
       return
       end subroutine mxmf3

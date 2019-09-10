@@ -130,10 +130,22 @@ for (imgfm = thr_begin; imgfm < thr_end; ++imgfm) {
       __m512 lcl_vdinput/*, lcl_vdinput2, lcl_vdinput3, lcl_vdinput4*/;
       const element_output_type* doutput_ptr = &LIBXSMM_VLA_ACCESS(5, doutput, img, fm1,     ho,     wo, fm2, nBlocksFm, ofhp, ofwp, 64);
       const element_mask_type*      mask_ptr = &LIBXSMM_VLA_ACCESS(5, mask,    img, fm1, ho-oph, wo-opw, fm2, nBlocksFm,  ofh,  ofw, 64);
-
+#if 1
       lcl_vdinput = _mm512_i32gather_ps( _mm512_loadu_si512( mask_ptr ), lcl_buffer_ptr, 4 );
       lcl_vdinput = _mm512_add_ps( lcl_vdinput, _mm512_load_act( doutput_ptr ) );
       _mm512_i32scatter_ps( lcl_buffer_ptr, _mm512_loadu_si512( mask_ptr ), lcl_vdinput, 4 );
+#else
+      for ( v = 0; v < 16; ++v ) {
+#if defined(LIBXSMM_DNN_POOLING_BWD_BF16)
+        union libxsmm_bfloat16_hp del_output_f32;
+        del_output_f32.i[1]  = doutput_ptr[v];
+        del_output_f32.i[0]  = 0;
+        lcl_buffer_ptr[mask_ptr[v]] += del_output_f32.f;
+#else
+        lcl_buffer_ptr[mask_ptr[v]] += doutput_ptr[v];
+#endif
+      }
+#endif
     }
   }
 #endif

@@ -40,6 +40,7 @@
 #endif
 
 #define USE_OVERWRITE
+#define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE
 /*#define USE_FUSED_BATCH_STATS*/
 /*#define USE_FUSED_RELU_BWD*/
 #define USE_OVERWRITE_RNE
@@ -53,7 +54,7 @@ int main(int argc, char* argv[])
 {
   float *naive_input, *naive_input_save, *naive_output_save, *naive_filter, *naive_output, *naive_output_bp, *naive_output_fp, *naive_input_bp , *naive_filter_wu, *naive_input_tmp, *naive_libxsmm_output_f32, *naive_libxsmm_input_f32 ,*naive_libxsmm_filter_f32;
   libxsmm_bfloat16 *naive_input_bf16, *naive_input_bp_bf16, *naive_filter_bf16, *naive_output_bf16, *naive_output_bp_bf16, *naive_filter_wu_bf16;
-  libxsmm_bfloat16 *input_libxsmm, *filter_libxsmm, *output_libxsmm, *naive_libxsmm_output, *naive_libxsmm_input, *naive_libxsmm_filter, *dinput_libxsmm, *doutput_libxsmm, *dfilter_libxsmm;
+  libxsmm_bfloat16 *input_libxsmm, *filter_libxsmm, *filtertr_libxsmm, *output_libxsmm, *naive_libxsmm_output, *naive_libxsmm_input, *naive_libxsmm_filter, *dinput_libxsmm, *doutput_libxsmm, *dfilter_libxsmm;
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
   naive_conv_t naive_param;
@@ -97,6 +98,7 @@ int main(int argc, char* argv[])
   libxsmm_dnn_tensor* libxsmm_input;
   libxsmm_dnn_tensor* libxsmm_output;
   libxsmm_dnn_tensor* libxsmm_filter;
+  libxsmm_dnn_tensor* libxsmm_filter_tr;
   libxsmm_dnn_tensor* libxsmm_dinput;
   libxsmm_dnn_tensor* libxsmm_doutput;
   libxsmm_dnn_tensor* libxsmm_dfilter;
@@ -120,7 +122,7 @@ int main(int argc, char* argv[])
     printf("Usage: %s iters inpWidth inpHeight nImg nIfm nOfm kw kh pad stride type padding_mode\n", argv[0]);
     return 0;
   }
-  srand(1);
+  libxsmm_rng_set_seed(1);
 
   /* reading new values from cli */
   i = 1;
@@ -141,6 +143,11 @@ int main(int argc, char* argv[])
 
   if (type != 'A' && type != 'F' && type != 'B'&& type != 'U') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (WU only)\n");
+    return 0;
+  }
+
+  if (format != 'L') {
+    printf("format needs to be 'L'\n");
     return 0;
   }
 
@@ -240,6 +247,7 @@ int main(int argc, char* argv[])
   naive_libxsmm_filter      = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
   input_libxsmm             = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(libxsmm_bfloat16), 2097152);
   filter_libxsmm            = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
+  filtertr_libxsmm          = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nOfm*nIfm*kh*kw*    sizeof(libxsmm_bfloat16), 2097152);
   output_libxsmm            = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(libxsmm_bfloat16), 2097152);
   dinput_libxsmm            = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nIfm*ifhp*ifwp*sizeof(libxsmm_bfloat16), 2097152);
   doutput_libxsmm           = (libxsmm_bfloat16*)libxsmm_aligned_malloc( nImg*nOfm*ofhp*ofwp*sizeof(libxsmm_bfloat16), 2097152);
@@ -248,6 +256,7 @@ int main(int argc, char* argv[])
 
   /* initialize data */
   zero_buf(naive_input, nImg*nIfm*ifhp*ifwp);
+  zero_buf(naive_output_bp, nImg*nOfm*ofhp*ofwp);
   if (padding_mode == 0 ) {
     init_buf(naive_input,          nImg*nIfm*ifhp*ifwp, 0, 0);
     init_buf(naive_output_bp,      nImg*nOfm*ofhp*ofwp, 0, 0);
@@ -302,13 +311,13 @@ int main(int argc, char* argv[])
     printf("##########################################\n");
   }
 
-  /* make things bfp16 */
-  truncate_mask_fp32_bfp16( naive_input, naive_input, nImg*nIfm*ifhp*ifwp );
-  truncate_mask_fp32_bfp16( naive_input_bp, naive_input_bp, nImg*nIfm*ifhp*ifwp );
-  truncate_mask_fp32_bfp16( naive_output_fp, naive_output_fp, nImg*nOfm*ofhp*ofwp );
-  truncate_mask_fp32_bfp16( naive_output_bp, naive_output_bp, nImg*nOfm*ofhp*ofwp );
-  truncate_mask_fp32_bfp16( naive_filter, naive_filter, nIfm*nOfm*kh*kw );
-  truncate_mask_fp32_bfp16( naive_filter_wu, naive_filter_wu, nIfm*nOfm*kh*kw );
+  /* make things bf16 */
+  truncate_mask_fp32_bf16( naive_input, naive_input, nImg*nIfm*ifhp*ifwp );
+  truncate_mask_fp32_bf16( naive_input_bp, naive_input_bp, nImg*nIfm*ifhp*ifwp );
+  truncate_mask_fp32_bf16( naive_output_fp, naive_output_fp, nImg*nOfm*ofhp*ofwp );
+  truncate_mask_fp32_bf16( naive_output_bp, naive_output_bp, nImg*nOfm*ofhp*ofwp );
+  truncate_mask_fp32_bf16( naive_filter, naive_filter, nIfm*nOfm*kh*kw );
+  truncate_mask_fp32_bf16( naive_filter_wu, naive_filter_wu, nIfm*nOfm*kh*kw );
   libxsmm_truncate_convert_f32_bf16( naive_input, naive_input_bf16, nImg*nIfm*ifhp*ifwp );
   libxsmm_truncate_convert_f32_bf16( naive_input_bp, naive_input_bp_bf16, nImg*nIfm*ifhp*ifwp );
   libxsmm_truncate_convert_f32_bf16( naive_output_fp, naive_output_bf16, nImg*nOfm*ofhp*ofwp );
@@ -342,11 +351,10 @@ int main(int argc, char* argv[])
   conv_desc.buffer_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
   conv_desc.filter_format = LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM;
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_NONE;
-#if defined(USE_OVERWRITE)
+#if defined(USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE)
+  conv_desc.options = LIBXSMM_DNN_CONV_OPTION_BWD_NO_FILTER_TRANSPOSE_OVERWRITE;
+#elif defined(USE_OVERWRITE)
   conv_desc.options = LIBXSMM_DNN_CONV_OPTION_OVERWRITE;
-#endif
-#if defined(USE_OVERWRITE_RNE)
-  conv_desc.options = LIBXSMM_DNN_CONV_OPTION_F32_BF16_CVT_RNE_OVERWRITE;
 #endif
 #if defined(USE_FUSED_BIAS)
   conv_desc.fuse_ops = LIBXSMM_DNN_CONV_FUSE_BIAS;
@@ -391,7 +399,11 @@ int main(int argc, char* argv[])
   libxsmm_filter  = libxsmm_dnn_link_tensor( libxsmm_layout,  filter_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
-  libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER_TRANS, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_filter_tr  = libxsmm_dnn_link_tensor( libxsmm_layout, filtertr_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
+  libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+
+    libxsmm_layout = libxsmm_dnn_create_tensor_datalayout( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dfilter  = libxsmm_dnn_link_tensor( libxsmm_layout,  dfilter_libxsmm, &status ); CHKERR_LIBXSMM_DNN( status );
   libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
 
@@ -421,6 +433,7 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_doutput,    LIBXSMM_DNN_GRADIENT_OUTPUT ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_filter, LIBXSMM_DNN_REGULAR_FILTER ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_dfilter, LIBXSMM_DNN_GRADIENT_FILTER ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_filter_tr,  LIBXSMM_DNN_REGULAR_FILTER_TRANS ) );
 #ifdef USE_FUSED_BATCH_STATS
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_bind_tensor( libxsmm_handle, libxsmm_batchstats, LIBXSMM_DNN_BATCH_STATS ) );
 #endif
@@ -536,6 +549,9 @@ int main(int argc, char* argv[])
     printf("##############################################\n");
     printf("#  Check Correctness - BWD (custom-Storage)  #\n");
     printf("##############################################\n");
+#if defined(USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE)
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_trans_reg_bf16_filter( libxsmm_handle ) );
+#endif
     /* run LIBXSMM convolutions */
 #if defined(_OPENMP)
 #   pragma omp parallel
@@ -700,24 +716,47 @@ int main(int argc, char* argv[])
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_INPUT ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_OUTPUT ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_REGULAR_FILTER ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_INPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_OUTPUT ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_release_tensor( libxsmm_handle, LIBXSMM_DNN_GRADIENT_FILTER ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_input ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_output ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_filter ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dinput ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_doutput ) );
+  CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_dfilter ) );
   CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_conv_layer( libxsmm_handle ) );
 
   /* deallocate data */
   libxsmm_free( naive_input );
+  libxsmm_free( naive_input_save );
   libxsmm_free( naive_input_tmp );
   libxsmm_free( naive_output );
+  libxsmm_free( naive_output_fp );
+  libxsmm_free( naive_output_save );
+  libxsmm_free( naive_output_bp );
+  libxsmm_free( naive_input_bp );
   libxsmm_free( naive_filter );
+  libxsmm_free( naive_filter_wu );
   libxsmm_free( naive_input_bf16 );
+  libxsmm_free( naive_input_bp_bf16 );
   libxsmm_free( naive_output_bf16 );
+  libxsmm_free( naive_output_bp_bf16 );
   libxsmm_free( naive_filter_bf16 );
+  libxsmm_free( naive_filter_wu_bf16 );
   libxsmm_free( naive_libxsmm_output );
   libxsmm_free( naive_libxsmm_output_f32 );
+  libxsmm_free( naive_libxsmm_input_f32 );
+  libxsmm_free( naive_libxsmm_filter_f32 );
+  libxsmm_free( naive_libxsmm_input );
+  libxsmm_free( naive_libxsmm_filter );
   libxsmm_free( input_libxsmm );
   libxsmm_free( filter_libxsmm );
   libxsmm_free( output_libxsmm );
+  libxsmm_free( dinput_libxsmm );
+  libxsmm_free( doutput_libxsmm );
+  libxsmm_free( dfilter_libxsmm );
+  libxsmm_free( batchstats_libxsmm );
 
   { const char *const env_check_scale = getenv("CHECK_SCALE");
     const double check_scale = LIBXSMM_ABS(0 == env_check_scale ? 100.0 : atof(env_check_scale));

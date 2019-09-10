@@ -187,10 +187,10 @@ int main(int argc, char* argv[])
   init_buf( naive_filter,    nIFm*nOFm, 0, 0 );
   init_buf( naive_delfilter, nIFm*nOFm, 0, 0 );
 
-  libxsmm_rne_convert_fp32_bfp16( naive_input,     naive_input_bf16,     nImg*nIFm );
-  libxsmm_rne_convert_fp32_bfp16( naive_delinput,  naive_delinput_bf16,  nImg*nIFm );
-  libxsmm_rne_convert_fp32_bfp16( naive_filter,    naive_filter_bf16,    nIFm*nOFm );
-  libxsmm_rne_convert_fp32_bfp16( naive_delfilter, naive_delfilter_bf16, nIFm*nOFm );
+  libxsmm_rne_convert_fp32_bf16( naive_input,     naive_input_bf16,     nImg*nIFm );
+  libxsmm_rne_convert_fp32_bf16( naive_delinput,  naive_delinput_bf16,  nImg*nIFm );
+  libxsmm_rne_convert_fp32_bf16( naive_filter,    naive_filter_bf16,    nIFm*nOFm );
+  libxsmm_rne_convert_fp32_bf16( naive_delfilter, naive_delfilter_bf16, nIFm*nOFm );
 
   if (LIBXSMM_NEQ(0, check)) {
     printf("##########################################\n");

@@ -31,7 +31,7 @@
 #include "libxsmm_trace.h"
 #include <libxsmm_sync.h>
 
-#if !defined(LIBXSMM_TRACE_DLINFO) /*&& !defined(__STATIC)*/
+#if !defined(LIBXSMM_TRACE_DLINFO) && defined(_GNU_SOURCE) /*&& !defined(__STATIC)*/
 # define LIBXSMM_TRACE_DLINFO
 #endif
 #if !defined(LIBXSMM_TRACE_MINDEPTH) || 0 > (LIBXSMM_TRACE_MINDEPTH)
@@ -580,7 +580,7 @@ LIBXSMM_API void __cyg_profile_func_enter(void* this_fn, void* call_site)
 #if defined(LIBXSMM_TRACE)
   if (0 > internal_trace_initialized) {
     /* NULL: inherit global settings from libxsmm_trace_init */
-    libxsmm_trace(stderr, NULL/*filter_threadid*/, LIBXSMM_CALLER, NULL, NULL);
+    libxsmm_trace(stderr, NULL/*filter_threadid*/, "__cyg_profile_func_enter"/*LIBXSMM_FUNCNAME*/, NULL, NULL);
   }
 #endif
   LIBXSMM_UNUSED(this_fn); LIBXSMM_UNUSED(call_site);

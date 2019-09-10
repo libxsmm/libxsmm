@@ -36,11 +36,7 @@
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
-#if !defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && defined(LIBXSMM_BUILD) && \
-  (!defined(__BLAS) || (0 != __BLAS)) && (defined(__GNUC__) || defined(_CRAYC)) && \
-  !(defined(__APPLE__) && defined(__MACH__) && LIBXSMM_VERSION3(6, 1, 0) >= \
-    LIBXSMM_VERSION3(__clang_major__, __clang_minor__, __clang_patchlevel__)) && \
-  !defined(_WIN32) && !defined(__CYGWIN__)
+#if !defined(LIBXSMM_BLAS_WRAP_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && (!defined(__BLAS) || (0 != __BLAS))
 # define LIBXSMM_BLAS_WRAP_DYNAMIC
 #endif
 #if defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
@@ -57,9 +53,6 @@
 #endif
 #if !defined(LIBXSMM_GEMM_LOCK)
 # define LIBXSMM_GEMM_LOCK LIBXSMM_LOCK_DEFAULT
-#endif
-#if !defined(LIBXSMM_GEMM_TASKSCALE)
-# define LIBXSMM_GEMM_TASKSCALE 2
 #endif
 #if !defined(LIBXSMM_GEMM_MMBATCH_SCALE)
 # define LIBXSMM_GEMM_MMBATCH_SCALE 1.5
@@ -88,16 +81,18 @@
 #endif
 
 #if defined(LIBXSMM_BUILD)
-# define LIBXSMM_BLAS_WRAPPER_STATIC(TYPE, KIND, ORIGINAL) if (NULL == (ORIGINAL)) { \
+# define LIBXSMM_BLAS_WRAPPER_STATIC1(TYPE, KIND, ORIGINAL) if (NULL == (ORIGINAL)) { \
     ORIGINAL = LIBXSMM_FSYMBOL(LIBXSMM_CONCATENATE(__real_, LIBXSMM_TPREFIX(TYPE, KIND))); \
   }
-#elif (!defined(__BLAS) || (0 != __BLAS))
-# define LIBXSMM_BLAS_WRAPPER_STATIC(TYPE, KIND, ORIGINAL) if (NULL == (ORIGINAL)) { \
-    ORIGINAL = LIBXSMM_BLAS_SYMBOL(TYPE, KIND); \
-  }
+# define LIBXSMM_BLAS_WRAPPER_STATIC0 LIBXSMM_BLAS_WRAPPER_STATIC1
 #else
-# define LIBXSMM_BLAS_WRAPPER_STATIC(TYPE, KIND, ORIGINAL)
+# define LIBXSMM_BLAS_WRAPPER_STATIC1(TYPE, KIND, ORIGINAL) if (NULL == (ORIGINAL)) { \
+    ORIGINAL = (LIBXSMM_BLAS_FNTYPE(TYPE, KIND))LIBXSMM_BLAS_SYMBOL(TYPE, KIND); \
+  }
+# define LIBXSMM_BLAS_WRAPPER_STATIC0(TYPE, KIND, ORIGINAL)
 #endif
+#define LIBXSMM_BLAS_WRAPPER_STATIC(CONDITION, TYPE, KIND, ORIGINAL) \
+  LIBXSMM_CONCATENATE(LIBXSMM_BLAS_WRAPPER_STATIC, CONDITION)(TYPE, KIND, ORIGINAL)
 
 #if defined(LIBXSMM_BLAS_WRAP_DYNAMIC)
 # define LIBXSMM_BLAS_WRAPPER_DYNAMIC(TYPE, KIND, ORIGINAL, NEXT) { \
@@ -119,9 +114,9 @@
 # define LIBXSMM_BLAS_WRAPPER_DYNAMIC(TYPE, KIND, ORIGINAL, NEXT)
 #endif
 
-#define LIBXSMM_BLAS_WRAPPER(TYPE, KIND, ORIGINAL, NEXT) if (NULL == (ORIGINAL)) { \
+#define LIBXSMM_BLAS_WRAPPER(CONDITION, TYPE, KIND, ORIGINAL, NEXT) if (NULL == (ORIGINAL)) { \
   LIBXSMM_BLAS_WRAPPER_DYNAMIC(TYPE, KIND, ORIGINAL, NEXT); \
-  LIBXSMM_BLAS_WRAPPER_STATIC(TYPE, KIND, ORIGINAL); \
+  LIBXSMM_BLAS_WRAPPER_STATIC(CONDITION, TYPE, KIND, ORIGINAL); \
 }
 
 
@@ -155,14 +150,14 @@ LIBXSMM_API void __real_dgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, dou
 LIBXSMM_API void __real_sgemm_batch(LIBXSMM_BLAS_SYMBOL_SIGNATURE(const*, *, float, gemm_batch));
 #endif
 
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, double, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_CDECL(const*, *, double, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, float, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_CDECL(const*, *, float, gemm_batch);
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, double, gemm);
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, float, gemm);
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, double, gemv);
-LIBXSMM_BLAS_SYMBOL_FDECL(const*, *, float, gemv);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, double, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_CDECL(LIBXSMM_GEMM_CONST*, *, double, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, float, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_CDECL(LIBXSMM_GEMM_CONST*, *, float, gemm_batch);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, double, gemm);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, float, gemm);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, double, gemv);
+LIBXSMM_BLAS_SYMBOL_FDECL(LIBXSMM_GEMM_CONST*, *, float, gemv);
 
 LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_gemm_handle {
   libxsmm_code_pointer copy_a, copy_b, copy_i, copy_o;
@@ -229,8 +224,8 @@ LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_mmbatch_size);
 LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_npargroups);
 /** Minimum batchsize per thread/task. */
 LIBXSMM_APIVAR_ALIGNED(unsigned int libxsmm_gemm_taskgrain);
-/** Determines if OpenMP tasks are used, and scales beyond the number of threads. */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_taskscale);
+/** Determines if OpenMP tasks are used. */
+LIBXSMM_APIVAR_ALIGNED(int libxsmm_gemm_tasks);
 
 /** Determines the default prefetch strategy, which is used in case of LIBXSMM_PREFETCH_AUTO. */
 LIBXSMM_APIVAR(libxsmm_gemm_prefetch_type libxsmm_gemm_auto_prefetch_default);

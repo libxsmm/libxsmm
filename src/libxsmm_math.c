@@ -30,7 +30,6 @@
 ******************************************************************************/
 #include <libxsmm_mhd.h>
 #include "libxsmm_main.h"
-#include "libxsmm_hash.h"
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -257,13 +256,6 @@ LIBXSMM_API void libxsmm_matdiff_clear(libxsmm_matdiff_info* info)
 }
 
 
-LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed)
-{
-  LIBXSMM_INIT
-  return libxsmm_crc32(seed, data, size);
-}
-
-
 LIBXSMM_API size_t libxsmm_shuffle(unsigned int n)
 {
   const unsigned int s = (0 != (n & 1) ? ((n / 2 - 1) | 1) : ((n / 2) & ~1));
@@ -318,7 +310,7 @@ LIBXSMM_API unsigned int libxsmm_isqrt2_u32(unsigned int x)
 
 LIBXSMM_API LIBXSMM_INTRINSICS(LIBXSMM_X86_GENERIC) double libxsmm_dsqrt(double x)
 {
-#if defined(LIBXSMM_INTRINSICS_X86)
+#if defined(LIBXSMM_INTRINSICS_X86) && !defined(__PGI)
   const __m128d a = LIBXSMM_INTRINSICS_MM_UNDEFINED_PD();
   const double result = _mm_cvtsd_f64(_mm_sqrt_sd(a, _mm_set_sd(x)));
 #elif !defined(LIBXSMM_NO_LIBM)
@@ -378,6 +370,7 @@ LIBXSMM_API unsigned int libxsmm_icbrt_u32(unsigned int x)
   return y;
 }
 
+#if defined(LIBXSMM_NO_LIBM)
 /* Implementation based on Claude Baumann's product (http://www.convict.lu/Jeunes/ultimate_stuff/exp_ln_2.htm).
  * Exponential function, which exposes the number of iterations taken in the main case (1...22).
  */
@@ -447,6 +440,7 @@ LIBXSMM_API_INLINE float internal_math_sexp2(float x, int maxiter)
   }
   return result.s;
 }
+#endif
 
 
 LIBXSMM_API float libxsmm_sexp2(float x)
@@ -520,18 +514,19 @@ LIBXSMM_API float libxsmm_sexp2_i8i(int x)
 }
 
 
-#if defined(LIBXSMM_BUILD) && !defined(LIBXSMM_NOFORTRAN)
+#if defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))
 
 /* implementation provided for Fortran 77 compatibility */
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff)(libxsmm_matdiff_info* /*info*/,
-  const libxsmm_datatype* /*datatype*/, const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const void* /*ref*/, const void* /*tst*/,
+  const int* /*datatype*/, const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const void* /*ref*/, const void* /*tst*/,
   const libxsmm_blasint* /*ldref*/, const libxsmm_blasint* /*ldtst*/);
 LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_matdiff)(libxsmm_matdiff_info* info,
-  const libxsmm_datatype* datatype, const libxsmm_blasint* m, const libxsmm_blasint* n, const void* ref, const void* tst,
+  const int* datatype, const libxsmm_blasint* m, const libxsmm_blasint* n, const void* ref, const void* tst,
   const libxsmm_blasint* ldref, const libxsmm_blasint* ldtst)
 {
   static int error_once = 0;
-  if ((NULL == datatype || NULL == m || EXIT_SUCCESS != libxsmm_matdiff(info, *datatype, *m, *(NULL != n ? n : m), ref, tst, ldref, ldtst))
+  if ((NULL == datatype || LIBXSMM_DATATYPE_UNSUPPORTED <= *datatype || 0 > *datatype || NULL == m
+    || EXIT_SUCCESS != libxsmm_matdiff(info, (libxsmm_datatype)*datatype, *m, *(NULL != n ? n : m), ref, tst, ldref, ldtst))
     && 0 != libxsmm_verbosity && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_matdiff specified!\n");
@@ -575,48 +570,5 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_shuffle)(long long* coprime, const int*
 #endif
 }
 
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* /*hash_seed*/, const void* /*data*/, const int* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_hash)(void* hash_seed, const void* data, const int* size)
-{
-#if !defined(NDEBUG)
-  static int error_once = 0;
-  if (NULL != hash_seed && NULL != data && NULL != size && 0 <= *size)
-#endif
-  {
-    unsigned int *const hash_seed_ui32 = (unsigned int*)hash_seed;
-    *hash_seed_ui32 = (libxsmm_hash(data, (unsigned int)*size, *hash_seed_ui32) & 0x7FFFFFFF/*sign-bit*/);
-  }
-#if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_hash specified!\n");
-  }
-#endif
-}
-
-
-/* implementation provided for Fortran 77 compatibility */
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* /*result*/, const void* /*a*/, const void* /*b*/, const long long* /*size*/);
-LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_diff)(int* result, const void* a, const void* b, const long long* size)
-{
-#if !defined(NDEBUG)
-  static int error_once = 0;
-  if (NULL != result && NULL != a && NULL != b && NULL != size && 0 <= *size)
-#endif
-  {
-    *result = libxsmm_memcmp(a, b, (size_t)*size);
-  }
-#if !defined(NDEBUG)
-  else if (0 != libxsmm_verbosity /* library code is expected to be mute */
-    && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-  {
-    fprintf(stderr, "LIBXSMM ERROR: invalid arguments for libxsmm_memcmp specified!\n");
-  }
-#endif
-}
-
-#endif /*defined(LIBXSMM_BUILD)*/
+#endif /*defined(LIBXSMM_BUILD) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
 

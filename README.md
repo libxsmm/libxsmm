@@ -6,6 +6,8 @@ LIBXSMM is a library for specialized dense and sparse matrix operations as well 
 
 The library supports statically generated code at configuration time (SMMs), uses optimized code paths based on compiler-generated code as well as Intrinsic functions, but mainly utilizes Just&#8209;In&#8209;Time (JIT) code specialization for compiler-independent performance (matrix multiplications, matrix transpose/copy, sparse functionality, and small convolutions). LIBXSMM is suitable for "build once and deploy everywhere" i.e., no special target flags are needed to exploit the available performance.
 
+For a list questions and answers, please also have a look at [https://github.com/hfp/libxsmm/wiki/Q&A](https://github.com/hfp/libxsmm/wiki/Q&A).
+
 **Where to go for documentation?**
 
 * **ReadtheDocs**: [main](https://libxsmm.readthedocs.io/) and [sample](https://libxsmm.readthedocs.io/libxsmm_samples/) documentation with full text search.
@@ -16,9 +18,36 @@ The library supports statically generated code at configuration time (SMMs), use
 
 **<a name="what-is-a-small-convolution"></a>What is a small convolution?** In the last years, new workloads such as deep learning and more specifically convolutional neural networks (CNN) emerged and are pushing the limits of today's hardware. One of the expensive kernels is a small convolution with certain kernel sizes such that calculations in the frequency space is not the most efficient method when compared with direct convolutions. LIBXSMM's current support for convolutions aims for an easy to use invocation of small (direct) convolutions, which are intended for CNN training and classification.
 
-For more questions and answers, please have a look at [https://github.com/hfp/libxsmm/wiki/Q&A](https://github.com/hfp/libxsmm/wiki/Q&A).
+**<a name="getting-started"></a><a name="hello-libxsmm"></a>Getting Started**: The following code is focused on a specific functionality but may be considered as "Hello LIBXSMM". Build the example with `cd /path/to/libxsmm; make STATIC=0` (shared library), save the code under `hello.cpp` (below) and compile using `g++ -I/path/to/libxsmm/include hello.cpp -L/path/to/libxsmm/lib -lxsmm -lblas -o hello` (GNU CCC), and finally execute with `LD_LIBRARY_PATH=/path/to/libxsmm/lib LIBXSMM_VERBOSE=2 ./hello`.
 
-Documented functionality and available domains:
+```cpp
+#include <libxsmm.h>
+#include <vector>
+int main(int argc, char* argv[])
+{
+  typedef double value_type;
+  int batchsize = 1000, m = 13, n = 5, k = 7;
+  std::vector<value_type> a(batchsize*m*k), b(batchsize*k*n), c(m*n, 0);
+  /* C/C++ and Fortran interfaces are available */
+  typedef libxsmm_mmfunction<value_type> kernel_type;
+  /* generates and dispatches a matrix multiplication kernel (C++ functor) */
+  kernel_type kernel(LIBXSMM_GEMM_FLAG_NONE, m,n,k, 1.0/*alpha*/, 1.0/*beta*/);
+  assert(kernel);
+  for (int i = 0; i < batchsize; ++i) { /* initialize input */
+    a[i*m*k] = static_cast<value_type>(1) / (i % 25);
+    b[i*k*n] = static_cast<value_type>(7) / (i % 75);
+  }
+  for (int i = 0; i < batchsize; ++i) { /* C = Ai * Bi */
+    kernel(&a[i*m*k], &b[i*k*n], &c[0]);
+  }
+}
+```
+
+## Interfaces and Domains<a name="interfaces"></a>
+
+### Overview<a name="general-interface"></a>
+
+Please have a look at [https://github.com/hfp/libxsmm/tree/master/include](https://github.com/hfp/libxsmm/tree/master/include) for all published functions. Get started with the following list of available domains and documented functionality:
 
 * MM: [Matrix Multiplication](#matrix-multiplication)
 * DNN: [Deep Neural Networks](#deep-neural-networks)
@@ -26,22 +55,64 @@ Documented functionality and available domains:
 * PERF: [Performance](#performance)
 * BE: [Backend](#jit-backend)
 
-For additional functionality, please have a look at [https://github.com/hfp/libxsmm/tree/master/include](https://github.com/hfp/libxsmm/tree/master/include).
+To initialize library internal resources, an explicit initialization routine helps to avoid lazy initialization overhead when calling LIBXSMM for the first time. The library deallocates internal resources at program exit, but also provides a companion of the afore mentioned initialization (finalize).
+
+```C
+/** Initialize the library; pay for setup cost at a specific point. */
+void libxsmm_init(void);
+/** De-initialize the library and free internal memory (optional). */
+void libxsmm_finalize(void);
+```
+
+### Matrix Multiplication<a name="interface-for-matrix-multiplication"></a>
+
+This domain (MM) supports Small Matrix Multiplications (SMM), batches of multiple multiplications as well as the industry-standard interface for GEneral Matrix Matrix multiplication (GEMM).
+
+The [Matrix Multiplication domain (MM)](documentation/libxsmm_mm.md) contains routines for:
+
+* [Small, tiled, and parallelized matrix multiplications](documentation/libxsmm_mm.md#overview)
+* [Manual code dispatch (customized matrix batches)](documentation/libxsmm_mm.md#manual-code-dispatch)
+* [Batched multiplication (explicit interface)](documentation/libxsmm_mm.md#batched-multiplication)
+* [Call wrapper (static and dynamic linkage)](documentation/libxsmm_mm.md#call-wrapper)
+
+### Deep Learning<a name="interface-for-convolutions"></a>
+
+This domain (DL) is detailed by a separate [document](documentation/libxsmm_dl.md). It may be inspiring to have a look at the light-weight GxM framework, which uses LIBXSMM for end-to-end Deep Learning.
+
+### Service Functions
+
+For convenient operation of the library and to ease integration, some service routines are available. These routines may not belong to the core functionality of LIBXSMM (SMM or DNN domain), but users are encouraged to use this domain (AUX). There are two categories: (1)&#160;routines which are available for C and FORTRAN, and (2)&#160;routines that are only available per C interface.
+
+The [service function domain (AUX)](documentation/libxsmm_aux.md) contains routines for:
+
+* [Getting and setting the target architecture](documentation/libxsmm_aux.md#getting-and-setting-the-target-architecture)
+* [Getting and setting the verbosity](documentation/libxsmm_aux.md#getting-and-setting-the-verbosity)
+* [Measuring time durations (timer)](documentation/libxsmm_aux.md#timer-facility)
+* [Loading and storing data (I/O)](documentation/libxsmm_aux.md#meta-image-file-io)
+* [Allocating memory](documentation/libxsmm_aux.md#memory-allocation)
+
+### Backend<a name="jit-backend"></a>
+
+More information about the JIT-backend and the code generator can be found in a separate [document](documentation/libxsmm_be.md), which also includes information about LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](documentation/libxsmm_be.md#generator-driver) programs.
 
 ## Build Instructions
 
 ### Overview
 
-The main interface file is *generated*, and it is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.h#L36) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f#L32). There are two ways prepared to incorporate and use LIBXSMM:
+The main interface file is *generated*, and it is therefore **not** stored in the code repository. Instead, one may have a look at the code generation template files for [C/C++](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.h#L36) and [FORTRAN](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm.f#L32). There are two ways prepared to build and use LIBXSMM:
 
 * [Classic Library (ABI)](#classic-library-abi) and [Link Instructions](#link-instructions) (C/C++ and FORTRAN)
 * [Header-Only](#header-only) (C and C++)
 
+**NOTE**: LIBXSMM is available as prebuilt package for Fedora/RedHat/CentOS, Ubuntu, and FreeBSD. Further, LIBXSMM can be installed using the [Spack Package Manager](http://computation.llnl.gov/projects/spack-hpc-package-manager) or per [EasyBuild+EasyConfig](https://github.com/easybuilders).
+
 ### Classic Library (ABI)
 
-The build system relies on GNU&#160;Make (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using key&#8209;value pairs. Key&#8209;value pairs can be supplied in two ways: (1)&#160;after the "make" command, or (2)&#160;prior to the "make" command (`env`) which is effectively the same as exporting the key&#8209;value pair as an environment variable (`export`, or `setenv`). Both methods can be mixed (the second method may require make's `-e` flag). Please note that the CXX, CC, and FC keys are considered in any case.
+The build system relies on GNU&#160;Make (typically associated with the `make` command, but e.g. FreeBSD is calling it `gmake`). The build can be customized by using key&#8209;value pairs. Key&#8209;value pairs can be supplied in two ways: (1)&#160;after the "make" command, or (2)&#160;prior to the "make" command (`env`) which is effectively the same as exporting the key&#8209;value pair as an environment variable (`export`, or `setenv`). Both methods can be mixed (the second method may require make's `-e` flag).
 
-The build system considers a set of given key-value pairs as a single unique build and triggers a rebuild for a distinct set of flags. For more advanced builds or additional background, please consult the section about [Customization](documentation/libxsmm_tune.md). To generate the interface of the library inside of the 'include' directory and to build the static library (by default, STATIC=1 is activated). Run any or both of the following commands:
+**NOTE**: By default, C/C++ and FORTRAN compilers are needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran` and maybe `AR=ar`), the need for a FORTRAN compiler can be relaxed (`make FC=` or `make FORTRAN=0`). The latter affects the availability of the MODule file and the corresponding 'libxsmmf' library (the interface 'libxsmm.f' is still generated).
+
+The build system considers a set of given key-value pairs as a single unique build and triggers a rebuild for a distinct set of flags. For more advanced builds or additional background, please consult the section about [Customization](documentation/libxsmm_tune.md). To generate the interface of the library inside of the 'include' directory and to build the static library (by default, STATIC=1 is activated). Run any (or both) of the following command(s):
 
 ```bash
 make STATIC=0
@@ -79,26 +150,13 @@ make clean
 make realclean
 ```
 
-**NOTE**: By default, C/C++ and FORTRAN compilers are needed (some sample code is written in C++). Beside of specifying the compilers (`make CXX=g++ CC=gcc FC=gfortran` and maybe `AR=ar`), the need for a FORTRAN compiler can be relaxed (`make FC=` or `make FORTRAN=0`). The latter affects the availability of the MODule file and the corresponding 'libxsmmf' library (the interface 'libxsmm.f' is still generated). FORTRAN code can make use of LIBXSMM:
+<a name="fortran"></a>FORTRAN code can make use of LIBXSMM:
 
 * By using the module and linking with 'libxsmmf', 'libxsmm', and (optionally) 'libxsmmext',
 * By including 'libxsmm.f' and linking with 'libxsmm', and (optionally) 'libxsmmext', or
 * By (implicitly) calling a SUBROUTINE and linking with 'libxsmm', and (optionally) 'libxsmmext'.
 
-**FORTRAN&#160;77**: Using the module or including the interface, requires at least a Fortran&#160;2003 compiler (F2K3). FORTRAN&#160;77 compatibility is only implicitly available (no interface), and the available subset of routines is documented in 'libxsmm.f' and marked with [comments](https://github.com/hfp/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility) (part of the implementation).
-
-### Link Instructions
-
-The library is agnostic with respect to the threading-runtime, and therefore an application is free to use any threading runtime (e.g., OpenMP). The library is also thread-safe, and multiple application threads can call LIBXSMM's routines concurrently. Enabling OpenMP for LIBXSMM's main library is supported as well (OMP=1), and mostly affects the synchronization primitives used inside of the library. All of the "omp" functionality (function postfix) is served by the 'libxsmmext' library, which is automatically built with OpenMP enabled. When using this "omp" functionality, 'libxsmmext' needs to be present at the link line. <a name="pkg-config"></a>To ease linking with LIBXSMM, `pkg-config` can be used. For example:
-
-```bash
-export PKG_CONFIG_PATH=/path/to/libxsmm/lib
-pkg-config libxsmm --libs
-```
-
-Similarly, an application is free to choose any BLAS or LAPACK library (if the link model available on the OS supports this), and therefore linking GEMM routines when linking LIBXSMM itself (by supplying BLAS=1&#124;2) may prevent a user from making this decision at the time of linking the actual application. To use LIBXSMM without GEMM-related functionality, any BLAS-dependency can be removed in two ways: (1)&#160;building a special library with `make BLAS=0`, or (2)&#160;linking the application against the 'libxsmmnoblas' library. If an application however uses BLAS already, the [Call Wrapper](documentation/libxsmm_mm.md#call-wrapper) can be used to intercept existing BLAS calls (and to rely on LIBXSMM instead).
-
-**NOTE**: LIBXSMM does not support to dynamically link 'libxsmm' or 'libxsmmext' ("so"), when BLAS is linked statically ("a"). If BLAS is linked statically, the static version of LIBXSMM must be used!
+**Note**: Using the Fortran module or including the interface, requires at least a Fortran&#160;2003 compiler (F2K3). FORTRAN&#160;77 compatibility is only implicitly available (no interface), and the available subset of routines is documented in 'libxsmm.f' and marked with [comments](https://github.com/hfp/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility) (part of the implementation).
 
 ### Header-Only
 
@@ -111,6 +169,28 @@ make header-only
 ```
 
 **NOTE**: building an application applies the same build settings to LIBXSMM! For instance, to omit debug code inside of LIBXSMM `NDEBUG` must be defined (`-DNDEBUG`).
+
+## Link Instructions
+
+Using the [classic ABI](#classic-library-abi) (including [Fortran](#fortran) code), requires linking LIBXSMM against the application. The library is agnostic with respect to the threading-runtime, and therefore an application is free to use any threading runtime (e.g., OpenMP). The library is also thread-safe, and multiple application threads can call LIBXSMM's routines concurrently. Enabling OpenMP for LIBXSMM's main library is supported as well (OMP=1), and mostly affects the synchronization primitives used inside of the library. All of the "omp" functionality (function postfix) is served by the 'libxsmmext' library, which is automatically built with OpenMP enabled. When using this "omp" functionality, 'libxsmmext' needs to be present at the link line.
+
+<a name="table-of-libraries"></a>Library | Purpose
+:-------------|---------
+libxsmm       | Thread-safe core functions (same routine can be called concurrently). Contains routines that can take a thread-ID and the number of library-external threads.
+libxsmmf      | Necessary when using the Fortran MODule but not when including `libxsmm.f` or relying on implicit interfaces ([Fortran&#160;77](https://github.com/hfp/libxsmm/search?q=implementation+provided+for+Fortran+77+compatibility)).
+libxsmmext    | Provides library-internal OpenMP-threaded functions carrying the `omp` postfix when compared to function name names of the core library.
+libxsmmnoblas | Supplies faked symbols for `dgemm` (and others) and thereby removes the need to link against a LAPACK/BLAS library.
+
+<a name="pkg-config"></a>To ease linking with LIBXSMM, `pkg-config` can be used. For example:
+
+```bash
+export PKG_CONFIG_PATH=/path/to/libxsmm/lib
+pkg-config libxsmm --libs
+```
+
+Similarly, an application is free to choose any BLAS or LAPACK library (if the link model available on the OS supports this), and therefore linking GEMM routines when linking LIBXSMM itself (by supplying BLAS=1&#124;2) may prevent a user from making this decision at the time of linking the actual application. To use LIBXSMM without GEMM-related functionality, any BLAS-dependency can be removed in two ways: (1)&#160;building a special library with `make BLAS=0`, or (2)&#160;linking the application against the 'libxsmmnoblas' library. If an application however uses BLAS already, the [Call Wrapper](documentation/libxsmm_mm.md#call-wrapper) can be used to intercept existing BLAS calls (and to rely on LIBXSMM instead).
+
+**NOTE**: LIBXSMM does not support to dynamically link 'libxsmm' or 'libxsmmext' ("so"), when BLAS is linked statically ("a"). If BLAS is linked statically, the static version of LIBXSMM must be used!
 
 ### Installation
 
@@ -137,50 +217,6 @@ Further, performing `make install-minimal` omits the documentation (default: 'PR
 make PREFIX=/path/to/libxsmm-install STATIC=0 install
 make PREFIX=/path/to/libxsmm-install install
 ```
-
-## Interfaces
-
-### General Interface
-
-To initialize the dispatch-table or other internal resources, an explicit initialization routine helps to avoid lazy initialization overhead when calling LIBXSMM for the first time. The library deallocates internal resources at program exit, but also provides a companion to the afore mentioned initialization (finalize).
-
-```C
-/** Initialize the library; pay for setup cost at a specific point. */
-void libxsmm_init(void);
-/** De-initialize the library and free internal memory (optional). */
-void libxsmm_finalize(void);
-```
-
-### Matrix Multiplication<a name="interface-for-matrix-multiplication"></a>
-
-This domain (MM) supports Small Matrix Multiplications (SMM), batches of multiple multiplications as well as the industry-standard interface for GEneral Matrix Matrix multiplication (GEMM).
-
-The [Matrix Multiplication domain (MM)](documentation/libxsmm_mm.md) contains routines for:
-
-* [Small, tiled, and parallelized matrix multiplications](documentation/libxsmm_mm.md#overview)
-* [Manual code dispatch (customized matrix batches)](documentation/libxsmm_mm.md#manual-code-dispatch)
-* [Batched multiplication (explicit interface)](documentation/libxsmm_mm.md#batched-multiplication)
-* [Call wrapper (static and dynamic linkage)](documentation/libxsmm_mm.md#call-wrapper)
-
-### Deep Learning<a name="interface-for-convolutions"></a>
-
-This domain (DL) is detailed by a separate [document](documentation/libxsmm_dl.md). It may be inspiring to have a look at the light-weight GxM framework, which uses LIBXSMM for end-to-end Deep Learning. Further, please also note how to utilize [TensorFlow&trade;](documentation/tensorflow.md) with LIBXSMM.
-
-### Service Functions
-
-For convenient operation of the library and to ease integration, some service routines are available. These routines may not belong to the core functionality of LIBXSMM (SMM or DNN domain), but users are encouraged to use this domain (AUX). There are two categories: (1)&#160;routines which are available for C and FORTRAN, and (2)&#160;routines that are only available per C interface.
-
-The [service function domain (AUX)](documentation/libxsmm_aux.md) contains routines for:
-
-* [Getting and setting the target architecture](documentation/libxsmm_aux.md#getting-and-setting-the-target-architecture)
-* [Getting and setting the verbosity](documentation/libxsmm_aux.md#getting-and-setting-the-verbosity)
-* [Measuring time durations (timer)](documentation/libxsmm_aux.md#timer-facility)
-* [Loading and storing data (I/O)](documentation/libxsmm_aux.md#meta-image-file-io)
-* [Allocating memory](documentation/libxsmm_aux.md#memory-allocation)
-
-### Backend<a name="jit-backend"></a>
-
-More information about the JIT-backend and the code generator can be found in a separate [document](documentation/libxsmm_be.md), which also includes information about LIBXSMM's stand-alone <a name="generator-driver"></a>[generator-driver](documentation/libxsmm_be.md#generator-driver) programs.
 
 ## Runtime Control<a name="running"></a>
 
@@ -274,17 +310,19 @@ Please note that comparing performance results depends on whether the operands o
 
 **\[7]&#160;[https://sxs-collaboration.github.io/spectre/](https://sxs-collaboration.github.io/spectre/)**: SpECTRE is an open-source code for multi-scale, multi-physics problems in astrophysics and gravitational physics which runs at petascale and is designed for exascale computers. In the future, SpECTRE may be applied to problems across discipline boundaries in fluid dynamics, geoscience, plasma physics, nuclear physics, and engineering.
 
+**\[8]&#160;[https://ceed.exascaleproject.org/ceed-code/](https://ceed.exascaleproject.org/ceed-code/)**: The Center for Efficient Exascale Discretizations (CEED) is building on the efforts of the Nek5000, MFEM, MAGMA, OCCA and PETSc projects to develop application program interfaces (APIs), both at high-level and at low-level to enable applications to take advantage of high-order methods. The CEED low-level API, [libCEED](https://ceed.exascaleproject.org/libceed/) uses LIBXSMM as a [backend](https://github.com/CEED/libCEED#backends) for high performance on CPUs.
+
 ### Machine Learning (ML)
 
-**\[8]&#160;[https://github.com/baidu-research/DeepBench](https://github.com/baidu-research/DeepBench#deepbench)**: The primary purpose of DeepBench is to benchmark operations that are important to deep learning on different hardware platforms. LIBXSMM's DNN primitives have been [incorporated into DeepBench](https://github.com/baidu-research/DeepBench/tree/master/code/intel/convolution/libxsmm_conv) to demonstrate an increased performance of deep learning on Intel hardware. In addition, LIBXSMM's [DNN sample folder](https://github.com/hfp/libxsmm/tree/master/samples/dnn) contains scripts to run convolutions extracted from popular benchmarks in a stand-alone fashion.
+**\[9]&#160;[https://github.com/baidu-research/DeepBench](https://github.com/baidu-research/DeepBench#deepbench)**: The primary purpose of DeepBench is to benchmark operations that are important to deep learning on different hardware platforms. LIBXSMM's DNN primitives have been [incorporated into DeepBench](https://github.com/baidu-research/DeepBench/tree/master/code/intel/convolution/libxsmm_conv) to demonstrate an increased performance of deep learning on Intel hardware. In addition, LIBXSMM's [DNN sample folder](https://github.com/hfp/libxsmm/tree/master/samples/dnn) contains scripts to run convolutions extracted from popular benchmarks in a stand-alone fashion.
 
-**\[9]&#160;[https://www.tensorflow.org/](https://tensorflow.org/)**: TensorFlow&trade; is an open source software library for numerical computation using data flow graphs. TensorFlow was originally developed by researchers and engineers working on the Google Brain Team for the purposes of conducting machine learning and deep neural networks research. LIBXSMM can be [used](documentation/tensorflow.md#tensorflow-with-libxsmm) to increase the performance of TensorFlow on Intel hardware.
+**\[10]&#160;[https://www.tensorflow.org/](https://tensorflow.org/)**: TensorFlow&trade; is an open source software library for numerical computation using data flow graphs. TensorFlow was originally developed by researchers and engineers working on the Google Brain Team for the purposes of conducting machine learning and deep neural networks research. LIBXSMM can be [used](documentation/tensorflow.md#tensorflow-with-libxsmm) to increase the performance of TensorFlow on Intel hardware.
 
-**\[10]&#160;[https://github.com/IntelLabs/SkimCaffe](https://github.com/IntelLabs/SkimCaffe#skimcaffe-specific-description)**: SkimCaffe from Intel Labs is a Caffe branch for training of sparse CNNs, which provide 80-95% sparsity in convolutions and fully-connected layers. LIBXSMM's SPMDM domain (SParseMatrix-DenseMatrix multiplication) evolved from SkimCaffe, and since then LIBXSMM implements the sparse operations in SkimCaffe.
+**\[11]&#160;[https://github.com/IntelLabs/SkimCaffe](https://github.com/IntelLabs/SkimCaffe#skimcaffe-specific-description)**: SkimCaffe from Intel Labs is a Caffe branch for training of sparse CNNs, which provide 80-95% sparsity in convolutions and fully-connected layers. LIBXSMM's SPMDM domain (SParseMatrix-DenseMatrix multiplication) evolved from SkimCaffe, and since then LIBXSMM implements the sparse operations in SkimCaffe.
 
 ### Automated Driving (AD)
 
-**\[11]&#160;[https://software.seek.intel.com/accelerating-eigen-math-library](https://software.seek.intel.com/accelerating-eigen-math-library)**: Accelerating The Eigen Math Library for Automated Driving Workloads: The Need for Speed in Kalman Filtering. An article in [Issue&#160;31](https://software.intel.com/sites/default/files/managed/4f/73/parallel-universe-issue-31.pdf) of The Parallel Universe magazine.
+**\[12]&#160;[https://software.seek.intel.com/accelerating-eigen-math-library](https://software.seek.intel.com/accelerating-eigen-math-library)**: Accelerating The Eigen Math Library for Automated Driving Workloads: The Need for Speed in Kalman Filtering. An article in [Issue&#160;31](https://software.intel.com/sites/default/files/managed/4f/73/parallel-universe-issue-31.pdf) of The Parallel Universe magazine.
 
 ## References
 

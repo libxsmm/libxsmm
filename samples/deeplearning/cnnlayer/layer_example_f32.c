@@ -41,7 +41,7 @@
 #endif
 
 # define USE_OVERWRITE
-/*# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE*/
+# define USE_BWD_NO_FILTER_TRANSPOSE_OVERWRITE
 /*# define USE_FUSED_BATCH_STATS_FWD*/
 /*# define USE_FUSED_BATCH_STATS_BWD*/
 /*# define USE_FUSED_RELU_BWD*/
@@ -81,10 +81,10 @@ int main(int argc, char* argv[])
   float *del_input_add_libxsmm, *naive_libxsmm_del_input_add, *bn_input_libxsmm, *naive_rcpstddev, *naive_del_input_add, *naive_bn_input;
   libxsmm_dnn_fusedbatchnorm_desc  fusedbatchnorm_desc_pre;
   libxsmm_dnn_fusedbatchnorm *libxsmm_bn_handle_pre;
+  int pad_bn = 0, stride_bn = 1;
 #endif
   int ifhp, ifwp, ofhp, ofwp, ofh, ofw;
   int stride_h, stride_w, pad_h, pad_w, pad_h_in, pad_w_in, pad_h_out, pad_w_out;
-  int pad_bn = 0, stride_bn = 1;
   naive_conv_t naive_param;
   void* scratch;
   size_t scratch_size = 0;
@@ -177,8 +177,10 @@ int main(int argc, char* argv[])
   if (argc > i) type       = *(argv[i++]);
   if (argc > i) format     = *(argv[i++]);
   if (argc > i) padding_mode = atoi(argv[i++]);
+#if defined(USE_FUSED_BATCH_STATS_BWD)
   if (argc > i) pad_bn     = atoi(argv[i++]);
   if (argc > i) stride_bn  = atoi(argv[i++]);
+#endif
 
   if (type != 'A' && type != 'F' && type != 'B' && type != 'U') {
     printf("type needs to be 'A' (All), 'F' (FP only), 'B' (BP only), 'U' (WU only)\n");

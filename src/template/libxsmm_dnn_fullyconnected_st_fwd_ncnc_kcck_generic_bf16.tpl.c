@@ -56,9 +56,27 @@ LIBXSMM_VLA_DECL(4, const element_input_type,  input,   (element_input_type* )ha
 LIBXSMM_VLA_DECL(5, const element_filter_type, filter,  (element_filter_type*)handle->reg_filter->data, nBlocksIFm, handle->bc/2, handle->bk, 2);
 float* temp_output = (float*)handle->scratch;
 LIBXSMM_VLA_DECL(2, float,                     out_tmp, temp_output+(ltid*handle->bk*handle->bn), handle->bk );
+
+unsigned long long  blocks = nBlocksIFm;
+#ifdef ADDRESS_BRGEMM
 const element_filter_type *A_array[1024];
 const element_input_type  *B_array[1024];
-unsigned long long  blocks = nBlocksIFm;
+#endif
+#ifdef OFFSET_BRGEMM
+unsigned long long  A_offsets[1024];
+unsigned long long  B_offsets[1024];
+#endif
+#ifdef STRIDE_BRGEMM
+LIBXSMM_UNUSED( ifm1 );
+#endif
+
+#ifdef OFFSET_BRGEMM
+/* Hoist here the offset preparation */
+for ( ifm1 = 0; ifm1 < nBlocksIFm; ++ifm1 ) {
+  A_offsets[ifm1] = ifm1 * handle->bc/2 * handle->bk * 2 * sizeof(element_filter_type);
+  B_offsets[ifm1] = ifm1 * handle->bn * handle->bk * sizeof(element_input_type);
+}
+#endif
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
@@ -67,13 +85,24 @@ for ( mb1ofm1 = thr_begin; mb1ofm1 < thr_end; ++mb1ofm1 ) {
   int mb1  = mb1ofm1/nBlocksOFm;
   int ofm1 = mb1ofm1%nBlocksOFm;
 
+#ifdef ADDRESS_BRGEMM
   /* prepare arguments for batch-reduce call  */
   for ( ifm1 = 0; ifm1 < nBlocksIFm; ++ifm1 ) {
     A_array[ifm1] = &LIBXSMM_VLA_ACCESS(5, filter, ofm1, ifm1, 0, 0, 0, nBlocksIFm, handle->bc/2, handle->bk, 2);
     B_array[ifm1] = &LIBXSMM_VLA_ACCESS(4, input,  mb1, ifm1,  0, 0, nBlocksIFm, handle->bn, handle->bc);
   }
-  /* run mixed precision kernel */
   batchreduce_kernel(A_array, B_array, &LIBXSMM_VLA_ACCESS(2, out_tmp, 0, 0, handle->bk), &blocks);
+#endif
+#ifdef OFFSET_BRGEMM
+  batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, handle->bc/2, handle->bk, 2),
+                      &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+                      &LIBXSMM_VLA_ACCESS(2, out_tmp, 0, 0, handle->bk), &blocks, A_offsets, B_offsets);
+#endif
+#ifdef STRIDE_BRGEMM
+  batchreduce_kernel( &LIBXSMM_VLA_ACCESS(5, filter, ofm1, 0, 0, 0, 0, nBlocksIFm, handle->bc/2, handle->bk, 2),
+                      &LIBXSMM_VLA_ACCESS(4, input,  mb1, 0,  0, 0, nBlocksIFm, handle->bn, handle->bc),
+                      &LIBXSMM_VLA_ACCESS(2, out_tmp, 0, 0, handle->bk), &blocks);
+#endif
   /* downconvert scratch to bf16 and store to final C */
   for ( img2 = 0; img2 < handle->bn; ++img2 ) {
     for ( ofm2 = 0; ofm2 < handle->bk; ofm2 += 16 ) {

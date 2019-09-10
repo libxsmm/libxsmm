@@ -164,6 +164,13 @@ int main(/*int argc, char* argv[]*/)
     if (0 != a/*u32-overflow*/ && a < LIBXSMM_DELTA(a, b)) exit(EXIT_FAILURE);
   }
 
+  { /* bit operations: specific tests */
+    unsigned int a, b;
+    a = LIBXSMM_INTRINSICS_BITSCANFWD64(0x2aaaab69ede0);
+    b = LIBXSMM_INTRINSICS_BITSCANFWD64_SW(0x2aaaab69ede0);
+    if (a != b) exit(EXIT_FAILURE);
+  }
+
   if (0 < warn_ssqrt || 0 < warn_dsqrt) {
     fprintf(stderr, "missed bitwise exact result in %.0f%% of the cases!\n", 100.0 * LIBXSMM_MAX(warn_ssqrt, warn_dsqrt) / N);
   }

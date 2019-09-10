@@ -39,8 +39,8 @@ libxsmm_cpuid
 libxsmm_cpuid_name
 libxsmm_cpuid_x86
 libxsmm_create_dcsr_reg
-libxsmm_create_rm_ac_soa
-libxsmm_create_rm_bc_soa
+libxsmm_create_pgemm_ac_rm
+libxsmm_create_pgemm_bc_rm
 libxsmm_create_scsr_reg
 libxsmm_create_xcsc_soa
 libxsmm_create_xcsr_soa
@@ -192,10 +192,10 @@ libxsmm_generator_convolution_weight_update_kernel
 libxsmm_generator_gemm_directasm
 libxsmm_generator_gemm_inlineasm
 libxsmm_generator_gemm_kernel
-libxsmm_generator_gemm_rm_ac_soa
-libxsmm_generator_gemm_rm_bc_soa
 libxsmm_generator_getrf_kernel
 libxsmm_generator_matcopy_kernel
+libxsmm_generator_packed_gemm_ac_rm
+libxsmm_generator_packed_gemm_bc_rm
 libxsmm_generator_pgemm_kernel
 libxsmm_generator_spgemm
 libxsmm_generator_spgemm_csc_kernel
@@ -233,6 +233,7 @@ libxsmm_hash_char
 libxsmm_hash_i32
 libxsmm_hash_i64
 libxsmm_hash_i8
+libxsmm_hash_string
 libxsmm_icbrt_u32
 libxsmm_icbrt_u64
 libxsmm_init
@@ -328,8 +329,8 @@ libxsmm_release_scratch
 libxsmm_release_smmkernel
 libxsmm_release_wimmkernel
 libxsmm_release_wsmmkernel
-libxsmm_rnaz_convert_fp32_bfp16
-libxsmm_rne_convert_fp32_bfp16
+libxsmm_rnaz_convert_fp32_bf16
+libxsmm_rne_convert_fp32_bf16
 libxsmm_rng_f32_seq
 libxsmm_rng_f64
 libxsmm_rng_set_seed
@@ -390,8 +391,9 @@ libxsmm_spmdm_get_num_createSparseSlice_blocks
 libxsmm_spmdm_init
 libxsmm_ssqrt
 libxsmm_strerror
-libxsmm_timer_cycles
 libxsmm_timer_duration
+libxsmm_timer_ncycles
+libxsmm_timer_ncycles_
 libxsmm_timer_tick
 libxsmm_trace
 libxsmm_trace_finalize
@@ -428,7 +430,9 @@ libxsmm_wsmmdispatch
 libxsmm_xgemm_omp
 libxsmm_xgemm_omp_
 libxsmm_xmmcall_
+libxsmm_xmmcall_abc
 libxsmm_xmmcall_abc_
+libxsmm_xmmcall_prf
 libxsmm_xmmcall_prf_
 libxsmm_xmmdispatch
 libxsmm_xmmdispatch2_

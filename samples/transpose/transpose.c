@@ -39,7 +39,6 @@
 #include <math.h>
 #if defined(__MKL)
 # include <mkl_trans.h>
-# include <mkl_service.h>
 #elif defined(__OPENBLAS77)
 # include <f77blas.h>
 #endif
@@ -104,7 +103,7 @@
 
 LIBXSMM_INLINE LIBXSMM_RETARGETABLE ELEM_TYPE initial_value(libxsmm_blasint i, libxsmm_blasint j, libxsmm_blasint ld)
 {
-  return (ELEM_TYPE)(i * ld + j);
+  return (ELEM_TYPE)i * ld + j;
 }
 
 
@@ -163,17 +162,15 @@ int main(int argc, char* argv[])
     const char *const env_tasks = getenv("TASKS"), *const env_check = getenv("CHECK");
     const int tasks = (NULL == env_tasks || 0 == *env_tasks) ? 0/*default*/ : atoi(env_tasks);
     const int check = (NULL == env_check || 0 == *env_check) ? 1/*default*/ : atoi(env_check);
-    ELEM_TYPE *const a = (ELEM_TYPE*)libxsmm_malloc((size_t)(ldi * (('o' == t || 'O' == t) ? n : ldo) * sizeof(ELEM_TYPE)));
-    ELEM_TYPE *const b = (ELEM_TYPE*)libxsmm_malloc((size_t)(ldo * (('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE)));
+    ELEM_TYPE *const a = (ELEM_TYPE*)libxsmm_malloc((size_t)ldi * (size_t)(('o' == t || 'O' == t) ? n : ldo) * sizeof(ELEM_TYPE));
+    ELEM_TYPE *const b = (ELEM_TYPE*)libxsmm_malloc((size_t)ldo * (size_t)(('o' == t || 'O' == t) ? m : ldi) * sizeof(ELEM_TYPE));
     libxsmm_timer_tickint start, duration = 0, duration2 = 0;
     libxsmm_blasint i;
     size_t size = 0;
-#if defined(MKL_ENABLE_AVX512)
-    mkl_enable_instructions(MKL_ENABLE_AVX512);
-#endif
+
     fprintf(stdout, "m=%lli n=%lli ldi=%lli ldo=%lli size=%.fMB (%s, %s)\n",
       (long long)m, (long long)n, (long long)ldi, (long long)ldo,
-      1.0 * (m * n * sizeof(ELEM_TYPE)) / (1 << 20), LIBXSMM_STRINGIFY(ELEM_TYPE),
+      1.0 * (sizeof(ELEM_TYPE) * m * n) / (1ULL << 20), LIBXSMM_STRINGIFY(ELEM_TYPE),
       ('o' == t || 'O' == t) ? "out-of-place" : "in-place");
 
 #if defined(_OPENMP)
@@ -215,7 +212,7 @@ int main(int argc, char* argv[])
           ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
         }
       }
-      size += (size_t)(km * kn * sizeof(ELEM_TYPE));
+      size += (size_t)(sizeof(ELEM_TYPE) * km * kn);
 
       if (('o' == t || 'O' == t)) {
 #if !defined(USE_REFERENCE)
@@ -229,7 +226,7 @@ int main(int argc, char* argv[])
 #else
           OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
 #endif
-          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
           start = libxsmm_timer_tick();
@@ -238,17 +235,17 @@ int main(int argc, char* argv[])
 #         pragma omp single nowait
 #endif
           OTRANS(b, a, sizeof(ELEM_TYPE), km, kn, kldi, kldo);
-          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
       }
       else {
         assert(('i' == t || 'I' == t) && kldo == kldi);
-        memcpy(b, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
+        memcpy(b, a, (size_t)(sizeof(ELEM_TYPE) * kldi * kn));
 
         if (2 > tasks) { /* library-internal parallelization */
           start = libxsmm_timer_tick();
           ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
-          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
         else { /* external parallelization */
           start = libxsmm_timer_tick();
@@ -257,7 +254,7 @@ int main(int argc, char* argv[])
 #         pragma omp single
 #endif
           ITRANS(b, sizeof(ELEM_TYPE), km, kn, kldi);
-          duration += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
       }
       if (0 != check) { /* check */
@@ -307,7 +304,7 @@ int main(int argc, char* argv[])
           start = libxsmm_timer_tick();
           matrix_transpose(b, a, km, kn);
 #endif
-          duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration2 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
         }
         else {
           assert(('i' == t || 'I' == t) && kldo == kldi);
@@ -315,7 +312,7 @@ int main(int argc, char* argv[])
           memcpy(b, a, (size_t)(kldi * kn * sizeof(ELEM_TYPE)));
           start = libxsmm_timer_tick();
           ITRANS_GOLD(&km, &kn, b, &kldi, &kldo);
-          duration2 += libxsmm_timer_diff(start, libxsmm_timer_tick());
+          duration2 += libxsmm_timer_ncycles(start, libxsmm_timer_tick());
 #else
           fprintf(stderr, "Error: no validation routine available!\n");
           result = EXIT_FAILURE;
@@ -342,7 +339,7 @@ int main(int argc, char* argv[])
       if (0 < duration) {
         /* out-of-place transpose bandwidth assumes RFO */
         fprintf(stdout, "\tbandwidth: %.1f GB/s\n", size
-          * ((('o' == t || 'O' == t)) ? 3 : 2) / (d * (1 << 30)));
+          * ((('o' == t || 'O' == t)) ? 3 : 2) / (d * (1U << 30)));
       }
       if (0 == lower) {
         fprintf(stdout, "\tduration: %.0f ms\n", 1000.0 * (d / (0 == r ? (s + 1) : s)));

@@ -487,6 +487,7 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_output ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_deloutput ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_mask ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_pooling( libxsmm_handle ) );
   }
 
   /* deallocate data */

@@ -194,7 +194,7 @@ int main(int argc, char* argv[]) {
   libxsmm_dfsspmdm* gemm_op_betazero = NULL;
   libxsmm_dfsspmdm* gemm_op_betaone = NULL;
 
-  if (argc != 4 ) {
+  if (argc != 4) {
     fprintf( stderr, "need csr-filename N reps!\n" );
     exit(-1);
   }
@@ -267,9 +267,9 @@ int main(int argc, char* argv[]) {
   /* setting up fsspmdm */
   l_n_block = 48;
   beta = 0.0;
-  gemm_op_betazero = libxsmm_dfsspmdm_create( l_m, l_n_block, l_k, l_k, l_n, l_n, 1.0, beta, l_a_dense );
+  gemm_op_betazero = libxsmm_dfsspmdm_create( l_m, l_n_block, l_k, l_k, l_n, l_n, 1.0, beta, 1, l_a_dense );
   beta = 1.0;
-  gemm_op_betaone = libxsmm_dfsspmdm_create( l_m, l_n_block, l_k, l_k, l_n, l_n, 1.0, beta, l_a_dense );
+  gemm_op_betaone = libxsmm_dfsspmdm_create( l_m, l_n_block, l_k, l_k, l_n, l_n, 1.0, beta, 0, l_a_dense );
 
   /* compute golden results */
   printf("computing golden solution...\n");
@@ -361,7 +361,7 @@ int main(int argc, char* argv[]) {
   fprintf(stdout, "time[s] LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, l_total/(double)l_reps );
   fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f (sparse)\n", l_m, l_n, l_k, (2.0 * (double)l_elements * (double)l_n * (double)l_reps * 1.0e-9) / l_total );
   fprintf(stdout, "GFLOPS  LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f (dense)\n", l_m, l_n, l_k, (2.0 * (double)l_m * (double)l_n * (double)l_k * (double)l_reps * 1.0e-9) / l_total );
-  fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * ((2.0*(double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
+  fprintf(stdout, "GB/s    LIBXSMM (RM, M=%i, N=%i, K=%i, beta=0): %f\n", l_m, l_n, l_k, ((double)sizeof(double) * (((double)l_m * (double)l_n) + ((double)l_k * (double)l_n)) * (double)l_reps * 1.0e-9) / l_total );
 
   gettimeofday(&l_start, NULL);
   for ( l_j = 0; l_j < l_reps; l_j++ ) {

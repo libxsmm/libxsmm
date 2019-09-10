@@ -1,4 +1,5 @@
 My Amplifier*
+VTune Amplifier Results
 libxsmm*-*
 libxsmm*_*
 opentuner.db
@@ -7,10 +8,9 @@ include/libxsmm_config.h
 include/libxsmm_source.h
 include/libxsmm.f
 include/libxsmm.h
-build/libxsmm_dispatch.h
-build/mm_*_*_*.c
-build/*/*/*.xml
+build
 lib/libxsmm*
+ide/GPUCache
 ide/_vs*-*.bat
 ide/.vs
 ide/build
@@ -49,6 +49,7 @@ _*.txt
 *.opendb
 *.VC.db
 *.dylib
+*.sarif
 *.docx
 *.user
 *.tlog
@@ -67,6 +68,7 @@ _*.txt
 *.sdf
 *.ilk
 *.pdb
+*.vsp
 *.obj
 *.lib
 *.mod

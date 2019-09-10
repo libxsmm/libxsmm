@@ -1,5 +1,5 @@
 /******************************************************************************
-** Copyright (c) 2016-2019, Intel Corporation                                **
+** Copyright (c) 2017-2019, Intel Corporation                                **
 ** All rights reserved.                                                      **
 **                                                                           **
 ** Redistribution and use in source and binary forms, with or without        **
@@ -26,15 +26,35 @@
 ** NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS        **
 ** SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.              **
 ******************************************************************************/
-/* Alexander Heinecke (Intel Corp.)
+/* Hans Pabst (Intel Corp.)
 ******************************************************************************/
-#ifndef LIBXSMM_DNN_HANDLE_H
-#define LIBXSMM_DNN_HANDLE_H
+#ifndef LIBXSMM_MEMORY_H
+#define LIBXSMM_MEMORY_H
 
-#include <libxsmm_dnn.h>
+#include "libxsmm_macros.h"
 
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_create_conv_handle_direct( libxsmm_dnn_layer* handle );
 
-LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_internal_free_structs_code_conv_handle( const libxsmm_dnn_layer* handle );
+/**
+ * Calculate if there is a difference between two (short) buffers.
+ * Returns zero if there is no difference; otherwise non-zero.
+ */
+LIBXSMM_API unsigned char libxsmm_diff(const void* a, const void* b, unsigned char size);
 
-#endif /* LIBXSMM_DNN_HANDLE_H */
+/**
+ * Calculate if there is a difference between "a" and "n x b".
+ * Returns the index of the first match (or "n" in case of no match).
+ */
+LIBXSMM_API unsigned int libxsmm_diff_n(const void* a, const void* bn, unsigned char size,
+  unsigned char stride, unsigned int hint, unsigned int n);
+
+/** Similar to memcmp (C standard library), but the result is conceptually only a boolean. */
+LIBXSMM_API int libxsmm_memcmp(const void* a, const void* b, size_t size);
+
+/** Calculate a hash value for the given buffer and seed; accepts NULL-buffer. */
+LIBXSMM_API unsigned int libxsmm_hash(const void* data, unsigned int size, unsigned int seed);
+
+/** Calculate a 64-bit hash for the given character string; accepts NULL-string. */
+LIBXSMM_API unsigned long long libxsmm_hash_string(const char* string);
+
+#endif /*LIBXSMM_MEMORY_H*/
+

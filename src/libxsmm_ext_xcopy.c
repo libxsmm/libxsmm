@@ -49,7 +49,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
   const int* prefetch)
 {
   if (0 < typesize && m <= ldi && m <= ldo && out != in &&
-    ((0 != out && 0 < m && 0 < n) || (0 == m && 0 == n)))
+    ((NULL != out && 0 < m && 0 < n) || (0 == m && 0 == n)))
   {
     LIBXSMM_INIT
     {
@@ -64,7 +64,7 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
         if (0 != (1 & libxsmm_trans_jit) /* JIT'ted matrix-copy permitted? */
           && NULL != (desc = libxsmm_mcopy_descriptor_init(&blob, typesize,
           tm, tn, (unsigned int)ldo, (unsigned int)ldi,
-            0 != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/)))
+            NULL != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/)))
         {
           kernel = libxsmm_dispatch_mcopy(desc);
         }
@@ -151,12 +151,11 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
       else if (0 == typesize) {
         fprintf(stderr, "LIBXSMM ERROR: the type-size of the matrix-copy is zero!\n");
       }
-      else if (0 >= m || 0 >= n) {
-        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the matrix-copy is/are zero or negative!\n");
-      }
-      else {
-        LIBXSMM_ASSERT(ldi < m || ldo < n);
+      else if (ldi < m || ldo < m) {
         fprintf(stderr, "LIBXSMM ERROR: the leading dimension(s) of the matrix-copy is/are too small!\n");
+      }
+      else if (0 > m || 0 > n) {
+        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the matrix-copy is/are negative!\n");
       }
     }
   }
@@ -168,7 +167,7 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
 {
   static int error_once = 0;
   if (0 < typesize && m <= ldi && n <= ldo &&
-    ((0 != out && 0 != in && 0 < m && 0 < n) || (0 == m && 0 == n)))
+    ((NULL != out && NULL != in && 0 < m && 0 < n) || (0 == m && 0 == n)))
   {
     LIBXSMM_INIT
     if (out != in) {
@@ -274,31 +273,30 @@ LIBXSMM_APIEXT void libxsmm_otrans_omp(void* out, const void* in, unsigned int t
       else if (0 == typesize) {
         fprintf(stderr, "LIBXSMM ERROR: the type-size of the transpose is zero!\n");
       }
-      else if (0 >= m || 0 >= n) {
-        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the transpose is/are zero or negative!\n");
-      }
-      else {
-        LIBXSMM_ASSERT(ldi < m || ldo < n);
+      else if (ldi < m || ldo < n) {
         fprintf(stderr, "LIBXSMM ERROR: the leading dimension(s) of the transpose is/are too small!\n");
+      }
+      else if (0 > m || 0 > n) {
+        fprintf(stderr, "LIBXSMM ERROR: the matrix extent(s) of the transpose is/are negative!\n");
       }
     }
   }
 }
 
 
-#if defined(LIBXSMM_BUILD)
+#if defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))
 
 /* implementation provided for Fortran 77 compatibility */
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_otrans_omp)(void* /*out*/, const void* /*in*/, const unsigned int* /*typesize*/,
+LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_otrans_omp)(void* /*out*/, const void* /*in*/, const int* /*typesize*/,
   const libxsmm_blasint* /*m*/, const libxsmm_blasint* /*n*/, const libxsmm_blasint* /*ldi*/, const libxsmm_blasint* /*ldo*/);
-LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_otrans_omp)(void* out, const void* in, const unsigned int* typesize,
+LIBXSMM_APIEXT void LIBXSMM_FSYMBOL(libxsmm_otrans_omp)(void* out, const void* in, const int* typesize,
   const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* ldi, const libxsmm_blasint* ldo)
 {
   libxsmm_blasint ldx;
-  LIBXSMM_ASSERT(0 != typesize && 0 != m);
+  LIBXSMM_ASSERT(NULL != typesize && 0 < *typesize && NULL != m);
   ldx = *(NULL != ldi ? ldi : m);
-  libxsmm_otrans_omp(out, in, *typesize, *m, *(NULL != n ? n : m), ldx, NULL != ldo ? *ldo : ldx);
+  libxsmm_otrans_omp(out, in, (unsigned int)*typesize, *m, *(NULL != n ? n : m), ldx, NULL != ldo ? *ldo : ldx);
 }
 
-#endif /*defined(LIBXSMM_BUILD)*/
+#endif /*defined(LIBXSMM_BUILD) && defined(LIBXSMM_BUILD_EXT) && (!defined(LIBXSMM_NOFORTRAN) || defined(__clang_analyzer__))*/
 

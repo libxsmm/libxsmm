@@ -31,7 +31,7 @@
 #ifndef LIBXSMM_MALLOC_H
 #define LIBXSMM_MALLOC_H
 
-#include "libxsmm_macros.h"
+#include "libxsmm_memory.h"
 
 
 /** Function types accepted for memory allocation (see libxsmm_*_allocator). */
@@ -114,7 +114,8 @@ LIBXSMM_API void* libxsmm_scratch_malloc(size_t size,
  * macro is intentionally lower case.
  */
 #define libxsmm_aligned_scratch(size, alignment) \
-  libxsmm_scratch_malloc(size, alignment, LIBXSMM_CALLER_ID)
+  libxsmm_scratch_malloc(size, alignment, \
+    LIBXSMM_CALLER_ID)
 
 /** Deallocate memory (malloc/free interface). */
 LIBXSMM_API void libxsmm_free(const void* memory);
@@ -136,8 +137,8 @@ LIBXSMM_API int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info*
 
 /** Information about the scratch memory domain. */
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE libxsmm_scratch_info {
-  /** Allocated memory in all pools (size), and library-internal memory (internal). */
-  size_t size, internal;
+  /** Watermark memory across pools (size), unsatisfied (local), and library-internal memory. */
+  size_t size, local, internal;
   /** Pending allocations (not released). */
   size_t npending;
   /** Number of allocations so far. */

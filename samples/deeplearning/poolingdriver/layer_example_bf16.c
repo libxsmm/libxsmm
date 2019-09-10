@@ -239,10 +239,10 @@ int main(int argc, char* argv[])
   set_zeropad_nchw(naive_output_pad,   nImg, nFm, ofhp, ofwp, pad_h_out, pad_w_out);
   set_zeropad_nchw(naive_deloutput_pad, nImg, nFm, ofhp, ofwp, pad_h_out, pad_w_out);
 
-  libxsmm_rne_convert_fp32_bfp16( naive_input_pad,     naive_input_pad_bf16,     nImg*nFm*ifhp*ifwp );
-  libxsmm_rne_convert_fp32_bfp16( naive_delinput_pad,  naive_delinput_pad_bf16,  nImg*nFm*ifhp*ifwp );
-  libxsmm_rne_convert_fp32_bfp16( naive_output_pad,    naive_output_pad_bf16,    nImg*nFm*ofhp*ofwp );
-  libxsmm_rne_convert_fp32_bfp16( naive_deloutput_pad, naive_deloutput_pad_bf16, nImg*nFm*ofhp*ofwp );
+  libxsmm_rne_convert_fp32_bf16( naive_input_pad,     naive_input_pad_bf16,     nImg*nFm*ifhp*ifwp );
+  libxsmm_rne_convert_fp32_bf16( naive_delinput_pad,  naive_delinput_pad_bf16,  nImg*nFm*ifhp*ifwp );
+  libxsmm_rne_convert_fp32_bf16( naive_output_pad,    naive_output_pad_bf16,    nImg*nFm*ofhp*ofwp );
+  libxsmm_rne_convert_fp32_bf16( naive_deloutput_pad, naive_deloutput_pad_bf16, nImg*nFm*ofhp*ofwp );
 
   zero_buf_int32(naive_mask,      nImg*nFm*ofh*ofw);
   zero_buf_int32(mask_libxsmm,    nImg*nFm*ofh*ofw);
@@ -499,6 +499,7 @@ int main(int argc, char* argv[])
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_output ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_deloutput ) );
     CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_tensor( libxsmm_mask ) );
+    CHKERR_LIBXSMM_DNN( libxsmm_dnn_destroy_pooling( libxsmm_handle ) );
   }
 
   /* deallocate data */

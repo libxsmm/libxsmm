@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 /* helper variables */
-libxsmm_blasint i, ik, ikb, in, inb, ic, icb, jk, jb/*jn shadows global variable*/, jc, ek, en, ec;
+libxsmm_blasint i, ik, ikb, in, inb, ic, icb, jk, jb/*jn shadows global variable*/, jc, ek, en, ec, BF, KB_BLOCKS, KB;
 /* tensor dimensions */
 libxsmm_blasint K = handle->desc.K;
 libxsmm_blasint N = handle->desc.N;
@@ -85,12 +85,13 @@ element_output_type *zt = (element_output_type*)handle->internal_z;
 LIBXSMM_VLA_DECL(3, element_output_type, z, zt, N, K);
 #endif
 /* define batch-reduce gemm kernels */
-const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelaz = libxsmm_smmdispatch_reducebatch_addr( bc, bn, bk, &bc, &K, &C, NULL, &beta, NULL, NULL);
+/*const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelaz = libxsmm_smmdispatch_reducebatch_addr( bc, bn, bk, &bc, &K, &C, NULL, &beta, NULL, NULL);*/
 const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelbz = libxsmm_smmdispatch_reducebatch_addr( bk, bk, bn, &K, &N, &bk, NULL, &beta, NULL, NULL);
 const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelcz = libxsmm_smmdispatch_reducebatch_addr( bk, bc, bn, &K, &N, &bk, NULL, &beta, NULL, NULL);
 const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelb = libxsmm_smmdispatch_reducebatch_addr( bk, bk, bn, &K, &N, &bk, NULL, NULL, NULL, NULL);
 const libxsmm_smmfunction_reducebatch_addr batchreduce_kernelc = libxsmm_smmdispatch_reducebatch_addr( bk, bc, bn, &K, &N, &bk, NULL, NULL, NULL, NULL);
 const libxsmm_smmfunction_reducebatch_addr batchreduce_kerneld = libxsmm_smmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL);
+const libxsmm_smmfunction_reducebatch_addr batchreduce_kernela = libxsmm_smmdispatch_reducebatch_addr( bc, bn, bk, &bc, &K, &C, NULL, NULL, NULL, NULL);
 
 /* computing first logical thread */
 const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_thread;
@@ -152,6 +153,16 @@ const element_output_type *B_array[1024];
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, (int)ltid);
+
+/* Blocking reduction domain if it is too large */
+BF = 1;
+if (C >= 512 && K >= 512 && C%2 == 0 && K%2 == 0) {
+  BF = 2;
+}
+if (C >= 2048 && K >= 2048 && C%8 == 0 && K%8 == 0) {
+  BF = 8;
+}
+KB_BLOCKS = kBlocks/BF;
 
 #if 0
 if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
@@ -230,18 +241,20 @@ libxsmm_barrier_wait(handle->barrier, (int)ltid);
 
 if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
   /* gemm kernel bwd_d */
-  for (inic = thr_begin_nc; inic < thr_end_nc; ++inic ) {
-    in = (inic / (C/bc))*bn;
-    icb = (inic % (C/bc));
-    ic = icb * bc;
-    /* Prepare arguments for batch-reduce call  */
-    for (ik = 0; ik < kBlocks; ik++) {
-      A_array[ik] = &LIBXSMM_VLA_ACCESS(4, wT, icb, ik, 0, 0, kBlocks, bk, bc);
-      B_array[ik] = &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik*bk, N, K);
+  for (KB = 0; KB < BF; KB++) {
+    for (inic = thr_begin_nc; inic < thr_end_nc; ++inic ) {
+      in = (inic / (C/bc))*bn;
+      icb = (inic % (C/bc));
+      ic = icb * bc;
+      /* Prepare arguments for batch-reduce call  */
+      for (ik = 0, ikb = 0; ikb < KB_BLOCKS; ik+=bk, ikb++) {
+        A_array[ikb] = &LIBXSMM_VLA_ACCESS(4, wT, icb, ikb + KB*KB_BLOCKS, 0, 0, kBlocks, bk, bc);
+        B_array[ikb] = &LIBXSMM_VLA_ACCESS(3, delta, t-1, in, ik + KB*KB_BLOCKS*bk, N, K);
+      }
+      /* Reduce batch gemm call  */
+      blocks = KB_BLOCKS;
+      batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, t-1, in, ic, N, C), &blocks);
     }
-    /* Reduce batch gemm call  */
-    blocks = kBlocks;
-    batchreduce_kernelaz(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, t-1, in, ic, N, C), &blocks);
   }
 }
 
@@ -355,18 +368,20 @@ for (i = t-2; i >= 0; --i) {
 
   if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
     /* dx = W^T * delta */
-    for (inic = thr_begin_nc; inic < thr_end_nc; ++inic ) {
-      in = (inic / (C/bc))*bn;
-      icb = (inic % (C/bc));
-      ic = icb * bc;
-      /* Prepare arguments for batch-reduce call  */
-      for (ik = 0; ik < kBlocks; ik++) {
-        A_array[ik] = &LIBXSMM_VLA_ACCESS(4, wT, icb, ik, 0, 0, kBlocks, bk, bc);
-        B_array[ik] = &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik*bk, N, K);
+    for (KB = 0; KB < BF; KB++) {
+      for (inic = thr_begin_nc; inic < thr_end_nc; ++inic ) {
+        in = (inic / (C/bc))*bn;
+        icb = (inic % (C/bc));
+        ic = icb * bc;
+        /* Prepare arguments for batch-reduce call  */
+        for (ik = 0, ikb = 0; ikb < KB_BLOCKS; ik+=bk, ikb++) {
+          A_array[ikb] = &LIBXSMM_VLA_ACCESS(4, wT, icb, ikb + KB*KB_BLOCKS, 0, 0, kBlocks, bk, bc);
+          B_array[ikb] = &LIBXSMM_VLA_ACCESS(3, delta, i, in, ik + KB*KB_BLOCKS*bk, N, K);
+        }
+        /* Reduce batch gemm call  */
+        blocks = KB_BLOCKS;
+        batchreduce_kernela(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, i, in, ic, N, C), &blocks);
       }
-      /* Reduce batch gemm call  */
-      blocks = kBlocks;
-      batchreduce_kernelaz(A_array, B_array, &LIBXSMM_VLA_ACCESS(3, dx, i, in, ic, N, C), &blocks);
     }
   }
 

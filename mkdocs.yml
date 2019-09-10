@@ -33,6 +33,7 @@ nav:
   - TensorFlow: tensorflow.md
   - SeisSol: https://seissol.readthedocs.io/en/latest/compilation.html#installing-libxsmm
   - SpECTRE: https://sxs-collaboration.github.io/spectre/installation.html
+  - libCEED: https://ceed.exascaleproject.org/ceed-code/
   - EDGE: http://usr.dial3343.org/en/master/chapters/install/edge.html#libxsmm
   - PyFR: http://pyfr.org/user_guide.php
 - About:

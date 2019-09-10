@@ -98,57 +98,11 @@
 #define LIBXSMM_VERSION43(VERSION) (((VERSION) >> 14) & 0x1F)
 #define LIBXSMM_VERSION44(VERSION) (((VERSION)) & 0x3FFF)
 
-#if defined(__cplusplus)
-# define LIBXSMM_VARIADIC ...
-# define LIBXSMM_EXTERN_KEYWORD extern "C"
-# define LIBXSMM_EXTERN LIBXSMM_EXTERN_KEYWORD
-# define LIBXSMM_EXTERN_C LIBXSMM_EXTERN_KEYWORD
-# define LIBXSMM_INLINE_KEYWORD inline
-# define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
-# if defined(__GNUC__) || defined(_CRAYC)
-#   define LIBXSMM_CALLER_ID __PRETTY_FUNCTION__
-# elif defined(_MSC_VER)
-#   define LIBXSMM_CALLER_ID __FUNCDNAME__
-#   define LIBXSMM_CALLER __FUNCTION__
-# else
-#   define LIBXSMM_CALLER_ID __FUNCNAME__
-# endif
-#else
-# define LIBXSMM_VARIADIC
-# define LIBXSMM_EXTERN_KEYWORD extern
-# define LIBXSMM_EXTERN LIBXSMM_EXTERN_KEYWORD
-# define LIBXSMM_EXTERN_C
-# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
-#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
-#   define LIBXSMM_CALLER_ID __func__
-#   define LIBXSMM_RESTRICT restrict
-#   define LIBXSMM_INLINE_KEYWORD inline
-# elif defined(_MSC_VER)
-#   define LIBXSMM_CALLER_ID __FUNCDNAME__
-#   define LIBXSMM_CALLER __FUNCTION__
-#   define LIBXSMM_INLINE_KEYWORD __inline
-#   define LIBXSMM_INLINE_FIXUP
-# elif defined(__GNUC__) && !defined(__STRICT_ANSI__)
-#   define LIBXSMM_CALLER_ID __PRETTY_FUNCTION__
-# endif
-# if !defined(LIBXSMM_INLINE_KEYWORD)
-#   define LIBXSMM_INLINE_KEYWORD
-#   define LIBXSMM_INLINE_FIXUP
-# endif
-# define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD
-#endif /*__cplusplus*/
-#if !defined(LIBXSMM_CALLER_ID)
-# define LIBXSMM_CALLER_ID NULL
-#endif
-#if !defined(LIBXSMM_CALLER)
-# define LIBXSMM_CALLER LIBXSMM_CALLER_ID
-#endif
-
-#if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD))
+#if !defined(LIBXSMM_UNPACKED) && (defined(_CRAYC) || defined(LIBXSMM_OFFLOAD_BUILD) || \
+  (0 == LIBXSMM_SYNC)/*Windows: missing pack(pop) error*/)
 # define LIBXSMM_UNPACKED
 #endif
-
-#if defined(_WIN32) && !defined(__GNUC__)
+#if defined(_WIN32) && !defined(__GNUC__) && !defined(__clang__)
 # define LIBXSMM_ATTRIBUTE(A) __declspec(A)
 # if defined(__cplusplus)
 #   define LIBXSMM_INLINE_ALWAYS __forceinline
@@ -178,6 +132,71 @@
 # define LIBXSMM_PACKED(TYPE) TYPE
 # if !defined(LIBXSMM_UNPACKED)
 #   define LIBXSMM_UNPACKED
+# endif
+#endif
+
+/* LIBXSMM_ATTRIBUTE_USED: mark library functions as used to avoid warning */
+#if defined(__GNUC__) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32))
+# define LIBXSMM_ATTRIBUTE_MALLOC LIBXSMM_ATTRIBUTE(malloc)
+# define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
+# define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
+#else
+# define LIBXSMM_ATTRIBUTE_MALLOC
+# define LIBXSMM_ATTRIBUTE_UNUSED
+# define LIBXSMM_ATTRIBUTE_USED
+#endif
+
+#if defined(__cplusplus)
+# define LIBXSMM_VARIADIC ...
+# define LIBXSMM_EXTERN_KEYWORD extern "C"
+# define LIBXSMM_EXTERN LIBXSMM_EXTERN_KEYWORD
+# define LIBXSMM_EXTERN_C LIBXSMM_EXTERN_KEYWORD
+# define LIBXSMM_INLINE_KEYWORD inline
+# define LIBXSMM_INLINE LIBXSMM_INLINE_KEYWORD
+# if defined(__GNUC__) || defined(_CRAYC)
+#   define LIBXSMM_CALLER __PRETTY_FUNCTION__
+# elif defined(_MSC_VER)
+#   define LIBXSMM_CALLER __FUNCDNAME__
+#   define LIBXSMM_FUNCNAME __FUNCTION__
+# else
+#   define LIBXSMM_CALLER __FUNCNAME__
+# endif
+#else
+# define LIBXSMM_VARIADIC
+# define LIBXSMM_EXTERN_KEYWORD extern
+# define LIBXSMM_EXTERN LIBXSMM_EXTERN_KEYWORD
+# define LIBXSMM_EXTERN_C
+# if defined(__STDC_VERSION__) && (199901L <= __STDC_VERSION__) /*C99*/
+#   define LIBXSMM_PRAGMA(DIRECTIVE) _Pragma(LIBXSMM_STRINGIFY(DIRECTIVE))
+#   define LIBXSMM_CALLER __func__
+#   define LIBXSMM_RESTRICT restrict
+#   define LIBXSMM_INLINE_KEYWORD inline
+# elif defined(_MSC_VER)
+#   define LIBXSMM_CALLER __FUNCDNAME__
+#   define LIBXSMM_FUNCNAME __FUNCTION__
+#   define LIBXSMM_INLINE_KEYWORD __inline
+#   define LIBXSMM_INLINE_FIXUP
+# elif defined(__GNUC__) && !defined(__STRICT_ANSI__)
+#   define LIBXSMM_CALLER __PRETTY_FUNCTION__
+# endif
+# if !defined(LIBXSMM_INLINE_KEYWORD)
+#   define LIBXSMM_INLINE_KEYWORD
+#   define LIBXSMM_INLINE_FIXUP
+# endif
+/* LIBXSMM_ATTRIBUTE_USED: increases compile-time of header-only by a large factor */
+# define LIBXSMM_INLINE static LIBXSMM_INLINE_KEYWORD LIBXSMM_ATTRIBUTE_UNUSED
+#endif /*__cplusplus*/
+#if !defined(LIBXSMM_CALLER)
+# define LIBXSMM_CALLER NULL
+#endif
+#if !defined(LIBXSMM_FUNCNAME)
+# define LIBXSMM_FUNCNAME LIBXSMM_CALLER
+#endif
+#if !defined(LIBXSMM_CALLER_ID)
+# if defined(__GNUC__) || 1
+#   define LIBXSMM_CALLER_ID ((const void*)((uintptr_t)libxsmm_hash_string(LIBXSMM_CALLER)))
+# else /* assume no string-pooling (perhaps unsafe) */
+#   define LIBXSMM_CALLER_ID LIBXSMM_CALLER
 # endif
 #endif
 
@@ -465,7 +484,7 @@
 # define LIBXSMM_ASSUME(EXPRESSION) assert(EXPRESSION)
 #endif
 
-#if defined(LIBXSMM_INTEL_COMPILER)
+#if defined(__INTEL_COMPILER)
 # define LIBXSMM_ASSUME_ALIGNED(A, N) __assume_aligned(A, N)
 #else
 # define LIBXSMM_ASSUME_ALIGNED(A, N) assert(0 == ((uintptr_t)(A)) % (N))
@@ -583,7 +602,7 @@
 # define LIBXSMM_OMP_VAR(A)
 #endif
 
-#if (defined(__GNUC__) || defined(__clang__)) && !defined(__CYGWIN__) && !defined(__MINGW32__)
+#if defined(LIBXSMM_BUILD) && (defined(__GNUC__) || defined(__clang__)) && !defined(__CYGWIN__) && !defined(__MINGW32__)
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT LIBXSMM_ATTRIBUTE(weak_import)
 # define LIBXSMM_ATTRIBUTE_WEAK LIBXSMM_ATTRIBUTE(weak)
 #else
@@ -591,26 +610,17 @@
 # define LIBXSMM_ATTRIBUTE_WEAK_IMPORT
 #endif
 
-#if !defined(LIBXSMM_NO_CTOR) && defined(__GNUC__) && !defined(LIBXSMM_CTOR)
+#if !defined(LIBXSMM_NO_CTOR) && !defined(LIBXSMM_CTOR) && \
+    (defined(LIBXSMM_BUILD) && !defined(__STATIC)) && \
+    (defined(__GNUC__) || defined(__clang__))
 # define LIBXSMM_ATTRIBUTE_CTOR LIBXSMM_ATTRIBUTE(constructor)
 # define LIBXSMM_ATTRIBUTE_DTOR LIBXSMM_ATTRIBUTE(destructor)
-# if defined(LIBXSMM_BUILD) && !defined(__STATIC)
-#   define LIBXSMM_CTOR
-# endif
+# define LIBXSMM_CTOR
 #else
 # define LIBXSMM_ATTRIBUTE_CTOR
 # define LIBXSMM_ATTRIBUTE_DTOR
 #endif
 
-#if defined(__GNUC__) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32))
-# define LIBXSMM_ATTRIBUTE_MALLOC LIBXSMM_ATTRIBUTE(malloc)
-# define LIBXSMM_ATTRIBUTE_UNUSED LIBXSMM_ATTRIBUTE(unused)
-# define LIBXSMM_ATTRIBUTE_USED LIBXSMM_ATTRIBUTE(used)
-#else
-# define LIBXSMM_ATTRIBUTE_MALLOC
-# define LIBXSMM_ATTRIBUTE_UNUSED
-# define LIBXSMM_ATTRIBUTE_USED
-#endif
 #if defined(__GNUC__)
 # define LIBXSMM_MAY_ALIAS LIBXSMM_ATTRIBUTE(__may_alias__)
 #else
@@ -645,13 +655,6 @@
 /** Synchronize console output */
 #define LIBXSMM_STDIO_ACQUIRE() LIBXSMM_FLOCK(stdout); LIBXSMM_FLOCK(stderr)
 #define LIBXSMM_STDIO_RELEASE() LIBXSMM_FUNLOCK(stderr); LIBXSMM_FUNLOCK(stdout)
-
-/** Determines whether constant-folding is available or not. */
-#if !defined(LIBXSMM_STRING_POOLING)
-# if defined(__GNUC__) /*&& !defined(_MSC_VER)*/
-#   define LIBXSMM_STRING_POOLING
-# endif
-#endif
 
 /** Below group is to fix-up some platform/compiler specifics. */
 #if defined(_WIN32)
@@ -737,7 +740,9 @@
 #if defined(LIBXSMM_GLIBC_FPTYPES)
 # if defined(__cplusplus)
 #   undef __USE_MISC
-#   include <math.h>
+#   if !defined(LIBXSMM_NO_LIBM)
+#     include <math.h>
+#   endif
 #   if !defined(_DEFAULT_SOURCE)
 #     define _DEFAULT_SOURCE
 #   endif

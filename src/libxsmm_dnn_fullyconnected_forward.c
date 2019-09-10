@@ -149,7 +149,15 @@ libxsmm_dnn_err_t libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_bf16_bf16(libxsmm_
   typedef libxsmm_bfloat16 element_filter_type;
 
   if ( handle->desc.fuse_ops == LIBXSMM_DNN_FULLYCONNECTED_FUSE_NONE ) {
+#ifdef ADDRESS_BRGEMM
     libxsmm_bsmmfunction_reducebatch_addr batchreduce_kernel = handle->gemm_fwd.xgemm.bsmra;
+#endif
+#ifdef OFFSET_BRGEMM
+    libxsmm_bsmmfunction_reducebatch_offs batchreduce_kernel = handle->gemm_fwd.xgemm.bsmro;
+#endif
+#ifdef STRIDE_BRGEMM
+    libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernel = handle->gemm_fwd.xgemm.bsmrs;
+#endif
 # include "template/libxsmm_dnn_fullyconnected_st_fwd_ncnc_kcck_generic_bf16.tpl.c"
   } else {
     status = LIBXSMM_DNN_ERR_FUSEBN_UNSUPPORTED_FUSION;
