@@ -78,11 +78,6 @@ JitterDataNode::JitterDataNode(JitterDataParams* p, MLEngine* e) : NNNode(p, e)
 
       tts.dims[0] = p->get_batch_size();
       tts.dims[1] = p->get_channels();
-//      if(dtype == DT_BF16)
-      {
-        if(tts.dims[1] == 3)
-          tts.dims[1] = tts.dims[1] + 1;
-      }
 
       if(vc.size() > 0) {
         tts.dims[2] = vc[0];
@@ -490,11 +485,6 @@ void JitterDataNode::imageTransform(vector<cv::Mat>& vcrop, float* outp)
   for(int i=0; i < nOfm; i++)
     rscale[i] = 1./gparams_.scale_values[i];
 
-//  int dtype = tenTopData_[0]->getDataType();
-//  if(dtype == DT_BF16)
-    if(nOfm == 3)
-      nOfm = nOfm + 1;
-
 #ifdef _OPENMP
 #pragma omp parallel for
 #endif
@@ -505,8 +495,7 @@ void JitterDataNode::imageTransform(vector<cv::Mat>& vcrop, float* outp)
       for(int w = 0; w < ofw; w++) {
         for(int ofm = 0; ofm < nOfm; ofm++) {
 
-//          if(dtype != DT_BF16)
-//            assert(vcrop[img].channels() == nOfm);
+          //assert(vcrop[img].channels() == nOfm);
           int out_idx;
 
           int oh = h+padh;
@@ -530,7 +519,6 @@ void JitterDataNode::imageTransform(vector<cv::Mat>& vcrop, float* outp)
           else
             out_idx = img * ofhp * ofwp * nOfm + oh * ofwp * nOfm + ow * nOfm + ofm;
 
-//          if(dtype == DT_BF16 && ofm == 3)
           if(ofm == 3)
             outp[out_idx] = 0.0;
           else
@@ -574,11 +562,6 @@ void JitterDataNode::forwardPropagate()
   if(first_fp)
   {
     int size = nImg * nOfm * ofhp *ofwp;
-//    if(out_dtype == DT_BF16)
-    {
-      if(nOfm == 3)
-        size = nImg * (nOfm+1) * ofhp *ofwp;
-    }
 
 #ifdef _OPENMP
 #pragma omp parallel for
@@ -685,12 +668,10 @@ void JitterDataNode::forwardPropagate()
 #endif
 
     int crop_img_size = nImg * ofhp * ofwp * nOfm;
-    //if(out_dtype == DT_BF16)
-    {
-      if(nOfm == 3)
-        crop_img_size = nImg * ofhp * ofwp * (nOfm+1);
 
-      if(out_dtype == DT_BF16 && bf16_img == NULL)
+    if(out_dtype == DT_BF16)
+    {
+      if(bf16_img == NULL)
       {
         bf16_img = _mm_malloc(crop_img_size*sizeof(libxsmm_bfloat16), 64);
         tenTopData_[0]->setLPBuffer(bf16_img);
@@ -779,12 +760,10 @@ void JitterDataNode::forwardPropagate()
     imageTransform(cropbuf_[mbslot], topdata);
 
     int crop_img_size = nImg * ofhp * ofwp * nOfm;
-//    if(out_dtype == DT_BF16)
-    {
-      if(nOfm == 3)
-        crop_img_size = nImg * ofhp * ofwp * (nOfm+1);
 
-      if(out_dtype == DT_BF16 && bf16_img == NULL)
+    if(out_dtype == DT_BF16)
+    {
+      if(bf16_img == NULL)
       {
         bf16_img = _mm_malloc(crop_img_size*sizeof(libxsmm_bfloat16), 64);
         tenTopData_[0]->setLPBuffer(bf16_img);

@@ -95,10 +95,7 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* h
   if(lptrptr != NULL)
   {
     for(int n=0; n<gp->num_numa_nodes; n++)
-    {
       weight[n] = lptrptr[n] + offset*sizeof(libxsmm_bfloat16);
-      f32_weight[n] = ptrptr[n] + offset*sizeof(float);
-    }
   }
   else
     for(int n=0; n<gp->num_numa_nodes; n++)
@@ -130,7 +127,7 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* h
   /* setup LIBXSMM buffers */
   for(int n=0; n<gp->num_numa_nodes; n++)
   {
-    if(libxsmm_input[n] == NULL && libxsmm_output[n] == NULL)
+    if(libxsmm_input[n] == NULL && libxsmm_output[n] == NULL && libxsmm_filter[n] == NULL)
     {
       libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout(libxsmm_handle[n], LIBXSMM_DNN_REGULAR_INPUT, &status);
       CHKERR_LIBXSMM_DNN( status );
@@ -139,6 +136,12 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* h
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[n], libxsmm_input[n], LIBXSMM_DNN_REGULAR_INPUT));
 
+      libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout(libxsmm_handle[n], LIBXSMM_DNN_REGULAR_FILTER, &status);
+      CHKERR_LIBXSMM_DNN( status );
+      libxsmm_filter[n]  = libxsmm_dnn_link_tensor( libxsmm_layout, weight[n], &status );
+      CHKERR_LIBXSMM_DNN( status );
+      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
+      CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[n], libxsmm_filter[n], LIBXSMM_DNN_REGULAR_FILTER ) );
 
       libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout(libxsmm_handle[n], LIBXSMM_DNN_REGULAR_OUTPUT, &status);
       CHKERR_LIBXSMM_DNN( status );
@@ -146,126 +149,6 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* h
       CHKERR_LIBXSMM_DNN( status );
       libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
       CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[n], libxsmm_output[n], LIBXSMM_DNN_REGULAR_OUTPUT ) );
-    }
-  }
-
-  for(int n=0; n<gp->num_numa_nodes; n++)
-  {
-    if(libxsmm_filter[n] == NULL)
-    {
-      libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout(libxsmm_handle[n], LIBXSMM_DNN_REGULAR_FILTER, &status);
-      CHKERR_LIBXSMM_DNN( status );
-
-      int welem = gp->nInput * gp->nOutput * gp->kw * gp->kh;
-      if(gp->in_data_type == DT_FLOAT)
-      {
-        int wsize = welem*sizeof(float);
-        wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(float), 2097152);
-
-        // Transform weight layout
-        libxsmm_filter[n] = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
-        CHKERR_LIBXSMM_DNN( status );
-
-        CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_filter[n], weight[n], LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-        memcpy(weight[n], wt_prv_ptr, welem*sizeof(float));
-
-        if(n == 0)
-        {
-          libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor(libxsmm_layout, weight[n], &status);
-          CHKERR_LIBXSMM_DNN( status );
-        }
-        libxsmm_filter[n]  = libxsmm_dnn_link_tensor( libxsmm_layout, weight[n], &status );
-        CHKERR_LIBXSMM_DNN( status );
-
-        // Transform weight history layout
-        if(n == 0)
-        {
-          if(hwt_ptr != NULL)
-          {
-            libxsmm_dnn_tensor *libxsmm_temp = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
-            CHKERR_LIBXSMM_DNN( status );
-
-            CHKERR_LIBXSMM_DNN( libxsmm_dnn_copyin_tensor( libxsmm_temp, (void*)hwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS ) );
-            memcpy(hwt_ptr, wt_prv_ptr, welem*sizeof(float));
-
-            libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor(libxsmm_layout, hwt_ptr, &status);
-            CHKERR_LIBXSMM_DNN( status );
-          }
-        }
-        libxsmm_free(wt_prv_ptr);
-      }
-      else if(gp->in_data_type == DT_BF16)
-      {
-        wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(libxsmm_bfloat16), 2097152);
-
-        // Transform BF16 weight layout
-#if 0
-        libxsmm_filter[n] = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
-        CHKERR_LIBXSMM_DNN( status );
-
-        CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_tensor(libxsmm_filter[n], weight[n], LIBXSMM_DNN_TENSOR_FORMAT_KCRS) );
-        memcpy(weight[n], wt_prv_ptr, welem*sizeof(libxsmm_bfloat16));
-#endif
-        libxsmm_filter[n] = libxsmm_dnn_link_tensor( libxsmm_layout, weight[n], &status );
-        CHKERR_LIBXSMM_DNN( status );
-        libxsmm_free(wt_prv_ptr);
-
-#if 0
-        libxsmm_dnn_tensor_datalayout * mylayout = libxsmm_dnn_get_tensor_datalayout (libxsmm_filter[n], &status);
-        /* check for VNNI weights */
-        assert( mylayout->num_dims == 7 );
-
-        int lpb = mylayout->dim_size[0];
-        int bofm = mylayout->dim_size[1];
-        int bifm = mylayout->dim_size[2];
-        int S = mylayout->dim_size[3];
-        int R = mylayout->dim_size[4];
-        int ifmb = mylayout->dim_size[5];
-        int ofmb = mylayout->dim_size[6];
-
-        int welem = gp->nInput * gp->nOutput;
-        void *wt_prv_ptr = (void*)libxsmm_aligned_malloc(welem*sizeof(float), 2097152);
-        memcpy(wt_prv_ptr, f32_weight[n], welem*sizeof(float));
-        float (* __restrict wt_prv)[nIFM][kh][kw] = (float (*)[*][*][*])wt_prv_ptr;
-        float (* __restrict f32_wt)[ifmb][R][S][bifm][bofm][lpb] = (float (*)[*][*][*][*][*][*])f32_weight[n];
-        for(int k=0; k<ofmb; k++)
-          for(int c=0; c<ifmb; c++)
-            for(int r=0; r<R; r++)
-              for(int s=0; s<S; s++)
-                for(int cc=0; cc<bifm; cc++)
-                  for(int kk=0; kk<bofm; kk++)
-                    for(int ccc=0; ccc<lpb; ccc++)
-                      f32_wt[k][c][r][s][cc][kk][ccc] = wt_prv[k*bofm+kk][c*bifm*lpb+cc*lpb+ccc][r][s];
-
-        libxsmm_free(wt_prv_ptr);
-#endif
-#if 0
-        // Transform FP32 weight layout
-        if(n == 0)
-        {
-          libxsmm_checkpoint_filter = libxsmm_dnn_link_tensor( libxsmm_layout, f32_weight[n], &status );
-          CHKERR_LIBXSMM_DNN( status );
-
-          // Transform FP32 weight history layout
-          if(hwt_ptr != NULL)
-          {
-            libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor( libxsmm_layout, wt_prv_ptr, &status );
-            CHKERR_LIBXSMM_DNN( status );
-
-            void *hfwt_ptr = hweightpb->getBuffer();
-            CHKERR_LIBXSMM_DNN(libxsmm_dnn_copyin_tensor(libxsmm_checkpoint_history_filter, hfwt_ptr, LIBXSMM_DNN_TENSOR_FORMAT_KCRS));
-            memcpy(hfwt_ptr, wt_prv_ptr, welem*sizeof(float));
-
-            libxsmm_checkpoint_history_filter = libxsmm_dnn_link_tensor(libxsmm_layout, hfwt_ptr, &status);
-            CHKERR_LIBXSMM_DNN( status );
-          }
-        }
-        libxsmm_free(wt_prv_ptr);
-        wt_prv_ptr = NULL;
-#endif
-      }
-      libxsmm_dnn_destroy_tensor_datalayout( libxsmm_layout );
-      CHKERR_LIBXSMM_DNN( libxsmm_dnn_fullyconnected_bind_tensor( libxsmm_handle[n], libxsmm_filter[n], LIBXSMM_DNN_REGULAR_FILTER ) );
     }
   }
 
@@ -422,12 +305,18 @@ void FCXSMM::weightUpdate(TensorBuf *deloutpb, TensorBuf *inpb, TensorBuf *delwe
   assert(bot_compute_engine != -1);
 
   void *dwt_ptr[NUM_NUMA_NODES];
+  void **ptrptr;
 
+  if(gp->in_data_type == DT_BF16)
+  {
 #ifdef BF16_MLSL
-  void **ptrptr = delweightpb->getBufferPtr();
+    ptrptr = delweightpb->getBufferPtr();
 #else
-  void **ptrptr = delweightpb->getLPBufferPtr();
+    ptrptr = delweightpb->getLPBufferPtr();
 #endif
+  }
+  else
+    ptrptr = delweightpb->getBufferPtr();
 
   int offset = delweightpb->getOffset();
   if(gp->in_data_type == DT_FLOAT)
@@ -479,11 +368,87 @@ void FCXSMM::weightUpdate(TensorBuf *deloutpb, TensorBuf *inpb, TensorBuf *delwe
     {
       if(gp->in_data_type == DT_FLOAT)
       {
-#include "reduce_weight_grads.c"
+        int jobs = ofm * ifm * kh * kw;
+        int jn = jobs/gp->num_numa_nodes;
+        int jnv = jn/VLEN;
+        int jpt = (jnv % ntps == 0) ? (jnv/ntps)*VLEN : ((jnv/ntps)+1)*VLEN;
+        int ltid = tid - n*ntps;
+        int tb = (ltid * jpt < jn) ? ltid*jpt : jn;
+        int te = ((ltid+1)*jpt < jn) ? (ltid+1)*jpt : jn;
+
+        float *wgp = (float*)dwt_ptr[n]+n*jn;
+
+        for(int nn=0; nn<gp->num_numa_nodes; nn++)
+        {
+          if(n == nn) continue;
+
+          float *rgp = (float*)dwt_ptr[nn]+n*jn;
+
+#pragma omp simd
+          for(int i=tb; i<te; i++)
+            wgp[i] += rgp[i];
+        }
+
+#pragma omp barrier
+
+        for(int nn=0; nn<gp->num_numa_nodes; nn++)
+        {
+          if(n == nn) continue;
+          float *wgp = (float*)dwt_ptr[n]+nn*jn;
+          float *rgp = (float*)dwt_ptr[nn]+nn*jn;
+
+#pragma vector nontemporal
+#pragma omp simd
+          for(int i=tb; i<te; i++)
+            wgp[i] = rgp[i];
+        }
       }
       else if(gp->in_data_type == DT_BF16)
       {
-#include "reduce_weight_grads_bf16.c"
+        if(n == 0)
+        {
+          int jobs = ofm * ifm * kh * kw;
+          assert(jobs % VLEN == 0);
+          int jv = jobs/VLEN;
+          int rem = jv % ntps;
+          int jpt = (rem == 0) ? (jv/ntps)*VLEN : ((jv-rem)/ntps)*VLEN;
+          int tb = (tid * jpt < jobs) ? tid*jpt : jobs;
+          int te = ((tid+1)*jpt < jobs) ? (tid+1)*jpt : jobs;
+
+          libxsmm_bfloat16 *my_ptr = (libxsmm_bfloat16*)dwt_ptr[n];
+
+          for(int nn=1; nn<gp->num_numa_nodes; nn++)
+          {
+            libxsmm_bfloat16 *rem_ptr = (libxsmm_bfloat16*)dwt_ptr[nn];
+
+            for(int i=tb; i<te; i+=VLEN)
+            {
+              __m512  vfp32_l  = gxm_bfp16_to_fp32_avx512f(_mm256_loadu_si256( (const __m256i*)(my_ptr + i)));
+              __m512  vfp32_r  = gxm_bfp16_to_fp32_avx512f(_mm256_loadu_si256( (const __m256i*)(rem_ptr + i)));
+              __m512  vfp32 = _mm512_add_ps(vfp32_l, vfp32_r);
+              __m512  vfp32rne = gxm_fp32_to_bfp16_rne_adjustment_avx512f(vfp32);
+              __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f(vfp32rne);
+              _mm256_storeu_si256( (__m256i*)(my_ptr + i), vbfp16);
+            }
+
+            //Remainder processing
+            if(tid == 0)
+            {
+              if(rem > 0)
+              {
+                for(int i=ntps*jpt; i<jobs; i+=VLEN)
+                {
+                  __m512  vfp32_l  = gxm_bfp16_to_fp32_avx512f(_mm256_loadu_si256( (const __m256i*)(my_ptr + i)));
+                  __m512  vfp32_r  = gxm_bfp16_to_fp32_avx512f(_mm256_loadu_si256( (const __m256i*)(rem_ptr + i)));
+                  __m512  vfp32 = _mm512_add_ps(vfp32_l, vfp32_r);
+                  __m512  vfp32rne = gxm_fp32_to_bfp16_rne_adjustment_avx512f(vfp32);
+                  __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f(vfp32rne);
+                  _mm256_storeu_si256( (__m256i*)(my_ptr + i), vbfp16);
+                }
+              }
+            }
+          }
+        }
       }
     }
 #endif

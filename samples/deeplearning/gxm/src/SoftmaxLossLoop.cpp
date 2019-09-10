@@ -38,106 +38,69 @@
 
 void SMaxLossLoop::forwardPropagate(TensorBuf* inpb, TensorBuf* labelb, TensorBuf* outpb)
 {
-  int nImg  = gp->batch_size/NUM_NUMA_NODES;
-  int nIfm = gp->nInput;
-  int nOfm = gp->nOutput;
+  int nImg  = gp->batch_size;
+  int nFM = gp->nInput;
 
-  float* inp[NUM_NUMA_NODES], *outp[NUM_NUMA_NODES];
-  int *label[NUM_NUMA_NODES];
+  float* inp, *outp;
+  int *label;
 
-  label[0] = (int*)labelb->getBuffer();
-  for(int n=1; n<NUM_NUMA_NODES; n++)
-    label[n] = label[n-1] + nImg;
+  label = (int*)labelb->getBuffer();
+  inp = (float*)inpb->getBuffer();
+  outp = (float*)outpb->getBuffer();
 
+  float (* __restrict input)[nFM] = (float (*)[*])inp;
+  float (* __restrict output)[nFM] = (float (*)[*])outp;
 
-  inp[0] = (float*)inpb->getBuffer();
-  for(int n=1; n<NUM_NUMA_NODES; n++)
-    inp[n] = inp[n-1] + nImg*nIfm;
-
-  outp[0] = (float*)outpb->getBuffer();
-  for(int n=1; n<NUM_NUMA_NODES; n++)
-    outp[n] = outp[n-1] + nImg*nOfm;
-
-#ifdef _OPENMP
-#pragma omp parallel
-#endif
+//#ifdef _OPENMP
+//#pragma omp parallel for
+//#endif
+  for(int i=0; i<nImg; i++)
   {
-    int tid = omp_get_thread_num();
-    int ntps = gp->num_threads/NUM_NUMA_NODES;
-    int n = tid/ntps;
-    int ltid = tid - n*ntps;
+    float max = input[i][0];
+    output[i][0] = input[i][0];
 
-    float (* __restrict input )[nIfm] = (float (*)[*])inp[n];
-    float (* __restrict output)[nOfm] = (float (*)[*])outp[n];
-
-    int jobs = (nImg % ntps == 0) ? nImg/ntps : (nImg/ntps) + 1;
-    int tb = (ltid*jobs < nImg) ? ltid*jobs : nImg;
-    int te = ((ltid+1)*jobs < nImg) ? (ltid+1)*jobs : nImg;
-
-#pragma omp simd
-    for(int i=tb; i<te; i++)
-    {
-      float max = input[i][0];
-      output[i][0] = input[i][0];
-
-      for(int ofm = 1; ofm < nOfm; ofm++) {
-        output[i][ofm] = input[i][ofm];
-        if(input[i][ofm] > max)
-          max = input[i][ofm];
-      }
-
-      float sum_of_exp = 0.0;
-      for(int ofm = 0; ofm < nOfm; ofm++) {
-        output[i][ofm] = output[i][ofm] - max;
-        output[i][ofm] = exp(output[i][ofm]);
-        sum_of_exp += output[i][ofm];
-      }
-
-      float recp_soe = 1.0/sum_of_exp;
-
-      //Normalize each value by sum_of_exp
-      for(int ofm = 0; ofm < nOfm; ofm++)
-        output[i][ofm] = output[i][ofm]*recp_soe;
-    }
-  }
-
-  for(int n=0; n<NUM_NUMA_NODES; n++)
-  {
-    float (* __restrict output)[nOfm] = (float (*)[*])outp[n];
-    int* lab = label[n];
-
-    float loss = 0.0;
-
-    for(int img = 0; img < nImg; img++)
-    {
-      float val = output[img][lab[img]] > FLT_MIN ? output[img][lab[img]] : FLT_MIN;
-      loss += log(val);
+    for(int fm = 1; fm < nFM; fm++) {
+      output[i][fm] = input[i][fm];
+      if(input[i][fm] > max)
+        max = input[i][fm];
     }
 
-    gp->loss[n] = -loss/nImg;
+    float sum_of_exp = 0.0;
+    for(int fm = 0; fm < nFM; fm++) {
+      output[i][fm] = output[i][fm] - max;
+      output[i][fm] = exp(output[i][fm]);
+      sum_of_exp += output[i][fm];
+    }
+
+    float recp_soe = 1.0/sum_of_exp;
+
+    //Normalize each value by sum_of_exp
+    for(int fm = 0; fm < nFM; fm++)
+      output[i][fm] = output[i][fm]*recp_soe;
   }
+
+  float loss = 0.0;
+
+  for(int img = 0; img < nImg; img++)
+  {
+    float val = output[img][label[img]] > FLT_MIN ? output[img][label[img]] : FLT_MIN;
+    loss += log(val);
+  }
+
+  gp->loss = -loss/nImg;
 }
 
 void SMaxLossLoop::backPropagate(TensorBuf *outpb, TensorBuf* labelb, TensorBuf *delinpb)
 {
-  int nImg  = gp->batch_size/NUM_NUMA_NODES;
-  int nIfm = gp->nInput;
+  int nImg  = gp->batch_size;
+  int nFM = gp->nInput;
 
-  float *outp[NUM_NUMA_NODES], *delinp[NUM_NUMA_NODES];
-  int* label[NUM_NUMA_NODES];
+  float *outp, *delinp;
+  int* label;
 
-  label[0] = (int*)labelb->getBuffer();
-  for(int n=1; n<NUM_NUMA_NODES; n++)
-    label[n] = label[n-1] + nImg;
-
-
-  delinp[0] = (float*)delinpb->getBuffer();
-  for(int n=1; n<NUM_NUMA_NODES; n++)
-    delinp[n] = delinp[n-1] + nImg*nIfm;
-
-  outp[0] = (float*)outpb->getBuffer();
-  for(int n=1; n<NUM_NUMA_NODES; n++)
-    outp[n] = outp[n-1] + nImg*nIfm;
+  label = (int*)labelb->getBuffer();
+  delinp = (float*)delinpb->getBuffer();
+  outp = (float*)outpb->getBuffer();
 
 #ifdef USE_MLSL
   float recp_mb = 1.0/(nImg * num_nodes);
@@ -145,33 +108,20 @@ void SMaxLossLoop::backPropagate(TensorBuf *outpb, TensorBuf* labelb, TensorBuf 
   float recp_mb = 1.0/nImg;
 #endif
 
+  float (* __restrict output )[nFM] = (float (*)[*])outp;
+  float (* __restrict del_input )[nFM] = (float (*)[*])delinp;
+
 #ifdef _OPENMP
-#pragma omp parallel
+#pragma omp parallel for
 #endif
+  for(int i=0; i<nImg; i++)
   {
-    int tid = omp_get_thread_num();
-    int ntps = gp->num_threads/NUM_NUMA_NODES;
-    int n = tid/ntps;
-    int ltid = tid - n*ntps;
-
-    float (* __restrict output )[nIfm] = (float (*)[*])outp[n];
-    float (* __restrict del_input )[nIfm] = (float (*)[*])delinp[n];
-    int* lab = label[n];
-
-    int jobs = (nImg % ntps == 0) ? nImg/ntps : (nImg/ntps) + 1;
-    int tb = (ltid*jobs < nImg) ? ltid*jobs : nImg;
-    int te = ((ltid+1)*jobs < nImg) ? (ltid+1)*jobs : nImg;
-
-#pragma omp simd
-    for(int i=tb; i<te; i++)
+    for(int fm = 0; fm < nFM; fm++)
     {
-      for(int fm = 0; fm < nIfm; fm++)
-      {
-        if(fm == lab[i])
-          del_input[i][fm] = (output[i][fm] - 1) * recp_mb * gp->loss_weight;
-        else
-          del_input[i][fm] = output[i][fm] * recp_mb * gp->loss_weight;
-      }
+      if(fm == label[i])
+        del_input[i][fm] = (output[i][fm] - 1) * recp_mb * gp->loss_weight;
+      else
+        del_input[i][fm] = output[i][fm] * recp_mb * gp->loss_weight;
     }
   }
 }

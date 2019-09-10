@@ -48,7 +48,7 @@ typedef struct {
   int batch_size;
   int nBInput, nBOutput;
   int iBlock, oBlock;
-  float loss[NUM_NUMA_NODES];
+  float loss;
   float loss_weight;
   int num_threads;
 } SMaxLossImplParams;
