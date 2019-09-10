@@ -143,11 +143,9 @@ int main(void)
   libxsmm_free(p);
 
   /* check foreign memory */
-  p = malloc(size);
-  if (NULL != p && EXIT_SUCCESS == libxsmm_get_malloc_info(p, &malloc_info)) {
+  if (EXIT_SUCCESS == libxsmm_get_malloc_info(&size/*faulty pointer*/, &malloc_info)) {
     ++nerrors;
   }
-  free(p);
 
   return 0 == nerrors ? EXIT_SUCCESS : EXIT_FAILURE;
 }
