@@ -632,7 +632,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 #endif
   if (NULL == internal_registry) { /* double-check after acquiring the lock(s) */
     void *new_registry = NULL, *new_keys = &internal_registry_keys;
-#if defined(LIBXSMM_CACHE_GLOBAL)
+#if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
     void* new_cache = &internal_cache_buffer;
 #endif
     /* setup verbosity as early as possible since below code may rely on verbose output */
