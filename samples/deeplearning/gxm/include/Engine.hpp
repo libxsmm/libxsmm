@@ -123,8 +123,13 @@ class MLEngine
     void *weight_buf_[NUM_NUMA_NODES]={NULL}, *wdiff_buf_[NUM_NUMA_NODES]={NULL};
     void *winc_buf_[NUM_NUMA_NODES]={NULL}, *lpweight_buf_[NUM_NUMA_NODES]={NULL};
     void *lpwdiff_buf_[NUM_NUMA_NODES]={NULL};
+#if 0
     void *bias_buf_[NUM_NUMA_NODES]={NULL}, *bidiff_buf_[NUM_NUMA_NODES]={NULL};
     void *biinc_buf_[NUM_NUMA_NODES]={NULL}, *stats_buf_[NUM_NUMA_NODES]={NULL};
+#else
+    void *bias_buf_=NULL, *bidiff_buf_=NULL;
+    void *biinc_buf_=NULL, *stats_buf_=NULL;
+#endif
     int total_weights_, total_biases_, orig_total_weights_;
     void *scratch[NUM_NUMA_NODES]={NULL};
 

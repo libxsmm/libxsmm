@@ -557,25 +557,28 @@ void MLEngine::run(int mode)
         int ntps = num_threads_/NUM_NUMA_NODES;
         int n = tid/ntps;
         int w = total_weights_;
-        int b = total_biases_;
+//        int b = total_biases_;
 
         if(n != 0 && tid % ntps == 0)
         {
           float *wptr = (float*)weight_buf_[n];
+#if 0
           float *bptr = (float*)bias_buf_[n];
           float *sptr = (float*)stats_buf_[n];
+#endif
 
 #pragma omp simd
           for(int i=0; i<w; i++)
             wptr[i] = ((float*)weight_buf_[0])[i];
 
+#if 0
 #pragma omp simd
           for(int i=0; i<b; i++)
           {
             bptr[i] = ((float*)bias_buf_[0])[i];
             sptr[i] = ((float*)stats_buf_[0])[i];
           }
-
+#endif
           if(lpweight_buf_[0] != NULL)
           {
             libxsmm_bfloat16 *lwptr = (libxsmm_bfloat16*)lpweight_buf_[n];
@@ -663,7 +666,11 @@ void MLEngine::run(int mode)
 #if 0
           solver_->applyUpdate((float**)bias_buf_, (float**)biinc_buf_, bidiff_buf_, total_biases_, (float**)bias_lr_mult_, (float**)bias_decay_mult_, "BIAS");
 #else
+#if 0
           solver_->applyUpdate((float**)bias_buf_, (float**)biinc_buf_, bidiff_buf_, total_biases_, 1.0, 0.0, "BIAS");
+#else
+          solver_->applyUpdate((float*)bias_buf_, (float*)biinc_buf_, bidiff_buf_, total_biases_, 1.0, 0.0, "BIAS");
+#endif
 #endif
 
 #ifdef TIMING
@@ -777,10 +784,17 @@ void MLEngine::run(int mode)
       if(lpwdiff_buf_[n] != NULL)
         MLSL::Environment::GetEnv().Free(lpwdiff_buf_[n]);
       MLSL::Environment::GetEnv().Free(winc_buf_[n]);
+#if 0
       MLSL::Environment::GetEnv().Free(bias_buf_[n]);
       MLSL::Environment::GetEnv().Free(bidiff_buf_[n]);
       MLSL::Environment::GetEnv().Free(biinc_buf_[n]);
       MLSL::Environment::GetEnv().Free(stats_buf_[n]);
+#else
+      MLSL::Environment::GetEnv().Free(bias_buf_);
+      MLSL::Environment::GetEnv().Free(bidiff_buf_);
+      MLSL::Environment::GetEnv().Free(biinc_buf_);
+      MLSL::Environment::GetEnv().Free(stats_buf_);
+#endif
 #else
       libxsmm_free(weight_buf_[n]);
       libxsmm_free(wdiff_buf_[n]);
@@ -789,10 +803,17 @@ void MLEngine::run(int mode)
       if(lpwdiff_buf_[n] != NULL)
         libxsmm_free(lpwdiff_buf_[n]);
       libxsmm_free(winc_buf_[n]);
+#if 0
       libxsmm_free(bias_buf_[n]);
       libxsmm_free(bidiff_buf_[n]);
       libxsmm_free(biinc_buf_[n]);
       libxsmm_free(stats_buf_[n]);
+#else
+      libxsmm_free(bias_buf_);
+      libxsmm_free(bidiff_buf_);
+      libxsmm_free(biinc_buf_);
+      libxsmm_free(stats_buf_);
+#endif
 #endif
     }
   }
@@ -820,25 +841,28 @@ void MLEngine::run(int mode)
       int ntps = num_threads_/NUM_NUMA_NODES;
       int n = tid/ntps;
       int w = total_weights_;
-      int b = total_biases_;
+//      int b = total_biases_;
 
       if(n != 0 && tid % ntps == 0)
       {
         float *wptr = (float*)weight_buf_[n];
+#if 0
         float *bptr = (float*)bias_buf_[n];
         float *sptr = (float*)stats_buf_[n];
+#endif
 
 #pragma omp simd
         for(int i=0; i<w; i++)
           wptr[i] = ((float*)weight_buf_[0])[i];
 
+#if 0
 #pragma omp simd
         for(int i=0; i<b; i++)
         {
           bptr[i] = ((float*)bias_buf_[0])[i];
           sptr[i] = ((float*)stats_buf_[0])[i];
         }
-
+#endif
         if(lpweight_buf_[0] != NULL)
         {
           libxsmm_bfloat16 *lwptr = (libxsmm_bfloat16*)lpweight_buf_[n];
@@ -1113,6 +1137,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
   }
   else if(tenType == "STATS")
   {
+#if 0
     for(int n=0; n<NUM_NUMA_NODES; n++)
 #ifdef USE_MLSL
       stats_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
@@ -1121,11 +1146,20 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
 #endif
     buf_ = stats_buf_[0];
     ptrptr = stats_buf_;
+#else
+#ifdef USE_MLSL
+    stats_buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
+    stats_buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
+    buf_ = stats_buf_;
+#endif
   }
   else if(tenType == "BIAS")
   {
     if(buftype == DATA)
     {
+#if 0
       for(int n=0; n<NUM_NUMA_NODES; n++)
 #ifdef USE_MLSL
         bias_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
@@ -1134,9 +1168,18 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
 #endif
       buf_ = bias_buf_[0];
       ptrptr = bias_buf_;
+#else
+#ifdef USE_MLSL
+      bias_buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
+      bias_buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
+      buf_ = bias_buf_;
+#endif
     }
     else if(buftype == DIFF)
     {
+#if 0
       for(int n=0; n<NUM_NUMA_NODES; n++)
 #ifdef USE_MLSL
         bidiff_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
@@ -1145,9 +1188,18 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
 #endif
       buf_ = bidiff_buf_[0];
       ptrptr = bidiff_buf_;
+#else
+#ifdef USE_MLSL
+      bidiff_buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
+      bidiff_buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
+      buf_ = bidiff_buf_;
+#endif
     }
     else if(buftype == HISTORY)
     {
+#if 0
       for(int n=0; n<NUM_NUMA_NODES; n++)
 #ifdef USE_MLSL
         biinc_buf_[n] = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
@@ -1156,6 +1208,14 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
 #endif
       buf_ = biinc_buf_[0];
       ptrptr = biinc_buf_;
+#else
+#ifdef USE_MLSL
+      biinc_buf_ = (void*)MLSL::Environment::GetEnv().Alloc(s, 2097152);
+#else
+      biinc_buf_ = (void*)libxsmm_aligned_malloc(s, 2097152);
+#endif
+      buf_ = biinc_buf_;
+#endif
     }
   }
 
@@ -1673,6 +1733,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
     }
   }
 
+#if 0
   if(tenType == "BIAS" && buftype == DATA)
   {
 #ifdef _OPENMP
@@ -1771,6 +1832,7 @@ void MLEngine::allocate_memory(string tenType, TensorList L, int buftype, vector
       }
     }
   }
+#endif
 }
 
 void MLEngine::insertSplitNodes(NTGParameter& p, NTGParameter* ps)

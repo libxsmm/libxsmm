@@ -25,6 +25,7 @@ node {
       crop_image: true
       physical_padding: true
       crop_size: 224
+      channels: 4
       pad_h: 3
       pad_w: 3
       mean_values: 0.406
