@@ -631,7 +631,10 @@ LIBXSMM_API_INTERN void internal_init(void)
 # endif
 #endif
   if (NULL == internal_registry) { /* double-check after acquiring the lock(s) */
-    void *new_registry = NULL, *new_keys = &internal_registry_keys, *new_cache = &internal_cache_buffer;
+    void *new_registry = NULL, *new_keys = &internal_registry_keys;
+#if defined(LIBXSMM_CACHE_GLOBAL)
+    void* new_cache = &internal_cache_buffer
+#endif
     /* setup verbosity as early as possible since below code may rely on verbose output */
     const char *const env_verbose = getenv("LIBXSMM_VERBOSE");
     if (NULL != env_verbose && 0 != *env_verbose) {
