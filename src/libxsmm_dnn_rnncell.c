@@ -107,6 +107,66 @@ LIBXSMM_API libxsmm_dnn_rnncell* libxsmm_dnn_create_rnncell(libxsmm_dnn_rnncell_
       handle->fwd_generic = 1;
       handle->bwdupd_generic = 1;
     }
+
+     /* In case of BF16 for now hoist the BRGEMM and make them to use STRIDED variant by default */
+    if ( (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16) && (handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16) ) {
+      libxsmm_blasint BF, CB_BLOCKS, KB_BLOCKS;
+      const libxsmm_blasint K =  handle->desc.K;
+      const libxsmm_blasint N =  handle->desc.N;
+      const libxsmm_blasint C =  handle->desc.C;
+      const libxsmm_blasint bk = handle->bk;
+      const libxsmm_blasint bn = handle->bn;
+      const libxsmm_blasint bc = handle->bc;
+      const libxsmm_blasint cBlocks = C/bc;
+      const libxsmm_blasint kBlocks = K/bk;
+      const libxsmm_blasint nBlocks = N/bn;
+      int kernel_flags = 0;
+      int stride_a, stride_b;
+
+      /* Blocking reduction domain if it is too large */
+      BF = 1;
+      if ((C > 1024 && C <= 2048) || (K > 1024 && K <= 2048)) {
+        BF = 8;
+        while ( (cBlocks % BF != 0) || (kBlocks % BF != 0) ) {
+          BF--;
+        }
+      }
+      if (C > 2048 || K > 2048) {
+        BF = 16;
+        while ( (cBlocks % BF != 0) || (kBlocks % BF != 0) ) {
+          BF--;
+        }
+      }
+      if (C == 2048 && K == 1024) {
+        BF = 2;
+      }
+      CB_BLOCKS = cBlocks/BF;
+      KB_BLOCKS = kBlocks/BF;
+
+      /* define batch-reduce gemm kernels */
+      stride_a = bc * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      stride_b = bc * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      handle->fwd_kernela = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bc, stride_a, stride_b, CB_BLOCKS, &bk, &C, &K, NULL, NULL, &kernel_flags, NULL );
+      stride_a = bk * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      stride_b = bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      handle->fwd_kernelb = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bk, stride_a, stride_b, KB_BLOCKS, &bk, &K, &K, NULL, NULL, &kernel_flags, NULL );
+
+      KB_BLOCKS = kBlocks/BF;
+
+      stride_a = bc * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      stride_b = bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      handle->bwdupd_kernela = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bc, bn, bk, stride_a, stride_b, KB_BLOCKS, &bc, &K, &C, NULL, NULL, &kernel_flags, NULL);
+      stride_a = bn * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      stride_b = bn * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      handle->bwdupd_kernelb = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bk, bn, stride_a, stride_b, nBlocks, &bk, &N, &bk, NULL, NULL, &kernel_flags, NULL);
+      stride_a = bn * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      stride_b = bn * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      handle->bwdupd_kernelc = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bc, bn, stride_a, stride_b, nBlocks, &bk, &N, &bk, NULL, NULL, &kernel_flags, NULL);
+      stride_a = bk * bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      stride_b = bk * libxsmm_dnn_typesize(handle->desc.datatype_in);
+      handle->bwdupd_kerneld = libxsmm_bsmmdispatch_reducebatch_strd_unroll( bk, bn, bk, stride_a, stride_b, KB_BLOCKS, &bk, &K, &K, NULL, NULL, &kernel_flags, NULL);
+    }
+
     /* Need to allocate space for scratch libxsmm_dnn_tensor's, let's set all pointers to zero */
     handle->internal_z = 0;
     handle->scratch_wT = 0;

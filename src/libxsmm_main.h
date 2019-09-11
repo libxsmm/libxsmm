@@ -586,6 +586,15 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   int fwd_generic;
   int bwdupd_generic;
   /* barrier */
+
+  /* Ability to hoist GEMMs */
+  libxsmm_bsmmfunction_reducebatch_strd fwd_kernela;
+  libxsmm_bsmmfunction_reducebatch_strd fwd_kernelb;
+  libxsmm_bsmmfunction_reducebatch_strd bwdupd_kernela;
+  libxsmm_bsmmfunction_reducebatch_strd bwdupd_kernelb;
+  libxsmm_bsmmfunction_reducebatch_strd bwdupd_kernelc;
+  libxsmm_bsmmfunction_reducebatch_strd bwdupd_kerneld;
+
   libxsmm_barrier* barrier; /* barrier */
 };
 
