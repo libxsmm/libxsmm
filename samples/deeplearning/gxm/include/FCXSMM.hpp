@@ -32,6 +32,7 @@
 
 #pragma once
 
+#include <string.h>
 #include <omp.h>
 #include "FCImpl.hpp"
 #include "libxsmm.h"
@@ -55,6 +56,8 @@ class FCXSMM : public FCImpl
     libxsmm_dnn_tensor*  libxsmm_output[NUM_NUMA_NODES]={NULL};
     libxsmm_dnn_tensor*  libxsmm_deloutput[NUM_NUMA_NODES]={NULL};
     libxsmm_dnn_tensor*  libxsmm_filter[NUM_NUMA_NODES]={NULL};
+    libxsmm_dnn_tensor*  libxsmm_checkpoint_filter=NULL;
+    libxsmm_dnn_tensor*  libxsmm_checkpoint_history_filter=NULL;
     libxsmm_dnn_tensor*  libxsmm_delfilter[NUM_NUMA_NODES]={NULL};
     libxsmm_dnn_tensor_datalayout* libxsmm_layout;
     libxsmm_dnn_err_t status;
@@ -69,7 +72,7 @@ class FCXSMM : public FCImpl
 
     bool firstTimeFwd=true, firstTimeBwd=true;
 
-    void forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *biasp, TensorBuf *outp, int tid);
+    void forwardPropagate(TensorBuf *inp, TensorBuf *weightp, TensorBuf *hweightp, TensorBuf *biasp, TensorBuf *outp, int tid);
     void backPropagate(TensorBuf *deloutp, TensorBuf* weightp, TensorBuf *delinp, int tid);
     void weightUpdate(TensorBuf *deloutp, TensorBuf *inp, TensorBuf *delweightp, TensorBuf *delbiasp, int tid);
 };

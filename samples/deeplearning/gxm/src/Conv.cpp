@@ -237,7 +237,11 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
       else if(in_dtype == DT_BF16)
       {
         tenWeightDiff_->setDataType(DT_BF16);
+#ifdef BF16_MLSL
         tenWeightDiff_->setBufferSize(welem*sizeof(libxsmm_bfloat16));
+#else
+        tenWeightDiff_->setBufferSize(welem*sizeof(float));
+#endif
       }
 
       if(bias_term)
@@ -371,7 +375,6 @@ ConvNode::ConvNode(ConvParams* p, MLEngine* e): NNNode(p, e)
 
 void ConvNode::fillWeightBuffers(TensorBuf* tBuf, int buftype, long long int size)
 {
-  int dtype = DT_FLOAT;
   void *ptr = tBuf->getBuffer();
 
 #ifdef USE_MLSL
@@ -391,11 +394,11 @@ void ConvNode::fillWeightBuffers(TensorBuf* tBuf, int buftype, long long int siz
 
   if(buftype == DATA)
   {
-    initBuffer(ptr, dtype, variance_norm_, fanin, fanout, welem*sizeof(float), wfiller_type_, (unsigned int)(node_id+PRIME_SEED), std_);
+    if(node_id == 0)
+      initBuffer(ptr, variance_norm_, fanin, fanout, welem*sizeof(float), wfiller_type_, std_);
 
 #ifdef USE_MLSL
-    if(dtype == DT_FLOAT)
-      MPI_Bcast(ptr, welem, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(ptr, welem, MPI_FLOAT, 0, MPI_COMM_WORLD);
 #endif
   }
   else if(buftype == HISTORY || buftype == DIFF)
@@ -413,12 +416,11 @@ void ConvNode::fillWeightMultipliers(float* lr, float* decay, long long int size
 
 void ConvNode::fillBiasBuffers(TensorBuf* tBuf, int buftype, long long int size)
 {
-  int dtype = DT_FLOAT;
   void *ptr = tBuf->getBuffer();
 
   if(buftype == DATA)
   {
-    initConstantBuffer(ptr, dtype, size, "CONSTANT", value_);
+    initConstantBuffer(ptr, size, "CONSTANT", value_);
   }
   else
     memset(ptr, 0, size);
@@ -469,6 +471,7 @@ void ConvNode::Checkpoint(TensorBuf *tBuf, string name, string format)
       f = fopen(name.c_str(), "wb");
       if(f != NULL)
       {
+#if 0
         if(name.find("wt") != name.npos)
         {
           ptr = _mm_malloc(bytes, 64);
@@ -476,13 +479,16 @@ void ConvNode::Checkpoint(TensorBuf *tBuf, string name, string format)
           impl->dumpBuffer(tBuf, ptr);
         }
         else
+#endif
           ptr = tBuf->getBuffer();
 
         size_t b = fwrite(ptr, 1, bytes, f);
         assert((long long int)b == bytes);
 
+#if 0
         if(name.find("wt") != name.npos)
           _mm_free(ptr);
+#endif
       }
       else
         printf("Warning: could not checkpoint to file %s\n",name.c_str());
@@ -492,6 +498,7 @@ void ConvNode::Checkpoint(TensorBuf *tBuf, string name, string format)
       f = fopen(name.c_str(), "w");
       if(f != NULL)
       {
+#if 0
         if(name.find("wt") != name.npos)
         {
           ptr = _mm_malloc(bytes, 64);
@@ -499,13 +506,16 @@ void ConvNode::Checkpoint(TensorBuf *tBuf, string name, string format)
           impl->dumpBuffer(tBuf, ptr);
         }
         else
+#endif
           ptr = tBuf->getBuffer();
 
         for(int i=0; i<bytes/sizeof(float); i++)
           fprintf(f, "%f\n", *((float*)ptr + i));
 
+#if 0
         if(name.find("wt") != name.npos)
           _mm_free(ptr);
+#endif
       }
       else
         printf("Warning: could not checkpoint to file %s\n",name.c_str());
@@ -543,16 +553,71 @@ void ConvNode::convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len)
 
 void ConvNode::convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len)
 {
-  int i;
+#if 1
 
 #ifdef _OPENMP
-#pragma omp parallel for private(i)
+#pragma omp parallel
 #endif
-  for ( i = 0; i < len; i+=16 ) {
-    __m256i vbfp16    = _mm256_loadu_si256( (const __m256i*)(in+i) );
-    __m512  vfp32     = gxm_bfp16_to_fp32_avx512f( vbfp16 );
-    _mm512_storeu_ps( out+i, vfp32 );
+  {
+    int tid = omp_get_thread_num();
+    int ntps = gparams_.num_threads/gparams_.num_numa_nodes;
+    int n = tid/ntps;
+    if(n == 0)
+    {
+      int lenv = len/16;
+      int rem = lenv % ntps;
+      int jobs = (rem == 0) ? (lenv/ntps)*16 : ((lenv-rem)/ntps)*16;
+      int tb = (tid*jobs < len) ? tid*jobs : len;
+      int te = ((tid+1)*jobs < len) ? (tid+1)*jobs : len;
+
+      for (int i = tb; i < te; i+=16 ) {
+        __m256i vbfp16    = _mm256_loadu_si256( (const __m256i*)(in+i) );
+        __m512  vfp32     = gxm_bfp16_to_fp32_avx512f( vbfp16 );
+        _mm512_storeu_ps( out+i, vfp32 );
+      }
+
+      //Remainder processing
+      if(tid == 0)
+      {
+        if(rem > 0)
+        {
+          for(int i=ntps*jobs; i<len; i+=16)
+          {
+            __m256i vbfp16    = _mm256_loadu_si256( (const __m256i*)(in+i) );
+            __m512  vfp32     = gxm_bfp16_to_fp32_avx512f( vbfp16 );
+            _mm512_storeu_ps( out+i, vfp32 );
+          }
+        }
+      }
+    }
   }
+#else
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  {
+    int tid = omp_get_thread_num();
+    int ntps = gparams_.num_threads/gparams_.num_numa_nodes;
+    int n = tid/ntps;
+
+    if(n == 0)
+    {
+      union libxsmm_bfloat16_hp delwt_32_0;
+      delwt_32_0.i[0] = 0;
+
+      int jobs = (len % ntps == 0) ? len/ntps : len/ntps + 1;
+      int tb = (tid*jobs < len) ? tid*jobs : len;
+      int te = ((tid+1)*jobs < len) ? (tid+1)*jobs : len;
+
+      for(int j=tb; j<te; j++)
+      {
+        delwt_32_0.i[1] = in[j];
+        out[j] = delwt_32_0.f;
+      }
+    }
+  }
+#endif
 }
 
 void ConvNode::forwardPropagate()
@@ -612,7 +677,9 @@ void ConvNode::forwardPropagate()
         ptr[i] = 0;
     }
 
+#ifdef CHECK_BLOWUP_FP32
     cbptr = (float*)_mm_malloc(10240*4, 64);
+#endif
 
     first_fp = false;
   }
@@ -671,7 +738,7 @@ void ConvNode::forwardPropagate()
       if(isnan(cbptr[i]) || isinf(cbptr[i]))
       {
         printf("Warning! %s layer FP activations are NaN or Inf\n", nname_.c_str());
-  //      exit(-1);
+        exit(-1);
       }
     }
   }
@@ -843,7 +910,7 @@ void ConvNode::backPropagate()
 #ifdef CHECK_BLOWUP_FP32
   if(out_dtype == DT_FLOAT)
   {
-    for(int i=0; i<16; i++)
+    for(int i=0; i<10240; i++)
     {
       float v = ((float*)tenBotDiff_->getBuffer())[i];
       if(isnan(v) || isinf(v))
@@ -855,13 +922,27 @@ void ConvNode::backPropagate()
   }
   else if(out_dtype == DT_BF16)
   {
-    convert_bf16_f32((libxsmm_bfloat16*)tenBotDiff_->getBuffer(), cbptr, 16);
-    for(int i=0; i<16; i++)
+    convert_bf16_f32((libxsmm_bfloat16*)tenBotDiff_->getBuffer(), cbptr, 10240);
+#ifdef USE_MLSL
+    int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
+#else
+    int node_id = 0;
+#endif
+    if(node_id == 0)
     {
-      if(isnan(cbptr[i]) || isinf(cbptr[i]))
+      for(int i=0; i<10240; i++)
       {
-        printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
-        exit(-1);
+        if(isnan(cbptr[i]) || isinf(cbptr[i]))
+        {
+          printf("Warning! %s layer BP activations are NaN or Inf\n", nname_.c_str());
+          MeanOfLayer((char*)((nname_+"_delin").c_str()), (libxsmm_bfloat16*)tenBotDiff_->getBuffer(), nImg*ifm*ifhp*ifwp);
+          MeanOfLayer((char*)((nname_+"_delout").c_str()), (libxsmm_bfloat16*)tenTopDiff_->getBuffer(), nImg*ofm*ofhp*ofwp);
+          MeanOfLayer((char*)((nname_+"_weight").c_str()), (libxsmm_bfloat16*)tenWeightData_->getLPBuffer(), ofm*ifm*kh*kw);
+#ifdef USE_MLSL
+          MPI_Finalize();
+#endif
+          exit(-1);
+        }
       }
     }
   }
@@ -991,13 +1072,30 @@ void ConvNode::weightUpdate()
   }
   else if(out_dtype == DT_BF16)
   {
-    convert_bf16_f32((libxsmm_bfloat16*)tenWeightDiff_->getBuffer(), cbptr, 10240);
-    for(int i=0; i<10240; i++)
+#ifdef BF16_MLSL
+    void **wptrptr = tenWeightDiff_->getBufferPtr();
+#else
+    void **wptrptr = tenWeightDiff_->getLPBufferPtr();
+#endif
+    int offset = tenWeightDiff_->getOffset();
+    void* bf16_wtdiff = wptrptr[0] + offset*sizeof(libxsmm_bfloat16);
+
+    convert_bf16_f32((libxsmm_bfloat16*)bf16_wtdiff, cbptr, 10240);
+#ifdef USE_MLSL
+    int node_id = MLSL::Environment::GetEnv().GetProcessIdx();
+#else
+    int node_id = 0;
+#endif
+    if(node_id == 0)
     {
-      if(isnan(cbptr[i]) || isinf(cbptr[i]))
+      for(int i=0; i<10240; i++)
       {
-        printf("Warning! %s layer weight-gradients are NaN or Inf\n", nname_.c_str());
-//        exit(-1);
+        if(isnan(cbptr[i]) || isinf(cbptr[i]))
+        {
+          printf("Warning! %s layer weight-gradients are NaN or Inf\n", nname_.c_str());
+          MeanOfLayer((char*)nname_.c_str(), (libxsmm_bfloat16*)bf16_wtdiff, ofm*ifm*kw*kw);
+          exit(-1);
+        }
       }
     }
   }
@@ -1005,21 +1103,20 @@ void ConvNode::weightUpdate()
 
 #ifdef USE_MLSL
   void *mptr = tenWeightDiff_->getBuffer();
-  void *mpptr = tenWeightDiff_->getPrivBuffer();
-  void *mp = (mpptr == NULL) ? mptr : mpptr;
+
+#ifndef BF16_MLSL
+  void *lmptr = tenWeightDiff_->getLPBuffer();
 
   if(in_dtype == DT_BF16)
   {
-    if(dwptr == NULL)
-    {
-      int wsize = ALIGN_SIZE(ifm*ofm*kh*kw*sizeof(float), 2097152);
-      dwptr = (float*)MLSL::Environment::GetEnv().Alloc(wsize, 2097152);
-    }
-    convert_bf16_f32((libxsmm_bfloat16*)mp, dwptr, ifm*ofm*kh*kw);
-    op_->GetParameterSet(0)->StartGradientComm(dwptr);
+    convert_bf16_f32((libxsmm_bfloat16*)lmptr, (float*)mptr, ifm*ofm*kh*kw);
+    op_->GetParameterSet(0)->StartGradientComm(mptr);
   }
   else if(in_dtype == DT_FLOAT)
-    op_->GetParameterSet(0)->StartGradientComm(mp);
+    op_->GetParameterSet(0)->StartGradientComm(mptr);
+#else
+  op_->GetParameterSet(0)->StartGradientComm(mptr);
+#endif
 
   if(gparams_.bias_term)
     op_->GetParameterSet(1)->StartGradientComm(tenBiasDiff_->getBuffer());

@@ -62,12 +62,15 @@ FCXSMM::FCXSMM(FCImplParams *gp, int engine) : FCImpl(gp, engine)
   }
 }
 
-void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* biaspb, TensorBuf *outpb, int tid)
+void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* hweightpb, TensorBuf* biaspb, TensorBuf *outpb, int tid)
 {
 #ifdef RETURNALL
   return;
 #endif
 
+  int nIFM = gp->nInput;
+  int kh = gp->kh;
+  int kw = gp->kw;
   assert(top_compute_engine != -1);
   assert(bot_compute_engine != -1);
 
@@ -82,19 +85,27 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* b
   for(int n=1; n<gp->num_numa_nodes; n++)
     input[n] = input[n-1] + imoff;
 
-
-  void *weight[NUM_NUMA_NODES];
+  void *weight[NUM_NUMA_NODES], *f32_weight[NUM_NUMA_NODES];
+  void *wt_prv_ptr;
   void **lptrptr = weightpb->getLPBufferPtr();
   void **ptrptr = weightpb->getBufferPtr();
 
   int offset = weightpb->getOffset();
 
   if(lptrptr != NULL)
+  {
     for(int n=0; n<gp->num_numa_nodes; n++)
       weight[n] = lptrptr[n] + offset*sizeof(libxsmm_bfloat16);
+  }
   else
     for(int n=0; n<gp->num_numa_nodes; n++)
       weight[n] = ptrptr[n] + offset*sizeof(float);
+
+  void *hwt_ptr;
+  if(hweightpb != NULL)
+    hwt_ptr = hweightpb->getBuffer();
+  else
+    hwt_ptr = NULL;
 
   void *bias;
   if(gp->bias_term)
@@ -116,7 +127,7 @@ void FCXSMM::forwardPropagate(TensorBuf *inpb, TensorBuf* weightpb, TensorBuf* b
   /* setup LIBXSMM buffers */
   for(int n=0; n<gp->num_numa_nodes; n++)
   {
-    if(libxsmm_input[n] == NULL && libxsmm_filter[n] == NULL && libxsmm_output[n] == NULL)
+    if(libxsmm_input[n] == NULL && libxsmm_output[n] == NULL && libxsmm_filter[n] == NULL)
     {
       libxsmm_layout = libxsmm_dnn_fullyconnected_create_tensor_datalayout(libxsmm_handle[n], LIBXSMM_DNN_REGULAR_INPUT, &status);
       CHKERR_LIBXSMM_DNN( status );
@@ -294,8 +305,19 @@ void FCXSMM::weightUpdate(TensorBuf *deloutpb, TensorBuf *inpb, TensorBuf *delwe
   assert(bot_compute_engine != -1);
 
   void *dwt_ptr[NUM_NUMA_NODES];
+  void **ptrptr;
 
-  void **ptrptr = delweightpb->getBufferPtr();
+  if(gp->in_data_type == DT_BF16)
+  {
+#ifdef BF16_MLSL
+    ptrptr = delweightpb->getBufferPtr();
+#else
+    ptrptr = delweightpb->getLPBufferPtr();
+#endif
+  }
+  else
+    ptrptr = delweightpb->getBufferPtr();
+
   int offset = delweightpb->getOffset();
   if(gp->in_data_type == DT_FLOAT)
     offset = offset*sizeof(float);
@@ -342,14 +364,93 @@ void FCXSMM::weightUpdate(TensorBuf *deloutpb, TensorBuf *inpb, TensorBuf *delwe
 #ifdef USE_MLSL
 #pragma omp barrier
 
+    if(gp->num_numa_nodes > 1)
+    {
       if(gp->in_data_type == DT_FLOAT)
       {
-#include "reduce_weight_grads.c"
+        int jobs = ofm * ifm * kh * kw;
+        int jn = jobs/gp->num_numa_nodes;
+        int jnv = jn/VLEN;
+        int jpt = (jnv % ntps == 0) ? (jnv/ntps)*VLEN : ((jnv/ntps)+1)*VLEN;
+        int ltid = tid - n*ntps;
+        int tb = (ltid * jpt < jn) ? ltid*jpt : jn;
+        int te = ((ltid+1)*jpt < jn) ? (ltid+1)*jpt : jn;
+
+        float *wgp = (float*)dwt_ptr[n]+n*jn;
+
+        for(int nn=0; nn<gp->num_numa_nodes; nn++)
+        {
+          if(n == nn) continue;
+
+          float *rgp = (float*)dwt_ptr[nn]+n*jn;
+
+#pragma omp simd
+          for(int i=tb; i<te; i++)
+            wgp[i] += rgp[i];
+        }
+
+#pragma omp barrier
+
+        for(int nn=0; nn<gp->num_numa_nodes; nn++)
+        {
+          if(n == nn) continue;
+          float *wgp = (float*)dwt_ptr[n]+nn*jn;
+          float *rgp = (float*)dwt_ptr[nn]+nn*jn;
+
+#pragma vector nontemporal
+#pragma omp simd
+          for(int i=tb; i<te; i++)
+            wgp[i] = rgp[i];
+        }
       }
       else if(gp->in_data_type == DT_BF16)
       {
-#include "reduce_weight_grads_bf16.c"
+        if(n == 0)
+        {
+          int jobs = ofm * ifm * kh * kw;
+          assert(jobs % VLEN == 0);
+          int jv = jobs/VLEN;
+          int rem = jv % ntps;
+          int jpt = (rem == 0) ? (jv/ntps)*VLEN : ((jv-rem)/ntps)*VLEN;
+          int tb = (tid * jpt < jobs) ? tid*jpt : jobs;
+          int te = ((tid+1)*jpt < jobs) ? (tid+1)*jpt : jobs;
+
+          libxsmm_bfloat16 *my_ptr = (libxsmm_bfloat16*)dwt_ptr[n];
+
+          for(int nn=1; nn<gp->num_numa_nodes; nn++)
+          {
+            libxsmm_bfloat16 *rem_ptr = (libxsmm_bfloat16*)dwt_ptr[nn];
+
+            for(int i=tb; i<te; i+=VLEN)
+            {
+              __m512  vfp32_l  = gxm_bfp16_to_fp32_avx512f(_mm256_loadu_si256( (const __m256i*)(my_ptr + i)));
+              __m512  vfp32_r  = gxm_bfp16_to_fp32_avx512f(_mm256_loadu_si256( (const __m256i*)(rem_ptr + i)));
+              __m512  vfp32 = _mm512_add_ps(vfp32_l, vfp32_r);
+              __m512  vfp32rne = gxm_fp32_to_bfp16_rne_adjustment_avx512f(vfp32);
+              __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f(vfp32rne);
+              _mm256_storeu_si256( (__m256i*)(my_ptr + i), vbfp16);
+            }
+
+            //Remainder processing
+            if(tid == 0)
+            {
+              if(rem > 0)
+              {
+                for(int i=ntps*jpt; i<jobs; i+=VLEN)
+                {
+                  __m512  vfp32_l  = gxm_bfp16_to_fp32_avx512f(_mm256_loadu_si256( (const __m256i*)(my_ptr + i)));
+                  __m512  vfp32_r  = gxm_bfp16_to_fp32_avx512f(_mm256_loadu_si256( (const __m256i*)(rem_ptr + i)));
+                  __m512  vfp32 = _mm512_add_ps(vfp32_l, vfp32_r);
+                  __m512  vfp32rne = gxm_fp32_to_bfp16_rne_adjustment_avx512f(vfp32);
+                  __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f(vfp32rne);
+                  _mm256_storeu_si256( (__m256i*)(my_ptr + i), vbfp16);
+                }
+              }
+            }
+          }
+        }
       }
+    }
 #endif
   }
 }

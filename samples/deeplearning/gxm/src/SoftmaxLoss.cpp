@@ -183,17 +183,13 @@ void SoftmaxLossNode::forwardPropagate()
 #endif
 
 #ifdef USE_MLSL
-  for(int n=0; n<NUM_NUMA_NODES; n++)
-    MPI_Allreduce(MPI_IN_PLACE, &gparams_.loss[n], 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
+  MPI_Allreduce(MPI_IN_PLACE, &gparams_.loss, 1, MPI_FLOAT, MPI_SUM, MPI_COMM_WORLD);
 #endif
 
   if(node_id_ == 0 && eptr_->get_current_batch() % LOSSFREQ == 0)
   {
-    float loss = gparams_.loss[0];
-    for(int n=1; n<NUM_NUMA_NODES; n++)
-      loss += gparams_.loss[n];
-    loss = (loss/num_nodes_)/NUM_NUMA_NODES;
-    printf("loss = %.15f (weighted loss = %.15f)\n", loss, loss*(gparams_.loss_weight));
+    gparams_.loss = gparams_.loss/num_nodes_;
+    printf("loss = %.15f (weighted loss = %.15f)\n", gparams_.loss, gparams_.loss*gparams_.loss_weight);
   }
 }
 

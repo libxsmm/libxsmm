@@ -365,6 +365,7 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
 
   eptr_->set_learning_rate(lrval_);
 
+#ifdef BF16_MLSL
   if(tensorType=="WEIGHT" && data_type_ == BF16)
   {
     for(int n=0; n<NUM_NUMA_NODES; n++)
@@ -374,8 +375,12 @@ void SolverNode::applyUpdate(float **blob, float **inc, void **grad, int s, floa
     convert_bf16_f32((libxsmm_bfloat16**)grad, tmp_grad, s);
   }
 
-  int sn = s/NUM_NUMA_NODES;
   float **wgrad_ptr = (tensorType == "WEIGHT" && data_type_ == BF16) ? tmp_grad : (float**)grad;
+#else
+  float **wgrad_ptr = (float**)grad;
+#endif
+
+  int sn = s/NUM_NUMA_NODES;
 
 #ifndef USE_MLSL
 

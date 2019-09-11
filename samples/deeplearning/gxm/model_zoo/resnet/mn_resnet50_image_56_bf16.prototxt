@@ -11,9 +11,9 @@ node {
     test_source: "/home/local_scratch/jpegs_256resized"
     test_list: "/home/local_scratch/val_images_labels.list"
     batch_size: 54    #number of cores(56) - number of EP servers (2)
-    num_train_files: 80073  # per node when numsplits=16
-    num_test_files: 3125    # per node when numsplits=16
-    numsplits: 16
+    num_train_files: 80073 #160145  # per node when numsplits=16
+    num_test_files: 3125 #6250     per node when numsplits=16
+    numsplits: 16 #8 
     lookahead: 2
     shuffle: true
     engine: XSMM
@@ -25,6 +25,7 @@ node {
       crop_image: true
       physical_padding: true
       crop_size: 224
+      channels: 4
       pad_h: 3
       pad_w: 3
       mean_values: 0.406

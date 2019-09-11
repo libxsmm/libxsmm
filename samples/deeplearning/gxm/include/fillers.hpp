@@ -40,12 +40,10 @@
 #include <string>
 #include "Tensor.hpp"
 
-#define PRIME_SEED 131
-
 using namespace std;
 
-void Uniform(const float lower, const float upper, int n, float *ptr, unsigned int seed);
-void Gaussian(float mean, float stddev, int n, float *ptr, unsigned int seed);
-void initBuffer(void*, int, int vnorm, int fanin, int fanout, long long int, string, unsigned int seed, float std=0);
-void initConstantBuffer(void*, int, long long int, string, float);
-void initConstantBuffer(void*, int, long long int, string, short);
+void Uniform(const float lower, const float upper, int n, float *ptr);
+void Gaussian(float mean, float stddev, int n, float *ptr);
+void initBuffer(void*, int vnorm, int fanin, int fanout, long long int, string, float std=0);
+void initConstantBuffer(void*, long long int, string, float);
+void initConstantBuffer(void*, long long int, string, short);

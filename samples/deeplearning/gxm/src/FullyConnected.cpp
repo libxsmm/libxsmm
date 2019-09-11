@@ -205,7 +205,11 @@ FCNode::FCNode(FCParams *p, MLEngine* e) : NNNode(p, e)
       {
         tenWeightDiff_->setDataType(DT_BF16);
         int welem = ws_.dims[0]*ws_.dims[1];
+#ifdef BF16_MLSL
         tenWeightDiff_->setBufferSize(welem*sizeof(libxsmm_bfloat16));
+#else
+        tenWeightDiff_->setBufferSize(welem*sizeof(float));
+#endif
       }
       else
       {
@@ -333,10 +337,11 @@ void FCNode::fillWeightBuffers(TensorBuf* tBuf, int buftype, long long int size)
 
   if(buftype == DATA)
   {
-    initBuffer(ptr, dtype, variance_norm_, fanin, fanout, welem*sizeof(float), wfiller_type_, (unsigned int)node_id+PRIME_SEED, std_);
+    if(node_id == 0)
+      initBuffer(ptr, variance_norm_, fanin, fanout, welem*sizeof(float), wfiller_type_, std_);
 
 #ifdef USE_MLSL
-    MPI_Bcast(ptr, size, MPI_FLOAT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(ptr, welem, MPI_FLOAT, 0, MPI_COMM_WORLD);
 #endif
   }
   else if(buftype == HISTORY || buftype == DIFF)
@@ -360,7 +365,7 @@ void FCNode::fillBiasBuffers(TensorBuf* tBuf, int buftype, long long int size)
   if(buftype == DATA)
   {
     assert(bfiller_type_.compare("constant") == 0);
-    initConstantBuffer(ptr, dtype, size, "CONSTANT", value_);
+    initConstantBuffer(ptr, size, "CONSTANT", value_);
   }
   else
     memset(ptr, 0, size);
@@ -464,24 +469,78 @@ void FCNode::convert_f32_bf16(float* in, libxsmm_bfloat16* out, int len)
 #pragma omp parallel for private(i)
 #endif
   for ( i = 0; i < len; i+=16 ) {
-    __m512  vfp32  = gxm_fp32_to_bfp16_rne_adjustment_avx512f( _mm512_loadu_ps( in+i ) );
-    __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f( vfp32 );
+    __m512  vfp32  = gxm_fp32_to_bfp16_rne_adjustment_avx512f(_mm512_loadu_ps(in + i));
+    __m256i vbfp16 = gxm_fp32_to_bfp16_truncate_avx512f(vfp32);
     _mm256_storeu_si256( (__m256i*)(out+i), vbfp16 );
   }
 }
 
 void FCNode::convert_bf16_f32(libxsmm_bfloat16* in, float* out, int len)
 {
-  int i;
+#if 1
 
 #ifdef _OPENMP
-#pragma omp parallel for private(i)
+#pragma omp parallel
 #endif
-  for ( i = 0; i < len; i+=16 ) {
-    __m256i vbfp16    = _mm256_loadu_si256( (const __m256i*)(in+i) );
-    __m512  vfp32     = gxm_bfp16_to_fp32_avx512f( vbfp16 );
-    _mm512_storeu_ps( out+i, vfp32 );
+  {
+    int tid = omp_get_thread_num();
+    int ntps = gparams_.num_threads/gparams_.num_numa_nodes;
+    int n = tid/ntps;
+    if(n == 0)
+    {
+      int lenv = len/16;
+      int rem = lenv % ntps;
+      int jobs = (rem == 0) ? (lenv/ntps)*16 : ((lenv-rem)/ntps)*16;
+      int tb = (tid*jobs < len) ? tid*jobs : len;
+      int te = ((tid+1)*jobs < len) ? (tid+1)*jobs : len;
+
+      for (int i = tb; i < te; i+=16 ) {
+        __m256i vbfp16    = _mm256_loadu_si256( (const __m256i*)(in+i) );
+        __m512  vfp32     = gxm_bfp16_to_fp32_avx512f( vbfp16 );
+        _mm512_storeu_ps( out+i, vfp32 );
+      }
+
+      //Remainder processing
+      if(tid == 0)
+      {
+        if(rem > 0)
+        {
+          for(int i=ntps*jobs; i<len; i+=16)
+          {
+            __m256i vbfp16    = _mm256_loadu_si256( (const __m256i*)(in+i) );
+            __m512  vfp32     = gxm_bfp16_to_fp32_avx512f( vbfp16 );
+            _mm512_storeu_ps( out+i, vfp32 );
+          }
+        }
+      }
+    }
   }
+#else
+
+#ifdef _OPENMP
+#pragma omp parallel
+#endif
+  {
+    int tid = omp_get_thread_num();
+    int ntps = gparams_.num_threads/gparams_.num_numa_nodes;
+    int n = tid/ntps;
+
+    if(n == 0)
+    {
+      union libxsmm_bfloat16_hp delwt_32_0;
+      delwt_32_0.i[0] = 0;
+      int jobs = (len % ntps == 0) ? len/ntps : len/ntps + 1;
+      int tb = (tid*jobs < len) ? tid*jobs : len;
+      int te = ((tid+1)*jobs < len) ? (tid+1)*jobs : len;
+
+      for(int j=tb; j<te; j++)
+      {
+        delwt_32_0.i[1] = in[j];
+        out[j] = delwt_32_0.f;
+      }
+    }
+  }
+#endif
 }
 
 void FCNode::forwardPropagate()
@@ -513,7 +572,7 @@ void FCNode::forwardPropagate()
   impl->set_node_name(nname_);
   impl->set_scratch_buffer(tenScratchData_);
 
-  impl->forwardPropagate(tenBotData_, tenWeightData_, tenBiasData_, tenTopData_);
+  impl->forwardPropagate(tenBotData_, tenWeightData_, tenWeightInc_, tenBiasData_, tenTopData_);
 
 #ifdef CHECK_BLOWUP_FP32
   if(out_dtype == DT_FLOAT)
@@ -743,18 +802,20 @@ void FCNode::weightUpdate()
 
 #ifdef USE_MLSL
   void *mptr = tenWeightDiff_->getBuffer();
-  void *mpptr = tenWeightDiff_->getPrivBuffer();
-  void *mp = (mpptr == NULL) ? mptr : mpptr;
+
+#ifndef BF16_MLSL
+  void *lmptr = tenWeightDiff_->getLPBuffer();
 
   if(in_dtype == DT_BF16)
   {
-    if(dwptr == NULL)
-      dwptr = (float*)_mm_malloc(gparams_.nInput*gparams_.nOutput*sizeof(float), 64);
-    convert_bf16_f32((libxsmm_bfloat16*)mp, dwptr, gparams_.nInput*gparams_.nOutput);
-    op_->GetParameterSet(0)->StartGradientComm(dwptr);
+    convert_bf16_f32((libxsmm_bfloat16*)lmptr, (float*)mptr, gparams_.nInput*gparams_.nOutput);
+    op_->GetParameterSet(0)->StartGradientComm(mptr);
   }
   else if(in_dtype == DT_FLOAT)
-    op_->GetParameterSet(0)->StartGradientComm(mp);
+    op_->GetParameterSet(0)->StartGradientComm(mptr);
+#else
+  op_->GetParameterSet(0)->StartGradientComm(mptr);
+#endif
 
   if(gparams_.bias_term)
     op_->GetParameterSet(1)->StartGradientComm(tenBiasDiff_->getBuffer());

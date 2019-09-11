@@ -206,6 +206,10 @@ ifeq ($(MLSL), 1)
   CXX = mpiicpc
 endif
 
+ifeq ($(MLSL_WITH_BF16), 1)
+  CXXFLAGS += -DBF16_MLSL
+endif
+
 ifeq ($(LMDB), 1)
   LIBRARIES += lmdb
   LIBRARY_DIRS += $(GXM_LIBRARY_PATH)/lib

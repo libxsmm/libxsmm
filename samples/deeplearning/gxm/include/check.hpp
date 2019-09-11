@@ -42,4 +42,4 @@
  void MeanOfLayer(char *s, float *array, int size);
  void MeanOfLayer(char *s, double *array, int size);
  void MeanOfLayer(char *s, int *array, int size);
- void MeanOfLayer(char *s, short *array, int size);
+ void MeanOfLayer(char *s, libxsmm_bfloat16 *array, int size);

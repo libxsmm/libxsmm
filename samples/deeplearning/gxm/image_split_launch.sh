@@ -86,8 +86,8 @@ if [ ${arch_} == skx ]; then
     numservers=2
     listep=6,34
 elif [ ${arch_} == clx ]; then
-    numservers=0
-    listep=6,7,8,9
+    numservers=2
+    listep=6,34
 elif [ ${arch_} == knl ]; then
     numservers=2
     listep=6,7,8,9,10,11,12,13
@@ -103,8 +103,7 @@ maxcores=`cpuinfo | grep "Processors(CPUs)" | awk '{print $3}'`
 maxcores=`cpuinfo | grep "Cores             :" | awk '{print $3}'`
 load_bal_threads=0
 numthreads=$(((maxcores-numservers-load_bal_threads)*threadspercore))
-numa_nodes=2
-ntps=$((numthreads/numa_nodes))
+#numthreads=27
 
 # MLSL configuration
 export MLSL_LOG_LEVEL=1
@@ -143,7 +142,6 @@ if [ "$threadspercore" == "1" ]; then
   elif [ "$numservers" == "2" ]; then
     affinitystr="proclist=[0-5,7-33,35-55],granularity=thread,explicit"
   elif [ "$numservers" == "1" ]; then
-    numthreads_per_proc=$((ntps/max_ppn))
     affinitystr="proclist=[0-5,7-27],granularity=thread,explicit"
   fi
 else
