@@ -226,6 +226,9 @@
 #   if !defined(LIBXSMM_STATIC_TARGET_ARCH)
 #     define LIBXSMM_STATIC_TARGET_ARCH LIBXSMM_X86_GENERIC
 #   endif
+#   if defined(__GNUC__)
+#     define LIBXSMM_INTRINSICS_INCLUDE
+#   endif
 # endif
 # if defined(LIBXSMM_STATIC_TARGET_ARCH) && !defined(LIBXSMM_INTRINSICS_STATIC)
 #   if defined(__INTEL_COMPILER)
