@@ -64,7 +64,7 @@ const int ifwp = ifw + 2*ipw;
 /* here we assume that input and output blocking is similar */
 const int nBlocksFm = handle->blocksifm;
 
-const element_stats_type nhw = (element_stats_type)(nImg  * ifh * ifw);
+const element_stats_type nhw = (element_stats_type)(nImg * ifh * ifw);
 const element_stats_type recp_nhw = 1.0f/nhw;
 
 /* computing first logical thread */
@@ -118,7 +118,6 @@ LIBXSMM_VLA_DECL(5, const unsigned char,       relumask,   (unsigned char*)handl
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-//if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS) > 0 ) {
 if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
   for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
     __m512 lcl_vdgamma  = _mm512_setzero_ps();
