@@ -118,7 +118,6 @@ LIBXSMM_VLA_DECL(5, const unsigned char,       relumask,   (unsigned char*)handl
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-//if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS) > 0 ) {
 if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
   for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
     __m512 lcl_vdgamma = _mm512_setzero_ps();
