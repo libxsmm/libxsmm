@@ -32,6 +32,45 @@
 #define PROFILE
 #endif
 
+#define _mm512_loadcvt_bf16_fp32(A)   _mm512_castsi512_ps(_mm512_slli_epi32(_mm512_cvtepi16_epi32(_mm256_loadu_si256((__m256i*)(A))),16))
+
+#define MATRIX_CVT_BF16_FP32_LD(m, n, ld, _src, _dst) \
+do { \
+  libxsmm_bfloat16 *src = _src; \
+  float *dst = _dst; \
+  libxsmm_blasint i,j; \
+  for ( j = 0; j < n; ++j ) { \
+    for ( i = 0; i < m; i+=16 ) { \
+      _mm512_store_ps((float*)&dst[(j*ld)+i], _mm512_loadcvt_bf16_fp32(&src[(j*ld)+i])); \
+    } \
+  } \
+} while (0)
+
+#define MATRIX_BCST_CVT_BF16_FP32_COLVECTOR_LD(m, n, ld, _srcdst, _colv) \
+do { \
+  libxsmm_bfloat16 *colv = _colv; \
+  float *srcdst = _srcdst; \
+  libxsmm_blasint i,j; \
+  for ( j = 0; j < n; ++j ) { \
+    for ( i = 0; i < m; i+=16 ) { \
+      _mm512_store_ps((float*)&srcdst[(j*ld)+i], _mm512_loadcvt_bf16_fp32(&colv[i])); \
+    } \
+  } \
+} while (0)
+
+#define MATRIX_BCST_CVT_BF16_FP32_COLVECTOR_CONST_LD(m, n, ld, _srcdst, _colv, const_bias) \
+do { \
+  libxsmm_bfloat16 *colv = _colv; \
+  float *srcdst = _srcdst; \
+  libxsmm_blasint i,j; \
+  __m512 vbias = _mm512_set1_ps(const_bias); \
+  for ( j = 0; j < n; ++j ) { \
+    for ( i = 0; i < m; i+=16 ) { \
+      _mm512_store_ps((float*)&srcdst[(j*ld)+i], _mm512_add_ps(vbias, _mm512_loadcvt_bf16_fp32(&colv[i]))); \
+    } \
+  } \
+} while (0)
+
 /* helper variables */
 libxsmm_blasint j, ik, ikb, in, ic, icb, inik, BF, CB, CB_BLOCKS, KB_BLOCKS;
 /* input sizes */
@@ -47,7 +86,7 @@ const libxsmm_blasint kBlocks = K/bk;
 const int lpb = 2;
 const int bc_lp = bc/lpb;
 const int bk_lp = bk/lpb;
-unsigned long long blocks;
+unsigned long long blocks, blocksa, blocksb;
 
 /* define tensors */
 element_input_type  *xt  = (element_input_type* )handle->xt->data;
@@ -115,11 +154,9 @@ LIBXSMM_VLA_DECL(3, element_output_type, o_out, ot_bf16, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, ci_out, cit_bf16, N, K);
 LIBXSMM_VLA_DECL(3, element_output_type, co_out, cot_bf16, N, K);
 /* define batch-reduce gemm kernels */
-const libxsmm_bsmmfunction_reducebatch_addr batchreduce_kernela = libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bc, &bk, &C, &K, NULL, NULL, NULL, NULL );
-const libxsmm_bsmmfunction_reducebatch_addr batchreduce_kernelb = libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL );
-/* Auxiliary arrays for batch-reduce gemms */
-const element_filter_type *A_array[1024];
-const element_input_type  *B_array[1024];
+const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernela = handle->fwd_kernela;
+const libxsmm_bsmmfunction_reducebatch_strd batchreduce_kernelb = handle->fwd_kernelb;
+
 float *cps_ptr = NULL;
 
 /* parallelize over C-blocks */
@@ -190,7 +227,7 @@ for (inik = thr_begin; inik < thr_end; ++inik ) {
   in = (inik % (N/bn))*bn;
   ikb = inik / (N/bn);
   ik = ikb*bk;
-  libxsmm_internal_matrix_cvt_bf16_fp32_ld( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, cp_bf16, in, ik, K), &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K));
+  MATRIX_CVT_BF16_FP32_LD( bk, bn, K, &LIBXSMM_VLA_ACCESS(2, cp_bf16, in, ik, K), &LIBXSMM_VLA_ACCESS(2, cp, in, ik, K));
 }
 
 libxsmm_barrier_wait(handle->barrier, (int)ltid);
@@ -218,3 +255,8 @@ if (ltid == 0) {
 }
 #undef PROFILE
 #endif
+
+#undef MATRIX_CVT_BF16_FP32_LD
+#undef MATRIX_BCST_CVT_BF16_FP32_COLVECTOR_LD
+#undef MATRIX_BCST_CVT_BF16_FP32_COLVECTOR_CONST_LD
+#undef _mm512_loadcvt_bf16_fp32

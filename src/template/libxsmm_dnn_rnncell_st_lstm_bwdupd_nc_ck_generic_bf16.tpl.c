@@ -335,7 +335,7 @@ if (ltid == 0) {
 }
 #endif
 
-#include "libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck_core_bf16.tpl.c"
+//#include "libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck_core_bf16.tpl.c"
 
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
 #ifdef PROFILE
