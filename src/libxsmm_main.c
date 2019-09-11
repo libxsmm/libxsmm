@@ -631,7 +631,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 # endif
 #endif
   if (NULL == internal_registry) { /* double-check after acquiring the lock(s) */
-    libxsmm_code_pointer* new_registry = NULL;
+    void *new_registry = NULL, *new_keys = &internal_registry_keys, *new_cache = &internal_cache_buffer;
     /* setup verbosity as early as possible since below code may rely on verbose output */
     const char *const env_verbose = getenv("LIBXSMM_VERBOSE");
     if (NULL != env_verbose && 0 != *env_verbose) {
@@ -701,12 +701,12 @@ LIBXSMM_API_INTERN void internal_init(void)
     libxsmm_hash_init(libxsmm_target_archid); /* used by debug memory allocation (checksum) */
     if (
 #if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-      (EXIT_SUCCESS == libxsmm_xmalloc((void**)&internal_cache_buffer, (LIBXSMM_MAX_NTHREADS) * sizeof(internal_cache_type), LIBXSMM_CACHELINE/*alignment*/,
+      (EXIT_SUCCESS == libxsmm_xmalloc((void**)new_cache, (LIBXSMM_MAX_NTHREADS) * sizeof(internal_cache_type), LIBXSMM_CACHELINE/*alignment*/,
         LIBXSMM_MALLOC_FLAG_PRIVATE, NULL/*extra*/, 0/*extra-size*/)) &&
 #endif
-      (EXIT_SUCCESS == libxsmm_xmalloc((void**)&new_registry, (LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer), 0/*auto-align*/,
+      (EXIT_SUCCESS == libxsmm_xmalloc(&new_registry, (LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer), 0/*auto-align*/,
         LIBXSMM_MALLOC_FLAG_PRIVATE, NULL/*extra*/, 0/*extra-size*/)) &&
-      (EXIT_SUCCESS == libxsmm_xmalloc((void**)&internal_registry_keys, (LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_descriptor), 0/*auto-align*/,
+      (EXIT_SUCCESS == libxsmm_xmalloc((void**)new_keys, (LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_descriptor), 0/*auto-align*/,
         LIBXSMM_MALLOC_FLAG_PRIVATE, NULL/*extra*/, 0/*extra-size*/)))
     {
       LIBXSMM_ASSERT(NULL != new_registry && NULL != internal_registry_keys);
@@ -739,7 +739,7 @@ LIBXSMM_API_INTERN void internal_init(void)
           }
         }
       }
-      for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) new_registry[i].pmm = NULL;
+      for (i = 0; i < (LIBXSMM_CAPACITY_REGISTRY); ++i) ((libxsmm_code_pointer*)new_registry)[i].pmm = NULL;
 #if defined(LIBXSMM_BUILD)
 #     include <libxsmm_dispatch.h>
 #endif
@@ -1036,7 +1036,6 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #endif
   }
 }
-
 
 
 LIBXSMM_API void libxsmm_sink(LIBXSMM_VARIADIC)

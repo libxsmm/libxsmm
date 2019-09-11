@@ -1040,15 +1040,6 @@ LIBXSMM_API void* __wrap_memalign(size_t alignment, size_t size)
     if (NULL == internal_malloc_hook.memalign.ptr) {
       internal_malloc_init(&internal_malloc_hook);
     }
-    LIBXSMM_ASSERT(NULL != internal_malloc_hook.memalign.ptr
-      && NULL != internal_malloc_hook.malloc.ptr
-#   if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-      && NULL != internal_malloc_hook.calloc.ptr
-#   endif
-#   if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-      && NULL != internal_malloc_hook.realloc.ptr
-#   endif
-      && NULL != internal_malloc_hook.free.ptr);
 # endif
 # if defined(LIBXSMM_MALLOC_HOOK_DELAY) && (0 < (LIBXSMM_MALLOC_HOOK_DELAY))
     if ((LIBXSMM_MALLOC_HOOK_DELAY) > counter) {
