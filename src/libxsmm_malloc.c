@@ -43,10 +43,12 @@
 # include <features.h>
 # include <malloc.h>
 #endif
-#if defined(__GLIBC__)
-# define LIBXSMM_MALLOC_GLIBC __GLIBC__
-#else
-# define LIBXSMM_MALLOC_GLIBC 6
+#if !defined(LIBXSMM_MALLOC_GLIBC)
+# if defined(__GLIBC__)
+#   define LIBXSMM_MALLOC_GLIBC __GLIBC__
+# else
+#   define LIBXSMM_MALLOC_GLIBC 6
+# endif
 #endif
 #if defined(_WIN32)
 # include <windows.h>
@@ -170,6 +172,9 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #endif
 #if !defined(LIBXSMM_MALLOC_HOOK_TRYKMP) && 0
 # define LIBXSMM_MALLOC_HOOK_TRYKMP
+#endif
+#if !defined(LIBXSMM_MALLOC_HOOK_CHECK) && 0
+# define LIBXSMM_MALLOC_HOOK_CHECK 1
 #endif
 #if !defined(LIBXSMM_MALLOC_HOOK_DELAY) && 0
 # define LIBXSMM_MALLOC_HOOK_DELAY 4
@@ -303,6 +308,9 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
   const char *const buffer = (const char*)memory;
   internal_malloc_info_type* result = (internal_malloc_info_type*)(NULL != memory
     ? (buffer - sizeof(internal_malloc_info_type)) : NULL);
+#if defined(LIBXSMM_MALLOC_HOOK_CHECK)
+  if ((LIBXSMM_MALLOC_HOOK_CHECK) < check) check = (LIBXSMM_MALLOC_HOOK_CHECK);
+#endif
   if (0 != check && NULL != result) { /* check ownership */
 #if !defined(_WIN32) /* mprotect: pass address rounded down to page/4k alignment */
     if (1 == check || 0 == mprotect((void*)(((uintptr_t)result) & 0xFFFFFFFFFFFFF000),
@@ -1004,7 +1012,7 @@ LIBXSMM_API void* __wrap_malloc(size_t size)
 LIBXSMM_API void* __wrap_calloc(size_t /*num*/, size_t /*size*/);
 LIBXSMM_API void* __wrap_calloc(size_t num, size_t size)
 {
-  const size_t nbytes = num * size;
+  const size_t nbytes = num * size; /* TODO: signal anonymous/zeroed pages */
   void *const result = __wrap_memalign(0/*auto-alignment*/, nbytes);
   if (NULL != result) memset(result, 0, nbytes);
   return result;
