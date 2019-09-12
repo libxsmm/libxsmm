@@ -1530,14 +1530,29 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
   {
     static int error_once = 0;
     if (0 != size) {
-      /* ATOMIC BEGIN: this region should be atomic/locked */
-        const void* context = libxsmm_default_allocator_context;
-        libxsmm_malloc_function malloc_fn = libxsmm_default_malloc_fn;
-        libxsmm_free_function free_fn = libxsmm_default_free_fn;
-      /* ATOMIC END: this region should be atomic */
       void *alloc_failed = NULL, *buffer = NULL, *reloc = NULL;
       size_t alloc_alignment = 0, alloc_size = 0, max_preserve = 0;
       internal_malloc_info_type* info = NULL;
+      /* ATOMIC BEGIN: this region should be atomic/locked */
+      const void* context = libxsmm_default_allocator_context;
+      libxsmm_malloc_function malloc_fn = libxsmm_default_malloc_fn;
+      libxsmm_free_function free_fn = libxsmm_default_free_fn;
+      if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
+        context = libxsmm_scratch_allocator_context;
+        malloc_fn = libxsmm_scratch_malloc_fn;
+        free_fn = libxsmm_scratch_free_fn;
+#if defined(LIBXSMM_MALLOC_MMAP_SCRATCH)
+        flags |= LIBXSMM_MALLOC_FLAG_MMAP;
+#endif
+      }
+      if ((0 != (libxsmm_malloc_kind & 1) && 0 <= libxsmm_malloc_kind)
+        || NULL == malloc_fn.function || NULL == free_fn.function)
+      {
+        malloc_fn.function = __real_malloc;
+        free_fn.function = __real_free;
+        context = NULL;
+      }
+      /* ATOMIC END: this region should be atomic */
       flags |= LIBXSMM_MALLOC_FLAG_RW; /* normalize given flags since flags=0 is accepted as well */
       if (0 != (LIBXSMM_MALLOC_FLAG_REALLOC & flags) && NULL != *memory) {
         info = internal_malloc_info(*memory, 2/*check*/);
@@ -1549,19 +1564,6 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         }
       }
       else *memory = NULL;
-      if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) {
-#if defined(LIBXSMM_MALLOC_MMAP_SCRATCH) /* try harder for uncommitted scratch memory */
-        flags |= LIBXSMM_MALLOC_FLAG_MMAP;
-#endif
-        context = libxsmm_scratch_allocator_context;
-        malloc_fn = libxsmm_scratch_malloc_fn;
-        free_fn = libxsmm_scratch_free_fn;
-      }
-      if (NULL == malloc_fn.function || NULL == free_fn.function) {
-        LIBXSMM_ASSERT(NULL == context);
-        malloc_fn.function = __real_malloc;
-        free_fn.function = __real_free;
-      }
 #if !defined(LIBXSMM_MALLOC_MMAP)
       if (0 == (LIBXSMM_MALLOC_FLAG_X & flags) && 0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
         alloc_alignment = (0 == (LIBXSMM_MALLOC_FLAG_REALLOC & flags) ? libxsmm_alignment(size, alignment) : alignment);
