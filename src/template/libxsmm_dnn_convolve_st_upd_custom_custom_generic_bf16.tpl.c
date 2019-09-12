@@ -263,6 +263,8 @@ if (handle->upd_linearized_pixels == 1) {
     }
     for (img = my_img_start; img < my_img_end; img++) {
       for (ofm1 = 0; ofm1 < handle->blocksofm; ofm1++) {
+        TRANS_OUTPUT_W_TO_VNNI_FORMAT(img, ofm1, 0, handle->ofh);
+#if 0
         for (oj = 0; oj < handle->ofh; oj++) {
           for (oi = 0; oi < handle->ofw; oi++) {
             for (ofm2 = 0; ofm2 < handle->ofmblock; ofm2++) {
@@ -271,6 +273,7 @@ if (handle->upd_linearized_pixels == 1) {
             }
           }
         }
+#endif
       }
     }
   }
