@@ -347,6 +347,11 @@ if (handle->upd_linearized_pixels == 0) {
       }
     }
   } else {
+    int fast_trans = (handle->ofw == 112 && handle->desc.v == 2 && handle->ifmblock == 4 && handle->batchreduce_h_pixels == 1) ? 1 : 0;
+    const __m512i skipper = LIBXSMM_INTRINSICS_MM512_SET_EPI16(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 27, 19, 11, 3, 26, 18, 10, 2, 25, 17, 9, 1, 24, 16, 8, 0);
+    __m512i p0, p1, p2, p3;
+    __m256i _p0, _p1, _p2, _p3;
+    __m256i r0, r1, r2, r3;
     LDA = handle->ofmblock;
     LDB = handle->ifhp*handle->ifwp_extended;
     LDC = handle->ofmblock;
@@ -373,11 +378,53 @@ if (handle->upd_linearized_pixels == 0) {
 
                     /* Copy the input in such a way that we ignore "w-pixels" based on ki value  */
                     if (handle->on_the_fly_input_packing == 1) {
-                      for (ij = 0; ij < handle->batchreduce_h_pixels; ij++) {
-                        for (ii = 0; ii < handle->ofw; ii++) {
-                          for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-                            LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, ifm2, ij, ii, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended) =
-                              LIBXSMM_VLA_ACCESS(5, input, img, ifm1, (oj+ij)*handle->desc.u+kj, ii*handle->desc.v+ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                      if (fast_trans == 1) {
+                        for (ii = 0; ii < handle->ofw*2; ii+=32) {
+                          p0 = _mm512_loadu_si512((element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, oj*handle->desc.u+kj, ii+ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock));
+                          p0 = _mm512_permutexvar_epi16(skipper, p0);
+                          _p0 = _mm512_extracti64x4_epi64(p0, 0);
+                          p1 = _mm512_loadu_si512((element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, oj*handle->desc.u+kj, ii+8+ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock));
+                          p1 = _mm512_permutexvar_epi16(skipper, p1);
+                          _p1 = _mm512_extracti64x4_epi64(p1, 0);
+                          p2 = _mm512_loadu_si512((element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, oj*handle->desc.u+kj, ii+16+ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock));
+                          p2 = _mm512_permutexvar_epi16(skipper, p2);
+                          _p2 = _mm512_extracti64x4_epi64(p2, 0);
+                          p3 = _mm512_loadu_si512((element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, oj*handle->desc.u+kj, ii+24+ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock));
+                          p3 = _mm512_permutexvar_epi16(skipper, p3);
+                          _p3 = _mm512_extracti64x4_epi64(p3, 0);
+
+                          r0 = _mm256_insert_epi64 (r0, _mm256_extract_epi64(_p0, 0), 0);
+                          r0 = _mm256_insert_epi64 (r0, _mm256_extract_epi64(_p1, 0), 1);
+                          r0 = _mm256_insert_epi64 (r0, _mm256_extract_epi64(_p2, 0), 2);
+                          r0 = _mm256_insert_epi64 (r0, _mm256_extract_epi64(_p3, 0), 3);
+                          _mm256_store_si256((union __m256i *)&LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, 0, ii/2, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended), r0);
+
+                          r1 = _mm256_insert_epi64 (r1, _mm256_extract_epi64(_p0, 1), 0);
+                          r1 = _mm256_insert_epi64 (r1, _mm256_extract_epi64(_p1, 1), 1);
+                          r1 = _mm256_insert_epi64 (r1, _mm256_extract_epi64(_p2, 1), 2);
+                          r1 = _mm256_insert_epi64 (r1, _mm256_extract_epi64(_p3, 1), 3);
+                          _mm256_store_si256((union __m256i *)&LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 1, 0, ii/2, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended), r1);
+
+                          r2 = _mm256_insert_epi64 (r2, _mm256_extract_epi64(_p0, 2), 0);
+                          r2 = _mm256_insert_epi64 (r2, _mm256_extract_epi64(_p1, 2), 1);
+                          r2 = _mm256_insert_epi64 (r2, _mm256_extract_epi64(_p2, 2), 2);
+                          r2 = _mm256_insert_epi64 (r2, _mm256_extract_epi64(_p3, 2), 3);
+                          _mm256_store_si256((union __m256i *)&LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 2, 0, ii/2, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended), r2);
+
+                          r3 = _mm256_insert_epi64 (r3, _mm256_extract_epi64(_p0, 3), 0);
+                          r3 = _mm256_insert_epi64 (r3, _mm256_extract_epi64(_p1, 3), 1);
+                          r3 = _mm256_insert_epi64 (r3, _mm256_extract_epi64(_p2, 3), 2);
+                          r3 = _mm256_insert_epi64 (r3, _mm256_extract_epi64(_p3, 3), 3);
+                          _mm256_store_si256((union __m256i *)&LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 3, 0, ii/2, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended), r3);
+
+                        }
+                      } else {
+                        for (ij = 0; ij < handle->batchreduce_h_pixels; ij++) {
+                          for (ii = 0; ii < handle->ofw; ii++) {
+                            for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
+                              LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, ifm2, ij, ii, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended) =
+                                LIBXSMM_VLA_ACCESS(5, input, img, ifm1, (oj+ij)*handle->desc.u+kj, ii*handle->desc.v+ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                            }
                           }
                         }
                       }
