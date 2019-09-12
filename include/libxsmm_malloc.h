@@ -53,9 +53,10 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE libxsmm_free_function {
 /**
  * To setup the custom default memory allocator, either a malloc_fn and a free_fn
  * are given, or two NULL-pointers designate to reset the default allocator to a
- * library-internal default. If a context is given (non-NULL ), the context-based
+ * library-internal default. If a context is given (non-NULL), the context-based
  * form of the memory allocation is used.
- * It is supported to change the allocator while buffers are pending.
+ * Changing the allocator including the function for deallocation applies to
+ * upcoming allocation/deallocation and works correctly for pending buffers.
  */
 LIBXSMM_API int libxsmm_set_default_allocator(/* malloc_fn/free_fn must correspond */
   const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);
@@ -69,7 +70,8 @@ LIBXSMM_API int libxsmm_get_default_allocator(const void** context,
  * to be controlled otherwise. If two NULL-pointers are given, the allocator is reset
  * to the currently active default memory allocator. If a context is given (non-NULL),
  * the context-based form of the memory allocation is used.
- * It is supported to change the allocator while buffers are pending.
+ * Changing the allocator including the function for deallocation applies to
+ * upcoming allocation/deallocation and works correctly for pending buffers.
  */
 LIBXSMM_API int libxsmm_set_scratch_allocator(/* malloc_fn/free_fn must correspond */
   const void* context, libxsmm_malloc_function malloc_fn, libxsmm_free_function free_fn);

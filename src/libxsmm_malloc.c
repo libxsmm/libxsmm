@@ -874,7 +874,7 @@ LIBXSMM_API_INLINE void internal_malloc_init(internal_malloc_hook_type* hook)
     }
   }
   if (NULL != hook->free.ptr) {
-# if defined(LIBXSMM_MALLOC_HOOK_IMALLOC)
+# if defined(LIBXSMM_MALLOC_HOOK_IMALLOC) && !defined(LIBXSMM_MALLOC_HOOK_TRYKMP)
     union { const void* dlsym; libxsmm_malloc_fun* ptr; } i_malloc;
     i_malloc.dlsym = dlsym(RTLD_NEXT, "i_malloc");
     if (NULL == dlerror() && NULL != i_malloc.dlsym) {
@@ -1094,9 +1094,9 @@ LIBXSMM_API void* __wrap_realloc(void* /*ptr*/, size_t /*size*/);
 LIBXSMM_API void* __wrap_realloc(void* ptr, size_t size)
 {
   void* result;
-  const int recursive = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
-  if ( 1 < recursive /* protect against recursion */
-    || 0 == (libxsmm_malloc_kind & 1) || 0 > libxsmm_malloc_kind)
+  if (0 == (libxsmm_malloc_kind & 1) || 0 > libxsmm_malloc_kind
+    || (libxsmm_malloc_limit[0] > size)
+    || (libxsmm_malloc_limit[1] < size && 0 != libxsmm_malloc_limit[1]))
   {
     result = __real_realloc(ptr, size);
   }
@@ -1112,7 +1112,6 @@ LIBXSMM_API void* __wrap_realloc(void* ptr, size_t size)
     internal_scratch_malloc(&ptr, size, (size_t)alignment, flags, caller);
     result = ptr;
   }
-  LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
   return result;
 }
 #endif
@@ -1456,6 +1455,7 @@ LIBXSMM_API_INLINE void* internal_xrealloc(void** ptr, internal_malloc_info_type
   if (result == base) { /* signal no-copy */
     LIBXSMM_ASSERT(NULL != result);
     *info = NULL; /* no delete */
+    *ptr = NULL; /* no copy */
   }
   else if (NULL != result) { /* copy */
     const size_t offset_src = (const char*)*ptr - base;
@@ -1494,7 +1494,10 @@ LIBXSMM_API_INTERN void* internal_xmalloc(void** ptr, internal_malloc_info_type*
       : malloc_fn.ctx_form(size, context));
   }
   else { /* reallocate */
-    if (__real_malloc == malloc_fn.function || malloc == malloc_fn.function) {
+    if (NULL != free_fn.function /* prefer free_fn since it is part of pointer-info */
+      ? (__real_free == free_fn.function || free == free_fn.function)
+      : (__real_malloc == malloc_fn.function || malloc == malloc_fn.function))
+    {
 #if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
       result = internal_xrealloc(ptr, info, size, __real_realloc, __real_free);
 #else
