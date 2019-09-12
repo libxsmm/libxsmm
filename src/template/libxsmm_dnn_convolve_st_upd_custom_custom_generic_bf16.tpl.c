@@ -373,11 +373,11 @@ if (handle->upd_linearized_pixels == 0) {
 
                     /* Copy the input in such a way that we ignore "w-pixels" based on ki value  */
                     if (handle->on_the_fly_input_packing == 1) {
-                      for (ij = 0; ij < handle->ifhp; ij++) {
+                      for (ij = 0; ij < handle->batchreduce_h_pixels; ij++) {
                         for (ii = 0; ii < handle->ofw; ii++) {
                           for (ifm2 = 0; ifm2 < handle->ifmblock; ifm2++) {
-                            LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, ifm2, ij, ii, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended) =
-                              LIBXSMM_VLA_ACCESS(5, input, img, ifm1, ij, ii*handle->desc.v+ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
+                            LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, ifm2, ij, ii, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended) =
+                              LIBXSMM_VLA_ACCESS(5, input, img, ifm1, (oj+ij)*handle->desc.u+kj, ii*handle->desc.v+ki, ifm2, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock);
                           }
                         }
                       }
@@ -385,7 +385,7 @@ if (handle->upd_linearized_pixels == 0) {
 
                     for (j_br = 0; j_br < handle->batchreduce_h_pixels; j_br++) {
                       A_ptrs[j_br] = (element_output_type*) &LIBXSMM_VLA_ACCESS(6, tr_output_2, img, ofm1, oj+j_br, 0, 0, 0, handle->blocksofm, handle->ofhp, handle->ofwp_extended/2, handle->ofmblock, 2);
-                      B_ptrs[j_br] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, ifm1, 0, (oj+j_br)*handle->desc.u + kj, 0, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended);
+                      B_ptrs[j_br] = (element_input_type*) &LIBXSMM_VLA_ACCESS(5, tr_input_2, img, 0, 0, j_br, 0, handle->blocksifm, handle->ifmblock, handle->ifhp, handle->ifwp_extended);
                     }
 
                     br_gemm_kernel(A_ptrs, B_ptrs, dst_ptr, &n_blocks);

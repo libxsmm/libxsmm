@@ -727,7 +727,7 @@ LIBXSMM_API_INTERN void libxsmm_dnn_convolution_setup_bf16_upd( libxsmm_dnn_laye
     handle->ofwp_extended = handle->ofwp + remainder_pixels;
     handle->ifwp_extended = handle->ifwp + remainder_pixels;
     handle->output_pixels = handle->ofwp * handle->ofwp_extended;
-    handle->batchreduce_h_pixels = (handle->upd_trans_w_only) ? 1 : handle->ofh;
+    handle->batchreduce_h_pixels = (handle->upd_trans_w_only) ? 1 : 1;
     handle->use_intermediate_f32_wt_tensor = (handle->batchreduce_h_pixels == handle->ofh) ? 0 : 1;
     handle->scratch2_size = (size_t) (handle->desc.N * handle->ofhp*handle->ofwp_extended * handle->desc.K * sizeof(float)/2);
     if (handle->use_intermediate_f32_wt_tensor) {
