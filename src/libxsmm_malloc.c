@@ -148,7 +148,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #endif
 
 #if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && \
-  !(defined(__APPLE__) && defined(__MACH__)) && !defined(_CRAYC) && !defined(__TRACE)
+  defined(LIBXSMM_GLIBC) && !defined(_CRAYC) && !defined(__TRACE) /* TODO */
 # define LIBXSMM_MALLOC_HOOK_DYNAMIC
 # if defined(LIBXSMM_OFFLOAD_TARGET)
 #   pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
@@ -158,7 +158,8 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #   pragma offload_attribute(pop)
 # endif
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(_WIN32) && 1
+#if !defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(_WIN32) && \
+  defined(LIBXSMM_GLIBC) /* TODO */
 # define LIBXSMM_MALLOC_HOOK_STATIC
 #endif
 #if !defined(LIBXSMM_MALLOC_HOOK_REALLOC) && 1
@@ -823,11 +824,16 @@ LIBXSMM_API_INLINE void internal_malloc_init(internal_malloc_hook_type* hook)
     }
   }
   if (NULL == hook->free.ptr)
-# endif
+# endif /*defined(LIBXSMM_MALLOC_HOOK_TRYKMP)*/
   {
     dlerror(); /* clear an eventual error status */
+# if !defined(LIBXSMM_GLIBC)
+    hook->memalign.ptr = internal_malloc_memalign;
+# else
     hook->memalign.dlsym = dlsym(RTLD_NEXT, "memalign");
-    if (NULL == dlerror() && NULL != hook->memalign.dlsym) {
+    if (NULL == dlerror() && NULL != hook->memalign.dlsym)
+# endif
+    {
       hook->malloc.dlsym = dlsym(RTLD_NEXT, "malloc");
       if (NULL == dlerror() && NULL != hook->malloc.dlsym) {
 # if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
