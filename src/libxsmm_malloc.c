@@ -597,7 +597,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
             pool_size = (NULL != info ? info->size : 0);
             req_size = alloc_size + used_size;
           }
-          LIBXSMM_ASSERT(used_size <= pool_size);
+          LIBXSMM_ASSERT(used_size <= pool_size || NULL == info);
           if (req_size <= pool_size) { /* fast path: draw from pool-buffer */
             void *const headaddr = &pool->instance.head;
             uintptr_t headptr = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)(
@@ -739,8 +739,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
       const int status =
 #endif
       libxsmm_xmalloc(memory, size, alignment/* no need here to determine alignment of given buffer */,
-        ~LIBXSMM_MALLOC_FLAG_SCRATCH & (LIBXSMM_MALLOC_FLAG_REALLOC | flags),
-        NULL/*extra*/, 0/*extra_size*/);
+        ~LIBXSMM_MALLOC_FLAG_SCRATCH & flags, NULL/*extra*/, 0/*extra_size*/);
       assert(EXIT_SUCCESS == status || NULL == *memory); /* !LIBXSMM_ASSERT */
     }
   }
