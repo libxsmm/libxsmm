@@ -212,7 +212,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_MMAP_HOOK) && 1
 # define LIBXSMM_MALLOC_MMAP_HOOK
 #endif
-/* map memory even for non-executable buffers */
+/* map memory also for non-executable buffers */
 #if !defined(LIBXSMM_MALLOC_MMAP) && 0
 # define LIBXSMM_MALLOC_MMAP
 #endif
@@ -1125,8 +1125,12 @@ LIBXSMM_API void* __wrap_realloc(void* ptr, size_t size)
 LIBXSMM_API void __wrap_free(void* /*ptr*/);
 LIBXSMM_API void __wrap_free(void* ptr)
 {
-  /* rely on recognizing pointers not issued by LIBXSMM */
-  libxsmm_free(ptr);
+  if (0 == (libxsmm_malloc_kind & 1) || 0 > libxsmm_malloc_kind) {
+    __real_free(ptr);
+  }
+  else { /* recognize pointers not issued by LIBXSMM */
+    libxsmm_free(ptr);
+  }
 }
 
 #endif /*(defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC))*/

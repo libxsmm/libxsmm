@@ -439,10 +439,6 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
   libxsmm_xrelease_scratch(NULL/*lock*/);
   /* release global services */
   libxsmm_hash_finalize();
-#if !defined(NDEBUG)
-  /* turn-off redirected memory allocations */
-  libxsmm_malloc_kind = 0;
-#endif
 }
 
 
