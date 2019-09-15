@@ -874,6 +874,37 @@ else # osx
   endif
 endif
 
+ifneq (0,$(INTEL))
+  ifeq (1,$(STATIC))
+    SLDFLAGS += -no-intel-extensions -static-intel -static-libstdc++
+    ifneq (Darwin,$(UNAME))
+      SLDFLAGS += -static-libgcc
+    endif
+    DFLAGS += -D__STATIC=1
+  else ifneq (0,$(STATIC))
+    DFLAGS += -D__STATIC=$(STATIC)
+    SLDFLAGS += -static
+  endif
+else
+  ifeq (1,$(STATIC))
+    ifeq (0,$(PGI))
+      SLDFLAGS += -Bstatic
+      ifeq (0,$(CLANG))
+        SLDFLAGS += -static-libstdc++
+        ifneq (Darwin,$(UNAME))
+          SLDFLAGS += -static-libgcc
+        endif
+      endif
+    endif
+    DFLAGS += -D__STATIC=1
+  else ifneq (0,$(STATIC))
+    DFLAGS += -D__STATIC=$(STATIC)
+    ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | grep -q "\-ldummydoesnotexist"; echo "$$?"))
+      SLDFLAGS += -static
+    endif
+  endif
+endif
+
 LIBGFORTRAN = $(call libpath,$(FC),$(SLDFLAGS),gfortran)
 ifneq (,$(strip $(LIBGFORTRAN)))
 ifeq (3,$(GCC)) # try to avoid some more references to Fortran runtime libraries
@@ -1087,16 +1118,6 @@ ifneq (0,$(INTEL))
     endif
   endif
   endif
-  ifeq (1,$(STATIC))
-    SLDFLAGS += -no-intel-extensions -static-intel -static-libstdc++
-    ifneq (Darwin,$(UNAME))
-      SLDFLAGS += -static-libgcc
-    endif
-    DFLAGS += -D__STATIC=1
-  else ifneq (0,$(STATIC))
-    DFLAGS += -D__STATIC=$(STATIC)
-    SLDFLAGS += -static
-  endif
   ifeq (,$(strip $(GFC)))
   ifneq (,$(strip $(R8)))
   ifneq (0,$(R8))
@@ -1307,9 +1328,6 @@ else # GCC assumed
     else
       OMPLIBFILE = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,gomp)
       ifneq (,$(OMPLIBFILE))
-        ifneq (0,$(CLANG))
-          FLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
-        endif
         FLDFLAGS += $(OMPFLAG_FORCE)
         FCFLAGS += $(OMPFLAG_FORCE)
       endif
@@ -1342,23 +1360,6 @@ else # GCC assumed
     endif
   endif
   endif
-  endif
-  ifeq (1,$(STATIC))
-    ifeq (0,$(PGI))
-      SLDFLAGS += -Bstatic
-      ifeq (0,$(CLANG))
-        SLDFLAGS += -static-libstdc++
-        ifneq (Darwin,$(UNAME))
-          SLDFLAGS += -static-libgcc
-        endif
-      endif
-    endif
-    DFLAGS += -D__STATIC=1
-  else ifneq (0,$(STATIC))
-    DFLAGS += -D__STATIC=$(STATIC)
-    ifeq (0,$(shell $(LD) -static -ldummydoesnotexist 2>&1 | grep -q "\-ldummydoesnotexist"; echo "$$?"))
-      SLDFLAGS += -static
-    endif
   endif
   ifneq (,$(strip $(R8)))
   ifneq (0,$(R8))
@@ -1912,9 +1913,9 @@ else ifneq (0,$(BLAS)) # generic
     BLASDIR ?= $(wildcard /usr/local/lib /usr/lib)
     BLASROOT = $(wildcard $(patsubst %,%/..,$(BLASDIR)))
     ifeq (0,$(BLAS_STATIC)) # shared
-      BLAS_LDTEST = $(SLDFLAGS) $(patsubst %,-L%,$(BLASDIR))
+      BLAS_LDTEST = $(filter-out -static,$(SLDFLAGS)) $(patsubst %,-L%,$(BLASDIR))
     else # static
-      BLAS_LDTEST = -static $(patsubst %,-L%,$(BLASDIR))
+      BLAS_LDTEST = $(SLDFLAGS) $(patsubst %,-L%,$(BLASDIR))
     endif
     BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),openblas$(BLAS_THREADS)$(BLAS_BITS))
     ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
