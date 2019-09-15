@@ -1285,7 +1285,7 @@ else # GCC assumed
     endif
   else ifeq (FreeBSD,$(UNAME))
     # avoid include path at begin of compile line
-    OMPFLAG_FORCE += -I/usr/local/include
+    OMPFLAG_FORCE := -I/usr/local/include $(OMPFLAG_FORCE)
   endif
   # account for missing TLS/OMP
   ifeq (,$(OMPFLAG_FORCE))
@@ -1299,11 +1299,17 @@ else # GCC assumed
   ifneq (,$(OMPFLAG_FORCE))
     OMPLIBFILE = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,$(OMPRT))
     ifneq (,$(OMPLIBFILE))
+      ifneq (0,$(CLANG))
+        FLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+      endif
       FLDFLAGS += $(OMPFLAG_FORCE)
       FCFLAGS += $(OMPFLAG_FORCE)
     else
       OMPLIBFILE = $(call libpath,$(FLD),$(SLDFLAGS) $(OMPFLAG_FORCE) -L/usr/local/lib,gomp)
       ifneq (,$(OMPLIBFILE))
+        ifneq (0,$(CLANG))
+          FLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+        endif
         FLDFLAGS += $(OMPFLAG_FORCE)
         FCFLAGS += $(OMPFLAG_FORCE)
       endif
@@ -1316,11 +1322,19 @@ else # GCC assumed
   ifneq (,$(OMPLIBFILE))
     # clang: OMP=libomp
     ifneq (0,$(shell echo "$(OMP)" | grep -q "^-*[0-9]\+$$"; echo "$$?")) # NaN
+      ifneq (0,$(CLANG))
+        CXXLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+        CLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+      endif
       CXXLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
       CXXFLAGS += $(OMPFLAG_FORCE)=$(OMP)
       CLDFLAGS += $(OMPFLAG_FORCE)=$(OMP)
       CFLAGS += $(OMPFLAG_FORCE)=$(OMP)
     else ifneq (Darwin,$(UNAME))
+      ifneq (0,$(CLANG))
+        CXXLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+        CLDFLAGS += $(call absliblpath,$(OMPLIBFILE))
+      endif
       CXXLDFLAGS += $(OMPFLAG_FORCE)
       CLDFLAGS += $(OMPFLAG_FORCE)
       CXXFLAGS += $(OMPFLAG_FORCE)
@@ -1331,9 +1345,12 @@ else # GCC assumed
   endif
   ifeq (1,$(STATIC))
     ifeq (0,$(PGI))
-      SLDFLAGS += -Bstatic -static-libstdc++
-      ifneq (Darwin,$(UNAME))
-        SLDFLAGS += -static-libgcc
+      SLDFLAGS += -Bstatic
+      ifeq (0,$(CLANG))
+        SLDFLAGS += -static-libstdc++
+        ifneq (Darwin,$(UNAME))
+          SLDFLAGS += -static-libgcc
+        endif
       endif
     endif
     DFLAGS += -D__STATIC=1
@@ -1903,7 +1920,6 @@ else ifneq (0,$(BLAS)) # generic
     ifeq (,$(BLASLIBFILE)) # newer distributions symlink a non-decorated library to threaded OpenBLAS
       BLASLIBFILE = $(call libpath,$(LD),$(BLAS_LDTEST),openblas$(BLAS_BITS))
     endif
-    BLAS_LDTEST = $(NULL)
     # most people expect to pickup OpenBLAS (if available) even when libblas/liblapack are available; use OPENBLAS=0 to avoid this
     ifeq (0,$(PGI))
       OPENBLAS := $(if $(BLASLIBFILE),1,0)
