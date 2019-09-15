@@ -58,7 +58,7 @@
 # define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
 #endif
 #if !defined(LIBXSMM_MALLOC_LIMIT)
-# define LIBXSMM_MALLOC_LIMIT (16U << 10) /* 16 KB */
+# define LIBXSMM_MALLOC_LIMIT (256U << 10) /* 256 KB */
 #endif
 #if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER_ID)
 # define LIBXSMM_MALLOC_INTERNAL_CALLER_ID ((uintptr_t)-1)
