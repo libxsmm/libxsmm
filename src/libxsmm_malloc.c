@@ -174,6 +174,9 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_HOOK_TRYKMP) && 0
 # define LIBXSMM_MALLOC_HOOK_TRYKMP
 #endif
+#if !defined(LIBXSMM_MALLOC_HOOK_ALIGN) && 1
+# define LIBXSMM_MALLOC_HOOK_ALIGN
+#endif
 #if !defined(LIBXSMM_MALLOC_HOOK_CHECK) && 0
 # define LIBXSMM_MALLOC_HOOK_CHECK 1
 #endif
@@ -993,17 +996,22 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
 {
   void* result;
-#if defined(LIBXSMM_GLIBC)
-  result = __libc_malloc(size);
+#if defined(LIBXSMM_MALLOC_HOOK_ALIGN)
+  const size_t alignment = libxsmm_alignment(size, 0/*auto*/);
+  result = __real_memalign(alignment, size);
 #else
-# if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
+# if defined(LIBXSMM_GLIBC)
+  result = __libc_malloc(size);
+# else
+#   if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
   if (NULL != internal_malloc_hook.malloc.ptr) {
     LIBXSMM_ASSERT(malloc != internal_malloc_hook.malloc.ptr);
     result = internal_malloc_hook.malloc.ptr(size);
   }
   else
-# endif
+#   endif
   result = malloc(size);
+# endif
 #endif
   return result;
 }
