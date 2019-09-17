@@ -33,7 +33,12 @@
 
 #include <libxsmm.h>
 
+/* Map number of Bits to corresponding routine. */
+#define LIBXSMM_CRC32U(N) LIBXSMM_CONCATENATE(libxsmm_crc32_u, N)
 /* Map number of Bytes to number of bits. */
+#define LIBXSMM_CRC32(N) LIBXSMM_CONCATENATE(libxsmm_crc32_b, N)
+#define libxsmm_crc32_b4 libxsmm_crc32_u32
+#define libxsmm_crc32_b8 libxsmm_crc32_u64
 #define libxsmm_crc32_b16 libxsmm_crc32_u128
 #define libxsmm_crc32_b32 libxsmm_crc32_u256
 #define libxsmm_crc32_b48 libxsmm_crc32_u384

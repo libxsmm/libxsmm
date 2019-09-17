@@ -180,15 +180,15 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_HOOK_CHECK) && 0
 # define LIBXSMM_MALLOC_HOOK_CHECK 1
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_DELAY) && 0
-# define LIBXSMM_MALLOC_HOOK_DELAY 4
-#endif
 
-#if !defined(LIBXSMM_MALLOC_NOCRC)
+#if !defined(LIBXSMM_MALLOC_CRC_LIGHT) && 1
+# define LIBXSMM_MALLOC_CRC_LIGHT
+#endif
+#if !defined(LIBXSMM_MALLOC_CRC_OFF)
 # if defined(NDEBUG) && !defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-#   define LIBXSMM_MALLOC_NOCRC
+#   define LIBXSMM_MALLOC_CRC_OFF
 # elif !defined(LIBXSMM_BUILD)
-#   define LIBXSMM_MALLOC_NOCRC
+#   define LIBXSMM_MALLOC_CRC_OFF
 # endif
 #endif
 
@@ -230,7 +230,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_malloc_info_type {
 #if defined(LIBXSMM_VTUNE)
   unsigned int code_id;
 #endif
-#if !defined(LIBXSMM_MALLOC_NOCRC) /* hash *must* be the last entry */
+#if !defined(LIBXSMM_MALLOC_CRC_OFF) /* hash *must* be the last entry */
   unsigned int hash;
 #endif
 } internal_malloc_info_type;
@@ -343,9 +343,13 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
         || pointer >= buffer || NULL == pointer
         || maxsize < result->size || 0 == result->size
         || 1 >= libxsmm_ninit /* before checksum calculation */
-#if !defined(LIBXSMM_MALLOC_NOCRC) /* last check: checksum over info */
+#if !defined(LIBXSMM_MALLOC_CRC_OFF) /* last check: checksum over info */
+# if defined(LIBXSMM_MALLOC_CRC_LIGHT)
+        || result->hash != LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &result)
+# else
         || result->hash != libxsmm_crc32(LIBXSMM_MALLOC_SEED, result,
             (const char*)& result->hash - (const char*)result)
+# endif
 #endif
       ) { /* mismatch */
         result = NULL;
@@ -1063,19 +1067,10 @@ LIBXSMM_API void* __wrap_memalign(size_t alignment, size_t size)
   void* result;
   const int recursive = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
   if (1 == recursive) {
-# if defined(LIBXSMM_MALLOC_HOOK_DELAY) && (0 < (LIBXSMM_MALLOC_HOOK_DELAY))
-    static int counter = 0;
-# endif
 # if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
     if (NULL == internal_malloc_hook.memalign.ptr) {
       internal_malloc_init(&internal_malloc_hook);
     }
-# endif
-# if defined(LIBXSMM_MALLOC_HOOK_DELAY) && (0 < (LIBXSMM_MALLOC_HOOK_DELAY))
-    if ((LIBXSMM_MALLOC_HOOK_DELAY) > counter) {
-      LIBXSMM_ATOMIC_ADD_FETCH(&counter, 1, LIBXSMM_ATOMIC_RELAXED);
-    }
-    else
 # endif
     if (0 == libxsmm_ninit) libxsmm_init();
   }
@@ -1901,9 +1896,13 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 #if defined(LIBXSMM_VTUNE)
         buffer_info->code_id = 0;
 #endif /* info must be initialized to calculate correct checksum */
-#if !defined(LIBXSMM_MALLOC_NOCRC)
+#if !defined(LIBXSMM_MALLOC_CRC_OFF)
+# if defined(LIBXSMM_MALLOC_CRC_LIGHT)
+        buffer_info->hash = LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &buffer_info);
+# else
         buffer_info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, buffer_info,
           (unsigned int)(((char*)&buffer_info->hash) - ((char*)buffer_info)));
+# endif
 #endif  /* finally commit/return allocated buffer */
         *memory = aligned;
       }
@@ -2083,10 +2082,14 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
           *memory = code_ptr; /* relocate */
           info->pointer = info->reloc;
           info->reloc = NULL;
-# if !defined(LIBXSMM_MALLOC_NOCRC) /* update checksum */
+# if !defined(LIBXSMM_MALLOC_CRC_OFF) /* update checksum */
+#   if defined(LIBXSMM_MALLOC_CRC_LIGHT)
+          info->hash = LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &info);
+#   else
           info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, info,
             /* info size minus actual hash value */
             (unsigned int)(((char*)&info->hash) - ((char*)info)));
+#   endif
 # endif   /* treat memory protection errors as soft error; ignore return value */
           munmap(buffer, alloc_size);
 #endif
@@ -2094,10 +2097,14 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 #if !defined(_WIN32)
         else { /* malloc-based fall-back */
           int mprotect_result;
-# if !defined(LIBXSMM_MALLOC_NOCRC) && defined(LIBXSMM_VTUNE) /* update checksum */
+# if !defined(LIBXSMM_MALLOC_CRC_OFF) && defined(LIBXSMM_VTUNE) /* update checksum */
+#   if defined(LIBXSMM_MALLOC_CRC_LIGHT)
+          info->hash = LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &info);
+#   else
           info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, info,
             /* info size minus actual hash value */
             (unsigned int)(((char*)&info->hash) - ((char*)info)));
+#   endif
 # endif   /* treat memory protection errors as soft error; ignore return value */
           mprotect_result = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
           if (EXIT_SUCCESS != mprotect_result) {
