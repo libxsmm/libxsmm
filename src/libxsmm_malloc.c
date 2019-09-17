@@ -658,7 +658,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
           const size_t minsize = limsize;
 # endif
           LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
-          LIBXSMM_ASSERT(0 != LIBXSMM_ATOMIC_LOAD(&pool->instance.counter, LIBXSMM_ATOMIC_RELAXED));
+          assert(0 != LIBXSMM_ATOMIC_LOAD(&pool->instance.counter, LIBXSMM_ATOMIC_RELAXED)); /* !LIBXSMM_ASSERT */
           pool->instance.incsize = 0; /* reset */
           pool->instance.minsize = minsize;
 # if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
