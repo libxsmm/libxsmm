@@ -463,10 +463,16 @@ LIBXSMM_API_INLINE size_t internal_get_scratch_size(const internal_malloc_pool_t
 # endif /*(1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
   {
     if (0 != pool->instance.minsize) {
+# if 1 /* memory info is not used */
+      if (pool != exclude && (LIBXSMM_MALLOC_INTERNAL_CALLER) != pool->instance.site) {
+        result += pool->instance.minsize;
+      }
+# else
       const internal_malloc_info_type* const info = internal_malloc_info(pool->instance.buffer, 0/*no check*/);
       if (NULL != info && pool != exclude && (LIBXSMM_MALLOC_INTERNAL_CALLER) != pool->instance.site) {
         result += info->size;
       }
+# endif
     }
     else break; /* early exit */
   }
@@ -744,7 +750,6 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
         memcpy(buffer, preserve, LIBXSMM_MIN(size, info->size)); /* TODO: memmove? */
         *memory = buffer;
       }
-      LIBXSMM_ASSERT(1 <= pool->instance.counter);
       internal_scratch_free(memory, pool);
     }
     else
@@ -1936,7 +1941,7 @@ LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check)
   static int error_once = 0;
   if (NULL != info) { /* !libxsmm_free */
 #if (!defined(NDEBUG) || defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC))
-    if (EXIT_SUCCESS != internal_xfree(memory, info) && NULL != memory
+    if (EXIT_SUCCESS != internal_xfree(memory, info)
       && 0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
@@ -1946,16 +1951,15 @@ LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check)
     internal_xfree(memory, info); /* !libxsmm_free */
 #endif
   }
-  else {
-#if (defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)) && 0
-    __real_free((void*)memory);
-#else
-    if (NULL != memory /* library code is expected to be mute */
-      && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
+  else if (NULL != memory) {
+#if (!defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC))
+    if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, "LIBXSMM WARNING: deallocation does not match allocation!\n");
+      fprintf(stderr, "LIBXSMM ERROR: deallocation does not match allocation!\n");
     }
+#else
+    __real_free((void*)memory);
 #endif
   }
 }
@@ -2124,8 +2128,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
     }
     result = EXIT_FAILURE;
   }
-  else if (NULL != memory /* library code is expected to be mute */
-    && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
+  else if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
     fprintf(stderr, "LIBXSMM WARNING: %s buffer %p does not match!\n",
@@ -2253,7 +2256,18 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
   if (0 == scratch_info.npending || 0 == (libxsmm_malloc_kind & 1) || 0 > libxsmm_malloc_kind) {
     internal_malloc_pool_type* const pools = (internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_CACHELINE);
     unsigned int i;
-    for (i = 0; i < libxsmm_scratch_pools; ++i) libxsmm_xfree(pools[i].instance.buffer, 0/*no check*/);
+    for (i = 0; i < libxsmm_scratch_pools; ++i) {
+      if (0 != pools[i].instance.minsize) {
+# if !defined(LIBXSMM_MALLOC_SCRATCH_DELETE_FIRST)
+        if (1 < pools[i].instance.counter)
+# endif
+        {
+          internal_malloc_info_type* const info = internal_malloc_info(pools[i].instance.buffer, 0/*no check*/);
+          internal_xfree(info->pointer, info);
+        }
+      }
+      else break; /* early exit */
+    }
     memset(pools, 0, (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) * sizeof(internal_malloc_pool_type));
     /* keep private watermark (no reset) */
     internal_malloc_scratch_nmallocs = internal_malloc_maxlocal_size = internal_malloc_scratch_size = 0;
@@ -2321,8 +2335,13 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
       for (; pool != end; ++pool) if ((LIBXSMM_MALLOC_INTERNAL_CALLER) != pool->instance.site) {
 # endif
         if (0 != pool->instance.minsize) {
+# if defined(LIBXSMM_MALLOC_SCRATCH_DELETE_FIRST)
+          const size_t npending = pool->instance.counter;
+# else
+          const size_t npending = 1 < pool->instance.counter ? (pool->instance.counter - 1) : 0;
+# endif
           info->npools += (unsigned int)LIBXSMM_MIN(pool->instance.minsize, 1);
-          info->npending += pool->instance.counter;
+          info->npending += npending;
         }
 # if (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
         else break; /* early exit */
