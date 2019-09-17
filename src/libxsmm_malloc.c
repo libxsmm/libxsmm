@@ -1386,7 +1386,7 @@ LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* 
   if (NULL != size || NULL != extra)
 #endif
   {
-    const internal_malloc_info_type *const info = internal_malloc_info(memory, 1/*check*/);
+    const internal_malloc_info_type *const info = internal_malloc_info(memory, 2/*check*/);
     if (NULL != info) {
       if (size) *size = info->size;
       if (flags) *flags = info->flags;
