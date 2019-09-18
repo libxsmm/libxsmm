@@ -53,6 +53,9 @@
 #if defined(_WIN32)
 # include <Windows.h>
 #else
+# if defined(LIBXSMM_INTERCEPT_DYNAMIC)
+#   include <dlfcn.h>
+# endif
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
@@ -446,15 +449,13 @@ LIBXSMM_API_INTERN void internal_finalize(void);
 LIBXSMM_API_INTERN void internal_finalize(void)
 {
   char *const env_dump_build = getenv("LIBXSMM_DUMP_BUILD");
-  char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES")
-    ? getenv("LIBXSMM_DUMP_FILES") : getenv("LIBXSMM_DUMP_FILE"));
+  char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES") ? getenv("LIBXSMM_DUMP_FILES") : getenv("LIBXSMM_DUMP_FILE"));
   libxsmm_finalize();
   LIBXSMM_STDIO_ACQUIRE(); /* synchronize I/O */
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
-      ? libxsmm_cpuid_name(libxsmm_target_archid)
-      : NULL/*hidden*/;
+      ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
 #if !defined(NDEBUG) && defined(__OPTIMIZE__)
     fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
 #endif
@@ -566,8 +567,6 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 #endif
   }
   LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
-  /* signal shutdown */
-  libxsmm_ninit = 0;
 #if (0 != LIBXSMM_SYNC)
   { /* release locks */
 # if (1 < INTERNAL_REGLOCK_MAXN)
@@ -579,6 +578,24 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   }
 #endif
 }
+
+
+#if defined(LIBXSMM_INTERCEPT_DYNAMIC)
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* /*string*/, int /*len*/);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* string, int len)
+{
+  static int once = 0;
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    union { const void* dlsym; void (*ptr)(const char*, int); } stop;
+    dlerror(); /* clear an eventual error status */
+    stop.dlsym = dlsym(RTLD_NEXT, "_gfortran_stop_string");
+    if (NULL != stop.dlsym) {
+      stop.ptr(string, len);
+    }
+    else exit(EXIT_FAILURE);
+  }
+}
+#endif
 
 
 LIBXSMM_API_INTERN size_t internal_strlen(const char* /*cstr*/, size_t /*maxlen*/);
