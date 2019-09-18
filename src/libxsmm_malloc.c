@@ -647,7 +647,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
         }
         else { /* fresh pool */
           const size_t scratch_size = internal_get_scratch_size(pool); /* exclude current pool */
-          const size_t limit_size = (1 < npools ? (libxsmm_scratch_limit - LIBXSMM_MIN(scratch_size, libxsmm_scratch_limit)) : ((size_t)-1/*unlimited*/));
+          const size_t limit_size = (1 < npools ? (libxsmm_scratch_limit - LIBXSMM_MIN(scratch_size, libxsmm_scratch_limit)) : ((size_t)LIBXSMM_UNLIMITED));
           const size_t scale_size = (size_t)(1 != libxsmm_scratch_scale ? (libxsmm_scratch_scale * alloc_size) : alloc_size); /* hysteresis */
           const size_t incsize = (size_t)(libxsmm_scratch_scale * pool->instance.incsize);
           const size_t maxsize = LIBXSMM_MAX(scale_size, pool->instance.minsize) + incsize;
@@ -2368,8 +2368,8 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
 
 LIBXSMM_API void libxsmm_set_scratch_limit(size_t nbytes)
 {
-  LIBXSMM_INIT
   libxsmm_scratch_limit = nbytes;
+  LIBXSMM_INIT /* API takes precedence */
 }
 
 
@@ -2377,5 +2377,23 @@ LIBXSMM_API size_t libxsmm_get_scratch_limit(void)
 {
   LIBXSMM_INIT
   return libxsmm_scratch_limit;
+}
+
+
+LIBXSMM_API void libxsmm_set_scratch_malloc(int enabled)
+{
+  libxsmm_malloc_kind = enabled;
+  LIBXSMM_INIT /* API takes precedence */
+}
+
+
+LIBXSMM_API int libxsmm_get_scratch_malloc(void)
+{
+  LIBXSMM_INIT
+#if (defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) || defined(LIBXSMM_INTERCEPT_DYNAMIC))
+  return 0 != (libxsmm_malloc_kind & 1) && 0 <= libxsmm_malloc_kind;
+#else
+  return 0;
+#endif
 }
 

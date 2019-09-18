@@ -362,7 +362,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
           value->NameLen = 0;
 #   endif
           if (NULL != filter_symbol) {
-            struct { size_t d; int s; } approx = { (size_t)-1, 0 };
+            struct { size_t d; int s; } approx = { (size_t)LIBXSMM_UNLIMITED, 0 };
             while (next < n && (filter_symbol == stacktrace[symbol] ||
 #   if defined(_WIN32) || defined(__CYGWIN__)
               (FALSE != SymFromAddr(process, (DWORD64)stacktrace[symbol], NULL, value) && 0 < value->NameLen)))
@@ -490,7 +490,7 @@ const char* libxsmm_trace_info(unsigned int* depth, unsigned int* threadid, cons
         if (NULL != value) {
           int next = symbol + 1;
           if (NULL != filter_symbol) {
-            struct { size_t d; int s; } approx = { (size_t)-1, 0 };
+            struct { size_t d; int s; } approx = { (size_t)LIBXSMM_UNLIMITED, 0 };
             while (next < n && (filter_symbol == stacktrace[symbol] ||
               NULL != internal_trace_get_symbolname(stacktrace[symbol], value, fd, fdoff)))
             {

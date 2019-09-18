@@ -599,10 +599,13 @@ LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* nbytes, size_t ndefa
   if (NULL != nbytes && 0 != *nbytes) {
     size_t u = internal_strlen(nbytes, 32) - 1;
     const char unit[] = "kmgKMG", * const hit = strchr(unit, nbytes[u]);
-    result = (size_t)strtoul(nbytes, 0, 10);
-    u = (0 != hit ? ((hit - unit) % 3) : 3);
-    if (u < 3) {
-      result <<= (u + 1) * 10;
+    const long long int ibytes = atol(nbytes); /* take with increased type-width */
+    result = (size_t)ibytes;
+    if ((size_t)LIBXSMM_UNLIMITED != result) {
+      u = (0 != hit ? ((hit - unit) % 3) : 3);
+      if (u < 3) {
+        result <<= (u + 1) * 10;
+      }
     }
   }
   return result;

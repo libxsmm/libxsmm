@@ -61,7 +61,7 @@
 # define LIBXSMM_MALLOC_LIMIT (2U << 20) /* 2 MB */
 #endif
 #if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER_ID)
-# define LIBXSMM_MALLOC_INTERNAL_CALLER_ID ((uintptr_t)-1)
+# define LIBXSMM_MALLOC_INTERNAL_CALLER_ID ((uintptr_t)LIBXSMM_UNLIMITED)
 #endif
 #if !defined(LIBXSMM_MALLOC_INTERNAL_CALLER)
 # define LIBXSMM_MALLOC_INTERNAL_CALLER ((const void*)(LIBXSMM_MALLOC_INTERNAL_CALLER_ID))
@@ -100,10 +100,7 @@
 
 /** Check if M, N, K, or LDx fits into the descriptor. */
 #if (0 != LIBXSMM_ILP64)
-# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) ( \
-    ((unsigned int)(-1)) >= ((unsigned int)(M)) && \
-    ((unsigned int)(-1)) >= ((unsigned int)(N)) && \
-    ((unsigned int)(-1)) >= ((unsigned int)(K)))
+# define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) (0xFFFFFFFF >= (M) && 0xFFFFFFFF >= (N) && 0xFFFFFFFF >= (K))
 #else /* always fits */
 # define LIBXSMM_GEMM_NO_BYPASS_DIMS(M, N, K) 1
 #endif

@@ -69,10 +69,12 @@
       (defined(__amd64__) && 0 != (__amd64__)) || \
       (defined(_M_X64) || defined(_M_AMD64)) || \
       (defined(_WIN64))
+#   define LIBXSMM_UNLIMITED 0xFFFFFFFFFFFFFFFF
 #   define LIBXSMM_BITS 64
 # elif defined(NDEBUG) /* not for production use! */
 #   error LIBXSMM is only supported on a 64-bit platform!
 # else /* JIT-generated code (among other issues) is not supported! */
+#   define LIBXSMM_UNLIMITED 0xFFFFFFFF
 #   define LIBXSMM_BITS 32
 # endif
 #endif
