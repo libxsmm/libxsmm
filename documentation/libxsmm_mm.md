@@ -238,8 +238,8 @@ Above, GEMM and GEMM_BATCH are intercepted both, however this can be chosen inde
 An application that is dynamically linked against BLAS allows to intercept the GEMM calls at startup time (runtime) of the unmodified executable by using the LD_PRELOAD mechanism. The shared library of LIBXSMMext (`make STATIC=0`) can be used to intercept GEMM calls:
 
 ```bash
-LD_PRELOAD=/path/to/libxsmm/lib/libxsmmext.so \
 LD_LIBRARY_PATH=/path/to/libxsmm/lib:${LD_LIBRARY_PATH} \
+LD_PRELOAD=libxsmmext.so \
    ./myapplication
 ```
 
