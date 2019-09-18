@@ -449,12 +449,12 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES")
     ? getenv("LIBXSMM_DUMP_FILES") : getenv("LIBXSMM_DUMP_FILE"));
   libxsmm_finalize();
+  LIBXSMM_STDIO_ACQUIRE(); /* synchronize I/O */
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid)
       : NULL/*hidden*/;
-    LIBXSMM_STDIO_ACQUIRE(); /* synchronize I/O */
 #if !defined(NDEBUG) && defined(__OPTIMIZE__)
     fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
 #endif
@@ -521,10 +521,11 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     else {
       fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
     }
-    LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
   }
   /* release scratch memory pool */
-  atexit(internal_release_scratch);
+  if (EXIT_SUCCESS != atexit(internal_release_scratch) && 0 != libxsmm_verbosity) {
+    fprintf(stderr, "LIBXSMM ERROR: failed to perform final cleanup!\n");
+  }
 #if defined(_WIN32)
   if (NULL != internal_singleton_handle)
 #else
@@ -532,7 +533,6 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 #endif
   { /* dump per-node info */
     if (NULL != env_dump_build || NULL != env_dump_files) {
-      LIBXSMM_STDIO_ACQUIRE();
       if (NULL != env_dump_files && 0 != *env_dump_files) {
         const char *filename = strtok(env_dump_files, INTERNAL_DELIMS);
         for (; NULL != filename; filename = strtok(NULL, INTERNAL_DELIMS)) {
@@ -555,7 +555,6 @@ LIBXSMM_API_INTERN void internal_finalize(void)
           fprintf(stdout, "%s\n", internal_build_state);
         }
       }
-      LIBXSMM_STDIO_RELEASE();
     }
     /* cleanup singleton */
 #if defined(_WIN32)
@@ -566,6 +565,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     close(internal_singleton_handle);
 #endif
   }
+  LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
   /* signal shutdown */
   libxsmm_ninit = 0;
 #if (0 != LIBXSMM_SYNC)
@@ -877,7 +877,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         libxsmm_timer_tick_rtc(); libxsmm_timer_tick(); /* warm-up */
         s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick(); /* start timing */
         internal_init();
-        atexit(internal_finalize); /* once */
+        if (EXIT_SUCCESS != atexit(internal_finalize) && 0 != libxsmm_verbosity) {
+          fprintf(stderr, "LIBXSMM ERROR: failed to perform final cleanup!\n");
+        }
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick(); /* final timing */
         if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && t0 != t1) {
           const libxsmm_timer_tickint dt = LIBXSMM_DELTA(t0, t1);
