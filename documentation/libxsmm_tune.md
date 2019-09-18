@@ -16,13 +16,13 @@ Intercepting malloc/free is supported by linking LIBXSMM's static or dynamically
 ```bash
 gcc [...] -Wl,--export-dynamic \
   -Wl,--wrap=malloc,--wrap=calloc,--wrap=realloc \
-  -wl,--wrap=memalign,--wrap=free \
+  -Wl,--wrap=memalign,--wrap=free \
   /path/to/libxsmm.a
 ```
 
 LIBXSMM's main library induces a BLAS-dependency which may be already fulfilled for the application in question. However, if this is not the case (unresolved symbols), `libxsmmnoblas.a` must be linked in addition. Depending on the dependencies of the application, the link order may also need to be adjusted. Other i.e. a GNU-compatible compiler (as shown above), can induce additional requirements (compiler runtime libraries). For instance, the Intel Compiler may need "libirc" i.e., `-lirc` in front of `libxsmm.a`.
 
-Linking the shared library form of LIBXSMM (`make STATIC=0`) has similar requirements with respect to the application but does not require `-Wl,--wrap` although `-Wl,--export-dynamic` is necessary if the application itself is linked statically (only LIBXSMM is linked as a shared library). The LD_PRELOAD based mechanism does not need changes to the link step of an application. However, `libxsmmnoblas` may be needed if the application does not already link against BLAS.
+Linking the shared library form of LIBXSMM (`make STATIC=0`) has similar requirements with respect to the application but does not require `-Wl,--wrap` although `-Wl,--export-dynamic` is necessary if the application itself is linked statically (LIBXSMM is linked as a shared library). The LD_PRELOAD based mechanism does not need changes to the link step of an application. However, `libxsmmnoblas` may be needed if the application does not already link against BLAS.
 
 ```bash
 LD_PRELOAD=/path/to/libxsmm/lib/libxsmm.so:/path/to/libxsmm/lib/libxsmmnoblas.so
@@ -32,7 +32,7 @@ LIBXSMM_MALLOC=1
 
 **NOTE**: If the application already uses BLAS, of course `libxsmmnoblas` must not be used!
 
-The following code can be complied and linked using `gfortran example.f -o example`:
+The following code can be compiled and linked using `gfortran example.f -o example`:
 
 ```fortran
       PROGRAM allocate_test
