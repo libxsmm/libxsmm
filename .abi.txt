@@ -221,6 +221,7 @@ libxsmm_get_registry_info
 libxsmm_get_scratch_allocator
 libxsmm_get_scratch_info
 libxsmm_get_scratch_limit
+libxsmm_get_scratch_malloc
 libxsmm_get_target_arch
 libxsmm_get_target_archid
 libxsmm_get_tid
@@ -348,6 +349,7 @@ libxsmm_set_default_allocator
 libxsmm_set_gemm_auto_prefetch
 libxsmm_set_scratch_allocator
 libxsmm_set_scratch_limit
+libxsmm_set_scratch_malloc
 libxsmm_set_target_arch
 libxsmm_set_target_archid
 libxsmm_set_verbosity
