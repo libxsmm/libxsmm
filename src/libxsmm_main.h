@@ -51,9 +51,6 @@
 #if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
 # define LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS LIBXSMM_MAX_NTHREADS
 #endif
-#if !defined(LIBXSMM_MALLOC_SCRATCH_LIMIT)
-# define LIBXSMM_MALLOC_SCRATCH_LIMIT 0xFFFFFFFF /* ~4 GB */
-#endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_SCALE)
 # define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
 #endif
@@ -799,6 +796,10 @@ LIBXSMM_API int libxsmm_cast(libxsmm_datatype datatype, double dvalue, void* val
 /** Retrieve internal information about a buffer (default memory domain). */
 LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra);
 
+/** Initializes malloc hooks and other internals. */
+LIBXSMM_API_INTERN void libxsmm_malloc_init(void);
+LIBXSMM_API_INTERN void libxsmm_malloc_finalize(void);
+
 /** Calculates an alignment depending on supposedly allocated size; alignment can be zero ("auto"). */
 LIBXSMM_API_INTERN size_t libxsmm_alignment(size_t size, size_t alignment);
 
@@ -885,14 +886,8 @@ LIBXSMM_APIVAR(const void* libxsmm_default_allocator_context);
 LIBXSMM_APIVAR(const void* libxsmm_scratch_allocator_context);
 /** Number of scratch memory pools used; clamped against internal maximum. */
 LIBXSMM_APIVAR(unsigned int libxsmm_scratch_pools);
-/** Maximum total size of the scratch memory domain. */
-LIBXSMM_APIVAR(size_t libxsmm_scratch_limit);
 /** Growth factor used to scale the scratch memory in case of reallocation. */
 LIBXSMM_APIVAR(double libxsmm_scratch_scale);
-/** Minimum number of bytes needed for interception (libxsmm_malloc_kind) */
-LIBXSMM_APIVAR_ARRAY(size_t libxsmm_malloc_limit, 2);
-/** 0: regular, 1/odd: intercept/scratch, otherwise: all/scratch */
-LIBXSMM_APIVAR(int libxsmm_malloc_kind);
 /** Counts the number of attempts to create an SPMDM-handle */
 LIBXSMM_APIVAR(unsigned int libxsmm_statistic_num_spmdm);
 /** Number of seconds per RDTSC-cycle (zero if RDTSC is not used for wall-clock) */

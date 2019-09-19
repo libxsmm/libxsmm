@@ -218,11 +218,13 @@ LIBXSMM_APIVAR(unsigned int internal_statistic_num_trmm);
 LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
 LIBXSMM_APIVAR(const char* internal_build_state);
 
+#if !defined(INTERNAL_DELIMS)
+# define INTERNAL_DELIMS ";,:"
+#endif
+
 #if defined(_WIN32)
-# define INTERNAL_DELIMS ";,"
 LIBXSMM_APIVAR(HANDLE internal_singleton_handle);
 #else
-# define INTERNAL_DELIMS ";,:"
 LIBXSMM_APIVAR_ARRAY(char internal_singleton_fname, 64);
 LIBXSMM_APIVAR(int internal_singleton_handle);
 #endif
@@ -630,7 +632,7 @@ LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* nbytes, size_t ndefa
   size_t result = ndefault;
   if (NULL != nbytes && 0 != *nbytes) {
     size_t u = internal_strlen(nbytes, 32) - 1;
-    const char unit[] = "kmgKMG", * const hit = strchr(unit, nbytes[u]);
+    const char unit[] = "kmgKMG", *const hit = strchr(unit, nbytes[u]);
     const long long int ibytes = atol(nbytes); /* take with increased type-width */
     result = (size_t)ibytes;
     if ((size_t)LIBXSMM_UNLIMITED != result) {
@@ -701,8 +703,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       }
       LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
     }
-    libxsmm_scratch_limit = internal_parse_nbytes(
-      getenv("LIBXSMM_SCRATCH_LIMIT"), LIBXSMM_MALLOC_SCRATCH_LIMIT);
+    libxsmm_set_scratch_limit(internal_parse_nbytes(getenv("LIBXSMM_SCRATCH_LIMIT"), LIBXSMM_SCRATCH_DEFAULT));
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
 #if defined(LIBXSMM_MAXTARGET)
     libxsmm_set_target_arch(LIBXSMM_STRINGIFY(LIBXSMM_MAXTARGET));
@@ -786,19 +787,20 @@ LIBXSMM_API_INTERN void internal_init(void)
         }
       }
 #endif
-      { /* setup libxsmm_malloc_kind after internal allocations */
+      { /* setup malloc-interception after internal allocations */
         const libxsmm_malloc_function null_malloc_fn = { 0 };
         const libxsmm_free_function null_free_fn = { 0 };
         const char *const env_k = getenv("LIBXSMM_MALLOC");
         char *const env_t = getenv("LIBXSMM_MALLOC_LIMIT");
         const char* env_i = (NULL != env_t ? strtok(env_t, INTERNAL_DELIMS) : NULL);
-        size_t limit = libxsmm_scratch_limit;
-        if (NULL != env_k && 0 != *env_k) libxsmm_malloc_kind = atoi(env_k);
-        libxsmm_malloc_limit[0] = internal_parse_nbytes(env_i, LIBXSMM_MALLOC_LIMIT);
-        if (NULL != env_i) limit = internal_parse_nbytes(strtok(NULL, INTERNAL_DELIMS), libxsmm_scratch_limit);
-        libxsmm_malloc_limit[1] = LIBXSMM_MAX(limit, libxsmm_malloc_limit[0]);
+        const size_t malloc_lo = internal_parse_nbytes(env_i, LIBXSMM_MALLOC_LIMIT);
+        const size_t malloc_hi = (NULL != env_i ? internal_parse_nbytes(
+          strtok(NULL, INTERNAL_DELIMS), LIBXSMM_SCRATCH_UNLIMITED) : LIBXSMM_SCRATCH_UNLIMITED);
+        const int malloc_kind = ((NULL == env_k || 0 == *env_k) ? 0/*disabled*/ : atoi(env_k));
+        libxsmm_set_malloc(malloc_kind, &malloc_lo, &malloc_hi);
         libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
         libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
+        libxsmm_malloc_init();
       }
       { /* commit the registry buffer and enable global visibility */
         void *const pv_registry = &internal_registry;
