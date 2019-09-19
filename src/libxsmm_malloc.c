@@ -843,72 +843,71 @@ LIBXSMM_API_INTERN void* internal_malloc_alignmem(size_t alignment, size_t size)
 LIBXSMM_API_INTERN void libxsmm_malloc_init(void)
 {
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  LIBXSMM_ASSERT(NULL != hook);
   dlerror(); /* clear an eventual error status */
 # if defined(LIBXSMM_MALLOC_HOOK_KMP)
-  hook->alignmem.dlsym = dlsym(RTLD_NEXT, "kmp_aligned_malloc");
-  if (NULL == dlerror() && NULL != hook->alignmem.dlsym) {
-    hook->memalign.ptr = internal_malloc_alignmem; /* twiddle */
-    hook->malloc.dlsym = dlsym(RTLD_NEXT, "kmp_malloc");
-    if (NULL == dlerror() && NULL != hook->malloc.dlsym) {
+  internal_malloc.alignmem.dlsym = dlsym(RTLD_NEXT, "kmp_aligned_malloc");
+  if (NULL == dlerror() && NULL != internal_malloc.alignmem.dlsym) {
+    internal_malloc.memalign.ptr = internal_malloc_alignmem; /* twiddle */
+    internal_malloc.malloc.dlsym = dlsym(RTLD_NEXT, "kmp_malloc");
+    if (NULL == dlerror() && NULL != internal_malloc.malloc.dlsym) {
 # if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-      hook->calloc.dlsym = dlsym(RTLD_NEXT, "kmp_calloc");
-      if (NULL == dlerror() && NULL != hook->calloc.dlsym)
+      internal_malloc.calloc.dlsym = dlsym(RTLD_NEXT, "kmp_calloc");
+      if (NULL == dlerror() && NULL != internal_malloc.calloc.dlsym)
 # endif
       {
 # if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-        hook->realloc.dlsym = dlsym(RTLD_NEXT, "kmp_realloc");
-        if (NULL == dlerror() && NULL != hook->realloc.dlsym)
+        internal_malloc.realloc.dlsym = dlsym(RTLD_NEXT, "kmp_realloc");
+        if (NULL == dlerror() && NULL != internal_malloc.realloc.dlsym)
 # endif
         {
-          hook->free.dlsym = dlsym(RTLD_NEXT, "kmp_free");
+          internal_malloc.free.dlsym = dlsym(RTLD_NEXT, "kmp_free");
         }
       }
     }
   }
-  if (NULL == hook->free.ptr)
+  if (NULL == internal_malloc.free.ptr)
 # endif /*defined(LIBXSMM_MALLOC_HOOK_KMP)*/
   {
 # if defined(LIBXSMM_GLIBC)
-    hook->memalign.dlsym = dlsym(RTLD_NEXT, "__libc_memalign");
-    if (NULL == dlerror() && NULL != hook->memalign.dlsym) {
-      hook->malloc.dlsym = dlsym(RTLD_NEXT, "__libc_malloc");
-      if (NULL == dlerror() && NULL != hook->malloc.dlsym) {
+    internal_malloc.memalign.dlsym = dlsym(RTLD_NEXT, "__libc_memalign");
+    if (NULL == dlerror() && NULL != internal_malloc.memalign.dlsym) {
+      internal_malloc.malloc.dlsym = dlsym(RTLD_NEXT, "__libc_malloc");
+      if (NULL == dlerror() && NULL != internal_malloc.malloc.dlsym) {
 #   if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-        hook->calloc.dlsym = dlsym(RTLD_NEXT, "__libc_calloc");
-        if (NULL == dlerror() && NULL != hook->calloc.dlsym)
+        internal_malloc.calloc.dlsym = dlsym(RTLD_NEXT, "__libc_calloc");
+        if (NULL == dlerror() && NULL != internal_malloc.calloc.dlsym)
 #   endif
         {
 #   if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-          hook->realloc.dlsym = dlsym(RTLD_NEXT, "__libc_realloc");
-          if (NULL == dlerror() && NULL != hook->realloc.dlsym)
+          internal_malloc.realloc.dlsym = dlsym(RTLD_NEXT, "__libc_realloc");
+          if (NULL == dlerror() && NULL != internal_malloc.realloc.dlsym)
 #   endif
           {
-            hook->free.dlsym = dlsym(RTLD_NEXT, "__libc_free");
+            internal_malloc.free.dlsym = dlsym(RTLD_NEXT, "__libc_free");
           }
         }
       }
     }
-    if (NULL == hook->free.ptr) {
+    if (NULL == internal_malloc.free.ptr) {
       void* handle = NULL;
       dlerror(); /* clear an eventual error status */
       handle = dlopen("libc.so." LIBXSMM_STRINGIFY(LIBXSMM_MALLOC_GLIBC), RTLD_LAZY);
       if (NULL != handle) {
-        hook->memalign.dlsym = dlsym(handle, "__libc_memalign");
-        if (NULL == dlerror() && NULL != hook->memalign.dlsym) {
-          hook->malloc.dlsym = dlsym(handle, "__libc_malloc");
-          if (NULL == dlerror() && NULL != hook->malloc.dlsym) {
+        internal_malloc.memalign.dlsym = dlsym(handle, "__libc_memalign");
+        if (NULL == dlerror() && NULL != internal_malloc.memalign.dlsym) {
+          internal_malloc.malloc.dlsym = dlsym(handle, "__libc_malloc");
+          if (NULL == dlerror() && NULL != internal_malloc.malloc.dlsym) {
 #   if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-            hook->calloc.dlsym = dlsym(handle, "__libc_calloc");
-            if (NULL == dlerror() && NULL != hook->calloc.dlsym)
+            internal_malloc.calloc.dlsym = dlsym(handle, "__libc_calloc");
+            if (NULL == dlerror() && NULL != internal_malloc.calloc.dlsym)
 #   endif
             {
 #   if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-              hook->realloc.dlsym = dlsym(handle, "__libc_realloc");
-              if (NULL == dlerror() && NULL != hook->realloc.dlsym)
+              internal_malloc.realloc.dlsym = dlsym(handle, "__libc_realloc");
+              if (NULL == dlerror() && NULL != internal_malloc.realloc.dlsym)
 #   endif
               {
-                hook->free.dlsym = dlsym(handle, "__libc_free");
+                internal_malloc.free.dlsym = dlsym(handle, "__libc_free");
               }
             }
           }
@@ -949,7 +948,7 @@ LIBXSMM_API_INTERN void libxsmm_malloc_init(void)
 # else /* TODO */
 # endif /*defined(LIBXSMM_GLIBC)*/
   }
-  if (NULL != hook->free.ptr) {
+  if (NULL != internal_malloc.free.ptr) {
 # if defined(LIBXSMM_MALLOC_HOOK_IMALLOC)
     union { const void* dlsym; libxsmm_malloc_fun* ptr; } i_malloc;
     i_malloc.dlsym = dlsym(RTLD_NEXT, "i_malloc");
@@ -969,14 +968,14 @@ LIBXSMM_API_INTERN void libxsmm_malloc_init(void)
           union { const void* dlsym; libxsmm_free_fun* ptr; } i_free;
           i_free.dlsym = dlsym(RTLD_NEXT, "i_free");
           if (NULL == dlerror() && NULL != i_free.dlsym) {
-            *i_malloc.ptr = hook->malloc.ptr;
+            *i_malloc.ptr = internal_malloc.malloc.ptr;
 #   if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-            *i_calloc.ptr = hook->calloc.ptr;
+            *i_calloc.ptr = internal_malloc.calloc.ptr;
 #   endif
 #   if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-            *i_realloc.ptr = hook->realloc.ptr;
+            *i_realloc.ptr = internal_malloc.realloc.ptr;
 #   endif
-            *i_free.ptr = hook->free.ptr;
+            *i_free.ptr = internal_malloc.free.ptr;
           }
         }
       }
@@ -985,25 +984,25 @@ LIBXSMM_API_INTERN void libxsmm_malloc_init(void)
   }
   else { /* fall-back: potentially recursive */
 # if defined(LIBXSMM_GLIBC)
-    hook->memalign.ptr = __libc_memalign;
-    hook->malloc.ptr = __libc_malloc;
+    internal_malloc.memalign.ptr = __libc_memalign;
+    internal_malloc.malloc.ptr = __libc_malloc;
 #   if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-    hook->calloc.ptr = __libc_calloc;
+    internal_malloc.calloc.ptr = __libc_calloc;
 #   endif
 #   if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-    hook->realloc.ptr = __libc_realloc;
+    internal_malloc.realloc.ptr = __libc_realloc;
 #   endif
-    hook->free.ptr = __libc_free;
+    internal_malloc.free.ptr = __libc_free;
 # else
-    hook->memalign.ptr = internal_malloc_memalign;
-    hook->malloc.ptr = malloc;
+    internal_malloc.memalign.ptr = internal_malloc_memalign;
+    internal_malloc.malloc.ptr = malloc;
 #   if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-    hook->calloc.ptr = calloc;
+    internal_malloc.calloc.ptr = calloc;
 #   endif
 #   if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-    hook->realloc.ptr = realloc;
+    internal_malloc.realloc.ptr = realloc;
 #   endif
-    hook->free.ptr = free;
+    internal_malloc.free.ptr = free;
 # endif
   }
 #endif

@@ -444,6 +444,7 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
   libxsmm_xrelease_scratch(NULL/*lock*/);
   /* release global services */
   libxsmm_hash_finalize();
+  libxsmm_malloc_finalize();
 }
 
 
