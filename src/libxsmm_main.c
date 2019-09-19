@@ -581,18 +581,33 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 
 
 #if defined(LIBXSMM_INTERCEPT_DYNAMIC)
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* /*string*/, int /*len*/);
-LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* string, int len)
-{
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* /*message*/, int /*len*/, int /*quiet*/);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* message, int len, int quiet)
+{ /* STOP termination handler for GNU Fortran runtime */
+  static int once = 0;
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    union { const void* dlsym; void (*ptr)(const char*, int, int); } stop;
+    dlerror(); /* clear an eventual error status */
+    stop.dlsym = dlsym(RTLD_NEXT, "_gfortran_stop_string");
+    if (NULL != stop.dlsym) {
+      stop.ptr(message, len, quiet);
+    }
+    else exit(EXIT_FAILURE); /* statically linked runtime */
+  }
+}
+
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* /*message*/, int /*len*/);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* message, int len)
+{ /* STOP termination handler for Intel Fortran runtime */
   static int once = 0;
   if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
     union { const void* dlsym; void (*ptr)(const char*, int); } stop;
     dlerror(); /* clear an eventual error status */
-    stop.dlsym = dlsym(RTLD_NEXT, "_gfortran_stop_string");
+    stop.dlsym = dlsym(RTLD_NEXT, "for_stop_core");
     if (NULL != stop.dlsym) {
-      stop.ptr(string, len);
+      stop.ptr(message, len);
     }
-    else exit(EXIT_FAILURE);
+    else exit(EXIT_FAILURE); /* statically linked runtime */
   }
 }
 #endif
