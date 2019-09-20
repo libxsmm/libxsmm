@@ -2,14 +2,14 @@
 
 ### Intercepted Allocations<a name="scalable_malloc"></a>
 
-To improve thread-scalability and to avoid frequent memory allocation/deallocation, the [scratch memory allocator](documentation/libxsmm_aux.md#memory-allocation) can be leveraged by intercepting existing malloc/free calls. This experimental facility is built into LIBXSMM's main library and can be enabled using an environment variable (`LIBXSMM_MALLOC=1`) or an API:
+To improve thread-scalability and to avoid frequent memory allocation/deallocation, the [scratch memory allocator](documentation/libxsmm_aux.md#memory-allocation) can be leveraged by intercepting existing malloc/free calls. This experimental facility is built into LIBXSMM's main library and can be enabled using an environment variable (`LIBXSMM_MALLOC=1`) or an API. The latter also takes an optional lower or an optional upper bound to select malloc-calls based on the size of the allocation which is complemented by a separate environment variable (e.g., LIBXSMM_MALLOC_LIMIT=4m:1g).
 
 ```C
-void libxsmm_set_scratch_malloc(int enabled);
-int libxsmm_get_scratch_malloc(void);
+void libxsmm_set_malloc(int enabled, const size_t* lo, const size_t* hi);
+int libxsmm_get_malloc(size_t* lo, size_t* hi);
 ```
 
-The latter function may return zero even if there was an attempt to enable this facility (limitation/experimental implementation). Please note, the regular [Allocation API](documentation/libxsmm_aux.md#memory-allocation) (e.g., `libxsmm_[get|set]_scratch_limit`) as well as the related environment variables are applicable (e.g., `LIBXSMM_SCRATCH_LIMIT`). For instance, `LIBXSMM_SCRATCH_LIMIT=-1` can be used to allow unlimited growth of the memory domain. In addition, `LIBXSMM_MALLOC_LIMIT` can take a lower and an optional upper bound to select malloc-calls based on the size of the allocation (e.g., LIBXSMM_MALLOC_LIMIT=4m:1g). Further, an increased verbosity level can help to gain some insight (`LIBXSMM_VERBOSE=3`).
+The latter function may return zero even if there was an attempt to enable this facility (limitation/experimental implementation). Please note, the regular [Scratch Memory API](documentation/libxsmm_aux.md#memory-allocation) (e.g., `libxsmm_[get|set]_scratch_limit`) and the related environment variables can apply as well (`LIBXSMM_SCRATCH_LIMIT`, `LIBXSMM_SCRATCH_POOLS`, `LIBXSMM_SCRATCH_SCALE`). If intercepted memory allocations are enabled, the scratch limit is adjusted by default to allow unlimited growth of the scratch domain. Further, an increased verbosity level can help to gain some insight (`LIBXSMM_VERBOSE=3`).
 
 Intercepting malloc/free is supported by linking LIBXSMM's static or dynamically linked main library. The latter of which can be used to intercept calls of an existing and unchanged binary (LD_PRELOAD mechanism). To statically link with LIBXSMM and to intercept existing malloc/free calls, the following changes to the application's link stage are recommended:
 
@@ -20,9 +20,11 @@ gcc [...] -Wl,--export-dynamic \
   /path/to/libxsmm.a
 ```
 
-LIBXSMM's main library induces a BLAS-dependency which may be already fulfilled for the application in question. However, if this is not the case (unresolved symbols), `libxsmmnoblas.a` must be linked in addition. Depending on the dependencies of the application, the link order may also need to be adjusted. Other i.e. a GNU-compatible compiler (as shown above), can induce additional requirements (compiler runtime libraries). For instance, the Intel Compiler may need "libirc" i.e., `-lirc` in front of `libxsmm.a`.
+LIBXSMM's main library induces a BLAS-dependency which may be already fulfilled for the application in question. However, if this is not the case (unresolved symbols), `libxsmmnoblas.a` must be linked in addition. Depending on the dependencies of the application, the link order may also need to be adjusted. Other i.e. a GNU-compatible compiler (as shown above), can induce additional requirements (compiler runtime libraries).
 
-Linking the shared library form of LIBXSMM (`make STATIC=0`) has similar requirements with respect to the application but does not require `-Wl,--wrap` although `-Wl,--export-dynamic` is necessary if the application itself is linked statically (LIBXSMM is linked as a shared library). The LD_PRELOAD based mechanism does not need changes to the link step of an application. However, `libxsmmnoblas` may be needed if the application does not already link against BLAS.
+**NOTE**: The Intel Compiler may need "libirc" i.e., `-lirc` in front of `libxsmm.a`. Linking the static library of LIBXSMM may require above mentioned linker flags (`--wrap`) in particular when using Intel Fortran (IFORT) as a linker driver unless `CALL libxsmm_init()` is issued (or at least one symbol of LIBXSMM's main library is referenced). Linking LIBXSMM statically using the GNU compiler does not strictly need special linker flags.
+
+Linking the shared library form of LIBXSMM (`make STATIC=0`) has similar requirements with respect to the application but does not require `-Wl,--wrap` although `-Wl,--export-dynamic` is necessary if the application itself is linked statically (and LIBXSMM is linked as a shared library). The LD_PRELOAD based mechanism does not need any changes to the link step of an application. However, `libxsmmnoblas` may be required if the application does not already link against BLAS.
 
 ```bash
 LD_PRELOAD="libxsmm.so libxsmmnoblas.so"
