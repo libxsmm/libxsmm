@@ -950,6 +950,7 @@ LIBXSMM_API_INTERN void libxsmm_malloc_init(void)
   }
   if (NULL != internal_malloc.free.ptr) {
 # if defined(LIBXSMM_MALLOC_HOOK_IMALLOC)
+    union { const void* dlsym; int (*ptr)(void); } mkl_fastmm;
     union { const void* dlsym; libxsmm_malloc_fun* ptr; } i_malloc;
     i_malloc.dlsym = dlsym(RTLD_NEXT, "i_malloc");
     if (NULL == dlerror() && NULL != i_malloc.dlsym) {
@@ -979,6 +980,13 @@ LIBXSMM_API_INTERN void libxsmm_malloc_init(void)
           }
         }
       }
+    }
+    mkl_fastmm.dlsym = dlsym(RTLD_NEXT, "mkl_disable_fast_mm");
+    if (NULL == dlerror() && NULL != mkl_fastmm.dlsym) {
+      mkl_fastmm.ptr();
+    }
+    else {
+      setenv("MKL_DISABLE_FAST_MM", "1", 1/*overwrite*/);
     }
 # endif /*defined(LIBXSMM_MALLOC_HOOK_IMALLOC)*/
   }
