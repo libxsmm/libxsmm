@@ -132,10 +132,10 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #endif
 
 #if !defined(LIBXSMM_MALLOC_ALIGNMAX)
-# define LIBXSMM_MALLOC_ALIGNMAX (2 * 1024 * 1024)
+# define LIBXSMM_MALLOC_ALIGNMAX (2 << 20) /* 2 MB */
 #endif
 #if !defined(LIBXSMM_MALLOC_ALIGNFCT)
-# define LIBXSMM_MALLOC_ALIGNFCT 8
+# define LIBXSMM_MALLOC_ALIGNFCT 16
 #endif
 #if !defined(LIBXSMM_MALLOC_SEED)
 # define LIBXSMM_MALLOC_SEED 1051981
@@ -211,7 +211,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_DELETE_SAFE
 #endif
 /* map memory for scratch buffers */
-#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 0
+#if !defined(LIBXSMM_MALLOC_MMAP_SCRATCH) && 1
 # define LIBXSMM_MALLOC_MMAP_SCRATCH
 #endif
 /* map memory for hooked allocation */
@@ -219,7 +219,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_MMAP_HOOK
 #endif
 /* map memory also for non-executable buffers */
-#if !defined(LIBXSMM_MALLOC_MMAP) && 0
+#if !defined(LIBXSMM_MALLOC_MMAP) && 1
 # define LIBXSMM_MALLOC_MMAP
 #endif
 
@@ -658,7 +658,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
         else { /* fresh pool */
           const size_t scratch_limit = libxsmm_get_scratch_limit();
           const size_t scratch_size = internal_get_scratch_size(pool); /* exclude current pool */
-          const size_t limit_size = (1 < npools ? (scratch_limit - LIBXSMM_MIN(scratch_size, scratch_limit)) : ((size_t)LIBXSMM_UNLIMITED));
+          const size_t limit_size = (1 < npools ? (scratch_limit - LIBXSMM_MIN(scratch_size, scratch_limit)) : LIBXSMM_SCRATCH_UNLIMITED);
           const size_t scale_size = (size_t)(1 != libxsmm_scratch_scale ? (libxsmm_scratch_scale * alloc_size) : alloc_size); /* hysteresis */
           const size_t incsize = (size_t)(libxsmm_scratch_scale * pool->instance.incsize);
           const size_t maxsize = LIBXSMM_MAX(scale_size, pool->instance.minsize) + incsize;
@@ -1717,20 +1717,22 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         }
 #else /* !defined(_WIN32) */
 # if defined(MAP_HUGETLB)
-        static int hugetlb = 1;
+        static size_t hugetlb = LIBXSMM_SCRATCH_UNLIMITED;
 # endif
 # if defined(MAP_32BIT)
-        static int map32 = 1;
+        static size_t map32 = LIBXSMM_SCRATCH_UNLIMITED;
 # endif
         int xflags = 0
 # if defined(MAP_NORESERVE)
-          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) < size) ? 0 : MAP_NORESERVE)
+          | (LIBXSMM_MALLOC_ALIGNMAX < size ? 0 : MAP_NORESERVE)
 # endif
-# if defined(MAP_32BIT)
-          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) < size || 0 == map32) ? 0 : MAP_32BIT)
+# if defined(MAP_32BIT) /* can be quickly exhausted */
+          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) <= size && size < map32
+            && LIBXSMM_X86_AVX512_CORE > libxsmm_target_archid
+            && LIBXSMM_X86_AVX512 < libxsmm_target_archid) ? MAP_32BIT : 0)
 # endif
 # if defined(MAP_HUGETLB) /* may fail depending on system settings */
-          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) < size && 0 != hugetlb) ? MAP_HUGETLB : 0)
+          | (((LIBXSMM_MALLOC_ALIGNMAX * LIBXSMM_MALLOC_ALIGNFCT) <= size && size < hugetlb) ? MAP_HUGETLB : 0)
 # endif
 # if defined(MAP_UNINITIALIZED) /* unlikely to be available */
           | MAP_UNINITIALIZED
@@ -1739,26 +1741,25 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
           | MAP_LOCKED
 # endif
         ;
-        /* prefault pages to avoid data race in Linux' page-fault handler pre-3.10.0-327 */
-# if defined(MAP_HUGETLB) && defined(MAP_POPULATE)
-        struct utsname osinfo;
-        if (0 != (MAP_HUGETLB & xflags) && 0 <= uname(&osinfo) && 0 == strcmp("Linux", osinfo.sysname)) {
-          unsigned int version_major = 3, version_minor = 10, version_update = 0, version_patch = 327;
-          if (4 == sscanf(osinfo.release, "%u.%u.%u-%u", &version_major, &version_minor, &version_update, &version_patch) &&
-            LIBXSMM_VERSION4(3, 10, 0, 327) > LIBXSMM_VERSION4(version_major, version_minor, version_update, version_patch))
+        static int prefault = 0;
+# if defined(MAP_POPULATE)
+        if (0 == prefault) { /* prefault only on Linux 3.10.0-327 (and later) to avoid data race in page-fault handler */
+          struct utsname osinfo; unsigned int version_major = 3, version_minor = 10, version_update = 0, version_patch = 327;
+          if (0 <= uname(&osinfo) && 0 == strcmp("Linux", osinfo.sysname)
+            && 4 == sscanf(osinfo.release, "%u.%u.%u-%u", &version_major, &version_minor, &version_update, &version_patch)
+            && LIBXSMM_VERSION4(3, 10, 0, 327) > LIBXSMM_VERSION4(version_major, version_minor, version_update, version_patch))
           {
-            /* TODO: lock across threads and processes */
-            xflags |= MAP_POPULATE;
+            prefault = MAP_POPULATE;
           }
         }
 # endif
         alloc_alignment = (NULL == info ? libxsmm_alignment(size, alignment) : alignment);
         alloc_size = size + extra_size + sizeof(internal_malloc_info_type) + alloc_alignment - 1;
         alloc_failed = MAP_FAILED;
-        if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) {
+        if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* anonymous and non-executable */
           LIBXSMM_ASSERT(NULL != info || NULL == *memory); /* no memory mapping of foreign pointer */
           buffer = mmap(NULL == info ? NULL : info->pointer, alloc_size, PROT_READ | PROT_WRITE,
-            MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | xflags, -1, 0/*offset*/);
+            MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | prefault | xflags, -1, 0/*offset*/);
         }
         else { /* executable buffer requested */
           static /*LIBXSMM_TLS*/ int fallback = -1;
@@ -1825,7 +1826,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
                   if (0 != (MAP_32BIT & xflags)) {
                     buffer = internal_xmalloc_xmap(envloc, alloc_size, xflags & ~MAP_32BIT, &reloc);
                   }
-                  if (alloc_failed != buffer) map32 = 0; else
+                  if (alloc_failed != buffer) map32 = size; else
 # endif
                   fallback = 3;
                 }
@@ -1840,7 +1841,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
                       buffer = mmap(reloc, alloc_size, PROT_READ | PROT_WRITE | PROT_EXEC,
                         MAP_PRIVATE | LIBXSMM_MAP_ANONYMOUS | (xflags & ~MAP_32BIT), -1, 0/*offset*/);
                     }
-                    if (alloc_failed != buffer) map32 = 0; else
+                    if (alloc_failed != buffer) map32 = size; else
 # endif
                     fallback = 4;
                   }
@@ -1861,13 +1862,13 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 # if defined(MAP_HUGETLB) /* no further attempts to rely on huge pages */
           if (0 != (xflags & MAP_HUGETLB)) {
             flags &= ~LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
-            hugetlb = 0;
+            hugetlb = size;
           }
 # endif
 # if defined(MAP_32BIT) /* no further attempts to map to 32-bit */
           if (0 != (xflags & MAP_32BIT)) {
             flags &= ~LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
-            map32 = 0;
+            map32 = size;
           }
 # endif
           if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) { /* ultimate fall-back */
