@@ -12,7 +12,7 @@ matrix:
   include:
   - os: linux
     compiler: gcc
-    env: OPT=1 PYTHON=python3
+    env: OPT=1 PYTHON=python3 LIBXSMM_MALLOC=1
   - os: linux
     compiler: gcc
     env: DBG=1 LIBXSMM_TARGET=0
