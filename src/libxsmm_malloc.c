@@ -2341,9 +2341,11 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
     unsigned int i;
     for (i = 0; i < libxsmm_scratch_pools; ++i) {
       if (0 != pools[i].instance.minsize) {
+        if (
 # if !defined(LIBXSMM_MALLOC_SCRATCH_DELETE_FIRST)
-        if (1 < pools[i].instance.counter)
+          1 < pools[i].instance.counter &&
 # endif
+          NULL != pools[i].instance.buffer)
         {
           internal_malloc_info_type* const info = internal_malloc_info(pools[i].instance.buffer, 0/*no check*/);
           internal_xfree(info->pointer, info);
