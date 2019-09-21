@@ -950,7 +950,6 @@ LIBXSMM_API_INTERN void libxsmm_malloc_init(void)
   }
   if (NULL != internal_malloc.free.ptr) {
 # if defined(LIBXSMM_MALLOC_HOOK_IMALLOC)
-    union { const void* dlsym; int (*ptr)(void); } mkl_fastmm;
     union { const void* dlsym; libxsmm_malloc_fun* ptr; } i_malloc;
     i_malloc.dlsym = dlsym(RTLD_NEXT, "i_malloc");
     if (NULL == dlerror() && NULL != i_malloc.dlsym) {
@@ -981,12 +980,15 @@ LIBXSMM_API_INTERN void libxsmm_malloc_init(void)
         }
       }
     }
-    mkl_fastmm.dlsym = dlsym(RTLD_NEXT, "mkl_disable_fast_mm");
-    if (NULL == dlerror() && NULL != mkl_fastmm.dlsym) {
-      mkl_fastmm.ptr();
-    }
-    else {
-      setenv("MKL_DISABLE_FAST_MM", "1", 1/*overwrite*/);
+    if (0 != (internal_malloc_kind & 1) && 0 < internal_malloc_kind) {
+      union { const void* dlsym; int (*ptr)(void); } mkl_fastmm;
+      mkl_fastmm.dlsym = dlsym(RTLD_NEXT, "mkl_disable_fast_mm");
+      if (NULL == dlerror() && NULL != mkl_fastmm.dlsym) {
+        mkl_fastmm.ptr();
+      }
+      else {
+        setenv("MKL_DISABLE_FAST_MM", "1", 1/*overwrite*/);
+      }
     }
 # endif /*defined(LIBXSMM_MALLOC_HOOK_IMALLOC)*/
   }
@@ -1126,7 +1128,7 @@ LIBXSMM_API_INTERN void* internal_memalign_hook(size_t alignment, size_t size, c
   const int recursive = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED);
   if (0 == libxsmm_ninit && 1 == recursive) libxsmm_init(); /* !LIBXSMM_INIT */
   if ( 1 < recursive /* protect against recursion */
-    || 0 == (internal_malloc_kind & 1) || 0 > internal_malloc_kind
+    || 0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind
     || (internal_malloc_limit[0] > size)
     || (internal_malloc_limit[1] < size && 0 != internal_malloc_limit[1]))
   {
@@ -1181,7 +1183,7 @@ LIBXSMM_API void* __wrap_calloc(size_t num, size_t size)
 LIBXSMM_API_INTERN void* internal_realloc_hook(void* ptr, size_t size, const void* caller)
 {
   void* result;
-  if (0 == (internal_malloc_kind & 1) || 0 > internal_malloc_kind
+  if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind
     || (internal_malloc_limit[0] > size)
     || (internal_malloc_limit[1] < size && 0 != internal_malloc_limit[1]))
   {
@@ -1213,7 +1215,7 @@ LIBXSMM_API void* __wrap_realloc(void* ptr, size_t size)
 LIBXSMM_API_INTERN void internal_free_hook(void* ptr, const void* caller)
 {
   LIBXSMM_UNUSED(caller);
-  if (0 == (internal_malloc_kind & 1) || 0 > internal_malloc_kind) {
+  if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind) {
     __real_free(ptr);
   }
   else { /* recognize pointers not issued by LIBXSMM */
@@ -1650,7 +1652,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         flags |= LIBXSMM_MALLOC_FLAG_MMAP;
 #endif
       }
-      if ((0 != (internal_malloc_kind & 1) && 0 <= internal_malloc_kind)
+      if ((0 != (internal_malloc_kind & 1) && 0 < internal_malloc_kind)
         || NULL == malloc_fn.function || NULL == free_fn.function)
       {
         malloc_fn.function = __real_malloc;
@@ -2334,7 +2336,7 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, lock);
   }
   LIBXSMM_EXPECT(EXIT_SUCCESS, libxsmm_get_scratch_info(&scratch_info));
-  if (0 == scratch_info.npending || 0 == (internal_malloc_kind & 1) || 0 > internal_malloc_kind) {
+  if (0 == scratch_info.npending || 0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind) {
     internal_malloc_pool_type* const pools = (internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_CACHELINE);
     unsigned int i;
     for (i = 0; i < libxsmm_scratch_pools; ++i) {
@@ -2490,7 +2492,7 @@ LIBXSMM_API int libxsmm_get_malloc(size_t* lo, size_t* hi)
   if (NULL != lo) *lo = internal_malloc_limit[0];
   if (NULL != hi) *hi = internal_malloc_limit[1];
 #if (defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) || defined(LIBXSMM_INTERCEPT_DYNAMIC))
-  result = 0 != (internal_malloc_kind & 1) && 0 <= internal_malloc_kind;
+  result = 0 != (internal_malloc_kind & 1) && 0 < internal_malloc_kind;
 #else
   result = 0;
 #endif
