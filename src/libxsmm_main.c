@@ -84,7 +84,8 @@
 #if !defined(LIBXSMM_CACHE_PAD) && 1
 # define LIBXSMM_CACHE_PAD
 #endif
-#if !defined(LIBXSMM_CACHE_GLOBAL) && 1
+#if !defined(LIBXSMM_CACHE_GLOBAL) && \
+    !defined(_CRAYC) /* investigate */
 # define LIBXSMM_CACHE_GLOBAL
 #endif
 #if !defined(LIBXSMM_ENABLE_DEREG) && 0
