@@ -699,7 +699,7 @@ LIBXSMM_API_INTERN void internal_init(void)
         libxsmm_scratch_scale = LIBXSMM_MALLOC_SCRATCH_SCALE;
       }
       else {
-        libxsmm_scratch_scale = LIBXSMM_CLMP(atof(env), 1.1, 3.0);
+        libxsmm_scratch_scale = LIBXSMM_CLMP(atof(env), 1.0, 10.0);
         /*libxsmm_scratch_scale_locked = 1;*/
       }
       LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
