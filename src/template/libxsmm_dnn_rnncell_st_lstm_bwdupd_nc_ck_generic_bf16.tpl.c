@@ -37,57 +37,28 @@
 #define _mm512_storecvt_fp32_bf16(A,B)  _mm256_storeu_si256((__m256i*)(A),_mm512_cvtepi32_epi16(_mm512_srai_epi32(_mm512_roundbf16rne((B)),16)))
 
 /* helper variables */
-libxsmm_blasint j, ik, ikb, in, inb, ic, icb, jk, jb/*jn shadows global variable*/, jc, ek, en, ec, BF, KB_BLOCKS, KB;
+libxsmm_blasint ik, ikb, ic, icb, jk, jc, BF;
 /* tensor dimensions */
 libxsmm_blasint K = handle->desc.K;
 libxsmm_blasint N = handle->desc.N;
 libxsmm_blasint C = handle->desc.C;
 libxsmm_blasint t = handle->T;
 libxsmm_blasint bk = handle->bk;
-libxsmm_blasint bn = handle->bn;
 libxsmm_blasint bc = handle->bc;
 libxsmm_blasint K4 = K * 4;
 const libxsmm_blasint cBlocks = C/bc;
 const libxsmm_blasint kBlocks = K/bk;
-const libxsmm_blasint nBlocks = N/bn;
 const int lpb = handle->lpb;
-/*const int bc_lp = bc/lpb;*/
 const int bk_lp = bk/lpb;
-const int bn_lp = bn/lpb;
-unsigned long long blocks;
 /* tensor raw pointers */
-element_input_type  *xt    = (element_input_type* )handle->xt->data;
-element_input_type *csp   = (element_input_type* )handle->csp->data;
-element_input_type *hpD   = (element_input_type* )handle->hp->data;
 element_filter_type *w     = (element_filter_type*)handle->w->data;
 element_filter_type *r     = (element_filter_type*)handle->r->data;
-element_output_type *cst   = (element_output_type*)handle->cst->data;
-element_output_type *ht    = handle->ht ? (element_output_type*)handle->ht->data : (element_output_type*)NULL;
-element_output_type *it    = (element_output_type*)handle->it->data;
-element_output_type *ft    = (element_output_type*)handle->ft->data;
-element_output_type *ot    = (element_output_type*)handle->ot->data;
-element_output_type *cit   = (element_output_type*)handle->cit->data;
-element_output_type *cot   = (element_output_type*)handle->cot->data;
-element_input_type  *dxt   = (element_input_type*)handle->dxt->data;
-element_input_type  *dcsp  = (element_input_type* )handle->dcsp->data;
-element_input_type  *dhpD  = (element_input_type* )handle->dhp->data;
 element_filter_type *dw    = (element_filter_type*)handle->dw->data;
 element_filter_type *dr    = (element_filter_type*)handle->dr->data;
-element_output_type *db_bf16    = (element_output_type*)handle->db->data;
-element_output_type *dcsD  = (element_output_type*)handle->dcs->data;
-element_output_type *dht   = (element_output_type*)handle->dht->data;
-element_output_type *diD   = (element_output_type*)handle->scratch_di;
-element_output_type *dfD   = (element_output_type*)handle->scratch_df;
-element_output_type *doD   = (element_output_type*)handle->scratch_do;
-element_output_type *dciD  = (element_output_type*)handle->scratch_dci;
 float *dxD   = (float*)handle->scratch_dx;
-float *doutD = (float*)handle->scratch_deltat;
-float *dhpD_f32 = (float*)handle->scratch_dhp;
 float *db    = (float*)handle->scratch_db;
-element_input_type  *scratch_xT  = (element_input_type* )handle->scratch_xT;
 element_filter_type *scratch_wT  = (element_filter_type*)handle->scratch_wT;
 element_filter_type *scratch_rT  = (element_filter_type*)handle->scratch_rT;
-element_output_type *scratch_hT  = (element_output_type*)handle->scratch_hT;
 float *w_scratch   = (float*)handle->scratch_w;
 float *r_scratch   = (float*)handle->scratch_r;
 element_filter_type *wiD   = &(w[0]);
@@ -114,14 +85,6 @@ float *driD_scratch  = &(r_scratch[0]);
 float *drcD_scratch  = &(r_scratch[K*K]);
 float *drfD_scratch  = &(r_scratch[2*K*K]);
 float *droD_scratch  = &(r_scratch[3*K*K]);
-float *dbi   = &(db[0]);
-float *dbc   = &(db[K]);
-float *dbf   = &(db[2*K]);
-float *dbo   = &(db[3*K]);
-element_output_type *dbi_bf16   = &(db_bf16[0]);
-element_output_type *dbc_bf16   = &(db_bf16[K]);
-element_output_type *dbf_bf16   = &(db_bf16[2*K]);
-element_output_type *dbo_bf16   = &(db_bf16[3*K]);
 element_filter_type *scratch_wiT = &(scratch_wT[0]);
 element_filter_type *scratch_wcT = &(scratch_wT[C*K]);
 element_filter_type *scratch_wfT = &(scratch_wT[2*C*K]);
@@ -130,14 +93,7 @@ element_filter_type *scratch_riT = &(scratch_rT[0]);
 element_filter_type *scratch_rcT = &(scratch_rT[K*K]);
 element_filter_type *scratch_rfT = &(scratch_rT[2*K*K]);
 element_filter_type *scratch_roT = &(scratch_rT[3*K*K]);
-/*element_output_type *t1D   = (element_output_type*)handle->scratch_t1;*/
-/*element_output_type *t2D   = (element_output_type*)handle->scratch_t2;*/
 /* multidimensional arrays */
-/*LIBXSMM_VLA_DECL(2, element_output_type, t1, t1D, K);*/
-/*LIBXSMM_VLA_DECL(2, element_output_type, t2, t2D, K);*/
-LIBXSMM_VLA_DECL(3, element_input_type,  x, xt, N, C);
-LIBXSMM_VLA_DECL(2, element_input_type,  cp, csp, K);
-LIBXSMM_VLA_DECL(2, element_input_type,  hp, hpD, K);
 LIBXSMM_VLA_DECL(2, element_filter_type, wi, wiD, K4);
 LIBXSMM_VLA_DECL(2, element_filter_type, wf, wfD, K4);
 LIBXSMM_VLA_DECL(2, element_filter_type, wo, woD, K4);
@@ -146,18 +102,6 @@ LIBXSMM_VLA_DECL(2, element_filter_type, ri, riD, K4);
 LIBXSMM_VLA_DECL(2, element_filter_type, rf, rfD, K4);
 LIBXSMM_VLA_DECL(2, element_filter_type, ro, roD, K4);
 LIBXSMM_VLA_DECL(2, element_filter_type, rc, rcD, K4);
-LIBXSMM_VLA_DECL(3, element_output_type, cs, cst, N, K);
-LIBXSMM_VLA_DECL(3, element_output_type, h, ht, N, K);
-LIBXSMM_VLA_DECL(3, element_output_type, i, it, N, K);
-LIBXSMM_VLA_DECL(3, element_output_type, f, ft, N, K);
-LIBXSMM_VLA_DECL(3, element_output_type, o, ot, N, K);
-LIBXSMM_VLA_DECL(3, element_output_type, ci, cit, N, K);
-LIBXSMM_VLA_DECL(3, element_output_type, co, cot, N, K);
-LIBXSMM_VLA_DECL(3, float,  dx, dxD, N, C);
-LIBXSMM_VLA_DECL(3, element_input_type,  dx_bf16, dxt, N, C);
-LIBXSMM_VLA_DECL(2, element_input_type,  dcp, dcsp, K);
-LIBXSMM_VLA_DECL(2, element_input_type,  dhp, dhpD, K);
-LIBXSMM_VLA_DECL(2, float,  dhp_f32, dhpD_f32, K);
 LIBXSMM_VLA_DECL(4, float, dwi, dwiD_scratch, cBlocks, bc, bk);
 LIBXSMM_VLA_DECL(4, float, dwf, dwfD_scratch, cBlocks, bc, bk);
 LIBXSMM_VLA_DECL(4, float, dwo, dwoD_scratch, cBlocks, bc, bk);
@@ -174,18 +118,6 @@ LIBXSMM_VLA_DECL(2, element_filter_type, dri_ck, driD, 4*K);
 LIBXSMM_VLA_DECL(2, element_filter_type, drf_ck, drfD, 4*K);
 LIBXSMM_VLA_DECL(2, element_filter_type, dro_ck, droD, 4*K);
 LIBXSMM_VLA_DECL(2, element_filter_type, drc_ck, drcD, 4*K);
-LIBXSMM_VLA_DECL(2, element_output_type, dcs, dcsD, K);
-LIBXSMM_VLA_DECL(3, element_output_type, dh, dht, N, K);
-LIBXSMM_VLA_DECL(2, element_output_type, di, diD, K);
-LIBXSMM_VLA_DECL(2, element_output_type, df, dfD, K);
-LIBXSMM_VLA_DECL(2, element_output_type, dp, doD, K);
-LIBXSMM_VLA_DECL(2, element_output_type, dci, dciD, K);
-LIBXSMM_VLA_DECL(5, element_output_type, diB, (element_output_type*)handle->scratch_diB, nBlocks, bn_lp, bk, lpb);
-LIBXSMM_VLA_DECL(5, element_output_type, dfB, (element_output_type*)handle->scratch_dfB, nBlocks, bn_lp, bk, lpb);
-LIBXSMM_VLA_DECL(5, element_output_type, dpB, (element_output_type*)handle->scratch_dpB, nBlocks, bn_lp, bk, lpb);
-LIBXSMM_VLA_DECL(5, element_output_type, dciB, (element_output_type*)handle->scratch_dciB, nBlocks, bn_lp, bk, lpb);
-LIBXSMM_VLA_DECL(2, float, dout, doutD, K);
-LIBXSMM_VLA_DECL(2, element_input_type,  xT, scratch_xT, N);
 LIBXSMM_VLA_DECL(5, element_filter_type, wiT, scratch_wiT, kBlocks, bk_lp, bc, lpb);
 LIBXSMM_VLA_DECL(5, element_filter_type, wcT, scratch_wcT, kBlocks, bk_lp, bc, lpb);
 LIBXSMM_VLA_DECL(5, element_filter_type, wfT, scratch_wfT, kBlocks, bk_lp, bc, lpb);
@@ -194,36 +126,9 @@ LIBXSMM_VLA_DECL(5, element_filter_type, riT, scratch_riT, kBlocks, bk_lp, bk, l
 LIBXSMM_VLA_DECL(5, element_filter_type, rcT, scratch_rcT, kBlocks, bk_lp, bk, lpb);
 LIBXSMM_VLA_DECL(5, element_filter_type, rfT, scratch_rfT, kBlocks, bk_lp, bk, lpb);
 LIBXSMM_VLA_DECL(5, element_filter_type, roT, scratch_roT, kBlocks, bk_lp, bk, lpb);
-LIBXSMM_VLA_DECL(2, element_output_type, hT, scratch_hT, N);
-float *dout_ptr = NULL;
-/* define batch-reduce gemm kernels */
-const libxsmm_bsmmfunction_reducebatch_addr batchreduce_kernela = libxsmm_bsmmdispatch_reducebatch_addr( bc, bn, bk, &bc, &K, &C, NULL, NULL, NULL, NULL);
-const libxsmm_bsmmfunction_reducebatch_addr batchreduce_kernelb = libxsmm_bsmmdispatch_reducebatch_addr( bk, bk, bn, &bk, &N, &bk, NULL, NULL, NULL, NULL);
-const libxsmm_bsmmfunction_reducebatch_addr batchreduce_kernelc = libxsmm_bsmmdispatch_reducebatch_addr( bk, bc, bn, &bk, &N, &bk, NULL, NULL, NULL, NULL);
-const libxsmm_bsmmfunction_reducebatch_addr batchreduce_kerneld = libxsmm_bsmmdispatch_reducebatch_addr( bk, bn, bk, &bk, &K, &K, NULL, NULL, NULL, NULL);
-
-/* Auxiliary arrays for batch-reduce gemm calls */
-const element_filter_type *A_array[1024];
-const element_output_type *B_array[1024];
 
 /* computing first logical thread */
 const libxsmm_blasint ltid = (libxsmm_blasint)tid - (libxsmm_blasint)start_thread;
-
-/* number of tasks that could be run in parallel for N and K blocks*/
-const libxsmm_blasint work_nk = (N/bn) * (K/bk);
-/* compute chunk size */
-const libxsmm_blasint chunksize_nk = (work_nk % (libxsmm_blasint)handle->desc.threads == 0) ? (work_nk / (libxsmm_blasint)handle->desc.threads) : ((work_nk / (libxsmm_blasint)handle->desc.threads) + 1);
-/* compute thr_begin and thr_end */
-const libxsmm_blasint thr_begin_nk = (ltid * chunksize_nk < work_nk) ? (ltid * chunksize_nk) : work_nk;
-const libxsmm_blasint thr_end_nk = ((ltid + 1) * chunksize_nk < work_nk) ? ((ltid + 1) * chunksize_nk) : work_nk;
-
-/* number of tasks that could be run in parallel for N and C blocks*/
-const libxsmm_blasint work_nc = (N/bn) * (C/bc);
-/* compute chunk size */
-const libxsmm_blasint chunksize_nc = (work_nc % (libxsmm_blasint)handle->desc.threads == 0) ? (work_nc / (libxsmm_blasint)handle->desc.threads) : ((work_nc / (libxsmm_blasint)handle->desc.threads) + 1);
-/* compute thr_begin and thr_end */
-const libxsmm_blasint thr_begin_nc = (ltid * chunksize_nc < work_nc) ? (ltid * chunksize_nc) : work_nc;
-const libxsmm_blasint thr_end_nc = ((ltid + 1) * chunksize_nc < work_nc) ? ((ltid + 1) * chunksize_nc) : work_nc;
 
 /* number of tasks that could be run in parallel for C and K blocks*/
 const libxsmm_blasint work_ck = (C/bc) * (K/bk);
@@ -241,15 +146,6 @@ const libxsmm_blasint chunksize_kk = (work_kk % (libxsmm_blasint)handle->desc.th
 const libxsmm_blasint thr_begin_kk = (ltid * chunksize_kk < work_kk) ? (ltid * chunksize_kk) : work_kk;
 const libxsmm_blasint thr_end_kk = ((ltid + 1) * chunksize_kk < work_kk) ? ((ltid + 1) * chunksize_kk) : work_kk;
 
-#if defined(LIBXSMM_RNN_CELL_AVX512)
-element_output_type *cps_ptr = NULL;
-int k_tasks = K/16;
-int k_chunksize = (k_tasks % (libxsmm_blasint)handle->desc.threads == 0) ? (k_tasks / (libxsmm_blasint)handle->desc.threads) : ((k_tasks / (libxsmm_blasint)handle->desc.threads) + 1);
-/* compute thr_begin and thr_end */
-const libxsmm_blasint k_thr_begin = (ltid * k_chunksize * 16 < K) ? (ltid * k_chunksize * 16) : K;
-const libxsmm_blasint k_thr_end = ((ltid + 1) * k_chunksize * 16 < K) ? ((ltid + 1) * k_chunksize * 16) : K;
-__m512 dbi_sum, dbf_sum, dbo_sum, dbc_sum;
-#endif
 /* number of tasks that could be run in parallel for K blocks*/
 /* compute chunk size */
 #if 0
@@ -262,9 +158,8 @@ const libxsmm_blasint thr_end_k = ((ltid + 1) * chunksize_k < K) ? ((ltid + 1) *
 __int64_t _start, _end, eltwise_cycles = 0, dout_cycles = 0, weight_trans_cycles = 0, act_trans_cycles = 0, dx_cycles = 0, dwdr_cycles = 0, gradient_cycles = 0, reformat_cycles = 0;
 float total_time = 0.0;
 #endif
-int bcbk_multiples_of_16 = ((bc % 16 == 0) && (bk % 16 == 0)) ? 1 : 0;
 
-libxsmm_blasint ikic, inic, inik, icin, ikin;
+libxsmm_blasint ikic;
 
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, (int)ltid);
@@ -284,7 +179,6 @@ if (K > 2048) {
     BF--;
   }
 }
-KB_BLOCKS = kBlocks/BF;
 
 /* initialization is done at the beginning */
 if ( (LIBXSMM_DNN_COMPUTE_KIND_BWD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
@@ -335,7 +229,7 @@ if (ltid == 0) {
 }
 #endif
 
-//#include "libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck_core_bf16.tpl.c"
+/*#include "libxsmm_dnn_rnncell_st_lstm_bwdupd_nc_kcck_core_bf16.tpl.c"*/
 
 if ( (LIBXSMM_DNN_COMPUTE_KIND_UPD == kind) || (LIBXSMM_DNN_COMPUTE_KIND_BWDUPD == kind) ) {
 #ifdef PROFILE
