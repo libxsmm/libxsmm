@@ -33,6 +33,10 @@
 
 #include "libxsmm_memory.h"
 
+/** Can be used with libxsmm_[get|set]_scratch_limit. */
+#define LIBXSMM_SCRATCH_UNLIMITED ((size_t)LIBXSMM_UNLIMITED)
+#define LIBXSMM_SCRATCH_DEFAULT 0
+
 
 /** Function types accepted for memory allocation (see libxsmm_*_allocator). */
 LIBXSMM_EXTERN_C typedef LIBXSMM_RETARGETABLE void* (*libxsmm_malloc_ctx)(size_t /*size*/, const void* /*context*/);
@@ -154,12 +158,28 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info);
 
 /**
  * Limit the total size (Bytes) of the scratch memory.
- * The environment variable LIBXSMM_SCRATCH_LIMIT takes
- * the following units: none (Bytes), k/K, m/M, and g/G.
+ * LIBXSMM_SCRATCH_UNLIMITED removes any limit, and
+ * LIBXSMM_SCRATCH_DEFAULT populates the default.
+ * The related environment variable LIBXSMM_SCRATCH_LIMIT
+ * allows units: <none>/b/B (Bytes), k/K, m/M, and g/G.
  */
 LIBXSMM_API void libxsmm_set_scratch_limit(size_t nbytes);
 /** Get the maximum size of the scratch memory domain. */
 LIBXSMM_API size_t libxsmm_get_scratch_limit(void);
+
+/**
+ * Intercepts malloc/free to use scratch memory allocator.
+ * (related environment variable LIBXSMM_MALLOC).
+ * Optionally set the range of malloc-sizes to be intercepted.
+ * The related environment variable LIBXSMM_MALLOC_LIMIT
+ * allows units: <none>/b/B (Bytes), k/K, m/M, and g/G.
+ */
+LIBXSMM_API void libxsmm_set_malloc(int enabled, const size_t* lo, const size_t* hi);
+/**
+ * Determines if malloc/free are (and can be) intercepted.
+ * Optionally gets the range of enabled malloc-sizes.
+ */
+LIBXSMM_API int libxsmm_get_malloc(size_t* lo, size_t* hi);
 
 /**
  * Calculate the linear offset of the n-dimensional (ndims) offset (can be NULL),

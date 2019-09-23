@@ -212,6 +212,7 @@ libxsmm_get_gemm_prefetch
 libxsmm_get_gemm_xprefetch
 libxsmm_get_kernel_info
 libxsmm_get_kernel_kind
+libxsmm_get_malloc
 libxsmm_get_malloc_info
 libxsmm_get_malloc_xinfo
 libxsmm_get_mcopykernel_info
@@ -346,6 +347,7 @@ libxsmm_rwlock_tryread
 libxsmm_scratch_malloc
 libxsmm_set_default_allocator
 libxsmm_set_gemm_auto_prefetch
+libxsmm_set_malloc
 libxsmm_set_scratch_allocator
 libxsmm_set_scratch_limit
 libxsmm_set_target_arch

@@ -1,10 +1,64 @@
 ## Customization
 
-### Overview
+### Intercepted Allocations<a name="scalable_malloc"></a>
 
-By default, only non-coprocessor targets are built since both KNC/self-hosted ("native") and KNC/offload are considered legacy (OFFLOAD=0 and KNC=0). In general, the subfolders of the 'lib' directory are separating the build targets where a 'mic' folder contains the native library (KNC=1) targeting the Intel&#160;Xeon&#160;Phi coprocessor ("KNC"), and the 'intel64' folder contains either the hybrid archive made of CPU/host as well as coprocessor code (OFFLOAD=1, which also implies KNC=1), or an archive which is only containing the CPU code (default). To remove any BLAS-dependency, please follow the [Link Instructions](index.md#link-instructions).
+To improve thread-scalability and to avoid frequent memory allocation/deallocation, the [scratch memory allocator](documentation/libxsmm_aux.md#memory-allocation) can be leveraged by intercepting existing malloc/free calls. This experimental facility is built into LIBXSMM's main library and can be enabled using an environment variable (`LIBXSMM_MALLOC=1`) or an API. The latter also takes an optional lower or an optional upper bound to select malloc-calls based on the size of the allocation which is complemented by a separate environment variable (e.g., LIBXSMM_MALLOC_LIMIT=4m:1g).
 
-**NOTE**: The build system considers a set of given key-value pairs as a single unique build and triggers a rebuild for a distinct set of flags!
+```C
+void libxsmm_set_malloc(int enabled, const size_t* lo, const size_t* hi);
+int libxsmm_get_malloc(size_t* lo, size_t* hi);
+```
+
+The latter function may return zero even if there was an attempt to enable this facility (limitation/experimental implementation). Please note, the regular [Scratch Memory API](documentation/libxsmm_aux.md#memory-allocation) (e.g., `libxsmm_[get|set]_scratch_limit`) and the related environment variables can apply as well (`LIBXSMM_SCRATCH_LIMIT`, `LIBXSMM_SCRATCH_POOLS`, `LIBXSMM_SCRATCH_SCALE`). If intercepted memory allocations are enabled, the scratch limit is adjusted by default to allow unlimited growth of the scratch domain. Further, an increased verbosity level can help to gain some insight (`LIBXSMM_VERBOSE=3`).
+
+Intercepting malloc/free is supported by linking LIBXSMM's static or shared main library. The latter of which can be used to intercept calls of an existing and unchanged binary (LD_PRELOAD mechanism). To statically link with LIBXSMM and to intercept existing malloc/free calls, the following changes to the application's link stage are recommended:
+
+```bash
+gcc [...] -Wl,--export-dynamic \
+  -Wl,--wrap=malloc,--wrap=calloc,--wrap=realloc \
+  -Wl,--wrap=memalign,--wrap=free \
+  /path/to/libxsmm.a
+```
+
+The main library causes a BLAS-dependency which may be already fulfilled for the application in question. However, if this is not the case (unresolved symbols), `libxsmmnoblas.a` must be linked in addition. Depending on the dependencies of the application, the link order may also need to be adjusted. Other i.e. a GNU-compatible compiler (as shown above), can induce additional requirements (compiler runtime libraries).
+
+**NOTE**: The Intel Compiler may need "libirc" i.e., `-lirc` in front of `libxsmm.a`. Linking LIBXSMM's static library may require above mentioned linker flags (`--wrap`) in particular when using Intel Fortran (IFORT) as a linker driver unless `CALL libxsmm_init()` is issued (or at least one symbol of LIBXSMM's main library is referenced; check with `nm application | grep libxsmm`). Linking the static library using the GNU compiler does not strictly need special flags when linking the application.
+
+Linking the shared library form of LIBXSMM (`make STATIC=0`) has similar requirements with respect to the application but does not require `-Wl,--wrap` although `-Wl,--export-dynamic` is necessary if the application is statically linked (beside of LIBXSMM linked in a shared fashion). The LD_PRELOAD based mechanism does not need any changes to the link step of an application. However, `libxsmmnoblas` may be required if the application does not already link against BLAS.
+
+```bash
+LD_PRELOAD="libxsmm.so libxsmmnoblas.so"
+LD_LIBRARY_PATH=/path/to/libxsmm/lib:${LD_LIBRARY_PATH}
+LIBXSMM_MALLOC=1
+```
+
+**NOTE**: If the application already uses BLAS, of course `libxsmmnoblas` must not be used!
+
+The following code can be compiled and linked using `gfortran example.f -o example`:
+
+```fortran
+      PROGRAM allocate_test
+        DOUBLE PRECISION, ALLOCATABLE :: a(:), b(:), c(:)
+        INTEGER :: i, repeat = 100000
+        DOUBLE PRECISION :: t0, t1, d
+
+        ALLOCATE(b(16*1024))
+        ALLOCATE(c(16*1024))
+        CALL CPU_TIME(t0)
+        DO i = 1, repeat
+          ALLOCATE(a(16*1024*1024))
+          DEALLOCATE(a)
+        END DO
+        CALL CPU_TIME(t1)
+        DEALLOCATE(b)
+        DEALLOCATE(c)
+        d = t1 - t0
+
+        WRITE(*, "(A,F10.1,A)") "duration:", (1D3 * d), " ms"
+      END PROGRAM
+```
+
+Running with `LIBXSMM_VERBOSE=3 LIBXSMM_MALLOC=1 LD_PRELOAD=... LD_LIBRARY_PATH=... ./example` displays: `Scratch: 132 MB (mallocs=1, pools=1)` which shows the innermost allocation/deallocation was served by the scratch memory allocator.
 
 ### Static Specialization
 
@@ -66,8 +120,6 @@ The prefetch interface is extending the signature of all kernels by three argume
 
 Further, the generated configuration ([template](https://github.com/hfp/libxsmm/blob/master/src/template/libxsmm_config.h)) of the library encodes the parameters for which the library was built for (static information). This helps optimizing client code related to the library's functionality. For example, the LIBXSMM_MAX_\* and LIBXSMM_AVG_\* information can be used with the LIBXSMM_PRAGMA_LOOP_COUNT macro to hint loop trip counts when handling matrices related to the problem domain of LIBXSMM.
 
-<a name="scalable_malloc"></a>To improve thread-scalability of the default memory allocation domain, the library can rely on Intel&#160;TBB, which is discovered per TBBROOT environment variable: `make TBB=1`.
-
 ### Auto-dispatch
 
 The function `libxsmm_?mmdispatch` helps amortizing the cost of the dispatch when multiple calls with the same M, N, and K are needed. The automatic code dispatch is orchestrating two levels:
@@ -85,13 +137,13 @@ make THRESHOLD=$((60 * 60 * 60))
 
 The maximum of the given threshold and the largest requested specialization refines the value of the threshold. Please note that explicitly JIT'ting and executing a kernel is possible and independent of the threshold. If a problem-size is below the threshold, dispatching the code requires to figure out whether a specialized routine exists or not.
 
-To minimize the probability of key collisions (code cache), the preferred precision of the statically generated code can be selected:
+For statically generated code, the suported precision can be selected:
 
 ```bash
 make PRECISION=2
 ```
 
-The default preference is to generate and register both single and double-precision code, and therefore no space in the dispatch table is saved (PRECISION=0). Specifying PRECISION=1&#124;2 is only generating and registering either single-precision or double-precision code.
+The default preference is to generate and register both single and double-precision code (PRECISION=0). Specifying PRECISION=1&#124;2 is generating and registering single-precision or double-precision code respectively.
 
 The automatic dispatch is highly convenient because existing GEMM calls can serve specialized kernels (even in a binary compatible fashion), however there is (and always will be) an overhead associated with looking up the code-registry and checking whether the code determined by the GEMM call is already JIT'ted or not. This lookup has been optimized using various techniques such as using specialized CPU instructions to calculate CRC32 checksums, to avoid costly synchronization (needed for thread-safety) until it is ultimately known that the requested kernel is not yet JIT'ted, and by implementing a small thread-local cache of recently dispatched kernels. The latter of which can be adjusted in size (only power-of-two sizes) but also disabled:
 

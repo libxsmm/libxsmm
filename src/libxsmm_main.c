@@ -53,6 +53,9 @@
 #if defined(_WIN32)
 # include <Windows.h>
 #else
+# if defined(LIBXSMM_INTERCEPT_DYNAMIC)
+#   include <dlfcn.h>
+# endif
 # include <sys/types.h>
 # include <sys/mman.h>
 # include <sys/stat.h>
@@ -215,11 +218,13 @@ LIBXSMM_APIVAR(unsigned int internal_statistic_num_trmm);
 LIBXSMM_APIVAR(int internal_gemm_auto_prefetch_locked);
 LIBXSMM_APIVAR(const char* internal_build_state);
 
+#if !defined(INTERNAL_DELIMS)
+# define INTERNAL_DELIMS ";,:"
+#endif
+
 #if defined(_WIN32)
-# define INTERNAL_DELIMS ";,"
 LIBXSMM_APIVAR(HANDLE internal_singleton_handle);
 #else
-# define INTERNAL_DELIMS ";,:"
 LIBXSMM_APIVAR_ARRAY(char internal_singleton_fname, 64);
 LIBXSMM_APIVAR(int internal_singleton_handle);
 #endif
@@ -439,10 +444,7 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
   libxsmm_xrelease_scratch(NULL/*lock*/);
   /* release global services */
   libxsmm_hash_finalize();
-#if !defined(NDEBUG)
-  /* turn-off redirected memory allocations */
-  libxsmm_malloc_kind = 0;
-#endif
+  libxsmm_malloc_finalize();
 }
 
 
@@ -450,15 +452,13 @@ LIBXSMM_API_INTERN void internal_finalize(void);
 LIBXSMM_API_INTERN void internal_finalize(void)
 {
   char *const env_dump_build = getenv("LIBXSMM_DUMP_BUILD");
-  char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES")
-    ? getenv("LIBXSMM_DUMP_FILES") : getenv("LIBXSMM_DUMP_FILE"));
+  char *const env_dump_files = (NULL != getenv("LIBXSMM_DUMP_FILES") ? getenv("LIBXSMM_DUMP_FILES") : getenv("LIBXSMM_DUMP_FILE"));
   libxsmm_finalize();
+  LIBXSMM_STDIO_ACQUIRE(); /* synchronize I/O */
   if (0 != libxsmm_verbosity) { /* print statistic on termination */
     const char *const env_target_hidden = getenv("LIBXSMM_TARGET_HIDDEN");
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
-      ? libxsmm_cpuid_name(libxsmm_target_archid)
-      : NULL/*hidden*/;
-    LIBXSMM_STDIO_ACQUIRE(); /* synchronize I/O */
+      ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
 #if !defined(NDEBUG) && defined(__OPTIMIZE__)
     fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
 #endif
@@ -525,10 +525,11 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     else {
       fprintf(stderr, "\nLIBXSMM_TARGET: %s\n", target_arch);
     }
-    LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
   }
   /* release scratch memory pool */
-  atexit(internal_release_scratch);
+  if (EXIT_SUCCESS != atexit(internal_release_scratch) && 0 != libxsmm_verbosity) {
+    fprintf(stderr, "LIBXSMM ERROR: failed to perform final cleanup!\n");
+  }
 #if defined(_WIN32)
   if (NULL != internal_singleton_handle)
 #else
@@ -536,7 +537,6 @@ LIBXSMM_API_INTERN void internal_finalize(void)
 #endif
   { /* dump per-node info */
     if (NULL != env_dump_build || NULL != env_dump_files) {
-      LIBXSMM_STDIO_ACQUIRE();
       if (NULL != env_dump_files && 0 != *env_dump_files) {
         const char *filename = strtok(env_dump_files, INTERNAL_DELIMS);
         for (; NULL != filename; filename = strtok(NULL, INTERNAL_DELIMS)) {
@@ -559,7 +559,6 @@ LIBXSMM_API_INTERN void internal_finalize(void)
           fprintf(stdout, "%s\n", internal_build_state);
         }
       }
-      LIBXSMM_STDIO_RELEASE();
     }
     /* cleanup singleton */
 #if defined(_WIN32)
@@ -570,8 +569,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     close(internal_singleton_handle);
 #endif
   }
-  /* signal shutdown */
-  libxsmm_ninit = 0;
+  LIBXSMM_STDIO_RELEASE(); /* synchronize I/O */
 #if (0 != LIBXSMM_SYNC)
   { /* release locks */
 # if (1 < INTERNAL_REGLOCK_MAXN)
@@ -583,6 +581,39 @@ LIBXSMM_API_INTERN void internal_finalize(void)
   }
 #endif
 }
+
+
+#if defined(LIBXSMM_INTERCEPT_DYNAMIC)
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* /*message*/, int /*len*/, int /*quiet*/);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* message, int len, int quiet)
+{ /* STOP termination handler for GNU Fortran runtime */
+  static int once = 0;
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    union { const void* dlsym; void (*ptr)(const char*, int, int); } stop;
+    dlerror(); /* clear an eventual error status */
+    stop.dlsym = dlsym(RTLD_NEXT, "_gfortran_stop_string");
+    if (NULL != stop.dlsym) {
+      stop.ptr(message, len, quiet);
+    }
+    else exit(EXIT_FAILURE); /* statically linked runtime */
+  }
+}
+
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* /*message*/, int /*len*/);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* message, int len)
+{ /* STOP termination handler for Intel Fortran runtime */
+  static int once = 0;
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    union { const void* dlsym; void (*ptr)(const char*, int); } stop;
+    dlerror(); /* clear an eventual error status */
+    stop.dlsym = dlsym(RTLD_NEXT, "for_stop_core");
+    if (NULL != stop.dlsym) {
+      stop.ptr(message, len);
+    }
+    else exit(EXIT_FAILURE); /* statically linked runtime */
+  }
+}
+#endif
 
 
 LIBXSMM_API_INTERN size_t internal_strlen(const char* /*cstr*/, size_t /*maxlen*/);
@@ -602,11 +633,14 @@ LIBXSMM_API_INTERN size_t internal_parse_nbytes(const char* nbytes, size_t ndefa
   size_t result = ndefault;
   if (NULL != nbytes && 0 != *nbytes) {
     size_t u = internal_strlen(nbytes, 32) - 1;
-    const char unit[] = "kmgKMG", * const hit = strchr(unit, nbytes[u]);
-    result = (size_t)strtoul(nbytes, 0, 10);
-    u = (0 != hit ? ((hit - unit) % 3) : 3);
-    if (u < 3) {
-      result <<= (u + 1) * 10;
+    const char unit[] = "kmgKMG", *const hit = strchr(unit, nbytes[u]);
+    const long long int ibytes = atol(nbytes); /* take with increased type-width */
+    result = (size_t)ibytes;
+    if ((size_t)LIBXSMM_UNLIMITED != result) {
+      u = (0 != hit ? ((hit - unit) % 3) : 3);
+      if (u < 3) {
+        result <<= (u + 1) * 10;
+      }
     }
   }
   return result;
@@ -665,14 +699,28 @@ LIBXSMM_API_INTERN void internal_init(void)
         libxsmm_scratch_scale = LIBXSMM_MALLOC_SCRATCH_SCALE;
       }
       else {
-        libxsmm_scratch_scale = LIBXSMM_CLMP(atof(env), 1.1, 3.0);
+        libxsmm_scratch_scale = LIBXSMM_CLMP(atof(env), 1.0, 10.0);
         /*libxsmm_scratch_scale_locked = 1;*/
       }
       LIBXSMM_ASSERT(1 <= libxsmm_scratch_scale);
     }
-    libxsmm_scratch_limit = internal_parse_nbytes(
-      getenv("LIBXSMM_SCRATCH_LIMIT"), LIBXSMM_MALLOC_SCRATCH_LIMIT);
+    libxsmm_set_scratch_limit(internal_parse_nbytes(getenv("LIBXSMM_SCRATCH_LIMIT"), LIBXSMM_SCRATCH_DEFAULT));
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
+    { /* setup malloc-interception after internal allocations */
+      const libxsmm_malloc_function null_malloc_fn = { 0 };
+      const libxsmm_free_function null_free_fn = { 0 };
+      const char *const env_k = getenv("LIBXSMM_MALLOC");
+      char *const env_t = getenv("LIBXSMM_MALLOC_LIMIT");
+      const char* env_i = (NULL != env_t ? strtok(env_t, INTERNAL_DELIMS) : NULL);
+      const size_t malloc_lo = internal_parse_nbytes(env_i, LIBXSMM_MALLOC_LIMIT);
+      const size_t malloc_hi = (NULL != env_i ? internal_parse_nbytes(
+        strtok(NULL, INTERNAL_DELIMS), LIBXSMM_SCRATCH_UNLIMITED) : LIBXSMM_SCRATCH_UNLIMITED);
+      const int malloc_kind = ((NULL == env_k || 0 == *env_k) ? 0/*disabled*/ : atoi(env_k));
+      libxsmm_set_malloc(malloc_kind, &malloc_lo, &malloc_hi);
+      libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
+      libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
+      libxsmm_malloc_init();
+    }
 #if defined(LIBXSMM_MAXTARGET)
     libxsmm_set_target_arch(LIBXSMM_STRINGIFY(LIBXSMM_MAXTARGET));
 #else /* attempt to set libxsmm_target_archid per environment variable */
@@ -755,20 +803,6 @@ LIBXSMM_API_INTERN void internal_init(void)
         }
       }
 #endif
-      { /* setup libxsmm_malloc_kind after internal allocations */
-        const libxsmm_malloc_function null_malloc_fn = { 0 };
-        const libxsmm_free_function null_free_fn = { 0 };
-        const char *const env_k = getenv("LIBXSMM_MALLOC");
-        char *const env_t = getenv("LIBXSMM_MALLOC_LIMIT");
-        const char* env_i = (NULL != env_t ? strtok(env_t, INTERNAL_DELIMS) : NULL);
-        size_t limit = libxsmm_scratch_limit;
-        if (NULL != env_k && 0 != *env_k) libxsmm_malloc_kind = atoi(env_k);
-        libxsmm_malloc_limit[0] = internal_parse_nbytes(env_i, LIBXSMM_MALLOC_LIMIT);
-        if (NULL != env_i) limit = internal_parse_nbytes(strtok(NULL, INTERNAL_DELIMS), libxsmm_scratch_limit);
-        libxsmm_malloc_limit[1] = LIBXSMM_MAX(limit, libxsmm_malloc_limit[0]);
-        libxsmm_xset_default_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
-        libxsmm_xset_scratch_allocator(NULL/*lock*/, NULL/*context*/, null_malloc_fn, null_free_fn);
-      }
       { /* commit the registry buffer and enable global visibility */
         void *const pv_registry = &internal_registry;
         LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)((void**)pv_registry, (void*)new_registry, LIBXSMM_ATOMIC_SEQ_CST);
@@ -878,7 +912,9 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_CTOR void libxsmm_init(void)
         libxsmm_timer_tick_rtc(); libxsmm_timer_tick(); /* warm-up */
         s0 = libxsmm_timer_tick_rtc(); t0 = libxsmm_timer_tick(); /* start timing */
         internal_init();
-        atexit(internal_finalize); /* once */
+        if (EXIT_SUCCESS != atexit(internal_finalize) && 0 != libxsmm_verbosity) {
+          fprintf(stderr, "LIBXSMM ERROR: failed to perform final cleanup!\n");
+        }
         s1 = libxsmm_timer_tick_rtc(); t1 = libxsmm_timer_tick(); /* final timing */
         if (LIBXSMM_FEQ(0, libxsmm_timer_scale) && t0 != t1) {
           const libxsmm_timer_tickint dt = LIBXSMM_DELTA(t0, t1);
@@ -1837,7 +1873,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 #endif
   {
 #if defined(LIBXSMM_DESC_PAD)
-    unsigned int i = LIBXSMM_CONCATENATE(libxsmm_crc32_b, LIBXSMM_HASH_SIZE)(LIBXSMM_HASH_SEED, desc);
+    unsigned int i = LIBXSMM_CRC32(LIBXSMM_HASH_SIZE)(LIBXSMM_HASH_SEED, desc);
 #else
     unsigned int i = libxsmm_crc32(LIBXSMM_HASH_SEED, desc, LIBXSMM_MIN(size, LIBXSMM_HASH_SIZE));
 #endif

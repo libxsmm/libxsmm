@@ -754,8 +754,8 @@ LIBXSMM_API unsigned int libxsmm_get_pid(void)
 LIBXSMM_API unsigned int libxsmm_get_tid(void)
 {
 #if (0 != LIBXSMM_SYNC)
-  static LIBXSMM_TLS unsigned int tid = (unsigned int)(-1);
-  if ((unsigned int)(-1) == tid) {
+  static LIBXSMM_TLS unsigned int tid = 0xFFFFFFFF;
+  if (0xFFFFFFFF == tid) {
     tid = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_thread_count, 1, LIBXSMM_ATOMIC_RELAXED) - 1;
   }
   return tid;

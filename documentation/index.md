@@ -37,9 +37,8 @@ int main(int argc, char* argv[])
     a[i*m*k] = static_cast<value_type>(1) / (i % 25);
     b[i*k*n] = static_cast<value_type>(7) / (i % 75);
   }
-  for (int i = 0; i < batchsize; ++i) { /* C = Ai * Bi */
-    kernel(&a[i*m*k], &b[i*k*n], &c[0]);
-  }
+  /* kernel multiplies and accumulates matrix products: C += Ai * Bi */
+  for (int i = 0; i < batchsize; ++i) kernel(&a[i*m*k], &b[i*k*n], &c[0]);
 }
 ```
 

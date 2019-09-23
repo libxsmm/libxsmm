@@ -46,6 +46,17 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if defined(__TBB)
+# define MALLOC scalable_malloc
+# define FREE scalable_free
+#elif defined(_OPENMP) && defined(LIBXSMM_INTEL_COMPILER)
+# define MALLOC kmp_malloc
+# define FREE kmp_free
+#else
+# define MALLOC malloc
+# define FREE free
+#endif
+
 #if !defined(MAX_MALLOC_MB)
 # define MAX_MALLOC_MB 100
 #endif
@@ -139,11 +150,7 @@ int main(int argc, char* argv[])
       libxsmm_release_scratch(); /* suppress LIBXSMM's termination message about scratch */
     }
 
-#if defined(__TBB)
-    longlife = (0 == enable_longlife ? NULL : scalable_malloc((MAX_MALLOC_MB) << 20));
-#else
-    longlife = (0 == enable_longlife ? NULL : malloc((MAX_MALLOC_MB) << 20));
-#endif
+    longlife = (0 == enable_longlife ? NULL : MALLOC((MAX_MALLOC_MB) << 20));
 #if defined(_OPENMP)
 #   pragma omp parallel for num_threads(nthreads) private(i) reduction(+:d0,nerrors0)
 #endif
@@ -156,11 +163,7 @@ int main(int argc, char* argv[])
         const int k = (i * count + j) % (MAX_MALLOC_N);
         const size_t nbytes = ((size_t)r[k] % (MAX_MALLOC_MB) + 1) << 20;
         const libxsmm_timer_tickint t1 = libxsmm_timer_tick();
-#if defined(__TBB)
-        p[j] = scalable_malloc(nbytes);
-#else
-        p[j] = malloc(nbytes);
-#endif
+        p[j] = MALLOC(nbytes);
         d0 += libxsmm_timer_ncycles(t1, libxsmm_timer_tick());
         if (NULL == p[j]) {
           ++nerrors0;
@@ -169,19 +172,9 @@ int main(int argc, char* argv[])
           memset(p[j], j, nbytes);
         }
       }
-      for (j = 0; j < count; ++j) {
-#if defined(__TBB)
-        scalable_free(p[j]);
-#else
-        free(p[j]);
-#endif
-      }
+      for (j = 0; j < count; ++j) FREE(p[j]);
     }
-#if defined(__TBB)
-    scalable_free(longlife);
-#else
-    free(longlife);
-#endif
+    FREE(longlife);
 
     if (0 != d0 && 0 != d1 && 0 < nallocs) {
       const double dcalls = libxsmm_timer_duration(0, d0);

@@ -69,10 +69,12 @@
       (defined(__amd64__) && 0 != (__amd64__)) || \
       (defined(_M_X64) || defined(_M_AMD64)) || \
       (defined(_WIN64))
+#   define LIBXSMM_UNLIMITED 0xFFFFFFFFFFFFFFFF
 #   define LIBXSMM_BITS 64
 # elif defined(NDEBUG) /* not for production use! */
 #   error LIBXSMM is only supported on a 64-bit platform!
 # else /* JIT-generated code (among other issues) is not supported! */
+#   define LIBXSMM_UNLIMITED 0xFFFFFFFF
 #   define LIBXSMM_BITS 32
 # endif
 #endif
@@ -737,22 +739,6 @@
 #   define LIBXSMM_EXPECT_NOT(RESULT, EXPR) LIBXSMM_ASSERT((RESULT) != (EXPR))
 # endif
 #endif
-#if defined(LIBXSMM_GLIBC_FPTYPES)
-# if defined(__cplusplus)
-#   undef __USE_MISC
-#   if !defined(LIBXSMM_NO_LIBM)
-#     include <math.h>
-#   endif
-#   if !defined(_DEFAULT_SOURCE)
-#     define _DEFAULT_SOURCE
-#   endif
-#   if !defined(_BSD_SOURCE)
-#     define _BSD_SOURCE
-#   endif
-# elif !defined(__PURE_INTEL_C99_HEADERS__)
-#   define __PURE_INTEL_C99_HEADERS__
-# endif
-#endif
 #include <stddef.h>
 #include <stdint.h>
 #if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -760,14 +746,15 @@
 #endif
 
 /* block must be after including above header files */
-#if defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__) < LIBXSMM_VERSION2(2, 26)
+#if (defined(__GLIBC__) && defined(__GLIBC_MINOR__) && LIBXSMM_VERSION2(__GLIBC__, __GLIBC_MINOR__) < LIBXSMM_VERSION2(2, 26)) \
+  || (defined(LIBXSMM_INTEL_COMPILER) && (1802 >= LIBXSMM_INTEL_COMPILER) && !defined(__cplusplus) && defined(__linux__))
 /* _Float128 was introduced with GNU GCC 7.0. */
 # if !defined(_Float128) && !defined(__SIZEOF_FLOAT128__) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__)
 #   define _Float128 __float128
 # endif
 # if !defined(LIBXSMM_GLIBC_FPTYPES) && defined(__GNUC__) && !defined(__cplusplus) && defined(__linux__) \
-  && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) \
-  || defined(LIBXSMM_INTEL_COMPILER)) && 0 /* TODO */
+  && (LIBXSMM_VERSION3(7, 0, 0) > LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__) || \
+     (defined(LIBXSMM_INTEL_COMPILER) && (1802 >= LIBXSMM_INTEL_COMPILER)))
 #   define LIBXSMM_GLIBC_FPTYPES
 # endif
 # if !defined(_Float128X) && defined(LIBXSMM_GLIBC_FPTYPES)
@@ -785,6 +772,29 @@
 # if !defined(_Float64x) && defined(LIBXSMM_GLIBC_FPTYPES)
 #   define _Float64x _Float64
 # endif
+#endif
+
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
+#endif
+#if defined(LIBXSMM_GLIBC_FPTYPES)
+# if defined(__cplusplus)
+#   undef __USE_MISC
+#   if !defined(LIBXSMM_NO_LIBM)
+#     include <math.h>
+#   endif
+#   if !defined(_DEFAULT_SOURCE)
+#     define _DEFAULT_SOURCE
+#   endif
+#   if !defined(_BSD_SOURCE)
+#     define _BSD_SOURCE
+#   endif
+# elif !defined(__PURE_INTEL_C99_HEADERS__)
+#   define __PURE_INTEL_C99_HEADERS__
+# endif
+#endif
+#if defined(LIBXSMM_OFFLOAD_TARGET)
+# pragma offload_attribute(pop)
 #endif
 
 #endif /*LIBXSMM_MACROS_H*/
