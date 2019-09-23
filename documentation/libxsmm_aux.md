@@ -89,7 +89,7 @@ By establishing a pool of "temporary" memory, the cost of repeated allocation an
 Scratch: 173 MB (mallocs=5, pools=1)
 ```
 
-To improve thread-scalability and to avoid frequent memory allocation/deallocation, the scratch memory allocator can be leveraged by [intercepting existing malloc/free calls](documentation/libxsmm_tune.md#intercepting-allocations).
+To improve thread-scalability and to avoid frequent memory allocation/deallocation, the scratch memory allocator can be leveraged by [intercepting existing malloc/free calls](libxsmm_tune.md#intercepted-allocations).
 
 **NOTE**: be careful with scratch memory as it only grows during execution (in between `libxsmm_init` and `libxsmm_finalize` unless `libxsmm_release_scratch` is called). This is true even when `libxsmm_free` is (and should be) used!
 
