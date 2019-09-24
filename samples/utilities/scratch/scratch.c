@@ -111,8 +111,8 @@ int main(int argc, char* argv[])
     const int enable_longlife = ((NULL == longlife_env || 0 == *longlife_env) ? 0 : atoi(longlife_env));
     void* longlife = (0 == enable_longlife ? NULL : malloc_offsite((MAX_MALLOC_MB) << 20));
     libxsmm_timer_tickint d0 = 0, d1 = 0;
-    int scratch = 0, local = 0;
     libxsmm_scratch_info info;
+    int scratch = 0;
 
     libxsmm_init();
 
@@ -143,14 +143,14 @@ int main(int argc, char* argv[])
     }
     libxsmm_free(longlife);
     if (EXIT_SUCCESS == libxsmm_get_scratch_info(&info) && 0 < info.size) {
-      scratch = (int)(1.0 * info.size / (1ULL << 20) + 0.5);
-      local = (int)(1.0 * info.local / (1ULL << 20) + 0.5);
-      fprintf(stdout, "\nScratch: %i+%i MB (mallocs=%lu, pools=%u)\n",
-        scratch, local, (unsigned long int)info.nmallocs, info.npools);
+      scratch = (int)(1.0 * LIBXSMM_MAX(info.size, info.local) / (1ULL << 20) + 0.5);
+      fprintf(stdout, "\nScratch: %i MB (mallocs=%lu, pools=%u)\n",
+        scratch, (unsigned long int)info.nmallocs, info.npools);
       libxsmm_release_scratch(); /* suppress LIBXSMM's termination message about scratch */
     }
 
     longlife = (0 == enable_longlife ? NULL : MALLOC((MAX_MALLOC_MB) << 20));
+    if (NULL == longlife) max_size += MAX_MALLOC_MB;
 #if defined(_OPENMP)
 #   pragma omp parallel for num_threads(nthreads) private(i) reduction(+:d0,nerrors0)
 #endif
@@ -185,8 +185,7 @@ int main(int argc, char* argv[])
       fprintf(stdout, "\tlibxsmm scratch calls/s: %.1f kHz\n", scratch_freq);
       fprintf(stdout, "Malloc: %i MB\n", max_size);
       fprintf(stdout, "\tstd.malloc+free calls/s: %.1f kHz\n", malloc_freq);
-      fprintf(stdout, "Fair (size vs. speed): %.1fx\n",
-        max_size * speedup / LIBXSMM_MAX(scratch + local, max_size));
+      fprintf(stdout, "Fair (size vs. speed): %.1fx\n", max_size * speedup / scratch);
       fprintf(stdout, "Scratch Speedup: %.1fx\n", speedup);
     }
   }
