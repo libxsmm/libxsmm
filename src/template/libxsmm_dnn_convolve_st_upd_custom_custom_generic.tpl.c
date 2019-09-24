@@ -316,6 +316,12 @@ if (handle->upd_use_batchreduce == 0 && handle->upd_linearized_tasklist == 0) {
       my_R_start = LIBXSMM_MIN( my_in_tile_id * r_per_tile, handle->desc.R );
       my_R_end = LIBXSMM_MIN( (my_in_tile_id+1) * r_per_tile, handle->desc.R );
     }
+    if (handle->desc.threads == 92 && handle->desc.N == 92 && handle->desc.C == 512 && handle->desc.K == 512 && handle->ofh == 7 && handle->desc.u == 1 && handle->desc.R == 3) {
+      my_ofm_start = LIBXSMM_MIN( my_in_tile_id * ofms_per_thread, handle->blocksofm  );
+      my_ofm_end = LIBXSMM_MIN( (my_in_tile_id+1) * ofms_per_thread, handle->blocksofm  );
+      my_ifm_start = 0;
+      my_ifm_end = handle->blocksifm;
+    }
     block_ofm = my_ofm_end-my_ofm_start+1;
     block_ifm = my_ifm_end-my_ifm_start+1;
     img_block_size = my_img_end - my_img_start;

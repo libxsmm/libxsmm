@@ -610,6 +610,12 @@ LIBXSMM_API_INTERN int libxsmm_dnn_convolution_setup_weight_copies_upd( libxsmm_
   if (handle->ofw <= 14) {
     result = 9;
   }
+  if (handle->ofw == 14 && handle->desc.N == 92 && handle->desc.threads == 92) {
+    result = 23;
+  }
+  if (handle->ofw == 7 && handle->desc.N == 92 && handle->desc.threads == 92 && handle->desc.R == 3 && handle->desc.S == 3 && handle->desc.u == 1 && handle->desc.v == 1) {
+    result = 23;
+  }
   while (handle->desc.threads % result != 0) {
     result--;
   }
@@ -637,6 +643,9 @@ LIBXSMM_API_INTERN int libxsmm_dnn_convolution_setup_linearized_tasklist_upd( li
   /* Use linearized task-list (i.e. no reduction) only if small images and large filters */
   if (handle->ofh <= 10 && handle->ofw <= 10) {
     result = 1;
+  }
+  if (handle->ofw == 7 && handle->desc.N == 92 && handle->desc.threads == 92 && handle->desc.R == 3 && handle->desc.S == 3 && handle->desc.u == 1 && handle->desc.v == 1) {
+    result = 0;
   }
 #if 0
   if ((handle->blocksofm * handle->blocksifm * handle->desc.R * handle->desc.S > (handle->desc.threads * 4)) && (handle->ofh <= 56)) {
