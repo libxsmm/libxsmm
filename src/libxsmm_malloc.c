@@ -165,7 +165,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_HOOK_KMP) && 0
 # define LIBXSMM_MALLOC_HOOK_KMP
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_QKMALLOC) && 1
+#if !defined(LIBXSMM_MALLOC_HOOK_QKMALLOC) && 0
 # define LIBXSMM_MALLOC_HOOK_QKMALLOC
 #endif
 #if !defined(LIBXSMM_MALLOC_HOOK_IMALLOC) && 1
@@ -458,7 +458,7 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
       }
 #endif
     }
-    { /* update statistics */
+    if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* update statistics */
       if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) { /* scratch */
         if (0 == (LIBXSMM_MALLOC_FLAG_PRIVATE & flags)) { /* public */
           LIBXSMM_ASSERT(alloc_size <= internal_malloc_public_cur);
@@ -608,7 +608,7 @@ LIBXSMM_API_INTERN void internal_scratch_free(const void* memory, internal_mallo
 LIBXSMM_API_INTERN void internal_scratch_malloc(void** /*memory*/, size_t /*size*/, size_t /*alignment*/, int /*flags*/, const void* /*caller*/);
 LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size_t alignment, int flags, const void* caller)
 {
-  LIBXSMM_ASSERT(NULL != memory);
+  LIBXSMM_ASSERT(NULL != memory && 0 == (LIBXSMM_MALLOC_FLAG_X & flags));
   if (0 == (LIBXSMM_MALLOC_FLAG_REALLOC & flags) || NULL == *memory) {
     static int error_once = 0;
     size_t local_size = 0;
@@ -861,6 +861,7 @@ LIBXSMM_APIVAR(internal_malloc_struct internal_malloc);
 LIBXSMM_API_INTERN void* internal_memalign_malloc(size_t /*alignment*/, size_t /*size*/);
 LIBXSMM_API_INTERN void* internal_memalign_malloc(size_t alignment, size_t size)
 {
+  LIBXSMM_UNUSED(alignment);
   LIBXSMM_ASSERT(NULL != internal_malloc.malloc.dlsym);
   return internal_malloc.malloc.ptr(size);
 }
@@ -1166,18 +1167,20 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t
 
 LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
 {
+  if (NULL != ptr) {
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (NULL != internal_malloc.free.ptr) {
-    LIBXSMM_ASSERT(free != internal_malloc.free.ptr);
-    internal_malloc.free.ptr(ptr);
-  }
-  else
+    if (NULL != internal_malloc.free.ptr) {
+      LIBXSMM_ASSERT(free != internal_malloc.free.ptr);
+      internal_malloc.free.ptr(ptr);
+    }
+    else
 #endif
 #if defined(LIBXSMM_GLIBC)
-  __libc_free(ptr);
+    __libc_free(ptr);
 #else
-  free(ptr);
+    free(ptr);
 #endif
+  }
 }
 
 #if (defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC))
@@ -1243,7 +1246,8 @@ LIBXSMM_API void* __wrap_calloc(size_t num, size_t size)
 LIBXSMM_API_INTERN void* internal_realloc_hook(void* ptr, size_t size, const void* caller)
 {
   void* result;
-  if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind
+  if ( 1 < LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED)
+    || 0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind
     || (internal_malloc_limit[0] > size)
     || (internal_malloc_limit[1] < size && 0 != internal_malloc_limit[1]))
   {
@@ -1275,8 +1279,19 @@ LIBXSMM_API void* __wrap_realloc(void* ptr, size_t size)
 LIBXSMM_API_INTERN void internal_free_hook(void* ptr, const void* caller)
 {
   LIBXSMM_UNUSED(caller);
-  if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind) {
-    __real_free(ptr);
+  if ( 1 < LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED)
+    || 0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind)
+  {
+    if (2 <= libxsmm_ninit) {
+      __real_free(ptr);
+    }
+    else { /* prior to completed initialization */
+#if defined(LIBXSMM_GLIBC)
+      __libc_free(ptr);
+#else
+      free(ptr);
+#endif
+    }
   }
   else { /* recognize pointers not issued by LIBXSMM */
     libxsmm_free(ptr);
@@ -1999,23 +2014,24 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
           fprintf(stderr, "LIBXSMM ERROR: incorrect extraneous data specification!\n");
           /* no EXIT_FAILURE because valid buffer is returned */
         }
-        /* update statistics */
-        if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) { /* scratch */
-          if (0 == (LIBXSMM_MALLOC_FLAG_PRIVATE & flags)) { /* public */
-            const size_t watermark = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)(
-              &internal_malloc_public_cur, alloc_size, LIBXSMM_ATOMIC_RELAXED);
-            if (internal_malloc_public_max < watermark) internal_malloc_public_max = watermark; /* accept data-race */
+        if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* update statistics */
+          if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) { /* scratch */
+            if (0 == (LIBXSMM_MALLOC_FLAG_PRIVATE & flags)) { /* public */
+              const size_t watermark = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)(
+                &internal_malloc_public_cur, alloc_size, LIBXSMM_ATOMIC_RELAXED);
+              if (internal_malloc_public_max < watermark) internal_malloc_public_max = watermark; /* accept data-race */
+            }
+            else { /* private */
+              const size_t watermark = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)(
+                &internal_malloc_private_cur, alloc_size, LIBXSMM_ATOMIC_RELAXED);
+              if (internal_malloc_private_max < watermark) internal_malloc_private_max = watermark; /* accept data-race */
+            }
           }
-          else { /* private */
+          else { /* account for local */
             const size_t watermark = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)(
-              &internal_malloc_private_cur, alloc_size, LIBXSMM_ATOMIC_RELAXED);
-            if (internal_malloc_private_max < watermark) internal_malloc_private_max = watermark; /* accept data-race */
+              &internal_malloc_local_cur, alloc_size, LIBXSMM_ATOMIC_RELAXED);
+            if (internal_malloc_local_max < watermark) internal_malloc_local_max = watermark; /* accept data-race */
           }
-        }
-        else { /* account for local */
-          const size_t watermark = LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_ADD_FETCH, LIBXSMM_BITS)(
-            &internal_malloc_local_cur, alloc_size, LIBXSMM_ATOMIC_RELAXED);
-          if (internal_malloc_local_max < watermark) internal_malloc_local_max = watermark; /* accept data-race */
         }
         /* keep allocation function on record */
         if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
