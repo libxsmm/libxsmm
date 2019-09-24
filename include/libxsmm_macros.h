@@ -136,6 +136,11 @@
 #   define LIBXSMM_UNPACKED
 # endif
 #endif
+#if defined(LIBXSMM_UNPACKED)
+# define LIBXSMM_PAD(EXPR)
+#else /* no braces around EXPR */
+# define LIBXSMM_PAD(EXPR) EXPR;
+#endif
 
 /* LIBXSMM_ATTRIBUTE_USED: mark library functions as used to avoid warning */
 #if defined(__GNUC__) || (defined(LIBXSMM_INTEL_COMPILER) && !defined(_WIN32))

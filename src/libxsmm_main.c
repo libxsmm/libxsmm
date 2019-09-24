@@ -84,9 +84,11 @@
 #if !defined(LIBXSMM_CACHE_PAD) && 1
 # define LIBXSMM_CACHE_PAD
 #endif
-#if !defined(LIBXSMM_CACHE_GLOBAL) && \
-    !defined(_CRAYC) /* investigate */
+#if !defined(LIBXSMM_CACHE_GLOBAL) && 1
 # define LIBXSMM_CACHE_GLOBAL
+#endif
+#if !defined(LIBXSMM_CACHE_CLEAR) && 0
+# define LIBXSMM_CACHE_CLEAR
 #endif
 #if !defined(LIBXSMM_ENABLE_DEREG) && 0
 # define LIBXSMM_ENABLE_DEREG
@@ -183,7 +185,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_cache_entry_type {
   libxsmm_descriptor keys[LIBXSMM_CACHE_MAXSIZE];
   libxsmm_code_pointer code[LIBXSMM_CACHE_MAXSIZE];
-# if !defined(LIBXSMM_CACHE_GLOBAL)
+# if !defined(LIBXSMM_CACHE_GLOBAL) || defined(LIBXSMM_CACHE_CLEAR)
   unsigned int id; /* to invalidate */
 # endif
   unsigned char size, hit;
@@ -1060,10 +1062,16 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       /* make internal registry globally unavailable */
       LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);
       internal_registry_keys = NULL;
+#if !defined(NDEBUG)
+      internal_registry = NULL;
+#endif
       libxsmm_xfree(registry_keys, 0/*no check*/);
       libxsmm_xfree(registry, 0/*no check*/);
 #if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       libxsmm_xfree(internal_cache_buffer, 0/*no check*/);
+# if !defined(NDEBUG)
+      internal_cache_buffer = NULL;
+# endif
 #endif
       }
 #if (0 != LIBXSMM_SYNC) /* LIBXSMM_LOCK_RELEASE, but no LIBXSMM_LOCK_DESTROY */
@@ -1841,27 +1849,25 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
   internal_pad_descriptor(desc, size);
   LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
-  LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE), xdesc, &cache->entry.keys,
+  LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE), xdesc, cache->entry.keys,
     LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache->entry.hit, cache->entry.size);
 #   else
   internal_pad_descriptor(desc, size);
-  cache_index = (unsigned char)libxsmm_diff_n(desc, &cache->entry.keys,
+  cache_index = (unsigned char)libxsmm_diff_n(desc, cache->entry.keys,
     LIBXSMM_DIFF_SIZE, LIBXSMM_DESCRIPTOR_MAXSIZE, cache->entry.hit, cache->entry.size);
 #   endif
-# else
-#   if defined(LIBXSMM_DESC_INLINE)
+# elif defined(LIBXSMM_DESC_INLINE)
   LIBXSMM_DIFF_DECL(LIBXSMM_DIFF_SIZE, xdesc);
   LIBXSMM_DIFF_LOAD(LIBXSMM_DIFF_SIZE, xdesc, desc);
-  LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE), xdesc, &cache->entry.keys,
+  LIBXSMM_DIFF_N(unsigned char, cache_index, LIBXSMM_DIFF(LIBXSMM_DIFF_SIZE), xdesc, cache->entry.keys,
     LIBXSMM_MIN(size, LIBXSMM_DIFF_SIZE), LIBXSMM_DESCRIPTOR_MAXSIZE, cache->entry.hit, cache->entry.size);
-#   else
+# else
   LIBXSMM_ASSERT(NULL != desc);
-  cache_index = (unsigned char)libxsmm_diff_n(desc, &cache->entry.keys,
+  cache_index = (unsigned char)libxsmm_diff_n(desc, cache->entry.keys,
     LIBXSMM_MIN(size, LIBXSMM_DIFF_SIZE), LIBXSMM_DESCRIPTOR_MAXSIZE, cache->entry.hit, cache->entry.size);
-#   endif
 # endif
   if (
-# if !defined(LIBXSMM_CACHE_GLOBAL)
+# if !defined(LIBXSMM_CACHE_GLOBAL) || defined(LIBXSMM_CACHE_CLEAR)
     cache->entry.id == libxsmm_ninit &&
 # endif
     cache_index < cache->entry.size)
@@ -2031,7 +2037,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
     } while (0 != diff);
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
     if (NULL != flux_entry.ptr_const) { /* keep code version on record (cache) */
-# if !defined(LIBXSMM_CACHE_GLOBAL)
+# if !defined(LIBXSMM_CACHE_GLOBAL) || defined(LIBXSMM_CACHE_CLEAR)
       if (cache->entry.id == libxsmm_ninit)
 # endif
       {
@@ -2043,7 +2049,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
           INTERNAL_FIND_CODE_CACHE_EVICT(cache_index, cache->entry.size, cache->entry.hit);
         }
       }
-# if !defined(LIBXSMM_CACHE_GLOBAL)
+# if !defined(LIBXSMM_CACHE_GLOBAL) || defined(LIBXSMM_CACHE_CLEAR)
       else { /* invalidate */
         LIBXSMM_ASSERT(0 == cache_index);
         cache->entry.id = libxsmm_ninit;
