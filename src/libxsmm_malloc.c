@@ -390,7 +390,7 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
   char* buffer;
   size_t size;
   LIBXSMM_ASSERT(NULL != memory && NULL != info);
-  buffer = info->pointer;
+  buffer = (char*)info->pointer;
   flags = info->flags;
   size = info->size;
 #if !defined(LIBXSMM_BUILD) /* sanity check */
