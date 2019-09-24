@@ -2293,6 +2293,9 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
   libxsmm_xmmfunction result;
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
+#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+    memset(&wrap, 0, sizeof(*descriptor));
+#endif
     wrap.gemm.desc = *descriptor;
     wrap.kind = LIBXSMM_KERNEL_KIND_MATMUL;
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
@@ -2473,6 +2476,9 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_de
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
     LIBXSMM_INIT
+#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+    memset(&wrap, 0, sizeof(*descriptor));
+#endif
     wrap.mcopy.desc = *descriptor;
     wrap.kind = LIBXSMM_KERNEL_KIND_MCOPY;
 #if defined(_WIN32) || defined(__CYGWIN__) /* TODO: full support for Windows calling convention */
@@ -2493,6 +2499,9 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_de
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
     LIBXSMM_INIT
+#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+    memset(&wrap, 0, sizeof(*descriptor));
+#endif
     wrap.trans.desc = *descriptor;
     wrap.kind = LIBXSMM_KERNEL_KIND_TRANS;
     result = internal_find_code(&wrap, sizeof(*descriptor)).xtrans;
@@ -2510,6 +2519,9 @@ LIBXSMM_API libxsmm_pgemm_xfunction libxsmm_dispatch_pgemm(const libxsmm_pgemm_d
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
     LIBXSMM_INIT
+#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+    memset(&wrap, 0, sizeof(*descriptor));
+#endif
     wrap.pgemm.desc = *descriptor;
     wrap.kind = LIBXSMM_KERNEL_KIND_PGEMM;
     result = internal_find_code(&wrap, sizeof(*descriptor)).xpgemm;
@@ -2527,6 +2539,9 @@ LIBXSMM_API libxsmm_getrf_xfunction libxsmm_dispatch_getrf(const libxsmm_getrf_d
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
     LIBXSMM_INIT
+#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+    memset(&wrap, 0, sizeof(*descriptor));
+#endif
     wrap.getrf.desc = *descriptor;
     wrap.kind = LIBXSMM_KERNEL_KIND_GETRF;
     result = internal_find_code(&wrap, sizeof(*descriptor)).xgetrf;
@@ -2544,6 +2559,9 @@ LIBXSMM_API libxsmm_trmm_xfunction libxsmm_dispatch_trmm(const libxsmm_trmm_desc
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
     LIBXSMM_INIT
+#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+    memset(&wrap, 0, sizeof(*descriptor));
+#endif
     wrap.trmm.desc = *descriptor;
     wrap.kind = LIBXSMM_KERNEL_KIND_TRMM;
     result = internal_find_code(&wrap, sizeof(*descriptor)).xtrmm;
@@ -2561,6 +2579,9 @@ LIBXSMM_API libxsmm_trsm_xfunction libxsmm_dispatch_trsm(const libxsmm_trsm_desc
   if (NULL != descriptor) {
     libxsmm_descriptor wrap;
     LIBXSMM_INIT
+#if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
+    memset(&wrap, 0, sizeof(*descriptor));
+#endif
     wrap.trsm.desc = *descriptor;
     wrap.kind = LIBXSMM_KERNEL_KIND_TRSM;
     result = internal_find_code(&wrap, sizeof(*descriptor)).xtrsm;
