@@ -387,16 +387,17 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
   static int error_once = 0;
 #endif
   int result = EXIT_SUCCESS, flags;
-  char* buffer;
+  void* buffer;
   size_t size;
   LIBXSMM_ASSERT(NULL != memory && NULL != info);
-  buffer = (char*)info->pointer;
+  buffer = info->pointer;
   flags = info->flags;
   size = info->size;
 #if !defined(LIBXSMM_BUILD) /* sanity check */
   if (NULL != buffer || 0 == size)
 #endif
   {
+    const size_t alloc_size = size + (((const char*)memory) - ((const char*)buffer));
     LIBXSMM_ASSERT(NULL != buffer || 0 == size);
     if (0 == (LIBXSMM_MALLOC_FLAG_MMAP & flags)) {
       if (NULL != info->free.function) {
@@ -430,7 +431,6 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
       result = (NULL == buffer || FALSE != VirtualFree(buffer, 0, MEM_RELEASE)) ? EXIT_SUCCESS : EXIT_FAILURE;
 #else /* !_WIN32 */
       {
-        const size_t alloc_size = size + (((const char*)memory) - ((const char*)buffer));
         void* const reloc = info->reloc;
         if (0 != munmap(buffer, alloc_size)) {
           if (0 != libxsmm_verbosity /* library code is expected to be mute */
@@ -458,8 +458,7 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
       }
 #endif
     }
-    /* update statistics */
-    { const size_t alloc_size = size + ((const char*)memory - buffer);
+    { /* update statistics */
       if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) { /* scratch */
         if (0 == (LIBXSMM_MALLOC_FLAG_PRIVATE & flags)) { /* public */
           LIBXSMM_ASSERT(alloc_size <= internal_malloc_public_cur);
