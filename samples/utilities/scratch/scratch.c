@@ -49,7 +49,7 @@
 #if defined(__TBB)
 # define MALLOC scalable_malloc
 # define FREE scalable_free
-#elif defined(_OPENMP) && defined(LIBXSMM_INTEL_COMPILER)
+#elif defined(_OPENMP) && defined(LIBXSMM_INTEL_COMPILER) && (1901 > LIBXSMM_INTEL_COMPILER)
 # define MALLOC kmp_malloc
 # define FREE kmp_free
 #else
