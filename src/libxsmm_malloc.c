@@ -1282,16 +1282,7 @@ LIBXSMM_API_INTERN void internal_free_hook(void* ptr, const void* caller)
   if ( 1 < LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED)
     || 0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind)
   {
-    if (2 <= libxsmm_ninit) {
-      __real_free(ptr);
-    }
-    else { /* prior to completed initialization */
-#if defined(LIBXSMM_GLIBC)
-      __libc_free(ptr);
-#else
-      free(ptr);
-#endif
-    }
+    __real_free(ptr);
   }
   else { /* recognize pointers not issued by LIBXSMM */
     libxsmm_free(ptr);
