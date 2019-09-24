@@ -219,7 +219,7 @@ gcc [...] -Wl,--wrap=dgemm_,--wrap=sgemm_ \
           /path/to/your_regular_blas.a
 ```
 
-In addition, existing [BLAS(-like) batch-calls](blas-batch-interface) can be intercepted as well:
+In addition, existing [BLAS(-like) batch-calls](#blas-batch-interface) can be intercepted as well:
 
 ```bash
 gcc [...] -Wl,--wrap=dgemm_batch_,--wrap=sgemm_batch_ \

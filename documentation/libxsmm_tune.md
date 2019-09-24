@@ -2,14 +2,14 @@
 
 ### Intercepted Allocations<a name="scalable_malloc"></a>
 
-To improve thread-scalability and to avoid frequent memory allocation/deallocation, the [scratch memory allocator](documentation/libxsmm_aux.md#memory-allocation) can be leveraged by intercepting existing malloc/free calls. This experimental facility is built into LIBXSMM's main library and can be enabled using an environment variable (`LIBXSMM_MALLOC=1`) or an API. The latter also takes an optional lower or an optional upper bound to select malloc-calls based on the size of the allocation which is complemented by a separate environment variable (e.g., LIBXSMM_MALLOC_LIMIT=4m:1g).
+To improve thread-scalability and to avoid frequent memory allocation/deallocation, the [scratch memory allocator](libxsmm_aux.md#memory-allocation) can be leveraged by intercepting existing malloc/free calls. This experimental facility is built into LIBXSMM's main library and can be enabled using an environment variable (`LIBXSMM_MALLOC=1`) or an API. The latter also takes an optional lower or an optional upper bound to select malloc-calls based on the size of the allocation which is complemented by a separate environment variable (e.g., LIBXSMM_MALLOC_LIMIT=4m:1g).
 
 ```C
 void libxsmm_set_malloc(int enabled, const size_t* lo, const size_t* hi);
 int libxsmm_get_malloc(size_t* lo, size_t* hi);
 ```
 
-The latter function may return zero even if there was an attempt to enable this facility (limitation/experimental implementation). Please note, the regular [Scratch Memory API](documentation/libxsmm_aux.md#memory-allocation) (e.g., `libxsmm_[get|set]_scratch_limit`) and the related environment variables can apply as well (`LIBXSMM_SCRATCH_LIMIT`, `LIBXSMM_SCRATCH_POOLS`, `LIBXSMM_SCRATCH_SCALE`). If intercepted memory allocations are enabled, the scratch limit is adjusted by default to allow unlimited growth of the scratch domain. Further, an increased verbosity level can help to gain some insight (`LIBXSMM_VERBOSE=3`).
+The latter function may return zero even if there was an attempt to enable this facility (limitation/experimental implementation). Please note, the regular [Scratch Memory API](libxsmm_aux.md#memory-allocation) (e.g., `libxsmm_[get|set]_scratch_limit`) and the related environment variables can apply as well (`LIBXSMM_SCRATCH_LIMIT`, `LIBXSMM_SCRATCH_POOLS`, `LIBXSMM_SCRATCH_SCALE`). If intercepted memory allocations are enabled, the scratch limit is adjusted by default to allow unlimited growth of the scratch domain. Further, an increased verbosity level can help to gain some insight (`LIBXSMM_VERBOSE=3`).
 
 Intercepting malloc/free is supported by linking LIBXSMM's static or shared main library. The latter of which can be used to intercept calls of an existing and unchanged binary (LD_PRELOAD mechanism). To statically link with LIBXSMM and to intercept existing malloc/free calls, the following changes to the application's link stage are recommended:
 
