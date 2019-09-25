@@ -647,6 +647,9 @@ LIBXSMM_API_INTERN int libxsmm_dnn_convolution_setup_linearized_tasklist_upd( li
   if (handle->ofw == 7 && handle->desc.N == 92 && handle->desc.threads == 92 && handle->desc.R == 3 && handle->desc.S == 3 && handle->desc.u == 1 && handle->desc.v == 1) {
     result = 0;
   }
+  if (handle->ofh == 14  && handle->ofw == 14 && handle->desc.N == 23 && handle->desc.threads == 23) {
+    result = 1;
+  }
 #if 0
   if ((handle->blocksofm * handle->blocksifm * handle->desc.R * handle->desc.S > (handle->desc.threads * 4)) && (handle->ofh <= 56)) {
     result = 1;
