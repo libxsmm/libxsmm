@@ -113,6 +113,11 @@ ASNEEDED ?= 0
 # 1: build according to STATIC=0 and STATIC=1
 SHARED ?= 0
 
+# -1: support intercepted malloc (default: disabled at runtime)
+#  0: disable intercepted malloc at compile-time
+# >0: enable intercepted malloc
+MALLOC ?= -1
+
 # Determines the kind of routine called for intercepted GEMMs
 # >=1 and odd : sequential and non-tiled (small problem sizes only)
 # >=2 and even: parallelized and tiled (all problem sizes)
@@ -624,7 +629,7 @@ ifneq (,$(PYTHON))
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(INDICES) > $@
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) > $@
 endif
 
 .PHONY: cheader
@@ -656,7 +661,7 @@ $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(INDICES) | \
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) | \
 	sed "/ATTRIBUTES OFFLOAD:MIC/d" > $@
 else
 .PHONY: $(INCDIR)/libxsmm.f

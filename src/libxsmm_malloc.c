@@ -147,7 +147,8 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_CALLER_LEVEL 3
 #endif
 
-#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && \
+#if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && \
+  defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && \
   defined(LIBXSMM_GLIBC) && !defined(_CRAYC) && !defined(__TRACE) /* TODO */
 # define LIBXSMM_MALLOC_HOOK_DYNAMIC
 # if defined(LIBXSMM_OFFLOAD_TARGET)
@@ -158,8 +159,9 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #   pragma offload_attribute(pop)
 # endif
 #endif
-#if !defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(_WIN32) && \
-  defined(LIBXSMM_GLIBC) /* TODO */
+#if !defined(LIBXSMM_MALLOC_HOOK_STATIC) && \
+  defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC) && \
+  !defined(_WIN32) && defined(LIBXSMM_GLIBC) /* TODO */
 # define LIBXSMM_MALLOC_HOOK_STATIC
 #endif
 #if !defined(LIBXSMM_MALLOC_HOOK_KMP) && 0
@@ -2544,8 +2546,8 @@ LIBXSMM_API void libxsmm_set_malloc(int enabled, const size_t* lo, const size_t*
 #if !(defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) || defined(LIBXSMM_INTERCEPT_DYNAMIC))
   LIBXSMM_UNUSED(enabled);
   internal_malloc_kind = 0;
-#else
-  internal_malloc_kind = enabled;
+#elif defined(LIBXSMM_MALLOC) && (0 < LIBXSMM_MALLOC)
+  internal_malloc_kind = LIBXSMM_MALLOC;
 #endif
   /* setup lo/hi after internal_malloc_kind! */
   if (NULL != lo) internal_malloc_limit[0] = *lo;

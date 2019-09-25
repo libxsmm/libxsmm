@@ -49,6 +49,7 @@ if __name__ == "__main__":
         cacheline = 64
         prefetch = -1
         wrap = 1
+        malloc = -1
         mnklist = list()
 
         # optional argument(s)
@@ -77,7 +78,9 @@ if __name__ == "__main__":
         if 13 < argc:
             wrap = int(sys.argv[13])
         if 14 < argc:
-            mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[14:], 0))
+            malloc = int(sys.argv[14])
+        if 15 < argc:
+            mnklist = sorted(libxsmm_utilities.load_mnklist(sys.argv[15:], 0))
 
         version, branch, realversion = libxsmm_utilities.version_branch()
         major, minor, update, patch = libxsmm_utilities.version_numbers(
@@ -125,6 +128,7 @@ if __name__ == "__main__":
             "ALPHA": alpha,
             "BETA": beta,
             "WRAP": wrap,
+            "MALLOC": malloc,
             "SYNC": [0, 1][0 != sync],
             "JIT": [0, 1][0 != jit],
             "LIBXSMM_OFFLOAD_BUILD": ["", "\n#define LIBXSMM_OFFLOAD_BUILD"][
