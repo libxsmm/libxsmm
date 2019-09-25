@@ -2440,7 +2440,7 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
   if (NULL != lock) {
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, lock);
   }
-# if !defined(LIBXSMM_MALLOC_DELETE_SAFE)
+# if defined(LIBXSMM_MALLOC_DELETE_SAFE)
   if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind)
 # endif
   {
