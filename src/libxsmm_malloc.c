@@ -2547,7 +2547,10 @@ LIBXSMM_API void libxsmm_set_malloc(int enabled, const size_t* lo, const size_t*
   LIBXSMM_UNUSED(enabled);
   internal_malloc_kind = 0;
 #elif defined(LIBXSMM_MALLOC) && (0 < LIBXSMM_MALLOC)
+  LIBXSMM_UNUSED(enabled);
   internal_malloc_kind = LIBXSMM_MALLOC;
+#else
+  internal_malloc_kind = enabled;
 #endif
   /* setup lo/hi after internal_malloc_kind! */
   if (NULL != lo) internal_malloc_limit[0] = *lo;
