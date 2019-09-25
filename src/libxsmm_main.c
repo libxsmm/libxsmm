@@ -453,15 +453,16 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
 
 LIBXSMM_API_INTERN const char* libxsmm_format_size(size_t nbytes, const char scale[], const char* unit, int base)
 {
-  static LIBXSMM_TLS char result[32];
+  static LIBXSMM_TLS char formatted_size[32];
   const int len = (NULL != scale ? ((int)strlen(scale)) : 0);
   const int m = LIBXSMM_INTRINSICS_BITSCANBWD64(nbytes) / base, n = LIBXSMM_MIN(m, len);
   int i;
-  result[0] = 0; /* clear */
+  formatted_size[0] = 0; /* clear */
   LIBXSMM_ASSERT(NULL != unit && 0 <= base);
   for (i = 0; i < n; ++i) nbytes >>= base;
-  LIBXSMM_SNPRINTF(result, sizeof(result), "%i %c%s", (int)nbytes, 0 < n ? scale[n-1] : *unit, 0 < n ? unit : "");
-  return result;
+  LIBXSMM_SNPRINTF(formatted_size, sizeof(formatted_size), "%i %c%s",
+    (int)nbytes, 0 < n ? scale[n-1] : *unit, 0 < n ? unit : "");
+  return formatted_size;
 }
 
 
