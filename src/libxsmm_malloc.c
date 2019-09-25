@@ -185,6 +185,9 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_HOOK_CHECK) && 0
 # define LIBXSMM_MALLOC_HOOK_CHECK 1
 #endif
+#if !defined(LIBXSMM_MALLOC_HOOK_INIT) && 0
+# define LIBXSMM_MALLOC_HOOK_INIT
+#endif
 
 #if !defined(LIBXSMM_MALLOC_CRC_LIGHT) && !defined(_DEBUG) && 1
 # define LIBXSMM_MALLOC_CRC_LIGHT
@@ -452,18 +455,18 @@ LIBXSMM_API_INTERN int internal_xfree(const void* memory, internal_malloc_info_t
     if (0 == (LIBXSMM_MALLOC_FLAG_X & flags)) { /* update statistics */
       if (0 == (LIBXSMM_MALLOC_FLAG_PRIVATE & flags)) { /* public */
         if (0 != (LIBXSMM_MALLOC_FLAG_SCRATCH & flags)) { /* scratch */
-          LIBXSMM_ASSERT(alloc_size <= internal_malloc_public_cur);
+          LIBXSMM_ASSERT(alloc_size <= (size_t)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(&internal_malloc_public_cur, LIBXSMM_ATOMIC_RELAXED));
           LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_SUB_FETCH, LIBXSMM_BITS)(
             &internal_malloc_public_cur, alloc_size, LIBXSMM_ATOMIC_RELAXED);
         }
         else { /* local */
-          LIBXSMM_ASSERT(alloc_size <= internal_malloc_local_cur);
+          LIBXSMM_ASSERT(alloc_size <= (size_t)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(&internal_malloc_local_cur, LIBXSMM_ATOMIC_RELAXED));
           LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_SUB_FETCH, LIBXSMM_BITS)(
             &internal_malloc_local_cur, alloc_size, LIBXSMM_ATOMIC_RELAXED);
         }
       }
       else { /* private */
-        LIBXSMM_ASSERT(alloc_size <= internal_malloc_private_cur);
+        LIBXSMM_ASSERT(alloc_size <= (size_t)LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_LOAD, LIBXSMM_BITS)(&internal_malloc_private_cur, LIBXSMM_ATOMIC_RELAXED));
         LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_SUB_FETCH, LIBXSMM_BITS)(
           &internal_malloc_private_cur, alloc_size, LIBXSMM_ATOMIC_RELAXED);
       }
@@ -874,7 +877,12 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_memalign(size_t alignment
 {
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (NULL != internal_malloc.memalign.ptr && 2 <= libxsmm_ninit) {
+  if (
+# if defined(LIBXSMM_MALLOC_HOOK_INIT)
+    2 <= libxsmm_ninit &&
+# endif
+    NULL != internal_malloc.memalign.ptr)
+  {
     result = internal_malloc.memalign.ptr(alignment, size);
   }
   else
@@ -896,7 +904,12 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_malloc(size_t size)
   result = __real_memalign(alignment, size);
 #else
 # if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (NULL != internal_malloc.malloc.ptr && 2 <= libxsmm_ninit) {
+  if (
+#   if defined(LIBXSMM_MALLOC_HOOK_INIT)
+    2 <= libxsmm_ninit &&
+#   endif
+    NULL != internal_malloc.malloc.ptr)
+  {
     LIBXSMM_ASSERT(malloc != internal_malloc.malloc.ptr);
     result = internal_malloc.malloc.ptr(size);
   }
@@ -917,7 +930,12 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_calloc(size_t num, size_t
 {
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (NULL != internal_malloc.calloc.ptr && 2 <= libxsmm_ninit) {
+  if (
+# if defined(LIBXSMM_MALLOC_HOOK_INIT)
+    2 <= libxsmm_ninit &&
+# endif
+    NULL != internal_malloc.calloc.ptr)
+  {
     LIBXSMM_ASSERT(calloc != internal_malloc.calloc.ptr);
     result = internal_malloc.calloc.ptr(num, size);
   }
@@ -938,7 +956,12 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void* __real_realloc(void* ptr, size_t
 {
   void* result;
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-  if (NULL != internal_malloc.realloc.ptr && 2 <= libxsmm_ninit) {
+  if (
+# if defined(LIBXSMM_MALLOC_HOOK_INIT)
+    2 <= libxsmm_ninit &&
+# endif
+    NULL != internal_malloc.realloc.ptr)
+  {
     LIBXSMM_ASSERT(realloc != internal_malloc.realloc.ptr);
     result = internal_malloc.realloc.ptr(ptr, size);
   }
@@ -958,7 +981,12 @@ LIBXSMM_API_INTERN LIBXSMM_ATTRIBUTE_WEAK void __real_free(void* ptr)
 {
   if (NULL != ptr) {
 #if defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)
-    if (NULL != internal_malloc.free.ptr && 2 <= libxsmm_ninit) {
+    if (
+# if defined(LIBXSMM_MALLOC_HOOK_INIT)
+      2 <= libxsmm_ninit &&
+# endif
+      NULL != internal_malloc.free.ptr)
+    {
       LIBXSMM_ASSERT(free != internal_malloc.free.ptr);
       internal_malloc.free.ptr(ptr);
     }
@@ -1038,8 +1066,10 @@ LIBXSMM_API_INTERN void* internal_realloc_hook(void* /*ptr*/, size_t /*size*/, c
 LIBXSMM_API_INTERN void* internal_realloc_hook(void* ptr, size_t size, const void* caller)
 {
   void* result;
-  if ( 0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED)
-    || 0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind
+  if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind
+#if 0
+    || (0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED))
+#endif
     || (internal_malloc_limit[0] > size)
     || (internal_malloc_limit[1] < size && 0 != internal_malloc_limit[1]))
   {
@@ -1072,8 +1102,11 @@ LIBXSMM_API_INTERN void internal_free_hook(void* /*ptr*/, const void* /*caller*/
 LIBXSMM_API_INTERN void internal_free_hook(void* ptr, const void* caller)
 {
   LIBXSMM_UNUSED(caller);
-  if ( 0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED)
-    || 0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind)
+  if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind
+#if 0
+    || (0 != LIBXSMM_ATOMIC_LOAD(&internal_malloc_recursive, LIBXSMM_ATOMIC_RELAXED))
+#endif
+    )
   {
     __real_free(ptr);
   }
