@@ -33,7 +33,6 @@ libxsmm_bsgemm_
 libxsmm_bsgemm_descriptor_init
 libxsmm_bsmmdispatch
 libxsmm_bsmmdispatch_reducebatch
-libxsmm_cast
 libxsmm_convert_bf16_f32
 libxsmm_cpuid
 libxsmm_cpuid_name
@@ -405,7 +404,6 @@ libxsmm_trans_descriptor_init
 libxsmm_trmm_descriptor_init
 libxsmm_trsm_descriptor_init
 libxsmm_truncate_convert_f32_bf16
-libxsmm_typename
 libxsmm_typesize
 libxsmm_wigemm
 libxsmm_wigemm0

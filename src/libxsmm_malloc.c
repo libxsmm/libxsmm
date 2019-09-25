@@ -2089,7 +2089,8 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
         if (0 != libxsmm_verbosity /* library code is expected to be mute */
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
-          fprintf(stderr, "LIBXSMM ERROR: failed to allocate %" PRIuPTR " Byte with flag=%i!\n", (uintptr_t)alloc_size, flags);
+          fprintf(stderr, "LIBXSMM ERROR: failed to allocate %s with flag=%i!\n",
+            libxsmm_format_size(alloc_size, "KMGT", "B", 10), flags);
         }
         result = EXIT_FAILURE;
         *memory = NULL;
@@ -2432,15 +2433,18 @@ LIBXSMM_API void libxsmm_free(const void* memory)
 LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)* lock)
 {
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
+  internal_malloc_pool_type* pools = NULL;
   libxsmm_scratch_info scratch_info;
   LIBXSMM_ASSERT(libxsmm_scratch_pools <= LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS);
   LIBXSMM_ASSERT(sizeof(internal_malloc_pool_type) <= (LIBXSMM_CACHELINE));
   if (NULL != lock) {
     LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK, lock);
   }
-  LIBXSMM_EXPECT(EXIT_SUCCESS, libxsmm_get_scratch_info(&scratch_info));
-  if (0 == scratch_info.npending || 0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind) {
-    internal_malloc_pool_type* const pools = (internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_CACHELINE);
+# if !defined(LIBXSMM_MALLOC_DELETE_SAFE)
+  if (0 == (internal_malloc_kind & 1) || 0 >= internal_malloc_kind)
+# endif
+  {
+    pools = (internal_malloc_pool_type*)LIBXSMM_UP2(internal_malloc_pool_buffer, LIBXSMM_CACHELINE);
     unsigned int i;
     for (i = 0; i < libxsmm_scratch_pools; ++i) {
       if (0 != pools[i].instance.minsize) {
@@ -2456,17 +2460,21 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
       }
       else break; /* early exit */
     }
+  }
+  LIBXSMM_EXPECT(EXIT_SUCCESS, libxsmm_get_scratch_info(&scratch_info));
+  if (0 != scratch_info.npending && /* library code is expected to be mute */
+    (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity))
+  {
+    fprintf(stderr, "LIBXSMM WARNING: %s pending scratch-memory by %" PRIuPTR " allocation%s!\n",
+      libxsmm_format_size(internal_malloc_public_cur + internal_malloc_local_cur, "KMGT", "B", 10),
+      (uintptr_t)scratch_info.npending, 1 < scratch_info.npending ? "s" : "");
+  }
+  if (NULL != pools) {
     memset(pools, 0, (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) * sizeof(internal_malloc_pool_type));
     /* no reset: keep private watermark (internal_malloc_private_max, internal_malloc_private_cur) */
     internal_malloc_public_max = internal_malloc_public_cur = 0;
     internal_malloc_local_max = internal_malloc_local_cur = 0;
     internal_malloc_scratch_nmallocs = 0;
-  }
-  if (0 != scratch_info.npending && /* library code is expected to be mute */
-    (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity))
-  {
-    fprintf(stderr, "LIBXSMM WARNING: %lu pending scratch-memory allocation%s!\n",
-      (unsigned long int)scratch_info.npending, 1 < scratch_info.npending ? "s" : "");
   }
   if (NULL != lock) {
     LIBXSMM_LOCK_RELEASE(LIBXSMM_LOCK, lock);

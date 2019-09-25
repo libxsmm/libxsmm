@@ -786,14 +786,14 @@ typedef enum libxsmm_malloc_flags {
       LIBXSMM_MALLOC_FLAG_MMAP    | LIBXSMM_MALLOC_FLAG_RWX
 } libxsmm_malloc_flags;
 
-/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
-LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+/** Format for instance an amount of Bytes like libxsmm_format_size(nbytes, "KMGT", "B", 10). */
+LIBXSMM_API_INTERN const char* libxsmm_format_size(size_t nbytes, const char scale[], const char* unit, int base);
 
 /** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
-LIBXSMM_API const char* libxsmm_typename(libxsmm_datatype datatype);
+LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
 
-/** Determines the generic value given in double-precision. */
-LIBXSMM_API int libxsmm_cast(libxsmm_datatype datatype, double dvalue, void* value);
+/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
+LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 
 /** Retrieve internal information about a buffer (default memory domain). */
 LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra);

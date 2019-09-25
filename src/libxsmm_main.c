@@ -451,6 +451,20 @@ LIBXSMM_API_INTERN void internal_release_scratch(void)
 }
 
 
+LIBXSMM_API_INTERN const char* libxsmm_format_size(size_t nbytes, const char scale[], const char* unit, int base)
+{
+  static LIBXSMM_TLS char result[32];
+  const int len = (NULL != scale ? ((int)strlen(scale)) : 0);
+  const int m = LIBXSMM_INTRINSICS_BITSCANBWD64(nbytes) / base, n = LIBXSMM_MIN(m, len);
+  int i;
+  result[0] = 0; /* clear */
+  LIBXSMM_ASSERT(NULL != unit && 0 <= base);
+  for (i = 0; i < n; ++i) nbytes >>= base;
+  LIBXSMM_SNPRINTF(result, sizeof(result), "%i %c%s", (int)nbytes, 0 < n ? scale[n-1] : *unit, 0 < n ? unit : "");
+  return result;
+}
+
+
 LIBXSMM_API_INTERN void internal_finalize(void);
 LIBXSMM_API_INTERN void internal_finalize(void)
 {
@@ -483,7 +497,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         size_private = scratch_info.internal;
         size_scratch = scratch_info.size;
       }
-      fprintf(stderr, "Memory: %.f MB", 1.0 * ((unsigned long long)internal_registry_nbytes + size_private) / (1ULL << 20));
+      fprintf(stderr, "Memory: %s", libxsmm_format_size(internal_registry_nbytes + size_private, "KMGT", "B", 10));
       if (0 != high_verbosity) {
         size_t ngemms = 0;
         int i; for (i = 0; i < 4; ++i) {
@@ -506,7 +520,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       }
       fprintf(stderr, "\n");
       if (0 != size_scratch) {
-        fprintf(stderr, "Scratch: %.f MB", 1.0 * size_scratch / (1ULL << 20));
+        fprintf(stderr, "Scratch: %s", libxsmm_format_size(size_scratch, "KMGT", "B", 10));
         if (0 != high_verbosity) {
 #if (0 != LIBXSMM_SYNC)
           if (1 < libxsmm_thread_count) {
@@ -1302,27 +1316,7 @@ LIBXSMM_API_INTERN int libxsmm_dvalue(libxsmm_datatype datatype, const void* val
 }
 
 
-LIBXSMM_API int libxsmm_cast(libxsmm_datatype datatype, double dvalue, void* value)
-{
-  int result = EXIT_SUCCESS;
-  if (NULL != value) {
-    switch (datatype) {
-      case LIBXSMM_DATATYPE_F64: *(double     *)value =              dvalue; break;
-      case LIBXSMM_DATATYPE_F32: *(float      *)value =       (float)dvalue; break;
-      case LIBXSMM_DATATYPE_I32: *(int        *)value =         (int)dvalue; break;
-      case LIBXSMM_DATATYPE_I16: *(short      *)value =       (short)dvalue; break;
-      case LIBXSMM_DATATYPE_I8:  *(signed char*)value = (signed char)dvalue; break;
-      default: result = EXIT_FAILURE;
-    }
-  }
-  else {
-    result = EXIT_FAILURE;
-  }
-  return result;
-}
-
-
-LIBXSMM_API const char* libxsmm_typename(libxsmm_datatype datatype)
+LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype)
 {
   switch (datatype) {
     case LIBXSMM_DATATYPE_F64:  return "f64";
