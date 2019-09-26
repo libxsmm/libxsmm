@@ -53,11 +53,11 @@
 #if !defined(USE_VERBOSE)
 # define USE_VERBOSE
 #endif
-#if !defined(OTYPE)
-# define OTYPE float
-#endif
 #if !defined(ITYPE)
-# define ITYPE OTYPE
+# define ITYPE float
+#endif
+#if !defined(OTYPE)
+# define OTYPE ITYPE
 #endif
 
 
