@@ -29,7 +29,6 @@
 #############################################################################
 # Hans Pabst (Intel Corp.)
 #############################################################################
-
 FLOCK=$(command -v flock)
 
 if [ -d $1 ]; then
@@ -43,8 +42,8 @@ fi
 shift
 cd ${ABSDIR}
 if [ "" != "${FLOCK}" ]; then
-  ${FLOCK} ${ABSDIR} bash -c "$*"
+  ${FLOCK} ${ABSDIR} -c "$@"
 else
-  eval "$*"
+  eval "$@"
 fi
 

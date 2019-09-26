@@ -113,6 +113,11 @@ ASNEEDED ?= 0
 # 1: build according to STATIC=0 and STATIC=1
 SHARED ?= 0
 
+# -1: support intercepted malloc (default: disabled at runtime)
+#  0: disable intercepted malloc at compile-time
+# >0: enable intercepted malloc
+MALLOC ?= -1
+
 # Determines the kind of routine called for intercepted GEMMs
 # >=1 and odd : sequential and non-tiled (small problem sizes only)
 # >=2 and even: parallelized and tiled (all problem sizes)
@@ -626,7 +631,7 @@ ifneq (,$(PYTHON))
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(INDICES) > $@
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) > $@
 endif
 
 .PHONY: cheader
@@ -658,7 +663,7 @@ $(INCDIR)/libxsmm.f: $(ROOTDIR)/$(SCRDIR)/libxsmm_interface.py \
 		$(MAKE_ILP64) $(OFFLOAD) $(CACHELINE) $(PRECISION) $(PREFETCH_TYPE) \
 		$(shell echo $$((0<$(THRESHOLD)?$(THRESHOLD):0))) \
 		$(shell echo $$(($(THREADS)+$(OMP)))) \
-		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(INDICES) | \
+		$(JIT) $(FLAGS) $(ALPHA) $(BETA) $(WRAP) $(MALLOC) $(INDICES) | \
 	sed "/ATTRIBUTES OFFLOAD:MIC/d" > $@
 else
 .PHONY: $(INCDIR)/libxsmm.f
@@ -1021,56 +1026,49 @@ else # static
 	$(AR) -rs $@ $(NOBLAS_HST)
 endif
 
-.PHONY: samples
-samples: lib_hst
-	@find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
+DIRS_SAMPLES = $(dir $(shell find $(ROOTDIR)/$(SPLDIR) -type f -name Makefile \
 	| grep -v /deeplearning/grudriver/ \
 	| grep -v /deeplearning/tf_lstm_ops/ \
 	| grep -v /deeplearning/gxm/ \
 	| grep -v /edge/repro/ \
 	| grep -v /packed/ \
 	| grep -v /pyfr/ \
-	$(patsubst %, | grep -v /%/,$^) | xargs -I {} $(FLOCK) {} "$(MAKE) DEPSTATIC=$(STATIC)"
+	$(NULL)))
 
-.PHONY: cp2k
+.PHONY: samples $(DIRS_SAMPLES)
+samples: $(DIRS_SAMPLES)
+$(DIRS_SAMPLES): lib_hst
+	@$(FLOCK) $@ "$(MAKE) DEPSTATIC=$(STATIC)"
+
+.PHONY: cp2k cp2k_mic
 cp2k: lib_hst
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
-
-.PHONY: cp2k_mic
 cp2k_mic: lib_mic
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
-.PHONY: wrap
+.PHONY: wrap wrap_mic
 wrap: lib_hst
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) TRACE=0"
-
-.PHONY: wrap_mic
 wrap_mic: lib_mic
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/utilities/wrap "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1 TRACE=0"
 
-.PHONY: nek
+.PHONY: nek nek_mic
 nek: lib_hst
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
-
-.PHONY: nek_mic
 nek_mic: lib_mic
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
-.PHONY: smm
+.PHONY: smm smm_mic
 smm: lib_hst
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
-
-.PHONY: smm_mic
 smm_mic: lib_mic
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
 # added for specfem sample
 # will need option: make MNK="5 25" ..
-.PHONY: specfem
+.PHONY: specfem specfem_mic
 specfem: lib_hst
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC)"
-
-.PHONY: specfem_mic
 specfem_mic: lib_mic
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/specfem "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) KNC=1"
 
@@ -1310,17 +1308,12 @@ test-cpp: $(INCDIR)/libxsmm_source.h
 
 .PHONY: test-cp2k
 test-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt
-$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
-	$(info ========================)
-	$(info Running CP2K Code Sample)
-	$(info ========================)
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) cp2k"
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "./cp2k-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * 128)))"
+$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-test.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst cp2k
+	@$(FLOCK) $(dir $@) "./cp2k-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * 128)))"
 
 .PHONY: perf-cp2k
 perf-cp2k: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt
-$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) cp2k"
+$(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.txt: $(ROOTDIR)/$(SPLDIR)/cp2k/cp2k-perf.sh lib_hst cp2k
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/cp2k "./cp2k-perf.sh $(notdir $@)"
 
 .PHONY: test-wrap
@@ -1330,41 +1323,30 @@ test-wrap: wrap
 .PHONY: test-smm
 ifneq (,$(strip $(FC)))
 test-smm: $(ROOTDIR)/$(SPLDIR)/smm/smm-test.txt
-$(ROOTDIR)/$(SPLDIR)/smm/smm-test.txt: $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh lib_hst
-	$(info =======================)
-	$(info Running SMM Code Sample)
-	$(info =======================)
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) smm"
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "./smmf-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
+$(ROOTDIR)/$(SPLDIR)/smm/smm-test.txt: $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh lib_hst smm
+	@$(FLOCK) $(dir $@) "./smmf-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
 endif
 
 .PHONY: perf-smm
 ifneq (,$(strip $(FC)))
 perf-smm: $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.txt
-$(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.txt: $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh lib_hst
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) smm"
-	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/smm "./smmf-perf.sh $(notdir $@)"
+$(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.txt: $(ROOTDIR)/$(SPLDIR)/smm/smmf-perf.sh lib_hst smm
+	@$(FLOCK) $(dir $@) "./smmf-perf.sh $(notdir $@)"
 endif
 
 .PHONY: test-nek
 ifneq (,$(strip $(FC)))
-test-nek: $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt
+test-nek: \
+	$(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt \
+	$(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt \
+	$(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt
 $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/axhm-perf.sh lib_hst
-	$(info =======================)
-	$(info Running NEK/AXHM Sample)
-	$(info =======================)
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) axhm"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./axhm-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
 $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/grad-perf.sh lib_hst
-	$(info =======================)
-	$(info Running NEK/GRAD Sample)
-	$(info =======================)
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) grad"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./grad-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
 $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.txt: $(ROOTDIR)/$(SPLDIR)/nek/rstr-perf.sh lib_hst
-	$(info =======================)
-	$(info Running NEK/RSTR Sample)
-	$(info =======================)
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "$(MAKE) --no-print-directory DEPSTATIC=$(STATIC) rstr"
 	@$(FLOCK) $(ROOTDIR)/$(SPLDIR)/nek "./rstr-perf.sh $(notdir $@) $(shell echo $$(($(TESTSIZE) * -128)))"
 endif

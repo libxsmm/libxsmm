@@ -109,7 +109,9 @@
 #endif
 
 #if defined(LIBXSMM_UNPACKED)
-# define LIBXSMM_DESCRIPTOR_CLEAR(BLOB) memset(BLOB, 0, LIBXSMM_DESCRIPTOR_MAXSIZE)
+# define LIBXSMM_DESCRIPTOR_CLEAR(BLOB) \
+  LIBXSMM_ASSERT((LIBXSMM_DESCRIPTOR_MAXSIZE) == sizeof(*(BLOB))); \
+  memset(BLOB, 0, LIBXSMM_DESCRIPTOR_MAXSIZE)
 #else
 # define LIBXSMM_DESCRIPTOR_CLEAR(BLOB) LIBXSMM_ASSERT(BLOB)
 #endif
@@ -125,7 +127,7 @@
     | (LIBXSMM_NEQ(0, BETA) ? 0 : LIBXSMM_GEMM_FLAG_BETA_0)); \
   (DESCRIPTOR).m   = (unsigned int)(M);   (DESCRIPTOR).n   = (unsigned int)(N);   (DESCRIPTOR).k   = (unsigned int)(K); \
   (DESCRIPTOR).lda = (unsigned int)(LDA); (DESCRIPTOR).ldb = (unsigned int)(LDB); (DESCRIPTOR).ldc = (unsigned int)(LDC); \
-  (DESCRIPTOR).pad = 0; (DESCRIPTOR).c1 = 0; (DESCRIPTOR).c2 = 0; (DESCRIPTOR).c3 = 0
+  LIBXSMM_PAD((DESCRIPTOR).pad = 0) (DESCRIPTOR).c1 = 0; (DESCRIPTOR).c2 = 0; (DESCRIPTOR).c3 = 0
 
 /** Similar to LIBXSMM_GEMM_DESCRIPTOR, but separately taking the input-/output-precision. */
 #define LIBXSMM_GEMM_DESCRIPTOR2(DESCRIPTOR, IPREC, OPREC, FLAGS, M, N, K, LDA, LDB, LDC, ALPHA, BETA, PREFETCH) \
@@ -167,7 +169,7 @@ LIBXSMM_EXTERN_C LIBXSMM_PACKED(struct LIBXSMM_RETARGETABLE) libxsmm_gemm_descri
   /** Leading dimensions. */
   unsigned int lda, ldb, ldc;
   /** Ignored entry. */
-  unsigned int pad;
+  LIBXSMM_PAD(unsigned int pad)
   /** multipurpose 64bit field, currently used for: a) stride_a in brgemm */
   unsigned long long c1;
   /** multipurpose 64bit field, currently used for: a) stride_b in brgemm */
@@ -673,14 +675,14 @@ typedef enum libxsmm_malloc_flags {
       LIBXSMM_MALLOC_FLAG_MMAP    | LIBXSMM_MALLOC_FLAG_RWX
 } libxsmm_malloc_flags;
 
-/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
-LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
+/** Format for instance an amount of Bytes like libxsmm_format_size(nbytes, "KMGT", "B", 10). */
+LIBXSMM_API_INTERN const char* libxsmm_format_size(size_t nbytes, const char scale[], const char* unit, int base);
 
 /** Returns the type-name of data-type (can be also libxsmm_gemm_precision). */
-LIBXSMM_API const char* libxsmm_typename(libxsmm_datatype datatype);
+LIBXSMM_API_INTERN const char* libxsmm_typename(libxsmm_datatype datatype);
 
-/** Determines the generic value given in double-precision. */
-LIBXSMM_API int libxsmm_cast(libxsmm_datatype datatype, double dvalue, void* value);
+/** Returns the type-size of data-type (can be also libxsmm_gemm_precision). */
+LIBXSMM_API unsigned char libxsmm_typesize(libxsmm_datatype datatype);
 
 /** Retrieve internal information about a buffer (default memory domain). */
 LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* flags, void** extra);

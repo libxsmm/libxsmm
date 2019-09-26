@@ -173,6 +173,7 @@ LIBXSMM_INLINE void rne_mask_fp32_bf16(float* in, float* out, unsigned int len) 
 LIBXSMM_INLINE void zero_buf(float* buf, size_t size) {
   int i;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < (int)size; ++i) {
@@ -193,6 +194,7 @@ LIBXSMM_INLINE void zero_buf_bf16(libxsmm_bfloat16* buf, size_t size) {
 LIBXSMM_INLINE void zero_buf_int16(short* buf, size_t size) {
   int i;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < (int)size; ++i) {
@@ -203,6 +205,7 @@ LIBXSMM_INLINE void zero_buf_int16(short* buf, size_t size) {
 LIBXSMM_INLINE void zero_buf_int32(int* buf, size_t size) {
   int i;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < (int)size; ++i) {
@@ -213,6 +216,7 @@ LIBXSMM_INLINE void zero_buf_int32(int* buf, size_t size) {
 LIBXSMM_INLINE void zero_buf_int8(char* buf, size_t size) {
   int i;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < (int)size; ++i) {
@@ -223,6 +227,7 @@ LIBXSMM_INLINE void zero_buf_int8(char* buf, size_t size) {
 LIBXSMM_INLINE void zero_buf_uint8(unsigned char* buf, size_t size) {
   int i;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < (int)size; ++i) {
@@ -233,6 +238,7 @@ LIBXSMM_INLINE void zero_buf_uint8(unsigned char* buf, size_t size) {
 LIBXSMM_INLINE void copy_buf(float* src, float* dst, size_t size) {
   int i;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < (int)size; ++i) {
@@ -243,6 +249,7 @@ LIBXSMM_INLINE void copy_buf(float* src, float* dst, size_t size) {
 LIBXSMM_INLINE void copy_buf_int16(short* src, short* dst, size_t size) {
   int i;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < (int)size; ++i) {
@@ -253,6 +260,7 @@ LIBXSMM_INLINE void copy_buf_int16(short* src, short* dst, size_t size) {
 LIBXSMM_INLINE void copy_buf_int8(char* src, char* dst, size_t size) {
   int i;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < (int)size; ++i) {
@@ -263,6 +271,7 @@ LIBXSMM_INLINE void copy_buf_int8(char* src, char* dst, size_t size) {
 LIBXSMM_INLINE void copy_buf_uint8(unsigned char* src, unsigned char* dst, size_t size) {
   int i;
 #if defined(_OPENMP)
+  LIBXSMM_OMP_VAR(i);
 # pragma omp parallel for private(i)
 #endif
   for (i = 0; i < (int)size; ++i) {
@@ -1670,8 +1679,8 @@ LIBXSMM_INLINE void naive_conv_fp_int8int32(naive_conv_t* param, const unsigned 
               if (ij+kj < 0 || ij+kj >= ifh) continue;
               for (ki = 0; ki < kw; ++ki) {
                 if (ii+ki < 0 || ii+ki >= ifw) continue;
-                LIBXSMM_VLA_ACCESS(  4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) += (int)
-                 LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
+                LIBXSMM_VLA_ACCESS(4, output_t, img, ofm, oj, oi, nOfm, ofhp, ofwp) += (int)
+                LIBXSMM_VLA_ACCESS(4,  input_t, img, ifm, ij + kj, ii + ki, nIfm, ifhp, ifwp)
                 * LIBXSMM_VLA_ACCESS(4, filter_t, ofm, ifm, kj, ki, nIfm, kh, kw);
               }
             }
