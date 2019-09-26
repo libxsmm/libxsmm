@@ -86,10 +86,23 @@ int test(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k)
         || LIBXSMM_GEMM_PRECISION(ITYPE) != info.iprecision
         || LIBXSMM_GEMM_PRECISION(OTYPE) != info.oprecision)
       {
+#if defined(_DEBUG) || defined(USE_VERBOSE)
+        fprintf(stderr, "Error: the %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel does not match!\n",
+          (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
+#endif
         result = EXIT_FAILURE;
       }
+#if defined(_DEBUG) || defined(USE_VERBOSE)
+      else {
+        fprintf(stderr, "Error: the %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel is corrupted!\n",
+          (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
+      }
+#endif
     }
   }
+#if !defined(LIBXSMM_JIT) || (0 == LIBXSMM_JIT)
+  else result = EXIT_SUCCESS;
+#endif
   return result;
 }
 #endif /*defined(CHECK_SEPARATE)*/
@@ -143,34 +156,34 @@ int main(void)
   result = libxsmm_get_registry_info(&registry_info);
   if (EXIT_SUCCESS == result) {
     nkernels = (int)LIBXSMM_MIN((size_t)nkernels, registry_info.capacity);
-  }
 
 #if defined(CHECK_SEPARATE)
-  for (i = 0; i < nkernels; i += nthreads) {
+    for (i = 0; i < nkernels; i += nthreads) {
 #if defined(_OPENMP) && defined(CHECK_PARALLEL_JIT)
-#   pragma omp parallel num_threads(nthreads)
+#     pragma omp parallel num_threads(nthreads)
 #endif
-    {
+      {
 #if defined(_OPENMP) && defined(CHECK_PARALLEL_JIT)
-      const int tid = omp_get_thread_num();
+        const int tid = omp_get_thread_num();
 #else
-      const int tid = 0;
+        const int tid = 0;
 #endif
-      const int j = LIBXSMM_MIN(3 * (i + tid), nkernels - 3);
-      const int ri = test(mnk[j+0], mnk[j+1], mnk[j+2]);
-      if (EXIT_SUCCESS != ri) {
+        const int j = LIBXSMM_MIN(3 * (i + tid), nkernels - 3);
+        const int ri = test(mnk[j+0], mnk[j+1], mnk[j+2]);
+        if (EXIT_SUCCESS != ri) {
 #if defined(_OPENMP) && defined(CHECK_PARALLEL_JIT)
 # if (201107 <= _OPENMP)
-#       pragma omp atomic write
+#         pragma omp atomic write
 # else
-#       pragma omp critical
+#         pragma omp critical
 # endif
-#endif
-        result = ri;
+ #endif
+          result = ri;
+        }
       }
     }
-  }
 #endif
+  }
 
   if (EXIT_SUCCESS == result) {
 #if defined(_OPENMP) && defined(CHECK_PARALLEL_JIT)
@@ -256,13 +269,15 @@ int main(void)
 #endif
 
   /* test unregistering and freeing kernels */
-  for (i = 0; i < nkernels; ++i) {
-    int j = i + 1;
-    /* avoid to double-release kernels */
-    for (; j < nkernels; ++j) {
-      if (f[i].p == f[j].p) f[j].p = NULL;
+  if (EXIT_SUCCESS == result) {
+    for (i = 0; i < nkernels; ++i) {
+      int j = i + 1;
+      /* avoid to double-release kernels */
+      for (; j < nkernels; ++j) {
+        if (f[i].p == f[j].p) f[j].p = NULL;
+      }
+      libxsmm_release_kernel(f[i].p);
     }
-    libxsmm_release_kernel(f[i].p);
   }
 
   libxsmm_finalize();
