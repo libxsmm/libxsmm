@@ -498,7 +498,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
         size_private = scratch_info.internal;
         size_scratch = scratch_info.size;
       }
-      fprintf(stderr, "Memory: %s", libxsmm_format_size(internal_registry_nbytes + size_private, "KMGT", "B", 10));
+      fprintf(stderr, "Memory: %s", libxsmm_format_size(internal_registry_nbytes + size_private, "KM", "B", 10));
       if (0 != high_verbosity) {
         size_t ngemms = 0;
         int i; for (i = 0; i < 4; ++i) {
@@ -521,7 +521,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       }
       fprintf(stderr, "\n");
       if (0 != size_scratch) {
-        fprintf(stderr, "Scratch: %s", libxsmm_format_size(size_scratch, "KMGT", "B", 10));
+        fprintf(stderr, "Scratch: %s", libxsmm_format_size(size_scratch, "KM", "B", 10));
         if (0 != high_verbosity) {
 #if (0 != LIBXSMM_SYNC)
           if (1 < libxsmm_thread_count) {

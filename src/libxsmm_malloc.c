@@ -2090,7 +2090,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
          && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
         {
           fprintf(stderr, "LIBXSMM ERROR: failed to allocate %s with flag=%i!\n",
-            libxsmm_format_size(alloc_size, "KMGT", "B", 10), flags);
+            libxsmm_format_size(alloc_size, "KM", "B", 10), flags);
         }
         result = EXIT_FAILURE;
         *memory = NULL;
@@ -2466,7 +2466,7 @@ LIBXSMM_API_INTERN void libxsmm_xrelease_scratch(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK)
     (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity))
   {
     fprintf(stderr, "LIBXSMM WARNING: %s pending scratch-memory by %" PRIuPTR " allocation%s!\n",
-      libxsmm_format_size(internal_malloc_public_cur + internal_malloc_local_cur, "KMGT", "B", 10),
+      libxsmm_format_size(internal_malloc_public_cur + internal_malloc_local_cur, "KM", "B", 10),
       (uintptr_t)scratch_info.npending, 1 < scratch_info.npending ? "s" : "");
   }
   if (NULL != pools) {
