@@ -786,9 +786,6 @@
 #if defined(LIBXSMM_GLIBC_FPTYPES)
 # if defined(__cplusplus)
 #   undef __USE_MISC
-#   if !defined(LIBXSMM_NO_LIBM)
-#     include <math.h>
-#   endif
 #   if !defined(_DEFAULT_SOURCE)
 #     define _DEFAULT_SOURCE
 #   endif
@@ -797,6 +794,12 @@
 #   endif
 # elif !defined(__PURE_INTEL_C99_HEADERS__)
 #   define __PURE_INTEL_C99_HEADERS__
+# endif
+#endif
+#if !defined(LIBXSMM_NO_LIBM) && (!defined(__STDC_VERSION__) || (199901L > __STDC_VERSION__) || defined(__cplusplus))
+# include <math.h>
+# if !defined(M_LN2)
+#   define M_LN2 0.69314718055994530942
 # endif
 #endif
 #if defined(LIBXSMM_OFFLOAD_TARGET)
