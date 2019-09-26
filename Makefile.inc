@@ -342,13 +342,6 @@ ifeq (0,$(GNU))
       CC = icc
     endif
   endif
-  ifeq (,$(shell echo "$${FC}"))
-  ifneq (,$(notdir $(call which,ifort)))
-    FC = ifort
-  else ifneq (,$(notdir $(call which,ifx)))
-    FC = ifx
-  endif
-  endif
   ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" | $(CC) -E -P - 2>/dev/null))
     ICX = 1
   endif
@@ -360,7 +353,15 @@ INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
   $(shell $(CXX) --version 2>/dev/null | grep -m1 . | cut -d' ' -f1) \
   $(shell $(CC) --version 2>/dev/null | grep -m1 . | cut -d' ' -f1)))))")
 
-ifeq (0,$(INTEL))
+ifneq (0,$(INTEL))
+  ifeq (,$(shell echo "$${FC}"))
+    ifneq (,$(notdir $(call which,ifort)))
+      FC = ifort
+    else ifneq (,$(notdir $(call which,ifx)))
+      FC = ifx
+    endif
+  endif
+else
   ifeq (,$(call which,$(CXX)))
     CXX = g++
   else ifneq (0,$(shell $(CXX) --version >/dev/null 2>/dev/null; echo "$$?"))
