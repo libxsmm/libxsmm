@@ -604,7 +604,7 @@
 #else
 # define LIBXSMM_PRAGMA_OMP(...)
 #endif
-#if defined(_OPENMP) && defined(_MSC_VER) && !defined(__clang__) && !defined(LIBXSMM_INTEL_COMPILER)
+#if defined(_OPENMP) && defined(_MSC_VER) && !defined(LIBXSMM_INTEL_COMPILER)
 # define LIBXSMM_OMP_VAR(A) LIBXSMM_UNUSED(A) /* suppress warning about "unused" variable */
 #else
 # define LIBXSMM_OMP_VAR(A)
