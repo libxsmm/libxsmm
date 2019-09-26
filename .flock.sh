@@ -29,7 +29,7 @@
 #############################################################################
 # Hans Pabst (Intel Corp.)
 #############################################################################
-set -e -o pipefail
+set -e
 
 FLOCK=$(command -v flock)
 
@@ -44,7 +44,7 @@ fi
 shift
 cd ${ABSDIR}
 if [ "" != "${FLOCK}" ]; then
-  ${FLOCK} ${ABSDIR} $@
+  ${FLOCK} ${ABSDIR} -c "$@"
 else
   eval "$@"
 fi
