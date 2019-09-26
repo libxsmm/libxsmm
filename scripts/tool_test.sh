@@ -29,7 +29,7 @@
 #############################################################################
 # Hans Pabst (Intel Corp.)
 #############################################################################
-set -o pipefail
+set -e -o pipefail
 
 HERE=$(cd $(dirname $0); pwd -P)
 BASENAME=$(command -v basename)
