@@ -92,13 +92,13 @@ int test(libxsmm_blasint m, libxsmm_blasint n, libxsmm_blasint k)
 #endif
         result = EXIT_FAILURE;
       }
-#if defined(_DEBUG) || defined(USE_VERBOSE)
-      else {
-        fprintf(stderr, "Error: the %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel is corrupted!\n",
-          (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
-      }
-#endif
     }
+#if defined(_DEBUG) || defined(USE_VERBOSE)
+    else {
+      fprintf(stderr, "Error: the %" PRIuPTR "x%" PRIuPTR "x%" PRIuPTR "-kernel is corrupted!\n",
+        (uintptr_t)m, (uintptr_t)n, (uintptr_t)k);
+    }
+#endif
   }
 #if !defined(LIBXSMM_JIT) || (0 == LIBXSMM_JIT)
   else result = EXIT_SUCCESS;
