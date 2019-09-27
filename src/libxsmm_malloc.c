@@ -243,9 +243,12 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
   } \
   else { \
     if (NULL == (CALLER)) { /* libxsmm_trace_caller_id may allocate memory */ \
-      (CALLER) = libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL); \
+      internal_scratch_malloc(&(RESULT), SIZE, ALIGNMENT, FLAGS, \
+        libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL)); \
     } \
-    internal_scratch_malloc(&(RESULT), SIZE, ALIGNMENT, FLAGS, CALLER); \
+    else { \
+      internal_scratch_malloc(&(RESULT), SIZE, ALIGNMENT, FLAGS, CALLER); \
+    } \
   } \
   LIBXSMM_ATOMIC_SUB_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED); \
 }
@@ -260,11 +263,14 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
   } \
   else { \
     const int nzeros = LIBXSMM_INTRINSICS_BITSCANFWD64((uintptr_t)(PTR)), alignment = 1 << nzeros; \
-    if (NULL == (CALLER)) { /* libxsmm_trace_caller_id may allocate memory */ \
-      (CALLER) = libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL); \
-    } \
     LIBXSMM_ASSERT(0 == ((uintptr_t)(PTR) & ~(0xFFFFFFFFFFFFFFFF << nzeros))); \
-    internal_scratch_malloc(&(PTR), SIZE, (size_t)alignment, FLAGS, CALLER); \
+    if (NULL == (CALLER)) { /* libxsmm_trace_caller_id may allocate memory */ \
+      internal_scratch_malloc(&(PTR), SIZE, (size_t)alignment, FLAGS, \
+        libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL)); \
+    } \
+    else { \
+      internal_scratch_malloc(&(PTR), SIZE, (size_t)alignment, FLAGS, CALLER); \
+    } \
     (RESULT) = (PTR); \
   } \
 }
