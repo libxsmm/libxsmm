@@ -71,8 +71,8 @@ int main(int argc, char* argv[])
   LIBXSMM_GEMM_CONST libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k), nn = n;
   LIBXSMM_GEMM_CONST OTYPE alpha = (OTYPE)(7 < argc ? atof(argv[7]) : 1.0);
   LIBXSMM_GEMM_CONST OTYPE beta  = (OTYPE)(8 < argc ? atof(argv[8]) : 1.0);
-  LIBXSMM_GEMM_CONST char transa = (LIBXSMM_GEMM_CONST char)( 9 < argc ? *argv[9]  : 'N');
-  LIBXSMM_GEMM_CONST char transb = (LIBXSMM_GEMM_CONST char)(10 < argc ? *argv[10] : 'N');
+  LIBXSMM_GEMM_CONST char transa = (/*LIBXSMM_GEMM_CONST*/ char)( 9 < argc ? *argv[9]  : 'N');
+  LIBXSMM_GEMM_CONST char transb = (/*LIBXSMM_GEMM_CONST*/ char)(10 < argc ? *argv[10] : 'N');
   LIBXSMM_GEMM_CONST libxsmm_blasint mm = (('N' == transa || 'n' == transa) ? m : k);
   LIBXSMM_GEMM_CONST libxsmm_blasint kk = (('N' == transb || 'n' == transb) ? k : n);
   LIBXSMM_GEMM_CONST libxsmm_blasint ka = (('N' == transa || 'n' == transa) ? k : m);

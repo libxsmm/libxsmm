@@ -57,7 +57,7 @@ int main(void)
 
   ELEM_TYPE *const data = (ELEM_TYPE*)libxsmm_malloc(sizeof(ELEM_TYPE) * s);
   if (NULL == data) s = 0;
-  for (i = 0; i < s; ++i) data[i] = (rand() - ((RAND_MAX) >> 1));
+  for (i = 0; i < s; ++i) data[i] = (ELEM_TYPE)(rand() - ((RAND_MAX) >> 1));
 
   h1 = libxsmm_crc32_u64(seed, data);
   h2 = libxsmm_crc32_u32(seed, data);
