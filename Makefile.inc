@@ -530,9 +530,9 @@ ifneq (0,$(FORTRAN))
           GFC = $(FC)
         endif
       endif
+    else
+      FORTRAN = 0
     endif
-  else
-    FORTRAN = 0
   endif
 else
   FC = $(NULL)
@@ -1117,6 +1117,7 @@ ifneq (0,$(INTEL))
     ifeq (,$(strip $(GFC)))
       FCFLAGS += -qopenmp-simd
     endif
+    SIMD ?= 1
   endif
   endif
   ifeq (,$(strip $(GFC)))
@@ -1375,6 +1376,7 @@ ifeq (undefined,$(origin TARGET))
     undefine CTARGET
   endif
   endif
+  MAINTAINER ?= 0
   ifeq (,$(CTARGET))
   ifneq (0,$(shell echo "$$((3>$(DBG)))"))
     # detect maintainer build and limit to SSE3
@@ -1382,10 +1384,10 @@ ifeq (undefined,$(origin TARGET))
     ifeq (,$(SPACK_ENV_PATH)) # not under Spack
     ifeq (3,$(GCC)) # pure GNU pipeline
     ifeq (0,$(DEPSTATIC))
-      CTARGET = -msse3
+      MAINTAINER = 1
     else ifneq (0,$(SHARED))
       ifneq (,$(SHARED))
-        CTARGET = -msse3
+        MAINTAINER = 1
       endif
     endif
     endif
@@ -1438,7 +1440,12 @@ ifeq (undefined,$(origin TARGET))
         ifneq (,$(filter 40 41 42 43,$(SSE)$(AVX)))
           ifneq (0,$(GCC))
             ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
-              CTARGET = -msse4.2
+              ifeq (0,$(MAINTAINER))
+                CTARGET = -msse4.2
+              else
+                TARGET = -msse4.2
+                CTARGET = -msse3
+              endif
             else
               CTARGET = -msse3
             endif
@@ -1462,7 +1469,12 @@ ifeq (undefined,$(origin TARGET))
       ifneq (,$(filter 01 02 03 10 11 12 13,$(SSE)$(AVX)))
         ifneq (0,$(GCC))
           ifneq (0,$(shell echo "$$((40300<=$(CC_VERSION)))"))
-            CTARGET = -msse4.2
+            ifeq (0,$(MAINTAINER))
+              CTARGET = -msse4.2
+            else
+              TARGET = -msse4.2
+              CTARGET = -msse3
+            endif
           else
             CTARGET = -msse3
           endif
@@ -1504,6 +1516,10 @@ else # revoke target flags
   CTARGET = $(NULL)
   FTARGET = $(NULL)
 endif
+# avoid unnecessary state
+ifeq ($(CTARGET),$(FTARGET))
+  TARGET ?= $(CTARGET)
+endif
 
 ifeq (0,$(COMPATIBLE))
   ifneq (0,$(OPT))
@@ -1521,6 +1537,7 @@ ifeq (0,$(COMPATIBLE))
             ifneq (2,$(GCC))
             ifneq (0,$(shell echo "$$((40900<=$(FC_VERSION)))"))
               FCFLAGS += -fopenmp-simd
+              SIMD ?= 1
             endif
             endif
             endif
@@ -1540,6 +1557,7 @@ ifeq (0,$(COMPATIBLE))
           ifneq (,$(strip $(FC)))
           ifneq (0,$(shell echo "$$((40900<=$(FC_VERSION)))"))
             FCFLAGS += -fopenmp-simd
+            SIMD ?= 1
           endif
           endif
           endif
@@ -2047,15 +2065,16 @@ objname = $(foreach ARG, $(1),$(addprefix $(BLDDIR)/, $(patsubst %$(suffix $(ARG
 
 STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
   $(filter-out environment% default automatic,$(origin $V)), \
-  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_STATE .% _% MAKE_% HAVE_% MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION \
-    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO CMAIN COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING DEPDIR \
-    DLIBEXT ENV EXTDEP FSTD FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FINFO FMAIN FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE \
-    FLOCK SUITE ILIBEXT LIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP BLAS_LDTEST \
-    SHARED CCAR CLDFLAGS CPEDANTIC FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE \
-    OMPLIBFILE NOBLAS% MAINLIB LIBRT LIBGFORTRAN LIBDL LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB DYNAMIC PYTHON% PYMOD CWARNEXTRA \
-    CSTD DNOBLAS MINGW FORCE_CXX PEDANTIC CLANG INTEL CRAY PGI GNU GCC GCCBIN GFC ICX AVX SSE FFORM_FLAG FREEFORM OPSYS UNUSED \
-    which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink applyif extname objname,$V), \
-    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$($V)))?))))
+  $(if $(filter-out $(EXCLUDE_STATE) EXCLUDE_STATE .% _% MAKE_% HAVE_% LIB_% MAKEFILE_LIST MAKEOVERRIDES MAKEFLAGS SHELL BLASLIBEXT BLDDIR REVERSION \
+    CC_VERSION CC_VERSION_FLAG CC_VERSION_STRING CINFO COMPILER_VERSION_FLAG CP CXX_VERSION CXX_VERSION_FLAG CXX_VERSION_STRING DEPDIR DFLAGS FINFO \
+    ENV EXTDEP FSTD FC_VERSION FC_VERSION_FLAG FC_VERSION_STRING FORTDEP GCC_VERSION GCC_VERSION_STRING GINFO TESTSIZE DLIBEXT DYNAMIC FLOCK LIBEXT \
+    ILIBEXT LIBNAME LICFILE MAKEINC MKL_INCFILE MV ROOTDIR SLIBEXT XLNKOPT BRACE_OPEN BRACE_CLOSE MKTEMP BLAS_LDTEST SHARED GNU CCAR CLDFLAGS SUITE \
+    FPEDANTIC FWARNEXTRA XGROUP_BEGIN XGROUP_END XBLASLIB SLDFLAGS PICFLAG PIC OPTFLAG OPT OMPFLAG_FORCE OMPLIBFILE MINGW NOBLAS% MAINLIB LIBRT PGI \
+    ICX GFC CLANG INTEL CRAY GCC GCCBIN LIBGFORTRAN LIBDEP FORTLIB FMFLAGS FIXFC FCLDFLAGS EXTLIB PYTHON% PYMOD CWARNEXTRA CSTD DNOBLAS FORCE_CXX \
+    PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED AVX SSE \
+    which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink applyif extname objname \
+    $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC,$(NULL)) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
+    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(XLNKOPT)--export-dynamic,$($V))))?))))
 .state: $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 
 %/.make:
