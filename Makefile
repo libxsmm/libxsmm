@@ -1263,7 +1263,7 @@ endif
 	@echo "  MMVALUE=\$$(echo \$${RUN2} | cut -d_ -f1)" >> $@
 	@echo "  NNVALUE=\$$(echo \$${RUN2} | cut -d_ -f2)" >> $@
 	@echo "  KKVALUE=\$$(echo \$${RUN2} | cut -d_ -f3)" >> $@
-	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (M=\$${MVALUE} N=\$${NVALUE} K=\$${KVALUE})... \"" >> $@
+	@echo "  >&2 echo -n \"\$${NRUN} of \$${NMAX} (MNK=\$${MVALUE}x\$${NVALUE}x\$${KVALUE} MNK2=\$${MMVALUE}x\$${NNVALUE}x\$${KKVALUE})... \"" >> $@
 	@echo "  ERROR=\$$({ CHECK=1 \$${HERE}/rstr.sh \$${MVALUE} \$${NVALUE} \$${KVALUE} \$${MMVALUE} \$${NNVALUE} \$${KKVALUE} \$$* >> \$${FILE}; } 2>&1)" >> $@
 	@echo "  RESULT=\$$?" >> $@
 	@echo "  if [ 0 != \$${RESULT} ]; then" >> $@
