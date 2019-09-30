@@ -43,12 +43,23 @@ if [ "" != "${TOUCH}" ] && [ "" != "${DIFF}" ] && [ "" != "${SED}" ] && [ "" != 
   fi
 
   STATE=$(${TR} '?' '\n' | ${SED} -e 's/^ */\"/' -e 's/   */ /g' -e 's/ *$/\\n\"/')
-  if [ ! -e ${STATEFILE} ] || [ "0" != "$(echo "${STATE}" | ${DIFF} -q ${STATEFILE} - >/dev/null; echo "$?")" ]; then
+  if [ ! -e ${STATEFILE} ]; then
     if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
       printf "%s\n" "${STATE}" > ${STATEFILE}
     fi
     echo "$0"
+    # only needed to execute body of .state-rule
     ${TOUCH} $0
+  else # difference must be determined
+    STATE_DIFF=$(echo "${STATE}" | ${DIFF} --new-line-format="" --unchanged-line-format="" ${STATEFILE} - 2>/dev/null)
+    if [ "0" != "$?" ] || [ "" != "${STATE_DIFF}" ]; then
+      if [ "" = "${NOSTATE}" ] || [ "0" = "${NOSTATE}" ]; then
+        printf "%s\n" "${STATE}" > ${STATEFILE}
+      fi
+      echo "$0 $(echo "${STATE_DIFF}" | ${SED} -e 's/=..*$//' -e 's/\"//g' -e '/^$/d')"
+      # only needed to execute body of .state-rule
+      ${TOUCH} $0
+    fi
   fi
 else
   echo "Error: missing prerequisites!"
