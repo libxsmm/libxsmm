@@ -54,8 +54,14 @@ all: $(XFILES)
 .PHONY: compile
 compile: $(OBJECTS) $(FTNOBJS)
 
+ifneq (0,$(shell echo "$$((0!=$(INTEL) && 190001<=$(CC_VERSION)))"))
+  QKMALLOC ?= 1
+else
+  QKMALLOC ?= 0
+endif
+
 $(OUTDIR)/$(OUTNAME): $(OUTDIR)/.make $(OBJECTS) $(LIBDEP) $(EXTDEP)
-ifneq (0,$(INTEL))
+ifneq (0,$(QKMALLOC))
 	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS) -lqkmalloc
 else
 	$(LD) -o $@ $(OBJECTS) $(MAINLIB) $(NOBLASLIB) $(SLDFLAGS) $(LDFLAGS) $(CLDFLAGS)
