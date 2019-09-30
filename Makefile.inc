@@ -2078,9 +2078,11 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
 
 PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 .state: $(firstword $(PRESTATE))
-ifneq (0,$(STATIC))
 ifneq (STATIC2,$(word 2,$(PRESTATE))$(words $(PRESTATE)))
+ifneq (0,$(STATIC))
 	@rm -f $(OUTDIR)/lib*.$(DLIBEXT) $(OUTDIR)/lib*.$(DLIBEXT).*
+else
+	@rm -f $(OUTDIR)/lib*.$(DLIBEXT) $(OUTDIR)/lib*.$(SLIBEXT).*
 endif
 endif
 
