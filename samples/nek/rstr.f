@@ -109,7 +109,7 @@
         CALL libxsmm_init()
 
         ! workload is about 2 GByte in memory by default
-        size0 = ((m * n * k) + (nn * mm * kk)) * T ! size of a single stream element in Byte
+        size0 = ((m * n * k) + (nn * mm * kk)) * T ! size of single stream element in Byte
         size1 = MERGE(2048_8, MERGE(size1, ISHFT(ABS(size0 * size1)     &
      &          + ISHFT(1, 20) - 1, -20), 0.LE.size1), 0.EQ.size1)
         size = ISHFT(MERGE(MAX(size, size1), ISHFT(ABS(size) * size0    &
@@ -124,7 +124,8 @@
         ALLOCATE(dx(mm,m), dy(n,nn), dz(k,kk))
 
         ! Initialize
-        !$OMP PARALLEL DO PRIVATE(i, ix, iy, iz) DEFAULT(NONE) SHARED(a, m, mm, n, nn, k, kk, s)
+        !$OMP PARALLEL DO PRIVATE(i, ix, iy, iz) DEFAULT(NONE) &
+        !$OMP   SHARED(a, m, mm, n, nn, k, kk, s)
         DO i = 1, s
           DO ix = 1, m
             DO iy = 1, n
@@ -134,7 +135,8 @@
             END DO
           END DO
         END DO
-        !$OMP PARALLEL DO PRIVATE(i, ix, iy, iz) DEFAULT(NONE) SHARED(c, m, mm, n, nn, k, kk, s)
+        !$OMP PARALLEL DO PRIVATE(i, ix, iy, iz) DEFAULT(NONE) &
+        !$OMP   SHARED(c, m, mm, n, nn, k, kk, s)
         DO i = 1, s
           DO ix = 1, mm
             DO iy = 1, nn
@@ -172,7 +174,8 @@
 
           WRITE(*, "(A)") "Calculating check..."
           !$OMP PARALLEL PRIVATE(i, j, r) DEFAULT(NONE) &
-          !$OMP   SHARED(a, dx, dy, dz, d, m, n, k, mm, nn, kk, repetitions)
+          !$OMP   SHARED(a, dx, dy, dz, d, m, n, k, mm, nn, kk, &
+          !$OMP          repetitions)
           ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k))
           tm1 = 0; tm2 = 0;
           DO r = 1, repetitions
@@ -180,14 +183,14 @@
             DO i = LBOUND(a, 4), UBOUND(a, 4)
               tm1 = RESHAPE(                                            &
      &                MATMUL(dx, RESHAPE(a(:,:,:,i), (/m,n*k/))),       &
-     &                (/mm, n, k/))
+     &                (/mm, n, k/)) ! [mm,m]x[m,n*k]->[mm,n*k]
               DO j = 1, k
-                tm2(:,:,j) = MATMUL(tm1(:,:,j), dy)
+                tm2(:,:,j) = MATMUL(tm1(:,:,j), dy) ! [mm,n]x[n,nn]->[mm,nn]
               END DO
               ! because we can't RESHAPE d
               d(:,:,:,i) = RESHAPE(                                     &
      &                        MATMUL(RESHAPE(tm2, (/mm*nn, k/)), dz),   &
-     &                        (/mm,nn,kk/))
+     &                        (/mm,nn,kk/)) ! [mm*nn,k]x[k,kk]->[mm*nn,kk]
             END DO
           END DO
           ! Deallocate thread-local arrays
@@ -197,7 +200,8 @@
 
         WRITE(*, "(A)") "Streamed... (BLAS)"
         !$OMP PARALLEL PRIVATE(i, j, r, start) DEFAULT(NONE) &
-        !$OMP   SHARED(a, dx, dy, dz, c, m, n, k, mm, nn, kk, duration, repetitions)
+        !$OMP   SHARED(a, dx, dy, dz, c, m, n, k, mm, nn, kk, &
+        !$OMP          duration, repetitions)
         ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k), tm3(mm,nn,kk))
         tm1 = 0; tm2 = 0; tm3 = 3
         !$OMP MASTER
@@ -221,7 +225,7 @@
             CALL libxsmm_blas_dgemm(m=mm*nn, n=kk, k=k,                 &
      &              a=tm2(:,:,1), b=dz, c=tm3(:,:,1),                   &
      &              alpha=alpha, beta=beta)
-            CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
+            CALL stream_vector_copy(tm3(1,1,1), c(1,1,1,i), mm*nn*kk)
           END DO
         END DO
         !$OMP BARRIER
@@ -237,7 +241,8 @@
 
         WRITE(*, "(A)") "Streamed... (mxm)"
         !$OMP PARALLEL PRIVATE(i, j, r, start) DEFAULT(NONE) &
-        !$OMP   SHARED(a, dx, dy, dz, c, m, n, k, mm, nn, kk, duration, repetitions)
+        !$OMP   SHARED(a, dx, dy, dz, c, m, n, k, mm, nn, kk, &
+        !$OMP          duration, repetitions)
         ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k), tm3(mm,nn,kk))
         tm1 = 0; tm2 = 0; tm3 = 3
         !$OMP MASTER
@@ -252,7 +257,7 @@
               CALL mxmf2(tm1(:,:,j), mm, dy, n, tm2(:,:,j), nn)
             END DO
             CALL mxmf2(tm2, mm*nn, dz, k, tm3, kk)
-            CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
+            CALL stream_vector_copy(tm3(1,1,1), c(1,1,1,i), mm*nn*kk)
           END DO
         END DO
         !$OMP BARRIER
@@ -268,7 +273,8 @@
 
         WRITE(*, "(A)") "Streamed... (auto-dispatched)"
         !$OMP PARALLEL PRIVATE(i, j, r, start) DEFAULT(NONE) &
-        !$OMP   SHARED(a, dx, dy, dz, c, m, n, k, mm, nn, kk, duration, repetitions)
+        !$OMP   SHARED(a, dx, dy, dz, c, m, n, k, mm, nn, kk, &
+        !$OMP          duration, repetitions)
         ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k), tm3(mm,nn,kk))
         tm1 = 0; tm2 = 0; tm3 = 3
         !$OMP MASTER
@@ -292,7 +298,7 @@
             CALL libxsmm_dgemm(m=mm*nn, n=kk, k=k,                      &
      &              a=tm2(:,:,1), b=dz, c=tm3(:,:,1),                   &
      &              alpha=alpha, beta=beta)
-            CALL stream_vector_copy( tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
+            CALL stream_vector_copy(tm3(1,1,1), c(1,1,1,i), mm*nn*kk)
           END DO
         END DO
         !$OMP BARRIER
@@ -318,7 +324,8 @@
      &      libxsmm_available(xmm3))                                    &
      &  THEN
           !$OMP PARALLEL PRIVATE(i, j, r, start) & !DEFAULT(NONE)
-          !$OMP   SHARED(a, dx, dy, dz, c, m, n, k, mm, nn, kk, duration, repetitions, xmm1, xmm2, xmm3)
+          !$OMP   SHARED(a, dx, dy, dz, c, m, n, k, mm, nn, kk, &
+          !$OMP          duration, repetitions, xmm1, xmm2, xmm3)
           ALLOCATE(tm1(mm,n,k), tm2(mm,nn,k), tm3(mm,nn,kk))
           tm1 = 0; tm2 = 0; tm3 = 3
           !$OMP MASTER
@@ -328,16 +335,18 @@
           DO r = 1, repetitions
             !$OMP DO
             DO i = LBOUND(a, 4), UBOUND(a, 4)
+              ! [mm,m]x[m,n*k]->[mm,n*k]
               CALL libxsmm_mmcall(xmm1,                                 &
      &                C_LOC(dx), C_LOC(a(1,1,1,i)), C_LOC(tm1))
-              DO j = 1, k
+              DO j = 1, k ! [mm,n]x[n,nn]->[mm,nn]
                 CALL libxsmm_mmcall(xmm2,                               &
      &                C_LOC(tm1(1,1,j)), C_LOC(dy), C_LOC(tm2(1,1,j)))
               END DO
+              ! [mm*nn,k]x[k,kk]->[mm*nn,kk]
               CALL libxsmm_mmcall(xmm3,                                 &
      &                C_LOC(tm2), C_LOC(dz), C_LOC(tm3(1,1,1)))
               CALL stream_vector_copy(                                  &
-     &                tm3(1,1,1), c(1,1,1,i), mm*nn*kk )
+     &                tm3(1,1,1), c(1,1,1,i), mm*nn*kk)
             END DO
           END DO
           !$OMP BARRIER
