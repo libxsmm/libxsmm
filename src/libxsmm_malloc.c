@@ -170,6 +170,9 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 #if !defined(LIBXSMM_MALLOC_HOOK_QKMALLOC) && 0
 # define LIBXSMM_MALLOC_HOOK_QKMALLOC
 #endif
+#if !defined(LIBXSMM_MALLOC_HOOK_FASTMM_OFF) && 1
+# define LIBXSMM_MALLOC_HOOK_FASTMM_OFF
+#endif
 #if !defined(LIBXSMM_MALLOC_HOOK_IMALLOC) && 1
 # define LIBXSMM_MALLOC_HOOK_IMALLOC
 #endif
@@ -231,6 +234,22 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_MMAP
 #endif
 
+#if defined(LIBXSMM_MALLOC_HOOK_FASTMM_OFF)
+# define INTERNAL_MEMALIGN_HOOK_POSTINIT if (2 == libxsmm_ninit) { /* post-init */ \
+  union { const void* dlsym; int (*ptr)(void); } mkl_fastmm; \
+  mkl_fastmm.dlsym = dlsym(RTLD_NEXT, "mkl_disable_fast_mm"); \
+  if (NULL == dlerror() && NULL != mkl_fastmm.dlsym) { \
+    mkl_fastmm.ptr(); \
+  } \
+  else { \
+    setenv("MKL_DISABLE_FAST_MM", "1", 1/*overwrite*/); \
+  } \
+  ++libxsmm_ninit; /* relaxed */ \
+}
+#else
+# define INTERNAL_MEMALIGN_HOOK_POSTINIT
+#endif
+
 #define INTERNAL_MEMALIGN_HOOK(RESULT, FLAGS, ALIGNMENT, SIZE, CALLER) { \
   const int recursive = LIBXSMM_ATOMIC_ADD_FETCH(&internal_malloc_recursive, 1, LIBXSMM_ATOMIC_RELAXED); \
   if (0 == libxsmm_ninit && 1 == recursive) libxsmm_init(); /* !LIBXSMM_INIT */ \
@@ -242,6 +261,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
     (RESULT) = (0 != (ALIGNMENT) ? __real_memalign(ALIGNMENT, SIZE) : __real_malloc(SIZE)); \
   } \
   else { \
+    INTERNAL_MEMALIGN_HOOK_POSTINIT \
     if (NULL == (CALLER)) { /* libxsmm_trace_caller_id may allocate memory */ \
       internal_scratch_malloc(&(RESULT), SIZE, ALIGNMENT, FLAGS, \
         libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL)); \
@@ -1388,16 +1408,6 @@ LIBXSMM_API_INTERN void libxsmm_malloc_init(void)
             *i_free.ptr = internal_malloc.free.ptr;
           }
         }
-      }
-    }
-    if (0 != (internal_malloc_kind & 1) && 0 < internal_malloc_kind) {
-      union { const void* dlsym; int (*ptr)(void); } mkl_fastmm;
-      mkl_fastmm.dlsym = dlsym(RTLD_NEXT, "mkl_disable_fast_mm");
-      if (NULL == dlerror() && NULL != mkl_fastmm.dlsym) {
-        mkl_fastmm.ptr();
-      }
-      else {
-        setenv("MKL_DISABLE_FAST_MM", "1", 1/*overwrite*/);
       }
     }
 # endif /*defined(LIBXSMM_MALLOC_HOOK_IMALLOC)*/
