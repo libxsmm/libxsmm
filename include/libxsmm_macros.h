@@ -706,8 +706,16 @@
 # define inline LIBXSMM_INLINE_KEYWORD
 #endif
 
-#if (0 != LIBXSMM_SYNC) && !defined(_REENTRANT)
-# define _REENTRANT
+#if (0 != LIBXSMM_SYNC)
+# if !defined(_REENTRANT)
+#   define _REENTRANT
+# endif
+# if defined(__PGI)
+#   if defined(__GCC_ATOMIC_TEST_AND_SET_TRUEVAL)
+#     undef __GCC_ATOMIC_TEST_AND_SET_TRUEVAL
+#   endif
+#   define __GCC_ATOMIC_TEST_AND_SET_TRUEVAL 1
+# endif
 #endif
 
 #if !defined(__has_feature) && !defined(__clang__)

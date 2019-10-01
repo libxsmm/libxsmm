@@ -1658,6 +1658,8 @@ ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
       CLDFLAGS += -pthread
     endif
   endif
+else ifneq (0,$(PGI))
+  LDFLAGS += -latomic
 endif
 endif
 ifeq (0,$(VLA))
