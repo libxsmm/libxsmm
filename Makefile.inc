@@ -1729,6 +1729,7 @@ ifneq (,$(OMPFLAG_FORCE))
 ifeq (0,$(shell INFILE=$$($(MKTEMP) /tmp/.libxsmm_XXXXXX.c); \
   echo "\#if defined(_OPENMP)" > $${INFILE}; \
   echo "\# include <omp.h>" >> $${INFILE}; \
+  echo "int main() { return 0; }" >> $${INFILE}; \
   echo "\#endif" >> $${INFILE}; \
   RESULT=$$($(CC) $(OMPFLAG_FORCE) $${INFILE} -o $${INFILE}.x 2>&1); \
   if [ "" = "$${RESULT}" ]; then echo "$$?"; else echo "1"; fi; \
