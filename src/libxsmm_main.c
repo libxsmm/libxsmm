@@ -2848,9 +2848,9 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn, const int* 
     && (NULL == oprec || (0 <= *oprec && *oprec < LIBXSMM_DATATYPE_UNSUPPORTED)))
 #endif
   {
-    const libxsmm_gemm_prefetch_type gemm_prefetch = libxsmm_get_gemm_xprefetch(prefetch);
     const int gemm_flags = (NULL != flags ? *flags : LIBXSMM_FLAGS);
     const libxsmm_gemm_descriptor* descriptor;
+    libxsmm_gemm_prefetch_type gemm_prefetch;
     libxsmm_descriptor_blob blob;
     libxsmm_code_pointer result;
 #if !defined(NDEBUG)
@@ -2861,6 +2861,9 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn, const int* 
     const libxsmm_gemm_precision itype = (libxsmm_gemm_precision)*iprec, otype = (libxsmm_gemm_precision)*oprec;
     const libxsmm_blasint kk = *k, nn = *n;
 #endif
+    LIBXSMM_PRAGMA_FORCEINLINE
+    gemm_prefetch = libxsmm_get_gemm_xprefetch(prefetch);
+    LIBXSMM_PRAGMA_FORCEINLINE
     descriptor = libxsmm_gemm_descriptor_init2(&blob, itype, otype, *m, nn, kk,
         NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? *m : kk),
         NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? kk : nn),
@@ -2869,6 +2872,7 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn, const int* 
     if (NULL != descriptor)
 #endif
     {
+      LIBXSMM_PRAGMA_FORCEINLINE
       result.xgemm = libxsmm_xmmdispatch(descriptor);
       *fn = result.ival;
     }
