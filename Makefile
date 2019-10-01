@@ -759,10 +759,10 @@ endef
 
 EXTCFLAGS = -DLIBXSMM_BUILD_EXT
 ifeq (0,$(OMP))
-ifeq (,$(filter environment% override command%,$(origin OMP)))
-  EXTCFLAGS += $(OMPFLAG)
-  EXTLDFLAGS += $(OMPFLAG)
-endif
+  ifeq (,$(filter environment% override command%,$(origin OMP)))
+    EXTCFLAGS += $(OMPFLAG)
+    EXTLDFLAGS += $(OMPFLAG)
+  endif
 else # OpenMP
   DFLAGS += -DLIBXSMM_SYNC_OMP
 endif
