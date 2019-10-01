@@ -57,9 +57,8 @@
 # endif
 #endif
 
-#if !defined(LIBXSMM_GCC_BASELINE) && !defined(LIBXSMM_SYNC_LEGACY) && ((defined(__GNUC__) && \
-  LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)) \
-  || (defined(_WIN32) && defined(__clang__)))
+#if !defined(LIBXSMM_GCC_BASELINE) && !defined(LIBXSMM_SYNC_LEGACY) && ((defined(_WIN32) && defined(__clang__)) || \
+    (defined(__GNUC__) && LIBXSMM_VERSION3(4, 7, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)))
 # define LIBXSMM_GCC_BASELINE
 #endif
 
@@ -76,8 +75,11 @@
 #endif
 
 #if !defined(LIBXSMM_SYNC_SYSTEM) && \
-  (defined(__MINGW32__) || defined(__PGI) || \
-  (defined(_CRAYC) && !defined(__GNUC__)))
+  ((defined(_CRAYC) && !defined(__GNUC__)) || defined(__MINGW32__))
+# define LIBXSMM_SYNC_SYSTEM
+#endif
+/* disabled atomics: incomplete support for libatomic in compiler */
+#if !defined(LIBXSMM_SYNC_SYSTEM) && defined(__PGI) && 1
 # define LIBXSMM_SYNC_SYSTEM
 #endif
 #if !defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP) && 0
@@ -144,10 +146,48 @@ typedef enum libxsmm_atomic_kind {
 #   define LIBXSMM_SYNC_NPAUSE 0
 # endif
 #else
-# if !defined(LIBXSMM_SYNC_SYSTEM) && (defined(LIBXSMM_GCC_BASELINE) || (defined(__GNUC__) && \
-  LIBXSMM_VERSION3(4, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)))
-#   define LIBXSMM_ATOMIC(FN, BITS) FN
-#   if defined(LIBXSMM_GCC_BASELINE)
+# if !defined(LIBXSMM_SYNC_SYSTEM) && (defined(LIBXSMM_GCC_BASELINE) || defined(LIBXSMM_LIBATOMIC) /* GNU's libatomic required */ \
+  || (defined(__GNUC__) && LIBXSMM_VERSION3(4, 1, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)))
+#   if defined(LIBXSMM_LIBATOMIC)
+#     define LIBXSMM_ATOMIC(FN, BITS) LIBXSMM_CONCATENATE(LIBXSMM_ATOMIC, BITS)(FN)
+#     define LIBXSMM_ATOMIC8(FN) LIBXSMM_CONCATENATE(FN, 8)
+#     define LIBXSMM_ATOMIC16(FN) LIBXSMM_CONCATENATE(FN, 16)
+#     define LIBXSMM_ATOMIC32(FN) FN/*default*/
+#     define LIBXSMM_ATOMIC64(FN) LIBXSMM_CONCATENATE(FN, 64)
+#     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_4(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_LOAD8(SRC_PTR, KIND) __atomic_load_1(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_LOAD16(SRC_PTR, KIND) __atomic_load_2(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_LOAD64(SRC_PTR, KIND) __atomic_load_8(SRC_PTR, KIND)
+#     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) __atomic_store_4(DST_PTR, (unsigned int)(VALUE), KIND)
+#     define LIBXSMM_ATOMIC_STORE8(DST_PTR, VALUE, KIND) __atomic_store_1(DST_PTR, (unsigned char)(VALUE), KIND)
+#     define LIBXSMM_ATOMIC_STORE16(DST_PTR, VALUE, KIND) __atomic_store_2(DST_PTR, (unsigned short)(VALUE), KIND)
+#     define LIBXSMM_ATOMIC_STORE64(DST_PTR, VALUE, KIND) __atomic_store_8(DST_PTR, (unsigned long long)(VALUE), KIND)
+#     if !defined(LIBXSMM_ATOMIC_ZERO_STORE)
+#       define LIBXSMM_ATOMIC_ZERO_STORE
+#     endif
+#     define LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, VALUE, KIND) __atomic_fetch_or(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_ADD_FETCH(DST_PTR, VALUE, KIND) __atomic_add_fetch_4(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_ADD_FETCH8(DST_PTR, VALUE, KIND) __atomic_add_fetch_1(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_ADD_FETCH16(DST_PTR, VALUE, KIND) __atomic_add_fetch_2(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_ADD_FETCH64(DST_PTR, VALUE, KIND) __atomic_add_fetch_8(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_SUB_FETCH(DST_PTR, VALUE, KIND) __atomic_sub_fetch_4(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_SUB_FETCH8(DST_PTR, VALUE, KIND) __atomic_sub_fetch_1(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_SUB_FETCH16(DST_PTR, VALUE, KIND) __atomic_sub_fetch_2(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_SUB_FETCH64(DST_PTR, VALUE, KIND) __atomic_sub_fetch_8(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_FETCH_ADD(DST_PTR, VALUE, KIND) __atomic_fetch_add_4(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_FETCH_ADD8(DST_PTR, VALUE, KIND) __atomic_fetch_add_1(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_FETCH_ADD16(DST_PTR, VALUE, KIND) __atomic_fetch_add_2(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_FETCH_ADD64(DST_PTR, VALUE, KIND) __atomic_fetch_add_8(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_FETCH_SUB(DST_PTR, VALUE, KIND) __atomic_fetch_sub(DST_PTR, VALUE, KIND)
+#     define LIBXSMM_ATOMIC_CMPSWP(DST_PTR, OLDVAL, NEWVAL, KIND) __sync_bool_compare_and_swap(DST_PTR, OLDVAL, NEWVAL)
+#     if defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
+#       define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (!__atomic_test_and_set(DST_PTR, KIND))
+#     endif
+#     define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
+              __atomic_clear(DST_PTR, KIND); }
+#     define LIBXSMM_ATOMIC_SYNC(KIND) __sync_synchronize()
+#   elif defined(LIBXSMM_GCC_BASELINE)
+#     define LIBXSMM_ATOMIC(FN, BITS) FN
 #     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __atomic_load_n(SRC_PTR, KIND)
 #     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) __atomic_store_n(DST_PTR, VALUE, KIND)
 #     if !defined(LIBXSMM_ATOMIC_ZERO_STORE)
@@ -167,19 +207,15 @@ typedef enum libxsmm_atomic_kind {
 #     if defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
 #       define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (!__atomic_test_and_set(DST_PTR, KIND))
 #     endif
-#     if defined(__PGI) /* ICE: __atomic_clear not implemented */
-#       define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
-                LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND); }
-#     else
-#       define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
-                __atomic_clear(DST_PTR, KIND); }
-#     endif
+#     define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
+              __atomic_clear(DST_PTR, KIND); }
 #     if 0 /* __atomic_thread_fence: incorrect behavior in libxsmm_barrier (even with LIBXSMM_ATOMIC_SEQ_CST) */
-#     define LIBXSMM_ATOMIC_SYNC(KIND) __atomic_thread_fence(KIND)
+#       define LIBXSMM_ATOMIC_SYNC(KIND) __atomic_thread_fence(KIND)
 #     else
-#     define LIBXSMM_ATOMIC_SYNC(KIND) __sync_synchronize()
+#       define LIBXSMM_ATOMIC_SYNC(KIND) __sync_synchronize()
 #     endif
 #   else /* GCC legacy atomics */
+#     define LIBXSMM_ATOMIC(FN, BITS) FN
 #     define LIBXSMM_ATOMIC_LOAD(SRC_PTR, KIND) __sync_or_and_fetch(SRC_PTR, 0)
 #     define LIBXSMM_ATOMIC_STORE(DST_PTR, VALUE, KIND) { \
               LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND); *(DST_PTR) = VALUE; \
@@ -202,6 +238,9 @@ typedef enum libxsmm_atomic_kind {
 #   endif
 #   if defined(LIBXSMM_ATOMIC_ZERO_STORE)
 #     define LIBXSMM_ATOMIC_STORE_ZERO(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE(DST_PTR, 0, KIND)
+#     define LIBXSMM_ATOMIC_STORE_ZERO8(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE8(DST_PTR, 0, KIND)
+#     define LIBXSMM_ATOMIC_STORE_ZERO16(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE16(DST_PTR, 0, KIND)
+#     define LIBXSMM_ATOMIC_STORE_ZERO64(DST_PTR, KIND) LIBXSMM_ATOMIC_STORE64(DST_PTR, 0, KIND)
 #   endif
 #   if !defined(LIBXSMM_ATOMIC_TRYLOCK_CMPSWP)
 #     define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (0 == LIBXSMM_ATOMIC_FETCH_OR(DST_PTR, 1, KIND))
