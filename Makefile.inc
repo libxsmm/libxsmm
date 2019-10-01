@@ -1641,27 +1641,36 @@ endif
 endif
 
 ifneq (0,$(THREADS))
-ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
-  CFLAGS += -pthread
-  CXXFLAGS += -pthread
-  FLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
-  ifneq (Windows_NT,$(UNAME))
-    ifneq (0,$(INTEL))
-      ifeq (0,$(OFFLOAD))
-        CLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
-      else
+  ifeq (,$(filter-out 0,$(COMPATIBLE) $(PGI)))
+    CFLAGS += -pthread
+    CXXFLAGS += -pthread
+    FLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
+    ifneq (Windows_NT,$(UNAME))
+      ifneq (0,$(INTEL))
+        ifeq (0,$(OFFLOAD))
+          CLDFLAGS += $(XLIB_BEGIN) -lpthread $(XLIB_END)
+        else
+          CLDFLAGS += -pthread
+        endif
+      else ifneq (Darwin,$(UNAME))
+        CLDFLAGS += -pthread
+      else ifeq (0,$(CLANG))
         CLDFLAGS += -pthread
       endif
-    else ifneq (Darwin,$(UNAME))
-      CLDFLAGS += -pthread
-    else ifeq (0,$(CLANG))
-      CLDFLAGS += -pthread
     endif
+  else ifneq (0,$(PGI))
+    LIBATOMIC ?= 1
   endif
-else ifneq (0,$(PGI))
+endif
+
+LIBATOMIC ?= 0
+ifneq (0,$(THREADS))
+ifneq (0,$(LIBATOMIC))
+  DFLAGS += -DLIBXSMM_LIBATOMIC
   LDFLAGS += -latomic
 endif
 endif
+
 ifeq (0,$(VLA))
   DFLAGS += -DLIBXSMM_NO_VLA
 else ifneq (,$(VLA))
