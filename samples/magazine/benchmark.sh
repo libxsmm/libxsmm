@@ -43,11 +43,30 @@ OUT_EIGEN=benchmark-eigen.txt
 OUT_XSMM=benchmark-xsmm.txt
 OUT_BLAS=benchmark-blas.txt
 
+SCRT=${HERE}/../../scripts/libxsmm_utilities.py
+
 # MNK: comma separated numbers are on its own others are combined into triplets
-RUNS=$(${HERE}/../../scripts/libxsmm_utilities.py -1 $((128*128*128)) 11 \
+RUNS1=$(${SCRT} -1 $((128*128*128)) 11 \
   2, 3, 5, 10, 20, 30, \
   5 7 13, \
   23, 32 \
+  0 0)
+RUNS2=$(${SCRT} -1 $((128*128*128)) 46 \
+  4 5 7 9 13 25 26 28 32 45, \
+  13 14 25 26 32, \
+  5 32 13 24 26, \
+  14 16 29, \
+  14 32 29, \
+  16 29 55, \
+  32 29 55, \
+  9 32 22, \
+  4 10 15, \
+  6 7 8, \
+  23, \
+  64, \
+  78, \
+  12, \
+  6, \
   0 0)
 
 if [ "" != "$1" ]; then
@@ -57,14 +76,21 @@ else
   SIZE=0
 fi
 
+if [ "" != "$1" ]; then
+  RUNS=RUNS$1
+  shift
+else
+  RUNS=RUNS1
+fi
+
 ${CAT} /dev/null > ${OUT_BLAZE}
 ${CAT} /dev/null > ${OUT_EIGEN}
 ${CAT} /dev/null > ${OUT_XSMM}
 ${CAT} /dev/null > ${OUT_BLAS}
 
 NRUN=1
-NMAX=$(${ECHO} ${RUNS} | wc -w | tr -d " ")
-for RUN in ${RUNS} ; do
+NMAX=$(${ECHO} ${!RUNS} | wc -w | tr -d " ")
+for RUN in ${!RUNS} ; do
   MVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f1)
   NVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f2)
   KVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f3)
