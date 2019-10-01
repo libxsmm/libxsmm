@@ -2020,8 +2020,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
             }
           }
         }
-        if (alloc_failed != buffer) {
-          LIBXSMM_ASSERT(NULL != buffer);
+        if (alloc_failed != buffer && NULL != buffer) {
           flags |= LIBXSMM_MALLOC_FLAG_MMAP; /* select deallocation */
         }
         else { /* allocation failed */
