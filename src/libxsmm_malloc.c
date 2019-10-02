@@ -2171,13 +2171,11 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check)
 {
   /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory, check);
-#if !defined(NDEBUG)
-  static int error_once = 0;
-#endif
   if (NULL != info) { /* !libxsmm_free */
 #if (defined(NDEBUG) || defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC))
     internal_xfree(memory, info); /* !libxsmm_free */
 #else
+    static int error_once = 0;
     if (EXIT_SUCCESS != internal_xfree(memory, info)
       && 0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
@@ -2190,6 +2188,7 @@ LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check)
 #if (defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC))
     __real_free((void*)memory);
 #else /*if !defined(NDEBUG)*/
+    static int error_once = 0;
     if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
