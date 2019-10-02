@@ -590,10 +590,7 @@ LIBXSMM_API_INLINE internal_malloc_pool_type* internal_scratch_malloc_pool(const
   LIBXSMM_ASSERT(NULL != memory);
   for (; pool != end; ++pool) {
     if (0 != pool->instance.minsize) {
-      if (pool->instance.buffer <= buffer
-#if 0 /* implied initial condition */
-        && 0 != pool->instance.counter
-#endif
+      if (0 != pool->instance.counter
 #if 0 /* implied by non-zero counter */
         && NULL != pool->instance.buffer
 #endif
@@ -602,7 +599,9 @@ LIBXSMM_API_INLINE internal_malloc_pool_type* internal_scratch_malloc_pool(const
         size_t buffer_size;
         LIBXSMM_ASSERT(NULL != info);
         buffer_size = info->size;
-        if (buffer < (pool->instance.buffer + buffer_size)) {
+        if (pool->instance.buffer == buffer /* fast path */ ||
+           (pool->instance.buffer < buffer && buffer < (pool->instance.buffer + buffer_size)))
+        {
           result = pool;
           break;
         }
