@@ -591,16 +591,14 @@ LIBXSMM_API_INLINE internal_malloc_pool_type* internal_scratch_malloc_pool(const
   for (; pool != end; ++pool) {
     if (0 != pool->instance.minsize) {
       if (0 != pool->instance.counter
-#if 0 /* implied by non-zero counter */
+#if 1 /* should be implied by non-zero counter */
         && NULL != pool->instance.buffer
 #endif
       ){/* check if memory belongs to scratch domain or local domain */
         const internal_malloc_info_type* const info = internal_malloc_info(pool->instance.buffer, 0/*no check*/);
-        size_t buffer_size;
         LIBXSMM_ASSERT(NULL != info);
-        buffer_size = info->size;
         if (pool->instance.buffer == buffer /* fast path */ ||
-           (pool->instance.buffer < buffer && buffer < (pool->instance.buffer + buffer_size)))
+           (pool->instance.buffer < buffer && buffer < (pool->instance.buffer + info->size)))
         {
           result = pool;
           break;
