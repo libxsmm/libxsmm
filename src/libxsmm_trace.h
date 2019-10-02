@@ -77,9 +77,9 @@ LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* 
   switch (level) {
 # if 0
   case 0: return __builtin_extract_return_addr(__builtin_return_address(0));
-  case 1: return __builtin_extract_return_addr(__builtin_return_address(0));
-  case 2: return __builtin_extract_return_addr(__builtin_return_address(0));
-  case 3: return __builtin_extract_return_addr(__builtin_return_address(0));
+  case 1: return __builtin_extract_return_addr(__builtin_return_address(1));
+  case 2: return __builtin_extract_return_addr(__builtin_return_address(2));
+  case 3: return __builtin_extract_return_addr(__builtin_return_address(3));
 # else
   case 0: return __builtin_frame_address(1);
   case 1: return __builtin_frame_address(2);
