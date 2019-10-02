@@ -825,7 +825,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
     { /* local memory allocation */
       if (EXIT_SUCCESS != libxsmm_xmalloc(memory, local_size, alignment,
-          (flags | LIBXSMM_MALLOC_FLAG_SCRATCH) & ~LIBXSMM_MALLOC_FLAG_REALLOC, NULL/*extra*/, 0/*extra_size*/)
+          flags & ~(LIBXSMM_MALLOC_FLAG_SCRATCH | LIBXSMM_MALLOC_FLAG_REALLOC), NULL/*extra*/, 0/*extra_size*/)
         && /* library code is expected to be mute */0 != libxsmm_verbosity
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
@@ -2454,7 +2454,7 @@ LIBXSMM_API void libxsmm_free(const void* memory)
 #else /* lookup matching pool */
     internal_malloc_info_type *const info = internal_malloc_info(memory, 2/*check*/);
     static int error_once = 0;
-    if (NULL != info) { /* !libxsmm_free */
+    if (NULL != info && 0 == (LIBXSMM_MALLOC_FLAG_SCRATCH & info->flags)) { /* !libxsmm_free */
 # if !defined(NDEBUG)
       if (EXIT_SUCCESS != internal_xfree(memory, info)
         && 0 != libxsmm_verbosity /* library code is expected to be mute */
