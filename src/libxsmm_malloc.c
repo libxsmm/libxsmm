@@ -2188,15 +2188,13 @@ LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check)
   }
   else if (NULL != memory) {
 #if (defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC))
-# if !defined(NDEBUG)
-  if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
+    __real_free((void*)memory);
+#else /*if !defined(NDEBUG)*/
+    if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       fprintf(stderr, "LIBXSMM ERROR: deallocation does not match allocation!\n");
     }
-# endif
-#else
-    __real_free((void*)memory);
 #endif
   }
 }
