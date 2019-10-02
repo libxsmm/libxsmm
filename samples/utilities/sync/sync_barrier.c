@@ -50,11 +50,15 @@ int main(int argc, char* argv[])
   }
 
   /* parse the command line and set up the test parameters */
+#if defined(_OPENMP)
   num_cores = (1 < argc ? atoi(argv[1]) : 2);
   assert(num_cores >= 1);
-
   threads_per_core = (2 < argc ? atoi(argv[2]) : 2);
   assert(threads_per_core >= 1);
+#else
+  threads_per_core = 1;
+  num_cores = 1;
+#endif
 
   num_iterations = (1 < argc ? atoi(argv[1]) : 50000);
   assert(num_iterations > 0);
