@@ -88,10 +88,12 @@ LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* 
   case 3: return __builtin_frame_address(4);
 # endif
   default:
-#elif defined(_WIN32)
+#else
   {
+# if defined(_WIN32)
     if (0 == level) return _AddressOfReturnAddress();
     else
+# endif
 #endif
     { const void* stacktrace[LIBXSMM_TRACE_CALLERID_MAXDEPTH];
       const unsigned int n = libxsmm_backtrace(stacktrace, LIBXSMM_TRACE_CALLERID_MAXDEPTH, 0/*skip*/);
