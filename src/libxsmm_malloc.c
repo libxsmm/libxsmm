@@ -877,15 +877,15 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
 
 #if defined(LIBXSMM_GLIBC)
 /* prototypes for GLIBC internal implementation */
-LIBXSMM_EXTERN_C void* __libc_memalign(size_t /*alignment*/, size_t /*size*/);
-LIBXSMM_EXTERN_C void* __libc_malloc(size_t /*size*/);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_memalign(size_t /*alignment*/, size_t /*size*/);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_malloc(size_t /*size*/);
 #if defined(LIBXSMM_MALLOC_HOOK_CALLOC)
-LIBXSMM_EXTERN_C void* __libc_calloc(size_t /*num*/, size_t /*size*/);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_calloc(size_t /*num*/, size_t /*size*/);
 #endif
 #if defined(LIBXSMM_MALLOC_HOOK_REALLOC)
-LIBXSMM_EXTERN_C void* __libc_realloc(void* /*ptr*/, size_t /*size*/);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void* __libc_realloc(void* /*ptr*/, size_t /*size*/);
 #endif
-LIBXSMM_EXTERN_C void  __libc_free(void* /*ptr*/);
+LIBXSMM_EXTERN_C LIBXSMM_RETARGETABLE void  __libc_free(void* /*ptr*/);
 #endif /*defined(LIBXSMM_GLIBC)*/
 
 

@@ -68,7 +68,7 @@ LIBXSMM_API int libxsmm_trace_finalize(void);
 /** Receives the backtrace of up to 'size' addresses. Returns the actual number of addresses (n <= size). */
 LIBXSMM_API unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned int skip);
 
-#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__clang__)
+#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__INTEL_COMPILER) && !defined(__clang__)
 # pragma GCC diagnostic push
 # pragma GCC diagnostic ignored "-Wpragmas"
 # pragma GCC diagnostic ignored "-Wframe-address"
@@ -99,7 +99,7 @@ LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* 
     }
   }
 }
-#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__clang__)
+#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__INTEL_COMPILER) && !defined(__clang__)
 # pragma GCC diagnostic pop
 #endif
 
