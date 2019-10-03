@@ -57,10 +57,6 @@
 # endif
 #endif
 
-#if !defined(CHECK_PARALLEL)
-# define CHECK_PARALLEL
-#endif
-
 #if defined(CHECK_PARALLEL)
 # define MATCOPY libxsmm_matcopy_omp
 #else
@@ -70,9 +66,10 @@
 
 int main(void)
 {
-  /* test #:                      1  2  3  4  5   6  7  8  9 10 11 12 13 14  15   16  17  18   19   20    21 */
+  /* test#:                       1  2  3  4  5   6  7  8  9 10 11 12 13 14  15   16  17  18   19   20    21 */
+  /* index:                       0  1  2  3  4   5  6  7  8  9 10 11 12 13  14   15  16  17   18   19    20 */
   const libxsmm_blasint m[]   = { 1, 1, 1, 1, 2,  2, 3, 4, 6, 6, 6, 6, 9, 9,  9,   8, 16, 63,  16,  16, 2507 };
-  const libxsmm_blasint n[]   = { 1, 6, 7, 7, 2,  4, 3, 4, 1, 1, 1, 1, 5, 9, 23, 250, 16, 31, 500, 500, 1975 };
+  const libxsmm_blasint n[]   = { 1, 6, 7, 7, 2,  4, 3, 4, 1, 1, 1, 1, 5, 9, 23, 250, 16, 31, 500, 448, 1975 };
   const libxsmm_blasint ldi[] = { 1, 1, 2, 2, 2, 17, 3, 6, 6, 8, 6, 7, 9, 9,  9, 512, 16, 63,  16, 512, 3000 };
   const libxsmm_blasint ldo[] = { 1, 1, 1, 8, 2,  2, 3, 4, 6, 6, 8, 8, 9, 9,  9,  16, 16, 64, 512,  16, 3072 };
   const int prefetch[]        = { 1, 0, 1, 0, 1,  0, 1, 0, 1, 0, 1, 0, 0, 0,  0,   0,  1,  0,   1,   0,    1 };
@@ -83,7 +80,12 @@ int main(void)
 #if defined(MATCOPY_GOLD)
   ELEM_TYPE *c = 0;
 #endif
-  int test;
+  void (*matcopy[])(void*, const void*, unsigned int,
+    libxsmm_blasint, libxsmm_blasint,
+    libxsmm_blasint, libxsmm_blasint, const int*) = {
+      libxsmm_matcopy, libxsmm_matcopy_omp
+    };
+  int test, fun;
 
   for (test = start; test < ntests; ++test) {
     const libxsmm_blasint size_a = ldi[test] * n[test], size_b = ldo[test] * n[test];
@@ -102,36 +104,39 @@ int main(void)
   assert(0 != c);
   LIBXSMM_MATINIT_OMP(ELEM_TYPE, 0, c, max_size_b, 1, max_size_b, 1.0);
 #endif
-  for (test = start; test < ntests; ++test) {
-    MATCOPY(b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test], prefetch + test);
-    { /* validation */
-      unsigned int testerrors = 0;
-      libxsmm_blasint i, j;
-      for (i = 0; i < n[test]; ++i) {
-        for (j = 0; j < m[test]; ++j) {
-          const ELEM_TYPE u = a[i*ldi[test]+j];
-          const ELEM_TYPE v = b[i*ldo[test]+j];
-          if (LIBXSMM_NEQ(u, v)) {
-            ++testerrors;
-          }
-        }
-      }
-#if defined(MATCOPY_GOLD)
-      if (0 == testerrors) {
-        MATCOPY_GOLD(m + test, n + test, a, ldi + test, c, ldo + test);
+
+  for (fun = 0; fun < 2; ++fun) {
+    for (test = start; test < ntests; ++test) {
+      matcopy[fun](b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test], prefetch + test);
+      { /* validation */
+        unsigned int testerrors = 0;
+        libxsmm_blasint i, j;
         for (i = 0; i < n[test]; ++i) {
           for (j = 0; j < m[test]; ++j) {
-            const ELEM_TYPE u = b[i*ldo[test]+j];
-            const ELEM_TYPE v = c[i*ldo[test]+j];
+            const ELEM_TYPE u = a[i*ldi[test]+j];
+            const ELEM_TYPE v = b[i*ldo[test]+j];
             if (LIBXSMM_NEQ(u, v)) {
               ++testerrors;
             }
           }
         }
-      }
+#if defined(MATCOPY_GOLD)
+        if (0 == testerrors) {
+          MATCOPY_GOLD(m + test, n + test, a, ldi + test, c, ldo + test);
+          for (i = 0; i < n[test]; ++i) {
+            for (j = 0; j < m[test]; ++j) {
+              const ELEM_TYPE u = b[i*ldo[test]+j];
+              const ELEM_TYPE v = c[i*ldo[test]+j];
+              if (LIBXSMM_NEQ(u, v)) {
+                ++testerrors;
+              }
+            }
+          }
+        }
 #endif
-      if (nerrors < testerrors) {
-        nerrors = testerrors;
+        if (nerrors < testerrors) {
+          nerrors = testerrors;
+        }
       }
     }
   }
