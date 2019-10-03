@@ -2089,7 +2089,7 @@ STATE := $(foreach V,$(sort $(.VARIABLES)),$(if \
     PEDANTIC LIBDL MAINTAINER CMAIN FMAIN CPEDANTIC FREEFORM OPSYS FFORM_FLAG UNUSED PRESTATE AVX SSE \
     which cleanup cleanld linkopt abslibfile abslibpath absliblpath abslibrpath libpath abslib solink applyif extname objname \
     $(if $(filter $(BLAS_STATIC),$(DEPSTATIC)),BLAS_STATIC,$(NULL)) $(if $(filter-out $(FTARGET),$(CTARGET)),TARGET,CTARGET FTARGET),$V), \
-    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(XLNKOPT)--export-dynamic,$($V))))?))))
+    $(if $($V),$V=$(subst $(USER),$$USER,$(subst $(HOME),$$HOME,$(filter-out $(XLNKOPT)--export-dynamic -dynamic,$($V))))?))))
 
 PRESTATE := $(shell echo '$(STATE)' | $(DEPDIR)/.state.sh)
 .state: $(firstword $(PRESTATE))
