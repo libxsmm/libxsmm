@@ -141,12 +141,6 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
 # define LIBXSMM_MALLOC_SEED 1051981
 #endif
 
-#if defined(NDEBUG)
-# define LIBXSMM_MALLOC_CALLER_LEVEL 0
-#else
-# define LIBXSMM_MALLOC_CALLER_LEVEL 3
-#endif
-
 #if !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC) && \
   defined(LIBXSMM_MALLOC) && (0 != LIBXSMM_MALLOC) && defined(LIBXSMM_INTERCEPT_DYNAMIC) && \
   defined(LIBXSMM_GLIBC) && !defined(_CRAYC) && !defined(__TRACE) /* TODO */
@@ -247,7 +241,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
   else { \
     if (NULL == (CALLER)) { /* libxsmm_trace_caller_id may allocate memory */ \
       internal_scratch_malloc(&(RESULT), SIZE, ALIGNMENT, FLAGS, \
-        libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL)); \
+        libxsmm_trace_caller_id(0/*level*/)); \
     } \
     else { \
       internal_scratch_malloc(&(RESULT), SIZE, ALIGNMENT, FLAGS, CALLER); \
@@ -269,7 +263,7 @@ LIBXSMM_EXTERN_C typedef struct iJIT_Method_Load_V2 {
     LIBXSMM_ASSERT(0 == ((uintptr_t)(PTR) & ~(0xFFFFFFFFFFFFFFFF << nzeros))); \
     if (NULL == (CALLER)) { /* libxsmm_trace_caller_id may allocate memory */ \
       internal_scratch_malloc(&(PTR), SIZE, (size_t)alignment, FLAGS, \
-        libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL)); \
+        libxsmm_trace_caller_id(0/*level*/)); \
     } \
     else { \
       internal_scratch_malloc(&(PTR), SIZE, (size_t)alignment, FLAGS, CALLER); \
@@ -684,7 +678,7 @@ LIBXSMM_API_INTERN void internal_scratch_malloc(void** memory, size_t size, size
 # endif
       unsigned int npools = 1;
 # if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (1 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-      const void *const site = (NULL != caller ? caller : libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL));
+      const void *const site = caller; /* no further attempt in case of NULL */
       for (; pool != end; ++pool) { /* counter: memory info is not employed as pools are still manipulated */
         if (NULL != pool->instance.buffer) {
           if ((LIBXSMM_MALLOC_INTERNAL_CALLER) != pool->instance.site) ++npools; /* count number of occupied pools */
@@ -2400,7 +2394,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_MALLOC void* libxsmm_aligned_malloc(size_t size, s
     assert(EXIT_SUCCESS == status || NULL == result); /* !LIBXSMM_ASSERT */
   }
   else { /* scratch */
-    const void *const caller = libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL);
+    const void *const caller = libxsmm_trace_caller_id(0/*level*/);
     internal_scratch_malloc(&result, size, alignment, LIBXSMM_MALLOC_FLAG_DEFAULT, caller);
   }
   return result;
@@ -2420,7 +2414,7 @@ LIBXSMM_API void* libxsmm_realloc(size_t size, void* ptr)
     assert(EXIT_SUCCESS == status || NULL == ptr); /* !LIBXSMM_ASSERT */
   }
   else { /* scratch */
-    const void *const caller = libxsmm_trace_caller_id(LIBXSMM_MALLOC_CALLER_LEVEL);
+    const void *const caller = libxsmm_trace_caller_id(0/*level*/);
     internal_scratch_malloc(&ptr, size, alignment, LIBXSMM_MALLOC_FLAG_REALLOC, caller);
   }
   return ptr;
@@ -2482,10 +2476,19 @@ LIBXSMM_API void libxsmm_free(const void* memory)
       }
       else
 # endif
-      if (0 != libxsmm_verbosity && /* library code is expected to be mute */
-          1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM ERROR: memory deallocation failed!\n");
+# if defined(NDEBUG) && (defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC))
+        __real_free((void*)memory);
+# else
+#   if (defined(LIBXSMM_MALLOC_HOOK_STATIC) || defined(LIBXSMM_MALLOC_HOOK_DYNAMIC))
+        __real_free((void*)memory);
+#   endif
+        if (0 != libxsmm_verbosity && /* library code is expected to be mute */
+            1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+        {
+          fprintf(stderr, "LIBXSMM ERROR: deallocation does not match allocation!\n");
+        }
+# endif
       }
     }
 #endif
