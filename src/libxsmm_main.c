@@ -1646,7 +1646,7 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     } break;
     case LIBXSMM_BUILD_KIND_MCOPY: { /* matcopy kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.mcopy);
-# if 1 /* TODO: backend supports typesize <= 4, but kernels for typesize < 4 are incorrect */
+# if 0 /* TODO: backend supports typesize <= 4, but kernels for typesize < 4 are incorrect */
       if (4 == request->descriptor.mcopy->typesize)
 # endif
       {
