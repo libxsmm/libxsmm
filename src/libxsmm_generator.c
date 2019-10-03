@@ -361,23 +361,22 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
     libxsmm_mcopy_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  if (0 == LIBXSMM_MOD2(typesize, 4)) { /* TODO: more general kernel */
-    const unsigned int typescale = typesize / 4;
-    LIBXSMM_DESCRIPTOR_CLEAR(blob);
-    result.blob = blob;
-    result.ptr->unroll_level = (unsigned char)((NULL == unroll || 0 >= *unroll) ? 2/*default*/ : LIBXSMM_MIN(*unroll, 64));
-    result.ptr->typesize = (unsigned char)/*typesize*/4;
-    result.ptr->prefetch = (unsigned char)prefetch;
-    result.ptr->flags = (unsigned char)flags;
-    result.ptr->ldi = ldi * typescale;
-    result.ptr->ldo = ldo * typescale;
-    result.ptr->m = m * typescale;
-    result.ptr->n = n;
-  }
-  else {
-    result.ptr = NULL;
-  }
-  return result.ptr;
+  LIBXSMM_DESCRIPTOR_CLEAR(blob);
+  result.blob = blob;
+  /* TODO: backend supports typesize <= 4, but kernels for typesize < 4 are incorrect */
+  result.ptr->typesize = (unsigned char)/*typesize*/4;
+  result.ptr->unroll_level = (unsigned char)((NULL == unroll || 0 >= *unroll) ? LIBXSMM_MAX(8 / result.ptr->typesize, 1) : LIBXSMM_MIN(*unroll, 64));
+  result.ptr->prefetch = (unsigned char)prefetch;
+  result.ptr->flags = (unsigned char)flags;
+  result.ptr->ldi = ldi * typesize / 4; /* scale */
+  result.ptr->ldo = ldo * typesize / 4; /* scale */
+  result.ptr->m = m * typesize / 4; /* scale */
+  result.ptr->n = n;
+  return ((typesize * ldi) == (4 * result.ptr->ldi)
+      &&  (typesize * ldo) == (4 * result.ptr->ldo)
+      &&  (typesize * m) == (4 * result.ptr->m))
+    ? result.ptr
+    : NULL;
 }
 
 LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descriptor_blob* blob,
