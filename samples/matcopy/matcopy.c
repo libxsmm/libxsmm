@@ -59,6 +59,7 @@ int main(int argc, char* argv[])
   ELEM_TYPE *a, *b;
   double copy_time;
 
+  libxsmm_init();
   printf("This is a tester for JIT matcopy kernels!\n");
   desc = libxsmm_mcopy_descriptor_init(&blob, sizeof(ELEM_TYPE),
     m, n, ldo, ldi, flags, prefetch, &unroll);

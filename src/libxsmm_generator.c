@@ -365,8 +365,8 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
   result.blob = blob;
   result.ptr->prefetch = (unsigned char)prefetch;
   result.ptr->flags = (unsigned char)flags;
-  /* TODO: backend supports typesize <= 4, but certain kernels are incorrect */
-  if (4 == typesize || (4 > typesize && 4 <= m)) {
+  /* TODO: backend supports typesize <= 4, but certain AVX1/AVX2-kernels are incorrect */
+  if (4 >= typesize && (LIBXSMM_X86_AVX512 <= libxsmm_target_archid || 32 <= (typesize * m) || ldi == ldo)) {
     result.ptr->typesize = (unsigned char)typesize;
     result.ptr->unroll_level = (unsigned char)((NULL == unroll || 0 >= *unroll) ? LIBXSMM_MAX(8 / result.ptr->typesize, 1) : LIBXSMM_MIN(*unroll, 64));
     result.ptr->ldi = ldi;
