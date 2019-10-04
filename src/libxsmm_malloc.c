@@ -1943,7 +1943,7 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
               }
               fclose(selinux);
             }
-            LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&fallback, NULL == env
+            LIBXSMM_ATOMIC_STORE(&fallback, NULL == env
               /* libxsmm_se decides */
               ? (0 == libxsmm_se ? LIBXSMM_MALLOC_FINAL : LIBXSMM_MALLOC_FALLBACK)
               /* user's choice takes precedence */
