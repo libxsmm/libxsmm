@@ -613,7 +613,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* messag
     if (NULL != stop.dlsym) {
       stop.ptr(message, len, quiet);
     }
-    else exit(EXIT_FAILURE); /* statically linked runtime */
+    else exit(EXIT_SUCCESS); /* statically linked runtime */
   }
 }
 
@@ -628,7 +628,22 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* message, int l
     if (NULL != stop.dlsym) {
       stop.ptr(message, len);
     }
-    else exit(EXIT_FAILURE); /* statically linked runtime */
+    else exit(EXIT_SUCCESS); /* statically linked runtime */
+  }
+}
+
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core_quiet(void);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core_quiet(void)
+{ /* STOP termination handler for Intel Fortran runtime */
+  static int once = 0;
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    union { const void* dlsym; void (*ptr)(void); } stop;
+    dlerror(); /* clear an eventual error status */
+    stop.dlsym = dlsym(RTLD_NEXT, "for_stop_core_quiet");
+    if (NULL != stop.dlsym) {
+      stop.ptr();
+    }
+    else exit(EXIT_SUCCESS); /* statically linked runtime */
   }
 }
 #endif
