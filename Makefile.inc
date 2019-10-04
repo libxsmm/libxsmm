@@ -349,7 +349,7 @@ endif
 ICX ?= 0
 
 # check if the Intel Development Tools are available
-INTEL ?= $(shell echo "$$((2==$(words $(filter icpc icpx icc icx, \
+INTEL ?= $(shell echo "$$((2==$(words $(filter icpc% icpx% icc% icx%, \
   $(shell $(CXX) --version 2>/dev/null | grep -m1 . | cut -d' ' -f1) \
   $(shell $(CC) --version 2>/dev/null | grep -m1 . | cut -d' ' -f1)))))")
 
@@ -988,6 +988,8 @@ ifneq (0,$(INTEL))
   ifeq (,$(strip $(GFC)))
     # flag specifying output directory must be last
     FMFLAGS += -module
+  else
+    FMFLAGS += -J
   endif
   CXXFLAGS += $(OPTFLAG)
   CFLAGS += $(OPTFLAG)
