@@ -80,7 +80,7 @@ int main(int argc, char* argv[])
       }
     }
     for (j = m; j < ldo; ++j) {
-      b[j+ldo*i] = (ELEM_TYPE)0xDEAD;
+      b[j+ldo*i] = (ELEM_TYPE)0xCD;
     }
   }
 
@@ -115,7 +115,7 @@ int main(int argc, char* argv[])
       }
     }
     for (j = m; j < ldo; ++j) {
-      if (LIBXSMM_NEQ((ELEM_TYPE)0xDEAD, b[j+ldo*i])) {
+      if (LIBXSMM_NEQ((ELEM_TYPE)0xCD, b[j+ldo*i])) {
         printf("ERROR!!!\n");
         error = 1; i = n; break;
       }
