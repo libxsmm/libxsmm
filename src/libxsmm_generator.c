@@ -363,31 +363,32 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
   } result;
   LIBXSMM_DESCRIPTOR_CLEAR(blob);
   result.blob = blob;
-#if 1 /* TODO: backend supports typesize <= 4, but kernels for typesize < 4 are incorrect */
-  result.ptr->typesize = (unsigned char)/*typesize*/4;
-  result.ptr->unroll_level = (unsigned char)((NULL == unroll || 0 >= *unroll) ? LIBXSMM_MAX(8 / result.ptr->typesize, 1) : LIBXSMM_MIN(*unroll, 64));
   result.ptr->prefetch = (unsigned char)prefetch;
   result.ptr->flags = (unsigned char)flags;
-  result.ptr->ldi = ldi * typesize / 4; /* scale */
-  result.ptr->ldo = ldo * typesize / 4; /* scale */
-  result.ptr->m = m * typesize / 4; /* scale */
-  result.ptr->n = n;
-  return ((typesize * ldi) == (4 * result.ptr->ldi)
-      &&  (typesize * ldo) == (4 * result.ptr->ldo)
-      &&  (typesize * m) == (4 * result.ptr->m))
-    ? result.ptr
-    : NULL;
-#else /* no fix-up (also not for DP) */
-  result.ptr->typesize = (unsigned char)typesize;
-  result.ptr->unroll_level = (unsigned char)((NULL == unroll || 0 >= *unroll) ? LIBXSMM_MAX(8 / result.ptr->typesize, 1) : LIBXSMM_MIN(*unroll, 64));
-  result.ptr->prefetch = (unsigned char)prefetch;
-  result.ptr->flags = (unsigned char)flags;
-  result.ptr->ldi = ldi;
-  result.ptr->ldo = ldo;
-  result.ptr->m = m;
-  result.ptr->n = n;
+  /* TODO: backend supports typesize <= 4, but certain kernels are incorrect */
+  if (4 == typesize || (4 > typesize && 4 <= m)) {
+    result.ptr->typesize = (unsigned char)typesize;
+    result.ptr->unroll_level = (unsigned char)((NULL == unroll || 0 >= *unroll) ? LIBXSMM_MAX(8 / result.ptr->typesize, 1) : LIBXSMM_MIN(*unroll, 64));
+    result.ptr->ldi = ldi;
+    result.ptr->ldo = ldo;
+    result.ptr->m = m;
+    result.ptr->n = n;
+  }
+  else { /* fix-up incl. DP-support */
+    result.ptr->typesize = 4;
+    result.ptr->unroll_level = 2;
+    result.ptr->ldi = ldi * typesize / 4; /* scale */
+    result.ptr->ldo = ldo * typesize / 4; /* scale */
+    result.ptr->m = m * typesize / 4; /* scale */
+    result.ptr->n = n;
+    if (((typesize * ldi) != (4 * result.ptr->ldi)
+      || (typesize * ldo) != (4 * result.ptr->ldo)
+      || (typesize * m) != (4 * result.ptr->m)))
+    {
+      result.ptr = NULL;
+    }
+  }
   return result.ptr;
-#endif
 }
 
 LIBXSMM_API libxsmm_trsm_descriptor* libxsmm_trsm_descriptor_init(libxsmm_descriptor_blob* blob,
