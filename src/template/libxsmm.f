@@ -1303,10 +1303,7 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
-          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
-     &        ALL(0.LT.SHAPE(b)).AND.                                   &
-     &        ALL(0.LT.SHAPE(c)))                                       &
-     &    THEN
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
             CALL libxsmm_dgemm0(transa, transb, m, n, k,                &
      &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
      &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
@@ -1375,10 +1372,7 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
-          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
-     &        ALL(0.LT.SHAPE(b)).AND.                                   &
-     &        ALL(0.LT.SHAPE(c)))                                       &
-     &    THEN
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
             CALL libxsmm_sgemm0(transa, transb, m, n, k,                &
      &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
      &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
@@ -1447,10 +1441,7 @@
           INTEGER(C_INT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_SHORT), INTENT(IN) :: a(:,:), b(:,:)
           INTEGER(C_INT), INTENT(INOUT) :: c(:,:)
-          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
-     &        ALL(0.LT.SHAPE(b)).AND.                                   &
-     &        ALL(0.LT.SHAPE(c)))                                       &
-     &    THEN
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
             CALL libxsmm_wigemm0(transa, transb, m, n, k,               &
      &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
      &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
@@ -1519,10 +1510,7 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           INTEGER(C_SHORT), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
-          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
-     &        ALL(0.LT.SHAPE(b)).AND.                                   &
-     &        ALL(0.LT.SHAPE(c)))                                       &
-     &    THEN
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
             CALL libxsmm_wsgemm0(transa, transb, m, n, k,               &
      &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
      &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
@@ -1591,10 +1579,7 @@
           REAL(C_DOUBLE), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_DOUBLE), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_DOUBLE), INTENT(INOUT) :: c(:,:)
-          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
-     &        ALL(0.LT.SHAPE(b)).AND.                                   &
-     &        ALL(0.LT.SHAPE(c)))                                       &
-     &    THEN
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
             CALL libxsmm_blas_dgemm0(transa, transb, m, n, k,           &
      &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
      &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
@@ -1663,10 +1648,7 @@
           REAL(C_FLOAT), INTENT(IN), OPTIONAL :: alpha, beta
           REAL(C_FLOAT), INTENT(IN) :: a(:,:), b(:,:)
           REAL(C_FLOAT), INTENT(INOUT) :: c(:,:)
-          IF (ALL(0.LT.SHAPE(a)).AND.                                   &
-     &        ALL(0.LT.SHAPE(b)).AND.                                   &
-     &        ALL(0.LT.SHAPE(c)))                                       &
-     &    THEN
+          IF ((0.LT.m).AND.(0.LT.n).AND.(0.LT.k)) THEN
             CALL libxsmm_blas_sgemm0(transa, transb, m, n, k,           &
      &        alpha, a(LBOUND(a,1),LBOUND(a,2)), lda,                   &
      &               b(LBOUND(b,1),LBOUND(b,2)), ldb,                   &
