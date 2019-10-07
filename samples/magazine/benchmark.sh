@@ -31,7 +31,6 @@
 #############################################################################
 
 HERE=$(cd $(dirname $0); pwd -P)
-ECHO=$(command -v echo)
 CAT=$(command -v cat)
 TR=$(command -v tr)
 
@@ -41,15 +40,15 @@ export OMP_SCHEDULE=static OMP_PROC_BIND=TRUE
 OUT_BLAZE=benchmark-blaze.txt
 OUT_EIGEN=benchmark-eigen.txt
 OUT_XSMM=benchmark-xsmm.txt
+OUT_XBAT=benchmark-xbat.txt
 OUT_BLAS=benchmark-blas.txt
 
 SCRT=${HERE}/../../scripts/libxsmm_utilities.py
 
 # MNK: comma separated numbers are on its own others are combined into triplets
-RUNS1=$(${SCRT} -1 $((128*128*128)) 11 \
-  2, 3, 5, 10, 20, 30, \
+RUNS1=$(${SCRT} -1 $((128*128*128)) 21 \
+  2, 3, 4, 5, 8, 10, 15, 16, 20, 23, 24, 25, 28, 30, 32, 35, 36, 40, \
   5 7 13, \
-  23, 32 \
   0 0)
 RUNS2=$(${SCRT} -1 $((128*128*128)) 46 \
   4 5 7 9 13 25 26 28 32 45, \
@@ -86,27 +85,31 @@ fi
 ${CAT} /dev/null > ${OUT_BLAZE}
 ${CAT} /dev/null > ${OUT_EIGEN}
 ${CAT} /dev/null > ${OUT_XSMM}
+${CAT} /dev/null > ${OUT_XBAT}
 ${CAT} /dev/null > ${OUT_BLAS}
 
 NRUN=1
-NMAX=$(${ECHO} ${!RUNS} | wc -w | tr -d " ")
+NMAX=$(echo ${!RUNS} | wc -w | tr -d " ")
 for RUN in ${!RUNS} ; do
-  MVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f1)
-  NVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f2)
-  KVALUE=$(${ECHO} ${RUN} | cut --output-delimiter=' ' -d_ -f3)
-  ${ECHO} "${NRUN} of ${NMAX} (M=${MVALUE} N=${NVALUE} K=${KVALUE})... "
-  ${ECHO} -n "${MVALUE} ${NVALUE} ${KVALUE} "                                   >> ${OUT_BLAZE}
+  MVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f1)
+  NVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f2)
+  KVALUE=$(echo ${RUN} | cut --output-delimiter=' ' -d_ -f3)
+  echo "${NRUN} of ${NMAX} (M=${MVALUE} N=${NVALUE} K=${KVALUE})... "
+  echo -n "${MVALUE} ${NVALUE} ${KVALUE} "                                   >> ${OUT_BLAZE}
   ${HERE}/magazine_blaze ${SIZE} ${MVALUE} ${NVALUE} ${KVALUE} | ${TR} "\n" " " >> ${OUT_BLAZE}
-  ${ECHO}                                                                       >> ${OUT_BLAZE}
-  ${ECHO} -n "${MVALUE} ${NVALUE} ${KVALUE} "                                   >> ${OUT_EIGEN}
+  echo                                                                       >> ${OUT_BLAZE}
+  echo -n "${MVALUE} ${NVALUE} ${KVALUE} "                                   >> ${OUT_EIGEN}
   ${HERE}/magazine_eigen ${SIZE} ${MVALUE} ${NVALUE} ${KVALUE} | ${TR} "\n" " " >> ${OUT_EIGEN}
-  ${ECHO}                                                                       >> ${OUT_EIGEN}
-  ${ECHO} -n "${MVALUE} ${NVALUE} ${KVALUE} "                                   >> ${OUT_XSMM}
+  echo                                                                       >> ${OUT_EIGEN}
+  echo -n "${MVALUE} ${NVALUE} ${KVALUE} "                                   >> ${OUT_XSMM}
   ${HERE}/magazine_xsmm  ${SIZE} ${MVALUE} ${NVALUE} ${KVALUE} | ${TR} "\n" " " >> ${OUT_XSMM}
-  ${ECHO}                                                                       >> ${OUT_XSMM}
-  ${ECHO} -n "${MVALUE} ${NVALUE} ${KVALUE} "                                   >> ${OUT_BLAS}
+  echo                                                                       >> ${OUT_XSMM}
+  echo -n "${MVALUE} ${NVALUE} ${KVALUE} "                                   >> ${OUT_XBAT}
+  ${HERE}/magazine_batch ${SIZE} ${MVALUE} ${NVALUE} ${KVALUE} | ${TR} "\n" " " >> ${OUT_XBAT}
+  echo                                                                       >> ${OUT_XBAT}
+  echo -n "${MVALUE} ${NVALUE} ${KVALUE} "                                   >> ${OUT_BLAS}
   ${HERE}/magazine_blas  ${SIZE} ${MVALUE} ${NVALUE} ${KVALUE} | ${TR} "\n" " " >> ${OUT_BLAS}
-  ${ECHO}                                                                       >> ${OUT_BLAS}
+  echo                                                                       >> ${OUT_BLAS}
   NRUN=$((NRUN+1))
 done
 
