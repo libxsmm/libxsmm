@@ -1850,18 +1850,28 @@ else # disable
   MKL = 0
 endif
 ifneq (0,$(MKL))
+  ifeq (1,$(MKL_DIRECT))
+    ifeq (1,$(MKL))
+      BLAS_FLAGS += -DMKL_DIRECT_CALL_SEQ
+    else
+      BLAS_FLAGS += -DMKL_DIRECT_CALL
+    endif
+    ifneq (0,$(GCC))
+      CXXFLAGS += -Wno-unused-value
+      CFLAGS += -Wno-unused-value
+    endif
+  else ifneq (0,$(MKL_DIRECT))
+    ifeq (1,$(MKL))
+      BLAS_FLAGS += -DMKL_DIRECT_CALL_SEQ_JIT
+    else
+      BLAS_FLAGS += -DMKL_DIRECT_CALL_JIT
+    endif
+    ifneq (0,$(GCC))
+      CXXFLAGS += -Wno-unused-value
+      CFLAGS += -Wno-unused-value
+    endif
+  endif
   BLAS_FLAGS += -D__CBLAS
-endif
-ifeq (1,$(MKL_DIRECT))
-  ifeq (1,$(MKL))
-    BLAS_FLAGS += -DMKL_DIRECT_CALL_SEQ
-  else ifneq (0,$(MKL))
-    BLAS_FLAGS += -DMKL_DIRECT_CALL
-  endif
-  ifneq (0,$(GCC))
-    CXXFLAGS += -Wno-unused-value
-	CFLAGS += -Wno-unused-value
-  endif
 endif
 ifneq (Darwin,$(UNAME))
   ifneq (,$(wildcard $(MKLROOT)/lib/x86_64-linux-gnu/libmkl_rt.*))
