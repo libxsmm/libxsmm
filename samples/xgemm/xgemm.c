@@ -49,9 +49,19 @@
 # define OTYPE ITYPE
 #endif
 
+#if !defined(SEQUENTIAL) && 0
+# define SEQUENTIAL
+#endif
+
 #if !defined(XGEMM)
-# define XGEMM(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
-    LIBXSMM_YGEMM_SYMBOL(ITYPE)(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+# if defined(SEQUENTIAL)
+#   define XGEMM(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+      libxsmm_xgemm(LIBXSMM_GEMM_PRECISION(ITYPE), LIBXSMM_GEMM_PRECISION(OTYPE), \
+        TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+# else
+#   define XGEMM(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC) \
+      LIBXSMM_YGEMM_SYMBOL(ITYPE)(TRANSA, TRANSB, M, N, K, ALPHA, A, LDA, B, LDB, BETA, C, LDC)
+# endif
 #endif
 
 #if !defined(CHECK) && (LIBXSMM_EQUAL(ITYPE, float) || LIBXSMM_EQUAL(ITYPE, double))
@@ -71,8 +81,8 @@ int main(int argc, char* argv[])
   LIBXSMM_GEMM_CONST libxsmm_blasint n = (2 < argc ? atoi(argv[2]) : k), nn = n;
   LIBXSMM_GEMM_CONST OTYPE alpha = (OTYPE)(7 < argc ? atof(argv[7]) : 1.0);
   LIBXSMM_GEMM_CONST OTYPE beta  = (OTYPE)(8 < argc ? atof(argv[8]) : 1.0);
-  LIBXSMM_GEMM_CONST char transa = (LIBXSMM_GEMM_CONST char)( 9 < argc ? *argv[9]  : 'N');
-  LIBXSMM_GEMM_CONST char transb = (LIBXSMM_GEMM_CONST char)(10 < argc ? *argv[10] : 'N');
+  LIBXSMM_GEMM_CONST char transa = (/*LIBXSMM_GEMM_CONST*/ char)( 9 < argc ? *argv[9]  : 'N');
+  LIBXSMM_GEMM_CONST char transb = (/*LIBXSMM_GEMM_CONST*/ char)(10 < argc ? *argv[10] : 'N');
   LIBXSMM_GEMM_CONST libxsmm_blasint mm = (('N' == transa || 'n' == transa) ? m : k);
   LIBXSMM_GEMM_CONST libxsmm_blasint kk = (('N' == transb || 'n' == transb) ? k : n);
   LIBXSMM_GEMM_CONST libxsmm_blasint ka = (('N' == transa || 'n' == transa) ? k : m);

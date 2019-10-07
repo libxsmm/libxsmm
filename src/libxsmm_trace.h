@@ -43,6 +43,14 @@
 #if (defined(__TRACE) || defined(LIBXSMM_BUILD) || !defined(_WIN32))
 # define LIBXSMM_TRACE
 #endif
+#if !defined(LIBXSMM_TRACE_CALLERID_MAXDEPTH)
+# define LIBXSMM_TRACE_CALLERID_MAXDEPTH 8
+#endif
+#if !defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && \
+  (!defined(_WIN32) && (defined(__GNUC__) || defined(__clang__)) && (!defined(__PGI) || \
+    LIBXSMM_VERSION3(19, 0, 0) <= LIBXSMM_VERSION3(__PGIC__, __PGIC_MINOR__, __PGIC_PATCHLEVEL__)))
+# define LIBXSMM_TRACE_CALLERID_GCCBUILTIN
+#endif
 
 
 /** Initializes the trace facility; NOT thread-safe. */
@@ -60,20 +68,42 @@ LIBXSMM_API int libxsmm_trace_finalize(void);
 /** Receives the backtrace of up to 'size' addresses. Returns the actual number of addresses (n <= size). */
 LIBXSMM_API unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned int skip);
 
-LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* must be inline */
-#if (defined(__GNUC__) || defined(__clang__)) && (!defined(__PGI) || \
-  LIBXSMM_VERSION3(19, 0, 0) <= LIBXSMM_VERSION3(__PGIC__, __PGIC_MINOR__, __PGIC_PATCHLEVEL__))
-  if (0 == level) return __builtin_return_address(0);
-  else
-#elif defined(_WIN32)
-  if (0 == level) return _AddressOfReturnAddress();
-  else
+#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__INTEL_COMPILER) && !defined(__clang__)
+# pragma GCC diagnostic push
+# pragma GCC diagnostic ignored "-Wpragmas"
+# pragma GCC diagnostic ignored "-Wframe-address"
 #endif
-  { const void* stacktrace[8/*sufficient/maximum level*/];
-    const unsigned int n = libxsmm_backtrace(stacktrace, sizeof(stacktrace) / sizeof(*stacktrace), 0/*skip*/);
-    return (level < n ? stacktrace[level] : NULL);
+LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* must be inline */
+#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN)
+  switch (level) {
+# if 0
+  case 0: return __builtin_extract_return_addr(__builtin_return_address(0));
+  case 1: return __builtin_extract_return_addr(__builtin_return_address(1));
+  case 2: return __builtin_extract_return_addr(__builtin_return_address(2));
+  case 3: return __builtin_extract_return_addr(__builtin_return_address(3));
+# else
+  case 0: return __builtin_frame_address(1);
+  case 1: return __builtin_frame_address(2);
+  case 2: return __builtin_frame_address(3);
+  case 3: return __builtin_frame_address(4);
+# endif
+  default:
+#else
+  {
+# if defined(_WIN32)
+    if (0 == level) return _AddressOfReturnAddress();
+    else
+# endif
+#endif
+    { const void* stacktrace[LIBXSMM_TRACE_CALLERID_MAXDEPTH];
+      const unsigned int n = libxsmm_backtrace(stacktrace, LIBXSMM_TRACE_CALLERID_MAXDEPTH, 0/*skip*/);
+      return (level < n ? stacktrace[level] : NULL);
+    }
   }
 }
+#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__INTEL_COMPILER) && !defined(__clang__)
+# pragma GCC diagnostic pop
+#endif
 
 /** Returns the name of the function where libxsmm_trace is called from; thread-safe. */
 LIBXSMM_API const char* libxsmm_trace_info(

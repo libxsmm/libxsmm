@@ -1255,6 +1255,41 @@ LIBXSMM_API void libxsmm_gemm_thread(const libxsmm_gemm_handle* handle, void* sc
 }
 
 
+LIBXSMM_API void libxsmm_xgemm(libxsmm_gemm_precision iprec, libxsmm_gemm_precision oprec,
+  const char* transa, const char* transb, const libxsmm_blasint* m, const libxsmm_blasint* n, const libxsmm_blasint* k,
+  const void* alpha, const void* a, const libxsmm_blasint* lda, const void* b, const libxsmm_blasint* ldb,
+  const void* beta, void* c, const libxsmm_blasint* ldc)
+{
+  libxsmm_gemm_blob blob;
+  const libxsmm_gemm_handle *const handle = libxsmm_gemm_handle_init(&blob, iprec, oprec, transa, transb,
+    m, n, k, lda, ldb, ldc, alpha, beta, LIBXSMM_GEMM_HANDLE_FLAG_AUTO, 1/*ntasks*/);
+  const size_t scratch_size = libxsmm_gemm_handle_get_scratch_size(handle);
+  void* scratch = NULL;
+  if (NULL != handle && (0 == scratch_size ||
+      NULL != (scratch = libxsmm_scratch_malloc(scratch_size, LIBXSMM_CACHELINE, LIBXSMM_MALLOC_INTERNAL_CALLER))))
+  {
+    libxsmm_gemm_thread(handle, scratch, a, b, c, 0/*tid*/, 1/*ntasks*/);
+    libxsmm_free(scratch);
+  }
+  else { /* fall-back or error */
+    static int error_once = 0;
+    if (NULL == handle) { /* fall-back */
+      if ((LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM WARNING (XGEMM): fall-back code path triggered!\n");
+      }
+    }
+    else if (0 != libxsmm_verbosity && /* library code is expected to be mute */
+      1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: failed to allocate GEMM-scratch memory!\n");
+    }
+    libxsmm_blas_xgemm(iprec, oprec, transa, transb, m, n, k, alpha, a, lda, b, ldb, beta, c, ldc);
+  }
+}
+
+
 LIBXSMM_API void libxsmm_dgemm_batch(
   const char transa_array[], const char transb_array[], const libxsmm_blasint m_array[], const libxsmm_blasint n_array[], const libxsmm_blasint k_array[],
   const double alpha_array[], const double* a_array[], const libxsmm_blasint lda_array[], const double* b_array[], const libxsmm_blasint ldb_array[],

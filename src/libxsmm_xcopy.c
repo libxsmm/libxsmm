@@ -49,6 +49,9 @@
 #   define LIBXSMM_XCOPY_JIT 3
 # endif
 #endif
+#if !defined(LIBXSMM_XCOPY_JIT_TINY) && 0
+# define LIBXSMM_XCOPY_JIT_TINY
+#endif
 
 
 LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
@@ -180,7 +183,7 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
       unsigned int tm = libxsmm_trans_mtile[4 < typesize ? 0 : 1];
       unsigned int tn = (unsigned int)(libxsmm_trans_tile_stretch * tm);
       libxsmm_xmcopyfunction kernel = NULL;
-      if (m < (libxsmm_blasint)tm || n < (libxsmm_blasint)tn) {
+      if ((unsigned int)m < tm || (unsigned int)n < tn) {
         if (1 == nthreads) {
           tm = (unsigned int)m; tn = (unsigned int)n;
         }
@@ -192,12 +195,15 @@ LIBXSMM_API void libxsmm_matcopy_thread(void* out, const void* in, unsigned int 
           tm = LIBXSMM_CLMP((unsigned int)m, 1, mm);
         }
       }
-      else if (0 != (1 & libxsmm_trans_jit)) { /* JIT'ted matrix-copy permitted? */
+#if !defined(LIBXSMM_XCOPY_JIT_TINY)
+      else
+#endif
+      if (0 != (1 & libxsmm_trans_jit)) { /* JIT'ted matrix-copy permitted? */
         const int iprefetch = (0 == prefetch ? 0 : *prefetch);
         libxsmm_descriptor_blob blob;
-        kernel = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&blob, typesize,
-          (unsigned int)tm, (unsigned int)tn, (unsigned int)ldo, (unsigned int)ldi,
-          NULL != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE, iprefetch, NULL/*default unroll*/));
+        kernel = libxsmm_dispatch_mcopy(libxsmm_mcopy_descriptor_init(&blob, typesize, tm, tn,
+          (unsigned int)ldo, (unsigned int)ldi, NULL != in ? 0 : LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE,
+          iprefetch, NULL/*default unroll*/));
       }
       libxsmm_matcopy_thread_internal(out, in, typesize,
         (unsigned int)m, (unsigned int)n, (unsigned int)ldi, (unsigned int)ldo,

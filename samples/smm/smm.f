@@ -42,7 +42,7 @@
         !DIR$ ATTRIBUTES ALIGN:64 :: a, b, c, tmp
         !$OMP THREADPRIVATE(tmp)
         TYPE(LIBXSMM_DMMFUNCTION) :: xmm
-        INTEGER(8) :: i, r, s, size0, size1, size, repetitions, start
+        INTEGER(8) :: i, r, s, size0, size1, size2, repetitions, start
         TYPE(LIBXSMM_MATDIFF_INFO) :: diff, max_diff
         INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, k
         DOUBLE PRECISION :: duration, scale
@@ -76,9 +76,9 @@
         END IF
         IF (5 <= argc) THEN
           CALL GET_COMMAND_ARGUMENT(5, argv)
-          READ(argv, "(I32)") size
+          READ(argv, "(I32)") size2
         ELSE
-          size = 0 ! 1 repetition by default
+          size2 = 0 ! 1 repetition by default
         END IF
 
         ! Initialize LIBXSMM
@@ -91,10 +91,10 @@
         size0 = (m * k + k * n + m * n) * T ! size of a single stream element in Byte
         size1 = MERGE(2048_8, MERGE(size1, ISHFT(ABS(size0 * size1)     &
      &            + ISHFT(1, 20) - 1, -20), 0.LE.size1), 0.EQ.size1)
-        size = ISHFT(MERGE(MAX(size, size1), ISHFT(ABS(size) * size0    &
-     &            + ISHFT(1, 20) - 1, -20), 0.LE.size), 20) / size0
+        size2 = ISHFT(MERGE(MAX(size2, size1), ISHFT(ABS(size2) * size0 &
+     &            + ISHFT(1, 20) - 1, -20), 0.LE.size2), 20) / size0
         s = ISHFT(size1, 20) / size0
-        repetitions = size / s
+        repetitions = size2 / s
         scale = 1D0 / s
         duration = 0
 
@@ -109,6 +109,7 @@
           CALL init(42, a(:,:,i), scale, i - 1)
           CALL init(24, b(:,:,i), scale, i - 1)
         END DO
+        !$OMP END PARALLEL DO
 
         WRITE(*, "(3(A,I0),A,I0,A,I0,A,I0)")                            &
      &    "m=", m, " n=", n, " k=", k, " elements=", UBOUND(a, 3),      &
@@ -161,7 +162,7 @@
         ! Deallocate thread-local arrays
         DEALLOCATE(tmp)
         !$OMP END PARALLEL
-        CALL performance(duration, m, n, k, size)
+        CALL performance(duration, m, n, k, size2)
 
         WRITE(*, "(A)") "Streamed (A,B)... (auto-dispatched)"
         c(:,:) = 0
@@ -190,7 +191,7 @@
         ! Deallocate thread-local arrays
         DEALLOCATE(tmp)
         !$OMP END PARALLEL
-        CALL performance(duration, m, n, k, size)
+        CALL performance(duration, m, n, k, size2)
         CALL libxsmm_matdiff(diff, LIBXSMM_DATATYPE_F64, m, n,          &
      &    libxsmm_ptr2(d), libxsmm_ptr2(c))
         WRITE(*, "(1A,A,F10.1)") CHAR(9), "diff:      ", diff%l2_abs
@@ -221,7 +222,7 @@
           ! Deallocate thread-local arrays
           DEALLOCATE(tmp)
           !$OMP END PARALLEL
-          CALL performance(duration, m, n, k, size)
+          CALL performance(duration, m, n, k, size2)
           CALL libxsmm_matdiff(diff, LIBXSMM_DATATYPE_F64, m, n,        &
      &      libxsmm_ptr2(d), libxsmm_ptr2(c))
           WRITE(*, "(1A,A,F10.1)") CHAR(9), "diff:      ", diff%l2_abs
@@ -247,7 +248,7 @@
           INTEGER(8), INTENT(IN), OPTIONAL :: n
           INTEGER(8) :: minval, addval, maxval
           INTEGER :: ld, i, j
-          REAL(8) :: value, norm
+          REAL(8) :: val, norm
           ld = UBOUND(matrix, 1) - LBOUND(matrix, 1) + 1
           minval = MERGE(n, 0_8, PRESENT(n)) + seed
           addval = (UBOUND(matrix, 1) - LBOUND(matrix, 1)) * ld         &
@@ -257,9 +258,9 @@
           DO j = LBOUND(matrix, 2), UBOUND(matrix, 2)
             DO i = LBOUND(matrix, 1),                                   &
      &             LBOUND(matrix, 1) + UBOUND(matrix, 1) - 1
-              value = (i - LBOUND(matrix, 1)) * ld                      &
-     &              + (j - LBOUND(matrix, 2)) + minval
-              matrix(i,j) = norm * (value - 0.5D0 * addval)
+              val = (i - LBOUND(matrix, 1)) * ld                        &
+     &            + (j - LBOUND(matrix, 2)) + minval
+              matrix(i,j) = norm * (val - 0.5D0 * addval)
             END DO
           END DO
         END SUBROUTINE
@@ -287,15 +288,15 @@
           END DO
         END SUBROUTINE
 
-        SUBROUTINE performance(duration, m, n, k, size)
+        SUBROUTINE performance(duration, m, n, k, s)
           INTEGER(LIBXSMM_BLASINT_KIND), INTENT(IN) :: m, n, k
-          INTEGER(8), INTENT(IN) :: size
+          INTEGER(8), INTENT(IN) :: s
           REAL(T), INTENT(IN) :: duration
           IF (0.LT.duration) THEN
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "performance:",         &
-     &        2D0 * size * m * n * k * 1D-9 / duration, " GFLOPS/s"
+     &        2D0 * s * m * n * k * 1D-9 / duration, " GFLOPS/s"
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ",         &
-     &        size * (m * k + k * n) * T / (duration * ISHFT(1_8, 30)), &
+     &        s * (m * k + k * n) * T / (duration * ISHFT(1_8, 30)),    &
      &        " GB/s"
           END IF
           WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "duration:   ",           &

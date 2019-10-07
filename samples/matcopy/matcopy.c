@@ -41,14 +41,13 @@
 
 int main(int argc, char* argv[])
 {
-  const int m = (1 < argc ? atoi(argv[1]) : 16);
-  const int n = (2 < argc ? atoi(argv[2]) : m);
-  const int unsigned ldi = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 0, m);
-  const int unsigned ldo = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 0, m);
-  const int unroll = (5 < argc ? atoi(argv[5]) : 1);
-  const int prefetch = (6 < argc ? atoi(argv[6]) : 0);
+  const unsigned int m = LIBXSMM_MAX((unsigned int)(1 < argc ? atoi(argv[1]) : 16), 0);
+  const unsigned int n = LIBXSMM_MAX((unsigned int)(2 < argc ? atoi(argv[2]) : 0), m);
+  const unsigned int ldi = LIBXSMM_MAX((unsigned int)(3 < argc ? atoi(argv[3]) : 0), m);
+  const unsigned int ldo = LIBXSMM_MAX((unsigned int)(4 < argc ? atoi(argv[4]) : 0), m);
+  const int unroll = (5 < argc ? atoi(argv[5]) : 1), prefetch = (6 < argc ? atoi(argv[6]) : 0);
   const int flags = ((7 < argc && 0 != atoi(argv[7])) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
-  const int iters = (8 < argc ? atoi(argv[8]) : 1);
+  const unsigned int iters = LIBXSMM_MAX((unsigned int)(8 < argc ? atoi(argv[8]) : 0), 1);
 
   /* we should modify to test all data-types */
   const libxsmm_mcopy_descriptor* desc;
@@ -56,10 +55,11 @@ int main(int argc, char* argv[])
   libxsmm_descriptor_blob blob;
   libxsmm_timer_tickint l_start;
   libxsmm_timer_tickint l_end;
-  int error = 0, i, j;
+  unsigned int error = 0, i, j;
   ELEM_TYPE *a, *b;
   double copy_time;
 
+  libxsmm_init();
   printf("This is a tester for JIT matcopy kernels!\n");
   desc = libxsmm_mcopy_descriptor_init(&blob, sizeof(ELEM_TYPE),
     m, n, ldo, ldi, flags, prefetch, &unroll);
@@ -72,12 +72,15 @@ int main(int argc, char* argv[])
     exit(EXIT_FAILURE);
   }
 
-  for (i = 0; i < n; i++) {
-    for (j = 0; j < m; j++) {
+  for (i = 0; i < n; ++i) {
+    for (j = 0; j < ldi; ++j) {
       a[j+ldi*i] = (ELEM_TYPE)rand();
-      if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & flags)) {
+      if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & flags) && j < m) {
         b[j+ldo*i] = (ELEM_TYPE)rand();
       }
+    }
+    for (j = m; j < ldo; ++j) {
+      b[j+ldo*i] = (ELEM_TYPE)0xCD;
     }
   }
 
@@ -101,18 +104,20 @@ int main(int argc, char* argv[])
   for (i = 0; i < n; ++i) {
     for (j = 0; j < m; ++j) {
       if (0 != (LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE & flags)) {
-        if (LIBXSMM_NEQ(b[j+ldo*i], 0)) {
+        if (LIBXSMM_NEQ(0, b[j+ldo*i])) {
           printf("ERROR!!!\n");
-          i = n;
-          error = 1;
-          break;
+          error = 1; i = n; break;
         }
       }
       else if (LIBXSMM_NEQ(a[j+ldi*i], b[j+ldo*i])) {
         printf("ERROR!!!\n");
-        i = n;
-        error = 1;
-        break;
+        error = 1; i = n; break;
+      }
+    }
+    for (j = m; j < ldo; ++j) {
+      if (LIBXSMM_NEQ((ELEM_TYPE)0xCD, b[j+ldo*i])) {
+        printf("ERROR!!!\n");
+        error = 1; i = n; break;
       }
     }
   }
@@ -120,8 +125,8 @@ int main(int argc, char* argv[])
   if (error == 0) {
     printf("CORRECT copy!!!!\n");
     printf("Time taken is\t%.5f seconds\n", copy_time);
+    return EXIT_SUCCESS;
   }
-
-  return EXIT_SUCCESS;
+  else return EXIT_FAILURE;
 }
 

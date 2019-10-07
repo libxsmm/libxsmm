@@ -797,7 +797,7 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
 #endif
     0 != group_count)
   {
-    int result;
+    int result = EXIT_SUCCESS;
     const int max_npargroups = (int)(0 < libxsmm_gemm_npargroups
       ? LIBXSMM_MIN(libxsmm_gemm_npargroups, LIBXSMM_GEMM_NPARGROUPS) : LIBXSMM_GEMM_NPARGROUPS);
     const libxsmm_gemm_prefetch_type prefetch = libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
@@ -878,7 +878,6 @@ LIBXSMM_API_INLINE void internal_gemm_batch_omp(libxsmm_gemm_precision iprec, li
 #if defined(_OPENMP)
         const int nchunks = (int)((size + libxsmm_gemm_taskgrain - 1) / libxsmm_gemm_taskgrain);
         const int ntasks = nchunks * npargroups, nthreads = LIBXSMM_MIN(max_nthreads, ntasks);
-        result = EXIT_SUCCESS;
         if (1 < nthreads) {
           if (0 == outerpar) { /* enable internal parallelization */
 # if defined(LIBXSMM_EXT_TASKS)

@@ -171,14 +171,15 @@ then
       SRUN_FLAGS="${SRUN_FLAGS} --time=$((LIMITRUN/60))"
     fi
     umask 007
-    # eventually cleanup run-script from terminated sessions
+    # eventually cleanup run-script of terminated/previous sessions
     ${RM} -f ${HERE}/../.tool_??????.sh
     TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
-    LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} --preserve-env --unbuffered ${TESTSCRIPT}"
+    LAUNCH="${SRUN} --ntasks=1 --partition=\${PARTITION} ${SRUN_FLAGS} \
+                    --preserve-env --unbuffered ${TESTSCRIPT}"
   elif [ "" != "${SLURMSCRIPT}" ] && [ "0" != "${SLURMSCRIPT}" ]; then
     umask 007
-    # eventually cleanup run-script from terminated sessions
+    # eventually cleanup run-script of terminated/previous sessions
     ${RM} -f ${HERE}/../.tool_??????.sh
     TESTSCRIPT=$(${MKTEMP} ${HERE}/../.tool_XXXXXX.sh)
     ${CHMOD} +rx ${TESTSCRIPT}
@@ -310,11 +311,6 @@ then
           echo "if [ \"0\" != \"\${RESULT}\" ]; then exit \${RESULT}; fi" >> ${TESTSCRIPT}
           # control log
           echo "echo \"--- RUN ${TESTID}\"" >> ${TESTSCRIPT}
-          if [ "" != "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
-             [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ];
-          then
-            echo "(" >> ${TESTSCRIPT}
-          fi
           DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
           ${SED} \
             -e "/^#\!..*/d" \
@@ -322,16 +318,24 @@ then
             -e "/^[[:space:]]*$/d" \
             -e "s/\.\//${DIRSED}\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
-            ${SLURMFILE} >> ${TESTSCRIPT}
+            ${SLURMFILE} > ${SLURMFILE}.run && ${CHMOD} +rx ${SLURMFILE}.run
+          RUNFILE=$(readlink -f ${SLURMFILE}.run)
+          if [ "" = "${TOOL_ENABLED}" ] || [ "0" != "${TOOL_ENABLED}" ]; then
+            echo -n "${TOOL_COMMAND} ${RUNFILE} ${TOOL_COMMAND_POST}" >> ${TESTSCRIPT}
+          else
+            echo -n "${RUNFILE}" >> ${TESTSCRIPT}
+          fi
           if [ "" != "${LIMITLOG}" ] && [ "0" != "${LIMITLOG}" ] && \
              [ "" != "$(command -v cat)" ] && [ "" != "$(command -v tail)" ];
           then
-            echo ") | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
+            echo " | cat -s | tail -n ${LIMITLOG}" >> ${TESTSCRIPT}
+          else
+            echo >> ${TESTSCRIPT}
           fi
+          echo "rm -f ${RUNFILE}" >> ${TESTSCRIPT}
         else
           echo "${TEST}" >> ${TESTSCRIPT}
         fi
-
         if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
           ${SYNC}
         fi

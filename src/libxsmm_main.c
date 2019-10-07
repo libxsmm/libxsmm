@@ -177,6 +177,15 @@ LIBXSMM_APIVAR(LIBXSMM_LOCK_TYPE(LIBXSMM_REGLOCK)* internal_reglock_ptr);
     RESULT_INDEX = (unsigned char)LIBXSMM_MOD2((CACHE_HIT) + ((CACHE_SIZE) - 1), CACHE_SIZE)
 #endif
 
+#define INTERNAL_MEMCPY127(PTRDST, PTRSRC) { \
+  const unsigned char *const internal_memcpy127_src_ = (const unsigned char*)(PTRSRC); \
+  unsigned char *const internal_memcpy127_dst_ = (unsigned char*)(PTRDST); signed char internal_memcpy127_i_; \
+  LIBXSMM_ASSERT(sizeof(*(PTRSRC)) <= sizeof(*(PTRDST)) && sizeof(*(PTRSRC)) <= 127); \
+  for (internal_memcpy127_i_ = 0; internal_memcpy127_i_ < (signed char)sizeof(*(PTRSRC)); ++internal_memcpy127_i_) { \
+    internal_memcpy127_dst_[internal_memcpy127_i_] = internal_memcpy127_src_[internal_memcpy127_i_]; \
+  } \
+}
+
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
   unsigned int ntry, ncol, njit, nsta;
 } internal_statistic_type;
@@ -430,7 +439,7 @@ LIBXSMM_API_INLINE void internal_register_static_code(
     }
     if (NULL == dst_entry->ptr_const) { /* registry not exhausted */
       internal_registry_keys[i].kind = LIBXSMM_KERNEL_KIND_MATMUL;
-      internal_registry_keys[i].gemm.desc = *desc;
+      INTERNAL_MEMCPY127(&internal_registry_keys[i].gemm.desc, desc);
       dst_entry->xgemm = xgemm;
       /* mark current entry as static code (non-JIT) */
       dst_entry->uval |= LIBXSMM_CODE_STATIC;
@@ -613,7 +622,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void _gfortran_stop_string(const char* messag
     if (NULL != stop.dlsym) {
       stop.ptr(message, len, quiet);
     }
-    else exit(EXIT_FAILURE); /* statically linked runtime */
+    else exit(EXIT_SUCCESS); /* statically linked runtime */
   }
 }
 
@@ -628,7 +637,22 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core(const char* message, int l
     if (NULL != stop.dlsym) {
       stop.ptr(message, len);
     }
-    else exit(EXIT_FAILURE); /* statically linked runtime */
+    else exit(EXIT_SUCCESS); /* statically linked runtime */
+  }
+}
+
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core_quiet(void);
+LIBXSMM_API LIBXSMM_ATTRIBUTE_WEAK void for_stop_core_quiet(void)
+{ /* STOP termination handler for Intel Fortran runtime */
+  static int once = 0;
+  if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&once, 1, LIBXSMM_ATOMIC_RELAXED)) {
+    union { const void* dlsym; void (*ptr)(void); } stop;
+    dlerror(); /* clear an eventual error status */
+    stop.dlsym = dlsym(RTLD_NEXT, "for_stop_core_quiet");
+    if (NULL != stop.dlsym) {
+      stop.ptr();
+    }
+    else exit(EXIT_SUCCESS); /* statically linked runtime */
   }
 }
 #endif
@@ -1435,16 +1459,16 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   char jit_name[256] = { 0 };
 
   /* large enough temporary buffer for generated code */
-#if defined(NDEBUG)
+# if defined(NDEBUG)
   char jit_buffer[LIBXSMM_CODE_MAXSIZE];
   memset(&generated_code, 0, sizeof(generated_code));
   generated_code.generated_code = jit_buffer;
   generated_code.buffer_size = sizeof(jit_buffer);
-#else
+# else
   memset(&generated_code, 0, sizeof(generated_code));
   generated_code.generated_code = malloc(LIBXSMM_CODE_MAXSIZE);
   generated_code.buffer_size = (NULL != generated_code.generated_code ? LIBXSMM_CODE_MAXSIZE : 0);
-#endif
+# endif
   /* setup code generation */
   generated_code.code_type = 2;
   generated_code.arch = libxsmm_target_archid;
@@ -1456,8 +1480,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   switch (request->kind) { /* generate kernel */
     case LIBXSMM_BUILD_KIND_GEMM: { /* small MxM kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.gemm);
+# if 0 /* dummy kernel for an empty shape is desired */
       if (0 < request->descriptor.gemm->m   && 0 < request->descriptor.gemm->n   && 0 < request->descriptor.gemm->k &&
           0 < request->descriptor.gemm->lda && 0 < request->descriptor.gemm->ldb && 0 < request->descriptor.gemm->ldc)
+# endif
       {
         const unsigned int m = request->descriptor.gemm->m, n = request->descriptor.gemm->n, k = request->descriptor.gemm->k;
 # if !defined(LIBXSMM_DENY_RETARGET) /* disable: ECFLAGS=-DLIBXSMM_DENY_RETARGET */
@@ -1636,7 +1662,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
     } break;
     case LIBXSMM_BUILD_KIND_MCOPY: { /* matcopy kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.mcopy);
-      if (4 == request->descriptor.mcopy->typesize) {
+# if 0 /* TODO: backend supports typesize <= 4, but kernels for typesize < 4 are incorrect */
+      if (4 == request->descriptor.mcopy->typesize)
+# endif
+      {
         LIBXSMM_NO_OFFLOAD(void, libxsmm_generator_matcopy_kernel, &generated_code, request->descriptor.mcopy, target_arch);
 # if !defined(LIBXSMM_VTUNE)
         if (0 > libxsmm_verbosity)
@@ -1804,10 +1833,9 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 #if defined(LIBXSMM_DESC_PAD)
 LIBXSMM_API_INLINE void internal_pad_descriptor(libxsmm_descriptor* desc, size_t size)
 {
-  size_t i = size;
-  size = LIBXSMM_MAX(LIBXSMM_DIFF_SIZE, LIBXSMM_HASH_SIZE);
-  LIBXSMM_ASSERT(NULL != desc && i <= size && size <= LIBXSMM_DESCRIPTOR_MAXSIZE);
-  for (; i < size; ++i) desc->data[i] = 0;
+  const signed char s = (signed char)LIBXSMM_MAX(LIBXSMM_DIFF_SIZE, LIBXSMM_HASH_SIZE); signed char i;
+  LIBXSMM_ASSERT(NULL != desc && s <= LIBXSMM_DESCRIPTOR_MAXSIZE);
+  for (i = (signed char)size; i < s; ++i) desc->data[i] = 0;
 }
 #endif
 
@@ -1960,7 +1988,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
             if (EXIT_SUCCESS == build && NULL != flux_entry.ptr_const)
 #endif
             {
-              internal_registry_keys[i] = *desc;
+              INTERNAL_MEMCPY127(internal_registry_keys + i, desc);
 # if (1 < INTERNAL_REGLOCK_MAXN)
               LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE, LIBXSMM_BITS)(&internal_registry[i].pmm, flux_entry.pmm, LIBXSMM_ATOMIC_SEQ_CST);
 # else
@@ -2040,7 +2068,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
         cache->entry.size = 1;
       }
 # endif
-      cache->entry.keys[cache_index] = *desc;
+      INTERNAL_MEMCPY127(cache->entry.keys + cache_index, desc);
       cache->entry.code[cache_index] = flux_entry;
       cache->entry.hit = cache_index;
       LIBXSMM_ASSERT(0 == diff);
@@ -2285,7 +2313,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_xmmdispatch(const libxsmm_gemm_descripto
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     memset(&wrap, 0, sizeof(*descriptor));
 #endif
-    wrap.gemm.desc = *descriptor;
+    INTERNAL_MEMCPY127(&wrap.gemm.desc, descriptor);
     wrap.kind = LIBXSMM_KERNEL_KIND_MATMUL;
     if (0 != (0x80 & descriptor->prefetch)) { /* "sign"-bit of byte-value is set */
       wrap.gemm.desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
@@ -2710,7 +2738,7 @@ LIBXSMM_API libxsmm_xmcopyfunction libxsmm_dispatch_mcopy(const libxsmm_mcopy_de
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     memset(&wrap, 0, sizeof(*descriptor));
 #endif
-    wrap.mcopy.desc = *descriptor;
+    INTERNAL_MEMCPY127(&wrap.mcopy.desc, descriptor);
     wrap.kind = LIBXSMM_KERNEL_KIND_MCOPY;
 #if defined(_WIN32) || defined(__CYGWIN__)
     wrap.mcopy.desc.prefetch = 0;
@@ -2733,7 +2761,7 @@ LIBXSMM_API libxsmm_xtransfunction libxsmm_dispatch_trans(const libxsmm_trans_de
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     memset(&wrap, 0, sizeof(*descriptor));
 #endif
-    wrap.trans.desc = *descriptor;
+    INTERNAL_MEMCPY127(&wrap.trans.desc, descriptor);
     wrap.kind = LIBXSMM_KERNEL_KIND_TRANS;
     result = internal_find_code(&wrap, sizeof(*descriptor)).xtrans;
   }
@@ -2753,7 +2781,7 @@ LIBXSMM_API libxsmm_pgemm_xfunction libxsmm_dispatch_pgemm(const libxsmm_pgemm_d
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     memset(&wrap, 0, sizeof(*descriptor));
 #endif
-    wrap.pgemm.desc = *descriptor;
+    INTERNAL_MEMCPY127(&wrap.pgemm.desc, descriptor);
     wrap.kind = LIBXSMM_KERNEL_KIND_PGEMM;
     result = internal_find_code(&wrap, sizeof(*descriptor)).xpgemm;
   }
@@ -2773,7 +2801,7 @@ LIBXSMM_API libxsmm_getrf_xfunction libxsmm_dispatch_getrf(const libxsmm_getrf_d
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     memset(&wrap, 0, sizeof(*descriptor));
 #endif
-    wrap.getrf.desc = *descriptor;
+    INTERNAL_MEMCPY127(&wrap.getrf.desc, descriptor);
     wrap.kind = LIBXSMM_KERNEL_KIND_GETRF;
     result = internal_find_code(&wrap, sizeof(*descriptor)).xgetrf;
   }
@@ -2793,7 +2821,7 @@ LIBXSMM_API libxsmm_trmm_xfunction libxsmm_dispatch_trmm(const libxsmm_trmm_desc
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     memset(&wrap, 0, sizeof(*descriptor));
 #endif
-    wrap.trmm.desc = *descriptor;
+    INTERNAL_MEMCPY127(&wrap.trmm.desc, descriptor);
     wrap.kind = LIBXSMM_KERNEL_KIND_TRMM;
     result = internal_find_code(&wrap, sizeof(*descriptor)).xtrmm;
   }
@@ -2813,7 +2841,7 @@ LIBXSMM_API libxsmm_trsm_xfunction libxsmm_dispatch_trsm(const libxsmm_trsm_desc
 #if defined(LIBXSMM_UNPACKED) /* TODO: investigate (CCE) */
     memset(&wrap, 0, sizeof(*descriptor));
 #endif
-    wrap.trsm.desc = *descriptor;
+    INTERNAL_MEMCPY127(&wrap.trsm.desc, descriptor);
     wrap.kind = LIBXSMM_KERNEL_KIND_TRSM;
     result = internal_find_code(&wrap, sizeof(*descriptor)).xtrsm;
   }
@@ -2836,7 +2864,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsr_soa(const libxsmm_gemm_descr
       srsoa.gemm = descriptor;
     }
     else { /* "sign"-bit of byte-value is set */
-      desc = *descriptor;
+      INTERNAL_MEMCPY127(&desc, descriptor);
       desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
       srsoa.gemm = &desc;
     }
@@ -2863,7 +2891,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_xcsc_soa(const libxsmm_gemm_descr
       scsoa.gemm = descriptor;
     }
     else { /* "sign"-bit of byte-value is set */
-      desc = *descriptor;
+      INTERNAL_MEMCPY127(&desc, descriptor);
       desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
       scsoa.gemm = &desc;
     }
@@ -2889,7 +2917,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_pgemm_ac_rm(const libxsmm_gemm_de
       pgemmacrm.gemm = descriptor;
     }
     else { /* "sign"-bit of byte-value is set */
-      desc = *descriptor;
+      INTERNAL_MEMCPY127(&desc, descriptor);
       desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
       pgemmacrm.gemm = &desc;
     }
@@ -2913,7 +2941,7 @@ LIBXSMM_API libxsmm_xmmfunction libxsmm_create_pgemm_bc_rm(const libxsmm_gemm_de
       pgemmbcrm.gemm = descriptor;
     }
     else { /* "sign"-bit of byte-value is set */
-      desc = *descriptor;
+      INTERNAL_MEMCPY127(&desc, descriptor);
       desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
       pgemmbcrm.gemm = &desc;
     }
@@ -2938,7 +2966,7 @@ LIBXSMM_API libxsmm_dmmfunction libxsmm_create_dcsr_reg(const libxsmm_gemm_descr
       sreg.gemm = descriptor;
     }
     else { /* "sign"-bit of byte-value is set */
-      desc = *descriptor;
+      INTERNAL_MEMCPY127(&desc, descriptor);
       desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
       sreg.gemm = &desc;
     }
@@ -2971,7 +2999,7 @@ LIBXSMM_API libxsmm_smmfunction libxsmm_create_scsr_reg(const libxsmm_gemm_descr
         sreg.gemm = descriptor;
       }
       else { /* "sign"-bit of byte-value is set */
-        desc = *descriptor;
+        INTERNAL_MEMCPY127(&desc, descriptor);
         desc.prefetch = (unsigned char)libxsmm_get_gemm_prefetch(LIBXSMM_PREFETCH_AUTO);
         sreg.gemm = &desc;
       }
@@ -3082,23 +3110,39 @@ LIBXSMM_API void LIBXSMM_FSYMBOL(libxsmm_xmmdispatch2)(intptr_t* fn, const int* 
     && (NULL == oprec || (0 <= *oprec && *oprec < LIBXSMM_DATATYPE_UNSUPPORTED)))
 #endif
   {
-    const libxsmm_gemm_precision precision = (NULL != iprec ? ((libxsmm_gemm_precision)*iprec) : LIBXSMM_GEMM_PRECISION_F64);
-    const libxsmm_blasint kk = *(NULL != k ? k : m), nn = (NULL != n ? *n : kk);
     const int gemm_flags = (NULL != flags ? *flags : LIBXSMM_FLAGS);
+    const libxsmm_gemm_descriptor* descriptor;
+    libxsmm_gemm_prefetch_type gemm_prefetch;
     libxsmm_descriptor_blob blob;
-    libxsmm_gemm_descriptor *descriptor = libxsmm_gemm_descriptor_init2(&blob,
-      precision, NULL != oprec ? ((libxsmm_gemm_precision)*oprec) : precision, *m, nn, kk,
-      NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? *m : kk),
-      NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? kk : nn),
-      *(NULL != ldc ? ldc : m), alpha, beta, gemm_flags, libxsmm_get_gemm_xprefetch(prefetch));
-    if (NULL != descriptor) {
-      libxsmm_code_pointer result;
+    libxsmm_code_pointer result;
+#if !defined(NDEBUG)
+    const libxsmm_gemm_precision itype = (NULL != iprec ? ((libxsmm_gemm_precision)*iprec) : LIBXSMM_GEMM_PRECISION_F64);
+    const libxsmm_gemm_precision otype = (NULL != oprec ? ((libxsmm_gemm_precision)*oprec) : itype);
+    const libxsmm_blasint kk = *(NULL != k ? k : m), nn = (NULL != n ? *n : kk);
+#else
+    const libxsmm_gemm_precision itype = (libxsmm_gemm_precision)*iprec, otype = (libxsmm_gemm_precision)*oprec;
+    const libxsmm_blasint kk = *k, nn = *n;
+#endif
+    LIBXSMM_PRAGMA_FORCEINLINE
+    gemm_prefetch = libxsmm_get_gemm_xprefetch(prefetch);
+    LIBXSMM_PRAGMA_FORCEINLINE
+    descriptor = libxsmm_gemm_descriptor_init2(&blob, itype, otype, *m, nn, kk,
+        NULL != lda ? *lda : (0 == (LIBXSMM_GEMM_FLAG_TRANS_A & gemm_flags) ? *m : kk),
+        NULL != ldb ? *ldb : (0 == (LIBXSMM_GEMM_FLAG_TRANS_B & gemm_flags) ? kk : nn),
+      *(NULL != ldc ? ldc : m), alpha, beta, gemm_flags, gemm_prefetch);
+#if !defined(NDEBUG)
+    if (NULL != descriptor)
+#endif
+    {
+      LIBXSMM_PRAGMA_FORCEINLINE
       result.xgemm = libxsmm_xmmdispatch(descriptor);
       *fn = result.ival;
     }
+#if !defined(NDEBUG)
     else { /* quiet */
       *fn = 0;
     }
+#endif
   }
 #if !defined(NDEBUG)
   else {

@@ -61,6 +61,7 @@ class XgemmTuner(MeasurementInterface):
         Define the search space by creating a
         ConfigurationManipulator
         """
+        self.dimset = libxsmm_utilities.load_mnklist(self.args.mnk, 0, -1)
         self.granularity = 1
         assert(0 < self.granularity)
         m_max = (64 + self.granularity - 1) / self.granularity
@@ -76,13 +77,15 @@ class XgemmTuner(MeasurementInterface):
         return manipulator
 
     def seed_configurations(self):
-        m_seed = [self.args.n, self.args.m][0 != self.args.m]
-        k_seed = [self.args.m, self.args.k][0 != self.args.k]
-        n_seed = [self.args.k, self.args.n][0 != self.args.n]
-        if 0 == m_seed or 0 == n_seed or k_seed:
+        m_seed = self.args.m
+        n_seed = [self.args.n, m_seed][0 == self.args.n]
+        k_seed = [self.args.k, n_seed][0 == self.args.k]
+        if 0 == m_seed or 0 == n_seed or 0 == k_seed:
             return []
         else:
-            return [{"M": m_seed, "N": n_seed, "K": k_seed}]
+            return [{"M": (m_seed + self.granularity - 1) / self.granularity,
+                     "N": (n_seed + self.granularity - 1) / self.granularity,
+                     "K": (k_seed + self.granularity - 1) / self.granularity}]
 
     def objective(self):
         return opentuner.search.objective.MaximizeAccuracyMinimizeSize()
@@ -99,10 +102,9 @@ class XgemmTuner(MeasurementInterface):
             " LIBXSMM_TGEMM_N=" + str(self.granularity * cfg["N"]) +
             " LIBXSMM_TGEMM_K=" + str(self.granularity * cfg["K"]) +
             " ./xgemm.sh")
-        dimset = libxsmm_utilities.load_mnklist(self.args.mnk, 0, -1)
         geoperf = 0  # geometric mean
         compensation = 0  # see Kahan
-        for dims in dimset:
+        for dims in self.dimset:
             run_result = self.call_program(
                 run_cmd + " " + " ".join(map(str, dims)))
             assert(run_result["returncode"] == 0)
@@ -116,17 +118,16 @@ class XgemmTuner(MeasurementInterface):
             khb = geoperf + kha
             compensation = (khb - geoperf) - kha
             geoperf = khb
-        geoperf = math.exp(geoperf / len(dimset))
+        geoperf = math.exp(geoperf / len(self.dimset))
         geotime = 1000000.0 / geoperf
         mnk = (self.granularity**3) * cfg["M"] * cfg["N"] * cfg["K"]
         return Result(time=geotime, accuracy=geoperf, size=mnk)
 
     def save_final_config(self, configuration):
         """called at the end of tuning"""
-        dimset = libxsmm_utilities.load_mnklist(self.args.mnk, 0, -1)
         matrices = (  # collects requested matrix shapes into string
             "-".join(map(str, map(lambda mnk: "x".join(
-                     map(str, mnk)), dimset))))
+                     map(str, mnk)), self.dimset))))
         filename = "xgemm-" + matrices + time.strftime(
                    "-%Y%m%d-%H%M%S") + ".json"
         print("Optimal block size written to " + filename +

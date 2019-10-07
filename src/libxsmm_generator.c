@@ -361,21 +361,32 @@ LIBXSMM_API libxsmm_mcopy_descriptor* libxsmm_mcopy_descriptor_init(libxsmm_desc
     libxsmm_mcopy_descriptor* ptr;
     libxsmm_descriptor_blob* blob;
   } result;
-  if (0 == LIBXSMM_MOD2(typesize, 4)) { /* TODO: more general kernel */
-    const unsigned int typescale = typesize / 4;
-    LIBXSMM_DESCRIPTOR_CLEAR(blob);
-    result.blob = blob;
-    result.ptr->unroll_level = (unsigned char)((NULL == unroll || 0 >= *unroll) ? 2/*default*/ : LIBXSMM_MIN(*unroll, 64));
-    result.ptr->typesize = (unsigned char)/*typesize*/4;
-    result.ptr->prefetch = (unsigned char)prefetch;
-    result.ptr->flags = (unsigned char)flags;
-    result.ptr->ldi = ldi * typescale;
-    result.ptr->ldo = ldo * typescale;
-    result.ptr->m = m * typescale;
+  LIBXSMM_DESCRIPTOR_CLEAR(blob);
+  result.blob = blob;
+  result.ptr->prefetch = (unsigned char)prefetch;
+  result.ptr->flags = (unsigned char)flags;
+  /* TODO: backend supports typesize <= 4, but certain AVX1/AVX2-kernels are incorrect */
+  if (4 >= typesize && (LIBXSMM_X86_AVX512 <= libxsmm_target_archid || 32 <= (typesize * m) || ldi == ldo)) {
+    result.ptr->typesize = (unsigned char)typesize;
+    result.ptr->unroll_level = (unsigned char)((NULL == unroll || 0 >= *unroll) ? LIBXSMM_MAX(8 / result.ptr->typesize, 1) : LIBXSMM_MIN(*unroll, 64));
+    result.ptr->ldi = ldi;
+    result.ptr->ldo = ldo;
+    result.ptr->m = m;
     result.ptr->n = n;
   }
-  else {
-    result.ptr = NULL;
+  else { /* fix-up incl. DP-support */
+    result.ptr->typesize = 4;
+    result.ptr->unroll_level = 2;
+    result.ptr->ldi = ldi * typesize / 4; /* scale */
+    result.ptr->ldo = ldo * typesize / 4; /* scale */
+    result.ptr->m = m * typesize / 4; /* scale */
+    result.ptr->n = n;
+    if (((typesize * ldi) != (4 * result.ptr->ldi)
+      || (typesize * ldo) != (4 * result.ptr->ldo)
+      || (typesize * m) != (4 * result.ptr->m)))
+    {
+      result.ptr = NULL;
+    }
   }
   return result.ptr;
 }

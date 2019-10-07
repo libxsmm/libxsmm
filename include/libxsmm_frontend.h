@@ -137,6 +137,8 @@
 #define LIBXSMM_EQUAL_doubledouble 1
 #define LIBXSMM_EQUAL_floatdouble 0
 #define LIBXSMM_EQUAL_doublefloat 0
+#define LIBXSMM_EQUAL_shortdouble 0
+#define LIBXSMM_EQUAL_shortfloat 0
 
 #if defined(LIBXSMM_GEMM_CONST)
 # undef LIBXSMM_GEMM_CONST
