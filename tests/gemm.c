@@ -192,21 +192,22 @@ int main(void)
         alpha + test, a, lda + test, b, ldb + test, beta + test, d, ldc + test);
 # endif
 #endif
+#if (0 != LIBXSMM_JIT)
       if (0 != smm) { /* dispatch kernel and check that it is available */
-        LIBXSMM_MMFUNCTION_TYPE(ITYPE) kernel;
-        kernel = LIBXSMM_MMDISPATCH_SYMBOL(ITYPE)(mi, ni, ki, lda + test, ldb + test, ldc + test,
-          alpha + test, beta + test, &flags, NULL/*prefetch*/);
+        const LIBXSMM_MMFUNCTION_TYPE(ITYPE) kernel = LIBXSMM_MMDISPATCH_SYMBOL(ITYPE)(mi, ni, ki,
+          lda + test, ldb + test, ldc + test, alpha + test, beta + test, &flags, NULL/*prefetch*/);
         if (NULL == kernel) {
-#if defined(_DEBUG)
+# if defined(_DEBUG)
           fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n\t", test + 1, i + 1);
           libxsmm_gemm_print(stderr, LIBXSMM_GEMM_PRECISION(ITYPE), transa + i, transb + i, &mi, &ni, &ki,
             alpha + test, NULL/*a*/, lda + test, NULL/*b*/, ldb + test, beta + test, NULL/*c*/, ldc + test);
           fprintf(stderr, "\n");
-#endif
+# endif
           result = EXIT_FAILURE;
           break;
         }
       }
+#endif
 #if defined(CHECK_FPE) && defined(_MM_GET_EXCEPTION_MASK)
       fpstate = _MM_GET_EXCEPTION_STATE() & fpcheck;
       result = (0 == fpstate ? EXIT_SUCCESS : EXIT_FAILURE);
