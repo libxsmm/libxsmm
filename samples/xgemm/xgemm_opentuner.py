@@ -138,15 +138,15 @@ class XgemmTuner(MeasurementInterface):
 if __name__ == "__main__":
     argparser = opentuner.default_argparser()
     argparser.add_argument(
-        "mnk", metavar="N", nargs="*", default=["1024,1280,1536,1792"],
+        "mnk", nargs="*", default=["1024,1280,1536,1792"],
         help="Set of MNK parameters to be tuned")
     argparser.add_argument(
-        "m", type=int, default=0, nargs='?',
-        help="Initial tile size (M)")
+        "-m", "--initial-m", type=int, default=0, nargs='?',
+        dest="m", help="Initial tile size (M)")
     argparser.add_argument(
-        "n", type=int, default=0, nargs='?',
-        help="Initial tile size (N)")
+        "-n", "--initial-n", type=int, default=0, nargs='?',
+        dest="n", help="Initial tile size (N)")
     argparser.add_argument(
-        "k", type=int, default=0, nargs='?',
-        help="Initial tile size (K)")
+        "-k", "--initial-k", type=int, default=0, nargs='?',
+        dest="k", help="Initial tile size (K)")
     XgemmTuner.main(argparser.parse_args())
