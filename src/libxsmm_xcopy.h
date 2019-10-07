@@ -82,15 +82,12 @@
     } \
   } \
   else { /* generic type-size */ \
-    unsigned int libxsmm_xcopy_loop_k_; \
     for (libxsmm_xcopy_loop_i_ = M0; libxsmm_xcopy_loop_i_ < (libxsmm_blasint)(M1); ++libxsmm_xcopy_loop_i_) { \
       LIBXSMM_PRAGMA_NONTEMPORAL HINT_ALIGNED(OUT) \
       for (libxsmm_xcopy_loop_j_ = N0; libxsmm_xcopy_loop_j_ < (libxsmm_blasint)(N1); ++libxsmm_xcopy_loop_j_) { \
         XKERNEL(TYPE, TYPESIZE, OUT, IN, LDI, LDO, libxsmm_xcopy_loop_i_, libxsmm_xcopy_loop_j_, \
           libxsmm_xcopy_loop_src_, libxsmm_xcopy_loop_dst_); \
-        for (libxsmm_xcopy_loop_k_ = 0; libxsmm_xcopy_loop_k_ < (TYPESIZE); ++libxsmm_xcopy_loop_k_) { \
-          libxsmm_xcopy_loop_dst_[libxsmm_xcopy_loop_k_] = libxsmm_xcopy_loop_src_[libxsmm_xcopy_loop_k_]; \
-        } \
+        LIBXSMM_MEMCPY127(libxsmm_xcopy_loop_dst_, libxsmm_xcopy_loop_src_, TYPESIZE); \
       } \
     } \
   } \
