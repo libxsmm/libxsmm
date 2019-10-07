@@ -909,7 +909,9 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
     if (LIBXSMM_GEMM_HANDLE_FLAG_AUTO == flags && 0 == LIBXSMM_SMM_AI(um, un, uk,
       0 == (result.ptr->gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) ? 1 : 2/*RFO*/, result.ptr->otypesize))
     {
-      result.ptr->flags |= LIBXSMM_GEMM_HANDLE_FLAG_COPY_C;
+      if (um == LIBXSMM_UP2POT(um) || un == LIBXSMM_UP2POT(un)) { /* power-of-two (POT) extent(s) */
+        result.ptr->flags |= LIBXSMM_GEMM_HANDLE_FLAG_COPY_C | LIBXSMM_GEMM_HANDLE_FLAG_COPY_A;
+      }
     }
     result.ptr->itypesize = libxsmm_typesize((libxsmm_datatype)iprec);
     result.ptr->ldc = (unsigned int)(NULL != ldc ? *ldc : *m);
