@@ -312,7 +312,7 @@ LIBXSMM_API void libxsmm_dfsspmdm_destroy( libxsmm_dfsspmdm* handle )
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
     void* fp;
-    memcpy(&fp, &(handle->kernel), sizeof(libxsmm_dmmfunction));
+    LIBXSMM_ASSIGN127(&fp, &handle->kernel);
     libxsmm_free(fp);
   }
 
@@ -331,7 +331,7 @@ LIBXSMM_API void libxsmm_sfsspmdm_destroy( libxsmm_sfsspmdm* handle )
        do not use libxsmm_release_kernel here! We also need to work
        around pointer-to-function to pointer-to-object conversion */
     void* fp;
-    memcpy(&fp, &(handle->kernel), sizeof(libxsmm_smmfunction));
+    LIBXSMM_ASSIGN127(&fp, &handle->kernel);
     libxsmm_free(fp);
   }
 

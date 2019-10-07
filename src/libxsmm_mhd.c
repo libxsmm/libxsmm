@@ -722,7 +722,7 @@ LIBXSMM_API int libxsmm_mhd_read(const char filename[],
       if (0 != header_size) result = fseek(file, (long)header_size, SEEK_SET); /* set file position to data section */
       if (EXIT_SUCCESS == result && datatype != type_stored) { /* conversion needed */
         if (1 == fread(minmax, typesize, 1, file)) {
-          memcpy(minmax + (LIBXSMM_MHD_MAX_ELEMSIZE), minmax, typesize);
+          LIBXSMM_MEMCPY127(minmax + (LIBXSMM_MHD_MAX_ELEMSIZE), minmax, typesize);
           result = fseek(file, (long)header_size, SEEK_SET); /* reset file position */
           if (EXIT_SUCCESS == result) {
             result = internal_mhd_read(file, NULL/*output*/, size, shape,
@@ -912,7 +912,8 @@ LIBXSMM_API int libxsmm_mhd_write(const char filename[],
 
       result = (0 <= file_position ? EXIT_SUCCESS : EXIT_FAILURE);
       if (EXIT_SUCCESS == result && type_data != elemtype) { /* conversion needed */
-        memcpy(minmax, data, typesize_data); memcpy(minmax + (LIBXSMM_MHD_MAX_ELEMSIZE), data, typesize_data); /* initial condition */
+        LIBXSMM_MEMCPY127(minmax, data, typesize_data);
+        LIBXSMM_MEMCPY127(minmax + (LIBXSMM_MHD_MAX_ELEMSIZE), data, typesize_data); /* initial condition */
         result = internal_mhd_write(file, input, size, shape, ndims, ncomponents, type_data, elemtype, typesize_data, typesize,
           1/*search min-max*/, minmax, minmax + (LIBXSMM_MHD_MAX_ELEMSIZE));
       }
