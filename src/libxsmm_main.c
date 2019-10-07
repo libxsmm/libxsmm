@@ -1404,16 +1404,16 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   char jit_name[256] = { 0 };
 
   /* large enough temporary buffer for generated code */
-#if defined(NDEBUG)
+# if defined(NDEBUG)
   char jit_buffer[LIBXSMM_CODE_MAXSIZE];
   memset(&generated_code, 0, sizeof(generated_code));
   generated_code.generated_code = jit_buffer;
   generated_code.buffer_size = sizeof(jit_buffer);
-#else
+# else
   memset(&generated_code, 0, sizeof(generated_code));
   generated_code.generated_code = malloc(LIBXSMM_CODE_MAXSIZE);
   generated_code.buffer_size = (NULL != generated_code.generated_code ? LIBXSMM_CODE_MAXSIZE : 0);
-#endif
+# endif
   /* setup code generation */
   generated_code.code_type = 2;
 
@@ -1424,8 +1424,10 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
   switch (request->kind) { /* generate kernel */
     case LIBXSMM_BUILD_KIND_GEMM: { /* small MxM kernel */
       LIBXSMM_ASSERT(NULL != request->descriptor.gemm);
+# if 0 /* dummy kernel for an empty shape is desired */
       if (0 < request->descriptor.gemm->m   && 0 < request->descriptor.gemm->n   && 0 < request->descriptor.gemm->k &&
           0 < request->descriptor.gemm->lda && 0 < request->descriptor.gemm->ldb && 0 < request->descriptor.gemm->ldc)
+# endif
       {
         const unsigned int m = request->descriptor.gemm->m, n = request->descriptor.gemm->n, k = request->descriptor.gemm->k;
 # if !defined(LIBXSMM_DENY_RETARGET) /* disable: ECFLAGS=-DLIBXSMM_DENY_RETARGET */
