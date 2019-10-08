@@ -1780,48 +1780,40 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
   }
 
-  if (0 == generated_code.last_error) { /* no error raised */
-# if !defined(NDEBUG)
-    if (0 != generated_code.code_size) /* sanity check */
-# endif
-    {
-      char* code_buffer = NULL;
-      void* code_buffer_result = &code_buffer;
-      LIBXSMM_ASSERT(generated_code.code_size <= LIBXSMM_CODE_MAXSIZE);
-      LIBXSMM_ASSERT(NULL != generated_code.generated_code);
-      /* attempt to create executable buffer */
-      result = libxsmm_xmalloc((void**)code_buffer_result, generated_code.code_size, 0/*auto*/,
-        /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
-        LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
-      if (EXIT_SUCCESS == result) { /* check for success */
-        LIBXSMM_ASSERT(NULL != code_buffer);
-        /* copy temporary buffer into the prepared executable buffer */
+  if  (0 == generated_code.last_error /* no error raised */
+    && 0 != generated_code.code_size /*check (tcopy issue?)*/)
+  {
+    char* code_buffer = NULL;
+    void* code_buffer_result = &code_buffer;
+    LIBXSMM_ASSERT(generated_code.code_size <= LIBXSMM_CODE_MAXSIZE);
+    LIBXSMM_ASSERT(NULL != generated_code.generated_code);
+    /* attempt to create executable buffer */
+    result = libxsmm_xmalloc((void**)code_buffer_result, generated_code.code_size, 0/*auto*/,
+      /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
+      LIBXSMM_MALLOC_FLAG_RWX, &regindex, sizeof(regindex));
+    if (EXIT_SUCCESS == result) { /* check for success */
+      LIBXSMM_ASSERT(NULL != code_buffer);
+      /* copy temporary buffer into the prepared executable buffer */
 # if defined(NDEBUG)
-        { int i; /* precondition: jit_buffer == generated_code.generated_code */
-          for (i = 0; i < (int)generated_code.code_size; ++i) code_buffer[i] = jit_buffer[i];
-        }
+      { int i; /* precondition: jit_buffer == generated_code.generated_code */
+        for (i = 0; i < (int)generated_code.code_size; ++i) code_buffer[i] = jit_buffer[i];
+      }
 # else
-        memcpy(code_buffer, generated_code.generated_code, generated_code.code_size);
+      memcpy(code_buffer, generated_code.generated_code, generated_code.code_size);
 # endif
-        /* attribute/protect buffer and revoke unnecessary flags */
-        result = libxsmm_malloc_attrib((void**)code_buffer_result, LIBXSMM_MALLOC_FLAG_X, jit_name);
-        if (EXIT_SUCCESS == result) { /* check for success */
-          code->pmm = code_buffer; /* commit buffer */
-          LIBXSMM_ASSERT(NULL != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->uval));
-        }
-        else { /* release buffer */
-          libxsmm_xfree(code_buffer, 0/*no check*/);
-        }
+      /* attribute/protect buffer and revoke unnecessary flags */
+      result = libxsmm_malloc_attrib((void**)code_buffer_result, LIBXSMM_MALLOC_FLAG_X, jit_name);
+      if (EXIT_SUCCESS == result) { /* check for success */
+        code->pmm = code_buffer; /* commit buffer */
+        LIBXSMM_ASSERT(NULL != code->pmm && 0 == (LIBXSMM_CODE_STATIC & code->uval));
+      }
+      else { /* release buffer */
+        libxsmm_xfree(code_buffer, 0/*no check*/);
       }
     }
-# if !defined(NDEBUG)
-    else {
-      result = EXIT_FAILURE;
-    }
-# endif
   }
   else {
-    result = generated_code.last_error;
+    result = (0 != generated_code.last_error ? generated_code.last_error : EXIT_FAILURE);
   }
 # if !defined(NDEBUG)
   free(generated_code.generated_code); /* free temporary/initial code buffer */
