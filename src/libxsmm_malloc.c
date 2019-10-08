@@ -2560,7 +2560,7 @@ LIBXSMM_API int libxsmm_get_malloc_info(const void* memory, libxsmm_malloc_info*
   if (NULL != info) {
     size_t size;
     result = libxsmm_get_malloc_xinfo(memory, &size, NULL/*flags*/, NULL/*extra*/);
-    memset(info, 0, sizeof(libxsmm_malloc_info));
+    LIBXSMM_MEMZERO127(info);
     if (EXIT_SUCCESS == result) {
       info->size = size;
     }
@@ -2585,7 +2585,7 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
   int result = EXIT_SUCCESS;
   if (NULL != info) {
 #if defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))
-    memset(info, 0, sizeof(*info));
+    LIBXSMM_MEMZERO127(info);
     info->nmallocs = internal_malloc_scratch_nmallocs;
     info->internal = internal_malloc_private_max;
     info->local = internal_malloc_local_max;
@@ -2611,7 +2611,7 @@ LIBXSMM_API int libxsmm_get_scratch_info(libxsmm_scratch_info* info)
 # endif
     }
 #else
-    memset(info, 0, sizeof(*info));
+    LIBXSMM_MEMZERO127(info);
 #endif /*defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS) && (0 < (LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS))*/
   }
   else {

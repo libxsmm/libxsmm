@@ -744,12 +744,12 @@ void libxsmm_reset_x86_gp_reg_mapping( libxsmm_gp_reg_mapping* io_gp_reg_mapping
 
 LIBXSMM_API_INTERN
 void libxsmm_reset_loop_label_tracker( libxsmm_loop_label_tracker* io_loop_label_tracker ) {
-  memset(io_loop_label_tracker, 0, sizeof(*io_loop_label_tracker));
+  LIBXSMM_MEMZERO127(io_loop_label_tracker);
 }
 
 LIBXSMM_API_INTERN
 void libxsmm_reset_jump_label_tracker( libxsmm_jump_label_tracker* io_jump_label_tracker ) {
-  memset(io_jump_label_tracker, 0, sizeof(*io_jump_label_tracker));
+  LIBXSMM_MEMZERO127(io_jump_label_tracker);
 }
 
 LIBXSMM_API_INTERN

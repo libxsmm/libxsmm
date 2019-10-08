@@ -576,11 +576,11 @@ LIBXSMM_API libxsmm_rwlock* libxsmm_rwlock_create(void)
     LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_RWLOCK, &result->impl, &attr);
     LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_RWLOCK, &attr);
 # else
-    memset((void*)&result->completions, 0, sizeof(internal_sync_counter));
-    memset((void*)&result->requests, 0, sizeof(internal_sync_counter));
+    LIBXSMM_MEMZERO127(&result->completions);
+    LIBXSMM_MEMZERO127(&result->requests);
 # endif
 #else
-    memset(result, 0, sizeof(libxsmm_rwlock));
+    LIBXSMM_MEMZERO127(result);
 #endif
   }
   return result;
