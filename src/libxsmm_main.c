@@ -1780,13 +1780,15 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
 # endif
   }
 
-  /* handle an eventual error in the else-branch */
-  if (0 < generated_code.code_size) {
-    LIBXSMM_ASSERT(generated_code.code_size <= LIBXSMM_CODE_MAXSIZE);
-    LIBXSMM_ASSERT(NULL != generated_code.generated_code);
-    if (0 == generated_code.last_error) { /* no error raised */
+  if (0 == generated_code.last_error) { /* no error raised */
+# if !defined(NDEBUG)
+    if (0 != generated_code.code_size) /* sanity check */
+# endif
+    {
       char* code_buffer = NULL;
       void* code_buffer_result = &code_buffer;
+      LIBXSMM_ASSERT(generated_code.code_size <= LIBXSMM_CODE_MAXSIZE);
+      LIBXSMM_ASSERT(NULL != generated_code.generated_code);
       /* attempt to create executable buffer */
       result = libxsmm_xmalloc((void**)code_buffer_result, generated_code.code_size, 0/*auto*/,
         /* flag must be a superset of what's populated by libxsmm_malloc_attrib */
@@ -1794,13 +1796,13 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
       if (EXIT_SUCCESS == result) { /* check for success */
         LIBXSMM_ASSERT(NULL != code_buffer);
         /* copy temporary buffer into the prepared executable buffer */
-#if defined(NDEBUG)
+# if defined(NDEBUG)
         { int i; /* precondition: jit_buffer == generated_code.generated_code */
           for (i = 0; i < (int)generated_code.code_size; ++i) code_buffer[i] = jit_buffer[i];
         }
-#else
+# else
         memcpy(code_buffer, generated_code.generated_code, generated_code.code_size);
-#endif
+# endif
         /* attribute/protect buffer and revoke unnecessary flags */
         result = libxsmm_malloc_attrib((void**)code_buffer_result, LIBXSMM_MALLOC_FLAG_X, jit_name);
         if (EXIT_SUCCESS == result) { /* check for success */
@@ -1812,12 +1814,14 @@ LIBXSMM_API_INTERN int libxsmm_build(const libxsmm_build_request* request, unsig
         }
       }
     }
+# if !defined(NDEBUG)
     else {
-      result = generated_code.last_error;
+      result = EXIT_FAILURE;
     }
+# endif
   }
   else {
-    result = EXIT_FAILURE;
+    result = generated_code.last_error;
   }
 # if !defined(NDEBUG)
   free(generated_code.generated_code); /* free temporary/initial code buffer */

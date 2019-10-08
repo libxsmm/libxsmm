@@ -33,7 +33,10 @@
 
 #include "libxsmm_macros.h"
 
-#define LIBXSMM_MEMSET127(PTRDST, VALUE, SIZE) { \
+#if defined(__clang_analyzer__)
+# define LIBXSMM_MEMSET127(PTRDST, VALUE, SIZE) memset(PTRDST, VALUE, SIZE)
+#else
+# define LIBXSMM_MEMSET127(PTRDST, VALUE, SIZE) { \
   char *const libxsmm_memset127_dst_ = (char*)(PTRDST); \
   union { size_t size; signed char value; } libxsmm_memset127_size_ = { (SIZE) }; \
   signed char libxsmm_memset127_i_; LIBXSMM_ASSERT((SIZE) <= 127); \
@@ -41,6 +44,7 @@
     libxsmm_memset127_dst_[libxsmm_memset127_i_] = (char)(VALUE); \
   } \
 }
+#endif
 #define LIBXSMM_MEMZERO127(PTRDST) LIBXSMM_MEMSET127(PTRDST, '\0', sizeof(*(PTRDST)))
 
 #define LIBXSMM_MEMCPY127(PTRDST, PTRSRC, SIZE) { \
