@@ -164,6 +164,19 @@ int main(/*int argc, char* argv[]*/)
     if (0 != a/*u32-overflow*/ && a < LIBXSMM_DELTA(a, b)) exit(EXIT_FAILURE);
   }
 
+  { /* further check LIBXSMM_INTRINSICS_BITSCANBWD32 */
+    const int npot[] = { 0, 1, 2, 4, 8, 16, 32, 64, 128, 256, 65536 };
+    const int n = sizeof(npot) / sizeof(*npot);
+    for (i = 0; i < n; ++i) {
+      const int numpot = npot[i];
+      const int nbits = LIBXSMM_INTRINSICS_BITSCANBWD32(numpot);
+      const int num = nbits < numpot ? (1 << nbits) : nbits;
+      if (numpot != num) {
+        exit(EXIT_FAILURE);
+      }
+    }
+  }
+
   { /* bit operations: specific tests */
     unsigned int a, b;
     a = LIBXSMM_INTRINSICS_BITSCANFWD64(0x2aaaab69ede0);
