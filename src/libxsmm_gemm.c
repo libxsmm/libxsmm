@@ -910,7 +910,10 @@ LIBXSMM_API libxsmm_gemm_handle* libxsmm_gemm_handle_init(libxsmm_gemm_blob* blo
       0 == (result.ptr->gemm_flags & LIBXSMM_GEMM_FLAG_BETA_0) ? 1 : 2/*RFO*/, result.ptr->otypesize))
     {
       if (um == LIBXSMM_UP2POT(um) || un == LIBXSMM_UP2POT(un)) { /* power-of-two (POT) extent(s) */
-        result.ptr->flags |= LIBXSMM_GEMM_HANDLE_FLAG_COPY_C | LIBXSMM_GEMM_HANDLE_FLAG_COPY_A;
+        result.ptr->flags |= LIBXSMM_GEMM_HANDLE_FLAG_COPY_C;
+        if (LIBXSMM_GEMM_FLAG_TRANS_AB != (LIBXSMM_GEMM_FLAG_TRANS_AB & result.ptr->gemm_flags)) {
+          result.ptr->flags |= LIBXSMM_GEMM_HANDLE_FLAG_COPY_A;
+        }
       }
     }
     result.ptr->itypesize = libxsmm_typesize((libxsmm_datatype)iprec);
