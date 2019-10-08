@@ -69,7 +69,9 @@ LIBXSMM_API int libxsmm_trace_finalize(void);
 LIBXSMM_API unsigned int libxsmm_backtrace(const void* buffer[], unsigned int size, unsigned int skip);
 
 #if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__INTEL_COMPILER) && !defined(__clang__)
-# pragma GCC diagnostic push
+#if defined(__GNUC__) && LIBXSMM_VERSION3(4, 6, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__)
+#   pragma GCC diagnostic push
+# endif
 # pragma GCC diagnostic ignored "-Wpragmas"
 # pragma GCC diagnostic ignored "-Wframe-address"
 #endif
@@ -101,7 +103,8 @@ LIBXSMM_API_INLINE const void* libxsmm_trace_caller_id(unsigned int level) { /* 
     }
   }
 }
-#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__INTEL_COMPILER) && !defined(__clang__)
+#if defined(LIBXSMM_TRACE_CALLERID_GCCBUILTIN) && !defined(__INTEL_COMPILER) && !defined(__clang__) && \
+  (!defined(__GNUC__) || LIBXSMM_VERSION3(4, 6, 0) <= LIBXSMM_VERSION3(__GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__))
 # pragma GCC diagnostic pop
 #endif
 
