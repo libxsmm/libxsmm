@@ -2170,34 +2170,34 @@ LIBXSMM_API_INTERN int libxsmm_xmalloc(void** memory, size_t size, size_t alignm
 LIBXSMM_API_INTERN void libxsmm_xfree(const void* memory, int check)
 {
 #if (!defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)) || defined(_DEBUG)
-  const char* error_msg = NULL;
+  static int error_once = 0;
 #endif
   /*const*/ internal_malloc_info_type *const info = internal_malloc_info(memory, check);
   if (NULL != info) { /* !libxsmm_free */
 #if (!defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)) || defined(_DEBUG)
-    if (EXIT_SUCCESS != internal_xfree(memory, info)) error_msg = "LIBXSMM ERROR: memory deallocation failed!\n";
+    if (EXIT_SUCCESS != internal_xfree(memory, info)) {
+      if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
+        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+      {
+        fprintf(stderr, "LIBXSMM ERROR: memory deallocation failed!\n");
+      }
+    }
 #else
     internal_xfree(memory, info);
 #endif
   }
   else if (NULL != memory) {
-#if (!defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)) || defined(_DEBUG)
-    error_msg = "LIBXSMM ERROR: deallocation does not match allocation!\n";
-#endif
 #if 1
     __real_free((void*)memory);
 #endif
-  }
 #if (!defined(LIBXSMM_MALLOC_HOOK_STATIC) && !defined(LIBXSMM_MALLOC_HOOK_DYNAMIC)) || defined(_DEBUG)
-  if (NULL != error_msg) {
-    static int error_once = 0;
     if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
-      fprintf(stderr, error_msg);
+      fprintf(stderr, "LIBXSMM ERROR: deallocation does not match allocation!\n");
     }
-  }
 #endif
+  }
 }
 
 
