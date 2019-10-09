@@ -431,9 +431,8 @@
 #define LIBXSMM_UP2(N, NPOT) ((((uintptr_t)N) + ((NPOT) - 1)) & ~((NPOT) - 1))
 #define LIBXSMM_UP(N, UP) ((((N) + (UP) - 1) / (UP)) * (UP))
 #define LIBXSMM_ABS(A) (0 <= (A) ? (A) : -(A))
-/* avoid warning about always true in case of unsigned integers (<=) */
-#define LIBXSMM_MIN(A, B) ((A) <= (B) ? (A) : (B))
-#define LIBXSMM_MAX(A, B) ((A) <= (B) ? (B) : (A))
+#define LIBXSMM_MIN(A, B) ((A) < (B) ? (A) : (B))
+#define LIBXSMM_MAX(A, B) ((A) < (B) ? (B) : (A))
 #define LIBXSMM_MOD(A, N) ((A) % (N))
 #define LIBXSMM_MOD2(A, NPOT) ((A) & ((NPOT) - 1))
 #define LIBXSMM_DELTA(T0, T1) ((T0) < (T1) ? ((T1) - (T0)) : ((T0) - (T1)))
