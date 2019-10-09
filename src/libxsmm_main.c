@@ -84,9 +84,6 @@
 #if !defined(LIBXSMM_CACHE_PAD) && 1
 # define LIBXSMM_CACHE_PAD
 #endif
-#if !defined(LIBXSMM_CACHE_GLOBAL) && 1
-# define LIBXSMM_CACHE_GLOBAL
-#endif
 #if !defined(LIBXSMM_CACHE_CLEAR) && 0
 # define LIBXSMM_CACHE_CLEAR
 #endif
@@ -186,7 +183,7 @@ LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_statistic_type {
 LIBXSMM_EXTERN_C typedef struct LIBXSMM_RETARGETABLE internal_cache_entry_type {
   libxsmm_descriptor keys[LIBXSMM_CACHE_MAXSIZE];
   libxsmm_code_pointer code[LIBXSMM_CACHE_MAXSIZE];
-# if !defined(LIBXSMM_CACHE_GLOBAL) || defined(LIBXSMM_CACHE_CLEAR)
+# if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
   unsigned int id; /* to invalidate */
 # endif
   unsigned char size, hit;
@@ -199,7 +196,7 @@ LIBXSMM_EXTERN_C typedef union LIBXSMM_RETARGETABLE internal_cache_type {
   internal_cache_entry_type entry;
 } internal_cache_type;
 
-# if defined(LIBXSMM_CACHE_GLOBAL)
+# if defined(LIBXSMM_NTHREADS_USE)
 LIBXSMM_APIVAR(internal_cache_type* internal_cache_buffer);
 # endif
 #endif /*defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))*/
@@ -700,7 +697,7 @@ LIBXSMM_API_INTERN void internal_init(void)
 #endif
   if (NULL == internal_registry) { /* double-check after acquiring the lock(s) */
     void *new_registry = NULL, *new_keys = &internal_registry_keys;
-#if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
+#if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
     void* new_cache = &internal_cache_buffer;
 #endif
     /* setup verbosity as early as possible since below code may rely on verbose output */
@@ -767,13 +764,18 @@ LIBXSMM_API_INTERN void internal_init(void)
       LIBXSMM_MEMZERO127(&internal_statistic[0/*DP*/][i]);
       LIBXSMM_MEMZERO127(&internal_statistic[1/*SP*/][i]);
     }
-    libxsmm_nt = 2;
-#if !defined(__MIC__) && (LIBXSMM_X86_AVX512_MIC != LIBXSMM_STATIC_TARGET_ARCH)
-    if (LIBXSMM_X86_AVX512_MIC == libxsmm_target_archid)
-#endif
+#if (0 != LIBXSMM_SYNC)
     {
-      libxsmm_nt = 4;
+# if defined(_WIN32)
+      const DWORD nthreads = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+# else
+      const long int nthreads = sysconf(_SC_NPROCESSORS_ONLN);
+# endif
+      libxsmm_nthreads = (unsigned int)LIBXSMM_MAX(nthreads, 1);
     }
+#else
+      libxsmm_nthreads = 1;
+#endif
     internal_statistic_mnk = LIBXSMM_MAX_DIM;
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
@@ -784,8 +786,8 @@ LIBXSMM_API_INTERN void internal_init(void)
 #endif
     libxsmm_hash_init(libxsmm_target_archid); /* used by debug memory allocation (checksum) */
     if (
-#if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-      (EXIT_SUCCESS == libxsmm_xmalloc((void**)new_cache, (LIBXSMM_MAX_NTHREADS) * sizeof(internal_cache_type), LIBXSMM_CACHELINE/*alignment*/,
+#if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
+      (EXIT_SUCCESS == libxsmm_xmalloc((void**)new_cache, (LIBXSMM_NTHREADS_MAX) * sizeof(internal_cache_type), LIBXSMM_CACHELINE/*alignment*/,
         LIBXSMM_MALLOC_FLAG_PRIVATE, NULL/*extra*/, 0/*extra-size*/)) &&
 #endif
       (EXIT_SUCCESS == libxsmm_xmalloc(&new_registry, (LIBXSMM_CAPACITY_REGISTRY) * sizeof(libxsmm_code_pointer), 0/*auto-align*/,
@@ -794,9 +796,9 @@ LIBXSMM_API_INTERN void internal_init(void)
         LIBXSMM_MALLOC_FLAG_PRIVATE, NULL/*extra*/, 0/*extra-size*/)))
     {
       LIBXSMM_ASSERT(NULL != new_registry && NULL != internal_registry_keys);
-#if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
+#if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       LIBXSMM_ASSERT(NULL != internal_cache_buffer);
-      memset(internal_cache_buffer, 0, (LIBXSMM_MAX_NTHREADS) * sizeof(internal_cache_type));
+      memset(internal_cache_buffer, 0, (LIBXSMM_NTHREADS_MAX) * sizeof(internal_cache_type));
 #endif
       libxsmm_trans_init(libxsmm_target_archid);
       libxsmm_dnn_init(libxsmm_target_archid);
@@ -845,7 +847,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
         fprintf(stderr, "LIBXSMM ERROR: failed to allocate internal buffers!\n");
       }
-#if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
+#if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       libxsmm_xfree(internal_cache_buffer, 0/*no check*/);
 #endif
       libxsmm_xfree(internal_registry_keys, 0/*no check*/);
@@ -1097,7 +1099,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
 #endif
       libxsmm_xfree(registry_keys, 0/*no check*/);
       libxsmm_xfree(registry, 0/*no check*/);
-#if defined(LIBXSMM_CACHE_GLOBAL) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
+#if defined(LIBXSMM_NTHREADS_USE) && defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
       libxsmm_xfree(internal_cache_buffer, 0/*no check*/);
 # if !defined(NDEBUG)
       internal_cache_buffer = NULL;
@@ -1846,7 +1848,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
   int build = EXIT_SUCCESS;
 #endif
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
-# if defined(LIBXSMM_CACHE_GLOBAL)
+# if defined(LIBXSMM_NTHREADS_USE)
   const unsigned int tid = libxsmm_get_tid();
   internal_cache_type *const cache = internal_cache_buffer + tid;
 # else
@@ -1877,7 +1879,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
     LIBXSMM_MIN(size, LIBXSMM_DIFF_SIZE), LIBXSMM_DESCRIPTOR_MAXSIZE, cache->entry.hit, cache->entry.size);
 # endif
   if (
-# if !defined(LIBXSMM_CACHE_GLOBAL) || defined(LIBXSMM_CACHE_CLEAR)
+# if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
     cache->entry.id == libxsmm_ninit &&
 # endif
     cache_index < cache->entry.size)
@@ -2047,7 +2049,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
     } while (0 != diff);
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
     if (NULL != flux_entry.ptr_const) { /* keep code version on record (cache) */
-# if !defined(LIBXSMM_CACHE_GLOBAL) || defined(LIBXSMM_CACHE_CLEAR)
+# if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
       if (cache->entry.id == libxsmm_ninit)
 # endif
       {
@@ -2059,7 +2061,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
           INTERNAL_FIND_CODE_CACHE_EVICT(cache_index, cache->entry.size, cache->entry.hit);
         }
       }
-# if !defined(LIBXSMM_CACHE_GLOBAL) || defined(LIBXSMM_CACHE_CLEAR)
+# if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
       else { /* invalidate */
         LIBXSMM_ASSERT(0 == cache_index);
         cache->entry.id = libxsmm_ninit;

@@ -756,7 +756,28 @@ LIBXSMM_API unsigned int libxsmm_get_tid(void)
 #if (0 != LIBXSMM_SYNC)
   static LIBXSMM_TLS unsigned int tid = 0xFFFFFFFF;
   if (0xFFFFFFFF == tid) {
-    tid = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_thread_count, 1, LIBXSMM_ATOMIC_RELAXED) - 1;
+    const unsigned int nthreads = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_thread_count, 1, LIBXSMM_ATOMIC_RELAXED);
+    static int error_once = 0;
+# if defined(LIBXSMM_NTHREADS_USE)
+    if (LIBXSMM_NTHREADS_MAX < nthreads
+      && 0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: maximum number of threads is exhausted!\n");
+    }
+    else
+# endif
+    if (0 != libxsmm_nthreads && libxsmm_nthreads < nthreads
+      && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM WARNING: maximum number of threads is oversubscribed!\n");
+    }
+# if defined(LIBXSMM_NTHREADS_USE)
+    tid = (nthreads - 1) % LIBXSMM_NTHREADS_MAX;
+# else
+    tid = nthreads - 1;
+# endif
   }
   return tid;
 #else
