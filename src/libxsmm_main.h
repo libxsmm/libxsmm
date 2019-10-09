@@ -900,12 +900,5 @@ LIBXSMM_APIVAR(double libxsmm_timer_scale);
 /** Security-enhanced environment */
 LIBXSMM_APIVAR(int libxsmm_se);
 
-#if (0 != LIBXSMM_SYNC)
-/** Number of discovered threads (per libxsmm_get_tid) */
-LIBXSMM_APIVAR(unsigned int libxsmm_thread_count);
-/** Total number of HW threads per system. */
-LIBXSMM_APIVAR(unsigned int libxsmm_nthreads);
-#endif
-
 #endif /*LIBXSMM_MAIN_H*/
 

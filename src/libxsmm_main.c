@@ -521,17 +521,7 @@ LIBXSMM_API_INTERN void internal_finalize(void)
       if (0 != size_scratch) {
         fprintf(stderr, "Scratch: %s", libxsmm_format_size(size_scratch, "KM", "B", 10));
         if (0 != high_verbosity) {
-#if (0 != LIBXSMM_SYNC)
-          if (1 < libxsmm_thread_count) {
-            fprintf(stderr, " (mallocs=%lu, pools=%u, threads=%u)\n",
-              (unsigned long int)scratch_info.nmallocs, scratch_info.npools, libxsmm_thread_count);
-          }
-          else
-#endif
-          {
-            fprintf(stderr, " (mallocs=%lu, pools=%u)\n",
-              (unsigned long int)scratch_info.nmallocs, scratch_info.npools);
-          }
+          fprintf(stderr, " (mallocs=%lu, pools=%u)\n", (unsigned long int)scratch_info.nmallocs, scratch_info.npools);
         }
         else {
           fprintf(stderr, "\n");
@@ -764,16 +754,6 @@ LIBXSMM_API_INTERN void internal_init(void)
       LIBXSMM_MEMZERO127(&internal_statistic[0/*DP*/][i]);
       LIBXSMM_MEMZERO127(&internal_statistic[1/*SP*/][i]);
     }
-#if (0 != LIBXSMM_SYNC)
-    {
-# if defined(_WIN32)
-      const DWORD nthreads = GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
-# else
-      const long int nthreads = sysconf(_SC_NPROCESSORS_ONLN);
-# endif
-      libxsmm_nthreads = (unsigned int)LIBXSMM_MAX(nthreads, 1);
-    }
-#endif
     internal_statistic_mnk = LIBXSMM_MAX_DIM;
     internal_statistic_sml = 13;
     internal_statistic_med = 23;
