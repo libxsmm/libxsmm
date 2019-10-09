@@ -767,7 +767,7 @@ LIBXSMM_API unsigned int libxsmm_get_tid(void)
     }
     else
 # endif
-    if (0 != libxsmm_nthreads && libxsmm_nthreads < nthreads
+    if (0 != libxsmm_nthreads && (libxsmm_nthreads + 1/*shepherd*/) < nthreads
       && (LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity)
       && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {

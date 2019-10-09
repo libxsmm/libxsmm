@@ -773,8 +773,6 @@ LIBXSMM_API_INTERN void internal_init(void)
 # endif
       libxsmm_nthreads = (unsigned int)LIBXSMM_MAX(nthreads, 1);
     }
-#else
-      libxsmm_nthreads = 1;
 #endif
     internal_statistic_mnk = LIBXSMM_MAX_DIM;
     internal_statistic_sml = 13;
