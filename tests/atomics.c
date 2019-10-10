@@ -38,7 +38,7 @@
 
 int main(void)
 {
-  LIBXSMM_ATOMIC_LOCKTYPE lock = 0/*unlocked*/;
+  LIBXSMM_ALIGNED(LIBXSMM_ATOMIC_LOCKTYPE lock = 0/*unlocked*/, LIBXSMM_ALIGNMENT);
   int result = EXIT_SUCCESS;
   int mh = 1051981, hp, tmp;
 
