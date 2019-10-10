@@ -120,7 +120,7 @@
 #elif (defined(__GNUC__) || defined(__clang__) || defined(__PGI))
 # define LIBXSMM_ATTRIBUTE(A) __attribute__((A))
 # define LIBXSMM_INLINE_ALWAYS LIBXSMM_ATTRIBUTE(always_inline) LIBXSMM_INLINE
-# define LIBXSMM_ALIGNED(DECL, N) DECL LIBXSMM_ATTRIBUTE(aligned(N))
+# define LIBXSMM_ALIGNED(DECL, N) LIBXSMM_ATTRIBUTE(aligned(N)) DECL
 # if !defined(LIBXSMM_UNPACKED)
 #   define LIBXSMM_PACKED(TYPE) TYPE LIBXSMM_ATTRIBUTE(__packed__)
 # endif
