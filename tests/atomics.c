@@ -66,10 +66,23 @@ int main(void)
       result = EXIT_FAILURE;
     }
     LIBXSMM_NONATOMIC_RELEASE(&lock, ATOMIC_KIND);
+    if (0 != lock) result = EXIT_FAILURE;
   }
   else {
     result = EXIT_FAILURE;
   }
+
+  LIBXSMM_ATOMIC_ACQUIRE(&lock, LIBXSMM_SYNC_NPAUSE, ATOMIC_KIND);
+  if (0 == lock) result = EXIT_FAILURE;
+  if (LIBXSMM_ATOMIC_TRYLOCK(&lock, ATOMIC_KIND)) {
+    result = EXIT_FAILURE;
+  }
+  if (LIBXSMM_ATOMIC_TRYLOCK(&lock, ATOMIC_KIND)) {
+    result = EXIT_FAILURE;
+  }
+  if (0 == lock) result = EXIT_FAILURE;
+  LIBXSMM_ATOMIC_RELEASE(&lock, ATOMIC_KIND);
+  if (0 != lock) result = EXIT_FAILURE;
 
   return result;
 }
