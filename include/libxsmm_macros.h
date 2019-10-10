@@ -326,7 +326,7 @@
 
 #if !defined(LIBXSMM_PRAGMA)
 # if defined(LIBXSMM_INTEL_COMPILER) || defined(_MSC_VER)
-#   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(DIRECTIVE)
+#   define LIBXSMM_PRAGMA(DIRECTIVE) __pragma(LIBXSMM_EXPAND(DIRECTIVE))
 # else
 #   define LIBXSMM_PRAGMA(DIRECTIVE)
 # endif
