@@ -490,7 +490,7 @@ LIBXSMM_API void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
     libxsmm_mutex_state state;
     for (state = mutex->state; INTERNAL_SYNC_LOCK_FREE != state; state = mutex->state) {
 #     if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
-      LIBXSMM_SYNC_CYCLE_ELSE(&mutex->state, LIBXSMM_SYNC_NPAUSE, {
+      LIBXSMM_SYNC_CYCLE_ELSE(&mutex->state, INTERNAL_SYNC_LOCK_FREE, LIBXSMM_SYNC_NPAUSE, {
         /*const*/ libxsmm_mutex_state state_locked = INTERNAL_SYNC_LOCK_LOCKED;
         if (INTERNAL_SYNC_LOCK_LOCKED != state || LIBXSMM_ATOMIC_CMPSWP(&mutex->state,
           state_locked, INTERNAL_SYNC_LOCK_CONTESTED, LIBXSMM_ATOMIC_RELAXED))
