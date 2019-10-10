@@ -128,18 +128,21 @@
   } \
 } while(0)
 
-#define BENCHMARK(LOCK_KIND, IMPL, NREPEAT, NTHREADS, WORK_R, WORK_W, NW, NT, NR, WRATIOPERC) do { \
+#define BENCHMARK(LOCK_KIND, IMPL, NTHREADS, WORK_R, WORK_W, WRATIOPERC, NREPEAT_LAT, NREPEAT_TPT) do { \
+  const int nw = 0 < (WRATIOPERC) ? (100 / (WRATIOPERC)) : ((NREPEAT_TPT) + 1); \
+  const int nt = (NREPEAT_TPT) * (NTHREADS); \
+  const double nr = 1.0 / (NREPEAT_LAT); \
   LIBXSMM_LOCK_ATTR_TYPE(LOCK_KIND) attr; \
   LIBXSMM_LOCK_TYPE(LOCK_KIND) lock; \
-  LIBXSMM_ASSERT(0 < (NT)); \
-  fprintf(stdout, "Latency and throughput of %s (%s) for nthreads=%i wratio=%i%% work_r=%i work_w=%i nrepeat=%i\n", \
-    LIBXSMM_STRINGIFY(LOCK_KIND), IMPL, NTHREADS, WRATIOPERC, WORK_R, WORK_W, NREPEAT); \
+  LIBXSMM_ASSERT(0 < nt); \
+  fprintf(stdout, "Latency and throughput of %s (%s) for nthreads=%i wratio=%i%% work_r=%i work_w=%i nlat=%i ntpt=%i\n", \
+    LIBXSMM_STRINGIFY(LOCK_KIND), IMPL, NTHREADS, WRATIOPERC, WORK_R, WORK_W, NREPEAT_LAT, NREPEAT_TPT); \
   LIBXSMM_LOCK_ATTR_INIT(LOCK_KIND, &attr); \
   LIBXSMM_LOCK_INIT(LOCK_KIND, &lock, &attr); \
   LIBXSMM_LOCK_ATTR_DESTROY(LOCK_KIND, &attr); \
-  MEASURE_LATENCY_RO(LOCK_KIND, &lock, NREPEAT, NR); \
-  MEASURE_LATENCY_RW(LOCK_KIND, &lock, NREPEAT, NR); \
-  MEASURE_THROUGHPUT(LOCK_KIND, &lock, NREPEAT, NTHREADS, WORK_R, WORK_W, NW, NT); \
+  MEASURE_LATENCY_RO(LOCK_KIND, &lock, NREPEAT_LAT, nr); \
+  MEASURE_LATENCY_RW(LOCK_KIND, &lock, NREPEAT_LAT, nr); \
+  MEASURE_THROUGHPUT(LOCK_KIND, &lock, NREPEAT_TPT, NTHREADS, WORK_R, WORK_W, nw, nt); \
   LIBXSMM_LOCK_DESTROY(LOCK_KIND, &lock); \
 } while(0)
 
@@ -170,25 +173,23 @@ int main(int argc, char* argv[])
   const int wratioperc = LIBXSMM_CLMP(2 < argc ? atoi(argv[2]) : 5, 0, 100);
   const int work_r = LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 100, 1);
   const int work_w = LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : (10 * work_r), 1);
-  const int nrepeat = LIBXSMM_MAX(5 < argc ? atoi(argv[5]) : 1000000, 1);
-  const int nw = 0 < wratioperc ? (100 / wratioperc) : (nrepeat + 1);
-  const int nt = nrepeat * nthreads;
-  const double nr = 1.0 / nrepeat;
+  const int nlat = LIBXSMM_MAX(5 < argc ? atoi(argv[5]) : 2000000, 1);
+  const int ntpt = LIBXSMM_MAX(6 < argc ? atoi(argv[6]) : 10000, 1);
 
 #if defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK)
-  BENCHMARK(LIBXSMM_LOCK_SPINLOCK, "OS-native", nrepeat, nthreads, work_r, work_w, nw, nt, nr, wratioperc);
+  BENCHMARK(LIBXSMM_LOCK_SPINLOCK, "OS-native", nthreads, work_r, work_w, wratioperc, nlat, ntpt);
 #else
-  BENCHMARK(LIBXSMM_LOCK_SPINLOCK, "LIBXSMM", nrepeat, nthreads, work_r, work_w, nw, nt, nr, wratioperc);
+  BENCHMARK(LIBXSMM_LOCK_SPINLOCK, "LIBXSMM", nthreads, work_r, work_w, wratioperc, nlat, ntpt);
 #endif
 #if defined(LIBXSMM_LOCK_SYSTEM_MUTEX)
-  BENCHMARK(LIBXSMM_LOCK_MUTEX, "OS-native", nrepeat, nthreads, work_r, work_w, nw, nt, nr, wratioperc);
+  BENCHMARK(LIBXSMM_LOCK_MUTEX, "OS-native", nthreads, work_r, work_w, wratioperc, nlat, ntpt);
 #else
-  BENCHMARK(LIBXSMM_LOCK_MUTEX, "LIBXSMM", nrepeat, nthreads, work_r, work_w, nw, nt, nr, wratioperc);
+  BENCHMARK(LIBXSMM_LOCK_MUTEX, "LIBXSMM", nthreads, work_r, work_w, wratioperc, nlat, ntpt);
 #endif
 #if defined(LIBXSMM_LOCK_SYSTEM_RWLOCK)
-  BENCHMARK(LIBXSMM_LOCK_RWLOCK, "OS-native", nrepeat, nthreads, work_r, work_w, nw, nt, nr, wratioperc);
+  BENCHMARK(LIBXSMM_LOCK_RWLOCK, "OS-native", nthreads, work_r, work_w, wratioperc, nlat, ntpt);
 #else
-  BENCHMARK(LIBXSMM_LOCK_RWLOCK, "LIBXSMM", nrepeat, nthreads, work_r, work_w, nw, nt, nr, wratioperc);
+  BENCHMARK(LIBXSMM_LOCK_RWLOCK, "LIBXSMM", nthreads, work_r, work_w, wratioperc, nlat, ntpt);
 #endif
 
   return EXIT_SUCCESS;
