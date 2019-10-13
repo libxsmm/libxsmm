@@ -79,14 +79,14 @@ LIBXSMM_VLA_DECL(7, const element_filter_type, weight, weight_base, handle->bloc
 
 #if defined(LIBXSMM_DNN_CONVOLUTION_BWD_AVX512_CPX)
 #define LIBXSMM_DNN_CONVOLUTION_BWD_CONVERT_F32_BF16(in, out, length) do { \
-  unsigned int __i = 0; \
+  int __i = 0; \
   for ( __i = 0; __i < length; __i+= 32) { \
     _mm512_store_si512((libxsmm_bfloat16*)out+__i, (__m512i) _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i+16), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i))); \
   } \
 } while(0)
 #else
 #define LIBXSMM_DNN_CONVOLUTION_BWD_CONVERT_F32_BF16(in, out, length) do { \
-  unsigned int __i = 0; \
+  int __i = 0; \
   for ( __i = 0; __i < length; __i+= 16) { \
     _mm256_store_si256((__m256i*)(out+__i), _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)in+__i) ),16)) ); \
   } \
