@@ -342,16 +342,24 @@ ifeq (0,$(GNU))
       CC = icc
     endif
   endif
-  ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" | $(CC) -E -P - 2>/dev/null))
+  ifeq (__INTEL_COMPILER,$(shell echo "__INTEL_COMPILER" | $(CC) $(ECFLAGS) $(EFLAGS) -E -P - 2>/dev/null))
     ICX = 1
   endif
 endif
 ICX ?= 0
 
+# adopt extra flags from C if not set individually
+ECXXFLAGS ?= $(ECFLAGS)
+
+COMPILER_VERSION_FLAG ?= $(ECXXFLAGS) $(EFLAGS) --version 2>/dev/null
+CC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
+FC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
+CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
+
 # check if the Intel Development Tools are available
 INTEL ?= $(shell echo "$$((2==$(words $(filter icpc% icpx% icc% icx%, \
-  $(shell $(CXX) --version 2>/dev/null | grep -m1 . | cut -d' ' -f1) \
-  $(shell $(CC) --version 2>/dev/null | grep -m1 . | cut -d' ' -f1)))))")
+  $(shell $(CXX) $(CXX_VERSION_FLAG) 2>/dev/null | grep -m1 . | cut -d' ' -f1) \
+  $(shell $(CC)  $(CC_VERSION_FLAG)  2>/dev/null | grep -m1 . | cut -d' ' -f1)))))")
 
 ifneq (0,$(INTEL))
   ifeq (,$(shell echo "$${FC}"))
@@ -364,7 +372,7 @@ ifneq (0,$(INTEL))
 else
   ifeq (,$(call which,$(CXX)))
     CXX = g++
-  else ifneq (0,$(shell $(CXX) --version >/dev/null 2>/dev/null; echo "$$?"))
+  else ifneq (0,$(shell $(CXX) $(CXX_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CXX = g++
   else ifneq (gcc,$(notdir $(call which,$(CC))))
     ifeq (g++,$(notdir $(call which,$(CXX))))
@@ -373,18 +381,13 @@ else
   endif
   ifeq (,$(call which,$(CC)))
     CC = gcc
-  else ifneq (0,$(shell $(CC) --version >/dev/null 2>/dev/null; echo "$$?"))
+  else ifneq (0,$(shell $(CC) $(CC_VERSION_FLAG) >/dev/null 2>/dev/null; echo "$$?"))
     CC = gcc
   endif
   ifeq (Cray,$(shell $(CC) -V 2>&1 | head -n1 | cut -d' ' -f1))
     COMPILER_VERSION_FLAG ?= -V 2>&1
   endif
 endif
-
-COMPILER_VERSION_FLAG ?= --version 2>/dev/null
-CC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
-FC_VERSION_FLAG ?= $(COMPILER_VERSION_FLAG)
-CXX_VERSION_FLAG ?= $(CC_VERSION_FLAG)
 
 CXX_VERSION_STRING = $(shell $(CXX) $(CXX_VERSION_FLAG) | grep -m1 . | sed $(REVERSION))
 CXX_VERSION_MAJOR = $(shell echo "$(CXX_VERSION_STRING)" | cut -d"." -f1)
@@ -421,6 +424,7 @@ endif
 
 # fixup FC-default given by MAKE
 ifneq (,$(strip $(FC)))
+ifeq (0,$(INTEL))
   FIXFC ?= 0
   ifeq (,$(call which,$(FC)))
     FIXFC = 1
@@ -440,6 +444,7 @@ ifneq (,$(strip $(FC)))
       FC = $(NULL)
     endif
   endif
+endif
 endif
 
 ifneq (,$(strip $(FC)))
@@ -2044,9 +2049,6 @@ else ifneq (0,$(BLAS)) # generic
     endif
   endif
 endif
-
-# adopt extra flags from C if not set individually
-ECXXFLAGS ?= $(ECFLAGS)
 
 cleanup = $(foreach flag,$(subst / $(NULL), $(NULL),$(subst //,/,$1)),$(flag))
 # cleanup eventually duplicated flags and slashes

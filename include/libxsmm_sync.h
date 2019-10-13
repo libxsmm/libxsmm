@@ -141,7 +141,7 @@ typedef enum libxsmm_atomic_kind {
 # define LIBXSMM_ATOMIC_ACQUIRE LIBXSMM_NONATOMIC_ACQUIRE
 # define LIBXSMM_ATOMIC_RELEASE LIBXSMM_NONATOMIC_RELEASE
 # define LIBXSMM_ATOMIC_SYNC LIBXSMM_NONATOMIC_SYNC
-# define LIBXSMM_SYNC_CYCLE(COUNTER, NPAUSE)
+# define LIBXSMM_SYNC_CYCLE(DST_PTR, EXP_STATE, NPAUSE)
 # if !defined(LIBXSMM_SYNC_NPAUSE)
 #   define LIBXSMM_SYNC_NPAUSE 0
 # endif
@@ -270,10 +270,10 @@ typedef enum libxsmm_atomic_kind {
 #     define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) /* matches bit-width of LIBXSMM_ATOMIC_LOCKTYPE */ \
               (0 == LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(DST_PTR, 1, KIND))
 #   endif
-#   define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) { LIBXSMM_SYNC_CYCLE_DECL(libxsmm_atomic_acquire_counter_); \
+#   define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) \
             LIBXSMM_ASSERT(1 == sizeof(LIBXSMM_ATOMIC_LOCKTYPE)); LIBXSMM_ASSERT(0 == LIBXSMM_MOD2((uintptr_t)(DST_PTR), 4)); \
-            while (!LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(libxsmm_atomic_acquire_counter_, NPAUSE); \
-            LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE"); }
+            while (!LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(DST_PTR, 0/*free*/, NPAUSE); \
+            LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE")
 #   define LIBXSMM_ATOMIC_SYNC_NOFENCE(KIND) __asm__ __volatile__ ("" ::: "memory")
 #   if !defined(LIBXSMM_SYNC_NPAUSE)
 #     define LIBXSMM_SYNC_NPAUSE 4096
@@ -316,10 +316,10 @@ typedef enum libxsmm_atomic_kind {
 #   else
 #     define LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND) (0 == LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_FETCH_OR, 8)(DST_PTR, 1, KIND))
 #   endif
-#   define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) { LIBXSMM_SYNC_CYCLE_DECL(libxsmm_atomic_acquire_counter_); \
+#   define LIBXSMM_ATOMIC_ACQUIRE(DST_PTR, NPAUSE, KIND) \
             LIBXSMM_ASSERT(1 == sizeof(LIBXSMM_ATOMIC_LOCKTYPE)); LIBXSMM_ASSERT(0 == LIBXSMM_MOD2((uintptr_t)(DST_PTR), 4)); \
-            while (!LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(libxsmm_atomic_acquire_counter_, NPAUSE); \
-            LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE"); }
+            while (!LIBXSMM_ATOMIC_TRYLOCK(DST_PTR, KIND)) LIBXSMM_SYNC_CYCLE(DST_PTR, 0/*free*/, NPAUSE); \
+            LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_ACQUIRE")
 #   define LIBXSMM_ATOMIC_RELEASE(DST_PTR, KIND) { \
             LIBXSMM_ASSERT_MSG(0 != *(DST_PTR), "LIBXSMM_ATOMIC_RELEASE"); \
             LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, 8)(DST_PTR, KIND); }
@@ -349,29 +349,31 @@ typedef enum libxsmm_atomic_kind {
 #   error LIBXSMM is missing atomic compiler builtins!
 # endif
 # if (0 < LIBXSMM_SYNC_NPAUSE)
-#   define LIBXSMM_SYNC_CYCLE_ELSE(COUNTER, NPAUSE, ELSE) if (0 <= ((NPAUSE) - (++(COUNTER)))) { \
-      LIBXSMM_SYNC_PAUSE; \
-    } \
-    else { \
-      LIBXSMM_SYNC_YIELD(); ELSE \
-    }
-#   define LIBXSMM_SYNC_CYCLE_DECL(NAME) int NAME = 0
+#   define LIBXSMM_SYNC_CYCLE_ELSE(DST_PTR, EXP_STATE, NPAUSE, ELSE) do { int libxsmm_sync_cycle_npause_ = 1; \
+      do { int libxsmm_sync_cycle_counter_ = 0; \
+        for (; libxsmm_sync_cycle_counter_ < libxsmm_sync_cycle_npause_; ++libxsmm_sync_cycle_counter_) LIBXSMM_SYNC_PAUSE; \
+        if (libxsmm_sync_cycle_npause_ < (NPAUSE)) { \
+          libxsmm_sync_cycle_npause_ *= 2; \
+        } \
+        else { \
+          libxsmm_sync_cycle_npause_ = (NPAUSE); \
+          LIBXSMM_SYNC_YIELD(); \
+          ELSE \
+        } \
+      } while(((EXP_STATE) & 1) != (*(DST_PTR) & 1)); \
+    } while(0)
 # else
-#   define LIBXSMM_SYNC_CYCLE_ELSE(COUNTER, NPAUSE, ELSE) LIBXSMM_SYNC_PAUSE
-#   define LIBXSMM_SYNC_CYCLE_DECL(NAME)
+#   define LIBXSMM_SYNC_CYCLE_ELSE(DST_PTR, EXP_STATE, NPAUSE, ELSE) LIBXSMM_SYNC_PAUSE
 # endif
-# define LIBXSMM_SYNC_CYCLE(COUNTER, NPAUSE) LIBXSMM_SYNC_CYCLE_ELSE(COUNTER, NPAUSE, ;)
+# define LIBXSMM_SYNC_CYCLE(DST_PTR, EXP_STATE, NPAUSE) \
+    LIBXSMM_SYNC_CYCLE_ELSE(DST_PTR, EXP_STATE, NPAUSE, /*else*/;)
 #endif
 
 #if defined(LIBXSMM_OFFLOAD_TARGET)
 # pragma offload_attribute(push,target(LIBXSMM_OFFLOAD_TARGET))
 #endif
 #if (0 != LIBXSMM_SYNC) /** Default lock-kind */
-# if defined(_MSC_VER)
-#   define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_SPINLOCK
-# else
-#   define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_MUTEX
-# endif
+# define LIBXSMM_LOCK_DEFAULT LIBXSMM_LOCK_MUTEX
 # if !defined(LIBXSMM_LOCK_SYSTEM_SPINLOCK) && (defined(LIBXSMM_SYNC_SYSTEM) || 1)
 #   define LIBXSMM_LOCK_SYSTEM_SPINLOCK
 # endif

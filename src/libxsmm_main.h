@@ -41,15 +41,19 @@
 # define LIBXSMM_CAPACITY_CACHE 16
 #endif
 
-#if !defined(LIBXSMM_MAX_NTHREADS)
+#if !defined(LIBXSMM_NTHREADS_MAX)
 # if (0 != LIBXSMM_SYNC)
-#   define LIBXSMM_MAX_NTHREADS 1024
+#   define LIBXSMM_NTHREADS_MAX 1024
 # else
-#   define LIBXSMM_MAX_NTHREADS 1
+#   define LIBXSMM_NTHREADS_MAX 1
 # endif
 #endif
+/* determines if code relies on LIBXSMM_NTHREADS_MAX */
+#if !defined(LIBXSMM_NTHREADS_USE) && 0
+# define LIBXSMM_NTHREADS_USE
+#endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS)
-# define LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS LIBXSMM_MAX_NTHREADS
+# define LIBXSMM_MALLOC_SCRATCH_MAX_NPOOLS LIBXSMM_NTHREADS_MAX
 #endif
 #if !defined(LIBXSMM_MALLOC_SCRATCH_SCALE)
 # define LIBXSMM_MALLOC_SCRATCH_SCALE 1.0
@@ -109,7 +113,7 @@
 #endif
 
 #if defined(LIBXSMM_UNPACKED)
-# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE) memset(DST, 0, SIZE)
+# define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE) LIBXSMM_MEMSET127(DST, 0, SIZE)
 #else
 # define LIBXSMM_DESCRIPTOR_CLEAR_AUX(DST, SIZE)
 #endif
@@ -752,8 +756,6 @@ LIBXSMM_APIVAR_ALIGNED(LIBXSMM_LOCK_TYPE(LIBXSMM_LOCK) libxsmm_lock_global);
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_target_archid);
 /** Determines whether a threaded implementation is synchronized or not. */
 LIBXSMM_APIVAR_ALIGNED(int libxsmm_nosync);
-/** Number of threads per core. */
-LIBXSMM_APIVAR_ALIGNED(int libxsmm_nt);
 
 /** Function used to allocate default memory. */
 LIBXSMM_APIVAR(libxsmm_malloc_function libxsmm_default_malloc_fn);
@@ -777,11 +779,6 @@ LIBXSMM_APIVAR(unsigned int libxsmm_statistic_num_spmdm);
 LIBXSMM_APIVAR(double libxsmm_timer_scale);
 /** Security-enhanced environment */
 LIBXSMM_APIVAR(int libxsmm_se);
-
-#if (0 != LIBXSMM_SYNC)
-/** Number of discovered threads (per libxsmm_get_tid) */
-LIBXSMM_APIVAR(unsigned int libxsmm_thread_count);
-#endif
 
 #endif /*LIBXSMM_MAIN_H*/
 

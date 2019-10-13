@@ -165,7 +165,7 @@ LIBXSMM_API_INTERN void libxsmm_perf_init(void)
     goto error;
   }
 
-  memset(&header, 0, sizeof(header));
+  LIBXSMM_MEMZERO127(&header);
   header.magic      = JITDUMP_MAGIC;
   header.version    = JITDUMP_VERSION;
   header.elf_mach   = 62;  /* EM_X86_64 */
@@ -211,7 +211,7 @@ LIBXSMM_API_INTERN void libxsmm_perf_finalize(void)
     goto error;
   }
 
-  memset(&hdr, 0, sizeof(hdr));
+  LIBXSMM_MEMZERO127(&hdr);
   hdr.id = JITDUMP_CODE_CLOSE;
   hdr.total_size = sizeof(hdr);
   hdr.timestamp = libxsmm_timer_tick();
@@ -264,8 +264,8 @@ LIBXSMM_API_INTERN void libxsmm_perf_dump_code(const void* memory, size_t size, 
     struct jitdump_record_code_load rec;
     size_t name_len = strlen(name) + 1;
 
-    memset(&hdr, 0, sizeof(hdr));
-    memset(&rec, 0, sizeof(rec));
+    LIBXSMM_MEMZERO127(&hdr);
+    LIBXSMM_MEMZERO127(&rec);
 
     hdr.id = JITDUMP_CODE_LOAD;
     hdr.total_size = sizeof(hdr) + sizeof(rec) + name_len + size;

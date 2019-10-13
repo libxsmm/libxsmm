@@ -173,7 +173,7 @@ LIBXSMM_API_INLINE int internal_mmbatch_flush(const libxsmm_gemm_descriptor* bat
         const libxsmm_blasint m = descriptor.m, n = descriptor.n, k = descriptor.k;
         const char *const symbol = batcharray[i].stat.symbol;
         const unsigned int ci = batcharray[i].stat.count;
-        memset(&batcharray[i], 0, (size_t)itemsize); /* clear */
+        LIBXSMM_MEMZERO127(batcharray + i); /* clear */
         if (threshold < ci && count < limit /* limit printed statistic */
           && 0 < m && 0 < n && 0 < k)
         {
@@ -1113,7 +1113,7 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_begin(libxsmm_gemm_precision precision,
       ++internal_ext_gemm_batchdepth;
 
       /* ensure descriptor does not match any GEMM such that... */
-      memset(&libxsmm_mmbatch_desc, 0, sizeof(libxsmm_mmbatch_desc));
+      LIBXSMM_MEMZERO127(&libxsmm_mmbatch_desc);
       /* ...the batch stops and completely flushes */
       if (0 != internal_ext_gemm_batchsize) {
         result = internal_mmbatch_flush(internal_ext_gemm_batchdesc + i,
@@ -1168,7 +1168,7 @@ LIBXSMM_APIEXT void libxsmm_mmbatch_end(void)
     const unsigned int mmbatch_maxdepth = LIBXSMM_UP2POT(LIBXSMM_EXT_GEMM_MMBATCH_MAXDEPTH);
 #endif
     /* ensure descriptor does not match any GEMM such that... */
-    memset(&libxsmm_mmbatch_desc, 0, sizeof(libxsmm_mmbatch_desc));
+    LIBXSMM_MEMZERO127(&libxsmm_mmbatch_desc);
     /* ...the batch stops and completely flushes */
     if (EXIT_SUCCESS == internal_mmbatch_flush(&flushdesc,
       0 != internal_ext_gemm_batchsize ? (((internal_ext_gemm_batchsize - 1) % max_batchsize) + 1) : 0,

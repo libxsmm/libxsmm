@@ -383,11 +383,10 @@ LIBXSMM_API void libxsmm_spinlock_acquire(libxsmm_spinlock* spinlock)
   assert(0 != spinlock);
   LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_SPINLOCK, &spinlock->impl);
 # else
-  LIBXSMM_SYNC_CYCLE_DECL(counter);
   assert(0 != spinlock);
   for (;;) {
     if (1 == LIBXSMM_ATOMIC_ADD_FETCH(&spinlock->state, 1, LIBXSMM_ATOMIC_RELAXED)) break;
-    while (INTERNAL_SYNC_LOCK_FREE != spinlock->state) LIBXSMM_SYNC_CYCLE(counter, LIBXSMM_SYNC_NPAUSE);
+    LIBXSMM_SYNC_CYCLE(&spinlock->state, INTERNAL_SYNC_LOCK_FREE, LIBXSMM_SYNC_NPAUSE);
   }
   LIBXSMM_ATOMIC_SYNC(LIBXSMM_ATOMIC_SEQ_CST);
 # endif
@@ -480,20 +479,18 @@ LIBXSMM_API void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
   LIBXSMM_LOCK_ACQUIRE(LIBXSMM_LOCK_MUTEX, &mutex->impl);
 # else
 #   if defined(_WIN32)
-  LIBXSMM_SYNC_CYCLE_DECL(counter);
   assert(0 != mutex);
   while (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_MUTEX) != libxsmm_mutex_trylock(mutex)) {
-    while (0 != (mutex->state & 1)) LIBXSMM_SYNC_CYCLE(counter, LIBXSMM_SYNC_NPAUSE);
+    LIBXSMM_SYNC_CYCLE(&mutex->state, 0/*free*/, LIBXSMM_SYNC_NPAUSE);
   }
 #   else
   libxsmm_mutex_state lock_free = INTERNAL_SYNC_LOCK_FREE, lock_state = INTERNAL_SYNC_LOCK_LOCKED;
-  LIBXSMM_SYNC_CYCLE_DECL(counter);
   assert(0 != mutex);
   while (0/*false*/ == LIBXSMM_ATOMIC_CMPSWP(&mutex->state, lock_free, lock_state, LIBXSMM_ATOMIC_RELAXED)) {
     libxsmm_mutex_state state;
     for (state = mutex->state; INTERNAL_SYNC_LOCK_FREE != state; state = mutex->state) {
 #     if defined(LIBXSMM_SYNC_FUTEX) && defined(__linux__)
-      LIBXSMM_SYNC_CYCLE_ELSE(counter, LIBXSMM_SYNC_NPAUSE, {
+      LIBXSMM_SYNC_CYCLE_ELSE(&mutex->state, INTERNAL_SYNC_LOCK_FREE, LIBXSMM_SYNC_NPAUSE, {
         /*const*/ libxsmm_mutex_state state_locked = INTERNAL_SYNC_LOCK_LOCKED;
         if (INTERNAL_SYNC_LOCK_LOCKED != state || LIBXSMM_ATOMIC_CMPSWP(&mutex->state,
           state_locked, INTERNAL_SYNC_LOCK_CONTESTED, LIBXSMM_ATOMIC_RELAXED))
@@ -504,7 +501,7 @@ LIBXSMM_API void libxsmm_mutex_acquire(libxsmm_mutex* mutex)
       );
       break;
 #     else
-      LIBXSMM_SYNC_CYCLE(counter, LIBXSMM_SYNC_NPAUSE);
+      LIBXSMM_SYNC_CYCLE(&mutex->state, INTERNAL_SYNC_LOCK_FREE, LIBXSMM_SYNC_NPAUSE);
 #     endif
     }
     lock_free = INTERNAL_SYNC_LOCK_FREE;
@@ -576,11 +573,11 @@ LIBXSMM_API libxsmm_rwlock* libxsmm_rwlock_create(void)
     LIBXSMM_LOCK_INIT(LIBXSMM_LOCK_RWLOCK, &result->impl, &attr);
     LIBXSMM_LOCK_ATTR_DESTROY(LIBXSMM_LOCK_RWLOCK, &attr);
 # else
-    memset((void*)&result->completions, 0, sizeof(internal_sync_counter));
-    memset((void*)&result->requests, 0, sizeof(internal_sync_counter));
+    LIBXSMM_MEMZERO127(&result->completions);
+    LIBXSMM_MEMZERO127(&result->requests);
 # endif
 #else
-    memset(result, 0, sizeof(libxsmm_rwlock));
+    LIBXSMM_MEMZERO127(result);
 #endif
   }
   return result;
@@ -640,8 +637,9 @@ LIBXSMM_API void libxsmm_rwlock_acquire(libxsmm_rwlock* rwlock)
 # else
   internal_sync_counter prev;
   if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) != internal_rwlock_trylock(rwlock, &prev)) {
-    LIBXSMM_SYNC_CYCLE_DECL(counter);
-    while (rwlock->completions.bits != prev.bits) LIBXSMM_SYNC_CYCLE(counter, LIBXSMM_SYNC_NPAUSE);
+    while (rwlock->completions.bits != prev.bits) {
+      LIBXSMM_SYNC_CYCLE(&rwlock->completions.bits, prev.bits, LIBXSMM_SYNC_NPAUSE);
+    }
   }
 # endif
 #else
@@ -714,8 +712,9 @@ LIBXSMM_API void libxsmm_rwlock_acqread(libxsmm_rwlock* rwlock)
 # else
   internal_sync_counter prev;
   if (LIBXSMM_LOCK_ACQUIRED(LIBXSMM_LOCK_RWLOCK) != internal_rwlock_tryread(rwlock, &prev)) {
-    LIBXSMM_SYNC_CYCLE_DECL(counter);
-    while (rwlock->completions.kind.writer != prev.kind.writer) LIBXSMM_SYNC_CYCLE(counter, LIBXSMM_SYNC_NPAUSE);
+    while (rwlock->completions.kind.writer != prev.kind.writer) {
+      LIBXSMM_SYNC_CYCLE(&rwlock->completions.kind.writer, prev.kind.writer, LIBXSMM_SYNC_NPAUSE);
+    }
   }
 # endif
 #else
@@ -756,7 +755,20 @@ LIBXSMM_API unsigned int libxsmm_get_tid(void)
 #if (0 != LIBXSMM_SYNC)
   static LIBXSMM_TLS unsigned int tid = 0xFFFFFFFF;
   if (0xFFFFFFFF == tid) {
-    tid = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_thread_count, 1, LIBXSMM_ATOMIC_RELAXED) - 1;
+    static unsigned int libxsmm_thread_count = 0;
+    const unsigned int nthreads = LIBXSMM_ATOMIC_ADD_FETCH(&libxsmm_thread_count, 1, LIBXSMM_ATOMIC_RELAXED);
+# if defined(LIBXSMM_NTHREADS_USE)
+    static int error_once = 0;
+    if (LIBXSMM_NTHREADS_MAX < nthreads
+      && 0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
+      fprintf(stderr, "LIBXSMM ERROR: maximum number of threads is exhausted!\n");
+    }
+    tid = (nthreads - 1) % LIBXSMM_NTHREADS_MAX;
+# else
+    tid = (nthreads - 1);
+# endif
   }
   return tid;
 #else

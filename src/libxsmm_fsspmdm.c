@@ -75,7 +75,7 @@ LIBXSMM_API libxsmm_dfsspmdm* libxsmm_dfsspmdm_create(
   if (0 == new_handle) return 0;
 
   /* initialize the handle */
-  memset((void*)new_handle, 0, sizeof(libxsmm_dfsspmdm));
+  LIBXSMM_MEMZERO127(new_handle);
   /* TODO: in case of ILP64, check value ranges */
   new_handle->N = (int)N;
   new_handle->M = (int)M;
@@ -186,7 +186,7 @@ LIBXSMM_API libxsmm_sfsspmdm* libxsmm_sfsspmdm_create(
   if (0 == new_handle) return 0;
 
   /* initialize the handle */
-  memset((void*)new_handle, 0, sizeof(libxsmm_sfsspmdm));
+  LIBXSMM_MEMZERO127(new_handle);
   /* TODO: in case of ILP64, check value ranges */
   new_handle->N = (int)N;
   new_handle->M = (int)M;

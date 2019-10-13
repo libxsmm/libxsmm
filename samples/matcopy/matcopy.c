@@ -41,13 +41,13 @@
 
 int main(int argc, char* argv[])
 {
-  const unsigned int m = LIBXSMM_MAX((unsigned int)(1 < argc ? atoi(argv[1]) : 16), 0);
-  const unsigned int n = LIBXSMM_MAX((unsigned int)(2 < argc ? atoi(argv[2]) : 0), m);
-  const unsigned int ldi = LIBXSMM_MAX((unsigned int)(3 < argc ? atoi(argv[3]) : 0), m);
-  const unsigned int ldo = LIBXSMM_MAX((unsigned int)(4 < argc ? atoi(argv[4]) : 0), m);
+  const unsigned int m = (unsigned int)LIBXSMM_MAX(1 < argc ? atoi(argv[1]) : 16, 0);
+  const unsigned int n = (unsigned int)LIBXSMM_MAX(2 < argc ? atoi(argv[2]) : 0, (int)m);
+  const unsigned int ldi = (unsigned int)LIBXSMM_MAX(3 < argc ? atoi(argv[3]) : 0, (int)m);
+  const unsigned int ldo = (unsigned int)LIBXSMM_MAX(4 < argc ? atoi(argv[4]) : 0, (int)m);
   const int unroll = (5 < argc ? atoi(argv[5]) : 1), prefetch = (6 < argc ? atoi(argv[6]) : 0);
   const int flags = ((7 < argc && 0 != atoi(argv[7])) ? LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE : 0);
-  const unsigned int iters = LIBXSMM_MAX((unsigned int)(8 < argc ? atoi(argv[8]) : 0), 1);
+  const unsigned int iters = (unsigned int)LIBXSMM_MAX(8 < argc ? atoi(argv[8]) : 0, 1);
 
   /* we should modify to test all data-types */
   const libxsmm_mcopy_descriptor* desc;
@@ -71,6 +71,7 @@ int main(int argc, char* argv[])
     free(a); free(b);
     exit(EXIT_FAILURE);
   }
+  assert(NULL != a && NULL != b);
 
   for (i = 0; i < n; ++i) {
     for (j = 0; j < ldi; ++j) {
