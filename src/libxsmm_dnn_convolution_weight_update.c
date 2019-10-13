@@ -451,6 +451,22 @@ void transpose_32xcols(libxsmm_bfloat16 *in, libxsmm_bfloat16 *out, int col, int
     rd = _mm512_undefined_epi32();
     re = _mm512_undefined_epi32();
     r0 = _mm512_load_epi32(in + 0*in_width);
+  } else {
+    r0 = _mm512_undefined_epi32();
+    r1 = _mm512_undefined_epi32();
+    r2 = _mm512_undefined_epi32();
+    r3 = _mm512_undefined_epi32();
+    r4 = _mm512_undefined_epi32();
+    r5 = _mm512_undefined_epi32();
+    r6 = _mm512_undefined_epi32();
+    r7 = _mm512_undefined_epi32();
+    r8 = _mm512_undefined_epi32();
+    r9 = _mm512_undefined_epi32();
+    ra = _mm512_undefined_epi32();
+    rb = _mm512_undefined_epi32();
+    rc = _mm512_undefined_epi32();
+    rd = _mm512_undefined_epi32();
+    re = _mm512_undefined_epi32();
   }
 
   t0 = _mm512_unpacklo_epi16(r0,r1);
