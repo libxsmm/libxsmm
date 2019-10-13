@@ -583,10 +583,6 @@ LIBXSMM_EXTERN_C struct LIBXSMM_RETARGETABLE libxsmm_dnn_rnncell {
   void* ot_scratch;
   void* cit_scratch;
   void* cot_scratch;
-  /* options */
-  int fwd_generic;
-  int bwdupd_generic;
-  /* barrier */
 
   /* Ability to hoist GEMMs */
   libxsmm_bsmmfunction_reducebatch_strd fwd_kernela;

@@ -217,8 +217,21 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck(libxsmm
   }
 #endif
 
-  /* check if we have a kernel JITed */
-  if ( handle->fwd_generic != 0 ) {
+  /* check if we are on AVX512 */
+  if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) {
+    if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      status = libxsmm_dnn_rnncell_st_bwdupd_nc_ck_f32_f32( handle, kind, start_thread, tid );
+    } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
+      if ( handle->desc.N % 2 != 0 ) {
+        status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
+      } else {
+        status = libxsmm_dnn_rnncell_st_bwdupd_nc_ck_bf16_bf16( handle, kind, start_thread, tid );
+      }
+    } else  {
+      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+      return status;
+    }
+  } else {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef float element_input_type;
       typedef float element_output_type;
@@ -247,20 +260,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck(libxsmm
       return status;
     }
   }
-  else {
-    if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      status = libxsmm_dnn_rnncell_st_bwdupd_nc_ck_f32_f32( handle, kind, start_thread, tid );
-    } else if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
-      if ( handle->desc.N % 2 != 0 ) {
-        status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
-      } else {
-        status = libxsmm_dnn_rnncell_st_bwdupd_nc_ck_bf16_bf16( handle, kind, start_thread, tid );
-      }
-    } else  {
-      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-      return status;
-    }
-  }
 
   return status;
 }
@@ -277,8 +276,21 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_kcck(libxs
   }
 #endif
 
-  /* check if we have a kernel JITed */
-  if ( handle->fwd_generic != 0 ) {
+  /* check if we are on AVX512 */
+  if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) {
+    if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
+      status = libxsmm_dnn_rnncell_st_bwdupd_nc_kcck_f32_f32( handle, kind, start_thread, tid );
+    } else if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
+      if ( handle->desc.N % 2 != 0 ) {
+        status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
+      } else {
+        status = libxsmm_dnn_rnncell_st_bwdupd_nc_kcck_bf16_bf16( handle, kind, start_thread, tid );
+      }
+    } else {
+      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
+      return status;
+    }
+  } else {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
       typedef float element_input_type;
       typedef float element_output_type;
@@ -307,20 +319,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_kcck(libxs
       return status;
     }
   }
-  else {
-    if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      status = libxsmm_dnn_rnncell_st_bwdupd_nc_kcck_f32_f32( handle, kind, start_thread, tid );
-    } else   if ( handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_BF16 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_BF16 ) {
-      if ( handle->desc.N % 2 != 0 ) {
-        status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
-      } else {
-        status = libxsmm_dnn_rnncell_st_bwdupd_nc_kcck_bf16_bf16( handle, kind, start_thread, tid );
-      }
-    } else {
-      status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
-      return status;
-    }
-  }
 
   return status;
 }
@@ -338,19 +336,18 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_ncnc_kcck(lib
   }
 #endif
 
-  /* check if we have a kernel JITed */
-  if ( handle->fwd_generic != 0 ) {
+  /* check if we are on AVX512 */
+  if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      LIBXSMM_UNUSED(kind); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
-      status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
+      status = libxsmm_dnn_rnncell_st_bwdupd_ncnc_kcck_f32_f32( handle, kind, start_thread, tid );
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
     }
-  }
-  else {
+  } else {
     if (handle->desc.datatype_in == LIBXSMM_DNN_DATATYPE_F32 && handle->desc.datatype_out == LIBXSMM_DNN_DATATYPE_F32 ) {
-      status = libxsmm_dnn_rnncell_st_bwdupd_ncnc_kcck_f32_f32( handle, kind, start_thread, tid );
+      LIBXSMM_UNUSED(kind); LIBXSMM_UNUSED(start_thread); LIBXSMM_UNUSED(tid);
+      status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;
     } else {
       status = LIBXSMM_DNN_ERR_UNSUPPORTED_DATATYPE;
       return status;
