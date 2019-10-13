@@ -28,6 +28,8 @@
 ******************************************************************************/
 /* Evangelos Georganas (Intel Corp.)
 ******************************************************************************/
+
+#if defined(LIBXSMM_DNN_RNNCELL_FWD_AVX512_CPX)
 #define NATIVE_MATRIX_RNE_CVT_FP32_BFP16_LD(m, n, ld, _src, _dst)  \
 do { \
   float *src = _src; \
@@ -37,10 +39,25 @@ do { \
   for ( j = 0; j < n; ++j ) { \
     for ( i = 0; i < m; i+=32 ) { \
     packed_result = _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i])); \
-    _mm512_store_si512((libxsmm_bfloat16*)&dst[(j*ld)+i], (__m512i) packed_result); \
+    _mm512_storeu_si512((libxsmm_bfloat16*)&dst[(j*ld)+i], (__m512i) packed_result); \
     } \
   } \
 } while (0)
+#else
+#define NATIVE_MATRIX_RNE_CVT_FP32_BFP16_LD(m, n, ld, _src, _dst)  \
+do { \
+  float *src = _src; \
+  libxsmm_bfloat16 *dst = _dst; \
+  libxsmm_blasint i,j; \
+  __m256i packed_result; \
+  for ( j = 0; j < n; ++j ) { \
+    for ( i = 0; i < m; i+=16 ) { \
+    packed_result = _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i]) ), 16 ) ) ; \
+    _mm256_storeu_si256((__m256i*)&dst[(j*ld)+i], packed_result); \
+    } \
+  } \
+} while (0)
+#endif
 
 blocksa = CB_BLOCKS;
 blocksb = KB_BLOCKS;
