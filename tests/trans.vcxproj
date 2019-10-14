@@ -27,7 +27,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="otrans.c" />
+    <ClCompile Include="trans.c" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />
@@ -35,7 +35,7 @@
     <None Include="test.sh" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectName>otrans</ProjectName>
+    <ProjectName>trans</ProjectName>
     <ProjectGuid>{C9CA7758-C0C9-4A50-9757-115410B599B0}</ProjectGuid>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
