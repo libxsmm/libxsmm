@@ -38,10 +38,10 @@
 do { \
   libxsmm_bfloat16 *src = _src; \
   float *dst = _dst; \
-  libxsmm_blasint i,j; \
-  for ( j = 0; j < n; ++j ) { \
-    for ( i = 0; i < m; i+=16 ) { \
-      _mm512_store_ps((float*)&dst[(j*ld)+i], _mm512_loadcvt_bf16_fp32(&src[(j*ld)+i])); \
+  libxsmm_blasint __i,__j; \
+  for ( __j = 0; __j < n; ++__j ) { \
+    for ( __i = 0; __i < m; __i+=16 ) { \
+      _mm512_store_ps((float*)&dst[(__j*ld)+__i], _mm512_loadcvt_bf16_fp32(&src[(__j*ld)+__i])); \
     } \
   } \
 } while (0)
@@ -50,10 +50,10 @@ do { \
 do { \
   libxsmm_bfloat16 *colv = _colv; \
   float *srcdst = _srcdst; \
-  libxsmm_blasint i,j; \
-  for ( j = 0; j < n; ++j ) { \
-    for ( i = 0; i < m; i+=16 ) { \
-      _mm512_store_ps((float*)&srcdst[(j*ld)+i], _mm512_loadcvt_bf16_fp32(&colv[i])); \
+  libxsmm_blasint __i,__j; \
+  for ( __j = 0; __j < n; ++__j ) { \
+    for ( __i = 0; __i < m; __i+=16 ) { \
+      _mm512_store_ps((float*)&srcdst[(__j*ld)+__i], _mm512_loadcvt_bf16_fp32(&colv[__i])); \
     } \
   } \
 } while (0)
@@ -62,11 +62,11 @@ do { \
 do { \
   libxsmm_bfloat16 *colv = _colv; \
   float *srcdst = _srcdst; \
-  libxsmm_blasint i,j; \
+  libxsmm_blasint __i,__j; \
   __m512 vbias = _mm512_set1_ps(const_bias); \
-  for ( j = 0; j < n; ++j ) { \
-    for ( i = 0; i < m; i+=16 ) { \
-      _mm512_store_ps((float*)&srcdst[(j*ld)+i], _mm512_add_ps(vbias, _mm512_loadcvt_bf16_fp32(&colv[i]))); \
+  for ( __j = 0; __j < n; ++__j ) { \
+    for ( __i = 0; __i < m; __i+=16 ) { \
+      _mm512_store_ps((float*)&srcdst[(__j*ld)+__i], _mm512_add_ps(vbias, _mm512_loadcvt_bf16_fp32(&colv[__i]))); \
     } \
   } \
 } while (0)
