@@ -92,8 +92,10 @@ libxsmm_dnn_err_t libxsmm_dnn_rnncell_st_bwdupd_nc_ck_bf16_bf16(libxsmm_dnn_rnnc
   libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
 #if defined(LIBXSMM_INTRINSICS_AVX512_CORE) /*__AVX512F__,__AVX512BW__,__AVX512DQ__*/
 #define LIBXSMM_RNN_CELL_AVX512
+#if 0
   typedef libxsmm_bfloat16 element_input_type;
   typedef libxsmm_bfloat16 element_output_type;
+#endif
   typedef libxsmm_bfloat16 element_filter_type;
   if ( handle->desc.cell_type == LIBXSMM_DNN_RNNCELL_RNN_RELU ) {
     status = LIBXSMM_DNN_ERR_NOT_IMPLEMENTED;

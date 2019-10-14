@@ -72,7 +72,7 @@ do { \
 } while (0)
 
 /* helper variables */
-libxsmm_blasint j, ik, ikb, in, ic, icb, inik, BF, CB, CB_BLOCKS, KB_BLOCKS;
+libxsmm_blasint j, ik, ikb, in, /*ic, icb,*/ inik, BF, CB, CB_BLOCKS, KB_BLOCKS;
 /* input sizes */
 const libxsmm_blasint K =  handle->desc.K;
 const libxsmm_blasint N =  handle->desc.N;
