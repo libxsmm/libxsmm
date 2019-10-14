@@ -34,12 +34,12 @@
 do { \
   float *src = _src; \
   libxsmm_bfloat16 *dst = _dst; \
-  libxsmm_blasint i,j; \
+  libxsmm_blasint __i,__j; \
   __m512bh packed_result; \
-  for ( j = 0; j < n; ++j ) { \
-    for ( i = 0; i < m; i+=32 ) { \
-    packed_result = _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i])); \
-    _mm512_storeu_si512((libxsmm_bfloat16*)&dst[(j*ld)+i], (__m512i) packed_result); \
+  for ( __j = 0; __j < n; ++__j ) { \
+    for ( __i = 0; __i < m; __i+=32 ) { \
+    packed_result = _mm512_cvtne2ps_pbh(LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i+16]), LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i])); \
+    _mm512_storeu_si512((libxsmm_bfloat16*)&dst[(__j*ld)+__i], (__m512i) packed_result); \
     } \
   } \
 } while (0)
@@ -48,12 +48,12 @@ do { \
 do { \
   float *src = _src; \
   libxsmm_bfloat16 *dst = _dst; \
-  libxsmm_blasint i,j; \
+  libxsmm_blasint __i,__j; \
   __m256i packed_result; \
-  for ( j = 0; j < n; ++j ) { \
-    for ( i = 0; i < m; i+=16 ) { \
-    packed_result = _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(j*ld)+i]) ), 16 ) ) ; \
-    _mm256_storeu_si256((__m256i*)&dst[(j*ld)+i], packed_result); \
+  for ( __j = 0; __j < n; ++__j ) { \
+    for ( __i = 0; __i < m; __i+=16 ) { \
+    packed_result = _mm512_cvtepi32_epi16( _mm512_srai_epi32( LIBXSMM_INTRINSICS_MM512_ROUNDNE_BF16( LIBXSMM_INTRINSICS_MM512_LOAD_PS((float*)&src[(__j*ld)+__i]) ), 16 ) ) ; \
+    _mm256_storeu_si256((__m256i*)&dst[(__j*ld)+__i], packed_result); \
     } \
   } \
 } while (0)
