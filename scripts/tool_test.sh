@@ -95,8 +95,8 @@ then
   fi
 
   # should be source'd after the above variables are set
-  source ${HERE}/../.env/buildkite.env
-  #source ${HERE}/../.env/travis.env
+  source ${HERE}/../.env/buildkite.env ""
+  #source ${HERE}/../.env/travis.env ""
 
   # support yml-files for Travis-CI that depend on TRAVIS_* variables
   if [ "" = "${TRAVIS_BUILD_DIR}" ]; then
@@ -260,7 +260,7 @@ then
     # make execution environment locally available (always)
     if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ]; then
       if [ -e ${REPOROOT}/.env/${HOST}/${CONFIG}.env ]; then
-        source ${REPOROOT}/.env/${HOST}/${CONFIG}.env
+        source ${REPOROOT}/.env/${HOST}/${CONFIG}.env ""
       else
         echo "WARNING: configuration \"${CONFIG}\" not found!"
       fi
@@ -287,7 +287,7 @@ then
       # prepare temporary script for remote environment/execution
       if [ "" != "${TESTSCRIPT}" ] && [ -e ${TESTSCRIPT} ]; then
         echo "#!/bin/bash" > ${TESTSCRIPT}
-        echo "set -e -o pipefail" >> ${TESTSCRIPT}
+        echo "set -eo pipefail" >> ${TESTSCRIPT}
         echo "if [ \"\" = \"\${MAKEJ}\" ]; then MAKEJ=\"-j \$(eval ${HERE}/tool_cpuinfo.sh -nc)\"; fi" >> ${TESTSCRIPT}
         # make execution environment available
         if [ "" != "${HOST}" ] && [ "none" != "${CONFIG}" ] && \
@@ -298,7 +298,7 @@ then
           ${CP} -u /opt/intel/licenses/* ${REPOROOT}/licenses 2>/dev/null
           ${CP} -u ${LICSDIR}/licenses/* ${REPOROOT}/licenses 2>/dev/null
           echo "export INTEL_LICENSE_FILE=${REPOROOT}/licenses" >> ${TESTSCRIPT}
-          echo "source ${REPOROOT}/.env/${HOST}/${CONFIG}.env" >> ${TESTSCRIPT}
+          echo "source ${REPOROOT}/.env/${HOST}/${CONFIG}.env """ >> ${TESTSCRIPT}
         fi
         # record the current test case
         if [ "$0" != "${SLURMFILE}" ] && [ -e ${SLURMFILE} ]; then
@@ -313,11 +313,9 @@ then
           echo "echo \"--- RUN ${TESTID}\"" >> ${TESTSCRIPT}
           DIRSED=$(echo "${DIR}" | ${SED} "s/\//\\\\\//g")
           ${SED} \
-            -e "/^#\!..*/d" \
-            -e "/^#SBATCH/d" \
-            -e "/^[[:space:]]*$/d" \
-            -e "s/\.\//${DIRSED}\//" \
+            -e "s/#\!..*/#\!\/bin\/bash\nset -eo pipefail/" -e "s/\.\//${DIRSED}\//" \
             -e "s/^[./]*\([[:print:]][[:print:]]*\/\)*slurm[[:space:]][[:space:]]*//" \
+            -e "/^#SBATCH/d" -e "/^[[:space:]]*$/d" \
             ${SLURMFILE} > ${SLURMFILE}.run && ${CHMOD} +rx ${SLURMFILE}.run
           RUNFILE=$(readlink -f ${SLURMFILE}.run)
           if [ "" = "${TOOL_ENABLED}" ] || [ "0" != "${TOOL_ENABLED}" ]; then
@@ -332,10 +330,11 @@ then
           else
             echo >> ${TESTSCRIPT}
           fi
-          echo "rm -f ${RUNFILE}" >> ${TESTSCRIPT}
+          echo "${RM} -f ${RUNFILE}" >> ${TESTSCRIPT}
         else
           echo "${TEST}" >> ${TESTSCRIPT}
         fi
+        echo >> ${TESTSCRIPT}
         if [ "" != "${SYNC}" ]; then # flush asynchronous NFS mount
           ${SYNC}
         fi
