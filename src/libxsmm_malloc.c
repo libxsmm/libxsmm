@@ -384,8 +384,8 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
 #endif
   if (0 != check && NULL != result) { /* check ownership */
 #if !defined(_WIN32) /* mprotect: pass address rounded down to page/4k alignment */
-    if (1 == check || 0 == mprotect((void*)(((uintptr_t)result) & 0xFFFFFFFFFFFFF000), sizeof(internal_malloc_info_type),
-      0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) ? (PROT_READ | PROT_WRITE) : (PROT_READ | PROT_EXEC))|| ENOMEM != errno)
+    if (1 == check || 0 == mprotect((void*)(((uintptr_t)result) & 0xFFFFFFFFFFFFF000),
+      sizeof(internal_malloc_info_type), PROT_READ | PROT_WRITE) || ENOMEM != errno)
 #endif
     {
       const size_t maxsize = LIBXSMM_MAX(LIBXSMM_MAX(internal_malloc_public_max, internal_malloc_local_max), internal_malloc_private_max);
@@ -1616,11 +1616,12 @@ LIBXSMM_API int libxsmm_get_malloc_xinfo(const void* memory, size_t* size, int* 
   if (NULL != size || NULL != extra)
 #endif
   {
-    const internal_malloc_info_type *const info = internal_malloc_info(memory, 2/*check*/);
+    const int check = ((NULL == flags || 0 == (LIBXSMM_MALLOC_FLAG_X & *flags)) ? 2 : 1);
+    const internal_malloc_info_type *const info = internal_malloc_info(memory, check);
     if (NULL != info) {
-      if (size) *size = info->size;
-      if (flags) *flags = info->flags;
-      if (extra) *extra = info->pointer;
+      if (NULL != size) *size = info->size;
+      if (NULL != flags) *flags = info->flags;
+      if (NULL != extra) *extra = info->pointer;
       result = EXIT_SUCCESS;
     }
     else { /* potentially foreign buffer */
@@ -2321,7 +2322,7 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
           info->reloc = NULL;
 # if !defined(LIBXSMM_MALLOC_CRC_OFF) /* update checksum */
 #   if defined(LIBXSMM_MALLOC_CRC_LIGHT)
-          info->hash = LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &info);
+          LIBXSMM_ASSERT(info->hash == LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &info));
 #   else
           info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, info,
             /* info size minus actual hash value */
@@ -2334,13 +2335,13 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
 #if !defined(_WIN32)
         else { /* malloc-based fall-back */
           int mprotect_result;
-# if !defined(LIBXSMM_MALLOC_CRC_OFF) && defined(LIBXSMM_VTUNE) /* update checksum */
+# if !defined(LIBXSMM_MALLOC_CRC_OFF) && defined(LIBXSMM_VTUNE) /* check checksum */
 #   if defined(LIBXSMM_MALLOC_CRC_LIGHT)
-          info->hash = LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &info);
+          LIBXSMM_ASSERT(info->hash == LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &info));
 #   else
-          info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, info,
+          LIBXSMM_ASSERT(info->hash == libxsmm_crc32(LIBXSMM_MALLOC_SEED, info,
             /* info size minus actual hash value */
-            (unsigned int)(((char*)&info->hash) - ((char*)info)));
+            (unsigned int)(((char*)&info->hash) - ((char*)info))));
 #   endif
 # endif   /* treat memory protection errors as soft error; ignore return value */
           mprotect_result = mprotect(buffer, alloc_size/*entire memory region*/, PROT_READ | PROT_EXEC);
