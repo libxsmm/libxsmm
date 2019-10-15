@@ -384,8 +384,8 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
 #endif
   if (0 != check && NULL != result) { /* check ownership */
 #if !defined(_WIN32) /* mprotect: pass address rounded down to page/4k alignment */
-    if (1 == check || 0 == mprotect((void*)(((uintptr_t)result) & 0xFFFFFFFFFFFFF000),
-      sizeof(internal_malloc_info_type), PROT_READ | PROT_WRITE) || ENOMEM != errno)
+    if (1 == check || 0 == mprotect((void*)(((uintptr_t)result) & 0xFFFFFFFFFFFFF000), sizeof(internal_malloc_info_type),
+      0 == (LIBXSMM_MALLOC_FLAG_X & result->flags) ? (PROT_READ | PROT_WRITE) : (PROT_READ | PROT_EXEC))|| ENOMEM != errno)
 #endif
     {
       const size_t maxsize = LIBXSMM_MAX(LIBXSMM_MAX(internal_malloc_public_max, internal_malloc_local_max), internal_malloc_private_max);
@@ -411,7 +411,7 @@ LIBXSMM_API_INLINE internal_malloc_info_type* internal_malloc_info(const void* m
         || result->hash != LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &result)
 # else
         || result->hash != libxsmm_crc32(LIBXSMM_MALLOC_SEED, result,
-            (const char*)& result->hash - (const char*)result)
+            (const char*)&result->hash - (const char*)result)
 # endif
 #endif
       ) { /* mismatch */
