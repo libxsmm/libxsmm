@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 UNAME=$(command -v uname)
 SORT=$(command -v sort)
@@ -87,11 +88,11 @@ if [ "${BIN}" != "f32" ]; then
   true
 else
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}   4   4  ${MB}  512  100  4  4 0 0 1 ${TYPE} ${FORMAT} ${PAD}
-fi && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   4   4  ${MB}  512   96  4  4 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}   8   8  ${MB}  256  512  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  16  16  ${MB}  128  256  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  32  32  ${MB}   64  128  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  64  64  ${MB}    3   64  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}    && \
+fi
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   4   4  ${MB}  512   96  4  4 0 0 1 ${TYPE} ${FORMAT} ${PAD}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}   8   8  ${MB}  256  512  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  16  16  ${MB}  128  256  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  32  32  ${MB}   64  128  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  64  64  ${MB}    3   64  4  4 1 1 2 ${TYPE} ${FORMAT} ${PAD}
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}   4   4  ${MB}  512  512  4  4 0 0 1 ${TYPE} ${FORMAT} ${PAD}
 

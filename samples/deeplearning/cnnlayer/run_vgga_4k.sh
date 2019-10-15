@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 if [ "" = "${CHECK}" ] || [ "0" = "${CHECK}" ]; then
   if [ "" = "${CHECK_DNN_ITERS}" ]; then CHECK_DNN_ITERS=100; fi
@@ -95,18 +96,18 @@ if [ "${BIN}" != "f32" ]; then
   true
 else
 ${EXE} ${ITERS} 3840 2160 ${MB}   3  64 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee    ${LOGFILE}
-fi && \
-${EXE} ${ITERS} 3840 2160 ${MB}  64  64 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
-${EXE} ${ITERS} 1920 1080 ${MB}  64 128 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
-${EXE} ${ITERS} 1920 1080 ${MB} 128 128 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
-${EXE} ${ITERS}  960  540 ${MB} 128 256 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
-${EXE} ${ITERS}  960  540 ${MB} 256 256 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
-${EXE} ${ITERS}  960  540 ${MB} 256 256 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
-${EXE} ${ITERS}  480  270 ${MB} 256 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
-${EXE} ${ITERS}  480  270 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
-${EXE} ${ITERS}  480  270 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
-${EXE} ${ITERS}  240  135 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
-${EXE} ${ITERS}  240  135 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}  && \
+fi
+${EXE} ${ITERS} 3840 2160 ${MB}  64  64 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
+${EXE} ${ITERS} 1920 1080 ${MB}  64 128 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
+${EXE} ${ITERS} 1920 1080 ${MB} 128 128 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
+${EXE} ${ITERS}  960  540 ${MB} 128 256 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
+${EXE} ${ITERS}  960  540 ${MB} 256 256 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
+${EXE} ${ITERS}  960  540 ${MB} 256 256 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
+${EXE} ${ITERS}  480  270 ${MB} 256 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
+${EXE} ${ITERS}  480  270 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
+${EXE} ${ITERS}  480  270 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
+${EXE} ${ITERS}  240  135 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
+${EXE} ${ITERS}  240  135 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
 ${EXE} ${ITERS}  240  135 ${MB} 512 512 3 3 1 1 1 ${KIND} ${FORMAT} ${PADMODE} | tee -a ${LOGFILE}
 RESULT=$?
 

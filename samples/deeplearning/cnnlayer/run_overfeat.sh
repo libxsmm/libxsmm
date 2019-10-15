@@ -1,4 +1,5 @@
 #!/bin/bash
+set -eo pipefail
 
 UNAME=$(command -v uname)
 SORT=$(command -v sort)
@@ -87,9 +88,9 @@ if [ "${BIN}" != "f32" ]; then
   true
 else
 ${NUMACTL} ./layer_example_${BIN} ${ITERS} 231 231  ${MB}    3   96 11 11 0 0 4 ${TYPE} ${FORMAT} ${PAD}
-fi && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}   96  256  5  5 0 0 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  12  12  ${MB}  256  512  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
-${NUMACTL} ./layer_example_${BIN} ${ITERS}  12  12  ${MB}  512 1024  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}    && \
+fi
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  28  28  ${MB}   96  256  5  5 0 0 1 ${TYPE} ${FORMAT} ${PAD}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  12  12  ${MB}  256  512  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
+${NUMACTL} ./layer_example_${BIN} ${ITERS}  12  12  ${MB}  512 1024  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
 ${NUMACTL} ./layer_example_${BIN} ${ITERS}  12  12  ${MB} 1024 1024  3  3 1 1 1 ${TYPE} ${FORMAT} ${PAD}
 
