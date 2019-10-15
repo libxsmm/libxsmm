@@ -57,12 +57,6 @@
 # endif
 #endif
 
-#if defined(CHECK_PARALLEL)
-# define MATCOPY libxsmm_matcopy_omp
-#else
-# define MATCOPY libxsmm_matcopy
-#endif
-
 
 int main(void)
 {
