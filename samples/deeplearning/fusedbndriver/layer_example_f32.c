@@ -744,6 +744,6 @@ int main(int argc, char* argv[])
   /* some empty lines at the end */
   printf("\n\n\n");
 
-  return EXIT_SUCCESS;
+  return global_status;
 }
 
