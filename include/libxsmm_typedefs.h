@@ -263,6 +263,7 @@ typedef enum libxsmm_gemm_prefetch_type {
 
 /** Flag enumeration which can be binary ORed. */
 typedef enum libxsmm_matcopy_flags {
+  LIBXSMM_MATCOPY_FLAG_DEFAULT = 0,
   /** If set, then use zero matrix as source */
   LIBXSMM_MATCOPY_FLAG_ZERO_SOURCE = 1
 } libxsmm_matcopy_flags;
