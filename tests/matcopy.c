@@ -128,8 +128,13 @@ int main(void)
           }
         }
 #endif
-#if (0 != LIBXSMM_JIT)
-        if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid()) { /* dispatch kernel and check that it is available */
+#if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
+# if 0  /* Issue #354 */
+        if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid())
+# else
+        if (LIBXSMM_X86_AVX512 <= libxsmm_get_target_archid())
+# endif
+        {
           libxsmm_descriptor_blob blob;
           const libxsmm_mcopy_descriptor *const desc = libxsmm_mcopy_descriptor_init(&blob, sizeof(ELEM_TYPE),
             m[test], n[test], ldo[test], ldi[test], LIBXSMM_MATCOPY_FLAG_DEFAULT, prefetch[test], NULL/*unroll*/);
