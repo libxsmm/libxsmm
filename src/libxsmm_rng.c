@@ -41,6 +41,10 @@
 # pragma offload_attribute(pop)
 #endif
 
+#if !defined(LIBXSMM_RNG_SIMD_MIN)
+# define LIBXSMM_RNG_SIMD_MIN 8
+#endif
+
 /* dispatched RNG functions (separate typedef for legacy Cray C++ needed) */
 typedef void (*internal_rng_f32_seq_fn)(float*, libxsmm_blasint);
 LIBXSMM_APIVAR(internal_rng_f32_seq_fn internal_rng_f32_seq);
@@ -158,28 +162,36 @@ void internal_rng_set_seed_avx512(uint32_t seed)
 LIBXSMM_API_INLINE LIBXSMM_INTRINSICS(LIBXSMM_X86_AVX512)
 void internal_rng_f32_seq_avx512(float* rngs, libxsmm_blasint count)
 {
-  libxsmm_blasint i = 0;
-  const libxsmm_blasint n = (count >> 4) << 4; /* multiple of vector-length */
-  for (; i < n; i += 16) {
-    _mm512_storeu_ps(rngs + i, LIBXSMM_INTRINSICS_MM512_RNG_PS());
-  }
-  if (i < count) { /* remainder */
-    if (0 != n) { /* bring AVX-512 state to scalar */
-      _mm512_storeu_si512(internal_rng_state0, LIBXSMM_INTRINSICS_MM512_RNG_STATE(0));
-      _mm512_storeu_si512(internal_rng_state1, LIBXSMM_INTRINSICS_MM512_RNG_STATE(1));
-      _mm512_storeu_si512(internal_rng_state2, LIBXSMM_INTRINSICS_MM512_RNG_STATE(2));
-      _mm512_storeu_si512(internal_rng_state3, LIBXSMM_INTRINSICS_MM512_RNG_STATE(3));
+  if ((LIBXSMM_RNG_SIMD_MIN << 4) <= count) { /* SIMD code path */
+    const libxsmm_blasint n = (count >> 4) << 4; /* multiple of vector-length */
+    libxsmm_blasint i = 0;
+    for (; i < n; i += 16) {
+      _mm512_storeu_ps(rngs + i, LIBXSMM_INTRINSICS_MM512_RNG_PS());
     }
-    LIBXSMM_ASSERT(count < i + 16);
-    do { /* scalar remainder */
-      rngs[i] = internal_rng_scalar_float_next(LIBXSMM_MOD2(i, 16));
-      ++i;
-    } while (i < count);
-    /* bring scalar state to AVX-512 */
-    LIBXSMM_INTRINSICS_MM512_RNG_STATE(0) = _mm512_loadu_si512(internal_rng_state0);
-    LIBXSMM_INTRINSICS_MM512_RNG_STATE(1) = _mm512_loadu_si512(internal_rng_state1);
-    LIBXSMM_INTRINSICS_MM512_RNG_STATE(2) = _mm512_loadu_si512(internal_rng_state2);
-    LIBXSMM_INTRINSICS_MM512_RNG_STATE(3) = _mm512_loadu_si512(internal_rng_state3);
+    if (i < count) { /* remainder */
+#if 0 /* assert(0 < n) */
+      if (0 < n)
+#endif
+      { /* bring AVX-512 state to scalar */
+        _mm512_storeu_si512(internal_rng_state0, LIBXSMM_INTRINSICS_MM512_RNG_STATE(0));
+        _mm512_storeu_si512(internal_rng_state1, LIBXSMM_INTRINSICS_MM512_RNG_STATE(1));
+        _mm512_storeu_si512(internal_rng_state2, LIBXSMM_INTRINSICS_MM512_RNG_STATE(2));
+        _mm512_storeu_si512(internal_rng_state3, LIBXSMM_INTRINSICS_MM512_RNG_STATE(3));
+      }
+      LIBXSMM_ASSERT(count < i + 16);
+      do { /* scalar remainder */
+        rngs[i] = internal_rng_scalar_float_next(LIBXSMM_MOD2(i, 16));
+        ++i;
+      } while (i < count);
+      /* bring scalar state to AVX-512 */
+      LIBXSMM_INTRINSICS_MM512_RNG_STATE(0) = _mm512_loadu_si512(internal_rng_state0);
+      LIBXSMM_INTRINSICS_MM512_RNG_STATE(1) = _mm512_loadu_si512(internal_rng_state1);
+      LIBXSMM_INTRINSICS_MM512_RNG_STATE(2) = _mm512_loadu_si512(internal_rng_state2);
+      LIBXSMM_INTRINSICS_MM512_RNG_STATE(3) = _mm512_loadu_si512(internal_rng_state3);
+    }
+  }
+  else { /* scalar code path */
+    internal_rng_f32_seq_sw(rngs, count);
   }
 }
 #endif /*defined(LIBXSMM_INTRINSICS_AVX512)*/
@@ -216,9 +228,14 @@ LIBXSMM_API void libxsmm_rng_f32_seq(float* rngs, libxsmm_blasint count)
   LIBXSMM_ASSERT_MSG(NULL != internal_rng_f32_seq, "RNG must be initialized");
 #if (LIBXSMM_X86_AVX512 <= LIBXSMM_STATIC_TARGET_ARCH)
   internal_rng_f32_seq_avx512(rngs, count);
-#elif defined(LIBXSMM_INTRINSICS_AVX512) /* __AVX512F__ */
-  internal_rng_f32_seq(rngs, count); /* pointer based function call */
 #else
+# if defined(LIBXSMM_INTRINSICS_AVX512) /* __AVX512F__ */
+  if ((LIBXSMM_RNG_SIMD_MIN << 4) <= count) { /* SIMD code path */
+    internal_rng_f32_seq(rngs, count); /* pointer based function call */
+    return;
+  }
+  else /* scalar code path */
+# endif
   internal_rng_f32_seq_sw(rngs, count);
 #endif
 }
