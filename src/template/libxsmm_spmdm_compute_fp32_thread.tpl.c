@@ -35,6 +35,8 @@ const int k_blocks = handle->kb;
 const int m_block_size = handle->bm;
 const int n_block_size = handle->bn;
 const int k_block_size = handle->bk;
+const int handle_m = handle->m;
+const int handle_n = handle->n;
 int mb = block_id / handle->nb;
 int nb = block_id % handle->nb;
 
@@ -65,11 +67,11 @@ LIBXSMM_UNUSED(tid);
 /* really is twice this */
 assert(n_block_size == LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32);
 
-if (m_overall_end > handle->m) m_overall_end = handle->m;
+if (m_overall_end > handle_m) m_overall_end = handle_m;
 num_m = (m_overall_end - m_overall_start);
 num_m_aligned = (num_m / 2) * 2;
 
-if (n_overall_end > handle->n) n_overall_end = handle->n;
+if (n_overall_end > handle_n) n_overall_end = handle_n;
 num_n = (n_overall_end - n_overall_start);
 last_block_n = (num_n != n_block_size);
 num_full_regs = (num_n / SIMD_WIDTH_FP32);
@@ -77,7 +79,7 @@ if ((num_full_regs > 0) && (num_full_regs%2)) num_full_regs--;
 last_n_start = num_full_regs*SIMD_WIDTH_FP32;
 
 /* Copy in c matrix to buffer*/
-ptr_result = c + (size_t)m_overall_start*handle->n + n_overall_start;
+ptr_result = c + (size_t)m_overall_start*handle_n + n_overall_start;
 if (LIBXSMM_FEQ(0.f, *beta)) {
   if (!last_block_n) {
     for (m = 0; m < num_m; m++) {
@@ -106,45 +108,45 @@ else if (LIBXSMM_FEQ(1.f, *beta)) {
     int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int m2;
 
-    ptr_result = c + (size_t)n_overall_start*handle->m + m_overall_start;
+    ptr_result = c + (size_t)n_overall_start*handle_m + m_overall_start;
 
     for (m = 0; m < num_m_simd; m += SIMD_WIDTH_FP32) {
       for (n = 0; n < num_n_simd; n += SIMD_WIDTH_FP32) {
-        TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + (size_t)n*handle->m + m, handle->m, scratch_C + (size_t)m*n_block_size + n, n_block_size);
+        TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + (size_t)n*handle_m + m, handle_m, scratch_C + (size_t)m*n_block_size + n, n_block_size);
       }
       /* Transpose a SIMD_WIDTH_FP32 * (num_n - num_n_simd) block of output space - input is of size (num_n - num_n_simd) * SIMD_WIDTH_FP32 */
       for (m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) {
         for (n = num_n_simd; n < num_n; n++) {
-          scratch_C[m2*n_block_size + n] = ptr_result[n*handle->m + m2];
+          scratch_C[m2*n_block_size + n] = ptr_result[n*handle_m + m2];
         }
       }
     }
     /* Transpose a (num_m - num_m_simd) * num_n block of output space - input is of size num_n * (num_m - num_m_simd) */
     for (m = num_m_simd; m < num_m; m++) {
       for (n = 0; n < num_n; n++) {
-        scratch_C[m*n_block_size + n] = ptr_result[n*handle->m + m];
+        scratch_C[m*n_block_size + n] = ptr_result[n*handle_m + m];
       }
     }
   }
   else {
     if (!last_block_n) {
       for (m = 0; m < num_m; m++) {
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 0*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 1*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 2*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 3*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 4*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 5*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 0*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 1*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 2*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 3*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 4*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 5*SIMD_WIDTH_FP32));
       }
     }
     else {
       for (m = 0; m < num_m; m++) {
         for (n = 0; n < num_full_regs; n += 2) {
-          _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n)  *SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + ((size_t)n)  *SIMD_WIDTH_FP32));
-          _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + ((size_t)n+1)*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n)  *SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + ((size_t)n)  *SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + ((size_t)n+1)*SIMD_WIDTH_FP32));
         }
         for (n = last_n_start; n < num_n; n++) {
-          scratch_C[m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n] = ptr_result[m*handle->n + n];
+          scratch_C[m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n] = ptr_result[m*handle_n + n];
         }
       }
     }
@@ -157,11 +159,11 @@ else {
     int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
     int m2;
 
-    ptr_result = c + (size_t)n_overall_start*handle->m + m_overall_start;
+    ptr_result = c + (size_t)n_overall_start*handle_m + m_overall_start;
 
     for (m = 0; m < num_m_simd; m += SIMD_WIDTH_FP32) {
       for (n = 0; n < num_n_simd; n += SIMD_WIDTH_FP32) {
-        TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + (size_t)n*handle->m + m, handle->m, scratch_C + (size_t)m*n_block_size + n, n_block_size);
+        TRANSPOSE_SIMD_WIDTH_KERNEL(ptr_result + (size_t)n*handle_m + m, handle_m, scratch_C + (size_t)m*n_block_size + n, n_block_size);
         _MM_STORE_FP32(scratch_C + (size_t)m*n_block_size + n, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + (size_t)m*n_block_size + n)));
         _MM_STORE_FP32(scratch_C + (size_t)m*n_block_size + n + (size_t)n_block_size*1, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + (size_t)m*n_block_size + n + (size_t)n_block_size*1)));
         _MM_STORE_FP32(scratch_C + (size_t)m*n_block_size + n + (size_t)n_block_size*2, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(scratch_C + (size_t)m*n_block_size + n + (size_t)n_block_size*2)));
@@ -174,14 +176,14 @@ else {
       /* Transpose a SIMD_WIDTH_FP32 * (num_n - num_n_simd) block of output space - input is of size (num_n - num_n_simd) * SIMD_WIDTH_FP32 */
       for (m2 = m; m2 < m + SIMD_WIDTH_FP32; m2++) {
         for (n = num_n_simd; n < num_n; n++) {
-          scratch_C[m2*n_block_size + n] = (*beta)*ptr_result[n*handle->m + m2];
+          scratch_C[m2*n_block_size + n] = (*beta)*ptr_result[n*handle_m + m2];
         }
       }
     }
     /* Transpose a (num_m - num_m_simd) * num_n block of output space - input is of size num_n * (num_m - num_m_simd) */
     for (m = num_m_simd; m < num_m; m++) {
       for (n = 0; n < num_n; n++) {
-        scratch_C[m*n_block_size + n] = (*beta)*ptr_result[n*handle->m + m];
+        scratch_C[m*n_block_size + n] = (*beta)*ptr_result[n*handle_m + m];
       }
     }
 
@@ -189,22 +191,22 @@ else {
   else {
     if (!last_block_n) {
       for (m = 0; m < num_m; m++) {
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 0*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 1*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 2*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 3*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 4*SIMD_WIDTH_FP32)));
-        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + 5*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 0*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 1*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 2*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 3*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 4*SIMD_WIDTH_FP32)));
+        _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + 5*SIMD_WIDTH_FP32)));
       }
     }
     else {
       for (m = 0; m < num_m; m++) {
         for (n = 0; n < num_full_regs; n += 2) {
-          _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n)  *SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + ((size_t)n)  *SIMD_WIDTH_FP32)));
-          _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n+1)*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle->n + ((size_t)n+1)*SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n)  *SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + ((size_t)n)  *SIMD_WIDTH_FP32)));
+          _MM_STORE_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n+1)*SIMD_WIDTH_FP32, _MM_MUL_FP32(beta_v, _MM_LOADU_FP32(ptr_result + (size_t)m*handle_n + ((size_t)n+1)*SIMD_WIDTH_FP32)));
         }
         for (n = last_n_start; n < num_n; n++) {
-          scratch_C[m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n] = (*beta)*ptr_result[m*handle->n + n];
+          scratch_C[m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n] = (*beta)*ptr_result[m*handle_n + n];
         }
       }
     }
@@ -251,24 +253,24 @@ for (kb = 0; kb < k_blocks; kb++) {
     }
   }
   else {
-    ptr_dense = b + (size_t)k_overall_start*handle->n + n_overall_start;
+    ptr_dense = b + (size_t)k_overall_start*handle_n + n_overall_start;
     if (!last_block_n) {
       for (k = 0; k < num_k; k++) {
-        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle->n + 0*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle->n + 1*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle->n + 2*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle->n + 3*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle->n + 4*SIMD_WIDTH_FP32));
-        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle->n + 5*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle_n + 0*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle_n + 1*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle_n + 2*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle_n + 3*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle_n + 4*SIMD_WIDTH_FP32));
+        _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle_n + 5*SIMD_WIDTH_FP32));
       }
     } else {
       for (k = 0; k < num_k; k++) {
         for (n = 0; n < num_full_regs; n += 2) {
-          _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n)  *SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle->n + ((size_t)n)  *SIMD_WIDTH_FP32));
-          _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle->n + ((size_t)n+1)*SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n)  *SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle_n + ((size_t)n)  *SIMD_WIDTH_FP32));
+          _MM_STORE_FP32(scratch_B + (size_t)k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n+1)*SIMD_WIDTH_FP32, _MM_LOADU_FP32(ptr_dense + (size_t)k*handle_n + ((size_t)n+1)*SIMD_WIDTH_FP32));
         }
         for (n = last_n_start; n < num_n; n++) {
-          scratch_B[k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n] = ptr_dense[k*handle->n + n];
+          scratch_B[k*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n] = ptr_dense[k*handle_n + n];
         }
       }
     }
@@ -512,46 +514,46 @@ if ('T' == transc || 't' == transc) {
   int num_n_simd = num_n / SIMD_WIDTH_FP32 * SIMD_WIDTH_FP32;
   int n2;
 
-  ptr_result = c + (size_t)n_overall_start*handle->m + m_overall_start;
+  ptr_result = c + (size_t)n_overall_start*handle_m + m_overall_start;
   for (n = 0; n < num_n_simd; n += SIMD_WIDTH_FP32) {
     for (m = 0; m < num_m_simd; m += SIMD_WIDTH_FP32) {
-      TRANSPOSE_SIMD_WIDTH_KERNEL(scratch_C + (size_t)m*n_block_size + n, n_block_size, ptr_result + (size_t)n*handle->m + m, handle->m);
+      TRANSPOSE_SIMD_WIDTH_KERNEL(scratch_C + (size_t)m*n_block_size + n, n_block_size, ptr_result + (size_t)n*handle_m + m, handle_m);
     }
     /* Transpose a SIMD_WIDTH_FP32 * (num_m - num_m_simd) block of output space - input is of size (num_m - num_m_simd) * SIMD_WIDTH_FP32 */
     for (n2 = n; n2 < n + SIMD_WIDTH_FP32; n2++) {
       for (m = num_m_simd; m < num_m; m++) {
-        ptr_result[n2*handle->m + m] = scratch_C[m*n_block_size + n2];
+        ptr_result[n2*handle_m + m] = scratch_C[m*n_block_size + n2];
       }
     }
   }
   /* Transpose a (num_n - num_n_simd) * num_m block of output space - input is of size num_m * (num_n - num_n_simd) */
   for (n = num_n_simd; n < num_n; n++) {
     for (m = 0; m < num_m; m++) {
-      ptr_result[n*handle->m + m] = scratch_C[m*n_block_size + n];
+      ptr_result[n*handle_m + m] = scratch_C[m*n_block_size + n];
     }
   }
 }
 else {
   if (!last_block_n) {
     for (m = 0; m < num_m; m++) {
-      _MM_STOREU_FP32(ptr_result + (size_t)m*handle->n + 0*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + (size_t)m*handle->n + 1*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + (size_t)m*handle->n + 2*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + (size_t)m*handle->n + 3*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + (size_t)m*handle->n + 4*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32));
-      _MM_STOREU_FP32(ptr_result + (size_t)m*handle->n + 5*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + (size_t)m*handle_n + 0*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 0*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + (size_t)m*handle_n + 1*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 1*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + (size_t)m*handle_n + 2*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 2*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + (size_t)m*handle_n + 3*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 3*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + (size_t)m*handle_n + 4*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 4*SIMD_WIDTH_FP32));
+      _MM_STOREU_FP32(ptr_result + (size_t)m*handle_n + 5*SIMD_WIDTH_FP32, _MM_LOAD_FP32(scratch_C + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + 5*SIMD_WIDTH_FP32));
     }
   }
   else {
     for (m = 0; m < num_m; m++) {
       for (n = 0; n < num_full_regs; n += 2) {
-        _MM_STOREU_FP32(ptr_result + (size_t)m*handle->n + ((size_t)n)*SIMD_WIDTH_FP32,
+        _MM_STOREU_FP32(ptr_result + (size_t)m*handle_n + ((size_t)n)*SIMD_WIDTH_FP32,
           _MM_LOAD_FP32(scratch_C  + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n)  *SIMD_WIDTH_FP32));
-        _MM_STOREU_FP32(ptr_result + (size_t)m*handle->n + ((size_t)n+1)*SIMD_WIDTH_FP32,
+        _MM_STOREU_FP32(ptr_result + (size_t)m*handle_n + ((size_t)n+1)*SIMD_WIDTH_FP32,
           _MM_LOAD_FP32(scratch_C  + (size_t)m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + ((size_t)n+1)*SIMD_WIDTH_FP32));
       }
       for (n = last_n_start; n < num_n; n++) {
-        ptr_result[m*handle->n + n] = scratch_C[m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n];
+        ptr_result[m*handle_n + n] = scratch_C[m*LIBXSMM_SPMDM_COMPUTE_NREGS*SIMD_WIDTH_FP32 + n];
       }
     }
   }
