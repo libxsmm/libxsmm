@@ -15,14 +15,14 @@ matrix:
     env: OPT=1 PYTHON=python3 LIBXSMM_MALLOC=1
   - os: linux
     compiler: gcc
-    env: DBG=1 LIBXSMM_TARGET=0
+    env: DBG=1 LIBXSMM_SE=1 LIBXSMM_TARGET=0
   - os: linux
     compiler: clang
     env: DBG=1 LIBXSMM_TARGET=sse LD_LIBRARY_PATH=/usr/local/clang/lib:${LD_LIBRARY_PATH}
   - os: osx
     #osx_image: xcode9.1
     compiler: clang
-    env: OPT=1
+    env: OPT=1 LIBXSMM_SE=1
   - os: osx
     # xcode6.4 is deprecated
     osx_image: xcode7.3

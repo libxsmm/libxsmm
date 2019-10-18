@@ -2058,8 +2058,8 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
 LIBXSMM_API const libxsmm_descriptor* libxsmm_get_kernel_info(libxsmm_code_pointer code, size_t* size)
 {
   const libxsmm_descriptor* result;
-  void* extra = NULL;
   int flags = LIBXSMM_MALLOC_FLAG_X;
+  void* extra = NULL;
   if (NULL != size) *size = 0;
   if (NULL != code.ptr_const && NULL != internal_registry && NULL != internal_registry_keys
     && EXIT_SUCCESS == libxsmm_get_malloc_xinfo(code.ptr_const, size, &flags, &extra)

@@ -60,13 +60,13 @@
 
 int main(void)
 {
-  /* test#:                       1  2  3  4  5   6  7  8  9 10 11 12 13 14  15   16  17  18   19   20    21 */
-  /* index:                       0  1  2  3  4   5  6  7  8  9 10 11 12 13  14   15  16  17   18   19    20 */
-  const libxsmm_blasint m[]   = { 1, 1, 1, 1, 2,  2, 3, 4, 6, 6, 6, 6, 9, 9,  9,   8, 16, 63,  16,  16, 2507 };
-  const libxsmm_blasint n[]   = { 1, 6, 7, 7, 2,  4, 3, 4, 1, 1, 1, 1, 5, 9, 23, 250, 16, 31, 500, 448, 1975 };
-  const libxsmm_blasint ldi[] = { 1, 1, 2, 2, 2, 17, 3, 6, 6, 8, 6, 7, 9, 9,  9, 512, 16, 63,  16, 512, 3000 };
-  const libxsmm_blasint ldo[] = { 1, 1, 1, 8, 2,  2, 3, 4, 6, 6, 8, 8, 9, 9,  9,  16, 16, 64, 512,  16, 3072 };
-  const int prefetch[]        = { 1, 0, 1, 0, 1,  0, 1, 0, 1, 0, 1, 0, 0, 0,  0,   0,  1,  0,   1,   0,    1 };
+  /* test#:                       1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18  19   20  21  22   23   24    25 */
+  /* index:                       0  1  2  3  4  5  6  7  8   9 10 11 12 13 14 15 16 17  18   19  20  21   22   23    24 */
+  const libxsmm_blasint m[]   = { 0, 0, 0, 1, 1, 1, 1, 1, 2,  2, 3, 4, 6, 6, 6, 6, 9, 9,  9,   8, 16, 63,  16,  16, 2507 };
+  const libxsmm_blasint n[]   = { 0, 0, 1, 0, 1, 6, 7, 7, 2,  4, 3, 4, 1, 1, 1, 1, 5, 9, 23, 250, 16, 31, 500, 448, 1975 };
+  const libxsmm_blasint ldi[] = { 0, 1, 1, 1, 1, 1, 2, 2, 2, 17, 3, 6, 6, 8, 6, 7, 9, 9,  9, 512, 16, 63,  16, 512, 3000 };
+  const libxsmm_blasint ldo[] = { 0, 1, 1, 1, 1, 1, 1, 8, 2,  2, 3, 4, 6, 6, 8, 8, 9, 9,  9,  16, 16, 64, 512,  16, 3072 };
+  const int prefetch[]        = { 0, 0, 1, 1, 1, 0, 1, 0, 1,  0, 1, 0, 1, 0, 1, 0, 0, 0,  0,   0,  1,  0,   1,   0,    1 };
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint max_size_a = 0, max_size_b = 0;
   unsigned int nerrors = 0;
@@ -125,6 +125,25 @@ int main(void)
                 ++testerrors;
               }
             }
+          }
+        }
+#endif
+#if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
+# if 0  /* Issue #354 */
+        if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid())
+# else
+        if (LIBXSMM_X86_AVX512 <= libxsmm_get_target_archid())
+# endif
+        {
+          libxsmm_descriptor_blob blob;
+          const libxsmm_mcopy_descriptor *const desc = libxsmm_mcopy_descriptor_init(&blob, sizeof(ELEM_TYPE),
+            m[test], n[test], ldo[test], ldi[test], LIBXSMM_MATCOPY_FLAG_DEFAULT, prefetch[test], NULL/*unroll*/);
+          const libxsmm_xmcopyfunction kernel = libxsmm_dispatch_mcopy(desc);
+          if (NULL == kernel) {
+# if defined(_DEBUG)
+            fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n", fun + 1, test + 1);
+# endif
+            ++testerrors;
           }
         }
 #endif

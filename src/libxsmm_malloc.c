@@ -2322,7 +2322,9 @@ LIBXSMM_API_INTERN int libxsmm_malloc_attrib(void** memory, int flags, const cha
           info->reloc = NULL;
 # if !defined(LIBXSMM_MALLOC_CRC_OFF) /* update checksum */
 #   if defined(LIBXSMM_MALLOC_CRC_LIGHT)
-          LIBXSMM_ASSERT(info->hash == LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &info));
+          { const internal_malloc_info_type *const code_info = internal_malloc_info(code_ptr, 0/*no check*/);
+            info->hash = LIBXSMM_CRC32U(LIBXSMM_BITS)(LIBXSMM_MALLOC_SEED, &code_info);
+          }
 #   else
           info->hash = libxsmm_crc32(LIBXSMM_MALLOC_SEED, info,
             /* info size minus actual hash value */
