@@ -65,5 +65,8 @@ LIBXSMM_API int libxsmm_cpuid(void);
 /** Names the CPU architecture given by CPUID. */
 LIBXSMM_API const char* libxsmm_cpuid_name(int id);
 
+/** SIMD vector length (VLEN) in 32-bit elements. */
+LIBXSMM_API int libxsmm_cpuid_vlen32(int id);
+
 #endif /*LIBXSMM_CPUID_H*/
 
