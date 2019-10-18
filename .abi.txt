@@ -36,6 +36,7 @@ libxsmm_bsmmdispatch_reducebatch
 libxsmm_convert_bf16_f32
 libxsmm_cpuid
 libxsmm_cpuid_name
+libxsmm_cpuid_vlen32
 libxsmm_cpuid_x86
 libxsmm_create_dcsr_reg
 libxsmm_create_pgemm_ac_rm
