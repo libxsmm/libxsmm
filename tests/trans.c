@@ -51,6 +51,7 @@ int main(void)
   const int start = 0, ntests = sizeof(m) / sizeof(*m);
   libxsmm_blasint max_size_a = 0, max_size_b = 0;
   ELEM_TYPE *a = NULL, *b = NULL, *c = NULL;
+  const size_t typesize = sizeof(ELEM_TYPE);
   unsigned int nerrors = 0;
   int test, fun;
 
@@ -69,9 +70,9 @@ int main(void)
     max_size_a = LIBXSMM_MAX(max_size_a, size_a);
     max_size_b = LIBXSMM_MAX(max_size_b, size_b);
   }
-  a = (ELEM_TYPE*)libxsmm_malloc((size_t)(sizeof(ELEM_TYPE) * max_size_a));
-  b = (ELEM_TYPE*)libxsmm_malloc((size_t)(sizeof(ELEM_TYPE) * max_size_b));
-  c = (ELEM_TYPE*)libxsmm_malloc((size_t)(sizeof(ELEM_TYPE) * max_size_b));
+  a = (ELEM_TYPE*)libxsmm_malloc(typesize * max_size_a);
+  b = (ELEM_TYPE*)libxsmm_malloc(typesize * max_size_b);
+  c = (ELEM_TYPE*)libxsmm_malloc(typesize * max_size_b);
   LIBXSMM_ASSERT(NULL != a && NULL != b && NULL != c);
 
   /* initialize data */
@@ -80,8 +81,8 @@ int main(void)
 
   for (fun = 0; fun < 2; ++fun) {
     for (test = start; test < ntests; ++test) {
-      memcpy(c, b, (size_t)(sizeof(ELEM_TYPE) * max_size_b));
-      otrans[fun](b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
+      memcpy(c, b, typesize * max_size_b);
+      otrans[fun](b, a, (unsigned int)typesize, m[test], n[test], ldi[test], ldo[test]);
       { libxsmm_blasint testerrors = 0, i, j; /* validation */
         for (i = 0; i < n[test]; ++i) {
           for (j = 0; j < m[test]; ++j) {
@@ -113,10 +114,10 @@ int main(void)
           }
         }
 #if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
-        if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid()) {
+        if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid() && (4 == typesize) || 8 == typesize) {
           libxsmm_descriptor_blob blob;
           const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(
-            &blob, sizeof(ELEM_TYPE), m[test], n[test], ldo[test]);
+            &blob, (unsigned int)typesize, m[test], n[test], ldo[test]);
           const libxsmm_xtransfunction kernel = libxsmm_dispatch_trans(desc);
           if (NULL == kernel) {
 # if defined(_DEBUG)
@@ -133,8 +134,8 @@ int main(void)
 #if 1 /* TODO */
       if (m[test] != ldi[test] || n[test] != ldi[test]) continue;
 #endif
-      memcpy(c, b, (size_t)(sizeof(ELEM_TYPE) * max_size_b));
-      itrans[fun](b, sizeof(ELEM_TYPE), m[test], n[test], ldi[test]);
+      memcpy(c, b, typesize * max_size_b);
+      itrans[fun](b, (unsigned int)typesize, m[test], n[test], ldi[test]);
       { libxsmm_blasint testerrors = 0, i, j; /* validation */
         for (i = 0; i < n[test]; ++i) {
           for (j = 0; j < m[test]; ++j) {
