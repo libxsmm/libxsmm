@@ -114,7 +114,7 @@ int main(void)
           }
         }
 #if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
-        if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid() && (4 == typesize) || 8 == typesize) {
+        if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid() && (4 == typesize || 8 == typesize)) {
           libxsmm_descriptor_blob blob;
           const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(
             &blob, (unsigned int)typesize, m[test], n[test], ldo[test]);
