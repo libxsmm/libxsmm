@@ -387,42 +387,32 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
 {
   static int error_once = 0;
   LIBXSMM_INIT
-  if (NULL != inout) {
-    if (m == n) { /* some fall-back; still warned as "not implemented" */
-      libxsmm_blasint i, j;
+  if (NULL != inout && 0 < typesize && typesize <= 127 && m <= ld && LIBXSMM_MAX(n, 1) <= ld) {
+    libxsmm_blasint i, j;
+    if (m == n) {
       for (i = 0; i < m; ++i) {
         for (j = 0; j < i; ++j) {
-          char *const a = (char*)inout + ((size_t)i * ld + j) * typesize;
-          char *const b = (char*)inout + ((size_t)j * ld + i) * typesize;
-          unsigned int k;
-          for (k = 0; k < typesize; ++k) {
-            const char tmp = a[k];
-            a[k] = b[k];
-            b[k] = tmp;
-          }
+          char *const a = &((char*)inout)[(i*ld+j)*typesize];
+          char *const b = &((char*)inout)[(j*ld+i)*typesize];
+          const signed char c = (signed char)typesize;
+          signed char k = 0;
+          for (; k < c; ++k) LIBXSMM_ISWAP(a[k], b[k]);
         }
       }
-#if defined(LIBXSMM_XCOPY_CHECK)
-      if ((LIBXSMM_VERBOSITY_WARN <= libxsmm_verbosity || 0 > libxsmm_verbosity) /* library code is expected to be mute */
-        && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
-      {
-        fprintf(stderr, "LIBXSMM WARNING: in-place transpose is not fully implemented!\n");
-      }
-#endif
     }
     else {
-      if (0 != libxsmm_verbosity /* library code is expected to be mute */
+      if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
         && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
       {
-        fprintf(stderr, "LIBXSMM ERROR: in-place transpose is not fully implemented!\n");
+        fprintf(stderr, "LIBXSMM ERROR: in-place transpose is not implemented!\n");
       }
-      LIBXSMM_ASSERT(0/*TODO: proper implementation is pending*/);
+      LIBXSMM_ASSERT_MSG(0, "in-place transpose is not implemented!");
     }
   }
   else if (0 != libxsmm_verbosity /* library code is expected to be mute */
     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
   {
-    fprintf(stderr, "LIBXSMM ERROR: the transpose input/output cannot be NULL!\n");
+    fprintf(stderr, "LIBXSMM ERROR: unsupported or invalid arguments for in-place transpose!\n");
   }
 }
 

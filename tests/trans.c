@@ -43,6 +43,7 @@
 int main(void)
 {
   /* test #:                      1  2  3  4  5  6  7  8  9 10 11  12  13  14  15  16  17  18   19   20   21    22 */
+  /* index:                       0  1  2  3  4  5  6  7  8  9 10  11  12  13  14  15  16  17   18   19   20    21 */
   const libxsmm_blasint m[]   = { 0, 1, 1, 1, 1, 2, 3, 5, 5, 5, 5,  5, 13, 13, 16, 22, 63, 64,  16,  16,  75, 2507 };
   const libxsmm_blasint n[]   = { 0, 1, 7, 7, 7, 2, 3, 1, 1, 1, 5, 13,  5, 13, 16, 22, 31, 64, 500,  32, 130, 1975 };
   const libxsmm_blasint ldi[] = { 0, 1, 1, 1, 9, 2, 3, 5, 8, 8, 5,  5, 13, 13, 16, 22, 64, 64,  16, 512,  87, 3000 };
@@ -79,88 +80,74 @@ int main(void)
 
   for (fun = 0; fun < 2; ++fun) {
     for (test = start; test < ntests; ++test) {
-      libxsmm_blasint i, j; /* validation */
       memcpy(c, b, (size_t)(sizeof(ELEM_TYPE) * max_size_b));
       otrans[fun](b, a, sizeof(ELEM_TYPE), m[test], n[test], ldi[test], ldo[test]);
-      { unsigned int testerrors = 0; /* validation */
+      { libxsmm_blasint testerrors = 0, i, j; /* validation */
         for (i = 0; i < n[test]; ++i) {
           for (j = 0; j < m[test]; ++j) {
             const libxsmm_blasint u = i * ldi[test] + j;
             const libxsmm_blasint v = j * ldo[test] + i;
-            testerrors += LIBXSMM_NEQ(a[u], b[v]);
-          }
-          for (j = m[test]; j < ldi[test]; ++j) {
-            const libxsmm_blasint v = j * ldo[test] + i;
-            if (v < max_size_b) {
-              testerrors += LIBXSMM_NEQ(b[v], c[v]);
+            if (LIBXSMM_NEQ(a[u], b[v])) {
+              ++testerrors; i = n[test]; break;
             }
           }
-        }
-        for (i = n[test]; i < ldo[test]; ++i) {
-          for (j = 0; j < m[test]; ++j) {
+          for (j = m[test]; j < ldi[test] && 0 == testerrors; ++j) {
             const libxsmm_blasint v = j * ldo[test] + i;
-            if (v < max_size_b) {
-              testerrors += LIBXSMM_NEQ(b[v], c[v]);
-            }
-            else {
+            if (v < max_size_b && LIBXSMM_NEQ(b[v], c[v])) {
               ++testerrors;
             }
           }
-          for (j = m[test]; j < ldi[test]; ++j) {
+        }
+        for (i = n[test]; i < ldo[test] && 0 == testerrors; ++i) {
+          for (j = 0; j < m[test]; ++j) {
             const libxsmm_blasint v = j * ldo[test] + i;
-            if (v < max_size_b) {
-              testerrors += LIBXSMM_NEQ(b[v], c[v]);
+            if ((v < max_size_b && LIBXSMM_NEQ(b[v], c[v])) || v >= max_size_b) {
+              ++testerrors; break;
             }
           }
-        }
-        if (nerrors < testerrors) {
-          nerrors = testerrors;
-        }
-      }
-      if (ldi[test] != ldo[test]) continue;
-      memcpy(c, b, (size_t)(sizeof(ELEM_TYPE) * max_size_b));
-      itrans[fun](b, sizeof(ELEM_TYPE), m[test], n[test], ldi[test]);
-      { unsigned int testerrors = 0; /* validation */
-        for (i = 0; i < n[test]; ++i) {
-          for (j = 0; j < m[test]; ++j) {
-            const libxsmm_blasint u = i * ldi[test] + j;
-            testerrors += LIBXSMM_NEQ(a[u], b[u]);
-          }
-          for (j = m[test]; j < ldi[test]; ++j) {
-            const libxsmm_blasint v = j * ldi[test] + i;
-            if (v < max_size_b) {
-              testerrors += LIBXSMM_NEQ(b[v], c[v]);
-            }
-          }
-        }
-#if 0
-        for (i = n[test]; i < ldi[test]; ++i) {
-          for (j = 0; j < m[test]; ++j) {
-            const libxsmm_blasint u = i * ldi[test] + j;
-            const libxsmm_blasint v = j * ldi[test] + i;
-            if (v < max_size_b) {
-              testerrors += LIBXSMM_NEQ(b[v], c[u]);
-            }
-            else {
+          for (j = m[test]; j < ldi[test] && 0 == testerrors; ++j) {
+            const libxsmm_blasint v = j * ldo[test] + i;
+            if (v < max_size_b && LIBXSMM_NEQ(b[v], c[v])) {
               ++testerrors;
             }
           }
-          for (j = m[test]; j < ldi[test]; ++j) {
-            const libxsmm_blasint u = i * ldi[test] + j;
-            const libxsmm_blasint v = j * ldi[test] + i;
-            if (v < max_size_b) {
-              testerrors += LIBXSMM_NEQ(b[v], c[u]);
-            }
+        }
+#if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
+        if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid()) {
+          libxsmm_descriptor_blob blob;
+          const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(
+            &blob, sizeof(ELEM_TYPE), m[test], n[test], ldo[test]);
+          const libxsmm_xtransfunction kernel = libxsmm_dispatch_trans(desc);
+          if (NULL == kernel) {
+# if defined(_DEBUG)
+            fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n", fun + 1, test + 1);
+# endif
+            ++testerrors;
           }
         }
 #endif
-        if (nerrors < testerrors) {
-          nerrors = testerrors;
+        nerrors += testerrors;
+      }
+
+      if (LIBXSMM_MAX(n[test], 1) > ldi[test] || 0 != fun) continue;
+#if 1 /* TODO */
+      if (m[test] != ldi[test] || n[test] != ldi[test]) continue;
+#endif
+      memcpy(c, b, (size_t)(sizeof(ELEM_TYPE) * max_size_b));
+      itrans[fun](b, sizeof(ELEM_TYPE), m[test], n[test], ldi[test]);
+      { libxsmm_blasint testerrors = 0, i, j; /* validation */
+        for (i = 0; i < n[test]; ++i) {
+          for (j = 0; j < m[test]; ++j) {
+            const libxsmm_blasint u = i * ldi[test] + j;
+            if (LIBXSMM_NEQ(a[u], b[u])) {
+              ++testerrors; i = n[test]; break;
+            }
+          }
         }
+        nerrors += testerrors;
       }
     }
   }
-
 
   libxsmm_free(a);
   libxsmm_free(b);
