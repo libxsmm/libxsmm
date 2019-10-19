@@ -112,6 +112,20 @@ int main(void)
             }
           }
         }
+#if (0 != LIBXSMM_JIT) /* dispatch kernel and check that it is available */
+        if (LIBXSMM_X86_AVX <= libxsmm_get_target_archid()) {
+          libxsmm_descriptor_blob blob;
+          const libxsmm_trans_descriptor *const desc = libxsmm_trans_descriptor_init(
+            &blob, sizeof(ELEM_TYPE), m[test], n[test], ldo[test]);
+          const libxsmm_xtransfunction kernel = libxsmm_dispatch_trans(desc);
+          if (NULL == kernel) {
+# if defined(_DEBUG)
+            fprintf(stderr, "\nERROR: kernel %i.%i not generated!\n", fun + 1, test + 1);
+# endif
+            ++testerrors;
+          }
+        }
+#endif
         nerrors += testerrors;
       }
 
