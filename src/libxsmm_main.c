@@ -784,7 +784,7 @@ LIBXSMM_API_INTERN void internal_init(void)
       LIBXSMM_ASSERT(NULL != internal_cache_buffer);
       memset(internal_cache_buffer, 0, (LIBXSMM_NTHREADS_MAX) * sizeof(internal_cache_type));
 #endif
-      libxsmm_trans_init(libxsmm_target_archid);
+      libxsmm_xcopy_init(libxsmm_target_archid);
       libxsmm_dnn_init(libxsmm_target_archid);
 #if defined(LIBXSMM_PERF)
       libxsmm_perf_init();
@@ -1073,7 +1073,7 @@ LIBXSMM_API LIBXSMM_ATTRIBUTE_DTOR void libxsmm_finalize(void)
       libxsmm_perf_finalize();
 #endif
       libxsmm_gemm_finalize();
-      libxsmm_trans_finalize();
+      libxsmm_xcopy_finalize();
       libxsmm_dnn_finalize();
       /* make internal registry globally unavailable */
       LIBXSMM_ATOMIC(LIBXSMM_ATOMIC_STORE_ZERO, LIBXSMM_BITS)((uintptr_t*)regaddr, LIBXSMM_ATOMIC_SEQ_CST);

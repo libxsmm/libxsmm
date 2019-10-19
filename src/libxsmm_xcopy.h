@@ -178,9 +178,9 @@
 
 
 /** Initializes the transpose functionality; NOT thread-safe. */
-LIBXSMM_API_INTERN void libxsmm_trans_init(int archid);
+LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid);
 /** Finalizes the transpose functionality; NOT thread-safe. */
-LIBXSMM_API_INTERN void libxsmm_trans_finalize(void);
+LIBXSMM_API_INTERN void libxsmm_xcopy_finalize(void);
 
 LIBXSMM_API void libxsmm_matcopy_thread_internal(void* out, const void* in, unsigned int typesize,
   unsigned int m, unsigned int n, unsigned int ldi, unsigned int ldo, const int* prefetch,

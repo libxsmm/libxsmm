@@ -74,5 +74,5 @@ rm -rf opentuner.db
 ./transpose_opentuner.py --no-dups 7168 8192 6
 ```
 
-The tuning script uses the environment variables `LIBXSMM_TRANS_M` and `LIBXSMM_TRANS_N`, which are internal to LIBXSMM. These variables are used to request a specific tiling-scheme inside of LIBXSMM's `libxsmm_otrans_omp` routine.
+The tuning script uses the environment variables `LIBXSMM_XCOPY_M` and `LIBXSMM_XCOPY_N`, which are internal to LIBXSMM. These variables are used to request a specific tiling-scheme inside of LIBXSMM's `libxsmm_otrans_omp` routine.
 
