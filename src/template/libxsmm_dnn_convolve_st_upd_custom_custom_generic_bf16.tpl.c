@@ -382,16 +382,16 @@ if (handle->upd_linearized_pixels == 0) {
                         for (ii = 0; ii < handle->ofw*2; ii+=32) {
                           p0 = _mm512_loadu_si512((element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, oj*handle->desc.u+kj, ii+ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock));
                           p0 = _mm512_permutexvar_epi16(skipper, p0);
-                          _p0 = _mm512_extracti64x4_epi64(p0, 0);
+                          _p0 = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(p0, 0);
                           p1 = _mm512_loadu_si512((element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, oj*handle->desc.u+kj, ii+8+ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock));
                           p1 = _mm512_permutexvar_epi16(skipper, p1);
-                          _p1 = _mm512_extracti64x4_epi64(p1, 0);
+                          _p1 = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(p1, 0);
                           p2 = _mm512_loadu_si512((element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, oj*handle->desc.u+kj, ii+16+ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock));
                           p2 = _mm512_permutexvar_epi16(skipper, p2);
-                          _p2 = _mm512_extracti64x4_epi64(p2, 0);
+                          _p2 = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(p2, 0);
                           p3 = _mm512_loadu_si512((element_input_type*)&LIBXSMM_VLA_ACCESS(5, input, img, ifm1, oj*handle->desc.u+kj, ii+24+ki, 0, handle->blocksifm, handle->ifhp, handle->ifwp, handle->ifmblock));
                           p3 = _mm512_permutexvar_epi16(skipper, p3);
-                          _p3 = _mm512_extracti64x4_epi64(p3, 0);
+                          _p3 = LIBXSMM_INTRINSICS_MM512_EXTRACTI64X4_EPI64(p3, 0);
 
                           r0 = _mm256_insert_epi64 (r0, _mm256_extract_epi64(_p0, 0), 0);
                           r0 = _mm256_insert_epi64 (r0, _mm256_extract_epi64(_p1, 0), 1);
