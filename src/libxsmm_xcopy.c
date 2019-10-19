@@ -54,7 +54,7 @@
 #endif
 
 
-LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
+LIBXSMM_API_INTERN void libxsmm_xcopy_init(int archid)
 {
   /* setup tile sizes according to CPUID or environment (LIBXSMM_XCOPY_M, LIBXSMM_XCOPY_N) */
   static unsigned int config_tm[/*config*/][2/*DP/SP*/] = {
@@ -101,7 +101,7 @@ LIBXSMM_API_INTERN void libxsmm_trans_init(int archid)
 }
 
 
-LIBXSMM_API_INTERN void libxsmm_trans_finalize(void)
+LIBXSMM_API_INTERN void libxsmm_xcopy_finalize(void)
 {
 }
 
