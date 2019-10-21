@@ -47,7 +47,7 @@
         INTEGER(LIBXSMM_BLASINT_KIND) :: m, n, lda, ldb, i, j, k
         REAL(T), POINTER :: an(:,:), bn(:,:), bt(:,:)
         DOUBLE PRECISION :: duration
-        INTEGER(8) :: size, start
+        INTEGER(8) :: nbytes, start
         INTEGER :: nrepeat
         REAL(T) :: diff
 
@@ -92,13 +92,10 @@
           nrepeat = 3
         END IF
 
-        size = INT(m * n, 8) * T ! size in Byte
-        WRITE(*, "(2(A,I0),2(A,I0),A,I0,A,2A,2A,1A)")                   &
+        nbytes = INT(m * n, 8) * T ! size in Byte
+        WRITE(*, "(2(A,I0),2(A,I0),A,I0,A)")                            &
      &    "m=", m, " n=", n, " ldi=", lda, " ldo=", ldb,                &
-     &    " size=", (size / ISHFT(1, 20)),                              &
-     &    "MB (", MERGE("DP", "SP", 8.EQ.T), ", ",                      &
-     &    TRIM(MERGE("out-of-place", "in-place    ",                    &
-     &      ('o'.EQ.trans).OR.('O'.EQ.trans))), ")"
+     &    " size=", (nbytes / ISHFT(1, 20)), "MB"
 
         ALLOCATE(b1(ldb*MAX(m,n)))
         bn(1:ldb,1:n) => b1
@@ -113,6 +110,7 @@
               an(i,j) = initial_value(i - 1, j - 1, m)
             END DO
           END DO
+          !$OMP END PARALLEL DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
             CALL libxsmm_otrans_omp(libxsmm_ptr1(b1), libxsmm_ptr1(a1), &
@@ -127,6 +125,7 @@
               bn(i,j) = initial_value(i - 1, j - 1, m)
             END DO
           END DO
+          !$OMP END PARALLEL DO
           start = libxsmm_timer_tick()
           DO k = 1, nrepeat
             CALL libxsmm_itrans(libxsmm_ptr1(b1), S, m, n, ldb)
@@ -147,7 +146,7 @@
           IF ((0.LT.duration).AND.(0.LT.nrepeat)) THEN
             ! out-of-place transpose bandwidth assumes RFO
             WRITE(*, "(1A,A,F10.1,A)") CHAR(9), "bandwidth:  ",         &
-     &        REAL(size, T)                                             &
+     &        REAL(nbytes, T)                                           &
      &        * MERGE(3D0, 2D0, ('o'.EQ.trans).OR.('O'.EQ.trans))       &
      &        * REAL(nrepeat, T) / (duration * REAL(ISHFT(1_8, 30), T)),&
      &        " GB/s"
