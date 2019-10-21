@@ -115,7 +115,9 @@ output_f32.i[0] = 0;
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
+if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
+     ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS) > 0)       ||
+     ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED) > 0)    ) {
   for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
     /* @TODO check if we can bake this in into scratch */
     element_stats_type lcl_sum_ptr[64];
@@ -163,106 +165,112 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 
-  /* now we need to reduce the sum and sum^2, we use the final  */
-  for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
-    /* @TODO check if we can bake this in into scratch */
-    element_stats_type lcl_sum_ptr[64];
-    element_stats_type lcl_sumsq_ptr[64];
-    element_stats_type* bmean_ptr = &LIBXSMM_VLA_ACCESS(2, bmean,    fm, 0, nFmBlock);
-    element_stats_type* brstd_ptr = &LIBXSMM_VLA_ACCESS(2, brstd,    fm, 0, nFmBlock);
-    element_stats_type* tvar_ptr  = &LIBXSMM_VLA_ACCESS(2, variance, fm, 0, nFmBlock);
-
-    LIBXSMM_PRAGMA_SIMD
-    for ( v=0; v < nFmBlock; v++ ) {
-      lcl_sum_ptr[v]   = (element_stats_type)0;
-      lcl_sumsq_ptr[v] = (element_stats_type)0;
-    }
-
-    for ( img=0; img < nImg; img++ ) {
-      element_stats_type* sum_img_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, img, 0, nImg, nFmBlock);
-      element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, img, 0, nImg, nFmBlock);
+  if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||
+       ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS) > 0)    ) {
+    /* now we need to reduce the sum and sum^2, we use the final  */
+    for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+      /* @TODO check if we can bake this in into scratch */
+      element_stats_type lcl_sum_ptr[64];
+      element_stats_type lcl_sumsq_ptr[64];
+      element_stats_type* bmean_ptr = &LIBXSMM_VLA_ACCESS(2, bmean,    fm, 0, nFmBlock);
+      element_stats_type* brstd_ptr = &LIBXSMM_VLA_ACCESS(2, brstd,    fm, 0, nFmBlock);
+      element_stats_type* tvar_ptr  = &LIBXSMM_VLA_ACCESS(2, variance, fm, 0, nFmBlock);
 
       LIBXSMM_PRAGMA_SIMD
       for ( v=0; v < nFmBlock; v++ ) {
-        lcl_sum_ptr[v] += sum_img_ptr[v];
-        lcl_sumsq_ptr[v] += sumsq_img_ptr[v];
+        lcl_sum_ptr[v]   = (element_stats_type)0;
+        lcl_sumsq_ptr[v] = (element_stats_type)0;
+      }
+
+      for ( img=0; img < nImg; img++ ) {
+        element_stats_type* sum_img_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, img, 0, nImg, nFmBlock);
+        element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, img, 0, nImg, nFmBlock);
+
+        LIBXSMM_PRAGMA_SIMD
+        for ( v=0; v < nFmBlock; v++ ) {
+          lcl_sum_ptr[v] += sum_img_ptr[v];
+          lcl_sumsq_ptr[v] += sumsq_img_ptr[v];
+        }
+      }
+
+      LIBXSMM_PRAGMA_SIMD
+      for ( v=0; v < nFmBlock; v++ ) {
+        const element_stats_type tbmean = (recp_nhw * lcl_sum_ptr[v]) ;
+        const element_stats_type tbmeansq = tbmean * tbmean;
+        const element_stats_type tsqbmean = recp_nhw * lcl_sumsq_ptr[v];
+        const element_stats_type tvar     = tsqbmean - tbmeansq;
+        const element_stats_type tbrstd = (element_stats_type)(1.0/sqrt((double)tvar + sqrt_eps));
+        bmean_ptr[v] = tbmean;
+        brstd_ptr[v] = tbrstd;
+        tvar_ptr[v] = tvar;
       }
     }
 
-    LIBXSMM_PRAGMA_SIMD
-    for ( v=0; v < nFmBlock; v++ ) {
-      const element_stats_type tbmean = (recp_nhw * lcl_sum_ptr[v]) ;
-      const element_stats_type tbmeansq = tbmean * tbmean;
-      const element_stats_type tsqbmean = recp_nhw * lcl_sumsq_ptr[v];
-      const element_stats_type tvar     = tsqbmean - tbmeansq;
-      const element_stats_type tbrstd = (element_stats_type)(1.0/sqrt((double)tvar + sqrt_eps));
-      bmean_ptr[v] = tbmean;
-      brstd_ptr[v] = tbrstd;
-      tvar_ptr[v] = tvar;
+    libxsmm_barrier_wait(handle->barrier, ltid);
+  }
+}
+
+if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||
+     ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE) > 0)    ) {
+  /* now we apply the actual forward batch norm */
+  for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
+    img = imgfm / nBlocksFm;
+    fm = imgfm % nBlocksFm;
+    for ( hi=iph, ho=oph; hi < (ifh+iph); hi+=sh, ho++ ) {
+      for ( wi=ipw, wo=opw; wi < (ifw+ipw); wi+=sw, wo++ ) {
+        const element_input_type*  input_ptr     = &LIBXSMM_VLA_ACCESS(5, input,     img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+        const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
+#endif
+        const element_stats_type*  gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, nFmBlock);
+        const element_stats_type*  beta_ptr      = &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, nFmBlock);
+        const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
+        const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
+              element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+              unsigned char*       relumask_ptr  = &LIBXSMM_VLA_ACCESS(5, relumask,  img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
+#endif
+        float o;
+
+#if !defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+        LIBXSMM_PRAGMA_SIMD
+#endif
+        for (v = 0; v < nFmBlock; v++ ) {
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+          input_f32.i[1] = input_ptr[v];
+          o = gamma_ptr[v]*(input_f32.f - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
+#else
+          /* BN + scale (gamma, beta) */
+          o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
+#endif
+          /* Eltwise */
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+          input_add_f32.i[1] = input_add_ptr[v];
+          o += input_add_f32.f;
+#else
+          o += input_add_ptr[v];
+#endif
+#endif
+          /* ReLU */
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
+          o = ( o > 0.0f ) ? o : 0.0f;
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+          o = ( o > 0.0f ) ? o : 0.0f;
+          relumask_ptr[v] = ( o > 0.0f ) ? 1 : 0;
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
+          output_f32.f = o;
+          output_ptr[v] = output_f32.i[1];
+#else
+          output_ptr[v] = o;
+#endif
+        }
+      }
     }
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
-
-/* now we apply the actual forward batch norm */
-for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
-  img = imgfm / nBlocksFm;
-  fm = imgfm % nBlocksFm;
-  for ( hi=iph, ho=oph; hi < (ifh+iph); hi+=sh, ho++ ) {
-    for ( wi=ipw, wo=opw; wi < (ifw+ipw); wi+=sw, wo++ ) {
-      const element_input_type*  input_ptr     = &LIBXSMM_VLA_ACCESS(5, input,     img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-      const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, hi, wi, 0, nBlocksFm, ifhp, ifwp, nFmBlock);
-#endif
-      const element_stats_type*  gamma_ptr     = &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, nFmBlock);
-      const element_stats_type*  beta_ptr      = &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, nFmBlock);
-      const element_stats_type*  bmean_ptr     = &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, nFmBlock);
-      const element_stats_type*  brstd_ptr     = &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, nFmBlock);
-            element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
-            unsigned char*       relumask_ptr  = &LIBXSMM_VLA_ACCESS(5, relumask,  img, fm, ho, wo, 0, nBlocksFm, ofhp, ofwp, nFmBlock);
-#endif
-      float o;
-
-#if !defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
-      LIBXSMM_PRAGMA_SIMD
-#endif
-      for (v = 0; v < nFmBlock; v++ ) {
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
-        input_f32.i[1] = input_ptr[v];
-        o = gamma_ptr[v]*(input_f32.f - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
-#else
-        /* BN + scale (gamma, beta) */
-        o = gamma_ptr[v]*(input_ptr[v] - bmean_ptr[v])*brstd_ptr[v] + beta_ptr[v];
-#endif
-        /* Eltwise */
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
-        input_add_f32.i[1] = input_add_ptr[v];
-        o += input_add_f32.f;
-#else
-        o += input_add_ptr[v];
-#endif
-#endif
-        /* ReLU */
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
-        o = ( o > 0.0f ) ? o : 0.0f;
-#endif
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
-        o = ( o > 0.0f ) ? o : 0.0f;
-        relumask_ptr[v] = ( o > 0.0f ) ? 1 : 0;
-#endif
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_BF16)
-        output_f32.f = o;
-        output_ptr[v] = output_f32.i[1];
-#else
-        output_ptr[v] = o;
-#endif
-      }
-    }
-  }
-}
-
-libxsmm_barrier_wait(handle->barrier, ltid);
 

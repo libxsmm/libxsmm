@@ -115,7 +115,9 @@ LIBXSMM_VLA_DECL(5,       unsigned char,      relumask,  (unsigned char*)handle-
 /* lazy barrier init */
 libxsmm_barrier_init(handle->barrier, ltid);
 
-if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
+if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
+     ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS) > 0)       ||
+     ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS_NORED) > 0)    ) {
   for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
     __m512 lcl_vsum    = _mm512_setzero_ps();
     __m512 lcl_vsumsq  = _mm512_setzero_ps();
@@ -154,142 +156,148 @@ if ( (handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0 ) {
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 
-  /* now we need to reduce the sum and sum^2, we use the final  */
-  for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
-    __m512 lcl_vsum      = _mm512_setzero_ps();
-    __m512 lcl_vsumsq    = _mm512_setzero_ps();
-    __m512 lcl_vsum2     = _mm512_setzero_ps();
-    __m512 lcl_vsumsq2   = _mm512_setzero_ps();
-    __m512 lcl_vsqrt_eps = _mm512_set1_ps(sqrt_eps);
-    __m512 lcl_vrec_nhw  = _mm512_set1_ps(recp_nhw);
-    __m512 lcl_vone      = _mm512_set1_ps(1.0);
-    __m512 lcl_vbmean,  lcl_vbmeansq,  lcl_vsqbmean,  lcl_vbrstd,  lcl_vvar;
-    __m512 lcl_vbmean2, lcl_vbmeansq2, lcl_vsqbmean2, lcl_vbrstd2, lcl_vvar2;
+  if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||
+       ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSTATS) > 0)    ) {
+    /* now we need to reduce the sum and sum^2, we use the final  */
+    for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+      __m512 lcl_vsum      = _mm512_setzero_ps();
+      __m512 lcl_vsumsq    = _mm512_setzero_ps();
+      __m512 lcl_vsum2     = _mm512_setzero_ps();
+      __m512 lcl_vsumsq2   = _mm512_setzero_ps();
+      __m512 lcl_vsqrt_eps = _mm512_set1_ps(sqrt_eps);
+      __m512 lcl_vrec_nhw  = _mm512_set1_ps(recp_nhw);
+      __m512 lcl_vone      = _mm512_set1_ps(1.0);
+      __m512 lcl_vbmean,  lcl_vbmeansq,  lcl_vsqbmean,  lcl_vbrstd,  lcl_vvar;
+      __m512 lcl_vbmean2, lcl_vbmeansq2, lcl_vsqbmean2, lcl_vbrstd2, lcl_vvar2;
 
-    element_stats_type* sum_img_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, 0, 0, nImg, 32);
-    element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, 0, 0, nImg, 32);
+      element_stats_type* sum_img_ptr   = &LIBXSMM_VLA_ACCESS(3, sum_img,   fm, 0, 0, nImg, 32);
+      element_stats_type* sumsq_img_ptr = &LIBXSMM_VLA_ACCESS(3, sumsq_img, fm, 0, 0, nImg, 32);
 
-    for ( img=0; img < nImg; img++ ) {
-      lcl_vsum    = _mm512_add_ps( lcl_vsum,    _mm512_loadu_ps( sum_img_ptr ) );
-      lcl_vsumsq  = _mm512_add_ps( lcl_vsumsq,  _mm512_loadu_ps( sumsq_img_ptr ) );
+      for ( img=0; img < nImg; img++ ) {
+        lcl_vsum    = _mm512_add_ps( lcl_vsum,    _mm512_loadu_ps( sum_img_ptr ) );
+        lcl_vsumsq  = _mm512_add_ps( lcl_vsumsq,  _mm512_loadu_ps( sumsq_img_ptr ) );
 
-      lcl_vsum2   = _mm512_add_ps( lcl_vsum2,   _mm512_loadu_ps( sum_img_ptr+16 ) );
-      lcl_vsumsq2 = _mm512_add_ps( lcl_vsumsq2, _mm512_loadu_ps( sumsq_img_ptr+16 ) );
+        lcl_vsum2   = _mm512_add_ps( lcl_vsum2,   _mm512_loadu_ps( sum_img_ptr+16 ) );
+        lcl_vsumsq2 = _mm512_add_ps( lcl_vsumsq2, _mm512_loadu_ps( sumsq_img_ptr+16 ) );
 
-      sum_img_ptr   += 32;
-      sumsq_img_ptr += 32;
+        sum_img_ptr   += 32;
+        sumsq_img_ptr += 32;
+      }
+
+      lcl_vbmean    = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsum   );   /* E(X) */
+      lcl_vbmeansq  = _mm512_mul_ps( lcl_vbmean,   lcl_vbmean );   /* E(X)^2 */
+      lcl_vsqbmean  = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsumsq );   /* E(X^2) */
+      lcl_vvar      = _mm512_sub_ps( lcl_vsqbmean, lcl_vbmeansq ); /* variance */
+      lcl_vbrstd    = _mm512_div_ps( lcl_vone, _mm512_sqrt_ps( _mm512_add_ps( lcl_vvar, lcl_vsqrt_eps ) ) );
+
+      lcl_vbmean2   = _mm512_mul_ps( lcl_vrec_nhw,  lcl_vsum2   );   /* E(X) */
+      lcl_vbmeansq2 = _mm512_mul_ps( lcl_vbmean2,   lcl_vbmean2 );   /* E(X)^2 */
+      lcl_vsqbmean2 = _mm512_mul_ps( lcl_vrec_nhw,  lcl_vsumsq2 );   /* E(X^2) */
+      lcl_vvar2     = _mm512_sub_ps( lcl_vsqbmean2, lcl_vbmeansq2 ); /* variance */
+      lcl_vbrstd2   = _mm512_div_ps( lcl_vone,  _mm512_sqrt_ps( _mm512_add_ps( lcl_vvar2, lcl_vsqrt_eps ) ) );
+
+
+      _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, bmean,    fm, 0, 32), lcl_vbmean );
+      _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,    fm, 0, 32), lcl_vbrstd );
+      _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, variance, fm, 0, 32), lcl_vvar );
+
+      _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, bmean,    fm, 16, 32), lcl_vbmean2 );
+      _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,    fm, 16, 32), lcl_vbrstd2 );
+      _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, variance, fm, 16, 32), lcl_vvar2 );
     }
 
-    lcl_vbmean    = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsum   );   /* E(X) */
-    lcl_vbmeansq  = _mm512_mul_ps( lcl_vbmean,   lcl_vbmean );   /* E(X)^2 */
-    lcl_vsqbmean  = _mm512_mul_ps( lcl_vrec_nhw, lcl_vsumsq );   /* E(X^2) */
-    lcl_vvar      = _mm512_sub_ps( lcl_vsqbmean, lcl_vbmeansq ); /* variance */
-    lcl_vbrstd    = _mm512_div_ps( lcl_vone, _mm512_sqrt_ps( _mm512_add_ps( lcl_vvar, lcl_vsqrt_eps ) ) );
+    libxsmm_barrier_wait(handle->barrier, ltid);
+  }
+}
 
-    lcl_vbmean2   = _mm512_mul_ps( lcl_vrec_nhw,  lcl_vsum2   );   /* E(X) */
-    lcl_vbmeansq2 = _mm512_mul_ps( lcl_vbmean2,   lcl_vbmean2 );   /* E(X)^2 */
-    lcl_vsqbmean2 = _mm512_mul_ps( lcl_vrec_nhw,  lcl_vsumsq2 );   /* E(X^2) */
-    lcl_vvar2     = _mm512_sub_ps( lcl_vsqbmean2, lcl_vbmeansq2 ); /* variance */
-    lcl_vbrstd2   = _mm512_div_ps( lcl_vone,  _mm512_sqrt_ps( _mm512_add_ps( lcl_vvar2, lcl_vsqrt_eps ) ) );
+if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||
+     ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BNSCALE) > 0)    ) {
+  /* now we apply the actual forward batch norm */
+  for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
+    __m512 lcl_vgamma,  lcl_vbeta,  lcl_vbmean,  lcl_vbrstd;
+    __m512 lcl_vgamma2, lcl_vbeta2, lcl_vbmean2, lcl_vbrstd2;
 
+    img = imgfm / nBlocksFm;
+    fm = imgfm % nBlocksFm;
+    lcl_vgamma  = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, 32) );
+    lcl_vbeta   = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, 32) );
+    lcl_vbmean  = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, 32) );
+    lcl_vbrstd  = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, 32) );
 
-    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, bmean,    fm, 0, 32), lcl_vbmean );
-    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,    fm, 0, 32), lcl_vbrstd );
-    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, variance, fm, 0, 32), lcl_vvar );
+    lcl_vgamma2 = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 16, 32) );
+    lcl_vbeta2  = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, beta,      fm, 16, 32) );
+    lcl_vbmean2 = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 16, 32) );
+    lcl_vbrstd2 = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 16, 32) );
 
-    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, bmean,    fm, 16, 32), lcl_vbmean2 );
-    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,    fm, 16, 32), lcl_vbrstd2 );
-    _mm512_storeu_ps( &LIBXSMM_VLA_ACCESS(2, variance, fm, 16, 32), lcl_vvar2 );
+    for ( hi=iph, ho=oph; hi < (ifh+iph); hi+=sh, ho++ ) {
+      const element_input_type*  input_ptr     = &LIBXSMM_VLA_ACCESS(5, input,     img, fm, hi, ipw, 0, nBlocksFm, ifhp, ifwp, 32);
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+      const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, hi, ipw, 0, nBlocksFm, ifhp, ifwp, 32);
+#endif
+            element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 32);
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+            unsigned char*       relumask_ptr  = &LIBXSMM_VLA_ACCESS(5, relumask,  img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 4);
+#endif
+      for ( wi=ipw, wo=opw; wi < (ifw+ipw); wi+=sw, wo++ ) {
+        __m512 lcl_vo;
+        __m512 lcl_vo2;
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+        __mmask16 lcl_relumask;
+        __mmask16 lcl_relumask2;
+#endif
+
+        /* BN + scale (gamma, beta) */
+        lcl_vo = _mm512_sub_ps( _mm512_load_act( input_ptr ), lcl_vbmean );
+        lcl_vo = _mm512_mul_ps( lcl_vgamma, lcl_vo );
+        lcl_vo = _mm512_fmadd_ps( lcl_vo, lcl_vbrstd, lcl_vbeta );
+        /* eltwise add */
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+        lcl_vo = _mm512_add_ps( lcl_vo, _mm512_load_act( input_add_ptr ) );
+#endif
+        /* ReLU */
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
+        lcl_vo = _mm512_max_ps( lcl_vo, _mm512_setzero_ps() );
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+        lcl_relumask = _mm512_cmp_ps_mask( lcl_vo, _mm512_setzero_ps(), _CMP_GT_OQ );
+        lcl_vo = _mm512_mask_blend_ps( lcl_relumask, _mm512_setzero_ps(), lcl_vo );
+        LIBXSMM_INTRINSICS_MM512_STORE_MASK16( relumask_ptr, lcl_relumask );
+        relumask_ptr += 2;
+#endif
+
+        /* BN + scale (gamma, beta) */
+        lcl_vo2 = _mm512_sub_ps( _mm512_load_act( input_ptr+16 ), lcl_vbmean2 );
+        lcl_vo2 = _mm512_mul_ps( lcl_vgamma2, lcl_vo2 );
+        lcl_vo2 = _mm512_fmadd_ps( lcl_vo2, lcl_vbrstd2, lcl_vbeta2 );
+        /* eltwise add */
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+        lcl_vo2 = _mm512_add_ps( lcl_vo2, _mm512_load_act( input_add_ptr+16 ) );
+#endif
+        /* ReLU */
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
+        lcl_vo2 = _mm512_max_ps( lcl_vo2, _mm512_setzero_ps() );
+#endif
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
+        lcl_relumask2 = _mm512_cmp_ps_mask( lcl_vo2, _mm512_setzero_ps(), _CMP_GT_OQ );
+        lcl_vo2 = _mm512_mask_blend_ps( lcl_relumask2, _mm512_setzero_ps(), lcl_vo2 );
+        LIBXSMM_INTRINSICS_MM512_STORE_MASK16( relumask_ptr, lcl_relumask2 );
+        relumask_ptr += 2;
+#endif
+
+        _mm512_stream_act( output_ptr, lcl_vo );
+        _mm512_stream_act( output_ptr+16, lcl_vo2 );
+
+        input_ptr += sw*32;
+#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
+        input_add_ptr += sw*32;
+#endif
+        output_ptr += 32;
+      }
+    }
   }
 
   libxsmm_barrier_wait(handle->barrier, ltid);
 }
-
-/* now we apply the actual forward batch norm */
-for ( imgfm = thr_begin; imgfm < thr_end; ++imgfm ) {
-  __m512 lcl_vgamma,  lcl_vbeta,  lcl_vbmean,  lcl_vbrstd;
-  __m512 lcl_vgamma2, lcl_vbeta2, lcl_vbmean2, lcl_vbrstd2;
-
-  img = imgfm / nBlocksFm;
-  fm = imgfm % nBlocksFm;
-  lcl_vgamma  = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 0, 32) );
-  lcl_vbeta   = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, beta,      fm, 0, 32) );
-  lcl_vbmean  = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 0, 32) );
-  lcl_vbrstd  = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 0, 32) );
-
-  lcl_vgamma2 = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, gamma,     fm, 16, 32) );
-  lcl_vbeta2  = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, beta,      fm, 16, 32) );
-  lcl_vbmean2 = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, bmean,     fm, 16, 32) );
-  lcl_vbrstd2 = _mm512_loadu_ps( &LIBXSMM_VLA_ACCESS(2, brstd,     fm, 16, 32) );
-
-  for ( hi=iph, ho=oph; hi < (ifh+iph); hi+=sh, ho++ ) {
-    const element_input_type*  input_ptr     = &LIBXSMM_VLA_ACCESS(5, input,     img, fm, hi, ipw, 0, nBlocksFm, ifhp, ifwp, 32);
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-    const element_input_type*  input_add_ptr = &LIBXSMM_VLA_ACCESS(5, input_add, img, fm, hi, ipw, 0, nBlocksFm, ifhp, ifwp, 32);
-#endif
-          element_output_type* output_ptr    = &LIBXSMM_VLA_ACCESS(5, output,    img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 32);
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
-          unsigned char*       relumask_ptr  = &LIBXSMM_VLA_ACCESS(5, relumask,  img, fm, ho, opw, 0, nBlocksFm, ofhp, ofwp, 4);
-#endif
-     for ( wi=ipw, wo=opw; wi < (ifw+ipw); wi+=sw, wo++ ) {
-      __m512 lcl_vo;
-      __m512 lcl_vo2;
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
-      __mmask16 lcl_relumask;
-      __mmask16 lcl_relumask2;
-#endif
-
-      /* BN + scale (gamma, beta) */
-      lcl_vo = _mm512_sub_ps( _mm512_load_act( input_ptr ), lcl_vbmean );
-      lcl_vo = _mm512_mul_ps( lcl_vgamma, lcl_vo );
-      lcl_vo = _mm512_fmadd_ps( lcl_vo, lcl_vbrstd, lcl_vbeta );
-      /* eltwise add */
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-      lcl_vo = _mm512_add_ps( lcl_vo, _mm512_load_act( input_add_ptr ) );
-#endif
-      /* ReLU */
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
-      lcl_vo = _mm512_max_ps( lcl_vo, _mm512_setzero_ps() );
-#endif
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
-      lcl_relumask = _mm512_cmp_ps_mask( lcl_vo, _mm512_setzero_ps(), _CMP_GT_OQ );
-      lcl_vo = _mm512_mask_blend_ps( lcl_relumask, _mm512_setzero_ps(), lcl_vo );
-      LIBXSMM_INTRINSICS_MM512_STORE_MASK16( relumask_ptr, lcl_relumask );
-      relumask_ptr += 2;
-#endif
-
-      /* BN + scale (gamma, beta) */
-      lcl_vo2 = _mm512_sub_ps( _mm512_load_act( input_ptr+16 ), lcl_vbmean2 );
-      lcl_vo2 = _mm512_mul_ps( lcl_vgamma2, lcl_vo2 );
-      lcl_vo2 = _mm512_fmadd_ps( lcl_vo2, lcl_vbrstd2, lcl_vbeta2 );
-      /* eltwise add */
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-      lcl_vo2 = _mm512_add_ps( lcl_vo2, _mm512_load_act( input_add_ptr+16 ) );
-#endif
-      /* ReLU */
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU)
-      lcl_vo2 = _mm512_max_ps( lcl_vo2, _mm512_setzero_ps() );
-#endif
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_RELU_WITH_MASK)
-      lcl_relumask2 = _mm512_cmp_ps_mask( lcl_vo2, _mm512_setzero_ps(), _CMP_GT_OQ );
-      lcl_vo2 = _mm512_mask_blend_ps( lcl_relumask2, _mm512_setzero_ps(), lcl_vo2 );
-      LIBXSMM_INTRINSICS_MM512_STORE_MASK16( relumask_ptr, lcl_relumask2 );
-      relumask_ptr += 2;
-#endif
-
-      _mm512_stream_act( output_ptr, lcl_vo );
-      _mm512_stream_act( output_ptr+16, lcl_vo2 );
-
-      input_ptr += sw*32;
-#if defined(LIBXSMM_DNN_FUSEDBN_FWD_ENABLE_ELTWISE)
-      input_add_ptr += sw*32;
-#endif
-      output_ptr += 32;
-    }
-  }
-}
-
-libxsmm_barrier_wait(handle->barrier, ltid);
 
 # undef _mm512_load_act
 # undef _mm512_stream_act
