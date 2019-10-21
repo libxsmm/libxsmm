@@ -396,13 +396,7 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
           char *const a = &((char*)inout)[(i*ld+j)*typesize];
           char *const b = &((char*)inout)[(j*ld+i)*typesize];
           signed char k = 0;
-#if !defined(_CRAYC) /* incorrect code with CCE */
           for (; k < c; ++k) LIBXSMM_ISWAP(a[k], b[k]);
-#else
-          for (; k < c; ++k) { const char t = a[k];
-            a[k] = b[k]; b[k] = t; /* swap */
-          }
-#endif
         }
       }
     }
