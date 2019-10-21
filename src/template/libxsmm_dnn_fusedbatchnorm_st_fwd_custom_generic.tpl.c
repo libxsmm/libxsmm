@@ -30,7 +30,7 @@
 ******************************************************************************/
 
 /* size variables, all const */
-const int nImg = handle->desc.N;
+const int nImg = handle->desc.partN;
 const int ifh = handle->desc.H;
 const int ifw = handle->desc.W;
 const int sh = handle->desc.u;
@@ -69,7 +69,7 @@ const int thr_end2 = ((ltid + 1) * chunksize2 < work2) ? ((ltid + 1) * chunksize
 
 /* eps to avoid sqrt of zero */
 const element_stats_type sqrt_eps = 1e-7f;
-const element_stats_type nhw = (element_stats_type)(nImg * ifh * ifw);
+const element_stats_type nhw = (element_stats_type)(handle->desc.fullN * ifh * ifw);
 const element_stats_type recp_nhw = 1.0f/nhw;
 
 /* loop variables */
