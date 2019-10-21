@@ -719,7 +719,7 @@ else
     LDFLAGS += -hsystem_alloc
     CRAY ?= 1
     # prevent codegen issues
-    SYM = 1
+    #SYM = 1
   endif
   endif
 endif
