@@ -40,7 +40,8 @@
 
 FusedBNormXSMM::FusedBNormXSMM(FusedBNormImplParams* gp, int engine) : FusedBNormImpl(gp, engine)
 {
-  fusedbn_desc_train.N = gp->batch_size;
+  fusedbn_desc_train.partN = gp->batch_size;
+  fusedbn_desc_train.fullN = gp->batch_size;
   fusedbn_desc_train.C = gp->nInput[0];
   fusedbn_desc_train.H = gp->iHeight;
   fusedbn_desc_train.W = gp->iWidth;
@@ -80,7 +81,8 @@ FusedBNormXSMM::FusedBNormXSMM(FusedBNormImplParams* gp, int engine) : FusedBNor
   libxsmm_handle_train = libxsmm_dnn_create_fusedbatchnorm( fusedbn_desc_train, &status );
   CHKERR_LIBXSMM_DNN( status );
 
-  fusedbn_desc_test.N = gp->batch_size;
+  fusedbn_desc_test.partN = gp->batch_size;
+  fusedbn_desc_test.fullN = gp->batch_size;
   fusedbn_desc_test.C = gp->nInput[0];
   fusedbn_desc_test.H = gp->iHeight;
   fusedbn_desc_test.W = gp->iWidth;
