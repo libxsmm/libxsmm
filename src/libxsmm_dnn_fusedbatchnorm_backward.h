@@ -37,4 +37,6 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_custom(li
 
 LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_nhwc(libxsmm_dnn_fusedbatchnorm* handle, int start_thread, int tid);
 
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_reduce_stats_st_bwd_custom(libxsmm_dnn_fusedbatchnorm** handles, int num_handles, int start_thread, int tid);
+
 #endif /* LIBXSMM_DNN_FUSEDBATCHNORM_BACKWARD_H */

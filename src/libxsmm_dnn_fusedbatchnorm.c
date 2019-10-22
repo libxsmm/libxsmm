@@ -624,3 +624,41 @@ LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_execute_st(libxsmm_dnn_
   return status;
 }
 
+
+LIBXSMM_API libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_reduce_stats_st(libxsmm_dnn_fusedbatchnorm** handles, int num_handles, libxsmm_dnn_compute_kind kind,
+  /*unsigned*/int start_thread, /*unsigned*/int tid) {
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+
+  if (0 != handles && num_handles > 0) {
+    switch (kind) {
+      case LIBXSMM_DNN_COMPUTE_KIND_FWD: {
+        switch (handles[0]->desc.buffer_format) {
+          case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
+            status = libxsmm_dnn_fusedbatchnorm_reduce_stats_st_fwd_custom( handles, num_handles, start_thread, tid );
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN;
+          }
+        }
+      } break;
+      case LIBXSMM_DNN_COMPUTE_KIND_BWD: {
+        switch (handles[0]->desc.buffer_format) {
+          case LIBXSMM_DNN_TENSOR_FORMAT_LIBXSMM: {
+            status = libxsmm_dnn_fusedbatchnorm_reduce_stats_st_bwd_custom( handles, num_handles, start_thread, tid );
+          } break;
+          default: {
+            status = LIBXSMM_DNN_ERR_INVALID_FORMAT_FUSEDBN;
+          }
+        }
+      } break;
+      default: {
+        status = LIBXSMM_DNN_ERR_INVALID_KIND;
+      }
+    }
+  }
+  else {
+    status = LIBXSMM_DNN_ERR_INVALID_HANDLE;
+  }
+
+  return status;
+}

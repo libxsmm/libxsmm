@@ -530,3 +530,103 @@ LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_st_bwd_nhwc(libx
   return status;
 }
 
+
+LIBXSMM_API_INTERN libxsmm_dnn_err_t libxsmm_dnn_fusedbatchnorm_reduce_stats_st_bwd_custom(libxsmm_dnn_fusedbatchnorm** handles, int num_handles, int start_thread, int tid)
+{
+  libxsmm_dnn_err_t status = LIBXSMM_DNN_SUCCESS;
+  int l_count;
+
+  /* check if all required tensors are bound */
+  for ( l_count = 0; l_count < num_handles; ++l_count ) {
+    if ( handles[l_count]->grad_beta == 0  || handles[l_count]->grad_gamma == 0 || handles[l_count]->scratch == 0 ) {
+      status = LIBXSMM_DNN_ERR_DATA_NOT_BOUND;
+      return status;
+    }
+  }
+
+#if 0
+  /* check if we are on an AVX512 platform */
+  if ( libxsmm_target_archid >= LIBXSMM_X86_AVX512 ) {
+    status = libxsmm_dnn_fusedbatchnorm_reduce_stats_st_bwd_custom_avx512( handles, num_handles, start_thread, tid );
+  } else
+#endif
+  {
+    const int nImg = handles[0]->desc.partN;
+    const int nBlocksFm = handles[0]->blocksifm;
+    const int nFmBlock = handles[0]->ifmblock;
+    /* computing first logical thread */
+    const int ltid = tid - start_thread;
+    /* number of tasks that could be run in parallel */
+    const int work2 = nBlocksFm;
+    /* compute chunk size */
+    const int chunksize2 = (work2 % handles[0]->desc.threads == 0) ? (work2 / handles[0]->desc.threads) : ((work2 / handles[0]->desc.threads) + 1);
+    /* compute thr_begin and thr_end */
+    const int thr_begin2 = (ltid * chunksize2 < work2) ? (ltid * chunksize2) : work2;
+    const int thr_end2 = ((ltid + 1) * chunksize2 < work2) ? ((ltid + 1) * chunksize2) : work2;
+    int v, fm;
+
+    LIBXSMM_VLA_DECL(2, float, dgamma0,      (float*)handles[0]->grad_gamma->data, nFmBlock);
+    LIBXSMM_VLA_DECL(2, float, dbeta0,       (float*)handles[0]->grad_beta->data,  nFmBlock);
+    LIBXSMM_VLA_DECL(3, float, dgamma_img0, (float*)handles[0]->scratch,                                                        nImg, nFmBlock);
+    LIBXSMM_VLA_DECL(3, float, dbeta_img0,  ((float*)handles[0]->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)nFmBlock), nImg, nFmBlock);
+
+    /* lazy barrier init */
+    libxsmm_barrier_init(handles[0]->barrier, ltid);
+
+    for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+      float* dgamma0_ptr = &LIBXSMM_VLA_ACCESS(2, dgamma0, fm, 0, nFmBlock);
+      float* dbeta0_ptr  = &LIBXSMM_VLA_ACCESS(2, dbeta0,  fm, 0, nFmBlock);
+      float* dgamma_img0_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img0, fm, 0, 0, nImg, nFmBlock);
+      float* dbeta_img0_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img0,  fm, 0, 0, nImg, nFmBlock);
+
+      LIBXSMM_PRAGMA_SIMD
+      for ( v=0; v < nFmBlock; v++ ) {
+        dgamma0_ptr[v] = dgamma_img0_ptr[v];
+        dbeta0_ptr[v]  = dbeta_img0_ptr[v];
+      }
+    }
+
+    /* now we need to reduce the dgamma and dbeta  */
+    for ( l_count = 1; l_count < num_handles; ++l_count ) {
+      LIBXSMM_VLA_DECL(3, float, dgamma_imgr, (float*)handles[l_count]->scratch,                                                        nImg, nFmBlock);
+      LIBXSMM_VLA_DECL(3, float, dbeta_imgr,  ((float*)handles[l_count]->scratch) + ((size_t)nImg * (size_t)nBlocksFm * (size_t)nFmBlock), nImg, nFmBlock);
+
+      for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+        float* dgamma0_ptr = &LIBXSMM_VLA_ACCESS(2, dgamma0, fm, 0, nFmBlock);
+        float* dbeta0_ptr  = &LIBXSMM_VLA_ACCESS(2, dbeta0,  fm, 0, nFmBlock);
+        float* dgamma_imgr_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_imgr, fm, 0, 0, nImg, nFmBlock);
+        float* dbeta_imgr_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_imgr,  fm, 0, 0, nImg, nFmBlock);
+
+        LIBXSMM_PRAGMA_SIMD
+        for ( v=0; v < nFmBlock; v++ ) {
+          dgamma0_ptr[v] += dgamma_imgr_ptr[v];
+          dbeta0_ptr[v]  += dbeta_imgr_ptr[v];
+        }
+      }
+    }
+
+    for ( l_count = 1; l_count < num_handles; ++l_count ) {
+      LIBXSMM_VLA_DECL(2, float, dgammar, (float*)handles[l_count]->grad_gamma->data, nFmBlock);
+      LIBXSMM_VLA_DECL(2, float, dbetar,  (float*)handles[l_count]->grad_beta->data,  nFmBlock);
+
+      for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+        float* dgamma0_ptr = &LIBXSMM_VLA_ACCESS(2, dgamma0, fm, 0, nFmBlock);
+        float* dbeta0_ptr  = &LIBXSMM_VLA_ACCESS(2, dbeta0,  fm, 0, nFmBlock);
+        float* dgammar_ptr = &LIBXSMM_VLA_ACCESS(2, dgammar, fm, 0, nFmBlock);
+        float* dbetar_ptr  = &LIBXSMM_VLA_ACCESS(2, dbetar,  fm, 0, nFmBlock);
+
+        LIBXSMM_PRAGMA_SIMD
+        for ( v=0; v < nFmBlock; v++ ) {
+          dgammar_ptr[v] = dgamma0_ptr[v];
+          dbetar_ptr[v]  = dbeta0_ptr[v];
+        }
+      }
+    }
+
+    libxsmm_barrier_wait(handles[0]->barrier, ltid);
+  }
+
+  return status;
+}
+
+
