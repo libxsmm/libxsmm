@@ -1547,7 +1547,7 @@ ifneq (,$(strip $(STAGEDIR)))
     PPKGDIR = libdata/pkgconfig
   endif
 else ifeq (,$(strip $(PREFIX)))
-  ifneq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
+  ifeq (FreeBSD1,$(UNAME)$(_PKG_CHECKED))
     override PREFIX = /usr/local
   else
     override PREFIX = $(abspath .)
