@@ -139,8 +139,8 @@ LIBXSMM_APIEXT void libxsmm_matcopy_omp(void* out, const void* in, unsigned int 
   }
   else {
     static int error_once = 0;
-    if (0 != libxsmm_get_verbosity() /* library code is expected to be mute */
-     && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    if ( 0 != libxsmm_get_verbosity() /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
     {
       if (0 == out) {
         fprintf(stderr, "LIBXSMM ERROR: the matrix-copy input and/or output is NULL!\n");
