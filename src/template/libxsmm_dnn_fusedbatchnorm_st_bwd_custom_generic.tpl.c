@@ -231,9 +231,26 @@ if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)            ||
         }
       }
     }
+  } else {
+    /* now we need to reduce the del_gamm and del_beta */
+    for ( fm = thr_begin2; fm < thr_end2; ++fm ) {
+      element_stats_type* del_gamma_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, 0, 0, nImg, nFmBlock);
+      element_stats_type* del_beta_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, 0, 0, nImg, nFmBlock);
 
-    libxsmm_barrier_wait(handle->barrier, ltid);
+      for ( img=1; img < nImg; img++ ) {
+        element_stats_type* del_gamma_img_ptr = &LIBXSMM_VLA_ACCESS(3, dgamma_img, fm, img, 0, nImg, nFmBlock);
+        element_stats_type* del_beta_img_ptr  = &LIBXSMM_VLA_ACCESS(3, dbeta_img,  fm, img, 0, nImg, nFmBlock);
+
+        LIBXSMM_PRAGMA_SIMD
+        for ( v=0; v < nFmBlock; v++ ) {
+          del_gamma_ptr[v] += del_gamma_img_ptr[v];
+          del_beta_ptr[v]  += del_beta_img_ptr[v];
+        }
+      }
+    }
   }
+
+  libxsmm_barrier_wait(handle->barrier, ltid);
 }
 
 if ( ((handle->desc.fuse_ops & LIBXSMM_DNN_FUSEDBN_OPS_BN) > 0)      ||
