@@ -388,13 +388,13 @@ LIBXSMM_API void libxsmm_itrans(void* inout, unsigned int typesize,
   static int error_once = 0;
   LIBXSMM_INIT
   if (NULL != inout && 0 < typesize && typesize <= 127 && m <= ld && LIBXSMM_MAX(n, 1) <= ld) {
+    const signed char c = (signed char)typesize;
     libxsmm_blasint i, j;
     if (m == n) {
       for (i = 0; i < m; ++i) {
         for (j = 0; j < i; ++j) {
           char *const a = &((char*)inout)[(i*ld+j)*typesize];
           char *const b = &((char*)inout)[(j*ld+i)*typesize];
-          const signed char c = (signed char)typesize;
           signed char k = 0;
           for (; k < c; ++k) LIBXSMM_ISWAP(a[k], b[k]);
         }
