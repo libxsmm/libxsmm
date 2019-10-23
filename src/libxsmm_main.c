@@ -2049,17 +2049,17 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
         else { /* evict */
           INTERNAL_FIND_CODE_CACHE_EVICT(cache_index, cache->entry.size, cache->entry.hit);
         }
-        cache->entry.hit = cache_index;
       }
 # if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
       else { /* reset cache */
         cache->entry.id = libxsmm_ninit;
         cache->entry.size = 1;
-        cache->entry.hit = 0;
+        cache_index = 0;
       }
 # endif
       LIBXSMM_ASSIGN127(cache->entry.keys + cache_index, desc);
       cache->entry.code[cache_index] = flux_entry;
+      cache->entry.hit = cache_index;
     }
 #endif
   }
