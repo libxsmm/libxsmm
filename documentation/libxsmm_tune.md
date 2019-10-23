@@ -2,14 +2,14 @@
 
 ### Intercepted Allocations<a name="scalable_malloc"></a>
 
-To improve thread-scalability and to avoid frequent memory allocation/deallocation, the [scratch memory allocator](libxsmm_aux.md#memory-allocation) can be leveraged by intercepting existing malloc/free calls. This experimental facility is built into LIBXSMM's main library and can be enabled using an environment variable (`LIBXSMM_MALLOC=1`) or an API. The latter also takes an optional lower or an optional upper bound to select malloc-calls based on the size of the allocation which is complemented by a separate environment variable (e.g., LIBXSMM_MALLOC_LIMIT=4m:1g).
+To improve thread-scalability and to avoid frequent memory allocation/deallocation, the [scratch memory allocator](libxsmm_aux.md#memory-allocation) can be leveraged by intercepting existing malloc/free calls. This facility is built into LIBXSMM's main library (disable at compile-time: `make MALLOC=0`) and can be enabled by using an environment variable (`LIBXSMM_MALLOC=1`) or can be enabled per API (`libxsmm_set_malloc`). The latter takes an optional lower and/or an optional upper bound to select malloc-calls based on the size of the allocation. This can also be achieved by using a separate environment variable (e.g., LIBXSMM_MALLOC_LIMIT=4m:1g).
 
 ```C
 void libxsmm_set_malloc(int enabled, const size_t* lo, const size_t* hi);
 int libxsmm_get_malloc(size_t* lo, size_t* hi);
 ```
 
-The latter function may return zero even if there was an attempt to enable this facility (limitation/experimental implementation). Please note, the regular [Scratch Memory API](libxsmm_aux.md#memory-allocation) (e.g., `libxsmm_[get|set]_scratch_limit`) and the related environment variables can apply as well (`LIBXSMM_SCRATCH_LIMIT`, `LIBXSMM_SCRATCH_POOLS`, `LIBXSMM_SCRATCH_SCALE`). If intercepted memory allocations are enabled, the scratch limit is adjusted by default to allow unlimited growth of the scratch domain. Further, an increased verbosity level can help to gain some insight (`LIBXSMM_VERBOSE=3`).
+Querying the status may return zero even if there was an attempt to enable this facility (limitation/experimental implementation). Please note, the regular [Scratch Memory API](libxsmm_aux.md#memory-allocation) (e.g., `libxsmm_[get|set]_scratch_limit`) and the related environment variables can apply as well (`LIBXSMM_SCRATCH_LIMIT`, `LIBXSMM_SCRATCH_POOLS`, `LIBXSMM_SCRATCH_SCALE`). If intercepted memory allocations are enabled, the scratch limit is adjusted by default to allow unlimited growth of the scratch domain. Further, an increased verbosity level can help to gain some insight (`LIBXSMM_VERBOSE=3`).
 
 Intercepting malloc/free is supported by linking LIBXSMM's static or shared main library. The latter of which can be used to intercept calls of an existing and unchanged binary (LD_PRELOAD mechanism). To statically link with LIBXSMM and to intercept existing malloc/free calls, the following changes to the application's link stage are recommended:
 
@@ -22,7 +22,7 @@ gcc [...] -Wl,--export-dynamic \
 
 The main library causes a BLAS-dependency which may be already fulfilled for the application in question. However, if this is not the case (unresolved symbols), `libxsmmnoblas.a` must be linked in addition. Depending on the dependencies of the application, the link order may also need to be adjusted. Other i.e. a GNU-compatible compiler (as shown above), can induce additional requirements (compiler runtime libraries).
 
-**NOTE**: The Intel Compiler may need "libirc" i.e., `-lirc` in front of `libxsmm.a`. Linking LIBXSMM's static library may require above mentioned linker flags (`--wrap`) in particular when using Intel Fortran (IFORT) as a linker driver unless `CALL libxsmm_init()` is issued (or at least one symbol of LIBXSMM's main library is referenced; check with `nm application | grep libxsmm`). Linking the static library using the GNU compiler does not strictly need special flags when linking the application.
+**NOTE**: The Intel Compiler may need "libirc" i.e., `-lirc` in front of `libxsmm.a`. Linking LIBXSMM's static library may require above mentioned linker flags (`--wrap`) in particular when using Intel Fortran (IFORT) as a linker driver unless `CALL libxsmm_init()` is issued (or at least one symbol of LIBXSMM's main library is referenced; check with `nm application | grep libxsmm`). Linking the static library by using the GNU compiler does not strictly need special flags when linking the application.
 
 Linking the shared library form of LIBXSMM (`make STATIC=0`) has similar requirements with respect to the application but does not require `-Wl,--wrap` although `-Wl,--export-dynamic` is necessary if the application is statically linked (beside of LIBXSMM linked in a shared fashion). The LD_PRELOAD based mechanism does not need any changes to the link step of an application. However, `libxsmmnoblas` may be required if the application does not already link against BLAS.
 
@@ -34,7 +34,7 @@ LIBXSMM_MALLOC=1
 
 **NOTE**: If the application already uses BLAS, of course `libxsmmnoblas` must not be used!
 
-The following code can be compiled and linked using `gfortran example.f -o example`:
+The following code can be compiled and linked with `gfortran example.f -o example`:
 
 ```fortran
       PROGRAM allocate_test
@@ -94,7 +94,7 @@ Each group of the above indexes is combined into all possible triplets generatin
 (3,2,2), (3,2,3), (3,3,2), (3,3,3), (23,23,23)
 ```
 
-Of course, both mechanisms (M/N/K and MNK based) can be combined using the same command line (make). Static optimization and JIT can also be combined (no need to turn off the JIT backend).
+Of course, both mechanisms (M/N/K and MNK based) can be combined by using the same command line (make). Static optimization and JIT can also be combined (no need to turn off the JIT backend).
 
 ### Targeted Compilation<a name="tuning"></a>
 
@@ -137,7 +137,7 @@ make THRESHOLD=$((60 * 60 * 60))
 
 The maximum of the given threshold and the largest requested specialization refines the value of the threshold. Please note that explicitly JIT'ting and executing a kernel is possible and independent of the threshold. If a problem-size is below the threshold, dispatching the code requires to figure out whether a specialized routine exists or not.
 
-For statically generated code, the suported precision can be selected:
+For statically generated code, the precision can be selected:
 
 ```bash
 make PRECISION=2
@@ -145,7 +145,7 @@ make PRECISION=2
 
 The default preference is to generate and register both single and double-precision code (PRECISION=0). Specifying PRECISION=1&#124;2 is generating and registering single-precision or double-precision code respectively.
 
-The automatic dispatch is highly convenient because existing GEMM calls can serve specialized kernels (even in a binary compatible fashion), however there is (and always will be) an overhead associated with looking up the code-registry and checking whether the code determined by the GEMM call is already JIT'ted or not. This lookup has been optimized using various techniques such as using specialized CPU instructions to calculate CRC32 checksums, to avoid costly synchronization (needed for thread-safety) until it is ultimately known that the requested kernel is not yet JIT'ted, and by implementing a small thread-local cache of recently dispatched kernels. The latter of which can be adjusted in size (only power-of-two sizes) but also disabled:
+The automatic dispatch is highly convenient because existing GEMM calls can serve specialized kernels (even in a binary compatible fashion), however there is (and always will be) an overhead associated with looking up the code-registry and checking whether the code determined by the GEMM call is already JIT'ted or not. This lookup has been optimized with various techniques such as specialized CPU instructions to calculate CRC32 checksums, to avoid costly synchronization (needed for thread-safety) until it is ultimately known that the requested kernel is not yet JIT'ted, and by implementing a small thread-local cache of recently dispatched kernels. The latter of which can be adjusted in size (only power-of-two sizes) but also disabled:
 
 ```bash
 make CACHE=0
