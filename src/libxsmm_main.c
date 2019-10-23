@@ -2006,7 +2006,7 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
               if (NULL == internal_registry[i].ptr_const) break;
             } while (i != i0);
             if (i == i0) { /* out of capacity (no registry slot available) */
-              diff = 0; /* inside of locked region (do not use break!) */
+              diff = 0; /* do not use break if inside of locked region */
             }
             flux_entry.pmm = NULL; /* no result */
           }
@@ -2027,8 +2027,9 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
     } while (0 != diff);
 #if defined(LIBXSMM_CACHE_MAXSIZE) && (0 < (LIBXSMM_CACHE_MAXSIZE))
     if (NULL != flux_entry.ptr_const) { /* keep code version on record (cache) */
+      LIBXSMM_ASSERT(0 == diff);
 # if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
-      if (cache->entry.id == libxsmm_ninit)
+      if (cache->entry.id == libxsmm_ninit) /* maintain cache */
 # endif
       {
         if (cache->entry.size < (LIBXSMM_CACHE_MAXSIZE)) { /* grow */
@@ -2038,18 +2039,17 @@ LIBXSMM_API_INLINE libxsmm_code_pointer internal_find_code(libxsmm_descriptor* d
         else { /* evict */
           INTERNAL_FIND_CODE_CACHE_EVICT(cache_index, cache->entry.size, cache->entry.hit);
         }
+        cache->entry.hit = cache_index;
       }
 # if !defined(LIBXSMM_NTHREADS_USE) || defined(LIBXSMM_CACHE_CLEAR)
-      else { /* invalidate */
-        LIBXSMM_ASSERT(0 == cache_index);
+      else { /* reset cache */
         cache->entry.id = libxsmm_ninit;
         cache->entry.size = 1;
+        cache->entry.hit = 0;
       }
 # endif
       LIBXSMM_ASSIGN127(cache->entry.keys + cache_index, desc);
       cache->entry.code[cache_index] = flux_entry;
-      cache->entry.hit = cache_index;
-      LIBXSMM_ASSERT(0 == diff);
     }
 #endif
   }
