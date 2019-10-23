@@ -95,12 +95,14 @@ class FusedBNormImpl
       }
     }
 
-    virtual void backPropagate(TensorBuf *deloutp, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf*> delinp, int tid)
+    //virtual void backPropagate(TensorBuf *deloutp, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf*> delinp, int tid)
+    virtual void backPropagate(TensorBuf *deloutp, TensorBuf *inp, TensorBuf *outp, TensorBuf *gammap, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf*> delinp, int tid)
     {
       switch(engine)
       {
         case XSMM:
-          backPropagate(deloutp, delgammap, delbetap, delinp, tid);
+          //backPropagate(deloutp, delgammap, delbetap, delinp, tid);
+          backPropagate(deloutp, inp, outp, gammap, delgammap, delbetap, delinp, tid);
           break;
       }
     }

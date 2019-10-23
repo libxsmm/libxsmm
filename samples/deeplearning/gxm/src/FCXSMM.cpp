@@ -391,16 +391,18 @@ void FCXSMM::weightUpdate(TensorBuf *deloutpb, TensorBuf *inpb, TensorBuf *delwe
 
 #pragma omp barrier
 
-        for(int nn=0; nn<gp->num_numa_nodes; nn++)
+        if(n == 0)
         {
-          if(n == nn) continue;
-          float *wgp = (float*)dwt_ptr[n]+nn*jn;
-          float *rgp = (float*)dwt_ptr[nn]+nn*jn;
+          for(int nn=1; nn<gp->num_numa_nodes; nn++)
+          {
+            float *wgp = (float*)dwt_ptr[n]+nn*jn;
+            float *rgp = (float*)dwt_ptr[nn]+nn*jn;
 
 #pragma vector nontemporal
 #pragma omp simd
-          for(int i=tb; i<te; i++)
-            wgp[i] = rgp[i];
+            for(int i=tb; i<te; i++)
+              wgp[i] = rgp[i];
+          }
         }
       }
       else if(gp->in_data_type == DT_BF16)

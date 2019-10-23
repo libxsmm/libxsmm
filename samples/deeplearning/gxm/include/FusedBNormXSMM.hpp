@@ -46,39 +46,40 @@ class FusedBNormXSMM : public FusedBNormImpl
     FusedBNormImpl *gp_;
     libxsmm_dnn_fusedbatchnorm_desc fusedbn_desc_train;
     libxsmm_dnn_fusedbatchnorm_desc fusedbn_desc_test;
-    libxsmm_dnn_fusedbatchnorm* libxsmm_handle_train = NULL;
-    libxsmm_dnn_fusedbatchnorm* libxsmm_handle_test = NULL;
-    libxsmm_dnn_tensor* libxsmm_input_train = NULL;
-    libxsmm_dnn_tensor* libxsmm_input_add_train = NULL;
-    libxsmm_dnn_tensor* libxsmm_output_train = NULL;
-    libxsmm_dnn_tensor* libxsmm_relumask_train = NULL;
-    libxsmm_dnn_tensor* libxsmm_expectval_train = NULL;
-    libxsmm_dnn_tensor* libxsmm_stddev_train = NULL;
-    libxsmm_dnn_tensor* libxsmm_variance_train = NULL;
-    libxsmm_dnn_tensor* libxsmm_gamma_train = NULL;
-    libxsmm_dnn_tensor* libxsmm_beta_train = NULL;
-    libxsmm_dnn_tensor* libxsmm_input_test = NULL;
-    libxsmm_dnn_tensor* libxsmm_input_add_test = NULL;
-    libxsmm_dnn_tensor* libxsmm_output_test = NULL;
-    libxsmm_dnn_tensor* libxsmm_relumask_test = NULL;
-    libxsmm_dnn_tensor* libxsmm_expectval_test = NULL;
-    libxsmm_dnn_tensor* libxsmm_stddev_test = NULL;
-    libxsmm_dnn_tensor* libxsmm_variance_test = NULL;
-    libxsmm_dnn_tensor* libxsmm_gamma_test = NULL;
-    libxsmm_dnn_tensor* libxsmm_beta_test = NULL;
-    libxsmm_dnn_tensor* libxsmm_delinput = NULL;
-    libxsmm_dnn_tensor* libxsmm_delinput_add = NULL;
-    libxsmm_dnn_tensor* libxsmm_deloutput = NULL;
-    libxsmm_dnn_tensor* libxsmm_delgamma = NULL;
-    libxsmm_dnn_tensor* libxsmm_delbeta = NULL;
+    libxsmm_dnn_fusedbatchnorm* libxsmm_handle_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_fusedbatchnorm* libxsmm_handle_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_input_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_input_add_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_output_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_relumask_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_expectval_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_stddev_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_variance_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_gamma_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_beta_train[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_input_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_input_add_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_output_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_relumask_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_expectval_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_stddev_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_variance_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_gamma_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_beta_test[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_delinput[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_delinput_add[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_deloutput[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_delgamma[NUM_NUMA_NODES] = {NULL};
+    libxsmm_dnn_tensor* libxsmm_delbeta[NUM_NUMA_NODES] = {NULL};
     libxsmm_dnn_tensor_datalayout* libxsmm_layout;
     libxsmm_dnn_err_t status;
 
-    float *bexpect = NULL, *bstddev = NULL, *bvariance = NULL;
-    void *relu_mask = NULL;
+    float *bexpect[NUM_NUMA_NODES]={NULL}, *bstddev[NUM_NUMA_NODES]={NULL}, *bvariance[NUM_NUMA_NODES]={NULL};
+    void *relu_mask[NUM_NUMA_NODES]={NULL};
     void *scratch=NULL;
     bool updated_scratch_fwd=false, updated_scratch_bwd=false;
     int nBlocksFm, ofmblock;
+    float *sumscratch=NULL;
 
   public:
     FusedBNormXSMM(FusedBNormImplParams* gp, int engine);
@@ -86,5 +87,6 @@ class FusedBNormXSMM : public FusedBNormImpl
 
     // Assume external threading, e.g., #pragma omp
     void forwardPropagate(vector<TensorBuf*> inp, TensorBuf* gammap, TensorBuf* betap, TensorBuf *gmeanp, TensorBuf *gvarp, TensorBuf *outp, int tid);
-    void backPropagate(TensorBuf *deloutp, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf *> delinp, int tid);
+    void backPropagate(TensorBuf *deloutp, TensorBuf *inp, TensorBuf *outp, TensorBuf *gammap, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf *> delinp, int tid);
+    //void backPropagate(TensorBuf *deloutp, TensorBuf *delgammap, TensorBuf *delbetap, vector<TensorBuf *> delinp, int tid);
 };

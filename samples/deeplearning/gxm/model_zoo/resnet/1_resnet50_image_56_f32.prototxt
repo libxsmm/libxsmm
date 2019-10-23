@@ -10,7 +10,7 @@ node {
     train_list: "/scratch/savancha/jpegs_256resized_split/split_1/train_images_labels.list"
     test_source: "/scratch/savancha/jpegs_256resized_split/split_1"
     test_list: "/scratch/savancha/jpegs_256resized_split/split_1/val_images_labels.list"
-    batch_size: 56
+    batch_size: 32
     num_train_files: 1281167
     num_test_files: 50000
     numsplits: 1
