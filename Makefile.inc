@@ -1500,7 +1500,7 @@ ifeq (undefined,$(origin TARGET))
   endif # CTARGET
   endif # DBG
 else # take user's TARGET into account
-  CTARGET = $(TARGET)
+  CTARGET := $(TARGET)
 endif
 
 ifeq (0,$(shell $(CC) -E $(CTARGET) /dev/null 2>/dev/null >/dev/null; echo "$$?"))

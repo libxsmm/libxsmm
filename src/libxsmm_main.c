@@ -476,10 +476,11 @@ LIBXSMM_API_INTERN void internal_finalize(void)
     const char *const target_arch = (NULL == env_target_hidden || 0 == atoi(env_target_hidden))
       ? libxsmm_cpuid_name(libxsmm_target_archid) : NULL/*hidden*/;
     const int high_verbosity = (LIBXSMM_VERBOSITY_HIGH <= libxsmm_verbosity || 0 > libxsmm_verbosity);
+    const int target_vlen32 = libxsmm_cpuid_vlen32(libxsmm_target_archid);
 #if !defined(NDEBUG) && defined(__OPTIMIZE__)
     fprintf(stderr, "LIBXSMM WARNING: library is optimized without -DNDEBUG and contains debug code!\n");
 #endif
-    if (libxsmm_cpuid_vlen32(LIBXSMM_MAX_STATIC_TARGET_ARCH) < libxsmm_cpuid_vlen32(libxsmm_target_archid)) {
+    if (libxsmm_cpuid_vlen32(LIBXSMM_MAX_STATIC_TARGET_ARCH) < target_vlen32) {
       fprintf(stderr, "LIBXSMM WARNING: missing compiler support for optimized code paths!\n");
     }
     else if (0 != high_verbosity && LIBXSMM_MAX_STATIC_TARGET_ARCH < libxsmm_target_archid) {
@@ -1235,7 +1236,10 @@ LIBXSMM_API void libxsmm_set_target_arch(const char* arch)
     target_archid = cpuid;
   }
   if (cpuid < target_archid) { /* warn about code path if beyond CPUID */
-    if (0 != libxsmm_verbosity) { /* library code is expected to be mute */
+    static int error_once = 0;
+    if ( 0 != libxsmm_verbosity /* library code is expected to be mute */
+      && 1 == LIBXSMM_ATOMIC_ADD_FETCH(&error_once, 1, LIBXSMM_ATOMIC_RELAXED))
+    {
       const char *const target_arch = libxsmm_cpuid_name(target_archid);
       fprintf(stderr, "LIBXSMM WARNING: \"%s\" code will fail to run on \"%s\"!\n",
         target_arch, libxsmm_cpuid_name(cpuid));
